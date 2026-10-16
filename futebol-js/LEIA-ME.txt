@@ -1,39 +1,30 @@
-FUTEBOL JS — protótipo do sistema de partida (versão 13)
-=========================================================
+FUTEBOL JS — protótipo do sistema de partida
+=============================================
 
-COMO JOGAR
-  Abra o arquivo index.html no navegador (Chrome, Edge ou Firefox).
-  Pronto: funciona sem internet, porque o Three.js (o motor 3D) está na pasta.
-  No celular: copie a pasta inteira e abra o index.html pelo navegador, ou
-  sirva a pasta pela rede (veja abaixo).
+ARQUIVOS
+  jogo.js ............... o jogo inteiro (código comentado em português; CSS e tela entram por JS)
+  versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
+  index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
+  three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)
+  canva-carregador.html . o HTML pequeno que fica no Canva Code (busca o jogo.js no GitHub)
+  modelos/ .............. jogadores.glb e celebracoes.glb (para o Blender; o jogo não precisa)
+  ferramentas/ .......... gerar_jogadores_glb.py (gera os .glb de novo)
 
-  Com internet, as fontes do jogo (Silkscreen e Chakra Petch) vêm do Google
-  Fonts. Sem internet o jogo usa fontes do sistema — funciona igual, só muda a letra.
+ATUALIZAR O JOGO
+  Suba o jogo.js e o versao.txt novos nesta pasta do GitHub (substituindo os antigos).
+  - No Canva: em até uns 5 minutos o link já abre a versão nova. Quem estiver com o jogo
+    aberto vê o aviso "Nova versão disponível · toque para atualizar".
+  - Na tela inicial do jogo aparece: "versão X · carregador 1.0 · github".
+    Se aparecer "jsdelivr" no lugar de "github", a rede bloqueou o GitHub e o jogo veio pelo
+    caminho reserva, que pode demorar horas para atualizar. Para forçar, abra uma vez:
+    https://purge.jsdelivr.net/gh/herick-css/futebol-js-jogo@main/futebol-js/jogo.js
 
-SERVIR PELA REDE (para abrir no celular, ou se o navegador reclamar de arquivo local)
-  Na pasta futebol-js, rode um destes:
-    python -m http.server 8000
-    npx serve .
-  Depois abra http://localhost:8000 (no celular: http://IP-DO-PC:8000, na mesma rede Wi-Fi).
-
-O QUE TEM AQUI
-  index.html ............ o jogo inteiro (HTML + CSS + JavaScript comentado em português)
-  three.min.js .......... Three.js r128 (licença MIT, Three.js Authors)
-  modelos/
-    jogadores.glb ....... os 3 bonecos (atacante azul, meia vermelho, goleiro) para o Blender
-    celebracoes.glb ..... seu jogador com as animações Aviaozinho e Joelhada (com joelho)
-  ferramentas/
-    gerar_jogadores_glb.py  gera os dois .glb de novo (python3 gerar_jogadores_glb.py)
-                            usa as mesmas medidas e quadros-chave do jogo
-
-  Os .glb são para você abrir/editar no Blender. O jogo NÃO precisa deles para rodar
-  (os bonecos são montados em código, no index.html).
+RODAR SEM O CANVA
+  Abra o index.html (funciona sem internet). Ou ative o GitHub Pages do repositório
+  (Settings → Pages → main / root) e use:
+  https://herick-css.github.io/futebol-js-jogo/futebol-js/
 
 CONTROLES NO COMPUTADOR
   WASD ou setas: andar · Shift: correr · J: chutar/cruzar · K: passar · L: driblar
   E: pedir a bola / desarmar · Q: carrinho · C: câmera · Espaço: bater no domínio
   1 e 2: comemorações · Esc: pausa
-
-PARA A PLAY STORE (próximo passo)
-  Este index.html + three.min.js já podem ir dentro de um app com Capacitor
-  (capacitorjs.com): a pasta vira o "www" do projeto Android.
