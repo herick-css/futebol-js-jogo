@@ -1,0 +1,39 @@
+FUTEBOL JS — protótipo do sistema de partida (versão 13)
+=========================================================
+
+COMO JOGAR
+  Abra o arquivo index.html no navegador (Chrome, Edge ou Firefox).
+  Pronto: funciona sem internet, porque o Three.js (o motor 3D) está na pasta.
+  No celular: copie a pasta inteira e abra o index.html pelo navegador, ou
+  sirva a pasta pela rede (veja abaixo).
+
+  Com internet, as fontes do jogo (Silkscreen e Chakra Petch) vêm do Google
+  Fonts. Sem internet o jogo usa fontes do sistema — funciona igual, só muda a letra.
+
+SERVIR PELA REDE (para abrir no celular, ou se o navegador reclamar de arquivo local)
+  Na pasta futebol-js, rode um destes:
+    python -m http.server 8000
+    npx serve .
+  Depois abra http://localhost:8000 (no celular: http://IP-DO-PC:8000, na mesma rede Wi-Fi).
+
+O QUE TEM AQUI
+  index.html ............ o jogo inteiro (HTML + CSS + JavaScript comentado em português)
+  three.min.js .......... Three.js r128 (licença MIT, Three.js Authors)
+  modelos/
+    jogadores.glb ....... os 3 bonecos (atacante azul, meia vermelho, goleiro) para o Blender
+    celebracoes.glb ..... seu jogador com as animações Aviaozinho e Joelhada (com joelho)
+  ferramentas/
+    gerar_jogadores_glb.py  gera os dois .glb de novo (python3 gerar_jogadores_glb.py)
+                            usa as mesmas medidas e quadros-chave do jogo
+
+  Os .glb são para você abrir/editar no Blender. O jogo NÃO precisa deles para rodar
+  (os bonecos são montados em código, no index.html).
+
+CONTROLES NO COMPUTADOR
+  WASD ou setas: andar · Shift: correr · J: chutar/cruzar · K: passar · L: driblar
+  E: pedir a bola / desarmar · Q: carrinho · C: câmera · Espaço: bater no domínio
+  1 e 2: comemorações · Esc: pausa
+
+PARA A PLAY STORE (próximo passo)
+  Este index.html + three.min.js já podem ir dentro de um app com Capacitor
+  (capacitorjs.com): a pasta vira o "www" do projeto Android.
