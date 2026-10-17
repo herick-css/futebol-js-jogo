@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 14.0
+   FUTEBOL JS · jogo.js · versão 15.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,16 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (versão 13)
    ---------------------------------------------------------------------
+   Novidades da versão 15:
+     - mão na cintura de verdade: braço com COTOVELO e cabeça que abaixa (peças escondidas,
+       iguais ao joelho, que só aparecem na pose de tristeza)
+     - torcida nova: ~9 mil torcedores-sprite (sentado/em pé × azul/vermelho, 3 tons de pele,
+       espelhados) numa arquibancada de degraus; pulam na placa de vídeo; gol faz a torcida do
+       time explodir; de vez em quando passa uma "ola"
+     - cavadinha: só funciona com o goleiro adiantado e depende da qualidade (força ~32%, pegar
+       bem embaixo, mira); mal batida cai curta ou passa do travessão. Goleiro na linha pega.
+     - goleiro pega o próprio rebote devagar (antes a bola ficava parada embaixo dele)
+
    Novidades da versão 13:
      - IA chuta de verdade: prepara (perna para trás) e bate forte, colocado ou de cavadinha;
        de longe chuta menos e erra mais. Cabeceia (passe, afastar, finalizar), voleio e bicicleta
@@ -592,56 +602,147 @@ function buildBoards() {
   add(BOARD_Z * 2, BOARD_X, 0, false);
 }
 
-// Torcida: "torcedores" de 2×2 pixels; alguns pulam e balançam bandeira.
-// DESEMPENHO: os 4 quadros da animação são desenhados UMA vez no carregamento (com o desfoque
-// aplicado uma vez só, na imagem inteira). Durante o jogo só trocamos qual textura aparece —
-// custo zero. (Na versão 6 a torcida era redesenhada 7×/s com desfoque em cada torcedor:
-// 40 a 75 ms por redesenho, e era isso que travava o jogo.)
+// ---------------------------------------------------------------------
+// TORCIDA (v15): cada torcedor é um retângulo com uma textura transparente (sprite), sentado ou
+// em pé numa arquibancada de degraus. São 4 tipos — sentado/em pé × camisa azul/vermelha — cada
+// um em 3 tons de pele e virado para um lado ou outro (espelhado), então ninguém parece clone.
+// DESEMPENHO: os ~9 mil torcedores ficam numa malha só (1 chamada de desenho, sem transparência
+// "de verdade": o fundo é cortado com alphaTest, que é barato). O sobe-e-desce é calculado na
+// PLACA DE VÍDEO (vertex shader): o processador só atualiza 3 números por quadro.
+//   - normal: quem está em pé balança, quem está sentado mexe pouquinho
+//   - gol: a torcida do time que marcou pula alta por ~7 s (a do outro time quase para)
+//   - "ola": de vez em quando uma onda dá a volta no estádio
+// ---------------------------------------------------------------------
+const ARQ = { FILEIRAS: 18, ALT0: 1.0, DEGRAU_Y: 0.62, DEGRAU_Z: 1.0, DIST0: 13 };   // degraus da arquibancada
 const crowd = (() => {
-  const W = 256, H = 64, QUADROS = 4;
-  const cols = ['#0B4F9C', '#d8443a', '#f2efe4', '#F7941D', '#3a3f4a', '#8a5a3c', '#e7a26b', '#2a72d6'];
-  const fans = [];
-  for (let y = 2; y < H - 2; y += 4) for (let x = 0; x < W; x += 3) {
-    if (Math.random() < 0.85) fans.push({ x, y, c: cols[Math.random() * cols.length | 0], jump: Math.random() < 0.3, wave: Math.random() < 0.15, ph: Math.random() * 6 });
-  }
-  const nitido = document.createElement('canvas'); nitido.width = W; nitido.height = H;
-  const gn = nitido.getContext('2d');
-  const frames = [];
-  for (let q = 0; q < QUADROS; q++) {
-    const t = q * 0.14;
-    gn.fillStyle = '#18202b'; gn.fillRect(0, 0, W, H);
-    gn.fillStyle = '#232d3b';
-    for (let y = 0; y < H; y += 4) gn.fillRect(0, y + 3, W, 1);   // degraus
-    for (const f of fans) {
-      const dy = f.jump && Math.sin(t * 7 + f.ph) > 0.4 ? -1 : 0;   // pulando
-      gn.fillStyle = f.c; gn.fillRect(f.x, f.y + dy, 2, 2);
-      if (f.wave && Math.sin(t * 5 + f.ph) > 0) { gn.fillStyle = '#f2efe4'; gn.fillRect(f.x, f.y + dy - 2, 1, 2); } // bandeira
+  // Atlas 128×64: 12 células de 16×32 px. Célula = (emPe × 6) + (time × 3) + pele.
+  const CAMISAS = [['#0B4F9C', '#083a73'], ['#C8352B', '#8f241d']];
+  const PELES_T = ['#F2C9A5', '#BF8159', '#62402A'];
+  const CABELOS_T = ['#1C140F', '#6B4423', '#0E0E0E'];
+  const tex = drawTexture(128, 64, (g) => {
+    g.clearRect(0, 0, 128, 64);
+    for (let i = 0; i < 12; i++) {
+      const ox = (i % 8) * 16, oy = Math.floor(i / 8) * 32;
+      const emPe = i >= 6, time = Math.floor(i / 3) % 2, pl = i % 3;
+      const [cam, esc] = CAMISAS[time], pele = PELES_T[pl], cab = CABELOS_T[pl];
+      const r = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(ox + x, oy + y, w, h); };
+      if (emPe) {
+        // Em pé, braços para cima (torcendo).
+        r(5, 1, 6, 2, cab); r(5, 3, 6, 6, pele); r(6, 5, 1, 1, '#16120F'); r(9, 5, 1, 1, '#16120F');
+        r(7, 9, 2, 1, pele);
+        r(2, 2, 2, 6, pele); r(12, 2, 2, 6, pele);           // braços levantados
+        r(2, 8, 2, 3, cam); r(12, 8, 2, 3, cam);              // mangas
+        r(4, 10, 8, 7, cam); r(4, 17, 8, 2, esc);             // camisa
+        r(4, 19, 8, 3, '#2a3550'); r(4, 22, 3, 7, '#2a3550'); r(9, 22, 3, 7, '#2a3550');   // calça
+        r(4, 29, 3, 2, '#141414'); r(9, 29, 3, 2, '#141414');                              // tênis
+      } else {
+        // Sentado: só aparece da coxa para cima (as pernas ficam atrás do degrau da frente).
+        r(5, 11, 6, 2, cab); r(5, 13, 6, 6, pele); r(6, 15, 1, 1, '#16120F'); r(9, 15, 1, 1, '#16120F');
+        r(7, 19, 2, 1, pele);
+        r(2, 20, 2, 3, cam); r(12, 20, 2, 3, cam); r(2, 23, 2, 4, pele); r(12, 23, 2, 4, pele);
+        r(4, 20, 8, 6, cam); r(4, 26, 8, 2, esc);
+        r(3, 28, 10, 4, '#2a3550');                           // joelhos/coxas
+      }
     }
-    // Cópia desfocada (uma operação por quadro, só no carregamento).
-    const c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d');
-    g.filter = 'blur(0.6px)';
-    g.drawImage(nitido, 0, 0);
-    const tex = pixelTexture(c, 4, 1);
-    tex.magFilter = THREE.LinearFilter; tex.minFilter = THREE.LinearFilter;   // suaviza de longe
-    frames.push(tex);
+  });
+  tex.minFilter = THREE.NearestMipmapLinearFilter; tex.generateMipmaps = true;   // de longe não "pisca"
+
+  const U = { uTempo: { value: 0 }, uFesta: { value: new THREE.Vector2(0, 0) }, uOla: { value: -1 } };
+  const material = new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.4, side: THREE.DoubleSide });
+  material.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, U);
+    sh.vertexShader = 'attribute float aFase;\nattribute vec3 aJeito;\nuniform float uTempo;\nuniform vec2 uFesta;\nuniform float uOla;\n' +
+      sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+        // aJeito: x = time (0 azul, 1 vermelho), y = em pé (1) ou sentado (0), z = posição na volta do estádio (0 a 1)
+        float festa = aJeito.x < 0.5 ? uFesta.x : uFesta.y;
+        float outro = aJeito.x < 0.5 ? uFesta.y : uFesta.x;
+        float vel = 5.0 + 5.0 * festa;
+        float onda = max(0.0, sin(uTempo * vel + aFase * 6.2832));
+        float amp = mix(aJeito.y > 0.5 ? 0.09 : 0.02, aJeito.y > 0.5 ? 0.6 : 0.45, festa) * (1.0 - 0.8 * outro);
+        float dOla = abs(fract(aJeito.z - uOla + 0.5) - 0.5);          // distância até a onda (dá a volta)
+        float ola = uOla < 0.0 ? 0.0 : exp(-dOla * dOla * 1600.0) * 0.7;
+        transformed.y += onda * amp + ola;`);
+  };
+
+  // Pinta (só posições). As fileiras são montadas em buildStands.
+  const pos = [], nor = [], uv = [], fase = [], jeito = [], idx = [];
+  const W = 0.8, H = 1.6, IN = 0.5 / 128, INV = 0.5 / 64;   // meio texel de margem
+  // base: pé do torcedor; dir: direção em que ele OLHA (para o campo); ang: 0..1 na volta do estádio
+  function torcedor(bx, by, bz, dirX, dirZ, time, emPe, ang) {
+    const cel = (emPe ? 6 : 0) + time * 3 + (Math.random() * 3 | 0);
+    let u0 = (cel % 8) * 16 / 128 + IN, u1 = ((cel % 8) * 16 + 16) / 128 - IN;
+    const vT = 1 - Math.floor(cel / 8) * 32 / 64 - INV, vB = 1 - (Math.floor(cel / 8) * 32 + 32) / 64 + INV;
+    if (Math.random() < 0.5) [u0, u1] = [u1, u0];   // espelhado
+    // "Direita" de quem olha para ele vindo do campo = (−dz, 0, dx) da direção do olhar dele invertida.
+    const rx = dirZ * W / 2, rz = -dirX * W / 2;
+    const y0 = by - (emPe ? 0 : 0.05), y1 = y0 + H;
+    const b = pos.length / 3;
+    pos.push(bx - rx, y1, bz - rz, bx + rx, y1, bz + rz, bx - rx, y0, bz - rz, bx + rx, y0, bz + rz);
+    for (let i = 0; i < 4; i++) { nor.push(dirX, 0, dirZ); jeito.push(time, emPe ? 1 : 0, ang); }
+    uv.push(u0, vT, u1, vT, u0, vB, u1, vB);
+    const f = Math.random(); fase.push(f, f, f, f);
+    idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
   }
-  const material = new THREE.MeshLambertMaterial({ map: frames[0] });
-  let atual = 0;
-  // Chamado ~7×/s pelo loop: só troca a textura (as 4 já estão na placa de vídeo).
-  function draw() { atual = (atual + 1) % QUADROS; material.map = frames[atual]; }
-  return { material, draw };
+  function malha() {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    g.setAttribute('aFase', new THREE.Float32BufferAttribute(fase, 1));
+    g.setAttribute('aJeito', new THREE.Float32BufferAttribute(jeito, 3));
+    g.setIndex(idx);
+    return new THREE.Mesh(g, material);
+  }
+
+  let festa = [0, 0], olaT = -1, proximaOla = rand(35, 70);
+  // Chamado todo quadro pelo loop (só mexe em 3 uniforms).
+  function atualizar(dt) {
+    U.uTempo.value += dt;
+    festa = festa.map((f) => Math.max(0, f - dt / 7));
+    U.uFesta.value.set(Math.min(1, festa[0] * 1.6), Math.min(1, festa[1] * 1.6));   // segura no máximo e depois cai
+    if (olaT >= 0) { olaT += dt / 11; if (olaT > 1) { olaT = -1; proximaOla = rand(45, 90); } }
+    else if (G.state === 'play' && (proximaOla -= dt) <= 0) olaT = 0;
+    U.uOla.value = olaT;
+  }
+  // Gol: a torcida desse time explode (e para a ola, se tiver).
+  function comemorar(time) { festa[time] = 1; festa[1 - time] = Math.min(festa[1 - time], 0.2); olaT = -1; proximaOla = rand(45, 90); }
+  return { torcedor, malha, atualizar, comemorar };
 })();
 
 function buildStands() {
-  // Três andares, cada um mais alto e mais longe. Todos num lote só (1 chamada de desenho).
-  const ANDARES = [[17, 4], [23, 8], [29, 12]];
+  // Arquibancada em degraus nos quatro lados: degraus (concreto + cadeiras) num lote só e os
+  // torcedores em outro (ver "TORCIDA" acima). Atrás do SEU gol (x < 0) é quase tudo azul,
+  // atrás do gol deles quase tudo vermelho; nas laterais mistura, com blocos de cada time.
   const T = new Lote();
-  for (const s of [-1, 1]) for (const [dist, alt] of ANDARES) {
-    T.caixa(CONFIG.FIELD_L + 56, alt, 6, 0xffffff, 0, alt / 2, s * (HALF_W + dist));
-    T.caixa(6, alt, CONFIG.FIELD_W + 56, 0xffffff, s * (HALF_L + dist), alt / 2, 0);
+  const { FILEIRAS, ALT0, DEGRAU_Y, DEGRAU_Z, DIST0 } = ARQ;
+  const angulo = (x, z) => (Math.atan2(z, x) / (Math.PI * 2) + 1) % 1;
+  for (let r = 0; r < FILEIRAS; r++) {
+    const y = ALT0 + r * DEGRAU_Y, d = DIST0 + r * DEGRAU_Z;
+    const concreto = r % 2 ? 0x3a414c : 0x343a44, cadeira = 0x26334a;
+    for (const s of [-1, 1]) {
+      const lenX = CONFIG.FIELD_L + 2 * (d + DEGRAU_Z), lenZ = CONFIG.FIELD_W + 2 * (d + DEGRAU_Z);
+      T.caixa(lenX, y, DEGRAU_Z, concreto, 0, y / 2, s * (HALF_W + d + DEGRAU_Z / 2));
+      T.caixa(lenX, 0.14, 0.45, cadeira, 0, y + 0.07, s * (HALF_W + d + 0.72));
+      T.caixa(DEGRAU_Z, y, lenZ, concreto, s * (HALF_L + d + DEGRAU_Z / 2), y / 2, 0);
+      T.caixa(0.45, 0.14, lenZ, cadeira, s * (HALF_L + d + 0.72), y + 0.07, 0);
+      // Laterais (olhando para o centro do campo, em −s no Z).
+      for (let x = -(HALF_L + d) + 0.5; x < HALF_L + d; x += 0.75) {
+        if (Math.random() > 0.78) continue;                  // cadeira vazia
+        const bloco = Math.floor((x + 200) / 10) % 2;         // blocos de 10 m
+        const pAzul = clamp(0.5 - x / HALF_L * 0.35 + (bloco ? 0.18 : -0.18), 0.08, 0.92);
+        const time = Math.random() < pAzul ? 0 : 1, z = s * (HALF_W + d + 0.62);
+        crowd.torcedor(x + rand(-0.12, 0.12), y + 0.14, z, 0, -s, time, Math.random() < 0.45, angulo(x, z));
+      }
+      // Fundos (atrás dos gols), olhando em −s no X: organizada, mais gente em pé.
+      for (let z = -(HALF_W + d) + 0.5; z < HALF_W + d; z += 0.75) {
+        if (Math.random() > 0.82) continue;
+        const casa = s < 0 ? 0 : 1, time = Math.random() < 0.85 ? casa : 1 - casa, x = s * (HALF_L + d + 0.62);
+        crowd.torcedor(x, y + 0.14, z + rand(-0.12, 0.12), -s, 0, time, Math.random() < 0.7, angulo(x, z));
+      }
+    }
   }
-  const torcida = T.malha(crowd.material); scene.add(torcida); freeze(torcida);
+  const degraus = T.malha(MAT_CORES); scene.add(degraus); freeze(degraus);
+  const torcida = crowd.malha(); scene.add(torcida); freeze(torcida);
   // Telhados e postes de luz num lote; lâmpadas (que brilham) em outro.
   const E = new Lote(), Lp = new Lote();
   for (const s of [-1, 1]) E.caixa(CONFIG.FIELD_L + 56, 0.6, 12, 0x2c3340, 0, 15, s * (HALF_W + 31));
@@ -756,7 +857,6 @@ function makeAthlete(o) {
   // Ordem 'ZXY' nos ombros e quadris: primeiro abre/fecha o braço para o lado (X), depois leva para a
   // frente (Z). Assim, com os braços para a frente, fechar as mãos realmente aproxima uma da outra.
   const pivo = (x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.order = 'ZXY'; corpo.add(g); return g; };
-  const fechar = (lote, pai) => { pai.add(lote.malha(material)); };
 
   // Perna: normalmente é UMA malha (perna inteira, 1 chamada de desenho). Para a joelhada
   // existe uma segunda versão com JOELHO: coxa + canela (a canela gira no joelho, a 0,28 m do
@@ -782,12 +882,27 @@ function makeAthlete(o) {
     p.joelho = joelho;
     return p;
   };
+  // Braço: igual à perna — normalmente UMA malha (braço inteiro). Para poses com o braço dobrado
+  // (mão na cintura) existe a versão com COTOVELO, a 0,30 m do ombro: "ombro" (manga + braço) e o
+  // antebraço com a mão, que gira no cotovelo. Fica escondida e só aparece quando é usada.
   const braco = (z) => {
     const p = pivo(0, 1.27, z), L = new Lote(UV_BRANCO);
+    const corMao = o.luva ? hex(o.luva) : pele;
     L.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
     L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
-    L.caixa(0.17, 0.16, 0.17, o.luva ? hex(o.luva) : pele, 0, -0.57, 0);
-    fechar(L, p);
+    L.caixa(0.17, 0.16, 0.17, corMao, 0, -0.57, 0);
+    p.inteira = L.malha(material); p.add(p.inteira);
+    const LO = new Lote(UV_BRANCO);
+    LO.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
+    LO.caixa(0.16, 0.17, 0.15, pele, 0, -0.295, 0);       // até um pouco depois do cotovelo (tapa a "dobra")
+    p.ombro = LO.malha(material); p.ombro.visible = false; p.add(p.ombro);
+    const cotovelo = new THREE.Group();
+    cotovelo.position.set(0, -0.3, 0); cotovelo.rotation.order = 'ZXY'; cotovelo.visible = false;
+    const LA = new Lote(UV_BRANCO);                 // antebraço e mão, medidos a partir do cotovelo
+    LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
+    LA.caixa(0.17, 0.16, 0.17, corMao, 0, -0.27, 0);
+    cotovelo.add(LA.malha(material)); p.add(cotovelo);
+    p.cotovelo = cotovelo;
     return p;
   };
   const pernaE = perna(-0.13), pernaD = perna(0.13);
@@ -804,7 +919,20 @@ function makeAthlete(o) {
     [[0.5, 0.06, 0.54, -0.01, 1.89, 0], [0.06, 0.18, 0.54, -0.24, 1.8, 0]],
   ];
   for (const [w, h, d, x, y, z] of CABELOS_ESTILO[o.estilo]) C.caixa(w, h, d, cabelo, x, y, z);
-  fechar(C, corpo);
+  const troncoInteiro = C.malha(material); corpo.add(troncoInteiro);
+  // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
+  // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
+  const CT = new Lote(UV_BRANCO);
+  CT.caixa(0.34, 0.26, 0.58, hex(o.calcao), 0, 0.8, 0);
+  CT.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null));
+  CT.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);
+  const troncoSemCabeca = CT.malha(material); troncoSemCabeca.visible = false; corpo.add(troncoSemCabeca);
+  const cabeca = new THREE.Group();
+  cabeca.position.set(0.02, 1.36, 0); cabeca.rotation.order = 'ZXY'; cabeca.visible = false;
+  const CB = new Lote(UV_BRANCO);
+  CB.caixa(0.48, 0.52, 0.52, pele, -0.02, 0.26, 0, (i) => (i === 0 ? UV_ROSTO : null));
+  for (const [w, h, d, x, y, z] of CABELOS_ESTILO[o.estilo]) CB.caixa(w, h, d, cabelo, x - 0.02, y - 1.36, z);
+  cabeca.add(CB.malha(material)); corpo.add(cabeca);
 
   const etiqueta = new THREE.Sprite(new THREE.SpriteMaterial({ map: texNome(o.nome, o.fundoNome), depthTest: false, transparent: true }));
   etiqueta.scale.set(1.3, 0.2, 1);
@@ -814,19 +942,23 @@ function makeAthlete(o) {
   const sombra = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT);
   sombra.rotation.x = -Math.PI / 2; sombra.position.y = 0.02;
   raiz.add(sombra);
-  return { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta };
+  return { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca };
 }
 // Reação de quem tomou o gol (k vai de 0 a 1 em 0,7 s). Valores conferidos no gramado:
-//   cintura: braços abertos para baixo com as mãos na altura do quadril, cabeça baixa
+//   cintura: mãos na cintura DE VERDADE (v15): o braço abre ~66° para o lado e o cotovelo dobra
+//            ~115° de volta, a mão para encostada no quadril (conta feita: mão a 0,97 m do chão,
+//            colada na lateral do tronco); cabeça baixa no pivô do pescoço, ombros um pouco caídos
 //   sentado: com joelho; as pernas sobem rápido (√k) e o corpo desce devagar (k²), assim
 //            nada atravessa o chão no meio do movimento; quadril para a 15 cm do chão
 //   deitado: mesma pose de "caído de costas" da bicicleta
 function aplicarLamento(p, m) {
   const k = p.lamentoK;
   if (p.lamento === 'cintura') {
-    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.55, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.55, k);
-    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, -0.15, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, -0.15, k);
-    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.12, k);
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 1.16, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -1.16, k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0, k);
+    usarCotovelos(m, -2.0 * k, 2.0 * k);          // antebraço volta para dentro até a mão no quadril
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.1, k);
+    usarCabeca(m, -0.5 * k);                      // olhando para o chão
   } else if (p.lamento === 'sentado') {
     const kl = Math.sqrt(k), ky = k * k;
     m.raiz.position.y = -0.59 * ky; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0;
@@ -852,6 +984,25 @@ function usarJoelhos(m, angE, angD) {
     m.joelhosLigados = liga;
   }
   if (liga) { m.pernaE.joelho.rotation.z = angE; m.pernaD.joelho.rotation.z = angD; }
+}
+// Liga/desliga o cotovelo dos dois braços. ang = dobra do antebraço (em X, para dentro do corpo:
+// negativo no braço esquerdo, positivo no direito).
+function usarCotovelos(m, angE, angD) {
+  const liga = angE !== 0 || angD !== 0;
+  if (liga !== !!m.cotovelosLigados) {
+    for (const b of [m.bracoE, m.bracoD]) { b.inteira.visible = !liga; b.ombro.visible = liga; b.cotovelo.visible = liga; }
+    m.cotovelosLigados = liga;
+  }
+  if (liga) { m.bracoE.cotovelo.rotation.x = angE; m.bracoD.cotovelo.rotation.x = angD; }
+}
+// Liga/desliga a cabeça separada. ang negativo = abaixa (queixo para o peito).
+function usarCabeca(m, ang) {
+  const liga = ang !== 0;
+  if (liga !== !!m.cabecaLigada) {
+    m.troncoInteiro.visible = !liga; m.troncoSemCabeca.visible = liga; m.cabeca.visible = liga;
+    m.cabecaLigada = liga;
+  }
+  if (liga) m.cabeca.rotation.z = ang;
 }
 const SHADOW_GEO = new THREE.CircleGeometry(0.38, 10);
 const SHADOW_MAT = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false });
@@ -1631,6 +1782,17 @@ function aiShoot(p) {
   kickBall(p, dx / D * sp, vy, dz / D * sp, curva, 0);
   p.kickT = 0.4;
   ball.isShot = true; ball.distChute = dGoal; ball.cavadinha = tipo === 'cavadinha';   // (depois do kickBall, que zera isso)
+  if (ball.cavadinha) marcarCavadinha(1 - p.team, rand(0.45, 0.9));
+}
+
+// Guarda, no momento da cavadinha, o quanto o goleiro que vai ser encoberto está ADIANTADO
+// (metros fora da linha do gol) e a qualidade do toque. A defesa usa isso (ver checkBallContacts):
+//   goleiro na linha (até ~2,5 m) → a bola é lenta e alta, ele só dá uns passos e pega;
+//   goleiro saindo (5 m ou mais) → aí sim ela encobre, mais ainda se for bem batida.
+function marcarCavadinha(timeGoleiro, qual) {
+  const gk = TEAMS[timeGoleiro].find((g) => g.role === 'GK');
+  ball.cavAdiant = gk ? Math.abs(gk.x + gk.dir * HALF_L) : 0;   // o gol dele fica em x = -dir × HALF_L
+  ball.cavQual = qual;
 }
 
 // ---------------------------------------------------------------------
@@ -1776,8 +1938,11 @@ function gkThink(p, dt) {
           return { vx: 0, vz: p.diveVZ };
         }
         if (t < 0.5 && py > 2.0 && Math.abs(gap) < 1.2 && p.jumpT <= 0) p.jumpT = 0.5; // bola alta em cima dele: pula
-        // Cavadinha: ele volta de costas, devagar (por isso ela funciona com o goleiro adiantado).
-        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (ball.cavadinha ? 0.55 : 1.4));
+        // Cavadinha: adiantado, ele volta de costas, devagar (por isso ela funciona). Perto da linha
+        // ele só ajeita o corpo e espera a bola cair — e ela é lenta, dá tempo.
+        const voltaDeCostas = ball.cavadinha && (ball.cavAdiant || 0) > 4;
+        if (ball.cavadinha && !voltaDeCostas && t < 0.5 && py > 1.9 && Math.abs(gap) < 1.6 && p.jumpT <= 0) p.jumpT = 0.5;
+        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (voltaDeCostas ? 0.55 : 1.4));
       }
     }
     const inBox = Math.abs(ball.x - ownGx) < BOX.depth - 2 && Math.abs(ball.z) < BOX.half - 2;
@@ -2158,7 +2323,7 @@ function checkBallContacts() {
   if (G.possession) return;
   const sp3 = Math.hypot(ball.vx, ball.vy, ball.vz);
   for (const gk of players) {
-    if (gk.role !== 'GK' || gk.controlCd > 0 || (gk.stun > 0 && gk.diveT <= 0) || ball.lastKicker === gk) continue;
+    if (gk.role !== 'GK' || gk.controlCd > 0 || (gk.stun > 0 && gk.diveT <= 0) || (ball.lastKicker === gk && sp3 > 5)) continue;   // rebote dele mesmo, já devagar: pode pegar
     const ownGx = -gk.dir * HALF_L;
     const inBox = Math.abs(ball.x - ownGx) < BOX.depth + 0.5 && Math.abs(ball.z) < BOX.half + 0.5;
     const reach = gk.diveT > 0 ? 2.0 : 1.2;
@@ -2189,7 +2354,14 @@ function checkBallContacts() {
       if (ball.distChute && ball.distChute < 13) chance -= (13 - ball.distChute) / 13 * 0.75;
       if (!ball.isShot && sp3 < 22) chance = Math.max(chance, 0.88);   // lançamento/cruzamento: ele sai e segura
       if (noCorpo) chance = Math.max(chance, 0.92);
-      if (ball.cavadinha && ball.vy < 0) chance = Math.min(chance, 0.3);   // voltando de costas, mal alcança
+      if (ball.cavadinha) {
+        // Quanto mais adiantado ele estava, menos alcança. Na linha (≤2 m) pega quase sempre;
+        // a 6 m, ~45%; a 8 m ou mais, ~20%. Cavadinha bem batida tira até mais 25% — mas só
+        // se ele estiver fora da linha (com ele parado no gol, não existe cavadinha boa).
+        const adi = ball.cavAdiant || 0, q = ball.cavQual || 0;
+        chance = clamp(0.95 - (adi - 2) * 0.12, 0.15, 0.95) - q * 0.25 * clamp((adi - 2) / 4, 0, 1);
+        if (noCorpo && adi < 4) chance = Math.max(chance, 0.95);
+      }
       if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
       ball.saveOk = Math.random() < chance;
       if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
@@ -2200,6 +2372,9 @@ function checkBallContacts() {
         return;
       }
     }
+    // Bola já devagar no pé dele (cavadinha curta, chute que morreu): pega, mesmo que a primeira
+    // tentativa tenha falhado. Antes ela ficava parada embaixo dele para sempre.
+    if (!ball.saveOk && sp3 < 5) ball.saveOk = true;
     if (ball.saveOk) {
       const wasShot = ball.isShot;
       givePossession(gk);
@@ -2302,6 +2477,7 @@ function scoreGoal(team) {
   G.possession = null;
   G.lastConceded = team === 0 ? 1 : 0;
   G.scoredBy = team;
+  crowd.comemorar(team);
   // Quem tomou o gol reage de um jeito: mão na cintura (metade), senta no chão ou se joga de costas.
   for (const p of TEAMS[1 - team]) {
     const r = Math.random();
@@ -3202,19 +3378,29 @@ function executeUserKick() {
   if (k.throwIn) vyFrac = Math.max(vyFrac, 0.22);
   vyFrac = clamp(vyFrac, 0.01, 0.8);
   // CAVADINHA: chute fraco (força abaixo de 50%) pegando bem embaixo da bola (efeito "sobe"
-  // forte): a bola sobe alto e cai devagar — encobre o goleiro adiantado.
+  // forte): a bola sobe alto e cai devagar — encobre o goleiro ADIANTADO.
+  // v15: ela não é mais perfeita sempre. A qualidade (0 a 1) vem de três coisas:
+  //   força perto de 32% (forte demais passa do gol, fraca demais cai na mão dele),
+  //   tocar bem embaixo da bola (efeito "sobe" no máximo) e a mira (erro da barra).
+  // Mal batida, ela cai CURTA (no colo do goleiro) ou LONGA (por cima do travessão).
   const cavadinha = k.kind === 'shot' && !k.cruzar && k.oy > 0.5 && k.power < 0.5;
   let vy = Math.max(0.3, speed * vyFrac);
   let hsp = speed * Math.sqrt(1 - vyFrac * vyFrac);
+  let qualCav = 0;
   if (cavadinha) {
-    // Parábola alta que cai perto da linha do gol: passa por cima de um goleiro adiantado.
     const dGol = Math.hypot(HALF_L - u.x, u.z);
+    const qForca = 1 - clamp(Math.abs(k.power - 0.32) / 0.2, 0, 1);
+    const qToque = clamp((k.oy - 0.5) / 0.4, 0, 1);
+    const qMira = 1 - clamp(errMax / 0.3, 0, 1);
+    qualCav = qForca * 0.45 + qToque * 0.25 + qMira * 0.3;
+    // Onde ela cai: perfeita = 0,5 m depois da linha. Ruim = até 5 m antes ou 3 m depois.
+    const erro = (1 - qualCav) * (k.power < 0.32 ? -rand(1.5, 5) : rand(1, 3));
     vy = clamp(5 + dGol * 0.22, 6.5, 9.5);
-    hsp = (dGol + 0.5) / (2 * vy / CONFIG.GRAVITY);
-    showToast('Cavadinha!', 'good');
+    hsp = Math.max(4, dGol + 0.5 + erro) / (2 * vy / CONFIG.GRAVITY);
+    showToast(qualCav > 0.65 ? 'Cavadinha!' : 'Cavadinha mal batida', qualCav > 0.65 ? 'good' : 'bad');
   }
   kickBall(u, Math.cos(ang) * hsp, vy, Math.sin(ang) * hsp, cavadinha ? 0 : k.ox, cavadinha ? 0 : k.oy, k.throwIn);  // sai de onde a bola está
-  if (k.kind === 'shot') { ball.isShot = true; ball.userShot = true; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha; }
+  if (k.kind === 'shot') { ball.isShot = true; ball.userShot = true; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha; if (cavadinha) marcarCavadinha(1, qualCav); }
   else { ball.userPass = true; G.stats.passes++; }
   G.kick = null;
   G.state = 'play'; G.targetScale = 1;
@@ -4755,7 +4941,12 @@ function syncMeshes(dt) {
       m.bracoE.rotation.x = 0.9 * a; m.bracoD.rotation.x = -0.9 * a; m.bracoE.rotation.z = -0.4 * a; m.bracoD.rotation.z = -0.1 * a;   // conferido: nada abaixo do gramado
       m.corpo.rotation.z = 0.15 * a;
     }
-    if (p.lamento && p.lamentoK > 0 && !p.celeb && (G.state === 'goal' || G.state === 'celebrate')) aplicarLamento(p, m);
+    const lamentando = p.lamento && p.lamentoK > 0 && !p.celeb && (G.state === 'goal' || G.state === 'celebrate');
+    if (lamentando) aplicarLamento(p, m);
+    if (!(lamentando && p.lamento === 'cintura')) {   // fora da pose triste: volta braço inteiro e cabeça presa
+      if (m.cotovelosLigados) usarCotovelos(m, 0, 0);
+      if (m.cabecaLigada) usarCabeca(m, 0);
+    }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
     // Braço aberto para o lado (aviãozinho, apito...): o ombro chega um pouco para dentro, senão
@@ -4850,7 +5041,7 @@ function stepGame(dt, rdt) {
   }
 }
 
-let last = performance.now(), radarT = 0, crowdT = 0, fpsT = 0, fpsN = 0;
+let last = performance.now(), radarT = 0, fpsT = 0, fpsN = 0;
 function frame(now) {
   requestAnimationFrame(frame);
   const rdt = Math.min(0.05, (now - last) / 1000);
@@ -4864,8 +5055,7 @@ function frame(now) {
   }
   updateCamera(rdt);
   syncMeshes(dt);
-  crowdT += rdt;
-  if (crowdT > 0.14) { crowdT = 0; crowd.draw(); }   // só troca a textura (já pronta)
+  crowd.atualizar(rdt);                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
