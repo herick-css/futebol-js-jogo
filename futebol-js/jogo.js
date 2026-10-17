@@ -4470,7 +4470,23 @@ $('againBtn').addEventListener('click', resetMatch);
   });
   window.addEventListener('keydown', (e) => { if (e.code === 'F9') { e.preventDefault(); painel.style.display === 'block' ? (painel.style.display = 'none') : mostrar(); } });
 })();
-$('versaoInfo').textContent = 'versão ' + VERSAO_JOGO + (window.__FUTEBOL_CARREGADOR ? ' · carregador ' + window.__FUTEBOL_CARREGADOR + ' · ' + (window.__FUTEBOL_ORIGEM || '') : '');
+// Versão mostrada = o que está no versao.txt do GitHub (quem manda no número é você).
+// O carregador do Canva compara o versao.txt de agora com window.__FUTEBOL_VERSAO para avisar
+// que tem atualização; antes ele comparava com o número escrito aqui dentro do código, e se os
+// dois fossem diferentes o aviso aparecia para sempre (mesmo depois de atualizar).
+function mostrarVersao(v) {
+  $('versaoInfo').textContent = 'versão ' + v + (window.__FUTEBOL_CARREGADOR ? ' · carregador ' + window.__FUTEBOL_CARREGADOR + ' · ' + (window.__FUTEBOL_ORIGEM || '') : '');
+}
+mostrarVersao(VERSAO_JOGO);
+(function lerVersaoTxt() {
+  const base = window.__FUTEBOL_ORIGEM === 'github' ? 'https://raw.githubusercontent.com/herick-css/futebol-js-jogo/main/futebol-js/'
+    : window.__FUTEBOL_ORIGEM === 'jsdelivr' ? 'https://cdn.jsdelivr.net/gh/herick-css/futebol-js-jogo@main/futebol-js/' : '';
+  if (!base && location.protocol === 'file:') return;          // aberto do pendrive: fica o número do código
+  fetch(base + 'versao.txt?v=' + Math.floor(Date.now() / 60000), { cache: 'no-store' })
+    .then((r) => (r.ok ? r.text() : ''))
+    .then((t) => { t = t.trim(); if (t && t.length < 20) { window.__FUTEBOL_VERSAO = t; mostrarVersao(t); } })
+    .catch(() => {});
+})();
 $('startBtn').addEventListener('click', () => {
   try {
     const el = document.documentElement;
