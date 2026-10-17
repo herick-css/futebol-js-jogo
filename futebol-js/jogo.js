@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 16.0
+   FUTEBOL JS · jogo.js · versão 17.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,12 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (versão 13)
    ---------------------------------------------------------------------
+   Novidades da versão 17:
+     - torcida: o pula-pula não acelera nem "embaralha" mais (a fase agora é somada no processador
+       e dá a volta em 2π; antes ela crescia sem parar e saltava quando a velocidade mudava)
+     - domínio DIFÍCIL: ponto azul pequeno (~3 marcadores) dentro da faixa verde. Azul = DOMÍNIO
+       PERFEITO em câmera lenta; verde = não domina, mas conta como passe ruim (não erro seu)
+
    Novidades da versão 16:
      - disputa de corpo: correndo com a bola com o marcador do lado, ou dois correndo para a
        bola solta, cada um põe o braço (dobrado no cotovelo) do lado do outro e inclina o ombro
@@ -657,17 +663,20 @@ const crowd = (() => {
   });
   tex.minFilter = THREE.NearestMipmapLinearFilter; tex.generateMipmaps = true;   // de longe não "pisca"
 
-  const U = { uTempo: { value: 0 }, uFesta: { value: new THREE.Vector2(0, 0) }, uOla: { value: -1 } };
+  // uFase: a "fase" do pula-pula de cada torcida, somada AQUI (no processador) quadro a quadro.
+  // (v17) Antes o shader fazia sin(tempo × velocidade); quando a velocidade mudava (gol), o tempo
+  // já estava grande e a fase dava saltos enormes — a torcida "acelerava" e embaralhava.
+  const U = { uFase: { value: new THREE.Vector2(0, 0) }, uFesta: { value: new THREE.Vector2(0, 0) }, uOla: { value: -1 } };
   const material = new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.4, side: THREE.DoubleSide });
   material.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, U);
-    sh.vertexShader = 'attribute float aFase;\nattribute vec3 aJeito;\nuniform float uTempo;\nuniform vec2 uFesta;\nuniform float uOla;\n' +
+    sh.vertexShader = 'attribute float aFase;\nattribute vec3 aJeito;\nuniform vec2 uFase;\nuniform vec2 uFesta;\nuniform float uOla;\n' +
       sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
         // aJeito: x = time (0 azul, 1 vermelho), y = em pé (1) ou sentado (0), z = posição na volta do estádio (0 a 1)
         float festa = aJeito.x < 0.5 ? uFesta.x : uFesta.y;
         float outro = aJeito.x < 0.5 ? uFesta.y : uFesta.x;
-        float vel = 5.0 + 5.0 * festa;
-        float onda = max(0.0, sin(uTempo * vel + aFase * 6.2832));
+        float fase = aJeito.x < 0.5 ? uFase.x : uFase.y;
+        float onda = max(0.0, sin(fase + aFase * 6.2832));
         float amp = mix(aJeito.y > 0.5 ? 0.09 : 0.02, aJeito.y > 0.5 ? 0.6 : 0.45, festa) * (1.0 - 0.8 * outro);
         float dOla = abs(fract(aJeito.z - uOla + 0.5) - 0.5);          // distância até a onda (dá a volta)
         float ola = uOla < 0.0 ? 0.0 : exp(-dOla * dOla * 1600.0) * 0.7;
@@ -706,10 +715,13 @@ const crowd = (() => {
 
   let festa = [0, 0], olaT = -1, proximaOla = rand(35, 70);
   // Chamado todo quadro pelo loop (só mexe em 3 uniforms).
+  const DOIS_PI = Math.PI * 2;
   function atualizar(dt) {
-    U.uTempo.value += dt;
     festa = festa.map((f) => Math.max(0, f - dt / 7));
-    U.uFesta.value.set(Math.min(1, festa[0] * 1.6), Math.min(1, festa[1] * 1.6));   // segura no máximo e depois cai
+    const f0 = Math.min(1, festa[0] * 1.6), f1 = Math.min(1, festa[1] * 1.6);   // segura no máximo e depois cai
+    U.uFesta.value.set(f0, f1);
+    // Velocidade (rad/s) de cada torcida: 5 normal, até 10 na festa. Soma e dá a volta em 2π.
+    U.uFase.value.set((U.uFase.value.x + dt * (5 + 5 * f0)) % DOIS_PI, (U.uFase.value.y + dt * (5 + 5 * f1)) % DOIS_PI);
     if (olaT >= 0) { olaT += dt / 11; if (olaT > 1) { olaT = -1; proximaOla = rand(45, 90); } }
     else if (G.state === 'play' && (proximaOla -= dt) <= 0) olaT = 0;
     U.uOla.value = olaT;
@@ -2801,7 +2813,7 @@ function kickoff(team) {
   taker.think = 1.4;
   G.kickoffPending = { team, taker, partner };
   G.userRequest = 0;
-  G.cine = null; G.corrida = null; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
+  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
   esconderRecepcao(); user.recvPose = null;
   for (const sp of spares) if (!sp.present) { sp.present = true; sp.fade = 1; }
   lostBall.life = 0;
@@ -3755,9 +3767,14 @@ function startReceive(pr) {
   if (kind === 'peitoPulo' && pr.y > 1.8) { risco += 0.3; motivo = motivo || 'veio alta demais'; }
   if (kind === 'alto' && pr.y > 2.6) { risco += 0.4; motivo = motivo || 'veio alta demais'; }
   risco = Math.min(0.9, risco);
+  // DOMÍNIO DIFÍCIL (v17): em vez do sorteio, a barra ganha um PONTO AZUL bem pequeno (~3 vezes a
+  // largura do marcador) dentro da faixa verde. Azul = DOMÍNIO PERFEITO (cena em câmera lenta).
+  // Verde = não domina, mas a culpa é do passe (não conta como erro seu). Fora = erro seu.
+  // (Só no domínio — pé, peito, pulo + peito. Bola alta continua como era.)
+  const dificil = risco >= 0.5 && kind !== 'alto';
   const R = {
-    kind, pr, risco, motivo, forcedMiss: Math.random() < risco, fin: tipoFinalizacao(),
-    t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, done: false,
+    kind, pr, risco, motivo, dificil, forcedMiss: !dificil && Math.random() < risco, fin: tipoFinalizacao(),
+    t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, azul: null, done: false,
   };
   const tam = RECV.ZONA[kind];
   R.zona.ini = 0.06 + Math.random() * (0.88 - tam); R.zona.fim = R.zona.ini + tam;
@@ -3790,11 +3807,27 @@ function startReceive(pr) {
     if (R.fin) botao(NOME_FIN[R.fin].replace(' AO GOL', ''), 'finalizar', 's1', true);
   }
   else botao('DOMINAR', 'dominar', 's1', true);
-  $('recvInfo').textContent = kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.' : 'Bata quando o marcador estiver na faixa verde';
+  $('recvInfo').textContent = kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
+    : dificil ? 'Passe difícil: só o ponto AZUL domina' : 'Bata quando o marcador estiver na faixa verde';
   $('recvInfo').className = '';
   G.recvHideT = 0;
   $('recvLayer').hidden = false;
   document.body.classList.add('recebendo');
+  // Ponto azul: medido depois de a barra aparecer (precisa da largura real em pixels).
+  let azulEl = $('hamAzul');
+  if (!azulEl) {
+    azulEl = document.createElement('div'); azulEl.id = 'hamAzul';
+    azulEl.style.cssText = 'position:absolute;top:0;bottom:0;background:#2a72d6;border-left:2px solid #9cc4ff;border-right:2px solid #9cc4ff;box-sizing:border-box;';
+    $('hamTrack').insertBefore(azulEl, $('hamMarker'));
+  }
+  azulEl.hidden = !dificil;
+  if (dificil) {
+    const larg = $('hamTrack').getBoundingClientRect().width || 320, marc = $('hamMarker').getBoundingClientRect().width || 8;
+    const tamAzul = clamp(3 * marc / larg, 0.035, 0.12);
+    const ini = R.zona.ini + 0.15 * tam + Math.random() * Math.max(0, 0.7 * tam - tamAzul);   // dentro do verde, longe das bordas
+    R.azul = { ini, fim: ini + tamAzul };
+    azulEl.style.left = (ini * 100) + '%'; azulEl.style.width = (tamAzul * 100) + '%';
+  }
   desenharMartelo();
 }
 
@@ -3838,8 +3871,17 @@ function martelar(acao) {
   if (!acao) acao = R.kind === 'alto' ? 'cabecear' : 'dominar';   // bater na barra / Espaço na bola alta = cabecear (o seguro)
   if (acao === 'finalizar' && !R.fin) acao = 'cabecear';
   const naFaixa = R.pos >= R.zona.ini - RECV.FOLGA && R.pos <= R.zona.fim + RECV.FOLGA;
-  const ok = naFaixa && !R.forcedMiss;
   const info = $('recvInfo');
+  if (R.dificil) {
+    const noAzul = R.pos >= R.azul.ini && R.pos <= R.azul.fim;   // sem folga: é para ser difícil
+    if (noAzul) { info.textContent = 'PERFEITO!'; info.className = 'ok'; $('hamAzul').style.background = '#9cc4ff'; }
+    else if (naFaixa) { info.textContent = 'O passe veio ruim demais — não foi culpa sua'; info.className = ''; }
+    else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
+    R.perfeito = noAzul; R.culpaDoPasse = !noAzul && naFaixa;
+    resolveReceive(acao, noAzul, naFaixa);
+    return;
+  }
+  const ok = naFaixa && !R.forcedMiss;
   if (ok) { info.textContent = 'Na medida!'; info.className = 'ok'; $('hamZone').classList.add('flash'); }
   else if (naFaixa) { info.textContent = 'Acertou o tempo, mas a bola ' + (R.motivo || 'veio difícil') + '!'; info.className = 'bad'; }
   else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
@@ -3860,7 +3902,21 @@ function resolveReceive(acao, ok) {
   if (R.kind === 'peito' || R.kind === 'peitoPulo') pose = R.kind;
   else if (R.kind === 'alto') pose = acao === 'cabecear' || R.fin === 'cabecada' ? 'cabeca' : R.fin;
   user.recvPose = pose ? { kind: pose, t: 0, dur: POSE_DUR[pose], side: Math.random() < 0.5 ? 1 : -1 } : null;
-  G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: CONTATO_T[pose || 'pe'], kind: R.kind, acao, ok, pose, fin: R.fin, fase: 'ida' };
+  G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: CONTATO_T[pose || 'pe'], kind: R.kind, acao, ok, pose, fin: R.fin, fase: 'ida',
+    perfeito: !!R.perfeito, culpaDoPasse: !!R.culpaDoPasse, passador: ball.lastKicker };
+  if (R.perfeito) iniciarDominioPerfeito(G.recvFx);
+}
+
+// DOMÍNIO PERFEITO: faixas de cinema, tudo em câmera lenta e a bola chegando devagar no pé/peito.
+// A pose de peito também anda mais devagar (dur maior). Acaba em fimRecepcao.
+function iniciarDominioPerfeito(F) {
+  F.contactT = 0.85;                               // a bola leva ~0,85 s (real) até o contato
+  if (user.recvPose) user.recvPose.dur *= 2.2;
+  G.targetScale = G.timeScale = 0.12;
+  setLetterbox(true);
+  showBanner('DOMÍNIO PERFEITO', 0);
+  G.dominioPerfeito = true;
+  G.recvHideT = 0.25;                              // a barra sai logo, para a cena aparecer
 }
 
 // Altura do pulo na pose de recepção (para posicionar a bola no peito/cabeça/pé).
@@ -3890,9 +3946,12 @@ function updateRecvFx(rdt) {
     ball.x = lerp(F.from.x, c.x, k); ball.y = lerp(F.from.y, c.y, k); ball.z = lerp(F.from.z, c.z, k);
     if (k >= 1) contatoRecepcao(F);
   } else if (F.fase === 'desce') {                 // domínio no peito: a bola escorre até o pé
-    const p = pontoPe(), k = smooth(Math.min(1, (F.t - F.t0) / 0.28));
+    const p = pontoPe(), k = smooth(Math.min(1, (F.t - F.t0) / (F.perfeito ? 0.7 : 0.28)));
     ball.x = lerp(F.c0.x, p.x, k); ball.y = lerp(F.c0.y, p.y, k); ball.z = lerp(F.c0.z, p.z, k);
     if (k >= 1) { fimRecepcao(); givePossession(user); }
+  } else if (F.fase === 'segura') {               // domínio perfeito de pé: bola colada no pé por 0,5 s
+    const p = pontoPe(); ball.x = p.x; ball.y = p.y; ball.z = p.z;
+    if (F.t - F.t0 > 0.5) { fimRecepcao(); givePossession(user); showToast('Dominou!', 'good'); }
   }
 }
 
@@ -3902,9 +3961,20 @@ function contatoRecepcao(F) {
   if (F.kind !== 'alto') {
     if (F.ok) {
       G.stats.dominiosOk++;
-      if (F.kind === 'pe') { fimRecepcao(); givePossession(user); showToast('Dominou!', 'good'); }
+      if (F.kind === 'pe') {
+        if (F.perfeito) { F.fase = 'segura'; F.t0 = F.t; return; }   // segura a cena mais um pouquinho com a bola no pé
+        fimRecepcao(); givePossession(user); showToast('Dominou!', 'good');
+      }
       else { F.fase = 'desce'; F.t0 = F.t; F.c0 = { x: ball.x, y: ball.y, z: ball.z }; showToast('Matou no peito!', 'good'); }
-    } else { bolaEscapa(); fimRecepcao(); }
+    } else {
+      bolaEscapa();
+      if (F.culpaDoPasse) {                        // verde no difícil: erro do passe, não seu
+        G.stats.dominios = Math.max(0, G.stats.dominios - 1);
+        const p = F.passador;
+        showToast(p && p !== user && p.team === user.team ? 'Passe ruim de ' + p.name : 'A bola veio impossível', '');
+      }
+      fimRecepcao();
+    }
     return;
   }
   if (F.acao === 'cabecear') { if (F.ok) cabecearPasse(); else toqueTorto('Cabeceou mal'); }
@@ -3914,6 +3984,11 @@ function contatoRecepcao(F) {
 }
 
 function fimRecepcao() {
+  if (G.dominioPerfeito) {                         // fim da cena: tira as faixas e o letreiro
+    G.dominioPerfeito = false;
+    setLetterbox(false);
+    $('banner').className = '';
+  }
   G.recvFx = null; G.recv = null;
   if (G.state === 'trap') G.state = 'play';
   G.targetScale = 1; G.recvIgnore = 0.6;
