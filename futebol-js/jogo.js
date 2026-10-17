@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 17.0
+   FUTEBOL JS · jogo.js · versão 18.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,15 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (versão 13)
    ---------------------------------------------------------------------
+   Novidades da versão 18:
+     - relógio só corre com a bola rolando (parado na saída até o primeiro passe e em toda bola parada)
+     - acréscimos (0, 30 s, 45 s ou 1 min) pelas paralisações; acabou o tempo, o juiz espera o lance
+       terminar (gol no último lance vale; pênalti marcado no fim é cobrado)
+     - cena do apito final: juiz apita, quem ganhou bate na mão do companheiro e dá tchau para a
+       torcida, quem perdeu fica com as poses de derrota (botão Pular vai direto ao placar)
+     - SONS gerados no código (sem arquivos): chute, toque, apito, torcida de fundo que reage ao
+       lance, gol, defesa, cliques do domínio/drible e "fuuu" do drible. Botão SOM/MUDO no topo.
+
    Novidades da versão 17:
      - torcida: o pula-pula não acelera nem "embaralha" mais (a fase agora é somada no processador
        e dá a volta em 2π; antes ela crescia sem parar e saltava quando a velocidade mudava)
@@ -731,6 +740,204 @@ const crowd = (() => {
   return { torcedor, malha, atualizar, comemorar };
 })();
 
+// ---------------------------------------------------------------------
+// SONS (v18) — todos GERADOS no código com a Web Audio API: nenhum arquivo para baixar.
+// Cada som é uma "receita" de osciladores (tons) e ruído filtrado:
+//   chute ........ "tum" grave (tom que cai rápido) + estalo de ruído; mais forte = mais alto
+//   toque ........ o mesmo, curtinho e baixo (passe, domínio, bola chegando no pé)
+//   apito ........ tom agudo (~2,8 kHz) com "tremido" de ~32 Hz (a bolinha do apito)
+//   torcida ...... ruído filtrado em loop, sempre tocando baixinho; sobe com a bola perto do gol
+//   gol .......... a torcida explode: ruído forte com o filtro abrindo + "vozes" (vários tons
+//                  desafinados juntos fazendo um "uôôô")
+//   defesa ....... "pof" abafado das luvas + um "uuuh" curto da torcida
+//   clique ....... bipes de interface (domínio e drible); domínio perfeito = arpejo
+//   drible ....... "fuuu" (ruído varrendo de grave para agudo)
+// DESEMPENHO: um único AudioContext, ruído criado UMA vez (2 s) e reaproveitado, no máximo
+// 14 sons curtos tocando juntos. No celular o som só liga depois de um toque (botão JOGAR).
+// ---------------------------------------------------------------------
+const Som = (() => {
+  let ctx = null, mestre = null, ruido = null, mudo = false, vozes = 0;
+  let torcidaGain = null, torcidaFiltro = null, nivelAtual = -1;
+  try { mudo = localStorage.getItem('futebolJsMudo') === '1'; } catch (e) { /* sem armazenamento */ }
+
+  function ligar() {
+    try {
+      if (!ctx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        ctx = new AC();
+        const comp = ctx.createDynamicsCompressor();          // evita estourar quando soma tudo
+        mestre = ctx.createGain(); mestre.gain.value = mudo ? 0 : 0.85;
+        mestre.connect(comp); comp.connect(ctx.destination);
+        ruido = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+        const d = ruido.getChannelData(0);
+        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        montarTorcida();
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+    } catch (e) { ctx = null; }
+  }
+  const pronto = () => ctx && ctx.state !== 'closed' && !mudo && G.state !== 'paused';   // logo depois de ligar ele ainda pode estar 'suspended': o som sai assim que ele acorda
+  // Limite de sons curtos ao mesmo tempo (cada um se "desconta" quando termina).
+  function vaga(dur) {
+    if (vozes >= 14) return false;
+    vozes++; setTimeout(() => { vozes--; }, dur * 1000 + 50);
+    return true;
+  }
+  // Envelope: sobe até "pico" em "ataque" segundos e some até "dur".
+  function env(g, t0, ataque, pico, dur) {
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(Math.max(0.0002, pico), t0 + ataque);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  }
+  function fonteRuido(t0, dur, loop) {
+    const s = ctx.createBufferSource(); s.buffer = ruido; s.loop = !!loop;
+    s.start(t0, Math.random() * 1.5);
+    if (!loop) s.stop(t0 + dur + 0.05);
+    return s;
+  }
+  function filtro(tipo, freq, Q) { const f = ctx.createBiquadFilter(); f.type = tipo; f.frequency.value = freq; f.Q.value = Q || 0.7; return f; }
+  function ganho() { return ctx.createGain(); }
+  // Tom com a frequência caindo de f0 para f1 (chute, toque, defesa).
+  function tom(tipo, f0, f1, t0, dur, pico) {
+    const o = ctx.createOscillator(), g = ganho();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    env(g, t0, 0.005, pico, dur);
+    o.connect(g); g.connect(mestre); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function estalo(t0, dur, tipo, freq, pico) {
+    const s = fonteRuido(t0, dur), f = filtro(tipo, freq, 0.8), g = ganho();
+    env(g, t0, 0.003, pico, dur);
+    s.connect(f); f.connect(g); g.connect(mestre);
+  }
+
+  // ---- torcida de fundo: dois ruídos em loop (corpo grave + "falatório" médio)
+  function montarTorcida() {
+    torcidaGain = ganho(); torcidaGain.gain.value = 0.0001;
+    torcidaFiltro = filtro('bandpass', 700, 0.5);
+    const lp = filtro('lowpass', 2400, 0.5);
+    const a = fonteRuido(ctx.currentTime, 0, true), b = fonteRuido(ctx.currentTime, 0, true);
+    const corpo = filtro('bandpass', 300, 0.6), gCorpo = ganho(); gCorpo.gain.value = 0.6;
+    // "Murmúrio": o volume do falatório sobe e desce devagar (oscilador lento no ganho).
+    const gFala = ganho(); gFala.gain.value = 0.7;
+    const lfo = ctx.createOscillator(), lfoG = ganho(); lfo.frequency.value = 0.23; lfoG.gain.value = 0.25;
+    lfo.connect(lfoG); lfoG.connect(gFala.gain); lfo.start();
+    a.connect(torcidaFiltro); torcidaFiltro.connect(gFala); gFala.connect(lp);
+    b.connect(corpo); corpo.connect(gCorpo); gCorpo.connect(lp);
+    lp.connect(torcidaGain); torcidaGain.connect(mestre);
+  }
+  // nivel 0..1 (chamado todo quadro; só mexe no som quando muda de verdade)
+  function torcida(nivel) {
+    if (!ctx || !torcidaGain) return;
+    const n = Math.round(clamp(nivel, 0, 1) * 20) / 20;
+    if (n === nivelAtual) return;
+    nivelAtual = n;
+    const t = ctx.currentTime;
+    torcidaGain.gain.setTargetAtTime(0.05 + 0.2 * n, t, 0.6);
+    torcidaFiltro.frequency.setTargetAtTime(600 + 700 * n, t, 0.6);
+  }
+
+  return {
+    ligar, torcida,
+    get mudo() { return mudo; },
+    alternarMudo() {
+      mudo = !mudo;
+      try { localStorage.setItem('futebolJsMudo', mudo ? '1' : '0'); } catch (e) { /* ok */ }
+      if (mestre) mestre.gain.setTargetAtTime(mudo ? 0 : 0.85, ctx.currentTime, 0.05);
+      return mudo;
+    },
+    pausar(p) { if (ctx) { if (p) ctx.suspend(); else ctx.resume(); } },
+    // forca 0..1
+    chute(forca) {
+      if (!pronto() || !vaga(0.25)) return;
+      const t = ctx.currentTime, f = clamp(forca, 0, 1);
+      tom('sine', 140 + 60 * f, 45, t, 0.18, 0.55 + 0.4 * f);
+      estalo(t, 0.06, 'bandpass', 1800, 0.25 + 0.35 * f);
+    },
+    toque(forca = 0.3) {
+      if (!pronto() || !vaga(0.1)) return;
+      const t = ctx.currentTime, f = clamp(forca, 0, 1);
+      tom('sine', 240, 110, t, 0.08, 0.2 + 0.25 * f);
+      estalo(t, 0.025, 'highpass', 2500, 0.06 + 0.1 * f);
+    },
+    apito(dur = 0.3, atraso = 0) {
+      if (!pronto() || !vaga(dur + atraso)) return;
+      const t = ctx.currentTime + atraso;
+      const o = ctx.createOscillator(), o2 = ctx.createOscillator(), g = ganho(), bp = filtro('bandpass', 2900, 3);
+      o.type = 'sine'; o.frequency.value = 2850; o2.type = 'triangle'; o2.frequency.value = 2860;
+      const lfo = ctx.createOscillator(), lfoG = ganho(); lfo.type = 'square'; lfo.frequency.value = 32; lfoG.gain.value = 130;
+      lfo.connect(lfoG); lfoG.connect(o.frequency); lfoG.connect(o2.frequency);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.32, t + 0.02);
+      g.gain.setValueAtTime(0.32, t + dur - 0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(mestre);
+      for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + dur + 0.05); }
+    },
+    apitoFinal() { this.apito(0.32, 0); this.apito(0.32, 0.5); this.apito(1.15, 1.0); },
+    gol() {
+      if (!pronto() || !vaga(6)) return;
+      const t = ctx.currentTime;
+      // Explosão da torcida.
+      const s = fonteRuido(t, 6), bp = filtro('bandpass', 500, 0.6), g = ganho();
+      bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
+      bp.frequency.exponentialRampToValueAtTime(800, t + 5.5);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.45);
+      g.gain.setValueAtTime(0.55, t + 2.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
+      s.connect(bp); bp.connect(g); g.connect(mestre);
+      // "Vozes": tons dente-de-serra desafinados por um filtro de "vogal" (uô).
+      const vog = filtro('bandpass', 750, 1.2), gv = ganho();
+      gv.gain.setValueAtTime(0.0001, t); gv.gain.exponentialRampToValueAtTime(0.16, t + 0.5);
+      gv.gain.setValueAtTime(0.16, t + 2.2); gv.gain.exponentialRampToValueAtTime(0.0001, t + 4.5);
+      vog.connect(gv); gv.connect(mestre);
+      for (let i = 0; i < 7; i++) {
+        const o = ctx.createOscillator(), f0 = rand(170, 330);
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(f0 * 0.85, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.5);
+        const vib = ctx.createOscillator(), vg = ganho(); vib.frequency.value = rand(4, 7); vg.gain.value = f0 * 0.02;
+        vib.connect(vg); vg.connect(o.frequency);
+        o.connect(vog); o.start(t); o.stop(t + 4.6); vib.start(t); vib.stop(t + 4.6);
+      }
+    },
+    defesa() {
+      if (!pronto() || !vaga(1.3)) return;
+      const t = ctx.currentTime;
+      estalo(t, 0.12, 'lowpass', 600, 0.7);                 // "pof" das luvas
+      tom('sine', 110, 60, t, 0.12, 0.45);
+      const s = fonteRuido(t, 1.3), bp = filtro('bandpass', 450, 1.4), g = ganho();   // "uuuh"
+      env(g, t + 0.05, 0.2, 0.22, 1.3);
+      s.connect(bp); bp.connect(g); g.connect(mestre);
+    },
+    // tipo: 'ok' | 'erro' | 'perfeito'
+    clique(tipo = 'ok') {
+      if (!pronto() || !vaga(0.35)) return;
+      const t = ctx.currentTime;
+      if (tipo === 'perfeito') { [880, 1320, 1760].forEach((f, i) => tom('sine', f, f, t + i * 0.07, 0.12, 0.22)); return; }
+      if (tipo === 'erro') { tom('square', 320, 200, t, 0.09, 0.09); return; }
+      tom('square', 1400, 1350, t, 0.04, 0.1);
+    },
+    drible() {
+      if (!pronto() || !vaga(0.4)) return;
+      const t = ctx.currentTime, s = fonteRuido(t, 0.4), bp = filtro('bandpass', 500, 1.2), g = ganho();
+      bp.frequency.setValueAtTime(450, t); bp.frequency.exponentialRampToValueAtTime(3000, t + 0.32);
+      env(g, t, 0.06, 0.35, 0.38);
+      s.connect(bp); bp.connect(g); g.connect(mestre);
+    },
+  };
+})();
+// O som só pode ligar depois de um toque/clique do jogador (regra dos navegadores).
+window.addEventListener('pointerdown', () => Som.ligar(), { passive: true, capture: true });
+window.addEventListener('keydown', () => Som.ligar());
+
+// Quão "quente" está o jogo para a torcida de fundo (0 a 1): bola perto de um gol, chute no ar.
+function nivelTorcida() {
+  if (G.state === 'menu' || G.state === 'end') return 0;
+  if (G.state === 'goal' || G.state === 'celebrate' || G.state === 'fim') return 0.6;
+  const d = Math.min(Math.abs(HALF_L - ball.x), Math.abs(-HALF_L - ball.x)) + Math.abs(ball.z) * 0.3;
+  let n = clamp(1 - (d - 8) / 40, 0, 1) * 0.8;
+  if (ball.isShot) n = 1;
+  return n;
+}
+
 function buildStands() {
   // Arquibancada em degraus nos quatro lados: degraus (concreto + cadeiras) num lote só e os
   // torcedores em outro (ver "TORCIDA" acima). Atrás do SEU gol (x < 0) é quase tudo azul,
@@ -1216,7 +1423,7 @@ function callOffside(p) {
   G.offside = null;
   const ar = officials.find((o) => o.role === 'AR' && o.cobre === p.team);
   if (ar) { ar.refPose = 'bandeira'; ar.refPoseT = 2.6; ar.vx = ar.vz = 0; }
-  referee.refPose = 'apito'; referee.refPoseT = 1.4;
+  referee.refPose = 'apito'; referee.refPoseT = 1.4; Som.apito(0.35);
   if (p.isUser) G.stats.impedimentos++;
   // A câmera mostra o BANDEIRINHA com a bandeira levantada (corte seco), não o juiz.
   iniciarParalisacao({ team: 1 - p.team, spot: { x: p.x, z: p.z }, off: p, vic: null, card: null, reason: 'impedimento', ar, cut: true });
@@ -2211,7 +2418,7 @@ function updatePlayers(dt) {
     if (p.wallBlockT > 0) p.wallBlockT -= dt;
     if (p.chutePrep > 0 && G.possession !== p) p.chutePrep = 0;   // perdeu a bola enquanto preparava
     if (p.throwAnim > 0) p.throwAnim -= dt;
-    if (p.lamento && (G.state === 'goal' || G.state === 'celebrate')) {
+    if (p.lamento && (G.state === 'goal' || G.state === 'celebrate' || G.state === 'fim')) {
       p.lamentoAtraso -= dt;
       if (p.lamentoAtraso <= 0) p.lamentoK = Math.min(1, p.lamentoK + dt / 0.7);
     }
@@ -2337,6 +2544,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   ball.y = Math.max(ball.y, CONFIG.BALL_R + 0.01);
   ball.lastKicker = from; G.lastTouch = from;
   from.controlCd = 0.45;
+  if (!isThrow) { const v = Math.hypot(vx, vy, vz); if (v > 17) Som.chute((v - 17) / 14); else Som.toque(v / 17); }
   if (!isThrow && !(from.role === 'GK' && !from.goalKick)) from.kickT = 0.35; // animação do chute
   if (isThrow) from.throwAnim = 0.3;               // lateral: braços jogam a bola para a frente
   from.throwIn = false; from.goalKick = false; from.setPiece = null; from.carry = false;
@@ -2436,6 +2644,7 @@ function givePossession(p, opts = {}) {
   }
   G.passTarget = null;
   if (!opts.silent && ball.userPass && p.team === 0 && p !== user) G.stats.passesOk++;
+  if (!opts.silent && p.role !== 'GK') Som.toque(0.25);   // bola chegando no pé
   G.possession = p; G.lastTouch = p;
   ball.vx = ball.vy = ball.vz = 0; ball.spinSide = ball.spinVert = 0;
   ball.broken = false; ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.penalti = false;
@@ -2494,7 +2703,7 @@ function checkBallContacts() {
       if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
-        showToast('Espalmou!');
+        showToast('Espalmou!'); Som.defesa();
         return;
       }
     }
@@ -2504,7 +2713,7 @@ function checkBallContacts() {
     if (ball.saveOk) {
       const wasShot = ball.isShot;
       givePossession(gk);
-      if (wasShot) showToast(gk.team === 1 ? 'Defesa do goleiro!' : 'Nosso goleiro defendeu!');
+      if (wasShot) { showToast(gk.team === 1 ? 'Defesa do goleiro!' : 'Nosso goleiro defendeu!'); Som.defesa(); }
       return;
     }
   }
@@ -2604,6 +2813,7 @@ function scoreGoal(team) {
   G.lastConceded = team === 0 ? 1 : 0;
   G.scoredBy = team;
   crowd.comemorar(team);
+  Som.gol();
   // Quem tomou o gol reage de um jeito: mão na cintura (metade), senta no chão ou se joga de costas.
   for (const p of TEAMS[1 - team]) {
     const r = Math.random();
@@ -2785,12 +2995,13 @@ function endCelebration() {
 }
 
 function clearFlags(p) {
-  Object.assign(p, { bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0 });
+  Object.assign(p, { fim: null, bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0 });
 }
 
 // Saída de bola: o atacante fica na bola e o meia central ao lado dele, no próprio campo.
 // Ninguém sai do lugar até o primeiro toque, que é sempre um passe curto para o meia.
 function kickoff(team) {
+  if (G.fimPendente) { apitoFinal(); return; }     // gol no último lance: em vez da saída, o apito final
   G.golAutor = null;
   if (G.celebAuto) { user.scripted = false; G.celebAuto = null; }
   // (se alguém foi expulso, outro assume a saída / o toque)
@@ -2812,6 +3023,7 @@ function kickoff(team) {
   givePossession(taker, { silent: true });
   taker.think = 1.4;
   G.kickoffPending = { team, taker, partner };
+  Som.apito(0.5);                                  // apito da saída de bola
   G.userRequest = 0;
   G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
   esconderRecepcao(); user.recvPose = null;
@@ -2836,6 +3048,7 @@ const CORNER_DEFEND = [[5, -2], [5, 3], [8, 0], [10, -4], [11, 5]];
 const SP_LABEL = { lateral: 'Lateral', escanteio: 'Escanteio', 'tiro de meta': 'Tiro de meta', falta: 'Falta', penalti: 'Pênalti' };
 
 function startRestart(kind, team, spot, motivo) {
+  G.paradas = (G.paradas || 0) + 1;                // conta para os acréscimos
   G.possession = null;
   G.kickoffPending = null; G.offside = null;
   ball.userPass = false; ball.userShot = false;
@@ -3142,7 +3355,7 @@ function commitFoul(off, vic, info = {}) {
   ball.vx *= 0.15; ball.vz *= 0.15; ball.vy = Math.min(ball.vy, 0);
   if (off.isUser) G.stats.faltas++;
   if (vic.isUser) G.stats.faltasSofridas++;
-  referee.refPose = 'apito'; referee.refPoseT = 1.3;
+  referee.refPose = 'apito'; referee.refPoseT = 1.3; Som.apito(0.4);
   showToast((info.tipo === 'carrinho' ? 'Carrinho faltoso de ' : 'Falta de ') + nomeDe(off) + '!', off.team === 0 ? 'bad' : 'good');
   iniciarParalisacao({ team: vic.team, spot: { x: vic.x, z: vic.z }, off, vic, card, reason: 'falta' });
 }
@@ -3874,6 +4087,7 @@ function martelar(acao) {
   const info = $('recvInfo');
   if (R.dificil) {
     const noAzul = R.pos >= R.azul.ini && R.pos <= R.azul.fim;   // sem folga: é para ser difícil
+    Som.clique(noAzul ? 'perfeito' : naFaixa ? 'ok' : 'erro');
     if (noAzul) { info.textContent = 'PERFEITO!'; info.className = 'ok'; $('hamAzul').style.background = '#9cc4ff'; }
     else if (naFaixa) { info.textContent = 'O passe veio ruim demais — não foi culpa sua'; info.className = ''; }
     else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
@@ -3882,6 +4096,7 @@ function martelar(acao) {
     return;
   }
   const ok = naFaixa && !R.forcedMiss;
+  Som.clique(naFaixa ? 'ok' : 'erro');
   if (ok) { info.textContent = 'Na medida!'; info.className = 'ok'; $('hamZone').classList.add('flash'); }
   else if (naFaixa) { info.textContent = 'Acertou o tempo, mas a bola ' + (R.motivo || 'veio difícil') + '!'; info.className = 'bad'; }
   else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
@@ -4362,6 +4577,7 @@ function endCine(success) {
     user.embalo = { t: 2.5, x: ex / el, z: ez / el };
     user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
     if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
+    Som.drible();
     showToast(C.carretel ? 'CARRETEL!' : C.noGoleiro ? 'Driblou o goleiro!' : C.perfect ? 'Drible perfeito!' : 'Driblou!', 'good');
   } else {
     user.stun = 0.8;
@@ -4436,6 +4652,7 @@ function tapTiming(x, y) {
 function judgeTarget(tg, res) {
   const T = G.timing;
   tg.judged = true;
+  Som.clique(res === 'miss' ? 'erro' : 'ok');
   if (res !== 'miss') T.hits++;
   if (res === 'perfect') T.perfect++;
   tg.el.classList.add(res);
@@ -4559,7 +4776,7 @@ $('spinBall').addEventListener('pointerdown', (e) => {
 $('hamTrack').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(null); });
 $('timingLayer').addEventListener('pointerdown', (e) => { e.preventDefault(); tapTiming(e.clientX, e.clientY - AREA.topo); });
 $('cancelKick').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cancelKick(); });
-$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
+$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
 function toggleCamera() {
   cam.mode = cam.mode === 'bola' ? 'frente' : 'bola';
@@ -4723,7 +4940,7 @@ let lastStaminaPct = -1;
 function updateHUD() {
   setText('scoreA', String(G.score[0]));
   setText('scoreB', String(G.score[1]));
-  setText('clock', fmtClock(G.clock));
+  setText('clock', (G.acrescimoDado && G.acrescimo > 0 ? '+' : '') + fmtClock(G.clock));
   const mode = computeMode();
   if (mode !== G.mode) { G.mode = mode; renderButtons(mode); }
   const req = $('reqBtn');
@@ -4804,7 +5021,7 @@ function matchRating() {
 }
 
 function resetMatch() {
-  G.score = [0, 0]; G.clock = CONFIG.MATCH_SECONDS; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
+  G.score = [0, 0]; G.clock = CONFIG.MATCH_SECONDS; G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
   resetStats();
   // Volta todo mundo (inclusive expulsos) e zera faltas e cartões.
   TEAMS[0].length = 0; TEAMS[1].length = 0;
@@ -4821,6 +5038,179 @@ function resetMatch() {
   snapCamera();
 }
 
+// ---------------------------------------------------------------------
+// TEMPO DE JOGO (v18)
+//   - o relógio só corre com a bola ROLANDO: parado na saída de bola até o primeiro toque e
+//     parado em toda bola parada (lateral, escanteio, tiro de meta, falta, pênalti) até a cobrança
+//   - acréscimos pelas paralisações (cada bola parada conta 1): até 1 → nada; 2–4 → 30 s;
+//     5–8 → 45 s; 9 ou mais → 1 min (numa partida de 5 min a IA sozinha para o jogo ~2 vezes).
+//     Anunciados quando o tempo normal acaba.
+//   - acabou o tempo: o juiz ESPERA o lance terminar. Termina quando a bola sai, tem falta,
+//     o goleiro pega, ou ninguém está atacando (bola longe dos dois gols). Gol no último lance
+//     vale, e o apito vem no lugar da saída. Pênalti marcado no fim é cobrado.
+// ---------------------------------------------------------------------
+const ESTADOS_DE_BOLA_ROLANDO = ['play', 'aim', 'power', 'spin', 'dribble', 'trap'];
+function relogioCorre() {
+  return ESTADOS_DE_BOLA_ROLANDO.includes(G.state) && !G.kickoffPending && !G.sp && !G.fimPendente;
+}
+function acrescimoPorParadas(n) { return n <= 1 ? 0 : n <= 4 ? 30 : n <= 8 ? 45 : 60; }
+
+function verificarFimDeTempo(dt) {
+  if (G.fimPendente) {
+    G.fimEspera += dt;
+    // Segurança: um time trocando passes lá na frente para sempre — depois de 20 s, acaba
+    // no primeiro momento sem chute/mira/drible em andamento.
+    const travou = G.fimEspera > 20 && G.state === 'play' && !ball.isShot && !G.recvFx && !G.corrida;
+    if (lanceAcabou() || travou) apitoFinal();
+    return;
+  }
+  if (G.clock > 0 || !relogioCorre()) return;
+  if (!G.acrescimoDado) {
+    G.acrescimoDado = true;
+    G.acrescimo = acrescimoPorParadas(G.paradas || 0);
+    if (G.acrescimo > 0) {
+      G.clock = G.acrescimo;
+      showToast('Acréscimos: +' + (G.acrescimo === 60 ? '1 min' : G.acrescimo + ' s') + ' (' + G.paradas + ' paralisações)');
+      return;
+    }
+  }
+  G.clock = 0; G.fimPendente = true; G.fimEspera = 0;
+  if (lanceAcabou()) apitoFinal();
+}
+
+// O lance acabou? (ver regras acima)
+function lanceAcabou() {
+  const st = G.state;
+  if (st === 'restart') return !(G.sp && G.sp.kind === 'penalti');
+  if (st === 'foul') return !(G.foul && G.foul.penalti);
+  if (st !== 'play') return false;                 // gol, mira, drible, domínio: ainda é lance
+  if (G.sp || ball.isShot || G.recvFx || G.cine || G.corrida) return false;
+  const perigo = (time, x) => Math.abs((time === 0 ? HALF_L : -HALF_L) - x) < 36;   // perto do gol que esse time ataca
+  const h = G.possession;
+  if (h) return h.role === 'GK' || !perigo(h.team, h.x);
+  if (Math.hypot(ball.vx, ball.vz) > 14) return false;   // bola viajando (lançamento, cruzamento)
+  const t = G.lastTouch ? G.lastTouch.team : 0;
+  if (G.passTarget && perigo(G.passTarget.p.team, G.passTarget.x)) return false;
+  return !perigo(t, ball.x);
+}
+
+// ---------------------------------------------------------------------
+// CENA DO APITO FINAL (v18), ~8 s (toque em PULAR para ir direto ao placar):
+//   0–1,7 s  câmera no juiz apitando (três apitos: curto, curto, longo) e "FIM DE JOGO"
+//   depois   câmera aberta no time que ganhou: duplas vão uma até a outra e batem na mão
+//            ("toca aqui") e depois todos dão tchau para a torcida. O time que perdeu fica com
+//            as poses de derrota (mão na cintura, sentado, deitado). Empate: todos dão tchau.
+// ---------------------------------------------------------------------
+function apitoFinal() {
+  G.fimPendente = false;
+  G.state = 'fim'; G.fimT = 0; G.fimCorte = true; G.fimFase = -1; G.fimBanner = false;
+  G.targetScale = G.timeScale = 1;
+  if (G.kick) { G.kick = null; }
+  hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
+  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.sp = null; G.foul = null; G.passTarget = null;
+  if (G.dominioPerfeito) { G.dominioPerfeito = false; }
+  G.possession = null; ball.vx *= 0.3; ball.vz *= 0.3;
+  setLetterbox(true);
+  $('skipBtn').hidden = false; $('cineLabel').textContent = '';
+  Som.apitoFinal();
+  const r = referee;
+  r.angle = Math.atan2(-r.z, -r.x);                // de frente para o meio do campo (e para a câmera)
+  r.refPose = 'apito'; r.refPoseT = 2.6;
+  G.fimRef = { x: r.x, z: r.z, angle: r.angle };
+  const venc = G.score[0] > G.score[1] ? 0 : G.score[1] > G.score[0] ? 1 : -1;
+  G.fimVencedor = venc;
+  for (const p of players) {
+    if (p.out) continue;
+    Object.assign(p, { scripted: true, vx: 0, vz: 0, stun: 0, fall: 0, falling: false, slideT: 0, slidePose: 0, jumpT: 0, diveT: 0, carretel: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, tackle: 0, guard: 0, kickT: 0, chutePrep: 0, disputaK: 0, fim: null, embalo: null, bolaFixa: null });
+    if (venc >= 0 && p.team !== venc) {
+      const r2 = Math.random();
+      p.lamento = r2 < 0.5 ? 'cintura' : r2 < 0.8 ? 'sentado' : 'deitado';
+      p.lamentoAtraso = rand(1.2, 2.2);
+    } else p.fim = { tipo: 'tchau', t0: rand(1.6, 2.6) };
+  }
+  // Duplas do "toca aqui": jogadores de linha do vencedor, cada um com o companheiro mais perto.
+  if (venc >= 0) {
+    const livres = TEAMS[venc].filter((p) => !p.out && p.role !== 'GK');
+    while (livres.length >= 2) {
+      const a = livres.shift();
+      let bi = 0;
+      for (let i = 1; i < livres.length; i++) if (dist2D(a, livres[i]) < dist2D(a, livres[bi])) bi = i;
+      if (!livres.length || dist2D(a, livres[bi]) > 14) continue;   // longe demais de todos: só dá tchau
+      const b = livres.splice(bi, 1)[0];
+      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+      let ux = b.x - a.x, uz = b.z - a.z; const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+      a.fim = { tipo: 'toca', par: b, alvo: { x: mx - ux * 0.45, z: mz - uz * 0.45 }, batida: 0, t0: 1.3 };
+      b.fim = { tipo: 'toca', par: a, alvo: { x: mx + ux * 0.45, z: mz + uz * 0.45 }, batida: 0, t0: 1.3 };
+    }
+  }
+}
+
+function updateFimDeJogo(dt) {
+  G.fimT += dt;
+  const r = referee, R = G.fimRef;
+  r.x = R.x; r.z = R.z; r.vx = r.vz = 0; r.angle = R.angle;
+  if (G.fimT > 0.15 && !G.fimBanner) { G.fimBanner = true; showBanner('FIM DE JOGO', 0); }
+  if (G.fimT > 2.6 && G.fimBanner === true) { G.fimBanner = 'saiu'; $('banner').className = ''; }
+  for (const p of players) {
+    if (p.out) continue;
+    p.vx = p.vz = 0;
+    const F = p.fim;
+    if (!F || G.fimT < F.t0) continue;
+    if (F.tipo === 'toca') {
+      const dx = F.alvo.x - p.x, dz = F.alvo.z - p.z, d = Math.hypot(dx, dz);
+      if (d > 0.08 && F.batida === 0) {
+        const v = Math.min(4.6, d * 3), passo = Math.min(d, v * dt);   // trotando
+        p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * v; p.vz = dz / d * v;
+        p.anim += v * 2.6 * dt;
+        p.angle = turnToward(p.angle, Math.atan2(dz, dx), 8 * dt);
+      } else {
+        const q = F.par;
+        p.angle = turnToward(p.angle, Math.atan2(q.z - p.z, q.x - p.x), 10 * dt);
+        const parChegou = !q.fim || q.fim.tipo !== 'toca' || Math.hypot(q.fim.alvo.x - q.x, q.fim.alvo.z - q.z) <= 0.1;
+        if (parChegou) F.batida += dt / 0.5;
+        if (F.batida >= 0.5 && !F.estalo && p.id < q.id) { F.estalo = true; Som.toque(0.6); }   // o "plá" da mão
+        if (F.batida >= 1) p.fim = { tipo: 'tchau', t0: G.fimT + rand(0, 0.3) };
+      }
+      if (G.fimT - F.t0 > 4) p.fim = { tipo: 'tchau', t0: G.fimT };   // não se encontraram: só dá tchau
+    } else {
+      // Tchau: vira para a arquibancada mais perto (as laterais).
+      p.angle = turnToward(p.angle, Math.atan2(p.z >= 0 ? 1 : -1, 0), 4 * dt);
+    }
+  }
+  if (G.fimT > 8.5) terminarCenaFinal();
+}
+
+function cameraFim() {
+  const r = referee, fase = G.fimT < 1.7 ? 0 : G.fimT < 5.4 || G.fimVencedor < 0 ? 1 : 2;
+  if (fase !== G.fimFase) { G.fimFase = fase; G.fimCorte = true; }   // corte seco entre as partes
+  if (fase === 0) {                                // o juiz apitando, de frente
+    const a = G.fimRef.angle;
+    return { px: r.x + Math.cos(a) * 4.2, py: 1.9, pz: r.z + Math.sin(a) * 4.2, tx: r.x, ty: 1.5, tz: r.z };
+  }
+  const perto = (alvo, dist, alt) => {             // câmera do lado de dentro do campo, torcida ao fundo
+    const lado = alvo.z > 0 ? -1 : 1;
+    return { px: alvo.x + dist * 0.35, py: alt, pz: alvo.z + lado * dist, tx: alvo.x, ty: 1.0, tz: alvo.z };
+  };
+  const venc = G.fimVencedor;
+  if (fase === 1) {
+    // Quem ganhou: você (se foi o seu time ou empate) ou a dupla vencedora; mostra a dupla junta.
+    let W = venc === 1 ? TEAMS[1].find((p) => p.fim && p.fim.par) || TEAMS[1][1] : user;
+    const par = W.fim && W.fim.par;
+    const alvo = par ? { x: (W.x + par.x) / 2, z: (W.z + par.z) / 2 } : W;
+    return perto(alvo, 7.5, 2.6);
+  }
+  // Quem perdeu: você (se foi o seu time) ou o adversário mais perto de você, nas poses de derrota.
+  const L = venc === 1 ? user : TEAMS[1].filter((p) => !p.out && p.role !== 'GK').sort((x, y) => dist2D(x, user) - dist2D(y, user))[0] || user;
+  return perto(L, 5.5, 2.0);
+}
+
+function terminarCenaFinal() {
+  if (G.state !== 'fim') return;
+  setLetterbox(false); $('banner').className = ''; $('skipBtn').hidden = true;
+  G.fimBanner = false; G.fimFase = -1;
+  endMatch();
+}
+
 function endMatch(motivo) {
   G.state = 'end';
   $('endTitle').textContent = motivo === 'expulso' ? 'VOCÊ FOI EXPULSO' : 'FIM DE JOGO';
@@ -4835,7 +5225,7 @@ function endMatch(motivo) {
 
 function pauseGame() {
   if (!PLAY_STATES.includes(G.state) && G.state !== 'goal' && G.state !== 'celebrate') return;
-  G.pausedFrom = G.state; G.state = 'paused';
+  G.pausedFrom = G.state; G.state = 'paused'; Som.pausar(true);
   power.holding = false;
   $('pauseStats').innerHTML = statsHTML();
   syncSettings();
@@ -4843,7 +5233,7 @@ function pauseGame() {
 }
 function resumeGame() {
   if (G.state !== 'paused') return;
-  G.state = G.pausedFrom;
+  G.state = G.pausedFrom; Som.pausar(false);
   $('pauseScreen').hidden = true;
 }
 
@@ -4863,6 +5253,16 @@ for (const s of SETTINGS) {
 $('setFps').addEventListener('change', (e) => { $('fps').hidden = !e.target.checked; });
 
 $('pauseBtn').addEventListener('click', pauseGame);
+// Botão de som (ao lado do radar). Lembra a escolha entre as partidas.
+(function () {
+  const b = document.createElement('button');
+  b.id = 'somBtn'; b.className = 'hudBtn'; b.setAttribute('aria-label', 'Som');
+  b.style.cssText = 'right:calc(84px + env(safe-area-inset-right, 0px));width:44px;padding:0;font-size:10px;';
+  const pinta = () => { b.textContent = Som.mudo ? 'MUDO' : 'SOM'; b.style.opacity = Som.mudo ? '0.6' : '1'; };
+  pinta();
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); Som.ligar(); Som.alternarMudo(); pinta(); });
+  $('pauseBtn').parentNode.appendChild(b);
+})();
 $('resumeBtn').addEventListener('click', resumeGame);
 $('restartBtn').addEventListener('click', resetMatch);
 $('againBtn').addEventListener('click', resetMatch);
@@ -4913,6 +5313,7 @@ mostrarVersao(VERSAO_JOGO);
     .catch(() => {});
 })();
 $('startBtn').addEventListener('click', () => {
+  Som.ligar();
   try {
     const el = document.documentElement;
     if (el.requestFullscreen && window.matchMedia('(pointer: coarse)').matches) {
@@ -4960,6 +5361,7 @@ function updateYaw(rdt) {
 
 function cameraGoal() {
   const c = CONFIG.CAM;
+  if (G.state === 'fim') return cameraFim();
   if (G.cine) {                                   // drible: câmera de lado, entre você e o marcador
     const C = G.cine, s = C.camSide, o = C.opp;
     const mx = (user.x + o.x) / 2, mz = (user.z + o.z) / 2;
@@ -5024,8 +5426,8 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   const g = cameraGoal();
   let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
-  const corte = (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.foul && G.foul.cut);   // corte seco de câmera
-  if (corte) { k = 1; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.foul) G.foul.cut = false; }
+  const corte = (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
+  if (corte) { k = 1; G.fimCorte = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.foul) G.foul.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
   cam.tx = lerp(cam.tx, g.tx, k); cam.ty = lerp(cam.ty, g.ty, k); cam.tz = lerp(cam.tz, g.tz, k);
   const sp = Math.hypot(user.vx, user.vz);
@@ -5103,6 +5505,16 @@ function syncMeshes(dt) {
     }
     m.corpo.rotation.x = (p.disputaLado || 0) * 0.1 * dk;   // ombro inclinado para o lado dele
     p.dkVis = dk;
+    if (G.state === 'fim' && p.fim) {               // cena final: tchau para a torcida e "toca aqui"
+      const F = p.fim, tt = G.fimT;
+      if (F.tipo === 'tchau' && tt > F.t0) {
+        aZR = 2.85; aXR = -0.35 + Math.sin(tt * 9 + p.id) * 0.4;      // braço direito no alto balançando
+        aZL = -bal * 0.5; aXL = 0.1;
+      } else if (F.tipo === 'toca' && F.batida > 0) {
+        const b = Math.sin(Math.min(1, F.batida) * Math.PI);           // sobe, bate e desce
+        aZR = lerp(aZR, 2.45, b); aXR = lerp(aXR, 0.15, b);            // mão um pouco para dentro, na direção do outro
+      }
+    }
     // Lateral: mirando, os braços vão para trás da cabeça; soltou, eles vêm para a frente.
     if (arremesso) { aZL = aZR = lerp(Math.PI * 0.92, 3.55, G.kick.windup); aXL = 0.25; aXR = -0.25; }
     if (p.throwAnim > 0) { const f = p.throwAnim / 0.3; aZL = aZR = lerp(1.5, 3.55, f); aXL = 0.25; aXR = -0.25; }
@@ -5189,7 +5601,7 @@ function syncMeshes(dt) {
       m.bracoE.rotation.x = 0.9 * a; m.bracoD.rotation.x = -0.9 * a; m.bracoE.rotation.z = -0.4 * a; m.bracoD.rotation.z = -0.1 * a;   // conferido: nada abaixo do gramado
       m.corpo.rotation.z = 0.15 * a;
     }
-    const lamentando = p.lamento && p.lamentoK > 0 && !p.celeb && (G.state === 'goal' || G.state === 'celebrate');
+    const lamentando = p.lamento && p.lamentoK > 0 && !p.celeb && (G.state === 'goal' || G.state === 'celebrate' || G.state === 'fim');
     if (lamentando) aplicarLamento(p, m);
     if (!(lamentando && p.lamento === 'cintura')) {   // fora da pose triste: volta braço inteiro e cabeça presa
       usarCotovelos(m, 0, 0);
@@ -5204,7 +5616,7 @@ function syncMeshes(dt) {
     m.bracoE.position.z = -0.39 + 0.09 * Math.abs(Math.sin(m.bracoE.rotation.x));
     m.bracoD.position.z = 0.39 - 0.09 * Math.abs(Math.sin(m.bracoD.rotation.x));
     if (p.recvPose) aplicarPoseRecepcao(p, m);
-    m.etiqueta.visible = p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE;
+    m.etiqueta.visible = G.state !== 'fim' && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
   ball.mesh.position.set(ball.x, ball.y, ball.z);
@@ -5241,7 +5653,8 @@ function syncMeshes(dt) {
 //   - resolução interna baixa (RENDER_H) continua sendo o maior ganho
 // ---------------------------------------------------------------------
 function stepGame(dt, rdt) {
-  if (PLAY_STATES.includes(G.state)) G.clock -= dt;
+  if (relogioCorre()) G.clock -= dt;
+  verificarFimDeTempo(dt);
   if (G.userRequest > 0) G.userRequest -= dt;
   keyboardAim();
   updateRoles(dt);
@@ -5262,11 +5675,11 @@ function stepGame(dt, rdt) {
   updateComemoracaoAuto(dt);
   updateExpulsos(dt);
   updateFoul(rdt);
+  if (G.state === 'fim') updateFimDeJogo(rdt);
   if (G.passTarget) { G.passTarget.t -= dt; if (G.passTarget.t <= 0 || G.state !== 'play') G.passTarget = null; }
   if (G.state === 'play') {
     handleBallOut();
     if (G.state === 'play') checkBallContacts();
-    if (G.state === 'play' && G.clock <= 0) endMatch();
   }
   if (G.state === 'power') updatePowerMeter();
   if (G.state === 'spin' && G.kick && !G.kick.spinChosen) {
@@ -5307,7 +5720,8 @@ function frame(now) {
   }
   updateCamera(rdt);
   syncMeshes(dt);
-  crowd.atualizar(rdt);                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
+  crowd.atualizar(rdt);
+  Som.torcida(nivelTorcida());                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
