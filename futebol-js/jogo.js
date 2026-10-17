@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 18.0
+   FUTEBOL JS · jogo.js · versão 19.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,12 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (versão 13)
    ---------------------------------------------------------------------
+   Novidades da versão 19:
+     - domínio difícil (ponto azul) vale para TODO domínio com risco, não só os acima de 50%
+     - sons novos: trave/travessão metálico, "óóh" da torcida no chute para fora, passos na
+       grama (só você correndo, baixinho); toques na bola com variações; gol com a torcida alta
+       e constante em vez de explosão
+
    Novidades da versão 18:
      - relógio só corre com a bola rolando (parado na saída até o primeiro passe e em toda bola parada)
      - acréscimos (0, 30 s, 45 s ou 1 min) pelas paralisações; acabou o tempo, o juiz espera o lance
@@ -747,8 +753,11 @@ const crowd = (() => {
 //   toque ........ o mesmo, curtinho e baixo (passe, domínio, bola chegando no pé)
 //   apito ........ tom agudo (~2,8 kHz) com "tremido" de ~32 Hz (a bolinha do apito)
 //   torcida ...... ruído filtrado em loop, sempre tocando baixinho; sobe com a bola perto do gol
-//   gol .......... a torcida explode: ruído forte com o filtro abrindo + "vozes" (vários tons
+//   gol .......... a torcida sobe e fica alta e constante uns 6 s (ruído + "vozes": vários tons
 //                  desafinados juntos fazendo um "uôôô")
+//   trave ........ "plém" metálico (tons não harmônicos)
+//   óóh .......... chute para fora: vozes caindo de decepção
+//   passos ....... "chhk" baixinho na grama, só você correndo
 //   defesa ....... "pof" abafado das luvas + um "uuuh" curto da torcida
 //   clique ....... bipes de interface (domínio e drible); domínio perfeito = arpejo
 //   drible ....... "fuuu" (ruído varrendo de grave para agudo)
@@ -854,11 +863,55 @@ const Som = (() => {
       tom('sine', 140 + 60 * f, 45, t, 0.18, 0.55 + 0.4 * f);
       estalo(t, 0.06, 'bandpass', 1800, 0.25 + 0.35 * f);
     },
+    // v19: cada toque sai um pouco diferente — altura, duração, "estalo" e às vezes um
+    // segundo toquinho (a bola quicando no pé). Assim passes seguidos não soam repetidos.
     toque(forca = 0.3) {
-      if (!pronto() || !vaga(0.1)) return;
+      if (!pronto() || !vaga(0.15)) return;
       const t = ctx.currentTime, f = clamp(forca, 0, 1);
-      tom('sine', 240, 110, t, 0.08, 0.2 + 0.25 * f);
-      estalo(t, 0.025, 'highpass', 2500, 0.06 + 0.1 * f);
+      const f0 = rand(190, 300), dur = rand(0.055, 0.1);
+      tom(Math.random() < 0.7 ? 'sine' : 'triangle', f0, f0 * rand(0.4, 0.55), t, dur, (0.18 + 0.25 * f) * rand(0.8, 1.15));
+      estalo(t, rand(0.015, 0.035), Math.random() < 0.5 ? 'highpass' : 'bandpass', rand(1800, 3600), (0.05 + 0.1 * f) * rand(0.7, 1.3));
+      if (Math.random() < 0.3) tom('sine', f0 * 0.8, f0 * 0.4, t + rand(0.03, 0.06), 0.05, 0.08 + 0.08 * f);   // quique no pé
+    },
+    // Trave/travessão: "plém" metálico — tons que NÃO são harmônicos entre si (é o que soa a metal),
+    // cada um sumindo num tempo diferente, mais um estalo na batida.
+    trave(vel = 15) {
+      if (!pronto() || !vaga(1.6)) return;
+      const t = ctx.currentTime, k = clamp(vel / 25, 0.3, 1);
+      const base = rand(480, 560);
+      [[1, 1.5, 0.3], [2.76, 1.1, 0.18], [5.4, 0.7, 0.1], [8.93, 0.45, 0.06]].forEach(([m, dur, pico]) => {
+        tom('sine', base * m, base * m * 0.995, t, dur, pico * k);
+      });
+      estalo(t, 0.03, 'highpass', 3000, 0.3 * k);
+    },
+    // Chute para fora: "óóóh..." da torcida, caindo no fim (decepção).
+    ohh() {
+      if (!pronto() || !vaga(2)) return;
+      const t = ctx.currentTime;
+      const vog = filtro('bandpass', 520, 1.6), g = ganho();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.linearRampToValueAtTime(0.12, t + 0.25);
+      g.gain.setValueAtTime(0.12, t + 0.7);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+      vog.connect(g); g.connect(mestre);
+      for (let i = 0; i < 8; i++) {
+        const o = ctx.createOscillator(), f0 = rand(190, 300);
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(f0, t); o.frequency.setValueAtTime(f0, t + 0.6);
+        o.frequency.exponentialRampToValueAtTime(f0 * 0.78, t + 1.7);    // a voz "cai" no fim
+        o.connect(vog); o.start(t + rand(0, 0.08)); o.stop(t + 1.85);
+      }
+      const s = fonteRuido(t, 1.8), bp = filtro('bandpass', 480, 1.2), gn = ganho();   // "ar" da multidão
+      gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(0.14, t + 0.25);
+      gn.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+      s.connect(bp); bp.connect(gn); gn.connect(mestre);
+    },
+    // Passo na grama: "chhk" bem baixinho (ruído médio-agudo curtinho) + um toque grave quase mudo.
+    passo() {
+      if (!pronto() || !vaga(0.1)) return;
+      const t = ctx.currentTime;
+      estalo(t, rand(0.04, 0.07), 'bandpass', rand(1500, 2600), rand(0.035, 0.055));
+      tom('sine', rand(80, 100), 50, t, 0.05, 0.03);
     },
     apito(dur = 0.3, atraso = 0) {
       if (!pronto() || !vaga(dur + atraso)) return;
@@ -875,27 +928,25 @@ const Som = (() => {
       for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + dur + 0.05); }
     },
     apitoFinal() { this.apito(0.32, 0); this.apito(0.32, 0.5); this.apito(1.15, 1.0); },
+    // Gol (v19): em vez da explosão, a torcida SOBE em ~1 s e fica alta e constante uns 6 s
+    // (barulho de estádio + "vozes"), depois vai baixando devagar.
     gol() {
-      if (!pronto() || !vaga(6)) return;
+      if (!pronto() || !vaga(9)) return;
       const t = ctx.currentTime;
-      // Explosão da torcida.
-      const s = fonteRuido(t, 6), bp = filtro('bandpass', 500, 0.6), g = ganho();
-      bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(1200, t + 0.6);
-      bp.frequency.exponentialRampToValueAtTime(800, t + 5.5);
-      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.55, t + 0.45);
-      g.gain.setValueAtTime(0.55, t + 2.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 6);
-      s.connect(bp); bp.connect(g); g.connect(mestre);
-      // "Vozes": tons dente-de-serra desafinados por um filtro de "vogal" (uô).
-      const vog = filtro('bandpass', 750, 1.2), gv = ganho();
-      gv.gain.setValueAtTime(0.0001, t); gv.gain.exponentialRampToValueAtTime(0.16, t + 0.5);
-      gv.gain.setValueAtTime(0.16, t + 2.2); gv.gain.exponentialRampToValueAtTime(0.0001, t + 4.5);
+      const s = fonteRuido(t, 9), bp = filtro('bandpass', 900, 0.5), lp = filtro('lowpass', 3000, 0.5), g = ganho();
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3, t + 1.1);
+      g.gain.setValueAtTime(0.3, t + 6.5); g.gain.linearRampToValueAtTime(0.0001, t + 9);
+      s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(mestre);
+      const vog = filtro('bandpass', 700, 0.9), gv = ganho();
+      gv.gain.setValueAtTime(0.0001, t); gv.gain.linearRampToValueAtTime(0.07, t + 1.0);
+      gv.gain.setValueAtTime(0.07, t + 5.8); gv.gain.linearRampToValueAtTime(0.0001, t + 8.5);
       vog.connect(gv); gv.connect(mestre);
-      for (let i = 0; i < 7; i++) {
-        const o = ctx.createOscillator(), f0 = rand(170, 330);
-        o.type = 'sawtooth'; o.frequency.setValueAtTime(f0 * 0.85, t); o.frequency.exponentialRampToValueAtTime(f0, t + 0.5);
-        const vib = ctx.createOscillator(), vg = ganho(); vib.frequency.value = rand(4, 7); vg.gain.value = f0 * 0.02;
+      for (let i = 0; i < 9; i++) {
+        const o = ctx.createOscillator(), f0 = rand(180, 330);
+        o.type = 'sawtooth'; o.frequency.value = f0;
+        const vib = ctx.createOscillator(), vg = ganho(); vib.frequency.value = rand(0.3, 1.2); vg.gain.value = f0 * 0.03;   // ondulação lenta
         vib.connect(vg); vg.connect(o.frequency);
-        o.connect(vog); o.start(t); o.stop(t + 4.6); vib.start(t); vib.stop(t + 4.6);
+        o.connect(vog); o.start(t + rand(0, 0.4)); o.stop(t + 8.6); vib.start(t); vib.stop(t + 8.6);
       }
     },
     defesa() {
@@ -2613,11 +2664,12 @@ function updateBall(dt) {
           ball.vx -= 1.7 * vn * nx; ball.vz -= 1.7 * vn * nz;
           ball.x = gx + nx * (R + 0.13); ball.z = pz + nz * (R + 0.13);
           if (G.state === 'play') showToast('Na trave!');
+          Som.trave(Math.hypot(ball.vx, ball.vz));
         }
       }
     }
     if (Math.abs(ball.x - gx) < R + 0.12 && Math.abs(ball.z) < GOAL_HALF && Math.abs(ball.y - CONFIG.GOAL_H) < R + 0.12) {
-      if (Math.sign(ball.y - CONFIG.GOAL_H) * ball.vy < 0) { ball.vy = -ball.vy * 0.6; if (G.state === 'play') showToast('No travessão!'); }
+      if (Math.sign(ball.y - CONFIG.GOAL_H) * ball.vy < 0) { ball.vy = -ball.vy * 0.6; if (G.state === 'play') showToast('No travessão!'); Som.trave(Math.hypot(ball.vx, ball.vy, ball.vz)); }
     }
   }
   // Segurança da recepção: a bola nunca atravessa você enquanto o minigame está aberto.
@@ -2792,6 +2844,7 @@ function handleBallOut() {
   if (Math.abs(ball.x) > HALF_L + R) {
     const side = Math.sign(ball.x);
     if (Math.abs(ball.z) < GOAL_HALF && (G.possession || ball.y < CONFIG.GOAL_H)) { scoreGoal(side > 0 ? 0 : 1); return; }
+    if (ball.isShot || ball.distChute > 0) Som.ohh();   // chute para fora: "óóh..." da torcida
     const defending = side > 0 ? 1 : 0, attacking = 1 - defending;
     const touchTeam = G.lastTouch ? G.lastTouch.team : attacking;
     if (touchTeam === defending) startRestart('escanteio', attacking, { x: side * HALF_L, z: Math.sign(ball.z || 1) * HALF_W });
@@ -3984,7 +4037,9 @@ function startReceive(pr) {
   // largura do marcador) dentro da faixa verde. Azul = DOMÍNIO PERFEITO (cena em câmera lenta).
   // Verde = não domina, mas a culpa é do passe (não conta como erro seu). Fora = erro seu.
   // (Só no domínio — pé, peito, pulo + peito. Bola alta continua como era.)
-  const dificil = risco >= 0.5 && kind !== 'alto';
+  // v19: vale para QUALQUER domínio com risco (antes só a partir de 50%, então a maioria das
+  // bolas difíceis ainda caía no sorteio antigo de "acertou o tempo, mas a bola escapou").
+  const dificil = risco > 0 && kind !== 'alto';
   const R = {
     kind, pr, risco, motivo, dificil, forcedMiss: !dificil && Math.random() < risco, fin: tipoFinalizacao(),
     t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, azul: null, done: false,
@@ -4000,8 +4055,9 @@ function startReceive(pr) {
   // Monta a tela do minigame.
   const titulos = { pe: 'DOMÍNIO', peito: 'PEITO', peitoPulo: 'PULO + PEITO', alto: 'BOLA ALTA' };
   const kEl = $('recvKind');
-  kEl.textContent = titulos[kind] + (risco >= 0.5 ? ' · DIFÍCIL' : '');
-  kEl.className = risco >= 0.5 ? 'dificil' : '';
+  const rotuloDificil = dificil || risco >= 0.5;
+  kEl.textContent = titulos[kind] + (rotuloDificil ? ' · DIFÍCIL' : '');
+  kEl.className = rotuloDificil ? 'dificil' : '';
   const zonaEl = $('hamZone');
   zonaEl.style.left = (R.zona.ini * 100) + '%'; zonaEl.style.width = (tam * 100) + '%';
   zonaEl.classList.remove('flash'); $('hamTrack').classList.remove('erro');
@@ -5463,6 +5519,11 @@ function syncMeshes(dt) {
     m.raiz.rotation.y = -p.angle;
     const sp = Math.hypot(p.vx, p.vz);
     const correndo = sp > 4.6;
+    // Passos na grama (só você, só correndo): um a cada meia volta do balanço da perna.
+    if (p.isUser) {
+      const passo = Math.floor(p.anim / Math.PI);
+      if (passo !== p.ultimoPasso) { p.ultimoPasso = passo; if (correndo && p.fall === 0 && (G.state === 'play' || G.state === 'celebrate')) Som.passo(); }
+    }
     const amp = sp < 0.3 ? 0 : (correndo ? 0.95 : 0.55 + Math.min(0.15, sp * 0.04));
     const bal = Math.sin(p.anim) * amp;
     // Pernas (com chute: a direita vai atrás e depois para a frente com força).
