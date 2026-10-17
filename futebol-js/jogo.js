@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 15.0
+   FUTEBOL JS · jogo.js · versão 16.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,16 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (versão 13)
    ---------------------------------------------------------------------
+   Novidades da versão 16:
+     - disputa de corpo: correndo com a bola com o marcador do lado, ou dois correndo para a
+       bola solta, cada um põe o braço (dobrado no cotovelo) do lado do outro e inclina o ombro
+     - IA vai ao encontro da bola: prevê o voo com a curva do efeito, o quique e o atrito, e corre
+       para o primeiro ponto onde alcança (na velocidade dela — pode não chegar)
+     - depois do drible certo você continua correndo na direção do drible (até mexer no joystick,
+       no máximo 2,5 s) e recupera 2 s de fôlego
+     - falta e pênalti: você fica uns passos atrás da bola enquanto mira; escolhido tudo, corre,
+       a perna vai para trás no último passo e a batida sai quando o pé chega na bola
+
    Novidades da versão 15:
      - mão na cintura de verdade: braço com COTOVELO e cabeça que abaixa (peças escondidas,
        iguais ao joelho, que só aparecem na pose de tristeza)
@@ -987,13 +997,12 @@ function usarJoelhos(m, angE, angD) {
 }
 // Liga/desliga o cotovelo dos dois braços. ang = dobra do antebraço (em X, para dentro do corpo:
 // negativo no braço esquerdo, positivo no direito).
-function usarCotovelos(m, angE, angD) {
-  const liga = angE !== 0 || angD !== 0;
-  if (liga !== !!m.cotovelosLigados) {
-    for (const b of [m.bracoE, m.bracoD]) { b.inteira.visible = !liga; b.ombro.visible = liga; b.cotovelo.visible = liga; }
-    m.cotovelosLigados = liga;
-  }
-  if (liga) { m.bracoE.cotovelo.rotation.x = angE; m.bracoD.cotovelo.rotation.x = angD; }
+function usarCotovelos(m, angE, angD) { usarCotovelo(m.bracoE, angE, 0); usarCotovelo(m.bracoD, angD, 0); }
+// Um braço só: ax = dobra para dentro/fora (X), az = dobra para a frente (Z, antebraço sobe à frente).
+function usarCotovelo(b, ax, az) {
+  const liga = ax !== 0 || az !== 0;
+  if (liga !== !!b.cotLigado) { b.inteira.visible = !liga; b.ombro.visible = liga; b.cotovelo.visible = liga; b.cotLigado = liga; }
+  if (liga) { b.cotovelo.rotation.x = ax; b.cotovelo.rotation.z = az; }
 }
 // Liga/desliga a cabeça separada. ang negativo = abaixa (queixo para o peito).
 function usarCabeca(m, ang) {
@@ -1416,6 +1425,93 @@ function seek(p, tx, tz, maxSpeed) {
   return { vx: dx / d * s, vz: dz / d * s };
 }
 
+// ---------------------------------------------------------------------
+// DISPUTA DE CORPO (v16). Dois casos:
+//   1) quem está com a bola corre e um adversário chega LADO A LADO (nem na frente, nem atrás);
+//   2) bola solta: o mais perto de cada time corre para ela e os dois estão colados.
+// Os dois ganham disputaAlvo; a animação (syncMeshes) põe o braço do lado do outro "protegendo".
+// disputaLado: −1 = o outro está à esquerda, +1 = à direita (lado direito = (−sen a, cos a)).
+// ---------------------------------------------------------------------
+function ladoALado(p, o, dMax) {
+  const rx = o.x - p.x, rz = o.z - p.z, d = Math.hypot(rx, rz);
+  if (d > dMax || d < 0.05) return null;
+  const fx = Math.cos(p.angle), fz = Math.sin(p.angle);
+  const frente = rx * fx + rz * fz, lat = rx * -fz + rz * fx;
+  if (Math.abs(frente) > 1.1 || Math.abs(lat) < 0.3) return null;
+  return lat;
+}
+function atualizarDisputas(dt) {
+  for (const p of players) p.disputaAlvo = null;
+  const vivo = G.state === 'play' && !G.sp && !G.kickoffPending && !G.cine;
+  if (vivo) {
+    const h = G.possession;
+    const pode = (p) => !p.out && p.stun <= 0 && p.role !== 'GK' && !p.scripted && !(p.slideT > 0);
+    if (h && pode(h) && !h.carry && !h.throwIn && !h.setPiece && Math.hypot(h.vx, h.vz) > 2.5) {
+      let best = null, bd = Infinity;
+      for (const o of TEAMS[1 - h.team]) {
+        if (!pode(o)) continue;
+        const lat = ladoALado(h, o, 1.7);
+        if (lat !== null && Math.abs(lat) < bd) { bd = Math.abs(lat); best = o; }
+      }
+      if (best) { h.disputaAlvo = best; best.disputaAlvo = h; }
+    } else if (!h && ball.y < 1.3) {
+      // Bola solta: o mais perto da bola de cada time, os dois correndo para ela e colados.
+      const perto = [0, 1].map((t) => {
+        let b = null, bd = 5;
+        for (const p of TEAMS[t]) { if (!pode(p)) continue; const d = dist2D(p, ball); if (d < bd) { bd = d; b = p; } }
+        return b;
+      });
+      const [a, b] = perto;
+      const indo = (p) => { const sp = Math.hypot(p.vx, p.vz); if (sp < 2.5) return false; const dx = ball.x - p.x, dz = ball.z - p.z, d = Math.hypot(dx, dz) || 1; return (p.vx * dx + p.vz * dz) / (sp * d) > 0.5; };
+      if (a && b && dist2D(a, b) < 1.8 && indo(a) && indo(b)) { a.disputaAlvo = b; b.disputaAlvo = a; }
+    }
+  }
+  for (const p of players) {
+    const o = p.disputaAlvo;
+    if (o) {
+      const lat = (o.x - p.x) * -Math.sin(p.angle) + (o.z - p.z) * Math.cos(p.angle);
+      if (!p.disputaLado || Math.abs(lat) > 0.2) p.disputaLado = lat >= 0 ? 1 : -1;   // não fica trocando de braço
+    }
+    p.disputaK = clamp((p.disputaK || 0) + (o ? dt * 5 : -dt * 4), 0, 1);
+  }
+}
+
+// ---------------------------------------------------------------------
+// ONDE DÁ PARA PEGAR A BOLA (v16). Simula o resto do voo dela com a MESMA física do jogo
+// (gravidade, efeito que faz a curva, quique, atrito do gramado) em passos de 0,05 s e devolve o
+// primeiro ponto em que ESTE jogador, na velocidade dele, chega antes da bola. Se ele não chega
+// em nenhum, devolve o ponto em que ele chega "menos atrasado" — ele vai, mas pode não dar tempo.
+// (Antes a IA corria para onde o passe ERA para ir; com efeito a bola curvava e ele ficava esperando.)
+// ---------------------------------------------------------------------
+function pontoDeEncontro(p, vel, tMax = 3) {
+  const R = CONFIG.BALL_R, h = 0.05, reacao = 0.15;
+  let x = ball.x, y = ball.y, z = ball.z, vx = ball.vx, vy = ball.vy, vz = ball.vz, ss = ball.spinSide, sv = ball.spinVert;
+  let melhor = null, folgaMelhor = -Infinity;
+  for (let t = h; t <= tMax + 1e-6; t += h) {
+    const hs = Math.hypot(vx, vz);
+    if (hs > 0.5) { const ax = (vz / hs) * ss * CONFIG.CURVE, az = (-vx / hs) * ss * CONFIG.CURVE; vx += ax * h; vz += az * h; }
+    const ar = y > R + 0.02;
+    vy += (-CONFIG.GRAVITY + (ar ? sv * CONFIG.LIFT : 0)) * h;
+    if (ar) { vx *= 1 - 0.06 * h; vz *= 1 - 0.06 * h; }
+    x += vx * h; y += vy * h; z += vz * h;
+    if (y < R) { y = R; if (vy < -1.2) { vy = -vy * 0.5; vx *= 0.88; vz *= 0.88; ss *= 0.6; sv *= 0.5; } else vy = 0; }
+    if (y <= R + 0.001 && vy === 0) {
+      const s2 = Math.hypot(vx, vz);
+      if (s2 < 0.15) { vx = vz = 0; } else { const ns = Math.max(0, s2 - (0.45 * s2 + 1.2) * h); vx *= ns / s2; vz *= ns / s2; }
+      ss *= Math.max(0, 1 - 3 * h); sv = 0;
+    }
+    ss *= Math.exp(-0.35 * h);
+    if (Math.abs(x) > HALF_L + 1 || Math.abs(z) > HALF_W + 1) break;   // saiu do campo: não adianta prever mais
+    if (y > 2.3) continue;                        // alta demais para alcançar (passa por cima)
+    const d = Math.max(0, Math.hypot(x - p.x, z - p.z) - 0.5);
+    const folga = vel * Math.max(0, t - reacao) - d;
+    if (folga >= 0) return { x, z, t };
+    if (folga > folgaMelhor) { folgaMelhor = folga; melhor = { x, z, t }; }
+    if (vx === 0 && vz === 0 && y <= R + 0.001) break;   // parou
+  }
+  return melhor || { x, z, t: tMax };
+}
+
 // Papéis recalculados a cada 0,3 s (e não todo quadro): dá um "tempo de reação" mais humano
 // e também economiza processamento.
 function updateRoles(dt) {
@@ -1529,9 +1625,10 @@ function aiThink(p, dt) {
   // Passe vindo para ele: corre até onde a bola vai chegar (ou até a bola, se ela já estiver perto).
   const PT = G.passTarget;
   if (PT && PT.p === p && !holder) {
-    const db = dist2D(p, ball);
-    const alvo = db < 4 ? { x: ball.x + ball.vx * 0.2, z: ball.z + ball.vz * 0.2 } : PT;
-    return seek(p, alvo.x, alvo.z, CONFIG.AI_SPEED * 1.05 * p.speedMul);
+    // v16: vai ao encontro da bola de verdade (com a curva do efeito), não ao ponto planejado.
+    const vel = CONFIG.AI_SPEED * 1.05 * p.speedMul;
+    const alvo = ballSpeed() > 1 ? pontoDeEncontro(p, vel) : ball;
+    return seek(p, alvo.x, alvo.z, vel);
   }
   if (G.kickoffPending) return seek(p, p.kx, p.kz, CONFIG.AI_SPEED);   // parados até a saída de bola
   if (G.sp) { const t = restartTarget(p); return seek(p, t.x, t.z, CONFIG.AI_SPEED * 0.9 * p.speedMul); }
@@ -1540,7 +1637,9 @@ function aiThink(p, dt) {
   const si = myTeamHas ? G.support[p.team].indexOf(p) : -1;
   if (si >= 0) { const t = supportTarget(p, holder, si); return seek(p, t.x, t.z, CONFIG.AI_SPEED * 0.9 * p.speedMul); }
   if (!holder && G.chasers[p.team] === p) {
-    return seek(p, ball.x + ball.vx * 0.35, ball.z + ball.vz * 0.35, CONFIG.AI_SPEED * p.speedMul);
+    const vel = CONFIG.AI_SPEED * p.speedMul;
+    const alvo = ballSpeed() > 1 ? pontoDeEncontro(p, vel) : ball;
+    return seek(p, alvo.x, alvo.z, vel);
   }
   const oppHolds = holder && holder.team !== p.team;
   if (oppHolds && G.pressers[p.team] === p) {
@@ -2021,6 +2120,17 @@ function userDesired(u, dt) {
   const livre = G.state === 'play' || G.state === 'celebrate' || (G.state === 'trap' && G.recv);
   if (!livre || u.throwIn || (G.sp && G.sp.taker === u) || G.kickoffPending) return { vx: 0, vz: 0 };
   const inp = readMove();
+  // Embalo do drible: sem joystick, segue correndo reto na direção em que passou pelo marcador.
+  const E = u.embalo;
+  if (E) {
+    E.t -= dt;
+    if (E.t <= 0 || inp.mag > 0.25 || G.possession !== u) u.embalo = null;
+    else {
+      u.running = true;
+      const s0 = (G.possession === u ? CONFIG.USER_RUN_BALL : CONFIG.USER_RUN) * Math.min(1, E.t / 0.4 + 0.3);   // no fim vai soltando
+      return { vx: E.x * s0, vz: E.z * s0 };
+    }
+  }
   if (inp.mag < 0.01) return { vx: 0, vz: 0 };
   const hasBall = G.possession === u;
   const canRun = !u.exhausted;
@@ -2185,6 +2295,10 @@ function updatePlayers(dt) {
 // 9. FÍSICA DA BOLA
 // ---------------------------------------------------------------------
 function attachBall(p) {
+  if (p.bolaFixa) {                                // cobrança com corrida: a bola fica parada na marca
+    ball.x = p.bolaFixa.x; ball.z = p.bolaFixa.z; ball.y = CONFIG.BALL_R; ball.vx = ball.vy = ball.vz = 0;
+    return;
+  }
   const c = Math.cos(p.angle), s = Math.sin(p.angle);
   const nasMaos = p.carry || (p.role === 'GK' && !p.goalKick && G.possession === p);
   if (p.throwIn) { ball.x = p.x + c * 0.12; ball.z = p.z + s * 0.12; ball.y = 2.15; }        // acima da cabeça
@@ -2659,7 +2773,7 @@ function endCelebration() {
 }
 
 function clearFlags(p) {
-  Object.assign(p, { stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0 });
+  Object.assign(p, { bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0 });
 }
 
 // Saída de bola: o atacante fica na bola e o meia central ao lado dele, no próprio campo.
@@ -2687,7 +2801,7 @@ function kickoff(team) {
   taker.think = 1.4;
   G.kickoffPending = { team, taker, partner };
   G.userRequest = 0;
-  G.cine = null; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
+  G.cine = null; G.corrida = null; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
   esconderRecepcao(); user.recvPose = null;
   for (const sp of spares) if (!sp.present) { sp.present = true; sp.fade = 1; }
   lostBall.life = 0;
@@ -2887,7 +3001,45 @@ function startSetPieceWait() {
   givePossession(p, { silent: true });
   // Sua cobrança já começa na SETA (sem a tela intermediária): mire no gol para chutar ou num
   // companheiro para tocar/cruzar. Lateral já é o arremesso. Sem relógio e sem câmera lenta.
+  // Falta e pênalti: você se afasta uns passos da bola para a corrida (ver updateCobrador).
+  if (p.isUser && (S.kind === 'falta' || S.kind === 'penalti')) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z };
   if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : 'shot');
+}
+
+// ---------------------------------------------------------------------
+// COBRANÇA COM CORRIDA (v16) — falta e pênalti seus.
+//   Mirando/força/efeito: você fica ~2,4 m atrás da bola, na linha da seta e um pouco à
+//   esquerda (chute de direita), e acompanha a seta se ela mudar.
+//   Escolheu tudo: corre até a bola acelerando, a perna vai para trás no penúltimo passo e
+//   a batida acontece quando o pé chega na bola (a física do chute é a mesma de sempre).
+// ---------------------------------------------------------------------
+function updateCobrador(dt) {
+  const u = user, B = u.bolaFixa;
+  if (!B) return;
+  const k = G.kick;
+  if (!k || G.possession !== u || !KICK_STATES.includes(G.state)) { u.bolaFixa = null; G.corrida = null; return; }
+  const ang = Math.atan2(k.dirZ, k.dirX), fx = Math.cos(ang), fz = Math.sin(ang);
+  const R = G.corrida;
+  let tx, tz, vmax;
+  if (!R) { tx = B.x - fx * 2.4 + fz * 0.9; tz = B.z - fz * 2.4 - fx * 0.9; vmax = 2.6; }        // esquerda = (fz, −fx)
+  else { R.t += dt; R.v = Math.min(6, R.v + dt * 9); tx = B.x - fx * 0.55 + fz * 0.12; tz = B.z - fz * 0.55 - fx * 0.12; vmax = R.v; }
+  const dx = tx - u.x, dz = tz - u.z, d = Math.hypot(dx, dz);
+  const v = d > 0.01 ? Math.min(vmax, R ? vmax : d * 4) : 0;
+  const passo = Math.min(d, v * dt);
+  if (d > 0.01) { u.x += dx / d * passo; u.z += dz / d * passo; }
+  u.vx = d > 0.01 ? dx / d * v : 0; u.vz = d > 0.01 ? dz / d * v : 0;
+  u.anim += v * 2.6 * dt;
+  if (!R) { u.angle = turnToward(u.angle, Math.atan2(B.z - u.z, B.x - u.x), 8 * dt); return; }   // de frente para a bola
+  u.angle = turnToward(u.angle, d > 0.6 ? Math.atan2(dz, dx) : ang, 10 * dt);
+  // Perna para trás ~0,19 s antes de chegar (é quando o balanço da perna encontra a bola).
+  if (!R.balanco && (d - passo) / Math.max(1, v) < 0.19) { R.balanco = true; u.kickT = 0.35; }
+  // (conta o que falta DEPOIS do passo deste quadro: outras regras empurram o jogador uns centímetros)
+  if (d - passo < 0.06 || R.t > 2) {
+    const kt = u.kickT;
+    u.angle = ang; u.bolaFixa = null; G.corrida = null;
+    executeUserKick();
+    if (kt > 0) u.kickT = kt;                      // não recomeça a animação (ela já está no meio)
+  }
 }
 
 // A IA cobra só depois de o time se posicionar e escolhe a melhor opção (nada aleatório, nem sempre você).
@@ -3252,9 +3404,10 @@ function setAimDir(dirX, dirZ) {
 function alvoCruzamento(dx, dz) {
   if (user.setPiece === 'penalti') return null;   // pênalti é chute
   const ang = Math.atan2(dz, dx);
-  const a1 = Math.atan2(-GOAL_HALF - 0.6 - user.z, HALF_L - user.x), a2 = Math.atan2(GOAL_HALF + 0.6 - user.z, HALF_L - user.x);
+  const O = user.bolaFixa || user;                // cobrança com corrida: conta a partir da bola
+  const a1 = Math.atan2(-GOAL_HALF - 0.6 - O.z, HALF_L - O.x), a2 = Math.atan2(GOAL_HALF + 0.6 - O.z, HALF_L - O.x);
   const lo = Math.min(a1, a2), hi = Math.max(a1, a2);
-  if (Math.abs(HALF_L - user.x) > 1 && ang >= lo && ang <= hi) return null;   // mirando no gol
+  if (Math.abs(HALF_L - O.x) > 1 && ang >= lo && ang <= hi) return null;   // mirando no gol
   let best = null, bestDiff = 0.3;
   for (const t of TEAMS[0]) {
     if (t === user || t.role === 'GK') continue;
@@ -3354,6 +3507,12 @@ function describeSpin(ox, oy) {
 
 function executeUserKick() {
   const k = G.kick, u = user;
+  if (u.bolaFixa && !G.corrida) {                  // falta/pênalti: primeiro a corrida até a bola
+    k.spinChosen = true;
+    hideKickUI();
+    G.corrida = { t: 0, v: 1.5, balanco: false };
+    return;
+  }
   if (k.kind === 'shot' && k.cruzar && k.target) {
     // Cruzamento: a força e o efeito escolhidos mexem na precisão (fora da faixa = cruza torto).
     const torto = k.miss > 0.12 || k.over > 0.08;
@@ -4123,6 +4282,11 @@ function endCine(success) {
     user.angle = Math.atan2(ez, ex);
     user.vx = ex / el * 6; user.vz = ez / el * 6;
     user.dash = 0.25; user.dashVX = ex / el * 7.5; user.dashVZ = ez / el * 7.5;
+    // v16: continua CORRENDO na direção do drible (você estava tocando nos alvos, não no
+    // joystick) até mexer no joystick, por no máximo 2,5 s. E o drible certo devolve 2 s de fôlego.
+    user.embalo = { t: 2.5, x: ex / el, z: ez / el };
+    user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
+    if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
     showToast(C.carretel ? 'CARRETEL!' : C.noGoleiro ? 'Driblou o goleiro!' : C.perfect ? 'Drible perfeito!' : 'Driblou!', 'good');
   } else {
     user.stun = 0.8;
@@ -4833,7 +4997,7 @@ function syncMeshes(dt) {
     // Preparação: seu chute/passe (G.kick.windup) ou o chute da IA (chutePrep). No lateral não
     // tem perna para trás: a preparação é dos braços (mais abaixo).
     const arremesso = p.isUser && G.kick && G.kick.throwIn;
-    const prep = p.isUser && G.kick && !arremesso ? G.kick.windup : (p.chutePrep > 0 ? smooth(1 - p.chutePrep / p.chutePrepDur) : 0);
+    const prep = p.isUser && G.kick && !arremesso ? (p.bolaFixa ? 0 : G.kick.windup) : (p.chutePrep > 0 ? smooth(1 - p.chutePrep / p.chutePrepDur) : 0);
     if (prep > 0) { legR = lerp(legR, -0.95, prep); legL = lerp(legL, 0.15, prep); }
     if (p.fall > 0 && p.fallKind === 'frente') { legL = lerp(legL, -0.3, p.fall); legR = lerp(legR, -0.12, p.fall); } // pernas largadas
     if (p.carretel > 0) { legR = lerp(legR, -1.9, p.carretel); legL = lerp(legL, 0.25, p.carretel); }   // calcanhar levanta a bola por trás
@@ -4855,6 +5019,15 @@ function syncMeshes(dt) {
       if (p.fallSide > 0) aXR = lerp(aXR, -3.0, p.fall); else aXL = lerp(aXL, 3.0, p.fall);
     }
     if (prep > 0) { aXL = lerp(aXL, 0.75, prep); aXR = lerp(aXR, -0.45, prep); aZR = lerp(aZR, -0.4, prep); }
+    // DISPUTA DE CORPO (v16): o braço do lado do adversário abre um pouco, vai à frente e dobra
+    // no cotovelo (mais abaixo), "segurando o espaço". O outro braço continua o balanço da corrida.
+    const dk = p.disputaK > 0.01 && p.fall === 0 && !(p.tackle > 0) ? p.disputaK : 0;
+    if (dk > 0) {
+      if (p.disputaLado < 0) { aXL = lerp(aXL, 0.75, dk); aZL = lerp(aZL, 0.4, dk); }
+      else { aXR = lerp(aXR, -0.75, dk); aZR = lerp(aZR, 0.4, dk); }
+    }
+    m.corpo.rotation.x = (p.disputaLado || 0) * 0.1 * dk;   // ombro inclinado para o lado dele
+    p.dkVis = dk;
     // Lateral: mirando, os braços vão para trás da cabeça; soltou, eles vêm para a frente.
     if (arremesso) { aZL = aZR = lerp(Math.PI * 0.92, 3.55, G.kick.windup); aXL = 0.25; aXR = -0.25; }
     if (p.throwAnim > 0) { const f = p.throwAnim / 0.3; aZL = aZR = lerp(1.5, 3.55, f); aXL = 0.25; aXR = -0.25; }
@@ -4944,8 +5117,10 @@ function syncMeshes(dt) {
     const lamentando = p.lamento && p.lamentoK > 0 && !p.celeb && (G.state === 'goal' || G.state === 'celebrate');
     if (lamentando) aplicarLamento(p, m);
     if (!(lamentando && p.lamento === 'cintura')) {   // fora da pose triste: volta braço inteiro e cabeça presa
-      if (m.cotovelosLigados) usarCotovelos(m, 0, 0);
+      usarCotovelos(m, 0, 0);
       if (m.cabecaLigada) usarCabeca(m, 0);
+      // Disputa de corpo: o antebraço do lado do adversário dobra para a frente ("protegendo").
+      if (p.dkVis > 0) usarCotovelo(p.disputaLado < 0 ? m.bracoE : m.bracoD, 0, 1.25 * p.dkVis);
     }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
@@ -4996,6 +5171,8 @@ function stepGame(dt, rdt) {
   keyboardAim();
   updateRoles(dt);
   updatePlayers(dt);
+  updateCobrador(rdt);
+  atualizarDisputas(dt);
   updateBall(dt);
   updateCine(dt);
   updateRestart(dt);
