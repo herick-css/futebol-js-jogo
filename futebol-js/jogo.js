@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.1.2
+   FUTEBOL JS · jogo.js · versão 4.1.3
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,14 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.1.3:
+     - "bola para a torcida" ativa de verdade (a rede segura a bola; vale chegando na bola)
+     - pular na grade também na várzea (mãos no alto da grade de 2,6 m, pés na tela)
+     - drible com marcador atrás virou PROTEÇÃO: de costas/ombro, com contato; ele cai de costas
+     - 11 x 11 (e 7 x 7): quem dá o bote é quem está na FRENTE do atacante (lateral/zagueiro),
+       e ele fecha no atacante correndo ou perto do gol, em vez de só recuar
+     - perder a bola: as mesmas 3 animações para você e para a IA (carrinho também), sem o
+       "balançando"; drible errado usa uma delas
    Novidades da versão 4.1.2:
      - abraço no técnico refeito (abraço de lado, conferido caixa por caixa: ninguém entra no outro)
      - 5 reservas sentados no banco de cada time; quem vai entrar levanta e espera na linha
@@ -2137,6 +2145,22 @@ function updateRoles(dt) {
     G.chasers[t] = live && !holder && !recebendo ? a : null;
     G.pressers[t] = live && oppHas ? a : null;
     G.covers[t] = live && oppHas ? b : null;
+    // (4.1.3) Quem dá o bote é quem está NA FRENTE do atacante (entre ele e o gol), se estiver
+    // perto. Antes era só o mais perto — muitas vezes alguém correndo ATRÁS dele (que não pode dar
+    // bote por trás), e o lateral/zagueiro da frente só recuava: o atacante chegava na cara do gol.
+    // Quem vinha atrás continua perseguindo como cobertura.
+    if (live && oppHas) {
+      const ownGx = (t === 0 ? -1 : 1) * HALF_L;
+      const gx = ownGx - holder.x, gz = -holder.z, gl = Math.hypot(gx, gz) || 1;
+      const naFrente = TEAMS[t].filter((p) => p.role !== 'GK' && !p.isUser && p.stun <= 0 && !p.scripted && !p.out
+        && ((p.x - holder.x) * gx + (p.z - holder.z) * gz) / (gl * (dist2D(p, holder) || 1)) > 0.35 && dist2D(p, holder) < 18 * ESC)
+        .sort((x, y) => dist2D(x, holder) - dist2D(y, holder));
+      if (naFrente.length && naFrente[0] !== G.pressers[t]) {
+        const atras = G.pressers[t];
+        G.pressers[t] = naFrente[0];
+        G.covers[t] = atras && atras !== naFrente[0] ? atras : (naFrente[1] || b);
+      }
+    }
     // Apoio: os 2 companheiros mais perto de quem está com a bola se oferecem para o passe (triângulos).
     G.support[t] = [];
     if (live && holder && holder.team === t) {
@@ -2369,6 +2393,13 @@ function aiThink(p, dt) {
       const d = dist2D(p, holder), vu = Math.hypot(holder.vx, holder.vz);
       const vindo = vu > 0.3 && ((p.x - holder.x) * holder.vx + (p.z - holder.z) * holder.vz) / (d * vu || 1) > 0.5;
       if (d < 2.6 && (vu < 4.2 || vindo)) p.committing = Math.max(p.committing, 0.4);
+    }
+    // (4.1.3) Atacante correndo para cima dele ou já perto do gol: não fica só recuando — fecha
+    // e dá o bote (antes ele ia de costas até a área e o atacante chegava na cara do gol).
+    {
+      const d = dist2D(p, holder), dGol = Math.hypot(-p.dir * HALF_L - holder.x, holder.z);
+      const perigo = dGol < 30 * ESC, vu = Math.hypot(holder.vx, holder.vz);
+      if (!porTras(p, holder) && (d < (perigo ? 2.6 : 1.9) && (vu > 3 || perigo))) p.committing = Math.max(p.committing, perigo ? 0.6 : 0.35);
     }
     // Foi passado para trás (driblado)? Às vezes corre atrás para tentar o bote por trás (arriscado).
     // Só o ÚLTIMO HOMEM (ninguém do time dele entre o atacante e o gol) persegue por trás.
@@ -2863,12 +2894,13 @@ function gkThink(p, dt) {
 //   'passinhos' ... 2–3 passos curtos desequilibrado (braços abertos, balançando) e volta
 //   'joelho' ...... tropeça: um pé fica no chão na frente e o outro apoia com o JOELHO (não cai)
 //   'queda' ....... cai de frente (a queda que já existia)
-// tipo vazio = sorteio (40% / 35% / 25%).
+// tipo vazio = sorteio (34% / 38% / 28%). Vale para TODO desarme: seu, da IA em você, da IA na IA,
+// carrinho, saída do goleiro e drible errado.
 // ---------------------------------------------------------------------
 const PERDA_DUR = { passinhos: 0.85, joelho: 1.15, queda: 1.4 };
 function perderBola(p, tipo) {
   if (!p || p.role === 'GK') return;
-  if (!tipo) { const r = Math.random(); tipo = r < 0.4 ? 'passinhos' : r < 0.75 ? 'joelho' : 'queda'; }
+  if (!tipo) { const r = Math.random(); tipo = r < 0.34 ? 'passinhos' : r < 0.72 ? 'joelho' : 'queda'; }   // (4.1.3) igual para você e para a IA
   const dur = PERDA_DUR[tipo];
   p.stun = Math.max(p.stun, dur);
   const sp = Math.hypot(p.vx, p.vz), a = sp > 0.3 ? Math.atan2(p.vz, p.vx) : p.angle;
@@ -2932,7 +2964,7 @@ function tryTackle(def, holder, dt) {
     givePossession(def, { silent: true });
     perderBola(holder);
     if (holder.isUser) { G.stats.perdas++; showToast('Desarmado!', 'bad'); }
-  } else if (def.role !== 'GK' && Math.random() < 0.1) {
+  } else if (def.role !== 'GK' && Math.random() < 0.07) {
     commitFoul(def, holder, { tipo: 'desarme' });        // errou o bote e acertou o pé: falta leve
   }
 }
@@ -3314,6 +3346,9 @@ function updateBall(dt) {
   if ((G.state === 'goal' || G.state === 'celebrate') && Math.abs(ball.x) > HALF_L) {
     const side = Math.sign(ball.x);
     if (Math.abs(ball.x) > HALF_L + 2) { ball.x = side * (HALF_L + 2); ball.vx *= -0.2; }
+    // (4.1.3) A rede segura a bola: ela não volta rolando para fora do gol depois do gol.
+    if ((ball.x - side * (HALF_L + 0.35)) * side < 0 && ball.vx * side < 0) { ball.vx = 0; ball.x = side * (HALF_L + 0.35); }
+    if (ball.y < 0.3) { ball.vx *= 0.96; ball.vz *= 0.96; }
     if (Math.abs(ball.z) > GOAL_HALF - R) { ball.z = Math.sign(ball.z) * (GOAL_HALF - R); ball.vz *= -0.3; }
     if (ball.y > CONFIG.GOAL_H - R) { ball.y = CONFIG.GOAL_H - R; ball.vy = 0; }
   }
@@ -3575,7 +3610,7 @@ function startCelebration(name) {
 //   society ... sem técnico/bandeirinha/placa: PULAR NA GRADE e bola para a torcida
 const CELEB_POR_CAMPO = {
   arena: ['tecnico', 'bandeira', 'placa', 'bola'],
-  varzea: ['tecnico', 'bandeira', 'bola'],
+  varzea: ['tecnico', 'bandeira', 'grade', 'bola'],   // (4.1.3) a várzea tem alambrado: dá para pular na grade
   society: ['grade', 'bola'],
 };
 function checarComemoracaoAuto() {
@@ -3588,8 +3623,13 @@ function checarComemoracaoAuto() {
     if (Math.hypot(u.x - tp.x, u.z - tp.z) < 2.0) { iniciarComemoracaoAuto('tecnico', tec); return; }
   }
   // 4.1.2: foi buscar a bola (lá no fundo da rede) → pega, leva para o lado, chuta para a torcida.
-  if (pode.includes('bola') && !ball.hidden && Math.abs(ball.x) > HALF_L && G.celebT < CONFIG.CELEB_TIME - 0.7 && ballSpeed() < 2
-      && Math.hypot(u.x - ball.x, u.z - ball.z) < 1.8 && ball.y < 1.2) { iniciarComemoracaoAuto('bola', ball); return; }
+  // (4.1.3) Antes só valia com a bola parada no fundo da rede, e ela às vezes voltava rolando para
+  // fora: aí nada acontecia. Agora vale onde a bola estiver, chegando nela andando para ela.
+  if (pode.includes('bola') && !ball.hidden && G.celebT < CONFIG.CELEB_TIME - 0.7 && ballSpeed() < 4 && ball.y < 1.2) {
+    const dx = ball.x - u.x, dz = ball.z - u.z, d = Math.hypot(dx, dz);
+    const indo = d > 0.01 && (u.vx * dx + u.vz * dz) / d > 1.0;
+    if (d < 0.9 || (d < 1.6 && indo)) { iniciarComemoracaoAuto('bola', ball); return; }
+  }
   if (pode.includes('bandeira')) for (const b of BANDEIRAS) {
     if (Math.hypot(u.x - b.x, u.z - b.z) < 2.0) { iniciarComemoracaoAuto('bandeira', b); return; }
   }
@@ -3636,6 +3676,7 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     A.pegaX = alvo.x - lado * 0.45; A.pegaZ = alvo.z;                 // para do lado de dentro da bola
     A.bocaX = lado * (HALF_L - 1.2); A.bocaZ = clamp(alvo.z, -GOAL_HALF + 0.8, GOAL_HALF - 0.8) * 0.5;
     A.px = lado * (HALF_L - 3); A.pz = sz * Math.min(HALF_W - 3, GOAL_HALF + 4.5);
+    if (Math.abs(alvo.x) <= HALF_L) { A.bocaX = (A.pegaX + A.px) / 2; A.bocaZ = (A.pegaZ + A.pz) / 2; }   // bola fora do gol: vai direto
     A.olhaTorcida = Math.atan2(sz, 0);
     const lim = BOARD_Z, alt = PARTIDA.campo.estadio === 'society' ? 12.5 : 10;
     A.chute = { vy: alt, vh: clamp((lim - Math.abs(A.pz)) * 0.8, 12, 22) };
@@ -3650,7 +3691,11 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     A.px = A.bx - A.nx * 0.55; A.pz = A.bz - A.nz * 0.55;   // de frente para a placa
     A.olhaPlaca = Math.atan2(A.nz, A.nx); A.olhaCampo = Math.atan2(-A.nz, -A.nx);
     A.dur = 5.0;
-    if (tipo === 'grade') { A.px = A.bx - A.nx * 0.36; A.pz = A.bz - A.nz * 0.36; A.dur = 5.4; }
+    if (tipo === 'grade') {
+      A.px = A.bx - A.nx * 0.36; A.pz = A.bz - A.nz * 0.36; A.dur = 5.4;
+      // Altura da subida: mãos no alto da grade (várzea, 2,6 m) ou no máximo 1,3 m (society, 5 m).
+      A.sobe = clamp(ALTURA_GRADE - 1.85, 0.4, 1.3);
+    }
   }
   G.celebAuto = A;
   u.scripted = true; u.vx = u.vz = 0;
@@ -3688,11 +3733,11 @@ function updateComemoracaoAuto(dt) {
       A.y = 0;
     } else if (t < 1.5) {                          // escala (sobe 1,3 m)
       u.x = A.px; u.z = A.pz; u.angle = A.olhaPlaca;
-      A.y = 1.3 * smooth(clamp((t - 0.5) / 1.0, 0, 1));
+      A.y = A.sobe * smooth(clamp((t - 0.5) / 1.0, 0, 1));
     } else {                                       // pendurado, balançando a grade
       u.x = A.px + (A.nz ? Math.sin(t * 9) * 0.05 : 0); u.z = A.pz + (A.nx ? Math.sin(t * 9) * 0.05 : 0);
       u.angle = A.olhaPlaca;
-      A.y = 1.3 + Math.abs(Math.sin(t * 4.5)) * 0.12;
+      A.y = A.sobe + Math.abs(Math.sin(t * 4.5)) * 0.12;
     }
     u.vx = u.vz = 0;
   } else if (A.tipo === 'tecnico') {
@@ -3836,19 +3881,20 @@ function poseGrade(A, m, t, agora) {
   if (t < 1.5) {
     // Escalando: um pé de cada vez na grade (coxa para a frente, canela dobrada) e mãos lá no alto.
     const k = (t - 0.5) / 1.0, f = Math.sin(k * Math.PI * 3);
-    const coxaE = 0.5 + Math.max(0, f) * 0.6, coxaD = 0.5 + Math.max(0, -f) * 0.6;
+    const coxaE = 0.6 + Math.max(0, f) * 0.45, coxaD = 0.6 + Math.max(0, -f) * 0.45;
     m.pernaE.rotation.z = coxaE; m.pernaD.rotation.z = coxaD;
-    usarJoelhos(m, -1.3, -1.3);
-    m.bracoE.rotation.z = 2.75 + Math.max(0, -f) * 0.25; m.bracoD.rotation.z = 2.75 + Math.max(0, f) * 0.25;
+    usarJoelhos(m, -1.15, -1.15);
+    m.bracoE.rotation.z = 2.88 + Math.max(0, -f) * 0.12; m.bracoD.rotation.z = 2.88 + Math.max(0, f) * 0.12;
     m.bracoE.rotation.x = -0.12; m.bracoD.rotation.x = 0.12;
     m.corpo.rotation.z = -0.08;
   } else {
     // Pendurado: pés apoiados na tela, mãos lá em cima, sacudindo de um lado para o outro.
-    m.pernaE.rotation.z = 0.55; m.pernaD.rotation.z = 0.45;
-    usarJoelhos(m, -1.25, -1.15);
+    // (4.1.3, conferido no 3D) pés encostados na tela e mãos segurando nela, sem atravessar.
+    m.pernaE.rotation.z = 0.95; m.pernaD.rotation.z = 0.85;
+    usarJoelhos(m, -1.1, -1.0);
     const solta = Math.sin(t * 2.2) > 0.55;         // de vez em quando solta um braço e soca o ar
-    m.bracoE.rotation.z = 2.8 + Math.sin(t * 9) * 0.08; m.bracoE.rotation.x = -0.1;
-    m.bracoD.rotation.z = solta ? 2.6 + Math.sin(agora / 90) * 0.3 : 2.8 - Math.sin(t * 9) * 0.08; m.bracoD.rotation.x = solta ? -0.6 : 0.1;
+    m.bracoE.rotation.z = 2.93 + Math.sin(t * 9) * 0.04; m.bracoE.rotation.x = -0.1;
+    m.bracoD.rotation.z = solta ? 3.0 + Math.sin(agora / 90) * 0.15 : 2.93 - Math.sin(t * 9) * 0.04; m.bracoD.rotation.x = solta ? -0.6 : 0.1;
     m.corpo.rotation.x = Math.sin(t * 9) * 0.1;
     m.corpo.rotation.z = -0.06;
   }
@@ -4408,7 +4454,7 @@ function updateParadoComBola(dt) {
     D.p.tackle = 1; D.p.angle = Math.atan2(u.z - D.p.z, u.x - D.p.x);
     if (Math.random() > 0.8) { D.p.stun = 0.6; G.desarmeLimpo = null; u.paradoT = 0; showToast('Ele errou o bote! Saia daí', 'good'); return; }   // tentativa: 80%
     givePossession(D.p, { silent: true });
-    perderBola(u, 'passinhos'); u.paradoT = 0; G.stats.perdas++;
+    perderBola(u); u.paradoT = 0; G.stats.perdas++;
     showToast('Ficou parado demais: desarmado!', 'bad');
     G.desarmeLimpo = null;
   }
@@ -4436,7 +4482,7 @@ function updateSlides(dt) {
     const dono = G.possession;
     if (dist2D(pe, ball) < 0.75 && ball.y < 0.7 && dono !== p) {
       p.slideGotBall = true;
-      if (dono && dono.team !== p.team) { dono.stun = Math.max(dono.stun, 0.8); dono.falling = true; dono.fallKind = 'frente'; dono.fallSide = 1; if (dono.isUser) G.stats.perdas++; }
+      if (dono && dono.team !== p.team) { perderBola(dono, Math.random() < 0.55 ? 'queda' : 'joelho'); if (dono.isUser) G.stats.perdas++; }
       G.possession = null;
       const a = Math.atan2(p.slideDZ, p.slideDX) + rand(-0.5, 0.5), sp = rand(5, 8);
       kickBall(p, Math.cos(a) * sp, 0.4, Math.sin(a) * sp);
@@ -5388,7 +5434,8 @@ function updateDribbleWindow(dt) {
 }
 
 // Qual drible combina com a situação:
-//   marcador ATRÁS (perseguindo) ............ 'arrancada' (você dispara, ele tropeça)
+//   marcador ATRÁS (perseguindo) ............ 'protecao' (4.1.3: protege de costas/ombro, com
+//                                             contato; ele empurra, perde o equilíbrio e cai)
 //   marcador do LADO ........................ 'corpo' (finge que vai para o lado dele e segue reto)
 //   de FRENTE, você PARADO .................. 'pedalada' (pedaladas e arranque para o lado)
 //   de FRENTE, você correndo (ou o goleiro) . 'frente' (corte com queda do marcador ou carretel)
@@ -5396,7 +5443,7 @@ function tipoDeDrible(u, o, vel) {
   if (o.role === 'GK') return 'frente';
   const dx = o.x - u.x, dz = o.z - u.z, d = Math.hypot(dx, dz) || 1;
   const ahead = (dx * Math.cos(u.angle) + dz * Math.sin(u.angle)) / d;
-  if (ahead <= -0.35) return 'arrancada';
+  if (ahead <= -0.35) return 'protecao';
   if (ahead < 0.35) return 'corpo';
   return vel < 1.5 ? 'pedalada' : 'frente';
 }
@@ -5418,6 +5465,7 @@ function startDribble() {
   C.oppSide = ((opp.x - user.x) * C.px + (opp.z - user.z) * C.pz) >= 0 ? 1 : -1;
   // O zoom vem do lado onde a câmera já está, para não "virar" a tela.
   C.camSide = ((cam.px - user.x) * C.px + (cam.pz - user.z) * C.pz) >= 0 ? 1 : -1;
+  if (C.tipo === 'protecao') C.camSide = -C.oppSide;   // (4.1.3) do lado contrário ao dele: os dois de perfil
   user.scripted = true; opp.scripted = true; user.running = false;
   C.cut = true;                                    // corte seco para a câmera de lado
   G.cine = C;
@@ -5434,7 +5482,7 @@ function startDribble() {
   const approach = noGoleiro ? 0.35 : clamp(tempo * 0.36, 0.5, 1.0), firstAt = noGoleiro ? 0.05 : 0.25;
   const gap = count > 1 ? Math.max(noGoleiro ? 0.22 : 0.45, (tempo - firstAt - approach - 0.35) / (count - 1)) : 0;
   startTiming({
-    title: noGoleiro ? 'DRIBLE NO GOLEIRO' : ({ arrancada: 'ARRANCADA', corpo: 'DRIBLE DE CORPO', pedalada: 'PEDALADA' }[C.tipo] || 'DRIBLE'), count, firstAt, gap, approach,
+    title: noGoleiro ? 'DRIBLE NO GOLEIRO' : ({ arrancada: 'ARRANCADA', protecao: 'PROTEJA A BOLA', corpo: 'DRIBLE DE CORPO', pedalada: 'PEDALADA' }[C.tipo] || 'DRIBLE'), count, firstAt, gap, approach,
     duration: tempo, need: noGoleiro ? 3 : CONFIG.DRIBBLE_NEEDED,
     place: () => {
       let pos;
@@ -5504,7 +5552,7 @@ function updateCine(dt) {
       u.x = nx; u.z = nz; u.vx = C.fx * C.speed; u.vz = C.fz * C.speed; u.anim += C.speed * 2.6 * dt;
     } else { u.vx = u.vz = 0; }
     o.vx = o.vz = 0;
-    if (C.tipo === 'corpo' || C.tipo === 'arrancada') { o.x = u.x + C.rel.x; o.z = u.z + C.rel.z; o.vx = u.vx; o.vz = u.vz; o.anim += C.speed * 2.6 * dt; }
+    if (C.tipo === 'corpo' || C.tipo === 'arrancada' || C.tipo === 'protecao') { o.x = u.x + C.rel.x; o.z = u.z + C.rel.z; o.vx = u.vx; o.vz = u.vz; o.anim += C.speed * 2.6 * dt; }
     o.guard = Math.min(1, o.guard + dt * 6);
     o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 6 * dt);
   } else if (C.phase === 'success' && C.tipo !== 'frente') {
@@ -5545,8 +5593,19 @@ function updateCine(dt) {
     o.x = lerp(C.o0.x, C.steal.x, smooth(k)); o.z = lerp(C.o0.z, C.steal.z, smooth(k));
     o.vx = (C.steal.x - C.o0.x) * 2; o.vz = (C.steal.z - C.o0.z) * 2; o.anim += 6 * dt;
     o.guard = 0;
-    u.vx = u.vz = 0; u.stun = Math.max(u.stun, 0.5);
-    if (k >= 0.45 && G.possession === u) givePossession(o, { silent: true });
+    u.vx = u.vz = 0;
+    // (4.1.3) Errou o drible: em vez de ficar balançando, você faz uma das animações de perder a
+    // bola (passinhos, joelho no chão ou queda) — a mesma de um desarme.
+    if (k >= 0.45 && G.possession === u) {
+      givePossession(o, { silent: true });
+      u.driblePose = null;
+      perderBola(u);
+      const a = Math.atan2(C.fz, C.fx); u.perda.vx = Math.cos(a) * 1.4; u.perda.vz = Math.sin(a) * 1.4;
+    }
+    if (u.perda) {                                  // você está "scripted" aqui: a animação anda aqui
+      u.perda.t += dt;
+      if (u.perda.tipo === 'passinhos') { const f = Math.max(0, 1 - u.perda.t / u.perda.dur); u.x += u.perda.vx * f * dt; u.z += u.perda.vz * f * dt; u.anim += dt * 9; }
+    }
     if (k >= 1) endCine(false);
   }
 }
@@ -5593,11 +5652,23 @@ function atualizarCarretel(C, dt) {
 //   pedalada (1,6 s): 0–0,9 s duas pedaladas (perna passa por cima da bola, corpo balança e ele
 //                  acompanha o balanço); depois arranca para o lado contrário da última.
 // ---------------------------------------------------------------------
+// Proteção de bola: onde o marcador encosta (atrás e para o lado do ombro) e as poses. Valores
+// conferidos com as caixas 3D: encostam (ombro/braço no peito dele) sem um entrar no outro.
+const PROT = { atras: 0.5, lado: 0.6, giro: 0.3, tras: 0.06, tomba: 0.03, bz: -0.35, bx: 0.7, bote: 0.15 };
 function prepararDribleNovo(C, u, o) {
   C.p0 = { x: u.x, z: u.z }; C.b0 = { x: ball.x, z: ball.z }; C.o0 = { x: o.x, z: o.z };
   const f = { x: C.fx, z: C.fz }, lado = C.oppSide;            // +1: marcador à sua direita
   if (C.tipo === 'arrancada') {
     C.dur = 0.9; C.p1 = { x: u.x + f.x * 3, z: u.z + f.z * 3 }; C.p2 = { x: u.x + f.x * 6.5, z: u.z + f.z * 6.5 };
+  } else if (C.tipo === 'protecao') {
+    // Proteção (1,6 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
+    // ele perde o equilíbrio e cai de costas; você sai com a bola para a frente.
+    C.dur = 1.6;
+    C.encosta = { x: u.x - f.x * 0.15, z: u.z - f.z * 0.15 };
+    C.oEncosta = { x: C.encosta.x - f.x * PROT.atras + C.px * lado * PROT.lado, z: C.encosta.z - f.z * PROT.atras + C.pz * lado * PROT.lado };
+    C.oCai = { x: C.oEncosta.x - f.x * 0.45, z: C.oEncosta.z - f.z * 0.45 };
+    C.p1 = { x: C.encosta.x + f.x * 1.5, z: C.encosta.z + f.z * 1.5 }; C.p2 = { x: C.encosta.x + f.x * 4.5, z: C.encosta.z + f.z * 4.5 };
+    C.fallSide = lado;
   } else if (C.tipo === 'corpo') {
     C.dur = 1.1;
     C.finta = { x: u.x + C.px * lado * 0.35, z: u.z + C.pz * lado * 0.35 };
@@ -5632,7 +5703,34 @@ function atualizarDribleNovo(C, dt) {
     const f = Math.max(0, 1 - o.perda.t / o.perda.dur);
     o.x += o.perda.vx * f * dt; o.z += o.perda.vz * f * dt; o.anim += dt * 9;
   }
-  if (C.tipo === 'arrancada') {
+  if (C.tipo === 'protecao') {
+    const t = C.t, ang = Math.atan2(C.fz, C.fx);
+    if (t < 0.35) {                                 // encosta nele
+      const a = smooth(t / 0.35);
+      mover(lerp(C.p0.x, C.encosta.x, a), lerp(C.p0.z, C.encosta.z, a), 1.5);
+      o.x = lerp(C.o0.x, C.oEncosta.x, a); o.z = lerp(C.o0.z, C.oEncosta.z, a); o.anim += 5 * dt;
+      bolaNaFrente(0.55);
+    } else if (t < 1.0) {                           // empurra-empurra: os dois balançam juntos
+      const sw = Math.sin((t - 0.35) * 13) * 0.05;
+      mover(C.encosta.x + C.px * sw, C.encosta.z + C.pz * sw, 0.5);
+      o.x = C.oEncosta.x + C.px * sw * 1.2; o.z = C.oEncosta.z + C.pz * sw * 1.2;
+      o.tackle = PROT.bote * Math.max(0, Math.sin((t - 0.35) * 9));      // tenta enfiar o pé
+      ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.y = CONFIG.BALL_R;
+      if (!C.empurrou && t > 0.6) { C.empurrou = true; Som.toque(0.3); }
+    } else {                                        // ele cai de costas e você sai com a bola
+      const a = smooth((t - 1.0) / (C.dur - 1.0));
+      const pt = bezier(C.encosta, C.p1, C.p2, a);
+      mover(pt.x, pt.z, 8);
+      bolaNaFrente(lerp(0.55, 1.1, a));
+      const q = smooth(clamp((t - 1.0) / 0.35, 0, 1));
+      o.x = lerp(C.oEncosta.x, C.oCai.x, q); o.z = lerp(C.oEncosta.z, C.oCai.z, q);
+      o.tackle = 0; o.fallKind = 'costas'; o.fallSide = C.fallSide; o.fall = Math.pow(q, 1.4);
+    }
+    // Você de costas para ele, um pouco virado para mostrar o ombro (do lado dele).
+    u.angle = t < 1.0 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) : turnToward(u.angle, ang, 10 * dt);
+    o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
+    o.vx = o.vz = 0;
+  } else if (C.tipo === 'arrancada') {
     const e = k * k * (3 - 2 * k);
     const pt = bezier(C.p0, C.p1, C.p2, e);
     mover(pt.x, pt.z, 9);
@@ -5690,6 +5788,16 @@ function aplicarDriblePose(p, m) {
     m.raiz.rotation.x = Math.sin((P.t / 0.9) * Math.PI * 2) * 0.2;    // balanço do corpo
     m.corpo.rotation.z = -0.15;
     m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.7; m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2;
+  } else if (P.tipo === 'protecao' && P.t < 1.0) {
+    // Corpo para trás (encostado nele), ombro do lado dele baixo, braço de lá segurando ele e o
+    // outro aberto para equilibrar.
+    const a = smooth(Math.min(1, P.t / 0.3)), sw = Math.sin(P.t * 13) * 0.05;
+    m.corpo.rotation.z = PROT.tras * a;
+    m.raiz.rotation.x = (P.lado * PROT.tomba + sw) * a;
+    const bL = P.lado > 0 ? m.bracoD : m.bracoE, bO = P.lado > 0 ? m.bracoE : m.bracoD, s = P.lado > 0 ? -1 : 1;
+    bL.rotation.z = PROT.bz * a; bL.rotation.x = s * PROT.bx * a;
+    bO.rotation.z = 0.25 * a; bO.rotation.x = -s * 0.6 * a;
+    m.pernaE.rotation.z = 0.12 * a; m.pernaD.rotation.z = -0.12 * a;   // base aberta
   } else if (P.tipo === 'corpo' && P.t < 0.4) {
     const a = Math.sin((P.t / 0.4) * Math.PI);
     m.raiz.rotation.x = P.lado * 0.32 * a;         // tomba o corpo para o lado do marcador (a finta)
@@ -5697,7 +5805,7 @@ function aplicarDriblePose(p, m) {
     if (P.lado > 0) m.bracoE.rotation.x = 0.4 + 0.6 * a; else m.bracoD.rotation.x = -0.4 - 0.6 * a;
   } else {
     m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0;
-    if (P.tipo === 'arrancada' || P.tipo === 'corpo' || P.tipo === 'pedalada') m.corpo.rotation.z = Math.min(m.corpo.rotation.z, -0.22);   // inclinado na arrancada
+    if (P.tipo === 'arrancada' || P.tipo === 'protecao' || P.tipo === 'corpo' || P.tipo === 'pedalada') m.corpo.rotation.z = Math.min(m.corpo.rotation.z, -0.22);   // inclinado na arrancada
   }
 }
 
@@ -5710,6 +5818,7 @@ function endCine(success) {
   if (success) {
     G.stats.driblesOk++;
     if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; }   // no carretel o marcador não cai, só fica parado
+    else if (C.tipo === 'protecao') { C.opp.stun = 2.0; C.opp.fall = 1; C.opp.fallKind = 'costas'; user.driblePose = null; }   // caiu de costas
     else if (C.tipo !== 'frente') { C.opp.stun = Math.max(C.opp.stun, 1.0); user.driblePose = null; }   // tropeçou (passinhos), não cai
     else { C.opp.stun = 2.4; C.opp.fall = 1; }
     const ex = C.p2.x - C.p1.x, ez = C.p2.z - C.p1.z, el = Math.hypot(ex, ez) || 1;
@@ -5722,10 +5831,10 @@ function endCine(success) {
     user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
     if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
     Som.drible();
-    const nomes = { arrancada: 'Arrancada!', corpo: 'Drible de corpo!', pedalada: 'Pedalada!' };
+    const nomes = { arrancada: 'Arrancada!', protecao: 'Protegeu a bola!', corpo: 'Drible de corpo!', pedalada: 'Pedalada!' };
     showToast(C.carretel ? 'CARRETEL!' : C.noGoleiro ? 'Driblou o goleiro!' : nomes[C.tipo] || (C.perfect ? 'Drible perfeito!' : 'Driblou!'), 'good');
   } else {
-    perderBola(user, Math.random() < 0.6 ? 'passinhos' : 'joelho');
+    if (!user.perda) perderBola(user);
     G.stats.perdas++;
     showToast('Perdeu no drible', 'bad');
   }
@@ -6727,7 +6836,7 @@ function syncMeshes(dt) {
     incl -= 0.18 * p.guard + 0.35 * p.tackle;
     if (prep > 0) incl = lerp(incl, 0.14, prep);
     if ((G.state === 'goal' || G.state === 'celebrate') && p.team !== G.scoredBy && p.team < 2) incl = -0.3;
-    if (p.stun > 0 && p.fall === 0 && p.diveT <= 0) incl += Math.sin(G.time * 18) * 0.15;
+    if (p.stun > 0 && p.fall === 0 && p.diveT <= 0 && !p.perda) incl += Math.sin(G.time * 18) * 0.15;   // (perdendo a bola: a animação dela manda)
     if (caiFrente) incl = lerp(incl, 0.12, p.fall);   // deitado, levanta um pouco a cabeça
     if (segurando) incl = 0;
     m.corpo.rotation.z += (incl - m.corpo.rotation.z) * k;
@@ -7270,9 +7379,11 @@ function texturaTela(corFio, passo) {
     }
   });
 }
+let ALTURA_GRADE = 5;                              // (4.1.3) a comemoração "pular na grade" usa
 function buildArredores(tipo) {
   const varzea = tipo === 'varzea';
   const ALT = varzea ? 2.6 : 5;                    // altura do alambrado / da rede
+  ALTURA_GRADE = ALT;
   const E = new Lote(), Lp = new Lote();
   // Tela: 4 paredes com a textura repetida (1 chamada de desenho).
   const tex = texturaTela(varzea ? 'rgba(170,175,180,0.9)' : 'rgba(30,60,35,0.85)', varzea ? 8 : 6);
@@ -8539,7 +8650,7 @@ montarTelaDeTatica();
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.1.2',
+  versao: '4.1.3',
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   partida: () => PARTIDA,
   cadastrarTime(t) { TIMES[t.id] = t; return t; },
