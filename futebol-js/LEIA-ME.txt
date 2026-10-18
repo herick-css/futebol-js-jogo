@@ -27,4 +27,22 @@ RODAR SEM O CANVA
 CONTROLES NO COMPUTADOR
   WASD ou setas: andar · Shift: correr · J: chutar/cruzar · K: passar · L: driblar
   E: pedir a bola / desarmar · Q: carrinho · C: câmera · Espaço: bater no domínio
-  1 e 2: comemorações · Esc: pausa
+  1 e 2: comemorações · Esc: pausa (na pausa dá para trocar a tática do seu time)
+
+SISTEMA DE PARTIDA (4.0.0)
+  Tudo o que muda de um jogo para outro é DADO, no começo do jogo.js (seção 1b):
+    CAMPOS (tamanho, nº de jogadores, gol, aparência) · TIMES (uniformes, nome, sigla, emblema,
+    força, popularidade, formação, tática, técnico) · FORMACOES · TATICAS · DIFICULDADES · NOMES.
+  Na tela inicial: "CONFIGURAR PARTIDA" (escolhas ficam salvas no aparelho).
+  No modo história (ou no console do navegador):
+    FutebolJS.novaPartida({
+      times: ['azulao', 'leoes'], campo: 'varzea', mandante: 1,
+      competicao: { tipo: 'copa', nome: 'Copa da Vila', fase: 'Semifinal', mataMata: true, jogo: 'volta', placarIda: [1, 2] },
+      dificuldade: 'dificil', clima: 'chuva', gramado: 'alto', horario: 'tarde', duracao: 300,
+      usuario: { nome: 'Herick', posicao: 'MID' }, taticas: ['contra', null], formacoes: ['4-3-3', null],
+    })
+    FutebolJS.cadastrarTime({ id: 'novo', ... })      (mesmo formato dos TIMES)
+    FutebolJS.salvarTecnico({ nome: '...', aparencia: { pele, cabelo, estilo, roupa } })
+    FutebolJS.trocarTatica(0, 'retranca')
+  Salvo no aparelho: elencos (futebolJs.elencos.v1), técnico (futebolJs.tecnico.v1),
+  última configuração (futebolJs.ultimaPartida.v1).
