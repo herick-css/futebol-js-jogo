@@ -33,16 +33,27 @@ SISTEMA DE PARTIDA (4.0.0)
   Tudo o que muda de um jogo para outro é DADO, no começo do jogo.js (seção 1b):
     CAMPOS (tamanho, nº de jogadores, gol, aparência) · TIMES (uniformes, nome, sigla, emblema,
     força, popularidade, formação, tática, técnico) · FORMACOES · TATICAS · DIFICULDADES · NOMES.
-  Na tela inicial: "CONFIGURAR PARTIDA" (escolhas ficam salvas no aparelho).
+  Na tela inicial: botão "OPÇÕES DA PARTIDA" (4.1.1) mostra tudo o que já dá para mudar em
+    botões (times, campo, clima, horário, gramado, competição, tempo, dificuldade, posição,
+    formação, tática) e, tracejado, o que ainda vem ("EM BREVE": bola, uniforme, árbitro...).
+    Para tirar/pôr um placeholder: lista SELECAO_EM_BREVE no jogo.js. As escolhas ficam salvas
+    no aparelho. "AVANÇADO (LISTAS)" é o mesmo, em listas.
   No modo história (ou no console do navegador):
     FutebolJS.novaPartida({
       times: ['azulao', 'leoes'], campo: 'varzea', mandante: 1,
       competicao: { tipo: 'copa', nome: 'Copa da Vila', fase: 'Semifinal', mataMata: true, jogo: 'volta', placarIda: [1, 2] },
-      dificuldade: 'dificil', clima: 'chuva', gramado: 'alto', horario: 'tarde', duracao: 300,
-      usuario: { nome: 'Herick', posicao: 'MID' }, taticas: ['contra', null], formacoes: ['4-3-3', null],
+      dificuldade: 'dificil', clima: 'chuva', gramado: 'alto', horario: 'tarde', duracao: 300 (ou 180),
+      usuario: { nome: 'Herick', posicao: 'MID', autocuidado: 0.7, ordemPenalti: 1 },
+      taticas: ['contra', null], formacoes: ['4-3-3', null],
     })
     FutebolJS.cadastrarTime({ id: 'novo', ... })      (mesmo formato dos TIMES)
     FutebolJS.salvarTecnico({ nome: '...', aparencia: { pele, cabelo, estilo, roupa } })
     FutebolJS.trocarTatica(0, 'retranca')
   Salvo no aparelho: elencos (futebolJs.elencos.v1), técnico (futebolJs.tecnico.v1),
   última configuração (futebolJs.ultimaPartida.v1).
+
+  Fim da partida (para a história): FutebolJS.ultimoResultado e o evento do navegador
+    window.addEventListener('futebolJs:fim', (e) => { e.detail.placar, e.detail.penaltis,
+      e.detail.vencedor, e.detail.nota, e.detail.suspensos, e.detail.lesoes, e.detail.voceSaiu ... })
+  autocuidado (0 a 1): menos autocuidado = mais lesões suas e mais lesões graves.
+  Cartões/lesões ficam salvos em futebolJs.historico.v1 (quem está fora não é escalado).
