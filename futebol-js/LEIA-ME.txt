@@ -57,3 +57,14 @@ SISTEMA DE PARTIDA (4.0.0)
       e.detail.vencedor, e.detail.nota, e.detail.suspensos, e.detail.lesoes, e.detail.voceSaiu ... })
   autocuidado (0 a 1): menos autocuidado = mais lesões suas e mais lesões graves.
   Cartões/lesões ficam salvos em futebolJs.historico.v1 (quem está fora não é escalado).
+
+NOVO NA 4.1.2 (onde mexer)
+  Comemorações por campo ......... CELEB_POR_CAMPO (arena / varzea / society). Ex.: para ter
+                                   "pular na grade" também na várzea, coloque 'grade' na lista dela.
+  Banco, técnico e reservas ...... temBanco(P): hoje só o society fica sem. Os reservas do banco são
+                                   os 5 primeiros de PARTIDA.reservas de cada time.
+  Poses do técnico ............... TEC_POSES / poseTecnico / escolherAcaoTecnico.
+  Abraço no técnico .............. ABRACO (distâncias e ângulos já conferidos sem atravessar).
+  IA do 11 x 11 .................. posicaoCampoGrande (cada jogador tem uma "funcao": zagueiro,
+                                   lateral, volante, meia, aberto, ponta, centroavante). Vale para
+                                   campos com 9 jogadores ou mais por time.
