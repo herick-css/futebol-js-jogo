@@ -74,3 +74,9 @@ NOVO NA 4.1.3 (onde mexer)
   Grade da várzea/society ............. ALTURA_GRADE (vem do alambrado) e poseGrade.
   Quem dá o bote ...................... updateRoles: o marcador da FRENTE (até 18 m) vira o
                                         "presser"; quem vem atrás vira cobertura.
+  Espaço do lado do banco ............. LADO_BANCO (distâncias da linha: bandeirinha 1,3; espera
+                                        2,4; técnico 3,2; banco 4,8; placa/grade +2,5 m além do normal).
+  Cones com bolas reservas ............ conesBola / montarCones (2 por lateral).
+  Reposição com bola reserva .......... iniciarReserva / atualizarReserva (lateral: cone;
+                                        escanteio: o goleiro adversário joga a bola dele).
+  Sombras no chão ..................... ajustarSombras (roda uma vez por quadro, antes de desenhar).

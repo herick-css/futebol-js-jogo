@@ -27,6 +27,14 @@
        e ele fecha no atacante correndo ou perto do gol, em vez de só recuar
      - perder a bola: as mesmas 3 animações para você e para a IA (carrinho também), sem o
        "balançando"; drible errado usa uma delas
+     - lado do banco mais largo (placa/grade a 6,5 m): bandeirinha, técnico, banco e reservas
+       não se encostam mais
+     - substituição em cenas: placa → câmera segue quem sai (sem tempo limite) → só quando ele
+       chega batem as mãos; reservas andam pelo corredor do banco e ninguém senta em cima de ninguém
+     - a bola pode sair do estádio (sem parede invisível); 2 cones com bola em cada lateral para
+       o lateral, e no escanteio o goleiro adversário joga a bola reserva dele para o cobrador
+     - quem vai cobrar (goleiro no tiro de meta, jogador caído) termina de levantar antes de ir
+     - sombras sempre no chão (não sobem mais junto no pulo, no mergulho, na placa)
    Novidades da versão 4.1.2:
      - abraço no técnico refeito (abraço de lado, conferido caixa por caixa: ninguém entra no outro)
      - 5 reservas sentados no banco de cada time; quem vai entrar levanta e espera na linha
@@ -345,6 +353,13 @@ const BOX = { depth: 16, half: 20 };       // grande área
 const SMALL_BOX = { depth: 5.5, half: 10 };// pequena área
 let PEN_SPOT = 11, CIRCLE_R = 9;
 let BOARD_X = HALF_L + CONFIG.BOARD_GAP, BOARD_Z = HALF_W + CONFIG.BOARD_GAP;
+// (4.1.3) Lado do BANCO (z < 0): a placa/grade fica mais para fora, para caber bandeirinha, técnico,
+// banco e reservas sem ninguém encostar em ninguém. Distâncias a partir da linha lateral:
+//   bandeirinha 1,3 · placa do 4º árbitro 1,9 · quem espera para entrar e 4º árbitro 2,4 ·
+//   técnico 3,2 · banco 4,8 · placa/grade 6,5 (o outro lado continua a 4).
+let BOARD_ZN = BOARD_Z;
+const LADO_BANCO = { extra: 2.5, placaTroca: 1.9, espera: 2.4, quarto: 2.4, tecnico: 3.2, banco: 4.8 };
+const limZ = (sz) => (sz < 0 ? BOARD_ZN : BOARD_Z);   // placa/grade do lado sz
 let ESC = 1, ESC_W = 1;
 function aplicarDimensoes(campo) {
   CONFIG.FIELD_L = campo.comprimento; CONFIG.FIELD_W = campo.largura;
@@ -357,6 +372,7 @@ function aplicarDimensoes(campo) {
   SMALL_BOX.depth = 5.5 * ESC; SMALL_BOX.half = Math.min(10 * ESC_W, BOX.half - 2);
   PEN_SPOT = 11 * ESC; CIRCLE_R = 9 * Math.min(ESC, ESC_W);
   BOARD_X = HALF_L + CONFIG.BOARD_GAP; BOARD_Z = HALF_W + CONFIG.BOARD_GAP;
+  BOARD_ZN = BOARD_Z + ((campo.estadio || 'arena') === 'society' ? 0 : LADO_BANCO.extra);
 }
 
 // ---------------------------------------------------------------------
@@ -839,7 +855,7 @@ const MAT_CORES = new THREE.MeshLambertMaterial({ vertexColors: true });   // ma
 // 4. CENÁRIO
 // ---------------------------------------------------------------------
 function buildPitch() {
-  const PPM = 8, M = CONFIG.BOARD_GAP + 2;      // pixels por metro, margem até depois das placas
+  const PPM = 8, M = CONFIG.BOARD_GAP + 2 + LADO_BANCO.extra;   // pixels por metro, margem até depois das placas
   const sx = CONFIG.FIELD_L + M * 2, sz = CONFIG.FIELD_W + M * 2;
   const c = document.createElement('canvas');
   c.width = sx * PPM; c.height = sz * PPM;
@@ -977,10 +993,10 @@ function buildBoards() {
     mesh.position.set(x, H / 2, z);
     ESTADIO.add(mesh); freeze(mesh);
   };
-  add(BOARD_X * 2, 0, -BOARD_Z, true);
+  add(BOARD_X * 2, 0, -BOARD_ZN, true);
   add(BOARD_X * 2, 0, BOARD_Z, true);
-  add(BOARD_Z * 2, -BOARD_X, 0, false);
-  add(BOARD_Z * 2, BOARD_X, 0, false);
+  add(BOARD_Z + BOARD_ZN, -BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
+  add(BOARD_Z + BOARD_ZN, BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
 }
 
 // ---------------------------------------------------------------------
@@ -1507,6 +1523,24 @@ function texNome(nome, fundo) {
 // UMA malha: corpo (com cabeça e cabelo), perna esquerda, perna direita, braço esquerdo e braço direito.
 // São 5 malhas + sombra (+ a etiqueta, quando aparece) = 6 ou 7 por jogador.
 // As medidas e as cores são exatamente as mesmas de antes.
+// (4.1.3) SOMBRAS NO CHÃO: a sombra é filha do boneco, então subia junto no pulo, no mergulho, em
+// cima da placa... Agora, uma vez por quadro (antes de desenhar), cada sombra é recolocada NO CHÃO
+// embaixo do boneco, deitada, e diminui um pouco quanto mais alto ele está.
+const ATLETAS = new Set();
+const _somM = new THREE.Matrix4(), _somI = new THREE.Matrix4(), _somQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0)), _somS = new THREE.Vector3(), _somP = new THREE.Vector3();
+function ajustarSombras() {
+  for (const A of ATLETAS) {
+    const r = A.raiz, s = A.sombra;
+    if (!r.parent || !r.visible || !s.visible) continue;
+    r.updateMatrixWorld(true);
+    const h = Math.max(0, r.position.y), k = clamp(1 - h * 0.35, 0.55, 1);
+    _somP.set(0, 0.9, 0).applyMatrix4(r.matrixWorld); _somP.y = 0.02;   // embaixo do quadril (deitado/mergulhando: embaixo do corpo)
+    _somS.set(k, k, k);
+    _somM.compose(_somP, _somQ, _somS);
+    _somI.copy(r.matrixWorld).invert().multiply(_somM);
+    _somI.decompose(s.position, s.quaternion, s.scale);
+  }
+}
 function makeAthlete(o) {
   const raiz = new THREE.Group();
   raiz.rotation.order = 'YXZ';                    // primeiro gira (Y), depois inclina/cai
@@ -1603,7 +1637,9 @@ function makeAthlete(o) {
   const sombra = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT);
   sombra.rotation.x = -Math.PI / 2; sombra.position.y = 0.02;
   raiz.add(sombra);
-  return { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca };
+  const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra };
+  raiz.userData.atleta = atleta; ATLETAS.add(atleta);
+  return atleta;
 }
 // Reação de quem tomou o gol (k vai de 0 a 1 em 0,7 s). Valores conferidos no gramado:
 //   cintura: mãos na cintura DE VERDADE (v15): o braço abre ~66° para o lado e o cotovelo dobra
@@ -1956,13 +1992,35 @@ const spares = [-1, 1].map((side) => {
   return { side, mesh: m, present: true, fade: 1 };
 });
 const spareOf = (side) => spares[side > 0 ? 1 : 0];
+// (4.1.3) Bolas reservas das LATERAIS: 2 cones em cada lateral (do lado de fora, longe do banco e da
+// linha do bandeirinha), cada um com uma bola em cima. Se a bola saiu longe (ou do estádio), quem
+// cobra o lateral pega a do cone mais perto. Depois da cobrança aparece outra no cone (3 s).
+const conesBola = [];
+for (let i = 0; i < 4; i++) {
+  const m = new THREE.Mesh(BALL_GEO, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, transparent: true }));
+  scene.add(m);
+  conesBola.push({ mesh: m, x: 0, z: 0, zs: i < 2 ? -1 : 1, present: true, fade: 1 });
+}
+function montarCones() {
+  const L = new Lote();
+  conesBola.forEach((c, i) => {
+    c.x = (i % 2 ? 1 : -1) * HALF_L * 0.42; c.z = c.zs * (HALF_W + 2.6);
+    c.present = true; c.fade = 1;
+    L.caixa(0.42, 0.06, 0.42, 0xf26a1b, c.x, 0.03, c.z);         // base
+    L.caixa(0.26, 0.22, 0.26, 0xf26a1b, c.x, 0.17, c.z);
+    L.caixa(0.18, 0.12, 0.18, 0xf2f2ee, c.x, 0.34, c.z);         // faixa branca
+    L.caixa(0.12, 0.08, 0.12, 0xf26a1b, c.x, 0.44, c.z);
+    c.mesh.position.set(c.x, 0.48 + CONFIG.BALL_R, c.z);
+  });
+  const m = L.malha(MAT_CORES); ESTADIO.add(m); freeze(m);
+}
 const lostBall = (() => {
   const m = new THREE.Mesh(BALL_GEO, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, transparent: true }));
   m.visible = false; scene.add(m);
   return { mesh: m, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, life: 0 };
 })();
 function updateSpares(dt) {
-  for (const sp of spares) {
+  for (const sp of spares.concat(conesBola)) {
     if (sp.present && sp.fade < 1) sp.fade = Math.min(1, sp.fade + dt / RESERVA_FADE);
     sp.mesh.visible = sp.present;
     sp.mesh.material.opacity = sp.fade;
@@ -2327,7 +2385,7 @@ function aiThink(p, dt) {
       // relação à câmera), sem ficar na frente do lance.
       const c = cameraCelebAuto(), dx = c.px - user.x, dz = c.pz - user.z, l = Math.hypot(dx, dz) || 1;
       const i = TEAMS[0].filter((q) => !q.isUser && q.role !== 'GK').indexOf(p), lado = i % 2 ? 1 : -1, dist = 3.0 + Math.floor(i / 2) * 1.1;
-      const tx = clamp(user.x + (-dz / l) * lado * dist - dx / l * 0.6, -BOARD_X + 0.8, BOARD_X - 0.8), tz = clamp(user.z + (dx / l) * lado * dist - dz / l * 0.6, -BOARD_Z + 0.8, BOARD_Z - 0.8);
+      const tx = clamp(user.x + (-dz / l) * lado * dist - dx / l * 0.6, -BOARD_X + 0.8, BOARD_X - 0.8), tz = clamp(user.z + (dx / l) * lado * dist - dz / l * 0.6, -BOARD_ZN + 0.8, BOARD_Z - 0.8);
       return seek(p, tx, tz, p.role === 'GK' ? 0 : CONFIG.AI_SPEED);
     }
     if (p.team === 0) { const a = p.id * 1.3; return seek(p, user.x + Math.cos(a) * 1.6, user.z + Math.sin(a) * 1.6, G.celebT < 8.5 ? CONFIG.AI_SPEED : 0); }
@@ -3139,7 +3197,7 @@ function updatePlayers(dt) {
     p.vx += dvx * k; p.vz += dvz * k;
     const ox = p.x, oz = p.z;
     p.x = clamp(p.x + p.vx * dt, -BOARD_X + 0.6, BOARD_X - 0.6);
-    p.z = clamp(p.z + p.vz * dt, -BOARD_Z + 0.6, BOARD_Z - 0.6);
+    p.z = clamp(p.z + p.vz * dt, -BOARD_ZN + 0.6, BOARD_Z - 0.6);
     goalCollide(p, ox, oz);
     colisaoArredores(p);
 
@@ -3240,6 +3298,10 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   if (G.sp && G.sp.taker === from && G.sp.kind === 'penalti') goleiroAdivinha(TEAMS[1 - from.team].find((p) => p.role === 'GK'));
   if (G.sp && G.sp.taker === from) {               // cobrança feita: jogo segue normal
     if (G.sp.kind === 'tiro de meta') { const sp = spareOf(G.sp.side); sp.present = true; sp.fade = 0; } // nova reserva surgindo
+    const RS = G.sp.reserva;                         // (4.1.3) cone / suporte do goleiro: aparece outra
+    if (RS && RS.cone) { RS.cone.present = true; RS.cone.fade = 0; }
+    if (RS && RS.rack) { RS.rack.present = true; RS.rack.fade = 0; }
+    if (RS && RS.gk) RS.gk.scripted = false;
     G.sp = null; G.focus = null; G.roleT = 0;
   }
   if (G.kickoffPending && G.kickoffPending.taker === from) { G.kickoffPending = null; G.roleT = 0; } // bola rolando
@@ -3312,11 +3374,13 @@ function updateBall(dt) {
   }
   ball.spinSide *= Math.exp(-0.35 * dt);
   if (ballSpeed() < 6) ball.saveRolled = false;
-  // Placas de publicidade: a bola baixa bate e volta. Se passar por cima, a torcida devolve.
-  for (const [k, lim] of [['x', BOARD_X], ['z', BOARD_Z]]) {
-    const v = 'v' + k, sg = Math.sign(ball[k]);
-    if (Math.abs(ball[k]) > lim - R && ball[k] * ball[v] > 0 && ball.y < 1.0) { ball[v] *= -0.35; ball[k] = sg * (lim - R); }
-    if (Math.abs(ball[k]) > lim + 3) { ball[k] = sg * (lim - 0.6); ball[v] = -sg * 2; ball.vy = 2; }
+  // (4.1.3) SEM PAREDE INVISÍVEL: a bola só bate no que existe — a placa de publicidade (0,9 m)
+  // no estádio, a grade na várzea/society. Por cima dela, sai do estádio de verdade (e a cobrança
+  // usa uma bola reserva: cone na lateral, goleiro joga a dele no escanteio — ver updateRestart).
+  const obst = (PARTIDA && (PARTIDA.campo.estadio || 'arena') !== 'arena') ? ALTURA_GRADE : 0.9;
+  for (const k of ['x', 'z']) {
+    const v = 'v' + k, sg = Math.sign(ball[k]) || 1, lim = k === 'x' ? BOARD_X : limZ(sg);
+    if (Math.abs(ball[k]) > lim - R && Math.abs(ball[k]) < lim + 0.35 && ball[k] * ball[v] > 0 && ball.y < obst) { ball[v] *= -0.35; ball[k] = sg * (lim - R); }
   }
   bolaNosArredores(R);
 
@@ -3633,7 +3697,7 @@ function checarComemoracaoAuto() {
   if (pode.includes('bandeira')) for (const b of BANDEIRAS) {
     if (Math.hypot(u.x - b.x, u.z - b.z) < 2.0) { iniciarComemoracaoAuto('bandeira', b); return; }
   }
-  const nx = Math.abs(u.x) > BOARD_X - 1.3 ? Math.sign(u.x) : 0, nz = Math.abs(u.z) > BOARD_Z - 1.3 ? Math.sign(u.z) : 0;
+  const nx = Math.abs(u.x) > BOARD_X - 1.3 ? Math.sign(u.x) : 0, nz = u.z > BOARD_Z - 1.3 ? 1 : u.z < -(BOARD_ZN - 1.3) ? -1 : 0;
   const alvo = nz ? { nx: 0, nz } : { nx, nz: 0 };
   if ((nx || nz) && pode.includes('placa')) iniciarComemoracaoAuto('placa', alvo);
   else if ((nx || nz) && pode.includes('grade')) iniciarComemoracaoAuto('grade', alvo);
@@ -3678,7 +3742,7 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     A.px = lado * (HALF_L - 3); A.pz = sz * Math.min(HALF_W - 3, GOAL_HALF + 4.5);
     if (Math.abs(alvo.x) <= HALF_L) { A.bocaX = (A.pegaX + A.px) / 2; A.bocaZ = (A.pegaZ + A.pz) / 2; }   // bola fora do gol: vai direto
     A.olhaTorcida = Math.atan2(sz, 0);
-    const lim = BOARD_Z, alt = PARTIDA.campo.estadio === 'society' ? 12.5 : 10;
+    const lim = limZ(sz), alt = PARTIDA.campo.estadio === 'society' ? 12.5 : 10;
     A.chute = { vy: alt, vh: clamp((lim - Math.abs(A.pz)) * 0.8, 12, 22) };
     A.dur = 5.6;
     ball.vx = ball.vz = ball.vy = 0;
@@ -3687,7 +3751,7 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     // Grade (4.1.2): escala o alambrado até ~1,3 m, segura lá em cima e fica balançando.
     A.nx = alvo.nx; A.nz = alvo.nz;
     A.bx = alvo.nx ? alvo.nx * BOARD_X : clamp(u.x, -BOARD_X + 2, BOARD_X - 2);
-    A.bz = alvo.nz ? alvo.nz * BOARD_Z : clamp(u.z, -BOARD_Z + 2, BOARD_Z - 2);
+    A.bz = alvo.nz ? alvo.nz * limZ(alvo.nz) : clamp(u.z, -BOARD_ZN + 2, BOARD_Z - 2);
     A.px = A.bx - A.nx * 0.55; A.pz = A.bz - A.nz * 0.55;   // de frente para a placa
     A.olhaPlaca = Math.atan2(A.nz, A.nx); A.olhaCampo = Math.atan2(-A.nz, -A.nx);
     A.dur = 5.0;
@@ -4004,8 +4068,8 @@ function kickoff(team) {
   G.userRequest = 0;
   G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null;
   esconderRecepcao(); user.recvPose = null;
-  for (const sp of spares) if (!sp.present) { sp.present = true; sp.fade = 1; }
-  lostBall.life = 0;
+  for (const sp of spares.concat(conesBola)) if (!sp.present) { sp.present = true; sp.fade = 1; }
+  lostBall.life = 0; ball.hidden = false;
   setLetterbox(false); $('skipBtn').hidden = true; $('cineLabel').textContent = '';
   if (taker.isUser) showToast('Saída de bola: aperte PASSAR para tocar no ' + partner.name);
   G.state = 'play'; G.targetScale = 1; G.timeScale = 1;
@@ -4143,22 +4207,24 @@ function updateRestart(dt) {
   if (!S || G.state !== 'restart') return;
   const p = S.taker;
   S.t += dt;
+  if (S.phase !== 'set' && S.t > 14) { skipRestart(); return; }   // segurança: nunca trava
+  // (4.1.3) Quem vai cobrar está no chão (goleiro depois do mergulho, jogador depois da falta)?
+  // Primeiro termina a animação e LEVANTA; só então vai buscar a bola. Antes ele era "travado"
+  // na pose do último quadro e ia andando deitado.
+  if (S.phase === 'fetch' && levantandoParaCobrar(p, dt)) { S.t -= dt; return; }
   if (S.phase === 'fetch' && (S.kind === 'falta' || S.kind === 'penalti')) {
     // Falta: a bola já está no lugar; o cobrador só vai até ela.
     if (walkTo(p, S.stand.x, S.stand.z, 5.5, dt)) { S.phase = 'set'; S.t = 0; }
   } else if (S.phase === 'fetch') {
-    // Bola longe do local da cobrança? Quando o cobrador chega perto, o gandula rola a bola para ele.
-    const ballFar = !S.onRack && dist2D(ball, S.stand) > 6;   // no tiro de meta a bola já está no suporte
-    if (ballFar && !S.gandula && dist2D(p, S.stand) < 12) {
-      const dx = p.x - ball.x, dz = p.z - ball.z, d = Math.hypot(dx, dz) || 1;
-      const sp = clamp(d * 0.8, 4, 16);
-      ball.vx = dx / d * sp; ball.vz = dz / d * sp; ball.vy = 2.5;
-      S.gandula = true;
-    }
+    // (4.1.3) Bola saiu do estádio ou foi parar longe: em vez de "o gandula devolver", usa uma
+    // RESERVA — lateral: a bola do cone mais perto; escanteio: o goleiro adversário pega a dele
+    // (no suporte atrás do gol) e joga para quem vai cobrar.
+    const foraDoEstadio = Math.abs(ball.x) > BOARD_X + 0.3 || ball.z > BOARD_Z + 0.3 || ball.z < -(BOARD_ZN + 0.3);
+    if (!S.onRack && !S.reserva && !ball.hidden && (foraDoEstadio || dist2D(ball, S.stand) > 10) && (S.kind === 'lateral' || S.kind === 'escanteio')) iniciarReserva(S);
+    if (S.reserva && atualizarReserva(S, p, dt)) return;
     // Vai até a bola (mirando um pouco à frente se ela ainda rola); se ela está longe, vai para o local.
     let tx, tz;
-    if (ballFar && !S.gandula) { tx = S.stand.x; tz = S.stand.z; }
-    else {
+    {
       const bx = ball.x + ball.vx * 0.3, bz = ball.z + ball.vz * 0.3;
       const dx = bx - p.x, dz = bz - p.z, d = Math.hypot(dx, dz) || 1;
       tx = bx - dx / d * 0.55; tz = bz - dz / d * 0.55;
@@ -4184,11 +4250,99 @@ function updateRestart(dt) {
   if (S.phase !== 'set' && S.t > 12) skipRestart();  // segurança: nunca trava
 }
 
+function levantandoParaCobrar(p, dt) {
+  if (p.diveT > 0) { p.diveT -= dt; const k = Math.max(0, p.diveT / (p.diveDur || 0.5)); p.x += (p.diveVX || 0) * k * dt; p.z += (p.diveVZ || 0) * k * dt; if (p.diveT <= 0) { p.fall = Math.max(p.fall, 1); p.fallKind = p.fallKind === 'frente' ? 'frente' : 'lado'; p.fallSide = p.diveSide || 1; } return true; }
+  if (p.falling) { p.fall = Math.min(1, p.fall + dt * 2.8); if (p.fall >= 1) p.falling = false; return true; }
+  if (p.perda) { p.perda.t += dt; if (p.perda.t >= p.perda.dur) p.perda = null; return true; }
+  if (p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); return true; }
+  if (p.fall > 0) { p.fall = Math.max(0, p.fall - dt * 2.2); p.vx = p.vz = 0; return true; }   // levantando
+  p.stun = 0;
+  return false;
+}
+
+// Começa a reposição com bola reserva (a bola do jogo vira "bola perdida" e some aos poucos).
+function iniciarReserva(S) {
+  Object.assign(lostBall, { x: ball.x, y: ball.y, z: ball.z, vx: ball.vx, vy: ball.vy, vz: ball.vz, life: 4 });
+  ball.hidden = true; ball.vx = ball.vz = ball.vy = 0;
+  if (S.kind === 'lateral') {
+    const lado = conesBola.filter((c) => c.zs === S.zs);
+    const cone = lado.filter((c) => c.present).sort((a, b) => Math.abs(a.x - S.stand.x) - Math.abs(b.x - S.stand.x))[0]
+      || lado.sort((a, b) => Math.abs(a.x - S.stand.x) - Math.abs(b.x - S.stand.x))[0];
+    S.reserva = { cone };
+  } else {
+    const gk = TEAMS[1 - S.team].find((q) => q.role === 'GK' && !q.out);
+    const rack = spareOf(S.side);
+    if (!gk) { S.reserva = { rack, direto: true }; return; }
+    gk.scripted = true; gk.carry = false;
+    S.reserva = { gk, rack, fase: 'vai', t: 0 };
+  }
+}
+// Atualiza a reposição. Devolve true quando o cobrador já foi cuidado neste quadro.
+function atualizarReserva(S, p, dt) {
+  const R = S.reserva;
+  if (R.cone) {
+    if (!ball.hidden) return false;                // já está com ele (fase 'carry' cuida)
+    const c = R.cone, alvo = { x: c.x, z: c.z - c.zs * 0.55 };   // do lado de dentro do cone
+    walkTo(p, alvo.x, alvo.z, dist2D(p, alvo) > 10 ? 7 : 5, dt);
+    if (dist2D(p, alvo) < 0.35) {
+      c.present = false; ball.hidden = false;
+      Object.assign(ball, { x: c.x, y: 0.48 + CONFIG.BALL_R, z: c.z, vx: 0, vy: 0, vz: 0 });
+      S.phase = 'carry'; S.t = 0; p.carry = true;
+    }
+    return true;
+  }
+  if (R.direto) {                                  // (sem goleiro) a reserva aparece no canto
+    R.rack.present = false; ball.hidden = false;
+    Object.assign(ball, { x: S.ballSpot.x, y: CONFIG.BALL_R, z: S.ballSpot.z, vx: 0, vy: 0, vz: 0 });
+    S.reserva = { rack: R.rack, feito: true };
+    return false;
+  }
+  if (R.feito) return false;
+  const gk = R.gk, rk = R.rack.mesh.position;
+  R.t += dt;
+  // O cobrador vai para o canto e espera virado para o goleiro.
+  if (R.fase !== 'voando') {
+    walkTo(p, S.stand.x, S.stand.z, dist2D(p, S.stand) > 10 ? 7 : 5, dt);
+    if (dist2D(p, S.stand) < 0.2) p.angle = turnToward(p.angle, Math.atan2(gk.z - p.z, gk.x - p.x), 6 * dt);
+  }
+  if (R.fase === 'vai') {
+    const alvo = { x: rk.x - S.side * 0.55, z: rk.z };
+    walkTo(gk, alvo.x, alvo.z, 5, dt);
+    if (dist2D(gk, alvo) < 0.3 || R.t > 6) {
+      R.rack.present = false; ball.hidden = false; R.fase = 'lanca'; R.t = 0;
+    }
+  } else if (R.fase === 'lanca') {
+    gk.vx = gk.vz = 0;
+    gk.angle = turnToward(gk.angle, Math.atan2(p.z - gk.z, p.x - gk.x), 8 * dt);
+    const f = gk.angle;
+    Object.assign(ball, { x: gk.x + Math.cos(f) * 0.35, y: 1.25, z: gk.z + Math.sin(f) * 0.35, vx: 0, vy: 0, vz: 0 });
+    gk.carry = true;
+    // Joga quando o cobrador chegou no canto (ou depois de 6 s, por segurança).
+    if ((dist2D(p, S.stand) < 0.5 && R.t > 0.5) || R.t > 6) {
+      const dx = p.x - ball.x, dz = p.z - ball.z, d = Math.hypot(dx, dz) || 1;
+      const T = clamp(0.55 + d * 0.045, 0.8, 1.6), y1 = 1.1;
+      ball.vx = dx / T; ball.vz = dz / T; ball.vy = (y1 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
+      ball.lastKicker = gk; gk.carry = false; gk.throwAnim = 0.3; gk.scripted = false;
+      R.fase = 'voando'; S.gandula = true;
+      Som.toque(0.2);
+    }
+    return true;
+  }
+  return R.fase !== 'voando';
+}
+
 // "Pular": o cobrador já aparece no lugar com a bola; os outros continuam andando normalmente.
 function skipRestart() {
   const S = G.sp;
   if (!S || G.state !== 'restart') return;
   const p = S.taker;
+  if (S.reserva) {                                  // pulou no meio da reposição
+    const R = S.reserva;
+    if (R.cone) R.cone.present = false;
+    if (R.rack) R.rack.present = false;
+    if (R.gk) { R.gk.scripted = false; R.gk.carry = false; }
+    ball.hidden = false;
+  }
   p.x = S.stand.x; p.z = S.stand.z; p.angle = S.face; p.carry = false; S.onRack = false;
   if (S.kind === 'lateral' && !S.pe) p.throwIn = true;
   startSetPieceWait();
@@ -6698,8 +6852,8 @@ function cameraGoal() {
   // A câmera nunca vai para trás das placas (lá ela ficaria dentro da torcida e você não veria
   // nada — era o que acontecia no lateral e no escanteio). Se passar, ela para na placa e sobe.
   let px = user.x - fx * back, pz = user.z - fz * back;
-  const sx = Math.max(0, Math.abs(px) - (BOARD_X - 0.8)), sz = Math.max(0, Math.abs(pz) - (BOARD_Z - 0.8));
-  if (sx || sz) { px = clamp(px, -(BOARD_X - 0.8), BOARD_X - 0.8); pz = clamp(pz, -(BOARD_Z - 0.8), BOARD_Z - 0.8); h += (sx + sz) * 0.7; }
+  const sx = Math.max(0, Math.abs(px) - (BOARD_X - 0.8)), sz = Math.max(0, pz > 0 ? pz - (BOARD_Z - 0.8) : -pz - (BOARD_ZN - 0.8));
+  if (sx || sz) { px = clamp(px, -(BOARD_X - 0.8), BOARD_X - 0.8); pz = clamp(pz, -(BOARD_ZN - 0.8), BOARD_Z - 0.8); h += (sx + sz) * 0.7; }
   return { px, py: h, pz, tx: user.x + fx * ahead, ty: c.lookY, tz: user.z + fz * ahead };
 }
 
@@ -7218,6 +7372,7 @@ function frame(now) {
   particulas.atualizar(rdt);
   atualizarTecnicos(rdt);
   atualizarBanco(rdt);
+  ajustarSombras();
   Som.torcida(nivelTorcida());                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
@@ -7336,6 +7491,7 @@ function montarFormacao(chave, nLinha) {
 
 // Tira do jogo (e da memória da placa de vídeo) um boneco.
 function descartarBoneco(raiz) {
+  if (raiz.userData.atleta) ATLETAS.delete(raiz.userData.atleta);
   scene.remove(raiz);
   raiz.traverse((o) => {
     if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose();
@@ -7357,6 +7513,7 @@ function montarEstadio() {
   if (tipo === 'arena') { buildBoards(); buildStands(); } else buildArredores(tipo);
   buildGoal(-1); buildGoal(1);
   construirBancos();
+  montarCones();
   for (const sp of spares) sp.mesh.position.set(sp.side * (HALF_L + 1.6), 0.5 + CONFIG.BALL_R, GOAL_HALF + 2.5);
 }
 
@@ -7398,21 +7555,21 @@ function buildArredores(tipo) {
     R.uv.push(0, rv, rep, rv, 0, 0, rep, 0);
     R.idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
   };
-  const X = BOARD_X, Z = BOARD_Z;
-  parede(-X, -Z, X, -Z); parede(-X, Z, X, Z); parede(-X, -Z, -X, Z); parede(X, -Z, X, Z);
+  const X = BOARD_X, Z = BOARD_Z, Zn = BOARD_ZN, Zs = (s) => (s < 0 ? Zn : Z);   // (4.1.3) lado do banco mais largo
+  parede(-X, -Zn, X, -Zn); parede(-X, Z, X, Z); parede(-X, -Zn, -X, Z); parede(X, -Zn, X, Z);
   const tela = R.malha(telaMat); ESTADIO.add(tela); freeze(tela);
   // Postes do alambrado e cano de cima.
   const corPoste = varzea ? 0x8a9096 : 0x2b3a2e;
-  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Z);
-  for (let z = -Z; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
-  for (const s of [-1, 1]) { E.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Z); E.caixa(0.07, 0.07, Z * 2, corPoste, s * X, ALT, 0); }
+  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s));
+  for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
+  for (const s of [-1, 1]) { E.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); E.caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
   // Arquibancadinha (num dos lados compridos, z > 0): degraus de cimento.
   const degraus = varzea ? 3 : 2, compr = Math.min(varzea ? 34 : 22, X * 1.4);
   for (let r = 0; r < degraus; r++) E.caixa(compr, 0.45 * (r + 1), 0.9, r % 2 ? 0x9a978f : 0x8c8a83, 0, 0.225 * (r + 1), Z + 1.6 + r * 0.9);
   // Postes de luz (4 nos cantos + 2 no meio). Na várzea de madeira, mais baixos.
   const altLuz = varzea ? 9 : 8, corLuz = varzea ? 0x6b4a2b : 0x59606b;
   for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) {
-    const x = sx * (X + 1.5), z = sz * (Z + (sx === 0 ? 5 : 1.5));
+    const x = sx * (X + 1.5), z = sz * (Zs(sz) + (sx === 0 ? 5 : 1.5));
     E.caixa(0.25, altLuz, 0.25, corLuz, x, altLuz / 2, z);
     Lp.caixa(1.6, 0.6, 0.6, 0xfff3c4, x, altLuz + 0.2, z);
   }
@@ -7444,9 +7601,9 @@ function buildArredores(tipo) {
   const tor = (x, y, z, dx, dz, emPe) => crowd.torcedor(x, y, z, dx, dz, Math.random() < 0.65 ? casa : 1 - casa, emPe, ang(x, z));
   for (const s of [-1, 1]) for (let x = -X + 1; x < X; x += 0.8) for (let fila = 0; fila < 2; fila++) {
     if (s > 0 && Math.abs(x) < compr / 2) continue;                       // ali é a arquibancadinha
-    if (Math.random() < ocup * (fila ? 0.6 : 1)) tor(x + rand(-0.2, 0.2), 0, s * (Z + 0.7 + fila * 0.9), 0, -s, true);
+    if (Math.random() < ocup * (fila ? 0.6 : 1)) tor(x + rand(-0.2, 0.2), 0, s * (Zs(s) + 0.7 + fila * 0.9), 0, -s, true);
   }
-  for (const s of [-1, 1]) for (let z = -Z + 1; z < Z; z += 0.8) if (Math.random() < ocup * 0.5) tor(s * (X + 0.8), 0, z + rand(-0.2, 0.2), -s, 0, true);
+  for (const s of [-1, 1]) for (let z = -Zn + 1; z < Z; z += 0.8) if (Math.random() < ocup * 0.5) tor(s * (X + 0.8), 0, z + rand(-0.2, 0.2), -s, 0, true);
   for (let r = 0; r < degraus; r++) for (let x = -compr / 2 + 0.5; x < compr / 2; x += 0.75) {
     if (Math.random() < Math.min(0.95, ocup * 1.7)) tor(x + rand(-0.12, 0.12), 0.45 * (r + 1), Z + 1.75 + r * 0.9, 0, -1, Math.random() < 0.4);
   }
@@ -7460,7 +7617,7 @@ const BANCOS = [];
 // Society (4.1.2): sem banco, técnico e reservas à vista (depois isso vira dado do campo).
 const temBanco = (P) => !!P && (P.campo.estadio || 'arena') !== 'society';
 function construirBancos() {
-  const L = new Lote(), z = -(HALF_W + 2.9);
+  const L = new Lote(), z = -(HALF_W + LADO_BANCO.banco);
   BANCOS.length = 0;
   if (!temBanco(PARTIDA)) return;
   for (const sx of [-1, 1]) {
@@ -7491,7 +7648,7 @@ function montarTecnicos(P) {
       pele: A.pele || '#BF8159', cabelo: A.cabelo || '#1C140F', estilo: A.estilo || 0, nome: T.nome, fundoNome: 'rgba(20,20,20,0.85)', emblema: P.timesObj[team].emblema });
     mesh.etiqueta.visible = false;
     scene.add(mesh.raiz);
-    const x = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25) + (team === 0 ? 3.2 : -3.2), z = -(HALF_W + 1.6);
+    const x = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25) + (team === 0 ? 3.2 : -3.2), z = -(HALF_W + LADO_BANCO.tecnico);
     tecnicos.push({ team, mesh, x, z, nome: T.nome, gestoT: 0, passo: 0, acao: 'cintura', acaoT: rand(4, 7), alvoX: x, passoT: rand(2, 5), relogio: 0, pv: null });
     mesh.raiz.position.set(x, 0, z);
   });
@@ -7870,8 +8027,8 @@ function montarTimes(P) {
 const reservasBanco = [];
 const BANCO_SENTA_Y = -0.185;                      // quadril a 0,555 m (assento a 0,45 m) — conferido sem atravessar o banco
 function bancoX(team) { return (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25); }
-function assentoBanco(team, i) { return { x: bancoX(team) + (i - 2) * 0.95, z: -(HALF_W + 2.9) - 0.08 }; }
-function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: bancoX(team) - s * (0.6 + k * 0.8), z: -(HALF_W + 1.4) }; }
+function assentoBanco(team, i) { return { x: bancoX(team) + (i - 2) * 0.95, z: -(HALF_W + LADO_BANCO.banco) - 0.08 }; }
+function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: bancoX(team) - s * (0.6 + k * 0.8), z: -(HALF_W + LADO_BANCO.espera) }; }
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
@@ -7893,15 +8050,18 @@ function montarReservasBanco(P) {
   }
 }
 // Quem saiu senta no banco (no primeiro lugar livre), andando da linha até lá.
-function sentarNoBanco(sai, team) {
+function sentarNoBanco(sai, team, direto) {
   if (!PARTIDA || !temBanco(PARTIDA)) return;
-  const ocup = new Set(reservasBanco.filter((d) => d.team === team).map((d) => d.assento));
+  // Lugar livre = nenhum boneco com esse lugar, a não ser quem já está entrando em campo (saiu da
+  // lista de reservas: o boneco dele some no próximo quadro e o lugar fica para quem sai).
+  const ocup = new Set(reservasBanco.filter((d) => d.team === team && (d.saiu || PARTIDA.reservas[team].includes(d.j))).map((d) => d.assento));
   let i = [0, 1, 2, 3, 4].find((k) => !ocup.has(k));
   if (i === undefined) return;
   const j = sai.isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
   const lado = Math.sign(sai.x - bancoX(team)) || 1;
+  const a = assentoBanco(team, i);
   reservasBanco.push({ team, j, assento: i, saiu: true, mancando: !!sai.mancando, mesh: bonecoDoBanco(PARTIDA, team, j, sai.role, sai.numero, sai.isUser),
-    x: clamp(sai.x, bancoX(team) - 6, bancoX(team) + 6), z: Math.min(sai.z, -(HALF_W + 0.8)), ang: Math.atan2(-1, 0), sentado: 0, pose: 'joelhos', anim: 0, fase: Math.random() * 6 });
+    x: direto ? a.x : clamp(sai.x, bancoX(team) - 6, bancoX(team) + 6), z: direto ? a.z : Math.min(sai.z, -(HALF_W + 0.8)), ang: direto ? Math.PI / 2 : Math.atan2(-1, 0), sentado: direto ? 1 : 0, pose: 'joelhos', anim: 0, fase: Math.random() * 6 });
 }
 function atualizarBanco(dt) {
   if (!PARTIDA || !reservasBanco.length) return;
@@ -7918,8 +8078,14 @@ function atualizarBanco(dt) {
     // Já entrou em campo (saiu da lista de reservas): o boneco some (o jogador de verdade assume).
     if (!d.saiu && !PARTIDA.reservas[d.team].includes(d.j)) { descartarBoneco(d.mesh.raiz); reservasBanco.splice(n, 1); continue; }
     const k = d.saiu ? undefined : chamados.get(d.j);
-    const alvo = k !== undefined ? esperaBanco(d.team, k) : assentoBanco(d.team, d.assento);
+    const final = k !== undefined ? esperaBanco(d.team, k) : assentoBanco(d.team, d.assento);
     const espera = k !== undefined;
+    // (4.1.3) Corredor na frente do banco: para entrar ou sair do lugar, primeiro vai reto para a
+    // frente do próprio lugar e anda pelo corredor — nunca passa por cima de quem está sentado.
+    const corredor = assentoBanco(d.team, 0).z + 1.1, naFileira = d.z < corredor - 0.3;
+    let alvo = final;
+    if (!espera && Math.abs(d.x - final.x) > 0.12) alvo = naFileira ? { x: d.x, z: corredor } : { x: final.x, z: corredor };
+    else if (espera && naFileira) alvo = { x: d.x, z: corredor };
     const dx = alvo.x - d.x, dz = alvo.z - d.z, dist = Math.hypot(dx, dz);
     let andando = false;
     if (dist > 0.04) {
@@ -7933,15 +8099,15 @@ function atualizarBanco(dt) {
     } else {
       d.x = alvo.x; d.z = alvo.z;
       d.ang = turnToward(d.ang, Math.PI / 2, 6 * dt);                              // de frente para o campo
-      if (!espera && Math.abs(Math.atan2(Math.sin(d.ang - Math.PI / 2), Math.cos(d.ang - Math.PI / 2))) < 0.15) { d.ang = Math.PI / 2; d.sentado = Math.min(1, d.sentado + dt / 0.45); }
+      if (!espera && alvo === final && Math.abs(Math.atan2(Math.sin(d.ang - Math.PI / 2), Math.cos(d.ang - Math.PI / 2))) < 0.15) { d.ang = Math.PI / 2; d.sentado = Math.min(1, d.sentado + dt / 0.45); }
     }
-    if (espera && dist < 0.3) alguemEsperando = true;
-    posarBoneco(d, andando, espera && dist <= 0.04, dt);
+    if (espera && alvo === final && dist < 0.3) alguemEsperando = true;
+    posarBoneco(d, andando, espera && alvo === final && dist <= 0.04, dt);
   }
   // Quarto árbitro aparece na linha enquanto alguém espera para entrar (a placa só na cena da troca).
   if (alguemEsperando && G.state !== 'subst') {
     const it = G.subsFila[0];
-    if (it) { const q = garantirQuartoArbitro(), s = it.team === 0 ? 1 : -1; q.raiz.visible = true; q.raiz.position.set(bancoX(it.team) + s * 1.8, 0, -(HALF_W + 1.2)); q.raiz.rotation.y = -Math.PI / 2;
+    if (it) { const q = garantirQuartoArbitro(), s = it.team === 0 ? 1 : -1; q.raiz.visible = true; q.raiz.position.set(bancoX(it.team) + s * 1.8, 0, -(HALF_W + LADO_BANCO.quarto)); q.raiz.rotation.y = -Math.PI / 2;
       q.bracoD.rotation.z = q.bracoE.rotation.z = 0.15; q.bracoD.rotation.x = -0.1; q.bracoE.rotation.x = 0.1; }
   } else if (quartoArbitro && G.state !== 'subst') quartoArbitro.raiz.visible = false;
 }
@@ -8099,7 +8265,7 @@ function executarTrocaDireto(item) {
   if (!players.includes(item.sai)) return;
   const entra = trocarNasListas(item);
   descartarBoneco(item.sai.mesh.raiz);
-  sentarNoBanco(item.sai, item.team);
+  sentarNoBanco(item.sai, item.team, true);
   entra.x = item.sai.x; entra.z = item.sai.z;
   if (item.sai.isUser) { item.sai.x = 999; item.sai.z = 999; }
   CORPOS = players.concat(officials);
@@ -8127,7 +8293,7 @@ const placaTroca = (() => {
 let quartoArbitro = null;
 function iniciarSubstituicao(item) {
   const sai = item.sai, team = item.team;
-  const bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + 0.2);
+  const bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + LADO_BANCO.espera - 0.9);
   const entra = trocarNasListas(item);
   const ep = esperaBanco(team, 0);                 // (4.1.2) é onde o reserva estava esperando
   entra.x = ep.x; entra.z = ep.z; entra.angle = Math.PI / 2; entra.scripted = true;
@@ -8135,10 +8301,11 @@ function iniciarSubstituicao(item) {
   garantirQuartoArbitro();
   quartoArbitro.raiz.visible = true;
   const qx = bx + (team === 0 ? 1.8 : -1.8);       // o quarto árbitro fica do lado, sem tapar o "toca aqui"
-  quartoArbitro.raiz.position.set(qx, 0, -(HALF_W + 1.2)); quartoArbitro.raiz.rotation.y = -Math.PI / 2;
+  quartoArbitro.raiz.position.set(qx, 0, -(HALF_W + LADO_BANCO.quarto)); quartoArbitro.raiz.rotation.y = -Math.PI / 2;
   quartoArbitro.bracoD.rotation.z = 2.5; quartoArbitro.bracoE.rotation.z = 2.5; quartoArbitro.bracoD.rotation.x = 0.2; quartoArbitro.bracoE.rotation.x = -0.2;
-  placaTroca.mostrar(qx, -(HALF_W + 0.8), sai.numero, entra.numero);
-  G.subst = { t: 0, item, sai, entra, bx, linhaZ, alvoSai: { x: bx + (team === 0 ? -0.5 : 0.5), z: linhaZ }, estadoAntes: G.state, tocou: false };
+  placaTroca.mostrar(qx, -(HALF_W + LADO_BANCO.placaTroca), sai.numero, entra.numero);
+  // (4.1.3) Quem sai vai até a frente de quem entra (0,9 m mais para o campo), SEM limite de tempo.
+  G.subst = { t: 0, fase: 'placa', item, sai, entra, bx, qx, linhaZ, alvoSai: { x: entra.x, z: linhaZ }, estadoAntes: G.state, tocou: false };
   CORPOS = players.concat(officials, [sai]);       // quem sai continua sendo desenhado até sumir
   G.state = 'subst'; G.targetScale = 1;
   setLetterbox(true);
@@ -8146,10 +8313,16 @@ function iniciarSubstituicao(item) {
   $('cineLabel').textContent = 'SUBSTITUIÇÃO · ' + PARTIDA.timesObj[team].sigla + ' · sai ' + (sai.isUser ? 'você' : sai.name) + ' (' + sai.numero + '), entra ' + entra.name + ' (' + entra.numero + ')' + (item.motivo === 'lesão' ? ' · lesão' : '');
   Som.apito(0.25);
 }
+// Cena da troca (4.1.3), em fases — cada uma só acaba quando a anterior aconteceu DE VERDADE:
+//   'placa' (1,3 s) .. câmera na placa do quarto árbitro; quem sai já começa a andar
+//   'sai' ............ câmera acompanha quem sai até ele chegar na frente de quem entra (sem
+//                      tempo limite: se ele estava longe, a câmera vai junto; dá para pular)
+//   'toque' (0,6 s) .. os dois de frente batem as mãos
+//   'troca' (1,4 s) .. quem entra corre para o lugar dele; quem sai vai para o banco (e senta)
 function atualizarSubstituicao(rdt) {
   const S = G.subst;
   if (!S) return;
-  S.t += rdt;
+  S.t += rdt; S.tf = (S.tf || 0) + rdt;
   const sai = S.sai, entra = S.entra;
   const andar = (p, alvo, v, dt) => {
     const dx = alvo.x - p.x, dz = alvo.z - p.z, d = Math.hypot(dx, dz);
@@ -8157,27 +8330,25 @@ function atualizarSubstituicao(rdt) {
     const s = Math.min(v, d / dt);
     p.vx = dx / d * s; p.vz = dz / d * s; p.x += p.vx * dt; p.z += p.vz * dt;
     p.angle = turnToward(p.angle, Math.atan2(dz, dx), 8 * dt); p.anim += s * 2.6 * dt;
-    return d < 0.35;
+    return d < 0.1;
   };
-  if (!S.tocou) {
-    const vSai = sai.mancando ? 1.6 : 3.2;
-    const chegou = andar(sai, S.alvoSai, vSai, rdt) || S.t > 4.5;
-    if (chegou) { S.tocou = true; S.tToque = S.t; Som.toque(0.5); }
+  const mudar = (f) => { S.fase = f; S.tf = 0; };
+  entra.vx = entra.vz = 0;
+  if (S.fase === 'placa' || S.fase === 'sai') {
+    const longe = dist2D(sai, S.alvoSai) > 12;
+    const chegou = andar(sai, S.alvoSai, sai.mancando ? (longe ? 3.0 : 2.0) : longe ? 6.5 : 4.2, rdt);   // longe: vem trotando (machucado, mancando)
     entra.angle = turnToward(entra.angle, Math.atan2(sai.z - entra.z, sai.x - entra.x), 6 * rdt);
+    if (S.fase === 'placa' && S.tf > 1.3) mudar('sai');
+    if (S.fase === 'sai' && chegou) { mudar('toque'); S.tocou = true; Som.toque(0.5); }
+  } else if (S.fase === 'toque') {
+    sai.vx = sai.vz = 0;
+    sai.angle = Math.atan2(entra.z - sai.z, entra.x - sai.x); entra.angle = Math.atan2(sai.z - entra.z, sai.x - entra.x);
+    sai.jumpT = 0; G.substToque = [sai, entra];
+    if (S.tf > 0.6) { G.substToque = null; mudar('troca'); }
   } else {
-    const k = S.t - S.tToque;
-    // Os dois de frente, mão para cima ("toca aqui") por 0,5 s.
-    const toque = k < 0.5;
-    for (const p of [sai, entra]) { p.vx = p.vz = 0; }
-    if (toque) {
-      sai.angle = Math.atan2(entra.z - sai.z, entra.x - sai.x); entra.angle = Math.atan2(sai.z - entra.z, sai.x - entra.x);
-      sai.jumpT = 0; G.substToque = [sai, entra];
-    } else {
-      G.substToque = null;
-      andar(entra, { x: entra.slotF ? entra.base.x * entra.dir : entra.x, z: entra.base.z * entra.dir }, 6, rdt);
-      andar(sai, { x: S.bx, z: -(HALF_W + 3) }, sai.mancando ? 1.6 : 2.6, rdt);
-    }
-    if (k > 1.8) terminarSubstituicao();
+    andar(entra, { x: entra.slotF ? entra.base.x * entra.dir : entra.x, z: entra.base.z * entra.dir }, 6, rdt);
+    andar(sai, { x: sai.x + (S.bx - sai.x) * 0.2, z: -(HALF_W + LADO_BANCO.espera + 0.6) }, sai.mancando ? 1.6 : 2.4, rdt);
+    if (S.tf > 1.4) terminarSubstituicao();
   }
 }
 function terminarSubstituicao() {
@@ -8185,10 +8356,12 @@ function terminarSubstituicao() {
   if (!S) return;
   G.subst = null; G.substToque = null;
   descartarBoneco(S.sai.mesh.raiz);
-  sentarNoBanco(S.sai, S.item.team);               // (4.1.2) quem saiu vai sentar no banco
+  const pulouCena = S.fase !== 'troca';
+  sentarNoBanco(S.sai, S.item.team, pulouCena);    // quem saiu vai sentar no banco (pulou a cena: já sentado)
   if (S.sai.isUser) { S.sai.x = 999; S.sai.z = 999; }
   S.entra.scripted = false;
-  if (S.t < 0.8) { S.entra.x = S.bx; S.entra.z = -(HALF_W - 1); }   // pulou: já entra em campo
+  const pulou = S.fase !== 'troca';
+  if (pulou) { S.entra.z = -(HALF_W - 1); S.entra.angle = Math.PI / 2; }   // pulou: já entra em campo
   CORPOS = players.concat(officials);
   placaTroca.esconder();
   if (quartoArbitro) quartoArbitro.raiz.visible = false;
@@ -8198,10 +8371,17 @@ function terminarSubstituicao() {
   G.state = S.estadoAntes;
   if (S.item.sai.isUser) mostrarAvisoEspectador();
 }
-// Câmera da troca: do campo, olhando a linha lateral (o banco e o quarto árbitro ao fundo).
+// Câmera da troca: na placa; depois acompanha quem sai; no "toca aqui", os dois com o banco atrás.
 function cameraSubstituicao() {
-  const S = G.subst;
-  return { px: S.bx + 3.5, py: 2.3, pz: -(HALF_W) + 7.5, tx: S.bx, ty: 1.2, tz: -(HALF_W + 0.6) };
+  const S = G.subst, sai = S.sai;
+  if (S.fase === 'placa') return { px: S.qx + 2.6, py: 2.0, pz: -(HALF_W) + 3.5, tx: S.qx, ty: 1.9, tz: -(HALF_W + LADO_BANCO.quarto) };
+  if (S.fase === 'sai') {
+    // Atrás e um pouco acima de quem sai, olhando para onde ele vai (o banco e quem entra ao fundo).
+    const dx = S.alvoSai.x - sai.x, dz = S.alvoSai.z - sai.z, d = Math.hypot(dx, dz) || 1, k = Math.min(1, d / 6);
+    return { px: sai.x - dx / d * 5.5 * k + 2.5, py: 3.6, pz: sai.z - dz / d * 5.5 * k + 5 * (1 - k) + 1.5, tx: sai.x + dx / d * 2 * k, ty: 1.0, tz: sai.z + dz / d * 2 * k };
+  }
+  const mx = (S.entra.x + sai.x) / 2;
+  return { px: mx + 3.2, py: 2.1, pz: -(HALF_W) + 5.5, tx: mx, ty: 1.2, tz: -(HALF_W + LADO_BANCO.espera - 0.4) };
 }
 
 // ---------------------------------------------------------------------
