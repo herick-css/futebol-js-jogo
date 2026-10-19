@@ -1,0 +1,117 @@
+FUTEBOL JS — protótipo do sistema de partida
+=============================================
+
+ARQUIVOS
+  jogo.js ............... o jogo inteiro (código comentado em português; CSS e tela entram por JS)
+  versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
+  index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
+  three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)
+  canva-carregador.html . o HTML pequeno que fica no Canva Code (busca o jogo.js no GitHub)
+  imagens/ .............. logo.png (a logo jogabunito em tamanho grande; o jogo usa uma cópia
+                          menor embutida no próprio jogo.js, por isso não precisa deste arquivo)
+  modelos/ .............. jogadores.glb e celebracoes.glb (para o Blender; o jogo não precisa)
+  ferramentas/ .......... gerar_jogadores_glb.py (gera os .glb de novo)
+
+ATUALIZAR O JOGO
+  Suba o jogo.js e o versao.txt novos nesta pasta do GitHub (substituindo os antigos).
+  - No Canva: em até uns 5 minutos o link já abre a versão nova. Quem estiver com o jogo
+    aberto vê o aviso "Nova versão disponível · toque para atualizar".
+  - Na tela inicial do jogo aparece: "versão X · carregador 1.0 · github".
+    Se aparecer "jsdelivr" no lugar de "github", a rede bloqueou o GitHub e o jogo veio pelo
+    caminho reserva, que pode demorar horas para atualizar. Para forçar, abra uma vez:
+    https://purge.jsdelivr.net/gh/herick-css/futebol-js-jogo@main/futebol-js/jogo.js
+
+RODAR SEM O CANVA
+  Abra o index.html (funciona sem internet). Ou ative o GitHub Pages do repositório
+  (Settings → Pages → main / root) e use:
+  https://herick-css.github.io/futebol-js-jogo/futebol-js/
+
+CONTROLES NO COMPUTADOR
+  WASD ou setas: andar · Shift: correr · J: chutar/cruzar · K: passar · L: driblar
+  E: pedir a bola / desarmar · Q: carrinho · C: câmera · Espaço: bater no domínio
+  1 e 2: comemorações · Esc: pausa (na pausa dá para trocar a tática do seu time)
+
+SISTEMA DE PARTIDA (4.0.0)
+  Tudo o que muda de um jogo para outro é DADO, no começo do jogo.js (seção 1b):
+    CAMPOS (tamanho, nº de jogadores, gol, aparência) · TIMES (uniformes, nome, sigla, emblema,
+    força, popularidade, formação, tática, técnico) · FORMACOES · TATICAS · DIFICULDADES · NOMES.
+  Na tela inicial: botão "CONFIGURAÇÕES" (4.1.1; antes "OPÇÕES DA PARTIDA") mostra tudo o que já dá para mudar em
+    botões (times, campo, clima, horário, gramado, competição, tempo, dificuldade, posição,
+    formação, tática) e, tracejado, o que ainda vem ("EM BREVE": bola, uniforme, árbitro...).
+    Para tirar/pôr um placeholder: lista SELECAO_EM_BREVE no jogo.js. As escolhas ficam salvas
+    no aparelho. "AVANÇADO (LISTAS)" é o mesmo, em listas.
+  No modo história (ou no console do navegador):
+    FutebolJS.novaPartida({
+      times: ['azulao', 'leoes'], campo: 'varzea', mandante: 1,
+      competicao: { tipo: 'copa', nome: 'Copa da Vila', fase: 'Semifinal', mataMata: true, jogo: 'volta', placarIda: [1, 2] },
+      dificuldade: 'dificil', clima: 'chuva', gramado: 'alto', horario: 'tarde', duracao: 300 (ou 180),
+      usuario: { nome: 'Herick', posicao: 'MID', autocuidado: 0.7, ordemPenalti: 1 },
+      taticas: ['contra', null], formacoes: ['4-3-3', null],
+    })
+    FutebolJS.cadastrarTime({ id: 'novo', ... })      (mesmo formato dos TIMES)
+    FutebolJS.salvarTecnico({ nome: '...', aparencia: { pele, cabelo, estilo, roupa } })
+    FutebolJS.trocarTatica(0, 'retranca')
+  Salvo no aparelho: elencos (futebolJs.elencos.v1), técnico (futebolJs.tecnico.v1),
+  última configuração (futebolJs.ultimaPartida.v1).
+
+  Fim da partida (para a história): FutebolJS.ultimoResultado e o evento do navegador
+    window.addEventListener('futebolJs:fim', (e) => { e.detail.placar, e.detail.penaltis,
+      e.detail.vencedor, e.detail.nota, e.detail.suspensos, e.detail.lesoes, e.detail.voceSaiu ... })
+  autocuidado (0 a 1): menos autocuidado = mais lesões suas e mais lesões graves.
+  Cartões/lesões ficam salvos em futebolJs.historico.v1 (quem está fora não é escalado).
+
+NOVO NA 4.2.0 (onde mexer) — tudo na seção "MENU INICIAL", perto do fim do jogo.js
+  Tela inicial ................... logo + JOGAR / CARREGAR / CONFIGURAÇÕES / CRÉDITOS / SAIR.
+                                   Botões e o que cada um faz: MENU_ACOES (dentro de montarMenuInicial).
+                                   SAIR ainda não faz nada (função vazia ali).
+  Cores e visual pixelado ........ MX_PAL (cores dos botões), spBotao e spPainel (desenho dos
+                                   botões e das molduras, pixel a pixel) e o CSS em montarMenuInicial.
+  Logo ........................... LOGO_JOGABUNITO (embutida). Para trocar: gere o base64 de um PNG
+                                   transparente e cole ali. O original grande está em imagens/logo.png.
+  CONFIGURAÇÕES .................. é a tela de opções da partida de sempre, com o visual novo; o
+                                   JOGAR usa o que estiver escolhido nela. Os controles ("como jogar")
+                                   que ficavam na tela inicial agora estão no fim dessa tela.
+  CARREGAR ....................... 3 espaços de save (chave futebolJs.saves.v1). Quem grava é o modo
+                                   história; para testar no console do navegador:
+                                     FutebolJS.salvarJogo(1, { nome: 'Herick', resumo: 'Copa · semi',
+                                       partida: { times: ['azulao', 'leoes'], campo: 'varzea' } })
+                                     FutebolJS.listarSaves()   FutebolJS.apagarSave(1)
+                                   Ao clicar num save o jogo dispara o evento 'futebolJs:carregar'
+                                   (e.detail = { slot, save }); com e.preventDefault() o modo história
+                                   assume. Sem isso, se o save tiver "partida", ela é aberta.
+  Teclado no menu ................ setas sobem/descem, Enter aperta, Esc volta.
+
+NOVO NA 4.1.2 (onde mexer)
+  Comemorações por campo ......... CELEB_POR_CAMPO (arena / varzea / society). Ex.: para ter
+                                   "pular na grade" também na várzea, coloque 'grade' na lista dela.
+  Banco, técnico e reservas ...... temBanco(P): hoje só o society fica sem. Os reservas do banco são
+                                   os 5 primeiros de PARTIDA.reservas de cada time.
+  Poses do técnico ............... TEC_POSES / poseTecnico / escolherAcaoTecnico.
+  Abraço no técnico .............. ABRACO (distâncias e ângulos já conferidos sem atravessar).
+  IA do 11 x 11 .................. posicaoCampoGrande (cada jogador tem uma "funcao": zagueiro,
+                                   lateral, volante, meia, aberto, ponta, centroavante). Vale para
+                                   campos com 9 jogadores ou mais por time.
+
+NOVO NA 4.1.3 (onde mexer)
+  Proteção de bola (marcador atrás) ... PROT (distâncias e ângulos conferidos no 3D).
+  Grade da várzea/society ............. ALTURA_GRADE (vem do alambrado) e poseGrade.
+  Quem dá o bote ...................... updateRoles: o marcador da FRENTE (até 18 m) vira o
+                                        "presser"; quem vem atrás vira cobertura.
+  Espaço do lado do banco ............. LADO_BANCO (distâncias da linha: bandeirinha 1,3; espera
+                                        2,4; técnico 3,2; banco 4,8; placa/grade +2,5 m além do normal).
+  Cones com bolas reservas ............ conesBola / montarCones (2 por lateral).
+  Reposição com bola reserva .......... iniciarReserva / atualizarReserva (lateral: cone;
+                                        escanteio: o goleiro adversário joga a bola dele).
+  Sombras no chão ..................... ajustarSombras (roda uma vez por quadro, antes de desenhar).
+
+NOVO NA 4.2.3 (onde mexer) — tudo em jogo.js
+- Atraso do juiz: APITO_ATRASO (1,5 s) e marcarComAtraso(fn) logo depois de commitFoul. Faltas
+  (commitFoul), impedimento (callOffside) e bola fora (handleBallOut) usam. G.apito existe enquanto o
+  juiz "marca": ninguém pega a bola, ninguém comete outra falta, a IA fica em formação.
+- Gol em câmera lenta: GOL_CENA_TEMPO (3 s) em startShotCine/updateShotCine. G.golPend guarda o gol
+  até acabar a cena; só então scoreGoal() conta o gol.
+- Cruzamento da IA: posicaoParaCruzamento() (onde cada um vai quando alguém sobe pelo lado) e
+  ladoParaCruzar() (quem leva e cruza). Chance de cruzar sobe no time de bola aérea (TT.cruzar).
+- Chute forte: tabela IMPACTO (velocidade mínima, chances 2/10 e 3/10, durações) e a pose em
+  aplicarImpacto(). sorteioChuteForte() decide quando a bola passa por um adversário.
+- Comemoração da bola: CELEB_BOLA { V_IDA, V_LEVA } (m/s). Os tempos agora dependem da distância.
