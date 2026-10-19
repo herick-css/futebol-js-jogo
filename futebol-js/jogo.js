@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.2.1
+   FUTEBOL JS · jogo.js · versão 4.2.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.2.2:
+     - interface ajustada para CELULAR: em tela baixa (até 480 px de altura) o HUD, o joystick, os botões,
+       a pausa, o fim de jogo, CONFIGURAÇÕES (3 colunas) e CARREGAR encolhem para caber (veja
+       "AJUSTE PARA CELULAR" perto do fim do arquivo); abaixo de 340 px de altura encolhe mais um pouco
+
    Novidades da versão 4.2.1:
      - a 4.2.1 junta o menu/telas da 4.2.0 com TODAS as mudanças da 4.1.3 (um upload do arquivo 4.1.3
        tinha apagado a interface nova; aqui as duas coisas estão juntas)
@@ -298,7 +303,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.2.1';
+const VERSAO_JOGO = '4.2.2';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -9228,6 +9233,86 @@ montarTelaDeTatica();
 montarMenuInicial();
 
 // ---------------------------------------------------------------------
+// AJUSTE PARA CELULAR (4.2.1): em tela baixa (celular deitado, ~280 a 480 px de altura) tudo encolhe
+// para caber sem rolar: HUD, joystick, botões de ação, pausa, fim de jogo, CONFIGURAÇÕES e CARREGAR.
+//   Quer mexer no tamanho? São as regras abaixo; o corte é "max-height: 480px". Para telas muito
+//   pequenas (altura até 340 px) há uma segunda camada, ainda mais compacta.
+(function () {
+  const st = document.createElement('style');
+  st.textContent = `
+@media (max-height: 480px) and (orientation: landscape) {
+  /* HUD */
+  #score { top: calc(6px + env(safe-area-inset-top, 0px)); padding: 3px 9px; font-size: 12px; gap: 6px; }
+  #score .tag { font-size: 10px; padding: 1px 5px; } #score b { font-size: 15px; }
+  .hudBtn { top: calc(6px + env(safe-area-inset-top, 0px)); height: 34px; font-size: 10px; padding: 0 8px; }
+  #pauseBtn { width: 34px; font-size: 13px; left: calc(8px + env(safe-area-inset-left, 0px)); }
+  #camBtn { left: calc(48px + env(safe-area-inset-left, 0px)); }
+  #fps { top: calc(44px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); }
+  #radar { top: calc(6px + env(safe-area-inset-top, 0px)); right: calc(8px + env(safe-area-inset-right, 0px)); width: 48px; height: 75px; }
+  #toast { top: calc(46px + env(safe-area-inset-top, 0px)); font-size: 11px; padding: 4px 9px; }
+  #stageBar, #recvHead { top: calc(46px + env(safe-area-inset-top, 0px)); }
+  #hint { font-size: 11px; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #banner { font-size: clamp(26px, 8vw, 50px); }
+  /* joystick e botões */
+  #joy { width: 104px; height: 104px; left: calc(14px + env(safe-area-inset-left, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px)); border-width: 3px; }
+  .knob { width: 46px; height: 46px; margin: -23px 0 0 -23px; border-width: 3px; }
+  #stamina { width: 104px; left: calc(14px + env(safe-area-inset-left, 0px)); bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  #aimPad { width: 104px; height: 104px; margin: -52px 0 0 -52px; }
+  #joyLabel { top: -18px; font-size: 9px; }
+  #actions, #recvActs { right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); grid-template-columns: 62px 74px; grid-template-rows: 62px 74px; gap: 7px; }
+  .act { border-width: 3px; font-size: 9px; padding: 2px; } .act.s1 { font-size: 10px; } #recvActs .act, #recvActs .act.s1 { font-size: 9px; }
+  #powerUI { right: calc(20px + env(safe-area-inset-right, 0px)); } #powerBar { width: 32px; }
+  #spinBall { width: min(36 * var(--avh, 1vh), 160px); height: min(36 * var(--avh, 1vh), 160px); }
+  .tgt { width: 62px; height: 62px; } .tgt .num { font-size: 15px; }
+  #cancelKick, #skipBtn { padding: 6px 10px; font-size: 10px; right: calc(12px + env(safe-area-inset-right, 0px)); }
+  /* pausa e fim de jogo: duas colunas, tudo mais enxuto */
+  html body .screen { padding-block: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)); }
+  html body .card { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); padding: 10px 12px; gap: 12px; border-width: 2px; box-shadow: 4px 4px 0 rgba(0,0,0,.5); }
+  html body .card .side { gap: 7px; }
+  .card h1 { font-size: 22px; } .card h2 { font-size: 17px; } .card p { font-size: 12px; line-height: 1.3; }
+  .eyebrow { font-size: 10px; }
+  .stats { gap: 0 12px; } .stats div { padding: 2px 0; font-size: 11px; } .stats dd { font-size: 11px; }
+  .finalScore { font-size: 28px; } .rating strong { font-size: 24px; }
+  .big { padding: 8px 12px; font-size: 12px; } .ghost { padding: 6px 10px; font-size: 11px; }
+  .settings { gap: 5px; } .settings label { font-size: 11px; gap: 2px 8px; } .settings .check { font-size: 11px; }
+  .howto { font-size: 11px; gap: 4px; }
+  /* CONFIGURAÇÕES: mais colunas, chips e títulos menores */
+  html body #selecao { padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)); }
+  html body #selecao .selTopo { --p: 2px; margin-bottom: 8px; top: calc(-4px - env(safe-area-inset-top, 0px)); }
+  html body #selecao .selTit { font-size: 12px; }
+  html body #selecao .selGrade { grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr)); gap: 6px; }
+  html body #selecao .selGrupo { --p: 1.5px; gap: 4px; padding: 0 2px; }
+  html body #selecao h3 { font-size: 10px; }
+  html body #selecao .selItem > span { font-size: 10px; margin-bottom: 2px; }
+  html body #selecao .chips { gap: 3px; }
+  html body #selecao .chip { --p: 1.5px; font-size: 10px; min-height: 0; gap: 4px; padding: 1px 3px; }
+  html body #selecao .selInfo, html body #cfgResumo { font-size: 10px !important; }
+  html body #selecao .pxBtn.pxPeq { --p: 2px; height: 32px; min-width: 84px; font-size: 11px; }
+  /* CARREGAR / CRÉDITOS */
+  .mxVeu { padding: 36px 10px 6px; }
+  .mxCaixa { --p: 3px; }
+  .mxTitulo { --p: 2px; height: 40px; font-size: 13px; top: calc(var(--p) * -9 - 18px); }
+  .mxCorpo { padding: 24px 6px 2px; gap: 6px; }
+  .mxSlot { --p: 2px; } .mxSlotN { font-size: 18px; } .mxSlotInfo b { font-size: 11px; } .mxSlotInfo small { font-size: 10px; }
+  .mxMsg { font-size: 11px; } .mxAcoes .pxBtn { --p: 3px; height: 34px; font-size: 12px; }
+  .mxCredPeq { font-size: 11px; } .mxCredNome { font-size: 30px; margin: 2px 0 8px; }
+}
+@media (max-height: 340px) and (orientation: landscape) {
+  #joy { width: 88px; height: 88px; } .knob { width: 38px; height: 38px; margin: -19px 0 0 -19px; }
+  #stamina { width: 88px; } #aimPad { width: 88px; height: 88px; margin: -44px 0 0 -44px; }
+  #actions, #recvActs { grid-template-columns: 52px 62px; grid-template-rows: 52px 62px; gap: 5px; }
+  .mxBotoes .pxBtn { --p: 2px; font-size: 12px; height: 38px; } .mxBotoes .pxPrim { font-size: 15px; height: 42px; }
+  .mxBotoes { gap: 5px; } .mxMenu { padding-bottom: 14px; }
+}
+/* telas estreitas (celular em pé enquanto o aviso "gire" não aparece, ou janelas pequenas) */
+@media (max-width: 420px) {
+  .mxBotoes { width: 92%; } .pxBtn { font-size: 14px; } #toast { white-space: normal; text-align: center; max-width: 90vw; }
+}
+`;
+  document.head.appendChild(st);
+})();
+
+// ---------------------------------------------------------------------
 // API PARA O MODO HISTÓRIA (e para testes no console do navegador)
 //   FutebolJS.novaPartida({ times: ['azulao', 'leoes'], campo: 'varzea', clima: 'chuva', ... })
 //   FutebolJS.cadastrarTime({ id: 'meuTime', nome: ..., uniforme: {...}, ... })
@@ -9235,7 +9320,7 @@ montarMenuInicial();
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.2.1',
+  versao: '4.2.2',
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
   salvarJogo, listarSaves, apagarSave,
