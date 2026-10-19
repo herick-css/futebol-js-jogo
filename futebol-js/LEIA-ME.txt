@@ -7,6 +7,8 @@ ARQUIVOS
   index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
   three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)
   canva-carregador.html . o HTML pequeno que fica no Canva Code (busca o jogo.js no GitHub)
+  imagens/ .............. logo.png (a logo jogabunito em tamanho grande; o jogo usa uma cópia
+                          menor embutida no próprio jogo.js, por isso não precisa deste arquivo)
   modelos/ .............. jogadores.glb e celebracoes.glb (para o Blender; o jogo não precisa)
   ferramentas/ .......... gerar_jogadores_glb.py (gera os .glb de novo)
 
@@ -33,7 +35,7 @@ SISTEMA DE PARTIDA (4.0.0)
   Tudo o que muda de um jogo para outro é DADO, no começo do jogo.js (seção 1b):
     CAMPOS (tamanho, nº de jogadores, gol, aparência) · TIMES (uniformes, nome, sigla, emblema,
     força, popularidade, formação, tática, técnico) · FORMACOES · TATICAS · DIFICULDADES · NOMES.
-  Na tela inicial: botão "OPÇÕES DA PARTIDA" (4.1.1) mostra tudo o que já dá para mudar em
+  Na tela inicial: botão "CONFIGURAÇÕES" (4.1.1; antes "OPÇÕES DA PARTIDA") mostra tudo o que já dá para mudar em
     botões (times, campo, clima, horário, gramado, competição, tempo, dificuldade, posição,
     formação, tática) e, tracejado, o que ainda vem ("EM BREVE": bola, uniforme, árbitro...).
     Para tirar/pôr um placeholder: lista SELECAO_EM_BREVE no jogo.js. As escolhas ficam salvas
@@ -57,6 +59,27 @@ SISTEMA DE PARTIDA (4.0.0)
       e.detail.vencedor, e.detail.nota, e.detail.suspensos, e.detail.lesoes, e.detail.voceSaiu ... })
   autocuidado (0 a 1): menos autocuidado = mais lesões suas e mais lesões graves.
   Cartões/lesões ficam salvos em futebolJs.historico.v1 (quem está fora não é escalado).
+
+NOVO NA 4.2.0 (onde mexer) — tudo na seção "MENU INICIAL", perto do fim do jogo.js
+  Tela inicial ................... logo + JOGAR / CARREGAR / CONFIGURAÇÕES / CRÉDITOS / SAIR.
+                                   Botões e o que cada um faz: MENU_ACOES (dentro de montarMenuInicial).
+                                   SAIR ainda não faz nada (função vazia ali).
+  Cores e visual pixelado ........ MX_PAL (cores dos botões), spBotao e spPainel (desenho dos
+                                   botões e das molduras, pixel a pixel) e o CSS em montarMenuInicial.
+  Logo ........................... LOGO_JOGABUNITO (embutida). Para trocar: gere o base64 de um PNG
+                                   transparente e cole ali. O original grande está em imagens/logo.png.
+  CONFIGURAÇÕES .................. é a tela de opções da partida de sempre, com o visual novo; o
+                                   JOGAR usa o que estiver escolhido nela. Os controles ("como jogar")
+                                   que ficavam na tela inicial agora estão no fim dessa tela.
+  CARREGAR ....................... 3 espaços de save (chave futebolJs.saves.v1). Quem grava é o modo
+                                   história; para testar no console do navegador:
+                                     FutebolJS.salvarJogo(1, { nome: 'Herick', resumo: 'Copa · semi',
+                                       partida: { times: ['azulao', 'leoes'], campo: 'varzea' } })
+                                     FutebolJS.listarSaves()   FutebolJS.apagarSave(1)
+                                   Ao clicar num save o jogo dispara o evento 'futebolJs:carregar'
+                                   (e.detail = { slot, save }); com e.preventDefault() o modo história
+                                   assume. Sem isso, se o save tiver "partida", ela é aberta.
+  Teclado no menu ................ setas sobem/descem, Enter aperta, Esc volta.
 
 NOVO NA 4.1.2 (onde mexer)
   Comemorações por campo ......... CELEB_POR_CAMPO (arena / varzea / society). Ex.: para ter
