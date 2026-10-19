@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.0
+   FUTEBOL JS · jogo.js · versão 4.3.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,7 +19,7 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
-   Novidades da versão 4.3.0 (começo do MODO HISTÓRIA):
+   Novidades da versão 4.3.2 (começo do MODO HISTÓRIA):
      - Jogar agora pergunta: Modo história ou Partida livre (partida livre = o jogo de sempre).
      - Modo história abre o CRIADOR DE PERSONAGEM: passo 1 (nome, apelido, nome na camisa, número
        preferido) e passo 2 (aparência) com um bonequinho 3D ao lado, que gira 360° (arraste) e dá zoom
@@ -375,7 +375,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.0';
+const VERSAO_JOGO = '4.3.2';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -10810,7 +10810,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.0',
+  versao: '4.3.2',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
