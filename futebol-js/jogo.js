@@ -722,7 +722,7 @@ const NOMES_TECNICO = ['Professor Carlão', 'Seu Bené', 'Mister Raul', 'Tio Zec
   'Seu Jorjão', 'Comandante Lula', 'Doutor Valter', 'Professora Neide', 'Tio Juca'];
 
 // ---- Armazenamento no aparelho (com proteção: no modo privado ele pode não existir).
-const PERSONAGEM = { ativo: false, nome: '', apelido: '', nomeCamisa: '', numero: 9, aparencia: null, pe: 'D', comemoracao: 1, voz: 2 };   // (4.3.0) personagem do modo história
+const PERSONAGEM = { ativo: false, nome: '', apelido: '', nomeCamisa: '', numero: 9, aparencia: null, pe: 'D', comemoracoes: [1, 2], voz: 2 };   // (4.3.0) personagem do modo história
 function personagemAparencia() { return Object.assign({}, PERSONAGEM.aparencia, { nomeCamisa: PERSONAGEM.nomeCamisa }); }
 const salvo = {
   ler(chave, padrao) { try { const v = localStorage.getItem(chave); return v ? JSON.parse(v) : padrao; } catch (e) { return padrao; } },
@@ -1610,41 +1610,84 @@ const CORES_CABELO = [
   { nome: 'Castanho claro', cor: '#8E6A3F' }, { nome: 'Loiro', cor: '#C9A15A' }, { nome: 'Ruivo', cor: '#A4482A' },
   { nome: 'Grisalho', cor: '#8D8F93' }, { nome: 'Branco', cor: '#D8D8D8' },
 ];
+// Cada corte tem: caixas (volumes 3D, sempre ENCOSTANDO uns nos outros: topo + frente/atrás/laterais se sobrepõem) e a pintura
+// na textura da cabeça (laterais e nuca): a = linha onde o cabelo começa, s = até onde ele é cheio, f = até onde vai o tom mais
+// opaco (faixa lisa, sem quadradinhos), n/nf = o mesmo para a nuca, t = linhas de testa/franja, p = patilha (cabelo na lateral
+// do rosto). Linhas vão de 0 (topo da cabeça) a 15 (queixo): cada linha tem ~3 cm. tipo 'degrade' = com pixels (fade), 'liso' = faixa.
+const HC = (nome, caixas, o) => Object.assign({ nome, caixas, a: 0, s: 4, f: 4, n: 8, nf: 10, t: 1, p: 3, tipo: 'liso' }, o);
 const ESTILOS_CABELO = [
-  { nome: 'Curto', caixas: [[0.52, 0.14, 0.56, -0.01, 1.91, 0], [0.08, 0.32, 0.56, -0.25, 1.73, 0]] },
-  { nome: 'Volumoso', caixas: [[0.52, 0.24, 0.56, -0.01, 1.95, 0], [0.1, 0.4, 0.56, -0.24, 1.7, 0], [0.36, 0.2, 0.06, -0.04, 1.76, -0.27], [0.36, 0.2, 0.06, -0.04, 1.76, 0.27]] },
-  { nome: 'Ralo', caixas: [[0.5, 0.06, 0.54, -0.01, 1.89, 0], [0.06, 0.18, 0.54, -0.24, 1.8, 0]] },
-  { nome: 'Careca', caixas: [] },
-  { nome: 'Raspado', caixas: [[0.5, 0.045, 0.54, -0.01, 1.9, 0, 0.35]], fade: { s: 0, f: 9 } },
-  { nome: 'Militar', caixas: [[0.5, 0.09, 0.54, -0.01, 1.925, 0]], fade: { s: 2, f: 9 } },
-  { nome: 'Degradê com risco', caixas: [[0.5, 0.1, 0.54, -0.01, 1.93, 0]], fade: { s: 2, f: 10, risco: 6 } },
-  { nome: 'Topete', caixas: [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.26, 0.14, 0.5, 0.1, 1.99, 0]], fade: { s: 2, f: 8 } },
-  { nome: 'Para trás', caixas: [[0.5, 0.12, 0.54, -0.05, 1.93, 0], [0.1, 0.2, 0.5, -0.27, 1.86, 0]], fade: { s: 3, f: 9 } },
-  { nome: 'Social', caixas: [[0.5, 0.14, 0.54, -0.01, 1.93, 0], [0.52, 0.04, 0.2, 0, 1.995, 0.12], [0.06, 0.24, 0.54, -0.25, 1.77, 0]], fade: { s: 2, f: 9 } },
-  { nome: 'Franja', caixas: [[0.52, 0.13, 0.56, -0.02, 1.93, 0], [0.06, 0.14, 0.54, 0.255, 1.86, 0], [0.1, 0.07, 0.1, 0.12, 2.0, 0.1], [0.1, 0.07, 0.1, 0, 2.01, -0.12], [0.1, 0.08, 0.1, -0.1, 2.0, 0.08]], fade: { s: 2, f: 8 } },
-  { nome: 'Black power', caixas: [[0.56, 0.3, 0.62, -0.03, 2.01, 0]], fade: { s: 2, f: 8 } },
-  { nome: 'Cacheado longo', caixas: [[0.56, 0.2, 0.62, -0.02, 1.96, 0], [0.42, 0.52, 0.1, -0.07, 1.62, 0.32], [0.42, 0.52, 0.1, -0.07, 1.62, -0.32], [0.14, 0.62, 0.66, -0.3, 1.56, 0], [0.06, 0.1, 0.54, 0.255, 1.88, 0]] },
-  { nome: 'Ondulado médio', caixas: [[0.54, 0.18, 0.58, -0.02, 1.945, 0], [0.4, 0.32, 0.08, -0.06, 1.7, 0.3], [0.4, 0.32, 0.08, -0.06, 1.7, -0.3], [0.1, 0.4, 0.6, -0.28, 1.65, 0], [0.06, 0.1, 0.4, 0.26, 1.88, 0.06]] },
-  { nome: 'Longo liso', caixas: [[0.52, 0.14, 0.56, -0.04, 1.94, 0], [0.1, 0.52, 0.52, -0.27, 1.62, 0], [0.3, 0.2, 0.04, -0.1, 1.74, 0.275], [0.3, 0.2, 0.04, -0.1, 1.74, -0.275]] },
-  { nome: 'Coque com degradê', caixas: [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.22, 0.2, 0.22, -0.2, 2.06, 0]], fade: { s: 2, f: 9 } },
-  { nome: 'Coque longo', caixas: [[0.5, 0.12, 0.54, -0.04, 1.93, 0], [0.24, 0.22, 0.24, -0.22, 2.07, 0], [0.08, 0.3, 0.4, -0.27, 1.7, 0], [0.3, 0.16, 0.04, -0.08, 1.76, 0.275], [0.3, 0.16, 0.04, -0.08, 1.76, -0.275]] },
+  HC('Curto', [[0.52, 0.13, 0.56, -0.01, 1.94, 0]], { s: 5, f: 6, n: 9, nf: 11, t: 1, p: 3 }),
+  HC('Volumoso', [[0.54, 0.24, 0.58, -0.01, 1.995, 0]], { s: 7, f: 8, n: 11, nf: 12, t: 2, p: 5 }),
+  HC('Ralo', [[0.5, 0.05, 0.54, -0.01, 1.9, 0]], { s: 2, f: 6, n: 5, nf: 8, t: 0, p: 2 }),
+  HC('Careca', [], { careca: true }),
+  HC('Raspado', [[0.5, 0.035, 0.54, -0.01, 1.895, 0, 0.35]], { s: 0, f: 8, n: 0, nf: 12, t: 0, p: 2 }),
+  HC('Militar', [[0.5, 0.08, 0.54, -0.01, 1.92, 0]], { s: 2, f: 8, n: 4, nf: 11, t: 1, p: 2 }),
+  HC('Degradê com risco', [[0.5, 0.1, 0.54, -0.01, 1.925, 0]], { s: 2, f: 10, n: 3, nf: 11, t: 1, p: 2, tipo: 'degrade', risco: 6 }),
+  HC('Topete', [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.26, 0.14, 0.5, 0.1, 1.99, 0]], { s: 3, f: 8, n: 5, nf: 11, t: 2, p: 3 }),
+  HC('Para trás', [[0.5, 0.12, 0.54, -0.05, 1.935, 0], [0.1, 0.2, 0.5, -0.27, 1.86, 0]], { s: 4, f: 9, n: 9, nf: 12, t: 0, p: 2 }),
+  HC('Social', [[0.5, 0.14, 0.54, -0.01, 1.945, 0], [0.52, 0.04, 0.2, 0, 2.02, 0.12]], { s: 4, f: 8, n: 9, nf: 12, t: 2, p: 3 }),
+  HC('Franja', [[0.52, 0.13, 0.56, -0.02, 1.94, 0], [0.06, 0.16, 0.54, 0.255, 1.855, 0], [0.1, 0.07, 0.1, 0.12, 2.02, 0.1], [0.1, 0.07, 0.1, 0, 2.03, -0.12], [0.1, 0.08, 0.1, -0.1, 2.02, 0.08]], { s: 5, f: 6, n: 9, nf: 11, t: 4, p: 4 }),
+  HC('Black power', [[0.56, 0.3, 0.62, -0.03, 2.01, 0]], { s: 6, f: 7, n: 10, nf: 12, t: 3, p: 5 }),
+  HC('Cacheado longo', [[0.56, 0.2, 0.62, -0.02, 1.96, 0], [0.42, 0.52, 0.1, -0.07, 1.62, 0.32], [0.42, 0.52, 0.1, -0.07, 1.62, -0.32], [0.14, 0.62, 0.66, -0.3, 1.56, 0]], { s: 4, f: 4, n: 8, nf: 9, t: 2, p: 4 }),
+  HC('Ondulado médio', [[0.54, 0.18, 0.58, -0.02, 1.945, 0], [0.4, 0.34, 0.08, -0.06, 1.71, 0.3], [0.4, 0.34, 0.08, -0.06, 1.71, -0.3], [0.1, 0.42, 0.6, -0.28, 1.66, 0]], { s: 4, f: 4, n: 8, nf: 9, t: 2, p: 4 }),
+  HC('Longo liso', [[0.52, 0.14, 0.56, -0.04, 1.945, 0], [0.1, 0.52, 0.52, -0.27, 1.62, 0], [0.3, 0.26, 0.04, -0.1, 1.77, 0.275], [0.3, 0.26, 0.04, -0.1, 1.77, -0.275]], { s: 4, f: 4, n: 8, nf: 9, t: 1, p: 4 }),
+  HC('Coque com degradê', [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.22, 0.2, 0.22, -0.2, 2.06, 0]], { s: 2, f: 9, n: 3, nf: 11, t: 1, p: 2 }),
+  HC('Coque longo', [[0.5, 0.12, 0.54, -0.04, 1.935, 0], [0.24, 0.22, 0.24, -0.22, 2.07, 0], [0.08, 0.36, 0.4, -0.27, 1.73, 0], [0.3, 0.22, 0.04, -0.08, 1.79, 0.275], [0.3, 0.22, 0.04, -0.08, 1.79, -0.275]], { s: 4, f: 4, n: 9, nf: 10, t: 1, p: 4 }),
+  HC('Pompadour', [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.34, 0.2, 0.5, 0.06, 2.0, 0]], { s: 3, f: 9, n: 4, nf: 11, t: 3, p: 3 }),
+  HC('Undercut penteado', [[0.5, 0.12, 0.54, -0.02, 1.935, 0], [0.44, 0.1, 0.54, 0.02, 2.03, 0.03]], { s: 2, f: 10, n: 3, nf: 11, t: 2, p: 2, tipo: 'degrade' }),
+  HC('Corte baixo', [[0.5, 0.06, 0.54, -0.01, 1.905, 0]], { s: 3, f: 8, n: 6, nf: 10, t: 1, p: 2 }),
+  HC('Bagunçado', [[0.5, 0.1, 0.54, -0.01, 1.925, 0], [0.1, 0.1, 0.1, 0.15, 2.0, -0.12], [0.1, 0.14, 0.1, 0, 2.01, 0.1], [0.1, 0.1, 0.1, -0.12, 2.0, -0.05], [0.1, 0.12, 0.1, 0.12, 2.0, 0.15]], { s: 4, f: 6, n: 9, nf: 11, t: 2, p: 3 }),
+  HC('Moicano', [[0.4, 0.14, 0.14, -0.02, 1.95, 0], [0.16, 0.22, 0.14, 0.1, 1.985, 0]], { s: 0, f: 7, n: 0, nf: 11, t: 0, p: 0 }),
+  HC('Tigela', [[0.52, 0.14, 0.56, -0.01, 1.945, 0], [0.06, 0.2, 0.58, 0.26, 1.79, 0], [0.52, 0.2, 0.04, -0.01, 1.79, 0.285], [0.52, 0.2, 0.04, -0.01, 1.79, -0.285], [0.04, 0.2, 0.58, -0.26, 1.79, 0]], { s: 6, f: 6, n: 6, nf: 7, t: 4, p: 5 }),
+  HC('Rabo de cavalo', [[0.52, 0.12, 0.56, -0.03, 1.935, 0], [0.1, 0.33, 0.3, -0.3, 1.74, 0], [0.08, 0.3, 0.12, -0.34, 1.45, 0]], { s: 5, f: 7, n: 8, nf: 10, t: 1, p: 3 }),
+  HC('Dreads curtos', [[0.56, 0.16, 0.6, -0.02, 1.95, 0], [0.07, 0.36, 0.07, -0.29, 1.71, -0.2], [0.07, 0.36, 0.07, -0.29, 1.71, -0.07], [0.07, 0.36, 0.07, -0.29, 1.71, 0.07], [0.07, 0.36, 0.07, -0.29, 1.71, 0.2],
+    [0.07, 0.36, 0.07, -0.1, 1.71, 0.29], [0.07, 0.36, 0.07, 0.08, 1.71, 0.29], [0.07, 0.36, 0.07, -0.1, 1.71, -0.29], [0.07, 0.36, 0.07, 0.08, 1.71, -0.29]], { s: 4, f: 4, n: 7, nf: 8, t: 2, p: 4 }),
+  HC('Entradas', [[0.4, 0.08, 0.54, -0.06, 1.915, 0], [0.08, 0.08, 0.2, 0.17, 1.915, 0]], { s: 4, f: 7, n: 8, nf: 10, t: 0, p: 3 }),
+  HC('Calvo com laterais', [], { a: 5, s: 9, f: 10, n: 9, nf: 12, t: 0, p: 0 }),
+  HC('Mullet', [[0.52, 0.12, 0.56, -0.02, 1.935, 0], [0.12, 0.4, 0.5, -0.28, 1.68, 0]], { s: 4, f: 6, n: 6, nf: 8, t: 1, p: 3 }),
+  HC('Cacheado curto', [[0.54, 0.18, 0.58, -0.01, 1.965, 0], [0.12, 0.06, 0.12, 0.1, 2.07, 0.12], [0.12, 0.06, 0.12, -0.08, 2.075, -0.1], [0.12, 0.06, 0.12, -0.12, 2.07, 0.14]], { s: 5, f: 6, n: 9, nf: 11, t: 2, p: 4 }),
+  HC('Repicado', [[0.52, 0.16, 0.56, -0.02, 1.955, 0], [0.4, 0.26, 0.06, -0.04, 1.76, 0.285], [0.4, 0.26, 0.06, -0.04, 1.76, -0.285], [0.08, 0.3, 0.54, -0.27, 1.74, 0]], { s: 4, f: 4, n: 8, nf: 9, t: 2, p: 4 }),
 ];
-// Barbas: "caixas" são os volumes 3D (laterais, queixo); o desenho no rosto (bigode, falhas) está em pintarRosto.
+// Barbas: "caixas" são os volumes finos nas laterais/queixo (nunca abaixo da cabeça: y >= 1,36); "id" escolhe o desenho no rosto (pintarRosto).
+const BB = (nome, grupo, id, caixas) => ({ nome, grupo, id, caixas: caixas || [] });
 const ESTILOS_BARBA = [
-  { nome: 'Sem barba', caixas: [] },
-  { nome: 'Por fazer', caixas: [] },
-  { nome: 'Curta', caixas: [[0.52, 0.22, 0.03, 0.02, 1.47, 0.268], [0.52, 0.22, 0.03, 0.02, 1.47, -0.268], [0.04, 0.09, 0.54, 0.26, 1.405, 0]] },
-  { nome: 'Cheia', caixas: [[0.52, 0.28, 0.03, 0.02, 1.5, 0.268], [0.52, 0.28, 0.03, 0.02, 1.5, -0.268], [0.05, 0.11, 0.54, 0.265, 1.415, 0]] },
-  { nome: 'Longa', caixas: [[0.52, 0.28, 0.03, 0.02, 1.5, 0.268], [0.52, 0.28, 0.03, 0.02, 1.5, -0.268], [0.05, 0.11, 0.54, 0.265, 1.415, 0], [0.14, 0.1, 0.36, 0.31, 1.41, 0]] },
-  { nome: 'Cavanhaque', caixas: [[0.05, 0.1, 0.22, 0.262, 1.41, 0]] },
-  { nome: 'Desenhada', caixas: [[0.5, 0.2, 0.03, 0.01, 1.46, 0.268], [0.5, 0.2, 0.03, 0.01, 1.46, -0.268], [0.04, 0.08, 0.54, 0.26, 1.4, 0]] },
-  { nome: 'Bigode fino', caixas: [] },
-  { nome: 'Bigode médio', caixas: [] },
-  { nome: 'Bigode grosso', caixas: [] },
+  BB('Sem barba', 'barba', 'nenhuma'),
+  BB('Por fazer', 'barba', 'porfazer'),
+  BB('Rala', 'barba', 'rala'),
+  BB('Curta', 'barba', 'curta', [[0.5, 0.14, 0.025, 0.01, 1.43, 0.27], [0.5, 0.14, 0.025, 0.01, 1.43, -0.27], [0.03, 0.07, 0.54, 0.255, 1.395, 0]]),
+  BB('Média', 'barba', 'media', [[0.5, 0.2, 0.025, 0.01, 1.46, 0.27], [0.5, 0.2, 0.025, 0.01, 1.46, -0.27], [0.04, 0.09, 0.54, 0.26, 1.405, 0]]),
+  BB('Cheia', 'barba', 'cheia', [[0.52, 0.26, 0.03, 0.02, 1.49, 0.27], [0.52, 0.26, 0.03, 0.02, 1.49, -0.27], [0.05, 0.11, 0.54, 0.265, 1.415, 0]]),
+  BB('Longa', 'barba', 'longa', [[0.52, 0.26, 0.03, 0.02, 1.49, 0.27], [0.52, 0.26, 0.03, 0.02, 1.49, -0.27], [0.05, 0.11, 0.54, 0.265, 1.415, 0], [0.12, 0.1, 0.34, 0.3, 1.41, 0]]),
+  BB('Cavanhaque', 'barba', 'cavanhaque', [[0.05, 0.1, 0.2, 0.262, 1.41, 0]]),
+  BB('Cavanhaque com bigode', 'barba', 'vandyke', [[0.05, 0.1, 0.2, 0.262, 1.41, 0]]),
+  BB('Cavanhaque longo', 'barba', 'cavlongo', [[0.05, 0.1, 0.2, 0.262, 1.41, 0], [0.08, 0.1, 0.14, 0.29, 1.41, 0]]),
+  BB('Alça no queixo', 'barba', 'alca', [[0.5, 0.12, 0.025, 0.01, 1.42, 0.27], [0.5, 0.12, 0.025, 0.01, 1.42, -0.27], [0.03, 0.06, 0.54, 0.255, 1.39, 0]]),
+  BB('Costeletas', 'barba', 'costeleta', [[0.16, 0.24, 0.025, -0.1, 1.52, 0.27], [0.16, 0.24, 0.025, -0.1, 1.52, -0.27]]),
+  BB('Desenhada', 'barba', 'desenhada', [[0.5, 0.18, 0.025, 0.01, 1.45, 0.27], [0.5, 0.18, 0.025, 0.01, 1.45, -0.27], [0.03, 0.07, 0.54, 0.255, 1.395, 0]]),
+  BB('Bigode fino', 'bigode', 'bigfino'),
+  BB('Bigode médio', 'bigode', 'bigmedio'),
+  BB('Bigode grosso', 'bigode', 'biggrosso'),
 ];
+// Rostos: olhos = coluna do olho esquerdo/direito (centro = 4 e 10), oh = altura do olho, sob = sobrancelha {y linha, g grossura,
+// inc: +1 brava (pontas de dentro mais baixas), -1 triste}, boca = tipo, extra = sardas/cicatriz.
 const ROSTOS = [
-  { nome: 'Padrão' }, { nome: 'Sério' }, { nome: 'Sorridente' }, { nome: 'Bravo' },
-  { nome: 'Sardas' }, { nome: 'Olhos azuis', iris: '#3A7BD5' }, { nome: 'Olhos verdes', iris: '#4C9A5B' }, { nome: 'Cicatriz' },
+  { nome: 'Padrão' },
+  { nome: 'Sério', sob: { g: 2 }, boca: 'reta' },
+  { nome: 'Sorridente', boca: 'sorriso' },
+  { nome: 'Bravo', sob: { g: 2, inc: 1 }, boca: 'brava' },
+  { nome: 'Triste', sob: { inc: -1 }, boca: 'triste' },
+  { nome: 'Olhos juntos', olhos: [5, 9] },
+  { nome: 'Olhos afastados', olhos: [3, 11] },
+  { nome: 'Olhos pequenos', oh: 2 },
+  { nome: 'Olhos grandes', oh: 4, sob: { y: 4 } },
+  { nome: 'Boca pequena', boca: 'pequena' },
+  { nome: 'Sobrancelha inclinada', sob: { inc: 1 } },
+  { nome: 'Sobrancelha grossa', sob: { g: 2 } },
+  { nome: 'Sobrancelha alta', sob: { y: 4 } },
+  { nome: 'Sonolento', oh: 1, sob: { y: 6 }, boca: 'reta' },
+  { nome: 'Marrento', sob: { inc: 1 }, boca: 'torta' },
+  { nome: 'Sardas', extra: 'sardas' },
+  { nome: 'Cicatriz', extra: 'cicatriz' },
 ];
 const hexNum = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
 const corCss = (c) => (typeof c === 'string' ? c : '#' + c.toString(16).padStart(6, '0'));
@@ -1663,8 +1706,8 @@ const UV_FRENTE = regiao(16, 0, 48, 32), UV_COSTAS = regiao(48, 0, 80, 32);
 // pixels) e o desenho da chuteira. Só são desenhados para quem usa (personagem); os outros jogadores seguem como antes.
 const UV_LADO_Z1 = regiao(80, 0, 96, 16), UV_LADO_Z2 = regiao(96, 0, 112, 16), UV_NUCA = regiao(112, 0, 128, 16), UV_BOTA = regiao(80, 16, 96, 32);
 const faceCabeca = (o) => {
-  const e = ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0];
-  return e.fade ? (i) => (i === 0 ? UV_ROSTO : i === 4 ? UV_LADO_Z1 : i === 5 ? UV_LADO_Z2 : i === 1 ? UV_NUCA : null) : (i) => (i === 0 ? UV_ROSTO : null);
+  const e = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
+  return !e.careca ? (i) => (i === 0 ? UV_ROSTO : i === 4 ? UV_LADO_Z1 : i === 5 ? UV_LADO_Z2 : i === 1 ? UV_NUCA : null) : (i) => (i === 0 ? UV_ROSTO : null);
 };
 // Chuteiras: o desenho vai numa textura 16x16 (nada de geometria nova → não pesa). Para criar outra: uma linha aqui.
 const CHUTEIRAS = [
@@ -1691,61 +1734,87 @@ function pintarChuteira(g, ox, oy, c) {
   else if (c.pad === 'xadrez') for (let y = 0; y < 16; y += 2) for (let x = (y % 4 === 0 ? 0 : 2); x < 16; x += 4) px(x, y, 2, 2, c.det);
   else if (c.pad === 'camuflagem') for (let i = 0; i < 26; i++) { const x = (i * 7 + 3) % 15, y = (i * 11 + 5) % 15; px(x, y, 2 + (i % 3), 2, i % 2 ? c.det : c.det2); }
 }
-// Cabeça: laterais e nuca com o degradê (fade) em quadradinhos — pele que escurece onde o cabelo é raspado.
+// Cabeça: laterais e nuca pintadas na textura. Faixa "lisa" = tons que ficam mais opacos até certa linha (sem quadradinhos);
+// "degrade" = com pixels (fade). Rostos de lado: as 3 colunas da frente só têm a patilha.
 function pintarLadosCabeca(g, ox, oy, o) {
-  const e = ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0], f = e.fade;
-  if (!f) return;
+  const e = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
+  if (e.careca) return;
   const pele = hexNum(o.pele), cab = hexNum(o.cabelo), escura = misturarCor(pele, 0x1a1008, 0.3), toque = misturarCor(cab, pele, 0.5);
   const css = (n) => '#' + n.toString(16).padStart(6, '0');
   for (let r = 0; r < 3; r++) {                                  // r: 0 = lado +Z, 1 = lado -Z, 2 = nuca
     const bx = ox + r * 16;
     g.fillStyle = css(pele); g.fillRect(bx, oy, 16, 16);
     for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      let sol = r < 2 ? e.s : e.n, fim = r < 2 ? e.f : e.nf;
+      if (r === 0 ? x >= 13 : r === 1 ? x <= 2 : false) { sol = e.p; fim = e.p; }
       let cor = null;
-      if (y < f.s) cor = css(cab);
-      else if (y < f.f) {
-        const nivel = 1 - (y - f.s) / (f.f - f.s), th = BAYER4[(y & 3) * 4 + (x & 3)] / 16;
-        if (nivel > th + 0.5) cor = css(toque); else if (nivel > th) cor = css(escura);
+      if (y >= e.a && y < sol) cor = css(cab);
+      else if (y >= Math.max(sol, e.a) && y < fim) {
+        const k = (y - sol) / Math.max(1, fim - sol);
+        if (e.tipo === 'degrade') {
+          const nivel = 1 - k, th = BAYER4[(y & 3) * 4 + (x & 3)] / 16;
+          if (nivel > th + 0.5) cor = css(toque); else if (nivel > th) cor = css(escura);
+        } else cor = css(misturarCor(pele, cab, k < 0.34 ? 0.7 : k < 0.67 ? 0.5 : 0.3));
       }
-      if (f.risco && y === f.risco && r < 2 && x > 2 && x < 14) cor = css(pele);       // risquinho
+      if (e.risco && y === e.risco && r < 2 && x > 2 && x < 14) cor = css(pele);
       if (cor) { g.fillStyle = cor; g.fillRect(bx + x, oy + y, 1, 1); }
     }
   }
 }
-
 function pintarRosto(g, ox, oy, pele, o) {
   o = o || {};
-  const R = o.rosto | 0, B = o.barba | 0, base = ROSTOS[R] || ROSTOS[0];
+  const R = ROSTOS[o.rosto | 0] || ROSTOS[0], B = ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0], cab = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
   const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(ox + x, oy + y, w || 1, h || 1); };
   const tinta = '#16120F';
   const bc = corCss(o.corBarba != null ? o.corBarba : (o.cabelo != null ? o.cabelo : '#1C140F'));
   g.fillStyle = pele; g.fillRect(ox, oy, 16, 16);
-  // sobrancelhas e olhos
-  if (R === 1) { px(3, 4, 4, 2, tinta); px(9, 4, 4, 2, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
-  else if (R === 2) { px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
-  else if (R === 3) { px(3, 4, 2, 1, tinta); px(5, 5, 2, 1, tinta); px(11, 4, 2, 1, tinta); px(9, 5, 2, 1, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
-  else if (base.iris) {
-    px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta);
-    px(3, 7, 3, 3, '#F2F2EE'); px(10, 7, 3, 3, '#F2F2EE'); px(4, 8, 2, 2, base.iris); px(11, 8, 2, 2, base.iris); px(5, 8, 1, 2, tinta); px(12, 8, 1, 2, tinta);
-  } else { px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta); px(4, 7, 2, 3, tinta); px(10, 7, 2, 3, tinta); }
+  // cabelo na frente: testa/franja (linhas do topo) e patilhas (cantos do rosto)
+  if (!cab.careca && o.cabelo != null) {
+    const hc = corCss(o.cabelo);
+    for (let y = 0; y < cab.t; y++) px(0, y, 16, 1, hc);
+    for (let y = 0; y < cab.p; y++) { px(0, y, 2, 1, hc); px(14, y, 2, 1, hc); }
+  }
+  // sobrancelhas
+  const sob = Object.assign({ y: 5, g: 1, inc: 0 }, R.sob), olhos = R.olhos || [4, 10], oh = R.oh || 3;
+  for (const lado of [0, 1]) {
+    const x0 = olhos[lado] - 1;
+    for (let k = 0; k < 4; k++) {
+      const dentro = lado === 0 ? k : 3 - k;                       // 0 = ponta de fora, 3 = ponta de dentro
+      const dy = sob.inc * (dentro >= 2 ? 1 : 0);
+      px(x0 + k, sob.y + dy, 1, sob.g, tinta);
+    }
+  }
+  // olhos
+  const topoOlho = oh >= 4 ? 7 : oh === 1 ? 8 : 7 + (3 - oh);
+  for (const lado of [0, 1]) px(olhos[lado], topoOlho, 2, oh, tinta);
   g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(ox + 7, oy + 9, 2, 2);                 // nariz
-  if (R === 4) for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
-  if (R === 7) { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
-  // barba e bigode (desenhados no rosto; os volumes 3D ficam em ESTILOS_BARBA)
+  if (R.extra === 'sardas') for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
+  if (R.extra === 'cicatriz') { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
+  // barba e bigode (desenhados no rosto; os volumes finos ficam em ESTILOS_BARBA). Nunca cobre o nariz (linhas 9-10, colunas 7-8).
   const linhas = (lista, c) => { for (const [y, x0, x1] of lista) px(x0, y, x1 - x0 + 1, 1, c); };
-  if (B === 1) { g.fillStyle = bc; g.globalAlpha = 0.38; g.fillRect(ox + 2, oy + 9, 12, 7); g.globalAlpha = 1; }
-  else if (B === 2) linhas([[9, 1, 2], [9, 13, 14], [10, 1, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 2, 13], [14, 2, 13], [15, 3, 12]], bc);
-  else if (B === 3 || B === 4) linhas([[8, 1, 2], [8, 13, 14], [9, 1, 3], [9, 12, 14], [10, 1, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 1, 14]], bc);
-  else if (B === 5) linhas([[10, 5, 10], [11, 5, 10], [12, 4, 5], [12, 10, 11], [13, 5, 10], [14, 5, 10], [15, 5, 10]], bc);
-  else if (B === 6) linhas([[7, 1, 1], [7, 14, 14], [8, 1, 1], [8, 14, 14], [9, 1, 1], [9, 14, 14], [10, 1, 1], [10, 14, 14], [10, 4, 11], [11, 1, 1], [11, 14, 14], [11, 4, 11], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 2, 13]], bc);
-  else if (B === 7) linhas([[11, 5, 10]], bc);
-  else if (B === 8) linhas([[10, 4, 11], [11, 4, 11]], bc);
-  else if (B === 9) linhas([[10, 3, 12], [11, 3, 12], [12, 3, 3], [12, 12, 12], [13, 3, 3], [13, 12, 12]], bc);
+  const id = B.id;
+  if (id === 'porfazer') { g.fillStyle = bc; g.globalAlpha = 0.3; g.fillRect(ox + 2, oy + 11, 12, 5); g.fillRect(ox + 1, oy + 9, 2, 2); g.fillRect(ox + 13, oy + 9, 2, 2); g.globalAlpha = 1; }
+  else if (id === 'rala') { g.fillStyle = bc; g.globalAlpha = 0.55; for (let y = 10; y < 16; y++) for (let x = 2; x < 14; x++) if ((x + y * 2) % 3 === 0 && !(y === 10 && x > 5 && x < 10)) g.fillRect(ox + x, oy + y, 1, 1); g.globalAlpha = 1; }
+  else if (id === 'curta') linhas([[10, 1, 2], [10, 13, 14], [11, 1, 4], [11, 11, 14], [12, 1, 3], [12, 12, 14], [13, 2, 13], [14, 3, 12], [15, 4, 11]], bc);
+  else if (id === 'media') linhas([[9, 1, 2], [9, 13, 14], [10, 1, 3], [10, 12, 14], [11, 1, 4], [11, 11, 14], [12, 1, 4], [12, 11, 14], [13, 1, 14], [14, 1, 14], [15, 2, 13]], bc);
+  else if (id === 'cheia' || id === 'longa') linhas([[9, 1, 2], [9, 13, 14], [10, 1, 5], [10, 10, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 1, 14]], bc);
+  else if (id === 'cavanhaque' || id === 'vandyke' || id === 'cavlongo') { linhas([[13, 6, 9], [14, 5, 10], [15, 5, 10]], bc); if (id === 'vandyke') linhas([[11, 4, 11]], bc); }
+  else if (id === 'alca') linhas([[10, 1, 1], [11, 1, 1], [12, 1, 1], [13, 1, 2], [14, 2, 13], [15, 3, 12], [10, 14, 14], [11, 14, 14], [12, 14, 14], [13, 13, 14]], bc);
+  else if (id === 'costeleta') linhas([[6, 0, 1], [7, 0, 1], [8, 0, 1], [9, 0, 1], [10, 0, 1], [11, 0, 1], [6, 14, 15], [7, 14, 15], [8, 14, 15], [9, 14, 15], [10, 14, 15], [11, 14, 15]], bc);
+  else if (id === 'desenhada') linhas([[10, 1, 1], [10, 14, 14], [11, 1, 1], [11, 14, 14], [12, 1, 1], [12, 14, 14], [13, 1, 2], [13, 13, 14], [14, 2, 13], [15, 3, 12], [11, 4, 11]], bc);
+  else if (id === 'bigfino') linhas([[11, 5, 10]], bc);
+  else if (id === 'bigmedio') linhas([[11, 4, 11], [12, 4, 5], [12, 10, 11]], bc);
+  else if (id === 'biggrosso') linhas([[10, 4, 6], [10, 9, 11], [11, 3, 12], [12, 3, 4], [12, 11, 12]], bc);
   // boca (por cima de tudo)
-  const labio = B >= 2 && B !== 7 && B !== 8 && B !== 9 ? '#B0645A' : '#7A3B2E';
-  if (R === 2) { px(5, 11, 1, 1, labio); px(10, 11, 1, 1, labio); px(6, 12, 4, 1, labio); px(7, 12, 2, 1, '#F2F2EE'); }
-  else if (R === 3) { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
-  else if (R === 1) px(6, 12, 4, 1, B >= 2 ? '#B0645A' : '#6A2F26');
+  const temBarba = id !== 'nenhuma' && id !== 'porfazer' && id !== 'rala' && B.grupo === 'barba' && id !== 'cavanhaque' && id !== 'cavlongo';
+  const labio = temBarba ? '#B0645A' : '#7A3B2E';
+  const boca = R.boca || 'normal';
+  if (boca === 'sorriso') { px(5, 11, 1, 1, labio); px(10, 11, 1, 1, labio); px(6, 12, 4, 1, labio); px(7, 12, 2, 1, '#F2F2EE'); }
+  else if (boca === 'brava') { px(6, 12, 4, 2, labio); px(7, 12, 2, 1, '#F2F2EE'); }
+  else if (boca === 'triste') { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
+  else if (boca === 'pequena') px(7, 12, 2, 1, labio);
+  else if (boca === 'torta') { px(6, 12, 3, 1, labio); px(9, 11, 1, 1, labio); }
+  else if (boca === 'reta') px(6, 12, 4, 1, temBarba ? '#B0645A' : '#6A2F26');
   else px(6, 12, 4, 1, labio);
 }
 function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCamisa, corTexto) {
@@ -1769,7 +1838,7 @@ function atlasJogador(o) {
     pintarRosto(g, 0, 0, o.pele, o);
     pintarCamisa(g, 16, o.camisa, o.listra, o.gola, o.numero, false, o.emblema);
     pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
-    if (o.estilo != null && (ESTILOS_CABELO[o.estilo] || {}).fade) pintarLadosCabeca(g, 80, 0, o);
+    pintarLadosCabeca(g, 80, 0, o);
     if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
   });
 }
@@ -9618,7 +9687,9 @@ const FOCO_CRIADOR = {            // para onde a câmera olha em cada parte (y =
 function montarCriador(tela, aoFechar) {
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const E = Object.assign({ nome: '', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
-    pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracao: 1, voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
+    pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
+  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1);
+  if (!Array.isArray(E.comemoracoes) || !E.comemoracoes.length) E.comemoracoes = [1, 2];
   let passo = 1, aba = 'pele', msg = '', emCena = false, falaAmostra = null;
   const css = document.createElement('style');
   css.textContent = `
@@ -9729,7 +9800,7 @@ function montarCriador(tela, aoFechar) {
     salvo.gravar('futebolJs.personagem.v1', { E, criado: true });
     PERSONAGEM.nome = E.nome.trim(); PERSONAGEM.apelido = E.temApelido ? E.apelido.trim() : '';
     PERSONAGEM.nomeCamisa = (E.nomeCamisa.trim() || sugestaoCamisa()).toUpperCase().slice(0, 10);
-    PERSONAGEM.numero = E.numero; PERSONAGEM.aparencia = aparencia(); PERSONAGEM.pe = E.pe; PERSONAGEM.comemoracao = E.comemoracao; PERSONAGEM.voz = E.voz;
+    PERSONAGEM.numero = E.numero; PERSONAGEM.aparencia = aparencia(); PERSONAGEM.pe = E.pe; PERSONAGEM.comemoracoes = E.comemoracoes.slice(); PERSONAGEM.voz = E.voz;
   };
 
   // ----- boneco 3D (cena própria) -----
@@ -9744,7 +9815,8 @@ function montarCriador(tela, aoFechar) {
     cena.add(new THREE.AmbientLight(0xffffff, 0.78));
     const sol = new THREE.DirectionalLight(0xffffff, 0.55); sol.position.set(3, 5, 4); cena.add(sol);
     const chao = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 0.12, 12), new THREE.MeshLambertMaterial({ color: 0x3c8a2c }));
-    chao.position.y = -0.06; cena.add(chao); chaoMesh = chao;
+    chao.position.y = -0.06; chao.visible = false; cena.add(chao); chaoMesh = chao;
+    criarCampo();
     let arrasta = false, x0 = 0;
     cv.addEventListener('pointerdown', (e) => { arrasta = true; x0 = e.clientX; autoGira = false; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
     cv.addEventListener('pointermove', (e) => { if (!arrasta) return; const dx = e.clientX - x0; x0 = e.clientX; yaw += dx * 0.016; yawAlvo = yaw; });
@@ -9758,25 +9830,31 @@ function montarCriador(tela, aoFechar) {
     rd.setSize(Math.ceil(w / f), Math.ceil(h / f), false);
     cam.aspect = w / h; cam.updateProjectionMatrix();
   };
+  // Campo de VÁRZEA: já está na cena desde o começo, escondido pela neblina (só dá para ver o chão em volta do boneco, como um
+  // pedestal). Ao salvar, a neblina vai embora e o campo aparece em volta dele — na mesma cena, sem corte.
   const criarCampo = () => {
     if (campo) return;
     const c = document.createElement('canvas'); c.width = 352; c.height = 220;
     const g = c.getContext('2d');
-    for (let i = 0; i < 22; i++) { g.fillStyle = i % 2 ? '#34802a' : '#3c8a2c'; g.fillRect(i * 16, 0, 16, 220); }
-    g.strokeStyle = '#EDEDE6'; g.lineWidth = 2; g.strokeRect(6, 6, 340, 208); g.beginPath(); g.moveTo(176, 6); g.lineTo(176, 214); g.stroke();
+    const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+    g.fillStyle = '#4c8c34'; g.fillRect(0, 0, 352, 220);
+    for (let i = 0; i < 420; i++) { g.fillStyle = rnd(i) > 0.5 ? '#437f2e' : '#58963b'; g.fillRect(Math.floor(rnd(i + 9) * 352), Math.floor(rnd(i + 99) * 220), 3 + Math.floor(rnd(i + 5) * 5), 2); }
+    const terra = (x, y, w, h) => { g.fillStyle = '#9a7646'; g.fillRect(x, y, w, h); g.fillStyle = '#8a6a3c'; for (let k = 0; k < 18; k++) g.fillRect(x + Math.floor(rnd(k + x) * w), y + Math.floor(rnd(k + y) * h), 3, 2); };
+    terra(150, 90, 52, 40); terra(8, 80, 34, 60); terra(310, 80, 34, 60); terra(90, 20, 40, 18); terra(230, 170, 50, 22);
+    g.strokeStyle = '#d8d8c8'; g.lineWidth = 2; g.setLineDash([6, 3]); g.strokeRect(6, 6, 340, 208); g.beginPath(); g.moveTo(176, 6); g.lineTo(176, 214); g.stroke();
     g.beginPath(); g.arc(176, 110, 30, 0, 7); g.stroke(); g.strokeRect(6, 55, 44, 110); g.strokeRect(302, 55, 44, 110);
     const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-    campo = new THREE.Group(); const mats = [];
-    const M = (o) => { const m = new THREE.MeshLambertMaterial(Object.assign({ transparent: true, opacity: 0 }, o)); mats.push(m); return m; };
-    const plano = new THREE.Mesh(new THREE.PlaneGeometry(44, 27.5), M({ map: tex })); plano.rotation.x = -Math.PI / 2; plano.position.y = -0.02; campo.add(plano);
-    for (const sx of [-1, 1]) {                       // traves
-      const x = sx * 21.6, b = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M({ color: 0xf2f2ee })); m.position.set(px, py, pz); campo.add(m); };
-      b(0.12, 2.44, 0.12, x, 1.22, -3.66); b(0.12, 2.44, 0.12, x, 1.22, 3.66); b(0.12, 0.12, 7.44, x, 2.44, 0);
+    campo = new THREE.Group();
+    const plano = new THREE.Mesh(new THREE.PlaneGeometry(44, 27.5), new THREE.MeshLambertMaterial({ map: tex })); plano.rotation.x = -Math.PI / 2; plano.position.y = -0.01; campo.add(plano);
+    for (const sx of [-1, 1]) {                       // traves de madeira da várzea
+      const x = sx * 21.6, b = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: 0xcfc3a4 })); m.position.set(px, py, pz); campo.add(m); };
+      b(0.14, 2.3, 0.14, x, 1.15, -3.5); b(0.14, 2.3, 0.14, x, 1.15, 3.5); b(0.14, 0.14, 7.14, x, 2.3, 0);
     }
-    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), M({ color: 0xffffff })); bola.position.set(0.8, 0.11, 0.55); campo.add(bola);
-    campo.userData.mats = mats; cena.add(campo);
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffffff })); bola.position.set(0.8, 0.12, 0.55); campo.add(bola);
+    cena.add(campo);
+    cena.fog = new THREE.Fog(0x2a1a0e, 1, 4);
   };
-  const tirarCampo = () => { if (!campo) return; cena.remove(campo); campo.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } }); campo = null; campoK = 0; campoAlvo = 0; chaoMesh.material.opacity = 1; cena.background = new THREE.Color(0x2a1a0e); };
+  const tirarCampo = () => { campoK = 0; campoAlvo = 0; if (cena) { cena.background = new THREE.Color(0x2a1a0e); if (cena.fog) cena.fog.color.set(0x2a1a0e); } };
   const reconstruir = () => {
     if (!cena) return;
     if (boneco) {
@@ -9788,6 +9866,7 @@ function montarCriador(tela, aoFechar) {
       pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, barba: ap.barba, rosto: ap.rosto, corBarba: ap.corBarba, manga: ap.manga, meiao: ap.meiao, chuteira: ap.chuteira,
       nomeCamisa: (E.nomeCamisa.trim() || sugestaoCamisa()), nome: E.nome || 'Você', fundoNome: 'rgba(0,0,0,0.5)' });
     boneco.etiqueta.visible = false;
+    boneco.raiz.traverse((o) => { if (o.material) o.material.fog = false; });         // a neblina do campo não apaga o boneco
     cena.add(boneco.raiz);
   };
   const loop = (t) => {
@@ -9807,11 +9886,12 @@ function montarCriador(tela, aoFechar) {
         boneco.pernaE.rotation.z = pul * 0.35; boneco.pernaD.rotation.z = pul * 0.35;
       }
     }
-    if (campo) {                                     // o campo vai aparecendo em volta (e o "pedestal" some)
-      campoK += (campoAlvo - campoK) * Math.min(1, dt * 0.9);
-      for (const m of campo.userData.mats) { m.opacity = campoK; m.visible = campoK > 0.01; }
-      chaoMesh.material.transparent = true; chaoMesh.material.opacity = 1 - campoK;
-      const c0 = new THREE.Color(0x2a1a0e), c1 = new THREE.Color(0x78b4e8); cena.background = c0.lerp(c1, campoK);
+    if (campo) {                                     // a neblina recua: o campo inteiro aparece em volta (sem corte)
+      campoK += (campoAlvo - campoK) * Math.min(1, dt * 0.8);
+      const k = campoK * campoK;
+      cena.fog.near = camD + 0.6 + k * 60; cena.fog.far = camD + 3.2 + k * 140;
+      const c0 = new THREE.Color(0x2a1a0e), c1 = new THREE.Color(0x78b4e8); c0.lerp(c1, Math.min(1, campoK * 1.15));
+      cena.background = c0; cena.fog.color.copy(c0);
     }
     cam.position.set(Math.cos(camAz) * camD, camY + 0.12, Math.sin(camAz) * camD); cam.lookAt(0, camY, 0);
     rd.render(cena, cam);
@@ -9848,9 +9928,8 @@ function montarCriador(tela, aoFechar) {
       } else if (aba === 'cabelo') {
         h += '<p class="crSecao">Corte</p>' + chips(ESTILOS_CABELO.map((c) => c.nome), E.estilo, 'corte') + '<p class="crSecao">Cor do cabelo</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(CORES_CABELO[E.corCabelo].nome) + '</p>';
       } else if (aba === 'barba') {
-        const nomesB = ESTILOS_BARBA.map((b) => b.nome);
-        h += '<p class="crSecao">Barba</p><div class="crGrade">' + [0, 1, 2, 3, 4, 5, 6].map((i) => '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(nomesB[i]) + '</button>').join('') + '</div>' +
-          '<p class="crSecao">Só bigodinho</p><div class="crGrade">' + [7, 8, 9].map((i) => '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(nomesB[i]) + '</button>').join('') + '</div>' +
+        const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(b.nome) + '</button>' : '')).join('') + '</div>';
+        h += '<p class="crSecao">Barba</p>' + grupoB('barba') + '<p class="crSecao">Só bigodinho</p>' + grupoB('bigode') +
           '<p class="crSecao">Cor da barba</p>' + cores(CORES_CABELO, E.corBarba, 'corBarba', true) + '<p class="crNomeSel">' + (E.corBarba < 0 ? 'Igual ao cabelo' : esc(CORES_CABELO[E.corBarba].nome)) + '</p>';
       } else if (aba === 'rosto') {
         h += '<p class="crSecao">Rosto</p>' + chips(ROSTOS.map((x) => x.nome), E.rosto, 'rosto');
@@ -9863,7 +9942,7 @@ function montarCriador(tela, aoFechar) {
       } else if (aba === 'pe') {
         h += '<p class="crSecao">Pé dominante</p><div class="crGrade largo">' + [['D', 'Pé direito'], ['E', 'Pé esquerdo']].map(([k, n]) => '<button type="button" class="pxBtn crChip' + (E.pe === k ? ' on' : '') + '" data-a="pe" data-k="' + k + '">' + n + '</button>').join('') + '</div><p class="crDica">É o pé com que você chuta e passa melhor.</p>';
       } else if (aba === 'comemoracao') {
-        h += '<p class="crSecao">Comemoração de gol</p><div class="crGrade largo">' + ['Aviãozinho', 'Joelhada'].map((n, i) => '<button type="button" class="pxBtn crChip' + (E.comemoracao === i + 1 ? ' on' : '') + '" data-a="comemoracao" data-i="' + (i + 1) + '">' + n + '</button>').join('') + '</div><p class="crDica">Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.</p>';
+        h += '<p class="crSecao">Comemorações de gol</p><div class="crGrade largo">' + ['Aviãozinho', 'Joelhada'].map((n, i) => '<button type="button" class="pxBtn crChip' + (E.comemoracoes.includes(i + 1) ? ' on' : '') + '" data-a="comemoracao" data-i="' + (i + 1) + '">' + (E.comemoracoes.includes(i + 1) ? '✔ ' : '') + n + '</button>').join('') + '</div><p class="crDica">As duas já vêm marcadas. Toque para desmarcar uma (pelo menos uma fica). Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.</p>';
       } else if (aba === 'voz') {
         h += '<p class="crSecao">Tom de voz</p><div class="crFala">“' + esc(Mumble.TEXTO_PADRAO.replace('Vamos', 'Vamos').replace(/^/, '')) + '”</div><div class="crGrade largo">' +
           Mumble.VOZES.map((v, i) => '<button type="button" class="pxBtn crChip' + (i === E.voz ? ' on' : '') + '" data-a="voz" data-i="' + i + '">' + (i + 1) + ' · ' + esc(v.nome) + '</button>').join('') + '</div><p class="crDica">Toque numa voz para ouvir. Da mais aguda (1) à mais grave (5).</p>';
@@ -9900,7 +9979,7 @@ function montarCriador(tela, aoFechar) {
     emCena = true; salvar(); PERSONAGEM.ativo = true;
     if (Som.ligar) Som.ligar();
     reconstruir(); aquece = true; autoGira = false;
-    criarCampo(); campoAlvo = 1;
+    campoAlvo = 1;
     el.classList.add('cena');
     irPara('cena'); yawAlvo = -(FOCO_CRIADOR.cena.az);
     await esperar(3400);
@@ -9972,7 +10051,7 @@ function montarCriador(tela, aoFechar) {
     if (a === 'pele') E.pele = i; else if (a === 'corte') E.estilo = i; else if (a === 'corCabelo') E.corCabelo = i;
     else if (a === 'barba') E.barba = i; else if (a === 'corBarba') E.corBarba = i; else if (a === 'rosto') E.rosto = i;
     else if (a === 'manga') E.manga = i; else if (a === 'meiao') E.meiao = i; else if (a === 'chuteira') E.chuteira = i;
-    else if (a === 'pe') E.pe = b.dataset.k; else if (a === 'comemoracao') E.comemoracao = i;
+    else if (a === 'pe') E.pe = b.dataset.k; else if (a === 'comemoracao') { const l = E.comemoracoes, k = l.indexOf(i); if (k >= 0) { if (l.length > 1) l.splice(k, 1); } else l.push(i); l.sort(); }
     else if (a === 'voz') { E.voz = i; if (Som.ligar) Som.ligar(); if (falaAmostra) falaAmostra.parar(); falaAmostra = Mumble.amostra(i); }
     else return;
     const sc = $c('crScroll'), y = sc.scrollTop; desenhar(); sc.scrollTop = y;
