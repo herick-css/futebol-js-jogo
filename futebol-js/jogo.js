@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.6
+   FUTEBOL JS · jogo.js · versão 4.3.7
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.3.7 — Ajustes do corredor da Fase 1:
+     - Corredor bem mais largo (7,6 m); duplas conversando afastadas; janelas altas acima dos armários.
+     - Portas com profundidade: buraco na parede com batentes (como a da sala); a porta da sala, a do valentão e a da rua abrem de verdade.
+     - Armários comuns (dois pequenos empilhados) e alguns de altura dupla; o do menino de óculos é de altura dupla e por dentro é preto. Óculos redesenhados (aros, ponte e hastes).
+     - Conversa com o João/Lúcia: câmera e ponto de parada perto deles (antes usava a câmera da sala e um caminho da sala).
    Novidades da versão 4.3.6 — Tutorial na quadra e primeira partida (Fase 1):
      - Cena após a porta: João mostra a bola de futsal e leva o jogador à quadra; tutorial de correr, chutar, passar, driblar, dominar e dominar difícil.
      - Sistema Atributos (1–10): jogador da história começa com 4 (chute/efeito/resistência/etc. mais fracos); partida rápida segue em 7.
@@ -405,7 +410,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.6';
+const VERSAO_JOGO = '4.3.7';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -10356,7 +10361,7 @@ const HIST = (() => {
 const Fase1 = (() => {
   const SX = 6, SZ = 5, ALT = 2.8, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
   const PORTA = { x: 4.7, z: SZ };
-  const CX = 2.4, CL = 13;                                             // corredor (4.3.5): meia largura e meio comprimento
+  const CX = 3.8, CL = 13;                                             // corredor (4.3.7: bem mais largo): meia largura e meio comprimento
   const LINHAS = [-1.6, 0.6, 2.8], COLS = [-3.2, 0, 3.2];            // 9 mesas (3 colunas × 3 fileiras)
   const ESC = 0.68, CAB = 1.55, ASSENTO_Y = -0.15;                     // personagem bebê: corpo 68%, cabeça 155%
   const PROF = { x: -2.4, z: -3.9 }, MESA_PROF = { x: -4.5, z: -4.2 };
@@ -10450,7 +10455,7 @@ const Fase1 = (() => {
     g.fillStyle = '#cfcfc0'; g.fillRect(2, h - 3, 18, 2); }); }
   function texPisoCor() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#d3d6d4'; g.fillRect(0, 0, w, h); g.fillStyle = '#bcc1c0'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#dde0de'; for (let i = 0; i < 18; i++) g.fillRect((i * 13) % w, (i * 7) % h, 2, 1); }); }
   function texParedeCor() { return drawTexture(64, 64, (g, w, h) => { g.fillStyle = '#efe3b5'; g.fillRect(0, 0, w, h); g.fillStyle = '#e2d3a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 29) % w, (i * 11) % 60, 2, 1);
-    g.fillStyle = '#5a3d22'; g.fillRect(6, 6, 52, 22); g.fillStyle = '#bfe4f5'; g.fillRect(8, 8, 23, 18); g.fillRect(33, 8, 23, 18); g.fillStyle = '#e8f6fc'; g.fillRect(10, 10, 6, 3); g.fillRect(35, 10, 6, 3);
+    g.fillStyle = '#5a3d22'; g.fillRect(6, 3, 52, 15); g.fillStyle = '#bfe4f5'; g.fillRect(8, 5, 23, 11); g.fillRect(33, 5, 23, 11); g.fillStyle = '#e8f6fc'; g.fillRect(10, 6, 6, 2); g.fillRect(35, 6, 6, 2);   // (4.3.7) janelas altas, acima dos armários
     g.fillStyle = '#9a9a8c'; g.fillRect(0, 54, w, 10); }); }
   function texMariposa() {
     const half = ['......a..', '.......a.', 'kk.....eo', 'kkkk..bbo', 'kbbkkkbwo', 'kbbbbkwkw', 'kkbbbkwwo', 'ykkbbkowo', 'yyykkkoyo', '.yyykkooy', '.yyyk.ooo', '..yy...oy'];
@@ -10521,58 +10526,114 @@ const Fase1 = (() => {
   }
 
   // ------------------------------------------------------------------ corredor 3D (depois da sala)
-  const ZK = -7.4;                                   // z do armário onde o menino de óculos é trancado (parede esquerda)
+  const ZK = -7.4;                                   // z do armário (de altura dupla) onde o menino de óculos é trancado (parede esquerda)
+  const FX = -CX + 0.5;                              // face dos armários da esquerda (voltada para o corredor)
+  const PROF_V = 0.4;                                // (4.3.7) profundidade do vão das portas (buraco na parede)
   function montarCorredor() {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const basic = (m) => new THREE.MeshBasicMaterial(m);
-    const H = 3.0;
+    const H = 3.0, HP = 2.25;                        // altura da parede e do vão da porta
     const pp = texPisoCor(); pp.wrapS = pp.wrapT = THREE.RepeatWrapping; pp.repeat.set(CX * 2 / 1.2, CL * 2 / 1.2);
     const piso = new THREE.Mesh(new THREE.PlaneGeometry(CX * 2, CL * 2), basic({ map: pp })); piso.rotation.x = -Math.PI / 2; g.add(piso);
     const chao = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), basic({ color: 0x000000 })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);
-    const pw = texParedeCor(); pw.wrapS = pw.wrapT = THREE.RepeatWrapping; pw.repeat.set(CL * 2 / 3.2, 1);
-    const mp = basic({ map: pw });
-    const lado = (x, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(CL * 2, H), mp); m.rotation.y = ry; m.position.set(x, H / 2, 0); g.add(m); };
-    lado(-CX, Math.PI / 2); lado(CX, -Math.PI / 2);
-    const topo = new THREE.Mesh(new THREE.PlaneGeometry(CX * 2, H), basic({ color: 0xefe3b5 })); topo.position.set(0, H / 2, -CL); g.add(topo);
-    const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
+    const pw = texParedeCor(); pw.wrapS = pw.wrapT = THREE.RepeatWrapping;
+    const mp = basic({ map: pw }), mDupla = basic({ color: 0xe2d3a0, side: THREE.DoubleSide }), mPreto = basic({ color: 0x000000, side: THREE.DoubleSide });
     const portas = [[-1, 11.0], [1, 6.0], [-1, 2.0], [1, -9.4]];                                   // [lado, z] das portas de sala
-    const vao = (z) => portas.some((p) => Math.abs(p[1] - z) < 0.85);
-    let k = 0;
-    for (let z = -CL + 0.25; z < CL - 0.2; z += 0.5, k++) {
-      for (const sd of [-1, 1]) {
-        if (portas.some((p) => p[0] === sd && Math.abs(p[1] - z) < 0.85)) continue;
-        const cor = (Math.floor(k / 2) % 2) ? 0xb3262e : 0x9c1f27;
-        const xf = sd * (CX - 0.5);                                                                  // face do armário (voltada para o corredor)
-        if (sd === -1 && Math.abs(z - ZK) < 0.1) {                                                   // o armário que abre e fecha: carcaça aberta na frente
-          F(0.02, 2.0, 0.46, 0x4a4a4a, sd * (CX - 0.01), 1.0, z); F(0.5, 0.03, 0.46, 0x707070, sd * (CX - 0.25), 1.985, z); F(0.5, 0.03, 0.46, 0x707070, sd * (CX - 0.25), 0.015, z);
-          F(0.5, 2.0, 0.03, 0x707070, sd * (CX - 0.25), 1.0, z - 0.215); F(0.5, 2.0, 0.03, 0x707070, sd * (CX - 0.25), 1.0, z + 0.215);
-          continue;
+    // paredes laterais em pedaços (a textura segue a posição no mundo), com um vão em cada porta
+    const paredeSeg = (sd, z0, z1, y0, y1) => {
+      const w = z1 - z0, geo = new THREE.PlaneGeometry(w, y1 - y0), uv = geo.attributes.uv, s = sd < 0 ? -1 : 1, zc = (z0 + z1) / 2;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, (zc + s * (uv.getX(i) - 0.5) * w + CL) / 3.2, (y0 + uv.getY(i) * (y1 - y0)) / H);
+      const m = new THREE.Mesh(geo, mp); m.rotation.y = sd < 0 ? Math.PI / 2 : -Math.PI / 2; m.position.set(sd * CX, (y0 + y1) / 2, zc); g.add(m);
+    };
+    for (const sd of [-1, 1]) {
+      const zs = portas.filter((p) => p[0] === sd).map((p) => p[1]).sort((a, b) => a - b); let z = -CL;
+      for (const dz of zs) {
+        paredeSeg(sd, z, dz - 0.55, 0, H); paredeSeg(sd, dz - 0.55, dz + 0.55, HP, H); z = dz + 0.55;
+        // o buraco na parede: batentes, verga, chão e o fundo escuro (a sala atrás)
+        for (const sz of [-1, 1]) { const j = new THREE.Mesh(new THREE.PlaneGeometry(PROF_V, HP), mDupla); j.position.set(sd * (CX + PROF_V / 2), HP / 2, dz + sz * 0.55); g.add(j); }
+        const vg = new THREE.Mesh(new THREE.PlaneGeometry(PROF_V, 1.1), mDupla); vg.rotation.x = Math.PI / 2; vg.position.set(sd * (CX + PROF_V / 2), HP, dz); g.add(vg);
+        const sl = new THREE.Mesh(new THREE.PlaneGeometry(PROF_V, 1.1), basic({ color: 0x77736a, side: THREE.DoubleSide })); sl.rotation.x = Math.PI / 2; sl.position.set(sd * (CX + PROF_V / 2), 0.01, dz); g.add(sl);
+        const fu = new THREE.Mesh(new THREE.PlaneGeometry(1.1, HP), mPreto); fu.rotation.y = Math.PI / 2; fu.position.set(sd * (CX + PROF_V), HP / 2, dz); g.add(fu);
+      }
+      paredeSeg(sd, z, CL, 0, H);
+    }
+    // fundo do corredor (porta da rua, dupla, também dentro de um buraco na parede)
+    const PF = 0.5, GX = 0.95, HF = 2.3, corFundo = basic({ color: 0xefe3b5 }), corFundoD = basic({ color: 0xe2d3a0, side: THREE.DoubleSide });
+    const plano = (w, h, x, y, z, ry, mat) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat); m.rotation.y = ry; m.position.set(x, y, z); g.add(m); return m; };
+    plano(CX - GX, H, -(CX + GX) / 2, H / 2, -CL, 0, corFundo); plano(CX - GX, H, (CX + GX) / 2, H / 2, -CL, 0, corFundo); plano(GX * 2, H - HF, 0, (H + HF) / 2, -CL, 0, corFundo);
+    for (const sx of [-1, 1]) plano(PF, HF, sx * GX, HF / 2, -CL - PF / 2, Math.PI / 2, corFundoD);
+    const vf = plano(GX * 2, PF, 0, HF, -CL - PF / 2, 0, corFundoD); vf.rotation.x = Math.PI / 2;
+    // lá fora: calçada clara e céu (só aparece pela porta aberta)
+    const cal = plano(6, 5, 0, 0.01, -CL - 2.9, 0, basic({ color: 0xc9c2a6 })); cal.rotation.x = -Math.PI / 2;
+    plano(12, 4.5, 0, 2.25, -CL - 5.4, 0, basic({ color: 0xbfe4f5 }));
+    const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
+    // armários: o comum é de 1 (dois pequenos empilhados, de 1 m cada); alguns são de ALTURA DUPLA (uma porta só, de 2 m — o da esquerda em ZK é o do menino de óculos); pedaços da parede ficam livres p/ quadro de avisos e bebedouro
+    const livresD = [[3.3, 5.1], [-5.7, -4.5]];
+    const bloq = (sd) => { const b = portas.filter((p) => p[0] === sd).map((p) => [p[1] - 0.8, p[1] + 0.8]); if (sd === -1) b.push([ZK - 0.25, ZK + 0.25]); else for (const l of livresD) b.push(l); return b; };
+    const escuro = 0x2a0a0c;
+    const armario = (sd, zc, alto, k) => {
+      const cor = (k % 2) ? 0xb3262e : 0x9c1f27, xc = sd * (CX - 0.25), xf = sd * (CX - 0.5) - sd * 0.005, w = 0.5;
+      F(0.5, 2.0, w - 0.03, cor, xc, 1.0, zc);
+      if (alto) {                                                                                  // altura dupla: porta única de 2 m
+        for (const y of [1.84, 1.74, 1.64]) F(0.03, 0.04, 0.3, escuro, xf, y, zc);
+        F(0.04, 0.16, 0.04, 0xd0d0cc, xf - sd * 0.005, 1.1, zc + 0.12);
+      } else {                                                                                     // comum: dois armários pequenos, um em cima do outro
+        for (const y0 of [0, 1.0]) {
+          for (const y of [y0 + 0.88, y0 + 0.8]) F(0.03, 0.04, 0.3, escuro, xf, y, zc);
+          F(0.04, 0.12, 0.04, 0xd0d0cc, xf - sd * 0.005, y0 + 0.5, zc + 0.12);
         }
-        F(0.5, 2.0, 0.46, cor, sd * (CX - 0.25), 1.0, z);
-        F(0.03, 0.04, 0.3, 0x2a0a0c, xf - sd * 0.005, 1.78, z); F(0.03, 0.04, 0.3, 0x2a0a0c, xf - sd * 0.005, 1.68, z);
-        F(0.04, 0.14, 0.04, 0xd0d0cc, xf - sd * 0.01, 1.1, z + 0.12);
-        F(0.03, 0.02, 0.46, 0x2a0a0c, xf - sd * 0.005, 1.0, z);
+        F(0.03, 0.02, w - 0.03, escuro, xf, 1.0, zc);
+      }
+    };
+    for (const sd of [-1, 1]) {
+      const bs = bloq(sd); let z = -CL + 0.1, k = 0;
+      while (z < CL - 0.35) {
+        const bate = bs.find((b) => z < b[1] - 1e-6 && z + 0.5 > b[0] + 1e-6); if (bate) { z = bate[1]; continue; }
+        armario(sd, z + 0.25, ((k * 5 + (sd < 0 ? 1 : 3)) % 7) < 3, k); z += 0.5; k++;
       }
     }
-    // portas das salas (marrons) e a porta da rua (no fim, dupla com vidro)
-    for (const [sd, z] of portas) { if (sd === -1 && z === 11.0) continue; F(0.05, 2.1, 0.95, 0x7a4a2a, sd * (CX - 0.03), 1.05, z); F(0.06, 0.5, 0.3, 0x9ec7e0, sd * (CX - 0.07), 1.55, z); F(0.08, 2.2, 0.08, 0x4a2c16, sd * (CX - 0.05), 1.1, z - 0.52); F(0.08, 2.2, 0.08, 0x4a2c16, sd * (CX - 0.05), 1.1, z + 0.52); F(0.08, 0.08, 1.1, 0x4a2c16, sd * (CX - 0.05), 2.2, z); }
-    F(1.6, 2.2, 0.08, 0x5a3a20, 0, 1.1, -CL + 0.05); F(0.7, 1.4, 0.1, 0x9ec7e0, -0.4, 1.3, -CL + 0.06); F(0.7, 1.4, 0.1, 0x9ec7e0, 0.4, 1.3, -CL + 0.06);
-    F(1.8, 0.1, 0.12, 0x4a2c16, 0, 2.3, -CL + 0.07); F(0.1, 2.2, 0.12, 0x4a2c16, -0.9, 1.1, -CL + 0.07); F(0.1, 2.2, 0.12, 0x4a2c16, 0.9, 1.1, -CL + 0.07);
-    // quadro de avisos e bebedouro (decoração)
-    F(0.04, 0.7, 1.0, 0xb98042, CX - 0.03, 1.5, 4.2); F(0.05, 0.5, 0.8, 0xe8d8a8, CX - 0.05, 1.5, 4.2);
-    F(0.4, 0.9, 0.4, 0xb8bcc0, -CX + 0.3, 0.45, -3.2);
+    // o armário de altura dupla que abre e fecha: por dentro é PRETO (carcaça aberta na frente)
+    { const kw = 0.5, xi = -CX + 0.25, vermelho = 0x9c1f27, preto = 0x040405;
+      F(0.02, 2.0, kw - 0.04, preto, -CX + 0.01, 1.0, ZK); F(0.5, 0.03, kw - 0.04, preto, xi, 1.985, ZK); F(0.5, 0.03, kw - 0.04, preto, xi, 0.015, ZK);
+      F(0.5, 2.0, 0.03, preto, xi, 1.0, ZK - kw / 2 + 0.03); F(0.5, 2.0, 0.03, preto, xi, 1.0, ZK + kw / 2 - 0.03);
+      F(0.03, 2.0, 0.04, vermelho, FX - 0.015, 1.0, ZK - kw / 2 + 0.02); F(0.03, 2.0, 0.04, vermelho, FX - 0.015, 1.0, ZK + kw / 2 - 0.02);
+      F(0.03, 0.04, kw, vermelho, FX - 0.015, 1.99, ZK); F(0.03, 0.04, kw, vermelho, FX - 0.015, 0.02, ZK); }
+    // portas das salas e batentes na frente do buraco (a folha fica lá no fundo do vão)
+    const marrom = 0x7a4a2a, batente = 0x4a2c16, xFolha = (sd) => sd * (CX + PROF_V - 0.06);
+    for (const [sd, z] of portas) {
+      F(0.07, HP + 0.05, 0.1, batente, sd * (CX - 0.03), (HP + 0.05) / 2, z - 0.6); F(0.07, HP + 0.05, 0.1, batente, sd * (CX - 0.03), (HP + 0.05) / 2, z + 0.6); F(0.07, 0.1, 1.3, batente, sd * (CX - 0.03), HP + 0.05, z);
+      if ((sd === -1 && z === 11.0) || (sd === 1 && z === -9.4)) continue;                         // essas duas abrem de verdade (pivôs abaixo)
+      F(0.05, 2.1, 1.0, marrom, xFolha(sd), 1.05, z); F(0.06, 0.5, 0.3, 0x9ec7e0, xFolha(sd) - sd * 0.01, 1.55, z); F(0.05, 0.06, 0.1, 0xd8d8d0, xFolha(sd) - sd * 0.04, 1.0, z - 0.4);
+    }
+    // porta da rua: batentes + folhas (pivôs abaixo)
+    F(0.1, HF + 0.05, 0.07, batente, -GX - 0.05, (HF + 0.05) / 2, -CL + 0.03); F(0.1, HF + 0.05, 0.07, batente, GX + 0.05, (HF + 0.05) / 2, -CL + 0.03); F(GX * 2 + 0.2, 0.1, 0.07, batente, 0, HF + 0.05, -CL + 0.03);
+    // quadro de avisos e bebedouro (nos pedaços livres da parede direita)
+    F(0.04, 0.7, 1.0, 0xb98042, CX - 0.03, 1.5, 4.2); F(0.05, 0.5, 0.8, 0xe8d8a8, CX - 0.05, 1.5, 4.2); F(0.05, 0.12, 0.2, 0xd23a2a, CX - 0.07, 1.62, 3.95); F(0.05, 0.12, 0.2, 0x2a6fd2, CX - 0.07, 1.4, 4.4);
+    F(0.4, 0.9, 0.5, 0xb8bcc0, CX - 0.25, 0.45, -5.1); F(0.3, 0.05, 0.4, 0x8a8e92, CX - 0.25, 0.92, -5.1); F(0.08, 0.14, 0.08, 0x5a5e62, CX - 0.12, 1.02, -5.1);
     g.add(L.malha(MAT_CORES));
+    const folhaMesh = (w, h, cor) => new THREE.Mesh(new THREE.BoxGeometry(0.05, h, w), new THREE.MeshLambertMaterial({ color: cor }));
     // porta da sala de onde saímos (abre para o corredor)
-    const pivoD = new THREE.Group(); pivoD.position.set(-CX + 0.03, 0, 11.5);
-    const fo = new THREE.Mesh(new THREE.BoxGeometry(0.07, 2.1, 1.0), new THREE.MeshLambertMaterial({ color: 0xb98042 })); fo.position.set(0, 1.05, -0.5); pivoD.add(fo); g.add(pivoD);
-    // a porta do armário trancado (dobradiça na borda de trás)
-    const pivoK = new THREE.Group(); pivoK.position.set(-CX + 0.5 - 0.01, 1.0, ZK - 0.22);
+    const pivoD = new THREE.Group(); pivoD.position.set(xFolha(-1), 0, 11.5);
+    const fo = folhaMesh(1.0, 2.1, 0xb98042); fo.position.set(0, 1.05, -0.5); pivoD.add(fo); g.add(pivoD);
+    // porta por onde o valentão entra e sai (direita)
+    const pivoV = new THREE.Group(); pivoV.position.set(xFolha(1), 0, -9.4 + 0.5);
+    const fv = folhaMesh(1.0, 2.1, 0xb98042); fv.position.set(0, 1.05, -0.5); pivoV.add(fv); g.add(pivoV);
+    // porta dupla da rua (abre para dentro do corredor)
+    const pivoFE = new THREE.Group(), pivoFD = new THREE.Group();
+    pivoFE.position.set(-GX, 0, -CL - 0.2); pivoFD.position.set(GX, 0, -CL - 0.2);
+    for (const [pv, sx] of [[pivoFE, 1], [pivoFD, -1]]) {
+      const lf = new THREE.Mesh(new THREE.BoxGeometry(GX - 0.02, 2.2, 0.06), new THREE.MeshLambertMaterial({ color: 0x5a3a20 })); lf.position.set(sx * GX / 2, 1.1, 0); pv.add(lf);
+      const vd = new THREE.Mesh(new THREE.BoxGeometry(GX - 0.3, 1.2, 0.08), new THREE.MeshLambertMaterial({ color: 0x9ec7e0 })); vd.position.set(sx * GX / 2, 1.3, 0); pv.add(vd); g.add(pv);
+    }
+    // a porta do armário trancado (dobradiça na borda de trás; folha única larga)
+    const pivoK = new THREE.Group(); pivoK.position.set(FX - 0.01, 1.0, ZK - 0.22);
     const fk = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.96, 0.44), new THREE.MeshLambertMaterial({ color: 0x9c1f27 })); fk.position.set(0, 0, 0.22); pivoK.add(fk);
-    const mk = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.04), new THREE.MeshLambertMaterial({ color: 0xd0d0cc })); mk.position.set(-0.03, 0.1, 0.38); pivoK.add(mk); g.add(pivoK);
+    for (const y of [0.84, 0.74, 0.64]) { const vt = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.04, 0.3), new THREE.MeshLambertMaterial({ color: escuro })); vt.position.set(-0.005, y, 0.22); pivoK.add(vt); }
+    const mk = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.04), new THREE.MeshLambertMaterial({ color: 0xd0d0cc })); mk.position.set(-0.03, 0.1, 0.34); pivoK.add(mk); g.add(pivoK);
     pivoK.rotation.y = 100 * rad;                                                                      // começa aberto (o menino está arrumando as coisas)
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
-    return { g, pivo: pivoD, pivoK, seta };
+    return { g, pivo: pivoD, pivoK, pivoV, pivoFE, pivoFD, seta };
   }
 
   // ------------------------------------------------------------------ personagens
@@ -10587,11 +10648,18 @@ const Fase1 = (() => {
     S.elenco.push(A);
     return A;
   }
-  function oculos(A) {                                  // óculos pretos de armação grossa (colados na frente da cabeça)
-    const kc = A.kc, Lg = new Lote();
-    const xf = 0.24 * kc, y = 1.36 + 0.3 * kc;
-    for (const sz of [-0.12, 0.12]) Lg.caixa(0.03, 0.13 * kc, 0.15 * kc, 0x111118, xf, y, sz * kc);
-    Lg.caixa(0.03, 0.03 * kc, 0.12 * kc, 0x111118, xf, y + 0.03 * kc, 0);
+  function oculos(A) {                                  // (4.3.7) óculos de armação preta: dois aros em volta dos olhos + ponte + hastes nas laterais da cabeça
+    const kc = A.kc, Lg = new Lote(), c = 0x111118;
+    const xf = 0.258 * kc, yo = 1.36 + 0.245 * kc, zo = 0.0975 * kc;   // olhos do rosto 16x16: altura ≈ 0,245·kc, a ±0,0975·kc do centro
+    const gw = 0.17 * kc, gh = 0.15 * kc, e = 0.03 * kc, d = 0.04 * kc;
+    for (const sz of [-1, 1]) {
+      const zc = sz * zo;
+      Lg.caixa(d, e, gw, c, xf, yo + gh / 2 - e / 2, zc); Lg.caixa(d, e, gw, c, xf, yo - gh / 2 + e / 2, zc);        // aro: em cima e embaixo
+      Lg.caixa(d, gh, e, c, xf, yo, zc - gw / 2 + e / 2); Lg.caixa(d, gh, e, c, xf, yo, zc + gw / 2 - e / 2);         // aro: laterais
+      Lg.caixa(0.03 * kc, e, 0.09 * kc, c, 0.25 * kc, yo + 0.04 * kc, sz * 0.215 * kc);                              // ligação com a haste
+      Lg.caixa(0.24 * kc, e, e, c, 0.13 * kc, yo + 0.04 * kc, sz * 0.256 * kc);                                       // haste (por fora da cabeça)
+    }
+    Lg.caixa(d, e, 0.06 * kc, c, xf, yo + 0.03 * kc, 0);                                                              // ponte
     A.m.corpo.add(Lg.malha(MAT_CORES));
   }
   const poseSentado = (A, t, dt) => {
@@ -10629,18 +10697,22 @@ const Fase1 = (() => {
     const mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, dx = B.x - A.x, dz = B.z - A.z, l = Math.hypot(dx, dz) || 1;
     let px = -dz / l, pz = dx / l;
     if (Math.abs(pz) < 0.4) { if (px < 0) { px = -px; pz = -pz; } } else if (pz > 0) { px = -px; pz = -pz; }     // lado do quadro (z menor) ou, se estão alinhados em z, o lado +x
-    const d = Math.max(S && S.lugar === 'corredor' ? 3.6 : dist, l * 1.9);
-    return [mx + px * d, alt, mz + pz * d, mx, 0.85, mz];
+    const cor = S && S.lugar === 'corredor';
+    const d = Math.max(cor ? 2.3 : dist, l * 1.9);                      // (4.3.7) corredor: câmera bem mais perto
+    let cx = mx + px * d, cz = mz + pz * d;
+    if (cor) { cx = Math.max(-CX + 0.8, Math.min(CX - 0.8, cx)); cz = Math.max(-CL + 0.7, Math.min(CL - 0.7, cz)); }
+    return [cx, cor ? 1.55 : alt, cz, mx, 0.85, mz];
   }
   const CAMS = {
     porta: [4.0, 1.6, 1.5, 4.7, 1.1, 5.0],                              // olhando a porta de dentro da sala
     jog: () => seg(S.jog, -1.7, 1.35, -1.9, 0.8), aluno: () => seg(S.jog, -1.7, 1.35, -1.9, 0.8),
     prof: [0.0, 1.5, -1.9, -2.4, 1.15, -3.9],
     dupla: () => dupla(S.parA, S.parB, 2.7, 1.7), entrega: () => dupla(S.jog, S.prof, 2.8, 1.7),
-    geral: [5.6, 3.7, 4.8, -1.0, 0.9, -1.5], aula: [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],
+    geral: [5.6, 3.7, 4.8, -1.0, 0.9, -1.5],
+    aula: () => (S && S.lugar === 'corredor') ? (() => { const J = S.jog, fx = J.x * 0.4; return [fx, 5.0, J.z + 4.4, fx, 0.3, J.z - 1.2]; })() : [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],   // (4.3.7) no corredor a câmera 'aula' acompanha o jogador (antes ficava na sala, a 16 m do João)
     mesa: () => seg(S.jog, 0.5, 1.35, 1.7, 0.85),
     saida: [4.0, 1.6, 1.5, 4.7, 1.1, 5.4],
-    cor_ini: [1.7, 2.3, 12.2, -1.4, 1.0, 10.4], cor_buli: [1.5, 1.7, -4.2, -1.3, 1.0, -7.5], cor_fim: [0.0, 1.7, -8.4, 0, 1.0, -12.4],
+    cor_ini: [1.0, 2.3, 12.6, -2.8, 1.0, 10.5], cor_buli: [0.4, 1.7, -4.1, -2.4, 1.0, -7.4], cor_fim: [0.0, 1.7, -8.4, 0, 1.0, -12.4],
     pat_porta: [-2.6, 1.7, -4.8, 0, 1.3, 7.2], pat_bola: () => [S.joaoA.x + 1.0, 1.05, S.joaoA.z + 1.5, S.joaoA.x, 0.85, S.joaoA.z + 0.3],
     qd_ini: [-9, 2.8, -35, 0, 1.0, -22], qd_geral: [-5.5, 3.0, -31.5, 1.5, 0.9, -22.5],
   };
@@ -10697,6 +10769,7 @@ const Fase1 = (() => {
     return out;
   }
   function irPara(A, x1, z1, vel) {                                     // anda até lá desviando dos móveis (se estiver sentado, puxa a cadeira para trás primeiro)
+    if (S && S.lugar !== 'sala') return andar(A, [[x1, z1]], vel);       // (4.3.7) fora da sala não há mesas: vai direto (o BFS é só da sala e puxava o jogador para longe do João)
     const pts = []; let x0 = A.x, z0 = A.z;
     if (A.sentado) { A.sentado = false; z0 = A.z + 0.5; pts.push([x0, z0]); }
     for (const p of caminho(x0, z0, x1, z1)) pts.push(p);
@@ -10708,7 +10781,7 @@ const Fase1 = (() => {
     if (S.lugar === 'patio') return l;
     if (S.lugar === 'corredor') {
       l.push({ id: 'lucia2', x: S.luciaA.x, z: S.luciaA.z, r: 1.7, txt: Tf('Falar com {0}', nm('lucia')) });
-      if (S.trancado) l.push({ id: 'armario', x: -CX + 0.9, z: ZK, r: 1.6, txt: T('Abrir o armário') });
+      if (S.trancado) l.push({ id: 'armario', x: FX + 0.6, z: ZK, r: 1.7, txt: T('Abrir o armário') });
       if (!S.joaoSaiu) l.push({ id: 'joao2', x: S.joaoA.x, z: S.joaoA.z, r: 1.8, txt: Tf('Falar com {0}', nm('joao')) });
       else l.push({ id: 'rua', x: 0, z: -CL + 1.0, r: 1.8, txt: T('Sair da escola') });
       return l;
@@ -10941,24 +11014,24 @@ const Fase1 = (() => {
     S.elenco = [J];
     descartar(S.sala.g);
     const cor = montarCorredor(); S.sala = cor; cor.g.add(J.m.raiz);
-    S.lugar = 'corredor'; S.fase = 'corredor'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.kAng = 100 * rad; S.kAlvo = 100 * rad;
+    S.lugar = 'corredor'; S.fase = 'corredor'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.kAng = 100 * rad; S.kAlvo = 100 * rad; S.vAng = 0; S.vAlvo = 0; S.fAng = 0; S.fAlvo = 0;
     S.trancado = false; S.joaoSaiu = false; S.cenaFeita = false; S.luciaFalou = false;
     const lk = looksAlunos();
     const npc = (look, x, z, yaw, extra) => { const A = criar(cor, look); A.x = x; A.z = z; A.yaw = A.yawAlvo = yaw; A.bloq = true; return Object.assign(A, extra || {}); };
-    npc(lk[0], -1.65, 8.2, 0, { conv: 0 }); npc(lk[2], -1.1, 8.2, Math.PI, { conv: 2.2 });          // dois conversando junto aos armários
-    npc(lk[4], 1.65, 0.5, Math.PI, { conv: 1 }); npc(lk[5], 1.1, 0.5, 0, { conv: 3.4 });
-    npc(lk[1], -1.65, -2.3, 0, { conv: 0.6 }); npc(lk[6], -1.1, -2.3, Math.PI, { conv: 2.9 });
-    S.luciaA = npc({ pele: pele(1), cabelo: corCab(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 }, 1.25, 5.0, -Math.PI / 2);
+    npc(lk[0], -2.65, 8.2, 0, { conv: 0 }); npc(lk[2], -1.45, 8.2, Math.PI, { conv: 2.2 });          // (4.3.7) duplas conversando, afastadas 1,2 m (antes se misturavam)
+    npc(lk[4], 2.65, 0.5, Math.PI, { conv: 1 }); npc(lk[5], 1.45, 0.5, 0, { conv: 3.4 });
+    npc(lk[1], -2.65, -2.3, 0, { conv: 0.6 }); npc(lk[6], -1.45, -2.3, Math.PI, { conv: 2.9 });
+    S.luciaA = npc({ pele: pele(1), cabelo: corCab(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 }, 1.9, 4.6, -Math.PI / 2);
     S.joaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Franja'), rosto: ri('Sorridente') }, 0, -11.6, -Math.PI / 2);
-    S.oculosA = npc({ pele: pele(3), cabelo: corCab(1), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e8d070', listra: '#e8d070' }, -1.35, ZK, Math.PI, { conv: 1.7 }); oculos(S.oculosA);
-    S.valentaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Moicano'), rosto: ri('Sério'), camisa: '#2a2a30', listra: '#2a2a30', gola: '#c8202a', cabecao: 1.15, escala: 0.92 }, CX - 0.1, -9.4, Math.PI, { oculto: true, bloq: false });
+    S.oculosA = npc({ pele: pele(3), cabelo: corCab(1), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e8d070', listra: '#e8d070' }, FX + 0.55, ZK, Math.PI, { conv: 1.7 }); oculos(S.oculosA);
+    S.valentaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Moicano'), rosto: ri('Sério'), camisa: '#2a2a30', listra: '#2a2a30', gola: '#c8202a', cabecao: 1.15, escala: 0.92 }, CX + 0.25, -9.4, Math.PI, { oculto: true, bloq: false });
     // saindo da sala (porta da esquerda)
-    J.oculto = false; J.sentado = false; J.x = -CX + 0.3; J.z = 11.0; J.yaw = J.yawAlvo = 0; J.rota = null;
+    J.oculto = false; J.sentado = false; J.x = -CX + 0.2; J.z = 11.0; J.yaw = J.yawAlvo = 0; J.rota = null;
     S.seta = { x: 0, y: 2.5, z: -11.6 };
     camPara('cor_ini', true);
     await preto(false, 1000);
     Musica.porta(true); S.portaAlvo = -100 * rad; await esperar(700);
-    await andar(J, [[-0.9, 10.3]], 1.6);
+    await andar(J, [[-1.8, 10.3]], 1.6);
     S.portaAlvo = 0; Musica.porta(false);
     UI.missao.textContent = T('Missão: encontre o João no fim do corredor.'); UI.missao.hidden = false;
     liberar();
@@ -10967,34 +11040,36 @@ const Fase1 = (() => {
     const J = S.jog, B = S.valentaoA, K = S.oculosA;
     S.seta.y = -9;
     camPara('cor_buli');
-    B.oculto = false; Musica.porta(true);
-    await andar(B, [[1.2, -8.6], [-0.6, -7.5]], 1.9);
+    B.oculto = false; Musica.porta(true); S.vAlvo = 100 * rad; await esperar(600);
+    const pEnt = andar(B, [[CX - 1.2, -8.6], [FX + 1.4, -7.5]], 1.9); await esperar(1000); S.vAlvo = 0; await pEnt;
     olhar(K, B.x, B.z); olhar(B, K.x, K.z); K.bloq = false; await esperar(300);
     await fala('oculos', T('E-ei! O que você vai fazer...?'), 'cor_buli'); Dialogo.esconder();
     olhar(B, -CX, ZK);
-    const p1 = andar(K, [[-1.8, ZK], [-2.15, ZK]], 1.3), p2 = andar(B, [[-1.2, ZK]], 1.3);          // ele é empurrado para dentro do armário
+    const p1 = andar(K, [[FX + 0.1, ZK], [FX - 0.25, ZK]], 1.3), p2 = andar(B, [[FX + 0.7, ZK]], 1.3);          // ele é empurrado para dentro do armário
     await esperar(900); K.oculto = true; await p1; await p2;
     S.kAlvo = 0; Musica.porta(false); await esperar(900);
     await fala('valentao', T('Há há há há!'), 'cor_buli'); Dialogo.esconder();
     olhar(B, J.x, J.z); await esperar(500);
-    await andar(B, [[0.4, -8.6], [CX - 0.1, -9.4]], 1.9);
-    B.oculto = true;
+    await andar(B, [[0.4, -8.6], [CX - 1.0, -9.4]], 1.9);
+    S.vAlvo = 100 * rad; Musica.porta(true); await esperar(500);
+    await andar(B, [[CX + 0.25, -9.4]], 1.7);
+    B.oculto = true; S.vAlvo = 0; Musica.porta(false);
     S.trancado = true; K.bloq = false;
     S.seta = { x: 0, y: 2.5, z: -11.6 };
   }
   async function abrirArmario() {
     const J = S.jog, K = S.oculosA;
-    await andar(J, [[-0.8, ZK]], 2.1); olhar(J, -CX, ZK); await esperar(200);
+    await andar(J, [[FX + 1.55, ZK]], 2.1); olhar(J, -CX, ZK); await esperar(200);
     S.kAlvo = 100 * rad; Musica.porta(true); await esperar(800);
-    K.oculto = false; K.x = -2.15; K.z = ZK; K.yaw = K.yawAlvo = 0;
-    await andar(K, [[-1.5, ZK]], 1.2);
+    K.oculto = false; K.x = FX - 0.25; K.z = ZK; K.yaw = K.yawAlvo = 0;
+    await andar(K, [[FX + 0.8, ZK]], 1.2);
     olhar(K, J.x, J.z); S.parA = J; S.parB = K;
     await fala('oculos', T('Muito obrigado por me tirar daí!'), 'dupla');
     await fala('jog', T('Por nada.'), 'dupla'); Dialogo.esconder();
     S.trancado = false; S.salvouOculos = true; salvarHistoria();
     S.kAlvo = 0;
     camPara('aula');
-    await andar(K, [[-0.5, ZK + 1.2], [0.2, -1.0]], 1.8);
+    await andar(K, [[FX + 1.8, ZK + 1.2], [0.2, -1.0]], 1.8);
     K.oculto = true;
   }
   async function luciaFora() {
@@ -11025,7 +11100,7 @@ const Fase1 = (() => {
     const txt = S.joao ? 'Ei, {0}! Agora eu vou te contar o que era! Vem, me segue até a quadra!' : 'Ei, {0}! Eu estava te esperando pra te mostrar uma coisa! Vem, me segue até a quadra!';
     await fala('joao', Tf(txt, nomeJog()), 'dupla'); Dialogo.esconder();
     Jo.bloq = false; camPara('cor_fim');
-    Musica.porta(true); await andar(Jo, [[0, -CL + 0.8]], 1.9); Jo.oculto = true; await esperar(500);
+    Musica.porta(true); S.fAlvo = 95 * rad; await esperar(500); await andar(Jo, [[0, -CL - 1.3]], 1.9); Jo.oculto = true; S.fAlvo = 0; Musica.porta(false); await esperar(700);
     S.joaoSaiu = true; S.seta = { x: 0, y: 2.7, z: -CL + 0.6 };
     UI.missao.textContent = T('Missão: siga o João para fora da escola.');
   }
@@ -11033,8 +11108,8 @@ const Fase1 = (() => {
     const J = S.jog;
     S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; Dialogo.esconder(); S.seta.y = -9;
     camPara('cor_fim');
-    await andar(J, [[0, -CL + 0.8]], 2.0);
-    Musica.porta(true); await esperar(600);
+    S.fAlvo = 95 * rad; Musica.porta(true);
+    await andar(J, [[0, -CL + 0.8]], 2.0); await esperar(300);
     await andar(J, [[0, -CL - 1.2]], 1.9);
     await preto(true, 1100);
     S.fim();
@@ -11286,6 +11361,8 @@ const Fase1 = (() => {
     // porta da sala (ou da sala de onde saímos) e porta do armário
     S.portaAng += (S.portaAlvo - S.portaAng) * Math.min(1, dt * 4); S.sala.pivo.rotation.y = S.portaAng;
     if (S.sala.pivoK) { S.kAng += (S.kAlvo - S.kAng) * Math.min(1, dt * 5); S.sala.pivoK.rotation.y = S.kAng; }
+    if (S.sala.pivoV) { S.vAng += (S.vAlvo - S.vAng) * Math.min(1, dt * 5); S.sala.pivoV.rotation.y = S.vAng; }                       // (4.3.7) porta do valentão
+    if (S.sala.pivoFE) { S.fAng += (S.fAlvo - S.fAng) * Math.min(1, dt * 3.5); S.sala.pivoFE.rotation.y = -S.fAng; S.sala.pivoFD.rotation.y = S.fAng; }   // porta da rua
     // jogador livre
     const J = S.jog;
     if (S.lugar === 'corredor') S.cirs = S.elenco.filter((A) => A !== J && A.bloq && !A.oculto && !(A.rota && A.rota.length)).map((A) => ({ x: A.x, z: A.z, r: 0.25 }));
@@ -11381,6 +11458,7 @@ const Fase1 = (() => {
     // elenco
     S.jog = criar(S.sala, { pele: ap.pele || pele(2), cabelo: ap.cabelo || corCab(1), estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.cabelo || corCab(1), barba: 0 });
     if (op.direto === 'quadra') { GANCHO_RENDER = gancho; S.alunos = []; S.nome = op.nome || S.nome; }       // (atalho de teste: pula a escola)
+    else if (op.direto === 'corredor') { GANCHO_RENDER = gancho; S.alunos = []; S.nome = op.nome || S.nome; await corredor(); await new Promise((res) => { S.fim = res; }); }   // (atalho de teste: começa no corredor)
     else {
       S.prof = criar(S.sala, { pele: pele(3), cabelo: corCab(6), estilo: ci('Coque longo'), rosto: ri('Padrão'), camisa: '#7a3e8f', listra: '#7a3e8f', gola: '#ffffff', calcao: 0x3a2a4a, meia: '#3a2a4a', cabecao: 1.3, escala: 0.98 });
       S.prof.x = PROF.x; S.prof.z = PROF.z; S.prof.yaw = S.prof.yawAlvo = -Math.PI / 2;
@@ -12627,7 +12705,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.6',
+  versao: '4.3.7',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
