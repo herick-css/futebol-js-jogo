@@ -33,8 +33,18 @@
      - Cortes com degradê/fade agora são pintados em pixels na textura da cabeça (sem cubos extras); barbas
        conectadas da lateral até a frente e sem passar por baixo da cabeça.
      - Componentes reutilizáveis: Mumble (fala por letras/"blips", 5 vozes) e Dialogo (caixa de diálogo pixel).
-     - Salvar personagem: menus somem, ele aquece, o campo aparece, fala 4 falas e a tela preta mostra o ano
-       atual voltando 12 anos (loading escondido). A fase 1 ainda não existe: termina num aviso e volta ao menu.
+     - Salvar personagem: os menus ficam transparentes, ele aquece NO MESMO LUGAR (no campo de várzea de verdade do
+       jogo; o criador já abre dentro dele, sem cena separada), fala 4 falas e a tela preta mostra o ano atual
+       voltando 12 anos (loading escondido). A fase 1 ainda não existe: termina num aviso e volta ao menu.
+     - IDIOMAS: português (padrão), inglês, espanhol, italiano e francês. Primeira tela do jogo = "Idioma" com 5
+       bandeiras desenhadas (BR, EUA, ES, IT, FR); botão com a bandeira no canto do menu muda depois. Todo texto passa
+       por T('texto em português') e a tabela I18N guarda as traduções (veja o bloco "IDIOMAS"). Traduzidos: menu,
+       painéis, carregando, gire o celular, criador de personagem (cortes, barbas, rostos, chuteiras...) e a cena.
+       Ainda em português: HUD/avisos da partida, configurações da partida, nomes de times.
+     - Rosto: removida a "Sobrancelha grossa" (igual ao Sério); cor dos lábios (8 tons); bocas que sobem (sorridente,
+       marrento) desceram 1 pixel; bravo e sorridente agora de boca fechada, sem dentes; barba "Rala" = barba desenhada
+       só com a pele mais escura.
+     - SOCIETY, replay atrás do gol: some só a grade do fundo daquele lado (antes sumiam todas).
 
    Novidades da versão 4.2.7:
      - SOCIETY agora é 4 x 4 (goleiro + 3 de linha; formações com 3 jogadores de linha em FORMACOES).
@@ -1682,13 +1692,13 @@ const ROSTOS = [
   { nome: 'Olhos grandes', oh: 4, sob: { y: 4 } },
   { nome: 'Boca pequena', boca: 'pequena' },
   { nome: 'Sobrancelha inclinada', sob: { inc: 1 } },
-  { nome: 'Sobrancelha grossa', sob: { g: 2 } },
   { nome: 'Sobrancelha alta', sob: { y: 4 } },
   { nome: 'Sonolento', oh: 1, sob: { y: 6 }, boca: 'reta' },
   { nome: 'Marrento', sob: { inc: 1 }, boca: 'torta' },
   { nome: 'Sardas', extra: 'sardas' },
   { nome: 'Cicatriz', extra: 'cicatriz' },
 ];
+const LABIOS = ['#E3A59B', '#D18F86', '#BE766D', '#A8625A', '#8E4C44', '#753B34', '#5C2D28', '#46211E'];   // (4.3.0) cor dos lábios: do mais claro ao mais escuro
 const hexNum = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
 const corCss = (c) => (typeof c === 'string' ? c : '#' + c.toString(16).padStart(6, '0'));
 function misturarCor(a, b, t) {      // t = 0 → a, t = 1 → b (cores 0xRRGGBB)
@@ -1794,7 +1804,7 @@ function pintarRosto(g, ox, oy, pele, o) {
   const linhas = (lista, c) => { for (const [y, x0, x1] of lista) px(x0, y, x1 - x0 + 1, 1, c); };
   const id = B.id;
   if (id === 'porfazer') { g.fillStyle = bc; g.globalAlpha = 0.3; g.fillRect(ox + 2, oy + 11, 12, 5); g.fillRect(ox + 1, oy + 9, 2, 2); g.fillRect(ox + 13, oy + 9, 2, 2); g.globalAlpha = 1; }
-  else if (id === 'rala') { g.fillStyle = bc; g.globalAlpha = 0.55; for (let y = 10; y < 16; y++) for (let x = 2; x < 14; x++) if ((x + y * 2) % 3 === 0 && !(y === 10 && x > 5 && x < 10)) g.fillRect(ox + x, oy + y, 1, 1); g.globalAlpha = 1; }
+  else if (id === 'rala') { const pc = parseInt(pele.slice(1), 16), esc = '#' + misturarCor(pc, 0x1a0f0a, 0.32).toString(16).padStart(6, '0'); linhas([[10, 1, 1], [10, 14, 14], [11, 1, 1], [11, 14, 14], [12, 1, 1], [12, 14, 14], [13, 1, 2], [13, 13, 14], [14, 2, 13], [15, 3, 12]], esc); }
   else if (id === 'curta') linhas([[10, 1, 2], [10, 13, 14], [11, 1, 4], [11, 11, 14], [12, 1, 3], [12, 12, 14], [13, 2, 13], [14, 3, 12], [15, 4, 11]], bc);
   else if (id === 'media') linhas([[9, 1, 2], [9, 13, 14], [10, 1, 3], [10, 12, 14], [11, 1, 4], [11, 11, 14], [12, 1, 4], [12, 11, 14], [13, 1, 14], [14, 1, 14], [15, 2, 13]], bc);
   else if (id === 'cheia' || id === 'longa') linhas([[9, 1, 2], [9, 13, 14], [10, 1, 5], [10, 10, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 1, 14]], bc);
@@ -1807,14 +1817,14 @@ function pintarRosto(g, ox, oy, pele, o) {
   else if (id === 'biggrosso') linhas([[10, 4, 6], [10, 9, 11], [11, 3, 12], [12, 3, 4], [12, 11, 12]], bc);
   // boca (por cima de tudo)
   const temBarba = id !== 'nenhuma' && id !== 'porfazer' && id !== 'rala' && B.grupo === 'barba' && id !== 'cavanhaque' && id !== 'cavlongo';
-  const labio = temBarba ? '#B0645A' : '#7A3B2E';
+  const labio = o.labio != null && LABIOS[o.labio] ? LABIOS[o.labio] : (temBarba ? '#B0645A' : '#7A3B2E');
   const boca = R.boca || 'normal';
-  if (boca === 'sorriso') { px(5, 11, 1, 1, labio); px(10, 11, 1, 1, labio); px(6, 12, 4, 1, labio); px(7, 12, 2, 1, '#F2F2EE'); }
-  else if (boca === 'brava') { px(6, 12, 4, 2, labio); px(7, 12, 2, 1, '#F2F2EE'); }
+  if (boca === 'sorriso') { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 13, 4, 1, labio); }      // sorriso de boca fechada
+  else if (boca === 'brava') px(6, 12, 4, 2, labio);                                                         // fechada, sem dentes
   else if (boca === 'triste') { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
   else if (boca === 'pequena') px(7, 12, 2, 1, labio);
-  else if (boca === 'torta') { px(6, 12, 3, 1, labio); px(9, 11, 1, 1, labio); }
-  else if (boca === 'reta') px(6, 12, 4, 1, temBarba ? '#B0645A' : '#6A2F26');
+  else if (boca === 'torta') { px(6, 13, 3, 1, labio); px(9, 12, 1, 1, labio); }
+  else if (boca === 'reta') px(6, 12, 4, 1, o.labio != null && LABIOS[o.labio] ? labio : (temBarba ? '#B0645A' : '#6A2F26'));
   else px(6, 12, 4, 1, labio);
 }
 function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCamisa, corTexto) {
@@ -4528,9 +4538,9 @@ function kickoff(team) {
   G.abracoFeito = false;
   for (const t of tecnicos) t.abraco = null;
   // (se alguém foi expulso, outro assume a saída / o toque)
-  const taker = TEAMS[team].find((p) => p.role === 'FWD') || TEAMS[team].find((p) => p.role === 'MID');
-  const partner = TEAMS[team].find((p) => p.role === 'MID' && p.base.z === 0 && p !== taker)
-    || TEAMS[team].find((p) => p !== taker && p.role !== 'GK');
+  const taker = TEAMS[team].find((p) => p.role === 'FWD' && !p.out) || TEAMS[team].find((p) => p.role === 'MID' && !p.out) || TEAMS[team].find((p) => p.role !== 'GK' && !p.out) || TEAMS[team][0];
+  const partner = TEAMS[team].find((p) => p.role === 'MID' && p.base.z === 0 && p !== taker && !p.out)
+    || TEAMS[team].find((p) => p !== taker && p.role !== 'GK' && !p.out) || taker;   // (4.3.0) sem ninguém sobrando (expulsões): não quebra
   for (const p of players) {
     if (p.out) continue;
     let bx = p.base.x, bz = p.base.z;
@@ -7833,8 +7843,7 @@ function terminarReplay() {
   const R = G.replay;
   if (!R) return;
   G.replay = null;
-  if (TELA_MESH) TELA_MESH.visible = true;
-  if (POSTES_MESH) POSTES_MESH.visible = true;
+  for (const s of [-1, 1]) { if (FUNDO_GRADE[s].tela) FUNDO_GRADE[s].tela.visible = true; if (FUNDO_GRADE[s].postes) FUNDO_GRADE[s].postes.visible = true; }
   linhasImped.g.visible = false;
   setLetterbox(false);
   $('skipBtn').hidden = true; $('skipBtn').textContent = 'Pular ▶';
@@ -7889,8 +7898,11 @@ function cameraReplay(R, bola, rdt) {
   else { px = bola.x - R.lado * 5.5; py = 1.5; pz = bola.z + 4; }                                      // perto, rasteira
   if (![px, py, pz, tx, ty, tz].every(Number.isFinite)) return;      // (4.2.6) valor inválido: mantém a câmera como está
   if (R.camPos && !Object.values(R.camPos).every(Number.isFinite)) R.camPos = null;
-  if (TELA_MESH) TELA_MESH.visible = !(R.tipo === 'gol' && R.cam === 1);
-  if (POSTES_MESH) POSTES_MESH.visible = !(R.tipo === 'gol' && R.cam === 1);   // (4.2.6) atrás do gol: sem a grade na frente
+  for (const s of [-1, 1]) {                        // (4.3.0) atrás do gol some só a grade do fundo desse lado (a que tampa a câmera)
+    const esc = R.tipo === 'gol' && R.cam === 1 && s === R.lado;
+    if (FUNDO_GRADE[s].tela) FUNDO_GRADE[s].tela.visible = !esc;
+    if (FUNDO_GRADE[s].postes) FUNDO_GRADE[s].postes.visible = !esc;
+  }
   const k = R.camPos ? 1 - Math.exp(-rdt * 4) : 1;
   R.camPos = R.camPos || { px, py, pz, tx, ty, tz };
   const C = R.camPos;
@@ -7924,6 +7936,7 @@ function iniciarReplayImpedimento(reg, depois) {
 }
 
 let last = performance.now(), radarT = 0, fpsT = 0, fpsN = 0;
+let GANCHO_RENDER = null;
 function frame(now) {
   requestAnimationFrame(frame);
   const rdt = Math.min(0.05, (now - last) / 1000);
@@ -7952,6 +7965,7 @@ function frame(now) {
   atualizarTecnicos(rdt);
   atualizarBanco(rdt);
   ajustarSombras();
+  if (GANCHO_RENDER) GANCHO_RENDER(rdt);                    // (4.3.0) o criador de personagem usa a câmera e o campo do jogo
   Som.torcida(nivelTorcida());                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
@@ -8115,19 +8129,21 @@ function texturaTela(corFio, passo) {
     }
   });
 }
-let TELA_MESH = null, POSTES_MESH = null;                              // (4.2.6) a rede/alambrado (some na câmera de trás do gol, no replay)
+let TELA_MESH = null, POSTES_MESH = null;
+const FUNDO_GRADE = { '-1': { tela: null, postes: null }, '1': { tela: null, postes: null } };   // (4.3.0) rede e postes do fundo de cada lado (só o do lado da câmera some no replay)                              // (4.2.6) a rede/alambrado (some na câmera de trás do gol, no replay)
 let ALTURA_GRADE = 5;                              // (4.1.3) a comemoração "pular na grade" usa
 function buildArredores(tipo) {
   const varzea = tipo === 'varzea';
   const ALT = varzea ? 2.6 : 5;                    // altura do alambrado / da rede
   ALTURA_GRADE = ALT;
-  const E = new Lote(), Lp = new Lote(), Ep = new Lote();   // Ep: postes e cano do alambrado (separados para sumirem no replay)
+  const E = new Lote(), Lp = new Lote(), Ep = new Lote(), EpF = { '-1': new Lote(), '1': new Lote() };   // Ep: postes e cano do alambrado (separados para sumirem no replay)
   // Tela: 4 paredes com a textura repetida (1 chamada de desenho).
   const tex = texturaTela(varzea ? 'rgba(170,175,180,0.9)' : 'rgba(30,60,35,0.85)', varzea ? 8 : 6);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1);
   const telaMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.25, side: THREE.DoubleSide, depthWrite: false });
-  const R = new Lote([0, 0, 1, 1]);
-  const parede = (x0, z0, x1, z1) => {
+  const R0 = new Lote([0, 0, 1, 1]), RF = { '-1': new Lote([0, 0, 1, 1]), '1': new Lote([0, 0, 1, 1]) };
+  const parede = (x0, z0, x1, z1, fundo) => {
+    const R = fundo ? RF[fundo] : R0;
     const len = Math.hypot(x1 - x0, z1 - z0), rep = len / 1.2, rv = ALT / 1.2;
     const b = R.pos.length / 3;
     R.pos.push(x0, ALT, z0, x1, ALT, z1, x0, 0, z0, x1, 0, z1);
@@ -8136,13 +8152,14 @@ function buildArredores(tipo) {
     R.idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
   };
   const X = BOARD_X, Z = BOARD_Z, Zn = BOARD_ZN, Zs = (s) => (s < 0 ? Zn : Z);   // (4.1.3) lado do banco mais largo
-  parede(-X, -Zn, X, -Zn); parede(-X, Z, X, Z); parede(-X, -Zn, -X, Z); parede(X, -Zn, X, Z);
-  const tela = R.malha(telaMat); ESTADIO.add(tela); freeze(tela); TELA_MESH = tela;
+  parede(-X, -Zn, X, -Zn); parede(-X, Z, X, Z); parede(-X, -Zn, -X, Z, -1); parede(X, -Zn, X, Z, 1);
+  const tela = R0.malha(telaMat); ESTADIO.add(tela); freeze(tela); TELA_MESH = tela;
+  for (const s of [-1, 1]) { const m = RF[s].malha(telaMat); ESTADIO.add(m); freeze(m); FUNDO_GRADE[s].tela = m; }
   // Postes do alambrado e cano de cima.
   const corPoste = varzea ? 0x8a9096 : 0x2b3a2e;
   for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s));
-  for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) Ep.caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
-  for (const s of [-1, 1]) { Ep.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); Ep.caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
+  for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) EpF[s].caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
+  for (const s of [-1, 1]) { Ep.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); EpF[s].caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
   // Arquibancadinha (num dos lados compridos, z > 0): degraus de cimento.
   const degraus = varzea ? 3 : 2, compr = Math.min(varzea ? 34 : 22, X * 1.4);
   for (let r = 0; r < degraus; r++) E.caixa(compr, 0.45 * (r + 1), 0.9, r % 2 ? 0x9a978f : 0x8c8a83, 0, 0.225 * (r + 1), Z + 1.6 + r * 0.9);
@@ -8172,6 +8189,7 @@ function buildArredores(tipo) {
   }
   const est = E.malha(MAT_CORES); ESTADIO.add(est); freeze(est);
   const postesM = Ep.malha(MAT_CORES); ESTADIO.add(postesM); freeze(postesM); POSTES_MESH = postesM;
+  for (const s of [-1, 1]) { const m = EpF[s].malha(MAT_CORES); ESTADIO.add(m); freeze(m); FUNDO_GRADE[s].postes = m; }
   lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });
   const lamp = Lp.malha(lampadasMat); ESTADIO.add(lamp); freeze(lamp);
   // Torcida em pé do lado de fora da tela (e sentada/em pé na arquibancadinha). Popularidade
@@ -8534,7 +8552,7 @@ function criarJogador(P, team, f, j, num, isUser) {
   const mesh = makeAthlete({
     camisa: isGK ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num,
     calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema,
-    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null,
+    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null,
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
   scene.add(mesh.raiz);
@@ -8624,7 +8642,7 @@ function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: banco
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
-    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
+    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
   m.etiqueta.visible = false;
   scene.add(m.raiz);
   return m;
@@ -9545,6 +9563,214 @@ function carregarJogo(slot) {
   return 'ok';
 }
 
+
+// ---------------------------------------------------------------------
+// 14. IDIOMAS (4.3.0): português (padrão), inglês, espanhol, italiano e francês.
+// TODO texto de interface passa por T('texto em português'): o próprio português é a chave e a tabela I18N guarda
+// [inglês, espanhol, italiano, francês]. Sem tradução cadastrada (ou em português), aparece o texto original.
+//   T('Jogar')                  → 'Play' (em inglês)
+//   Tf('PASSO {0} DE 4', 2)     → troca {0}, {1}... pelos argumentos, já traduzido
+//   Idioma.definir('es')        → troca o idioma, salva no aparelho e avisa quem escutou (Idioma.aoMudar)
+// Para um texto novo: escreva-o em português no código dentro de T(...) e acrescente a linha em I18N.
+// Ainda NÃO traduzidos: textos dentro da partida (HUD, avisos), configurações da partida e nomes de times.
+// ---------------------------------------------------------------------
+const IDIOMAS = [
+  { id: 'pt', nome: 'Português', bandeira: 'br' }, { id: 'en', nome: 'English', bandeira: 'us' }, { id: 'es', nome: 'Español', bandeira: 'es' },
+  { id: 'it', nome: 'Italiano', bandeira: 'it' }, { id: 'fr', nome: 'Français', bandeira: 'fr' },
+];
+const IDIOMA_PERGUNTAR_SEMPRE = true;      // true: a tela de idioma aparece toda vez que o jogo abre (false: só na primeira vez)
+const I18N = {
+  // ----- menu e painéis -----
+  'Jogar': ['Play', 'Jugar', 'Gioca', 'Jouer'], 'Carregar': ['Load', 'Cargar', 'Carica', 'Charger'],
+  'Configurações': ['Settings', 'Ajustes', 'Impostazioni', 'Paramètres'], 'Créditos': ['Credits', 'Créditos', 'Crediti', 'Crédits'],
+  'Sair': ['Exit', 'Salir', 'Esci', 'Quitter'], 'Voltar': ['Back', 'Volver', 'Indietro', 'Retour'],
+  'Modo história': ['Story mode', 'Modo historia', 'Modalità storia', 'Mode histoire'], 'Partida livre': ['Quick match', 'Partido libre', 'Partita libera', 'Match libre'],
+  'Carregar jogo': ['Load game', 'Cargar partida', 'Carica partita', 'Charger une partie'], 'Vazio': ['Empty', 'Vacío', 'Vuoto', 'Vide'],
+  'Nenhum jogo salvo aqui': ['No saved game here', 'Ninguna partida guardada aquí', 'Nessun salvataggio qui', 'Aucune sauvegarde ici'],
+  'Jogo salvo': ['Saved game', 'Partida guardada', 'Partita salvata', 'Partie sauvegardée'],
+  'Ainda não há jogos salvos.': ['No saved games yet.', 'Aún no hay partidas guardadas.', 'Non ci sono ancora salvataggi.', 'Aucune sauvegarde pour le moment.'],
+  'Este save não tem uma partida para abrir.': ['This save has no match to open.', 'Este guardado no tiene un partido para abrir.', 'Questo salvataggio non ha una partita da aprire.', "Cette sauvegarde n'a pas de match à ouvrir."],
+  'Esse espaço está vazio.': ['This slot is empty.', 'Este espacio está vacío.', 'Questo slot è vuoto.', 'Cet emplacement est vide.'],
+  'Feito por': ['Made by', 'Hecho por', 'Creato da', 'Créé par'], 'Carregando': ['Loading', 'Cargando', 'Caricamento', 'Chargement'],
+  'Gire o celular': ['Rotate your phone', 'Gira el móvil', 'Ruota il telefono', 'Tourne ton téléphone'],
+  'para a horizontal': ['to landscape', 'a horizontal', 'in orizzontale', 'en mode paysage'],
+  'Idioma': ['Language', 'Idioma', 'Lingua', 'Langue'], 'Menu principal': ['Main menu', 'Menú principal', 'Menu principale', 'Menu principal'],
+  'Mudar idioma': ['Change language', 'Cambiar idioma', 'Cambia lingua', 'Changer de langue'],
+  // ----- criador de personagem -----
+  'Criar personagem': ['Create character', 'Crear personaje', 'Crea personaggio', 'Créer le personnage'],
+  'PASSO {0} DE 4 · {1}': ['STEP {0} OF 4 · {1}', 'PASO {0} DE 4 · {1}', 'PASSO {0} DI 4 · {1}', 'ÉTAPE {0} SUR 4 · {1}'],
+  'IDENTIDADE': ['IDENTITY', 'IDENTIDAD', 'IDENTITÀ', 'IDENTITÉ'], 'APARÊNCIA': ['APPEARANCE', 'APARIENCIA', 'ASPETTO', 'APPARENCE'],
+  'EQUIPAMENTO': ['GEAR', 'EQUIPACIÓN', 'EQUIPAGGIAMENTO', 'ÉQUIPEMENT'], 'ESTILO DE JOGO': ['PLAYSTYLE', 'ESTILO DE JUEGO', 'STILE DI GIOCO', 'STYLE DE JEU'],
+  'Qual é o seu nome?': ['What is your name?', '¿Cómo te llamas?', 'Come ti chiami?', "Comment t'appelles-tu ?"],
+  'Ex.: Herick Silva': ['E.g.: Herick Silva', 'Ej.: Herick Silva', 'Es.: Herick Silva', 'Ex. : Herick Silva'],
+  'Tem apelido?': ['Do you have a nickname?', '¿Tienes apodo?', 'Hai un soprannome?', 'As-tu un surnom ?'],
+  'Não tenho': ["I don't", 'No tengo', 'Non ce l\'ho', 'Non'], 'Tenho': ['I do', 'Tengo', "Ce l'ho", 'Oui'],
+  'Ex.: Ricky': ['E.g.: Ricky', 'Ej.: Ricky', 'Es.: Ricky', 'Ex. : Ricky'],
+  'Nome na camisa': ['Name on the shirt', 'Nombre en la camiseta', 'Nome sulla maglia', 'Nom sur le maillot'],
+  'SOBRENOME': ['SURNAME', 'APELLIDO', 'COGNOME', 'NOM'],
+  'Vazio = usa o apelido (ou o sobrenome). Máximo 10 letras. Gire o boneco para ver as costas.': ['Empty = uses the nickname (or the surname). Up to 10 letters. Spin the character to see the back.', 'Vacío = usa el apodo (o el apellido). Máximo 10 letras. Gira el muñeco para ver la espalda.', 'Vuoto = usa il soprannome (o il cognome). Massimo 10 lettere. Ruota il personaggio per vedere la schiena.', 'Vide = utilise le surnom (ou le nom). 10 lettres maximum. Fais tourner le personnage pour voir le dos.'],
+  'Número preferido': ['Favorite number', 'Número preferido', 'Numero preferito', 'Numéro préféré'],
+  'Diminuir': ['Decrease', 'Disminuir', 'Diminuisci', 'Diminuer'], 'Aumentar': ['Increase', 'Aumentar', 'Aumenta', 'Augmenter'],
+  'De 1 a 99. Se o número já estiver ocupado no time, o jogo dá outro.': ['From 1 to 99. If the number is already taken on the team, the game gives you another.', 'De 1 a 99. Si el número ya está ocupado en el equipo, el juego te da otro.', 'Da 1 a 99. Se il numero è già occupato in squadra, il gioco ne assegna un altro.', "De 1 à 99. Si le numéro est déjà pris dans l'équipe, le jeu t'en donne un autre."],
+  'Menu': ['Menu', 'Menú', 'Menu', 'Menu'], 'Próximo ▶': ['Next ▶', 'Siguiente ▶', 'Avanti ▶', 'Suivant ▶'], '◀ Voltar': ['◀ Back', '◀ Volver', '◀ Indietro', '◀ Retour'],
+  'Pele': ['Skin', 'Piel', 'Pelle', 'Peau'], 'Cabelo': ['Hair', 'Pelo', 'Capelli', 'Cheveux'], 'Barba': ['Beard', 'Barba', 'Barba', 'Barbe'], 'Rosto': ['Face', 'Rostro', 'Viso', 'Visage'],
+  'Blusa': ['Shirt', 'Camiseta', 'Maglia', 'Maillot'], 'Meião': ['Socks', 'Medias', 'Calzettoni', 'Chaussettes'], 'Chuteira': ['Boots', 'Botas', 'Scarpini', 'Crampons'],
+  'Pé': ['Foot', 'Pie', 'Piede', 'Pied'], 'Comemoração': ['Celebration', 'Celebración', 'Esultanza', 'Célébration'], 'Voz': ['Voice', 'Voz', 'Voce', 'Voix'],
+  'Tom de pele': ['Skin tone', 'Tono de piel', 'Tono della pelle', 'Teint'], 'Escala de Fitzpatrick, do tipo I ao VI.': ['Fitzpatrick scale, from type I to VI.', 'Escala de Fitzpatrick, del tipo I al VI.', 'Scala di Fitzpatrick, dal tipo I al VI.', 'Échelle de Fitzpatrick, du type I au VI.'],
+  'Corte': ['Haircut', 'Corte', 'Taglio', 'Coupe'], 'Cor do cabelo': ['Hair color', 'Color del pelo', 'Colore dei capelli', 'Couleur des cheveux'],
+  'Só bigodinho': ['Mustache only', 'Solo bigote', 'Solo baffi', 'Moustache seulement'], 'Cor da barba': ['Beard color', 'Color de la barba', 'Colore della barba', 'Couleur de la barbe'],
+  'Igual ao cabelo': ['Same as hair', 'Igual que el pelo', 'Come i capelli', 'Comme les cheveux'], 'Cor dos lábios': ['Lip color', 'Color de los labios', 'Colore delle labbra', 'Couleur des lèvres'],
+  'Lábios {0}': ['Lips {0}', 'Labios {0}', 'Labbra {0}', 'Lèvres {0}'],
+  'Manga curta': ['Short sleeves', 'Manga corta', 'Maniche corte', 'Manches courtes'], 'Manga longa': ['Long sleeves', 'Manga larga', 'Maniche lunghe', 'Manches longues'],
+  'A cor da camisa é a do time. Aqui é só o modelo.': ["The shirt color is the team's. Here you only pick the style.", 'El color de la camiseta es el del equipo. Aquí solo eliges el modelo.', 'Il colore della maglia è quello della squadra. Qui scegli solo il modello.', "La couleur du maillot est celle de l'équipe. Ici, tu choisis seulement le modèle."],
+  'Curto': ['Short', 'Corto', 'Corto', 'Court'], 'Normal': ['Normal', 'Normal', 'Normale', 'Normal'], 'Longo': ['Long', 'Largo', 'Lungo', 'Long'],
+  'Pé dominante': ['Dominant foot', 'Pie dominante', 'Piede dominante', 'Pied fort'], 'Pé direito': ['Right foot', 'Pie derecho', 'Piede destro', 'Pied droit'], 'Pé esquerdo': ['Left foot', 'Pie izquierdo', 'Piede sinistro', 'Pied gauche'],
+  'É o pé com que você chuta e passa melhor.': ['It is the foot you shoot and pass best with.', 'Es el pie con el que mejor chutas y pasas.', 'È il piede con cui tiri e passi meglio.', 'Le pied avec lequel tu tires et passes le mieux.'],
+  'Comemorações de gol': ['Goal celebrations', 'Celebraciones de gol', 'Esultanze dopo il gol', 'Célébrations de but'], 'Aviãozinho': ['Airplane', 'Avioncito', 'Aeroplanino', 'Avion'], 'Joelhada': ['Knee slide', 'Rodillazo', 'Scivolata in ginocchio', 'Glissade à genoux'],
+  'As duas já vêm marcadas. Toque para desmarcar uma (pelo menos uma fica). Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.': ['Both come selected. Tap to unselect one (at least one stays). Airplane: you steer with the joystick. Knee slide: slide and drop to your knees. More celebrations will come later.', 'Las dos vienen marcadas. Toca para desmarcar una (al menos una se queda). Avioncito: lo guías con el joystick. Rodillazo: deslízate y cae de rodillas. Vendrán más celebraciones.', 'Sono già selezionate entrambe. Tocca per deselezionarne una (almeno una resta). Aeroplanino: lo guidi con il joystick. Scivolata: scivola e cadi in ginocchio. Altre esultanze arriveranno.', "Les deux sont déjà cochées. Touche pour en décocher une (au moins une reste). Avion : tu le diriges avec le joystick. Glissade : glisse et tombe à genoux. D'autres célébrations arriveront."],
+  'Tom de voz': ['Tone of voice', 'Tono de voz', 'Tono di voce', 'Ton de voix'],
+  'Vamos jogar bola!': ["Let's play ball!", '¡Vamos a jugar al fútbol!', 'Giochiamo a pallone!', 'On joue au foot !'],
+  'Bem aguda': ['Very high', 'Muy aguda', 'Molto acuta', 'Très aiguë'], 'Aguda': ['High', 'Aguda', 'Acuta', 'Aiguë'], 'Média': ['Medium', 'Media', 'Media', 'Moyenne'], 'Grave': ['Low', 'Grave', 'Grave', 'Grave'], 'Bem grave': ['Very low', 'Muy grave', 'Molto grave', 'Très grave'],
+  'Toque numa voz para ouvir. Da mais aguda (1) à mais grave (5).': ['Tap a voice to listen. From the highest (1) to the lowest (5).', 'Toca una voz para escucharla. De la más aguda (1) a la más grave (5).', 'Tocca una voce per ascoltarla. Dalla più acuta (1) alla più grave (5).', 'Touche une voix pour l’écouter. De la plus aiguë (1) à la plus grave (5).'],
+  'Salvar personagem ✔': ['Save character ✔', 'Guardar personaje ✔', 'Salva personaggio ✔', 'Enregistrer le personnage ✔'],
+  'Digite o seu nome.': ['Type your name.', 'Escribe tu nombre.', 'Scrivi il tuo nome.', 'Tape ton nom.'],
+  'Digite o apelido (ou escolha "Não tenho").': ['Type the nickname (or choose "I don\'t").', 'Escribe el apodo (o elige "No tengo").', 'Scrivi il soprannome (o scegli "Non ce l\'ho").', 'Tape le surnom (ou choisis « Non »).'],
+  'Seu personagem em 3D. Arraste para girar.': ['Your character in 3D. Drag to spin.', 'Tu personaje en 3D. Arrastra para girar.', 'Il tuo personaggio in 3D. Trascina per ruotare.', 'Ton personnage en 3D. Fais glisser pour tourner.'],
+  'Arraste o boneco para girar': ['Drag the character to spin', 'Arrastra el muñeco para girar', 'Trascina il personaggio per ruotare', 'Fais glisser le personnage pour tourner'],
+  'Girar para a esquerda': ['Spin left', 'Girar a la izquierda', 'Ruota a sinistra', 'Tourner à gauche'], 'Girar para a direita': ['Spin right', 'Girar a la derecha', 'Ruota a destra', 'Tourner à droite'],
+  // ----- cena de abertura -----
+  'É, esse aí sou eu... me preparando...': ["Yeah, that's me... getting ready...", 'Sí, ese soy yo... preparándome...', 'Sì, quello sono io... che mi preparo...', "Ouais, c'est moi... en train de me préparer..."],
+  'Mas... minha história com o futebol não começou aí não.': ["But... my story with football didn't start there.", 'Pero... mi historia con el fútbol no empezó ahí.', 'Ma... la mia storia con il calcio non è iniziata lì.', "Mais... mon histoire avec le foot n'a pas commencé là."],
+  'É, na verdade, ela começou há muito tempo atrás...': ['Yeah, actually, it began a long time ago...', 'Sí, en realidad empezó hace mucho tiempo...', 'Sì, in realtà è iniziata tanto tempo fa...', "Ouais, en fait, elle a commencé il y a très longtemps..."],
+  'Precisamente... {0} anos atrás': ['Precisely... {0} years ago', 'Exactamente... hace {0} años', 'Precisamente... {0} anni fa', 'Précisément... il y a {0} ans'],
+  'Fase 1 · em construção': ['Stage 1 · under construction', 'Fase 1 · en construcción', 'Fase 1 · in costruzione', 'Étape 1 · en construction'],
+  'Voltar ao menu': ['Back to menu', 'Volver al menú', 'Torna al menu', 'Retour au menu'],
+  // ----- tons de pele, cores, cortes, barbas, rostos e chuteiras -----
+  'Tipo I · muito clara': ['Type I · very fair', 'Tipo I · muy clara', 'Tipo I · molto chiara', 'Type I · très claire'], 'Tipo II · clara': ['Type II · fair', 'Tipo II · clara', 'Tipo II · chiara', 'Type II · claire'],
+  'Tipo III · média': ['Type III · medium', 'Tipo III · media', 'Tipo III · media', 'Type III · moyenne'], 'Tipo IV · morena': ['Type IV · olive', 'Tipo IV · morena', 'Tipo IV · olivastra', 'Type IV · mate'],
+  'Tipo V · parda escura': ['Type V · dark brown', 'Tipo V · marrón oscura', 'Tipo V · bruna scura', 'Type V · brune foncée'], 'Tipo VI · negra': ['Type VI · black', 'Tipo VI · negra', 'Tipo VI · nera', 'Type VI · noire'],
+  'Preto': ['Black', 'Negro', 'Nero', 'Noir'], 'Castanho escuro': ['Dark brown', 'Castaño oscuro', 'Castano scuro', 'Châtain foncé'], 'Castanho': ['Brown', 'Castaño', 'Castano', 'Châtain'],
+  'Castanho claro': ['Light brown', 'Castaño claro', 'Castano chiaro', 'Châtain clair'], 'Loiro': ['Blond', 'Rubio', 'Biondo', 'Blond'], 'Ruivo': ['Red', 'Pelirrojo', 'Rosso', 'Roux'], 'Grisalho': ['Gray', 'Canoso', 'Grigio', 'Gris'], 'Branco': ['White', 'Blanco', 'Bianco', 'Blanc'],
+  'Volumoso': ['Voluminous', 'Voluminoso', 'Voluminoso', 'Volumineux'], 'Ralo': ['Thin', 'Ralo', 'Rado', 'Clairsemé'], 'Careca': ['Bald', 'Calvo', 'Calvo', 'Chauve'], 'Raspado': ['Buzzed', 'Rapado', 'Rasato', 'Rasé'],
+  'Militar': ['Military', 'Militar', 'Militare', 'Militaire'], 'Degradê com risco': ['Fade with part line', 'Degradado con raya', 'Sfumato con riga', 'Dégradé avec raie'], 'Topete': ['Quiff', 'Tupé', 'Ciuffo', 'Houppette'],
+  'Para trás': ['Slicked back', 'Peinado atrás', 'All’indietro', 'Coiffé en arrière'], 'Social': ['Classic', 'Clásico', 'Classico', 'Classique'], 'Franja': ['Fringe', 'Flequillo', 'Frangia', 'Frange'],
+  'Black power': ['Afro', 'Afro', 'Afro', 'Afro'], 'Cacheado longo': ['Long curls', 'Rizado largo', 'Ricci lunghi', 'Boucles longues'], 'Ondulado médio': ['Medium wavy', 'Ondulado medio', 'Mosso medio', 'Ondulé mi-long'],
+  'Longo liso': ['Long straight', 'Largo liso', 'Lungo liscio', 'Long lisse'], 'Coque com degradê': ['Bun with fade', 'Moño con degradado', 'Chignon con sfumatura', 'Chignon avec dégradé'], 'Coque longo': ['Long bun', 'Moño largo', 'Chignon lungo', 'Chignon long'],
+  'Pompadour': ['Pompadour', 'Pompadour', 'Pompadour', 'Pompadour'], 'Undercut penteado': ['Combed undercut', 'Undercut peinado', 'Undercut pettinato', 'Undercut coiffé'], 'Corte baixo': ['Low cut', 'Corte bajo', 'Taglio basso', 'Coupe basse'],
+  'Bagunçado': ['Messy', 'Desordenado', 'Spettinato', 'Ébouriffé'], 'Moicano': ['Mohawk', 'Mohicano', 'Moicano', 'Mohawk'], 'Tigela': ['Bowl cut', 'Corte a tazón', 'Taglio a scodella', 'Coupe au bol'],
+  'Rabo de cavalo': ['Ponytail', 'Coleta', 'Coda di cavallo', 'Queue de cheval'], 'Dreads curtos': ['Short dreads', 'Rastas cortas', 'Dreadlock corti', 'Dreads courts'], 'Entradas': ['Receding hairline', 'Entradas', 'Stempiatura', 'Golfes dégarnis'],
+  'Calvo com laterais': ['Bald with sides', 'Calvo con laterales', 'Calvo con lati', 'Chauve avec côtés'], 'Mullet': ['Mullet', 'Mullet', 'Mullet', 'Mullet'], 'Cacheado curto': ['Short curls', 'Rizado corto', 'Ricci corti', 'Boucles courtes'], 'Repicado': ['Layered', 'Desfilado', 'Scalato', 'Dégradé effilé'],
+  'Rala': ['Light', 'Ligera', 'Leggera', 'Légère'], 'Sem barba': ['No beard', 'Sin barba', 'Senza barba', 'Sans barbe'], 'Por fazer': ['Stubble', 'Sin afeitar', 'Barba incolta', 'Pas rasé'], 'Curta': ['Short', 'Corta', 'Corta', 'Courte'],
+  'Cheia': ['Full', 'Llena', 'Piena', 'Pleine'], 'Longa': ['Long', 'Larga', 'Lunga', 'Longue'], 'Cavanhaque': ['Goatee', 'Perilla', 'Pizzetto', 'Bouc'], 'Cavanhaque com bigode': ['Goatee with mustache', 'Perilla con bigote', 'Pizzetto con baffi', 'Bouc avec moustache'],
+  'Cavanhaque longo': ['Long goatee', 'Perilla larga', 'Pizzetto lungo', 'Bouc long'], 'Alça no queixo': ['Chin strap', 'Barba de correa', 'Barba a collare', 'Collier de barbe'], 'Costeletas': ['Sideburns', 'Patillas', 'Basette', 'Pattes'],
+  'Desenhada': ['Sharp lined', 'Perfilada', 'Rifinita', 'Dessinée'], 'Bigode fino': ['Thin mustache', 'Bigote fino', 'Baffi sottili', 'Moustache fine'], 'Bigode médio': ['Medium mustache', 'Bigote medio', 'Baffi medi', 'Moustache moyenne'], 'Bigode grosso': ['Thick mustache', 'Bigote grueso', 'Baffi folti', 'Moustache épaisse'],
+  'Padrão': ['Default', 'Estándar', 'Standard', 'Standard'], 'Sério': ['Serious', 'Serio', 'Serio', 'Sérieux'], 'Sorridente': ['Smiling', 'Sonriente', 'Sorridente', 'Souriant'], 'Bravo': ['Angry', 'Enfadado', 'Arrabbiato', 'En colère'], 'Triste': ['Sad', 'Triste', 'Triste', 'Triste'],
+  'Olhos juntos': ['Close-set eyes', 'Ojos juntos', 'Occhi ravvicinati', 'Yeux rapprochés'], 'Olhos afastados': ['Wide-set eyes', 'Ojos separados', 'Occhi distanziati', 'Yeux écartés'], 'Olhos pequenos': ['Small eyes', 'Ojos pequeños', 'Occhi piccoli', 'Petits yeux'], 'Olhos grandes': ['Big eyes', 'Ojos grandes', 'Occhi grandi', 'Grands yeux'],
+  'Boca pequena': ['Small mouth', 'Boca pequeña', 'Bocca piccola', 'Petite bouche'], 'Sobrancelha inclinada': ['Slanted eyebrows', 'Cejas inclinadas', 'Sopracciglia inclinate', 'Sourcils inclinés'], 'Sobrancelha alta': ['High eyebrows', 'Cejas altas', 'Sopracciglia alte', 'Sourcils hauts'],
+  'Sonolento': ['Sleepy', 'Somnoliento', 'Assonnato', 'Endormi'], 'Marrento': ['Cocky', 'Chulo', 'Spavaldo', 'Frimeur'], 'Sardas': ['Freckles', 'Pecas', 'Lentiggini', 'Taches de rousseur'], 'Cicatriz': ['Scar', 'Cicatriz', 'Cicatrice', 'Cicatrice'],
+  'Clássica preta': ['Classic black', 'Clásica negra', 'Classico nero', 'Classique noir'], 'Branca pura': ['Pure white', 'Blanca pura', 'Bianco puro', 'Blanc pur'], 'Azul royal': ['Royal blue', 'Azul real', 'Blu reale', 'Bleu roi'],
+  'Vermelho fogo': ['Fire red', 'Rojo fuego', 'Rosso fuoco', 'Rouge feu'], 'Amarelo neon': ['Neon yellow', 'Amarillo neón', 'Giallo neon', 'Jaune fluo'], 'Verde limão': ['Lime green', 'Verde lima', 'Verde lime', 'Vert citron'],
+  'Rosa choque': ['Hot pink', 'Rosa fucsia', 'Rosa shocking', 'Rose vif'], 'Laranja e preta': ['Orange and black', 'Naranja y negra', 'Arancione e nera', 'Orange et noir'], 'Dourada': ['Golden', 'Dorada', 'Dorata', 'Dorée'], 'Camuflada': ['Camo', 'Camuflada', 'Mimetica', 'Camouflage'],
+};
+const _IDX = { en: 0, es: 1, it: 2, fr: 3 };
+const Idioma = {
+  atual: 'pt', aoMudar: [],
+  definir(id) {
+    if (!IDIOMAS.some((i) => i.id === id)) return;
+    this.atual = id; salvo.gravar('futebolJs.idioma.v1', { id });
+    try { document.documentElement.lang = ({ pt: 'pt-BR', en: 'en', es: 'es', it: 'it', fr: 'fr' })[id]; } catch (e) { /* ok */ }
+    for (const f of this.aoMudar) { try { f(id); } catch (e) { console.error(e); } }
+  },
+};
+function T(chave) {
+  if (Idioma.atual === 'pt') return chave;
+  const v = I18N[chave];
+  return (v && v[_IDX[Idioma.atual]]) || chave;
+}
+function Tf(chave, ...args) { return T(chave).replace(/\{(\d+)\}/g, (m, n) => (args[n] != null ? args[n] : m)); }
+
+// ---------------------------------------------------------------------
+// 14'. TELA DE IDIOMA (4.3.0): a primeira tela do jogo. Título "Idioma" e cinco bandeiras desenhadas em pixel art
+// (Brasil, EUA, França, Itália e Espanha). Bandeiras = desenhos num canvas pequeno (32×21), ampliados sem suavizar.
+//   telaIdioma(aoEscolher)  mostra a tela (e chama aoEscolher(id) quando alguém toca numa bandeira)
+//   bandeiraUrl('br' | 'us' | 'fr' | 'it' | 'es') devolve a imagem (data URL) da bandeira
+// ---------------------------------------------------------------------
+const _bandeiras = {};
+function bandeiraUrl(id) {
+  if (_bandeiras[id]) return _bandeiras[id];
+  const W = 32, H = 21, c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), R = (x, y, w, h, cor) => { g.fillStyle = cor; g.fillRect(x, y, w, h); };
+  if (id === 'br') {
+    R(0, 0, W, H, '#1FA64A');
+    for (let y = 0; y < H; y++) {                                  // losango amarelo
+      const k = 1 - Math.abs((y + 0.5) - H / 2) / (H / 2 - 1.5), l = Math.round(k * (W / 2 - 3));
+      if (l > 0) R(Math.round(W / 2 - l), y, l * 2, 1, '#FFD92B');
+    }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {      // círculo azul com a faixa branca
+      const dx = x + 0.5 - W / 2, dy = y + 0.5 - H / 2;
+      if (dx * dx + dy * dy <= 29) g.fillStyle = '#233C9A', g.fillRect(x, y, 1, 1);
+    }
+    for (let x = 0; x < W; x++) { const dx = x + 0.5 - W / 2, y = Math.round(H / 2 - 1 - dx * 0.16); if (dx * dx < 29) { R(x, y, 1, 1, '#F4F4EC'); R(x, y + 1, 1, 1, '#F4F4EC'); } }
+  } else if (id === 'us') {
+    for (let i = 0; i < 13; i++) R(0, Math.round(i * H / 13), W, Math.max(1, Math.round((i + 1) * H / 13) - Math.round(i * H / 13)), i % 2 ? '#F4F4EC' : '#C8202A');
+    R(0, 0, 14, 11, '#23336E');
+    for (let y = 1; y < 10; y += 2) for (let x = (y % 4 === 1 ? 1 : 2); x < 13; x += 2) R(x, y, 1, 1, '#F4F4EC');
+  } else if (id === 'fr') {
+    R(0, 0, 11, H, '#2338A0'); R(11, 0, 10, H, '#F4F4EC'); R(21, 0, 11, H, '#D5222E');
+  } else if (id === 'it') {
+    R(0, 0, 11, H, '#1E9A47'); R(11, 0, 10, H, '#F4F4EC'); R(21, 0, 11, H, '#D5222E');
+  } else {
+    R(0, 0, W, H, '#C8202A'); R(0, 5, W, 11, '#FFC42B');
+    R(7, 8, 4, 5, '#B5523A'); R(8, 9, 2, 3, '#C8202A'); R(7, 7, 4, 1, '#E0A020');    // escudinho
+  }
+  return (_bandeiras[id] = c.toDataURL());
+}
+function telaIdioma(aoEscolher) {
+  let L = document.getElementById('idiomaTela');
+  if (!L) {
+    L = document.createElement('div'); L.id = 'idiomaTela'; L.hidden = true;
+    L.setAttribute('role', 'dialog'); L.setAttribute('aria-modal', 'true');
+    const css = document.createElement('style');
+    css.textContent = `
+#idiomaTela { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; box-sizing: border-box; padding: 10px 14px; overflow: hidden;
+  --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); background-color: #150d06;
+  background-image: radial-gradient(ellipse 70% 55% at 50% 36%, rgba(240, 160, 32, 0.18), rgba(240, 160, 32, 0) 70%), repeating-conic-gradient(rgba(0, 0, 0, 0.24) 0 25%, rgba(0, 0, 0, 0) 0 50%); background-size: auto, 8px 8px; }
+#idiomaTela[hidden] { display: none; }
+#idiomaTela .idCaixa { display: flex; flex-direction: column; align-items: center; gap: clamp(10px, 4vh, 26px); width: min(760px, 100%); }
+#idiomaTela .idTitulo { --p: var(--p3, 3px); box-sizing: border-box; display: flex; align-items: center; justify-content: center; gap: 12px; height: calc(var(--p) * 20); padding: 0 calc(var(--p) * 6); white-space: nowrap;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
+  font: 700 clamp(26px, 8vh, 44px)/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; text-shadow: 0 3px 0 var(--mx-ink), 0 0 0 var(--mx-ink); }
+#idiomaTela .idGrade { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(8px, 2.5vh, 16px); width: 100%; }
+#idiomaTela .idBtn { --p: var(--p3, 3px); appearance: none; -webkit-appearance: none; box-sizing: border-box; margin: 0; padding: 4px 4px 6px; flex: 0 0 auto; width: clamp(92px, 17vw, 128px);
+  display: flex; flex-direction: column; align-items: center; gap: 6px; background: none; color: var(--mx-creme); cursor: pointer; touch-action: manipulation;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
+  font: 700 clamp(11px, 3.2vh, 14px)/1.1 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; text-shadow: 0 2px 0 var(--mx-ink); }
+#idiomaTela .idBtn img { display: block; width: 100%; height: auto; aspect-ratio: 32 / 21; image-rendering: pixelated; border: 3px solid var(--mx-ink); box-sizing: border-box; background: #000; }
+#idiomaTela .idBtn:active { transform: translateY(var(--p)); }
+#idiomaTela .idBtn:focus-visible, #idiomaTela .idBtn.on { outline: none; border-image-source: var(--sp-laranja); color: #fff; }
+@media (hover: hover) { #idiomaTela .idBtn:hover { border-image-source: var(--sp-laranja); } }
+@media (max-height: 420px) { #idiomaTela .idCaixa { gap: 8px; } #idiomaTela .idBtn { width: clamp(78px, 15vw, 104px); } }`;
+    document.head.appendChild(css);
+    ($('raizJogo') || document.body).appendChild(L);
+  }
+  L.setAttribute('aria-label', 'Idioma / Language');
+  L.innerHTML = '<div class="idCaixa"><div class="idTitulo">Idioma</div><div class="idGrade">' +
+    IDIOMAS.map((i) => '<button type="button" class="idBtn' + (i.id === Idioma.atual ? ' on' : '') + '" data-id="' + i.id + '"><img alt="" draggable="false" src="' + bandeiraUrl(i.bandeira) + '"><span>' + i.nome + '</span></button>').join('') + '</div></div>';
+  L.hidden = false;
+  L.onclick = (e) => {
+    const b = e.target.closest('button[data-id]');
+    if (!b) return;
+    Idioma.definir(b.dataset.id);
+    if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+    L.hidden = true; L.innerHTML = '';
+    if (aoEscolher) aoEscolher(b.dataset.id);
+  };
+  const primeiro = L.querySelector('.idBtn.on') || L.querySelector('.idBtn');
+  if (primeiro && !window.matchMedia('(pointer: coarse)').matches) primeiro.focus({ preventScroll: true });
+}
+
+{ const sv = salvo.ler('futebolJs.idioma.v1', {}).id; if (IDIOMAS.some((i) => i.id === sv)) Idioma.atual = sv; }
+
 const MENU_ROTULOS = [['jogar', 'Jogar'], ['carregar', 'Carregar'], ['config', 'Configurações'], ['creditos', 'Créditos'], ['sair', 'Sair']];
 // ---------------------------------------------------------------------
 // 14a. FALA "MUMBLE" (4.3.0) — componente reutilizável.
@@ -9610,7 +9836,7 @@ const Mumble = (() => {
     timer = setTimeout(passo, 0);
     return ctrl;
   }
-  const amostra = (voz, aoFim) => dizer(TEXTO_PADRAO, { voz, cps: 14, aoFim });
+  const amostra = (voz, aoFim) => dizer(T(TEXTO_PADRAO), { voz, cps: 14, aoFim });
   return { VOZES, TEXTO_PADRAO, dizer, amostra, blip };
 })();
 
@@ -9687,8 +9913,8 @@ const FOCO_CRIADOR = {            // para onde a câmera olha em cada parte (y =
 function montarCriador(tela, aoFechar) {
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const E = Object.assign({ nome: '', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
-    pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
-  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1);
+    pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, labio: 3, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
+  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
   if (!Array.isArray(E.comemoracoes) || !E.comemoracoes.length) E.comemoracoes = [1, 2];
   let passo = 1, aba = 'pele', msg = '', emCena = false, falaAmostra = null;
   const css = document.createElement('style');
@@ -9696,9 +9922,9 @@ function montarCriador(tela, aoFechar) {
 #criador { position: fixed; inset: 0; z-index: 8; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
   padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); touch-action: pan-y;
-  background-color: #150d06;
-  background-image: radial-gradient(ellipse 70% 55% at 30% 40%, rgba(240, 160, 32, 0.18), rgba(240, 160, 32, 0) 70%), repeating-conic-gradient(rgba(0, 0, 0, 0.24) 0 25%, rgba(0, 0, 0, 0) 0 50%);
-  background-size: auto, 8px 8px; }
+  background: transparent; }       /* o campo de verdade aparece por trás */
+#criador.cena { pointer-events: none; }
+body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !important; }
 #criador .crTopo { --p: var(--p2, 2px); flex: 0 0 auto; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 6px; height: calc(var(--p) * 13);
   border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; }
 #criador .crTit { margin-right: auto; font: 700 15px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 0 var(--mx-ink); }
@@ -9706,9 +9932,8 @@ function montarCriador(tela, aoFechar) {
 #criador .crCorpo { flex: 1 1 auto; min-height: 0; display: flex; gap: 10px; }
 #criador .crCaixa { --p: var(--p2, 2px); box-sizing: border-box; min-height: 0; min-width: 0; display: flex; flex-direction: column;
   border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
-#criador .crPrev { flex: 0 0 38%; }
-#criador .crTela { position: relative; flex: 1 1 auto; min-height: 0; }
-#criador .crTela canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; cursor: grab; }
+#criador .crPrev { flex: 0 0 38%; border: 0; border-image: none; }
+#criador .crArrasta { position: relative; flex: 1 1 auto; min-height: 0; touch-action: none; cursor: grab; }
 #criador .crGiro { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 6px; }
 #criador .crGiro span { font: 600 11px/1.1 var(--font-body); color: #dcc08c; text-align: center; }
 #criador .crGiro .pxBtn { width: auto; min-width: 0; height: 36px; --p: var(--p2, 2px); font-size: 13px; padding: 0 8px; }
@@ -9752,14 +9977,8 @@ function montarCriador(tela, aoFechar) {
 #criador .crGrade.largo .crChip { height: 40px; font-size: 12px; }
 #criador .crFala { margin: 6px 0 8px; padding: 8px 10px; font: 700 15px/1.3 var(--font-body); color: var(--mx-ink); text-align: center;
   border: solid transparent; border-width: calc(var(--p2, 2px) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p2, 2px) * 4) stretch; image-rendering: pixelated; }
-#criador .crPrev, #criador .crPainel, #criador .crTopo { transition: flex-basis 0.9s ease, opacity 0.7s ease; }
+#criador .crPainel, #criador .crTopo, #criador .crGiro { transition: opacity 1.4s ease; }
 #criador.cena .crTopo, #criador.cena .crPainel, #criador.cena .crGiro { opacity: 0; pointer-events: none; }
-#criador.cena .crPainel { flex: 0 0 0; min-width: 0; padding: 0; border-width: 0; overflow: hidden; }
-#criador.cena .crCorpo { gap: 0; }
-#criador.cena .crPrev { flex: 0 0 100%; border-width: 0; border-image: none; }
-#criador.cena .crTopo { height: 0; border-width: 0; padding: 0; margin: 0 0 -8px; overflow: hidden; }
-#criador.cena { padding: 0; gap: 0; }
-#criador.cena .crGiro { display: none; }
 #anoTela { position: fixed; inset: 0; z-index: 16; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #000; color: #fff; opacity: 0; transition: opacity 0.9s ease; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
 #anoTela.on { opacity: 1; }
 #anoTela .anoNum { font: 700 clamp(56px, 24vh, 130px)/1 var(--font-display); letter-spacing: 0.06em; color: #fff; font-variant-numeric: tabular-nums; }
@@ -9779,20 +9998,27 @@ function montarCriador(tela, aoFechar) {
   document.head.appendChild(css);
   const el = document.createElement('div');
   el.id = 'criador'; el.hidden = true;
-  el.innerHTML = '<div class="crTopo"><span class="crTit">Criar personagem</span><span class="crPassos" id="crPassos"></span></div>' +
-    '<div class="crCorpo"><div class="crCaixa crPrev"><div class="crTela"><canvas id="crCanvas" aria-label="Seu personagem em 3D. Arraste para girar."></canvas></div>' +
-    '<div class="crGiro"><button type="button" class="pxBtn" data-a="giraE" aria-label="Girar para a esquerda">◀</button><span>Arraste o boneco<br>para girar</span><button type="button" class="pxBtn" data-a="giraD" aria-label="Girar para a direita">▶</button></div></div>' +
+  el.innerHTML = '<div class="crTopo"><span class="crTit"></span><span class="crPassos" id="crPassos"></span></div>' +
+    '<div class="crCorpo"><div class="crCaixa crPrev"><div class="crArrasta" id="crArrasta"></div>' +
+    '<div class="crGiro"><button type="button" class="pxBtn" data-a="giraE">◀</button><span></span><button type="button" class="pxBtn" data-a="giraD">▶</button></div></div>' +
     '<div class="crCaixa crPainel"><div class="crScroll" id="crScroll"></div><div class="crRodape" id="crRodape"></div></div></div>';
   const raizJogo = $('raizJogo') || document.body;
   raizJogo.appendChild(el);
   const $c = (id) => el.querySelector('#' + id);
+  const textosFixos = () => {                          // textos que não são refeitos a cada passo (trocam com o idioma)
+    el.querySelector('.crTit').textContent = T('Criar personagem');
+    $c('crArrasta').setAttribute('aria-label', T('Seu personagem em 3D. Arraste para girar.'));
+    el.querySelector('.crGiro span').textContent = T('Arraste o boneco para girar');
+    el.querySelector('[data-a="giraE"]').setAttribute('aria-label', T('Girar para a esquerda'));
+    el.querySelector('[data-a="giraD"]').setAttribute('aria-label', T('Girar para a direita'));
+  };
   const tocar = () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); };
 
   // ----- dados do personagem -----
   const aparencia = () => {
     const corH = CORES_CABELO[E.corCabelo] || CORES_CABELO[0];
     const corB = E.corBarba >= 0 && CORES_CABELO[E.corBarba] ? CORES_CABELO[E.corBarba].cor : corH.cor;
-    return { pele: PELES_FITZ[E.pele].cor, cabelo: corH.cor, estilo: E.estilo, barba: E.barba, rosto: E.rosto, corBarba: corB, manga: E.manga, meiao: E.meiao, chuteira: E.chuteira };
+    return { pele: PELES_FITZ[E.pele].cor, cabelo: corH.cor, estilo: E.estilo, barba: E.barba, rosto: E.rosto, labio: E.labio, corBarba: corB, manga: E.manga, meiao: E.meiao, chuteira: E.chuteira };
   };
   const sobrenome = () => { const p = E.nome.trim().split(/\s+/); return p[p.length - 1] || ''; };
   const sugestaoCamisa = () => (E.temApelido && E.apelido.trim() ? E.apelido.trim() : sobrenome()).toUpperCase().slice(0, 10);
@@ -9803,78 +10029,57 @@ function montarCriador(tela, aoFechar) {
     PERSONAGEM.numero = E.numero; PERSONAGEM.aparencia = aparencia(); PERSONAGEM.pe = E.pe; PERSONAGEM.comemoracoes = E.comemoracoes.slice(); PERSONAGEM.voz = E.voz;
   };
 
-  // ----- boneco 3D (cena própria) -----
-  let rd = null, cena = null, cam = null, boneco = null, raf = 0, yaw = 0.5, yawAlvo = 0.5, autoGira = true, foco = FOCO_CRIADOR.corpo, camY = 1.0, camD = 5.0, camAz = 0, ultimo = 0, aquece = false, campo = null, campoK = 0, campoAlvo = 0, chaoMesh = null;
+  // ----- boneco 3D (no campo de VÁRZEA do próprio jogo) -----
+  // (4.3.0) Não existe mais cena/renderizador separado: ao abrir, o jogo monta o campo de várzea de verdade, esconde os outros
+  // atletas e o boneco fica ali. Um gancho no quadro (GANCHO_RENDER) põe a câmera do jogo em volta dele e usa setViewOffset
+  // para ele aparecer dentro da janela da esquerda. Ao salvar, os menus só ficam transparentes: câmera e boneco não mexem.
+  let boneco = null, yaw = 0.5, yawAlvo = 0.5, autoGira = true, foco = FOCO_CRIADOR.corpo, camY = 1.0, camD = 5.0, camAz = 0, ultimo = 0, aquece = false, arrastoLigado = false, ancora = null;
+  const BASE = { x: -3, z: 0 };                      // onde o boneco fica no campo
   const iniciar3D = () => {
-    if (rd) return;
-    const cv = $c('crCanvas');
-    rd = new THREE.WebGLRenderer({ canvas: cv, antialias: false });
-    rd.setPixelRatio(1);
-    cena = new THREE.Scene(); cena.background = new THREE.Color(0x2a1a0e);
-    cam = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
-    cena.add(new THREE.AmbientLight(0xffffff, 0.78));
-    const sol = new THREE.DirectionalLight(0xffffff, 0.55); sol.position.set(3, 5, 4); cena.add(sol);
-    const chao = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 0.12, 12), new THREE.MeshLambertMaterial({ color: 0x3c8a2c }));
-    chao.position.y = -0.06; chao.visible = false; cena.add(chao); chaoMesh = chao;
-    criarCampo();
+    if (arrastoLigado) return;
+    arrastoLigado = true;
+    const cv = $c('crArrasta');
     let arrasta = false, x0 = 0;
-    cv.addEventListener('pointerdown', (e) => { arrasta = true; x0 = e.clientX; autoGira = false; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+    cv.addEventListener('pointerdown', (e) => { if (emCena) return; arrasta = true; x0 = e.clientX; autoGira = false; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
     cv.addEventListener('pointermove', (e) => { if (!arrasta) return; const dx = e.clientX - x0; x0 = e.clientX; yaw += dx * 0.016; yawAlvo = yaw; });
     const solta = () => { arrasta = false; cv.style.cursor = 'grab'; };
     cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
-    new ResizeObserver(ajustar).observe(cv.parentNode);
   };
-  const ajustar = () => {
-    if (!rd) return;
-    const t = $c('crCanvas').parentNode, w = Math.max(2, t.clientWidth), h = Math.max(2, t.clientHeight), f = Math.max(2, Math.round(Math.min(w, h) / 150));  // ~150 pixels de altura: bem "PS1"
-    rd.setSize(Math.ceil(w / f), Math.ceil(h / f), false);
-    cam.aspect = w / h; cam.updateProjectionMatrix();
+  // Campo de várzea do sistema (o mesmo de "Partida livre"), de dia e sem chuva, só com o boneco em campo.
+  const prepararCenario = () => {
+    montarPartida(Object.assign({}, PARTIDA_PADRAO, lerTelaDeConfig(), { campo: 'varzea', horario: 'dia', clima: 'seco', usuario: { nome: 'Você', posicao: 'FWD' } }));
+    kickoff(0); G.state = 'menu'; snapCamera();
   };
-  // Campo de VÁRZEA: já está na cena desde o começo, escondido pela neblina (só dá para ver o chão em volta do boneco, como um
-  // pedestal). Ao salvar, a neblina vai embora e o campo aparece em volta dele — na mesma cena, sem corte.
-  const criarCampo = () => {
-    if (campo) return;
-    const c = document.createElement('canvas'); c.width = 352; c.height = 220;
-    const g = c.getContext('2d');
-    const rnd = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
-    g.fillStyle = '#4c8c34'; g.fillRect(0, 0, 352, 220);
-    for (let i = 0; i < 420; i++) { g.fillStyle = rnd(i) > 0.5 ? '#437f2e' : '#58963b'; g.fillRect(Math.floor(rnd(i + 9) * 352), Math.floor(rnd(i + 99) * 220), 3 + Math.floor(rnd(i + 5) * 5), 2); }
-    const terra = (x, y, w, h) => { g.fillStyle = '#9a7646'; g.fillRect(x, y, w, h); g.fillStyle = '#8a6a3c'; for (let k = 0; k < 18; k++) g.fillRect(x + Math.floor(rnd(k + x) * w), y + Math.floor(rnd(k + y) * h), 3, 2); };
-    terra(150, 90, 52, 40); terra(8, 80, 34, 60); terra(310, 80, 34, 60); terra(90, 20, 40, 18); terra(230, 170, 50, 22);
-    g.strokeStyle = '#d8d8c8'; g.lineWidth = 2; g.setLineDash([6, 3]); g.strokeRect(6, 6, 340, 208); g.beginPath(); g.moveTo(176, 6); g.lineTo(176, 214); g.stroke();
-    g.beginPath(); g.arc(176, 110, 30, 0, 7); g.stroke(); g.strokeRect(6, 55, 44, 110); g.strokeRect(302, 55, 44, 110);
-    const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
-    campo = new THREE.Group();
-    const plano = new THREE.Mesh(new THREE.PlaneGeometry(44, 27.5), new THREE.MeshLambertMaterial({ map: tex })); plano.rotation.x = -Math.PI / 2; plano.position.y = -0.01; campo.add(plano);
-    for (const sx of [-1, 1]) {                       // traves de madeira da várzea
-      const x = sx * 21.6, b = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshLambertMaterial({ color: 0xcfc3a4 })); m.position.set(px, py, pz); campo.add(m); };
-      b(0.14, 2.3, 0.14, x, 1.15, -3.5); b(0.14, 2.3, 0.14, x, 1.15, 3.5); b(0.14, 0.14, 7.14, x, 2.3, 0);
-    }
-    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), new THREE.MeshLambertMaterial({ color: 0xffffff })); bola.position.set(0.8, 0.12, 0.55); campo.add(bola);
-    cena.add(campo);
-    cena.fog = new THREE.Fog(0x2a1a0e, 1, 4);
+  const restaurarCenario = () => {
+    montarPartida(Object.assign({}, PARTIDA_PADRAO, lerTelaDeConfig()));
+    kickoff(0); G.state = 'menu'; snapCamera();
   };
-  const tirarCampo = () => { campoK = 0; campoAlvo = 0; if (cena) { cena.background = new THREE.Color(0x2a1a0e); if (cena.fog) cena.fog.color.set(0x2a1a0e); } };
+  const largaBoneco = () => {
+    if (!boneco) return;
+    ATLETAS.delete(boneco); scene.remove(boneco.raiz);
+    boneco.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); if (o.material && o.material !== SHADOW_MAT) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    boneco = null;
+  };
+  const desligar3D = () => { document.body.classList.remove('criadorAberto'); GANCHO_RENDER = null; camera.clearViewOffset(); largaBoneco(); };
   const reconstruir = () => {
-    if (!cena) return;
-    if (boneco) {
-      ATLETAS.delete(boneco); cena.remove(boneco.raiz);
-      boneco.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); if (o.material && o.material !== SHADOW_MAT) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
-    }
+    const rotacao = boneco ? boneco.raiz.rotation.y : 0;
+    largaBoneco();
     const ap = aparencia();      // uniforme da montagem: todo branco, com nome e número em preto
     boneco = makeAthlete({ camisa: '#FFFFFF', listra: '#FFFFFF', gola: '#E4E4E4', numero: E.numero, calcao: 0xFFFFFF, meia: '#FFFFFF', sola: '#E4E4E4', corTexto: '#111111',
-      pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, barba: ap.barba, rosto: ap.rosto, corBarba: ap.corBarba, manga: ap.manga, meiao: ap.meiao, chuteira: ap.chuteira,
+      pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, barba: ap.barba, rosto: ap.rosto, labio: ap.labio, corBarba: ap.corBarba, manga: ap.manga, meiao: ap.meiao, chuteira: ap.chuteira,
       nomeCamisa: (E.nomeCamisa.trim() || sugestaoCamisa()), nome: E.nome || 'Você', fundoNome: 'rgba(0,0,0,0.5)' });
     boneco.etiqueta.visible = false;
-    boneco.raiz.traverse((o) => { if (o.material) o.material.fog = false; });         // a neblina do campo não apaga o boneco
-    cena.add(boneco.raiz);
+    boneco.raiz.position.set(BASE.x, 0, BASE.z); boneco.raiz.rotation.y = rotacao;
+    scene.add(boneco.raiz);
   };
-  const loop = (t) => {
-    raf = requestAnimationFrame(loop);
-    const dt = Math.min(0.05, (t - ultimo) / 1000 || 0.016); ultimo = t;
+  const gancho = (rdt) => {
+    const t = performance.now(), dt = Math.min(0.05, rdt || 0.016);
     if (autoGira) { yaw += dt * 0.7; yawAlvo = yaw; } else yaw += (yawAlvo - yaw) * Math.min(1, dt * 10);
-    const kk = Math.min(1, dt * (emCena ? 1.6 : 6));
+    const kk = Math.min(1, dt * 6);
     camY += (foco.y - camY) * kk; camD += (foco.d - camD) * kk; camAz += ((foco.az || 0) - camAz) * kk;
+    for (const A of ATLETAS) A.raiz.visible = (A === boneco);          // só o boneco aparece no campo
+    ball.mesh.visible = ball.shadow.visible = false;
+    userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;
     if (boneco) {
       boneco.raiz.rotation.y = yaw;
       if (aquece) {                                  // aquecimento: pulinhos e braços girando (o mesmo do reserva no banco)
@@ -9884,90 +10089,97 @@ function montarCriador(tela, aoFechar) {
         boneco.bracoE.rotation.x = 0.25; boneco.bracoD.rotation.x = -0.25;
         usarCotovelo(boneco.bracoE, 0, 0); usarCotovelo(boneco.bracoD, 0, 0);
         boneco.pernaE.rotation.z = pul * 0.35; boneco.pernaD.rotation.z = pul * 0.35;
-      }
+      } else boneco.raiz.position.y = 0;
     }
-    if (campo) {                                     // a neblina recua: o campo inteiro aparece em volta (sem corte)
-      campoK += (campoAlvo - campoK) * Math.min(1, dt * 0.8);
-      const k = campoK * campoK;
-      cena.fog.near = camD + 0.6 + k * 60; cena.fog.far = camD + 3.2 + k * 140;
-      const c0 = new THREE.Color(0x2a1a0e), c1 = new THREE.Color(0x78b4e8); c0.lerp(c1, Math.min(1, campoK * 1.15));
-      cena.background = c0; cena.fog.color.copy(c0);
+    // janela da esquerda → posição e tamanho do boneco na tela (na cena fica onde estava)
+    const W = canvas.clientWidth || window.innerWidth, H = canvas.clientHeight || window.innerHeight;
+    if (!emCena || !ancora) {
+      const r = $c('crArrasta').getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+      if (r.height > 20) ancora = { cx: r.left + r.width / 2 - cr.left, cy: r.top + r.height / 2 - cr.top, h: r.height };
     }
-    cam.position.set(Math.cos(camAz) * camD, camY + 0.12, Math.sin(camAz) * camD); cam.lookAt(0, camY, 0);
-    rd.render(cena, cam);
+    const an = ancora || { cx: W / 2, cy: H / 2, h: H };
+    const d = camD * (Math.tan(16 * Math.PI / 180) / Math.tan(camera.fov * Math.PI / 360)) * (H / an.h);   // mesmo enquadramento que a janela tinha
+    camera.setViewOffset(W, H, W / 2 - an.cx, H / 2 - an.cy, W, H);
+    camera.position.set(BASE.x + Math.cos(camAz) * d, camY + 0.12, BASE.z + Math.sin(camAz) * d);
+    camera.lookAt(BASE.x, camY, BASE.z);
   };
   const irPara = (parte) => { foco = FOCO_CRIADOR[parte] || FOCO_CRIADOR.corpo; };
 
   // ----- telas dos passos -----
   const chips = (lista, atual, a) => '<div class="crGrade">' + lista.map((n, i) => '<button type="button" class="pxBtn crChip' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '">' + esc(n) + '</button>').join('') + '</div>';
-  const cores = (lista, atual, a, comIgual) => '<div class="crCores">' + (comIgual ? '<button type="button" class="crCor igual' + (atual < 0 ? ' on' : '') + '" data-a="' + a + '" data-i="-1" title="Igual ao cabelo" aria-label="Igual ao cabelo">=</button>' : '') +
-    lista.map((c, i) => '<button type="button" class="crCor' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '" style="background:' + (c.cor) + '" title="' + esc(c.nome) + '" aria-label="' + esc(c.nome) + '"></button>').join('') + '</div>';
+  const cores = (lista, atual, a, comIgual) => '<div class="crCores">' + (comIgual ? '<button type="button" class="crCor igual' + (atual < 0 ? ' on' : '') + '" data-a="' + a + '" data-i="-1" title="' + esc(T('Igual ao cabelo')) + '" aria-label="' + esc(T('Igual ao cabelo')) + '">=</button>' : '') +
+    lista.map((c, i) => '<button type="button" class="crCor' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '" style="background:' + (c.cor) + '" title="' + esc(T(c.nome)) + '" aria-label="' + esc(T(c.nome)) + '"></button>').join('') + '</div>';
   const ABAS = {
     2: [['pele', 'Pele'], ['cabelo', 'Cabelo'], ['barba', 'Barba'], ['rosto', 'Rosto']],
     3: [['blusa', 'Blusa'], ['meiao', 'Meião'], ['chuteira', 'Chuteira']],
     4: [['pe', 'Pé'], ['comemoracao', 'Comemoração'], ['voz', 'Voz']],
   };
-  const NOMES_PASSO = { 1: 'IDENTIDADE', 2: 'APARÊNCIA', 3: 'EQUIPAMENTO', 4: 'ESTILO DE JOGO' };
+  const NOMES_PASSO = { 1: 'IDENTIDADE', 2: 'APARÊNCIA', 3: 'EQUIPAMENTO', 4: 'ESTILO DE JOGO' };   // (passam por T ao desenhar)
   const desenhar = () => {
-    $c('crPassos').textContent = 'PASSO ' + passo + ' DE 4 · ' + NOMES_PASSO[passo];
+    $c('crPassos').textContent = Tf('PASSO {0} DE 4 · {1}', passo, T(NOMES_PASSO[passo]));
     const sc = $c('crScroll');
     let h = '', r = '';
     if (passo === 1) {
-      h = '<div class="crCampo"><label for="crNome">Qual é o seu nome?</label><input id="crNome" type="text" maxlength="22" autocomplete="off" autocapitalize="words" placeholder="Ex.: Herick Silva" value="' + esc(E.nome) + '"></div>' +
-        '<div class="crCampo"><label>Tem apelido?</label><div class="crDuplo"><button type="button" class="pxBtn' + (!E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="0">Não tenho</button><button type="button" class="pxBtn' + (E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="1">Tenho</button></div>' +
-        (E.temApelido ? '<input id="crApelido" type="text" maxlength="14" autocomplete="off" placeholder="Ex.: Ricky" value="' + esc(E.apelido) + '">' : '') + '</div>' +
-        '<div class="crCampo"><label for="crCamisa">Nome na camisa</label><input id="crCamisa" type="text" maxlength="10" autocomplete="off" placeholder="' + esc(sugestaoCamisa() || 'SOBRENOME') + '" value="' + esc(E.nomeCamisa) + '"><p class="crDica">Vazio = usa o apelido (ou o sobrenome). Máximo 10 letras. Gire o boneco para ver as costas.</p></div>' +
-        '<div class="crCampo"><label for="crNum">Número preferido</label><div class="crNum"><button type="button" class="pxBtn" data-a="num" data-i="-1" aria-label="Diminuir">−</button><input id="crNum" type="number" inputmode="numeric" min="1" max="99" value="' + E.numero + '"><button type="button" class="pxBtn" data-a="num" data-i="1" aria-label="Aumentar">+</button></div><p class="crDica">De 1 a 99. Se o número já estiver ocupado no time, o jogo dá outro.</p></div>';
-      r = '<p class="crMsg" role="status">' + esc(msg) + '</p><button type="button" class="pxBtn" data-a="sair">Menu</button><button type="button" class="pxBtn pxPrim" data-a="proximo">Próximo ▶</button>';
+      h = '<div class="crCampo"><label for="crNome">' + T('Qual é o seu nome?') + '</label><input id="crNome" type="text" maxlength="22" autocomplete="off" autocapitalize="words" placeholder="' + esc(T('Ex.: Herick Silva')) + '" value="' + esc(E.nome) + '"></div>' +
+        '<div class="crCampo"><label>' + T('Tem apelido?') + '</label><div class="crDuplo"><button type="button" class="pxBtn' + (!E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="0">' + T('Não tenho') + '</button><button type="button" class="pxBtn' + (E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="1">' + T('Tenho') + '</button></div>' +
+        (E.temApelido ? '<input id="crApelido" type="text" maxlength="14" autocomplete="off" placeholder="' + esc(T('Ex.: Ricky')) + '" value="' + esc(E.apelido) + '">' : '') + '</div>' +
+        '<div class="crCampo"><label for="crCamisa">' + T('Nome na camisa') + '</label><input id="crCamisa" type="text" maxlength="10" autocomplete="off" placeholder="' + esc(sugestaoCamisa() || T('SOBRENOME')) + '" value="' + esc(E.nomeCamisa) + '"><p class="crDica">' + T('Vazio = usa o apelido (ou o sobrenome). Máximo 10 letras. Gire o boneco para ver as costas.') + '</p></div>' +
+        '<div class="crCampo"><label for="crNum">' + T('Número preferido') + '</label><div class="crNum"><button type="button" class="pxBtn" data-a="num" data-i="-1" aria-label="' + T('Diminuir') + '">−</button><input id="crNum" type="number" inputmode="numeric" min="1" max="99" value="' + E.numero + '"><button type="button" class="pxBtn" data-a="num" data-i="1" aria-label="' + T('Aumentar') + '">+</button></div><p class="crDica">' + T('De 1 a 99. Se o número já estiver ocupado no time, o jogo dá outro.') + '</p></div>';
+      r = '<p class="crMsg" role="status">' + esc(msg) + '</p><button type="button" class="pxBtn" data-a="sair">' + T('Menu') + '</button><button type="button" class="pxBtn pxPrim" data-a="proximo">' + T('Próximo ▶') + '</button>';
     } else {
       const abas = ABAS[passo];
       if (!abas.some(([k]) => k === aba)) aba = abas[0][0];
-      h = '<div class="crAbas' + (abas.length === 3 ? ' tres' : '') + '">' + abas.map(([k, n]) => '<button type="button" class="pxBtn' + (aba === k ? ' on' : '') + '" data-a="aba" data-k="' + k + '">' + n + '</button>').join('') + '</div>';
+      h = '<div class="crAbas' + (abas.length === 3 ? ' tres' : '') + '">' + abas.map(([k, n]) => '<button type="button" class="pxBtn' + (aba === k ? ' on' : '') + '" data-a="aba" data-k="' + k + '">' + T(n) + '</button>').join('') + '</div>';
       if (aba === 'pele') {
-        h += '<p class="crSecao">Tom de pele</p>' + cores(PELES_FITZ, E.pele, 'pele', false) + '<p class="crNomeSel">' + esc(PELES_FITZ[E.pele].nome) + '</p><p class="crDica">Escala de Fitzpatrick, do tipo I ao VI.</p>';
+        h += '<p class="crSecao">' + T('Tom de pele') + '</p>' + cores(PELES_FITZ, E.pele, 'pele', false) + '<p class="crNomeSel">' + esc(T(PELES_FITZ[E.pele].nome)) + '</p><p class="crDica">' + T('Escala de Fitzpatrick, do tipo I ao VI.') + '</p>';
       } else if (aba === 'cabelo') {
-        h += '<p class="crSecao">Corte</p>' + chips(ESTILOS_CABELO.map((c) => c.nome), E.estilo, 'corte') + '<p class="crSecao">Cor do cabelo</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(CORES_CABELO[E.corCabelo].nome) + '</p>';
+        h += '<p class="crSecao">' + T('Corte') + '</p>' + chips(ESTILOS_CABELO.map((c) => T(c.nome)), E.estilo, 'corte') + '<p class="crSecao">' + T('Cor do cabelo') + '</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(T(CORES_CABELO[E.corCabelo].nome)) + '</p>';
       } else if (aba === 'barba') {
-        const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(b.nome) + '</button>' : '')).join('') + '</div>';
-        h += '<p class="crSecao">Barba</p>' + grupoB('barba') + '<p class="crSecao">Só bigodinho</p>' + grupoB('bigode') +
-          '<p class="crSecao">Cor da barba</p>' + cores(CORES_CABELO, E.corBarba, 'corBarba', true) + '<p class="crNomeSel">' + (E.corBarba < 0 ? 'Igual ao cabelo' : esc(CORES_CABELO[E.corBarba].nome)) + '</p>';
+        const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(T(b.nome)) + '</button>' : '')).join('') + '</div>';
+        h += '<p class="crSecao">' + T('Barba') + '</p>' + grupoB('barba') + '<p class="crSecao">' + T('Só bigodinho') + '</p>' + grupoB('bigode') +
+          '<p class="crSecao">' + T('Cor da barba') + '</p>' + cores(CORES_CABELO, E.corBarba, 'corBarba', true) + '<p class="crNomeSel">' + (E.corBarba < 0 ? T('Igual ao cabelo') : esc(T(CORES_CABELO[E.corBarba].nome))) + '</p>';
       } else if (aba === 'rosto') {
-        h += '<p class="crSecao">Rosto</p>' + chips(ROSTOS.map((x) => x.nome), E.rosto, 'rosto');
+        h += '<p class="crSecao">' + T('Rosto') + '</p>' + chips(ROSTOS.map((x) => T(x.nome)), E.rosto, 'rosto') + '<p class="crSecao">' + T('Cor dos lábios') + '</p>' + cores(LABIOS.map((c, i) => ({ cor: c, nome: Tf('Lábios {0}', i + 1) })), E.labio, 'labio', false);
       } else if (aba === 'blusa') {
-        h += '<p class="crSecao">Blusa</p><div class="crGrade largo">' + ['Manga curta', 'Manga longa'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.manga ? ' on' : '') + '" data-a="manga" data-i="' + i + '">' + n + '</button>').join('') + '</div><p class="crDica">A cor da camisa é a do time. Aqui é só o modelo.</p>';
+        h += '<p class="crSecao">' + T('Blusa') + '</p><div class="crGrade largo">' + ['Manga curta', 'Manga longa'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.manga ? ' on' : '') + '" data-a="manga" data-i="' + i + '">' + T(n) + '</button>').join('') + '</div><p class="crDica">' + T('A cor da camisa é a do time. Aqui é só o modelo.') + '</p>';
       } else if (aba === 'meiao') {
-        h += '<p class="crSecao">Meião</p><div class="crGrade largo">' + ['Curto', 'Normal', 'Longo'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.meiao ? ' on' : '') + '" data-a="meiao" data-i="' + i + '">' + n + '</button>').join('') + '</div>';
+        h += '<p class="crSecao">' + T('Meião') + '</p><div class="crGrade largo">' + ['Curto', 'Normal', 'Longo'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.meiao ? ' on' : '') + '" data-a="meiao" data-i="' + i + '">' + T(n) + '</button>').join('') + '</div>';
       } else if (aba === 'chuteira') {
-        h += '<p class="crSecao">Chuteira</p><div class="crGrade largo">' + CHUTEIRAS.map((c, i) => '<button type="button" class="pxBtn crChip' + (i === E.chuteira ? ' on' : '') + '" data-a="chuteira" data-i="' + i + '"><span class="crSw" style="background:' + c.base + '"></span>' + esc(c.nome) + '</button>').join('') + '</div>';
+        h += '<p class="crSecao">' + T('Chuteira') + '</p><div class="crGrade largo">' + CHUTEIRAS.map((c, i) => '<button type="button" class="pxBtn crChip' + (i === E.chuteira ? ' on' : '') + '" data-a="chuteira" data-i="' + i + '"><span class="crSw" style="background:' + c.base + '"></span>' + esc(T(c.nome)) + '</button>').join('') + '</div>';
       } else if (aba === 'pe') {
-        h += '<p class="crSecao">Pé dominante</p><div class="crGrade largo">' + [['D', 'Pé direito'], ['E', 'Pé esquerdo']].map(([k, n]) => '<button type="button" class="pxBtn crChip' + (E.pe === k ? ' on' : '') + '" data-a="pe" data-k="' + k + '">' + n + '</button>').join('') + '</div><p class="crDica">É o pé com que você chuta e passa melhor.</p>';
+        h += '<p class="crSecao">' + T('Pé dominante') + '</p><div class="crGrade largo">' + [['D', 'Pé direito'], ['E', 'Pé esquerdo']].map(([k, n]) => '<button type="button" class="pxBtn crChip' + (E.pe === k ? ' on' : '') + '" data-a="pe" data-k="' + k + '">' + T(n) + '</button>').join('') + '</div><p class="crDica">' + T('É o pé com que você chuta e passa melhor.') + '</p>';
       } else if (aba === 'comemoracao') {
-        h += '<p class="crSecao">Comemorações de gol</p><div class="crGrade largo">' + ['Aviãozinho', 'Joelhada'].map((n, i) => '<button type="button" class="pxBtn crChip' + (E.comemoracoes.includes(i + 1) ? ' on' : '') + '" data-a="comemoracao" data-i="' + (i + 1) + '">' + (E.comemoracoes.includes(i + 1) ? '✔ ' : '') + n + '</button>').join('') + '</div><p class="crDica">As duas já vêm marcadas. Toque para desmarcar uma (pelo menos uma fica). Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.</p>';
+        h += '<p class="crSecao">' + T('Comemorações de gol') + '</p><div class="crGrade largo">' + ['Aviãozinho', 'Joelhada'].map((n, i) => '<button type="button" class="pxBtn crChip' + (E.comemoracoes.includes(i + 1) ? ' on' : '') + '" data-a="comemoracao" data-i="' + (i + 1) + '">' + (E.comemoracoes.includes(i + 1) ? '✔ ' : '') + T(n) + '</button>').join('') + '</div><p class="crDica">' + T('As duas já vêm marcadas. Toque para desmarcar uma (pelo menos uma fica). Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.') + '</p>';
       } else if (aba === 'voz') {
-        h += '<p class="crSecao">Tom de voz</p><div class="crFala">“' + esc(Mumble.TEXTO_PADRAO.replace('Vamos', 'Vamos').replace(/^/, '')) + '”</div><div class="crGrade largo">' +
-          Mumble.VOZES.map((v, i) => '<button type="button" class="pxBtn crChip' + (i === E.voz ? ' on' : '') + '" data-a="voz" data-i="' + i + '">' + (i + 1) + ' · ' + esc(v.nome) + '</button>').join('') + '</div><p class="crDica">Toque numa voz para ouvir. Da mais aguda (1) à mais grave (5).</p>';
+        h += '<p class="crSecao">' + T('Tom de voz') + '</p><div class="crFala">“' + esc(T(Mumble.TEXTO_PADRAO)) + '”</div><div class="crGrade largo">' +
+          Mumble.VOZES.map((v, i) => '<button type="button" class="pxBtn crChip' + (i === E.voz ? ' on' : '') + '" data-a="voz" data-i="' + i + '">' + (i + 1) + ' · ' + esc(T(v.nome)) + '</button>').join('') + '</div><p class="crDica">' + T('Toque numa voz para ouvir. Da mais aguda (1) à mais grave (5).') + '</p>';
       }
-      r = '<p class="crMsg"></p><button type="button" class="pxBtn" data-a="anterior">◀ Voltar</button>' + (passo < 4 ? '<button type="button" class="pxBtn pxPrim" data-a="proximo">Próximo ▶</button>' : '<button type="button" class="pxBtn pxPrim" data-a="concluir">Salvar personagem ✔</button>');
+      r = '<p class="crMsg"></p><button type="button" class="pxBtn" data-a="anterior">' + T('◀ Voltar') + '</button>' + (passo < 4 ? '<button type="button" class="pxBtn pxPrim" data-a="proximo">' + T('Próximo ▶') + '</button>' : '<button type="button" class="pxBtn pxPrim" data-a="concluir">' + T('Salvar personagem ✔') + '</button>');
     }
     sc.innerHTML = h; $c('crRodape').innerHTML = r; sc.scrollTop = 0;
     irPara(passo === 1 ? 'corpo' : aba);
   };
   const validar1 = () => {
-    if (!E.nome.trim()) return 'Digite o seu nome.';
-    if (E.temApelido && !E.apelido.trim()) return 'Digite o apelido (ou escolha "Não tenho").';
+    if (!E.nome.trim()) return T('Digite o seu nome.');
+    if (E.temApelido && !E.apelido.trim()) return T('Digite o apelido (ou escolha "Não tenho").');
     return '';
   };
   const mudou = () => { reconstruir(); };
   const abrir = () => {
-    iniciar3D(); if (Som.ligar) Som.ligar();
-    el.classList.remove('cena'); emCena = false; aquece = false; tirarCampo();
-    el.hidden = false; tela.hidden = true;
-    passo = 1; aba = 'pele'; msg = ''; autoGira = true; camAz = 0;
-    desenhar(); ajustar(); reconstruir();
-    cancelAnimationFrame(raf); ultimo = performance.now(); raf = requestAnimationFrame(loop);
-    setTimeout(() => { const n = $c('crNome'); if (n && !window.matchMedia('(pointer: coarse)').matches) n.focus({ preventScroll: true }); }, 30);
+    iniciar3D(); if (Som.ligar) Som.ligar(); textosFixos();
+    comCarregamento(() => {                          // monta o campo de várzea do jogo (com a tela de carregando por cima)
+      prepararCenario();
+      el.classList.remove('cena'); emCena = false; aquece = false; ancora = null;
+      el.hidden = false; tela.hidden = true;
+      passo = 1; aba = 'pele'; msg = ''; autoGira = true; camAz = 0; boneco = null;
+      desenhar(); reconstruir();
+      ultimo = performance.now(); GANCHO_RENDER = gancho; document.body.classList.add('criadorAberto');
+      setTimeout(() => { const n = $c('crNome'); if (n && !window.matchMedia('(pointer: coarse)').matches) n.focus({ preventScroll: true }); }, 30);
+    });
   };
-  const fechar = () => { cancelAnimationFrame(raf); raf = 0; el.hidden = true; tela.hidden = false; tirarCampo(); if (aoFechar) aoFechar(); };
+  const fechar = () => {
+    comCarregamento(() => { desligar3D(); restaurarCenario(); el.hidden = true; tela.hidden = false; if (aoFechar) aoFechar(); });
+  };
 
   // ----- SALVAR PERSONAGEM + cena de abertura -----
   // Os menus somem, o boneco aquece, o campo vai aparecendo em volta e ele fala (caixa de diálogo + voz mumble).
@@ -9979,20 +10191,19 @@ function montarCriador(tela, aoFechar) {
     emCena = true; salvar(); PERSONAGEM.ativo = true;
     if (Som.ligar) Som.ligar();
     reconstruir(); aquece = true; autoGira = false;
-    campoAlvo = 1;
-    el.classList.add('cena');
-    irPara('cena'); yawAlvo = -(FOCO_CRIADOR.cena.az);
-    await esperar(3400);
+    irPara('corpo'); ancora = null; el.classList.add('cena');         // os menus só ficam transparentes; câmera e boneco ficam onde estão
+    yawAlvo = -camAz + 2 * Math.PI * Math.round((yaw + camAz) / (2 * Math.PI));
+    await esperar(2600);
     const nome = PERSONAGEM.apelido || PERSONAGEM.nome;
     await Dialogo.mostrar([
-      'É, esse aí sou eu... me preparando...',
-      'Mas... minha história com o futebol não começou aí não.',
-      'É, na verdade, ela começou há muito tempo atrás...',
-      'Precisamente... 12 anos atrás',
+      T('É, esse aí sou eu... me preparando...'),
+      T('Mas... minha história com o futebol não começou aí não.'),
+      T('É, na verdade, ela começou há muito tempo atrás...'),
+      Tf('Precisamente... {0} anos atrás', 12),
     ], { nome, voz: E.voz, aoLinha: (i) => { if (i === 1) aquece = false; } });
     await anoVoltando();
     // fim (por enquanto): volta ao menu
-    cancelAnimationFrame(raf); raf = 0; aquece = false; tirarCampo();
+    aquece = false; desligar3D(); restaurarCenario();        // (por baixo da tela preta)
     el.classList.remove('cena'); el.hidden = true; tela.hidden = false; emCena = false;
     const t = $('anoTela'); if (t) { t.classList.remove('on'); setTimeout(() => t.remove(), 1000); }
     if (aoFechar) aoFechar();
@@ -10016,7 +10227,7 @@ function montarCriador(tela, aoFechar) {
       requestAnimationFrame(passoAno);
     });
     await esperar(1300);
-    txt.innerHTML = 'Fase 1 · em construção<br><br><button type="button" class="pxBtn pxPrim" id="anoVoltar">Voltar ao menu</button>';
+    txt.innerHTML = T('Fase 1 · em construção') + '<br><br><button type="button" class="pxBtn pxPrim" id="anoVoltar">' + T('Voltar ao menu') + '</button>';
     await new Promise((fim) => { t.querySelector('#anoVoltar').addEventListener('click', () => { if (Som.clique) Som.clique(); fim(); }); });
   };
 
@@ -10049,7 +10260,7 @@ function montarCriador(tela, aoFechar) {
     if (a === 'concluir') { cenaAbertura(); return; }
     // escolhas de aparência
     if (a === 'pele') E.pele = i; else if (a === 'corte') E.estilo = i; else if (a === 'corCabelo') E.corCabelo = i;
-    else if (a === 'barba') E.barba = i; else if (a === 'corBarba') E.corBarba = i; else if (a === 'rosto') E.rosto = i;
+    else if (a === 'barba') E.barba = i; else if (a === 'corBarba') E.corBarba = i; else if (a === 'rosto') E.rosto = i; else if (a === 'labio') E.labio = i;
     else if (a === 'manga') E.manga = i; else if (a === 'meiao') E.meiao = i; else if (a === 'chuteira') E.chuteira = i;
     else if (a === 'pe') E.pe = b.dataset.k; else if (a === 'comemoracao') { const l = E.comemoracoes, k = l.indexOf(i); if (k >= 0) { if (l.length > 1) l.splice(k, 1); } else l.push(i); l.sort(); }
     else if (a === 'voz') { E.voz = i; if (Som.ligar) Som.ligar(); if (falaAmostra) falaAmostra.parar(); falaAmostra = Mumble.amostra(i); }
@@ -10221,10 +10432,31 @@ function montarMenuInicial() {
   const menu = document.createElement('div');
   menu.className = 'mxMenu';
   menu.innerHTML = '<img class="mxLogo" src="' + LOGO_JOGABUNITO + '" alt="jogabunito" draggable="false">' +
-    '<nav class="mxBotoes" aria-label="Menu principal">' +
-    MENU_ROTULOS.map(([a, r], i) => '<button type="button" class="pxBtn' + (i === 0 ? ' pxPrim' : '') + '" data-acao="' + a + '">' + r + '</button>').join('') +
+    '<nav class="mxBotoes" aria-label="' + T('Menu principal') + '">' +
+    MENU_ROTULOS.map(([a, r], i) => '<button type="button" class="pxBtn' + (i === 0 ? ' pxPrim' : '') + '" data-acao="' + a + '">' + T(r) + '</button>').join('') +
     '</nav>';
   tela.appendChild(menu);
+  // (4.3.0) botão de idioma no canto: mostra a bandeira atual e reabre a tela de idiomas
+  const cssId = document.createElement('style');
+  cssId.textContent = `.mxIdioma { --p: var(--p3, 3px); appearance: none; -webkit-appearance: none; position: absolute; z-index: 2; top: calc(10px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box; width: calc(var(--p) * 22); margin: 0; padding: 0; background: none; cursor: pointer; touch-action: manipulation;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; }
+.mxIdioma img { display: block; width: 100%; height: auto; aspect-ratio: 32 / 21; image-rendering: pixelated; border: 2px solid var(--mx-ink, #2a1206); box-sizing: border-box; }
+.mxIdioma:active { transform: translateY(var(--p)); } .mxIdioma:focus-visible { outline: none; border-image-source: var(--sp-grama); }
+@media (max-height: 460px) { .mxIdioma { --p: var(--p2, 2px); } }`;
+  document.head.appendChild(cssId);
+  const btnIdioma = document.createElement('button');
+  btnIdioma.type = 'button'; btnIdioma.className = 'mxIdioma';
+  tela.appendChild(btnIdioma);
+  const aplicarIdiomaMenu = () => {
+    for (const b of menu.querySelectorAll('button[data-acao]')) { const r = MENU_ROTULOS.find((x) => x[0] === b.dataset.acao); if (r) b.textContent = T(r[1]); }
+    menu.querySelector('nav').setAttribute('aria-label', T('Menu principal'));
+    const f = IDIOMAS.find((i) => i.id === Idioma.atual) || IDIOMAS[0];
+    btnIdioma.innerHTML = '<img alt="" draggable="false" src="' + bandeiraUrl(f.bandeira) + '">';
+    btnIdioma.setAttribute('aria-label', T('Mudar idioma') + ' (' + f.nome + ')'); btnIdioma.title = T('Mudar idioma');
+  };
+  Idioma.aoMudar.push(aplicarIdiomaMenu); aplicarIdiomaMenu();
+  btnIdioma.addEventListener('click', () => { if (Som.clique) Som.clique(); telaIdioma(); });
   const rodape = document.createElement('div');
   rodape.className = 'mxRodape'; rodape.id = 'versaoGuarda'; rodape.hidden = true;
   rodape.appendChild($('versaoInfo'));                      // (4.2.6) a linha "versão X · origem" agora aparece em Configurações
@@ -10235,24 +10467,24 @@ function montarMenuInicial() {
 
   let abriu = null;                                         // botão que abriu o painel (o foco volta para ele)
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const quando = (iso) => { try { return new Date(iso).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
+  const quando = (iso) => { try { return new Date(iso).toLocaleString(({ pt: 'pt-BR', en: 'en-US', es: 'es-ES', it: 'it-IT', fr: 'fr-FR' })[Idioma.atual] || 'pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } };
   const fecharPainel = () => {
     veu.hidden = true; veu.innerHTML = '';
     if (abriu) { abriu.focus({ preventScroll: true }); abriu = null; }
   };
   const abrirPainel = (titulo, corpo) => {
     veu.innerHTML = '<div class="mxCaixa" role="dialog" aria-modal="true" aria-label="' + titulo + '"><div class="mxTitulo">' + titulo + '</div>' +
-      '<div class="mxCorpo">' + corpo + '<div class="mxAcoes"><button type="button" class="pxBtn pxPeq" data-acao="fechar">Voltar</button></div></div></div>';
+      '<div class="mxCorpo">' + corpo + '<div class="mxAcoes"><button type="button" class="pxBtn pxPeq" data-acao="fechar">' + T('Voltar') + '</button></div></div></div>';
     veu.hidden = false; veu.scrollTop = 0;
     (veu.querySelector('.mxSlot:not(:disabled)') || veu.querySelector('[data-acao="fechar"]')).focus({ preventScroll: true });
   };
   const abrirCarregar = (msg) => {
     const lista = listarSaves();
     const itens = lista.map((sv, i) => sv
-      ? '<li><button type="button" class="mxSlot" data-slot="' + (i + 1) + '"><span class="mxSlotN">' + (i + 1) + '</span><span class="mxSlotInfo"><b>' + esc(sv.nome || 'Jogo salvo') + '</b><small>' +
+      ? '<li><button type="button" class="mxSlot" data-slot="' + (i + 1) + '"><span class="mxSlotN">' + (i + 1) + '</span><span class="mxSlotInfo"><b>' + esc(sv.nome || T('Jogo salvo')) + '</b><small>' +
         esc([sv.resumo, quando(sv.data)].filter(Boolean).join(' · ')) + '</small></span></button></li>'
-      : '<li><button type="button" class="mxSlot" disabled><span class="mxSlotN">' + (i + 1) + '</span><span class="mxSlotInfo"><b>Vazio</b><small>Nenhum jogo salvo aqui</small></span></button></li>').join('');
-    abrirPainel('Carregar jogo', '<ul class="mxSlots">' + itens + '</ul><p class="mxMsg" role="status">' + esc(msg || (lista.some(Boolean) ? '' : 'Ainda não há jogos salvos.')) + '</p>');
+      : '<li><button type="button" class="mxSlot" disabled><span class="mxSlotN">' + (i + 1) + '</span><span class="mxSlotInfo"><b>' + T('Vazio') + '</b><small>' + T('Nenhum jogo salvo aqui') + '</small></span></button></li>').join('');
+    abrirPainel(T('Carregar jogo'), '<ul class="mxSlots">' + itens + '</ul><p class="mxMsg" role="status">' + esc(msg ? T(msg) : (lista.some(Boolean) ? '' : T('Ainda não há jogos salvos.'))) + '</p>');
   };
 
   const criador = montarCriador(tela, (como) => {          // (4.3.0) criador de personagem (modo história)
@@ -10260,11 +10492,11 @@ function montarMenuInicial() {
   });
   const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
   const MENU_ACOES = {
-    jogar: () => abrirPainel('Jogar', '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="modoHistoria">Modo história</button>' +
-      '<button type="button" class="pxBtn" data-acao="partidaLivre">Partida livre</button></div>'),
+    jogar: () => abrirPainel(T('Jogar'), '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="modoHistoria">' + T('Modo história') + '</button>' +
+      '<button type="button" class="pxBtn" data-acao="partidaLivre">' + T('Partida livre') + '</button></div>'),
     carregar: () => abrirCarregar(),
     config: () => $('selBtn').click(),                      // abre OPÇÕES DA PARTIDA
-    creditos: () => abrirPainel('Créditos', '<p class="mxCredPeq">Feito por</p><p class="mxCredNome">Herick</p>'),
+    creditos: () => abrirPainel(T('Créditos'), '<p class="mxCredPeq">' + T('Feito por') + '</p><p class="mxCredNome">Herick</p>'),
     sair: () => { /* por enquanto não faz nada */ },
   };
   menu.addEventListener('click', (e) => {
@@ -10335,12 +10567,13 @@ function telaCarregando() {
   L.id = 'carregando'; L.hidden = true;
   L.setAttribute('role', 'status'); L.setAttribute('aria-live', 'polite');
   L.innerHTML = '<div class="mxCaixa carCaixa"><img class="carLogo" src="' + LOGO_JOGABUNITO + '" alt="" draggable="false">' +
-    '<div class="carTexto">Carregando<span class="carPontos"></span></div><div class="carBarra"><i></i></div></div>';
+    '<div class="carTexto">' + T('Carregando') + '<span class="carPontos"></span></div><div class="carBarra"><i></i></div></div>';
   ($('raizJogo') || document.body).appendChild(L);
   return L;
 }
 function comCarregamento(fn) {
   const L = telaCarregando();
+  { const tx = L.querySelector('.carTexto'); if (tx && tx.firstChild) tx.firstChild.nodeValue = T('Carregando'); }
   L.hidden = false;
   window.__semApito = true; window.__apitoPendente = false;
   const t0 = performance.now();
@@ -10417,11 +10650,14 @@ function montarTelasPixel() {
   const troca = (id, cls) => { const b = $(id); if (b) { b.classList.remove('big', 'ghost'); b.classList.add(...cls.split(' ')); } };
   troca('resumeBtn', 'pxBtn pxPrim'); troca('againBtn', 'pxBtn pxPrim'); troca('restartBtn', 'pxBtn');
   const r = $('rotate');
+  const textoGire = () => { const t = r && r.querySelector('.rotTexto'); if (t) t.innerHTML = T('Gire o celular') + '<small>' + T('para a horizontal') + '</small>'; };
+  Idioma.aoMudar.push(textoGire);
   if (r) r.innerHTML = '<div class="mxCaixa"><svg class="rotCel" viewBox="0 0 14 22" aria-hidden="true">' +
     '<rect x="1" y="0" width="12" height="22" fill="#fff0c8"/><rect x="2" y="2" width="10" height="16" fill="#2a1206"/>' +
     '<rect x="3" y="4" width="8" height="12" fill="#3f9d2a"/><rect x="3" y="9.5" width="8" height="1" fill="#fff0c8"/>' +
     '<rect x="6" y="19" width="2" height="2" fill="#2a1206"/></svg>' +
-    '<div class="rotTexto">Gire o celular<small>para a horizontal</small></div></div>';
+    '<div class="rotTexto"></div></div>';
+  textoGire();
   telaCarregando();
 }
 montarTelasPixel();
@@ -10593,3 +10829,5 @@ G.state = 'menu';
 snapCamera();
 drawRadar();
 requestAnimationFrame(frame);
+try { document.documentElement.lang = ({ pt: 'pt-BR', en: 'en', es: 'es', it: 'it', fr: 'fr' })[Idioma.atual]; } catch (e) { /* ok */ }
+if (IDIOMA_PERGUNTAR_SEMPRE || !salvo.ler('futebolJs.idioma.v1', {}).id) telaIdioma();          // (4.3.0) primeira tela: escolher o idioma
