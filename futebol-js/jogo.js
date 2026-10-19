@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.4
+   FUTEBOL JS · jogo.js · versão 4.3.5
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,13 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.3.5 — Fase 1 refeita (sala maior, corredor) e música:
+     - Menu com tema de rock alternativo sintetizado (Musica.menu); sem barulho de torcida no menu/criador/fase; criador em silêncio.
+     - Som de porta (Musica.porta). Sala maior, fundo preto sólido, objetos colados nas paredes (mural/relógio não atravessam mais).
+     - Câmeras mais próximas do jogador; pontos fixos de conversa (afastados); alunos saem desviando de mesas/cadeiras (BFS).
+     - Corredor: crianças conversando, Lúcia (mariposa Acherontia atropos), valentão tranca o menino de óculos no armário,
+       João espera no fim e leva à quadra; sair pela porta mostra "Em desenvolvimento...".
+
    Novidades da versão 4.3.4 — correção da sala + música:
      - Armário saiu da porta (não prende mais); se a cena terminar dentro de um móvel, o personagem é empurrado para fora.
      - Sem barulho de torcida no criador/Fase 1; musiquinha de jazz sintetizada (triangle/sine/square/sawtooth + vassourinha).
@@ -393,7 +400,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.4';
+const VERSAO_JOGO = '4.3.5';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1367,6 +1374,7 @@ const Som = (() => {
   // nivel 0..1 (chamado todo quadro; só mexe no som quando muda de verdade)
   function torcida(nivel) {
     if (!ctx || !torcidaGain) return;
+    if (nivel < 0) { if (nivelAtual !== -2) { nivelAtual = -2; torcidaGain.gain.setTargetAtTime(0, ctx.currentTime, 0.25); } return; }   // (4.3.5) silêncio total (menu, criador, fases)
     const n = Math.round(clamp(nivel, 0, 1) * 20) / 20;
     if (n === nivelAtual) return;
     nivelAtual = n;
@@ -7987,7 +7995,8 @@ function frame(now) {
   atualizarBanco(rdt);
   ajustarSombras();
   if (GANCHO_RENDER) GANCHO_RENDER(rdt);                    // (4.3.0) o criador de personagem usa a câmera e o campo do jogo
-  Som.torcida(GANCHO_RENDER ? 0 : nivelTorcida());         // (4.3.4) criador/fase: sem barulho de torcida
+  Som.torcida((GANCHO_RENDER || G.state === 'menu') ? -1 : nivelTorcida());
+  Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);         // (4.3.4) criador/fase: sem barulho de torcida
   // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
@@ -9921,10 +9930,34 @@ const Dialogo = (() => {
 // ============================================================
 // (4.3.4) JAZZ · musiquinha sintetizada (só ondas do WebAudio: triangle, sine, square, sawtooth + ruído)
 // ============================================================
-const Jazz = (() => {
-  const BPM = 92, BEAT = 60 / BPM;
-  // ii–V–I–vi (Dm9 · G13 · Cmaj9 · A7) e depois Em7 · A7 · Dm9 · G13 — notas MIDI
-  const ACORDES = [
+const Musica = (() => {
+  // Tudo sintetizado com osciladores do WebAudio (triangle, sine, square, sawtooth) e ruído filtrado.
+  let ctx = null, bus = null, ruido = null, timer = 0, prox = 0, compasso = 0, tocando = false, estilo = '', dist = null;
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const escolhe = (a) => a[Math.floor(Math.random() * a.length)];
+  const nota = (tipo, m, t, dur, vol, o) => {
+    o = o || {};
+    const osc = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    osc.type = tipo; osc.frequency.value = hz(m); if (o.det) osc.detune.value = o.det;
+    f.type = 'lowpass'; f.frequency.value = o.corte || 2400;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + (o.ataque || 0.012));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    if (o.dist) { osc.connect(dist); dist.connect(f); } else osc.connect(f);
+    f.connect(g); g.connect(bus);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  };
+  const chiado = (t, dur, vol, freq, tipo, q) => {
+    const s = ctx.createBufferSource(); s.buffer = ruido;
+    const f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = tipo || 'highpass'; f.frequency.value = freq || 6500; if (q) f.Q.value = q;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(bus); s.start(t, Math.random() * 0.5, dur + 0.02);
+  };
+
+  // ----------------------------------------------------------- JAZZ (ii–V–I, swing, vassourinha)
+  const JBPM = 92, JB = 60 / JBPM;
+  const JAZZ = [
     { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
     { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 77] },   // G13
     { raiz: 36, notas: [55, 59, 62, 64], escala: [60, 62, 64, 67, 69, 71] },   // Cmaj9
@@ -9934,80 +9967,113 @@ const Jazz = (() => {
     { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
     { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 79] },   // G13
   ];
-  let ctx = null, bus = null, ruido = null, timer = 0, prox = 0, compasso = 0, tocando = false, lastMel = 0;
-  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
-  const nota = (tipo, m, t, dur, vol, o) => {
-    o = o || {};
-    const osc = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
-    osc.type = tipo; osc.frequency.value = hz(m); if (o.det) osc.detune.value = o.det;
-    f.type = 'lowpass'; f.frequency.value = o.corte || 2400;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(vol, t + (o.ataque || 0.012));
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(f); f.connect(g); g.connect(bus);
-    osc.start(t); osc.stop(t + dur + 0.05);
-  };
-  const chiado = (t, dur, vol, freq) => {                      // "vassourinha" na caixa
-    const s = ctx.createBufferSource(); s.buffer = ruido;
-    const f = ctx.createBiquadFilter(), g = ctx.createGain();
-    f.type = 'highpass'; f.frequency.value = freq || 6500;
-    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    s.connect(f); f.connect(g); g.connect(bus); s.start(t, Math.random() * 0.5, dur + 0.02);
-  };
-  const sw = (i) => (i % 2 ? BEAT * (2 / 3) : 0) + Math.floor(i / 2) * BEAT;   // colcheias com swing (i = 0..7)
-  const escolhe = (a) => a[Math.floor(Math.random() * a.length)];
-
-  const compassoAgenda = (t0, n) => {
-    const c = ACORDES[n % ACORDES.length], prox_ = ACORDES[(n + 1) % ACORDES.length];
-    // baixo caminhando (triângulo): raiz · terça/quinta · passagem · aproximação do próximo acorde
-    const b = [c.raiz, c.raiz + escolhe([3, 4, 7]), c.raiz + escolhe([5, 7, 9]), prox_.raiz + escolhe([-1, 1])];
-    for (let i = 0; i < 4; i++) nota('triangle', b[i], t0 + i * BEAT, BEAT * 0.9, 0.34, { corte: 700, ataque: 0.01 });
-    // piano elétrico (sine + triangle uma oitava acima, "comping" sincopado)
-    const comp = escolhe([[0, 3], [1.5, 3], [0, 2.67], [0.67, 2.5]]);
-    for (const tb of comp) for (const m of c.notas) {
-      nota('sine', m, t0 + tb * BEAT, BEAT * 1.1, 0.07, { corte: 3000 });
-      nota('triangle', m + 12, t0 + tb * BEAT, BEAT * 0.8, 0.025, { corte: 2200, det: 6 });
+  const sw = (i) => (i % 2 ? JB * (2 / 3) : 0) + Math.floor(i / 2) * JB;
+  const jazz = (t0, n) => {
+    const c = JAZZ[n % JAZZ.length], pr = JAZZ[(n + 1) % JAZZ.length];
+    const b = [c.raiz, c.raiz + escolhe([3, 4, 7]), c.raiz + escolhe([5, 7, 9]), pr.raiz + escolhe([-1, 1])];
+    for (let i = 0; i < 4; i++) nota('triangle', b[i], t0 + i * JB, JB * 0.9, 0.34, { corte: 700, ataque: 0.01 });
+    for (const tb of escolhe([[0, 3], [1.5, 3], [0, 2.67], [0.67, 2.5]])) for (const m of c.notas) {
+      nota('sine', m, t0 + tb * JB, JB * 1.1, 0.07, { corte: 3000 });
+      nota('triangle', m + 12, t0 + tb * JB, JB * 0.8, 0.025, { corte: 2200, det: 6 });
     }
-    // pad de serra bem suave no 1º tempo (a cada 2 compassos) com filtro fechado
-    if (n % 2 === 0) for (const m of [c.notas[0] - 12, c.notas[2] - 12]) nota('sawtooth', m, t0, BEAT * 7.5, 0.018, { corte: 520, ataque: 0.6 });
-    // melodia (square suave, bem filtrada): frases curtas com pausas, variando a cada volta
+    if (n % 2 === 0) for (const m of [c.notas[0] - 12, c.notas[2] - 12]) nota('sawtooth', m, t0, JB * 7.5, 0.018, { corte: 520, ataque: 0.6 });
     let i = 0;
     while (i < 8) {
       if (Math.random() < 0.46) { i++; continue; }
-      const m = escolhe(c.escala) + (Math.random() < 0.2 ? 12 : 0);
-      const len = Math.random() < 0.35 ? 2 : 1;
-      nota('square', m, t0 + sw(i), BEAT * (len * 0.55), 0.045, { corte: 1500, ataque: 0.02 });
-      nota('sine', m + 12, t0 + sw(i), BEAT * (len * 0.5), 0.02);
+      const m = escolhe(c.escala) + (Math.random() < 0.2 ? 12 : 0), len = Math.random() < 0.35 ? 2 : 1;
+      nota('square', m, t0 + sw(i), JB * (len * 0.55), 0.045, { corte: 1500, ataque: 0.02 });
+      nota('sine', m + 12, t0 + sw(i), JB * (len * 0.5), 0.02);
       i += len;
     }
-    // bateria de vassourinha: ride em "tchi ta-ki" (swing) + chapéu nos tempos 2 e 4
-    for (let k = 0; k < 4; k++) { chiado(t0 + k * BEAT, 0.09, 0.05, 7000); chiado(t0 + k * BEAT + BEAT * (2 / 3), 0.05, 0.03, 8000); }
-    for (const k of [1, 3]) chiado(t0 + k * BEAT, 0.12, 0.05, 3500);
+    for (let k = 0; k < 4; k++) { chiado(t0 + k * JB, 0.09, 0.05, 7000); chiado(t0 + k * JB + JB * (2 / 3), 0.05, 0.03, 8000); }
+    for (const k of [1, 3]) chiado(t0 + k * JB, 0.12, 0.05, 3500);
+    return JB * 4;
+  };
+
+  // ----------------------------------------------------------- ROCK ALTERNATIVO (Am–F–C–G, 8 compassos verso / 8 refrão)
+  const RBPM = 126, RB = 60 / RBPM, R8 = RB / 2;
+  const ROCK = [{ r: 45, tri: [57, 60, 64, 69] }, { r: 41, tri: [53, 57, 60, 65] }, { r: 36, tri: [55, 60, 64, 67] }, { r: 43, tri: [55, 59, 62, 67] }];
+  const chute = (t) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
+    g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.3);
+  };
+  const caixa = (t) => { chiado(t, 0.17, 0.4, 1900, 'bandpass', 0.7); nota('triangle', 55, t, 0.12, 0.28, { corte: 1200, ataque: 0.002 }); };
+  const rock = (t0, n) => {
+    const c = ROCK[n % 4], refrao = Math.floor(n / 4) % 2 === 1;
+    // bateria: chute 1 e 3 (+ sincopa), caixa 2 e 4, chapéu em colcheias (aberto no refrão)
+    for (const k of (refrao ? [0, 1.5, 2, 3.5] : [0, 2])) chute(t0 + k * RB);
+    for (const k of [1, 3]) caixa(t0 + k * RB);
+    for (let i = 0; i < 8; i++) chiado(t0 + i * R8, refrao && i % 2 ? 0.16 : 0.04, 0.05, 8000);
+    if (n % 4 === 3) { caixa(t0 + 3.5 * RB); caixa(t0 + 3.75 * RB); }                               // virada
+    // baixo: colcheias na raiz (square filtrado), oitava no refrão
+    for (let i = 0; i < 8; i++) nota('square', c.r + (i % 4 === 3 && refrao ? 12 : 0), t0 + i * R8, R8 * 0.85, 0.22, { corte: 520, ataque: 0.004 });
+    if (refrao) {
+      // guitarra com distorção (sawtooth → waveshaper): power chord em "palm mute" nas colcheias, aberto no 1º tempo
+      for (let i = 0; i < 8; i++) for (const m of [c.r + 12, c.r + 19, c.r + 24])
+        nota('sawtooth', m, t0 + i * R8, i === 0 ? RB * 1.6 : R8 * 0.7, i === 0 ? 0.055 : 0.04, { corte: 1700, dist: true, ataque: 0.004 });
+    } else {
+      // verso: arpejo limpo (triangle + sine) com eco de colcheia pontuada
+      const arp = [0, 1, 2, 3, 2, 1, 2, 3];
+      for (let i = 0; i < 8; i++) { const m = c.tri[arp[i]] + 12; nota('triangle', m, t0 + i * R8, R8 * 1.6, 0.07, { corte: 3200 }); nota('sine', m, t0 + i * R8 + R8 * 1.5, R8, 0.025); }
+    }
+    // melodia (square suave): frase de 2 compassos que se repete com variações
+    const mel = refrao ? [[0, 69], [1, 72], [2, 71], [3, 69], [4, 67], [6, 64]] : [[0, 64], [2, 67], [4, 69], [6, 67]];
+    if (n % 2 === 0) for (const [i, m] of mel) nota('square', m + (n % 8 >= 6 ? 12 : 0), t0 + i * R8, R8 * 1.5, 0.04, { corte: 1800, ataque: 0.01, det: refrao ? 8 : 0 });
+    return RB * 4;
   };
 
   const laco = () => {
     if (!tocando || !ctx) return;
-    while (prox < ctx.currentTime + 1.2) { compassoAgenda(prox, compasso++); prox += BEAT * 4; }
+    while (prox < ctx.currentTime + 1.2) prox += estilo === 'rock' ? rock(prox, compasso++) : jazz(prox, compasso++);
   };
-  const tocar = () => {
-    if (tocando) return;
+  const tocar = (qual) => {
+    qual = qual || 'jazz';
+    if (tocando && estilo === qual) return;
+    if (tocando) parar();
     const A = (typeof Som !== 'undefined') ? Som.audio : null;
     if (!A) return;
     ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
     bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.mestre);
-    bus.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 1.5);
+    bus.gain.linearRampToValueAtTime(qual === 'rock' ? 0.7 : 0.9, ctx.currentTime + 1.5);
     if (!ruido) { ruido = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
-    tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
+    if (!dist) { dist = ctx.createWaveShaper(); const cv = new Float32Array(257); for (let i = 0; i < 257; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 6); } dist.curve = cv; }
+    estilo = qual; tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
     laco(); timer = setInterval(laco, 250);
   };
   const parar = () => {
     if (!tocando) return;
-    tocando = false; clearInterval(timer);
+    tocando = false; estilo = ''; clearInterval(timer);
     const b = bus, c = ctx;
-    try { b.gain.cancelScheduledValues(c.currentTime); b.gain.setValueAtTime(b.gain.value, c.currentTime); b.gain.linearRampToValueAtTime(0, c.currentTime + 1.2); } catch (e) {}
+    try { b.gain.cancelScheduledValues(c.currentTime); b.gain.setValueAtTime(b.gain.value, c.currentTime); b.gain.linearRampToValueAtTime(0, c.currentTime + 1.0); } catch (e) {}
     setTimeout(() => { try { b.disconnect(); } catch (e) {} }, 2500);
   };
-  return { tocar, parar, get tocando() { return tocando; } };
+  // tema do menu: chamado todo quadro com "o menu está aberto?"
+  const menu = (aberto) => {
+    if (aberto) { if (!tocando && typeof Som !== 'undefined' && Som.audio) tocar('rock'); }
+    else if (tocando && estilo === 'rock') parar();
+  };
+  // efeitos de porta (rangido de dobradiça: serra varrendo agudo/grave + estalo da tranca)
+  const porta = (abrindo) => {
+    const A = (typeof Som !== 'undefined') ? Som.audio : null;
+    if (!A || Som.mudo) return;
+    const c = A.ctx, t = c.currentTime + 0.02, d = abrindo ? 0.9 : 0.7;
+    const b = c.createBuffer(1, c.sampleRate * 0.3, c.sampleRate), dd = b.getChannelData(0); for (let i = 0; i < dd.length; i++) dd[i] = Math.random() * 2 - 1;
+    const clique = (t0, f, v) => { const s = c.createBufferSource(), fl = c.createBiquadFilter(), g = c.createGain(); s.buffer = b; fl.type = 'bandpass'; fl.frequency.value = f; fl.Q.value = 2; g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06); s.connect(fl); fl.connect(g); g.connect(A.mestre); s.start(t0); s.stop(t0 + 0.08); };
+    if (abrindo) clique(t, 1400, 0.5); else clique(t + d - 0.08, 700, 0.7);
+    const o = c.createOscillator(), o2 = c.createOscillator(), f = c.createBiquadFilter(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain();
+    o.type = 'sawtooth'; o2.type = 'square';
+    const f0 = abrindo ? 180 : 330, f1 = abrindo ? 330 : 170;
+    o.frequency.setValueAtTime(f0, t + 0.05); o.frequency.linearRampToValueAtTime(f1, t + d);
+    o2.frequency.setValueAtTime(f0 * 1.51, t + 0.05); o2.frequency.linearRampToValueAtTime(f1 * 1.51, t + d);
+    lfo.frequency.value = 17; lg.gain.value = 12; lfo.connect(lg); lg.connect(o.frequency);
+    f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 6;
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.07, t + 0.15); g.gain.linearRampToValueAtTime(0.05, t + d * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    o.connect(f); o2.connect(f); f.connect(g); g.connect(A.mestre);
+    for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + d + 0.05); }
+  };
+  return { tocar, parar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; } };
 })();
 
 // ---------------------------------------------------------------------
@@ -10076,6 +10142,28 @@ Object.assign(I18N, {
   'Continua...': ['To be continued...', 'Continuará...', 'Continua...', 'À suivre...'],
   'ÁLGEBRA': ['ALGEBRA', 'ÁLGEBRA', 'ALGEBRA', 'ALGÈBRE'],
   'Dona Graça': ['Mrs. Grace', 'Doña Gracia', 'Signora Grazia', 'Madame Grâce'],
+  'Menino de óculos': ['Boy with glasses', 'Chico con gafas', 'Ragazzo con gli occhiali', 'Garçon à lunettes'],
+  'Missão: encontre o João no fim do corredor.': ['Mission: find João at the end of the hallway.', 'Misión: encuentra a João al final del pasillo.', 'Missione: trova João in fondo al corridoio.', 'Mission : retrouve João au bout du couloir.'],
+  'Missão: siga o João para fora da escola.': ['Mission: follow João out of the school.', 'Misión: sigue a João fuera de la escuela.', 'Missione: segui João fuori dalla scuola.', 'Mission : suis João hors de l\'école.'],
+  'Abrir o armário': ['Open the locker', 'Abrir la taquilla', 'Apri l\'armadietto', 'Ouvrir le casier'],
+  'Sair da escola': ['Leave the school', 'Salir de la escuela', 'Esci da scuola', 'Sortir de l\'école'],
+  'Ei, {0}! Agora eu vou te contar o que era! Vem, me segue até a quadra!': ['Hey, {0}! Now I\'ll tell you what it was! Come on, follow me to the court!', '¡Ey, {0}! ¡Ahora te cuento lo que era! ¡Vamos, sígueme a la cancha!', 'Ehi, {0}! Ora ti dico cos\'era! Dai, seguimi al campo!', 'Hé, {0} ! Maintenant je te dis ce que c\'était ! Viens, suis-moi jusqu\'au terrain !'],
+  'Ei, {0}! Eu estava te esperando pra te mostrar uma coisa! Vem, me segue até a quadra!': ['Hey, {0}! I was waiting for you to show you something! Come on, follow me to the court!', '¡Ey, {0}! ¡Te estaba esperando para mostrarte algo! ¡Vamos, sígueme a la cancha!', 'Ehi, {0}! Ti aspettavo per mostrarti una cosa! Dai, seguimi al campo!', 'Hé, {0} ! Je t\'attendais pour te montrer un truc ! Viens, suis-moi jusqu\'au terrain !'],
+  '{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!': ['{0}! I\'m impressed! Showing up late and still getting everything right... that\'s so cool!', '¡{0}! ¡Me dejaste impresionada! Llegar tarde y aun así acertar todo... ¡me pareció muy genial!', '{0}! Sono rimasta impressionata! Arrivare in ritardo e azzeccare tutto... molto figo!', '{0} ! Je suis impressionnée ! Arriver en retard et tout réussir quand même... trop cool !'],
+  'Eu acertei no chute': ['I just guessed', 'Acerté de pura suerte', 'Ho tirato a indovinare', 'J\'ai deviné au hasard'],
+  'Fico feliz que você tenha gostado': ['I\'m glad you liked it', 'Me alegra que te haya gustado', 'Sono felice che ti sia piaciuto', 'Je suis content que ça t\'ait plu'],
+  'Ainda bem que estudei': ['Good thing I studied', 'Menos mal que estudié', 'Meno male che ho studiato', 'Heureusement que j\'ai étudié'],
+  'Hm, sei... no chute, é? Tá bom, então!': ['Hm, sure... a guess, huh? Okay, then!', 'Mm, ya... ¿de suerte, eh? ¡Bueno, entonces!', 'Mh, certo... a caso, eh? Va bene, allora!', 'Mouais... au hasard, hein ? Bon, d\'accord !'],
+  'Que bom! Continue assim!': ['Great! Keep it up!', '¡Qué bien! ¡Sigue así!', 'Che bello! Continua così!', 'Super ! Continue comme ça !'],
+  'A-ah... é... o João está esperando a gente no final do corredor.': ['U-uh... yeah... João is waiting for us at the end of the hallway.', 'E-eh... sí... João nos está esperando al final del pasillo.', 'A-ah... sì... João ci aspetta in fondo al corridoio.', 'E-euh... oui... João nous attend au bout du couloir.'],
+  'Ei, {0}! O João está esperando a gente no final do corredor.': ['Hey, {0}! João is waiting for us at the end of the hallway.', '¡Ey, {0}! João nos está esperando al final del pasillo.', 'Ehi, {0}! João ci aspetta in fondo al corridoio.', 'Hé, {0} ! João nous attend au bout du couloir.'],
+  'Vai lá, o João está esperando!': ['Go on, João is waiting!', '¡Ve, João está esperando!', 'Vai, João sta aspettando!', 'Vas-y, João attend !'],
+  'Quando a mariposa aparece, é porque alguém vai se lembrar de algo...': ['When the moth appears, someone is about to remember something...', 'Cuando aparece la polilla, alguien va a recordar algo...', 'Quando appare la falena, qualcuno sta per ricordare qualcosa...', 'Quand le papillon de nuit apparaît, quelqu\'un va se souvenir de quelque chose...'],
+  'E-ei! O que você vai fazer...?': ['H-hey! What are you going to do...?', '¡E-eh! ¿Qué vas a hacer...?', 'E-ehi! Che cosa vuoi fare...?', 'H-hé ! Qu\'est-ce que tu vas faire... ?'],
+  'Há há há há!': ['Ha ha ha ha!', '¡Ja ja ja ja!', 'Ah ah ah ah!', 'Ha ha ha ha !'],
+  'Muito obrigado por me tirar daí!': ['Thank you so much for getting me out of there!', '¡Muchas gracias por sacarme de ahí!', 'Grazie mille per avermi tirato fuori di lì!', 'Merci beaucoup de m\'avoir sorti de là !'],
+  'Por nada.': ['No problem.', 'De nada.', 'Di niente.', 'De rien.'],
+  'Em desenvolvimento...': ['Under development...', 'En desarrollo...', 'In sviluppo...', 'En développement...'],
   'João Pinha': ['John Pine', 'Juan Pino', 'Gianni Pini', 'Jean Pinet'],
   'Lúcia Alves': ['Lucy Allen', 'Lucía Álvarez', 'Lucia Alberti', 'Lucie Alard'],
   'Mover': ['Move', 'Mover', 'Muovi', 'Bouger'],
@@ -10117,12 +10205,14 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
 })();
 
 const Fase1 = (() => {
-  const SX = 4.5, SZ = 4, ALT = 2.7, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
-  const PORTA = { x: 3.3, z: SZ };
-  const LINHAS = [-1.2, 0.6, 2.4], COLS = [-2.6, 0, 2.6];            // 9 mesas (3 colunas × 3 fileiras)
+  const SX = 6, SZ = 5, ALT = 2.8, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
+  const PORTA = { x: 4.7, z: SZ };
+  const CX = 2.4, CL = 13;                                             // corredor (4.3.5): meia largura e meio comprimento
+  const LINHAS = [-1.6, 0.6, 2.8], COLS = [-3.2, 0, 3.2];            // 9 mesas (3 colunas × 3 fileiras)
   const ESC = 0.68, CAB = 1.55, ASSENTO_Y = -0.15;                     // personagem bebê: corpo 68%, cabeça 155%
-  const PROF = { x: -1.2, z: -3.2 };
-  const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves' };       // (a tabela I18N traz os nomes de cada idioma)
+  const PROF = { x: -2.4, z: -3.9 }, MESA_PROF = { x: -4.5, z: -4.2 };
+  const SPOT = { joao: [1.9, LINHAS[1] + 0.62], lucia: [-1.9, LINHAS[1] + 0.62], prof: [PROF.x + 1.25, PROF.z] };   // pontos fixos (afastados) de conversa
+  const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves', valentao: '??', oculos: 'Menino de óculos' };       // (a tabela I18N traz os nomes de cada idioma)
   const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
   const rad = Math.PI / 180;
   let UI = null, S = null;
@@ -10160,7 +10250,11 @@ const Fase1 = (() => {
 #f1Prova .pxBtn { --p: var(--p2, 2px); height: 44px; font-size: 18px; padding: 0 4px; }
 #f1Prova .pxBtn.on { border-image-source: var(--sp-laranja); color: #fff; }
 #f1Prova .pAcoes { display: flex; justify-content: flex-end; margin-top: 10px; }
-#f1Prova .pAcoes .pxBtn { width: auto; min-width: 150px; font-size: 13px; }`;
+#f1Prova .pAcoes .pxBtn { width: auto; min-width: 150px; font-size: 13px; }
+#f1Moth { position: fixed; z-index: 12; left: 50%; top: calc(10px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; opacity: 0; transition: opacity 0.9s ease; pointer-events: none; }
+#f1Moth.on { opacity: 1; }
+#f1Moth canvas { width: 102px; height: 72px; image-rendering: pixelated; }
+#f1Moth p { margin: 0; max-width: 84vw; text-align: center; font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206, 0 0 6px #000; }`;
     document.head.appendChild(css);
     const raiz = $('raizJogo') || document.body;
     const preto = document.createElement('div'); preto.id = 'f1Preto'; preto.hidden = true; preto.innerHTML = '<p class="f1Leg"></p>';
@@ -10168,8 +10262,10 @@ const Fase1 = (() => {
     const ctl = document.createElement('div'); ctl.id = 'f1Ctl'; ctl.hidden = true;
     ctl.innerHTML = '<div class="f1Pad" aria-label="Mover"><div class="f1Knob"></div></div><div class="f1Dica"></div><button type="button" class="pxBtn pxPrim f1Btn"></button>';
     const prova = document.createElement('div'); prova.id = 'f1Prova'; prova.hidden = true;
-    raiz.append(preto, missao, ctl, prova);
-    UI = { preto, leg: preto.querySelector('.f1Leg'), missao, ctl, pad: ctl.querySelector('.f1Pad'), knob: ctl.querySelector('.f1Knob'), dica: ctl.querySelector('.f1Dica'), btn: ctl.querySelector('.f1Btn'), prova };
+    const moth = document.createElement('div'); moth.id = 'f1Moth'; moth.innerHTML = '<p></p>'; moth.insertBefore(texMariposa(), moth.firstChild);
+    raiz.append(preto, missao, ctl, prova, moth);
+    moth.querySelector('p').textContent = T('Quando a mariposa aparece, é porque alguém vai se lembrar de algo...');
+    UI = { moth, preto, leg: preto.querySelector('.f1Leg'), missao, ctl, pad: ctl.querySelector('.f1Pad'), knob: ctl.querySelector('.f1Knob'), dica: ctl.querySelector('.f1Dica'), btn: ctl.querySelector('.f1Btn'), prova };
     // joystick (toque/mouse) e teclado
     const joy = { id: null, x: 0, y: 0 };
     const mover = (e) => {
@@ -10203,12 +10299,23 @@ const Fase1 = (() => {
   function texQuadro() { return drawTexture(96, 44, (g, w, h) => { g.fillStyle = '#2f5a3c'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,0.07)'; for (let i = 0; i < 60; i++) g.fillRect((i * 31) % w, (i * 17) % h, 6, 1);
     g.fillStyle = '#f2f2e6'; g.font = 'bold 11px monospace'; g.textAlign = 'left'; g.fillText(T('ÁLGEBRA'), 6, 13); g.font = 'bold 12px monospace'; g.fillText('x + 3 = 7', 6, 28); g.fillText('x = 4', 56, 40);
     g.fillStyle = '#cfcfc0'; g.fillRect(2, h - 3, 18, 2); }); }
+  function texPisoCor() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#d3d6d4'; g.fillRect(0, 0, w, h); g.fillStyle = '#bcc1c0'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#dde0de'; for (let i = 0; i < 18; i++) g.fillRect((i * 13) % w, (i * 7) % h, 2, 1); }); }
+  function texParedeCor() { return drawTexture(64, 64, (g, w, h) => { g.fillStyle = '#efe3b5'; g.fillRect(0, 0, w, h); g.fillStyle = '#e2d3a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 29) % w, (i * 11) % 60, 2, 1);
+    g.fillStyle = '#5a3d22'; g.fillRect(6, 6, 52, 22); g.fillStyle = '#bfe4f5'; g.fillRect(8, 8, 23, 18); g.fillRect(33, 8, 23, 18); g.fillStyle = '#e8f6fc'; g.fillRect(10, 10, 6, 3); g.fillRect(35, 10, 6, 3);
+    g.fillStyle = '#9a9a8c'; g.fillRect(0, 54, w, 10); }); }
+  function texMariposa() {
+    const half = ['......a..', '.......a.', 'kk.....eo', 'kkkk..bbo', 'kbbkkkbwo', 'kbbbbkwkw', 'kkbbbkwwo', 'ykkbbkowo', 'yyykkkoyo', '.yyykkooy', '.yyyk.ooo', '..yy...oy'];
+    const cor = { a: '#1b1410', e: '#c43a20', o: '#2a1c12', k: '#4a3320', b: '#8a6a3c', w: '#f0e2b8', y: '#e8a820' };
+    const cv = document.createElement('canvas'); cv.width = 17; cv.height = 12; const g = cv.getContext('2d');
+    half.forEach((row, y) => { for (let x = 0; x < 9; x++) { const c = cor[row[x]]; if (!c) continue; g.fillStyle = c; g.fillRect(x, y, 1, 1); g.fillRect(16 - x, y, 1, 1); } });
+    return cv;
+  }
   function montarSala() {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const basic = (m) => new THREE.MeshBasicMaterial(m);
     const pw = texParede(); pw.wrapS = pw.wrapT = THREE.RepeatWrapping;
     const mp = basic({ map: pw });
-    const parede = (cx, cy, w, h, ry, px, pz, mat) => {            // plano virado para dentro da sala (de costas ele some: a câmera pode ficar atrás da parede do fundo)
+    const parede = (cx, cy, w, h, ry, px, pz, mat) => {            // plano virado para dentro da sala (de costas ele some: a câmera pode ficar atrás da parede)
       const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
       for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 2.25, uv.getY(i) * h / ALT + (cy - h / 2) / ALT);
       const m = new THREE.Mesh(geo, mat || mp); m.rotation.y = ry; m.position.set(px, cy, pz); g.add(m); return m;
@@ -10222,13 +10329,17 @@ const Fase1 = (() => {
     parede(PORTA.x, 2.1 + (ALT - 2.1) / 2, 1, ALT - 2.1, Math.PI, PORTA.x, SZ);
     const pp = texPiso(); pp.wrapS = pp.wrapT = THREE.RepeatWrapping; pp.repeat.set(SX * 2 / 1.5, SZ * 2 / 1.5);
     const piso = new THREE.Mesh(new THREE.PlaneGeometry(SX * 2, SZ * 2), basic({ map: pp })); piso.rotation.x = -Math.PI / 2; g.add(piso);
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), basic({ color: 0x6a5a3a })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);  // terra lá fora
-    const quadro = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.45), basic({ map: texQuadro() })); quadro.position.set(0, 1.45, -SZ + 0.02); g.add(quadro);
-    // moldura, relógio, bandeira, mural
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), basic({ color: 0x000000 })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);  // (4.3.5) lá fora é preto sólido
+    const quadro = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 1.75), basic({ map: texQuadro() })); quadro.position.set(0, 1.5, -SZ + 0.02); g.add(quadro);
+    // moldura, relógio, janelas, bandeira, mural (cada peça colada na parede, sem atravessar)
     const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
-    F(3.3, 0.06, 0.05, 0x7a5430, 0, 2.2, -SZ + 0.03); F(3.3, 0.06, 0.05, 0x7a5430, 0, 0.7, -SZ + 0.03); F(0.06, 1.5, 0.05, 0x7a5430, -1.65, 1.45, -SZ + 0.03); F(0.06, 1.5, 0.05, 0x7a5430, 1.65, 1.45, -SZ + 0.03);
-    F(0.5, 0.5, 0.04, 0xf2f2ee, SX - 0.03, 2.2, -1.5); F(0.4, 0.4, 0.05, 0x2a1206, SX - 0.04, 2.2, -1.5);
-    F(1.4, 0.9, 0.03, 0xd7c9a0, -SX + 0.03, 1.5, -0.5);                                                         // mural
+    F(4.12, 0.06, 0.05, 0x7a5430, 0, 2.4, -SZ + 0.03); F(4.12, 0.06, 0.05, 0x7a5430, 0, 0.6, -SZ + 0.03); F(0.06, 1.86, 0.05, 0x7a5430, -2.03, 1.5, -SZ + 0.03); F(0.06, 1.86, 0.05, 0x7a5430, 2.03, 1.5, -SZ + 0.03);
+    F(0.04, 0.5, 0.5, 0xf2f2ee, SX - 0.03, 2.3, -4.3); F(0.05, 0.2, 0.04, 0x2a1206, SX - 0.04, 2.38, -4.3); F(0.05, 0.04, 0.16, 0x2a1206, SX - 0.04, 2.3, -4.38);              // relógio (parede direita)
+    F(0.03, 0.9, 1.4, 0xd7c9a0, -SX + 0.03, 1.5, -1.0);                                                                // mural (parede esquerda)
+    for (const wz of [-1.4, 1.4, 4.0]) {                                                                              // janelas na parede direita
+      F(0.03, 1.0, 1.3, 0xbfe4f5, SX - 0.025, 1.65, wz); F(0.05, 0.07, 1.42, 0x7a5430, SX - 0.03, 2.18, wz); F(0.05, 0.07, 1.42, 0x7a5430, SX - 0.03, 1.12, wz);
+      F(0.05, 1.1, 0.06, 0x7a5430, SX - 0.03, 1.65, wz - 0.68); F(0.05, 1.1, 0.06, 0x7a5430, SX - 0.03, 1.65, wz + 0.68); F(0.05, 1.0, 0.05, 0x7a5430, SX - 0.03, 1.65, wz);
+    }
     // mesas e cadeiras
     for (const dz of LINHAS) for (const cx of COLS) {
       F(1.0, 0.05, 0.56, 0xd9a45c, cx, 0.6, dz); F(0.9, 0.04, 0.46, 0xb9854a, cx, 0.5, dz);
@@ -10237,25 +10348,82 @@ const Fase1 = (() => {
       F(0.42, 0.04, 0.42, 0xa4492a, cx, 0.3, cz); F(0.42, 0.34, 0.04, 0xa4492a, cx, 0.5, cz + 0.2);
       for (const sx of [-0.18, 0.18]) for (const sz of [-0.18, 0.18]) F(0.03, 0.3, 0.03, 0x8c9199, cx + sx, 0.15, cz + sz);
     }
-    F(2.0, 0.78, 0.8, 0xa8723c, -3.3, 0.39, -3.3); F(2.1, 0.05, 0.9, 0xc58a4a, -3.3, 0.8, -3.3);               // mesa da professora
-    F(0.32, 0.2, 0.24, 0xc8202a, -3.9, 0.93, -3.3); F(0.32, 0.12, 0.24, 0x2a4f9a, -3.9, 1.09, -3.3); F(0.3, 0.14, 0.22, 0x3f9d2a, -3.4, 0.9, -3.4);
-    F(0.45, 1.0, 0.9, 0xe8e8e0, 4.2, 0.5, -2.2);                                                                  // armário
+    F(2.0, 0.78, 0.8, 0xa8723c, MESA_PROF.x, 0.39, MESA_PROF.z); F(2.1, 0.05, 0.9, 0xc58a4a, MESA_PROF.x, 0.8, MESA_PROF.z);               // mesa da professora
+    F(0.32, 0.2, 0.24, 0xc8202a, MESA_PROF.x - 0.6, 0.93, MESA_PROF.z); F(0.32, 0.12, 0.24, 0x2a4f9a, MESA_PROF.x - 0.6, 1.09, MESA_PROF.z); F(0.3, 0.14, 0.22, 0x3f9d2a, MESA_PROF.x - 0.1, 0.9, MESA_PROF.z - 0.1);
+    F(0.5, 1.6, 1.2, 0xe8e8e0, SX - 0.3, 0.8, -2.9); F(0.03, 1.5, 0.5, 0xc9c9c0, SX - 0.56, 0.8, -3.15); F(0.03, 1.5, 0.5, 0xc9c9c0, SX - 0.56, 0.8, -2.65);   // armário
     const mob = L.malha(MAT_CORES); g.add(mob);
     const papel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.012, 0.24), new THREE.MeshLambertMaterial({ color: 0xffffff })); papel.position.set(0, 0.63, LINHAS[1] + 0.02); g.add(papel);
     // bandeira do Brasil (a mesma bandeira pixelada da tela de idiomas)
     { const img = new Image(), tx = new THREE.Texture(img); tx.magFilter = tx.minFilter = THREE.NearestFilter; img.onload = () => { tx.needsUpdate = true; }; img.src = bandeiraUrl('br');
-      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.63), basic({ map: tx })); f.rotation.y = Math.PI / 2; f.position.set(-SX + 0.05, 1.9, 1.8); g.add(f); }
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.63), basic({ map: tx })); f.rotation.y = Math.PI / 2; f.position.set(-SX + 0.05, 1.9, 2.6); g.add(f); }
     // porta (gira em volta da dobradiça, para dentro da sala)
     const pivo = new THREE.Group(); pivo.position.set(PORTA.x + 0.5, 0, SZ);
     const folha = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 0.07), new THREE.MeshLambertMaterial({ color: 0xb98042 })); folha.position.set(-0.5, 1.05, 0); pivo.add(folha);
     const macan = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.12), new THREE.MeshLambertMaterial({ color: 0xd8d8d0 })); macan.position.set(-0.88, 1.0, 0); pivo.add(macan);
     const lm = new Lote(); lm.caixa(1.16, 0.08, 0.16, 0x7a5430, PORTA.x, 2.14, SZ); lm.caixa(0.08, 2.1, 0.16, 0x7a5430, PORTA.x - 0.54, 1.05, SZ); lm.caixa(0.08, 2.1, 0.16, 0x7a5430, PORTA.x + 0.54, 1.05, SZ);
     g.add(lm.malha(MAT_CORES)); g.add(pivo);
-    // seta que marca a cadeira (ou a porta, no fim)
-    const La = new Lote(); La.caixa(0.18, 0.18, 0.18, 0xffd92b, 0, 0.3, 0); La.caixa(0.34, 0.12, 0.34, 0xffd92b, 0, 0.12, 0); La.caixa(0.1, 0.12, 0.1, 0xffd92b, 0, 0.0, 0);
-    const seta = La.malha(new THREE.MeshBasicMaterial({ vertexColors: true })); g.add(seta);
+    const seta = fazSeta(); g.add(seta);
     scene.add(g);
-    return { g, pivo, seta, papel, malhas: [mob] };
+    return { g, pivo, seta, papel };
+  }
+  function fazSeta() {
+    const La = new Lote(); La.caixa(0.18, 0.18, 0.18, 0xffd92b, 0, 0.3, 0); La.caixa(0.34, 0.12, 0.34, 0xffd92b, 0, 0.12, 0); La.caixa(0.1, 0.12, 0.1, 0xffd92b, 0, 0.0, 0);
+    return La.malha(new THREE.MeshBasicMaterial({ vertexColors: true }));
+  }
+
+  // ------------------------------------------------------------------ corredor 3D (depois da sala)
+  const ZK = -7.4;                                   // z do armário onde o menino de óculos é trancado (parede esquerda)
+  function montarCorredor() {
+    const g = new THREE.Group(); g.position.set(OX, 0, 0);
+    const basic = (m) => new THREE.MeshBasicMaterial(m);
+    const H = 3.0;
+    const pp = texPisoCor(); pp.wrapS = pp.wrapT = THREE.RepeatWrapping; pp.repeat.set(CX * 2 / 1.2, CL * 2 / 1.2);
+    const piso = new THREE.Mesh(new THREE.PlaneGeometry(CX * 2, CL * 2), basic({ map: pp })); piso.rotation.x = -Math.PI / 2; g.add(piso);
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), basic({ color: 0x000000 })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);
+    const pw = texParedeCor(); pw.wrapS = pw.wrapT = THREE.RepeatWrapping; pw.repeat.set(CL * 2 / 3.2, 1);
+    const mp = basic({ map: pw });
+    const lado = (x, ry) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(CL * 2, H), mp); m.rotation.y = ry; m.position.set(x, H / 2, 0); g.add(m); };
+    lado(-CX, Math.PI / 2); lado(CX, -Math.PI / 2);
+    const topo = new THREE.Mesh(new THREE.PlaneGeometry(CX * 2, H), basic({ color: 0xefe3b5 })); topo.position.set(0, H / 2, -CL); g.add(topo);
+    const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
+    const portas = [[-1, 11.0], [1, 6.0], [-1, 2.0], [1, -9.4]];                                   // [lado, z] das portas de sala
+    const vao = (z) => portas.some((p) => Math.abs(p[1] - z) < 0.85);
+    let k = 0;
+    for (let z = -CL + 0.25; z < CL - 0.2; z += 0.5, k++) {
+      for (const sd of [-1, 1]) {
+        if (portas.some((p) => p[0] === sd && Math.abs(p[1] - z) < 0.85)) continue;
+        const cor = (Math.floor(k / 2) % 2) ? 0xb3262e : 0x9c1f27;
+        const xf = sd * (CX - 0.5);                                                                  // face do armário (voltada para o corredor)
+        if (sd === -1 && Math.abs(z - ZK) < 0.1) {                                                   // o armário que abre e fecha: carcaça aberta na frente
+          F(0.02, 2.0, 0.46, 0x4a4a4a, sd * (CX - 0.01), 1.0, z); F(0.5, 0.03, 0.46, 0x707070, sd * (CX - 0.25), 1.985, z); F(0.5, 0.03, 0.46, 0x707070, sd * (CX - 0.25), 0.015, z);
+          F(0.5, 2.0, 0.03, 0x707070, sd * (CX - 0.25), 1.0, z - 0.215); F(0.5, 2.0, 0.03, 0x707070, sd * (CX - 0.25), 1.0, z + 0.215);
+          continue;
+        }
+        F(0.5, 2.0, 0.46, cor, sd * (CX - 0.25), 1.0, z);
+        F(0.03, 0.04, 0.3, 0x2a0a0c, xf - sd * 0.005, 1.78, z); F(0.03, 0.04, 0.3, 0x2a0a0c, xf - sd * 0.005, 1.68, z);
+        F(0.04, 0.14, 0.04, 0xd0d0cc, xf - sd * 0.01, 1.1, z + 0.12);
+        F(0.03, 0.02, 0.46, 0x2a0a0c, xf - sd * 0.005, 1.0, z);
+      }
+    }
+    // portas das salas (marrons) e a porta da rua (no fim, dupla com vidro)
+    for (const [sd, z] of portas) { if (sd === -1 && z === 11.0) continue; F(0.05, 2.1, 0.95, 0x7a4a2a, sd * (CX - 0.03), 1.05, z); F(0.06, 0.5, 0.3, 0x9ec7e0, sd * (CX - 0.07), 1.55, z); F(0.08, 2.2, 0.08, 0x4a2c16, sd * (CX - 0.05), 1.1, z - 0.52); F(0.08, 2.2, 0.08, 0x4a2c16, sd * (CX - 0.05), 1.1, z + 0.52); F(0.08, 0.08, 1.1, 0x4a2c16, sd * (CX - 0.05), 2.2, z); }
+    F(1.6, 2.2, 0.08, 0x5a3a20, 0, 1.1, -CL + 0.05); F(0.7, 1.4, 0.1, 0x9ec7e0, -0.4, 1.3, -CL + 0.06); F(0.7, 1.4, 0.1, 0x9ec7e0, 0.4, 1.3, -CL + 0.06);
+    F(1.8, 0.1, 0.12, 0x4a2c16, 0, 2.3, -CL + 0.07); F(0.1, 2.2, 0.12, 0x4a2c16, -0.9, 1.1, -CL + 0.07); F(0.1, 2.2, 0.12, 0x4a2c16, 0.9, 1.1, -CL + 0.07);
+    // quadro de avisos e bebedouro (decoração)
+    F(0.04, 0.7, 1.0, 0xb98042, CX - 0.03, 1.5, 4.2); F(0.05, 0.5, 0.8, 0xe8d8a8, CX - 0.05, 1.5, 4.2);
+    F(0.4, 0.9, 0.4, 0xb8bcc0, -CX + 0.3, 0.45, -3.2);
+    g.add(L.malha(MAT_CORES));
+    // porta da sala de onde saímos (abre para o corredor)
+    const pivoD = new THREE.Group(); pivoD.position.set(-CX + 0.03, 0, 11.5);
+    const fo = new THREE.Mesh(new THREE.BoxGeometry(0.07, 2.1, 1.0), new THREE.MeshLambertMaterial({ color: 0xb98042 })); fo.position.set(0, 1.05, -0.5); pivoD.add(fo); g.add(pivoD);
+    // a porta do armário trancado (dobradiça na borda de trás)
+    const pivoK = new THREE.Group(); pivoK.position.set(-CX + 0.5 - 0.01, 1.0, ZK - 0.22);
+    const fk = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.96, 0.44), new THREE.MeshLambertMaterial({ color: 0x9c1f27 })); fk.position.set(0, 0, 0.22); pivoK.add(fk);
+    const mk = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.14, 0.04), new THREE.MeshLambertMaterial({ color: 0xd0d0cc })); mk.position.set(-0.03, 0.1, 0.38); pivoK.add(mk); g.add(pivoK);
+    pivoK.rotation.y = 100 * rad;                                                                      // começa aberto (o menino está arrumando as coisas)
+    const seta = fazSeta(); g.add(seta);
+    scene.add(g);
+    return { g, pivo: pivoD, pivoK, seta };
   }
 
   // ------------------------------------------------------------------ personagens
@@ -10266,9 +10434,16 @@ const Fase1 = (() => {
     const m = makeAthlete(o);
     m.etiqueta.visible = false;
     sala.g.add(m.raiz);
-    const A = { m, x: 0, z: 0, yaw: Math.PI / 2, yawAlvo: Math.PI / 2, estado: 'parado', rota: null, vel: 1.9, fase: 0, oculto: false, fala: false, escreve: false };
+    const A = { m, kc: o.cabecao, x: 0, z: 0, yaw: Math.PI / 2, yawAlvo: Math.PI / 2, estado: 'parado', rota: null, vel: 1.9, fase: 0, oculto: false, fala: false, escreve: false };
     S.elenco.push(A);
     return A;
+  }
+  function oculos(A) {                                  // óculos pretos de armação grossa (colados na frente da cabeça)
+    const kc = A.kc, Lg = new Lote();
+    const xf = 0.24 * kc, y = 1.36 + 0.3 * kc;
+    for (const sz of [-0.12, 0.12]) Lg.caixa(0.03, 0.13 * kc, 0.15 * kc, 0x111118, xf, y, sz * kc);
+    Lg.caixa(0.03, 0.03 * kc, 0.12 * kc, 0x111118, xf, y + 0.03 * kc, 0);
+    A.m.corpo.add(Lg.malha(MAT_CORES));
   }
   const poseSentado = (A, t, dt) => {
     const m = A.m, e = Math.min(1, dt * 12);
@@ -10287,7 +10462,7 @@ const Fase1 = (() => {
     } else {
       const e = Math.min(1, dt * 10);
       m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, 0, e);
-      m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? Math.sin(t * 5) * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? Math.sin(t * 5 + 2) * 0.35 + 0.4 : 0, e);
+      m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? Math.sin(t * 5 + (A.conv || 0)) * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? Math.sin(t * 5 + 2) * 0.35 + 0.4 : 0, e);
     }
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
   };
@@ -10296,35 +10471,98 @@ const Fase1 = (() => {
     return new Promise((r) => { A.rotaRes = r; });
   }
   const olhar = (A, x, z) => { A.yawAlvo = Math.atan2(-(z - A.z), x - A.x); };
-  function sentar(A, cx, dz, sim) { A.sentado = !!sim; if (sim) { A.x = cx; A.z = dz + 0.62; A.yaw = A.yawAlvo = Math.PI / 2; A.rota = null; } }
+  const paraFrente = (A) => { A.yawAlvo = Math.PI / 2; };                 // olhando para o quadro (de frente)
+  function sentar(A, cx, dz, sim) { A.sentado = !!sim; if (sim) { A.cx = cx; A.cz = dz + 0.62; A.x = cx; A.z = dz + 0.62; A.yaw = A.yawAlvo = Math.PI / 2; A.rota = null; } }
 
   // ------------------------------------------------------------------ câmera
+  const seg = (A, ox, oy, oz, ty) => [A.x + ox, oy, A.z + oz, A.x, ty, A.z];
+  function dupla(A, B, dist, alt) {                                     // câmera de lado, mostrando os dois
+    const mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, dx = B.x - A.x, dz = B.z - A.z, l = Math.hypot(dx, dz) || 1;
+    let px = -dz / l, pz = dx / l;
+    if (Math.abs(pz) < 0.4) { if (px < 0) { px = -px; pz = -pz; } } else if (pz > 0) { px = -px; pz = -pz; }     // lado do quadro (z menor) ou, se estão alinhados em z, o lado +x
+    const d = Math.max(S && S.lugar === 'corredor' ? 3.6 : dist, l * 1.9);
+    return [mx + px * d, alt, mz + pz * d, mx, 0.85, mz];
+  }
   const CAMS = {
-    porta: [0.9, 1.45, -0.6, 3.2, 1.0, 4.0], aluno: [-0.8, 1.5, 0.2, 3.1, 1.1, 3.0], prof: [1.4, 1.5, -0.4, -1.2, 1.15, -3.2], geral: [3.9, 3.4, 3.7, -0.5, 0.9, -1.0],
-    mesa: [0.3, 1.8, 3.4, 0, 0.7, 0.4], entrega: [-3.3, 1.45, -0.9, -0.7, 1.15, -2.9], saida: [1.0, 1.7, 1.0, 3.3, 1.0, 4.2], aula: [3.9, 3.0, 3.8, -0.8, 0.9, -1.4],
+    porta: [4.0, 1.6, 1.5, 4.7, 1.1, 5.0],                              // olhando a porta de dentro da sala
+    jog: () => seg(S.jog, -1.7, 1.35, -1.9, 0.8), aluno: () => seg(S.jog, -1.7, 1.35, -1.9, 0.8),
+    prof: [0.0, 1.5, -1.9, -2.4, 1.15, -3.9],
+    dupla: () => dupla(S.parA, S.parB, 2.7, 1.7), entrega: () => dupla(S.jog, S.prof, 2.8, 1.7),
+    geral: [5.6, 3.7, 4.8, -1.0, 0.9, -1.5], aula: [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],
+    mesa: () => seg(S.jog, 0.5, 1.35, 1.7, 0.85),
+    saida: [4.0, 1.6, 1.5, 4.7, 1.1, 5.4],
+    cor_ini: [1.7, 2.3, 12.2, -1.4, 1.0, 10.4], cor_buli: [1.5, 1.7, -4.2, -1.3, 1.0, -7.5], cor_fim: [0.0, 1.7, -8.4, 0, 1.0, -12.4],
   };
-  const camPara = (nome, corte) => { const c = CAMS[nome]; S.camAlvo = { px: c[0], py: c[1], pz: c[2], tx: c[3], ty: c[4], tz: c[5] }; S.camSeg = false; if (corte) S.camSnap = true; };
+  const camPara = (nome, corte) => { S.camNome = nome; if (corte) S.camSnap = true; };
 
-  // ------------------------------------------------------------------ colisão e interação
-  const RETS = []; for (const dz of LINHAS) for (const cx of COLS) RETS.push([cx - 0.52, cx + 0.52, dz - 0.28, dz + 0.78]); RETS.push([-4.4, -2.2, -3.8, -2.7], [3.95, 4.5, -2.65, -1.75]);
-  function livre(x, z) {
-    const R = 0.22;
+  // ------------------------------------------------------------------ colisão e caminhos
+  const RETS = []; for (const dz of LINHAS) for (const cx of COLS) RETS.push([cx - 0.52, cx + 0.52, dz - 0.28, dz + 0.8]);
+  RETS.push([MESA_PROF.x - 1.05, MESA_PROF.x + 1.05, MESA_PROF.z - 0.45, MESA_PROF.z + 0.45], [SX - 0.55, SX, -3.5, -2.3]);
+  function livre(x, z, R) {
+    R = R || 0.22;
+    if (S && S.lugar === 'corredor') {
+      if (Math.abs(x) > CX - 0.5 - 0.12 || z < -CL + 0.6 || z > CL - 0.6) return false;
+      for (const c of S.cirs) if (Math.hypot(x - c.x, z - c.z) < c.r + R) return false;
+      return true;
+    }
     if (x < -SX + 0.3 || x > SX - 0.3 || z < -SZ + 0.3 || z > SZ - 0.3) return false;
     for (const [x0, x1, z0, z1] of RETS) if (x > x0 - R && x < x1 + R && z > z0 - R && z < z1 + R) return false;
-    if (Math.hypot(x - PROF.x, z - PROF.z) < 0.55) return false;
+    if (Math.hypot(x - PROF.x, z - PROF.z) < 0.5 + R) return false;
     return true;
+  }
+  function caminho(x0, z0, x1, z1) {                                    // acha um caminho que desvia de mesas e cadeiras (BFS numa grade de 20 cm)
+    const g = 0.2, W = Math.round(SX * 2 / g) + 1, H = Math.round(SZ * 2 / g) + 1;
+    const ix = (x) => Math.max(0, Math.min(W - 1, Math.round((x + SX) / g))), iz = (z) => Math.max(0, Math.min(H - 1, Math.round((z + SZ) / g)));
+    const wx = (i) => i * g - SX, wz = (j) => j * g - SZ, ok = (i, j) => livre(wx(i), wz(j), 0.2);
+    const achar = (i, j) => {
+      if (ok(i, j)) return [i, j];
+      for (let r = 1; r < 15; r++) for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) { if (Math.max(Math.abs(a), Math.abs(b)) !== r) continue; const ii = i + a, jj = j + b; if (ii >= 0 && jj >= 0 && ii < W && jj < H && ok(ii, jj)) return [ii, jj]; }
+      return [i, j];
+    };
+    const s = achar(ix(x0), iz(z0)), e = achar(ix(x1), iz(z1));
+    const prev = new Int32Array(W * H).fill(-2), fila = [s[0] + s[1] * W]; prev[fila[0]] = -1;
+    const alvo = e[0] + e[1] * W;
+    for (let q = 0; q < fila.length && prev[alvo] === -2; q++) {
+      const c = fila[q], ci_ = c % W, cj = (c / W) | 0;
+      for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const ni = ci_ + a, nj = cj + b;
+        if (ni < 0 || nj < 0 || ni >= W || nj >= H || prev[ni + nj * W] !== -2 || !ok(ni, nj)) continue;
+        if (a && b && (!ok(ci_ + a, cj) || !ok(ci_, cj + b))) continue;
+        prev[ni + nj * W] = c; fila.push(ni + nj * W);
+      }
+    }
+    if (prev[alvo] === -2) return [[x1, z1]];
+    let pts = []; for (let c = alvo; c !== -1; c = prev[c]) pts.push([wx(c % W), wz((c / W) | 0)]);
+    pts.reverse();
+    const vis = (a, b) => { const d = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.ceil(d / 0.08); for (let k = 1; k < n; k++) { const t = k / n; if (!livre(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, 0.2)) return false; } return true; };
+    const out = []; let i0 = 0;
+    while (i0 < pts.length - 1) { let j = pts.length - 1; while (j > i0 + 1 && !vis(pts[i0], pts[j])) j--; out.push(pts[j]); i0 = j; }
+    return out;
+  }
+  function irPara(A, x1, z1, vel) {                                     // anda até lá desviando dos móveis (se estiver sentado, puxa a cadeira para trás primeiro)
+    const pts = []; let x0 = A.x, z0 = A.z;
+    if (A.sentado) { A.sentado = false; z0 = A.z + 0.5; pts.push([x0, z0]); }
+    for (const p of caminho(x0, z0, x1, z1)) pts.push(p);
+    return andar(A, pts, vel);
   }
   const alvos = () => {
     if (!S || S.modo !== 'livre') return [];
     const l = [];
+    if (S.lugar === 'corredor') {
+      l.push({ id: 'lucia2', x: S.luciaA.x, z: S.luciaA.z, r: 1.7, txt: Tf('Falar com {0}', nm('lucia')) });
+      if (S.trancado) l.push({ id: 'armario', x: -CX + 0.9, z: ZK, r: 1.6, txt: T('Abrir o armário') });
+      if (!S.joaoSaiu) l.push({ id: 'joao2', x: S.joaoA.x, z: S.joaoA.z, r: 1.8, txt: Tf('Falar com {0}', nm('joao')) });
+      else l.push({ id: 'rua', x: 0, z: -CL + 1.0, r: 1.8, txt: T('Sair da escola') });
+      return l;
+    }
     if (S.fase === 'antes') {
-      l.push({ id: 'prof', x: PROF.x, z: PROF.z, r: 1.7, txt: Tf('Falar com {0}', nm('prof')) });
-      l.push({ id: 'joao', x: COLS[2] - 0.35, z: LINHAS[1] + 0.62, r: 1.3, txt: Tf('Falar com {0}', nm('joao')) });
-      l.push({ id: 'lucia', x: COLS[0] + 0.35, z: LINHAS[1] + 0.62, r: 1.3, txt: Tf('Falar com {0}', nm('lucia')) });
-      l.push({ id: 'cadeira', x: COLS[1] + 0.45, z: LINHAS[1] + 0.62, r: 1.2, txt: T('Sentar na sua cadeira') });
+      l.push({ id: 'prof', x: PROF.x, z: PROF.z + 0.3, r: 2.1, txt: Tf('Falar com {0}', nm('prof')) });
+      l.push({ id: 'joao', x: SPOT.joao[0], z: SPOT.joao[1], r: 1.4, txt: Tf('Falar com {0}', nm('joao')) });
+      l.push({ id: 'lucia', x: SPOT.lucia[0], z: SPOT.lucia[1], r: 1.4, txt: Tf('Falar com {0}', nm('lucia')) });
+      l.push({ id: 'cadeira', x: COLS[1], z: LINHAS[1] + 1.36, r: 1.0, txt: T('Sentar na sua cadeira') });
       if (!S.portaTrancada) l.push({ id: 'porta', x: PORTA.x, z: PORTA.z - 0.5, r: 1.2, txt: T('Sair da sala') });
     } else {
-      if (!S.profFalou2) l.push({ id: 'prof', x: PROF.x, z: PROF.z, r: 1.7, txt: Tf('Falar com {0}', nm('prof')) });
+      if (!S.profFalou2) l.push({ id: 'prof', x: PROF.x, z: PROF.z + 0.3, r: 2.1, txt: Tf('Falar com {0}', nm('prof')) });
       l.push({ id: 'porta', x: PORTA.x, z: PORTA.z - 0.5, r: 1.2, txt: T('Sair da sala') });
     }
     return l;
@@ -10351,13 +10589,18 @@ const Fase1 = (() => {
   };
   async function fala(quem, texto, shot, op) {
     if (shot) camPara(shot);
-    const ator = quem === 'jog' ? S.jog : quem === 'prof' ? S.prof : quem === 'joao' ? S.joaoA : quem === 'lucia' ? S.luciaA : null;
+    const ator = quem === 'jog' ? S.jog : quem === 'prof' ? S.prof : quem === 'joao' ? S.joaoA : quem === 'lucia' ? S.luciaA : quem === 'valentao' ? S.valentaoA : quem === 'oculos' ? S.oculosA : null;
     if (ator) ator.fala = true;
-    const voz = quem === 'jog' ? S.voz : ({ prof: 1, joao: 3, lucia: 0 })[quem];
+    const voz = quem === 'jog' ? S.voz : ({ prof: 1, joao: 3, lucia: 0, valentao: 4, oculos: 2 })[quem];
     await Dialogo.mostrar([texto], { nome: quem === 'jog' ? nomeJog() : nm(quem), voz, manter: true });
     if (ator) ator.fala = false;
   }
   async function escolher(titulo, ops) { Dialogo.esconder(); return Escolha.mostrar(titulo, ops); }
+  async function aproximar(spot, alvoA) {                              // vai até o ponto fixo de conversa (afastado) e olha para o outro
+    const J = S.jog;
+    if (Math.hypot(J.x - spot[0], J.z - spot[1]) > 0.2) { camPara('aula'); await irPara(J, spot[0], spot[1], 2.3); }
+    olhar(J, alvoA.x, alvoA.z); olhar(alvoA, J.x, J.z); S.parA = J; S.parB = alvoA; await esperar(250);
+  }
 
   // ------------------------------------------------------------------ roteiro
   const perfeito = () => S.acertos === S.quiz.length;
@@ -10369,40 +10612,45 @@ const Fase1 = (() => {
       if (a.id === 'cadeira') { await sentarEFazer(); return; }
       if (a.id === 'joao') await conversaJoao(); else if (a.id === 'lucia') await conversaLucia();
       else if (a.id === 'prof') await conversaProf(); else if (a.id === 'porta') { if (S.fase === 'antes') await ondaNaPorta(); else { await saida(); return; } }
+      else if (a.id === 'lucia2') await luciaFora(); else if (a.id === 'armario') await abrirArmario();
+      else if (a.id === 'joao2') await joaoFora(); else if (a.id === 'rua') { if (S.fim) S.fim(); return; }
     } catch (e) { console.error(e); }
     Dialogo.esconder(); liberar();
   }
   async function conversaJoao() {
-    S.jog.fala = false; olhar(S.joaoA, S.jog.x, S.jog.z); olhar(S.jog, S.joaoA.x, S.joaoA.z);
-    if (S.joao) { await fala('joao', T('Não esquece: lá fora, depois da aula!'), 'aluno'); camPara('aula'); return; }
-    await fala('joao', Tf('Ei, {0}! Depois da aula, me encontra lá fora, tá?', nomeJog()), 'aluno');
+    const Ja = S.joaoA;
+    await aproximar(SPOT.joao, Ja);
+    if (S.joao) { await fala('joao', T('Não esquece: lá fora, depois da aula!'), 'dupla'); paraFrente(Ja); camPara('aula'); return; }
+    await fala('joao', Tf('Ei, {0}! Depois da aula, me encontra lá fora, tá?', nomeJog()), 'dupla');
     const r = await escolher(T('Ei, {0}! Depois da aula, me encontra lá fora, tá?').replace('{0}', nomeJog()), [T('Por quê?'), T('Beleza, combinado!')]);
     S.joao = r === 0 ? 'surpresa' : 'combinado';
-    await fala('joao', r === 0 ? T('É surpresa! Só aparece lá, tá bom?') : T('Fechou! Não esquece, hein.'), 'aluno');
-    camPara('aula');
+    await fala('joao', r === 0 ? T('É surpresa! Só aparece lá, tá bom?') : T('Fechou! Não esquece, hein.'), 'dupla');
+    paraFrente(Ja); camPara('aula');
   }
   async function conversaLucia() {
-    olhar(S.luciaA, S.jog.x, S.jog.z); olhar(S.jog, S.luciaA.x, S.luciaA.z);
-    if (S.lucia) { await fala('lucia', Tf('Boa atividade, {0}!', nomeJog()), 'aula'); return; }
-    await fala('jog', T('Será que eu perdi muita coisa?'), 'aula');
-    await fala('lucia', T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), 'aula');
+    const La = S.luciaA;
+    await aproximar(SPOT.lucia, La);
+    if (S.lucia) { await fala('lucia', Tf('Boa atividade, {0}!', nomeJog()), 'dupla'); paraFrente(La); camPara('aula'); return; }
+    await fala('jog', T('Será que eu perdi muita coisa?'), 'dupla');
+    await fala('lucia', T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), 'dupla');
     const r = await escolher(T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), [T('Acho que vou me sair bem'), T('Vou precisar mesmo')]);
     S.lucia = r === 0 ? 'confiante' : 'precisa';
-    await fala('lucia', r === 0 ? T('Que ótimo! Boa sorte!') : T('Pode contar comigo! É só olhar pra mim se travar.'), 'aula');
+    await fala('lucia', r === 0 ? T('Que ótimo! Boa sorte!') : T('Pode contar comigo! É só olhar pra mim se travar.'), 'dupla');
+    paraFrente(La); camPara('aula');                                    // ela volta a olhar para a frente
   }
   async function conversaProf() {
-    olhar(S.prof, S.jog.x, S.jog.z);
-    if (S.fase === 'antes') await fala('prof', Tf('A atividade já está na sua mesa, {0}. Sente-se e faça.', nomeJog()), 'prof');
+    await aproximar(SPOT.prof, S.prof);
+    if (S.fase === 'antes') await fala('prof', Tf('A atividade já está na sua mesa, {0}. Sente-se e faça.', nomeJog()), 'entrega');
     else {
       S.profFalou2 = true; const humor = perfeito() ? 'Estou muito feliz com você, {0}. Continue assim!' : (S.perfil === 0 ? 'Estou triste, {0}... Esperava mais sinceridade de você.' : 'Estou preocupada com você, {0}. Se precisar de ajuda com álgebra, é só falar.');
-      await fala('prof', Tf(humor, nomeJog()), 'prof');
+      await fala('prof', Tf(humor, nomeJog()), 'entrega');
     }
-    S.prof.yawAlvo = -Math.PI / 2;
+    S.prof.yawAlvo = -Math.PI / 2; camPara('aula');
   }
   async function ondaNaPorta() {
     olhar(S.prof, S.jog.x, S.jog.z);
     await fala('prof', Tf('Você está tirando uma onda com a minha cara, {0}?!', nomeJog()), 'prof');
-    await fala('jog', T('Não, professora... desculpa.'), 'aluno');
+    await fala('jog', T('Não, professora... desculpa.'), 'jog');
     await fala('prof', T('Hum. Então sente-se.'), 'prof');
     S.portaTrancada = true; S.prof.yawAlvo = -Math.PI / 2;
     camPara('aula');
@@ -10416,22 +10664,24 @@ const Fase1 = (() => {
     const J = S.jog, cx = COLS[1], dz = LINHAS[1];
     S.sala.seta.visible = false;
     camPara('aula');
-    await andar(J, [[cx + 1.3, dz + 0.62], [cx, dz + 0.62]], 2.0);
+    await irPara(J, cx, dz + 1.12, 2.1);
+    await andar(J, [[cx, dz + 0.62]], 1.6);
     sentar(J, cx, dz, true); camPara('mesa');
     await esperar(900);
-    const resp = await prova();
-    // entrega: levanta, vai até a professora, ela reage
-    J.sentado = false; J.x = cx; J.z = dz + 0.62; camPara('aula');
-    await andar(J, [[cx + 1.3, dz + 0.62], [cx + 1.3, -1.6], [PROF.x + 0.85, -2.45]], 2.0);
-    camPara('entrega');
-    olhar(J, PROF.x, PROF.z); olhar(S.prof, J.x, J.z); await esperar(300);
+    await prova();
+    // entrega: levanta, vai até a professora (desviando das mesas), ela reage
+    camPara('aula');
+    await irPara(J, SPOT.prof[0], SPOT.prof[1], 2.1);
+    olhar(J, PROF.x, PROF.z); olhar(S.prof, J.x, J.z); camPara('entrega'); await esperar(400);
     const txt = S.perfil === 0 ? (perfeito() ? 'Você não estava mentindo mesmo! Parabéns, {0}!' : 'Hum... você disse que era bom, {0}. Está chegando atrasado e mentindo também?')
       : S.perfil === 1 ? (perfeito() ? 'Modesto como sempre, não é?' : 'Bem que você me avisou...')
         : (perfeito() ? 'Você acertou tudo?! Então sabia álgebra, sim... Estou surpresa, {0}.' : 'É, você errou, como era de se esperar por ter chegado atrasado. Depois te passo umas tarefas extras para casa.');
+    S.parA = J; S.parB = S.prof;
     await fala('prof', Tf(txt, nomeJog()), 'entrega'); Dialogo.esconder();
     S.prof.yawAlvo = -Math.PI / 2;
     camPara('aula');
-    await andar(J, [[cx + 1.3, -1.6], [cx + 1.3, dz + 0.62], [cx, dz + 0.62]], 2.0);
+    await irPara(J, cx, dz + 1.12, 2.1);
+    await andar(J, [[cx, dz + 0.62]], 1.6);
     sentar(J, cx, dz, true);
     await esperar(600);
     salvarHistoria();
@@ -10445,21 +10695,20 @@ const Fase1 = (() => {
     await fala('prof', T('O sino tocou! Muito bem, turma, estão liberados. Até amanhã!'), 'prof'); Dialogo.esconder();
     camPara('aula');
     UI.missao.textContent = T('Missão: saia da sala.');
-    // levantam e saem em fila; o jogador já pode andar
-    J.sentado = false; J.x = cx; J.z = dz + 0.62; S.jog.estado = 'parado';
+    // levantam e saem em fila, desviando das mesas e cadeiras; o jogador já pode andar
     S.saindo = true;
     for (const [i, A] of S.alunos.entries()) {
       esperar(500 + i * 1100).then(async () => {
-        A.sentado = false; A.escreve = false;
-        const ax = A.cx === COLS[0] ? -1.3 : 1.3;
-        await andar(A, [[ax, A.cz], [PORTA.x, PORTA.z - 0.6], [PORTA.x, PORTA.z + 1.8]], 1.7);
+        A.escreve = false;
+        await irPara(A, PORTA.x, PORTA.z - 0.7, 1.7);
+        await andar(A, [[PORTA.x, PORTA.z + 1.8]], 1.7);
         A.oculto = true;
       });
     }
-    await andar(J, [[cx + 1.3, dz + 0.62]], 2.0);
+    await irPara(J, cx + 1.6, dz + 1.2, 2.0);
     Dialogo.esconder(); liberar();
-    return;
   }
+
   async function prova() {
     const resp = [];
     UI.prova.hidden = false; UI.missao.hidden = true;
@@ -10502,19 +10751,145 @@ const Fase1 = (() => {
   async function saida() {
     const J = S.jog;
     S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; Dialogo.esconder();
+    S.sala.seta.visible = false;
     camPara('saida');
-    await andar(J, [[PORTA.x, PORTA.z - 0.5], [PORTA.x, PORTA.z + 2.4]], 1.9);
+    await irPara(J, PORTA.x, PORTA.z - 1.0, 2.1);                       // vai até a porta (desviando dos móveis)
+    Musica.porta(true); S.portaAlvo = -100 * rad; await esperar(800);   // abre
+    await andar(J, [[PORTA.x, PORTA.z + 2.4]], 1.9);
     await preto(true, 1100);
     J.oculto = true;
+  }
+
+  // ------------------------------------------------------------------ corredor (cenas)
+  const pele = (i) => PELES_FITZ[i].cor, corCab = (i) => CORES_CABELO[i].cor;
+  const looksAlunos = () => [
+    { pele: pele(5), cabelo: corCab(0), estilo: ci('Dreads curtos'), rosto: ri('Sério') },
+    { pele: pele(3), cabelo: corCab(2), estilo: ci('Coque longo'), rosto: ri('Sorridente'), labio: 1 },
+    { pele: pele(1), cabelo: corCab(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 },
+    { pele: pele(2), cabelo: corCab(0), estilo: ci('Franja'), rosto: ri('Sorridente') },
+    { pele: pele(5), cabelo: corCab(0), estilo: ci('Black power'), rosto: ri('Padrão') },
+    { pele: pele(1), cabelo: corCab(3), estilo: ci('Longo liso'), rosto: ri('Sorridente'), labio: 0 },
+    { pele: pele(2), cabelo: corCab(1), estilo: ci('Moicano'), rosto: ri('Sonolento') },
+  ];
+  function descartar(g) {
+    scene.remove(g);
+    g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== MAT_CORES) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  }
+  async function corredor() {
+    const J = S.jog;
+    UI.missao.hidden = true; UI.ctl.hidden = true; Dialogo.esconder();
+    for (const A of S.elenco) if (A !== J) { ATLETAS.delete(A.m); if (A.m.raiz.parent) A.m.raiz.parent.remove(A.m.raiz); }
+    S.elenco = [J];
+    descartar(S.sala.g);
+    const cor = montarCorredor(); S.sala = cor; cor.g.add(J.m.raiz);
+    S.lugar = 'corredor'; S.fase = 'corredor'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.kAng = 100 * rad; S.kAlvo = 100 * rad;
+    S.trancado = false; S.joaoSaiu = false; S.cenaFeita = false; S.luciaFalou = false;
+    const lk = looksAlunos();
+    const npc = (look, x, z, yaw, extra) => { const A = criar(cor, look); A.x = x; A.z = z; A.yaw = A.yawAlvo = yaw; A.bloq = true; return Object.assign(A, extra || {}); };
+    npc(lk[0], -1.65, 8.2, 0, { conv: 0 }); npc(lk[2], -1.1, 8.2, Math.PI, { conv: 2.2 });          // dois conversando junto aos armários
+    npc(lk[4], 1.65, 0.5, Math.PI, { conv: 1 }); npc(lk[5], 1.1, 0.5, 0, { conv: 3.4 });
+    npc(lk[1], -1.65, -2.3, 0, { conv: 0.6 }); npc(lk[6], -1.1, -2.3, Math.PI, { conv: 2.9 });
+    S.luciaA = npc({ pele: pele(1), cabelo: corCab(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 }, 1.25, 5.0, -Math.PI / 2);
+    S.joaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Franja'), rosto: ri('Sorridente') }, 0, -11.6, -Math.PI / 2);
+    S.oculosA = npc({ pele: pele(3), cabelo: corCab(1), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e8d070', listra: '#e8d070' }, -1.35, ZK, Math.PI, { conv: 1.7 }); oculos(S.oculosA);
+    S.valentaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Moicano'), rosto: ri('Sério'), camisa: '#2a2a30', listra: '#2a2a30', gola: '#c8202a', cabecao: 1.15, escala: 0.92 }, CX - 0.1, -9.4, Math.PI, { oculto: true, bloq: false });
+    // saindo da sala (porta da esquerda)
+    J.oculto = false; J.sentado = false; J.x = -CX + 0.3; J.z = 11.0; J.yaw = J.yawAlvo = 0; J.rota = null;
+    S.seta = { x: 0, y: 2.5, z: -11.6 };
+    camPara('cor_ini', true);
+    await preto(false, 1000);
+    Musica.porta(true); S.portaAlvo = -100 * rad; await esperar(700);
+    await andar(J, [[-0.9, 10.3]], 1.6);
+    S.portaAlvo = 0; Musica.porta(false);
+    UI.missao.textContent = T('Missão: encontre o João no fim do corredor.'); UI.missao.hidden = false;
+    liberar();
+  }
+  async function cenaBuli() {                                          // um valentão tranca o menino de óculos no armário
+    const J = S.jog, B = S.valentaoA, K = S.oculosA;
+    S.seta.y = -9;
+    camPara('cor_buli');
+    B.oculto = false; Musica.porta(true);
+    await andar(B, [[1.2, -8.6], [-0.6, -7.5]], 1.9);
+    olhar(K, B.x, B.z); olhar(B, K.x, K.z); K.bloq = false; await esperar(300);
+    await fala('oculos', T('E-ei! O que você vai fazer...?'), 'cor_buli'); Dialogo.esconder();
+    olhar(B, -CX, ZK);
+    const p1 = andar(K, [[-1.8, ZK], [-2.15, ZK]], 1.3), p2 = andar(B, [[-1.2, ZK]], 1.3);          // ele é empurrado para dentro do armário
+    await esperar(900); K.oculto = true; await p1; await p2;
+    S.kAlvo = 0; Musica.porta(false); await esperar(900);
+    await fala('valentao', T('Há há há há!'), 'cor_buli'); Dialogo.esconder();
+    olhar(B, J.x, J.z); await esperar(500);
+    await andar(B, [[0.4, -8.6], [CX - 0.1, -9.4]], 1.9);
+    B.oculto = true;
+    S.trancado = true; K.bloq = false;
+    S.seta = { x: 0, y: 2.5, z: -11.6 };
+  }
+  async function abrirArmario() {
+    const J = S.jog, K = S.oculosA;
+    await andar(J, [[-0.8, ZK]], 2.1); olhar(J, -CX, ZK); await esperar(200);
+    S.kAlvo = 100 * rad; Musica.porta(true); await esperar(800);
+    K.oculto = false; K.x = -2.15; K.z = ZK; K.yaw = K.yawAlvo = 0;
+    await andar(K, [[-1.5, ZK]], 1.2);
+    olhar(K, J.x, J.z); S.parA = J; S.parB = K;
+    await fala('oculos', T('Muito obrigado por me tirar daí!'), 'dupla');
+    await fala('jog', T('Por nada.'), 'dupla'); Dialogo.esconder();
+    S.trancado = false; S.salvouOculos = true; salvarHistoria();
+    S.kAlvo = 0;
+    camPara('aula');
+    await andar(K, [[-0.5, ZK + 1.2], [0.2, -1.0]], 1.8);
+    K.oculto = true;
+  }
+  async function luciaFora() {
+    const J = S.jog, La = S.luciaA;
+    await aproximar([La.x - 1.25, La.z], La);
+    if (S.luciaFalou) { await fala('lucia', T('Vai lá, o João está esperando!'), 'dupla'); paraFrente(La); La.yawAlvo = -Math.PI / 2; return; }
+    S.luciaFalou = true;
+    if (perfeito()) {
+      const fraseImp = Tf('{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', nomeJog());
+      await fala('lucia', fraseImp, 'dupla');
+      const r = await escolher(fraseImp, [T('Eu acertei no chute'), T('Fico feliz que você tenha gostado'), T('Ainda bem que estudei')]);
+      if (r === 1) {
+        await mariposa();
+        await fala('lucia', T('A-ah... é... o João está esperando a gente no final do corredor.'), 'dupla');
+        S.mariposa = true; salvarHistoria();
+      } else await fala('lucia', r === 0 ? T('Hm, sei... no chute, é? Tá bom, então!') : T('Que bom! Continue assim!'), 'dupla');
+    } else await fala('lucia', Tf('Ei, {0}! O João está esperando a gente no final do corredor.', nomeJog()), 'dupla');
+    La.yawAlvo = -Math.PI / 2;
+  }
+  async function mariposa() {                                          // a mariposa pixelada: "alguém vai se lembrar de algo"
+    Dialogo.esconder();
+    UI.moth.querySelector('p').textContent = T('Quando a mariposa aparece, é porque alguém vai se lembrar de algo...');
+    UI.moth.classList.add('on'); await esperar(5200); UI.moth.classList.remove('on'); await esperar(900);
+  }
+  async function joaoFora() {
+    const J = S.jog, Jo = S.joaoA;
+    await aproximar([0, -10.2], Jo);
+    const txt = S.joao ? 'Ei, {0}! Agora eu vou te contar o que era! Vem, me segue até a quadra!' : 'Ei, {0}! Eu estava te esperando pra te mostrar uma coisa! Vem, me segue até a quadra!';
+    await fala('joao', Tf(txt, nomeJog()), 'dupla'); Dialogo.esconder();
+    Jo.bloq = false; camPara('cor_fim');
+    Musica.porta(true); await andar(Jo, [[0, -CL + 0.8]], 1.9); Jo.oculto = true; await esperar(500);
+    S.joaoSaiu = true; S.seta = { x: 0, y: 2.7, z: -CL + 0.6 };
+    UI.missao.textContent = T('Missão: siga o João para fora da escola.');
+  }
+  async function saidaRua() {
+    const J = S.jog;
+    S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; Dialogo.esconder(); S.seta.y = -9;
+    camPara('cor_fim');
+    await andar(J, [[0, -CL + 0.8]], 2.0);
+    Musica.porta(true); await esperar(600);
+    await andar(J, [[0, -CL - 1.2]], 1.9);
+    await preto(true, 1100);
+    S.fim();
   }
 
   // ------------------------------------------------------------------ quadro a quadro
   function atualizar(dt) {
     const t = performance.now() / 1000;
-    // porta
+    // porta da sala (ou da sala de onde saímos) e porta do armário
     S.portaAng += (S.portaAlvo - S.portaAng) * Math.min(1, dt * 4); S.sala.pivo.rotation.y = S.portaAng;
+    if (S.sala.pivoK) { S.kAng += (S.kAlvo - S.kAng) * Math.min(1, dt * 5); S.sala.pivoK.rotation.y = S.kAng; }
     // jogador livre
     const J = S.jog;
+    if (S.lugar === 'corredor') S.cirs = S.elenco.filter((A) => A !== J && A.bloq && !A.oculto && !(A.rota && A.rota.length)).map((A) => ({ x: A.x, z: A.z, r: 0.25 }));
     if (S.modo === 'livre' && !J.rota) {
       let ix = UI.joy.x, iz = UI.joy.y; const T_ = UI.teclas;
       if (T_.ArrowLeft || T_.KeyA) ix -= 1; if (T_.ArrowRight || T_.KeyD) ix += 1; if (T_.ArrowUp || T_.KeyW) iz -= 1; if (T_.ArrowDown || T_.KeyS) iz += 1;
@@ -10525,6 +10900,7 @@ const Fase1 = (() => {
         J.yawAlvo = Math.atan2(-dz, dx); J.vel = 2.3 * mag; J.livreAndando = true; S.face.x = dx; S.face.z = dz;
       } else J.livreAndando = false;
       if (S.fase === 'antes' && !S.brigou) { S.tLivre += dt; if (S.tLivre > 60) { S.brigou = true; S.modo = 'cena'; UI.ctl.hidden = true; brigar().then(() => { Dialogo.esconder(); liberar(); }); } }
+      if (S.lugar === 'corredor' && !S.cenaFeita && J.z < -3.6) { S.cenaFeita = true; S.modo = 'cena'; UI.ctl.hidden = true; J.livreAndando = false; cenaBuli().then(() => { Dialogo.esconder(); liberar(); }); }
     } else J.livreAndando = false;
     // atores
     for (const A of S.elenco) {
@@ -10533,7 +10909,7 @@ const Fase1 = (() => {
         const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = A.vel * dt;
         if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
         else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); mov = true; }
-      }
+      } else if (A.conv != null && !A.oculto && A.bloq) A.fala = Math.sin(t * 0.9 + A.conv * 3) > 0.15;       // papo animado
       if (A === J && J.livreAndando) mov = true;
       let dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 10);
       if (A.sentado && !mov) poseSentado(A, t, dt); else poseEmPe(A, t, dt, mov);
@@ -10551,8 +10927,12 @@ const Fase1 = (() => {
     for (const a of ATLETAS) a.raiz.visible = cast.has(a) ? !S.elenco.find((x) => x.m === a).oculto : false;
     ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;
     // câmera
-    let al = S.camAlvo;
-    if (S.modo === 'livre') { const J = S.jog, fx = J.x * 0.75; al = { px: fx, py: 6.5, pz: J.z + 5.8, tx: fx, ty: 0.3, tz: J.z - 1.0 }; }
+    let al;
+    if (S.modo === 'livre') {
+      const J = S.jog;
+      if (S.lugar === 'corredor') { const fx = J.x * 0.4; al = { px: fx, py: 5.0, pz: J.z + 4.4, tx: fx, ty: 0.3, tz: J.z - 1.2 }; }
+      else { const fx = J.x * 0.75; al = { px: fx, py: 5.4, pz: J.z + 4.8, tx: fx, ty: 0.3, tz: J.z - 1.0 }; }
+    } else { const c = CAMS[S.camNome] || CAMS.aula, v = typeof c === 'function' ? c() : c; al = { px: v[0], py: v[1], pz: v[2], tx: v[3], ty: v[4], tz: v[5] }; }
     const C = S.cam, k = S.camSnap ? 1 : 1 - Math.exp(-dt * 3.2); S.camSnap = false;
     for (const c of ['px', 'py', 'pz', 'tx', 'ty', 'tz']) C[c] += (al[c] - C[c]) * k;
     camera.position.set(OX + C.px, C.py, C.pz); camera.lookAt(OX + C.tx, C.ty, C.tz);
@@ -10563,44 +10943,47 @@ const Fase1 = (() => {
       UI.btn.disabled = !a; if (UI.btn.textContent !== T('Interagir')) UI.btn.textContent = T('Interagir');
     }
   }
+  // lá fora é preto sólido (como nos jogos antigos): esconde o campo e o resto do mundo enquanto a fase roda
+  function escurecerMundo() {
+    S.mundo = { bg: scene.background, fogN: scene.fog ? scene.fog.near : 0, fogF: scene.fog ? scene.fog.far : 0, vis: [] };
+    scene.background = new THREE.Color(0x000000);
+    if (scene.fog) { scene.fog.near = 1e5; scene.fog.far = 2e5; }
+    for (const c of scene.children) if (!c.isLight && c !== S.sala.g) { S.mundo.vis.push([c, c.visible]); c.visible = false; }
+  }
+  function restaurarMundo() {
+    const M = S.mundo; if (!M) return;
+    scene.background = M.bg;
+    if (scene.fog) { scene.fog.near = M.fogN; scene.fog.far = M.fogF; }
+    for (const [c, v] of M.vis) c.visible = v;
+  }
 
   // ------------------------------------------------------------------ iniciar
   async function iniciar(op) {
     montarUI();
     op = op || {};
-    Jazz.tocar();
+    Musica.tocar('jazz');
     const ap = PERSONAGEM.aparencia || {};
-    S = { ativo: true, modo: 'cena', fase: 'antes', elenco: [], nome: op.nome || 'Você', voz: op.voz == null ? 2 : op.voz, cam: { px: 0.9, py: 1.45, pz: -0.6, tx: 3.2, ty: 1.0, tz: 4.0 }, camAlvo: null, camSnap: true,
+    S = { ativo: true, modo: 'cena', fase: 'antes', lugar: 'sala', cirs: [], elenco: [], nome: op.nome || 'Você', voz: op.voz == null ? 2 : op.voz, cam: { px: 4.0, py: 1.6, pz: 1.5, tx: 4.7, ty: 1.1, tz: 5.0 }, camNome: 'porta', camSnap: true,
       portaAng: 0, portaAlvo: 0, tLivre: 0, brigou: false, portaTrancada: false, joao: null, lucia: null, perfil: 0, acertos: 0, profFalou2: false, face: { x: 0, z: -1 },
       seta: { x: COLS[1], y: 1.55, z: LINHAS[1] + 0.62 },
       quiz: [{ q: 'Se x + 5 = 12, quanto vale x?', o: ['5', '7', '17'], c: 1 }, { q: 'Se 2x = 10, quanto vale x?', o: ['20', '3', '5'], c: 2 }, { q: 'Se x − 4 = 6, quanto vale x?', o: ['10', '2', '24'], c: 0 }] };
-    camPara('porta', true); S.camAlvo = S.camAlvo || {};
     await preto(true, 0);
     { const a = $('anoTela'); if (a) a.remove(); }
     UI.missao.hidden = true; UI.ctl.hidden = true;
     S.sala = montarSala();
+    escurecerMundo();
     document.body.classList.add('criadorAberto');
     // elenco
-    const pele = (i) => PELES_FITZ[i].cor, cor = (i) => CORES_CABELO[i].cor;
-    S.jog = criar(S.sala, { pele: ap.pele || pele(2), cabelo: ap.cabelo || cor(1), estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.cabelo || cor(1), barba: 0 });
-    S.prof = criar(S.sala, { pele: pele(3), cabelo: cor(6), estilo: ci('Coque longo'), rosto: ri('Padrão'), camisa: '#7a3e8f', listra: '#7a3e8f', gola: '#ffffff', calcao: 0x3a2a4a, meia: '#3a2a4a', cabecao: 1.3, escala: 0.98 });
+    S.jog = criar(S.sala, { pele: ap.pele || pele(2), cabelo: ap.cabelo || corCab(1), estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.cabelo || corCab(1), barba: 0 });
+    S.prof = criar(S.sala, { pele: pele(3), cabelo: corCab(6), estilo: ci('Coque longo'), rosto: ri('Padrão'), camisa: '#7a3e8f', listra: '#7a3e8f', gola: '#ffffff', calcao: 0x3a2a4a, meia: '#3a2a4a', cabecao: 1.3, escala: 0.98 });
     S.prof.x = PROF.x; S.prof.z = PROF.z; S.prof.yaw = S.prof.yawAlvo = -Math.PI / 2;
     const seats = [[0, 0, null], [0, 2, null], [1, 0, 'lucia'], [1, 2, 'joao'], [2, 0, null], [2, 1, null], [2, 2, null]];            // [fileira, coluna, quem] — (0,0) vazia, (1,1) é a sua
-    const looks = [
-      { pele: pele(5), cabelo: cor(0), estilo: ci('Dreads curtos'), rosto: ri('Sério') },
-      { pele: pele(3), cabelo: cor(2), estilo: ci('Coque longo'), rosto: ri('Sorridente'), labio: 1 },
-      { pele: pele(1), cabelo: cor(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 },
-      { pele: pele(2), cabelo: cor(0), estilo: ci('Franja'), rosto: ri('Sorridente') },
-      { pele: pele(5), cabelo: cor(0), estilo: ci('Black power'), rosto: ri('Padrão') },
-      { pele: pele(1), cabelo: cor(3), estilo: ci('Longo liso'), rosto: ri('Sorridente'), labio: 0 },
-      { pele: pele(2), cabelo: cor(1), estilo: ci('Moicano'), rosto: ri('Sonolento') },
-    ];
+    const looks = looksAlunos();
     S.alunos = [];
     seats.forEach(([fi, co, quem], i) => {
       const A = criar(S.sala, looks[i]); A.cx = COLS[co]; A.cz = LINHAS[fi] + 0.62; sentar(A, COLS[co], LINHAS[fi], true); A.escreve = quem === null || quem === 'lucia';
       if (quem === 'joao') S.joaoA = A; if (quem === 'lucia') S.luciaA = A; S.alunos.push(A);
     });
-    S.alunos = S.alunos;
     S.jog.x = PORTA.x; S.jog.z = PORTA.z + 1.7; S.jog.yaw = S.jog.yawAlvo = Math.PI / 2;
     GANCHO_RENDER = gancho;
     await esperar(300);
@@ -10608,12 +10991,13 @@ const Fase1 = (() => {
     await preto(false, 1000);
     await esperar(500);
     // abre a porta e o personagem entra
-    S.portaAlvo = -100 * rad; await esperar(700);
-    const entra = andar(S.jog, [[PORTA.x, PORTA.z - 1.0]], 1.5); await entra;
-    await fala('jog', Tf('... oi, {0}... perdão pelo atraso', nm('prof')), 'porta');
+    Musica.porta(true); S.portaAlvo = -100 * rad; await esperar(700);
+    await andar(S.jog, [[PORTA.x, PORTA.z - 1.5]], 1.5);
+    S.portaAlvo = 0; Musica.porta(false);
+    await fala('jog', Tf('... oi, {0}... perdão pelo atraso', nm('prof')), 'jog');
     olhar(S.prof, S.jog.x, S.jog.z);
     await fala('prof', Tf('É a segunda vez essa semana, {0}! Semana passada eu já falei com o seu pai que você não está chegando no horário!', nomeJog()), 'prof');
-    await fala('jog', T('Eu sei... desculpa...'), 'aluno');
+    await fala('jog', T('Eu sei... desculpa...'), 'jog');
     await fala('prof', T('O assunto foi sobre álgebra. Você conhece?'), 'prof', { manter: false });
     const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [T('Sim, sou muito bom em álgebra'), T('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
     S.perfil = r;
@@ -10626,25 +11010,28 @@ const Fase1 = (() => {
     Dialogo.esconder();
     UI.missao.textContent = T('Missão: sente na sua cadeira e responda a atividade.'); UI.missao.hidden = false;
     liberar();
-    await new Promise((res) => { S.fim = res; S.checa = setInterval(() => { if (S.jog.oculto) { clearInterval(S.checa); res(); } }, 200); });
-    // fim: tela preta com "Continua..."
+    await new Promise((res) => { S.checa = setInterval(() => { if (S.jog.oculto) { clearInterval(S.checa); res(); } }, 200); });
+    // o corredor
+    await corredor();
+    await new Promise((res) => { S.fim = res; });
+    // fim: tela preta com "Em desenvolvimento..."
     UI.missao.hidden = true; UI.ctl.hidden = true;
     UI.leg.classList.remove('on');
     UI.preto.hidden = false; UI.preto.classList.remove('claro');
-    UI.leg.innerHTML = esc1(T('Continua...')) + '<br><br><button type="button" class="pxBtn pxPrim" id="f1Voltar">' + esc1(T('Voltar ao menu')) + '</button>';
+    UI.leg.innerHTML = esc1(T('Em desenvolvimento...')) + '<br><br><button type="button" class="pxBtn pxPrim" id="f1Voltar">' + esc1(T('Voltar ao menu')) + '</button>';
     UI.leg.classList.add('on');
     await new Promise((fim) => { UI.leg.querySelector('#f1Voltar').addEventListener('click', () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); fim(); }); });
     UI.leg.innerHTML = ''; UI.leg.classList.remove('on');
     S.ativo = false; GANCHO_RENDER = null; camera.clearViewOffset();
     document.body.classList.remove('criadorAberto');
-    for (const A of S.elenco) { ATLETAS.delete(A.m); S.sala.g.remove(A.m.raiz); }
-    scene.remove(S.sala.g);
-    S.sala.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== MAT_CORES) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    for (const A of S.elenco) { ATLETAS.delete(A.m); if (A.m.raiz.parent) A.m.raiz.parent.remove(A.m.raiz); }
+    descartar(S.sala.g);
+    restaurarMundo();
     UI.preto.hidden = true; UI.preto.classList.add('claro');
-    Jazz.parar();
+    Musica.parar();
     S = null;
   }
-  return { iniciar, get ativo() { return !!(S && S.ativo); }, _estado: () => S };
+  return { iniciar, get ativo() { return !!(S && S.ativo); }, _estado: () => S, _cams: CAMS, _caminho: caminho, _corredor: corredor };
 })();
 
 // ---------------------------------------------------------------------
@@ -11562,7 +11949,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.4',
+  versao: '4.3.5',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
