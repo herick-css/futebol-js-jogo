@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.2
+   FUTEBOL JS · jogo.js · versão 4.3.3
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,7 +19,21 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
-   Novidades da versão 4.3.2 (começo do MODO HISTÓRIA):
+   Novidades da versão 4.3.3 — FASE 1 · ESCOLA SANTA MARIA (depois do ano voltando, no modo história):
+     - Personagem "bebê" (corpo 68%, cabeça 155%; opções cabecao/escala em makeAthlete) com pele, cabelo e rosto
+       criados por você e SEM barba. Sala de aula 3D (quadro negro, 9 mesas/cadeiras, 7 alunos sentados, professora).
+     - Cena: câmera na porta, você abre e entra ("... oi, Dona Graça..."), bronca, pergunta sobre álgebra com 3
+       respostas (a professora reage diferente a cada uma) e a aula. Depois você controla o personagem (joystick +
+       1 botão de interagir; teclado WASD/setas + E).
+     - Missão: sentar na sua cadeira e responder a atividade (3 questões de múltipla escolha). Conversas opcionais
+       com João Pinha (combinar lá fora depois) e Lúcia Alves. Mais de 1 min sem sentar: bronca. Falar com a professora
+       antes: "a atividade já está na sua mesa". Tentar sair da sala logo ao entrar: ela pergunta se é brincadeira e a
+       porta deixa de funcionar. Ao entregar, a reação depende do que você disse (bom/ruim/não sei) e do resultado.
+     - "Algumas horas depois...", sino, a turma sai; você sai também (pode falar com a professora antes: feliz, triste
+       ou preocupada) e a cutscene da saída termina em "Continua...". Falas, nomes e nome da escola/país nos 5 idiomas.
+     - Fase1.iniciar() usa a câmera do jogo (GANCHO_RENDER) com a sala montada longe do campo.
+
+   Novidades da versão 4.3.2 (começo do MODO HISTÓRIA; inclui 4.3.0 e 4.3.1):
      - Jogar agora pergunta: Modo história ou Partida livre (partida livre = o jogo de sempre).
      - Modo história abre o CRIADOR DE PERSONAGEM: passo 1 (nome, apelido, nome na camisa, número
        preferido) e passo 2 (aparência) com um bonequinho 3D ao lado, que gira 360° (arraste) e dá zoom
@@ -375,7 +389,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.2';
+const VERSAO_JOGO = '4.3.3';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1961,12 +1975,14 @@ function makeAthlete(o) {
   C.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null)); // tronco
   C.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);                                                              // pescoço
   const fCab = faceCabeca(o);
-  C.caixa(0.48, 0.52, 0.52, pele, 0, 1.62, 0, fCab);                                                         // cabeça
+  const kc = o.cabecao || 1;                       // (4.3.2) "bebê": cabeça maior (kc) + corpo menor (o.escala)
+  C.caixa(0.48 * kc, 0.52 * kc, 0.52 * kc, pele, 0, 1.36 + 0.26 * kc, 0, fCab);                               // cabeça
   // (4.3.0) cabelo e barba vêm dos dados (ESTILOS_CABELO / ESTILOS_BARBA); "mix" mistura com a pele (degradê)
   const corBarba = o.corBarba != null ? hex(o.corBarba) : cabelo;
   const pecasCabeca = [];
   for (const [w, h, d, x, y, z, mix] of (ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0]).caixas) pecasCabeca.push([w, h, d, mix ? misturarCor(cabelo, pele, mix) : cabelo, x, y, z]);
   for (const [w, h, d, x, y, z] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z]);
+  if (kc !== 1) for (const p of pecasCabeca) { p[0] *= kc; p[1] *= kc; p[2] *= kc; p[4] *= kc; p[5] = 1.36 + (p[5] - 1.36) * kc; p[6] *= kc; }
   for (const [w, h, d, cor, x, y, z] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z);
   const troncoInteiro = C.malha(material); corpo.add(troncoInteiro);
   // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
@@ -1979,7 +1995,7 @@ function makeAthlete(o) {
   const cabeca = new THREE.Group();
   cabeca.position.set(0.02, 1.36, 0); cabeca.rotation.order = 'ZXY'; cabeca.visible = false;
   const CB = new Lote(UV_BRANCO);
-  CB.caixa(0.48, 0.52, 0.52, pele, -0.02, 0.26, 0, fCab);
+  CB.caixa(0.48 * kc, 0.52 * kc, 0.52 * kc, pele, -0.02, 0.26 * kc, 0, fCab);
   for (const [w, h, d, cor, x, y, z] of pecasCabeca) CB.caixa(w, h, d, cor, x - 0.02, y - 1.36, z);
   cabeca.add(CB.malha(material)); corpo.add(cabeca);
 
@@ -1992,6 +2008,7 @@ function makeAthlete(o) {
   sombra.rotation.x = -Math.PI / 2; sombra.position.y = 0.02;
   raiz.add(sombra);
   const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra };
+  if (o.escala) raiz.scale.setScalar(o.escala);
   raiz.userData.atleta = atleta; ATLETAS.add(atleta);
   return atleta;
 }
@@ -9896,6 +9913,635 @@ const Dialogo = (() => {
 })();
 
 // ---------------------------------------------------------------------
+// 14c. FASE 1 · ESCOLA (4.3.2) — "Escola Santa Maria". Sala de aula 3D com a professora, 9 cadeiras (7 ocupadas), conversas,
+// atividade de álgebra (3 questões) e cutscenes. Usa o mesmo palco do jogo (main scene/câmera, via GANCHO_RENDER): a sala é
+// montada longe do campo e os atletas da partida ficam escondidos. Personagens "bebê" (corpo pequeno, cabeção) com
+// o rosto/cabelo/pele que o jogador criou (sem barba).
+//   Fase1.iniciar({ nome, voz, aoSairDoCriador }) → Promise (resolve no fim; por enquanto termina em "Continua...").
+// Tudo que aparece em texto passa por T()/Tf() (tabela I18N no bloco de idiomas, mais o bloco "Fase 1" logo abaixo).
+// ---------------------------------------------------------------------
+// ----- Fase 1 (escola) -----
+Object.assign(I18N, {
+  'Escola Santa Maria - interior do Brasil': ['Santa Maria School - countryside of Brazil', 'Escuela Santa María - interior de Brasil', 'Scuola Santa Maria - entroterra del Brasile', 'École Santa Maria - intérieur du Brésil'],
+  '2014': ['2014', '2014', '2014', '2014'],
+  '... oi, {0}... perdão pelo atraso': ['... hi, {0}... sorry I am late', '... hola, {0}... perdón por llegar tarde', '... salve, {0}... scusi il ritardo', '... bonjour, {0}... pardon pour le retard'],
+  'É a segunda vez essa semana, {0}! Semana passada eu já falei com o seu pai que você não está chegando no horário!': ["That's the second time this week, {0}! Last week I already told your father you are not arriving on time!", '¡Es la segunda vez esta semana, {0}! ¡La semana pasada ya hablé con tu padre de que no llegas a la hora!', 'È la seconda volta questa settimana, {0}! La settimana scorsa ho già detto a tuo padre che non arrivi in orario!', "C'est la deuxième fois cette semaine, {0} ! La semaine dernière j'ai déjà dit à ton père que tu n'arrives pas à l'heure !"],
+  'Eu sei... desculpa...': ['I know... sorry...', 'Lo sé... perdón...', 'Lo so... scusi...', 'Je sais... désolé...'],
+  'O assunto foi sobre álgebra. Você conhece?': ['The subject was algebra. Do you know it?', 'El tema fue álgebra. ¿La conoces?', "L'argomento era l'algebra. La conosci?", "Le sujet était l'algèbre. Tu connais ?"],
+  'Sim, sou muito bom em álgebra': ["Yes, I'm very good at algebra", 'Sí, soy muy bueno en álgebra', 'Sì, sono molto bravo in algebra', 'Oui, je suis très bon en algèbre'],
+  'Sim, mas eu sou bem ruim...': ["Yes, but I'm pretty bad at it...", 'Sí, pero soy bastante malo...', 'Sì, ma sono piuttosto scarso...', 'Oui, mais je suis plutôt nul...'],
+  'Não, professora...': ['No, teacher...', 'No, profesora...', 'No, professoressa...', 'Non, madame...'],
+  'Que bom que já sabe!': ["Good that you already know it!", '¡Qué bueno que ya la sabes!', 'Bene che la conosci già!', 'Tant mieux si tu connais déjà !'],
+  'É bom começar a ficar bom.': ["It's good to start getting good at it.", 'Es bueno empezar a mejorar.', 'È bene iniziare a diventare bravo.', "Il est temps de commencer à s'améliorer."],
+  'Deveria ter vindo mais cedo.': ['You should have come earlier.', 'Deberías haber venido más temprano.', 'Avresti dovuto venire prima.', 'Tu aurais dû venir plus tôt.'],
+  'Álgebra é usar letras, como o x, no lugar de um número que ainda não conhecemos. Por exemplo: x + 3 = 7. Quanto vale o x? Isso mesmo, 4!': ['Algebra is using letters, like x, in place of a number we do not know yet. For example: x + 3 = 7. What is x? That is right, 4!', 'El álgebra es usar letras, como la x, en lugar de un número que aún no conocemos. Por ejemplo: x + 3 = 7. ¿Cuánto vale x? ¡Eso es, 4!', "L'algebra usa lettere, come la x, al posto di un numero che ancora non conosciamo. Per esempio: x + 3 = 7. Quanto vale x? Esatto, 4!", "L'algèbre, c'est utiliser des lettres, comme x, à la place d'un nombre qu'on ne connaît pas encore. Par exemple : x + 3 = 7. Combien vaut x ? Exactement, 4 !"],
+  'Então, meninos, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!': ['So, kids, that is algebra! You have a little activity to answer. Make yourselves comfortable!', '¡Entonces, chicos, eso es álgebra! Tienen una actividad para responder. ¡Pónganse cómodos!', 'Allora, ragazzi, questa è l\'algebra! Avete una piccola attività da svolgere. Mettetevi comodi!', "Alors, les enfants, voilà l'algèbre ! Vous avez un petit exercice à faire. Installez-vous !"],
+  'Missão: sente na sua cadeira e responda a atividade.': ['Mission: sit in your chair and answer the activity.', 'Misión: siéntate en tu silla y responde la actividad.', "Missione: siediti al tuo posto e svolgi l'attività.", "Mission : assieds-toi à ta place et fais l'exercice."],
+  'Missão: saia da sala.': ['Mission: leave the classroom.', 'Misión: sal del aula.', "Missione: esci dall'aula.", 'Mission : sors de la classe.'],
+  'Interagir': ['Interact', 'Interactuar', 'Interagisci', 'Interagir'],
+  'Falar com {0}': ['Talk to {0}', 'Hablar con {0}', 'Parla con {0}', 'Parler à {0}'],
+  'Sentar na sua cadeira': ['Sit in your chair', 'Sentarte en tu silla', 'Siediti al tuo posto', "T'asseoir à ta place"],
+  'Sair da sala': ['Leave the classroom', 'Salir del aula', "Uscire dall'aula", 'Sortir de la classe'],
+  'Ei, {0}! Depois da aula, me encontra lá fora, tá?': ['Hey, {0}! After class, meet me outside, okay?', '¡Ey, {0}! Después de clase, encuéntrame afuera, ¿vale?', 'Ehi, {0}! Dopo la lezione, ci vediamo fuori, ok?', 'Eh, {0} ! Après les cours, retrouve-moi dehors, d\'accord ?'],
+  'Por quê?': ['Why?', '¿Por qué?', 'Perché?', 'Pourquoi ?'], 'Beleza, combinado!': ['Sure, deal!', '¡Vale, trato hecho!', 'Va bene, affare fatto!', "D'accord, marché conclu !"],
+  'É surpresa! Só aparece lá, tá bom?': ["It's a surprise! Just show up, okay?", '¡Es una sorpresa! Tú solo aparece, ¿vale?', 'È una sorpresa! Tu presentati e basta, ok?', "C'est une surprise ! Viens juste, d'accord ?"],
+  'Fechou! Não esquece, hein.': ["Great! Don't forget, okay.", '¡Perfecto! No te olvides, ¿eh?', 'Perfetto! Non dimenticare, eh.', 'Super ! N\'oublie pas, hein.'],
+  'Não esquece: lá fora, depois da aula!': ["Don't forget: outside, after class!", '¡No te olvides: afuera, después de clase!', 'Non dimenticare: fuori, dopo la lezione!', "N'oublie pas : dehors, après les cours !"],
+  'Será que eu perdi muita coisa?': ['Did I miss a lot?', '¿Me perdí mucho?', 'Mi sono perso molto?', "J'ai raté beaucoup de choses ?"],
+  'Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!': ['Not that much! But if you have trouble, I can help you!', '¡No tanto! Pero si tienes dificultad, ¡puedo ayudarte!', 'Non troppo! Ma se hai difficoltà, posso aiutarti!', "Pas tant que ça ! Mais si tu as du mal, je peux t'aider !"],
+  'Acho que vou me sair bem': ['I think I will do well', 'Creo que me irá bien', 'Penso che me la caverò', 'Je pense que je vais m\'en sortir'], 'Vou precisar mesmo': ['I will really need it', 'La necesitaré de verdad', 'Ne avrò proprio bisogno', 'Oui, j\'en aurai besoin'],
+  'Que ótimo! Boa sorte!': ['Great! Good luck!', '¡Qué bien! ¡Buena suerte!', 'Ottimo! Buona fortuna!', 'Super ! Bonne chance !'],
+  'Pode contar comigo! É só olhar pra mim se travar.': ['Count on me! Just look at me if you get stuck.', '¡Cuenta conmigo! Solo mírame si te atascas.', 'Conta su di me! Guardami se ti blocchi.', "Compte sur moi ! Regarde-moi si tu bloques."],
+  'Boa atividade, {0}!': ['Good luck with the activity, {0}!', '¡Suerte con la actividad, {0}!', "Buon lavoro, {0}!", 'Bon exercice, {0} !'],
+  '{0}! Você vai ficar passeando pela sala? Sente-se e faça a atividade!': ['{0}! Are you going to wander around the room? Sit down and do the activity!', '¡{0}! ¿Vas a quedarte paseando por el aula? ¡Siéntate y haz la actividad!', '{0}! Hai intenzione di gironzolare per la classe? Siediti e fai l\'attività!', '{0} ! Tu vas te promener dans la classe ? Assieds-toi et fais l\'exercice !'],
+  'A atividade já está na sua mesa, {0}. Sente-se e faça.': ["The activity is already on your desk, {0}. Sit down and do it.", 'La actividad ya está en tu mesa, {0}. Siéntate y hazla.', "L'attività è già sul tuo banco, {0}. Siediti e falla.", "L'exercice est déjà sur ton bureau, {0}. Assieds-toi et fais-le."],
+  'Você está tirando uma onda com a minha cara, {0}?!': ['Are you making fun of me, {0}?!', '¿Te estás burlando de mí, {0}?!', 'Mi stai prendendo in giro, {0}?!', 'Tu te moques de moi, {0} ?!'],
+  'Não, professora... desculpa.': ['No, teacher... sorry.', 'No, profesora... perdón.', 'No, professoressa... scusi.', 'Non, madame... pardon.'],
+  'Hum. Então sente-se.': ['Hmm. Then sit down.', 'Mmm. Entonces siéntate.', 'Hmm. Allora siediti.', 'Hum. Alors assieds-toi.'],
+  'Atividade de álgebra': ['Algebra activity', 'Actividad de álgebra', "Attività di algebra", "Exercice d'algèbre"],
+  'Nome: {0}': ['Name: {0}', 'Nombre: {0}', 'Nome: {0}', 'Nom : {0}'], 'Questão {0} de {1}': ['Question {0} of {1}', 'Pregunta {0} de {1}', 'Domanda {0} di {1}', 'Question {0} sur {1}'],
+  'Se x + 5 = 12, quanto vale x?': ['If x + 5 = 12, what is x?', 'Si x + 5 = 12, ¿cuánto vale x?', 'Se x + 5 = 12, quanto vale x?', 'Si x + 5 = 12, combien vaut x ?'],
+  'Se 2x = 10, quanto vale x?': ['If 2x = 10, what is x?', 'Si 2x = 10, ¿cuánto vale x?', 'Se 2x = 10, quanto vale x?', 'Si 2x = 10, combien vaut x ?'],
+  'Se x − 4 = 6, quanto vale x?': ['If x − 4 = 6, what is x?', 'Si x − 4 = 6, ¿cuánto vale x?', 'Se x − 4 = 6, quanto vale x?', 'Si x − 4 = 6, combien vaut x ?'],
+  'Próxima ▶': ['Next ▶', 'Siguiente ▶', 'Avanti ▶', 'Suivante ▶'], 'Entregar ✔': ['Hand in ✔', 'Entregar ✔', 'Consegna ✔', 'Rendre ✔'],
+  'Você não estava mentindo mesmo! Parabéns, {0}!': ['You really were not lying! Congratulations, {0}!', '¡Realmente no mentías! ¡Felicidades, {0}!', 'Non stavi mentendo davvero! Complimenti, {0}!', 'Tu ne mentais vraiment pas ! Bravo, {0} !'],
+  'Hum... você disse que era bom, {0}. Está chegando atrasado e mentindo também?': ['Hmm... you said you were good, {0}. Are you arriving late and lying too?', 'Mmm... dijiste que eras bueno, {0}. ¿Llegas tarde y además mientes?', 'Hmm... hai detto di essere bravo, {0}. Arrivi in ritardo e menti anche?', 'Hum... tu as dit que tu étais bon, {0}. Tu arrives en retard et tu mens aussi ?'],
+  'Modesto como sempre, não é?': ['Modest as always, huh?', 'Modesto como siempre, ¿no?', 'Modesto come sempre, vero?', 'Modeste comme toujours, hein ?'],
+  'Bem que você me avisou...': ['You did warn me...', 'Bien que me avisaste...', 'Mi avevi avvisato...', 'Tu m\'avais prévenue...'],
+  'É, você errou, como era de se esperar por ter chegado atrasado. Depois te passo umas tarefas extras para casa.': ['Yes, you got it wrong, as expected from arriving late. Later I will give you some extra homework.', 'Sí, te equivocaste, como era de esperar por llegar tarde. Luego te doy tareas extra para casa.', 'Già, hai sbagliato, come c\'era da aspettarsi arrivando in ritardo. Dopo ti darò dei compiti extra per casa.', "Oui, tu t'es trompé, comme on pouvait s'y attendre en arrivant en retard. Je te donnerai des devoirs en plus pour la maison."],
+  'Você acertou tudo?! Então sabia álgebra, sim... Estou surpresa, {0}.': ['You got everything right?! So you did know algebra... I am surprised, {0}.', '¿¡Acertaste todo!? Entonces sí sabías álgebra... Estoy sorprendida, {0}.', 'Hai azzeccato tutto?! Quindi sapevi l\'algebra... Sono sorpresa, {0}.', "Tu as tout juste ?! Alors tu connaissais l'algèbre... Je suis surprise, {0}."],
+  'Algumas horas depois...': ['A few hours later...', 'Unas horas después...', 'Qualche ora dopo...', 'Quelques heures plus tard...'],
+  'O sino tocou! Muito bem, turma, estão liberados. Até amanhã!': ['The bell rang! Well done, class, you are dismissed. See you tomorrow!', '¡Sonó la campana! Muy bien, clase, pueden salir. ¡Hasta mañana!', 'Ha suonato la campanella! Bravi ragazzi, siete liberi. A domani!', 'La cloche a sonné ! Bien, la classe, vous pouvez sortir. À demain !'],
+  'Estou muito feliz com você, {0}. Continue assim!': ['I am very happy with you, {0}. Keep it up!', 'Estoy muy feliz contigo, {0}. ¡Sigue así!', 'Sono molto contenta di te, {0}. Continua così!', 'Je suis très contente de toi, {0}. Continue comme ça !'],
+  'Estou triste, {0}... Esperava mais sinceridade de você.': ['I am sad, {0}... I expected more honesty from you.', 'Estoy triste, {0}... Esperaba más sinceridad de ti.', 'Sono triste, {0}... Mi aspettavo più sincerità da te.', "Je suis triste, {0}... J'attendais plus de sincérité de ta part."],
+  'Estou preocupada com você, {0}. Se precisar de ajuda com álgebra, é só falar.': ['I am worried about you, {0}. If you need help with algebra, just say so.', 'Estoy preocupada por ti, {0}. Si necesitas ayuda con álgebra, solo dilo.', "Sono preoccupata per te, {0}. Se hai bisogno di aiuto con l'algebra, basta dirlo.", "Je m'inquiète pour toi, {0}. Si tu as besoin d'aide en algèbre, dis-le-moi."],
+  'Continua...': ['To be continued...', 'Continuará...', 'Continua...', 'À suivre...'],
+  'ÁLGEBRA': ['ALGEBRA', 'ÁLGEBRA', 'ALGEBRA', 'ALGÈBRE'],
+  'Dona Graça': ['Mrs. Grace', 'Doña Gracia', 'Signora Grazia', 'Madame Grâce'],
+  'João Pinha': ['John Pine', 'Juan Pino', 'Gianni Pini', 'Jean Pinet'],
+  'Lúcia Alves': ['Lucy Allen', 'Lucía Álvarez', 'Lucia Alberti', 'Lucie Alard'],
+  'Mover': ['Move', 'Mover', 'Muovi', 'Bouger'],
+});
+
+const Escolha = (() => {                              // caixa de ESCOLHAS (reutilizável): Escolha.mostrar(titulo, ['op1', 'op2']) → Promise(índice)
+  let el = null;
+  function montar() {
+    if (el) return;
+    const css = document.createElement('style');
+    css.textContent = `
+#escolha { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; justify-content: center; padding: 0 max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); }
+#escolha[hidden] { display: none; }
+#escolha .escCaixa { --p: var(--p3, 3px); box-sizing: border-box; width: min(720px, 100%); padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 8px;
+  border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
+#escolha .escTit { margin: 0; font: 600 clamp(14px, 3.8vh, 19px)/1.3 var(--font-body); }
+#escolha .pxBtn { --p: var(--p2, 2px); width: 100%; height: auto; min-height: 38px; padding: 4px 10px; font-size: 13px; line-height: 1.15; text-transform: none; letter-spacing: 0.02em; }`;
+    document.head.appendChild(css);
+    el = document.createElement('div'); el.id = 'escolha'; el.hidden = true;
+    ($('raizJogo') || document.body).appendChild(el);
+  }
+  function mostrar(titulo, ops) {
+    montar();
+    el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p>' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div>';
+    el.querySelector('.escTit').textContent = titulo || '';
+    el.querySelectorAll('button').forEach((b, i) => { b.textContent = ops[i]; });
+    el.hidden = false;
+    return new Promise((res) => {
+      el.onclick = (e) => {
+        const b = e.target.closest('button[data-i]');
+        if (!b) return;
+        if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+        el.hidden = true; el.onclick = null; res(Number(b.dataset.i));
+      };
+    });
+  }
+  return { mostrar };
+})();
+
+const Fase1 = (() => {
+  const SX = 4.5, SZ = 4, ALT = 2.7, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
+  const PORTA = { x: 3.3, z: SZ };
+  const LINHAS = [-1.2, 0.6, 2.4], COLS = [-2.6, 0, 2.6];            // 9 mesas (3 colunas × 3 fileiras)
+  const ESC = 0.68, CAB = 1.55, ASSENTO_Y = -0.15;                     // personagem bebê: corpo 68%, cabeça 155%
+  const PROF = { x: -1.2, z: -3.2 };
+  const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves' };       // (a tabela I18N traz os nomes de cada idioma)
+  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const rad = Math.PI / 180;
+  let UI = null, S = null;
+
+  // ------------------------------------------------------------------ interface
+  function montarUI() {
+    if (UI) return;
+    const css = document.createElement('style');
+    css.textContent = `
+#f1Preto { position: fixed; inset: 0; z-index: 20; background: #000; opacity: 1; transition: opacity 0.9s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #fff; text-align: center; padding: 0 20px; box-sizing: border-box; }
+#f1Preto[hidden] { display: none; }
+#f1Preto.claro { opacity: 0; pointer-events: none; }
+#f1Preto .f1Leg { margin: 0; font: 700 clamp(15px, 4.6vh, 26px)/1.35 var(--font-display); letter-spacing: 0.12em; text-transform: uppercase; opacity: 0; transition: opacity 0.8s ease; }
+#f1Preto .f1Leg.on { opacity: 1; }
+#f1Preto .pxBtn { width: min(320px, 90%); --p: var(--p3, 3px); height: 46px; white-space: nowrap; font-size: 14px; }
+#f1Missao { position: fixed; z-index: 9; left: max(10px, env(safe-area-inset-left, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); max-width: min(46vw, 420px); box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
+  font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206; }
+#f1Missao[hidden], #f1Ctl[hidden], #f1Prova[hidden] { display: none; }
+#f1Ctl { position: fixed; inset: 0; z-index: 9; pointer-events: none; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
+#f1Ctl .f1Pad { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 112px; height: 112px; border-radius: 50%; pointer-events: auto; touch-action: none;
+  background: rgba(21, 13, 6, 0.38); border: 4px solid rgba(255, 240, 200, 0.55); box-sizing: border-box; }
+#f1Ctl .f1Knob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: #f0a020; border: 4px solid #2a1206; box-sizing: border-box; }
+#f1Ctl .f1Dica { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); max-width: 46vw; text-align: right; font: 700 13px/1.2 var(--font-display); letter-spacing: 0.04em;
+  color: #fff0c8; text-shadow: 0 2px 0 #2a1206, 0 0 6px #000; min-height: 16px; }
+#f1Ctl .f1Btn { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 128px; pointer-events: auto; --p: var(--p3, 3px); height: 52px; font-size: 14px; }
+#f1Ctl .f1Btn:disabled { opacity: 0.45; }
+#f1Prova { position: fixed; inset: 0; z-index: 13; display: grid; place-items: center; background: rgba(10, 6, 3, 0.55); padding: 8px 12px; box-sizing: border-box; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
+#f1Prova .papel { --p: var(--p3, 3px); box-sizing: border-box; width: min(560px, 100%); max-height: 100%; overflow-y: auto; padding: 4px 8px 8px; color: #2a1206;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; }
+#f1Prova .pTit { margin: 4px 0 2px; font: 700 15px/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+#f1Prova .pNome { margin: 0 0 6px; font: 600 12px/1.2 var(--font-body); color: #5a3a1c; display: flex; justify-content: space-between; gap: 8px; }
+#f1Prova .pQ { margin: 8px 0; font: 700 clamp(16px, 4.6vh, 22px)/1.25 var(--font-body); }
+#f1Prova .pOps { display: grid; gap: 6px; grid-template-columns: repeat(3, 1fr); }
+#f1Prova .pxBtn { --p: var(--p2, 2px); height: 44px; font-size: 18px; padding: 0 4px; }
+#f1Prova .pxBtn.on { border-image-source: var(--sp-laranja); color: #fff; }
+#f1Prova .pAcoes { display: flex; justify-content: flex-end; margin-top: 10px; }
+#f1Prova .pAcoes .pxBtn { width: auto; min-width: 150px; font-size: 13px; }`;
+    document.head.appendChild(css);
+    const raiz = $('raizJogo') || document.body;
+    const preto = document.createElement('div'); preto.id = 'f1Preto'; preto.hidden = true; preto.innerHTML = '<p class="f1Leg"></p>';
+    const missao = document.createElement('div'); missao.id = 'f1Missao'; missao.hidden = true;
+    const ctl = document.createElement('div'); ctl.id = 'f1Ctl'; ctl.hidden = true;
+    ctl.innerHTML = '<div class="f1Pad" aria-label="Mover"><div class="f1Knob"></div></div><div class="f1Dica"></div><button type="button" class="pxBtn pxPrim f1Btn"></button>';
+    const prova = document.createElement('div'); prova.id = 'f1Prova'; prova.hidden = true;
+    raiz.append(preto, missao, ctl, prova);
+    UI = { preto, leg: preto.querySelector('.f1Leg'), missao, ctl, pad: ctl.querySelector('.f1Pad'), knob: ctl.querySelector('.f1Knob'), dica: ctl.querySelector('.f1Dica'), btn: ctl.querySelector('.f1Btn'), prova };
+    // joystick (toque/mouse) e teclado
+    const joy = { id: null, x: 0, y: 0 };
+    const mover = (e) => {
+      const r = UI.pad.getBoundingClientRect(), R = r.width / 2;
+      let dx = e.clientX - (r.left + R), dy = e.clientY - (r.top + R); const d = Math.hypot(dx, dy) || 1, k = Math.min(1, d / (R * 0.85));
+      dx = dx / d * k; dy = dy / d * k; joy.x = dx; joy.y = dy;
+      UI.knob.style.transform = 'translate(' + (dx * R * 0.55) + 'px,' + (dy * R * 0.55) + 'px)';
+    };
+    UI.pad.addEventListener('pointerdown', (e) => { joy.id = e.pointerId; UI.pad.setPointerCapture(e.pointerId); mover(e); });
+    UI.pad.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) mover(e); });
+    const solta = (e) => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; };
+    UI.pad.addEventListener('pointerup', solta); UI.pad.addEventListener('pointercancel', solta);
+    UI.joy = joy; UI.teclas = {};
+    window.addEventListener('keydown', (e) => {
+      if (!S || !S.ativo) return;
+      UI.teclas[e.code] = true;
+      if ((e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space') && S.modo === 'livre' && !e.repeat) { e.preventDefault(); interagir(); }
+      if (/^(Arrow|Key[WASD])/.test(e.code) && S.modo === 'livre') e.preventDefault();
+    });
+    window.addEventListener('keyup', (e) => { UI.teclas[e.code] = false; });
+    UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
+  }
+  const preto = async (ligado, ms) => { UI.preto.hidden = false; UI.preto.style.transitionDuration = ((ms || 900) / 1000) + 's'; await esperar(30); UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true; };
+  const legenda = async (txt, ms) => { UI.leg.textContent = txt; UI.leg.classList.add('on'); await esperar(ms || 2600); UI.leg.classList.remove('on'); await esperar(850); };
+  const nm = (k) => T(NOMES[k]);
+
+  // ------------------------------------------------------------------ sala 3D
+  function texParede() { return drawTexture(40, 48, (g, w, h) => { g.fillStyle = '#efe0b4'; g.fillRect(0, 0, w, h); g.fillStyle = '#e4d2a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 37) % w, (i * 53) % 30, 2, 1);
+    g.fillStyle = '#b98a4d'; g.fillRect(0, 31, w, 17); g.fillStyle = '#a57640'; for (let x = 0; x < w; x += 5) g.fillRect(x, 31, 1, 17); g.fillStyle = '#6b4a28'; g.fillRect(0, 30, w, 2); }); }
+  function texPiso() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#d8b583'; g.fillRect(0, 0, w, h); g.fillStyle = '#c59f6c'; for (let y = 0; y < h; y += 8) { g.fillRect(0, y, w, 1); g.fillRect((y * 5) % w, y, 1, 8); } g.fillStyle = '#e2c395'; for (let i = 0; i < 20; i++) g.fillRect((i * 13) % w, (i * 7) % h, 3, 1); }); }
+  function texQuadro() { return drawTexture(96, 44, (g, w, h) => { g.fillStyle = '#2f5a3c'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,0.07)'; for (let i = 0; i < 60; i++) g.fillRect((i * 31) % w, (i * 17) % h, 6, 1);
+    g.fillStyle = '#f2f2e6'; g.font = 'bold 11px monospace'; g.textAlign = 'left'; g.fillText(T('ÁLGEBRA'), 6, 13); g.font = 'bold 12px monospace'; g.fillText('x + 3 = 7', 6, 28); g.fillText('x = 4', 56, 40);
+    g.fillStyle = '#cfcfc0'; g.fillRect(2, h - 3, 18, 2); }); }
+  function montarSala() {
+    const g = new THREE.Group(); g.position.set(OX, 0, 0);
+    const basic = (m) => new THREE.MeshBasicMaterial(m);
+    const pw = texParede(); pw.wrapS = pw.wrapT = THREE.RepeatWrapping;
+    const mp = basic({ map: pw });
+    const parede = (cx, cy, w, h, ry, px, pz, mat) => {            // plano virado para dentro da sala (de costas ele some: a câmera pode ficar atrás da parede do fundo)
+      const geo = new THREE.PlaneGeometry(w, h), uv = geo.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 2.25, uv.getY(i) * h / ALT + (cy - h / 2) / ALT);
+      const m = new THREE.Mesh(geo, mat || mp); m.rotation.y = ry; m.position.set(px, cy, pz); g.add(m); return m;
+    };
+    parede(0, ALT / 2, SX * 2, ALT, 0, 0, -SZ);                                     // frente (quadro negro)
+    parede(-SX, ALT / 2, SZ * 2, ALT, Math.PI / 2, -SX, 0);                         // esquerda
+    parede(SX, ALT / 2, SZ * 2, ALT, -Math.PI / 2, SX, 0);                          // direita
+    const gx0 = PORTA.x - 0.5, gx1 = PORTA.x + 0.5;                                 // fundo, com o vão da porta
+    parede((-SX + gx0) / 2, ALT / 2, gx0 + SX, ALT, Math.PI, (-SX + gx0) / 2, SZ);
+    parede((gx1 + SX) / 2, ALT / 2, SX - gx1, ALT, Math.PI, (gx1 + SX) / 2, SZ);
+    parede(PORTA.x, 2.1 + (ALT - 2.1) / 2, 1, ALT - 2.1, Math.PI, PORTA.x, SZ);
+    const pp = texPiso(); pp.wrapS = pp.wrapT = THREE.RepeatWrapping; pp.repeat.set(SX * 2 / 1.5, SZ * 2 / 1.5);
+    const piso = new THREE.Mesh(new THREE.PlaneGeometry(SX * 2, SZ * 2), basic({ map: pp })); piso.rotation.x = -Math.PI / 2; g.add(piso);
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), basic({ color: 0x6a5a3a })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);  // terra lá fora
+    const quadro = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.45), basic({ map: texQuadro() })); quadro.position.set(0, 1.45, -SZ + 0.02); g.add(quadro);
+    // moldura, relógio, bandeira, mural
+    const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
+    F(3.3, 0.06, 0.05, 0x7a5430, 0, 2.2, -SZ + 0.03); F(3.3, 0.06, 0.05, 0x7a5430, 0, 0.7, -SZ + 0.03); F(0.06, 1.5, 0.05, 0x7a5430, -1.65, 1.45, -SZ + 0.03); F(0.06, 1.5, 0.05, 0x7a5430, 1.65, 1.45, -SZ + 0.03);
+    F(0.5, 0.5, 0.04, 0xf2f2ee, SX - 0.03, 2.2, -1.5); F(0.4, 0.4, 0.05, 0x2a1206, SX - 0.04, 2.2, -1.5);
+    F(1.4, 0.9, 0.03, 0xd7c9a0, -SX + 0.03, 1.5, -0.5);                                                         // mural
+    // mesas e cadeiras
+    for (const dz of LINHAS) for (const cx of COLS) {
+      F(1.0, 0.05, 0.56, 0xd9a45c, cx, 0.6, dz); F(0.9, 0.04, 0.46, 0xb9854a, cx, 0.5, dz);
+      for (const sx of [-0.44, 0.44]) for (const sz of [-0.24, 0.24]) F(0.04, 0.58, 0.04, 0x8c9199, cx + sx, 0.29, dz + sz);
+      const cz = dz + 0.62;
+      F(0.42, 0.04, 0.42, 0xa4492a, cx, 0.3, cz); F(0.42, 0.34, 0.04, 0xa4492a, cx, 0.5, cz + 0.2);
+      for (const sx of [-0.18, 0.18]) for (const sz of [-0.18, 0.18]) F(0.03, 0.3, 0.03, 0x8c9199, cx + sx, 0.15, cz + sz);
+    }
+    F(2.0, 0.78, 0.8, 0xa8723c, -3.3, 0.39, -3.3); F(2.1, 0.05, 0.9, 0xc58a4a, -3.3, 0.8, -3.3);               // mesa da professora
+    F(0.32, 0.2, 0.24, 0xc8202a, -3.9, 0.93, -3.3); F(0.32, 0.12, 0.24, 0x2a4f9a, -3.9, 1.09, -3.3); F(0.3, 0.14, 0.22, 0x3f9d2a, -3.4, 0.9, -3.4);
+    F(0.9, 1.0, 0.45, 0xe8e8e0, 4.1, 0.5, 3.0);                                                                  // armário
+    const mob = L.malha(MAT_CORES); g.add(mob);
+    const papel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.012, 0.24), new THREE.MeshLambertMaterial({ color: 0xffffff })); papel.position.set(0, 0.63, LINHAS[1] + 0.02); g.add(papel);
+    // bandeira do Brasil (a mesma bandeira pixelada da tela de idiomas)
+    { const img = new Image(), tx = new THREE.Texture(img); tx.magFilter = tx.minFilter = THREE.NearestFilter; img.onload = () => { tx.needsUpdate = true; }; img.src = bandeiraUrl('br');
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(0.96, 0.63), basic({ map: tx })); f.rotation.y = Math.PI / 2; f.position.set(-SX + 0.05, 1.9, 1.8); g.add(f); }
+    // porta (gira em volta da dobradiça, para dentro da sala)
+    const pivo = new THREE.Group(); pivo.position.set(PORTA.x + 0.5, 0, SZ);
+    const folha = new THREE.Mesh(new THREE.BoxGeometry(1.0, 2.1, 0.07), new THREE.MeshLambertMaterial({ color: 0xb98042 })); folha.position.set(-0.5, 1.05, 0); pivo.add(folha);
+    const macan = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.12), new THREE.MeshLambertMaterial({ color: 0xd8d8d0 })); macan.position.set(-0.88, 1.0, 0); pivo.add(macan);
+    const lm = new Lote(); lm.caixa(1.16, 0.08, 0.16, 0x7a5430, PORTA.x, 2.14, SZ); lm.caixa(0.08, 2.1, 0.16, 0x7a5430, PORTA.x - 0.54, 1.05, SZ); lm.caixa(0.08, 2.1, 0.16, 0x7a5430, PORTA.x + 0.54, 1.05, SZ);
+    g.add(lm.malha(MAT_CORES)); g.add(pivo);
+    // seta que marca a cadeira (ou a porta, no fim)
+    const La = new Lote(); La.caixa(0.18, 0.18, 0.18, 0xffd92b, 0, 0.3, 0); La.caixa(0.34, 0.12, 0.34, 0xffd92b, 0, 0.12, 0); La.caixa(0.1, 0.12, 0.1, 0xffd92b, 0, 0.0, 0);
+    const seta = La.malha(new THREE.MeshBasicMaterial({ vertexColors: true })); g.add(seta);
+    scene.add(g);
+    return { g, pivo, seta, papel, malhas: [mob] };
+  }
+
+  // ------------------------------------------------------------------ personagens
+  const ci = (n) => Math.max(0, ESTILOS_CABELO.findIndex((c) => c.nome === n)), ri = (n) => Math.max(0, ROSTOS.findIndex((r) => r.nome === n));
+  function criar(sala, d) {
+    const o = Object.assign({ camisa: '#F2F2EE', listra: '#F2F2EE', gola: '#3a64b8', calcao: 0x2a4f9a, meia: '#F2F2EE', sola: '#d9d9d9', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)',
+      barba: 0, manga: 0, meiao: 1, labio: 3, cabecao: CAB, escala: ESC }, d);
+    const m = makeAthlete(o);
+    m.etiqueta.visible = false;
+    sala.g.add(m.raiz);
+    const A = { m, x: 0, z: 0, yaw: Math.PI / 2, yawAlvo: Math.PI / 2, estado: 'parado', rota: null, vel: 1.9, fase: 0, oculto: false, fala: false, escreve: false };
+    S.elenco.push(A);
+    return A;
+  }
+  const poseSentado = (A, t, dt) => {
+    const m = A.m, e = Math.min(1, dt * 12);
+    m.raiz.position.y = ASSENTO_Y; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 1.25, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 1.25 + (A.escreve ? Math.sin(t * 7 + A.x) * 0.07 : 0), e);
+    m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
+    if (A.escreve) m.cabeca.rotation.z = 0;
+  };
+  const poseEmPe = (A, t, dt, andando) => {
+    const m = A.m;
+    usarJoelhos(m, 0, 0); m.raiz.position.y = 0;
+    if (andando) {
+      A.fase += dt * A.vel * 4.6; const s = Math.sin(A.fase);
+      m.pernaE.rotation.z = s * 0.75; m.pernaD.rotation.z = -s * 0.75; m.bracoE.rotation.z = -s * 0.6; m.bracoD.rotation.z = s * 0.6;
+      m.raiz.position.y = Math.abs(Math.cos(A.fase)) * 0.025;
+    } else {
+      const e = Math.min(1, dt * 10);
+      m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, 0, e);
+      m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? Math.sin(t * 5) * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? Math.sin(t * 5 + 2) * 0.35 + 0.4 : 0, e);
+    }
+    m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
+  };
+  function andar(A, pts, vel) {
+    A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.vel = vel || 1.9;
+    return new Promise((r) => { A.rotaRes = r; });
+  }
+  const olhar = (A, x, z) => { A.yawAlvo = Math.atan2(-(z - A.z), x - A.x); };
+  function sentar(A, cx, dz, sim) { A.sentado = !!sim; if (sim) { A.x = cx; A.z = dz + 0.62; A.yaw = A.yawAlvo = Math.PI / 2; A.rota = null; } }
+
+  // ------------------------------------------------------------------ câmera
+  const CAMS = {
+    porta: [0.9, 1.45, -0.6, 3.2, 1.0, 4.0], aluno: [-0.8, 1.5, 0.2, 3.1, 1.1, 3.0], prof: [1.4, 1.5, -0.4, -1.2, 1.15, -3.2], geral: [3.9, 3.4, 3.7, -0.5, 0.9, -1.0],
+    mesa: [0.3, 1.8, 3.4, 0, 0.7, 0.4], entrega: [-3.3, 1.45, -0.9, -0.7, 1.15, -2.9], saida: [1.0, 1.7, 1.0, 3.3, 1.0, 4.2], aula: [3.9, 3.0, 3.8, -0.8, 0.9, -1.4],
+  };
+  const camPara = (nome, corte) => { const c = CAMS[nome]; S.camAlvo = { px: c[0], py: c[1], pz: c[2], tx: c[3], ty: c[4], tz: c[5] }; S.camSeg = false; if (corte) S.camSnap = true; };
+
+  // ------------------------------------------------------------------ colisão e interação
+  const RETS = []; for (const dz of LINHAS) for (const cx of COLS) RETS.push([cx - 0.52, cx + 0.52, dz - 0.33, dz + 0.9]); RETS.push([-4.4, -2.2, -3.8, -2.7], [3.6, 4.5, 2.7, 3.3]);
+  function livre(x, z) {
+    const R = 0.26;
+    if (x < -SX + 0.3 || x > SX - 0.3 || z < -SZ + 0.3 || z > SZ - 0.3) return false;
+    for (const [x0, x1, z0, z1] of RETS) if (x > x0 - R && x < x1 + R && z > z0 - R && z < z1 + R) return false;
+    if (Math.hypot(x - PROF.x, z - PROF.z) < 0.55) return false;
+    return true;
+  }
+  const alvos = () => {
+    if (!S || S.modo !== 'livre') return [];
+    const l = [];
+    if (S.fase === 'antes') {
+      l.push({ id: 'prof', x: PROF.x, z: PROF.z, r: 1.7, txt: Tf('Falar com {0}', nm('prof')) });
+      l.push({ id: 'joao', x: COLS[2] - 0.35, z: LINHAS[1] + 0.62, r: 1.3, txt: Tf('Falar com {0}', nm('joao')) });
+      l.push({ id: 'lucia', x: COLS[0] + 0.35, z: LINHAS[1] + 0.62, r: 1.3, txt: Tf('Falar com {0}', nm('lucia')) });
+      l.push({ id: 'cadeira', x: COLS[1] + 0.45, z: LINHAS[1] + 0.62, r: 1.2, txt: T('Sentar na sua cadeira') });
+      if (!S.portaTrancada) l.push({ id: 'porta', x: PORTA.x, z: PORTA.z - 0.5, r: 1.2, txt: T('Sair da sala') });
+    } else {
+      if (!S.profFalou2) l.push({ id: 'prof', x: PROF.x, z: PROF.z, r: 1.7, txt: Tf('Falar com {0}', nm('prof')) });
+      l.push({ id: 'porta', x: PORTA.x, z: PORTA.z - 0.5, r: 1.2, txt: T('Sair da sala') });
+    }
+    return l;
+  };
+  function alvoAtual() {
+    const J = S.jog; let best = null, bs = 1e9;
+    for (const a of alvos()) {
+      const dx = a.x - J.x, dz = a.z - J.z, d = Math.hypot(dx, dz);
+      if (d > a.r) continue;
+      const sc = d - 0.45 * ((dx * S.face.x + dz * S.face.z) / (d || 1));
+      if (sc < bs) { bs = sc; best = a; }
+    }
+    return best;
+  }
+
+  // ------------------------------------------------------------------ falas
+  const nomeJog = () => S.nome;
+  const liberar = () => { S.modo = 'livre'; UI.ctl.hidden = false; S.bloq = performance.now() + 400; };
+  async function fala(quem, texto, shot, op) {
+    if (shot) camPara(shot);
+    const ator = quem === 'jog' ? S.jog : quem === 'prof' ? S.prof : quem === 'joao' ? S.joaoA : quem === 'lucia' ? S.luciaA : null;
+    if (ator) ator.fala = true;
+    const voz = quem === 'jog' ? S.voz : ({ prof: 1, joao: 3, lucia: 0 })[quem];
+    await Dialogo.mostrar([texto], { nome: quem === 'jog' ? nomeJog() : nm(quem), voz, manter: true });
+    if (ator) ator.fala = false;
+  }
+  async function escolher(titulo, ops) { Dialogo.esconder(); return Escolha.mostrar(titulo, ops); }
+
+  // ------------------------------------------------------------------ roteiro
+  const perfeito = () => S.acertos === S.quiz.length;
+  async function interagir() {
+    const a = alvoAtual();
+    if (!a || S.modo !== 'livre' || performance.now() < (S.bloq || 0)) return;
+    S.modo = 'cena'; UI.ctl.hidden = true;
+    try {
+      if (a.id === 'cadeira') { await sentarEFazer(); return; }
+      if (a.id === 'joao') await conversaJoao(); else if (a.id === 'lucia') await conversaLucia();
+      else if (a.id === 'prof') await conversaProf(); else if (a.id === 'porta') { if (S.fase === 'antes') await ondaNaPorta(); else { await saida(); return; } }
+    } catch (e) { console.error(e); }
+    Dialogo.esconder(); liberar();
+  }
+  async function conversaJoao() {
+    S.jog.fala = false; olhar(S.joaoA, S.jog.x, S.jog.z); olhar(S.jog, S.joaoA.x, S.joaoA.z);
+    if (S.joao) { await fala('joao', T('Não esquece: lá fora, depois da aula!'), 'aluno'); camPara('aula'); return; }
+    await fala('joao', Tf('Ei, {0}! Depois da aula, me encontra lá fora, tá?', nomeJog()), 'aluno');
+    const r = await escolher(T('Ei, {0}! Depois da aula, me encontra lá fora, tá?').replace('{0}', nomeJog()), [T('Por quê?'), T('Beleza, combinado!')]);
+    S.joao = r === 0 ? 'surpresa' : 'combinado';
+    await fala('joao', r === 0 ? T('É surpresa! Só aparece lá, tá bom?') : T('Fechou! Não esquece, hein.'), 'aluno');
+    camPara('aula');
+  }
+  async function conversaLucia() {
+    olhar(S.luciaA, S.jog.x, S.jog.z); olhar(S.jog, S.luciaA.x, S.luciaA.z);
+    if (S.lucia) { await fala('lucia', Tf('Boa atividade, {0}!', nomeJog()), 'aula'); return; }
+    await fala('jog', T('Será que eu perdi muita coisa?'), 'aula');
+    await fala('lucia', T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), 'aula');
+    const r = await escolher(T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), [T('Acho que vou me sair bem'), T('Vou precisar mesmo')]);
+    S.lucia = r === 0 ? 'confiante' : 'precisa';
+    await fala('lucia', r === 0 ? T('Que ótimo! Boa sorte!') : T('Pode contar comigo! É só olhar pra mim se travar.'), 'aula');
+  }
+  async function conversaProf() {
+    olhar(S.prof, S.jog.x, S.jog.z);
+    if (S.fase === 'antes') await fala('prof', Tf('A atividade já está na sua mesa, {0}. Sente-se e faça.', nomeJog()), 'prof');
+    else {
+      S.profFalou2 = true; const humor = perfeito() ? 'Estou muito feliz com você, {0}. Continue assim!' : (S.perfil === 0 ? 'Estou triste, {0}... Esperava mais sinceridade de você.' : 'Estou preocupada com você, {0}. Se precisar de ajuda com álgebra, é só falar.');
+      await fala('prof', Tf(humor, nomeJog()), 'prof');
+    }
+    S.prof.yawAlvo = -Math.PI / 2;
+  }
+  async function ondaNaPorta() {
+    olhar(S.prof, S.jog.x, S.jog.z);
+    await fala('prof', Tf('Você está tirando uma onda com a minha cara, {0}?!', nomeJog()), 'prof');
+    await fala('jog', T('Não, professora... desculpa.'), 'aluno');
+    await fala('prof', T('Hum. Então sente-se.'), 'prof');
+    S.portaTrancada = true; S.prof.yawAlvo = -Math.PI / 2;
+    camPara('aula');
+  }
+  async function brigar() {
+    olhar(S.prof, S.jog.x, S.jog.z);
+    await fala('prof', Tf('{0}! Você vai ficar passeando pela sala? Sente-se e faça a atividade!', nomeJog()), 'prof');
+    S.prof.yawAlvo = -Math.PI / 2;
+  }
+  async function sentarEFazer() {
+    const J = S.jog, cx = COLS[1], dz = LINHAS[1];
+    S.sala.seta.visible = false;
+    camPara('aula');
+    await andar(J, [[cx + 1.3, dz + 0.62], [cx, dz + 0.62]], 2.0);
+    sentar(J, cx, dz, true); camPara('mesa');
+    await esperar(900);
+    const resp = await prova();
+    // entrega: levanta, vai até a professora, ela reage
+    J.sentado = false; J.x = cx; J.z = dz + 0.62; camPara('aula');
+    await andar(J, [[cx + 1.3, dz + 0.62], [cx + 1.3, -1.6], [PROF.x + 0.85, -2.45]], 2.0);
+    camPara('entrega');
+    olhar(J, PROF.x, PROF.z); olhar(S.prof, J.x, J.z); await esperar(300);
+    const txt = S.perfil === 0 ? (perfeito() ? 'Você não estava mentindo mesmo! Parabéns, {0}!' : 'Hum... você disse que era bom, {0}. Está chegando atrasado e mentindo também?')
+      : S.perfil === 1 ? (perfeito() ? 'Modesto como sempre, não é?' : 'Bem que você me avisou...')
+        : (perfeito() ? 'Você acertou tudo?! Então sabia álgebra, sim... Estou surpresa, {0}.' : 'É, você errou, como era de se esperar por ter chegado atrasado. Depois te passo umas tarefas extras para casa.');
+    await fala('prof', Tf(txt, nomeJog()), 'entrega'); Dialogo.esconder();
+    S.prof.yawAlvo = -Math.PI / 2;
+    camPara('aula');
+    await andar(J, [[cx + 1.3, -1.6], [cx + 1.3, dz + 0.62], [cx, dz + 0.62]], 2.0);
+    sentar(J, cx, dz, true);
+    await esperar(600);
+    salvarHistoria();
+    // algumas horas depois...
+    await preto(true, 900); Dialogo.esconder();
+    await legenda(T('Algumas horas depois...'), 2200);
+    S.fase = 'depois'; S.profFalou2 = false;
+    sino(); camPara('aula', true);
+    Object.assign(S.seta, { x: PORTA.x, y: 2.4, z: PORTA.z - 0.3 }); S.sala.seta.visible = true;
+    await preto(false, 900);
+    await fala('prof', T('O sino tocou! Muito bem, turma, estão liberados. Até amanhã!'), 'prof'); Dialogo.esconder();
+    camPara('aula');
+    UI.missao.textContent = T('Missão: saia da sala.');
+    // levantam e saem em fila; o jogador já pode andar
+    J.sentado = false; J.x = cx; J.z = dz + 0.62; S.jog.estado = 'parado';
+    S.saindo = true;
+    for (const [i, A] of S.alunos.entries()) {
+      esperar(500 + i * 1100).then(async () => {
+        A.sentado = false; A.escreve = false;
+        const ax = A.cx === COLS[0] ? -1.3 : 1.3;
+        await andar(A, [[ax, A.cz], [PORTA.x, PORTA.z - 0.6], [PORTA.x, PORTA.z + 1.8]], 1.7);
+        A.oculto = true;
+      });
+    }
+    await andar(J, [[cx + 1.3, dz + 0.62]], 2.0);
+    Dialogo.esconder(); liberar();
+    return;
+  }
+  async function prova() {
+    const resp = [];
+    UI.prova.hidden = false; UI.missao.hidden = true;
+    for (let i = 0; i < S.quiz.length; i++) {
+      const q = S.quiz[i];
+      const escolhida = await new Promise((res) => {
+        let sel = -1;
+        UI.prova.innerHTML = '<div class="papel"><p class="pTit">' + esc1(T('Atividade de álgebra')) + '</p><p class="pNome"><span>' + esc1(Tf('Nome: {0}', nomeJog())) + '</span><span>' + esc1(Tf('Questão {0} de {1}', i + 1, S.quiz.length)) + '</span></p>' +
+          '<p class="pQ">' + esc1(T(q.q)) + '</p><div class="pOps">' + q.o.map((o, k) => '<button type="button" class="pxBtn" data-k="' + k + '">' + esc1(o) + '</button>').join('') + '</div>' +
+          '<div class="pAcoes"><button type="button" class="pxBtn pxPrim" disabled>' + esc1(T(i === S.quiz.length - 1 ? 'Entregar ✔' : 'Próxima ▶')) + '</button></div></div>';
+        UI.prova.onclick = (e) => {
+          const b = e.target.closest('button');
+          if (!b) return;
+          if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+          if (b.dataset.k != null) { sel = Number(b.dataset.k); UI.prova.querySelectorAll('.pOps .pxBtn').forEach((x) => x.classList.toggle('on', x === b)); UI.prova.querySelector('.pAcoes .pxBtn').disabled = false; }
+          else if (!b.disabled && sel >= 0) res(sel);
+        };
+      });
+      resp.push(escolhida);
+    }
+    UI.prova.hidden = true; UI.prova.onclick = null; UI.prova.innerHTML = ''; UI.missao.hidden = false;
+    S.acertos = resp.reduce((a, r, i) => a + (r === S.quiz[i].c ? 1 : 0), 0);
+    return resp;
+  }
+  const esc1 = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function salvarHistoria() {
+    PERSONAGEM.historia = { fase1: { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null } };
+    salvo.gravar('futebolJs.historia.v1', PERSONAGEM.historia);
+  }
+  function sino() {
+    const A = typeof Som !== 'undefined' && Som.audio;
+    if (!A || Som.mudo) return;
+    const { ctx, mestre } = A;
+    for (let k = 0; k < 4; k++) for (const f of [880, 1320]) {
+      const o = ctx.createOscillator(), g = ctx.createGain(), t0 = ctx.currentTime + 0.05 + k * 0.32;
+      o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.9);
+      o.connect(g); g.connect(mestre); o.start(t0); o.stop(t0 + 1);
+    }
+  }
+  async function saida() {
+    const J = S.jog;
+    S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; Dialogo.esconder();
+    camPara('saida');
+    await andar(J, [[PORTA.x, PORTA.z - 0.5], [PORTA.x, PORTA.z + 2.4]], 1.9);
+    await preto(true, 1100);
+    J.oculto = true;
+  }
+
+  // ------------------------------------------------------------------ quadro a quadro
+  function atualizar(dt) {
+    const t = performance.now() / 1000;
+    // porta
+    S.portaAng += (S.portaAlvo - S.portaAng) * Math.min(1, dt * 4); S.sala.pivo.rotation.y = S.portaAng;
+    // jogador livre
+    const J = S.jog;
+    if (S.modo === 'livre' && !J.rota) {
+      let ix = UI.joy.x, iz = UI.joy.y; const T_ = UI.teclas;
+      if (T_.ArrowLeft || T_.KeyA) ix -= 1; if (T_.ArrowRight || T_.KeyD) ix += 1; if (T_.ArrowUp || T_.KeyW) iz -= 1; if (T_.ArrowDown || T_.KeyS) iz += 1;
+      const mag = Math.min(1, Math.hypot(ix, iz));
+      if (mag > 0.12) {
+        const dx = ix / Math.hypot(ix, iz), dz = iz / Math.hypot(ix, iz), v = 2.3 * mag * dt;
+        if (livre(J.x + dx * v, J.z)) J.x += dx * v; if (livre(J.x, J.z + dz * v)) J.z += dz * v;
+        J.yawAlvo = Math.atan2(-dz, dx); J.vel = 2.3 * mag; J.livreAndando = true; S.face.x = dx; S.face.z = dz;
+      } else J.livreAndando = false;
+      if (S.fase === 'antes' && !S.brigou) { S.tLivre += dt; if (S.tLivre > 60) { S.brigou = true; S.modo = 'cena'; UI.ctl.hidden = true; brigar().then(() => { Dialogo.esconder(); liberar(); }); } }
+    } else J.livreAndando = false;
+    // atores
+    for (const A of S.elenco) {
+      let mov = false;
+      if (A.rota && A.rota.length) {
+        const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = A.vel * dt;
+        if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
+        else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); mov = true; }
+      }
+      if (A === J && J.livreAndando) mov = true;
+      let dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 10);
+      if (A.sentado && !mov) poseSentado(A, t, dt); else poseEmPe(A, t, dt, mov);
+      const r = A.m.raiz; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
+      if (!A.sentado) r.position.y = r.position.y || 0;
+    }
+    // seta
+    S.sala.seta.position.set(S.seta.x, S.seta.y + Math.sin(t * 4) * 0.08, S.seta.z);
+  }
+  function gancho(rdt) {
+    if (!S || !S.ativo) return;
+    const dt = Math.min(0.05, rdt || 0.016);
+    atualizar(dt);
+    const cast = new Set(S.elenco.map((a) => a.m));
+    for (const a of ATLETAS) a.raiz.visible = cast.has(a) ? !S.elenco.find((x) => x.m === a).oculto : false;
+    ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;
+    // câmera
+    let al = S.camAlvo;
+    if (S.modo === 'livre') { const J = S.jog, fx = J.x * 0.75; al = { px: fx, py: 6.5, pz: J.z + 5.8, tx: fx, ty: 0.3, tz: J.z - 1.0 }; }
+    const C = S.cam, k = S.camSnap ? 1 : 1 - Math.exp(-dt * 3.2); S.camSnap = false;
+    for (const c of ['px', 'py', 'pz', 'tx', 'ty', 'tz']) C[c] += (al[c] - C[c]) * k;
+    camera.position.set(OX + C.px, C.py, C.pz); camera.lookAt(OX + C.tx, C.ty, C.tz);
+    // interface
+    if (S.modo === 'livre') {
+      const a = alvoAtual(), txt = a ? a.txt : '';
+      if (UI.dica.textContent !== txt) UI.dica.textContent = txt;
+      UI.btn.disabled = !a; if (UI.btn.textContent !== T('Interagir')) UI.btn.textContent = T('Interagir');
+    }
+  }
+
+  // ------------------------------------------------------------------ iniciar
+  async function iniciar(op) {
+    montarUI();
+    op = op || {};
+    const ap = PERSONAGEM.aparencia || {};
+    S = { ativo: true, modo: 'cena', fase: 'antes', elenco: [], nome: op.nome || 'Você', voz: op.voz == null ? 2 : op.voz, cam: { px: 0.9, py: 1.45, pz: -0.6, tx: 3.2, ty: 1.0, tz: 4.0 }, camAlvo: null, camSnap: true,
+      portaAng: 0, portaAlvo: 0, tLivre: 0, brigou: false, portaTrancada: false, joao: null, lucia: null, perfil: 0, acertos: 0, profFalou2: false, face: { x: 0, z: -1 },
+      seta: { x: COLS[1], y: 1.55, z: LINHAS[1] + 0.62 },
+      quiz: [{ q: 'Se x + 5 = 12, quanto vale x?', o: ['5', '7', '17'], c: 1 }, { q: 'Se 2x = 10, quanto vale x?', o: ['20', '3', '5'], c: 2 }, { q: 'Se x − 4 = 6, quanto vale x?', o: ['10', '2', '24'], c: 0 }] };
+    camPara('porta', true); S.camAlvo = S.camAlvo || {};
+    await preto(true, 0);
+    { const a = $('anoTela'); if (a) a.remove(); }
+    UI.missao.hidden = true; UI.ctl.hidden = true;
+    S.sala = montarSala();
+    document.body.classList.add('criadorAberto');
+    // elenco
+    const pele = (i) => PELES_FITZ[i].cor, cor = (i) => CORES_CABELO[i].cor;
+    S.jog = criar(S.sala, { pele: ap.pele || pele(2), cabelo: ap.cabelo || cor(1), estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.cabelo || cor(1), barba: 0 });
+    S.prof = criar(S.sala, { pele: pele(3), cabelo: cor(6), estilo: ci('Coque longo'), rosto: ri('Padrão'), camisa: '#7a3e8f', listra: '#7a3e8f', gola: '#ffffff', calcao: 0x3a2a4a, meia: '#3a2a4a', cabecao: 1.3, escala: 0.98 });
+    S.prof.x = PROF.x; S.prof.z = PROF.z; S.prof.yaw = S.prof.yawAlvo = -Math.PI / 2;
+    const seats = [[0, 0, null], [0, 2, null], [1, 0, 'lucia'], [1, 2, 'joao'], [2, 0, null], [2, 1, null], [2, 2, null]];            // [fileira, coluna, quem] — (0,0) vazia, (1,1) é a sua
+    const looks = [
+      { pele: pele(5), cabelo: cor(0), estilo: ci('Dreads curtos'), rosto: ri('Sério') },
+      { pele: pele(3), cabelo: cor(2), estilo: ci('Coque longo'), rosto: ri('Sorridente'), labio: 1 },
+      { pele: pele(1), cabelo: cor(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 },
+      { pele: pele(2), cabelo: cor(0), estilo: ci('Franja'), rosto: ri('Sorridente') },
+      { pele: pele(5), cabelo: cor(0), estilo: ci('Black power'), rosto: ri('Padrão') },
+      { pele: pele(1), cabelo: cor(3), estilo: ci('Longo liso'), rosto: ri('Sorridente'), labio: 0 },
+      { pele: pele(2), cabelo: cor(1), estilo: ci('Moicano'), rosto: ri('Sonolento') },
+    ];
+    S.alunos = [];
+    seats.forEach(([fi, co, quem], i) => {
+      const A = criar(S.sala, looks[i]); A.cx = COLS[co]; A.cz = LINHAS[fi] + 0.62; sentar(A, COLS[co], LINHAS[fi], true); A.escreve = quem === null || quem === 'lucia';
+      if (quem === 'joao') S.joaoA = A; if (quem === 'lucia') S.luciaA = A; S.alunos.push(A);
+    });
+    S.alunos = S.alunos;
+    S.jog.x = PORTA.x; S.jog.z = PORTA.z + 1.7; S.jog.yaw = S.jog.yawAlvo = Math.PI / 2;
+    GANCHO_RENDER = gancho;
+    await esperar(300);
+    await legenda(T('Escola Santa Maria - interior do Brasil'), 3000);
+    await preto(false, 1000);
+    await esperar(500);
+    // abre a porta e o personagem entra
+    S.portaAlvo = -100 * rad; await esperar(700);
+    const entra = andar(S.jog, [[PORTA.x, PORTA.z - 1.0]], 1.5); await entra;
+    await fala('jog', Tf('... oi, {0}... perdão pelo atraso', nm('prof')), 'porta');
+    olhar(S.prof, S.jog.x, S.jog.z);
+    await fala('prof', Tf('É a segunda vez essa semana, {0}! Semana passada eu já falei com o seu pai que você não está chegando no horário!', nomeJog()), 'prof');
+    await fala('jog', T('Eu sei... desculpa...'), 'aluno');
+    await fala('prof', T('O assunto foi sobre álgebra. Você conhece?'), 'prof', { manter: false });
+    const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [T('Sim, sou muito bom em álgebra'), T('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
+    S.perfil = r;
+    await fala('prof', T(['Que bom que já sabe!', 'É bom começar a ficar bom.', 'Deveria ter vindo mais cedo.'][r]), 'prof');
+    S.prof.yawAlvo = -Math.PI / 2;     // vira para a turma
+    await fala('prof', T('Álgebra é usar letras, como o x, no lugar de um número que ainda não conhecemos. Por exemplo: x + 3 = 7. Quanto vale o x? Isso mesmo, 4!'), 'geral', { manter: true });
+    await fala('prof', T('Então, meninos, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!'), 'geral');
+    // controle livre
+    camPara('aula');
+    Dialogo.esconder();
+    UI.missao.textContent = T('Missão: sente na sua cadeira e responda a atividade.'); UI.missao.hidden = false;
+    liberar();
+    await new Promise((res) => { S.fim = res; S.checa = setInterval(() => { if (S.jog.oculto) { clearInterval(S.checa); res(); } }, 200); });
+    // fim: tela preta com "Continua..."
+    UI.missao.hidden = true; UI.ctl.hidden = true;
+    UI.leg.classList.remove('on');
+    UI.preto.hidden = false; UI.preto.classList.remove('claro');
+    UI.leg.innerHTML = esc1(T('Continua...')) + '<br><br><button type="button" class="pxBtn pxPrim" id="f1Voltar">' + esc1(T('Voltar ao menu')) + '</button>';
+    UI.leg.classList.add('on');
+    await new Promise((fim) => { UI.leg.querySelector('#f1Voltar').addEventListener('click', () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); fim(); }); });
+    UI.leg.innerHTML = ''; UI.leg.classList.remove('on');
+    S.ativo = false; GANCHO_RENDER = null; camera.clearViewOffset();
+    document.body.classList.remove('criadorAberto');
+    for (const A of S.elenco) { ATLETAS.delete(A.m); S.sala.g.remove(A.m.raiz); }
+    scene.remove(S.sala.g);
+    S.sala.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== MAT_CORES) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    UI.preto.hidden = true; UI.preto.classList.add('claro');
+    S = null;
+  }
+  return { iniciar, get ativo() { return !!(S && S.ativo); }, _estado: () => S };
+})();
+
+// ---------------------------------------------------------------------
 // 14b. CRIADOR DE PERSONAGEM (modo história, 4.3.0)
 // Jogar → Modo história abre esta tela. Passo 1: nome, apelido, nome na camisa e número preferido.
 // Passo 2: aparência (pele, cabelo, barba, rosto) com um bonequinho 3D ao lado: arraste para girar
@@ -10203,7 +10849,9 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     ], { nome, voz: E.voz, aoLinha: (i) => { if (i === 1) aquece = false; } });
     await anoVoltando();
     // fim (por enquanto): volta ao menu
-    aquece = false; desligar3D(); restaurarCenario();        // (por baixo da tela preta)
+    aquece = false; desligar3D();
+    await Fase1.iniciar({ nome: PERSONAGEM.apelido || PERSONAGEM.nome, voz: E.voz });       // (4.3.2) Fase 1: a escola
+    restaurarCenario();
     el.classList.remove('cena'); el.hidden = true; tela.hidden = false; emCena = false;
     const t = $('anoTela'); if (t) { t.classList.remove('on'); setTimeout(() => t.remove(), 1000); }
     if (aoFechar) aoFechar();
@@ -10227,8 +10875,6 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       requestAnimationFrame(passoAno);
     });
     await esperar(1300);
-    txt.innerHTML = T('Fase 1 · em construção') + '<br><br><button type="button" class="pxBtn pxPrim" id="anoVoltar">' + T('Voltar ao menu') + '</button>';
-    await new Promise((fim) => { t.querySelector('#anoVoltar').addEventListener('click', () => { if (Som.clique) Som.clique(); fim(); }); });
   };
 
   // ----- eventos -----
@@ -10810,7 +11456,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.2',
+  versao: '4.3.3',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
