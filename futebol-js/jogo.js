@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.3
+   FUTEBOL JS · jogo.js · versão 4.3.4
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.3.4 — correção da sala + música:
+     - Armário saiu da porta (não prende mais); se a cena terminar dentro de um móvel, o personagem é empurrado para fora.
+     - Sem barulho de torcida no criador/Fase 1; musiquinha de jazz sintetizada (triangle/sine/square/sawtooth + vassourinha).
+
    Novidades da versão 4.3.3 — FASE 1 · ESCOLA SANTA MARIA (depois do ano voltando, no modo história):
      - Personagem "bebê" (corpo 68%, cabeça 155%; opções cabecao/escala em makeAthlete) com pele, cabelo e rosto
        criados por você e SEM barba. Sala de aula 3D (quadro negro, 9 mesas/cadeiras, 7 alunos sentados, professora).
@@ -389,7 +393,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.3';
+const VERSAO_JOGO = '4.3.4';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -7983,7 +7987,8 @@ function frame(now) {
   atualizarBanco(rdt);
   ajustarSombras();
   if (GANCHO_RENDER) GANCHO_RENDER(rdt);                    // (4.3.0) o criador de personagem usa a câmera e o campo do jogo
-  Som.torcida(nivelTorcida());                             // torcida: só o relógio do shader (o resto é na placa de vídeo)
+  Som.torcida(GANCHO_RENDER ? 0 : nivelTorcida());         // (4.3.4) criador/fase: sem barulho de torcida
+  // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
@@ -9912,6 +9917,99 @@ const Dialogo = (() => {
   return { mostrar, esconder };
 })();
 
+
+// ============================================================
+// (4.3.4) JAZZ · musiquinha sintetizada (só ondas do WebAudio: triangle, sine, square, sawtooth + ruído)
+// ============================================================
+const Jazz = (() => {
+  const BPM = 92, BEAT = 60 / BPM;
+  // ii–V–I–vi (Dm9 · G13 · Cmaj9 · A7) e depois Em7 · A7 · Dm9 · G13 — notas MIDI
+  const ACORDES = [
+    { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
+    { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 77] },   // G13
+    { raiz: 36, notas: [55, 59, 62, 64], escala: [60, 62, 64, 67, 69, 71] },   // Cmaj9
+    { raiz: 45, notas: [55, 61, 64, 67], escala: [64, 67, 69, 72, 73, 76] },   // A7
+    { raiz: 40, notas: [55, 59, 62, 66], escala: [64, 66, 67, 71, 74, 76] },   // Em7
+    { raiz: 45, notas: [55, 61, 64, 67], escala: [61, 64, 67, 69, 72, 73] },   // A7
+    { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
+    { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 79] },   // G13
+  ];
+  let ctx = null, bus = null, ruido = null, timer = 0, prox = 0, compasso = 0, tocando = false, lastMel = 0;
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  const nota = (tipo, m, t, dur, vol, o) => {
+    o = o || {};
+    const osc = ctx.createOscillator(), g = ctx.createGain(), f = ctx.createBiquadFilter();
+    osc.type = tipo; osc.frequency.value = hz(m); if (o.det) osc.detune.value = o.det;
+    f.type = 'lowpass'; f.frequency.value = o.corte || 2400;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + (o.ataque || 0.012));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(f); f.connect(g); g.connect(bus);
+    osc.start(t); osc.stop(t + dur + 0.05);
+  };
+  const chiado = (t, dur, vol, freq) => {                      // "vassourinha" na caixa
+    const s = ctx.createBufferSource(); s.buffer = ruido;
+    const f = ctx.createBiquadFilter(), g = ctx.createGain();
+    f.type = 'highpass'; f.frequency.value = freq || 6500;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    s.connect(f); f.connect(g); g.connect(bus); s.start(t, Math.random() * 0.5, dur + 0.02);
+  };
+  const sw = (i) => (i % 2 ? BEAT * (2 / 3) : 0) + Math.floor(i / 2) * BEAT;   // colcheias com swing (i = 0..7)
+  const escolhe = (a) => a[Math.floor(Math.random() * a.length)];
+
+  const compassoAgenda = (t0, n) => {
+    const c = ACORDES[n % ACORDES.length], prox_ = ACORDES[(n + 1) % ACORDES.length];
+    // baixo caminhando (triângulo): raiz · terça/quinta · passagem · aproximação do próximo acorde
+    const b = [c.raiz, c.raiz + escolhe([3, 4, 7]), c.raiz + escolhe([5, 7, 9]), prox_.raiz + escolhe([-1, 1])];
+    for (let i = 0; i < 4; i++) nota('triangle', b[i], t0 + i * BEAT, BEAT * 0.9, 0.34, { corte: 700, ataque: 0.01 });
+    // piano elétrico (sine + triangle uma oitava acima, "comping" sincopado)
+    const comp = escolhe([[0, 3], [1.5, 3], [0, 2.67], [0.67, 2.5]]);
+    for (const tb of comp) for (const m of c.notas) {
+      nota('sine', m, t0 + tb * BEAT, BEAT * 1.1, 0.07, { corte: 3000 });
+      nota('triangle', m + 12, t0 + tb * BEAT, BEAT * 0.8, 0.025, { corte: 2200, det: 6 });
+    }
+    // pad de serra bem suave no 1º tempo (a cada 2 compassos) com filtro fechado
+    if (n % 2 === 0) for (const m of [c.notas[0] - 12, c.notas[2] - 12]) nota('sawtooth', m, t0, BEAT * 7.5, 0.018, { corte: 520, ataque: 0.6 });
+    // melodia (square suave, bem filtrada): frases curtas com pausas, variando a cada volta
+    let i = 0;
+    while (i < 8) {
+      if (Math.random() < 0.46) { i++; continue; }
+      const m = escolhe(c.escala) + (Math.random() < 0.2 ? 12 : 0);
+      const len = Math.random() < 0.35 ? 2 : 1;
+      nota('square', m, t0 + sw(i), BEAT * (len * 0.55), 0.045, { corte: 1500, ataque: 0.02 });
+      nota('sine', m + 12, t0 + sw(i), BEAT * (len * 0.5), 0.02);
+      i += len;
+    }
+    // bateria de vassourinha: ride em "tchi ta-ki" (swing) + chapéu nos tempos 2 e 4
+    for (let k = 0; k < 4; k++) { chiado(t0 + k * BEAT, 0.09, 0.05, 7000); chiado(t0 + k * BEAT + BEAT * (2 / 3), 0.05, 0.03, 8000); }
+    for (const k of [1, 3]) chiado(t0 + k * BEAT, 0.12, 0.05, 3500);
+  };
+
+  const laco = () => {
+    if (!tocando || !ctx) return;
+    while (prox < ctx.currentTime + 1.2) { compassoAgenda(prox, compasso++); prox += BEAT * 4; }
+  };
+  const tocar = () => {
+    if (tocando) return;
+    const A = (typeof Som !== 'undefined') ? Som.audio : null;
+    if (!A) return;
+    ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
+    bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.mestre);
+    bus.gain.linearRampToValueAtTime(0.9, ctx.currentTime + 1.5);
+    if (!ruido) { ruido = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
+    laco(); timer = setInterval(laco, 250);
+  };
+  const parar = () => {
+    if (!tocando) return;
+    tocando = false; clearInterval(timer);
+    const b = bus, c = ctx;
+    try { b.gain.cancelScheduledValues(c.currentTime); b.gain.setValueAtTime(b.gain.value, c.currentTime); b.gain.linearRampToValueAtTime(0, c.currentTime + 1.2); } catch (e) {}
+    setTimeout(() => { try { b.disconnect(); } catch (e) {} }, 2500);
+  };
+  return { tocar, parar, get tocando() { return tocando; } };
+})();
+
 // ---------------------------------------------------------------------
 // 14c. FASE 1 · ESCOLA (4.3.2) — "Escola Santa Maria". Sala de aula 3D com a professora, 9 cadeiras (7 ocupadas), conversas,
 // atividade de álgebra (3 questões) e cutscenes. Usa o mesmo palco do jogo (main scene/câmera, via GANCHO_RENDER): a sala é
@@ -10141,7 +10239,7 @@ const Fase1 = (() => {
     }
     F(2.0, 0.78, 0.8, 0xa8723c, -3.3, 0.39, -3.3); F(2.1, 0.05, 0.9, 0xc58a4a, -3.3, 0.8, -3.3);               // mesa da professora
     F(0.32, 0.2, 0.24, 0xc8202a, -3.9, 0.93, -3.3); F(0.32, 0.12, 0.24, 0x2a4f9a, -3.9, 1.09, -3.3); F(0.3, 0.14, 0.22, 0x3f9d2a, -3.4, 0.9, -3.4);
-    F(0.9, 1.0, 0.45, 0xe8e8e0, 4.1, 0.5, 3.0);                                                                  // armário
+    F(0.45, 1.0, 0.9, 0xe8e8e0, 4.2, 0.5, -2.2);                                                                  // armário
     const mob = L.malha(MAT_CORES); g.add(mob);
     const papel = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.012, 0.24), new THREE.MeshLambertMaterial({ color: 0xffffff })); papel.position.set(0, 0.63, LINHAS[1] + 0.02); g.add(papel);
     // bandeira do Brasil (a mesma bandeira pixelada da tela de idiomas)
@@ -10208,9 +10306,9 @@ const Fase1 = (() => {
   const camPara = (nome, corte) => { const c = CAMS[nome]; S.camAlvo = { px: c[0], py: c[1], pz: c[2], tx: c[3], ty: c[4], tz: c[5] }; S.camSeg = false; if (corte) S.camSnap = true; };
 
   // ------------------------------------------------------------------ colisão e interação
-  const RETS = []; for (const dz of LINHAS) for (const cx of COLS) RETS.push([cx - 0.52, cx + 0.52, dz - 0.33, dz + 0.9]); RETS.push([-4.4, -2.2, -3.8, -2.7], [3.6, 4.5, 2.7, 3.3]);
+  const RETS = []; for (const dz of LINHAS) for (const cx of COLS) RETS.push([cx - 0.52, cx + 0.52, dz - 0.28, dz + 0.78]); RETS.push([-4.4, -2.2, -3.8, -2.7], [3.95, 4.5, -2.65, -1.75]);
   function livre(x, z) {
-    const R = 0.26;
+    const R = 0.22;
     if (x < -SX + 0.3 || x > SX - 0.3 || z < -SZ + 0.3 || z > SZ - 0.3) return false;
     for (const [x0, x1, z0, z1] of RETS) if (x > x0 - R && x < x1 + R && z > z0 - R && z < z1 + R) return false;
     if (Math.hypot(x - PROF.x, z - PROF.z) < 0.55) return false;
@@ -10244,7 +10342,13 @@ const Fase1 = (() => {
 
   // ------------------------------------------------------------------ falas
   const nomeJog = () => S.nome;
-  const liberar = () => { S.modo = 'livre'; UI.ctl.hidden = false; S.bloq = performance.now() + 400; };
+  const liberar = () => {
+    S.modo = 'livre'; UI.ctl.hidden = false; S.bloq = performance.now() + 400;
+    const J = S.jog;                                  // se terminou a cena dentro de um móvel, sai dele (nunca fica preso)
+    if (!livre(J.x, J.z)) {
+      outer: for (let r = 0.1; r < 3; r += 0.1) for (let a = 0; a < 6.3; a += 0.4) { const x = J.x + Math.cos(a) * r, z = J.z + Math.sin(a) * r; if (livre(x, z)) { J.x = x; J.z = z; break outer; } }
+    }
+  };
   async function fala(quem, texto, shot, op) {
     if (shot) camPara(shot);
     const ator = quem === 'jog' ? S.jog : quem === 'prof' ? S.prof : quem === 'joao' ? S.joaoA : quem === 'lucia' ? S.luciaA : null;
@@ -10464,6 +10568,7 @@ const Fase1 = (() => {
   async function iniciar(op) {
     montarUI();
     op = op || {};
+    Jazz.tocar();
     const ap = PERSONAGEM.aparencia || {};
     S = { ativo: true, modo: 'cena', fase: 'antes', elenco: [], nome: op.nome || 'Você', voz: op.voz == null ? 2 : op.voz, cam: { px: 0.9, py: 1.45, pz: -0.6, tx: 3.2, ty: 1.0, tz: 4.0 }, camAlvo: null, camSnap: true,
       portaAng: 0, portaAlvo: 0, tLivre: 0, brigou: false, portaTrancada: false, joao: null, lucia: null, perfil: 0, acertos: 0, profFalou2: false, face: { x: 0, z: -1 },
@@ -10536,6 +10641,7 @@ const Fase1 = (() => {
     scene.remove(S.sala.g);
     S.sala.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material !== MAT_CORES) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
     UI.preto.hidden = true; UI.preto.classList.add('claro');
+    Jazz.parar();
     S = null;
   }
   return { iniciar, get ativo() { return !!(S && S.ativo); }, _estado: () => S };
@@ -11456,7 +11562,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.3',
+  versao: '4.3.4',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
