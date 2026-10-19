@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.2.5
+   FUTEBOL JS · jogo.js · versão 4.2.6
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,18 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.2.6:
+     - MENU INICIAL CABE EM TELA BAIXA (Opera/Chrome no celular dentro do Canva): as regras de altura
+       agora medem a parte VISÍVEL do jogo (#raizJogo vira "container"; cópias dos @media de altura em
+       @container, no fim do arquivo) e há um tamanho extra para alturas de até ~290 px.
+     - A linha da VERSÃO saiu do menu e agora aparece dentro de CONFIGURAÇÕES (no fim da tela).
+     - REPLAY do gol: o trecho é cortado no último "teletransporte" da bola (saída de bola, tiro de meta...) e
+       a câmera ignora valores inválidos: não varre mais o campo nem trava.
+     - Removido o texto "N faltas" do alto da tela (continua o cartão amarelo/vermelho).
+     - GOLEIRO preso na rede: se ele está dentro do gol, sai pela frente antes de ir buscar a bola (rotaGol).
+     - GOLEIRO em CRUZAMENTO: se a bola alta cai longe dele, só sai do gol em 3 de cada 10 jogadas
+       (gkSaiNoCruzamento); se cai perto (< 4,5 m), é dele.
+
    Novidades da versão 4.2.5:
      - JUIZ: tiro de meta, lateral e escanteio demoram só 0,5 s para ser marcados; o resto (falta,
        impedimento...) 1 s. O atraso não soma: só existe uma marcação agendada por vez (marcarComAtraso).
@@ -329,7 +341,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.2.5';
+const VERSAO_JOGO = '4.2.6';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -480,6 +492,14 @@ function goalCollide(p, ox, oz) {
 }
 // Caminho que contorna o gol: se o trajeto até o alvo cruza a armação, passa antes pela frente da trave.
 function rotaGol(p, tx, tz) {
+  // (4.2.6) Já está DENTRO do gol (rede)? Primeiro sai pela boca do gol (pela frente), senão a lateral da
+  // rede o prendia lá dentro quando ia buscar a bola do tiro de meta.
+  for (const side of [-1, 1]) {
+    const gx = side * HALF_L, rel = (p.x - gx) * side, relT = (tx - gx) * side;
+    if (rel > -0.05 && rel < GOAL_DEPTH + BODY_R + 0.3 && Math.abs(p.z) < GOAL_HALF + 0.35 && !(relT > -0.05 && Math.abs(tz) < GOAL_HALF + 0.35)) {
+      return { x: gx - side * 0.9, z: clamp(p.z, -(GOAL_HALF - 0.9), GOAL_HALF - 0.9) };
+    }
+  }
   for (const side of [-1, 1]) {
     const gx = side * HALF_L;
     const foraP = (p.x - gx) * side > -0.2, foraT = (tx - gx) * side > -0.2;
@@ -2916,6 +2936,15 @@ function marcarCavadinha(timeGoleiro, qual) {
 // ---------------------------------------------------------------------
 // Simula a bola solta (em passos de 0,1 s, com o atrito do gramado) e acha o primeiro ponto
 // DENTRO da área que o goleiro alcança antes do adversário mais rápido.
+// (4.2.6) Cruzamento (bola alta de um adversário caindo na área): se ela cai LONGE do goleiro, ele só
+// sai do gol em 3 de cada 10 cruzamentos (decisão tomada uma vez por jogada). Cai perto dele: é dele.
+function gkSaiNoCruzamento(p, qx, qz) {
+  if (Math.hypot(qx - p.x, qz - p.z) < 4.5) return true;
+  if (p.cruzSai === undefined || p.cruzDe !== ball.lastKicker || G.time - (p.cruzT || 0) > 4 || G.time < (p.cruzT || 0)) {
+    p.cruzSai = Math.random() < 0.3; p.cruzDe = ball.lastKicker; p.cruzT = G.time;
+  }
+  return p.cruzSai;
+}
 function goleiroAlcancaBolaSolta(gk, ownGx) {
   let x = ball.x, z = ball.z, y = ball.y, vx = ball.vx, vz = ball.vz, vy = ball.vy;
   const adv = opponentsOf(gk);
@@ -3032,15 +3061,18 @@ function gkThink(p, dt) {
     if (disc > 0) {
       const tq = (ball.vy + Math.sqrt(disc)) / g, qx = ball.x + ball.vx * tq, qz = ball.z + ball.vz * tq;
       if (tq < 2.5 && Math.abs(qx - ownGx) < BOX.depth && Math.abs(qz) < BOX.half && Math.hypot(qx - p.x, qz - p.z) < 12) {
-        if (tq < 0.45 && dist2D(p, { x: qx, z: qz }) < 1.5 && p.jumpT <= 0) p.jumpT = 0.5;
-        return seek(p, qx, qz, CONFIG.GK_SPEED * 1.3);
+        if (gkSaiNoCruzamento(p, qx, qz)) {
+          if (tq < 0.45 && dist2D(p, { x: qx, z: qz }) < 1.5 && p.jumpT <= 0) p.jumpT = 0.5;
+          return seek(p, qx, qz, CONFIG.GK_SPEED * 1.3);
+        }
       }
     }
   }
   // Bola solta entrando na área (lançamento, passe longo, rebote): se ele chega antes do
   // atacante mais perto, sai para pegar — não fica parado na linha só porque não foi chute.
   if (G.state === 'play' && !holder && !ball.isShot) {
-    const alvo = goleiroAlcancaBolaSolta(p, ownGx);
+    let alvo = goleiroAlcancaBolaSolta(p, ownGx);
+    if (alvo && ball.y > 1.2 && ball.lastKicker && ball.lastKicker.team !== p.team && !gkSaiNoCruzamento(p, alvo.x, alvo.z)) alvo = null;
     if (alvo) return seek(p, alvo.x, alvo.z, CONFIG.GK_SPEED * 1.3);
   }
   if (G.state === 'play' && holder && holder.team !== p.team) {
@@ -6650,7 +6682,8 @@ function updateHUD() {
     f.style.transform = 'scaleX(' + (pct / 100) + ')';
     setClass(f, 'low', user.exhausted || pct < 25);
   }
-  const chip = user.red ? '<i class="vm"></i> EXPULSO' : user.yellow ? '<i class="am"></i> AMARELO · ' + (user.fouls || 0) + ' faltas' : (user.fouls ? (user.fouls) + (user.fouls === 1 ? ' falta' : ' faltas') : '');
+  // (4.2.6) sem a contagem de faltas na tela: só o cartão (amarelo/vermelho)
+  const chip = user.red ? '<i class="vm"></i> EXPULSO' : user.yellow ? '<i class="am"></i> AMARELO' : '';
   if (hudCache.chip !== chip) { hudCache.chip = chip; $('cardChip').innerHTML = chip; $('cardChip').hidden = !chip; }
   let hint = '';
   if (mode === 'celebrate') hint = 'Comemore! ' + Math.max(0, Math.ceil(G.celebT)) + ' s';
@@ -7602,6 +7635,8 @@ function cameraReplay(R, bola, rdt) {
   } else if (R.cam === 0) { px = bola.x * 0.85; py = 12; pz = -(HALF_W + 8); }                        // TV (em cima das placas)
   else if (R.cam === 1) { px = R.lado * (HALF_L + 9); py = 4.5; pz = bola.z * 0.3; }                   // atrás do gol, por cima da rede
   else { px = bola.x - R.lado * 5.5; py = 1.5; pz = bola.z + 4; }                                      // perto, rasteira
+  if (![px, py, pz, tx, ty, tz].every(Number.isFinite)) return;      // (4.2.6) valor inválido: mantém a câmera como está
+  if (R.camPos && !Object.values(R.camPos).every(Number.isFinite)) R.camPos = null;
   const k = R.camPos ? 1 - Math.exp(-rdt * 4) : 1;
   R.camPos = R.camPos || { px, py, pz, tx, ty, tz };
   const C = R.camPos;
@@ -7618,7 +7653,16 @@ function mostrarLinhas(R) {
 // Gol: os 10 s antes do gol (o gravador continua 1,5 s depois do gol para pegar a bola na rede).
 function iniciarReplayGol(depois) {
   const tg = G.tGol || G.time;
-  iniciarReplay({ tipo: 'gol', quadros: trechoReplay(tg - 10, tg + 1.5), lado: G.ladoGol || 1, depois });
+  // (4.2.6) Corta o replay no último "teletransporte" da bola (saída de bola, tiro de meta, lateral...):
+  // antes dele os bonecos e a bola mudam de lugar de um quadro para o outro e a câmera ficava
+  // varrendo o campo de ponta a ponta (replay "bugado").
+  let quadros = trechoReplay(tg - 10, tg + 1.5);
+  const kb = CORPOS.length * VAL_POR_CORPO;
+  for (let i = quadros.length - 1; i > 0; i--) {
+    const a = quadros[i - 1].d, c = quadros[i].d;
+    if (Math.hypot(a[kb] - c[kb], a[kb + 2] - c[kb + 2]) > 6) { quadros = quadros.slice(i); break; }
+  }
+  iniciarReplay({ tipo: 'gol', quadros, lado: G.ladoGol || 1, depois });
 }
 // Impedimento: do passe menos 2 s até o passe.
 function iniciarReplayImpedimento(reg, depois) {
@@ -9007,9 +9051,13 @@ function montarTelaDeSelecao(box) {
     h += '</div>';
     const como = document.querySelector('#startScreen .howto');   // os controles saíram da tela inicial: ficam aqui
     if (como) h += '<div class="selGrupo comoJogar"><h3>COMO JOGAR</h3>' + como.outerHTML + '</div>';
+    h += '<div class="selGrupo versaoCfg"><h3>VERSÃO</h3><div class="selItem" id="cfgVersao"></div></div>';   // (4.2.6) a versão fica aqui, não no menu
     h += '</div>';
     const rolagem = tela.scrollTop;
+    const vInfo = $('versaoInfo'), guarda = $('versaoGuarda');
+    if (vInfo && guarda) guarda.appendChild(vInfo);                // (tira antes de apagar a tela, senão ela some junto)
     tela.innerHTML = h;
+    if (vInfo && $('cfgVersao')) { vInfo.style.cssText = 'position:static;display:block;font-size:12px;color:var(--chalk);opacity:.85'; $('cfgVersao').appendChild(vInfo); }
     tela.scrollTop = rolagem;
     if ($('cfgTime0').value === $('cfgTime1').value) {
       const info = tela.querySelector('[data-id="cfgTime1"]').closest('.selItem').querySelector('.selInfo');
@@ -9267,15 +9315,15 @@ function montarMenuInicial() {
 @media (hover: hover) { .mxBotoes .pxBtn:hover:not(:disabled)::before { opacity: 1; } }
 
 /* ---------- menu inicial ---------- */
-.mxMenu { position: relative; width: min(680px, 100%); margin: auto; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, 3.2vh, 28px); padding-bottom: 28px; }
-.mxLogo { display: block; width: auto; height: auto; max-width: min(560px, 92%); max-height: 30vh; pointer-events: none; -webkit-user-drag: none; animation: mxFlutua 1.8s steps(1) infinite alternate; }
+.mxMenu { position: relative; width: min(680px, 100%); margin: auto; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, calc(3.2 * var(--avh, 1vh)), 28px); padding-bottom: 28px; }
+.mxLogo { display: block; width: auto; height: auto; max-width: min(560px, 92%); max-height: calc(30 * var(--avh, 1vh)); pointer-events: none; -webkit-user-drag: none; animation: mxFlutua 1.8s steps(1) infinite alternate; }
 @keyframes mxFlutua { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .mxLogo { animation: none; } }
-.mxBotoes { width: min(340px, 86%); display: flex; flex-direction: column; gap: clamp(8px, 2vh, 16px); }
+.mxBotoes { width: min(340px, 86%); display: flex; flex-direction: column; gap: clamp(8px, calc(2 * var(--avh, 1vh)), 16px); }
 .mxRodape { position: absolute; left: 0; right: 0; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); text-align: center; color: var(--mx-creme); }
 @media (max-height: 620px) and (min-aspect-ratio: 5/4) {
   .mxMenu { flex-direction: row; gap: 28px; width: min(920px, 100%); padding-bottom: 22px; }
-  .mxLogo { max-width: 52%; max-height: 74vh; }
+  .mxLogo { max-width: 52%; max-height: calc(74 * var(--avh, 1vh)); }
   .mxBotoes { width: min(300px, 44%); gap: 8px; flex: 0 0 auto; }
   .mxBotoes .pxBtn { --p: var(--p3, 3px); font-size: 14px; }
   .mxBotoes .pxPrim { font-size: 18px; }
@@ -9369,8 +9417,8 @@ function montarMenuInicial() {
     '</nav>';
   tela.appendChild(menu);
   const rodape = document.createElement('div');
-  rodape.className = 'mxRodape';
-  rodape.appendChild($('versaoInfo'));                      // a linha "versão X · origem" continua aparecendo
+  rodape.className = 'mxRodape'; rodape.id = 'versaoGuarda'; rodape.hidden = true;
+  rodape.appendChild($('versaoInfo'));                      // (4.2.6) a linha "versão X · origem" agora aparece em Configurações
   tela.appendChild(rodape);
   const veu = document.createElement('div');
   veu.className = 'mxVeu'; veu.id = 'mxVeu'; veu.hidden = true;
@@ -9650,12 +9698,56 @@ window.addEventListener('orientationchange', ajustarPixelArt);
   .mxBotoes .pxBtn { --p: var(--p2, 2px); font-size: 12px; height: 38px; } .mxBotoes .pxPrim { font-size: 15px; height: 42px; }
   .mxBotoes { gap: 5px; } .mxMenu { padding-bottom: 14px; }
 }
+/* telas MUITO baixas (Opera/Chrome no celular com barras: a parte visível do jogo fica com ~250 px) */
+@media (max-height: 290px) and (orientation: landscape) {
+  .mxMenu { gap: 16px; padding-bottom: 10px; }
+  .mxBotoes { gap: 3px; width: min(260px, 46%); }
+  .mxBotoes .pxBtn { --p: var(--p2, 2px); font-size: 10px; height: 28px; } .mxBotoes .pxPrim { font-size: 13px; height: 34px; }
+  .mxRodape { bottom: 2px; font-size: 9px; }
+}
 /* telas estreitas (celular em pé enquanto o aviso "gire" não aparece, ou janelas pequenas) */
 @media (max-width: 420px) {
   .mxBotoes { width: 92%; } .pxBtn { font-size: 14px; } #toast { white-space: normal; text-align: center; max-width: 90vw; }
 }
 `;
   document.head.appendChild(st);
+})();
+
+// ---------------------------------------------------------------------
+// (4.2.6) MEDIDAS PELA PARTE VISÍVEL, NÃO PELO IFRAME. No Canva o iframe pode ser bem mais alto que a
+// parte que aparece na tela (barras do navegador, rolagem da página). Os "@media (max-height...)" medem
+// o iframe INTEIRO, então no Opera/Chrome do celular o menu ficava no tamanho de tela grande e cortava
+// embaixo. Aqui o #raizJogo (que já é encaixado só na parte visível) vira um "container" e uma cópia de
+// cada @media de altura é escrita como @container (mede o #raizJogo). As cópias vão por último e valem
+// por cima. Sem suporte a container queries, nada muda (continuam os @media de antes).
+// ---------------------------------------------------------------------
+(function espelharMediaEmContainer() {
+  try {
+    if (!(window.CSS && CSS.supports && CSS.supports('container-type: size'))) return;
+    let saida = '';
+    for (const el of Array.from(document.querySelectorAll('style'))) {
+      if (el.dataset.espelho) continue;
+      const t = el.textContent || '';
+      let i = 0;
+      while ((i = t.indexOf('@media', i)) >= 0) {
+        const ab = t.indexOf('{', i);
+        if (ab < 0) break;
+        let n = 1, j = ab + 1;
+        while (j < t.length && n > 0) { const c = t[j++]; if (c === '{') n++; else if (c === '}') n--; }
+        const consulta = t.slice(i + 6, ab);
+        if (/max-height/.test(consulta) && !/hover|reduced|prefers/.test(consulta)) {
+          const nova = consulta.replace(/orientation:\s*landscape/g, 'min-aspect-ratio: 1/1');
+          saida += '@container' + nova + t.slice(ab, j) + '\n';
+        }
+        i = j;
+      }
+    }
+    if (!saida) return;
+    raizJogo.style.containerType = 'size';
+    const st = document.createElement('style');
+    st.dataset.espelho = '1'; st.textContent = saida;
+    document.head.appendChild(st);
+  } catch (e) { /* segue com os @media normais */ }
 })();
 
 // ---------------------------------------------------------------------
@@ -9666,7 +9758,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.2.5',
+  versao: '4.2.6',
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
   salvarJogo, listarSaves, apagarSave,
