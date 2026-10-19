@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.2.6
+   FUTEBOL JS · jogo.js · versão 4.3.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,30 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.3.0 (começo do MODO HISTÓRIA):
+     - Jogar agora pergunta: Modo história ou Partida livre (partida livre = o jogo de sempre).
+     - Modo história abre o CRIADOR DE PERSONAGEM: passo 1 (nome, apelido, nome na camisa, número
+       preferido) e passo 2 (aparência) com um bonequinho 3D ao lado, que gira 360° (arraste) e dá zoom
+       na parte escolhida (pele, cabelo, barba, rosto).
+     - Pele: escala de Fitzpatrick (6 tons). Cabelo: 16 cortes em blocos + 8 cores. Barba: 7 estilos +
+       só bigodinho (fino, médio, grosso) + cor. Rosto: 8 variações (sério, sorridente, bravo, sardas,
+       olhos azuis/verdes, cicatriz). Tudo em dados (ESTILOS_CABELO, ESTILOS_BARBA, ROSTOS...).
+     - Criador completo em 4 passos: identidade, aparência, equipamento (blusa manga curta/longa, meião curto/
+       normal/longo, 10 chuteiras desenhadas em textura) e estilo de jogo (pé dominante, comemoração: aviãozinho
+       ou joelhada, e tom de voz: 5 vozes da mais aguda à mais grave). Uniforme da montagem todo branco.
+     - Cortes com degradê/fade agora são pintados em pixels na textura da cabeça (sem cubos extras); barbas
+       conectadas da lateral até a frente e sem passar por baixo da cabeça.
+     - Componentes reutilizáveis: Mumble (fala por letras/"blips", 5 vozes) e Dialogo (caixa de diálogo pixel).
+     - Salvar personagem: menus somem, ele aquece, o campo aparece, fala 4 falas e a tela preta mostra o ano
+       atual voltando 12 anos (loading escondido). A fase 1 ainda não existe: termina num aviso e volta ao menu.
+
+   Novidades da versão 4.2.7:
+     - SOCIETY agora é 4 x 4 (goleiro + 3 de linha; formações com 3 jogadores de linha em FORMACOES).
+     - SOCIETY, replay: na câmera de trás do gol a rede/grade some (TELA_MESH), não tampa mais a vista.
+     - SOCIETY, banco: 3 reservas de cada time sentados lado a lado num banquinho encostado na grade
+       (assentoBanco / ehSociety). Quem vai entrar levanta e aquece na frente do lugar; quem sai bate na
+       mão dele e senta no mesmo lugar. Sem 4º árbitro nem placa (só o texto da cena); só 3 reservas por time.
+
    Novidades da versão 4.2.6:
      - MENU INICIAL CABE EM TELA BAIXA (Opera/Chrome no celular dentro do Canva): as regras de altura
        agora medem a parte VISÍVEL do jogo (#raizJogo vira "container"; cópias dos @media de altura em
@@ -341,7 +365,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.2.6';
+const VERSAO_JOGO = '4.3.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -587,7 +611,7 @@ const CAMPOS = {
   varzea: { nome: 'Várzea (7 x 7)', comprimento: 78, largura: 48, jogadores: 7, estadio: 'varzea',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#5d7a33', gramaB: '#6b8a3a', fundo: '#7a6a45', padrao: 'manchas', faixas: 0, linhas: '#f1ead2' } },
-  society: { nome: 'Society (5 x 5)', comprimento: 48, largura: 30, jogadores: 5, gol: { largura: 5.5, altura: 2.3 }, estadio: 'society',
+  society: { nome: 'Society (4 x 4)', comprimento: 48, largura: 30, jogadores: 4, gol: { largura: 5.5, altura: 2.3 }, estadio: 'society',
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 99, cartoesAcumulam: false },
     aparencia: { gramaA: '#2c8a3e', gramaB: '#2c8a3e', fundo: '#1f5f2b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   oficial: { nome: 'Oficial (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arena',
@@ -600,11 +624,11 @@ const CAMPOS = {
 // proporcionalmente (ver montarFormacao). A primeira linha é zaga (DEF), a última é ataque
 // (FWD), as do meio são meio-campo (MID).
 const FORMACOES = {
-  '4-4-2':   { nome: '4-4-2 (clássica)',    linhas: { 4: [2, 1, 1], 6: [2, 3, 1], 10: [4, 4, 2] } },
-  '4-3-3':   { nome: '4-3-3 (ofensiva)',    linhas: { 4: [1, 2, 1], 6: [2, 2, 2], 10: [4, 3, 3] } },
-  '5-3-2':   { nome: '5-3-2 (defensiva)',   linhas: { 4: [2, 1, 1], 6: [3, 2, 1], 10: [5, 3, 2] } },
-  '3-5-2':   { nome: '3-5-2 (meio forte)',  linhas: { 4: [1, 2, 1], 6: [2, 3, 1], 10: [3, 5, 2] } },
-  '4-2-3-1': { nome: '4-2-3-1 (compacta)',  linhas: { 4: [1, 1, 1, 1], 6: [2, 1, 2, 1], 10: [4, 2, 3, 1] } },
+  '4-4-2':   { nome: '4-4-2 (clássica)',    linhas: { 3: [1, 1, 1], 4: [2, 1, 1], 6: [2, 3, 1], 10: [4, 4, 2] } },
+  '4-3-3':   { nome: '4-3-3 (ofensiva)',    linhas: { 3: [1, 2], 4: [1, 2, 1], 6: [2, 2, 2], 10: [4, 3, 3] } },
+  '5-3-2':   { nome: '5-3-2 (defensiva)',   linhas: { 3: [2, 1], 4: [2, 1, 1], 6: [3, 2, 1], 10: [5, 3, 2] } },
+  '3-5-2':   { nome: '3-5-2 (meio forte)',  linhas: { 3: [1, 2], 4: [1, 2, 1], 6: [2, 3, 1], 10: [3, 5, 2] } },
+  '4-2-3-1': { nome: '4-2-3-1 (compacta)',  linhas: { 3: [1, 1, 1], 4: [1, 1, 1, 1], 6: [2, 1, 2, 1], 10: [4, 2, 3, 1] } },
 };
 
 // ---- Táticas. Valores 1 = normal. Usados em aiCarry, bestPassReceiver, formationTarget,
@@ -698,6 +722,8 @@ const NOMES_TECNICO = ['Professor Carlão', 'Seu Bené', 'Mister Raul', 'Tio Zec
   'Seu Jorjão', 'Comandante Lula', 'Doutor Valter', 'Professora Neide', 'Tio Juca'];
 
 // ---- Armazenamento no aparelho (com proteção: no modo privado ele pode não existir).
+const PERSONAGEM = { ativo: false, nome: '', apelido: '', nomeCamisa: '', numero: 9, aparencia: null, pe: 'D', comemoracao: 1, voz: 2 };   // (4.3.0) personagem do modo história
+function personagemAparencia() { return Object.assign({}, PERSONAGEM.aparencia, { nomeCamisa: PERSONAGEM.nomeCamisa }); }
 const salvo = {
   ler(chave, padrao) { try { const v = localStorage.getItem(chave); return v ? JSON.parse(v) : padrao; } catch (e) { return padrao; } },
   gravar(chave, valor) { try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (e) { /* sem espaço/privado */ } },
@@ -1324,6 +1350,8 @@ const Som = (() => {
   return {
     ligar, torcida,
     get mudo() { return mudo; },
+    get audio() { return ctx ? { ctx, mestre } : null; },        // (4.3.0) para o Mumble (fala) usar o mesmo áudio
+
     alternarMudo() {
       mudo = !mudo;
       try { localStorage.setItem('futebolJsMudo', mudo ? '1' : '0'); } catch (e) { /* ok */ }
@@ -1564,28 +1592,172 @@ function buildGoal(side) {
 const PELES = ['#F2C9A5', '#DDA67E', '#BF8159', '#946042', '#62402A'];
 const CABELOS = ['#1C140F', '#3B2416', '#6B4423', '#C9A15A', '#0E0E0E'];
 
+// (4.3.0) PERSONALIZAÇÃO DO PERSONAGEM (modo história). Tudo é DADO: para criar um corte novo, basta uma
+// linha em ESTILOS_CABELO / ESTILOS_BARBA / ROSTOS. Cada caixa é [largura(x), altura, profundidade(z), x, y, z, mix];
+// o boneco olha para +X (frente) e a cabeça vai de x -0,24 a 0,24, de y 1,36 a 1,88 e de z -0,26 a 0,26.
+// mix (opcional) = quanto a cor se mistura com a pele (0 = cor do cabelo, 1 = pele): faz o "degradê"/raspado.
+// Os 3 primeiros cortes são os que os outros jogadores já usavam (índices antigos preservados).
+const PELES_FITZ = [   // escala de Fitzpatrick (I a VI), na ordem da imagem de referência
+  { id: 'I',   nome: 'Tipo I · muito clara',      cor: '#F3D5BC' },
+  { id: 'II',  nome: 'Tipo II · clara',            cor: '#E3B592' },
+  { id: 'III', nome: 'Tipo III · média',           cor: '#C99A77' },
+  { id: 'IV',  nome: 'Tipo IV · morena',           cor: '#A8734C' },
+  { id: 'V',   nome: 'Tipo V · parda escura',      cor: '#7C4A2A' },
+  { id: 'VI',  nome: 'Tipo VI · negra',            cor: '#3E2723' },
+];
+const CORES_CABELO = [
+  { nome: 'Preto', cor: '#15100D' }, { nome: 'Castanho escuro', cor: '#3B2416' }, { nome: 'Castanho', cor: '#6B4423' },
+  { nome: 'Castanho claro', cor: '#8E6A3F' }, { nome: 'Loiro', cor: '#C9A15A' }, { nome: 'Ruivo', cor: '#A4482A' },
+  { nome: 'Grisalho', cor: '#8D8F93' }, { nome: 'Branco', cor: '#D8D8D8' },
+];
+const ESTILOS_CABELO = [
+  { nome: 'Curto', caixas: [[0.52, 0.14, 0.56, -0.01, 1.91, 0], [0.08, 0.32, 0.56, -0.25, 1.73, 0]] },
+  { nome: 'Volumoso', caixas: [[0.52, 0.24, 0.56, -0.01, 1.95, 0], [0.1, 0.4, 0.56, -0.24, 1.7, 0], [0.36, 0.2, 0.06, -0.04, 1.76, -0.27], [0.36, 0.2, 0.06, -0.04, 1.76, 0.27]] },
+  { nome: 'Ralo', caixas: [[0.5, 0.06, 0.54, -0.01, 1.89, 0], [0.06, 0.18, 0.54, -0.24, 1.8, 0]] },
+  { nome: 'Careca', caixas: [] },
+  { nome: 'Raspado', caixas: [[0.5, 0.045, 0.54, -0.01, 1.9, 0, 0.35]], fade: { s: 0, f: 9 } },
+  { nome: 'Militar', caixas: [[0.5, 0.09, 0.54, -0.01, 1.925, 0]], fade: { s: 2, f: 9 } },
+  { nome: 'Degradê com risco', caixas: [[0.5, 0.1, 0.54, -0.01, 1.93, 0]], fade: { s: 2, f: 10, risco: 6 } },
+  { nome: 'Topete', caixas: [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.26, 0.14, 0.5, 0.1, 1.99, 0]], fade: { s: 2, f: 8 } },
+  { nome: 'Para trás', caixas: [[0.5, 0.12, 0.54, -0.05, 1.93, 0], [0.1, 0.2, 0.5, -0.27, 1.86, 0]], fade: { s: 3, f: 9 } },
+  { nome: 'Social', caixas: [[0.5, 0.14, 0.54, -0.01, 1.93, 0], [0.52, 0.04, 0.2, 0, 1.995, 0.12], [0.06, 0.24, 0.54, -0.25, 1.77, 0]], fade: { s: 2, f: 9 } },
+  { nome: 'Franja', caixas: [[0.52, 0.13, 0.56, -0.02, 1.93, 0], [0.06, 0.14, 0.54, 0.255, 1.86, 0], [0.1, 0.07, 0.1, 0.12, 2.0, 0.1], [0.1, 0.07, 0.1, 0, 2.01, -0.12], [0.1, 0.08, 0.1, -0.1, 2.0, 0.08]], fade: { s: 2, f: 8 } },
+  { nome: 'Black power', caixas: [[0.56, 0.3, 0.62, -0.03, 2.01, 0]], fade: { s: 2, f: 8 } },
+  { nome: 'Cacheado longo', caixas: [[0.56, 0.2, 0.62, -0.02, 1.96, 0], [0.42, 0.52, 0.1, -0.07, 1.62, 0.32], [0.42, 0.52, 0.1, -0.07, 1.62, -0.32], [0.14, 0.62, 0.66, -0.3, 1.56, 0], [0.06, 0.1, 0.54, 0.255, 1.88, 0]] },
+  { nome: 'Ondulado médio', caixas: [[0.54, 0.18, 0.58, -0.02, 1.945, 0], [0.4, 0.32, 0.08, -0.06, 1.7, 0.3], [0.4, 0.32, 0.08, -0.06, 1.7, -0.3], [0.1, 0.4, 0.6, -0.28, 1.65, 0], [0.06, 0.1, 0.4, 0.26, 1.88, 0.06]] },
+  { nome: 'Longo liso', caixas: [[0.52, 0.14, 0.56, -0.04, 1.94, 0], [0.1, 0.52, 0.52, -0.27, 1.62, 0], [0.3, 0.2, 0.04, -0.1, 1.74, 0.275], [0.3, 0.2, 0.04, -0.1, 1.74, -0.275]] },
+  { nome: 'Coque com degradê', caixas: [[0.5, 0.1, 0.54, -0.02, 1.925, 0], [0.22, 0.2, 0.22, -0.2, 2.06, 0]], fade: { s: 2, f: 9 } },
+  { nome: 'Coque longo', caixas: [[0.5, 0.12, 0.54, -0.04, 1.93, 0], [0.24, 0.22, 0.24, -0.22, 2.07, 0], [0.08, 0.3, 0.4, -0.27, 1.7, 0], [0.3, 0.16, 0.04, -0.08, 1.76, 0.275], [0.3, 0.16, 0.04, -0.08, 1.76, -0.275]] },
+];
+// Barbas: "caixas" são os volumes 3D (laterais, queixo); o desenho no rosto (bigode, falhas) está em pintarRosto.
+const ESTILOS_BARBA = [
+  { nome: 'Sem barba', caixas: [] },
+  { nome: 'Por fazer', caixas: [] },
+  { nome: 'Curta', caixas: [[0.52, 0.22, 0.03, 0.02, 1.47, 0.268], [0.52, 0.22, 0.03, 0.02, 1.47, -0.268], [0.04, 0.09, 0.54, 0.26, 1.405, 0]] },
+  { nome: 'Cheia', caixas: [[0.52, 0.28, 0.03, 0.02, 1.5, 0.268], [0.52, 0.28, 0.03, 0.02, 1.5, -0.268], [0.05, 0.11, 0.54, 0.265, 1.415, 0]] },
+  { nome: 'Longa', caixas: [[0.52, 0.28, 0.03, 0.02, 1.5, 0.268], [0.52, 0.28, 0.03, 0.02, 1.5, -0.268], [0.05, 0.11, 0.54, 0.265, 1.415, 0], [0.14, 0.1, 0.36, 0.31, 1.41, 0]] },
+  { nome: 'Cavanhaque', caixas: [[0.05, 0.1, 0.22, 0.262, 1.41, 0]] },
+  { nome: 'Desenhada', caixas: [[0.5, 0.2, 0.03, 0.01, 1.46, 0.268], [0.5, 0.2, 0.03, 0.01, 1.46, -0.268], [0.04, 0.08, 0.54, 0.26, 1.4, 0]] },
+  { nome: 'Bigode fino', caixas: [] },
+  { nome: 'Bigode médio', caixas: [] },
+  { nome: 'Bigode grosso', caixas: [] },
+];
+const ROSTOS = [
+  { nome: 'Padrão' }, { nome: 'Sério' }, { nome: 'Sorridente' }, { nome: 'Bravo' },
+  { nome: 'Sardas' }, { nome: 'Olhos azuis', iris: '#3A7BD5' }, { nome: 'Olhos verdes', iris: '#4C9A5B' }, { nome: 'Cicatriz' },
+];
+const hexNum = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
+const corCss = (c) => (typeof c === 'string' ? c : '#' + c.toString(16).padStart(6, '0'));
+function misturarCor(a, b, t) {      // t = 0 → a, t = 1 → b (cores 0xRRGGBB)
+  const ch = (n, sh) => (n >> sh) & 255, m = (sh) => Math.round(ch(a, sh) + (ch(b, sh) - ch(a, sh)) * t);
+  return (m(16) << 16) | (m(8) << 8) | m(0);
+}
+
 // Atlas de cada jogador (128×32): rosto, área branca (para as peças de cor), frente e costas da camisa.
 //   x 0–16, y 0–16: rosto   |  x 0–16, y 16–32: branco  |  x 16–48: camisa (frente)  |  x 48–80: camisa (costas)
 const ATLAS_W = 128, ATLAS_H = 32;
 const regiao = (x0, y0, x1, y1) => [x0 / ATLAS_W, 1 - y1 / ATLAS_H, x1 / ATLAS_W, 1 - y0 / ATLAS_H];
 const UV_ROSTO = regiao(0, 0, 16, 16), UV_BRANCO = regiao(4, 20, 12, 28);
 const UV_FRENTE = regiao(16, 0, 48, 32), UV_COSTAS = regiao(48, 0, 80, 32);
-
-function pintarRosto(g, ox, oy, pele) {
-  g.fillStyle = pele; g.fillRect(ox, oy, 16, 16);
-  g.fillStyle = '#16120F';
-  g.fillRect(ox + 3, oy + 5, 4, 1); g.fillRect(ox + 9, oy + 5, 4, 1);
-  g.fillRect(ox + 4, oy + 7, 2, 3); g.fillRect(ox + 10, oy + 7, 2, 3);
-  g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(ox + 7, oy + 9, 2, 2);
-  g.fillStyle = '#7A3B2E'; g.fillRect(ox + 6, oy + 12, 4, 1);
+// (4.3.0) pedaços novos do atlas (a parte livre, x 80..128): laterais e nuca da cabeça (degradê/fade pintado em
+// pixels) e o desenho da chuteira. Só são desenhados para quem usa (personagem); os outros jogadores seguem como antes.
+const UV_LADO_Z1 = regiao(80, 0, 96, 16), UV_LADO_Z2 = regiao(96, 0, 112, 16), UV_NUCA = regiao(112, 0, 128, 16), UV_BOTA = regiao(80, 16, 96, 32);
+const faceCabeca = (o) => {
+  const e = ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0];
+  return e.fade ? (i) => (i === 0 ? UV_ROSTO : i === 4 ? UV_LADO_Z1 : i === 5 ? UV_LADO_Z2 : i === 1 ? UV_NUCA : null) : (i) => (i === 0 ? UV_ROSTO : null);
+};
+// Chuteiras: o desenho vai numa textura 16x16 (nada de geometria nova → não pesa). Para criar outra: uma linha aqui.
+const CHUTEIRAS = [
+  { nome: 'Clássica preta', base: '#17171B', det: '#F2F2EE', pad: 'faixa' },
+  { nome: 'Branca pura', base: '#F2F2EE', det: '#B9BFCA', pad: 'faixa' },
+  { nome: 'Azul royal', base: '#1C4FB5', det: '#F2F2EE', pad: 'listras' },
+  { nome: 'Vermelho fogo', base: '#C8202A', det: '#17171B', pad: 'degrade' },
+  { nome: 'Amarelo neon', base: '#E6EE22', det: '#17171B', pad: 'listras' },
+  { nome: 'Verde limão', base: '#58D82A', det: '#0E3B12', pad: 'pontos' },
+  { nome: 'Rosa choque', base: '#FF3E9A', det: '#FFFFFF', pad: 'degrade' },
+  { nome: 'Laranja e preta', base: '#F7941D', det: '#17171B', pad: 'metade' },
+  { nome: 'Dourada', base: '#D9A92A', det: '#FFF1A8', pad: 'xadrez' },
+  { nome: 'Camuflada', base: '#3F5A32', det: '#1F2D1B', pad: 'camuflagem', det2: '#7D8A4F' },
+];
+const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+function pintarChuteira(g, ox, oy, c) {
+  const px = (x, y, w, h, cor) => { g.fillStyle = cor; g.fillRect(ox + x, oy + y, w || 1, h || 1); };
+  px(0, 0, 16, 16, c.base);
+  if (c.pad === 'faixa') { px(0, 6, 16, 2, c.det); px(0, 12, 16, 1, c.det); }
+  else if (c.pad === 'listras') for (let i = -16; i < 16; i += 5) for (let k = 0; k < 16; k++) { const x = i + k; if (x >= 0 && x < 16) px(x, k, 2, 1, c.det); }
+  else if (c.pad === 'degrade') for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (y / 16 > BAYER4[(y & 3) * 4 + (x & 3)] / 16 + 0.1) px(x, y, 1, 1, c.det);
+  else if (c.pad === 'pontos') for (let y = 1; y < 16; y += 4) for (let x = (y % 8 === 1 ? 1 : 3); x < 16; x += 4) px(x, y, 2, 2, c.det);
+  else if (c.pad === 'metade') { px(0, 8, 16, 8, c.det); px(0, 7, 16, 1, '#FFFFFF'); }
+  else if (c.pad === 'xadrez') for (let y = 0; y < 16; y += 2) for (let x = (y % 4 === 0 ? 0 : 2); x < 16; x += 4) px(x, y, 2, 2, c.det);
+  else if (c.pad === 'camuflagem') for (let i = 0; i < 26; i++) { const x = (i * 7 + 3) % 15, y = (i * 11 + 5) % 15; px(x, y, 2 + (i % 3), 2, i % 2 ? c.det : c.det2); }
 }
-function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema) {
+// Cabeça: laterais e nuca com o degradê (fade) em quadradinhos — pele que escurece onde o cabelo é raspado.
+function pintarLadosCabeca(g, ox, oy, o) {
+  const e = ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0], f = e.fade;
+  if (!f) return;
+  const pele = hexNum(o.pele), cab = hexNum(o.cabelo), escura = misturarCor(pele, 0x1a1008, 0.3), toque = misturarCor(cab, pele, 0.5);
+  const css = (n) => '#' + n.toString(16).padStart(6, '0');
+  for (let r = 0; r < 3; r++) {                                  // r: 0 = lado +Z, 1 = lado -Z, 2 = nuca
+    const bx = ox + r * 16;
+    g.fillStyle = css(pele); g.fillRect(bx, oy, 16, 16);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      let cor = null;
+      if (y < f.s) cor = css(cab);
+      else if (y < f.f) {
+        const nivel = 1 - (y - f.s) / (f.f - f.s), th = BAYER4[(y & 3) * 4 + (x & 3)] / 16;
+        if (nivel > th + 0.5) cor = css(toque); else if (nivel > th) cor = css(escura);
+      }
+      if (f.risco && y === f.risco && r < 2 && x > 2 && x < 14) cor = css(pele);       // risquinho
+      if (cor) { g.fillStyle = cor; g.fillRect(bx + x, oy + y, 1, 1); }
+    }
+  }
+}
+
+function pintarRosto(g, ox, oy, pele, o) {
+  o = o || {};
+  const R = o.rosto | 0, B = o.barba | 0, base = ROSTOS[R] || ROSTOS[0];
+  const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(ox + x, oy + y, w || 1, h || 1); };
+  const tinta = '#16120F';
+  const bc = corCss(o.corBarba != null ? o.corBarba : (o.cabelo != null ? o.cabelo : '#1C140F'));
+  g.fillStyle = pele; g.fillRect(ox, oy, 16, 16);
+  // sobrancelhas e olhos
+  if (R === 1) { px(3, 4, 4, 2, tinta); px(9, 4, 4, 2, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
+  else if (R === 2) { px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
+  else if (R === 3) { px(3, 4, 2, 1, tinta); px(5, 5, 2, 1, tinta); px(11, 4, 2, 1, tinta); px(9, 5, 2, 1, tinta); px(4, 7, 2, 2, tinta); px(10, 7, 2, 2, tinta); }
+  else if (base.iris) {
+    px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta);
+    px(3, 7, 3, 3, '#F2F2EE'); px(10, 7, 3, 3, '#F2F2EE'); px(4, 8, 2, 2, base.iris); px(11, 8, 2, 2, base.iris); px(5, 8, 1, 2, tinta); px(12, 8, 1, 2, tinta);
+  } else { px(3, 5, 4, 1, tinta); px(9, 5, 4, 1, tinta); px(4, 7, 2, 3, tinta); px(10, 7, 2, 3, tinta); }
+  g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(ox + 7, oy + 9, 2, 2);                 // nariz
+  if (R === 4) for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
+  if (R === 7) { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
+  // barba e bigode (desenhados no rosto; os volumes 3D ficam em ESTILOS_BARBA)
+  const linhas = (lista, c) => { for (const [y, x0, x1] of lista) px(x0, y, x1 - x0 + 1, 1, c); };
+  if (B === 1) { g.fillStyle = bc; g.globalAlpha = 0.38; g.fillRect(ox + 2, oy + 9, 12, 7); g.globalAlpha = 1; }
+  else if (B === 2) linhas([[9, 1, 2], [9, 13, 14], [10, 1, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 2, 13], [14, 2, 13], [15, 3, 12]], bc);
+  else if (B === 3 || B === 4) linhas([[8, 1, 2], [8, 13, 14], [9, 1, 3], [9, 12, 14], [10, 1, 14], [11, 1, 14], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 1, 14]], bc);
+  else if (B === 5) linhas([[10, 5, 10], [11, 5, 10], [12, 4, 5], [12, 10, 11], [13, 5, 10], [14, 5, 10], [15, 5, 10]], bc);
+  else if (B === 6) linhas([[7, 1, 1], [7, 14, 14], [8, 1, 1], [8, 14, 14], [9, 1, 1], [9, 14, 14], [10, 1, 1], [10, 14, 14], [10, 4, 11], [11, 1, 1], [11, 14, 14], [11, 4, 11], [12, 1, 5], [12, 10, 14], [13, 1, 14], [14, 1, 14], [15, 2, 13]], bc);
+  else if (B === 7) linhas([[11, 5, 10]], bc);
+  else if (B === 8) linhas([[10, 4, 11], [11, 4, 11]], bc);
+  else if (B === 9) linhas([[10, 3, 12], [11, 3, 12], [12, 3, 3], [12, 12, 12], [13, 3, 3], [13, 12, 12]], bc);
+  // boca (por cima de tudo)
+  const labio = B >= 2 && B !== 7 && B !== 8 && B !== 9 ? '#B0645A' : '#7A3B2E';
+  if (R === 2) { px(5, 11, 1, 1, labio); px(10, 11, 1, 1, labio); px(6, 12, 4, 1, labio); px(7, 12, 2, 1, '#F2F2EE'); }
+  else if (R === 3) { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
+  else if (R === 1) px(6, 12, 4, 1, B >= 2 ? '#B0645A' : '#6A2F26');
+  else px(6, 12, 4, 1, labio);
+}
+function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCamisa, corTexto) {
   g.fillStyle = cor; g.fillRect(ox, 0, 32, 32);
   g.fillStyle = listra; g.fillRect(ox, 22, 32, 4);
   g.fillStyle = gola; g.fillRect(ox + 11, 0, 10, 3);
   if (costas) {
-    g.fillStyle = '#FFFFFF'; g.font = 'bold 15px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(String(numero), ox + 16, 12);
+    g.fillStyle = corTexto || '#FFFFFF'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (nomeCamisa) {                               // (4.3.0) nome na camisa (só o seu jogador): nome em cima, número embaixo
+      g.font = 'bold 6px Arial'; g.fillText(String(nomeCamisa).toUpperCase().slice(0, 10), ox + 16, 6, 30);
+      g.font = 'bold 13px Arial'; g.fillText(String(numero), ox + 16, 16);
+    } else { g.font = 'bold 15px Arial'; g.fillText(String(numero), ox + 16, 12); }
   } else {
     if (emblema) desenharEmblema(g, ox + 19, 5, 8, 9, emblema);   // emblema do time no peito
     else { g.fillStyle = '#FFFFFF'; g.fillRect(ox + 19, 6, 7, 8); g.fillStyle = listra; g.fillRect(ox + 20, 7, 5, 6); }
@@ -1594,9 +1766,11 @@ function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema) {
 function atlasJogador(o) {
   return drawTexture(ATLAS_W, ATLAS_H, (g) => {
     g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, ATLAS_W, ATLAS_H);
-    pintarRosto(g, 0, 0, o.pele);
+    pintarRosto(g, 0, 0, o.pele, o);
     pintarCamisa(g, 16, o.camisa, o.listra, o.gola, o.numero, false, o.emblema);
-    pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true);
+    pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
+    if (o.estilo != null && (ESTILOS_CABELO[o.estilo] || {}).fade) pintarLadosCabeca(g, 80, 0, o);
+    if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
   });
 }
 function texNome(nome, fundo) {
@@ -1651,21 +1825,26 @@ function makeAthlete(o) {
   // existe uma segunda versão com JOELHO: coxa + canela (a canela gira no joelho, a 0,28 m do
   // quadril). Ela fica escondida e só aparece durante a joelhada — malha escondida não custa
   // chamada de desenho, então o jogo continua com o mesmo desempenho.
+  const meiao = o.meiao == null ? 1 : o.meiao, botaCor = o.chuteira != null ? 0xffffff : 0x1d1f24, botaUV = o.chuteira != null ? () => UV_BOTA : null;
   const perna = (z) => {
     const p = pivo(0, 0.74, z), L = new Lote(UV_BRANCO);
     L.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
-    L.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.45, 0);
-    L.caixa(0.32, 0.12, 0.24, 0x1d1f24, 0.04, -0.66, 0);
+    if (meiao === 0) { L.caixa(0.2, 0.2, 0.2, pele, 0, -0.38, 0); L.caixa(0.22, 0.14, 0.22, hex(o.meia), 0, -0.55, 0); }          // curto: só no tornozelo
+    else if (meiao === 2) L.caixa(0.225, 0.46, 0.225, hex(o.meia), 0, -0.39, 0);                                                    // longo: sobe pela coxa
+    else L.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.45, 0);
+    L.caixa(0.32, 0.12, 0.24, botaCor, 0.04, -0.66, 0, botaUV);
     L.caixa(0.33, 0.03, 0.25, hex(o.sola), 0.04, -0.715, 0);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LC = new Lote(UV_BRANCO);
     LC.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
+    if (meiao === 2) LC.caixa(0.225, 0.12, 0.225, hex(o.meia), 0, -0.22, 0);
     p.coxa = LC.malha(material); p.coxa.visible = false; p.add(p.coxa);
     const joelho = new THREE.Group();
     joelho.position.set(0, -0.28, 0); joelho.rotation.order = 'ZXY'; joelho.visible = false;
     const LK = new Lote(UV_BRANCO);                 // mesmas peças, agora medidas a partir do joelho
-    LK.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.17, 0);
-    LK.caixa(0.32, 0.12, 0.24, 0x1d1f24, 0.04, -0.38, 0);
+    if (meiao === 0) { LK.caixa(0.2, 0.2, 0.2, pele, 0, -0.1, 0); LK.caixa(0.22, 0.14, 0.22, hex(o.meia), 0, -0.27, 0); }
+    else LK.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.17, 0);
+    LK.caixa(0.32, 0.12, 0.24, botaCor, 0.04, -0.38, 0, botaUV);
     LK.caixa(0.33, 0.03, 0.25, hex(o.sola), 0.04, -0.435, 0);
     joelho.add(LK.malha(material)); p.add(joelho);
     p.joelho = joelho;
@@ -1674,21 +1853,22 @@ function makeAthlete(o) {
   // Braço: igual à perna — normalmente UMA malha (braço inteiro). Para poses com o braço dobrado
   // (mão na cintura) existe a versão com COTOVELO, a 0,30 m do ombro: "ombro" (manga + braço) e o
   // antebraço com a mão, que gira no cotovelo. Fica escondida e só aparece quando é usada.
+  const longa = o.manga === 1;
   const braco = (z) => {
     const p = pivo(0, 1.27, z), L = new Lote(UV_BRANCO);
     const corMao = o.luva ? hex(o.luva) : pele;
     L.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
-    L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
+    if (longa) L.caixa(0.18, 0.3, 0.17, camisa, 0, -0.36, 0); else L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
     L.caixa(0.17, 0.16, 0.17, corMao, 0, -0.57, 0);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LO = new Lote(UV_BRANCO);
     LO.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
-    LO.caixa(0.16, 0.17, 0.15, pele, 0, -0.295, 0);       // até um pouco depois do cotovelo (tapa a "dobra")
+    if (longa) LO.caixa(0.18, 0.17, 0.17, camisa, 0, -0.295, 0); else LO.caixa(0.16, 0.17, 0.15, pele, 0, -0.295, 0);       // até um pouco depois do cotovelo (tapa a "dobra")
     p.ombro = LO.malha(material); p.ombro.visible = false; p.add(p.ombro);
     const cotovelo = new THREE.Group();
     cotovelo.position.set(0, -0.3, 0); cotovelo.rotation.order = 'ZXY'; cotovelo.visible = false;
     const LA = new Lote(UV_BRANCO);                 // antebraço e mão, medidos a partir do cotovelo
-    LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
+    if (longa) LA.caixa(0.17, 0.24, 0.16, camisa, 0, -0.1, 0); else LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
     LA.caixa(0.17, 0.16, 0.17, corMao, 0, -0.27, 0);
     cotovelo.add(LA.malha(material)); p.add(cotovelo);
     p.cotovelo = cotovelo;
@@ -1701,13 +1881,14 @@ function makeAthlete(o) {
   C.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);   // (4.1.1) 0,6: as laterais não ficam no mesmo plano da camisa (piscava)
   C.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null)); // tronco
   C.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);                                                              // pescoço
-  C.caixa(0.48, 0.52, 0.52, pele, 0, 1.62, 0, (i) => (i === 0 ? UV_ROSTO : null));                           // cabeça
-  const CABELOS_ESTILO = [
-    [[0.52, 0.14, 0.56, -0.01, 1.91, 0], [0.08, 0.32, 0.56, -0.25, 1.73, 0]],
-    [[0.52, 0.24, 0.56, -0.01, 1.95, 0], [0.1, 0.4, 0.56, -0.24, 1.7, 0], [0.36, 0.2, 0.06, -0.04, 1.76, -0.27], [0.36, 0.2, 0.06, -0.04, 1.76, 0.27]],
-    [[0.5, 0.06, 0.54, -0.01, 1.89, 0], [0.06, 0.18, 0.54, -0.24, 1.8, 0]],
-  ];
-  for (const [w, h, d, x, y, z] of CABELOS_ESTILO[o.estilo]) C.caixa(w, h, d, cabelo, x, y, z);
+  const fCab = faceCabeca(o);
+  C.caixa(0.48, 0.52, 0.52, pele, 0, 1.62, 0, fCab);                                                         // cabeça
+  // (4.3.0) cabelo e barba vêm dos dados (ESTILOS_CABELO / ESTILOS_BARBA); "mix" mistura com a pele (degradê)
+  const corBarba = o.corBarba != null ? hex(o.corBarba) : cabelo;
+  const pecasCabeca = [];
+  for (const [w, h, d, x, y, z, mix] of (ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0]).caixas) pecasCabeca.push([w, h, d, mix ? misturarCor(cabelo, pele, mix) : cabelo, x, y, z]);
+  for (const [w, h, d, x, y, z] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z]);
+  for (const [w, h, d, cor, x, y, z] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z);
   const troncoInteiro = C.malha(material); corpo.add(troncoInteiro);
   // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
   // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
@@ -1719,8 +1900,8 @@ function makeAthlete(o) {
   const cabeca = new THREE.Group();
   cabeca.position.set(0.02, 1.36, 0); cabeca.rotation.order = 'ZXY'; cabeca.visible = false;
   const CB = new Lote(UV_BRANCO);
-  CB.caixa(0.48, 0.52, 0.52, pele, -0.02, 0.26, 0, (i) => (i === 0 ? UV_ROSTO : null));
-  for (const [w, h, d, x, y, z] of CABELOS_ESTILO[o.estilo]) CB.caixa(w, h, d, cabelo, x - 0.02, y - 1.36, z);
+  CB.caixa(0.48, 0.52, 0.52, pele, -0.02, 0.26, 0, fCab);
+  for (const [w, h, d, cor, x, y, z] of pecasCabeca) CB.caixa(w, h, d, cor, x - 0.02, y - 1.36, z);
   cabeca.add(CB.malha(material)); corpo.add(cabeca);
 
   const etiqueta = new THREE.Sprite(new THREE.SpriteMaterial({ map: texNome(o.nome, o.fundoNome), depthTest: false, transparent: true }));
@@ -7583,6 +7764,8 @@ function terminarReplay() {
   const R = G.replay;
   if (!R) return;
   G.replay = null;
+  if (TELA_MESH) TELA_MESH.visible = true;
+  if (POSTES_MESH) POSTES_MESH.visible = true;
   linhasImped.g.visible = false;
   setLetterbox(false);
   $('skipBtn').hidden = true; $('skipBtn').textContent = 'Pular ▶';
@@ -7637,6 +7820,8 @@ function cameraReplay(R, bola, rdt) {
   else { px = bola.x - R.lado * 5.5; py = 1.5; pz = bola.z + 4; }                                      // perto, rasteira
   if (![px, py, pz, tx, ty, tz].every(Number.isFinite)) return;      // (4.2.6) valor inválido: mantém a câmera como está
   if (R.camPos && !Object.values(R.camPos).every(Number.isFinite)) R.camPos = null;
+  if (TELA_MESH) TELA_MESH.visible = !(R.tipo === 'gol' && R.cam === 1);
+  if (POSTES_MESH) POSTES_MESH.visible = !(R.tipo === 'gol' && R.cam === 1);   // (4.2.6) atrás do gol: sem a grade na frente
   const k = R.camPos ? 1 - Math.exp(-rdt * 4) : 1;
   R.camPos = R.camPos || { px, py, pz, tx, ty, tz };
   const C = R.camPos;
@@ -7861,12 +8046,13 @@ function texturaTela(corFio, passo) {
     }
   });
 }
+let TELA_MESH = null, POSTES_MESH = null;                              // (4.2.6) a rede/alambrado (some na câmera de trás do gol, no replay)
 let ALTURA_GRADE = 5;                              // (4.1.3) a comemoração "pular na grade" usa
 function buildArredores(tipo) {
   const varzea = tipo === 'varzea';
   const ALT = varzea ? 2.6 : 5;                    // altura do alambrado / da rede
   ALTURA_GRADE = ALT;
-  const E = new Lote(), Lp = new Lote();
+  const E = new Lote(), Lp = new Lote(), Ep = new Lote();   // Ep: postes e cano do alambrado (separados para sumirem no replay)
   // Tela: 4 paredes com a textura repetida (1 chamada de desenho).
   const tex = texturaTela(varzea ? 'rgba(170,175,180,0.9)' : 'rgba(30,60,35,0.85)', varzea ? 8 : 6);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1);
@@ -7882,12 +8068,12 @@ function buildArredores(tipo) {
   };
   const X = BOARD_X, Z = BOARD_Z, Zn = BOARD_ZN, Zs = (s) => (s < 0 ? Zn : Z);   // (4.1.3) lado do banco mais largo
   parede(-X, -Zn, X, -Zn); parede(-X, Z, X, Z); parede(-X, -Zn, -X, Z); parede(X, -Zn, X, Z);
-  const tela = R.malha(telaMat); ESTADIO.add(tela); freeze(tela);
+  const tela = R.malha(telaMat); ESTADIO.add(tela); freeze(tela); TELA_MESH = tela;
   // Postes do alambrado e cano de cima.
   const corPoste = varzea ? 0x8a9096 : 0x2b3a2e;
-  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s));
-  for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) E.caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
-  for (const s of [-1, 1]) { E.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); E.caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
+  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s));
+  for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) Ep.caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
+  for (const s of [-1, 1]) { Ep.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); Ep.caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
   // Arquibancadinha (num dos lados compridos, z > 0): degraus de cimento.
   const degraus = varzea ? 3 : 2, compr = Math.min(varzea ? 34 : 22, X * 1.4);
   for (let r = 0; r < degraus; r++) E.caixa(compr, 0.45 * (r + 1), 0.9, r % 2 ? 0x9a978f : 0x8c8a83, 0, 0.225 * (r + 1), Z + 1.6 + r * 0.9);
@@ -7916,6 +8102,7 @@ function buildArredores(tipo) {
     }
   }
   const est = E.malha(MAT_CORES); ESTADIO.add(est); freeze(est);
+  const postesM = Ep.malha(MAT_CORES); ESTADIO.add(postesM); freeze(postesM); POSTES_MESH = postesM;
   lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });
   const lamp = Lp.malha(lampadasMat); ESTADIO.add(lamp); freeze(lamp);
   // Torcida em pé do lado de fora da tela (e sentada/em pé na arquibancadinha). Popularidade
@@ -7944,7 +8131,17 @@ const temBanco = (P) => !!P && (P.campo.estadio || 'arena') !== 'society';
 function construirBancos() {
   const L = new Lote(), z = -(HALF_W + LADO_BANCO.banco);
   BANCOS.length = 0;
-  if (!temBanco(PARTIDA)) return;
+  if (ehSociety()) {                               // (4.2.6) banquinho baixo encostado na grade, 3 lugares por time
+    const zc = -BOARD_ZN + 0.4;
+    for (const team of [0, 1]) {
+      const x = bancoX(team);
+      BANCOS.push({ x0: x - 1.55, x1: x + 1.55, z0: zc - 0.35, z1: zc + 0.35, h: 0.6 });
+      L.caixa(3.1, 0.45, 0.6, 0x2c3340, x, 0.225, zc);
+      L.caixa(0.1, 0.45, 0.5, 0x59606b, x - 1.45, 0.225, zc); L.caixa(0.1, 0.45, 0.5, 0x59606b, x + 1.45, 0.225, zc);
+    }
+    const ms = L.malha(MAT_CORES); ESTADIO.add(ms); freeze(ms);
+    return;
+  }
   for (const sx of [-1, 1]) {
     const x = sx * Math.min(9, HALF_L * 0.25);
     BANCOS.push({ x0: x - 2.7, x1: x + 2.7, z0: z - 0.85, z1: z + 0.08, h: 2.3 });
@@ -8268,7 +8465,7 @@ function criarJogador(P, team, f, j, num, isUser) {
   const mesh = makeAthlete({
     camisa: isGK ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num,
     calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema,
-    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, luva: isGK ? 0xf2f2ee : null,
+    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null,
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
   scene.add(mesh.raiz);
@@ -8304,6 +8501,8 @@ function montarTimes(P) {
     const numero = (role) => { const n = NUMEROS[role].find((v) => !usados.has(v)) || (20 + usados.size); usados.add(n); return n; };
     let userSlot = -1;
     if (team === 0) { userSlot = slots.findIndex((s) => s.role === P.usuario.posicao); if (userSlot < 0) userSlot = slots.findIndex((s) => s.role === 'FWD'); }
+    const numPref = team === 0 && P.usuario.numero > 0 ? P.usuario.numero : 0;      // (4.3.0) número preferido do personagem
+    if (numPref) usados.add(numPref);
     // Quem pode jogar: tira suspensos e lesionados (eles cumprem este jogo).
     const disponiveis = [];
     for (const j of P.elencos[team]) {
@@ -8318,11 +8517,11 @@ function montarTimes(P) {
     slots.forEach((f, i) => {
       const isUser = i === userSlot;
       const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, P.usuario.aparencia || {}) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]);
-      const p = criarJogador(P, team, f, j, numero(f.role), isUser);
+      const p = criarJogador(P, team, f, j, isUser && numPref ? numPref : numero(f.role), isUser);
       players.push(p); TEAMS[team].push(p); P.participantes.push(p);
       if (isUser) user = p;
     });
-    P.reservas[team] = disponiveis.slice(k);           // banco: quem sobrou disponível
+    P.reservas[team] = disponiveis.slice(k, ehSociety(P) ? k + ASSENTOS_SOCIETY : undefined);   // banco: quem sobrou disponível (society: só 3 lugares)
   }
   P.subsUsadas = [0, 0];
   CORPOS = players.concat(officials);
@@ -8339,12 +8538,24 @@ function montarTimes(P) {
 const reservasBanco = [];
 const BANCO_SENTA_Y = -0.185;                      // quadril a 0,555 m (assento a 0,45 m) — conferido sem atravessar o banco
 function bancoX(team) { return (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25); }
-function assentoBanco(team, i) { return { x: bancoX(team) + (i - 2) * 0.95, z: -(HALF_W + LADO_BANCO.banco) - 0.08 }; }
+// (4.2.6) SOCIETY: 3 reservas de cada time sentados lado a lado num banquinho ENCOSTADO NA GRADE (lado z < 0),
+// de frente para a quadra. Quem vai entrar levanta e aquece na frente do próprio lugar; quem sai bate na
+// mão dele e senta nesse mesmo lugar. Sem 4º árbitro nem placa: só o texto da cena.
+const ehSociety = (P) => !!(P || PARTIDA) && ((P || PARTIDA).campo.estadio || 'arena') === 'society';
+const ASSENTOS_SOCIETY = 3;
+function assentoBanco(team, i) {
+  if (ehSociety()) return { x: bancoX(team) + (i - 1) * 0.95, z: -BOARD_ZN + 0.5 };
+  return { x: bancoX(team) + (i - 2) * 0.95, z: -(HALF_W + LADO_BANCO.banco) - 0.08 };
+}
+function esperaDe(d, k) {                          // onde o reserva "d" espera (aquecendo) quando é chamado
+  if (ehSociety()) { const a = assentoBanco(d.team, d.assento); return { x: a.x, z: a.z + 1.3 }; }
+  return esperaBanco(d.team, k);
+}
 function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: bancoX(team) - s * (0.6 + k * 0.8), z: -(HALF_W + LADO_BANCO.espera) }; }
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
-    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, luva: gk ? 0xf2f2ee : null, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
+    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
   m.etiqueta.visible = false;
   scene.add(m.raiz);
   return m;
@@ -8352,9 +8563,9 @@ function bonecoDoBanco(P, team, j, role, numero, isUser) {
 function montarReservasBanco(P) {
   for (const d of reservasBanco) descartarBoneco(d.mesh.raiz);
   reservasBanco.length = 0;
-  if (!temBanco(P)) return;
+  const soc = ehSociety(P);
   for (const team of [0, 1]) {
-    P.reservas[team].slice(0, 5).forEach((j, i) => {
+    P.reservas[team].slice(0, soc ? ASSENTOS_SOCIETY : 5).forEach((j, i) => {
       const a = assentoBanco(team, i);
       reservasBanco.push({ team, j, assento: i, mesh: bonecoDoBanco(P, team, j, 'MID', '', false), x: a.x, z: a.z, ang: Math.PI / 2, sentado: 1,
         pose: Math.random() < 0.7 ? 'joelhos' : 'cruzados', anim: Math.random() * 6, fase: Math.random() * 6 });
@@ -8363,11 +8574,11 @@ function montarReservasBanco(P) {
 }
 // Quem saiu senta no banco (no primeiro lugar livre), andando da linha até lá.
 function sentarNoBanco(sai, team, direto) {
-  if (!PARTIDA || !temBanco(PARTIDA)) return;
+  if (!PARTIDA) return;
   // Lugar livre = nenhum boneco com esse lugar, a não ser quem já está entrando em campo (saiu da
   // lista de reservas: o boneco dele some no próximo quadro e o lugar fica para quem sai).
   const ocup = new Set(reservasBanco.filter((d) => d.team === team && (d.saiu || PARTIDA.reservas[team].includes(d.j))).map((d) => d.assento));
-  let i = [0, 1, 2, 3, 4].find((k) => !ocup.has(k));
+  let i = [0, 1, 2, 3, 4].slice(0, ehSociety() ? ASSENTOS_SOCIETY : 5).find((k) => !ocup.has(k));
   if (i === undefined) return;
   const j = sai.isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
   const lado = Math.sign(sai.x - bancoX(team)) || 1;
@@ -8390,7 +8601,7 @@ function atualizarBanco(dt) {
     // Já entrou em campo (saiu da lista de reservas): o boneco some (o jogador de verdade assume).
     if (!d.saiu && !PARTIDA.reservas[d.team].includes(d.j)) { descartarBoneco(d.mesh.raiz); reservasBanco.splice(n, 1); continue; }
     const k = d.saiu ? undefined : chamados.get(d.j);
-    const final = k !== undefined ? esperaBanco(d.team, k) : assentoBanco(d.team, d.assento);
+    const final = k !== undefined ? esperaDe(d, k) : assentoBanco(d.team, d.assento);
     const espera = k !== undefined;
     // (4.1.3) Corredor na frente do banco: para entrar ou sair do lugar, primeiro vai reto para a
     // frente do próprio lugar e anda pelo corredor — nunca passa por cima de quem está sentado.
@@ -8417,11 +8628,11 @@ function atualizarBanco(dt) {
     posarBoneco(d, andando, espera && alvo === final && dist <= 0.04, dt);
   }
   // Quarto árbitro aparece na linha enquanto alguém espera para entrar (a placa só na cena da troca).
-  if (alguemEsperando && G.state !== 'subst') {
+  if (alguemEsperando && G.state !== 'subst' && !ehSociety()) {
     const it = G.subsFila[0];
     if (it) { const q = garantirQuartoArbitro(), s = it.team === 0 ? 1 : -1; q.raiz.visible = true; q.raiz.position.set(bancoX(it.team) + s * 1.8, 0, -(HALF_W + LADO_BANCO.quarto)); q.raiz.rotation.y = -Math.PI / 2;
       q.bracoD.rotation.z = q.bracoE.rotation.z = 0.15; q.bracoD.rotation.x = -0.1; q.bracoE.rotation.x = 0.1; }
-  } else if (quartoArbitro && G.state !== 'subst') quartoArbitro.raiz.visible = false;
+  } else if (quartoArbitro && G.state !== 'subst') quartoArbitro.raiz.visible = false;   // (society: nunca aparece)
 }
 // Pose do boneco do banco: mistura "em pé" e "sentado" (d.sentado de 0 a 1).
 function posarBoneco(d, andando, aquecendo, dt) {
@@ -8605,19 +8816,25 @@ const placaTroca = (() => {
 let quartoArbitro = null;
 function iniciarSubstituicao(item) {
   const sai = item.sai, team = item.team;
-  const bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + LADO_BANCO.espera - 0.9);
+  const soc = ehSociety();
+  let bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + LADO_BANCO.espera - 0.9);
+  const dEntra = soc ? reservasBanco.find((d) => !d.saiu && d.team === team && d.j === PARTIDA.reservas[team][0]) : null;   // (4.2.6) o reserva que está levantado
   const entra = trocarNasListas(item);
-  const ep = esperaBanco(team, 0);                 // (4.1.2) é onde o reserva estava esperando
+  const ep = soc ? (dEntra ? esperaDe(dEntra, 0) : { x: bx, z: assentoBanco(team, 1).z + 1.3 }) : esperaBanco(team, 0);   // (4.1.2) é onde o reserva estava esperando
   entra.x = ep.x; entra.z = ep.z; entra.angle = Math.PI / 2; entra.scripted = true;
   sai.scripted = true; sai.stun = 0; sai.fall = 0; sai.falling = false; sai.perda = null;
-  garantirQuartoArbitro();
-  quartoArbitro.raiz.visible = true;
-  const qx = bx + (team === 0 ? 1.8 : -1.8);       // o quarto árbitro fica do lado, sem tapar o "toca aqui"
-  quartoArbitro.raiz.position.set(qx, 0, -(HALF_W + LADO_BANCO.quarto)); quartoArbitro.raiz.rotation.y = -Math.PI / 2;
-  quartoArbitro.bracoD.rotation.z = 2.5; quartoArbitro.bracoE.rotation.z = 2.5; quartoArbitro.bracoD.rotation.x = 0.2; quartoArbitro.bracoE.rotation.x = -0.2;
-  placaTroca.mostrar(qx, -(HALF_W + LADO_BANCO.placaTroca), sai.numero, entra.numero);
+  let qx = bx + (team === 0 ? 1.8 : -1.8);         // o quarto árbitro fica do lado, sem tapar o "toca aqui"
+  if (soc) { linhaZ = ep.z + 0.9; bx = ep.x; qx = ep.x; }   // society: sem 4º árbitro nem placa, só o texto
+  else {
+    garantirQuartoArbitro();
+    quartoArbitro.raiz.visible = true;
+    quartoArbitro.raiz.position.set(qx, 0, -(HALF_W + LADO_BANCO.quarto)); quartoArbitro.raiz.rotation.y = -Math.PI / 2;
+    quartoArbitro.bracoD.rotation.z = 2.5; quartoArbitro.bracoE.rotation.z = 2.5; quartoArbitro.bracoD.rotation.x = 0.2; quartoArbitro.bracoE.rotation.x = -0.2;
+    placaTroca.mostrar(qx, -(HALF_W + LADO_BANCO.placaTroca), sai.numero, entra.numero);
+  }
   // (4.1.3) Quem sai vai até a frente de quem entra (0,9 m mais para o campo), SEM limite de tempo.
-  G.subst = { t: 0, fase: 'placa', item, sai, entra, bx, qx, linhaZ, alvoSai: { x: entra.x, z: linhaZ }, estadoAntes: G.state, tocou: false };
+  G.subst = { t: 0, fase: soc ? 'sai' : 'placa', soc, item, sai, entra, bx, qx, linhaZ, alvoSai: { x: entra.x, z: linhaZ }, estadoAntes: G.state, tocou: false };
+  if (soc) G.subst.corredorZ = assentoBanco(team, dEntra ? dEntra.assento : 1).z + 1.1;
   CORPOS = players.concat(officials, [sai]);       // quem sai continua sendo desenhado até sumir
   G.state = 'subst'; G.targetScale = 1;
   setLetterbox(true);
@@ -8659,7 +8876,8 @@ function atualizarSubstituicao(rdt) {
     if (S.tf > 0.6) { G.substToque = null; mudar('troca'); }
   } else {
     andar(entra, { x: entra.slotF ? entra.base.x * entra.dir : entra.x, z: entra.base.z * entra.dir }, 6, rdt);
-    andar(sai, { x: sai.x + (S.bx - sai.x) * 0.2, z: -(HALF_W + LADO_BANCO.espera + 0.6) }, sai.mancando ? 1.6 : 2.4, rdt);
+    if (S.soc) andar(sai, { x: S.bx, z: S.corredorZ }, sai.mancando ? 1.6 : 2.4, rdt);      // society: vai para o lugar onde o outro estava sentado
+    else andar(sai, { x: sai.x + (S.bx - sai.x) * 0.2, z: -(HALF_W + LADO_BANCO.espera + 0.6) }, sai.mancando ? 1.6 : 2.4, rdt);
     if (S.tf > 1.4) terminarSubstituicao();
   }
 }
@@ -8693,6 +8911,7 @@ function cameraSubstituicao() {
     return { px: sai.x - dx / d * 5.5 * k + 2.5, py: 3.6, pz: sai.z - dz / d * 5.5 * k + 5 * (1 - k) + 1.5, tx: sai.x + dx / d * 2 * k, ty: 1.0, tz: sai.z + dz / d * 2 * k };
   }
   const mx = (S.entra.x + sai.x) / 2;
+  if (S.soc) return { px: mx + 3.0, py: 2.0, pz: S.linhaZ + 5.0, tx: mx, ty: 1.2, tz: S.linhaZ - 0.45 };
   return { px: mx + 3.2, py: 2.1, pz: -(HALF_W) + 5.5, tx: mx, ty: 1.2, tz: -(HALF_W + LADO_BANCO.espera - 0.4) };
 }
 
@@ -9095,7 +9314,7 @@ function lerTelaDeConfig() {
     times: [t0, t1], campo: v('cfgCampo'), dificuldade: v('cfgDif'), competicao: COMPETICOES_TESTE[v('cfgComp')],
     mandante: Number(v('cfgMando')), clima: v('cfgClima'), gramado: v('cfgGrama'), horario: v('cfgHora'),
     duracao: Number(v('cfgDur')) || DURACOES.padrao,
-    usuario: { posicao: v('cfgPos') }, formacoes: [v('cfgForm') || null, null], taticas: [v('cfgTat') || null, null],
+    usuario: Object.assign({ posicao: v('cfgPos') }, PERSONAGEM.ativo ? { nome: PERSONAGEM.apelido || PERSONAGEM.nome, numero: PERSONAGEM.numero, aparencia: personagemAparencia() } : {}), formacoes: [v('cfgForm') || null, null], taticas: [v('cfgTat') || null, null],
   };
 }
 
@@ -9258,6 +9477,517 @@ function carregarJogo(slot) {
 }
 
 const MENU_ROTULOS = [['jogar', 'Jogar'], ['carregar', 'Carregar'], ['config', 'Configurações'], ['creditos', 'Créditos'], ['sair', 'Sair']];
+// ---------------------------------------------------------------------
+// 14a. FALA "MUMBLE" (4.3.0) — componente reutilizável.
+// Em vez de gravar vozes, cada letra do texto vira um "blip" curto (estilo Animal Crossing / Undertale):
+// vogais soam como uma vogal (filtro com 2 formantes), consoantes são mais curtas e surdas, pontuação faz
+// pausa, e "?" sobe o tom no fim. Cinco vozes, da mais aguda (0) à mais grave (4).
+//   Mumble.VOZES ................. [{ nome, base }]  (base = tom em Hz)
+//   Mumble.dizer(texto, { voz, cps, aoLetra(n), aoFim() }) → { parar(), pular(), ativo }
+//        n = quantas letras já "foram ditas" (use para o texto aparecer digitando junto com o som)
+//   Mumble.amostra(voz, aoFim) ... fala o texto padrão "Vamos jogar bola!"
+// O áudio sai pelo mesmo volume mestre do jogo (Som.audio) e respeita o botão de mudo.
+// Para melhorar depois: mexa só em Mumble.blip (timbre/entonação); quem usa o componente não muda.
+// ---------------------------------------------------------------------
+const Mumble = (() => {
+  const VOZES = [
+    { nome: 'Bem aguda', base: 600 }, { nome: 'Aguda', base: 440 }, { nome: 'Média', base: 320 },
+    { nome: 'Grave', base: 230 }, { nome: 'Bem grave', base: 165 },
+  ];
+  const TEXTO_PADRAO = 'Vamos jogar bola!';
+  const FORMANTES = { a: [800, 1250], e: [520, 1900], i: [310, 2300], o: [520, 920], u: [340, 760] };
+  const limpa = (c) => c.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  // Toca UM blip. Tom = base × variação por letra (±4 semitons) × entonação.
+  function blip(ch, voz, entonacao) {
+    const A = typeof Som !== 'undefined' && Som.audio;
+    if (!A || Som.mudo || A.ctx.state === 'closed') return;
+    const c = limpa(ch);
+    if (!/[a-z0-9]/.test(c)) return;
+    const { ctx, mestre } = A, t0 = ctx.currentTime + 0.005;
+    const vogal = FORMANTES[c] ? c : (/[0-9]/.test(c) ? 'o' : null);
+    const dur = vogal ? 0.085 : 0.045;
+    const base = (VOZES[voz] || VOZES[2]).base;
+    const f0 = base * Math.pow(2, (((c.charCodeAt(0) * 7) % 9) - 4) / 12) * entonacao;
+    const osc = ctx.createOscillator(); osc.type = vogal ? 'sawtooth' : 'square';
+    osc.frequency.setValueAtTime(f0, t0); osc.frequency.linearRampToValueAtTime(f0 * (vogal ? 1.06 : 0.92), t0 + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vogal ? 0.17 : 0.07, t0 + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    if (vogal) {
+      const f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter();
+      f1.type = f2.type = 'bandpass'; f1.frequency.value = FORMANTES[vogal][0]; f2.frequency.value = FORMANTES[vogal][1]; f1.Q.value = f2.Q.value = 4;
+      const soma = ctx.createGain(); soma.gain.value = 1.6;
+      osc.connect(f1); osc.connect(f2); f1.connect(soma); f2.connect(soma); soma.connect(g);
+    } else {
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1400; osc.connect(lp); lp.connect(g);
+    }
+    g.connect(mestre); osc.start(t0); osc.stop(t0 + dur + 0.02);
+  }
+  function dizer(texto, op) {
+    op = op || {};
+    const voz = op.voz == null ? 2 : op.voz, cps = op.cps || 24, pergunta = /\?\s*$/.test(texto);
+    let i = 0, parado = false, timer = 0;
+    const ctrl = { ativo: true, parar() { parado = true; ctrl.ativo = false; clearTimeout(timer); },
+      pular() { if (!ctrl.ativo) return; ctrl.parar(); if (op.aoLetra) op.aoLetra(texto.length); if (op.aoFim) op.aoFim(); } };
+    const passo = () => {
+      if (parado) return;
+      const ch = texto[i]; i++;
+      if (op.aoLetra) op.aoLetra(i);
+      const ent = pergunta && i > texto.length * 0.6 ? 1 + 0.25 * ((i - texto.length * 0.6) / (texto.length * 0.4)) : 1;
+      if (i % 2 === 1 || /[aeiouáéíóúâêôãõ]/i.test(ch)) blip(ch, voz, ent);
+      if (i >= texto.length) { ctrl.ativo = false; if (op.aoFim) op.aoFim(); return; }
+      const d = 1000 / cps * (/[.!?…]/.test(ch) ? 8 : /[,;:]/.test(ch) ? 4 : ch === ' ' ? 0.7 : 1);
+      timer = setTimeout(passo, d);
+    };
+    timer = setTimeout(passo, 0);
+    return ctrl;
+  }
+  const amostra = (voz, aoFim) => dizer(TEXTO_PADRAO, { voz, cps: 14, aoFim });
+  return { VOZES, TEXTO_PADRAO, dizer, amostra, blip };
+})();
+
+// ---------------------------------------------------------------------
+// 14a'. CAIXA DE DIÁLOGO (4.3.0) — componente reutilizável, no estilo pixel art do menu.
+//   Dialogo.mostrar(linhas, { nome, voz, cps, aoLinha(i), manter }) → Promise (resolve quando a última linha é dispensada)
+//   linhas: array de textos. Toque/clique/Enter/Espaço: completa a linha digitando; outro toque: vai para a próxima.
+//   A fala usa o Mumble (som de cada letra) e o texto aparece junto.
+// ---------------------------------------------------------------------
+const Dialogo = (() => {
+  let el = null, nomeEl, textoEl, resolver = null, linhas = [], idx = 0, voz = 2, cps = 24, fala = null, digitando = false, aoLinha = null, manter = false;
+  function montar() {
+    if (el) return;
+    const css = document.createElement('style');
+    css.textContent = `
+#dialogo { position: fixed; inset: 0; z-index: 14; display: flex; align-items: flex-end; justify-content: center; padding: 0 max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  box-sizing: border-box; cursor: pointer; touch-action: manipulation; --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); }
+#dialogo .dlgCaixa { --p: var(--p3, 3px); position: relative; box-sizing: border-box; width: min(720px, 100%); min-height: calc(var(--avh, 1vh) * 26);
+  border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
+#dialogo .dlgNome { --p: var(--p2, 2px); position: absolute; left: 6px; top: calc(var(--p) * -14); box-sizing: border-box; display: flex; align-items: center; height: calc(var(--p) * 13); padding: 0 8px;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
+  font: 700 14px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 0 var(--mx-ink); }
+#dialogo .dlgTexto { margin: 0; padding: 6px 8px 14px; min-height: 3.6em; font: 600 clamp(15px, 4.2vh, 21px)/1.35 var(--font-body); white-space: pre-wrap; }
+#dialogo .dlgSeta { position: absolute; right: 12px; bottom: 6px; font: 700 14px/1 var(--font-display); color: var(--mx-laranja); animation: dlgPisca 0.7s steps(1) infinite; }
+@keyframes dlgPisca { 50% { opacity: 0; } }`;
+    document.head.appendChild(css);
+    el = document.createElement('div'); el.id = 'dialogo'; el.hidden = true;
+    el.innerHTML = '<div class="dlgCaixa" role="dialog" aria-live="polite"><div class="dlgNome"></div><p class="dlgTexto"></p><span class="dlgSeta">▼</span></div>';
+    ($('raizJogo') || document.body).appendChild(el);
+    nomeEl = el.querySelector('.dlgNome'); textoEl = el.querySelector('.dlgTexto');
+    el.addEventListener('click', avancar);
+    window.addEventListener('keydown', (e) => { if (!el.hidden && (e.code === 'Enter' || e.code === 'Space')) { e.preventDefault(); avancar(); } });
+  }
+  function linha() {
+    const t = linhas[idx];
+    if (aoLinha) aoLinha(idx);
+    digitando = true; el.querySelector('.dlgSeta').style.visibility = 'hidden'; textoEl.textContent = '';
+    fala = Mumble.dizer(t, { voz, cps, aoLetra: (n) => { textoEl.textContent = t.slice(0, n); }, aoFim: () => { digitando = false; el.querySelector('.dlgSeta').style.visibility = 'visible'; } });
+  }
+  function avancar() {
+    if (el.hidden) return;
+    if (digitando) { fala.pular(); return; }
+    idx++;
+    if (idx < linhas.length) { linha(); return; }
+    if (!manter) el.hidden = true;
+    const r = resolver; resolver = null; if (r) r();
+  }
+  function mostrar(ls, op) {
+    montar(); op = op || {};
+    linhas = ls.slice(); idx = 0; voz = op.voz == null ? 2 : op.voz; cps = op.cps || 24; aoLinha = op.aoLinha || null; manter = !!op.manter;
+    nomeEl.textContent = op.nome || ''; nomeEl.hidden = !op.nome;
+    el.hidden = false;
+    return new Promise((res) => { resolver = res; linha(); });
+  }
+  const esconder = () => { if (el) el.hidden = true; };
+  return { mostrar, esconder };
+})();
+
+// ---------------------------------------------------------------------
+// 14b. CRIADOR DE PERSONAGEM (modo história, 4.3.0)
+// Jogar → Modo história abre esta tela. Passo 1: nome, apelido, nome na camisa e número preferido.
+// Passo 2: aparência (pele, cabelo, barba, rosto) com um bonequinho 3D ao lado: arraste para girar
+// 360° e, a cada categoria escolhida, a câmera dá zoom naquela parte do corpo.
+// O boneco usa o MESMO makeAthlete do jogo, só que numa cena própria (renderizador separado, só
+// roda enquanto a tela está aberta). Para criar opções novas basta mexer nos dados lá em cima
+// (PELES_FITZ, CORES_CABELO, ESTILOS_CABELO, ESTILOS_BARBA, ROSTOS).
+// O personagem fica salvo em 'futebolJs.personagem.v1' e vira o seu jogador (PERSONAGEM).
+// ---------------------------------------------------------------------
+const FOCO_CRIADOR = {            // para onde a câmera olha em cada parte (y = altura do alvo, d = distância)
+  corpo: { y: 1.0, d: 6.2 }, pele: { y: 1.1, d: 4.7 }, cabelo: { y: 1.74, d: 3.1 }, barba: { y: 1.55, d: 2.5 }, rosto: { y: 1.6, d: 2.3 },
+  blusa: { y: 1.05, d: 4.4 }, meiao: { y: 0.5, d: 3.8 }, chuteira: { y: 0.25, d: 2.7 }, pe: { y: 0.25, d: 3.2 }, comemoracao: { y: 1.0, d: 6.2 }, voz: { y: 1.6, d: 3.4 },
+  cena: { y: 1.15, d: 8.5, az: 0.5 },
+};
+function montarCriador(tela, aoFechar) {
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const E = Object.assign({ nome: '', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
+    pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracao: 1, voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
+  let passo = 1, aba = 'pele', msg = '', emCena = false, falaAmostra = null;
+  const css = document.createElement('style');
+  css.textContent = `
+#criador { position: fixed; inset: 0; z-index: 8; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+  padding: calc(8px + env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); touch-action: pan-y;
+  background-color: #150d06;
+  background-image: radial-gradient(ellipse 70% 55% at 30% 40%, rgba(240, 160, 32, 0.18), rgba(240, 160, 32, 0) 70%), repeating-conic-gradient(rgba(0, 0, 0, 0.24) 0 25%, rgba(0, 0, 0, 0) 0 50%);
+  background-size: auto, 8px 8px; }
+#criador .crTopo { --p: var(--p2, 2px); flex: 0 0 auto; box-sizing: border-box; display: flex; align-items: center; gap: 10px; padding: 0 6px; height: calc(var(--p) * 13);
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; }
+#criador .crTit { margin-right: auto; font: 700 15px/1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; text-shadow: 0 2px 0 var(--mx-ink); }
+#criador .crPassos { font: 700 12px/1 var(--font-display); letter-spacing: 0.1em; color: #dcc08c; }
+#criador .crCorpo { flex: 1 1 auto; min-height: 0; display: flex; gap: 10px; }
+#criador .crCaixa { --p: var(--p2, 2px); box-sizing: border-box; min-height: 0; min-width: 0; display: flex; flex-direction: column;
+  border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
+#criador .crPrev { flex: 0 0 38%; }
+#criador .crTela { position: relative; flex: 1 1 auto; min-height: 0; }
+#criador .crTela canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; cursor: grab; }
+#criador .crGiro { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 6px; }
+#criador .crGiro span { font: 600 11px/1.1 var(--font-body); color: #dcc08c; text-align: center; }
+#criador .crGiro .pxBtn { width: auto; min-width: 0; height: 36px; --p: var(--p2, 2px); font-size: 13px; padding: 0 8px; }
+#criador .crPainel { flex: 1 1 auto; }
+#criador .crScroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-y; padding: 2px 4px 6px 2px; }
+#criador .crRodape { flex: 0 0 auto; display: flex; gap: 8px; justify-content: flex-end; align-items: center; padding-top: 6px; }
+#criador .crRodape .pxBtn { width: auto; min-width: 110px; height: 40px; --p: var(--p2, 2px); font-size: 13px; padding: 0 10px; }
+#criador .crRodape .pxPrim { min-width: 140px; }
+#criador .crMsg { margin: 0 auto 0 0; font: 600 12px/1.2 var(--font-body); color: #ffb27a; }
+#criador .crCampo { display: flex; flex-direction: column; gap: 4px; margin: 0 0 10px; }
+#criador .crCampo > label, #criador .crSecao { font: 700 12px/1.1 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mx-laranja); margin: 0; }
+#criador .crSecao { margin: 10px 0 5px; }
+#criador .crDica { margin: 0; font: 600 11px/1.25 var(--font-body); color: #dcc08c; }
+#criador input[type=text], #criador input[type=number] { --p: var(--p2, 2px); appearance: none; -webkit-appearance: none; -moz-appearance: textfield; box-sizing: border-box; width: 100%; height: calc(var(--p) * 13); margin: 0; padding: 0 4px;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; background: none; color: var(--mx-ink);
+  font: 700 15px/1 var(--font-body); outline: none; -webkit-user-select: text; user-select: text; touch-action: manipulation; border-radius: 0; }
+#criador input:focus { border-image-source: var(--sp-creme); }
+#criador input::placeholder { color: #9a7a4a; font-weight: 600; }
+#criador .crNum { display: grid; grid-template-columns: 44px 1fr 44px; gap: 6px; align-items: center; max-width: 220px; }
+#criador .crNum input { text-align: center; }
+#criador .crNum .pxBtn { height: calc(var(--p2, 2px) * 13); --p: var(--p2, 2px); padding: 0; font-size: 18px; }
+#criador .crDuplo { display: flex; gap: 6px; }
+#criador .crDuplo .pxBtn { width: auto; flex: 1 1 0; min-width: 0; height: 36px; --p: var(--p2, 2px); font-size: 13px; padding: 0 6px; }
+#criador .crAbas { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px; }
+#criador .crAbas .pxBtn, #criador .crChip { --p: var(--p2, 2px); width: 100%; min-width: 0; height: 34px; padding: 0 4px; font-size: 12px; letter-spacing: 0.04em; }
+#criador .crAbas .pxBtn.on, #criador .crChip.on, #criador .crDuplo .pxBtn.on { border-image-source: var(--sp-laranja); color: #fff; }
+#criador .crGrade { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 5px; }
+#criador .crChip { height: 32px; font-size: 11px; line-height: 1.05; text-align: center; }
+#criador .crCores { display: flex; flex-wrap: wrap; gap: 7px; }
+#criador .crCor { appearance: none; -webkit-appearance: none; width: 34px; height: 34px; margin: 0; padding: 0; border: 3px solid var(--mx-ink); outline: 3px solid transparent; outline-offset: 0; cursor: pointer; touch-action: manipulation;
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.18), 0 3px 0 var(--mx-ink); image-rendering: pixelated; }
+#criador .crCor.on { outline-color: var(--mx-creme); border-color: var(--mx-laranja); transform: translateY(-1px); }
+#criador .crCor.igual { background: repeating-linear-gradient(45deg, #5a4630 0 4px, #8a6f48 4px 8px); color: var(--mx-creme); font: 700 10px/1 var(--font-display); }
+#criador .crNomeSel { margin: 6px 0 0; font: 700 12px/1.2 var(--font-display); letter-spacing: 0.06em; color: var(--mx-creme); }
+#criador .crResumo { margin: 4px 0 12px; padding: 0; list-style: none; display: grid; gap: 4px; font: 600 14px/1.25 var(--font-body); }
+#criador .crResumo b { font: 700 12px/1 var(--font-display); letter-spacing: 0.08em; color: var(--mx-laranja); text-transform: uppercase; margin-right: 6px; }
+.mxCorpo .mxBotoes.mxEscolha { width: min(340px, 100%); margin: 0 auto; flex: 0 0 auto; }
+#criador .crAbas.tres { grid-template-columns: repeat(3, 1fr); }
+#criador .crChip .crSw { display: inline-block; width: 11px; height: 11px; margin-right: 5px; vertical-align: -1px; border: 2px solid var(--mx-ink); box-sizing: border-box; }
+#criador .crGrade.largo { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+#criador .crGrade.largo .crChip { height: 40px; font-size: 12px; }
+#criador .crFala { margin: 6px 0 8px; padding: 8px 10px; font: 700 15px/1.3 var(--font-body); color: var(--mx-ink); text-align: center;
+  border: solid transparent; border-width: calc(var(--p2, 2px) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p2, 2px) * 4) stretch; image-rendering: pixelated; }
+#criador .crPrev, #criador .crPainel, #criador .crTopo { transition: flex-basis 0.9s ease, opacity 0.7s ease; }
+#criador.cena .crTopo, #criador.cena .crPainel, #criador.cena .crGiro { opacity: 0; pointer-events: none; }
+#criador.cena .crPainel { flex: 0 0 0; min-width: 0; padding: 0; border-width: 0; overflow: hidden; }
+#criador.cena .crCorpo { gap: 0; }
+#criador.cena .crPrev { flex: 0 0 100%; border-width: 0; border-image: none; }
+#criador.cena .crTopo { height: 0; border-width: 0; padding: 0; margin: 0 0 -8px; overflow: hidden; }
+#criador.cena { padding: 0; gap: 0; }
+#criador.cena .crGiro { display: none; }
+#anoTela { position: fixed; inset: 0; z-index: 16; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #000; color: #fff; opacity: 0; transition: opacity 0.9s ease; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
+#anoTela.on { opacity: 1; }
+#anoTela .anoNum { font: 700 clamp(56px, 24vh, 130px)/1 var(--font-display); letter-spacing: 0.06em; color: #fff; font-variant-numeric: tabular-nums; }
+#anoTela .anoTxt { margin: 0; font: 700 14px/1.2 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; color: #fff; text-align: center; }
+#anoTela .pxBtn { width: min(320px, 90%); --p: var(--p3, 3px); height: 46px; white-space: nowrap; font-size: 14px; }
+@media (max-height: 460px) and (min-aspect-ratio: 5/4) {
+  #criador { gap: 5px; padding-top: 5px; padding-bottom: 5px; }
+  #criador .crTopo { height: 32px; --p: var(--p15, 1.5px); }
+  #criador .crTit { font-size: 12px; }
+  #criador .crCaixa { --p: var(--p15, 1.5px); }
+  #criador .crCampo { margin-bottom: 6px; }
+  #criador .crRodape .pxBtn { height: 32px; }
+  #criador .crAbas .pxBtn { height: 30px; }
+  #criador .crChip { height: 28px; }
+  #criador .crCor { width: 28px; height: 28px; }
+}`;
+  document.head.appendChild(css);
+  const el = document.createElement('div');
+  el.id = 'criador'; el.hidden = true;
+  el.innerHTML = '<div class="crTopo"><span class="crTit">Criar personagem</span><span class="crPassos" id="crPassos"></span></div>' +
+    '<div class="crCorpo"><div class="crCaixa crPrev"><div class="crTela"><canvas id="crCanvas" aria-label="Seu personagem em 3D. Arraste para girar."></canvas></div>' +
+    '<div class="crGiro"><button type="button" class="pxBtn" data-a="giraE" aria-label="Girar para a esquerda">◀</button><span>Arraste o boneco<br>para girar</span><button type="button" class="pxBtn" data-a="giraD" aria-label="Girar para a direita">▶</button></div></div>' +
+    '<div class="crCaixa crPainel"><div class="crScroll" id="crScroll"></div><div class="crRodape" id="crRodape"></div></div></div>';
+  const raizJogo = $('raizJogo') || document.body;
+  raizJogo.appendChild(el);
+  const $c = (id) => el.querySelector('#' + id);
+  const tocar = () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); };
+
+  // ----- dados do personagem -----
+  const aparencia = () => {
+    const corH = CORES_CABELO[E.corCabelo] || CORES_CABELO[0];
+    const corB = E.corBarba >= 0 && CORES_CABELO[E.corBarba] ? CORES_CABELO[E.corBarba].cor : corH.cor;
+    return { pele: PELES_FITZ[E.pele].cor, cabelo: corH.cor, estilo: E.estilo, barba: E.barba, rosto: E.rosto, corBarba: corB, manga: E.manga, meiao: E.meiao, chuteira: E.chuteira };
+  };
+  const sobrenome = () => { const p = E.nome.trim().split(/\s+/); return p[p.length - 1] || ''; };
+  const sugestaoCamisa = () => (E.temApelido && E.apelido.trim() ? E.apelido.trim() : sobrenome()).toUpperCase().slice(0, 10);
+  const salvar = () => {
+    salvo.gravar('futebolJs.personagem.v1', { E, criado: true });
+    PERSONAGEM.nome = E.nome.trim(); PERSONAGEM.apelido = E.temApelido ? E.apelido.trim() : '';
+    PERSONAGEM.nomeCamisa = (E.nomeCamisa.trim() || sugestaoCamisa()).toUpperCase().slice(0, 10);
+    PERSONAGEM.numero = E.numero; PERSONAGEM.aparencia = aparencia(); PERSONAGEM.pe = E.pe; PERSONAGEM.comemoracao = E.comemoracao; PERSONAGEM.voz = E.voz;
+  };
+
+  // ----- boneco 3D (cena própria) -----
+  let rd = null, cena = null, cam = null, boneco = null, raf = 0, yaw = 0.5, yawAlvo = 0.5, autoGira = true, foco = FOCO_CRIADOR.corpo, camY = 1.0, camD = 5.0, camAz = 0, ultimo = 0, aquece = false, campo = null, campoK = 0, campoAlvo = 0, chaoMesh = null;
+  const iniciar3D = () => {
+    if (rd) return;
+    const cv = $c('crCanvas');
+    rd = new THREE.WebGLRenderer({ canvas: cv, antialias: false });
+    rd.setPixelRatio(1);
+    cena = new THREE.Scene(); cena.background = new THREE.Color(0x2a1a0e);
+    cam = new THREE.PerspectiveCamera(32, 1, 0.1, 40);
+    cena.add(new THREE.AmbientLight(0xffffff, 0.78));
+    const sol = new THREE.DirectionalLight(0xffffff, 0.55); sol.position.set(3, 5, 4); cena.add(sol);
+    const chao = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.2, 0.12, 12), new THREE.MeshLambertMaterial({ color: 0x3c8a2c }));
+    chao.position.y = -0.06; cena.add(chao); chaoMesh = chao;
+    let arrasta = false, x0 = 0;
+    cv.addEventListener('pointerdown', (e) => { arrasta = true; x0 = e.clientX; autoGira = false; cv.setPointerCapture(e.pointerId); cv.style.cursor = 'grabbing'; });
+    cv.addEventListener('pointermove', (e) => { if (!arrasta) return; const dx = e.clientX - x0; x0 = e.clientX; yaw += dx * 0.016; yawAlvo = yaw; });
+    const solta = () => { arrasta = false; cv.style.cursor = 'grab'; };
+    cv.addEventListener('pointerup', solta); cv.addEventListener('pointercancel', solta);
+    new ResizeObserver(ajustar).observe(cv.parentNode);
+  };
+  const ajustar = () => {
+    if (!rd) return;
+    const t = $c('crCanvas').parentNode, w = Math.max(2, t.clientWidth), h = Math.max(2, t.clientHeight), f = Math.max(2, Math.round(Math.min(w, h) / 150));  // ~150 pixels de altura: bem "PS1"
+    rd.setSize(Math.ceil(w / f), Math.ceil(h / f), false);
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+  };
+  const criarCampo = () => {
+    if (campo) return;
+    const c = document.createElement('canvas'); c.width = 352; c.height = 220;
+    const g = c.getContext('2d');
+    for (let i = 0; i < 22; i++) { g.fillStyle = i % 2 ? '#34802a' : '#3c8a2c'; g.fillRect(i * 16, 0, 16, 220); }
+    g.strokeStyle = '#EDEDE6'; g.lineWidth = 2; g.strokeRect(6, 6, 340, 208); g.beginPath(); g.moveTo(176, 6); g.lineTo(176, 214); g.stroke();
+    g.beginPath(); g.arc(176, 110, 30, 0, 7); g.stroke(); g.strokeRect(6, 55, 44, 110); g.strokeRect(302, 55, 44, 110);
+    const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+    campo = new THREE.Group(); const mats = [];
+    const M = (o) => { const m = new THREE.MeshLambertMaterial(Object.assign({ transparent: true, opacity: 0 }, o)); mats.push(m); return m; };
+    const plano = new THREE.Mesh(new THREE.PlaneGeometry(44, 27.5), M({ map: tex })); plano.rotation.x = -Math.PI / 2; plano.position.y = -0.02; campo.add(plano);
+    for (const sx of [-1, 1]) {                       // traves
+      const x = sx * 21.6, b = (w, h, d, px, py, pz) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M({ color: 0xf2f2ee })); m.position.set(px, py, pz); campo.add(m); };
+      b(0.12, 2.44, 0.12, x, 1.22, -3.66); b(0.12, 2.44, 0.12, x, 1.22, 3.66); b(0.12, 0.12, 7.44, x, 2.44, 0);
+    }
+    const bola = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), M({ color: 0xffffff })); bola.position.set(0.8, 0.11, 0.55); campo.add(bola);
+    campo.userData.mats = mats; cena.add(campo);
+  };
+  const tirarCampo = () => { if (!campo) return; cena.remove(campo); campo.traverse((o) => { if (o.geometry) o.geometry.dispose(); if (o.material) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } }); campo = null; campoK = 0; campoAlvo = 0; chaoMesh.material.opacity = 1; cena.background = new THREE.Color(0x2a1a0e); };
+  const reconstruir = () => {
+    if (!cena) return;
+    if (boneco) {
+      ATLETAS.delete(boneco); cena.remove(boneco.raiz);
+      boneco.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); if (o.material && o.material !== SHADOW_MAT) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+    }
+    const ap = aparencia();      // uniforme da montagem: todo branco, com nome e número em preto
+    boneco = makeAthlete({ camisa: '#FFFFFF', listra: '#FFFFFF', gola: '#E4E4E4', numero: E.numero, calcao: 0xFFFFFF, meia: '#FFFFFF', sola: '#E4E4E4', corTexto: '#111111',
+      pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, barba: ap.barba, rosto: ap.rosto, corBarba: ap.corBarba, manga: ap.manga, meiao: ap.meiao, chuteira: ap.chuteira,
+      nomeCamisa: (E.nomeCamisa.trim() || sugestaoCamisa()), nome: E.nome || 'Você', fundoNome: 'rgba(0,0,0,0.5)' });
+    boneco.etiqueta.visible = false;
+    cena.add(boneco.raiz);
+  };
+  const loop = (t) => {
+    raf = requestAnimationFrame(loop);
+    const dt = Math.min(0.05, (t - ultimo) / 1000 || 0.016); ultimo = t;
+    if (autoGira) { yaw += dt * 0.7; yawAlvo = yaw; } else yaw += (yawAlvo - yaw) * Math.min(1, dt * 10);
+    const kk = Math.min(1, dt * (emCena ? 1.6 : 6));
+    camY += (foco.y - camY) * kk; camD += (foco.d - camD) * kk; camAz += ((foco.az || 0) - camAz) * kk;
+    if (boneco) {
+      boneco.raiz.rotation.y = yaw;
+      if (aquece) {                                  // aquecimento: pulinhos e braços girando (o mesmo do reserva no banco)
+        const f = t / 1000 * 2.2, pul = Math.max(0, Math.sin(f * 3));
+        boneco.raiz.position.y = pul * 0.12;
+        boneco.bracoE.rotation.z = Math.sin(f * 2) * 1.6 + 1.2; boneco.bracoD.rotation.z = Math.sin(f * 2 + Math.PI) * 1.6 + 1.2;
+        boneco.bracoE.rotation.x = 0.25; boneco.bracoD.rotation.x = -0.25;
+        usarCotovelo(boneco.bracoE, 0, 0); usarCotovelo(boneco.bracoD, 0, 0);
+        boneco.pernaE.rotation.z = pul * 0.35; boneco.pernaD.rotation.z = pul * 0.35;
+      }
+    }
+    if (campo) {                                     // o campo vai aparecendo em volta (e o "pedestal" some)
+      campoK += (campoAlvo - campoK) * Math.min(1, dt * 0.9);
+      for (const m of campo.userData.mats) { m.opacity = campoK; m.visible = campoK > 0.01; }
+      chaoMesh.material.transparent = true; chaoMesh.material.opacity = 1 - campoK;
+      const c0 = new THREE.Color(0x2a1a0e), c1 = new THREE.Color(0x78b4e8); cena.background = c0.lerp(c1, campoK);
+    }
+    cam.position.set(Math.cos(camAz) * camD, camY + 0.12, Math.sin(camAz) * camD); cam.lookAt(0, camY, 0);
+    rd.render(cena, cam);
+  };
+  const irPara = (parte) => { foco = FOCO_CRIADOR[parte] || FOCO_CRIADOR.corpo; };
+
+  // ----- telas dos passos -----
+  const chips = (lista, atual, a) => '<div class="crGrade">' + lista.map((n, i) => '<button type="button" class="pxBtn crChip' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '">' + esc(n) + '</button>').join('') + '</div>';
+  const cores = (lista, atual, a, comIgual) => '<div class="crCores">' + (comIgual ? '<button type="button" class="crCor igual' + (atual < 0 ? ' on' : '') + '" data-a="' + a + '" data-i="-1" title="Igual ao cabelo" aria-label="Igual ao cabelo">=</button>' : '') +
+    lista.map((c, i) => '<button type="button" class="crCor' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '" style="background:' + (c.cor) + '" title="' + esc(c.nome) + '" aria-label="' + esc(c.nome) + '"></button>').join('') + '</div>';
+  const ABAS = {
+    2: [['pele', 'Pele'], ['cabelo', 'Cabelo'], ['barba', 'Barba'], ['rosto', 'Rosto']],
+    3: [['blusa', 'Blusa'], ['meiao', 'Meião'], ['chuteira', 'Chuteira']],
+    4: [['pe', 'Pé'], ['comemoracao', 'Comemoração'], ['voz', 'Voz']],
+  };
+  const NOMES_PASSO = { 1: 'IDENTIDADE', 2: 'APARÊNCIA', 3: 'EQUIPAMENTO', 4: 'ESTILO DE JOGO' };
+  const desenhar = () => {
+    $c('crPassos').textContent = 'PASSO ' + passo + ' DE 4 · ' + NOMES_PASSO[passo];
+    const sc = $c('crScroll');
+    let h = '', r = '';
+    if (passo === 1) {
+      h = '<div class="crCampo"><label for="crNome">Qual é o seu nome?</label><input id="crNome" type="text" maxlength="22" autocomplete="off" autocapitalize="words" placeholder="Ex.: Herick Silva" value="' + esc(E.nome) + '"></div>' +
+        '<div class="crCampo"><label>Tem apelido?</label><div class="crDuplo"><button type="button" class="pxBtn' + (!E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="0">Não tenho</button><button type="button" class="pxBtn' + (E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="1">Tenho</button></div>' +
+        (E.temApelido ? '<input id="crApelido" type="text" maxlength="14" autocomplete="off" placeholder="Ex.: Ricky" value="' + esc(E.apelido) + '">' : '') + '</div>' +
+        '<div class="crCampo"><label for="crCamisa">Nome na camisa</label><input id="crCamisa" type="text" maxlength="10" autocomplete="off" placeholder="' + esc(sugestaoCamisa() || 'SOBRENOME') + '" value="' + esc(E.nomeCamisa) + '"><p class="crDica">Vazio = usa o apelido (ou o sobrenome). Máximo 10 letras. Gire o boneco para ver as costas.</p></div>' +
+        '<div class="crCampo"><label for="crNum">Número preferido</label><div class="crNum"><button type="button" class="pxBtn" data-a="num" data-i="-1" aria-label="Diminuir">−</button><input id="crNum" type="number" inputmode="numeric" min="1" max="99" value="' + E.numero + '"><button type="button" class="pxBtn" data-a="num" data-i="1" aria-label="Aumentar">+</button></div><p class="crDica">De 1 a 99. Se o número já estiver ocupado no time, o jogo dá outro.</p></div>';
+      r = '<p class="crMsg" role="status">' + esc(msg) + '</p><button type="button" class="pxBtn" data-a="sair">Menu</button><button type="button" class="pxBtn pxPrim" data-a="proximo">Próximo ▶</button>';
+    } else {
+      const abas = ABAS[passo];
+      if (!abas.some(([k]) => k === aba)) aba = abas[0][0];
+      h = '<div class="crAbas' + (abas.length === 3 ? ' tres' : '') + '">' + abas.map(([k, n]) => '<button type="button" class="pxBtn' + (aba === k ? ' on' : '') + '" data-a="aba" data-k="' + k + '">' + n + '</button>').join('') + '</div>';
+      if (aba === 'pele') {
+        h += '<p class="crSecao">Tom de pele</p>' + cores(PELES_FITZ, E.pele, 'pele', false) + '<p class="crNomeSel">' + esc(PELES_FITZ[E.pele].nome) + '</p><p class="crDica">Escala de Fitzpatrick, do tipo I ao VI.</p>';
+      } else if (aba === 'cabelo') {
+        h += '<p class="crSecao">Corte</p>' + chips(ESTILOS_CABELO.map((c) => c.nome), E.estilo, 'corte') + '<p class="crSecao">Cor do cabelo</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(CORES_CABELO[E.corCabelo].nome) + '</p>';
+      } else if (aba === 'barba') {
+        const nomesB = ESTILOS_BARBA.map((b) => b.nome);
+        h += '<p class="crSecao">Barba</p><div class="crGrade">' + [0, 1, 2, 3, 4, 5, 6].map((i) => '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(nomesB[i]) + '</button>').join('') + '</div>' +
+          '<p class="crSecao">Só bigodinho</p><div class="crGrade">' + [7, 8, 9].map((i) => '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(nomesB[i]) + '</button>').join('') + '</div>' +
+          '<p class="crSecao">Cor da barba</p>' + cores(CORES_CABELO, E.corBarba, 'corBarba', true) + '<p class="crNomeSel">' + (E.corBarba < 0 ? 'Igual ao cabelo' : esc(CORES_CABELO[E.corBarba].nome)) + '</p>';
+      } else if (aba === 'rosto') {
+        h += '<p class="crSecao">Rosto</p>' + chips(ROSTOS.map((x) => x.nome), E.rosto, 'rosto');
+      } else if (aba === 'blusa') {
+        h += '<p class="crSecao">Blusa</p><div class="crGrade largo">' + ['Manga curta', 'Manga longa'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.manga ? ' on' : '') + '" data-a="manga" data-i="' + i + '">' + n + '</button>').join('') + '</div><p class="crDica">A cor da camisa é a do time. Aqui é só o modelo.</p>';
+      } else if (aba === 'meiao') {
+        h += '<p class="crSecao">Meião</p><div class="crGrade largo">' + ['Curto', 'Normal', 'Longo'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.meiao ? ' on' : '') + '" data-a="meiao" data-i="' + i + '">' + n + '</button>').join('') + '</div>';
+      } else if (aba === 'chuteira') {
+        h += '<p class="crSecao">Chuteira</p><div class="crGrade largo">' + CHUTEIRAS.map((c, i) => '<button type="button" class="pxBtn crChip' + (i === E.chuteira ? ' on' : '') + '" data-a="chuteira" data-i="' + i + '"><span class="crSw" style="background:' + c.base + '"></span>' + esc(c.nome) + '</button>').join('') + '</div>';
+      } else if (aba === 'pe') {
+        h += '<p class="crSecao">Pé dominante</p><div class="crGrade largo">' + [['D', 'Pé direito'], ['E', 'Pé esquerdo']].map(([k, n]) => '<button type="button" class="pxBtn crChip' + (E.pe === k ? ' on' : '') + '" data-a="pe" data-k="' + k + '">' + n + '</button>').join('') + '</div><p class="crDica">É o pé com que você chuta e passa melhor.</p>';
+      } else if (aba === 'comemoracao') {
+        h += '<p class="crSecao">Comemoração de gol</p><div class="crGrade largo">' + ['Aviãozinho', 'Joelhada'].map((n, i) => '<button type="button" class="pxBtn crChip' + (E.comemoracao === i + 1 ? ' on' : '') + '" data-a="comemoracao" data-i="' + (i + 1) + '">' + n + '</button>').join('') + '</div><p class="crDica">Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.</p>';
+      } else if (aba === 'voz') {
+        h += '<p class="crSecao">Tom de voz</p><div class="crFala">“' + esc(Mumble.TEXTO_PADRAO.replace('Vamos', 'Vamos').replace(/^/, '')) + '”</div><div class="crGrade largo">' +
+          Mumble.VOZES.map((v, i) => '<button type="button" class="pxBtn crChip' + (i === E.voz ? ' on' : '') + '" data-a="voz" data-i="' + i + '">' + (i + 1) + ' · ' + esc(v.nome) + '</button>').join('') + '</div><p class="crDica">Toque numa voz para ouvir. Da mais aguda (1) à mais grave (5).</p>';
+      }
+      r = '<p class="crMsg"></p><button type="button" class="pxBtn" data-a="anterior">◀ Voltar</button>' + (passo < 4 ? '<button type="button" class="pxBtn pxPrim" data-a="proximo">Próximo ▶</button>' : '<button type="button" class="pxBtn pxPrim" data-a="concluir">Salvar personagem ✔</button>');
+    }
+    sc.innerHTML = h; $c('crRodape').innerHTML = r; sc.scrollTop = 0;
+    irPara(passo === 1 ? 'corpo' : aba);
+  };
+  const validar1 = () => {
+    if (!E.nome.trim()) return 'Digite o seu nome.';
+    if (E.temApelido && !E.apelido.trim()) return 'Digite o apelido (ou escolha "Não tenho").';
+    return '';
+  };
+  const mudou = () => { reconstruir(); };
+  const abrir = () => {
+    iniciar3D(); if (Som.ligar) Som.ligar();
+    el.classList.remove('cena'); emCena = false; aquece = false; tirarCampo();
+    el.hidden = false; tela.hidden = true;
+    passo = 1; aba = 'pele'; msg = ''; autoGira = true; camAz = 0;
+    desenhar(); ajustar(); reconstruir();
+    cancelAnimationFrame(raf); ultimo = performance.now(); raf = requestAnimationFrame(loop);
+    setTimeout(() => { const n = $c('crNome'); if (n && !window.matchMedia('(pointer: coarse)').matches) n.focus({ preventScroll: true }); }, 30);
+  };
+  const fechar = () => { cancelAnimationFrame(raf); raf = 0; el.hidden = true; tela.hidden = false; tirarCampo(); if (aoFechar) aoFechar(); };
+
+  // ----- SALVAR PERSONAGEM + cena de abertura -----
+  // Os menus somem, o boneco aquece, o campo vai aparecendo em volta e ele fala (caixa de diálogo + voz mumble).
+  // No fim, a tela fica preta mostrando o ano atual, que volta 12 anos — é um "loading escondido" para a próxima cena
+  // (a fase 1 ainda não existe: por enquanto o contador termina num aviso e volta ao menu).
+  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const cenaAbertura = async () => {
+    if (emCena) return;
+    emCena = true; salvar(); PERSONAGEM.ativo = true;
+    if (Som.ligar) Som.ligar();
+    reconstruir(); aquece = true; autoGira = false;
+    criarCampo(); campoAlvo = 1;
+    el.classList.add('cena');
+    irPara('cena'); yawAlvo = -(FOCO_CRIADOR.cena.az);
+    await esperar(3400);
+    const nome = PERSONAGEM.apelido || PERSONAGEM.nome;
+    await Dialogo.mostrar([
+      'É, esse aí sou eu... me preparando...',
+      'Mas... minha história com o futebol não começou aí não.',
+      'É, na verdade, ela começou há muito tempo atrás...',
+      'Precisamente... 12 anos atrás',
+    ], { nome, voz: E.voz, aoLinha: (i) => { if (i === 1) aquece = false; } });
+    await anoVoltando();
+    // fim (por enquanto): volta ao menu
+    cancelAnimationFrame(raf); raf = 0; aquece = false; tirarCampo();
+    el.classList.remove('cena'); el.hidden = true; tela.hidden = false; emCena = false;
+    const t = $('anoTela'); if (t) { t.classList.remove('on'); setTimeout(() => t.remove(), 1000); }
+    if (aoFechar) aoFechar();
+  };
+  const anoVoltando = async () => {
+    const t = document.createElement('div'); t.id = 'anoTela';
+    t.innerHTML = '<div class="anoNum"></div><p class="anoTxt"></p>';
+    ($('raizJogo') || document.body).appendChild(t);
+    const num = t.querySelector('.anoNum'), txt = t.querySelector('.anoTxt');
+    const ano0 = new Date().getFullYear(), ano1 = ano0 - 12;
+    num.textContent = String(ano0);
+    requestAnimationFrame(() => t.classList.add('on'));
+    await esperar(1500);
+    const dur = 4200, ini = performance.now();
+    await new Promise((fim) => {
+      const passoAno = (agora) => {
+        const k = Math.min(1, (agora - ini) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;       // acelera e freia
+        num.textContent = String(Math.round(ano0 + (ano1 - ano0) * e));
+        if (k < 1) requestAnimationFrame(passoAno); else fim();
+      };
+      requestAnimationFrame(passoAno);
+    });
+    await esperar(1300);
+    txt.innerHTML = 'Fase 1 · em construção<br><br><button type="button" class="pxBtn pxPrim" id="anoVoltar">Voltar ao menu</button>';
+    await new Promise((fim) => { t.querySelector('#anoVoltar').addEventListener('click', () => { if (Som.clique) Som.clique(); fim(); }); });
+  };
+
+  // ----- eventos -----
+  el.addEventListener('keydown', (e) => { if (e.target.tagName === 'INPUT') e.stopPropagation(); });   // o jogo não rouba as teclas digitadas
+  el.addEventListener('keyup', (e) => { if (e.target.tagName === 'INPUT') e.stopPropagation(); });
+  el.addEventListener('input', (e) => {
+    const t = e.target;
+    if (t.id === 'crNome') { E.nome = t.value; const c = $c('crCamisa'); if (c) c.placeholder = sugestaoCamisa() || 'SOBRENOME'; }
+    else if (t.id === 'crApelido') { E.apelido = t.value; const c = $c('crCamisa'); if (c) c.placeholder = sugestaoCamisa() || 'SOBRENOME'; }
+    else if (t.id === 'crCamisa') { E.nomeCamisa = t.value.toUpperCase(); t.value = E.nomeCamisa; }
+    else if (t.id === 'crNum') { const n = parseInt(t.value, 10); if (n >= 1 && n <= 99) E.numero = n; }
+    else return;
+    msg = ''; const m = el.querySelector('.crMsg'); if (m) m.textContent = '';
+    clearTimeout(el._t); el._t = setTimeout(mudou, 250);
+  });
+  el.addEventListener('change', (e) => { if (e.target.id === 'crNum') { E.numero = Math.min(99, Math.max(1, parseInt(e.target.value, 10) || E.numero)); e.target.value = E.numero; mudou(); } });
+  el.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-a]');
+    if (!b) return;
+    tocar();
+    const a = b.dataset.a, i = Number(b.dataset.i);
+    if (a === 'giraE' || a === 'giraD') { autoGira = false; yawAlvo = yaw + (a === 'giraD' ? 1 : -1) * Math.PI / 4; return; }
+    if (a === 'sair') { fechar(); return; }
+    if (a === 'apelido') { E.temApelido = !!i; desenhar(); mudou(); const n = $c('crApelido'); if (n && !window.matchMedia('(pointer: coarse)').matches) n.focus({ preventScroll: true }); return; }
+    if (a === 'num') { E.numero = Math.min(99, Math.max(1, E.numero + i)); $c('crNum').value = E.numero; mudou(); return; }
+    if (a === 'proximo') { if (passo === 1) { msg = validar1(); if (msg) { const m = el.querySelector('.crMsg'); m.textContent = msg; return; } } passo++; aba = ABAS[passo][0][0]; desenhar(); return; }
+    if (a === 'anterior') { passo--; msg = ''; aba = passo > 1 ? ABAS[passo][0][0] : aba; desenhar(); return; }
+    if (a === 'aba') { aba = b.dataset.k; desenhar(); return; }
+    if (a === 'concluir') { cenaAbertura(); return; }
+    // escolhas de aparência
+    if (a === 'pele') E.pele = i; else if (a === 'corte') E.estilo = i; else if (a === 'corCabelo') E.corCabelo = i;
+    else if (a === 'barba') E.barba = i; else if (a === 'corBarba') E.corBarba = i; else if (a === 'rosto') E.rosto = i;
+    else if (a === 'manga') E.manga = i; else if (a === 'meiao') E.meiao = i; else if (a === 'chuteira') E.chuteira = i;
+    else if (a === 'pe') E.pe = b.dataset.k; else if (a === 'comemoracao') E.comemoracao = i;
+    else if (a === 'voz') { E.voz = i; if (Som.ligar) Som.ligar(); if (falaAmostra) falaAmostra.parar(); falaAmostra = Mumble.amostra(i); }
+    else return;
+    const sc = $c('crScroll'), y = sc.scrollTop; desenhar(); sc.scrollTop = y;
+    irPara(aba); mudou();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (el.hidden || e.code !== 'Escape' || emCena) return;
+    e.preventDefault();
+    if (emCena) return;
+    if (passo > 1) { passo--; aba = passo > 1 ? ABAS[passo][0][0] : aba; desenhar(); } else fechar();
+  });
+  el._girarPara = (y) => { autoGira = false; yaw = yawAlvo = y; };   // (usado nos testes)
+  return { abrir, el, estado: E };
+}
+
 function montarMenuInicial() {
   const tela = $('startScreen');
   if (!tela) return;
@@ -9446,8 +10176,13 @@ function montarMenuInicial() {
     abrirPainel('Carregar jogo', '<ul class="mxSlots">' + itens + '</ul><p class="mxMsg" role="status">' + esc(msg || (lista.some(Boolean) ? '' : 'Ainda não há jogos salvos.')) + '</p>');
   };
 
+  const criador = montarCriador(tela, (como) => {          // (4.3.0) criador de personagem (modo história)
+    if (como === 'testar') { telaFecharVeu(); $('startBtn').click(); }
+  });
+  const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
   const MENU_ACOES = {
-    jogar: () => $('startBtn').click(),                     // começa a partida com o que está nas configurações
+    jogar: () => abrirPainel('Jogar', '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="modoHistoria">Modo história</button>' +
+      '<button type="button" class="pxBtn" data-acao="partidaLivre">Partida livre</button></div>'),
     carregar: () => abrirCarregar(),
     config: () => $('selBtn').click(),                      // abre OPÇÕES DA PARTIDA
     creditos: () => abrirPainel('Créditos', '<p class="mxCredPeq">Feito por</p><p class="mxCredNome">Herick</p>'),
@@ -9466,6 +10201,8 @@ function montarMenuInicial() {
     if (!b || b.disabled) return;
     if (Som.clique) Som.clique();
     if (b.dataset.acao === 'fechar') { fecharPainel(); return; }
+    if (b.dataset.acao === 'partidaLivre') { PERSONAGEM.ativo = false; telaFecharVeu(); $('startBtn').click(); return; }   // jogo de sempre, com o que está nas configurações
+    if (b.dataset.acao === 'modoHistoria') { telaFecharVeu(); criador.abrir(); return; }
     if (b.dataset.slot) {
       const r = carregarJogo(Number(b.dataset.slot));
       if (r === 'sem-partida') abrirCarregar('Este save não tem uma partida para abrir.');
@@ -9758,7 +10495,8 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.2.6',
+  versao: '4.3.0',
+  personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
   salvarJogo, listarSaves, apagarSave,
