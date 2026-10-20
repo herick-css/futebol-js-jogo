@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.4.0
+   FUTEBOL JS · jogo.js · versão 4.4.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,12 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.4.1 — Lateral, música do menu e gênero do personagem:
+     - Lateral e tiro livre indireto (impedimento): gol direto não vale (vira tiro de meta; contra o próprio gol, escanteio).
+       Bola de lateral no gol: em 8 de 10 o goleiro defende fácil; em 2 de 10 deixa entrar e o gol é anulado. IA escolhe melhor o alvo do lateral.
+     - Música do menu: guitarra distorcida estava estourando (distorcedor compartilhado) — corrigido e mais baixa. Arranjo novo:
+       começa só a guitarra limpa, entra o baixo, depois uma bateria leve; verso/refrão com pad e melodia em terças (harmonia).
+     - Criador de personagem: gênero (masculino/feminino); feminino sem aba de barba e falas no feminino (Tg/Tgf, tabela FEMININO).
    Novidades da versão 4.4.0 — Fase 1 (pátio, tutorial e partida):
      - A quadra do pátio é a mesma da partida (construirQuadraFutsal, com o portão); o campo de várzea não aparece mais antes dela.
      - Tutorial só com João e o jogador: ele ensina também falta, lateral e escanteio; o Professor é o árbitro da partida.
@@ -417,7 +423,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.4.0';
+const VERSAO_JOGO = '4.4.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -781,7 +787,7 @@ const NOMES_TECNICO = ['Professor Carlão', 'Seu Bené', 'Mister Raul', 'Tio Zec
   'Seu Jorjão', 'Comandante Lula', 'Doutor Valter', 'Professora Neide', 'Tio Juca'];
 
 // ---- Armazenamento no aparelho (com proteção: no modo privado ele pode não existir).
-const PERSONAGEM = { ativo: false, nome: '', apelido: '', nomeCamisa: '', numero: 9, aparencia: null, pe: 'D', comemoracoes: [1, 2], voz: 2 };   // (4.3.0) personagem do modo história
+const PERSONAGEM = { ativo: false, nome: '', apelido: '', nomeCamisa: '', numero: 9, aparencia: null, pe: 'D', comemoracoes: [1, 2], voz: 2, genero: 'M' };   // genero: 'M' | 'F' (4.4.1)   // (4.3.0) personagem do modo história
 function personagemAparencia() { return Object.assign({}, PERSONAGEM.aparencia, { nomeCamisa: PERSONAGEM.nomeCamisa }); }
 const salvo = {
   ler(chave, padrao) { try { const v = localStorage.getItem(chave); return v ? JSON.parse(v) : padrao; } catch (e) { return padrao; } },
@@ -3484,6 +3490,16 @@ function gkThink(p, dt) {
     }
     if (inBox && dist2D(p, holder) < 7) { tryTackle(p, holder, dt); return seek(p, holder.x, holder.z, CONFIG.GK_SPEED); }
   }
+  { // (4.4.1) lateral / tiro indireto indo no gol: em 8 de 10 o goleiro vai na bola e defende fácil; nos outros 2 fica parado
+    const DI = diretoAtivo();
+    if (G.state === 'play' && !holder && DI && DI.team !== p.team && !DI.deixa && ball.vx * -p.dir > 0.3) {
+      const lx = ownGx + p.dir * 0.9, tt = (lx - ball.x) / ball.vx;
+      if (tt > 0 && tt < 4) {
+        const pz = ball.z + ball.vz * tt;
+        if (Math.abs(pz) < GOAL_HALF + 1.2) return seek(p, lx + p.dir * 0.4, clamp(pz, -GOAL_HALF + 0.3, GOAL_HALF - 0.3), CONFIG.GK_SPEED * 1.9);
+      }
+    }
+  }
   if (G.state === 'play' && !holder) {
     const lineX = ownGx + p.dir * 0.9;
     // Plano onde ele vai interceptar: onde ELE está (se estiver perto do gol), não a linha do gol.
@@ -3886,6 +3902,10 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
     for (const p of players) if (p.wallSlot >= 0) { p.jumpT = 0.5; p.wallBlockT = 1.2; p.wallSlot = -1; }
   }
   if (G.sp && G.sp.taker === from && G.sp.kind === 'penalti') goleiroAdivinha(TEAMS[1 - from.team].find((p) => p.role === 'GK'));
+  // (4.4.1) Lateral e tiro livre INDIRETO (impedimento): não vale gol direto. G.direto vale até outro jogador tocar na bola.
+  // Quando a bola vai no gol, o goleiro defende fácil em 8 de 10 (deixa = false); em 2 de 10 deixa entrar e o gol é anulado.
+  if (G.sp && G.sp.taker === from && (G.sp.kind === 'lateral' || (G.sp.kind === 'falta' && G.sp.motivo === 'impedimento'))) G.direto = { taker: from, team: from.team, kind: G.sp.kind, deixa: Math.random() < 0.2, t: G.time };
+  else if (G.direto && G.direto.taker !== from) G.direto = null;
   if (G.sp && G.sp.taker === from) {               // cobrança feita: jogo segue normal
     if (G.sp.kind === 'tiro de meta') { const sp = spareOf(G.sp.side); sp.present = true; sp.fade = 0; } // nova reserva surgindo
     const RS = G.sp.reserva;                         // (4.1.3) cone / suporte do goleiro: aparece outra
@@ -4022,7 +4042,7 @@ function givePossession(p, opts = {}) {
   if (!opts.silent && ball.userPass && p.team === 0 && p !== user) G.stats.passesOk++;
   if (!opts.silent && p.role !== 'GK') Som.toque(0.25);   // bola chegando no pé
   if (G.timeComBola !== p.team) { G.timeComBola = p.team; G.recuperouEm = G.time; }   // para o contra-ataque
-  G.possession = p; G.lastTouch = p;
+  G.possession = p; G.lastTouch = p; G.direto = null;
   p.comPe = !!opts.comPe;                          // goleiro com a bola no PÉ (recuo de companheiro)
   ball.vx = ball.vy = ball.vz = 0; ball.spinSide = ball.spinVert = 0;
   ball.broken = false; ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.penalti = false;
@@ -4037,6 +4057,8 @@ function checkBallContacts() {
   const sp3 = Math.hypot(ball.vx, ball.vy, ball.vz);
   for (const gk of players) {
     if (gk.role !== 'GK' || gk.controlCd > 0 || (gk.stun > 0 && gk.diveT <= 0) || (ball.lastKicker === gk && sp3 > 5)) continue;
+    const DI = diretoAtivo();                      // (4.4.1) lateral/indireto direto no gol: 2 em 10 ele deixa passar (sem tocar), nos outros 8 pega
+    if (DI && DI.team !== gk.team && DI.deixa) continue;
     // (4.0.0) RECUO: bola tocada de propósito por um companheiro → o goleiro não pode pegar com a
     // mão. Ele domina com o pé (bola baixa, perto dele) e joga como jogador de linha.
     const LK = ball.lastKicker;
@@ -4089,6 +4111,7 @@ function checkBallContacts() {
       }
       if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
+      if (DI && DI.team !== gk.team) chance = 1;     // (4.4.1) lateral/indireto: defesa fácil
       ball.saveOk = Math.random() < chance;
       if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
       if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5))) {   // no corpo nunca "atravessa": rebate
@@ -4195,6 +4218,14 @@ function checkBallContacts() {
   }
 }
 
+// (4.4.1) Bola de lateral / tiro livre indireto que ninguém mais tocou ainda (vale por ~10 s). null se já foi tocada.
+function diretoAtivo() {
+  const D = G.direto;
+  if (!D) return null;
+  if (G.time - D.t > 10 || G.lastTouch !== D.taker || ball.lastKicker !== D.taker) { G.direto = null; return null; }
+  return D;
+}
+
 // Saiu? Decide se foi gol, escanteio, tiro de meta ou lateral e começa a cena.
 function handleBallOut() {
   const R = CONFIG.BALL_R;
@@ -4202,6 +4233,17 @@ function handleBallOut() {
   if (Math.abs(ball.x) > HALF_L + R) {
     const side = Math.sign(ball.x);
     if (Math.abs(ball.z) < GOAL_HALF && (G.possession || ball.y < CONFIG.GOAL_H)) {
+      const DI = !G.pen && !G.possession ? diretoAtivo() : null;
+      if (DI && G.lastTouch === DI.taker) {         // (4.4.1) gol direto de lateral / tiro livre indireto não vale
+        const marcou = side > 0 ? 0 : 1, zsg0 = Math.sign(ball.z || 1);
+        G.direto = null;
+        marcarComAtraso(() => {
+          showToast('Gol anulado: não vale direto de ' + (DI.kind === 'lateral' ? 'lateral' : 'tiro livre indireto') + '!', '');
+          if (marcou === DI.team) startRestart('tiro de meta', 1 - DI.team, { x: side * (HALF_L - SMALL_BOX.depth), z: zsg0 * 4 });   // no gol adversário: tiro de meta
+          else startRestart('escanteio', 1 - DI.team, { x: side * HALF_L, z: zsg0 * HALF_W });                                          // contra o próprio gol: escanteio
+        }, APITO_ATRASO_BOLA);
+        return;
+      }
       // (4.2.3) Gol de um chute bom (câmera lenta): o gol só é CONTADO depois de ~3 s da cena.
       if (G.shotCine && !G.pen) { G.golPend = { team: side > 0 ? 0 : 1, t: 0, tGol: G.time }; return; }
       scoreGoal(side > 0 ? 0 : 1); return;
@@ -4699,7 +4741,7 @@ function kickoff(team) {
   G.kickoffPending = { team, taker, partner };
   if (window.__semApito) window.__apitoPendente = true; else Som.apito(0.5);   // apito da saída de bola (4.2.5: espera a tela de carregando sumir)
   G.userRequest = 0;
-  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null; G.direto = null;
   esconderRecepcao(); user.recvPose = null;
   for (const sp of spares.concat(conesBola)) if (!sp.present) { sp.present = true; sp.fade = 1; }
   lostBall.life = 0; ball.hidden = false;
@@ -4728,6 +4770,7 @@ function startRestart(kind, team, spot, motivo) {
   G.kickoffPending = null; G.offside = null;
   ball.userPass = false; ball.userShot = false;
   const side = Math.sign(spot.x) || 1, zs = Math.sign(spot.z) || 1;
+  G.direto = null;
   const S = { kind, team, spot, side, zs, phase: 'fetch', t: 0, waitT: 0 };
   if (kind === 'lateral') {
     S.stand = { x: spot.x, z: zs * (HALF_W + 0.1) };                 // pés na linha
@@ -5065,8 +5108,10 @@ function pickSetPieceTarget(p, kind) {
     const d = dist2D(p, t), open = nearestOf(opps, t).d, fwd = (t.x - p.x) * p.dir;
     let s;
     if (kind === 'lateral') {
-      if (d < 4 || d > 22) continue;
+      if (d < (PARTIDA.regras.lateral === 'pe' ? 3 : 4) || d > 22) continue;
       s = Math.min(open, 8) * 1.4 + fwd * 0.2 - Math.max(0, d - 14) * 0.4;
+      for (const o of opps) if (distPointSegment(o, p, t) < 1.6) { s -= 7; break; }       // (4.4.1) não bate o lateral em cima de um adversário no meio do caminho
+      if (Math.abs(t.z) > HALF_W - 1.5) s -= 3;                                            // nem em quem está colado na linha (a bola sai de novo)
     } else if (kind === 'escanteio') {
       const inBox = Math.abs(t.x - Math.sign(p.x) * HALF_L) < BOX.depth && Math.abs(t.z) < BOX.half;
       if (!inBox) continue;
@@ -9811,6 +9856,7 @@ const I18N = {
   'EQUIPAMENTO': ['GEAR', 'EQUIPACIÓN', 'EQUIPAGGIAMENTO', 'ÉQUIPEMENT'], 'ESTILO DE JOGO': ['PLAYSTYLE', 'ESTILO DE JUEGO', 'STILE DI GIOCO', 'STYLE DE JEU'],
   'Qual é o seu nome?': ['What is your name?', '¿Cómo te llamas?', 'Come ti chiami?', "Comment t'appelles-tu ?"],
   'Ex.: Herick Silva': ['E.g.: Herick Silva', 'Ej.: Herick Silva', 'Es.: Herick Silva', 'Ex. : Herick Silva'],
+  'Gênero': ['Gender', 'Género', 'Genere', 'Genre'], 'Masculino': ['Male', 'Masculino', 'Maschile', 'Masculin'], 'Feminino': ['Female', 'Femenino', 'Femminile', 'Féminin'],
   'Tem apelido?': ['Do you have a nickname?', '¿Tienes apodo?', 'Hai un soprannome?', 'As-tu un surnom ?'],
   'Não tenho': ["I don't", 'No tengo', 'Non ce l\'ho', 'Non'], 'Tenho': ['I do', 'Tengo', "Ce l'ho", 'Oui'],
   'Ex.: Ricky': ['E.g.: Ricky', 'Ej.: Ricky', 'Es.: Ricky', 'Ex. : Ricky'],
@@ -10120,7 +10166,7 @@ const Musica = (() => {
     g.gain.setValueAtTime(0.0001, t);
     g.gain.linearRampToValueAtTime(vol, t + (o.ataque || 0.012));
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    if (o.dist) { osc.connect(dist); dist.connect(f); } else osc.connect(f);
+    if (o.dist) { const ws = ctx.createWaveShaper(); ws.curve = dist.curve; osc.connect(ws); ws.connect(f); } else osc.connect(f);   // (4.4.1) um distorcedor POR nota (antes um só era compartilhado e o volume multiplicava pelo nº de notas: a guitarra estourava)
     f.connect(g); g.connect(bus);
     osc.start(t); osc.stop(t + dur + 0.05);
   };
@@ -10170,34 +10216,49 @@ const Musica = (() => {
   // ----------------------------------------------------------- ROCK ALTERNATIVO (Am–F–C–G, 8 compassos verso / 8 refrão)
   const RBPM = 126, RB = 60 / RBPM, R8 = RB / 2;
   const ROCK = [{ r: 45, tri: [57, 60, 64, 69] }, { r: 41, tri: [53, 57, 60, 65] }, { r: 36, tri: [55, 60, 64, 67] }, { r: 43, tri: [55, 59, 62, 67] }];
-  const chute = (t) => {
+  const chute = (t, v) => {
+    v = v == null ? 1 : v;
     const o = ctx.createOscillator(), g = ctx.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(42, t + 0.12);
-    g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    g.gain.setValueAtTime(0.9 * v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
     o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.3);
   };
-  const caixa = (t) => { chiado(t, 0.17, 0.4, 1900, 'bandpass', 0.7); nota('triangle', 55, t, 0.12, 0.28, { corte: 1200, ataque: 0.002 }); };
+  const caixa = (t, v) => { v = v == null ? 1 : v; chiado(t, 0.17, 0.4 * v, 1900, 'bandpass', 0.7); nota('triangle', 55, t, 0.12, 0.28 * v, { corte: 1200, ataque: 0.002 }); };
+  // (4.4.1) Arranjo: 0-3 só a guitarra limpa (arpejo) + base suave; 2+ entra o baixo; 4-7 a guitarra continua e entra uma bateriazinha leve;
+  // do compasso 8 em diante: verso (4) / refrão (4) em loop, bateria completa e guitarra distorcida (agora mais baixa), sempre com o arpejo por baixo.
+  // Harmonia: acorde sustentado (pad) em cima da progressão Am–F–C–G e a melodia dobrada em terças (diatônicas de Dó maior/Lá menor).
+  const TERCA = { 0: 4, 2: 3, 4: 3, 5: 4, 7: 4, 9: 3, 11: 3 };
   const rock = (t0, n) => {
-    const c = ROCK[n % 4], refrao = Math.floor(n / 4) % 2 === 1;
-    // bateria: chute 1 e 3 (+ sincopa), caixa 2 e 4, chapéu em colcheias (aberto no refrão)
-    for (const k of (refrao ? [0, 1.5, 2, 3.5] : [0, 2])) chute(t0 + k * RB);
-    for (const k of [1, 3]) caixa(t0 + k * RB);
-    for (let i = 0; i < 8; i++) chiado(t0 + i * R8, refrao && i % 2 ? 0.16 : 0.04, 0.05, 8000);
-    if (n % 4 === 3) { caixa(t0 + 3.5 * RB); caixa(t0 + 3.75 * RB); }                               // virada
-    // baixo: colcheias na raiz (square filtrado), oitava no refrão
-    for (let i = 0; i < 8; i++) nota('square', c.r + (i % 4 === 3 && refrao ? 12 : 0), t0 + i * R8, R8 * 0.85, 0.22, { corte: 520, ataque: 0.004 });
-    if (refrao) {
-      // guitarra com distorção (sawtooth → waveshaper): power chord em "palm mute" nas colcheias, aberto no 1º tempo
-      for (let i = 0; i < 8; i++) for (const m of [c.r + 12, c.r + 19, c.r + 24])
-        nota('sawtooth', m, t0 + i * R8, i === 0 ? RB * 1.6 : R8 * 0.7, i === 0 ? 0.055 : 0.04, { corte: 1700, dist: true, ataque: 0.004 });
-    } else {
-      // verso: arpejo limpo (triangle + sine) com eco de colcheia pontuada
-      const arp = [0, 1, 2, 3, 2, 1, 2, 3];
-      for (let i = 0; i < 8; i++) { const m = c.tri[arp[i]] + 12; nota('triangle', m, t0 + i * R8, R8 * 1.6, 0.07, { corte: 3200 }); nota('sine', m, t0 + i * R8 + R8 * 1.5, R8, 0.025); }
+    const c = ROCK[n % 4], intro = n < 4, leve = n >= 4 && n < 8, refrao = n >= 8 && Math.floor((n - 8) / 4) % 2 === 1, cheia = n >= 8;
+    // pad: acorde sustentado, bem suave (a "harmonia")
+    for (const m of [c.tri[0], c.tri[1], c.tri[2]]) nota('sine', m, t0, RB * 4.1, intro ? 0.022 : 0.026, { corte: 1500, ataque: 0.5 });
+    // bateria: só depois da guitarra; leve nos compassos 4-7, completa a partir do 8
+    if (leve) {
+      for (const k of [0, 2]) chute(t0 + k * RB, 0.5);
+      for (const k of [1, 3]) caixa(t0 + k * RB, 0.38);
+      for (let i = 0; i < 8; i++) chiado(t0 + i * R8, 0.04, 0.026, 8000);
+    } else if (cheia) {
+      for (const k of (refrao ? [0, 1.5, 2, 3.5] : [0, 2])) chute(t0 + k * RB);
+      for (const k of [1, 3]) caixa(t0 + k * RB);
+      for (let i = 0; i < 8; i++) chiado(t0 + i * R8, refrao && i % 2 ? 0.16 : 0.04, 0.05, 8000);
+      if (n % 4 === 3) { caixa(t0 + 3.5 * RB); caixa(t0 + 3.75 * RB); }                           // virada
     }
-    // melodia (square suave): frase de 2 compassos que se repete com variações
-    const mel = refrao ? [[0, 69], [1, 72], [2, 71], [3, 69], [4, 67], [6, 64]] : [[0, 64], [2, 67], [4, 69], [6, 67]];
-    if (n % 2 === 0) for (const [i, m] of mel) nota('square', m + (n % 8 >= 6 ? 12 : 0), t0 + i * R8, R8 * 1.5, 0.04, { corte: 1800, ataque: 0.01, det: refrao ? 8 : 0 });
+    // baixo: entra no 3º compasso; colcheias na raiz (square filtrado), oitava no refrão
+    if (n >= 2) for (let i = 0; i < 8; i++) nota('square', c.r + (i % 4 === 3 && refrao ? 12 : 0), t0 + i * R8, R8 * 0.85, n < 4 ? 0.13 : 0.2, { corte: 520, ataque: 0.004 });
+    // guitarra limpa: arpejo (triangle + sine) com eco de colcheia pontuada; fica por baixo no refrão
+    { const arp = [0, 1, 2, 3, 2, 1, 2, 3], vol = refrao ? 0.034 : 0.07;
+      for (let i = 0; i < 8; i++) { const m = c.tri[arp[i]] + 12; nota('triangle', m, t0 + i * R8, R8 * 1.6, vol, { corte: 3200 }); nota('sine', m, t0 + i * R8 + R8 * 1.5, R8, vol * 0.36); } }
+    // guitarra com distorção no refrão (sawtooth → waveshaper): power chord em "palm mute" nas colcheias (volume reduzido: antes passava dos outros)
+    if (refrao) for (let i = 0; i < 8; i++) for (const m of [c.r + 12, c.r + 19, c.r + 24])
+      nota('sawtooth', m, t0 + i * R8, i === 0 ? RB * 1.6 : R8 * 0.7, i === 0 ? 0.024 : 0.017, { corte: 1500, dist: true, ataque: 0.004 });
+    // melodia (square suave) + segunda voz em terça, a partir do compasso 4
+    if (n >= 4 && n % 2 === 0) {
+      const mel = refrao ? [[0, 69], [1, 72], [2, 71], [3, 69], [4, 67], [6, 64]] : [[0, 64], [2, 67], [4, 69], [6, 67]], oit = n % 8 >= 6 ? 12 : 0;
+      for (const [i, m] of mel) {
+        nota('square', m + oit, t0 + i * R8, R8 * 1.5, 0.036, { corte: 1800, ataque: 0.01, det: refrao ? 8 : 0 });
+        nota('triangle', m + oit + (TERCA[m % 12] || 3), t0 + i * R8, R8 * 1.5, 0.026, { corte: 2200, ataque: 0.02 });
+      }
+    }
     return RB * 4;
   };
 
@@ -10484,6 +10545,29 @@ const HIST = (() => {
       k('Elisa', 0, 5, 'Coque com degradê', 'Sorridente', 1), k('Fábio', 2, 3, 'Topete', 'Padrão'), k('Gui', 5, 0, 'Corte baixo', 'Sorridente'), k('Hugo', 3, 2, 'Bagunçado', 'Sonolento')],
   };
 })();
+
+// ---------------------------------------------------------------------
+// (4.4.1) GÊNERO DO PERSONAGEM: falas ditas pelo jogador ou sobre ele que mudam com o gênero (bom/boa, atrasado/atrasada...).
+//   Tg('texto masculino') / Tgf('texto {0}', ...) → devolvem a versão feminina quando PERSONAGEM.genero === 'F'.
+//   Para criar uma fala nova que dependa do gênero: ponha o par [masculino, feminino] em FEMININO e use Tg/Tgf no lugar de T/Tf;
+//   a tradução da versão feminina é derivada da masculina (FEM_TROCAS ajusta es/it/fr).
+// ---------------------------------------------------------------------
+const FEMININO = [
+  ['Sim, sou muito bom em álgebra', 'Sim, sou muito boa em álgebra'],
+  ['Hum... você disse que era bom, {0}. Está chegando atrasado e mentindo também?', 'Hum... você disse que era boa, {0}. Está chegando atrasada e mentindo também?'],
+  ['É, você errou, como era de se esperar por ter chegado atrasado. Depois te passo umas tarefas extras para casa.', 'É, você errou, como era de se esperar por ter chegado atrasada. Depois te passo umas tarefas extras para casa.'],
+  ['Modesto como sempre, não é?', 'Modesta como sempre, não é?'],
+  ['É bom começar a ficar bom.', 'É bom começar a ficar boa.'],
+  ['{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', '{0}! Eu fiquei impressionada! Chegar atrasada e ainda acertar tudo... achei muito descolado!'],
+  ['Obrigado, João... Perdemos, mesmo assim.', 'Obrigada, João... Perdemos, mesmo assim.'],
+  ['Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.', 'Dizem que eu sempre fui boa... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.'],
+];
+const FEM_TROCAS = [[/stato bravo/g, 'stata brava'], [/bravo/g, 'brava'], [/Modesto/g, 'Modesta'], [/bueno/g, 'buena'], [/étais bon\b/g, 'étais bonne'], [/été bon\b/g, 'été bonne'], [/très bon /g, 'très bonne '], [/trompé,/g, 'trompée,']];
+const FEM_PT = {};
+for (const [m, f] of FEMININO) { FEM_PT[m] = f; if (I18N[m]) I18N[f] = I18N[m].map((t) => FEM_TROCAS.reduce((x, [r, y]) => x.replace(r, y), t)); }
+const ehFeminina = () => PERSONAGEM.genero === 'F';
+function Tg(chave) { return T(ehFeminina() && FEM_PT[chave] ? FEM_PT[chave] : chave); }
+function Tgf(chave, ...a) { return Tf(ehFeminina() && FEM_PT[chave] ? FEM_PT[chave] : chave, ...a); }
 
 const Fase1 = (() => {
   const SX = 6, SZ = 5, ALT = 2.8, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
@@ -11055,7 +11139,7 @@ const Fase1 = (() => {
       : S.perfil === 1 ? (perfeito() ? 'Modesto como sempre, não é?' : 'Bem que você me avisou...')
         : (perfeito() ? 'Você acertou tudo?! Então sabia álgebra, sim... Estou surpresa, {0}.' : 'É, você errou, como era de se esperar por ter chegado atrasado. Depois te passo umas tarefas extras para casa.');
     S.parA = J; S.parB = S.prof;
-    await fala('prof', Tf(txt, nomeJog()), 'entrega'); Dialogo.esconder();
+    await fala('prof', Tgf(txt, nomeJog()), 'entrega'); Dialogo.esconder();
     S.prof.yawAlvo = -Math.PI / 2;
     camPara('aula');
     await irPara(J, cx, dz + 1.12, 2.1);
@@ -11224,7 +11308,7 @@ const Fase1 = (() => {
     if (S.luciaFalou) { await fala('lucia', T('Vai lá, o João está esperando!'), 'dupla'); paraFrente(La); La.yawAlvo = -Math.PI / 2; return; }
     S.luciaFalou = true;
     if (perfeito()) {
-      const fraseImp = Tf('{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', nomeJog());
+      const fraseImp = Tgf('{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', nomeJog());
       await fala('lucia', fraseImp, 'dupla');
       const r = await escolher(fraseImp, [T('Eu acertei no chute'), T('Fico feliz que você tenha gostado'), T('Ainda bem que estudei')]);
       if (r === 1) {
@@ -11500,7 +11584,7 @@ const Fase1 = (() => {
       await fala('joao', T('Ganhamos, e muito por sua causa!'), 'dupla');
     } else if (r.bom) {
       await fala('joao', r.empate ? T('Empatamos... mas olha só como você jogou! Fiquei impressionado!') : T('Poxa, a gente perdeu... fiquei triste. Mas olha só como você jogou! Fiquei impressionado!'), 'dupla');
-      await fala('jog', T('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
+      await fala('jog', Tg('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
     } else if (r.venceu) {
       await fala('joao', T('Hahaha! A gente ganhou, mas você até tentou estragar o jogo, hein? Ganhamos mesmo assim!'), 'dupla');
       await fala('jog', T('Desculpa, João... eu errei bastante.'), 'dupla');
@@ -11515,7 +11599,7 @@ const Fase1 = (() => {
     // o traço da história
     await tracoBanner(traco);
     if (traco === 'talento') {
-      await fala('jog', T('Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.'), 'dupla');
+      await fala('jog', Tg('Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.'), 'dupla');
     } else {
       await fala('jog', T('Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.'), 'dupla');
     }
@@ -11671,9 +11755,9 @@ const Fase1 = (() => {
       await fala('prof', Tf('É a segunda vez essa semana, {0}! Semana passada eu já falei com o seu pai que você não está chegando no horário!', nomeJog()), 'prof');
       await fala('jog', T('Eu sei... desculpa...'), 'jog');
       await fala('prof', T('O assunto foi sobre álgebra. Você conhece?'), 'prof', { manter: false });
-      const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [T('Sim, sou muito bom em álgebra'), T('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
+      const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [Tg('Sim, sou muito bom em álgebra'), T('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
       S.perfil = r;
-      await fala('prof', T(['Que bom que já sabe!', 'É bom começar a ficar bom.', 'Deveria ter vindo mais cedo.'][r]), 'prof');
+      await fala('prof', Tg(['Que bom que já sabe!', 'É bom começar a ficar bom.', 'Deveria ter vindo mais cedo.'][r]), 'prof');
       S.prof.yawAlvo = -Math.PI / 2;     // vira para a turma
       await fala('prof', T('Álgebra é usar letras, como o x, no lugar de um número que ainda não conhecemos. Por exemplo: x + 3 = 7. Quanto vale o x? Isso mesmo, 4!'), 'geral', { manter: true });
       await fala('prof', T('Então, meninos, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!'), 'geral');
@@ -12074,7 +12158,7 @@ const FOCO_CRIADOR = {            // para onde a câmera olha em cada parte (y =
 };
 function montarCriador(tela, aoFechar) {
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const E = Object.assign({ nome: '', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
+  const E = Object.assign({ nome: '', genero: 'M', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
     pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, labio: 3, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
   E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
   if (!Array.isArray(E.comemoracoes) || !E.comemoracoes.length) E.comemoracoes = [1, 2];
@@ -12180,7 +12264,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
   const aparencia = () => {
     const corH = CORES_CABELO[E.corCabelo] || CORES_CABELO[0];
     const corB = E.corBarba >= 0 && CORES_CABELO[E.corBarba] ? CORES_CABELO[E.corBarba].cor : corH.cor;
-    return { pele: PELES_FITZ[E.pele].cor, cabelo: corH.cor, estilo: E.estilo, barba: E.barba, rosto: E.rosto, labio: E.labio, corBarba: corB, manga: E.manga, meiao: E.meiao, chuteira: E.chuteira };
+    return { pele: PELES_FITZ[E.pele].cor, cabelo: corH.cor, estilo: E.estilo, barba: E.genero === 'F' ? 0 : E.barba, rosto: E.rosto, labio: E.labio, corBarba: corB, manga: E.manga, meiao: E.meiao, chuteira: E.chuteira };
   };
   const sobrenome = () => { const p = E.nome.trim().split(/\s+/); return p[p.length - 1] || ''; };
   const sugestaoCamisa = () => (E.temApelido && E.apelido.trim() ? E.apelido.trim() : sobrenome()).toUpperCase().slice(0, 10);
@@ -12188,6 +12272,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     salvo.gravar('futebolJs.personagem.v1', { E, criado: true });
     PERSONAGEM.nome = E.nome.trim(); PERSONAGEM.apelido = E.temApelido ? E.apelido.trim() : '';
     PERSONAGEM.nomeCamisa = (E.nomeCamisa.trim() || sugestaoCamisa()).toUpperCase().slice(0, 10);
+    PERSONAGEM.genero = E.genero === 'F' ? 'F' : 'M';
     PERSONAGEM.numero = E.numero; PERSONAGEM.aparencia = aparencia(); PERSONAGEM.pe = E.pe; PERSONAGEM.comemoracoes = E.comemoracoes.slice(); PERSONAGEM.voz = E.voz;
   };
 
@@ -12276,6 +12361,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     3: [['blusa', 'Blusa'], ['meiao', 'Meião'], ['chuteira', 'Chuteira']],
     4: [['pe', 'Pé'], ['comemoracao', 'Comemoração'], ['voz', 'Voz']],
   };
+  const abasDe = (p) => (p === 2 && E.genero === 'F' ? ABAS[2].filter(([k]) => k !== 'barba') : ABAS[p]);   // (4.4.1) personagem feminina não tem aba de barba
   const NOMES_PASSO = { 1: 'IDENTIDADE', 2: 'APARÊNCIA', 3: 'EQUIPAMENTO', 4: 'ESTILO DE JOGO' };   // (passam por T ao desenhar)
   const desenhar = () => {
     $c('crPassos').textContent = Tf('PASSO {0} DE 4 · {1}', passo, T(NOMES_PASSO[passo]));
@@ -12283,13 +12369,14 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     let h = '', r = '';
     if (passo === 1) {
       h = '<div class="crCampo"><label for="crNome">' + T('Qual é o seu nome?') + '</label><input id="crNome" type="text" maxlength="22" autocomplete="off" autocapitalize="words" placeholder="' + esc(T('Ex.: Herick Silva')) + '" value="' + esc(E.nome) + '"></div>' +
+        '<div class="crCampo"><label>' + T('Gênero') + '</label><div class="crDuplo"><button type="button" class="pxBtn' + (E.genero !== 'F' ? ' on' : '') + '" data-a="genero" data-i="0">' + T('Masculino') + '</button><button type="button" class="pxBtn' + (E.genero === 'F' ? ' on' : '') + '" data-a="genero" data-i="1">' + T('Feminino') + '</button></div></div>' +
         '<div class="crCampo"><label>' + T('Tem apelido?') + '</label><div class="crDuplo"><button type="button" class="pxBtn' + (!E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="0">' + T('Não tenho') + '</button><button type="button" class="pxBtn' + (E.temApelido ? ' on' : '') + '" data-a="apelido" data-i="1">' + T('Tenho') + '</button></div>' +
         (E.temApelido ? '<input id="crApelido" type="text" maxlength="14" autocomplete="off" placeholder="' + esc(T('Ex.: Ricky')) + '" value="' + esc(E.apelido) + '">' : '') + '</div>' +
         '<div class="crCampo"><label for="crCamisa">' + T('Nome na camisa') + '</label><input id="crCamisa" type="text" maxlength="10" autocomplete="off" placeholder="' + esc(sugestaoCamisa() || T('SOBRENOME')) + '" value="' + esc(E.nomeCamisa) + '"><p class="crDica">' + T('Vazio = usa o apelido (ou o sobrenome). Máximo 10 letras. Gire o boneco para ver as costas.') + '</p></div>' +
         '<div class="crCampo"><label for="crNum">' + T('Número preferido') + '</label><div class="crNum"><button type="button" class="pxBtn" data-a="num" data-i="-1" aria-label="' + T('Diminuir') + '">−</button><input id="crNum" type="number" inputmode="numeric" min="1" max="99" value="' + E.numero + '"><button type="button" class="pxBtn" data-a="num" data-i="1" aria-label="' + T('Aumentar') + '">+</button></div><p class="crDica">' + T('De 1 a 99. Se o número já estiver ocupado no time, o jogo dá outro.') + '</p></div>';
       r = '<p class="crMsg" role="status">' + esc(msg) + '</p><button type="button" class="pxBtn" data-a="sair">' + T('Menu') + '</button><button type="button" class="pxBtn pxPrim" data-a="proximo">' + T('Próximo ▶') + '</button>';
     } else {
-      const abas = ABAS[passo];
+      const abas = abasDe(passo);
       if (!abas.some(([k]) => k === aba)) aba = abas[0][0];
       h = '<div class="crAbas' + (abas.length === 3 ? ' tres' : '') + '">' + abas.map(([k, n]) => '<button type="button" class="pxBtn' + (aba === k ? ' on' : '') + '" data-a="aba" data-k="' + k + '">' + T(n) + '</button>').join('') + '</div>';
       if (aba === 'pele') {
@@ -12414,10 +12501,15 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     const a = b.dataset.a, i = Number(b.dataset.i);
     if (a === 'giraE' || a === 'giraD') { autoGira = false; yawAlvo = yaw + (a === 'giraD' ? 1 : -1) * Math.PI / 4; return; }
     if (a === 'sair') { fechar(); return; }
+    if (a === 'genero') {                                           // (4.4.1) gênero: muda os textos do jogo; feminino não usa barba e começa com voz mais aguda
+      const novo = i ? 'F' : 'M';
+      if (novo !== E.genero) { E.genero = novo; if (novo === 'F') { E.barba = 0; E.corBarba = -1; if (E.voz >= 2) E.voz = 1; } else if (E.voz <= 1) E.voz = 2; }
+      desenhar(); mudou(); return;
+    }
     if (a === 'apelido') { E.temApelido = !!i; desenhar(); mudou(); const n = $c('crApelido'); if (n && !window.matchMedia('(pointer: coarse)').matches) n.focus({ preventScroll: true }); return; }
     if (a === 'num') { E.numero = Math.min(99, Math.max(1, E.numero + i)); $c('crNum').value = E.numero; mudou(); return; }
-    if (a === 'proximo') { if (passo === 1) { msg = validar1(); if (msg) { const m = el.querySelector('.crMsg'); m.textContent = msg; return; } } passo++; aba = ABAS[passo][0][0]; desenhar(); return; }
-    if (a === 'anterior') { passo--; msg = ''; aba = passo > 1 ? ABAS[passo][0][0] : aba; desenhar(); return; }
+    if (a === 'proximo') { if (passo === 1) { msg = validar1(); if (msg) { const m = el.querySelector('.crMsg'); m.textContent = msg; return; } } passo++; aba = abasDe(passo)[0][0]; desenhar(); return; }
+    if (a === 'anterior') { passo--; msg = ''; aba = passo > 1 ? abasDe(passo)[0][0] : aba; desenhar(); return; }
     if (a === 'aba') { aba = b.dataset.k; desenhar(); return; }
     if (a === 'concluir') { cenaAbertura(); return; }
     // escolhas de aparência
@@ -12434,7 +12526,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     if (el.hidden || e.code !== 'Escape' || emCena) return;
     e.preventDefault();
     if (emCena) return;
-    if (passo > 1) { passo--; aba = passo > 1 ? ABAS[passo][0][0] : aba; desenhar(); } else fechar();
+    if (passo > 1) { passo--; aba = passo > 1 ? abasDe(passo)[0][0] : aba; desenhar(); } else fechar();
   });
   el._girarPara = (y) => { autoGira = false; yaw = yawAlvo = y; };   // (usado nos testes)
   return { abrir, el, estado: E };
@@ -12972,7 +13064,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.4.0',
+  versao: '4.4.1',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
