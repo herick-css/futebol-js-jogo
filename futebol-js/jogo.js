@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.5.1
+   FUTEBOL JS · jogo.js · versão 4.6.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.6.0 — Fase 2 (fase2.js) e retomar a história pelo CARREGAR:
+     - A Fase 2 ("Dez anos depois", no arquivo fase2.js) salva sozinha na tela CARREGAR (um espaço de save: o do autosave da história, senão o
+       primeiro vazio, senão o mais antigo). Ao escolher esse save, o jogo devolve o personagem e a história salvos e abre a Fase 2 no ponto gravado
+       (montarCriador().retomar; o evento 'futebolJs:carregar' agora é tratado quando o save tem { fase, historia, personagem }).
+     - Carregar um save de história limpa a história atual e grava no lugar a que veio no save (HistoriaSave.limpar + gravar por fase).
    Novidades da versão 4.5.1 — IA do futsal/society, goleiros, Fase 1 (Cadu, empate, pátio) e criador de personagem:
      - IA no futsal/society (campo pequeno, 4 por time): um jogador fica de FIXO (o último, defende e só ataca a bola quando o atacante chega perto do gol),
        os outros fazem MARCAÇÃO 1 contra 1 (ficam entre o adversário e o gol) e, no ataque, os companheiros acompanham a jogada em vez de todos correrem na bola.
@@ -468,7 +473,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.5.1';
+const VERSAO_JOGO = '4.6.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -11877,7 +11882,28 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     if (passo > 1) { passo--; aba = passo > 1 ? abasDe(passo)[0][0] : aba; desenhar(); } else fechar();
   });
   el._girarPara = (y) => { autoGira = false; yaw = yawAlvo = y; };   // (usado nos testes)
-  return { abrir, el, estado: E };
+  // (4.6.0) Retoma um save da história (tela CARREGAR): devolve personagem e história salvos e abre a fase do save no ponto gravado.
+  //   sv = { fase: 'fase2', ponto, historia: { fase1, fase2... }, personagem: {...} } (veja gravarSlot em fase2.js)
+  const retomar = async (sv) => {
+    if (emCena || !sv || !/^[a-z0-9_-]+$/i.test(sv.fase || '')) return false;
+    emCena = true;
+    try {
+      if (sv.personagem && typeof sv.personagem === 'object') Object.assign(PERSONAGEM, sv.personagem);
+      PERSONAGEM.ativo = true;
+      HistoriaSave.limpar();
+      for (const f of Object.keys(sv.historia || {})) { try { HistoriaSave.gravar(f, sv.historia[f]); } catch (err) { console.warn(err); } }
+      if (Som.ligar) Som.ligar();
+      telaCheiaNoCelular();
+      tela.hidden = true; el.hidden = true;
+      document.body.classList.add('criadorAberto');
+      const rf = await Fases.executar(sv.fase, { retomar: sv.ponto || 'inicio' });
+      if (!rf.ok) console.warn('[' + sv.fase + '] não rodou:', rf);
+    } finally {
+      comCarregamento(() => { desligar3D(); restaurarCenario(); el.hidden = true; tela.hidden = false; emCena = false; if (aoFechar) aoFechar(); });
+    }
+    return true;
+  };
+  return { abrir, retomar, el, estado: E };
 }
 
 function montarMenuInicial() {
@@ -12091,6 +12117,11 @@ function montarMenuInicial() {
 
   const criador = montarCriador(tela, (como) => {          // (4.3.0) criador de personagem (modo história)
     if (como === 'testar') { telaFecharVeu(); $('startBtn').click(); }
+  });
+  window.addEventListener('futebolJs:carregar', (e) => {   // (4.6.0) save do modo história (Fase 2 em diante): o criador abre a fase no ponto salvo
+    const sv = e.detail && e.detail.save;
+    if (!sv || !sv.fase || !sv.historia) return;
+    e.preventDefault(); criador.retomar(sv);
   });
   const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
   const MENU_ACOES = {
@@ -12412,7 +12443,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.5.1',
+  versao: '4.6.0',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
