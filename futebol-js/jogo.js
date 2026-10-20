@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.6.0
+   FUTEBOL JS · jogo.js · versão 4.6.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,15 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.6.1 — tutorial mais firme, domínio/passe/cruzamento no motor, posições e transparência:
+   • Tutorial: no erro (passe, lateral, escanteio...) há UMA chance extra; errou duas vezes, o João diz que a gente deixa pra
+     depois. Sem comemoração, replay nem bola de volta ao meio. No passe do João para dominar, erro bruto = fala + repetição suave.
+   • Motor: domínio de bola difícil só tem o ponto AZUL; passe e cruzamento com assistência de mira bem mais livre.
+   • Avaliação da partida conforme a posição escolhida; trocar de posição só troca os personagens de lugar (ninguém some).
+   • Goleiro do João agora é o Sérgio; fala do 'jogar pra valer depois' removida; texto da mariposa avisa que afeta a história.
+   • Fase 1: professora fica feliz pelo bom resultado, mas preocupada com os horários.
+   • Bonecos translúcidos (câmera) mais opacos e limpos: um passe de profundidade evita a sobreposição de cubos.
+
    Novidades da versão 4.6.0 — Fase 2 (fase2.js) e retomar a história pelo CARREGAR:
      - A Fase 2 ("Dez anos depois", no arquivo fase2.js) salva sozinha na tela CARREGAR (um espaço de save: o do autosave da história, senão o
        primeiro vazio, senão o mais antigo). Ao escolher esse save, o jogo devolve o personagem e a história salvos e abre a Fase 2 no ponto gravado
@@ -473,7 +482,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.6.0';
+const VERSAO_JOGO = '4.6.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -4234,7 +4243,7 @@ function updateBall(dt) {
     const dx = ball.x - user.x, dz = ball.z - user.z, d = Math.hypot(dx, dz);
     if (d < 0.8 && d > 0.001) { ball.x = user.x + dx / d * 0.8; ball.z = user.z + dz / d * 0.8; }
   }
-  if ((G.state === 'goal' || G.state === 'celebrate' || G.golPend) && Math.abs(ball.x) > HALF_L) {
+  if ((G.state === 'goal' || G.state === 'celebrate' || G.golPend || G.treinoGol > 0) && Math.abs(ball.x) > HALF_L) {
     const side = Math.sign(ball.x);
     if (Math.abs(ball.x) > HALF_L + 2) { ball.x = side * (HALF_L + 2); ball.vx *= -0.2; }
     // (4.1.3) A rede segura a bola: ela não volta rolando para fora do gol depois do gol.
@@ -4449,7 +4458,7 @@ function diretoAtivo() {
 // Saiu? Decide se foi gol, escanteio, tiro de meta ou lateral e começa a cena.
 function handleBallOut() {
   const R = CONFIG.BALL_R;
-  if (G.sp || G.apito || G.golPend) return;       // bola parada de propósito / juiz já marcando / gol sendo mostrado
+  if (G.sp || G.apito || G.golPend || G.treinoGol > 0) return;       // bola parada de propósito / juiz já marcando / gol sendo mostrado
   if (Math.abs(ball.x) > HALF_L + R) {
     const side = Math.sign(ball.x);
     if (Math.abs(ball.z) < GOAL_HALF && (G.possession || ball.y < CONFIG.GOAL_H)) {
@@ -4493,6 +4502,7 @@ function scoreGoal(team, tGol) {
   G.score[team]++;
   if (byUser) { G.stats.gols++; if (ball.userShot || G.possession === user) G.stats.noAlvo++; }
   ball.userShot = false;
+  if (typeof Historia !== 'undefined' && Historia.emTreino()) { G.score[team]--; Historia.golNoTreino(); return; }   // (4.6.1) tutorial: gol sem comemoração, replay nem bola no meio
   G.possession = null;
   G.lastConceded = team === 0 ? 1 : 0;
   G.scoredBy = team;
@@ -5704,7 +5714,7 @@ function applyAimVector() {
 }
 function setAimDir(dirX, dirZ) {
   const k = G.kick;
-  k.dirX = dirX; k.dirZ = dirZ; k.aimed = true;
+  k.dirX = dirX; k.dirZ = dirZ; k.aimed = true; k.aimX = dirX; k.aimZ = dirZ;   // (4.6.1) aimX/aimZ: a mira de verdade (a trava no companheiro só puxa um pouco)
   k.target = k.kind === 'pass' ? findPassAssist(dirX, dirZ) : (k.kind === 'shot' ? alvoCruzamento(dirX, dirZ) : null);
   if (k.kind === 'shot') {
     k.cruzar = !!k.target;
@@ -5722,7 +5732,7 @@ function alvoCruzamento(dx, dz) {
   const a1 = Math.atan2(-GOAL_HALF - 0.6 - O.z, HALF_L - O.x), a2 = Math.atan2(GOAL_HALF + 0.6 - O.z, HALF_L - O.x);
   const lo = Math.min(a1, a2), hi = Math.max(a1, a2);
   if (Math.abs(HALF_L - O.x) > 1 && ang >= lo && ang <= hi) return null;   // mirando no gol
-  let best = null, bestDiff = 0.3;
+  let best = null, bestDiff = ASSIST_CRUZ;                                  // (4.6.1) antes 0,3 rad (17°): travava em quem estivesse perto da mira
   for (const t of TEAMS[0]) {
     if (t === user || t.role === 'GK') continue;
     const d = dist2D(user, t);
@@ -5733,8 +5743,11 @@ function alvoCruzamento(dx, dz) {
   return best;
 }
 
+// (4.6.1) ASSISTÊNCIA DE MIRA mais livre: antes o passe (26°) e o cruzamento (17°) travavam no companheiro e a bola ia exatamente nele, qualquer que fosse a mira.
+// Agora a trava só pega quando a seta está quase em cima do companheiro (14° e 11°) e, mesmo assim, a bola segue sobretudo a SUA mira (ver LIVRE_MIRA).
+const ASSIST_PASSE = 0.25, ASSIST_CRUZ = 0.2, LIVRE_MIRA = 0.65;   // LIVRE_MIRA = quanto da direção final vem da sua mira (o resto é a puxada para o companheiro)
 function findPassAssist(dx, dz) {
-  let best = null, bestDiff = 0.45;
+  let best = null, bestDiff = ASSIST_PASSE;
   for (const t of TEAMS[0]) {
     if (t === user) continue;
     const d = dist2D(user, t);
@@ -5752,7 +5765,12 @@ function confirmAim() {
   if (k.target) {
     const tx = k.target.x + k.target.vx * 0.5, tz = k.target.z + k.target.vz * 0.5;
     const dx = tx - user.x, dz = tz - user.z, d = Math.hypot(dx, dz) || 1;
-    k.dirX = dx / d; k.dirZ = dz / d; k.dist = d;
+    const al = Math.hypot(k.aimX == null ? 0 : k.aimX, k.aimZ == null ? 0 : k.aimZ);
+    if (al > 0.01) {                                   // (4.6.1) mistura a sua mira com a direção do companheiro (antes: 100% companheiro)
+      const bx = (dx / d) * (1 - LIVRE_MIRA) + (k.aimX / al) * LIVRE_MIRA, bz = (dz / d) * (1 - LIVRE_MIRA) + (k.aimZ / al) * LIVRE_MIRA, bl = Math.hypot(bx, bz) || 1;
+      k.dirX = bx / bl; k.dirZ = bz / bl;
+    } else { k.dirX = dx / d; k.dirZ = dz / d; }
+    k.dist = d;
   }
   enterPower();
 }
@@ -5831,6 +5849,13 @@ function executeUserKick() {
     // Cruzamento: a força e o efeito escolhidos mexem na precisão (fora da faixa = cruza torto).
     const torto = k.miss > 0.12 || k.over > 0.08;
     passTo(u, k.target, torto, k.toqueCurto ? undefined : 'cross');
+    { // (4.6.1) o passe/cruzamento sai pela direção MISTURADA (mira + companheiro), não direto no companheiro
+      const hv = Math.hypot(ball.vx, ball.vz), al = Math.hypot(k.aimX == null ? 0 : k.aimX, k.aimZ == null ? 0 : k.aimZ);
+      if (hv > 0.1 && al > 0.01) {
+        const bx = (ball.vx / hv) * (1 - LIVRE_MIRA) + (k.aimX / al) * LIVRE_MIRA, bz = (ball.vz / hv) * (1 - LIVRE_MIRA) + (k.aimZ / al) * LIVRE_MIRA, bl = Math.hypot(bx, bz) || 1;
+        ball.vx = bx / bl * hv; ball.vz = bz / bl * hv; u.angle = Math.atan2(bz, bx);
+      }
+    }
     ball.spinSide = k.ox * 0.6 * Atributos.fator('efeito'); ball.spinVert = Math.max(0, k.oy) * 0.3 * Atributos.fator('efeito');
     ball.userPass = true; ball.cruzamento = { team: u.team, alvo: k.target };
     G.stats.passes++;
@@ -6124,6 +6149,7 @@ function startReceive(pr) {
   kEl.className = rotuloDificil ? 'dificil' : '';
   const zonaEl = $('hamZone');
   zonaEl.style.left = (R.zona.ini * 100) + '%'; zonaEl.style.width = (tam * 100) + '%';
+  zonaEl.style.display = dificil ? 'none' : '';              // (4.6.1) domínio difícil: NÃO tem faixa verde, só o ponto azul
   zonaEl.classList.remove('flash'); $('hamTrack').classList.remove('erro');
   // Botões redondos no lugar dos botões de ação (os de jogo somem enquanto isso).
   const B = $('recvActs');
@@ -6141,7 +6167,7 @@ function startReceive(pr) {
   }
   else botao('DOMINAR', 'dominar', 's1', true);
   $('recvInfo').textContent = kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
-    : dificil ? 'Passe difícil: só o ponto AZUL domina' : 'Bata quando o marcador estiver na faixa verde';
+    : dificil ? 'Passe difícil: acerte o ponto AZUL' : 'Bata quando o marcador estiver na faixa verde';
   $('recvInfo').className = '';
   G.recvHideT = 0;
   $('recvLayer').hidden = false;
@@ -6157,8 +6183,10 @@ function startReceive(pr) {
   if (dificil) {
     const larg = $('hamTrack').getBoundingClientRect().width || 320, marc = $('hamMarker').getBoundingClientRect().width || 8;
     const tamAzul = clamp(3 * marc / larg, 0.035, 0.12);
-    const ini = R.zona.ini + 0.15 * tam + Math.random() * Math.max(0, 0.7 * tam - tamAzul);   // dentro do verde, longe das bordas
+    const ini = 0.08 + Math.random() * (0.84 - tamAzul);                                       // (4.6.1) sem faixa verde: o ponto azul fica em qualquer lugar da barra
     R.azul = { ini, fim: ini + tamAzul };
+    R.zona.ini = ini; R.zona.fim = ini + tamAzul;                                               // o marcador começa longe dele
+    R.pos = ini > 0.5 ? Math.random() * 0.15 : 0.85 + Math.random() * 0.1; R.dir = R.pos > 0.5 ? -1 : 1;
     azulEl.style.left = (ini * 100) + '%'; azulEl.style.width = (tamAzul * 100) + '%';
   }
   desenharMartelo();
@@ -6207,12 +6235,11 @@ function martelar(acao) {
   const info = $('recvInfo');
   if (R.dificil) {
     const noAzul = R.pos >= R.azul.ini && R.pos <= R.azul.fim;   // sem folga: é para ser difícil
-    Som.clique(noAzul ? 'perfeito' : naFaixa ? 'ok' : 'erro');
+    Som.clique(noAzul ? 'perfeito' : 'erro');
     if (noAzul) { info.textContent = 'PERFEITO!'; info.className = 'ok'; $('hamAzul').style.background = '#9cc4ff'; }
-    else if (naFaixa) { info.textContent = 'O passe veio ruim demais — não foi culpa sua'; info.className = ''; }
-    else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
-    R.perfeito = noAzul; R.culpaDoPasse = !noAzul && naFaixa;
-    resolveReceive(acao, noAzul, naFaixa);
+    else { info.textContent = 'Errou o ponto azul!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }       // (4.6.1) só o azul vale: fora dele a bola escapa
+    R.perfeito = noAzul; R.culpaDoPasse = false;
+    resolveReceive(acao, noAzul, noAzul);
     return;
   }
   const ok = naFaixa && !R.forcedMiss;
@@ -7419,13 +7446,25 @@ function statsHTML() {
   return rows.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('');
 }
 
+// (4.6.1) A NOTA agora depende da POSIÇÃO em que você jogou (antes era a de atacante para todo mundo):
+//   atacante (FWD) ... gols e chutes no alvo pesam mais (como sempre foi);
+//   meia (MID) ....... passes certos, dribles, domínios e desarmes pesam mais; gol vale um pouco menos;
+//   zagueiro (DEF) ... gols SOFRIDOS pelo seu time (jogo sem tomar gol = bônus), desarmes e não perder a bola; gol seu vale mais (é raro).
+function notaPorPosicao(s, pos, sofridos) {
+  const erros = (s.passes - s.passesOk) * 0.2 + (s.dribles - s.driblesOk) * 0.2 + (s.dominios - s.dominiosOk) * 0.2;
+  const disc = s.faltas * 0.1 + s.impedimentos * 0.15 + (s.cartoes.includes('A') ? 0.4 : 0) + (s.cartoes.includes('V') ? 2 : 0);
+  if (pos === 'DEF') {
+    const bonusGol = sofridos === 0 ? 1.2 : sofridos === 1 ? 0.5 : sofridos === 2 ? 0 : -0.4 * (sofridos - 2);
+    return 6 + bonusGol + s.desarmes * 0.4 + s.gols * 1.3 + s.noAlvo * 0.1 + s.passesOk * 0.1 + s.driblesOk * 0.25 + s.dominiosOk * 0.1 - erros * 0.8 - s.perdas * 0.2 - disc;
+  }
+  if (pos === 'MID') {
+    return 6 + s.gols * 0.8 + s.noAlvo * 0.15 + s.passesOk * 0.2 + s.driblesOk * 0.35 + s.dominiosOk * 0.15 + s.desarmes * 0.25 - erros - s.perdas * 0.15 - disc;
+  }
+  return 6 + s.gols * 1.0 + s.noAlvo * 0.2 + s.passesOk * 0.1 + s.driblesOk * 0.3 + s.dominiosOk * 0.1 + s.desarmes * 0.2 - erros - s.perdas * 0.15 - disc;   // atacante (e o resto): a conta de sempre
+}
 function matchRating() {
-  const s = G.stats;
-  const r = 6 + s.gols * 1.0 + s.noAlvo * 0.2 + s.passesOk * 0.1 - (s.passes - s.passesOk) * 0.2
-    + s.driblesOk * 0.3 - (s.dribles - s.driblesOk) * 0.2 + s.dominiosOk * 0.1 - (s.dominios - s.dominiosOk) * 0.2
-    + s.desarmes * 0.2 - s.perdas * 0.15
-    - s.faltas * 0.1 - s.impedimentos * 0.15 - (s.cartoes.includes('A') ? 0.4 : 0) - (s.cartoes.includes('V') ? 2 : 0);
-  return clamp(r, 3, 10).toFixed(1);
+  const pos = user && user.role ? user.role : 'FWD';
+  return clamp(notaPorPosicao(G.stats, pos, G.score[1]), 3, 10).toFixed(1);
 }
 
 function resetMatch() {
@@ -9093,10 +9132,19 @@ function montarTimes(P) {
       const fv = H.times[T.id] && H.times[T.id][CHAVE_VOCE];
       P.usuarioIndisponivel = indisponivel(fv) ? motivoFora(fv) : '';   // o modo história decide; no teste você joga assim mesmo
     }
-    let k = 0;
+    // (4.6.1) História: escolher outra posição só TROCA de lugar com quem estava nela (antes era uma fila: o elenco inteiro andava uma casa e o João podia sumir).
+    // Primeiro monta o time como se o personagem fosse atacante (o lugar de origem dele) e depois ele pega a posição escolhida; quem estava lá vai para o ataque.
+    const trocaPos = team === 0 && !!P.criancas, slotOrigem = trocaPos ? Math.max(0, slots.findIndex((s) => s.role === 'FWD')) : userSlot;
+    const doElenco = new Map();
+    if (trocaPos) {
+      let kk = 0;
+      slots.forEach((f, i) => { if (i !== slotOrigem) doElenco.set(i, disponiveis[kk++] || P.elencos[team][i % P.elencos[team].length]); });
+      if (userSlot !== slotOrigem && doElenco.has(userSlot)) { doElenco.set(slotOrigem, doElenco.get(userSlot)); doElenco.delete(userSlot); }
+    }
+    let k = trocaPos ? slots.length - 1 : 0;
     slots.forEach((f, i) => {
       const isUser = i === userSlot;
-      const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, P.usuario.aparencia || {}) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]);
+      const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, P.usuario.aparencia || {}) : (trocaPos ? doElenco.get(i) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]));
       const p = criarJogador(P, team, f, j, isUser && numPref ? numPref : numero(f.role), isUser);
       players.push(p); TEAMS[team].push(p); P.participantes.push(p);
       if (isUser) user = p;
@@ -10634,7 +10682,7 @@ Object.assign(I18N, {
   "É aqui! Primeiro o básico, depois a gente joga de verdade.": ["Here we are! The basics first, then we play for real.", "¡Es aquí! Primero lo básico, después jugamos en serio.", "Eccoci! Prima le basi, poi giochiamo sul serio.", "On y est ! D'abord les bases, ensuite on joue pour de vrai."],
   "E aí, João! Vocês querem jogar um quatro contra quatro com a gente?": ["Hey, João! Do you want to play a four-on-four with us?", "¡Eh, João! ¿Quieren jugar un cuatro contra cuatro con nosotros?", "Ehi, João! Volete giocare un quattro contro quattro con noi?", "Salut, João ! Vous voulez faire un quatre contre quatre avec nous ?"],
   "A gente tá em seis. Com vocês dois, fecha certinho!": ["There are six of us. With you two, it's just right!", "Somos seis. ¡Con ustedes dos, queda justo!", "Siamo in sei. Con voi due, è perfetto!", "On est six. Avec vous deux, ça fait le compte !"],
-  "Claro que a gente quer! Eu e {0} ficamos juntos. Cadu e Bia, vocês vêm com a gente?": ["Of course we do! {0} and I will team up. Cadu and Bia, will you join us?", "¡Claro que queremos! {0} y yo vamos juntos. Cadu y Bia, ¿vienen con nosotros?", "Certo che vogliamo! Io e {0} stiamo insieme. Cadu e Bia, venite con noi?", "Bien sûr ! {0} et moi, on joue ensemble. Cadu et Bia, vous venez avec nous ?"],
+  "Claro que a gente quer! Eu e {0} ficamos juntos. Sérgio e Bia, vocês vêm com a gente?": ["Of course we do! {0} and I will team up. Sérgio and Bia, will you join us?", "¡Claro que queremos! {0} y yo vamos juntos. Sérgio y Bia, ¿vienen con nosotros?", "Certo che vogliamo! Io e {0} stiamo insieme. Sérgio e Bia, venite con noi?", "Bien sûr ! {0} et moi, on joue ensemble. Sérgio et Bia, vous venez avec nous ?"],
   "Fechou! Bora!": ["Deal! Let's go!", "¡Hecho! ¡Vamos!", "Affare fatto! Andiamo!", "Ça marche ! Allons-y !"],
   "João... eu nunca joguei uma partida de verdade.": ["João... I've never played a real match.", "João... nunca he jugado un partido de verdad.", "João... non ho mai giocato una vera partita.", "João... je n'ai jamais joué un vrai match."],
   "Eu sei. Mas eu confio em você!": ["I know. But I trust you!", "Lo sé. ¡Pero confío en ti!", "Lo so. Ma mi fido di te!", "Je sais. Mais j'ai confiance en toi !"],
@@ -10792,7 +10840,7 @@ const HIST = (() => {
     uni0: { camisa: '#f2c230', listra: '#111111', gola: '#111111', calcao: '#1b1d22', meia: '#f2c230', sola: '#111111', goleiro: '#2a72d6' },
     uni1: { camisa: '#c8352b', listra: '#f2f2ee', gola: '#7e1e17', calcao: '#1b1d22', meia: '#c8352b', sola: '#f2f2ee', goleiro: '#1f9e5c' },
     joao: k('João', 2, 0, 'Franja', 'Sorridente'),
-    cadu: k('Cadu', 4, 0, 'Black power', 'Sorridente'), bia: k('Bia', 3, 2, 'Coque longo', 'Padrão', 1),
+    cadu: k('Sérgio', 4, 0, 'Black power', 'Sorridente'), bia: k('Bia', 3, 2, 'Coque longo', 'Padrão', 1),
     tadeu: k('Tadeu', 1, 3, 'Moicano', 'Sério'), duda: k('Duda', 2, 4, 'Longo liso', 'Sorridente', 0),
     nando: k('Nando', 5, 0, 'Dreads curtos', 'Padrão'), leo: k('Léo', 0, 1, 'Franja', 'Sonolento'),
     // (4.4.0) o Professor Roberto: o MESMO modelo é o do juiz na partida (PARTIDA.arbitro) e o do professor vigiando a turma no pátio
@@ -10862,6 +10910,21 @@ Object.assign(I18N, {
   'O prazer é meu, Cadu!': ['The pleasure is mine, Cadu!', '¡El placer es mío, Cadu!', 'Il piacere è mio, Cadu!', 'Tout le plaisir est pour moi, Cadu !'],
   'Valeu de novo por me ajudar, {0}!': ['Thanks again for helping me, {0}!', '¡Gracias otra vez por ayudarme, {0}!', 'Grazie ancora per avermi aiutato, {0}!', "Merci encore de m'avoir aidé, {0} !"],
   'Cadu': ['Cadu', 'Cadu', 'Cadu', 'Cadu'],
+});
+// (4.6.1) Textos novos: tutorial com uma chance extra, professora preocupada com os horários, mariposa e o goleiro Sérgio.
+Object.assign(I18N, {
+  'Tudo bem, a gente deixa isso pra depois.': ["That's okay, we'll leave that for later.", 'Está bien, lo dejamos para después.', 'Va bene, lo lasciamo per dopo.', "Pas de souci, on laisse ça pour plus tard."],
+  'Quase! Mire no gol e solte na faixa verde. Vamos tentar mais uma vez!': ['Almost! Aim at the goal and release in the green zone. Let\'s try once more!', '¡Casi! Apunta al arco y suelta en la franja verde. ¡Probemos una vez más!', 'Quasi! Mira alla porta e lascia nella fascia verde. Proviamo ancora una volta!', 'Presque ! Vise le but et relâche dans la zone verte. On réessaie une fois !'],
+  'Faltou pontaria! Mire em mim e solte na faixa verde. Mais uma tentativa!': ['Off target! Aim at me and release in the green zone. One more try!', '¡Falta puntería! Apúntame y suelta en la franja verde. ¡Un intento más!', 'Mira sbagliata! Mira verso di me e lascia nella fascia verde. Ancora un tentativo!', 'Pas assez précis ! Vise-moi et relâche dans la zone verte. Encore un essai !'],
+  'Essa escapou! Calma, eu passo de novo.': ['That one got away! Easy, I\'ll pass again.', '¡Ese se escapó! Tranquilo, te paso otra vez.', 'Questa è sfuggita! Calma, passo di nuovo.', 'Celle-là a filé ! Calme, je repasse.'],
+  'Essa veio forte mesmo! Calma, eu passo de novo.': ['That one was really hard! Easy, I\'ll pass again.', '¡Ese vino fuerte de verdad! Tranquilo, te paso otra vez.', 'Questa era davvero forte! Calma, passo di nuovo.', 'Celle-là était vraiment forte ! Calme, je repasse.'],
+  'Agora o difícil! Quando o passe vier muito forte, a faixa verde some e fica só um pontinho AZUL. Acerte nele para um domínio perfeito!': ['Now the hard one! When the pass comes in very hard, the green zone disappears and only a small BLUE dot is left. Hit it for a perfect control!', '¡Ahora lo difícil! Cuando el pase venga muy fuerte, la franja verde desaparece y solo queda un puntito AZUL. ¡Acierta en él para un control perfecto!', 'Ora il difficile! Quando il passaggio arriva molto forte, la fascia verde sparisce e resta solo un puntino BLU. Colpiscilo per un controllo perfetto!', 'Maintenant le difficile ! Quand la passe arrive très fort, la zone verte disparaît et il ne reste qu\'un petit point BLEU. Touche-le pour un contrôle parfait !'],
+  'Quase! Mire no gol e acerte a força. Mais uma tentativa!': ['Almost! Aim at the goal and get the power right. One more try!', '¡Casi! Apunta al arco y acierta la fuerza. ¡Un intento más!', 'Quasi! Mira alla porta e dosa la forza. Ancora un tentativo!', 'Presque ! Vise le but et dose la force. Encore un essai !'],
+  'A bola não chegou em mim! Mire em mim e ajuste a força. Mais uma tentativa!': ['The ball didn\'t reach me! Aim at me and adjust the power. One more try!', '¡La pelota no llegó a mí! Apúntame y ajusta la fuerza. ¡Un intento más!', 'La palla non è arrivata a me! Mira verso di me e regola la forza. Ancora un tentativo!', 'Le ballon ne m\'est pas arrivé ! Vise-moi et ajuste la force. Encore un essai !'],
+  'Passou longe de mim! Mire em mim, na área. Mais uma tentativa!': ['It went nowhere near me! Aim at me, in the box. One more try!', '¡Pasó lejos de mí! Apúntame, en el área. ¡Un intento más!', 'È passata lontana da me! Mira verso di me, in area. Ancora un tentativo!', 'Elle est passée loin de moi ! Vise-moi, dans la surface. Encore un essai !'],
+  'Estou feliz por você ter ido bem, {0}, mas estou preocupada com os seus horários.': ['I am happy you did well, {0}, but I am worried about your timekeeping.', 'Me alegra que te haya ido bien, {0}, pero me preocupan tus horarios.', 'Sono felice che tu sia andato bene, {0}, ma sono preoccupata per i tuoi orari.', 'Je suis contente que tu aies bien réussi, {0}, mais je m\'inquiète pour tes horaires.'],
+  'Quando a mariposa aparece, é porque aquilo que acabou de acontecer vai afetar a história...': ['When the moth appears, what just happened is going to affect the story...', 'Cuando aparece la polilla, lo que acaba de pasar va a afectar la historia...', 'Quando appare la falena, ciò che è appena successo influenzerà la storia...', 'Quand le papillon de nuit apparaît, ce qui vient de se passer va influencer l\'histoire...'],
+  'É aqui! Vou te ensinar o básico.': ['Here we are! I\'ll teach you the basics.', '¡Es aquí! Te enseño lo básico.', 'Eccoci! Ti insegno le basi.', 'On y est ! Je t\'apprends les bases.'],
 });
 const FEMININO = [
   ['Sim, sou muito bom em álgebra', 'Sim, sou muito boa em álgebra'],
@@ -11259,6 +11322,8 @@ const Historia = (() => {
 
   function atualizarTreino(dt) {
     G.clock = Math.max(G.clock, 99000); G.kickoffPending = null;
+    if (TT.medeJoao && TT.joao) TT.minJ = Math.min(TT.minJ, Math.hypot(ball.x - TT.joao.x, ball.z - TT.joao.z));   // (4.6.1) a bola passou perto do João?
+    if (G.treinoGol > 0) { G.treinoGol -= dt; if (G.treinoGol <= 0) { G.treinoGol = 0; devolverBola(); } return; }   // (4.6.1) gol no treino: sem comemoração, replay nem saída de bola no meio
     const ck = $('clock'); if (ck) ck.textContent = T('TREINO');
     if (referee) referee.mesh.raiz.visible = false;
     // (4.4.0) Sem adversários: se a bola sair (e a aula não for de bola parada) ela volta para você logo antes de o juiz "marcar";
@@ -11304,9 +11369,9 @@ const Historia = (() => {
 
   async function treino(op) {
     montarUI();
-    modo = 'treino';
+    modo = 'treino'; G.treinoGol = 0;
     entrar(cfg(true));
-    TT = { spots: new Map(), corrida: 0, tErrada: 0, tParada: 0, tSp: 0, congelado: false, joaoSegura: false, livreBola: false, joao: null, fantasma: null };
+    TT = { spots: new Map(), corrida: 0, tErrada: 0, tParada: 0, tSp: 0, congelado: false, joaoSegura: false, livreBola: false, joao: null, fantasma: null, minJ: 99, medeJoao: false };
     TT.joao = TEAMS[0].find((p) => p.name === 'João');
     soJoaoEVoce();
     G.state = 'play';
@@ -11316,7 +11381,7 @@ const Historia = (() => {
     if (op && op.aoPronto) { try { await op.aoPronto(); } catch (e) { console.error(e); } }
     try { await roteiro(); } catch (e) { console.error(e); }
     objetivo('');
-    modo = null; sair();
+    G.treinoGol = 0; modo = null; sair();
   }
 
   // ---- bolas paradas na aula (4.4.0): falta, lateral e escanteio -----------------------------------------
@@ -11326,7 +11391,8 @@ const Historia = (() => {
     reposicionar(eu.x, eu.z);                         // limpa tudo e põe você no lugar
     TT.livreBola = true;
     fix(TT.joao, jo.x, jo.z, Math.atan2(-jo.z, -jo.x));
-    await dizer(falaIntro);
+    TT.minJ = 99; TT.medeJoao = false;
+    if (falaIntro) await dizer(falaIntro);              // (4.6.1) na 2ª chance não repete a explicação
     objetivo(obj);
     const c0 = G.stats.chutes, p0 = G.stats.passes;
     G.possession = null; G.kick = null;
@@ -11335,16 +11401,35 @@ const Historia = (() => {
     snapCamera();
     const ok = await esperarCond(() => G.stats.chutes > c0 || G.stats.passes > p0, { pularEm: 40000 });
     objetivo('');
+    TT.medeJoao = true;                               // (4.6.1) daqui em diante vale a bola chegar perto do João
     TT.livreBola = false;                             // depois do seu toque, a bola que sair volta para você
     return ok;
   }
 
+  // (4.6.1) Cada lição dá UMA chance a mais: se você errar, o João avisa e você tenta de novo; se errar de novo, ele diz que a gente deixa para depois e a aula segue.
+  //   tentar(n) faz uma rodada (devolve true se o jogador usou "Pular este passo"); ok() diz se deu certo.
+  async function duasChances(op) {
+    for (let n = 0; n < 2; n++) {
+      if (await op.tentar(n)) return false;
+      if (op.ok()) { if (op.sucesso) await dizer(op.sucesso); return true; }
+      if (n === 0) await dizer(op.erro1);
+    }
+    await dizer(T('Tudo bem, a gente deixa isso pra depois.'));
+    return false;
+  }
+  // Uma rodada de domínio: o João lança e a gente espera a jogada TERMINAR (barra resolvida, bola dominada ou bola perdida) antes de falar/repetir.
+  async function rodadaDominio(tipo) {
+    const S0 = () => G.stats, d0 = S0().dominios;
+    reposicionar(-8, 0); await passeDoJoao(tipo);
+    await esperarCond(() => (S0().dominios > d0 && !G.recv && !G.recvFx && G.state === 'play') || (G.possession === user && G.state === 'play'), { pularEm: 20000, limite: 11000 });
+    await esperar(900);
+  }
   async function roteiro() {
     const S0 = () => G.stats;
-    const fim = async () => {                         // espera a jogada acabar (bola parada / comemoração) antes da próxima parte
+    const fim = async () => {                         // espera a jogada acabar (bola parada / gol contado) antes da próxima parte
       await esperar(2200);
       await esperarCond(() => !G.golPend && !G.shotCine, { pularEm: 15000 });      // (4.4.2) o gol na câmera lenta só é contado ~3 s depois: espera contar antes de comentar
-      await esperarCond(() => G.state === 'play', { pularEm: 15000 });
+      await esperarCond(() => G.state === 'play' && !(G.treinoGol > 0), { pularEm: 15000 });
       await esperar(300);
     };
     await esperar(600);
@@ -11354,86 +11439,131 @@ const Historia = (() => {
     await esperarCond(() => TT.corrida >= 3);
     objetivo('');
     await dizer(T('Isso! Viu como o fôlego acaba rápido? Com treino ele melhora, pode confiar.'));
-    // 2. chutar
-    reposicionar(-4, 0);
-    await dizer(T('Agora o chute! Chegue perto do gol e toque em CHUTAR. Primeiro arraste o dedo para mirar, depois segure e solte na faixa verde. Por último, toque na bola para dar efeito, se quiser.'));
-    objetivo(T('CHUTAR: faça um chute em direção ao gol'));
-    const c0 = S0().chutes;
-    await esperarCond(() => S0().chutes > c0);
-    objetivo('');
-    await fim();
-    const foi = S0().gols > 0;
-    await dizer(foi ? T('GOL! Que chute, hein? Nada mal pra quem nunca jogou!') : T('Quase! O segredo é treinar. Vamos para o próximo.'));
-    // 3. passar
-    reposicionar(-8, 0);
-    await dizer(T('Agora, o passe! Toque em PASSAR e mire em mim. Quanto mais forte a barra, mais forte o passe.'));
-    objetivo(T('PASSAR: passe a bola para o João'));
-    const p0 = S0().passes;
-    await esperarCond(() => S0().passes > p0);
-    objetivo('');
-    await esperarCond(() => G.state === 'play' && G.possession === user && performance.now() > 0, { pularEm: 9000, limite: 9000 });
-    await esperar(400);
-    await dizer(T('Boa! Passe é o que faz o time jogar junto.'));
+    // 2. chutar (vale se virar gol: o gol está vazio)
+    const g0 = S0().gols;
+    await duasChances({
+      tentar: async (n) => {
+        reposicionar(-4, 0);
+        if (n === 0) await dizer(T('Agora o chute! Chegue perto do gol e toque em CHUTAR. Primeiro arraste o dedo para mirar, depois segure e solte na faixa verde. Por último, toque na bola para dar efeito, se quiser.'));
+        objetivo(T('CHUTAR: faça um chute em direção ao gol'));
+        const c0 = S0().chutes;
+        const fez = await esperarCond(() => S0().chutes > c0, { pularEm: 30000 });
+        objetivo('');
+        if (!fez) return true;
+        await fim();
+        return false;
+      },
+      ok: () => S0().gols > g0,
+      sucesso: T('GOL! Que chute, hein? Nada mal pra quem nunca jogou!'),
+      erro1: T('Quase! Mire no gol e solte na faixa verde. Vamos tentar mais uma vez!'),
+    });
+    // 3. passar (vale se eu receber a bola)
+    const po0 = S0().passesOk;
+    await duasChances({
+      tentar: async (n) => {
+        reposicionar(-8, 0);
+        if (n === 0) await dizer(T('Agora, o passe! Toque em PASSAR e mire em mim. Quanto mais forte a barra, mais forte o passe.'));
+        objetivo(T('PASSAR: passe a bola para o João'));
+        const p0 = S0().passes;
+        const fez = await esperarCond(() => S0().passes > p0, { pularEm: 30000 });
+        objetivo('');
+        if (!fez) return true;
+        await esperarCond(() => G.state === 'play' && G.possession === user && performance.now() > 0, { pularEm: 9000, limite: 9000 });
+        await esperar(400);
+        return false;
+      },
+      ok: () => S0().passesOk > po0,
+      sucesso: T('Boa! Passe é o que faz o time jogar junto.'),
+      erro1: T('Faltou pontaria! Mire em mim e solte na faixa verde. Mais uma tentativa!'),
+    });
     // 4. driblar — o João faz o papel do marcador
     joaoMarca(true);
-    let tentativas = 0, d0 = S0().driblesOk;
-    while (tentativas < 4 && S0().driblesOk <= d0) {
-      reposicionar(-8, 0);
-      fix(TT.joao, -1, 0, Math.PI);
-      if (tentativas === 0) await dizer(T('Driblar! Eu vou ficar parado aqui, de marcador. Corra com a bola para cima de mim: quando eu estiver perto, aparece o botão DRIBLAR. Aperte nele na hora certa e acerte os toques na tela!'));
-      else await dizer(T('Sem problema, tenta de novo!'));
-      objetivo(T('DRIBLAR: corra com a bola até o João e toque em DRIBLAR'));
-      const dr0 = S0().dribles;
-      const ok = await esperarCond(() => S0().dribles > dr0, { pularEm: 30000 });
-      objetivo('');
-      if (!ok) break;
-      await esperarCond(() => G.state === 'play', { pularEm: 15000 });
-      await esperar(500);
-      tentativas++;
-    }
+    const d0 = S0().driblesOk;
+    await duasChances({
+      tentar: async (n) => {
+        reposicionar(-8, 0);
+        fix(TT.joao, -1, 0, Math.PI);
+        if (n === 0) await dizer(T('Driblar! Eu vou ficar parado aqui, de marcador. Corra com a bola para cima de mim: quando eu estiver perto, aparece o botão DRIBLAR. Aperte nele na hora certa e acerte os toques na tela!'));
+        objetivo(T('DRIBLAR: corra com a bola até o João e toque em DRIBLAR'));
+        const dr0 = S0().dribles;
+        const fez = await esperarCond(() => S0().dribles > dr0, { pularEm: 30000 });
+        objetivo('');
+        if (!fez) return true;
+        await esperarCond(() => G.state === 'play', { pularEm: 15000 });
+        await esperar(500);
+        return false;
+      },
+      ok: () => S0().driblesOk > d0,
+      sucesso: T('Olha só! Você passou direitinho por mim!'),
+      erro1: T('Sem problema, tenta de novo!'),
+    });
     joaoMarca(false);
-    if (S0().driblesOk > d0) await dizer(T('Olha só! Você passou direitinho por mim!'));
-    else await dizer(T('Drible é difícil mesmo. Com o tempo você pega o jeito!'));
     // 5. dominar
     await dizer(T('Agora dominar a bola! Quando ela vier alta ou forte, aparece uma barra. Toque em DOMINAR quando o marcador estiver na faixa verde.'));
-    let dom0 = S0().dominios, tent = 0;
-    while (tent < 3 && S0().dominios <= dom0) {
-      reposicionar(-8, 0); await passeDoJoao('lob'); tent++;
-      await esperarCond(() => S0().dominios > dom0 || G.state === 'play', { pularEm: 20000, limite: 7000 });
-      await esperarCond(() => G.state === 'play', { pularEm: 20000, limite: 12000 });
-    }
-    await dizer(S0().dominiosOk > 0 ? T('Perfeito! A bola grudou no seu pé.') : T('A bola escapou, mas isso acontece. O importante é tentar!'));
-    // 6. dominar bola difícil
-    await dizer(T('Agora o difícil! Quando o passe vier muito forte, a faixa verde fica menor e aparece um pontinho AZUL. Acerte nele para um domínio perfeito!'));
-    dom0 = S0().dominios; tent = 0;
-    while (tent < 3 && S0().dominios <= dom0) {
-      reposicionar(-8, 0); await passeDoJoao('forte'); tent++;
-      await esperarCond(() => S0().dominios > dom0 || G.state === 'play', { pularEm: 20000, limite: 7000 });
-      await esperarCond(() => G.state === 'play', { pularEm: 20000, limite: 12000 });
-    }
+    let dok0 = S0().dominiosOk;
+    await duasChances({
+      tentar: async () => { await rodadaDominio('lob'); return false; },
+      ok: () => S0().dominiosOk > dok0 || (G.possession === user && !G.recv),
+      sucesso: T('Perfeito! A bola grudou no seu pé.'),
+      erro1: T('Essa escapou! Calma, eu passo de novo.'),
+    });
+    // 6. dominar bola difícil (só o ponto azul)
+    await dizer(T('Agora o difícil! Quando o passe vier muito forte, a faixa verde some e fica só um pontinho AZUL. Acerte nele para um domínio perfeito!'));
+    dok0 = S0().dominiosOk;
+    await duasChances({
+      tentar: async () => { await rodadaDominio('forte'); return false; },
+      ok: () => S0().dominiosOk > dok0,
+      sucesso: T('Perfeito! A bola grudou no seu pé.'),
+      erro1: T('Essa veio forte mesmo! Calma, eu passo de novo.'),
+    });
     await esperar(400);
     await dizer(T('É isso! Você já sabe o básico: correr, chutar, passar, driblar e dominar.'));
     // 7. bolas paradas (4.4.0)
     await dizer(T('Agora vamos para as bolas paradas! Quando o jogo para, é você quem decide como a bola volta. Primeiro: a falta.'));
-    const golsAntesFalta = S0().gols;   // 4.4.3: o elogio só vale se a FALTA virou gol (o chute anterior não conta)
-    await aulaParada('falta', { x: 6, z: 4 }, { x: 1, z: 7 }, { x: 15, z: -6 }, { x: 6, z: 4 },
-      T('Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta na faixa verde, igual ao chute. Pode dar efeito na bola também!'),
-      T('FALTA: cobre a falta em direção ao gol'));
-    await fim();
-    await dizer(S0().gols > golsAntesFalta ? T('Que golaço de falta! Você leva jeito!') : T('Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!'));
+    const gf0 = S0().gols;   // 4.4.3: o elogio só vale se a FALTA virou gol (o chute anterior não conta)
+    await duasChances({
+      tentar: async (n) => {
+        const fez = await aulaParada('falta', { x: 6, z: 4 }, { x: 1, z: 7 }, { x: 15, z: -6 }, { x: 6, z: 4 },
+          n === 0 ? T('Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta na faixa verde, igual ao chute. Pode dar efeito na bola também!') : null,
+          T('FALTA: cobre a falta em direção ao gol'));
+        if (!fez) return true;
+        await fim();
+        return false;
+      },
+      ok: () => S0().gols > gf0,
+      sucesso: T('Que golaço de falta! Você leva jeito!'),
+      erro1: T('Quase! Mire no gol e acerte a força. Mais uma tentativa!'),
+    });
     await dizer(T('Agora o lateral. Na quadra de futsal ele é cobrado com o pé: a bola fica no chão, na linha lateral.'));
-    await aulaParada('lateral', { x: -2, z: HALF_W }, { x: -2, z: HALF_W - 5 }, { x: 8, z: -5 }, { x: -2, z: HALF_W - 0.25 },
-      T('Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!'),
-      T('LATERAL: devolva a bola para o João'));
-    await fim();
-    await dizer(T('Boa! Um lateral bem cobrado mantém a bola com o seu time.'));
+    const pl0 = S0().passesOk;
+    await duasChances({
+      tentar: async (n) => {
+        const fez = await aulaParada('lateral', { x: -2, z: HALF_W }, { x: -2, z: HALF_W - 5 }, { x: 8, z: -5 }, { x: -2, z: HALF_W - 0.25 },
+          n === 0 ? T('Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!') : null,
+          T('LATERAL: devolva a bola para o João'));
+        if (!fez) return true;
+        await fim();
+        return false;
+      },
+      ok: () => S0().passesOk > pl0 || TT.minJ < 2.2,
+      sucesso: T('Boa! Um lateral bem cobrado mantém a bola com o seu time.'),
+      erro1: T('A bola não chegou em mim! Mire no João e ajuste a força. Mais uma tentativa!'),
+    });
     await dizer(T('E por fim o escanteio: quando a bola sai pela linha de fundo depois de tocar no time que defende, a gente cobra do cantinho. Hora de cruzar na área!'));
-    await aulaParada('escanteio', { x: HALF_L, z: HALF_W }, { x: HALF_L - 6, z: HALF_W - 4 }, { x: HALF_L - 6, z: 1 }, { x: HALF_L - 0.3, z: HALF_W - 0.3 },
-      T('Eu vou ficar na área esperando a bola. Você cobra o escanteio do cantinho: mire em mim, escolha a força e cruze!'),
-      T('ESCANTEIO: cruze a bola para o João, na área'));
-    await fim();
-    await dizer(T('Perfeito! Agora você conhece as bolas paradas: falta, lateral e escanteio.'));
-    await dizer(T('Pronto! Agora a gente joga de verdade. Vamos lá!'));
+    const pe0 = S0().passesOk;
+    await duasChances({
+      tentar: async (n) => {
+        const fez = await aulaParada('escanteio', { x: HALF_L, z: HALF_W }, { x: HALF_L - 6, z: HALF_W - 4 }, { x: HALF_L - 6, z: 1 }, { x: HALF_L - 0.3, z: HALF_W - 0.3 },
+          n === 0 ? T('Eu vou ficar na área esperando a bola. Você cobra o escanteio do cantinho: mire em mim, escolha a força e cruze!') : null,
+          T('ESCANTEIO: cruze a bola para o João, na área'));
+        if (!fez) return true;
+        await fim();
+        return false;
+      },
+      ok: () => S0().passesOk > pe0 || TT.minJ < 2.2,
+      sucesso: T('Perfeito! Agora você conhece as bolas paradas: falta, lateral e escanteio.'),
+      erro1: T('Passou longe de mim! Mire no João, na área. Mais uma tentativa!'),
+    });
   }
   async function passeDoJoao(tipo) {
     const j = TT.joao;
@@ -11470,11 +11600,19 @@ const Historia = (() => {
   function fimDaPartida() {
     const s = G.stats, gols = s.gols, nota = Number(matchRating());
     const expulso = !!user.red;              // (4.4.3) o jogador levou o vermelho (a partida acaba na hora)
-    const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], expulso, bom: !expulso && gols >= 1 && nota >= 8, estatisticas: Object.assign({}, s) };
+    // (4.6.1) "jogou bem" também depende da posição: atacante = fez gol; meia = distribuiu o jogo (passes certos ou gol); zagueiro = o time sofreu no máximo 1 gol.
+    const pos = user && user.role ? user.role : 'FWD', sofridos = G.score[1];
+    const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
+    const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s) };
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), 1800); }
   }
-  function abortar() { modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
-  return { treino, partida, emPartida, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
+  function abortar() { G.treinoGol = 0; modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
+  // (4.6.1) Gol no TREINO: só aparece o letreiro e a bola fica na rede por ~1,4 s; depois volta para o jogador (nada de comemoração, replay ou bola no meio do campo).
+  const emTreino = () => modo === 'treino' && !!TT;
+  function golNoTreino() {
+    G.treinoGol = 1.4; G.possession = null; hideKickUI(); showBanner('GOL!', 0, 1.4);
+  }
+  return { emTreino, golNoTreino, treino, partida, emPartida, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
 })();
 
 // ---------------------------------------------------------------------
@@ -12443,7 +12581,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.6.0',
+  versao: '4.6.1',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).

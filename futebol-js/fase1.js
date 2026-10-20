@@ -82,7 +82,7 @@ const Fase1 = (() => {
     const prova = document.createElement('div'); prova.id = 'f1Prova'; prova.hidden = true;
     const moth = document.createElement('div'); moth.id = 'f1Moth'; moth.innerHTML = '<p></p>'; moth.insertBefore(texMariposa(), moth.firstChild);
     raiz.append(preto, missao, ctl, prova, moth);
-    moth.querySelector('p').textContent = T('Quando a mariposa aparece, é porque alguém vai se lembrar de algo...');
+    moth.querySelector('p').textContent = T('Quando a mariposa aparece, é porque aquilo que acabou de acontecer vai afetar a história...');
     UI = { moth, preto, leg: preto.querySelector('.f1Leg'), missao, ctl, pad: ctl.querySelector('.f1Pad'), knob: ctl.querySelector('.f1Knob'), dica: ctl.querySelector('.f1Dica'), btn: ctl.querySelector('.f1Btn'), prova };
     // joystick (toque/mouse) e teclado
     const joy = { id: null, x: 0, y: 0 };
@@ -585,7 +585,7 @@ const Fase1 = (() => {
     await aproximar(SPOT.prof, S.prof);
     if (S.fase === 'antes') await fala('prof', Tf('A atividade já está na sua mesa, {0}. Sente-se e faça.', nomeJog()), 'entrega');
     else {
-      S.profFalou2 = true; const humor = perfeito() ? 'Estou muito feliz com você, {0}. Continue assim!' : (S.perfil === 0 ? 'Estou triste, {0}... Esperava mais sinceridade de você.' : 'Estou preocupada com você, {0}. Se precisar de ajuda com álgebra, é só falar.');
+      S.profFalou2 = true; const humor = perfeito() ? 'Estou feliz por você ter ido bem, {0}, mas estou preocupada com os seus horários.' : (S.perfil === 0 ? 'Estou triste, {0}... Esperava mais sinceridade de você.' : 'Estou preocupada com você, {0}. Se precisar de ajuda com álgebra, é só falar.');
       await fala('prof', Tf(humor, nomeJog()), 'entrega');
     }
     S.prof.yawAlvo = -Math.PI / 2; camPara('aula');
@@ -824,7 +824,7 @@ const Fase1 = (() => {
     // (4.4.2) o texto explicativo só aparece na PRIMEIRA vez que a mariposa surge; nas outras vezes só a mariposa
     const primeira = !PERSONAGEM.mothTexto; PERSONAGEM.mothTexto = true;
     const pTxt = UI.moth.querySelector('p');
-    pTxt.textContent = primeira ? T('Quando a mariposa aparece, é porque alguém vai se lembrar de algo...') : '';
+    pTxt.textContent = primeira ? T('Quando a mariposa aparece, é porque aquilo que acabou de acontecer vai afetar a história...') : '';
     pTxt.style.display = primeira ? '' : 'none';
     UI.moth.classList.add('on'); await esperar(primeira ? 5200 : 2600); UI.moth.classList.remove('on'); await esperar(900);
   }
@@ -908,7 +908,7 @@ const Fase1 = (() => {
     const m = makeAthlete(Object.assign({}, A.opt, { camisa: uni.camisa, listra: uni.listra, gola: uni.gola, calcao: uni.calcao, meia: uni.meia, sola: uni.sola }));
     m.etiqueta.visible = false;
     if (pai) { pai.add(m.raiz); pai.remove(velho.raiz); }
-    ATLETAS.delete(velho); A.m = m; A.mats = null; A.alfa = 1;
+    ATLETAS.delete(velho); A.m = m; A.mats = null; A.pre = null; A.alfa = 1;
   }
   function tirarElenco(manter) {
     for (const A of S.elenco) if (!manter.includes(A)) { ATLETAS.delete(A.m); if (A.m.raiz.parent) A.m.raiz.parent.remove(A.m.raiz); }
@@ -1038,7 +1038,7 @@ const Fase1 = (() => {
       olhar(Jo, S.jog.x, S.jog.z); S.parA = S.jog; S.parB = Jo;
     }
     S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; S.convite = true;
-    await fala('joao', T('É aqui! Primeiro o básico, depois a gente joga de verdade.'), 'dupla');
+    await fala('joao', T('É aqui! Vou te ensinar o básico.'), 'dupla');
     Dialogo.esconder();
     await preto(true, 1000);
     // ---- o treino (tutorial) no motor do jogo. A tela só clareia quando a quadra de futsal já foi montada (aoPronto)
@@ -1072,7 +1072,7 @@ const Fase1 = (() => {
     await fala('cadu', T('E aí, João! Vocês querem jogar um quatro contra quatro com a gente?'), 'qd_geral');
     await fala('bia', T('A gente tá em seis. Com vocês dois, fecha certinho!'), 'qd_geral');
     olhar(Jo, J.x, J.z);
-    await fala('joao', Tf('Claro que a gente quer! Eu e {0} ficamos juntos. Cadu e Bia, vocês vêm com a gente?', nomeJog()), 'qd_geral');
+    await fala('joao', Tf('Claro que a gente quer! Eu e {0} ficamos juntos. Sérgio e Bia, vocês vêm com a gente?', nomeJog()), 'qd_geral');
     await fala('cadu', T('Fechou! Bora!'), 'qd_geral');
     olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
     await fala('jog', T('João... eu nunca joguei uma partida de verdade.'), 'dupla');
@@ -1106,7 +1106,7 @@ const Fase1 = (() => {
       sairParaPartida();
     }
     Historia.confirmarResultado();
-    S.partida1 = { placar: r.placar, venceu: r.venceu, empate: r.empate, expulso: !!r.expulso, gols: r.gols, tentativas };
+    S.partida1 = { placar: r.placar, venceu: r.venceu, empate: r.empate, expulso: !!r.expulso, gols: r.gols, posicao: r.posicao || PERSONAGEM.posicaoHist || 'FWD', tentativas };   // (4.6.1) posicao: onde jogou
     await cenaFinal(r);
   }
   const resultadoRuim = (r) => !!r.expulso || (!r.venceu && !r.bom);       // derrota ou empate sem jogar bem, ou vermelho
@@ -1226,7 +1226,26 @@ const Fase1 = (() => {
   }
   // (4.4.2) Câmera tapada: o que estiver entre a câmera e o jogador (ou a dupla que conversa) fica translúcido — árvores, a escola, pessoas.
   const _ray = new THREE.Ray(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _hit = new THREE.Vector3(), _box = new THREE.Box3(), _p1 = new THREE.Vector3(), _p2 = new THREE.Vector3();
-  const ALFA_TAPA = 0.2;
+  const ALFA_TAPA = 0.2;                                               // árvores e escola
+  const ALFA_PESSOA = 0.5;                                             // (4.6.1) pessoas: mais opacas (antes 0,2) e SEM ver os cubos por dentro (veja prePessoa)
+  // (4.6.1) Boneco translúcido LIMPO. Antes cada cubo (cabeça, tronco, braços, pernas) era desenhado com transparência e dava para ver um por dentro do
+  // outro. Agora, enquanto o boneco está translúcido, cada peça ganha uma cópia que só escreve PROFUNDIDADE (sem cor, desenhada depois do cenário e
+  // antes das peças transparentes): só a superfície da frente de cada pixel passa no teste e o boneco inteiro fica uma silhueta única, igualmente translúcida.
+  const MAT_PRE = new THREE.MeshBasicMaterial({ colorWrite: false });
+  function prePessoa(A) {
+    if (A.pre) return A.pre;
+    const peças = [];
+    A.m.raiz.traverse((o) => { if (o.isMesh && o.geometry !== SHADOW_GEO && o.material && !o.userData.pre) peças.push(o); });
+    A.pre = peças.map((src) => {
+      const c = new THREE.Mesh(src.geometry, MAT_PRE); c.userData.pre = true; c.renderOrder = 50; c.frustumCulled = false; c.matrixAutoUpdate = true;
+      src.parent.add(c); return { src, c };
+    });
+    return A.pre;
+  }
+  function syncPre(A, ligado) {
+    if (!A.pre) return;
+    for (const { src, c } of A.pre) { c.visible = ligado && src.visible; if (c.visible) { c.position.copy(src.position); c.quaternion.copy(src.quaternion); c.scale.copy(src.scale); } }
+  }
   function setAlfa(mats, a) {
     for (const mt of mats) { const t = a < 0.985; if (mt.transparent !== t) { mt.transparent = t; mt.needsUpdate = true; } mt.opacity = a; if (mt.depthWrite !== !t) mt.depthWrite = !t; }
   }
@@ -1248,12 +1267,13 @@ const Fase1 = (() => {
       oc.a = (oc.a == null ? 1 : oc.a); oc.a += (alvo - oc.a) * k; setAlfa(oc.mats, oc.a);
     }
     for (const A of S.elenco) {                                      // pessoas
-      if (alvos.includes(A) || A.oculto) { if (A.alfa != null && A.alfa < 1) { A.alfa = 1; setAlfa(A.mats || [], 1); } continue; }
+      if (alvos.includes(A) || A.oculto) { if (A.alfa != null && A.alfa < 1) { A.alfa = 1; setAlfa(A.mats || [], 1); } if (A.pre) syncPre(A, false); continue; }
       const esc = (A.opt.escala || 1) * 1.2 * (A.opt.cabecao > 1 ? 1.15 : 1);
       _box.min.set(A.x - 0.38, 0, A.z - 0.38); _box.max.set(A.x + 0.38, 2.0 * esc, A.z + 0.38);
-      const alvo = tapa(_box) ? ALFA_TAPA : 1;
+      const alvo = tapa(_box) ? ALFA_PESSOA : 1;
       if (!A.mats) { A.mats = []; A.m.raiz.traverse((o) => { if (o.isMesh && o.geometry !== SHADOW_GEO && o.material && !A.mats.includes(o.material)) A.mats.push(o.material); }); }
       A.alfa = (A.alfa == null ? 1 : A.alfa); A.alfa += (alvo - A.alfa) * k; setAlfa(A.mats, A.alfa);
+      if (A.alfa < 0.985) { prePessoa(A); syncPre(A, true); } else if (A.pre) syncPre(A, false);   // (4.6.1) profundidade só enquanto translúcido
     }
   }
   function gancho(rdt) {
@@ -1401,4 +1421,4 @@ const Fase1 = (() => {
   return { iniciar, emergencia, get ativo() { return !!(S && S.ativo); }, _estado: () => S, _cams: CAMS, _caminho: caminho, _corredor: corredor };
 })();
 
-window.FutebolJS.registrarFase({ id: 'fase1', nome: 'Fase 1', nucleoMinimo: '4.5.1', iniciar: (ctx) => Fase1.iniciar(ctx.args || {}) });
+window.FutebolJS.registrarFase({ id: 'fase1', nome: 'Fase 1', nucleoMinimo: '4.6.1', iniciar: (ctx) => Fase1.iniciar(ctx.args || {}) });
