@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.4.2
+   FUTEBOL JS · jogo.js · versão 4.4.3
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,20 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.4.3 — Fim da Fase 1, gênero nas falas, cabelos/rostos femininos e IA do futsal:
+     - Fim da primeira partida: se o resultado foi ruim (derrota ou empate sem jogar bem, ou expulsão), antes do João aparece "Tentar de novo?":
+       anúncio de 15 s (Google H5 / gancho FutebolJS.anuncioRecompensado / demonstração), contagem de 6 s com PULAR e aviso de que a partida
+       influencia a história. A partida descartada não registra nada (histórico de cartões, último resultado e evento só valem depois de confirmados).
+     - Expulsão na primeira partida: o João fica desapontado ("se não sabe jogar, podia ao menos não bater nos outros!").
+     - Cena final: a fala do jogador agora responde ao estado do João; depois mariposa, fade para o preto e "E esse foi meu primeiro contato com o futebol..."
+       com a mensagem do traço (talento natural / força de vontade).
+     - Tutorial: o João só elogia a falta ("golaço de falta") se a cobrança virou gol (antes contava o gol do chute anterior).
+     - Gênero: falas iguais em português mas diferentes em es/it/fr (désolée, mala/scarsa, persa, nata...) agora seguem o gênero; "Zagueira";
+       "VOCÊ FOI EXPULSA"; "meninos" virou "turma/pessoal" (turma mista); correção do "Es bueno empezar a mejorar" no feminino.
+     - 10 cabelos novos mais femininos (Chanel, Chanel longo, Franja reta, Maria-chiquinha, Tranças, Rabo alto, Coque alto, Cacheado volumoso, Pixie,
+       Ondulado solto) e 5 rostos (Cílios longos, Batom vermelho, Delicada, Bochechas rosadas, Meiga), com nomes em todos os idiomas.
+     - IA no futsal/society: quem conduz a bola não vai mais até a linha de fundo (a bola saía no canto): fecha em diagonal para a boca do gol,
+       chuta, toca ou volta.
    Novidades da versão 4.4.2 — Fase 1: ajustes de cena, pátio e partida:
      - Árvores, pessoas e a escola ficam translúcidas quando tapam a câmera; árvores e pessoas do pátio têm colisão.
      - Alunos do Roberto: dois sentados debaixo da árvore, dois conversando e dois se aquecendo. Fundo do pátio com as cores de fora da quadra.
@@ -430,7 +444,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.4.2';
+const VERSAO_JOGO = '4.4.3';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1767,6 +1781,17 @@ const ESTILOS_CABELO = [
   HC('Mullet', [[0.52, 0.12, 0.56, -0.02, 1.935, 0], [0.12, 0.4, 0.5, -0.28, 1.68, 0]], { s: 4, f: 6, n: 6, nf: 8, t: 1, p: 3 }),
   HC('Cacheado curto', [[0.54, 0.18, 0.58, -0.01, 1.965, 0], [0.12, 0.06, 0.12, 0.1, 2.07, 0.12], [0.12, 0.06, 0.12, -0.08, 2.075, -0.1], [0.12, 0.06, 0.12, -0.12, 2.07, 0.14]], { s: 5, f: 6, n: 9, nf: 11, t: 2, p: 4 }),
   HC('Repicado', [[0.52, 0.16, 0.56, -0.02, 1.955, 0], [0.4, 0.26, 0.06, -0.04, 1.76, 0.285], [0.4, 0.26, 0.06, -0.04, 1.76, -0.285], [0.08, 0.3, 0.54, -0.27, 1.74, 0]], { s: 4, f: 4, n: 8, nf: 9, t: 2, p: 4 }),
+  // (4.4.3) 10 cortes mais femininos (índices 30 a 39 — os antigos não mudam de lugar)
+  HC('Chanel', [[0.52, 0.14, 0.56, -0.02, 1.945, 0], [0.1, 0.36, 0.54, -0.27, 1.7, 0], [0.46, 0.34, 0.04, -0.04, 1.71, 0.285], [0.46, 0.34, 0.04, -0.04, 1.71, -0.285], [0.06, 0.15, 0.54, 0.255, 1.855, 0]], { s: 8, f: 9, n: 10, nf: 11, t: 3, p: 6 }),
+  HC('Chanel longo', [[0.52, 0.14, 0.56, -0.02, 1.945, 0], [0.1, 0.52, 0.54, -0.27, 1.62, 0], [0.46, 0.5, 0.04, -0.04, 1.62, 0.285], [0.46, 0.5, 0.04, -0.04, 1.62, -0.285], [0.06, 0.14, 0.54, 0.255, 1.86, 0]], { s: 10, f: 11, n: 13, nf: 14, t: 2, p: 8 }),
+  HC('Franja reta', [[0.52, 0.14, 0.56, -0.02, 1.945, 0], [0.06, 0.2, 0.56, 0.255, 1.83, 0], [0.1, 0.62, 0.52, -0.27, 1.57, 0], [0.3, 0.46, 0.04, -0.1, 1.66, 0.275], [0.3, 0.46, 0.04, -0.1, 1.66, -0.275]], { s: 5, f: 5, n: 11, nf: 12, t: 4, p: 5 }),
+  HC('Maria-chiquinha', [[0.52, 0.13, 0.56, -0.02, 1.94, 0], [0.06, 0.15, 0.54, 0.255, 1.86, 0], [0.12, 0.12, 0.12, -0.1, 1.84, 0.33], [0.12, 0.12, 0.12, -0.1, 1.84, -0.33], [0.1, 0.4, 0.1, -0.12, 1.58, 0.34], [0.1, 0.4, 0.1, -0.12, 1.58, -0.34]], { s: 5, f: 6, n: 8, nf: 10, t: 2, p: 4 }),
+  HC('Tranças', [[0.52, 0.13, 0.56, -0.02, 1.94, 0], [0.1, 0.3, 0.5, -0.27, 1.78, 0], [0.09, 0.5, 0.1, -0.29, 1.52, 0.13], [0.09, 0.5, 0.1, -0.29, 1.52, -0.13], [0.09, 0.08, 0.1, -0.29, 1.23, 0.13], [0.09, 0.08, 0.1, -0.29, 1.23, -0.13]], { s: 5, f: 6, n: 8, nf: 10, t: 2, p: 4 }),
+  HC('Rabo alto', [[0.52, 0.13, 0.56, -0.02, 1.94, 0], [0.06, 0.15, 0.54, 0.255, 1.87, 0], [0.18, 0.16, 0.2, -0.22, 2.04, 0], [0.1, 0.56, 0.14, -0.31, 1.78, 0]], { s: 4, f: 6, n: 7, nf: 9, t: 2, p: 3 }),
+  HC('Coque alto', [[0.52, 0.13, 0.56, -0.02, 1.94, 0], [0.06, 0.15, 0.54, 0.255, 1.87, 0], [0.3, 0.26, 0.3, -0.08, 2.12, 0], [0.08, 0.08, 0.34, -0.08, 2.0, 0]], { s: 4, f: 6, n: 6, nf: 9, t: 2, p: 3 }),
+  HC('Cacheado volumoso', [[0.58, 0.24, 0.64, -0.02, 1.985, 0], [0.5, 0.5, 0.1, -0.05, 1.66, 0.34], [0.5, 0.5, 0.1, -0.05, 1.66, -0.34], [0.16, 0.64, 0.7, -0.31, 1.56, 0], [0.12, 0.1, 0.12, 0.12, 2.1, 0.14], [0.12, 0.1, 0.12, -0.1, 2.12, -0.12]], { s: 4, f: 4, n: 9, nf: 10, t: 3, p: 5 }),
+  HC('Pixie', [[0.52, 0.11, 0.56, -0.01, 1.93, 0], [0.06, 0.13, 0.4, 0.25, 1.86, 0.08], [0.1, 0.16, 0.5, -0.26, 1.74, 0], [0.3, 0.14, 0.04, -0.06, 1.8, 0.275], [0.3, 0.14, 0.04, -0.06, 1.8, -0.275]], { s: 6, f: 7, n: 7, nf: 9, t: 3, p: 4 }),
+  HC('Ondulado solto', [[0.54, 0.16, 0.58, -0.02, 1.95, 0], [0.12, 0.6, 0.6, -0.28, 1.58, 0], [0.3, 0.52, 0.05, 0.02, 1.64, 0.285], [0.3, 0.52, 0.05, 0.02, 1.64, -0.285], [0.14, 0.58, 0.06, -0.28, 1.56, 0.33], [0.14, 0.58, 0.06, -0.28, 1.56, -0.33]], { s: 5, f: 5, n: 10, nf: 11, t: 2, p: 5 }),
 ];
 // Barbas: "caixas" são os volumes finos nas laterais/queixo (nunca abaixo da cabeça: y >= 1,36); "id" escolhe o desenho no rosto (pintarRosto).
 const BB = (nome, grupo, id, caixas) => ({ nome, grupo, id, caixas: caixas || [] });
@@ -1807,6 +1832,12 @@ const ROSTOS = [
   { nome: 'Marrento', sob: { inc: 1 }, boca: 'torta' },
   { nome: 'Sardas', extra: 'sardas' },
   { nome: 'Cicatriz', extra: 'cicatriz' },
+  // (4.4.3) 5 rostos mais femininos (índices 16 a 20). extra aceita várias coisas juntas: 'cilios+blush'. 'batom' = lábios vermelhos e cheios.
+  { nome: 'Cílios longos', extra: 'cilios', sob: { y: 4 } },
+  { nome: 'Batom vermelho', extra: 'cilios+batom', boca: 'sorriso', sob: { y: 4 } },
+  { nome: 'Delicada', oh: 4, sob: { y: 4 }, boca: 'pequena', extra: 'cilios' },
+  { nome: 'Bochechas rosadas', extra: 'blush', boca: 'sorriso' },
+  { nome: 'Meiga', olhos: [3, 11], oh: 4, sob: { y: 4 }, boca: 'sorriso', extra: 'cilios+blush' },
 ];
 const LABIOS = ['#E3A59B', '#D18F86', '#BE766D', '#A8625A', '#8E4C44', '#753B34', '#5C2D28', '#46211E'];   // (4.3.0) cor dos lábios: do mais claro ao mais escuro
 const hexNum = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
@@ -1908,8 +1939,14 @@ function pintarRosto(g, ox, oy, pele, o) {
   const topoOlho = oh >= 4 ? 7 : oh === 1 ? 8 : 7 + (3 - oh);
   for (const lado of [0, 1]) px(olhos[lado], topoOlho, 2, oh, tinta);
   g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(ox + 7, oy + 9, 2, 2);                 // nariz
-  if (R.extra === 'sardas') for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
-  if (R.extra === 'cicatriz') { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
+  const ex = String(R.extra || '').split('+');
+  if (ex.includes('cilios')) for (let lado = 0; lado < 2; lado++) {            // (4.4.3) cílios: pontinhos nos cantos de fora e em cima do olho
+    const xo = lado === 0 ? olhos[0] - 1 : olhos[1] + 2, xi = lado === 0 ? olhos[0] : olhos[1] + 1;
+    px(xo, topoOlho - 1, 1, 1, tinta); px(xo, topoOlho, 1, 1, tinta); px(xi, topoOlho - 1, 1, 1, tinta);
+  }
+  if (ex.includes('blush')) for (const [x, y] of [[2, 10], [3, 10], [2, 11], [12, 10], [13, 10], [13, 11]]) px(x, y, 1, 1, 'rgba(226,106,126,0.62)');   // bochechas rosadas
+  if (ex.includes('sardas')) for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
+  if (ex.includes('cicatriz')) { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
   // barba e bigode (desenhados no rosto; os volumes finos ficam em ESTILOS_BARBA). Nunca cobre o nariz (linhas 9-10, colunas 7-8).
   const linhas = (lista, c) => { for (const [y, x0, x1] of lista) px(x0, y, x1 - x0 + 1, 1, c); };
   const id = B.id;
@@ -1927,9 +1964,11 @@ function pintarRosto(g, ox, oy, pele, o) {
   else if (id === 'biggrosso') linhas([[10, 4, 6], [10, 9, 11], [11, 3, 12], [12, 3, 4], [12, 11, 12]], bc);
   // boca (por cima de tudo)
   const temBarba = id !== 'nenhuma' && id !== 'porfazer' && id !== 'rala' && B.grupo === 'barba' && id !== 'cavanhaque' && id !== 'cavlongo';
-  const labio = o.labio != null && LABIOS[o.labio] ? LABIOS[o.labio] : (temBarba ? '#B0645A' : '#7A3B2E');
+  const batom = ex.includes('batom');                                                     // (4.4.3) batom vermelho: ignora a cor de lábio escolhida
+  const labio = batom ? '#C42A3E' : o.labio != null && LABIOS[o.labio] ? LABIOS[o.labio] : (temBarba ? '#B0645A' : '#7A3B2E');
   const boca = R.boca || 'normal';
-  if (boca === 'sorriso') { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 13, 4, 1, labio); }      // sorriso de boca fechada
+  if (batom) { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 12, 4, 1, labio); px(6, 13, 4, 1, labio); px(7, 14, 2, 1, labio); }   // sorriso com lábios cheios
+  else if (boca === 'sorriso') { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 13, 4, 1, labio); }      // sorriso de boca fechada
   else if (boca === 'brava') px(6, 12, 4, 2, labio);                                                         // fechada, sem dentes
   else if (boca === 'triste') { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
   else if (boca === 'pequena') px(7, 12, 2, 1, labio);
@@ -3039,6 +3078,14 @@ function aiCarry(p, dt) {
   const dG = dGoal / ESC;                            // distância "no campo de referência"
   const near = nearestOf(opponentsOf(p), p);
   const TT = taticaDe(p.team);
+  // (4.4.3) Quadra/society: quem conduz a bola NUNCA corre até a linha de fundo (a bola sai e vira tiro de meta/escanteio).
+  // Chegando perto da linha: chuta se estiver na boca do gol; senão toca para alguém; senão volta para dentro.
+  if (!campoGrande() && p.chutePrep <= 0 && p.x * p.dir > 0 && (HALF_L - p.x * p.dir) < Math.max(2.4, SMALL_BOX.depth * 0.9)) {
+    if (Math.abs(p.z) < GOAL_HALF + 4) { p.chutePrep = p.chutePrepDur = 0.25; return { vx: 0, vz: 0 }; }
+    const rr = bestPassReceiver(p) || nearestOf(teamOf(p), p, p).p;
+    if (rr) { p.stuckT = 0; passTo(p, rr, false, 'short'); return { vx: 0, vz: 0 }; }
+    return { vx: -p.dir * CONFIG.AI_SPEED_BALL * 0.5 * p.speedMul, vz: -Math.sign(p.z || 1) * CONFIG.AI_SPEED_BALL * 0.8 * p.speedMul };
+  }
   // Travado (andando pouco)? Conta o tempo para forçar uma decisão.
   p.stuckT = Math.hypot(p.vx, p.vz) < 1.5 ? (p.stuckT || 0) + dt : 0;
   if (p.think <= 0 || p.stuckT > 1.2) {
@@ -3086,6 +3133,8 @@ function aiCarry(p, dt) {
   // (4.2.3) Time de bola aérea (ou que gosta de cruzar): quem conduz no ataque abre para o lado para
   // chegar na linha de fundo e cruzar, em vez de entrar sempre pelo meio.
   if ((TT.cruzar || 0) > 0.3 && p.role !== 'DEF' && p.x * p.dir > -4 && Math.abs(p.z) < HALF_W * 0.55 && Math.abs(goalX - p.x) / ESC > 22) dz += (Math.sign(p.z) || (p.id % 2 ? 1 : -1)) * 0.75;
+  // (4.4.3) Campo pequeno: no ataque a conduçao fecha em direção à boca do gol (não abre para o canto, de onde a bola sairia).
+  if (!campoGrande() && p.x * p.dir > 0 && Math.abs(p.z) > GOAL_HALF + 0.5) dz += -Math.sign(p.z) * clamp((Math.abs(p.z) - GOAL_HALF) / HALF_W, 0, 1) * 1.6 * clamp(p.x * p.dir / HALF_L + 0.2, 0, 1);
   if (near.p && near.d < 5) {
     const ox = near.p.x - p.x, oz = near.p.z - p.z;
     const ahead = (ox * p.dir) / near.d;            // marcador na frente?
@@ -3110,6 +3159,16 @@ function alaComBola(p) {
 }
 // Conduz pelo corredor (paralelo à lateral) até a linha de fundo; desvia de quem vier na frente.
 function conduzirPeloLado(p, near) {
+  if (!campoGrande()) {                            // (4.4.3) quadra/society: sobe pelo lado só até a altura da área e FECHA em diagonal para a boca do gol
+    const gx = p.dir * HALF_L;
+    const alvo = { x: gx - p.dir * Math.max(SMALL_BOX.depth + 1.2, HALF_L * 0.18), z: Math.sign(p.z || 1) * Math.min(Math.abs(p.z), GOAL_HALF + 2) };
+    let dx = alvo.x - p.x, dz = alvo.z - p.z;
+    if ((alvo.x - p.x) * p.dir < 1) { dx = gx - p.x; dz = -p.z * 0.8; }     // já chegou: aponta para o gol
+    const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    if (near.p && near.d < 4) { const oz = near.p.z - p.z; dz += (Math.abs(oz) > 0.3 ? -Math.sign(oz) : -Math.sign(p.z)) * 0.6; }
+    const m = Math.hypot(dx, dz) || 1, v = CONFIG.AI_SPEED_BALL * p.speedMul * 1.05;
+    return { vx: dx / m * v, vz: dz / m * v };
+  }
   const faixa = Math.sign(p.z) * HALF_W * 0.78;
   let dx = p.dir, dz = clamp((faixa - p.z) * 0.15, -0.5, 0.5);
   if (near.p && near.d < 4) { const oz = near.p.z - p.z; dz += (Math.abs(oz) > 0.3 ? -Math.sign(oz) : -Math.sign(p.z)) * 0.8; }
@@ -7151,7 +7210,7 @@ function updateHUD() {
     setClass(f, 'low', user.exhausted || pct < 25);
   }
   // (4.2.6) sem a contagem de faltas na tela: só o cartão (amarelo/vermelho)
-  const chip = user.red ? '<i class="vm"></i> EXPULSO' : user.yellow ? '<i class="am"></i> AMARELO' : '';
+  const chip = user.red ? '<i class="vm"></i> ' + Tg('EXPULSO') : user.yellow ? '<i class="am"></i> AMARELO' : '';
   if (hudCache.chip !== chip) { hudCache.chip = chip; $('cardChip').innerHTML = chip; $('cardChip').hidden = !chip; }
   let hint = '';
   if (mode === 'celebrate') hint = 'Comemore! ' + Math.max(0, Math.ceil(G.celebT)) + ' s';
@@ -7413,7 +7472,7 @@ function endMatch(motivo) {
   G.pulando = false;
   const res = registrarResultado(motivo);
   if (typeof Historia !== 'undefined' && Historia.emPartida()) { esconderRecepcao(); hideKickUI(); $('timingLayer').hidden = true; Historia.fimDaPartida(res); return; }   // (4.3.6) a história cuida do fim
-  $('endTitle').textContent = motivo === 'expulso' ? 'VOCÊ FOI EXPULSO' : 'FIM DE JOGO';
+  $('endTitle').textContent = motivo === 'expulso' ? Tg('VOCÊ FOI EXPULSO') : 'FIM DE JOGO';
   esconderRecepcao();
   hideKickUI();
   $('timingLayer').hidden = true;
@@ -9454,6 +9513,10 @@ function cameraPenaltis() {
 // ---------------------------------------------------------------------
 function registrarResultado(motivo) {
   const P = PARTIDA, H = lerHistorico(), R = P.regras;
+  // (4.4.3) Partida do modo história: NADA é gravado agora (histórico de cartões/suspensões, último resultado, evento).
+  // Fica pendente até a história aceitar o resultado (Historia.confirmarResultado); se o jogador refizer a partida
+  // (anúncio "tentar de novo"), Historia.descartarResultado() joga tudo fora e nada daquela partida fica registrado.
+  const naHistoria = typeof Historia !== 'undefined' && Historia.emPartida();
   const susp = [], les = [];
   // Quem estava fora cumpriu 1 jogo.
   [0, 1].forEach((t) => {
@@ -9476,7 +9539,7 @@ function registrarResultado(motivo) {
       les.push({ team: p.team, nome, tipo: p.lesao.tipo, jogos: p.lesao.jogos });
     }
   }
-  salvo.gravar('futebolJs.historico.v1', H);
+  if (naHistoria) Historia.guardarPendente({ H }); else salvo.gravar('futebolJs.historico.v1', H);
   const a = agregado();
   const res = {
     times: P.timesObj.map((t) => t.id), placar: G.score.slice(), agregado: a, penaltis: G.penaltisPlacar || null,
@@ -9485,6 +9548,7 @@ function registrarResultado(motivo) {
     suspensos: susp, lesoes: les, trocas: G.trocas.slice(), voceSaiu: !!G.espectador,
   };
   G.resultado = res;
+  if (naHistoria) { Historia.guardarPendente({ res }); return res; }
   window.FutebolJS.ultimoResultado = res;
   try { window.dispatchEvent(new CustomEvent('futebolJs:fim', { detail: res })); } catch (e) { /* navegador antigo */ }
   return res;
@@ -10355,7 +10419,7 @@ Object.assign(I18N, {
   'É bom começar a ficar bom.': ["It's good to start getting good at it.", 'Es bueno empezar a mejorar.', 'È bene iniziare a diventare bravo.', "Il est temps de commencer à s'améliorer."],
   'Deveria ter vindo mais cedo.': ['You should have come earlier.', 'Deberías haber venido más temprano.', 'Avresti dovuto venire prima.', 'Tu aurais dû venir plus tôt.'],
   'Álgebra é usar letras, como o x, no lugar de um número que ainda não conhecemos. Por exemplo: x + 3 = 7. Quanto vale o x? Isso mesmo, 4!': ['Algebra is using letters, like x, in place of a number we do not know yet. For example: x + 3 = 7. What is x? That is right, 4!', 'El álgebra es usar letras, como la x, en lugar de un número que aún no conocemos. Por ejemplo: x + 3 = 7. ¿Cuánto vale x? ¡Eso es, 4!', "L'algebra usa lettere, come la x, al posto di un numero che ancora non conosciamo. Per esempio: x + 3 = 7. Quanto vale x? Esatto, 4!", "L'algèbre, c'est utiliser des lettres, comme x, à la place d'un nombre qu'on ne connaît pas encore. Par exemple : x + 3 = 7. Combien vaut x ? Exactement, 4 !"],
-  'Então, meninos, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!': ['So, kids, that is algebra! You have a little activity to answer. Make yourselves comfortable!', '¡Entonces, chicos, eso es álgebra! Tienen una actividad para responder. ¡Pónganse cómodos!', 'Allora, ragazzi, questa è l\'algebra! Avete una piccola attività da svolgere. Mettetevi comodi!', "Alors, les enfants, voilà l'algèbre ! Vous avez un petit exercice à faire. Installez-vous !"],
+  'Então, turma, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!': ['So, class, that is algebra! You have a little activity to answer. Make yourselves comfortable!', '¡Entonces, chicos, eso es álgebra! Tienen una actividad para responder. ¡Pónganse cómodos!', 'Allora, ragazzi, questa è l\'algebra! Avete una piccola attività da svolgere. Mettetevi comodi!', "Alors, les enfants, voilà l'algèbre ! Vous avez un petit exercice à faire. Installez-vous !"],
   'Missão: sente na sua cadeira e responda a atividade.': ['Mission: sit in your chair and answer the activity.', 'Misión: siéntate en tu silla y responde la actividad.', "Missione: siediti al tuo posto e svolgi l'attività.", "Mission : assieds-toi à ta place et fais l'exercice."],
   'Missão: saia da sala.': ['Mission: leave the classroom.', 'Misión: sal del aula.', "Missione: esci dall'aula.", 'Mission : sors de la classe.'],
   'Interagir': ['Interact', 'Interactuar', 'Interagisci', 'Interagir'],
@@ -10411,7 +10475,7 @@ Object.assign(I18N, {
   "Fechou! Bora!": ["Deal! Let's go!", "¡Hecho! ¡Vamos!", "Affare fatto! Andiamo!", "Ça marche ! Allons-y !"],
   "João... eu nunca joguei uma partida de verdade.": ["João... I've never played a real match.", "João... nunca he jugado un partido de verdad.", "João... non ho mai giocato una vera partita.", "João... je n'ai jamais joué un vrai match."],
   "Eu sei. Mas eu confio em você!": ["I know. But I trust you!", "Lo sé. ¡Pero confío en ti!", "Lo so. Ma mi fido di te!", "Je sais. Mais j'ai confiance en toi !"],
-  "Eu apito o jogo! Quero jogo limpo, meninos!": ["I'll referee! I want a clean game, kids!", "¡Yo pito el partido! ¡Quiero juego limpio, chicos!", "Arbitro io! Voglio un gioco pulito, ragazzi!", "C'est moi qui arbitre ! Je veux du fair-play, les enfants !"],
+  "Eu apito o jogo! Quero jogo limpo, pessoal!": ["I'll referee! I want a clean game, everyone!", "¡Yo pito el partido! ¡Quiero juego limpio, chicos!", "Arbitro io! Voglio un gioco pulito, ragazzi!", "C'est moi qui arbitre ! Je veux du fair-play, les enfants !"],
   "{0}! Você disse que nunca tinha jogado?! Que jogo foi esse? Eu fiquei impressionado!": ["{0}! You said you'd never played?! What a game! I'm impressed!", "¡{0}! ¿Dijiste que nunca habías jugado? ¡¿Qué partido fue ese?! ¡Estoy impresionado!", "{0}! Hai detto che non avevi mai giocato?! Che partita! Sono impressionato!", "{0} ! Tu as dit que tu n'avais jamais joué ?! Quel match ! Je suis impressionné !"],
   "Ganhamos, e muito por sua causa!": ["We won, and a lot of it was thanks to you!", "¡Ganamos, y en gran parte por ti!", "Abbiamo vinto, e in gran parte grazie a te!", "On a gagné, et en grande partie grâce à toi !"],
   "Empatamos... mas olha só como você jogou! Fiquei impressionado!": ["We drew... but look how well you played! I'm impressed!", "Empatamos... ¡pero mira cómo jugaste! ¡Estoy impresionado!", "Abbiamo pareggiato... ma guarda come hai giocato! Sono impressionato!", "Match nul... mais regarde comme tu as joué ! Je suis impressionné !"],
@@ -10428,7 +10492,7 @@ Object.assign(I18N, {
   "Talento natural": ["Natural talent", "Talento natural", "Talento naturale", "Talent naturel"],
   "Força de vontade": ["Willpower", "Fuerza de voluntad", "Forza di volontà", "Force de volonté"],
   "Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.": ["They say I was always good... that I always played really well. But that was my first match.", "Dicen que siempre fui bueno... que siempre jugué muy bien. Pero ese fue mi primer partido.", "Dicono che sono sempre stato bravo... che ho sempre giocato benissimo. Ma quella fu la mia prima partita.", "On dit que j'ai toujours été bon... que j'ai toujours très bien joué. Mais c'était mon premier match."],
-  "Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.": ["I wasn't born knowing. Everything I became came from training and a lot of willpower.", "No nací sabiendo. Todo lo que fui después vino del entrenamiento y de mucha fuerza de voluntad.", "Non sono nato imparato. Tutto ciò che sono diventato è venuto dall'allenamento e da tanta forza di volontà.", "Je ne suis pas né en sachant. Tout ce que je suis devenu est venu de l'entraînement et de beaucoup de force de volonté."],
+  "Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.": ["I wasn't born knowing. Everything I became came from training and a lot of willpower.", "No nací sabiendo. Todo lo que fui después vino del entrenamiento y de mucha fuerza de voluntad.", "Non sono nato già bravo. Tutto ciò che sono diventato è venuto dall'allenamento e da tanta forza di volontà.", "Je ne suis pas né en sachant. Tout ce que je suis devenu est venu de l'entraînement et de beaucoup de force de volonté."],
   "Professor Roberto": ["Professor Roberto", "Profesor Roberto", "Professor Roberto", "Professeur Roberto"],
   "Pular este passo": ["Skip this step", "Saltar este paso", "Salta questo passo", "Passer cette étape"],
   "TREINO": ["TRAINING", "ENTRENO", "ALLENAMENTO", "ENTRAÎNEMENT"],
@@ -10573,6 +10637,38 @@ const HIST = (() => {
   };
 })();
 
+// (4.4.3) Textos novos: anúncio "tentar de novo", cena da expulsão, respostas ao João e fala final da fase 1.
+Object.assign(I18N, {
+  'Tentar de novo?': ['Try again?', '¿Intentar de nuevo?', 'Riprovare?', 'Réessayer ?'],
+  'Quer assistir a um anúncio de 15 segundos para jogar a partida de novo?': ['Want to watch a 15-second ad to play the match again?', '¿Quieres ver un anuncio de 15 segundos para jugar el partido otra vez?', 'Vuoi guardare un annuncio di 15 secondi per rigiocare la partita?', 'Tu veux regarder une pub de 15 secondes pour rejouer le match ?'],
+  'Atenção: essa partida influencia a história!': ['Heads up: this match affects the story!', '¡Atención: este partido influye en la historia!', 'Attenzione: questa partita influenza la storia!', 'Attention : ce match influence l\'histoire !'],
+  'Assistir ao anúncio': ['Watch the ad', 'Ver el anuncio', 'Guarda l\'annuncio', 'Regarder la pub'],
+  'Pular': ['Skip', 'Saltar', 'Salta', 'Passer'],
+  'A história continua em {0} s...': ['The story continues in {0} s...', 'La historia continúa en {0} s...', 'La storia continua tra {0} s...', 'L\'histoire continue dans {0} s...'],
+  'Anúncio': ['Ad', 'Anuncio', 'Annuncio', 'Publicité'],
+  'Espaço do anúncio do Google (demonstração)': ['Google ad space (demo)', 'Espacio del anuncio de Google (demostración)', 'Spazio per l\'annuncio di Google (demo)', 'Espace de la pub Google (démo)'],
+  'Anúncio: {0} s': ['Ad: {0} s', 'Anuncio: {0} s', 'Annuncio: {0} s', 'Pub : {0} s'],
+  'Aguarde o anúncio terminar para jogar de novo.': ['Wait for the ad to finish to play again.', 'Espera a que termine el anuncio para jugar de nuevo.', 'Aspetta la fine dell\'annuncio per rigiocare.', 'Attends la fin de la pub pour rejouer.'],
+  'Pronto! Boa sorte na nova tentativa!': ['Done! Good luck on your new try!', '¡Listo! ¡Suerte en el nuevo intento!', 'Fatto! Buona fortuna per il nuovo tentativo!', 'Terminé ! Bonne chance pour ce nouvel essai !'],
+  'Você foi expulso?! Logo na primeira partida...': ['You got sent off?! In your very first match...', '¿¡Te expulsaron!? Justo en el primer partido...', 'Sei stato espulso?! Proprio alla prima partita...', 'Tu as été expulsé ?! Dès le premier match...'],
+  'Se não sabe jogar, podia ao menos não bater nos outros!': ['If you can\'t play, you could at least not hit the others!', 'Si no sabes jugar, ¡al menos podrías no pegarles a los demás!', 'Se non sai giocare, potevi almeno non picchiare gli altri!', 'Si tu ne sais pas jouer, tu pourrais au moins éviter de frapper les autres !'],
+  'Desculpa, João... eu não queria machucar ninguém.': ['Sorry, João... I didn\'t mean to hurt anyone.', 'Perdona, João... no quería lastimar a nadie.', 'Scusa, João... non volevo far male a nessuno.', 'Pardon, João... je ne voulais faire de mal à personne.'],
+  'Tá... mas da próxima vez joga limpo, tá? Eu te ajudo a treinar.': ['Okay... but next time play clean, alright? I\'ll help you train.', 'Vale... pero la próxima juega limpio, ¿sí? Te ayudo a entrenar.', 'Va bene... ma la prossima volta gioca pulito, ok? Ti aiuto ad allenarti.', 'D\'accord... mais la prochaine fois, joue proprement, d\'accord ? Je t\'aide à t\'entraîner.'],
+  'Sério? Eu nem sei como aconteceu... mas foi muito legal jogar com você, João!': ['Really? I don\'t even know how it happened... but it was great playing with you, João!', '¿En serio? Ni sé cómo pasó... ¡pero fue genial jugar contigo, João!', 'Davvero? Non so nemmeno come sia successo... ma è stato bellissimo giocare con te, João!', 'Vraiment ? Je ne sais même pas comment c\'est arrivé... mais c\'était génial de jouer avec toi, João !'],
+  'E esse foi meu primeiro contato com o futebol...': ['And that was my first contact with football...', 'Y ese fue mi primer contacto con el fútbol...', 'E quello fu il mio primo contatto con il calcio...', 'Et ça, c\'était mon premier contact avec le football...'],
+  'VOCÊ FOI EXPULSO': ['YOU WERE SENT OFF', 'FUISTE EXPULSADO', 'SEI STATO ESPULSO', 'TU AS ÉTÉ EXPULSÉ'],
+  'EXPULSO': ['SENT OFF', 'EXPULSADO', 'ESPULSO', 'EXPULSÉ'],
+  // nomes dos 10 cabelos e 5 rostos novos
+  'Chanel': ['Bob cut', 'Corte bob', 'Caschetto', 'Carré'], 'Chanel longo': ['Long bob', 'Bob largo', 'Caschetto lungo', 'Carré long'],
+  'Franja reta': ['Straight bangs', 'Flequillo recto', 'Frangia dritta', 'Frange droite'], 'Maria-chiquinha': ['Pigtails', 'Coletas', 'Codini', 'Couettes'],
+  'Tranças': ['Braids', 'Trenzas', 'Trecce', 'Tresses'], 'Rabo alto': ['High ponytail', 'Cola alta', 'Coda alta', 'Queue haute'],
+  'Coque alto': ['High bun', 'Moño alto', 'Chignon alto', 'Chignon haut'], 'Cacheado volumoso': ['Big curls', 'Rizos voluminosos', 'Ricci voluminosi', 'Boucles volumineuses'],
+  'Pixie': ['Pixie cut', 'Corte pixie', 'Pixie cut', 'Coupe pixie'], 'Ondulado solto': ['Loose waves', 'Ondas sueltas', 'Onde sciolte', 'Ondulations libres'],
+  'Cílios longos': ['Long lashes', 'Pestañas largas', 'Ciglia lunghe', 'Longs cils'], 'Batom vermelho': ['Red lipstick', 'Labial rojo', 'Rossetto rosso', 'Rouge à lèvres rouge'],
+  'Delicada': ['Delicate', 'Delicada', 'Delicata', 'Délicate'], 'Bochechas rosadas': ['Rosy cheeks', 'Mejillas rosadas', 'Guance rosa', 'Joues roses'],
+  'Meiga': ['Sweet', 'Dulce', 'Dolce', 'Douce'],
+});
+
 // ---------------------------------------------------------------------
 // (4.4.1) GÊNERO DO PERSONAGEM: falas ditas pelo jogador ou sobre ele que mudam com o gênero (bom/boa, atrasado/atrasada...).
 //   Tg('texto masculino') / Tgf('texto {0}', ...) → devolvem a versão feminina quando PERSONAGEM.genero === 'F'.
@@ -10588,13 +10684,151 @@ const FEMININO = [
   ['{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', '{0}! Eu fiquei impressionada! Chegar atrasada e ainda acertar tudo... achei muito descolado!'],
   ['Obrigado, João... Perdemos, mesmo assim.', 'Obrigada, João... Perdemos, mesmo assim.'],
   ['Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.', 'Dizem que eu sempre fui boa... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.'],
+  // (4.4.3)
+  ['Você foi expulso?! Logo na primeira partida...', 'Você foi expulsa?! Logo na primeira partida...'],
+  ['VOCÊ FOI EXPULSO', 'VOCÊ FOI EXPULSA'],
+  ['EXPULSO', 'EXPULSA'],
+  ['Zagueiro: defender o nosso gol', 'Zagueira: defender o nosso gol'],
+  ['É, esse aí sou eu... me preparando...', 'É, essa aí sou eu... me preparando...'],
 ];
-const FEM_TROCAS = [[/stato bravo/g, 'stata brava'], [/bravo/g, 'brava'], [/Modesto/g, 'Modesta'], [/bueno/g, 'buena'], [/étais bon\b/g, 'étais bonne'], [/été bon\b/g, 'été bonne'], [/très bon /g, 'très bonne '], [/trompé,/g, 'trompée,']];
+const FEM_TROCAS = [[/stato bravo/g, 'stata brava'], [/bravo/g, 'brava'], [/Modesto/g, 'Modesta'], [/bueno/g, 'buena'], [/étais bon\b/g, 'étais bonne'], [/été bon\b/g, 'été bonne'], [/très bon /g, 'très bonne '], [/trompé,/g, 'trompée,'], [/stato espulso/g, 'stata espulsa'], [/été expulsé/g, 'été expulsée'], [/EXPULSADO/g, 'EXPULSADA'], [/STATO ESPULSO/g, 'STATA ESPULSA'], [/ÉTÉ EXPULSÉ/g, 'ÉTÉ EXPULSÉE'], [/ese soy yo/g, 'esa soy yo'], [/quello sono io/g, 'quella sono io'], [/^ESPULSO$/g, 'ESPULSA'], [/^EXPULSÉ$/g, 'EXPULSÉE']];
 const FEM_PT = {};
 for (const [m, f] of FEMININO) { FEM_PT[m] = f; if (I18N[m]) I18N[f] = I18N[m].map((t) => FEM_TROCAS.reduce((x, [r, y]) => x.replace(r, y), t)); }
+// (4.4.3) "É bom começar a ficar boa": em espanhol o "bueno" é de "é bom (começar)", não da pessoa — fica igual.
+if (I18N['É bom começar a ficar boa.'] && I18N['É bom começar a ficar bom.']) I18N['É bom começar a ficar boa.'][1] = I18N['É bom começar a ficar bom.'][1];
+// (4.4.3) Falas que são IGUAIS em português nos dois gêneros, mas que em outro idioma mudam (désolé/désolée, malo/mala, perso/persa...).
+//   chave PT → [en, es, it, fr] (null = igual ao texto normal). Só vale quando o personagem é feminino e o idioma não é o português.
+const FEM_TRAD = {
+  'Eu sei... desculpa...': [null, null, null, 'Je sais... désolée...'],
+  'Sim, mas eu sou bem ruim...': [null, 'Sí, pero soy bastante mala...', 'Sì, ma sono piuttosto scarsa...', 'Oui, mais je suis plutôt nulle...'],
+  'Será que eu perdi muita coisa?': [null, null, 'Mi sono persa molto?', null],
+  'Desculpa, João... eu errei bastante.': [null, null, null, 'Désolée, João... j\'ai fait beaucoup d\'erreurs.'],
+  'Relaxa! Vai ser só treinar mais um pouco.': [null, '¡Tranquila! Solo tienes que entrenar un poco más.', null, null],
+  'Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.': [null, null, 'Non sono nata già brava. Tutto ciò che sono diventata è venuto dall\'allenamento e da tanta forza di volontà.', 'Je ne suis pas née en sachant. Tout ce que je suis devenue est venu de l\'entraînement et de beaucoup de force de volonté.'],
+  'Fico feliz que você tenha gostado': [null, null, null, 'Je suis contente que ça t\'ait plu'],
+  'Eita, eu nem vi você passando para a quadra...': [null, null, null, 'Ben ça alors, je ne t\'ai même pas vue passer sur le terrain...'],
+};
 const ehFeminina = () => PERSONAGEM.genero === 'F';
-function Tg(chave) { return T(ehFeminina() && FEM_PT[chave] ? FEM_PT[chave] : chave); }
-function Tgf(chave, ...a) { return Tf(ehFeminina() && FEM_PT[chave] ? FEM_PT[chave] : chave, ...a); }
+function _textoGenero(chave) {
+  if (!ehFeminina()) return T(chave);
+  if (FEM_PT[chave]) return T(FEM_PT[chave]);
+  const x = FEM_TRAD[chave];
+  if (x && Idioma.atual !== 'pt' && x[_IDX[Idioma.atual]]) return x[_IDX[Idioma.atual]];
+  return T(chave);
+}
+function Tg(chave) { return _textoGenero(chave); }
+function Tgf(chave, ...a) { return _textoGenero(chave).replace(/\{(\d+)\}/g, (m, n) => (a[n] != null ? a[n] : m)); }
+
+// ---------------------------------------------------------------------
+// (4.4.3) ANÚNCIO "TENTAR DE NOVO?" — usado no fim da primeira partida da história quando o resultado foi ruim.
+//   Anuncios.oferta()    → tela "assistir a um anúncio de 15 s para jogar de novo?" com contagem de 6 s e botão PULAR.
+//                          Resolve 'ver' | 'pular' (a contagem chegando a zero conta como 'pular').
+//   Anuncios.assistir()  → mostra o anúncio e resolve true se o jogador ganhou a nova tentativa. Quem fornece o anúncio:
+//        1) window.FutebolJS.anuncioRecompensado = async () => true/false   (gancho do site/Canva: se existir, é ele que manda)
+//        2) Google H5 Games Ads (window.adBreak, anúncio "reward"): carregue o adsbygoogle.js do AdSense no index.html
+//           (<script async data-ad-client="ca-pub-XXXX" data-adbreak-test="on" src=".../adsbygoogle.js"> + window.adBreak = window.adConfig = ...)
+//        3) sem nenhum dos dois: anúncio de DEMONSTRAÇÃO de 15 s (apenas um espaço reservado).
+// ---------------------------------------------------------------------
+const Anuncios = (() => {
+  const DUR = 15;
+  let el = null;
+  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function montar() {
+    if (el) return;
+    const css = document.createElement('style');
+    css.textContent = `
+#anuncioTela { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: rgba(0, 0, 0, 0.92); padding: 8px 12px; box-sizing: border-box; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
+#anuncioTela[hidden] { display: none; }
+#anuncioTela .papel { --p: var(--p3, 3px); box-sizing: border-box; width: min(540px, 100%); max-height: 100%; overflow-y: auto; padding: 4px 10px 10px; color: #2a1206; text-align: center;
+  border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; }
+#anuncioTela .aTit { margin: 6px 0 2px; font: 700 clamp(15px, 4.4vh, 20px)/1.2 var(--font-display); letter-spacing: 0.08em; text-transform: uppercase; }
+#anuncioTela .aTxt { margin: 6px 0; font: 600 clamp(13px, 3.8vh, 18px)/1.35 var(--font-body); }
+#anuncioTela .aAviso { margin: 8px 0; padding: 6px 8px; background: #f0a020; color: #2a1206; border: 3px solid #2a1206; font: 700 clamp(12px, 3.6vh, 16px)/1.3 var(--font-display); letter-spacing: 0.03em; }
+#anuncioTela .aConta { margin: 6px 0 2px; min-height: 1.2em; font: 700 clamp(12px, 3.4vh, 15px)/1.2 var(--font-display); letter-spacing: 0.04em; color: #7a3a10; }
+#anuncioTela .aBar { height: 10px; margin: 4px 0 6px; background: #2a1206; }
+#anuncioTela .aBar i { display: block; width: 100%; height: 100%; background: #f0a020; transform-origin: left center; }
+#anuncioTela .aBtns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 6px; }
+#anuncioTela .aBtns .pxBtn { --p: var(--p2, 2px); width: auto; min-width: 150px; height: 44px; padding: 0 12px; font-size: 14px; white-space: nowrap; }
+#anuncioTela .aCaixa { margin: 8px 0; height: clamp(70px, 26vh, 150px); display: grid; place-items: center; background: repeating-linear-gradient(45deg, #3a2a18 0 10px, #2e2012 10px 20px); color: #fff0c8; font: 700 clamp(12px, 3.4vh, 15px)/1.3 var(--font-display); letter-spacing: 0.05em; padding: 0 10px; border: 3px solid #2a1206; }`;
+    document.head.appendChild(css);
+    el = document.createElement('div'); el.id = 'anuncioTela'; el.hidden = true;
+    (document.getElementById('raizJogo') || document.body).appendChild(el);
+  }
+  function fechar() { if (el) { el.hidden = true; el.innerHTML = ''; el.onclick = null; } }
+  function oferta(op) {
+    montar();
+    const seg = (op && op.segundos) || 6;
+    return new Promise((res) => {
+      el.innerHTML = '<div class="papel" role="dialog"><p class="aTit">' + esc(T('Tentar de novo?')) + '</p>' +
+        '<p class="aTxt">' + esc(T('Quer assistir a um anúncio de 15 segundos para jogar a partida de novo?')) + '</p>' +
+        '<p class="aAviso">' + esc(T('Atenção: essa partida influencia a história!')) + '</p>' +
+        '<p class="aConta"></p><div class="aBar"><i></i></div>' +
+        '<div class="aBtns"><button type="button" class="pxBtn pxPrim" data-a="ver">' + esc(T('Assistir ao anúncio')) + '</button>' +
+        '<button type="button" class="pxBtn" data-a="pular">' + esc(T('Pular')) + '</button></div></div>';
+      el.hidden = false;
+      const conta = el.querySelector('.aConta'), barra = el.querySelector('.aBar i');
+      const t0 = performance.now(); let feito = false, iv = 0;
+      const fim = (r) => { if (feito) return; feito = true; clearInterval(iv); fechar(); res(r); };
+      const tick = () => {
+        const rest = seg - (performance.now() - t0) / 1000;
+        if (rest <= 0) { fim('pular'); return; }
+        conta.textContent = Tf('A história continua em {0} s...', Math.ceil(rest));
+        barra.style.transform = 'scaleX(' + (rest / seg).toFixed(3) + ')';
+      };
+      tick(); iv = setInterval(tick, 100);
+      el.onclick = (e) => { const b = e.target.closest && e.target.closest('button'); if (!b) return; if (typeof Som !== 'undefined' && Som.clique) Som.clique(); fim(b.dataset.a === 'ver' ? 'ver' : 'pular'); };
+    });
+  }
+  // Google H5 Games Ads (anúncio com recompensa). 'visto' | 'fechou' | 'indisponivel'
+  function googleH5() {
+    return new Promise((res) => {
+      let visto = false, mostrou = false, feito = false;
+      const fim = (v) => { if (!feito) { feito = true; res(v); } };
+      try {
+        window.adBreak({
+          type: 'reward', name: 'tentar-de-novo',
+          beforeReward: (mostrar) => { mostrou = true; mostrar(); },
+          adViewed: () => { visto = true; },
+          adDismissed: () => { visto = false; },
+          adBreakDone: () => fim(visto ? 'visto' : mostrou ? 'fechou' : 'indisponivel'),
+        });
+      } catch (e) { fim('indisponivel'); }
+      setTimeout(() => { if (!mostrou) fim('indisponivel'); }, 8000);     // o SDK nunca respondeu: segue sem anúncio
+    });
+  }
+  function demonstracao() {
+    montar();
+    return new Promise((res) => {
+      el.innerHTML = '<div class="papel" role="dialog"><p class="aTit">' + esc(T('Anúncio')) + '</p>' +
+        '<div class="aCaixa">' + esc(T('Espaço do anúncio do Google (demonstração)')) + '</div>' +
+        '<p class="aConta"></p><div class="aBar"><i></i></div>' +
+        '<p class="aTxt">' + esc(T('Aguarde o anúncio terminar para jogar de novo.')) + '</p></div>';
+      el.hidden = false;
+      const conta = el.querySelector('.aConta'), barra = el.querySelector('.aBar i');
+      const t0 = performance.now();
+      const iv = setInterval(async () => {
+        const rest = DUR - (performance.now() - t0) / 1000;
+        if (rest <= 0) {
+          clearInterval(iv); conta.textContent = T('Pronto! Boa sorte na nova tentativa!'); barra.style.transform = 'scaleX(0)';
+          await esperar(900); fechar(); res(true); return;
+        }
+        conta.textContent = Tf('Anúncio: {0} s', Math.ceil(rest));
+        barra.style.transform = 'scaleX(' + (rest / DUR).toFixed(3) + ')';
+      }, 100);
+    });
+  }
+  async function assistir() {
+    const gancho = window.FutebolJS && window.FutebolJS.anuncioRecompensado;
+    if (typeof gancho === 'function') { try { return !!(await gancho()); } catch (e) { return false; } }
+    if (typeof window.adBreak === 'function') {
+      const r = await googleH5();
+      return r === 'visto' || r === 'indisponivel';       // sem anúncio disponível: não pune o jogador, libera a nova tentativa
+    }
+    return demonstracao();
+  }
+  return { oferta, assistir, fechar };
+})();
 
 const Fase1 = (() => {
   const SX = 6, SZ = 5, ALT = 2.8, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
@@ -11139,7 +11373,7 @@ const Fase1 = (() => {
     const La = S.luciaA;
     await aproximar(SPOT.lucia, La);
     if (S.lucia) { await fala('lucia', Tf('Boa atividade, {0}!', nomeJog()), 'dupla'); paraFrente(La); camPara('aula'); return; }
-    await fala('jog', T('Será que eu perdi muita coisa?'), 'dupla');
+    await fala('jog', Tg('Será que eu perdi muita coisa?'), 'dupla');
     await fala('lucia', T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), 'dupla');
     const r = await escolher(T('Nem tanto! Mas se você tiver dificuldade, eu posso te ajudar!'), [T('Acho que vou me sair bem'), T('Vou precisar mesmo')]);
     S.lucia = r === 0 ? 'confiante' : 'precisa';
@@ -11243,7 +11477,7 @@ const Fase1 = (() => {
   }
   const esc1 = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function salvarHistoria() {
-    PERSONAGEM.historia = { fase1: { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, atributos: PERSONAGEM.atributos || null } };
+    PERSONAGEM.historia = { fase1: { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, partida: S.partida1 || null, atributos: PERSONAGEM.atributos || null } };
     salvo.gravar('futebolJs.historia.v1', PERSONAGEM.historia);
   }
   function sino() {
@@ -11357,7 +11591,7 @@ const Fase1 = (() => {
     if (perfeito()) {
       const fraseImp = Tgf('{0}! Eu fiquei impressionada! Chegar atrasado e ainda acertar tudo... achei muito descolado!', nomeJog());
       await fala('lucia', fraseImp, 'dupla');
-      const r = await escolher(fraseImp, [T('Eu acertei no chute'), T('Fico feliz que você tenha gostado'), T('Ainda bem que estudei')]);
+      const r = await escolher(fraseImp, [T('Eu acertei no chute'), Tg('Fico feliz que você tenha gostado'), T('Ainda bem que estudei')]);
       if (r === 1) {
         await mariposa();
         await fala('lucia', T('A-ah... é... o João está esperando a gente no final do corredor.'), 'dupla');
@@ -11533,7 +11767,7 @@ const Fase1 = (() => {
     olhar(J, Jo.x, Jo.z);
     await andar(Jo, [[Math.max(-0.8, Math.min(0.8, J.x + 0.7)), J.z + 1.2]], 3.4);          // o João corre até você
     olhar(Jo, J.x, J.z); olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
-    await fala('joao', T('Eita, eu nem vi você passando para a quadra...'), 'dupla');
+    await fala('joao', Tg('Eita, eu nem vi você passando para a quadra...'), 'dupla');
     await fala('jog', T('Você está lento demais, João!'), 'dupla');
   }
   async function parteQuadra() {
@@ -11622,11 +11856,11 @@ const Fase1 = (() => {
     olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
     await fala('jog', T('João... eu nunca joguei uma partida de verdade.'), 'dupla');
     await fala('joao', T('Eu sei. Mas eu confio em você!'), 'dupla');
-    await fala('rob', T('Eu apito o jogo! Quero jogo limpo, meninos!'), 'qd_geral');
+    await fala('rob', T('Eu apito o jogo! Quero jogo limpo, pessoal!'), 'qd_geral');
     // (4.4.2) antes de jogar: em que posição você quer atuar? (a mariposa aparece quando você escolhe)
     olhar(Jo, J.x, J.z); olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
     await fala('joao', T('Antes de começar: em qual posição você quer jogar?'), 'dupla');
-    const posR = await escolher(T('Em qual posição você quer jogar?'), [T('Zagueiro: defender o nosso gol'), T('Meia: armar o jogo'), T('Atacante: fazer gols')]);
+    const posR = await escolher(T('Em qual posição você quer jogar?'), [Tg('Zagueiro: defender o nosso gol'), T('Meia: armar o jogo'), T('Atacante: fazer gols')]);
     PERSONAGEM.posicaoHist = ['DEF', 'MID', 'FWD'][posR] || 'FWD';
     Dialogo.esconder();
     await mariposa();
@@ -11634,11 +11868,27 @@ const Fase1 = (() => {
     Dialogo.esconder();
     await preto(true, 900);
     sairParaPartida();
-    const r = await Historia.partida({ aoPronto: () => preto(false, 900) });
-    await preto(true, 1000);
-    voltarDaPartida();
+    // (4.4.3) Resultado ruim (derrota/empate sem jogar bem, ou expulsão): antes do João, oferece refazer a partida assistindo a um anúncio.
+    //   A partida descartada NÃO deixa nada registrado (Historia.descartarResultado) e só a que valer é confirmada (confirmarResultado).
+    let r, tentativas = 0;
+    for (;;) {
+      r = await Historia.partida({ aoPronto: () => preto(false, 900) });
+      await preto(true, 1000);
+      voltarDaPartida();
+      if (!resultadoRuim(r)) break;
+      const escolha = await Anuncios.oferta({ segundos: 6 });
+      if (escolha !== 'ver') break;                                   // pulou (ou a contagem acabou): a história segue com este resultado
+      const ganhou = await Anuncios.assistir();
+      if (!ganhou) break;                                             // fechou o anúncio antes do fim: sem nova tentativa
+      Historia.descartarResultado();                                  // joga fora tudo da partida anterior
+      tentativas++;
+      sairParaPartida();
+    }
+    Historia.confirmarResultado();
+    S.partida1 = { placar: r.placar, venceu: r.venceu, empate: r.empate, expulso: !!r.expulso, gols: r.gols, tentativas };
     await cenaFinal(r);
   }
+  const resultadoRuim = (r) => !!r.expulso || (!r.venceu && !r.bom);       // derrota ou empate sem jogar bem, ou vermelho
   async function cenaFinal(r) {
     const J = S.jog, Jo = S.joaoA;
     tirarElenco([J, Jo]);
@@ -11652,16 +11902,22 @@ const Fase1 = (() => {
     camPara('dupla', true);
     await preto(false, 1000);
     await esperar(400);
-    if (r.bom && r.venceu) {
+    if (r.expulso) {                                                  // (4.4.3) levou o vermelho: o João fica desapontado
+      await fala('joao', Tg('Você foi expulso?! Logo na primeira partida...'), 'dupla');
+      await fala('joao', T('Se não sabe jogar, podia ao menos não bater nos outros!'), 'dupla');
+      await fala('jog', T('Desculpa, João... eu não queria machucar ninguém.'), 'dupla');
+      await fala('joao', T('Tá... mas da próxima vez joga limpo, tá? Eu te ajudo a treinar.'), 'dupla');
+    } else if (r.bom && r.venceu) {
       await fala('joao', Tf('{0}! Você disse que nunca tinha jogado?! Que jogo foi esse? Eu fiquei impressionado!', nomeJog()), 'dupla');
       await fala('joao', T('Ganhamos, e muito por sua causa!'), 'dupla');
+      await fala('jog', T('Sério? Eu nem sei como aconteceu... mas foi muito legal jogar com você, João!'), 'dupla');   // (4.4.3) resposta ao João (não é mais fala do futuro)
     } else if (r.bom) {
       await fala('joao', r.empate ? T('Empatamos... mas olha só como você jogou! Fiquei impressionado!') : T('Poxa, a gente perdeu... fiquei triste. Mas olha só como você jogou! Fiquei impressionado!'), 'dupla');
       await fala('jog', Tg('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
     } else if (r.venceu) {
       await fala('joao', T('Hahaha! A gente ganhou, mas você até tentou estragar o jogo, hein? Ganhamos mesmo assim!'), 'dupla');
-      await fala('jog', T('Desculpa, João... eu errei bastante.'), 'dupla');
-      await fala('joao', T('Relaxa! Vai ser só treinar mais um pouco.'), 'dupla');
+      await fala('jog', Tg('Desculpa, João... eu errei bastante.'), 'dupla');
+      await fala('joao', Tg('Relaxa! Vai ser só treinar mais um pouco.'), 'dupla');
     } else {
       await fala('joao', r.empate ? T('Empatamos... eu esperava um pouco mais de você.') : T('A gente perdeu... e eu esperava mais de você. Fiquei meio decepcionado.'), 'dupla');
       await fala('jog', T('Eu falei que nunca tinha jogado...'), 'dupla');
@@ -11671,14 +11927,14 @@ const Fase1 = (() => {
     await esperar(300);
     // o traço da história
     await tracoBanner(traco);
-    if (traco === 'talento') {
-      await fala('jog', T('Eu não sei o que dizer, nunca tinha jogado antes, não sabia que ia me sair bem!'), 'dupla');
-    } else {
-      await fala('jog', T('Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.'), 'dupla');
-    }
-    Dialogo.esconder();
+    // (4.4.3) a mariposa (alguém vai se lembrar de algo), um fade para o preto e a voz do personagem lembrando do primeiro contato
     await mariposa();
-    await preto(true, 1100);
+    await preto(true, 1400);
+    const dlg = $('dialogo'); if (dlg) dlg.style.zIndex = '21';          // a caixa de fala fica POR CIMA da tela preta
+    await fala('jog', T('E esse foi meu primeiro contato com o futebol...'));
+    await fala('jog', traco === 'talento' ? Tg('Dizem que eu sempre fui bom... que sempre joguei muito bem. Mas aquele foi o meu primeiro jogo.') : Tg('Eu não nasci sabendo. Tudo o que eu fui depois veio de treino e de muita força de vontade.'));
+    Dialogo.esconder(); if (dlg) dlg.style.zIndex = '';
+    await esperar(500);
   }
   async function tracoBanner(traco) {
     const el = document.createElement('div');
@@ -11860,14 +12116,14 @@ const Fase1 = (() => {
       await fala('jog', Tf('... oi, {0}... perdão pelo atraso', nm('prof')), 'jog');
       olhar(S.prof, S.jog.x, S.jog.z);
       await fala('prof', Tf('É a segunda vez essa semana, {0}! Semana passada eu já falei com o seu pai que você não está chegando no horário!', nomeJog()), 'prof');
-      await fala('jog', T('Eu sei... desculpa...'), 'jog');
+      await fala('jog', Tg('Eu sei... desculpa...'), 'jog');
       await fala('prof', T('O assunto foi sobre álgebra. Você conhece?'), 'prof', { manter: false });
-      const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [Tg('Sim, sou muito bom em álgebra'), T('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
+      const r = await escolher(T('O assunto foi sobre álgebra. Você conhece?'), [Tg('Sim, sou muito bom em álgebra'), Tg('Sim, mas eu sou bem ruim...'), T('Não, professora...')]);
       S.perfil = r;
       await fala('prof', Tg(['Que bom que já sabe!', 'É bom começar a ficar bom.', 'Deveria ter vindo mais cedo.'][r]), 'prof');
       S.prof.yawAlvo = -Math.PI / 2;     // vira para a turma
       await fala('prof', T('Álgebra é usar letras, como o x, no lugar de um número que ainda não conhecemos. Por exemplo: x + 3 = 7. Quanto vale o x? Isso mesmo, 4!'), 'geral', { manter: true });
-      await fala('prof', T('Então, meninos, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!'), 'geral');
+      await fala('prof', T('Então, turma, isso é álgebra! Vocês têm uma atividadezinha para responder. Podem ficar à vontade!'), 'geral');
       // controle livre
       camPara('aula');
       Dialogo.esconder();
@@ -11914,7 +12170,19 @@ const Fase1 = (() => {
 const Historia = (() => {
   let modo = null;                       // null | 'treino' | 'jogo'
   let UI = null, esp = null, TT = null, fimResolve = null;
+  let pendente = null;                   // (4.4.3) o que a partida quer gravar ({ H: histórico, res: resultado }) — só vale depois de confirmarResultado()
   const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  function guardarPendente(o) { pendente = Object.assign(pendente || {}, o); }
+  function descartarResultado() { pendente = null; }          // a partida refeita não deixa nada (o ultimoResultado nem chegou a mudar)
+  function confirmarResultado() {          // a história aceitou o resultado: agora sim registra (como uma partida normal)
+    const pd = pendente; pendente = null;
+    if (!pd) return;
+    if (pd.H) salvo.gravar('futebolJs.historico.v1', pd.H);
+    if (pd.res) {
+      window.FutebolJS.ultimoResultado = pd.res;
+      try { window.dispatchEvent(new CustomEvent('futebolJs:fim', { detail: pd.res })); } catch (e) { /* navegador antigo */ }
+    }
+  }
 
   function montarUI() {
     if (UI) return;
@@ -12190,11 +12458,12 @@ const Historia = (() => {
     await dizer(T('É isso! Você já sabe o básico: correr, chutar, passar, driblar e dominar.'));
     // 7. bolas paradas (4.4.0)
     await dizer(T('Agora vamos para as bolas paradas! Quando o jogo para, é você quem decide como a bola volta. Primeiro: a falta.'));
+    const golsAntesFalta = S0().gols;   // 4.4.3: o elogio só vale se a FALTA virou gol (o chute anterior não conta)
     await aulaParada('falta', { x: 6, z: 4 }, { x: 1, z: 7 }, { x: 15, z: -6 }, { x: 6, z: 4 },
       T('Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta na faixa verde, igual ao chute. Pode dar efeito na bola também!'),
       T('FALTA: cobre a falta em direção ao gol'));
     await fim();
-    await dizer(S0().gols > 0 ? T('Que golaço de falta! Você leva jeito!') : T('Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!'));
+    await dizer(S0().gols > golsAntesFalta ? T('Que golaço de falta! Você leva jeito!') : T('Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!'));
     await dizer(T('Agora o lateral. Na quadra de futsal ele é cobrado com o pé: a bola fica no chão, na linha lateral.'));
     await aulaParada('lateral', { x: -2, z: HALF_W }, { x: -2, z: HALF_W - 5 }, { x: 8, z: -5 }, { x: -2, z: HALF_W - 0.25 },
       T('Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!'),
@@ -12231,6 +12500,7 @@ const Historia = (() => {
   async function partida(op) {
     montarUI();
     modo = 'jogo';
+    pendente = null;                        // (4.4.3) partida nova (ou refeita): começa sem nada pendente
     const r = await new Promise((res) => {
       fimResolve = res;
       entrar(cfg(false));
@@ -12242,11 +12512,12 @@ const Historia = (() => {
   }
   function fimDaPartida() {
     const s = G.stats, gols = s.gols, nota = Number(matchRating());
-    const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], bom: gols >= 1 && nota >= 8, estatisticas: Object.assign({}, s) };
+    const expulso = !!user.red;              // (4.4.3) o jogador levou o vermelho (a partida acaba na hora)
+    const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], expulso, bom: !expulso && gols >= 1 && nota >= 8, estatisticas: Object.assign({}, s) };
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), 1800); }
   }
-  function abortar() { modo = null; esp = null; TT = null; fimResolve = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
-  return { treino, partida, emPartida, atualizar, fimDaPartida, abortar, _estado: () => ({ modo, TT }) };
+  function abortar() { modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
+  return { treino, partida, emPartida, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
 })();
 
 // ---------------------------------------------------------------------
@@ -12553,7 +12824,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     await esperar(2600);
     const nome = PERSONAGEM.apelido || PERSONAGEM.nome;
     await Dialogo.mostrar([
-      T('É, esse aí sou eu... me preparando...'),
+      Tg('É, esse aí sou eu... me preparando...'),
       T('Mas... minha história com o futebol não começou aí não.'),
       T('É, na verdade, ela começou há muito tempo atrás...'),
       Tf('Precisamente... {0} anos atrás', 12),
@@ -13172,7 +13443,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.4.2',
+  versao: '4.4.3',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
