@@ -108,7 +108,7 @@ const Fase1 = (() => {
   }
   const preto = async (ligado, ms) => { UI.preto.hidden = false; UI.preto.style.transitionDuration = ((ms || 900) / 1000) + 's'; await esperar(30); UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true; };
   const legenda = async (txt, ms) => { UI.leg.textContent = txt; UI.leg.classList.add('on'); await esperar(ms || 2600); UI.leg.classList.remove('on'); await esperar(850); };
-  const nm = (k) => T(NOMES[k]);
+  const nm = (k) => T(k === 'oculos' && S && S.caduNome ? 'Cadu' : NOMES[k]);                    // (4.5.1) depois de se apresentar, o menino de óculos é o Cadu
 
   // ------------------------------------------------------------------ sala 3D
   function texParede() { return drawTexture(40, 48, (g, w, h) => { g.fillStyle = '#efe0b4'; g.fillRect(0, 0, w, h); g.fillStyle = '#e4d2a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 37) % w, (i * 53) % 30, 2, 1);
@@ -365,7 +365,12 @@ const Fase1 = (() => {
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
     // (4.4.0) segurando a bola com as DUAS mãos: os braços vão para a posição de segurar (th = quanto sobe: 1,15 na frente, 2,85 acima da cabeça;
     // ph = quanto as mãos se fecham uma contra a outra). Vale parado ou andando; a bola acompanha as mãos (ver atualizar).
-    if (A.segura) { m.bracoE.rotation.z = m.bracoD.rotation.z = A.segura.th; m.bracoE.rotation.x = -A.segura.ph; m.bracoD.rotation.x = A.segura.ph; }
+    // (4.5.1) Quanto mais alto, mais os braços se ABREM para os lados da cabeça (o mesmo desenho da comemoração de gol: x = ∓0,2); antes eles se
+    // fechavam um contra o outro e atravessavam o cabeção.
+    if (A.segura) {
+      const w0 = Math.max(0, Math.min(1, (A.segura.th - 1.5) / (2.85 - 1.5))), w = w0 * w0 * (3 - 2 * w0), ph = A.segura.ph * (1 - w) - 0.3 * w;
+      m.bracoE.rotation.z = m.bracoD.rotation.z = A.segura.th; m.bracoE.rotation.x = -ph; m.bracoD.rotation.x = ph;
+    }
   };
   function andar(A, pts, vel) {
     A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.vel = vel || 1.9;
@@ -419,6 +424,9 @@ const Fase1 = (() => {
       if (z > PAT_Z0 - 0.9) return false;
       if (z > Z_PORTAO - 0.2) {                                         // pátio (menos o tronco da árvore do professor)
         for (const [tx, tz] of ARVORES_PATIO) if (Math.hypot(x - tx, z - tz) < 0.62) return false;          // (4.4.2) troncos
+        // (4.5.1) bancos (assento e encosto) e o mastro da bandeira também são sólidos (antes dava para atravessar)
+        for (const [x0, x1, z0, z1] of BANCOS_PATIO) if (x > x0 - R && x < x1 + R && z > z0 - R && z < z1 + R) return false;
+        if (Math.hypot(x - MASTRO_PATIO[0], z - MASTRO_PATIO[1]) < 0.3 + R) return false;
         for (const A of S.gente || []) if (!A.oculto && Math.hypot(x - A.x, z - A.z) < 0.42 + (R ? R - 0.22 : 0)) return false;   // (4.4.2) pessoas também são sólidas
         if (S.joaoA && !S.joaoA.oculto && S.joaoA.bloq && Math.hypot(x - S.joaoA.x, z - S.joaoA.z) < 0.42) return false;
         return Math.abs(x) < 20;
@@ -483,6 +491,7 @@ const Fase1 = (() => {
     if (S.lugar === 'corredor') {
       l.push({ id: 'lucia2', x: S.luciaA.x, z: S.luciaA.z, r: 1.7, txt: Tf('Falar com {0}', nm('lucia')) });
       if (S.trancado) l.push({ id: 'armario', x: FX + 0.6, z: ZK, r: 1.7, txt: T('Abrir o armário') });
+      if (S.salvouOculos && S.oculosA && !S.oculosA.oculto) l.push({ id: 'cadu', x: S.oculosA.x, z: S.oculosA.z, r: 1.7, txt: Tf('Falar com {0}', nm('oculos')) });   // (4.5.1) ele fica sentado no corredor
       if (!S.joaoSaiu) l.push({ id: 'joao2', x: S.joaoA.x, z: S.joaoA.z, r: 1.8, txt: Tf('Falar com {0}', nm('joao')) });
       else l.push({ id: 'rua', x: 0, z: -CL + 1.0, r: 1.8, txt: T('Sair da escola') });
       return l;
@@ -546,7 +555,7 @@ const Fase1 = (() => {
       if (a.id === 'joao') await conversaJoao(); else if (a.id === 'lucia') await conversaLucia();
       else if (a.id === 'prof') await conversaProf(); else if (a.id === 'porta') { if (S.fase === 'antes') await ondaNaPorta(); else { await saida(); return; } }
       else if (a.id === 'rob') await conversaRob();
-      else if (a.id === 'lucia2') await luciaFora(); else if (a.id === 'armario') await abrirArmario();
+      else if (a.id === 'lucia2') await luciaFora(); else if (a.id === 'armario') await abrirArmario(); else if (a.id === 'cadu') await conversaCadu();
       else if (a.id === 'joao2') await joaoFora(); else if (a.id === 'rua') { await saidaRua(); return; }
     } catch (e) { console.error(e); }
     Dialogo.esconder(); liberar();
@@ -669,7 +678,7 @@ const Fase1 = (() => {
   }
   const esc1 = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function salvarHistoria() {
-    HistoriaSave.gravar('fase1', { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, partida: S.partida1 || null, atributos: PERSONAGEM.atributos || null });            // (4.5.0) mescla com o que as outras fases já guardaram
+    HistoriaSave.gravar('fase1', { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, partida: S.partida1 || null, cadu: S.cadu || null, atributos: PERSONAGEM.atributos || null });            // (4.5.0) mescla com o que as outras fases já guardaram
   }
   function sino() {
     const A = typeof Som !== 'undefined' && Som.audio;
@@ -768,11 +777,30 @@ const Fase1 = (() => {
     olhar(K, J.x, J.z); S.parA = J; S.parB = K;
     await fala('oculos', T('Muito obrigado por me tirar daí!'), 'dupla');
     await fala('jog', T('Por nada.'), 'dupla'); Dialogo.esconder();
-    S.trancado = false; S.salvouOculos = true; salvarHistoria();
+    S.trancado = false; S.salvouOculos = true; S.cadu = S.cadu || { salvou: true, conversou: false, pergunta: null }; salvarHistoria();
+    await mariposa();                                                   // (4.5.1) soltar o menino do armário: a mariposa aparece (alguém vai se lembrar disso)
     S.kAlvo = 0;
     camPara('aula');
-    await andar(K, [[FX + 1.8, ZK + 1.2], [0.2, -1.0]], 1.8);
-    K.oculto = true;
+    // (4.5.1) ele não some mais: vai se sentar no chão, encostado na parede da direita (no vão sem armários), e dá para falar com ele
+    await andar(K, [[FX + 1.8, ZK + 1.2], [CX - 0.8, -5.1]], 1.8);
+    olhar(K, 0, K.z); K.chao = true; K.bloq = true; K.conv = null;
+  }
+  async function conversaCadu() {
+    const J = S.jog, K = S.oculosA;
+    await aproximar([K.x - 1.25, K.z], K); olhar(J, K.x, K.z); olhar(K, J.x, J.z); S.parA = J; S.parB = K;
+    if (S.cadu && S.cadu.conversou) {
+      await fala('oculos', Tf('Valeu de novo por me ajudar, {0}!', nomeJog()), 'dupla');
+      olhar(K, 0, K.z); return;
+    }
+    const abre = T('Ah, oi... eu não esperava que você viesse falar comigo...');
+    await fala('oculos', abre, 'dupla');
+    const r = await escolher(abre, [T('Por que ele fez aquilo?'), T('Você está bem?')]);
+    await fala('oculos', r === 0 ? T('Ele é só um cara idiota que não tem amigos e não tem mais o que fazer...') : T('Estou, graças a você. Obrigado.'), 'dupla');
+    await fala('oculos', T('Aliás, meu nome é Cadu. É um prazer te conhecer!'), 'dupla');
+    S.caduNome = true;                                                  // daqui para a frente ele aparece como "Cadu"
+    await fala('jog', T('O prazer é meu, Cadu!'), 'dupla');
+    S.cadu = { salvou: true, conversou: true, pergunta: r === 0 ? 'porque' : 'bem' }; salvarHistoria();
+    Dialogo.esconder(); olhar(K, 0, K.z);
   }
   async function luciaFora() {
     const J = S.jog, La = S.luciaA;
@@ -828,6 +856,8 @@ const Fase1 = (() => {
   const PAT_Z0 = 8.2;                                                   // parede da escola (fachada)
   const ARV_PROF = { x: -8.5, z: -9.0 };                                // a árvore onde o Professor Roberto vigia a turma
   const ARVORES_PATIO = [[-15, 2], [15, -5], [-17, -10], [17, 4], [ARV_PROF.x, ARV_PROF.z]];   // (4.4.2) todas as árvores têm tronco sólido
+  const BANCOS_PATIO = [-9, 9].map((x) => [x - 1.1, x + 1.1, 5.3, 6.0]);                  // (4.5.1) os dois bancos do pátio [x0, x1, z0, z1] (mesmas medidas do desenho em montarPatio)
+  const MASTRO_PATIO = [8, 3.0];                                         // (4.5.1) mastro da bandeira
   function texConcreto() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#b9b6ae'; g.fillRect(0, 0, w, h); g.fillStyle = '#a8a59d'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#c4c1b9'; g.fillRect(5, 7, 3, 2); g.fillRect(21, 19, 4, 2); }); }
   function texPlaca() { return drawTexture(256, 32, (g, w, h) => { g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c230'; g.fillRect(0, 0, w, 3); g.fillRect(0, h - 3, w, 3); g.fillStyle = '#fff0c8'; g.font = 'bold 16px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ESCOLA SANTA MARIA', w / 2, h / 2 + 1); }); }
   function texBola() {
@@ -1104,14 +1134,17 @@ const Fase1 = (() => {
       await fala('jog', T('Sério? Eu nem sei como aconteceu... mas foi muito legal jogar com você, João!'), 'dupla');   // (4.4.3) resposta ao João (não é mais fala do futuro)
     } else if (r.bom) {
       await fala('joao', r.empate ? T('Empatamos... mas olha só como você jogou! Fiquei impressionado!') : T('Poxa, a gente perdeu... fiquei triste. Mas olha só como você jogou! Fiquei impressionado!'), 'dupla');
-      await fala('jog', Tg('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
+      if (r.empate) {                                                 // (4.5.1) empate: o personagem não diz mais que perdeu
+        await fala('jog', Tg('Obrigado, João... pelo menos a gente não perdeu.'), 'dupla');
+        await fala('joao', T('Isso mesmo! Empate também vale. Na próxima a gente ganha!'), 'dupla');
+      } else await fala('jog', Tg('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
     } else if (r.venceu) {
       await fala('joao', T('Hahaha! A gente ganhou, mas você até tentou estragar o jogo, hein? Ganhamos mesmo assim!'), 'dupla');
       await fala('jog', Tg('Desculpa, João... eu errei bastante.'), 'dupla');
       await fala('joao', Tg('Relaxa! Vai ser só treinar mais um pouco.'), 'dupla');
     } else {
       await fala('joao', r.empate ? T('Empatamos... eu esperava um pouco mais de você.') : T('A gente perdeu... e eu esperava mais de você. Fiquei meio decepcionado.'), 'dupla');
-      await fala('jog', T('Eu falei que nunca tinha jogado...'), 'dupla');
+      await fala('jog', r.empate ? T('Eu falei que nunca tinha jogado... mas pelo menos não perdemos, né?') : T('Eu falei que nunca tinha jogado...'), 'dupla');   // (4.5.1) empate: "pelo menos não perdemos"
       await fala('joao', T('Tudo bem. Eu te ajudo a treinar!'), 'dupla');
     }
     Dialogo.esconder();
@@ -1368,4 +1401,4 @@ const Fase1 = (() => {
   return { iniciar, emergencia, get ativo() { return !!(S && S.ativo); }, _estado: () => S, _cams: CAMS, _caminho: caminho, _corredor: corredor };
 })();
 
-window.FutebolJS.registrarFase({ id: 'fase1', nome: 'Fase 1', nucleoMinimo: '4.5.0', iniciar: (ctx) => Fase1.iniciar(ctx.args || {}) });
+window.FutebolJS.registrarFase({ id: 'fase1', nome: 'Fase 1', nucleoMinimo: '4.5.1', iniciar: (ctx) => Fase1.iniciar(ctx.args || {}) });

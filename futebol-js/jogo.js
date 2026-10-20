@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.5.0
+   FUTEBOL JS · jogo.js · versão 4.5.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,19 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.5.1 — IA do futsal/society, goleiros, Fase 1 (Cadu, empate, pátio) e criador de personagem:
+     - IA no futsal/society (campo pequeno, 4 por time): um jogador fica de FIXO (o último, defende e só ataca a bola quando o atacante chega perto do gol),
+       os outros fazem MARCAÇÃO 1 contra 1 (ficam entre o adversário e o gol) e, no ataque, os companheiros acompanham a jogada em vez de todos correrem na bola.
+     - Goleiros no campo pequeno: só espalmam chute forte quando o atacante está a até 30% do caminho até o gol (continua valendo a chance de espalmar em vez de
+       agarrar); saem mais com bola longa (a partir de 12 m) e tocam com mais precisão (passe mais curto de lançamento e companheiro livre à frente).
+     - O goleiro do SEU time também comemora se você vai comemorando até ele (corre até você e levanta os braços).
+     - Fase 1: empate agora tem fala própria (antes o personagem falava como se tivesse perdido); bancos e mastro do pátio têm colisão; os bracinhos do João abrem
+       ao lado da cabeça quando ele levanta a bola (antes entravam na cabeça).
+     - Fase 1, corredor: ao soltar o menino do armário aparece a mariposa e ele fica sentado no corredor. Falando com ele há 2 opções ("Por que ele fez aquilo?" /
+       "Você está bem?") e depois ele diz que se chama Cadu. O que aconteceu fica salvo em historia.fase1.cadu. (fase1.js e jogo.js sobem JUNTOS.)
+     - Criador de personagem: 5 penteados femininos novos (Emo com franja de lado, Cacheado solto, Cacheado para cima, Ondulado longo, Ondulado curto),
+       a boca com batom foi redesenhada (lábio de cima escuro, o de baixo claro com brilho) e 5 rostos novos (Delineado, Sombra rosada, Pintinha, Sorriso aberto,
+       Determinada), com nomes em todos os idiomas. Quem já tinha personagem salvo não muda (os índices antigos continuam no mesmo lugar).
    Novidades da versão 4.5.0 — Preparação da Fase 2 (arquivo separado) e história salva por fase:
      - NOVO ARQUIVO fase2.js: a Fase 2 vive fora do jogo.js e é baixada só quando o jogador chega nela (o jogo carrega a partir do mesmo
        lugar de onde veio: GitHub, jsDelivr ou a pasta local). O carregador do Canva não muda: continua baixando só o jogo.js.
@@ -455,7 +468,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.5.0';
+const VERSAO_JOGO = '4.5.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1803,6 +1816,12 @@ const ESTILOS_CABELO = [
   HC('Cacheado volumoso', [[0.58, 0.24, 0.64, -0.02, 1.985, 0], [0.5, 0.5, 0.1, -0.05, 1.66, 0.34], [0.5, 0.5, 0.1, -0.05, 1.66, -0.34], [0.16, 0.64, 0.7, -0.31, 1.56, 0], [0.12, 0.1, 0.12, 0.12, 2.1, 0.14], [0.12, 0.1, 0.12, -0.1, 2.12, -0.12]], { s: 4, f: 4, n: 9, nf: 10, t: 3, p: 5 }),
   HC('Pixie', [[0.52, 0.11, 0.56, -0.01, 1.93, 0], [0.06, 0.13, 0.4, 0.25, 1.86, 0.08], [0.1, 0.16, 0.5, -0.26, 1.74, 0], [0.3, 0.14, 0.04, -0.06, 1.8, 0.275], [0.3, 0.14, 0.04, -0.06, 1.8, -0.275]], { s: 6, f: 7, n: 7, nf: 9, t: 3, p: 4 }),
   HC('Ondulado solto', [[0.54, 0.16, 0.58, -0.02, 1.95, 0], [0.12, 0.6, 0.6, -0.28, 1.58, 0], [0.3, 0.52, 0.05, 0.02, 1.64, 0.285], [0.3, 0.52, 0.05, 0.02, 1.64, -0.285], [0.14, 0.58, 0.06, -0.28, 1.56, 0.33], [0.14, 0.58, 0.06, -0.28, 1.56, -0.33]], { s: 5, f: 5, n: 10, nf: 11, t: 2, p: 5 }),
+  // (4.5.1) 5 cortes femininos novos (índices 40 a 44). Lado +Z = esquerda de quem olha o rosto de frente.
+  HC('Emo', [[0.54, 0.15, 0.58, -0.02, 1.945, 0], [0.06, 0.34, 0.31, 0.255, 1.735, 0.12], [0.06, 0.2, 0.14, 0.255, 1.81, -0.04], [0.06, 0.1, 0.2, 0.255, 1.86, -0.17], [0.46, 0.52, 0.045, -0.04, 1.62, 0.285], [0.46, 0.52, 0.045, -0.04, 1.62, -0.285], [0.1, 0.56, 0.58, -0.27, 1.6, 0], [0.08, 0.1, 0.14, -0.27, 1.3, 0.2], [0.08, 0.1, 0.14, -0.27, 1.3, -0.2]], { s: 8, f: 9, n: 12, nf: 13, t: 2, p: 8 }),
+  HC('Cacheado solto', [[0.58, 0.2, 0.64, -0.02, 1.965, 0], [0.12, 0.12, 0.12, 0.2, 2.07, 0.14], [0.12, 0.12, 0.12, 0.2, 2.07, -0.12], [0.12, 0.12, 0.12, -0.04, 2.085, 0.0], [0.07, 0.14, 0.14, 0.255, 1.84, 0.2], [0.07, 0.14, 0.14, 0.255, 1.84, -0.18], [0.07, 0.12, 0.14, 0.255, 1.86, 0.0], [0.5, 0.46, 0.1, -0.05, 1.66, 0.335], [0.5, 0.46, 0.1, -0.05, 1.66, -0.335], [0.16, 0.62, 0.7, -0.31, 1.55, 0], [0.16, 0.14, 0.16, 0.04, 1.36, 0.34], [0.16, 0.14, 0.16, -0.2, 1.34, 0.34], [0.16, 0.14, 0.16, 0.04, 1.36, -0.34], [0.16, 0.14, 0.16, -0.2, 1.34, -0.34], [0.12, 0.14, 0.16, -0.34, 1.2, 0.2], [0.12, 0.14, 0.16, -0.34, 1.2, -0.2], [0.12, 0.14, 0.16, -0.34, 1.2, 0.0]], { s: 4, f: 4, n: 9, nf: 10, t: 3, p: 5 }),
+  HC('Cacheado para cima', [[0.6, 0.26, 0.66, -0.02, 2.0, 0], [0.5, 0.26, 0.58, -0.04, 2.24, 0], [0.14, 0.14, 0.14, 0.2, 2.15, 0.22], [0.14, 0.14, 0.14, 0.2, 2.15, -0.22], [0.14, 0.14, 0.14, -0.26, 2.15, 0.2], [0.14, 0.14, 0.14, -0.26, 2.15, -0.2], [0.14, 0.14, 0.14, 0.14, 2.4, 0.12], [0.14, 0.14, 0.14, -0.14, 2.42, -0.12], [0.14, 0.14, 0.14, -0.14, 2.4, 0.14], [0.14, 0.14, 0.14, 0.12, 2.4, -0.14], [0.07, 0.15, 0.54, 0.255, 1.87, 0], [0.3, 0.14, 0.04, -0.06, 1.8, 0.285], [0.3, 0.14, 0.04, -0.06, 1.8, -0.285]], { s: 4, f: 5, n: 8, nf: 9, t: 3, p: 4 }),
+  HC('Ondulado longo', [[0.54, 0.16, 0.58, -0.02, 1.95, 0], [0.06, 0.15, 0.54, 0.255, 1.865, 0], [0.12, 0.2, 0.6, -0.28, 1.8, 0], [0.17, 0.2, 0.62, -0.31, 1.6, 0], [0.12, 0.2, 0.6, -0.28, 1.4, 0], [0.17, 0.2, 0.62, -0.31, 1.2, 0], [0.3, 0.2, 0.05, 0.0, 1.76, 0.285], [0.36, 0.2, 0.06, -0.05, 1.56, 0.292], [0.3, 0.2, 0.05, 0.0, 1.36, 0.285], [0.3, 0.2, 0.05, 0.0, 1.76, -0.285], [0.36, 0.2, 0.06, -0.05, 1.56, -0.292], [0.3, 0.2, 0.05, 0.0, 1.36, -0.285]], { s: 5, f: 5, n: 11, nf: 12, t: 2, p: 5 }),
+  HC('Ondulado curto', [[0.54, 0.16, 0.58, -0.02, 1.95, 0], [0.06, 0.15, 0.54, 0.255, 1.865, 0], [0.12, 0.17, 0.6, -0.28, 1.78, 0], [0.17, 0.17, 0.62, -0.31, 1.62, 0], [0.12, 0.12, 0.6, -0.28, 1.5, 0], [0.26, 0.17, 0.05, -0.02, 1.76, 0.285], [0.32, 0.17, 0.06, -0.06, 1.6, 0.292], [0.26, 0.17, 0.05, -0.02, 1.76, -0.285], [0.32, 0.17, 0.06, -0.06, 1.6, -0.292]], { s: 6, f: 6, n: 9, nf: 10, t: 2, p: 5 }),
 ];
 // Barbas: "caixas" são os volumes finos nas laterais/queixo (nunca abaixo da cabeça: y >= 1,36); "id" escolhe o desenho no rosto (pintarRosto).
 const BB = (nome, grupo, id, caixas) => ({ nome, grupo, id, caixas: caixas || [] });
@@ -1849,6 +1868,12 @@ const ROSTOS = [
   { nome: 'Delicada', oh: 4, sob: { y: 4 }, boca: 'pequena', extra: 'cilios' },
   { nome: 'Bochechas rosadas', extra: 'blush', boca: 'sorriso' },
   { nome: 'Meiga', olhos: [3, 11], oh: 4, sob: { y: 4 }, boca: 'sorriso', extra: 'cilios+blush' },
+  // (4.5.1) mais 5 rostos femininos (índices 21 a 25). Extras novos: delineado (gatinho), sombra (rosada), pinta; boca nova: aberto (sorriso com dentes).
+  { nome: 'Delineado', extra: 'cilios+delineado', sob: { y: 4 } },
+  { nome: 'Sombra rosada', oh: 4, sob: { y: 4 }, boca: 'sorriso', extra: 'cilios+sombra' },
+  { nome: 'Pintinha', oh: 4, sob: { y: 4 }, extra: 'cilios+pinta+blush' },
+  { nome: 'Sorriso aberto', sob: { y: 4 }, boca: 'aberto', extra: 'cilios+blush' },
+  { nome: 'Determinada', sob: { y: 4, inc: 1 }, boca: 'reta', extra: 'cilios+delineado' },
 ];
 const LABIOS = ['#E3A59B', '#D18F86', '#BE766D', '#A8625A', '#8E4C44', '#753B34', '#5C2D28', '#46211E'];   // (4.3.0) cor dos lábios: do mais claro ao mais escuro
 const hexNum = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
@@ -1955,6 +1980,14 @@ function pintarRosto(g, ox, oy, pele, o) {
     const xo = lado === 0 ? olhos[0] - 1 : olhos[1] + 2, xi = lado === 0 ? olhos[0] : olhos[1] + 1;
     px(xo, topoOlho - 1, 1, 1, tinta); px(xo, topoOlho, 1, 1, tinta); px(xi, topoOlho - 1, 1, 1, tinta);
   }
+  if (ex.includes('sombra')) for (let lado = 0; lado < 2; lado++) {                // (4.5.1) sombra rosada na pálpebra
+    for (let k = -1; k < 3; k++) px(olhos[lado] + k, topoOlho - 1, 1, 1, 'rgba(214,96,150,0.7)');
+  }
+  if (ex.includes('delineado')) for (let lado = 0; lado < 2; lado++) {            // (4.5.1) delineado "gatinho": linha em cima do olho com a asinha no canto de fora
+    const xo = lado === 0 ? olhos[0] - 1 : olhos[1] + 2, xo2 = lado === 0 ? olhos[0] - 2 : olhos[1] + 3;
+    px(olhos[lado], topoOlho - 1, 2, 1, tinta); px(xo, topoOlho - 1, 1, 1, tinta); px(xo2, topoOlho - 2, 1, 1, tinta);
+  }
+  if (ex.includes('pinta')) px(11, 11, 1, 1, '#3A2418');                          // (4.5.1) pintinha ao lado da boca
   if (ex.includes('blush')) for (const [x, y] of [[2, 10], [3, 10], [2, 11], [12, 10], [13, 10], [13, 11]]) px(x, y, 1, 1, 'rgba(226,106,126,0.62)');   // bochechas rosadas
   if (ex.includes('sardas')) for (const [x, y] of [[2, 9], [4, 9], [3, 10], [11, 9], [13, 9], [12, 10], [7, 8], [5, 10], [10, 10]]) px(x, y, 1, 1, 'rgba(95,55,32,0.55)');
   if (ex.includes('cicatriz')) { px(11, 6, 1, 1, '#D99A8C'); px(12, 7, 1, 1, '#D99A8C'); px(12, 8, 1, 1, '#D99A8C'); px(13, 9, 1, 1, '#D99A8C'); }
@@ -1978,8 +2011,12 @@ function pintarRosto(g, ox, oy, pele, o) {
   const batom = ex.includes('batom');                                                     // (4.4.3) batom vermelho: ignora a cor de lábio escolhida
   const labio = batom ? '#C42A3E' : o.labio != null && LABIOS[o.labio] ? LABIOS[o.labio] : (temBarba ? '#B0645A' : '#7A3B2E');
   const boca = R.boca || 'normal';
-  if (batom) { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 12, 4, 1, labio); px(6, 13, 4, 1, labio); px(7, 14, 2, 1, labio); }   // sorriso com lábios cheios
+  if (batom) {                                                                           // (4.5.1) batom: lábio de cima escuro, o de baixo mais claro e com um brilho, cantinhos do sorriso (antes era um borrão vermelho de 3 linhas)
+    const clara = '#DB4A5E', escura = '#B01E35';
+    px(6, 12, 4, 1, escura); px(5, 12, 1, 1, escura); px(10, 12, 1, 1, escura); px(6, 13, 4, 1, clara); px(7, 13, 1, 1, '#F08A98');
+  }
   else if (boca === 'sorriso') { px(5, 12, 1, 1, labio); px(10, 12, 1, 1, labio); px(6, 13, 4, 1, labio); }      // sorriso de boca fechada
+  else if (boca === 'aberto') { px(5, 12, 6, 1, labio); px(6, 13, 4, 1, '#F6F2EA'); px(7, 14, 2, 1, labio); }          // (4.5.1) sorriso aberto: lábio, dentes e lábio de baixo
   else if (boca === 'brava') px(6, 12, 4, 2, labio);                                                         // fechada, sem dentes
   else if (boca === 'triste') { px(6, 12, 4, 1, labio); px(5, 13, 1, 1, labio); px(10, 13, 1, 1, labio); }
   else if (boca === 'pequena') px(7, 12, 2, 1, labio);
@@ -2606,6 +2643,7 @@ const G = {
   passTarget: null,                               // quem vai receber o passe
   roleT: 0,
   chasers: [null, null], pressers: [null, null], covers: [null, null], support: [[], []],
+  fixo: [null, null], fixoAlvo: [null, null], marca: [new Map(), new Map()],      // (4.5.1) campo pequeno: último homem, quem ele cobre e a marcação 1 contra 1
   stats: null, mode: '', pausedFrom: null,
 };
 function resetStats() {
@@ -2741,6 +2779,7 @@ function updateRoles(dt) {
     const oppHas = holder && holder.team !== t && (holder.role !== 'GK' || holder.comPe);   // goleiro com a bola no pé também é pressionado
     const live = (G.state === 'play' || KICK_STATES.includes(G.state)) && !G.sp && !G.kickoffPending;  // na mira o marcador continua vindo
     const recebendo = G.passTarget && G.passTarget.p.team === t;  // o recebedor já vai na bola
+    if (campoPequeno()) { papeisCampoPequeno(t, holder, live, oppHas, recebendo); continue; }   // (4.5.1) futsal/society: fixo, marcação 1 x 1 e apoio
     G.chasers[t] = live && !holder && !recebendo ? a : null;
     G.pressers[t] = live && oppHas ? a : null;
     G.covers[t] = live && oppHas ? b : null;
@@ -2770,6 +2809,84 @@ function updateRoles(dt) {
       G.support[t] = near.slice(0, 2);
     }
   }
+}
+
+// ---------------------------------------------------------------------
+// CAMPO PEQUENO (futsal / society, 4 x 4) — 4.5.1. Antes os dois mais perto da bola iam em cima dela e o resto ficava "na formação":
+// a bola era cercada e ninguém marcava ninguém. Agora cada um tem um papel (recalculado a cada 0,3 s, junto com os outros papéis):
+//   FIXO (último homem) ... o jogador da IA mais recuado. Na defesa fica entre o atacante mais perigoso (ou a bola) e o gol, sem entrar
+//                           no bote; no ataque fica atrás da bola, do lado contrário, como opção de passe seguro e para a volta.
+//   PRESSIONA ............. o mais perto da bola entre os outros (com a bola do adversário): contenção e bote, como sempre.
+//   MARCA 1 x 1 ........... os demais ficam do lado do gol de um adversário (sem a bola), cada um no seu — sem dois no mesmo.
+//   APOIA ................. com a bola do time: o(s) outro(s) acompanham pela diagonal à frente / atrás de quem conduz.
+// O jogador controlado por você nunca recebe papel; o adversário pode marcar você. Vale para jogadores <= 5 no campo (4 x 4).
+// ---------------------------------------------------------------------
+const campoPequeno = () => !!PARTIDA && PARTIDA.campo.jogadores <= 5;
+function papeisCampoPequeno(t, holder, live, oppHas, recebendo) {
+  const dir = t === 0 ? 1 : -1, ownGx = -dir * HALF_L;
+  const cand = TEAMS[t].filter((p) => p.role !== 'GK' && !p.isUser && p.stun <= 0 && !p.scripted && !p.out);
+  // Fixo: o mais recuado (só troca se outro estiver bem mais atrás, para ele não ficar mudando).
+  let fixo = G.fixo[t] && cand.includes(G.fixo[t]) ? G.fixo[t] : null;
+  if (cand.length >= 2) {
+    let fundo = cand[0]; for (const p of cand) if (p.x * dir < fundo.x * dir) fundo = p;
+    if (!fixo || fixo.x * dir - fundo.x * dir > 3.5) fixo = fundo;
+  } else fixo = null;                                            // só um da IA em campo: ele joga solto
+  G.fixo[t] = fixo;
+  const alvoBola = holder || ball;
+  const dist = (p) => dist2D(p, alvoBola) * (0.85 + (p.id % 3) * 0.1);
+  const livres = cand.filter((p) => p !== fixo && !(G.passTarget && G.passTarget.p === p)).sort((x, y) => dist(x) - dist(y));
+  let a = livres[0] || null;
+  if (fixo && !(G.passTarget && G.passTarget.p === fixo)) {
+    // Bola solta ou atacante em cima do gol: se o fixo está bem mais perto, ele resolve; sem outro livre, ele faz o papel.
+    const perigo = holder && holder.team !== t && Math.hypot(ownGx - holder.x, holder.z) < 12 * Math.max(0.6, ESC);
+    if (!a || ((perigo || !holder) && dist(fixo) + 3 < dist(a))) a = fixo;
+  }
+  G.chasers[t] = live && !holder && !recebendo ? a : null;
+  G.pressers[t] = live && oppHas ? a : null;
+  G.covers[t] = null;
+  G.marca[t] = new Map(); G.fixoAlvo[t] = null;
+  if (live && oppHas) {
+    const ops = TEAMS[1 - t].filter((q) => q.role !== 'GK' && q !== holder && !(q.stun > 0) && !q.out);
+    const marcadores = cand.filter((p) => p !== a && p !== fixo), pares = [];
+    for (const p of marcadores) for (const q of ops) pares.push([dist2D(p, q), p, q]);
+    pares.sort((x, y) => x[0] - y[0]);
+    const usP = new Set(), usQ = new Set();
+    for (const [, p, q] of pares) { if (usP.has(p) || usQ.has(q)) continue; usP.add(p); usQ.add(q); G.marca[t].set(p, q); }
+    // O fixo cobre o adversário mais perigoso que ninguém marca (o mais perto do nosso gol); sem sobra, cobre a jogada.
+    const sobra = ops.filter((q) => !usQ.has(q)).sort((x, y) => Math.hypot(ownGx - x.x, x.z) - Math.hypot(ownGx - y.x, y.z));
+    G.fixoAlvo[t] = sobra[0] || null;
+  }
+  G.support[t] = [];
+  if (live && holder && holder.team === t) {
+    G.support[t] = cand.filter((p) => p !== holder && p !== fixo).sort((x, y) => dist2D(x, holder) - dist2D(y, holder)).slice(0, 2);
+  }
+}
+// Movimento do fixo e dos marcadores. Devolve null para quem deve seguir a lógica de sempre (pressão, apoio, formação).
+function aiCampoPequeno(p, holder, myTeamHas, oppHolds) {
+  const t = p.team, dir = p.dir, ownGx = -dir * HALF_L, ve = CONFIG.AI_SPEED * p.speedMul;
+  const ehFixo = G.fixo[t] === p;
+  if (oppHolds) {
+    if (G.pressers[t] === p) return null;                                       // contenção e bote (lógica de sempre)
+    if (ehFixo) {
+      const alvo = G.fixoAlvo[t] || holder;
+      const gx = ownGx - alvo.x, gz = -alvo.z, gl = Math.hypot(gx, gz) || 1;
+      const d = Math.min(alvo === holder ? 6.5 : 3.2, Math.max(0, gl - SMALL_BOX.depth * 0.8));    // sem ninguém para cobrir, fica ~6,5 m atrás da bola (o bote é de quem pressiona)
+      return seek(p, clamp(alvo.x + gx / gl * d, -HALF_L + 1.5, HALF_L - 1.5), clamp(alvo.z + gz / gl * d * 0.8, -HALF_W + 1.5, HALF_W - 1.5), ve * 0.95);
+    }
+    const q = G.marca[t].get(p);
+    if (q) {
+      const gx = ownGx - q.x, gz = -q.z * 0.5, gl = Math.hypot(gx, gz) || 1;           // do lado do gol, a ~1,6 m dele
+      const bx = q.x + gx / gl * 1.6, bz = q.z + gz / gl * 1.6;
+      return seek(p, clamp(bx * 0.85 + holder.x * 0.15, -HALF_L + 1.5, HALF_L - 1.5), clamp(bz * 0.85 + holder.z * 0.15, -HALF_W + 1.5, HALF_W - 1.5), ve * 0.92);
+    }
+    return null;
+  }
+  if (ehFixo) {                                                                 // ataque / bola solta: atrás da bola, do lado contrário
+    const F = holder || ball, bRel = F.x * dir, lado = Math.sign(F.z) || 1;
+    const rx = clamp(bRel - 13, -HALF_L + 7, 1.5);
+    return seek(p, rx * dir, clamp(-lado * HALF_W * 0.35, -HALF_W + 2, HALF_W - 2), ve * 0.85);
+  }
+  return null;
 }
 
 // "Desvio" de cada jogador: muda de alvo a cada poucos segundos. É o que tira a cara de formação engessada.
@@ -2940,7 +3057,14 @@ function posicaoCampoGrande(p, phase, bRel, bz, bz0, TT) {
 function supportTarget(p, holder, idx) {
   const side = Math.sign(p.z - holder.z) || (p.base.z >= 0 ? 1 : -1);
   const ap = (taticaDe(p.team).apoio || 1);         // tiki-taka: apoio mais perto; retranca: mais longe
-  const ax = (idx === 0 ? 8 : -5) * ap * ESC, az = (idx === 0 ? 9 : 7) * ap * ESC_W;
+  if (campoPequeno() && holder.role === 'GK') {          // (4.5.1) goleiro com a bola em campo pequeno: um companheiro corre para a frente (bola longa), o outro fica perto (toque curto)
+    const lado = side || 1;
+    return idx === 0
+      ? { x: clamp(p.dir * HALF_L * 0.12, -HALF_L + 3, HALF_L - 4), z: clamp(lado * HALF_W * 0.5, -HALF_W + 2, HALF_W - 2) }
+      : { x: clamp(holder.x + p.dir * 6.5, -HALF_L + 3, HALF_L - 4), z: clamp(-lado * HALF_W * 0.4, -HALF_W + 2, HALF_W - 2) };
+  }
+  const peq = campoPequeno();                          // (4.5.1) campo pequeno: o apoio da frente vai MAIS à frente e aberto (acompanha o ataque)
+  const ax = (idx === 0 ? (peq ? 14 : 8) : -5) * ap * ESC, az = (idx === 0 ? (peq ? 13 : 9) : 7) * ap * ESC_W;
   const relMax = limiteLegal(p.team) - 0.6;          // sem passar da linha do impedimento
   return {
     x: clamp(Math.min((holder.x + p.dir * ax) * p.dir, relMax) * p.dir, -HALF_L + 3, HALF_L - 4),
@@ -2998,11 +3122,12 @@ function aiThink(p, dt) {
     return seek(p, alvo.x, alvo.z, vel);
   }
   const oppHolds = holder && holder.team !== p.team;
+  if (campoPequeno()) { const r = aiCampoPequeno(p, holder, myTeamHas, oppHolds); if (r) return r; }   // (4.5.1) fixo e marcação 1 x 1
   // (4.0.0) SÓ RESTARAM OS ZAGUEIROS (todo mundo do time que está entre o atacante e o gol é
   // zagueiro) e o atacante ainda está FORA da área: o mais perto dele SOBE para dar o bote e o
   // outro fica na cobertura, uns 7 m atrás, entre o atacante e o gol. Antes os dois recuavam
   // juntos até dentro da área.
-  if (oppHolds && p.role === 'DEF' && holder.role !== 'GK') {
+  if (oppHolds && !campoPequeno() && p.role === 'DEF' && holder.role !== 'GK') {
     const D = duplaDeZaga(p.team, holder);
     if (D) {
       if (D.sobe === p) {
@@ -3218,11 +3343,14 @@ const forwardOk = (t, p) => (t.x - p.x) * p.dir > 2;
 // 'cross' cruzamento, 'short' toque curto, 'long' chutão.
 // Passe "no espaço": a bola vai 2 a 4 m à frente do companheiro (na direção do ataque e de
 // onde ele já está correndo), para ele ter que correr e pegar em movimento.
+// (4.5.1) A partir de qual distância o goleiro lança de longe (campo pequeno: bem menos que 26 m, que é a quadra inteira).
+const limiteBolaLonga = () => (campoPequeno() ? 12 : 26);
 function passTo(from, to, broken, style) {
   let tx = to.x + to.vx * 0.6, tz = to.z + to.vz * 0.6;
   const d0 = dist2D(from, to);
   if (!style || style === 'long' || style === 'cross') {
-    const lead = style === 'cross' ? 1 : clamp(d0 * 0.15, 2, 4);
+    let lead = style === 'cross' ? 1 : clamp(d0 * 0.15, 2, 4);
+    if (from.role === 'GK' && campoPequeno()) lead = Math.min(lead, 0.9);       // (4.5.1) goleiro em campo pequeno: bola no pé/peito do companheiro, não 4 m à frente dele
     let lx = to.dir * 1 + to.vx * 0.15, lz = -to.z * 0.02 + to.vz * 0.15;
     const ll = Math.hypot(lx, lz) || 1;
     tx += lx / ll * lead; tz += lz / ll * lead;
@@ -3494,6 +3622,13 @@ function gkThink(p, dt) {
     return { vx: p.diveVX || 0, vz: p.diveVZ };
   }
   if (p.jumpT > 0) p.jumpT -= dt;
+  // (4.5.1) O goleiro do SEU time também comemora: se você vem comemorando até ele (chegou a ~7 m), ele corre ao seu encontro e festeja junto.
+  // (A comemoração especial com câmera própria mantém a coreografia dela.)
+  if (p.gkFesta && G.state !== 'celebrate') p.gkFesta = false;
+  if (G.state === 'celebrate' && p.team === 0 && !p.isUser && !G.celebAuto) {
+    if (!p.gkFesta && dist2D(p, user) < Math.min(7, HALF_L * 0.4)) p.gkFesta = true;
+    if (p.gkFesta) { const a = p.id * 1.3; return seek(p, user.x + Math.cos(a) * 1.6, user.z + Math.sin(a) * 1.6, CONFIG.AI_SPEED); }
+  }
   // Pênalti contra: em cima da linha, no meio do gol, esperando a batida.
   if (G.sp && G.sp.kind === 'penalti' && p.team !== G.sp.team) { const t = restartTarget(p); return seek(p, t.x, t.z, CONFIG.GK_SPEED); }
   if (G.possession === p) {
@@ -3507,7 +3642,7 @@ function gkThink(p, dt) {
       if (p.hold > 0.7) p.hold = 0.7;
       if (perto || p.hold <= 0) {
         const r = pickSetPieceTarget(p, 'goleiro');
-        passTo(p, r, false, perto || dist2D(p, r) > 26 ? 'long' : undefined);
+        passTo(p, r, false, perto || dist2D(p, r) > limiteBolaLonga() ? 'long' : undefined);
         if (r === user) G.userRequest = 0;
       }
       return { vx: 0, vz: 0 };
@@ -3515,7 +3650,7 @@ function gkThink(p, dt) {
     if (p.hold <= 0) {
       // Reposição: com a mão para alguém livre perto, ou chutão para quem estiver livre lá na frente.
       const r = pickSetPieceTarget(p, 'goleiro');
-      passTo(p, r, false, dist2D(p, r) > 26 ? 'long' : 'throw');
+      passTo(p, r, false, dist2D(p, r) > limiteBolaLonga() ? 'long' : 'throw');
       if (r === user) G.userRequest = 0;
     }
     return { vx: 0, vz: 0 };
@@ -4205,7 +4340,10 @@ function checkBallContacts() {
       const wasShot = ball.isShot;
       // (4.0.0) Chute de DENTRO DA ÁREA em cima do goleiro: ele não tem tempo de encaixar —
       // espalma para um dos lados (para fora do gol). Só 1 em cada 10 ele segura.
-      if (wasShot && ball.distChute && ball.distChute < BOX.depth && Math.random() >= 0.1) {
+      // (4.5.1) Campo pequeno (futsal/society): só espalma se o chute foi FORTE e saiu quando faltava ~30% da meia quadra até o gol
+      // (antes: qualquer chute de dentro da área, que na quadra é metade do campo). Chute fraco ou de mais longe: ele tenta defender e segura.
+      const zonaEspalma = campoPequeno() ? (ball.distChute <= HALF_L * 0.3 && sp3 >= 20) : ball.distChute < BOX.depth;
+      if (wasShot && ball.distChute && zonaEspalma && Math.random() >= 0.1) {
         const lado = Math.random() < 0.5 ? -1 : 1;
         ball.vx = gk.dir * rand(2, 6); ball.vz = lado * rand(6, 10); ball.vy = rand(1.5, 4);
         ball.spinSide = 0; ball.spinVert = 0;
@@ -5170,7 +5308,7 @@ function aiSetPiece(p, dt) {
   if (S.kind === 'falta' && S.dGoal < 30 && S.motivo !== 'impedimento') { aiChuteDeFalta(p); return { vx: 0, vz: 0 }; }
   if (S.kind === 'lateral') passTo(p, r, false, S.pe ? 'short' : 'throw');
   else if (S.kind === 'escanteio') passTo(p, r, false, 'cross');
-  else passTo(p, r, false, d > 26 ? 'long' : undefined);
+  else passTo(p, r, false, d > limiteBolaLonga() ? 'long' : undefined);
   if (r === user) G.userRequest = 0;
   return { vx: 0, vz: 0 };
 }
@@ -5193,6 +5331,15 @@ function pickSetPieceTarget(p, kind) {
       const inBox = Math.abs(t.x - Math.sign(p.x) * HALF_L) < BOX.depth && Math.abs(t.z) < BOX.half;
       if (!inBox) continue;
       s = Math.min(open, 6) * 1.5 - Math.abs(t.z) * 0.1;
+    } else if (campoPequeno()) {
+      // (4.5.1) Campo pequeno: bolas LONGAS para quem está livre lá na frente (o goleiro lança mais) e toque curto só se estiver bem livre.
+      if (d < 4) continue;
+      let blocked = false;
+      for (const o of opps) if (distPointSegment(o, p, t) < 1.4) { blocked = true; break; }
+      const longa = d >= limiteBolaLonga();
+      // A bola longa vai pelo ALTO: não importa o adversário no caminho, só quem está perto de onde ela cai.
+      s = longa ? 12 + fwd * 0.3 + Math.min(open, 7) * 1.1 - (open < 2.8 ? 7 : 0)
+                : (open > 5.5 && !blocked ? 7 + Math.min(open, 8) * 0.4 : -4);
     } else {
       if (d < 8) continue;
       let blocked = false;
@@ -7732,7 +7879,7 @@ function updateCamera(rdt) {
 // e 'hold' (braços para a frente: goleiro com a bola nas mãos).
 function poseOf(p) {
   if (G.state === 'goal' && p.team === G.scoredBy && p.role !== 'GK') return 'up';
-  if (G.state === 'celebrate' && p.team === 0 && !p.isUser && p.role !== 'GK' && dist2D(p, user) < 4) return 'up';
+  if (G.state === 'celebrate' && p.team === 0 && !p.isUser && (p.role !== 'GK' || p.gkFesta) && dist2D(p, user) < 4) return 'up';
   if (p.throwIn || p.diveT > 0 || p.jumpT > 0) return 'up';
   if (p.carry || (p.role === 'GK' && G.possession === p && !p.goalKick && !p.comPe)) return 'hold';
   return null;
@@ -10681,6 +10828,13 @@ Object.assign(I18N, {
   'Cílios longos': ['Long lashes', 'Pestañas largas', 'Ciglia lunghe', 'Longs cils'], 'Batom vermelho': ['Red lipstick', 'Labial rojo', 'Rossetto rosso', 'Rouge à lèvres rouge'],
   'Delicada': ['Delicate', 'Delicada', 'Delicata', 'Délicate'], 'Bochechas rosadas': ['Rosy cheeks', 'Mejillas rosadas', 'Guance rosa', 'Joues roses'],
   'Meiga': ['Sweet', 'Dulce', 'Dolce', 'Douce'],
+  // (4.5.1) 5 cortes e 5 rostos novos
+  'Emo': ['Emo side bangs', 'Emo con flequillo de lado', 'Emo con frangia laterale', 'Emo à frange de côté'], 'Cacheado solto': ['Loose curls', 'Rizos sueltos', 'Ricci sciolti', 'Boucles lâchées'],
+  'Cacheado para cima': ['Curly updo', 'Rizos recogidos arriba', 'Ricci raccolti in alto', 'Boucles relevées'], 'Ondulado longo': ['Long waves', 'Ondas largas', 'Onde lunghe', 'Longues ondulations'],
+  'Ondulado curto': ['Short waves', 'Ondas cortas', 'Onde corte', 'Ondulations courtes'],
+  'Delineado': ['Winged liner', 'Delineado de gatito', 'Eyeliner a gatto', 'Eye-liner en aile'], 'Sombra rosada': ['Pink eyeshadow', 'Sombra rosada', 'Ombretto rosa', 'Fard à paupières rose'],
+  'Pintinha': ['Beauty mark', 'Lunar', 'Neo', 'Grain de beauté'], 'Sorriso aberto': ['Open smile', 'Sonrisa abierta', 'Sorriso aperto', 'Grand sourire'],
+  'Determinada': ['Determined', 'Decidida', 'Determinata', 'Déterminée'],
 });
 
 // ---------------------------------------------------------------------
@@ -10689,6 +10843,21 @@ Object.assign(I18N, {
 //   Para criar uma fala nova que dependa do gênero: ponha o par [masculino, feminino] em FEMININO e use Tg/Tgf no lugar de T/Tf;
 //   a tradução da versão feminina é derivada da masculina (FEM_TROCAS ajusta es/it/fr).
 // ---------------------------------------------------------------------
+// (4.5.1) Textos novos: empate no fim da primeira partida e a conversa com o Cadu (o menino do armário).
+Object.assign(I18N, {
+  'Obrigado, João... pelo menos a gente não perdeu.': ["Thanks, João... at least we didn't lose.", 'Gracias, João... al menos no perdimos.', 'Grazie, João... almeno non abbiamo perso.', "Merci, João... au moins on n'a pas perdu."],
+  'Isso mesmo! Empate também vale. Na próxima a gente ganha!': ["Exactly! A draw counts too. Next time we'll win!", '¡Eso es! Un empate también cuenta. ¡La próxima ganamos!', 'Esatto! Anche un pareggio conta. La prossima volta vinciamo!', 'Exactement ! Un match nul, ça compte aussi. La prochaine fois, on gagne !'],
+  'Eu falei que nunca tinha jogado... mas pelo menos não perdemos, né?': ["I told you I'd never played... but at least we didn't lose, right?", 'Te dije que nunca había jugado... pero al menos no perdimos, ¿no?', "Te l'avevo detto che non avevo mai giocato... ma almeno non abbiamo perso, no?", "Je t'avais dit que je n'avais jamais joué... mais au moins on n'a pas perdu, non ?"],
+  'Ah, oi... eu não esperava que você viesse falar comigo...': ["Oh, hi... I didn't expect you to come talk to me...", 'Ah, hola... no esperaba que vinieras a hablar conmigo...', 'Ah, ciao... non mi aspettavo che venissi a parlare con me...', "Ah, salut... je ne m'attendais pas à ce que tu viennes me parler..."],
+  'Por que ele fez aquilo?': ['Why did he do that?', '¿Por qué hizo eso?', "Perché l'ha fatto?", 'Pourquoi a-t-il fait ça ?'],
+  'Você está bem?': ['Are you okay?', '¿Estás bien?', 'Stai bene?', 'Ça va ?'],
+  'Ele é só um cara idiota que não tem amigos e não tem mais o que fazer...': ["He's just a stupid guy with no friends and nothing better to do...", 'Es solo un tipo idiota que no tiene amigos y no tiene nada mejor que hacer...', 'È solo uno stupido che non ha amici e non ha niente di meglio da fare...', "C'est juste un type idiot qui n'a pas d'amis et rien de mieux à faire..."],
+  'Estou, graças a você. Obrigado.': ['I am, thanks to you. Thank you.', 'Sí, gracias a ti. Gracias.', 'Sì, grazie a te. Grazie.', 'Oui, grâce à toi. Merci.'],
+  'Aliás, meu nome é Cadu. É um prazer te conhecer!': ["By the way, my name is Cadu. It's a pleasure to meet you!", 'Por cierto, me llamo Cadu. ¡Es un placer conocerte!', 'A proposito, mi chiamo Cadu. Piacere di conoscerti!', "Au fait, je m'appelle Cadu. Enchanté de te connaître !"],
+  'O prazer é meu, Cadu!': ['The pleasure is mine, Cadu!', '¡El placer es mío, Cadu!', 'Il piacere è mio, Cadu!', 'Tout le plaisir est pour moi, Cadu !'],
+  'Valeu de novo por me ajudar, {0}!': ['Thanks again for helping me, {0}!', '¡Gracias otra vez por ayudarme, {0}!', 'Grazie ancora per avermi aiutato, {0}!', "Merci encore de m'avoir aidé, {0} !"],
+  'Cadu': ['Cadu', 'Cadu', 'Cadu', 'Cadu'],
+});
 const FEMININO = [
   ['Sim, sou muito bom em álgebra', 'Sim, sou muito boa em álgebra'],
   ['Hum... você disse que era bom, {0}. Está chegando atrasado e mentindo também?', 'Hum... você disse que era boa, {0}. Está chegando atrasada e mentindo também?'],
@@ -10704,6 +10873,7 @@ const FEMININO = [
   ['EXPULSO', 'EXPULSA'],
   ['Zagueiro: defender o nosso gol', 'Zagueira: defender o nosso gol'],
   ['É, esse aí sou eu... me preparando...', 'É, essa aí sou eu... me preparando...'],
+  ['Obrigado, João... pelo menos a gente não perdeu.', 'Obrigada, João... pelo menos a gente não perdeu.'],
 ];
 const FEM_TROCAS = [[/stato bravo/g, 'stata brava'], [/bravo/g, 'brava'], [/Modesto/g, 'Modesta'], [/bueno/g, 'buena'], [/étais bon\b/g, 'étais bonne'], [/été bon\b/g, 'été bonne'], [/très bon /g, 'très bonne '], [/trompé,/g, 'trompée,'], [/stato espulso/g, 'stata espulsa'], [/été expulsé/g, 'été expulsée'], [/EXPULSADO/g, 'EXPULSADA'], [/STATO ESPULSO/g, 'STATA ESPULSA'], [/ÉTÉ EXPULSÉ/g, 'ÉTÉ EXPULSÉE'], [/ese soy yo/g, 'esa soy yo'], [/quello sono io/g, 'quella sono io'], [/^ESPULSO$/g, 'ESPULSA'], [/^EXPULSÉ$/g, 'EXPULSÉE']];
 const FEM_PT = {};
@@ -12242,7 +12412,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.5.0',
+  versao: '4.5.1',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).

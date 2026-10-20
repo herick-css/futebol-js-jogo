@@ -50,6 +50,7 @@
     L.push(['João', f1.joao ? (TXT_JOAO[f1.joao] || f1.joao) : 'não conversou antes do fim da aula']);
     L.push(['Lúcia', f1.lucia ? (TXT_LUCIA[f1.lucia] || f1.lucia) : 'não conversou']);
     L.push(['Cena da mariposa com a Lúcia', f1.mariposa ? 'aconteceu' : 'não aconteceu']);
+    if (f1.cadu) L.push(['Cadu (o menino do armário)', 'foi salvo do armário' + (f1.cadu.conversou ? ' · conversou com ele (perguntou ' + (f1.cadu.pergunta === 'porque' ? '"Por que ele fez aquilo?"' : '"Você está bem?"') + ')' : ' · ainda não conversaram')]);
     L.push(['Primeira partida', resultadoDaPartida(f1.partida) || 'não chegou a jogar']);
     L.push(['Traço da história', f1.traco ? (TXT_TRACO[f1.traco] || f1.traco) : '—']);
     if (f1.atributos) L.push(['Atributos', Object.keys(f1.atributos).map((k) => (NOMES_ATRIB[k] || k) + ' ' + f1.atributos[k]).join(' · ')]);
