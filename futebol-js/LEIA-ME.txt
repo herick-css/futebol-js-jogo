@@ -2,7 +2,9 @@ FUTEBOL JS — protótipo do sistema de partida
 =============================================
 
 ARQUIVOS
-  jogo.js ............... o jogo inteiro (código comentado em português; CSS e tela entram por JS)
+  jogo.js ............... o jogo: motor, partida, menus, textos nos 5 idiomas (código comentado em português)
+  fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
+  fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
   index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
   three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)
@@ -13,13 +15,29 @@ ARQUIVOS
   ferramentas/ .......... gerar_jogadores_glb.py (gera os .glb de novo)
 
 ATUALIZAR O JOGO
-  Suba o jogo.js e o versao.txt novos nesta pasta do GitHub (substituindo os antigos).
+  Suba o jogo.js, o fase1.js, o fase2.js (os que mudaram) e o versao.txt novos nesta pasta do GitHub.
+  ATENÇÃO: o jogo.js e o fase1.js andam JUNTOS (o fase1.js usa as variáveis internas do jogo.js). Se mexer num,
+  suba os dois. O carregador do Canva NÃO muda: ele baixa só o jogo.js; o jogo baixa o fase1.js e o fase2.js
+  sozinho, do mesmo lugar de onde ele próprio veio (GitHub → jsDelivr, ou a pasta local).
   - No Canva: em até uns 5 minutos o link já abre a versão nova. Quem estiver com o jogo
     aberto vê o aviso "Nova versão disponível · toque para atualizar".
   - Na tela inicial do jogo aparece: "versão X · carregador 1.0 · github".
     Se aparecer "jsdelivr" no lugar de "github", a rede bloqueou o GitHub e o jogo veio pelo
     caminho reserva, que pode demorar horas para atualizar. Para forçar, abra uma vez:
     https://purge.jsdelivr.net/gh/herick-css/futebol-js-jogo@main/futebol-js/jogo.js
+
+FASES EM ARQUIVOS SEPARADOS (a partir da 4.5.0)
+  - A Fase 1 também é um arquivo separado (fase1.js). Se ele não carregar, aparece "Não deu para abrir a Fase 1"
+    com TENTAR DE NOVO e VOLTAR AO MENU (o jogo começa a baixá-lo durante o "12 anos atrás").
+  - Cada fase nova (fase2.js, fase3.js...) é um arquivo na mesma pasta que se anuncia com
+    FutebolJS.registrarFase({ id, nucleoMinimo, iniciar(ctx) }). O cabeçalho do fase2.js explica tudo.
+  - O que a história salva fica em futebolJs.historia.v1 no aparelho: { fase1: {...}, fase2: {...} }.
+    A fase lê com ctx.api.historia.ler('fase1') e guarda o seu com ctx.api.historia.gravar('fase2', dados);
+    uma não apaga a outra. Começar uma história nova (Fase 1 do início) zera o save.
+  - Se o fase2.js não carregar (sem internet, ainda não publicado, ou o jogo.js for mais velho que o
+    nucleoMinimo dele), o jogo mostra "Em desenvolvimento..." e volta ao menu, como antes.
+  - Subiu uma versão nova? Atualize o versao.txt: o jogo usa um número que muda a cada minuto ao baixar
+    o fase2.js, então não fica cópia velha no celular.
 
 RODAR SEM O CANVA
   Abra o index.html (funciona sem internet). Ou ative o GitHub Pages do repositório
