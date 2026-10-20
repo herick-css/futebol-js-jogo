@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.3.7
+   FUTEBOL JS · jogo.js · versão 4.4.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,13 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.4.0 — Fase 1 (pátio, tutorial e partida):
+     - A quadra do pátio é a mesma da partida (construirQuadraFutsal, com o portão); o campo de várzea não aparece mais antes dela.
+     - Tutorial só com João e o jogador: ele ensina também falta, lateral e escanteio; o Professor é o árbitro da partida.
+     - João segura a bola nas mãos (sobe acima da cabeça, desce, sem girar); cena "nem vi você passando" se o jogador entrar antes dele.
+     - Pátio com alunos conversando e o Professor sob uma árvore; campo de futsal maior e IA menos cabeceadora/menos saídas pelas laterais.
+     - Textos novos traduzidos (en, es, it, fr).
+
    Novidades da versão 4.3.7 — Ajustes do corredor da Fase 1:
      - Corredor bem mais largo (7,6 m); duplas conversando afastadas; janelas altas acima dos armários.
      - Portas com profundidade: buraco na parede com batentes (como a da sala); a porta da sala, a do valentão e a da rua abrem de verdade.
@@ -410,7 +417,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.3.7';
+const VERSAO_JOGO = '4.4.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -662,7 +669,8 @@ const CAMPOS = {
     aparencia: { gramaA: '#2c8a3e', gramaB: '#2c8a3e', fundo: '#1f5f2b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   // (4.3.6) Quadra de futsal do modo história: mesma lógica do society (4 x 4, sem impedimento, lateral com o pé),
   // mas sem torcida, sem banco e sem técnico. Piso azul, borda laranja, mureta baixa e tela em volta.
-  futsal: { nome: 'Quadra de futsal (4 x 4)', comprimento: 40, largura: 22, jogadores: 4, gol: { largura: 4.4, altura: 2.2 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
+  // (4.4.0) um pouco maior (era 40 x 22): com os meninos pequenos e a bola voando alto, a IA mandava muita bola para fora pelas laterais.
+  futsal: { nome: 'Quadra de futsal (4 x 4)', comprimento: 44, largura: 26, jogadores: 4, gol: { largura: 4.4, altura: 2.2 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 0, cartoesAcumulam: false },
     aparencia: { gramaA: '#2f63b8', gramaB: '#2f63b8', fundo: '#d9732b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   oficial: { nome: 'Oficial (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arena',
@@ -825,8 +833,9 @@ const PARTIDA_PADRAO = {
   usuario: { nome: 'Você', posicao: 'FWD' },   // posição do seu jogador: 'FWD' | 'MID' | 'DEF'
   taticas: [null, null],            // null = a preferida do time
   formacoes: [null, null],
+  arbitro: null,                    // (4.4.0) null = o juiz de sempre; ou os dados de um boneco (ver HIST.professor) para outro apitar
 };
-let PARTIDA = null;                 // a partida em andamento (montada por montarPartida)
+let PARTIDA = null;                // a partida em andamento (montada por montarPartida)
 const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e partida rápida (3 min)
 
 // ---------------------------------------------------------------------
@@ -1039,8 +1048,9 @@ const MAT_CORES = new THREE.MeshLambertMaterial({ vertexColors: true });   // ma
 // ---------------------------------------------------------------------
 // 4. CENÁRIO
 // ---------------------------------------------------------------------
-function buildPitch() {
-  const PPM = 8, M = CONFIG.BOARD_GAP + 2 + LADO_BANCO.extra;   // pixels por metro, margem até depois das placas
+function buildPitch(op) {
+  // op (4.4.0, só a cena do pátio da escola): { margem } = piso só até um pouco depois da grade; { semFundo } = sem o chão grande de fora.
+  const PPM = 8, M = op && op.margem != null ? op.margem : CONFIG.BOARD_GAP + 2 + LADO_BANCO.extra;   // pixels por metro, margem até depois das placas
   const sx = CONFIG.FIELD_L + M * 2, sz = CONFIG.FIELD_W + M * 2;
   const c = document.createElement('canvas');
   c.width = sx * PPM; c.height = sz * PPM;
@@ -1165,7 +1175,7 @@ function buildPitch() {
   const tipoEst = PARTIDA ? PARTIDA.campo.estadio : 'arena';   // chão de fora: grama escura, terra (várzea) ou cimento (society)
   const outer = new THREE.Mesh(new THREE.PlaneGeometry(320, 240), mat(neve ? 0xdde4ec : tipoEst === 'varzea' ? 0x6b5a3e : tipoEst === 'society' ? (PARTIDA.campo.visual === 'futsal' ? 0x2a2e36 : 0x55595f) : 0x1c3a22));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02;
-  ESTADIO.add(outer); freeze(outer);
+  if (!(op && op.semFundo)) { ESTADIO.add(outer); freeze(outer); } else { outer.geometry.dispose(); }
   // Bandeirinhas de escanteio: cada uma é uma malha própria (4 chamadas de desenho em vez de 1)
   // porque a comemoração "chutar a bandeirinha" faz uma delas balançar. O pé fica na origem do
   // grupo, então girar o grupo inclina a haste a partir do chão.
@@ -2198,6 +2208,25 @@ function criarArbitragem() {
   });
 }
 
+// (4.4.0) Juiz com outra cara: na partida da história quem apita é o Professor Roberto, então o boneco do juiz é
+// refeito com o MESMO modelo dele (cfg.arbitro = os dados do boneco, ver HIST.professor). Sem cfg.arbitro volta ao juiz de sempre.
+// Só refaz quando muda (a chave guarda qual modelo está em campo).
+function aplicarArbitro(look) {
+  const o = referee; if (!o) return;
+  const chave = look ? 'prof:' + (look.nome || '') : 'padrao';
+  if (o.modeloChave === chave) return;
+  o.modeloChave = chave;
+  const base = { camisa: '#161616', listra: '#E8C547', gola: '#3a3a3a', numero: '', calcao: 0x161616, meia: 0x161616, sola: 0xE8C547, estilo: 2 };
+  const dados = look ? Object.assign({}, base, look, { nome: look.nome || 'Árbitro' }) : Object.assign({}, base, { pele: '#BF8159', cabelo: '#1C140F', nome: 'Árbitro' });
+  const velho = o.mesh, mesh = makeAthlete(Object.assign(dados, { fundoNome: 'rgba(30,30,30,0.9)' }));
+  scene.add(mesh.raiz);
+  mesh.raiz.position.copy(velho.raiz.position); mesh.raiz.rotation.copy(velho.raiz.rotation); mesh.raiz.visible = velho.raiz.visible;
+  if (o.cartao) { o.cartao.parent && o.cartao.parent.remove(o.cartao); mesh.bracoD.add(o.cartao); }
+  descartarBoneco(velho.raiz);
+  o.mesh = mesh;
+  CORPOS = players.concat(officials);
+}
+
 // Linha de impedimento de cada time atacante, em coordenada "rel" (x × direção do ataque):
 // posição do PENÚLTIMO defensor adversário (o goleiro conta).
 function atualizarLinhas() {
@@ -3136,6 +3165,13 @@ function passTo(from, to, broken, style) {
   if (style === 'cross') { speed = clamp(d * 0.6, 12, 22); vy = 7 + d * 0.04; }
   if (style === 'short') { speed = clamp(3 + d * 1.1, 5, 9); vy = 0.2; }        // toque curto (saída de bola)
   if (style === 'long') { speed = clamp(d * 0.55, 16, 26); vy = 7 + d * 0.05; }   // chutão do goleiro
+  if (style === 'cross' || style === 'long') {
+    // (4.4.0) Em campo pequeno o cruzamento/chutão tinha a mesma força e altura de um campo grande e voava ~18 m
+    // mesmo para um alvo a 8 m: atravessava a quadra e saía pela lateral do outro lado. Se a parábola passar
+    // do alvo, ela é refeita para CAIR nele (mais baixa e mais lenta).
+    const Tvoo = 2 * vy / CONFIG.GRAVITY;
+    if (speed * Tvoo > d * 1.25) { const T2 = clamp(0.55 + d * 0.045, 0.7, Tvoo); vy = CONFIG.GRAVITY * T2 / 2; speed = Math.max(4, d / T2); }
+  }
   if (broken) {
     if (Math.random() < 0.5) { vy = rand(6, 8); speed *= 0.75; }
     else { speed *= 1.45; vy = rand(1.5, 3); }
@@ -3183,14 +3219,17 @@ function aiBolaAerea(p) {
   // Mesmas regras que as suas: cabeçada ao gol só dentro da área; voleio/bicicleta até ~5 m fora.
   const fundo = Math.abs(gx - p.x), lat = Math.abs(p.z);
   const naArea = fundo < BOX.depth && lat < BOX.half, pertoDaArea = fundo < BOX.depth + 5 && lat < BOX.half + 3;
+  // (4.4.0) As alturas abaixo são de corpo de adulto: criança (escCorpo 0,68) multiplica tudo, senão ela
+  // "cabeceava" bolas que passavam na altura do peito dela. A distância do "afasta" também escala com o campo.
+  const ec = p.escCorpo || 1;
   if (pertoDaArea) {
     const ang = Math.abs(wrapAngle(Math.atan2(-p.z, gx - p.x) - p.angle));   // de costas = ~π
-    let tipo = ball.y > 1.55 ? 'cabeca' : 'voleio';
-    if (ang > 2.1) tipo = ball.y > 1.15 && Math.random() < 0.5 ? 'bicicleta' : 'cabeca';
+    let tipo = ball.y > 1.55 * ec ? 'cabeca' : 'voleio';
+    if (ang > 2.1) tipo = ball.y > 1.15 * ec && Math.random() < 0.5 ? 'bicicleta' : 'cabeca';
     if (tipo !== 'cabeca' || naArea) { aiFinalizaAereo(p, tipo); return; }
   }
-  if (dOwn < 30 && ball.lastKicker && ball.lastKicker.team !== p.team) { aiCabeceia(p, null); return; }   // afasta
-  if (ball.y < 1.75) { givePossession(p); return; }                                                        // peito
+  if (dOwn < 30 * ESC && ball.y >= 1.4 * ec && ball.lastKicker && ball.lastKicker.team !== p.team) { aiCabeceia(p, null); return; }   // afasta
+  if (ball.y < 1.75 * ec || (ec < 1 && Math.random() < 0.5)) { givePossession(p); return; }               // peito (criança: metade das bolas altas ela também só domina)
   aiCabeceia(p, bestPassReceiver(p) || nearestOf(teamOf(p), p, p).p);
 }
 
@@ -3214,7 +3253,16 @@ function aiFinalizaAereo(p, tipo) {
 function aiCabeceia(p, alvo) {
   let dx, dz, sp, vy;
   if (alvo) { dx = alvo.x - ball.x; dz = alvo.z - ball.z; const d = Math.hypot(dx, dz) || 1; sp = clamp(d * 0.55, 7, 13); vy = clamp(d * 0.18, 2.5, 5); dx /= d; dz /= d; }
-  else { const a = Math.atan2(rand(-0.8, 0.8), p.dir); dx = Math.cos(a); dz = Math.sin(a); sp = rand(11, 15); vy = rand(4, 6); }
+  else {
+    // (4.4.0) Afastar de cabeça: a bola precisa CAIR dentro do campo. Antes a velocidade era fixa (11 a 15 m/s,
+    // ~15 m de alcance) e em quadra pequena ela atravessava tudo e saía pela lateral. Agora o alcance é escolhido
+    // (proporcional ao campo) e a velocidade sai da parábola até o ponto de queda, que fica a 1,5 m das linhas.
+    const alc = rand(8, 14) * clamp(ESC + 0.35, 0.6, 1);
+    const a = Math.atan2(rand(-0.6, 0.6), p.dir);
+    const tx = clamp(ball.x + Math.cos(a) * alc, -HALF_L + 1.5, HALF_L - 1.5), tz = clamp(ball.z + Math.sin(a) * alc, -HALF_W + 1.5, HALF_W - 1.5);
+    const D = Math.hypot(tx - ball.x, tz - ball.z) || 1, T = clamp(D / 11, 0.6, 1.3);
+    dx = (tx - ball.x) / D; dz = (tz - ball.z) / D; sp = D / T; vy = (0 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
+  }
   p.angle = Math.atan2(dz, dx);
   p.recvPose = { kind: 'cabeca', t: CONTATO_T.cabeca, dur: POSE_DUR.cabeca, side: 1 };
   kickBall(p, dx * sp, vy, dz * sp, 0, 0);
@@ -4107,9 +4155,11 @@ function checkBallContacts() {
   // Bola alta (1 a 2,5 m) chegando num jogador da IA: perto do gol ele finaliza (cabeçada,
   // voleio ou bicicleta, com animação); perto do próprio gol afasta de cabeça; no meio do campo
   // mata no peito ou cabeceia para um companheiro.
-  if (sp3 > 3 && ball.y >= 1.0 && ball.y <= 2.5) {
+  if (sp3 > 3 && ball.y >= 0.6 && ball.y <= 2.5) {
     for (const p of players) {
       if (p.isUser || p.out || p.role === 'GK' || p.stun > 0 || p.controlCd > 0 || ball.lastKicker === p || p.recvPose) continue;
+      const ec = p.escCorpo || 1;                    // (4.4.0) criança: a "bola alta" começa e termina mais baixo
+      if (ball.y < 1.0 * ec || ball.y > 2.5 * ec) continue;
       if (dist2D(p, ball) > 0.95) continue;
       if (ball.isShot && ball.lastKicker && ball.lastKicker.team === p.team) continue;   // não atrapalha o chute do companheiro
       if (p.ignBolaT > 0) continue;
@@ -4719,9 +4769,11 @@ function startRestart(kind, team, spot, motivo) {
   else {
     let best = null, bd = Infinity;
     for (const p of TEAMS[team]) { if (p.role === 'GK') continue; const d = dist2D(p, S.stand); if (d < bd) { bd = d; best = p; } }
+    if (!best) best = TEAMS[team].find((p) => !p.out) || TEAMS[team][0] || null;   // (4.4.0) time sem jogador de linha (tutorial: só o goleiro-fantasma): usa quem houver
     S.taker = best;
   }
   if (G.forcaCobrador) S.taker = G.forcaCobrador;  // disputa de pênaltis: a ordem decide
+  if (!S.taker) { G.state = 'play'; return; }        // (4.4.0) ninguém para cobrar: segue o jogo
   S.taker.scripted = true;
   let ai = 0, di = 0, pi = 0;                      // vagas na área (escanteio) / fora da área (pênalti)
   for (const p of players) {
@@ -8191,6 +8243,35 @@ function descartarBoneco(raiz) {
   });
 }
 
+// (4.4.0) A quadra de futsal do jogo, montada FORA da partida, para a cena do pátio da escola. Usa as MESMAS funções da partida
+// (buildPitch, buildArredores, buildGoal): é a mesma quadra, com o mesmo piso, mureta, tela, traves e redes. O que muda é só que
+// pode ter uma ABERTURA (portão) no lado +z, por onde se entra. Devolve um grupo centrado na quadra (x = comprimento, z = largura).
+// Guarda e devolve tudo que essas funções mexem (medidas, PARTIDA, referências da tela...), então a partida não nota.
+function construirQuadraFutsal(op) {
+  op = op || {};
+  const campo = Object.assign({ id: 'futsal' }, CAMPOS.futsal);
+  const guarda = {
+    P: PARTIDA, tela: TELA_MESH, postes: POSTES_MESH, alt: ALTURA_GRADE, lamp: lampadasMat, band: BANDEIRAS.slice(),
+    fundo: { '-1': Object.assign({}, FUNDO_GRADE['-1']), '1': Object.assign({}, FUNDO_GRADE['1']) },
+    dim: { comprimento: CONFIG.FIELD_L, largura: CONFIG.FIELD_W, folga: CONFIG.BOARD_GAP, gol: { largura: CONFIG.GOAL_W, altura: CONFIG.GOAL_H }, estadio: BOARD_ZN === BOARD_Z ? 'society' : 'arena' },
+  };
+  const antes = new Set(ESTADIO.children), g = new THREE.Group();
+  PARTIDA = { campo, gramado: 'baixo', clima: 'seco' };
+  aplicarDimensoes(campo);
+  try {
+    buildPitch({ margem: CONFIG.BOARD_GAP + (op.margem != null ? op.margem : 0.6), semFundo: true });
+    buildArredores('society', { portao: op.portao || 0 });
+    buildGoal(-1); buildGoal(1);
+  } finally {
+    for (const c of ESTADIO.children.slice()) if (!antes.has(c)) { ESTADIO.remove(c); g.add(c); }
+    PARTIDA = guarda.P; TELA_MESH = guarda.tela; POSTES_MESH = guarda.postes; ALTURA_GRADE = guarda.alt; lampadasMat = guarda.lamp;
+    BANDEIRAS.length = 0; for (const b of guarda.band) BANDEIRAS.push(b);
+    FUNDO_GRADE['-1'] = guarda.fundo['-1']; FUNDO_GRADE['1'] = guarda.fundo['1'];
+    aplicarDimensoes(guarda.dim);
+  }
+  return g;
+}
+
 // Estádio de novo (campo novo, cores de torcida novas, mais ou menos gente).
 function montarEstadio() {
   /* (4.3.6) 'futsal' usa buildArredores('society') com visual próprio */
@@ -8232,7 +8313,9 @@ function texturaTela(corFio, passo) {
 let TELA_MESH = null, POSTES_MESH = null;
 const FUNDO_GRADE = { '-1': { tela: null, postes: null }, '1': { tela: null, postes: null } };   // (4.3.0) rede e postes do fundo de cada lado (só o do lado da câmera some no replay)                              // (4.2.6) a rede/alambrado (some na câmera de trás do gol, no replay)
 let ALTURA_GRADE = 5;                              // (4.1.3) a comemoração "pular na grade" usa
-function buildArredores(tipo) {
+function buildArredores(tipo, op) {
+  // op.portao (4.4.0, só a cena do pátio da escola) = meia largura de uma ABERTURA no meio do lado +z (mureta, tela e cano): por onde se entra na quadra.
+  const portao = op && op.portao > 0 ? op.portao : 0;
   const varzea = tipo === 'varzea';
   const futsal = !!PARTIDA && PARTIDA.campo.visual === 'futsal';      // (4.3.6) quadra de futsal: sem torcida nem arquibancada
   const ALT = varzea ? 2.6 : futsal ? 4 : 5;                    // altura do alambrado / da rede
@@ -8253,19 +8336,30 @@ function buildArredores(tipo) {
     R.idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
   };
   const X = BOARD_X, Z = BOARD_Z, Zn = BOARD_ZN, Zs = (s) => (s < 0 ? Zn : Z);   // (4.1.3) lado do banco mais largo
-  parede(-X, -Zn, X, -Zn); parede(-X, Z, X, Z); parede(-X, -Zn, -X, Z, -1); parede(X, -Zn, X, Z, 1);
+  parede(-X, -Zn, X, -Zn); parede(-X, -Zn, -X, Z, -1); parede(X, -Zn, X, Z, 1);
+  if (portao) { parede(-X, Z, -portao, Z); parede(portao, Z, X, Z); } else parede(-X, Z, X, Z);
   const tela = R0.malha(telaMat); ESTADIO.add(tela); freeze(tela); TELA_MESH = tela;
   for (const s of [-1, 1]) { const m = RF[s].malha(telaMat); ESTADIO.add(m); freeze(m); FUNDO_GRADE[s].tela = m; }
   // Postes do alambrado e cano de cima.
   const corPoste = varzea ? 0x8a9096 : futsal ? 0x20242c : 0x2b3a2e;
-  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s));
+  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) { if (portao && s > 0 && Math.abs(x) < portao + 0.4) continue; Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s)); }
+  if (portao) for (const sx of [-1, 1]) Ep.caixa(0.12, ALT, 0.12, corPoste, sx * portao, ALT / 2, Z);   // postes do portão
   for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) EpF[s].caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
-  for (const s of [-1, 1]) { Ep.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s)); EpF[s].caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2); }
+  for (const s of [-1, 1]) {
+    if (portao && s > 0) { Ep.caixa(X - portao, 0.07, 0.07, corPoste, -(X + portao) / 2, ALT, Z); Ep.caixa(X - portao, 0.07, 0.07, corPoste, (X + portao) / 2, ALT, Z); }
+    else Ep.caixa(X * 2, 0.07, 0.07, corPoste, 0, ALT, s * Zs(s));
+    EpF[s].caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2);
+  }
   // Arquibancadinha (num dos lados compridos, z > 0): degraus de cimento.
   const degraus = varzea ? 3 : 2, compr = Math.min(varzea ? 34 : 22, X * 1.4);
   if (futsal) {                                    // mureta laranja baixa (1,1 m) com o topo branco, nos quatro lados
     const MH = 1.1, C1 = 0xe0762a, C2 = 0xf4f1e8;
-    for (const sz of [-1, 1]) { E.caixa(X * 2 + 0.3, MH, 0.3, C1, 0, MH / 2, sz * Zs(sz)); E.caixa(X * 2 + 0.4, 0.08, 0.4, C2, 0, MH + 0.04, sz * Zs(sz)); }
+    for (const sz of [-1, 1]) {
+      if (portao && sz > 0) {                       // lado do portão: dois pedaços de mureta, com a abertura no meio
+        const w = X + 0.15 - portao, cx = (X + 0.15 + portao) / 2;
+        for (const m of [-1, 1]) { E.caixa(w, MH, 0.3, C1, m * cx, MH / 2, Z); E.caixa(w, 0.08, 0.4, C2, m * cx, MH + 0.04, Z); }
+      } else { E.caixa(X * 2 + 0.3, MH, 0.3, C1, 0, MH / 2, sz * Zs(sz)); E.caixa(X * 2 + 0.4, 0.08, 0.4, C2, 0, MH + 0.04, sz * Zs(sz)); }
+    }
     for (const sx of [-1, 1]) { E.caixa(0.3, MH, Z + Zn, C1, sx * X, MH / 2, (Z - Zn) / 2); E.caixa(0.4, 0.08, Z + Zn + 0.3, C2, sx * X, MH + 0.04, (Z - Zn) / 2); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) E.caixa(0.7, 4.4, 0.7, 0x9aa0a8, sx * (X + 0.2), 2.2, sz * (Zs(sz) + 0.2));   // colunas de concreto nos cantos
   }
@@ -8273,6 +8367,7 @@ function buildArredores(tipo) {
   // Postes de luz (4 nos cantos + 2 no meio). Na várzea de madeira, mais baixos.
   const altLuz = varzea ? 9 : 8, corLuz = varzea ? 0x6b4a2b : 0x59606b;
   for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) {
+    if (portao && sx === 0 && sz > 0) continue;       // o poste do meio ficaria bem no caminho do portão
     const x = sx * (X + 1.5), z = sz * (Zs(sz) + (sx === 0 ? 5 : 1.5));
     E.caixa(0.25, altLuz, 0.25, corLuz, x, altLuz / 2, z);
     Lp.caixa(1.6, 0.6, 0.6, 0xfff3c4, x, altLuz + 0.2, z);
@@ -8625,6 +8720,7 @@ function montarPartida(cfg) {
   Object.assign(G, { subsFila: [], trocas: [], lesoes: [] });
   montarTimes(PARTIDA);                            // (resetMatch monta de novo a cada partida: suspensões/lesões novas)
   montarTecnicos(PARTIDA);
+  aplicarArbitro(PARTIDA.arbitro || null);          // (4.4.0) na história o juiz é o Professor Roberto
   for (const o of officials) if (o.role === 'AR') { o.lineZ = Math.sign(o.lineZ) * (HALF_W + 1.3); o.z = o.lineZ; o.mesh.raiz.visible = PARTIDA.regras.impedimento; }   // sem impedimento (society): sem bandeirinhas   // bandeirinhas na lateral do campo novo
   aplicarAmbiente(PARTIDA);
   atualizarPlacarFixo();
@@ -8682,6 +8778,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     commitT: rand(0.5, 2), committing: 0, folego: 1,
     stamina: 1, exhausted: false, regenWait: 0, dribbleCd: 0, staminaMax: 1,
     isUser, mesh,
+    escCorpo: P.criancas && P.criancas.escala ? P.criancas.escala : 1,   // (4.4.0) tamanho do corpo: as alturas de "bola alta" da IA (cabeceio, peito) valem para o corpo de adulto, então são multiplicadas por isto
   };
 }
 
@@ -10339,6 +10436,31 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
   return { mostrar };
 })();
 
+// (4.4.0) textos novos da Fase 1: tutorial com bolas paradas (falta, lateral, escanteio), cena do "nem vi você passando" e o Professor Roberto no pátio
+Object.assign(I18N, {
+  "Driblar! Eu vou ficar parado aqui, de marcador. Corra com a bola para cima de mim: quando eu estiver perto, aparece o botão DRIBLAR. Aperte nele na hora certa e acerte os toques na tela!": ["Dribbling! I'll stand right here as the defender. Run at me with the ball: when I'm close, the DRIBBLE button shows up. Press it at the right moment and hit the taps on screen!", "¡Regatear! Me voy a quedar aquí, de marcador. Corre hacia mí con la pelota: cuando esté cerca, aparece el botón REGATEAR. ¡Púlsalo en el momento justo y acierta los toques en la pantalla!", "Dribbling! Resto fermo qui, come avversario. Corri verso di me con il pallone: quando sono vicino, compare il pulsante DRIBBLA. Premilo al momento giusto e centra i tocchi sullo schermo!", "Dribbler ! Je reste ici, comme défenseur. Cours vers moi avec le ballon : quand je suis proche, le bouton DRIBBLER apparaît. Appuie au bon moment et réussis les touches à l'écran !"],
+  "DRIBLAR: corra com a bola até o João e toque em DRIBLAR": ["DRIBBLE: run with the ball at João and tap DRIBBLE", "REGATEAR: corre con la pelota hacia João y toca REGATEAR", "DRIBBLARE: corri con il pallone verso João e tocca DRIBBLA", "DRIBBLER : cours avec le ballon vers João et touche DRIBBLER"],
+  "Olha só! Você passou direitinho por mim!": ["Look at that! You got right past me!", "¡Mira! ¡Me pasaste sin problemas!", "Guarda! Mi hai superato benissimo!", "Regarde ! Tu m'as passé sans problème !"],
+  "Agora vamos para as bolas paradas! Quando o jogo para, é você quem decide como a bola volta. Primeiro: a falta.": ["Now let's move on to set pieces! When play stops, you decide how the ball comes back. First: the free kick.", "¡Ahora vamos con las jugadas a balón parado! Cuando el juego se detiene, tú decides cómo vuelve la pelota. Primero: el tiro libre.", "Ora passiamo ai calci piazzati! Quando il gioco si ferma, sei tu a decidere come torna il pallone. Prima: la punizione.", "Passons maintenant aux coups de pied arrêtés ! Quand le jeu s'arrête, c'est toi qui décides comment le ballon revient. D'abord : le coup franc."],
+  "Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta na faixa verde, igual ao chute. Pode dar efeito na bola também!": ["When someone is fouled, the referee blows the whistle and we take the kick from where the foul happened. Aim at the goal, hold the power and release on the green band, just like a shot. You can add spin too!", "Cuando alguien es derribado, el árbitro pita y cobramos desde el lugar de la falta. Apuntas al arco, mantienes la fuerza y sueltas en la franja verde, igual que en el tiro. ¡También puedes darle efecto a la pelota!", "Quando qualcuno viene atterrato, l'arbitro fischia e battiamo dal punto del fallo. Mira alla porta, tieni premuta la forza e rilascia sulla fascia verde, come nel tiro. Puoi anche dare effetto al pallone!", "Quand un joueur est fauché, l'arbitre siffle et on tire depuis l'endroit de la faute. Tu vises le but, tu maintiens la puissance et tu relâches sur la bande verte, comme pour un tir. Tu peux aussi donner de l'effet au ballon !"],
+  "FALTA: cobre a falta em direção ao gol": ["FREE KICK: take the free kick toward the goal", "TIRO LIBRE: cobra el tiro libre hacia el arco", "PUNIZIONE: batti la punizione verso la porta", "COUP FRANC : tire le coup franc vers le but"],
+  "Que golaço de falta! Você leva jeito!": ["What a free-kick goal! You've got talent!", "¡Qué golazo de tiro libre! ¡Tienes talento!", "Che gol su punizione! Hai talento!", "Quel but sur coup franc ! Tu as du talent !"],
+  "Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!": ["Free kicks are like that: each one has its secret. Let's keep practicing!", "Los tiros libres son así: cada uno tiene su secreto. ¡Sigamos practicando!", "Le punizioni sono così: ognuna ha il suo segreto. Continuiamo ad allenarci!", "Les coups francs, c'est comme ça : chacun a son secret. Continuons à nous entraîner !"],
+  "Agora o lateral. Na quadra de futsal ele é cobrado com o pé: a bola fica no chão, na linha lateral.": ["Now the throw-in. On a futsal court it's taken with the foot: the ball sits on the ground, on the sideline.", "Ahora el saque de banda. En la cancha de futsal se saca con el pie: la pelota queda en el suelo, en la línea lateral.", "Ora la rimessa laterale. Nel futsal si batte con il piede: il pallone sta a terra, sulla linea laterale.", "Maintenant la remise en jeu. En futsal, elle se fait au pied : le ballon est posé au sol, sur la ligne de touche."],
+  "Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!": ["When the ball goes out on the side, play restarts from there. Here you tap PASS, aim at me and choose how hard to kick it. Go!", "Cuando la pelota sale por la banda, el juego se reanuda desde ahí. Aquí tocas PASAR, apuntas hacia mí y eliges la fuerza del toque. ¡Vamos!", "Quando il pallone esce dalla linea laterale, il gioco riparte da lì. Qui tocchi PASSA, mira verso di me e scegli la forza del tocco. Vai!", "Quand le ballon sort sur le côté, le jeu reprend de là. Ici, tu touches PASSER, tu me vises et tu choisis la force de la touche. Vas-y !"],
+  "LATERAL: devolva a bola para o João": ["THROW-IN: pass the ball back to João", "SAQUE DE BANDA: devuélvele la pelota a João", "RIMESSA: restituisci il pallone a João", "REMISE EN JEU : redonne le ballon à João"],
+  "Boa! Um lateral bem cobrado mantém a bola com o seu time.": ["Nice! A well-taken throw-in keeps the ball with your team.", "¡Bien! Un saque de banda bien hecho mantiene la pelota en tu equipo.", "Bene! Una rimessa fatta bene tiene il pallone alla tua squadra.", "Bien ! Une remise en jeu bien faite garde le ballon dans ton équipe."],
+  "E por fim o escanteio: quando a bola sai pela linha de fundo depois de tocar no time que defende, a gente cobra do cantinho. Hora de cruzar na área!": ["And finally the corner kick: when the ball goes out over the end line after touching the defending team, we take it from the corner. Time to cross into the box!", "Y por último el tiro de esquina: cuando la pelota sale por la línea de fondo tras tocar al equipo que defiende, cobramos desde la esquina. ¡Hora de centrar al área!", "E infine il calcio d'angolo: quando il pallone esce sulla linea di fondo dopo aver toccato la squadra che difende, si batte dall'angolo. È il momento di crossare in area!", "Et enfin le corner : quand le ballon sort sur la ligne de fond après avoir touché l'équipe qui défend, on tire depuis le coin. C'est l'heure de centrer dans la surface !"],
+  "Eu vou ficar na área esperando a bola. Você cobra o escanteio do cantinho: mire em mim, escolha a força e cruze!": ["I'll wait in the box for the ball. You take the corner from the corner arc: aim at me, choose the power and cross it!", "Yo me quedo en el área esperando la pelota. Tú cobras el córner desde la esquina: apunta hacia mí, elige la fuerza y ¡centra!", "Io resto in area ad aspettare il pallone. Tu batti l'angolo dalla bandierina: mira verso di me, scegli la forza e crossa!", "Je reste dans la surface à attendre le ballon. Toi, tu tires le corner depuis le coin : vise-moi, choisis la force et centre !"],
+  "ESCANTEIO: cruze a bola para o João, na área": ["CORNER: cross the ball to João in the box", "CÓRNER: centra la pelota hacia João, en el área", "ANGOLO: crossa il pallone verso João, in area", "CORNER : centre le ballon vers João, dans la surface"],
+  "Perfeito! Agora você conhece as bolas paradas: falta, lateral e escanteio.": ["Perfect! Now you know set pieces: free kick, throw-in and corner.", "¡Perfecto! Ahora conoces las jugadas a balón parado: tiro libre, saque de banda y córner.", "Perfetto! Ora conosci i calci piazzati: punizione, rimessa e angolo.", "Parfait ! Tu connais maintenant les coups de pied arrêtés : coup franc, remise en jeu et corner."],
+  "Pronto! Agora a gente joga de verdade. Vamos lá!": ["Done! Now we play for real. Let's go!", "¡Listo! Ahora jugamos en serio. ¡Vamos!", "Fatto! Ora giochiamo sul serio. Andiamo!", "Prêt ! Maintenant on joue pour de vrai. Allons-y !"],
+  "Eita, eu nem vi você passando para a quadra...": ["Whoa, I didn't even see you slip into the court...", "Vaya, ni te vi pasar a la cancha...", "Accidenti, non ti ho nemmeno visto entrare in campo...", "Ben ça alors, je ne t'ai même pas vu passer sur le terrain..."],
+  "Você está lento demais, João!": ["You're way too slow, João!", "¡Eres demasiado lento, João!", "Sei troppo lento, João!", "Tu es trop lent, João !"],
+  "Olá, {0}! Estou de olho na minha turma até os pais virem buscar.": ["Hello, {0}! I'm keeping an eye on my class until their parents come to pick them up.", "¡Hola, {0}! Estoy vigilando a mi clase hasta que los padres vengan a recogerlos.", "Ciao, {0}! Sto sorvegliando la mia classe finché i genitori non vengono a prenderli.", "Bonjour, {0} ! Je surveille ma classe en attendant que les parents viennent la chercher."],
+  "Eles adoram uma bola, mas comigo ninguém sai do meu campo de visão!": ["They love a ball, but nobody leaves my sight!", "¡Les encanta una pelota, pero conmigo nadie sale de mi campo de visión!", "Adorano il pallone, ma con me nessuno esce dal mio campo visivo!", "Ils adorent le ballon, mais avec moi personne ne sort de mon champ de vision !"],
+  "Os pais já já chegam. Por enquanto, eu fico de olho na turma.": ["The parents will be here soon. Until then, I'm keeping an eye on the class.", "Los padres llegan pronto. Mientras tanto, vigilo a la clase.", "I genitori arrivano presto. Intanto tengo d'occhio la classe.", "Les parents arrivent bientôt. En attendant, je garde un œil sur la classe."],
+});
 // ---------------------------------------------------------------------
 // DADOS DA HISTÓRIA (4.3.6): os meninos da quadra e os uniformes. As cenas (Fase1) e a partida (Historia)
 // usam estes mesmos dados, então os bonecos são iguais nas duas. Corpo 68% e cabeça 155% (modo "bebê").
@@ -10355,6 +10477,11 @@ const HIST = (() => {
     cadu: k('Cadu', 4, 0, 'Black power', 'Sorridente'), bia: k('Bia', 3, 2, 'Coque longo', 'Padrão', 1),
     tadeu: k('Tadeu', 1, 3, 'Moicano', 'Sério'), duda: k('Duda', 2, 4, 'Longo liso', 'Sorridente', 0),
     nando: k('Nando', 5, 0, 'Dreads curtos', 'Padrão'), leo: k('Léo', 0, 1, 'Franja', 'Sonolento'),
+    // (4.4.0) o Professor Roberto: o MESMO modelo é o do juiz na partida (PARTIDA.arbitro) e o do professor vigiando a turma no pátio
+    professor: { nome: 'Professor Roberto', pele: pele(1), cabelo: cab(6), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e9e9e4', listra: '#e9e9e4', gola: '#2a4f9a', calcao: 0x22252c, meia: '#e9e9e4', cabecao: 1.3, escala: 0.98 },
+    // (4.4.0) figurantes do pátio (alunos conversando); a roupa é a de escola de sempre
+    figurantes: [k('Ana', 2, 2, 'Rabo de cavalo', 'Sorridente', 2), k('Bruna', 4, 0, 'Cacheado longo', 'Padrão', 4), k('Caio', 1, 1, 'Curto', 'Padrão'), k('Davi', 3, 0, 'Raspado', 'Sério'),
+      k('Elisa', 0, 5, 'Coque com degradê', 'Sorridente', 1), k('Fábio', 2, 3, 'Topete', 'Padrão'), k('Gui', 5, 0, 'Corte baixo', 'Sorridente'), k('Hugo', 3, 2, 'Bagunçado', 'Sonolento')],
   };
 })();
 
@@ -10366,7 +10493,7 @@ const Fase1 = (() => {
   const ESC = 0.68, CAB = 1.55, ASSENTO_Y = -0.15;                     // personagem bebê: corpo 68%, cabeça 155%
   const PROF = { x: -2.4, z: -3.9 }, MESA_PROF = { x: -4.5, z: -4.2 };
   const SPOT = { joao: [1.9, LINHAS[1] + 0.62], lucia: [-1.9, LINHAS[1] + 0.62], prof: [PROF.x + 1.25, PROF.z] };   // pontos fixos (afastados) de conversa
-  const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves', valentao: '??', oculos: 'Menino de óculos' };       // (a tabela I18N traz os nomes de cada idioma)
+  const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves', valentao: '??', oculos: 'Menino de óculos', rob: 'Professor Roberto' };       // (a tabela I18N traz os nomes de cada idioma)
   const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
   const rad = Math.PI / 180;
   let UI = null, S = null;
@@ -10682,10 +10809,20 @@ const Fase1 = (() => {
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? Math.sin(t * 5 + (A.conv || 0)) * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? Math.sin(t * 5 + 2) * 0.35 + 0.4 : 0, e);
     }
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
+    // (4.4.0) segurando a bola com as DUAS mãos: os braços vão para a posição de segurar (th = quanto sobe: 1,15 na frente, 2,85 acima da cabeça;
+    // ph = quanto as mãos se fecham uma contra a outra). Vale parado ou andando; a bola acompanha as mãos (ver atualizar).
+    if (A.segura) { m.bracoE.rotation.z = m.bracoD.rotation.z = A.segura.th; m.bracoE.rotation.x = -A.segura.ph; m.bracoD.rotation.x = A.segura.ph; }
   };
   function andar(A, pts, vel) {
     A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.vel = vel || 1.9;
     return new Promise((r) => { A.rotaRes = r; });
+  }
+  // (4.4.0) Como andar(), mas dá para desistir no meio: 'parar' é checada a cada instante e, se for verdadeira, o ator para e a função devolve false.
+  async function andarAte(A, pt, vel, parar) {
+    A.rota = [{ x: pt[0], z: pt[1] }]; A.vel = vel || 1.9;
+    let fim = false; A.rotaRes = () => { fim = true; };
+    while (!fim) { if (parar && parar()) { A.rota = null; A.rotaRes = null; return false; } await esperar(70); }
+    return true;
   }
   const olhar = (A, x, z) => { A.yawAlvo = Math.atan2(-(z - A.z), x - A.x); };
   const paraFrente = (A) => { A.yawAlvo = Math.PI / 2; };                 // olhando para o quadro (de frente)
@@ -10709,11 +10846,12 @@ const Fase1 = (() => {
     prof: [0.0, 1.5, -1.9, -2.4, 1.15, -3.9],
     dupla: () => dupla(S.parA, S.parB, 2.7, 1.7), entrega: () => dupla(S.jog, S.prof, 2.8, 1.7),
     geral: [5.6, 3.7, 4.8, -1.0, 0.9, -1.5],
-    aula: () => (S && S.lugar === 'corredor') ? (() => { const J = S.jog, fx = J.x * 0.4; return [fx, 5.0, J.z + 4.4, fx, 0.3, J.z - 1.2]; })() : [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],   // (4.3.7) no corredor a câmera 'aula' acompanha o jogador (antes ficava na sala, a 16 m do João)
+    aula: () => (S && S.lugar === 'patio') ? (() => { const J = S.jog, fx = J.x * 0.6; return [fx, 5.2, J.z + 5.6, fx, 0.3, J.z - 1.6]; })()
+      : (S && S.lugar === 'corredor') ? (() => { const J = S.jog, fx = J.x * 0.4; return [fx, 5.0, J.z + 4.4, fx, 0.3, J.z - 1.2]; })() : [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],   // (4.4.0) no pátio também acompanha o jogador   // (4.3.7) no corredor a câmera 'aula' acompanha o jogador (antes ficava na sala, a 16 m do João)
     mesa: () => seg(S.jog, 0.5, 1.35, 1.7, 0.85),
     saida: [4.0, 1.6, 1.5, 4.7, 1.1, 5.4],
     cor_ini: [1.0, 2.3, 12.6, -2.8, 1.0, 10.5], cor_buli: [0.4, 1.7, -4.1, -2.4, 1.0, -7.4], cor_fim: [0.0, 1.7, -8.4, 0, 1.0, -12.4],
-    pat_porta: [-2.6, 1.7, -4.8, 0, 1.3, 7.2], pat_bola: () => [S.joaoA.x + 1.0, 1.05, S.joaoA.z + 1.5, S.joaoA.x, 0.85, S.joaoA.z + 0.3],
+    pat_porta: [-2.6, 1.7, -4.8, 0, 1.3, 7.2], pat_bola: () => [S.joaoA.x + 1.3, 1.25, S.joaoA.z + 2.3, S.joaoA.x, 1.0, S.joaoA.z],
     qd_ini: [-9, 2.8, -35, 0, 1.0, -22], qd_geral: [-5.5, 3.0, -31.5, 1.5, 0.9, -22.5],
   };
   const camPara = (nome, corte) => { S.camNome = nome; if (corte) S.camSnap = true; };
@@ -10725,8 +10863,11 @@ const Fase1 = (() => {
     R = R || 0.22;
     if (S && S.lugar === 'patio') {                                    // pátio, portão da quadra e a quadra
       if (z > PAT_Z0 - 0.9) return false;
-      if (z > QZ + QH + QB - 0.2) return Math.abs(x) < 20;
-      if (z > QZ + QH + QB - 1.4) return Math.abs(x) < 1.0;
+      if (z > Z_PORTAO - 0.2) {                                         // pátio (menos o tronco da árvore do professor)
+        if (Math.hypot(x - ARV_PROF.x, z - ARV_PROF.z) < 0.55) return false;
+        return Math.abs(x) < 20;
+      }
+      if (z > Z_PORTAO - 1.4) return Math.abs(x) < PORTAO - 0.2;        // o portão
       return Math.abs(x) < QX + 1.2 && z > QZ - QH - 1.2;
     }
     if (S && S.lugar === 'corredor') {
@@ -10778,7 +10919,11 @@ const Fase1 = (() => {
   const alvos = () => {
     if (!S || S.modo !== 'livre') return [];
     const l = [];
-    if (S.lugar === 'patio') return l;
+    if (S.lugar === 'patio') {                                          // (4.4.0) o Professor Roberto vigiando a turma
+      const R = S.falantes && S.falantes.rob && S.falantes.rob.A;
+      if (R && !S.convite) l.push({ id: 'rob', x: R.x, z: R.z, r: 2.1, txt: Tf('Falar com {0}', nm('rob')) });
+      return l;
+    }
     if (S.lugar === 'corredor') {
       l.push({ id: 'lucia2', x: S.luciaA.x, z: S.luciaA.z, r: 1.7, txt: Tf('Falar com {0}', nm('lucia')) });
       if (S.trancado) l.push({ id: 'armario', x: FX + 0.6, z: ZK, r: 1.7, txt: T('Abrir o armário') });
@@ -10844,6 +10989,7 @@ const Fase1 = (() => {
       if (a.id === 'cadeira') { await sentarEFazer(); return; }
       if (a.id === 'joao') await conversaJoao(); else if (a.id === 'lucia') await conversaLucia();
       else if (a.id === 'prof') await conversaProf(); else if (a.id === 'porta') { if (S.fase === 'antes') await ondaNaPorta(); else { await saida(); return; } }
+      else if (a.id === 'rob') await conversaRob();
       else if (a.id === 'lucia2') await luciaFora(); else if (a.id === 'armario') await abrirArmario();
       else if (a.id === 'joao2') await joaoFora(); else if (a.id === 'rua') { await saidaRua(); return; }
     } catch (e) { console.error(e); }
@@ -11116,21 +11262,11 @@ const Fase1 = (() => {
   }
 
   // ------------------------------------------------------------------ pátio e quadra (4.3.6)
-  const QZ = -30, QX = 20, QH = 11, QB = 2.4;                           // quadra: centro (z), meio comprimento, meia largura e borda laranja
+  // (4.4.0) A quadra do pátio é a MESMA do jogo (construirQuadraFutsal): as medidas vêm do campo 'futsal'.
+  const QX = CAMPOS.futsal.comprimento / 2, QH = CAMPOS.futsal.largura / 2, QB = CAMPOS.futsal.folga, QZ = -30, PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
+  const Z_PORTAO = QZ + QH + QB;                                        // z da grade do lado da escola (onde fica o portão)
   const PAT_Z0 = 8.2;                                                   // parede da escola (fachada)
-  function texQuadra() {
-    const PPM = 12, W = (QX + QB) * 2, H = (QH + QB) * 2;
-    return drawTexture(Math.round(W * PPM), Math.round(H * PPM), (g, w, h) => {
-      const X = (m) => (m + W / 2) * PPM, Y = (m) => (m + H / 2) * PPM;
-      g.fillStyle = '#d9732b'; g.fillRect(0, 0, w, h);
-      g.fillStyle = '#2f63b8'; g.fillRect(X(-QX), Y(-QH), QX * 2 * PPM, QH * 2 * PPM);
-      g.strokeStyle = '#ffffff'; g.lineWidth = 3;
-      g.strokeRect(X(-QX), Y(-QH), QX * 2 * PPM, QH * 2 * PPM);
-      g.beginPath(); g.moveTo(X(0), Y(-QH)); g.lineTo(X(0), Y(QH)); g.stroke();
-      g.beginPath(); g.arc(X(0), Y(0), 3 * PPM, 0, Math.PI * 2); g.stroke();
-      for (const s of [-1, 1]) { g.beginPath(); g.arc(X(s * QX), Y(0), 6 * PPM, s > 0 ? Math.PI / 2 : -Math.PI / 2, s > 0 ? Math.PI * 1.5 : Math.PI / 2); g.stroke(); }
-    });
-  }
+  const ARV_PROF = { x: -8.5, z: -9.0 };                                // a árvore onde o Professor Roberto vigia a turma
   function texConcreto() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#b9b6ae'; g.fillRect(0, 0, w, h); g.fillStyle = '#a8a59d'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#c4c1b9'; g.fillRect(5, 7, 3, 2); g.fillRect(21, 19, 4, 2); }); }
   function texPlaca() { return drawTexture(256, 32, (g, w, h) => { g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c230'; g.fillRect(0, 0, w, 3); g.fillRect(0, h - 3, w, 3); g.fillStyle = '#fff0c8'; g.font = 'bold 16px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ESCOLA SANTA MARIA', w / 2, h / 2 + 1); }); }
   function texBola() {
@@ -11142,12 +11278,6 @@ const Fase1 = (() => {
     });
   }
   function fazBola() { return new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), new THREE.MeshLambertMaterial({ map: texBola() })); }
-  function rede(g, x0, z0, x1, z1, alt, y0) {                            // painel de tela (transparente) entre dois pontos
-    const len = Math.hypot(x1 - x0, z1 - z0), t = texturaTela('rgba(20,24,34,0.85)', 6);
-    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(len / 1.2, alt / 1.2);
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(len, alt), new THREE.MeshBasicMaterial({ map: t, transparent: true, alphaTest: 0.25, side: THREE.DoubleSide, depthWrite: false }));
-    m.position.set((x0 + x1) / 2, (y0 || 0) + alt / 2, (z0 + z1) / 2); m.rotation.y = Math.atan2(-(z1 - z0), x1 - x0); g.add(m);
-  }
   function montarPatio() {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const basic = (m) => new THREE.MeshBasicMaterial(m);
@@ -11161,27 +11291,13 @@ const Fase1 = (() => {
     F(2.0, 2.3, 0.1, 0x2b1d10, 0, 1.15, PAT_Z0 - 0.22); F(2.3, 0.2, 0.16, 0x4a2c16, 0, 2.4, PAT_Z0 - 0.24); F(0.2, 2.4, 0.16, 0x4a2c16, -1.1, 1.2, PAT_Z0 - 0.24); F(0.2, 2.4, 0.16, 0x4a2c16, 1.1, 1.2, PAT_Z0 - 0.24);
     F(4.6, 0.12, 2.0, 0xc9c2a8, 0, 2.55, PAT_Z0 - 1.1);                                              // marquise sobre a porta
     // árvores, banco e mastro
-    for (const [x, z] of [[-15, 2], [15, -5], [-17, -10], [17, 4]]) { F(0.5, 3.0, 0.5, 0x5a3a22, x, 1.5, z); F(3.2, 2.6, 3.2, 0x2f6b2a, x, 4.1, z); F(2.2, 1.6, 2.2, 0x3d7a31, x, 5.8, z); }
+    for (const [x, z] of [[-15, 2], [15, -5], [-17, -10], [17, 4], [ARV_PROF.x, ARV_PROF.z]]) { F(0.5, 3.0, 0.5, 0x5a3a22, x, 1.5, z); F(3.2, 2.6, 3.2, 0x2f6b2a, x, 4.1, z); F(2.2, 1.6, 2.2, 0x3d7a31, x, 5.8, z); }
     for (const x of [-9, 9]) { F(2.2, 0.1, 0.55, 0x8a5a2b, x, 0.5, 5.6); F(2.2, 0.5, 0.1, 0x8a5a2b, x, 0.85, 5.9); F(0.12, 0.5, 0.5, 0x3a3a40, x - 0.9, 0.25, 5.6); F(0.12, 0.5, 0.5, 0x3a3a40, x + 0.9, 0.25, 5.6); }
     F(0.12, 6.0, 0.12, 0xd0d0cc, 8, 3, 3.0); F(1.4, 0.9, 0.04, 0x1f9e3b, 8.75, 5.4, 3.0); F(0.5, 0.5, 0.05, 0xf2c230, 8.75, 5.4, 3.0);
-    // quadra de futsal ao fundo
-    const XW = QX + QB, ZW = QH + QB, MH = 1.1, LARANJA = 0xe0762a, BRANCO = 0xf4f1e8, PORTAO = 1.2;
-    const piso = new THREE.Mesh(new THREE.PlaneGeometry(XW * 2, ZW * 2), basic({ map: texQuadra() })); piso.rotation.x = -Math.PI / 2; piso.position.set(0, 0.01, QZ); g.add(piso);
-    F(XW * 2 + 0.3, MH, 0.3, LARANJA, 0, MH / 2, QZ - ZW); F(XW * 2 + 0.4, 0.08, 0.4, BRANCO, 0, MH + 0.04, QZ - ZW);
-    const lado = (x0, x1) => { F(x1 - x0, MH, 0.3, LARANJA, (x0 + x1) / 2, MH / 2, QZ + ZW); F(x1 - x0, 0.08, 0.4, BRANCO, (x0 + x1) / 2, MH + 0.04, QZ + ZW); };
-    lado(-XW - 0.15, -PORTAO); lado(PORTAO, XW + 0.15);
-    for (const s of [-1, 1]) { F(0.3, MH, ZW * 2, LARANJA, s * XW, MH / 2, QZ); F(0.4, 0.08, ZW * 2 + 0.3, BRANCO, s * XW, MH + 0.04, QZ); }
-    for (const sx of [-1, 1]) for (const sz of [-1, 1]) F(0.7, 4.6, 0.7, 0x9aa0a8, sx * XW, 2.3, QZ + sz * ZW);
-    for (const s of [-1, 1]) {                                                                           // traves
-      for (const z of [-2.2, 2.2]) F(0.14, 2.2, 0.14, 0xffffff, s * QX, 1.1, QZ + z);
-      F(0.14, 0.14, 4.54, 0xffffff, s * QX, 2.2, QZ);
-      rede(g, s * (QX + 1.4), QZ - 2.2, s * (QX + 1.4), QZ + 2.2, 2.2, 0);
-    }
+    // a quadra de futsal ao fundo: A MESMA do jogo (mesmo piso, mureta, tela, traves e redes), só com a abertura do portão
+    const quadra = construirQuadraFutsal({ portao: PORTAO }); quadra.position.set(0, 0.012, QZ); g.add(quadra);
     g.add(L.malha(MAT_CORES));
     const placa = new THREE.Mesh(new THREE.PlaneGeometry(8, 1), basic({ map: texPlaca() })); placa.position.set(0, 3.9, PAT_Z0 - 0.23); g.add(placa);
-    // tela alta em volta da quadra (com um portão no meio do lado perto)
-    rede(g, -XW, QZ - ZW, XW, QZ - ZW, 4, MH); rede(g, -XW, QZ + ZW, -PORTAO, QZ + ZW, 4, MH); rede(g, PORTAO, QZ + ZW, XW, QZ + ZW, 4, MH);
-    rede(g, -XW, QZ - ZW, -XW, QZ + ZW, 4, MH); rede(g, XW, QZ - ZW, XW, QZ + ZW, 4, MH);
     const seta = fazSeta(); seta.visible = false; g.add(seta);
     const bola = fazBola(); bola.visible = false; g.add(bola);
     scene.add(g);
@@ -11200,7 +11316,10 @@ const Fase1 = (() => {
     for (const A of S.elenco) if (!manter.includes(A)) { ATLETAS.delete(A.m); if (A.m.raiz.parent) A.m.raiz.parent.remove(A.m.raiz); }
     S.elenco = S.elenco.filter((A) => manter.includes(A));
   }
-  async function esperarPerto(Jo, dist) { while (Math.hypot(S.jog.x - Jo.x, S.jog.z - Jo.z) > dist) await esperar(150); }
+  async function esperarPerto(Jo, dist, parar) {                         // espera você chegar perto do João. Com 'parar', desiste (e devolve false) quando ela ficar verdadeira
+    while (Math.hypot(S.jog.x - Jo.x, S.jog.z - Jo.z) > dist) { if (parar && parar()) return false; await esperar(120); }
+    return true;
+  }
   function sairParaPartida() {                                           // entrega a tela ao jogo de verdade (a cena fica guardada, escondida)
     Musica.parar();
     GANCHO_RENDER = null; camera.clearViewOffset();
@@ -11221,15 +11340,65 @@ const Fase1 = (() => {
     try { if (GANCHO_RENDER !== gancho) voltarDaPartida(); } catch (e) { console.error(e); }
     UI.preto.hidden = false; UI.preto.classList.remove('claro');
   }
+  // ---- gente no pátio (4.4.0): alunos conversando e, debaixo da árvore, o Professor Roberto com a turma que vai jogar depois
+  const GRUPOS_PATIO = [                                                 // [figurante, x, z] — quem está no mesmo grupo olha para o meio dele
+    [[0, -6.4, 2.4], [1, -5.0, 2.9]],
+    [[2, 6.0, -1.0], [3, 7.4, -0.4], [4, 6.7, -2.3]],
+    [[5, -4.6, -12.2], [6, -3.2, -11.7], [7, -3.9, -13.3]],
+  ];
+  function criarGentePatio() {
+    const pat = S.sala, uns = HIST.figurantes;
+    const cor = (o) => Object.assign({}, o);
+    let n = 0;
+    for (const grupo of GRUPOS_PATIO) {
+      const cx = grupo.reduce((a, g) => a + g[1], 0) / grupo.length, cz = grupo.reduce((a, g) => a + g[2], 0) / grupo.length;
+      for (const [i, x, z] of grupo) {
+        const A = criar(pat, cor(uns[i])); A.x = x; A.z = z; olhar(A, cx, cz); A.yaw = A.yawAlvo; A.bloq = true; A.conv = n++;
+      }
+    }
+    // a turma debaixo da árvore: em volta do tronco, conversando (as mesmas crianças da partida; trocam a roupa na hora de jogar)
+    const volta = [['cadu', -1.3, 0.9], ['bia', -1.5, -0.5], ['tadeu', 0.9, 1.5], ['duda', -0.4, -1.5], ['nando', 1.4, -0.4], ['leo', 0.1, 1.6]];
+    for (const [id, dx, dz] of volta) {
+      const A = criar(pat, cor(HIST[id])); A.x = ARV_PROF.x + dx; A.z = ARV_PROF.z + dz; olhar(A, ARV_PROF.x, ARV_PROF.z); A.yaw = A.yawAlvo; A.bloq = true; A.conv = n++;
+      S.falantes[id] = { A, nome: HIST[id].nome, voz: ({ cadu: 4, bia: 0, tadeu: 4, duda: 0, nando: 2, leo: 2 })[id] };
+    }
+    const rob = criar(pat, cor(HIST.professor)); rob.x = ARV_PROF.x + 2.6; rob.z = ARV_PROF.z + 0.2; olhar(rob, ARV_PROF.x, ARV_PROF.z); rob.yaw = rob.yawAlvo; rob.bloq = true;
+    rob.yawVigia = rob.yaw;
+    S.falantes.rob = { A: rob, nome: 'Professor Roberto', voz: 1 };
+  }
+  async function conversaRob() {                                         // o professor vigiando a turma (opcional, enquanto o João não sai)
+    const J = S.jog, R = S.falantes.rob.A;
+    const dx = J.x - R.x, dz = J.z - R.z, d = Math.hypot(dx, dz) || 1;
+    if (d > 1.7) { camPara('aula'); await andar(J, [[R.x + dx / d * 1.5, R.z + dz / d * 1.5]], 2.3); }
+    olhar(J, R.x, R.z); olhar(R, J.x, J.z); S.parA = J; S.parB = R; await esperar(250);
+    if (!S.falouRob) {
+      S.falouRob = true;
+      await fala('rob', Tf('Olá, {0}! Estou de olho na minha turma até os pais virem buscar.', nomeJog()), 'dupla');
+      await fala('rob', T('Eles adoram uma bola, mas comigo ninguém sai do meu campo de visão!'), 'dupla');
+    } else await fala('rob', T('Os pais já já chegam. Por enquanto, eu fico de olho na turma.'), 'dupla');
+    R.yawAlvo = R.yawVigia; camPara('aula');
+  }
+  async function cenaFurou() {                                           // você entrou na quadra antes do João
+    const J = S.jog, Jo = S.joaoA;
+    S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; J.livreAndando = false; J.rota = null; Dialogo.esconder();
+    olhar(J, Jo.x, Jo.z);
+    await andar(Jo, [[Math.max(-0.8, Math.min(0.8, J.x + 0.7)), J.z + 1.2]], 3.4);          // o João corre até você
+    olhar(Jo, J.x, J.z); olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
+    await fala('joao', T('Eita, eu nem vi você passando para a quadra...'), 'dupla');
+    await fala('jog', T('Você está lento demais, João!'), 'dupla');
+  }
   async function parteQuadra() {
     const J = S.jog;
     UI.missao.hidden = true; UI.ctl.hidden = true; Dialogo.esconder();
     tirarElenco([J]);
     descartar(S.sala.g);
     const pat = montarPatio(); S.sala = pat; pat.g.add(J.m.raiz);
-    S.lugar = 'patio'; S.fase = 'patio'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.modo = 'cena';
+    scene.background = new THREE.Color(0x8cc4ee);                        // (4.4.0) lá fora o céu é azul (dentro da escola o fundo é preto)
+    S.lugar = 'patio'; S.fase = 'patio'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.modo = 'cena'; S.convite = false;
     S.bolaDono = null; S.bolaAlt = 0.75; S.falantes = {};
     const Jo = criar(pat, Object.assign({}, HIST.joao)); Jo.x = 1.2; Jo.z = -3.4; Jo.yaw = Jo.yawAlvo = -Math.PI / 2; Jo.bloq = true; S.joaoA = Jo;
+    Jo.segura = { th: 1.15, ph: 0.16, alvoTh: 1.15 };                     // (4.4.0) segura a bola com as duas mãos, na frente do corpo
+    criarGentePatio();
     J.x = 0; J.z = PAT_Z0 - 0.6; J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null; J.oculto = false; J.sentado = false;
     camPara('pat_porta', true);
     await preto(false, 1100);
@@ -11238,31 +11407,39 @@ const Fase1 = (() => {
     S.parA = J; S.parB = Jo;
     await andar(J, [[0, 0.2]], 1.9); olhar(J, Jo.x, Jo.z); olhar(Jo, J.x, J.z);
     await fala('joao', Tf('{0}! Era isso que eu queria te mostrar!', nomeJog()), 'dupla');
-    S.bolaDono = Jo; S.bolaAlt = 1.15; pat.bola.visible = true; Musica.porta(false);
+    S.bolaDono = Jo; pat.bola.visible = true; Musica.porta(false);
+    Jo.segura.alvoTh = 2.85;                                              // (4.4.0) levanta a bola acima da cabeça (ela fica nas mãos)...
     await fala('joao', T('Olha só: uma bola de futsal! Novinha em folha!'), 'pat_bola');
-    S.bolaAlt = 0.75;
+    Jo.segura.alvoTh = 1.15;                                              // ...e depois abaixa
     await fala('joao', T('Vem, vamos para a quadra!'), 'dupla');
     await fala('jog', T('João... eu nunca joguei futebol.'), 'dupla');
     await fala('joao', T('Sério? Mas é fácil! Não tem problema nenhum, eu te ensino!'), 'dupla');
     Dialogo.esconder();
-    // o João vai na frente; a gente vai atrás
+    // o João vai na frente; a gente vai atrás. Dá para conversar com o Professor Roberto no caminho — e, se você cortar caminho e entrar
+    // na quadra antes do João, ele fica sem graça (cena do "nem vi você passando").
     Jo.bloq = false;
     UI.missao.textContent = T('Missão: siga o João até a quadra.'); UI.missao.hidden = false;
     liberar();
-    for (const [px, pz] of [[0, -6], [0, -13], [0, -19.5], [0, -25]]) {
-      await esperarPerto(Jo, 3.2);
-      await andar(Jo, [[px, pz]], 2.1);
+    const furou = () => S.jog.z < Z_PORTAO - 0.2 && Jo.z > Z_PORTAO + 1.0 && S.modo === 'livre';
+    let cortou = false;
+    for (const [px, pz] of [[0, -6], [0, -12], [0, -19.5], [0, -26]]) {
+      if (!(await esperarPerto(Jo, 3.2, furou))) { cortou = true; break; }
+      if (!(await andarAte(Jo, [px, pz], 2.1, furou))) { cortou = true; break; }
     }
-    await esperarPerto(Jo, 3.0);
-    S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true;
-    olhar(Jo, S.jog.x, S.jog.z); S.parA = S.jog; S.parB = Jo;
+    if (cortou) { await cenaFurou(); }
+    else {
+      while (S.modo !== 'livre') await esperar(150);                       // se estiver conversando com o professor, espera acabar
+      await esperarPerto(Jo, 3.0);
+      S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true;
+      olhar(Jo, S.jog.x, S.jog.z); S.parA = S.jog; S.parB = Jo;
+    }
+    S.modo = 'cena'; UI.ctl.hidden = true; UI.missao.hidden = true; S.convite = true;
     await fala('joao', T('É aqui! Primeiro o básico, depois a gente joga de verdade.'), 'dupla');
     Dialogo.esconder();
     await preto(true, 1000);
-    // ---- o treino (tutorial) no motor do jogo
+    // ---- o treino (tutorial) no motor do jogo. A tela só clareia quando a quadra de futsal já foi montada (aoPronto)
     sairParaPartida();
-    await preto(false, 900);
-    await Historia.treino();
+    await Historia.treino({ aoPronto: () => preto(false, 900) });
     await preto(true, 900);
     voltarDaPartida();
     await parteConvite();
@@ -11273,19 +11450,19 @@ const Fase1 = (() => {
     vestir(J, HIST.uni0); vestir(Jo, HIST.uni0);
     J.x = -3.0; J.z = -27.5; Jo.x = -1.2; Jo.z = -27.0; J.yaw = J.yawAlvo = Jo.yaw = Jo.yawAlvo = -Math.PI / 2; J.rota = Jo.rota = null; Jo.bloq = true;
     S.bolaAlt = 0.75;
-    const mk = (id, dados, uni, x, z) => {
-      const A = criar(S.sala, Object.assign({}, dados, { camisa: uni.camisa, listra: uni.listra, gola: uni.gola, calcao: uni.calcao, meia: uni.meia, sola: uni.sola }));
-      A.x = x; A.z = z; A.yaw = A.yawAlvo = Math.PI / 2; A.bloq = true; S.falantes[id] = { A, nome: dados.nome, voz: ({ cadu: 4, bia: 0, tadeu: 4, duda: 0, nando: 2, leo: 2 })[id] }; return A;
-    };
-    const kids = [mk('cadu', HIST.cadu, HIST.uni0, -2.0, -12.0), mk('bia', HIST.bia, HIST.uni0, -0.6, -12.8), mk('tadeu', HIST.tadeu, HIST.uni1, 0.8, -12.0), mk('duda', HIST.duda, HIST.uni1, 2.0, -12.9), mk('nando', HIST.nando, HIST.uni1, -3.4, -13.4), mk('leo', HIST.leo, HIST.uni1, 3.4, -13.6)];
-    const rob = criar(S.sala, { pele: pele(1), cabelo: corCab(6), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e9e9e4', listra: '#e9e9e4', gola: '#2a4f9a', calcao: 0x22252c, meia: '#e9e9e4', cabecao: 1.3, escala: 0.98 });
-    rob.x = 0.2; rob.z = -14.8; rob.yaw = rob.yawAlvo = Math.PI / 2; rob.bloq = true; S.falantes.rob = { A: rob, nome: 'Professor Roberto', voz: 1 };
+    // (4.4.0) as crianças (e o professor) já estavam no pátio, debaixo da árvore: agora vestem os uniformes e vêm para a quadra pelo portão
+    const unis = { cadu: HIST.uni0, bia: HIST.uni0, tadeu: HIST.uni1, duda: HIST.uni1, nando: HIST.uni1, leo: HIST.uni1 };
+    const ids = ['cadu', 'bia', 'tadeu', 'duda', 'nando', 'leo'];
+    for (const id of ids) vestir(S.falantes[id].A, unis[id]);
+    const kids = ids.map((id) => S.falantes[id].A), rob = S.falantes.rob.A;
+    for (const A of kids.concat([rob])) { A.conv = null; A.rota = null; }
     camPara('qd_ini', true);
     await preto(false, 1000);
     await esperar(500);
     // chegam pelo portão
     const destinos = [[-4.5, -22.0], [-2.6, -23.6], [0.2, -22.4], [2.4, -23.6], [4.4, -22.2], [6.2, -24.0]];
-    await Promise.all(kids.map((k, i) => andar(k, [[Math.max(-0.7, Math.min(0.7, k.x * 0.2)), -18.8], destinos[i]], 2.3)).concat([andar(rob, [[0, -18.6], [0.4, -21.0]], 2.0)]));
+    const entrada = Z_PORTAO + 3.0, dentro = Z_PORTAO - 2.6;
+    await Promise.all(kids.map((k, i) => andar(k, [[(i - 2.5) * 0.25, entrada], [(i - 2.5) * 0.25, dentro], destinos[i]], 3.0)).concat([andar(rob, [[0, entrada], [0, dentro], [0.4, -21.0]], 2.4)]));
     for (const k of kids) olhar(k, Jo.x, Jo.z); olhar(rob, Jo.x, Jo.z); olhar(Jo, kids[0].x, kids[0].z); olhar(J, kids[0].x, kids[0].z);
     camPara('qd_geral');
     await fala('cadu', T('E aí, João! Vocês querem jogar um quatro contra quatro com a gente?'), 'qd_geral');
@@ -11300,8 +11477,7 @@ const Fase1 = (() => {
     Dialogo.esconder();
     await preto(true, 900);
     sairParaPartida();
-    await preto(false, 900);
-    const r = await Historia.partida();
+    const r = await Historia.partida({ aoPronto: () => preto(false, 900) });
     await preto(true, 1000);
     voltarDaPartida();
     await cenaFinal(r);
@@ -11381,6 +11557,7 @@ const Fase1 = (() => {
     // atores
     for (const A of S.elenco) {
       let mov = false;
+      if (A.segura) A.segura.th += (A.segura.alvoTh - A.segura.th) * Math.min(1, dt * 3.4);      // sobe/desce a bola devagar
       if (A.rota && A.rota.length) {
         const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = A.vel * dt;
         if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
@@ -11392,10 +11569,20 @@ const Fase1 = (() => {
       const r = A.m.raiz; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
       if (!A.sentado) r.position.y = r.position.y || 0;
     }
-    // bola de futsal na mão do João (pátio / quadra)
+    // bola de futsal nas mãos do João (pátio / quadra). (4.4.0) A posição sai da conta dos braços (onde as mãos ficam de verdade) e a bola
+    // não gira mais: antes ela ficava no ar, rodando, a uma altura fixa.
     if (S.sala.bola) {
       const D = S.bolaDono, B = S.sala.bola; B.visible = !!D && !D.oculto;
-      if (D) { B.position.set(D.x + Math.cos(D.yaw) * 0.34, S.bolaAlt || 0.75, D.z - Math.sin(D.yaw) * 0.34); B.rotation.y += dt * 2; }
+      if (D && D.segura) {
+        const sg = D.segura, ec = D.opt.escala || 1, dh = 0.62, cph = Math.cos(sg.ph);
+        const lx = dh * cph * Math.sin(sg.th), ly = 1.27 - dh * cph * Math.cos(sg.th) + 0.05;       // meio entre as duas mãos (no referencial do boneco)
+        // (4.4.0) levantada: a bola vai para CIMA da cabeça (estilizado: a mão não chega, mas a bola não atravessa o cabeção). w: 0 = nas mãos, 1 = no topo
+        const kc = D.opt.cabecao || 1, w0 = Math.max(0, Math.min(1, (sg.th - 1.5) / (2.85 - 1.5))), w = w0 * w0 * (3 - 2 * w0);
+        const topoY = ((1.36 + 0.52 * kc + 0.15 * kc) * ec + 0.17 + 0.03) / ec;                // altura (no referencial do boneco) da bola apoiada no alto do cabelo
+        const lx2 = lx * (1 - w) + 0.02 * w, ly2 = ly * (1 - w) + Math.max(ly, topoY) * w;
+        B.position.set(D.x + Math.cos(D.yaw) * lx2 * ec, ly2 * ec, D.z - Math.sin(D.yaw) * lx2 * ec);
+        B.rotation.set(0, 0, 0);
+      } else if (D) { B.position.set(D.x + Math.cos(D.yaw) * 0.34, S.bolaAlt || 0.75, D.z - Math.sin(D.yaw) * 0.34); B.rotation.set(0, 0, 0); }
     }
     // seta
     S.sala.seta.position.set(S.seta.x, S.seta.y + Math.sin(t * 4) * 0.08, S.seta.z);
@@ -11570,13 +11757,14 @@ const Historia = (() => {
   // ---- partida ------------------------------------------------------
   function cfg(treino) {
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || 'Você', posicao: 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
-    const tec = { nome: 'Professor Roberto', aparencia: { pele: '#BF8159', cabelo: '#555555', estilo: 1, roupa: '#222222' } };
+    const tec = { nome: 'Professor Roberto', aparencia: { pele: '#BF8159', cabelo: '#555555', estilo: 1, roupa: '#222222' } };   // (não aparece: a quadra de futsal não tem técnico)
     const t0 = { id: 'h_joao', nome: 'Time do João', sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: HIST.uni0, uniforme2: HIST.uni1,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#111111', letras: 'JP' }, tecnico: tec, elenco: [HIST.cadu, HIST.bia, HIST.joao] };
     const t1 = { id: 'h_bairro', nome: 'Turma do Bairro', sigla: 'BAI', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: HIST.uni1, uniforme2: HIST.uni0,
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'TB' }, tecnico: tec, elenco: [HIST.tadeu, HIST.duda, HIST.nando, HIST.leo] };
     return { campo: 'futsal', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: treino ? 'Treino' : 'Racha da escola', rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
-      dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario: 'dia', duracao: treino ? 600 : DURACOES.rapida, usuario: eu, criancas: HIST.crianca, atributos: Atributos.iniciante(), taticas: [null, null], formacoes: [null, null] };
+      dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario: 'dia', duracao: treino ? 600 : DURACOES.rapida, usuario: eu, criancas: HIST.crianca, arbitro: HIST.professor,   // (4.4.0) quem apita é o Professor Roberto: o juiz usa o modelo dele
+       atributos: Atributos.iniciante(), taticas: [null, null], formacoes: [null, null] };
   }
   function entrar(c) {
     document.body.classList.remove('criadorAberto');
@@ -11596,17 +11784,37 @@ const Historia = (() => {
   // ---- treino ---------------------------------------------------------
   const fix = (p, x, z, ang) => { p.x = x; p.z = z; p.vx = p.vz = 0; p.angle = ang; p.parado = true; p.stun = 0; p.fall = 0; p.falling = false; TT.spots.set(p, { x, z }); };
   function posicoes() {
-    const t0 = TEAMS[0], t1 = TEAMS[1];
-    const gk0 = t0.find((p) => p.role === 'GK'), gk1 = t1.find((p) => p.role === 'GK');
-    const def0 = t0.find((p) => p !== user && p !== TT.joao && p !== gk0);
-    fix(gk0, -HALF_L + 1.6, 0, 0); if (def0) fix(def0, -13, -6.5, 0); fix(TT.joao, -3.5, 5.5, -0.5);
-    const o = t1.filter((p) => p.role !== 'GK');
-    fix(gk1, HALF_L - 1.6, 0, Math.PI); fix(o[0], 11, -7, Math.PI); fix(o[1], 12, 7, Math.PI); fix(o[2], 7, 0.5, Math.PI);
-    TT.marcador = o[2];
+    // (4.4.0) Só o João e você em campo. O João fica parado neste ponto (ele só anda quando a aula pede).
+    fix(TT.joao, -3.5, 5.5, -0.5);
+  }
+  // (4.4.0) Tira todo mundo da quadra, menos você e o João. Um "fantasma" do outro time fica de reserva (invisível, fora de jogo, longe do campo)
+  // só para o motor nunca ficar com um time vazio (a saída de bola depois de um gol, por exemplo, procura alguém nele).
+  function soJoaoEVoce() {
+    const fantasma = TEAMS[1].find((p) => p.role === 'GK') || TEAMS[1][0] || null;   // o goleiro: ele nunca entra em barreira de falta
+    for (const p of players.slice()) {
+      if (p === user || p === TT.joao || p === fantasma) continue;
+      descartarBoneco(p.mesh.raiz);
+      players.splice(players.indexOf(p), 1);
+      const l = TEAMS[p.team], i = l.indexOf(p); if (i >= 0) l.splice(i, 1);
+    }
+    if (fantasma) {
+      fantasma.out = true; fantasma.saida = null; fantasma.parado = true; fantasma.x = fantasma.z = 999; fantasma.vx = fantasma.vz = 0;
+      fantasma.mesh.raiz.visible = false; fantasma.mesh.etiqueta.visible = false;
+      TT.fantasma = fantasma;
+    }
+    CORPOS = players.concat(officials);
+    for (const o of officials) o.mesh.raiz.visible = false;             // nem juiz nem bandeirinhas: o João ensina tudo
+  }
+  // O João vira o marcador da aula de drible: entra na lista dos adversários (é de onde o botão DRIBLAR procura) e volta para o time depois.
+  function joaoMarca(sim) {
+    const j = TT.joao, l0 = TEAMS[0], l1 = TEAMS[1];
+    if (sim) { const i = l0.indexOf(j); if (i >= 0) l0.splice(i, 1); if (!l1.includes(j)) l1.push(j); }
+    else { const i = l1.indexOf(j); if (i >= 0) l1.splice(i, 1); if (!l0.includes(j)) l0.push(j); }
   }
   function devolverBola() {
     G.sp = null; G.kickoffPending = null; G.apito = null; G.golPend = null; G.passTarget = null; G.foul = null; G.offside = null; G.cine = null; G.shotCine = null; G.recv = null; G.corrida = null;
-    esconderRecepcao(); hideKickUI(); user.recvPose = null; user.throwIn = false; user.setPiece = null; user.scripted = false; user.stun = 0;
+    esconderRecepcao(); hideKickUI(); user.recvPose = null; user.throwIn = false; user.setPiece = null; user.scripted = false; user.stun = 0; user.bolaFixa = null; G.kick = null;
+    $('skipBtn').hidden = true; $('cineLabel').textContent = '';
     for (const p of players) { p.scripted = false; p.carry = false; p.throwIn = false; p.goalKick = false; p.setPiece = null; if (p !== user) p.parado = true; }
     user.dribbleCd = 0; user.stamina = 1; user.exhausted = false;
     const c = Math.cos(user.angle), s = Math.sin(user.angle);
@@ -11636,6 +11844,17 @@ const Historia = (() => {
   function atualizarTreino(dt) {
     G.clock = Math.max(G.clock, 99000); G.kickoffPending = null;
     const ck = $('clock'); if (ck) ck.textContent = T('TREINO');
+    if (referee) referee.mesh.raiz.visible = false;
+    // (4.4.0) Sem adversários: se a bola sair (e a aula não for de bola parada) ela volta para você logo antes de o juiz "marcar";
+    // e se a bola cair no pé do fantasma (depois de um gol, na saída de bola) volta na hora.
+    if (!TT.livreBola && G.sp && G.sp.team === 1 && (G.state === 'restart' || G.state === 'play')) {   // (4.4.0) cobrança do "outro time" (que não existe): a bola volta para você
+      TT.tSp1 = (TT.tSp1 || 0) + dt;
+      if (TT.tSp1 > 0.6) { TT.tSp1 = 0; devolverBola(); return; }
+    } else TT.tSp1 = 0;
+    if (G.state === 'play' && !TT.livreBola) {
+      if (G.apito && G.apito.t > 0.9) { devolverBola(); return; }
+      if (G.possession && G.possession.out) { devolverBola(); return; }
+    }
     if (G.state === 'play' && user.running && Math.hypot(user.vx, user.vz) > CONFIG.USER_RUN * 0.8) TT.corrida += dt;
     if (G.state === 'play' && !G.sp) {
       for (const [p, s] of TT.spots) {                                // volta ao lugar de cada um (passo suave)
@@ -11667,22 +11886,50 @@ const Historia = (() => {
     }
   }
 
-  async function treino() {
+  async function treino(op) {
     montarUI();
     modo = 'treino';
     entrar(cfg(true));
-    TT = { spots: new Map(), corrida: 0, tErrada: 0, tParada: 0, tSp: 0, congelado: false, joaoSegura: false, livreBola: false, joao: null, marcador: null };
+    TT = { spots: new Map(), corrida: 0, tErrada: 0, tParada: 0, tSp: 0, congelado: false, joaoSegura: false, livreBola: false, joao: null, fantasma: null };
     TT.joao = TEAMS[0].find((p) => p.name === 'João');
+    soJoaoEVoce();
     G.state = 'play';
     reposicionar(-8, 0);
     G.stats && Object.assign(G.stats, { gols: 0 });
+    // (4.4.0) a quadra de futsal já está montada: SÓ AGORA a tela preta clareia (antes aparecia o campo antigo, de várzea, por um instante)
+    if (op && op.aoPronto) { try { await op.aoPronto(); } catch (e) { console.error(e); } }
     try { await roteiro(); } catch (e) { console.error(e); }
     objetivo('');
     modo = null; sair();
   }
 
+  // ---- bolas paradas na aula (4.4.0): falta, lateral e escanteio -----------------------------------------
+  // É a MESMA cobrança do jogo (startRestart): você vai até a bola, o João não faz nada e a mira aparece. A aula só arruma a cena
+  // (bola no lugar, você perto, o João longe para você ser o cobrador) e espera o seu chute/passe/cruzamento.
+  async function aulaParada(tipo, spot, eu, jo, bola, falaIntro, obj) {
+    reposicionar(eu.x, eu.z);                         // limpa tudo e põe você no lugar
+    TT.livreBola = true;
+    fix(TT.joao, jo.x, jo.z, Math.atan2(-jo.z, -jo.x));
+    await dizer(falaIntro);
+    objetivo(obj);
+    const c0 = G.stats.chutes, p0 = G.stats.passes;
+    G.possession = null; G.kick = null;
+    Object.assign(ball, { x: bola.x, y: CONFIG.BALL_R, z: bola.z, vx: 0, vy: 0, vz: 0, spinSide: 0, spinVert: 0, hidden: false, lastKicker: null });
+    startRestart(tipo, 0, spot, 'falta');
+    snapCamera();
+    const ok = await esperarCond(() => G.stats.chutes > c0 || G.stats.passes > p0, { pularEm: 40000 });
+    objetivo('');
+    TT.livreBola = false;                             // depois do seu toque, a bola que sair volta para você
+    return ok;
+  }
+
   async function roteiro() {
     const S0 = () => G.stats;
+    const fim = async () => {                         // espera a jogada acabar (bola parada / comemoração) antes da próxima parte
+      await esperar(2200);
+      await esperarCond(() => G.state === 'play', { pularEm: 15000 });
+      await esperar(300);
+    };
     await esperar(600);
     // 1. correr
     await dizer(T('Beleza! Vamos começar pelo básico: correr. Empurre o joystick até o fim para disparar. Mas cuidado com a barrinha verde: o seu fôlego ainda é curtinho, tá?'));
@@ -11697,9 +11944,7 @@ const Historia = (() => {
     const c0 = S0().chutes;
     await esperarCond(() => S0().chutes > c0);
     objetivo('');
-    await esperar(2600);
-    await esperarCond(() => G.state === 'play', { pularEm: 15000 });
-    await esperar(300);
+    await fim();
     const foi = S0().gols > 0;
     await dizer(foi ? T('GOL! Que chute, hein? Nada mal pra quem nunca jogou!') : T('Quase! O segredo é treinar. Vamos para o próximo.'));
     // 3. passar
@@ -11712,14 +11957,15 @@ const Historia = (() => {
     await esperarCond(() => G.state === 'play' && G.possession === user && performance.now() > 0, { pularEm: 9000, limite: 9000 });
     await esperar(400);
     await dizer(T('Boa! Passe é o que faz o time jogar junto.'));
-    // 4. driblar
+    // 4. driblar — o João faz o papel do marcador
+    joaoMarca(true);
     let tentativas = 0, d0 = S0().driblesOk;
     while (tentativas < 4 && S0().driblesOk <= d0) {
       reposicionar(-8, 0);
-      TT.marcador.x = -1; TT.marcador.z = 0; TT.spots.set(TT.marcador, { x: -1, z: 0 });
-      if (tentativas === 0) await dizer(T('Driblar! Quando um marcador vier para cima de você, aparece o botão DRIBLAR. Aperte nele na hora certa e acerte os toques na tela!'));
+      fix(TT.joao, -1, 0, Math.PI);
+      if (tentativas === 0) await dizer(T('Driblar! Eu vou ficar parado aqui, de marcador. Corra com a bola para cima de mim: quando eu estiver perto, aparece o botão DRIBLAR. Aperte nele na hora certa e acerte os toques na tela!'));
       else await dizer(T('Sem problema, tenta de novo!'));
-      objetivo(T('DRIBLAR: corra com a bola até o marcador e toque em DRIBLAR'));
+      objetivo(T('DRIBLAR: corra com a bola até o João e toque em DRIBLAR'));
       const dr0 = S0().dribles;
       const ok = await esperarCond(() => S0().dribles > dr0, { pularEm: 30000 });
       objetivo('');
@@ -11728,10 +11974,10 @@ const Historia = (() => {
       await esperar(500);
       tentativas++;
     }
-    if (S0().driblesOk > d0) await dizer(T('Olha só! Passou direitinho pelo marcador!'));
+    joaoMarca(false);
+    if (S0().driblesOk > d0) await dizer(T('Olha só! Você passou direitinho por mim!'));
     else await dizer(T('Drible é difícil mesmo. Com o tempo você pega o jeito!'));
     // 5. dominar
-    TT.marcador.parado = true; TT.spots.set(TT.marcador, { x: 7, z: 0.5 });
     await dizer(T('Agora dominar a bola! Quando ela vier alta ou forte, aparece uma barra. Toque em DOMINAR quando o marcador estiver na faixa verde.'));
     let dom0 = S0().dominios, tent = 0;
     while (tent < 3 && S0().dominios <= dom0) {
@@ -11750,6 +11996,26 @@ const Historia = (() => {
     }
     await esperar(400);
     await dizer(T('É isso! Você já sabe o básico: correr, chutar, passar, driblar e dominar.'));
+    // 7. bolas paradas (4.4.0)
+    await dizer(T('Agora vamos para as bolas paradas! Quando o jogo para, é você quem decide como a bola volta. Primeiro: a falta.'));
+    await aulaParada('falta', { x: 6, z: 4 }, { x: 1, z: 7 }, { x: 15, z: -6 }, { x: 6, z: 4 },
+      T('Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta na faixa verde, igual ao chute. Pode dar efeito na bola também!'),
+      T('FALTA: cobre a falta em direção ao gol'));
+    await fim();
+    await dizer(S0().gols > 0 ? T('Que golaço de falta! Você leva jeito!') : T('Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!'));
+    await dizer(T('Agora o lateral. Na quadra de futsal ele é cobrado com o pé: a bola fica no chão, na linha lateral.'));
+    await aulaParada('lateral', { x: -2, z: HALF_W }, { x: -2, z: HALF_W - 5 }, { x: 8, z: -5 }, { x: -2, z: HALF_W - 0.25 },
+      T('Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!'),
+      T('LATERAL: devolva a bola para o João'));
+    await fim();
+    await dizer(T('Boa! Um lateral bem cobrado mantém a bola com o seu time.'));
+    await dizer(T('E por fim o escanteio: quando a bola sai pela linha de fundo depois de tocar no time que defende, a gente cobra do cantinho. Hora de cruzar na área!'));
+    await aulaParada('escanteio', { x: HALF_L, z: HALF_W }, { x: HALF_L - 6, z: HALF_W - 4 }, { x: HALF_L - 6, z: 1 }, { x: HALF_L - 0.3, z: HALF_W - 0.3 },
+      T('Eu vou ficar na área esperando a bola. Você cobra o escanteio do cantinho: mire em mim, escolha a força e cruze!'),
+      T('ESCANTEIO: cruze a bola para o João, na área'));
+    await fim();
+    await dizer(T('Perfeito! Agora você conhece as bolas paradas: falta, lateral e escanteio.'));
+    await dizer(T('Pronto! Agora a gente joga de verdade. Vamos lá!'));
   }
   async function passeDoJoao(tipo) {
     const j = TT.joao;
@@ -11770,12 +12036,13 @@ const Historia = (() => {
   }
 
   // ---- partida de verdade ----------------------------------------------
-  async function partida() {
+  async function partida(op) {
     montarUI();
     modo = 'jogo';
     const r = await new Promise((res) => {
       fimResolve = res;
       entrar(cfg(false));
+      if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // (4.4.0) a tela só clareia com a quadra pronta
       setTimeout(() => showToast(T('Racha da escola: 4 contra 4!')), 900);
     });
     modo = null; sair();
@@ -12705,7 +12972,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.3.7',
+  versao: '4.4.0',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
