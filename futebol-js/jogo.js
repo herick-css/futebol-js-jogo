@@ -30,6 +30,8 @@
    • Pausa: botão FORMAÇÃO (campo 2D com posição, nome e número de todos, banco, técnico e estratégia), FPS/draw calls, cor do círculo do jogador
      (12 cores ou nenhum), altura e distância da câmera, e editor de tamanho/posição do joystick e dos botões (salvos no aparelho).
    • Replay: o círculo embaixo do jogador não aparece mais.
+   • Pausa: botão MENU INICIAL (pede confirmação e recarrega o jogo), botão "Câmera padrão" e a FORMAÇÃO mostra os dois times (casa à esquerda, fora à direita).
+   • Drible de costas refeito: câmera de cima e por trás; você dá um passo largo para o lado dele, ele vai atrás, e você corta para o outro lado (ele fica desnorteado).
    Novidades da versão 4.7.6 — chute por baixo mais equilibrado:
    • O 4.7.5 fazia a bola subir demais batendo embaixo (0,42 rad a mais). Agora é a média entre o valor antigo (0,12) e o do 4.7.5: ELEV_BAIXO = 0,27
      (~15° a mais no ponto mais baixo) e, batendo em cima, ELEV_ALTO = 0,045 (média entre 0,04 e 0,05). A cavadinha não muda.
@@ -7862,24 +7864,25 @@ function atualizarCarretel(C, dt) {
 // ---------------------------------------------------------------------
 // Proteção de bola: onde o marcador encosta (atrás e para o lado do ombro) e as poses. Valores
 // conferidos com as caixas 3D: encostam (ombro/braço no peito dele) sem um entrar no outro.
-const PROT = { atras: 0.5, lado: 0.6, giro: 0.3, tras: 0.06, tomba: 0.03, bz: -0.35, bx: 0.7, bote: 0.15 };
+const PROT = { atras: 0.55, lado: 0.7, giro: 0.3, tras: 0.06, tomba: 0.03, bz: -0.35, bx: 0.7, bote: 0.15 };
 function prepararDribleNovo(C, u, o) {
   C.p0 = { x: u.x, z: u.z }; C.b0 = { x: ball.x, z: ball.z }; C.o0 = { x: o.x, z: o.z };
   const f = { x: C.fx, z: C.fz }, lado = C.oppSide;            // +1: marcador à sua direita
   if (C.tipo === 'arrancada') {
     C.dur = 0.9; C.p1 = { x: u.x + f.x * 3, z: u.z + f.z * 3 }; C.p2 = { x: u.x + f.x * 6.5, z: u.z + f.z * 6.5 };
   } else if (C.tipo === 'protecao') {
-    // Proteção (1,9 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
-    // (4.8.0) FINTA DE CORPO: você inclina o corpo e finge sair para o lado dele; ele vai atrás (cola nessa direção) e aí você sai
-    // para o lado CONTRÁRIO, com a bola protegida; ele erra a direção e fica desorientado (não cai).
-    C.dur = 1.9;
+    // Proteção (2,2 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
+    // (4.8.0) FINTA DE CORPO em 3 tempos: (1) você dá um passo largo e inclina o corpo para o lado DELE; (2) ele acredita, vai atrás
+    // (desliza para esse lado) e carrega o peso nessa perna; (3) você planta o pé, corta para o lado CONTRÁRIO tocando a bola com o
+    // lado de fora e sai; ele já está indo para o lado errado: fica DESNORTEADO.
+    C.dur = 2.2;
     C.encosta = { x: u.x - f.x * 0.15, z: u.z - f.z * 0.15 };
     C.oEncosta = { x: C.encosta.x - f.x * PROT.atras + C.px * lado * PROT.lado, z: C.encosta.z - f.z * PROT.atras + C.pz * lado * PROT.lado };
-    C.oCai = { x: C.oEncosta.x - f.x * 0.45, z: C.oEncosta.z - f.z * 0.45 };
-    C.fintaPos = { x: C.encosta.x + C.px * lado * 0.45, z: C.encosta.z + C.pz * lado * 0.45 };               // finge para o lado dele
-    C.oMorde = { x: C.oEncosta.x + C.px * lado * 0.5 + f.x * 0.3, z: C.oEncosta.z + C.pz * lado * 0.5 + f.z * 0.3 };   // ele acompanha a finta
-    C.p1 = { x: C.encosta.x + f.x * 1.2 - C.px * lado * 1.5, z: C.encosta.z + f.z * 1.2 - C.pz * lado * 1.5 };     // e você sai pelo outro
-    C.p2 = { x: C.encosta.x + f.x * 4.5 - C.px * lado * 0.8, z: C.encosta.z + f.z * 4.5 - C.pz * lado * 0.8 };
+    C.fintaPos = { x: C.encosta.x + C.px * lado * 0.95 + f.x * 0.1, z: C.encosta.z + C.pz * lado * 0.95 + f.z * 0.1 };           // passo largo para o lado dele
+    C.oMorde = { x: C.oEncosta.x + C.px * lado * 1.25 + f.x * 0.45, z: C.oEncosta.z + C.pz * lado * 1.25 + f.z * 0.45 };       // ele acompanha (e passa do ponto)
+    C.cutPos = { x: C.encosta.x - C.px * lado * 0.75 + f.x * 0.55, z: C.encosta.z - C.pz * lado * 0.75 + f.z * 0.55 };          // corte para o outro lado
+    C.p1 = { x: C.cutPos.x + f.x * 1.6 - C.px * lado * 0.7, z: C.cutPos.z + f.z * 1.6 - C.pz * lado * 0.7 };
+    C.p2 = { x: C.cutPos.x + f.x * 4.6 - C.px * lado * 1.0, z: C.cutPos.z + f.z * 4.6 - C.pz * lado * 1.0 };
     C.fallSide = lado;
   } else if (C.tipo === 'corpo') {
     C.dur = 1.1;
@@ -7929,23 +7932,38 @@ function atualizarDribleNovo(C, dt) {
       o.tackle = PROT.bote * Math.max(0, Math.sin((t - 0.35) * 9));      // tenta enfiar o pé
       ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.y = CONFIG.BALL_R;
       if (!C.empurrou && t > 0.6) { C.empurrou = true; Som.toque(0.3); }
-    } else if (t < 1.2) {                           // FINTA: você finge que vai para o lado dele e ele vai atrás
-      const a = smooth((t - 0.8) / 0.4);
-      mover(lerp(C.encosta.x, C.fintaPos.x, a), lerp(C.encosta.z, C.fintaPos.z, a), 2.5);
-      o.x = lerp(C.oEncosta.x, C.oMorde.x, a); o.z = lerp(C.oEncosta.z, C.oMorde.z, a); o.anim += 5 * dt;
+    } else if (t < 1.3) {                           // 1) FINTA: passo largo para o lado dele; 2) ele vai atrás (e passa do ponto)
+      const a = smooth((t - 0.75) / 0.55);
+      mover(lerp(C.encosta.x, C.fintaPos.x, a), lerp(C.encosta.z, C.fintaPos.z, a), 2.8);
+      o.x = lerp(C.oEncosta.x, C.oMorde.x, smooth(Math.max(0, (t - 0.85) / 0.45))); o.z = lerp(C.oEncosta.z, C.oMorde.z, smooth(Math.max(0, (t - 0.85) / 0.45))); o.anim += 7 * dt;
       o.tackle = PROT.bote * (1 - a * 0.5);
-      ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.2; ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.2; ball.y = CONFIG.BALL_R;
-    } else {                                        // você sai pelo lado contrário e ele, que foi para o lado errado, fica desorientado
-      const a = smooth((t - 1.2) / (C.dur - 1.2));
-      const pt = bezier(C.fintaPos, C.p1, C.p2, a);
-      mover(pt.x, pt.z, 8);
-      bolaNaFrente(lerp(0.55, 1.1, a));
+      ball.x = u.x + C.fx * 0.5 - C.px * C.oppSide * 0.38; ball.z = u.z + C.fz * 0.5 - C.pz * C.oppSide * 0.38; ball.y = CONFIG.BALL_R;   // bola no pé de FORA (longe dele)
+    } else if (t < 1.6) {                           // 3) você planta o pé e corta para o lado contrário; ele escorrega para o lado errado
+      const a = smooth((t - 1.3) / 0.3);
+      if (!C.cortou) {
+        C.cortou = true; Som.toque(0.45);
+        o.vx = C.px * C.oppSide * 3; o.vz = C.pz * C.oppSide * 3;
+        perderBola(o, 'desnorteado');
+        o.perda.vx = C.px * C.oppSide * 2.2 + C.fx * 0.5; o.perda.vz = C.pz * C.oppSide * 2.2 + C.fz * 0.5;   // o embalo leva ele para o lado da finta
+        o.perda.giro = C.oppSide * 7;
+      }
+      mover(lerp(C.fintaPos.x, C.cutPos.x, a), lerp(C.fintaPos.z, C.cutPos.z, a), 6);
+      ball.x = u.x + C.fx * 0.65 + C.px * C.oppSide * 0.1 * (1 - a); ball.z = u.z + C.fz * 0.65 + C.pz * C.oppSide * 0.1 * (1 - a); ball.y = CONFIG.BALL_R;
       o.tackle = 0;
-      tropeca(C.px * C.oppSide * 0.7 + C.fx * 0.3, C.pz * C.oppSide * 0.7 + C.fz * 0.3);   // (4.7.2) NÃO cai: fica desorientado (passinhos); (4.8.0) escorregando para o lado da finta
+    } else {                                        // você sai em velocidade pelo lado contrário
+      const a = smooth((t - 1.6) / (C.dur - 1.6));
+      const pt = bezier(C.cutPos, C.p1, C.p2, a);
+      mover(pt.x, pt.z, 8);
+      bolaNaFrente(lerp(0.65, 1.1, a));
+      o.tackle = 0;
     }
-    // Você de costas para ele, um pouco virado para mostrar o ombro (do lado dele).
-    u.angle = t < 1.2 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) * (t < 0.8 ? 1 : 1 - (t - 0.8) / 0.4) : turnToward(u.angle, ang, 10 * dt);   // (4.8.0) na finta o ombro vira para o lado do giro
-    o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
+    // Você de costas para ele, um pouco virado para mostrar o ombro (do lado dele); no corte vira para o lado contrário.
+    const gF = t < 0.75 ? 1 : t < 1.3 ? 1 + 0.9 * smooth((t - 0.75) / 0.55) : 1.9;
+    u.angle = t < 1.3 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) * gF
+      : t < 1.6 ? ang - C.oppSide * PROT.giro * 1.9 * (1 - smooth((t - 1.3) / 0.3)) + C.oppSide * 0.35 * Math.sin(smooth((t - 1.3) / 0.3) * Math.PI)
+      : turnToward(u.angle, ang, 10 * dt);
+    if (o.perda) o.angle = turnToward(o.angle, Math.atan2(C.pz * C.oppSide, C.px * C.oppSide), 4 * dt);
+    else o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
     o.vx = o.vz = 0;
   } else if (C.tipo === 'arrancada') {
     const e = k * k * (3 - 2 * k);
@@ -8005,16 +8023,18 @@ function aplicarDriblePose(p, m) {
     m.raiz.rotation.x = Math.sin((P.t / 0.9) * Math.PI * 2) * 0.2;    // balanço do corpo
     m.corpo.rotation.z = -0.15;
     m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.7; m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2;
-  } else if (P.tipo === 'protecao' && P.t < 1.2) {
+  } else if (P.tipo === 'protecao' && P.t < 1.65) {
     // Corpo para trás (encostado nele), ombro do lado dele baixo, braço de lá segurando ele e o
     // outro aberto para equilibrar.
     const a = smooth(Math.min(1, P.t / 0.3)), sw = Math.sin(P.t * 13) * 0.05;
     m.corpo.rotation.z = PROT.tras * a;
-    const fk = P.t < 0.8 ? 0 : Math.sin(clamp((P.t - 0.8) / 0.4, 0, 1) * Math.PI);                 // (4.8.0) finta: o corpo tomba bastante para o lado dele
-    m.raiz.rotation.x = (P.lado * PROT.tomba + sw) * a * (P.t < 0.8 ? 1 : 0.3) + P.lado * 0.38 * fk;
+    // (4.8.0) finta: 0,75–1,3 s o corpo tomba bastante para o lado dele; 1,3–1,65 s planta e tomba para o lado CONTRÁRIO (o corte)
+    const fk = P.t < 0.75 ? 0 : P.t < 1.3 ? Math.sin(clamp((P.t - 0.75) / 0.55, 0, 1) * Math.PI * 0.5) * 1 : 1 - clamp((P.t - 1.3) / 0.12, 0, 1);
+    const cut = P.t < 1.3 ? 0 : Math.sin(clamp((P.t - 1.3) / 0.35, 0, 1) * Math.PI);
+    m.raiz.rotation.x = (P.lado * PROT.tomba + sw) * a * (P.t < 0.75 ? 1 : 0.3) + P.lado * 0.4 * fk - P.lado * 0.34 * cut;
     const bL = P.lado > 0 ? m.bracoD : m.bracoE, bO = P.lado > 0 ? m.bracoE : m.bracoD, s = P.lado > 0 ? -1 : 1;
-    bL.rotation.z = PROT.bz * a; bL.rotation.x = s * PROT.bx * a;
-    bO.rotation.z = 0.25 * a; bO.rotation.x = -s * 0.6 * a;
+    bL.rotation.z = PROT.bz * a * (1 - cut); bL.rotation.x = s * PROT.bx * a * (1 - cut) + cut * 0.3;
+    bO.rotation.z = (0.25 + 0.5 * cut) * a; bO.rotation.x = -s * 0.6 * a * (1 - cut);
     m.pernaE.rotation.z = 0.12 * a; m.pernaD.rotation.z = -0.12 * a;   // base aberta
   } else if (P.tipo === 'corpo' && P.t < 0.4) {
     const a = Math.sin((P.t / 0.4) * Math.PI);
@@ -8036,7 +8056,11 @@ function endCine(success) {
   if (success) {
     G.stats.driblesOk++;
     if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; }   // no carretel o marcador não cai, só fica parado
-    else if (C.tipo === 'protecao' || C.tipo === 'corpo') { user.driblePose = null; C.opp.stun = 0; perderBola(C.opp, 'desnorteado'); }   // (4.8.0) caiu na finta: fica DESNORTEADO (passinhos, tonto) em vez de só parar
+    else if (C.tipo === 'protecao' || C.tipo === 'corpo') {
+      user.driblePose = null;
+      const resta = C.opp.perda && C.opp.perda.tipo === 'desnorteado' ? Math.max(0.3, C.opp.perda.dur - C.opp.perda.t) : 0;   // o de costas já começou a ficar tonto no corte
+      C.opp.stun = resta; if (!resta) perderBola(C.opp, 'desnorteado');
+    }   // (4.8.0) caiu na finta: fica DESNORTEADO (passinhos, tonto) em vez de só parar
     else if (C.tipo !== 'frente') { C.opp.stun = Math.max(C.opp.stun, 1.0); user.driblePose = null; }   // tropeçou (passinhos), não cai
     else { C.opp.stun = 2.4; C.opp.fall = 1; }
     const ex = C.p2.x - C.p1.x, ez = C.p2.z - C.p1.z, el = Math.hypot(ex, ez) || 1;
@@ -8883,6 +8907,14 @@ function ajAbrirLayout() {
   $('pauseScreen').hidden = true;
 }
 
+// Volta ao MENU INICIAL (pede confirmação; a partida em andamento se perde). Recarrega a página: é o jeito que garante estado limpo (fase da história,
+// replay, câmera, música...). O que está salvo (saves, personagem, ajustes) continua.
+function ajVoltarAoMenu() {
+  const hist = typeof Historia !== 'undefined' && Historia.emPartida();
+  const txt = hist ? T('Voltar ao menu inicial? A partida atual será perdida (o seu jogo salvo continua como estava).') : T('Voltar ao menu inicial? A partida atual será perdida.');
+  Escolha.mostrar(txt, [T('Sim, voltar ao menu'), T('Continuar jogando')]).then((i) => { if (i === 0) location.reload(); });
+}
+
 // Monta (uma vez) os controles novos dentro dos ajustes da tela de pausa.
 function ajMontarPausa() {
   const box = document.querySelector('#pauseScreen .settings');
@@ -8897,6 +8929,7 @@ function ajMontarPausa() {
     '<label for="ajAlt">' + T('Altura da câmera') + '<output id="ajAltV"></output><input id="ajAlt" type="range" min="60" max="180" step="5"></label>' +
     '<label for="ajDist">' + T('Distância da câmera') + '<output id="ajDistV"></output><input id="ajDist" type="range" min="60" max="170" step="5"></label>' +
     '<div class="ajLinha"><span>' + T('Círculo do jogador') + '</span><div id="ajAro" class="ajCores"></div></div>' +
+    '<button type="button" id="ajCamPad" class="pxBtn ajBtn">' + T('Câmera padrão') + '</button>' +
     '<button type="button" id="ajBotoes" class="pxBtn ajBtn">' + T('Ajustar botões e joystick') + '</button>';
   if (lbRes && lbRes.nextSibling) box.insertBefore(extra, lbRes.nextSibling); else box.appendChild(extra);
   const css = document.createElement('style');
@@ -8912,6 +8945,7 @@ function ajMontarPausa() {
   alt.addEventListener('input', () => { AJ.camAlt = Number(alt.value) / 100; pinta(); });
   dist.addEventListener('input', () => { AJ.camDist = Number(dist.value) / 100; pinta(); });
   alt.addEventListener('change', ajGuardar); dist.addEventListener('change', ajGuardar);
+  extra.querySelector('#ajCamPad').addEventListener('click', () => { AJ.camAlt = 1; AJ.camDist = 1; alt.value = 100; dist.value = 100; pinta(); ajGuardar(); });
   const cores = extra.querySelector('#ajAro');
   const marca = () => cores.querySelectorAll('.ajCor').forEach((b) => b.classList.toggle('on', b.dataset.cor === AJ.aro));
   for (const [nome, hex] of AJ_ARO_CORES) {
@@ -8931,65 +8965,63 @@ function ajMontarPausa() {
   if (linha && !$('formBtn')) {
     const fb = document.createElement('button'); fb.id = 'formBtn'; fb.className = 'pxBtn'; fb.type = 'button'; fb.textContent = T('Formação');
     fb.addEventListener('click', () => ajAbrirFormacao());
+    const mb = document.createElement('button'); mb.id = 'menuBtn'; mb.className = 'pxBtn'; mb.type = 'button'; mb.textContent = T('Menu inicial');
+    mb.addEventListener('click', ajVoltarAoMenu);
+    linha.appendChild(mb);
     linha.appendChild(fb);
   }
 }
 
-// FORMAÇÃO: o campo em 2D (o ataque vai para a direita) com as bolinhas na cor do time, número e nome; banco, técnico e estratégia.
-function ajAbrirFormacao(time = 0) {
+// FORMAÇÃO: o campo em 2D com os DOIS times (o da CASA à esquerda, atacando para a direita; o de FORA à direita, atacando para a esquerda), bolinhas na
+// cor da camisa com número e nome; embaixo, técnico, estratégia, formação e banco de cada um. Mostra a posição inicial da formação (base).
+function ajAbrirFormacao() {
   const P = PARTIDA; if (!P) return;
   const antigo = document.getElementById('ajForm'); if (antigo) antigo.remove();
   const ov = document.createElement('div');
   ov.id = 'ajForm';
   ov.style.cssText = 'position:fixed;inset:0;z-index:40;background:rgba(7,20,48,.94);overflow-y:auto;-webkit-overflow-scrolling:touch;color:#fff;font-family:var(--font-body);padding:calc(10px + env(safe-area-inset-top,0px)) 14px 16px;box-sizing:border-box;text-align:center';
-  const nomeTime = (t) => P.timesObj[t].nome;
-  ov.innerHTML = '<div style="font-family:var(--font-display);font-size:14px;margin-bottom:6px">' + T('FORMAÇÃO') + '</div>' +
-    '<div id="ajFormAbas" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px"></div>' +
-    '<canvas id="ajFormCv" width="640" height="360" style="width:min(94vw,660px,calc(54vh * 16 / 9));max-width:100%;height:auto;aspect-ratio:16/9;border:3px solid rgba(255,255,255,.5);background:#1f6b2e;image-rendering:auto"></canvas>' +
-    '<div id="ajFormInfo" style="max-width:660px;margin:10px auto 0;font-size:13px;line-height:1.5;text-align:left"></div>' +
-    '<button type="button" id="ajFormVoltar" style="margin-top:12px;font:inherit;font-family:var(--font-display);font-size:12px;padding:10px 18px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Voltar') + '</button>';
-  const abas = ov.querySelector('#ajFormAbas');
-  const cv = ov.querySelector('#ajFormCv'), g = cv.getContext('2d'), info = ov.querySelector('#ajFormInfo');
-  const luz = (hex) => { const [r, gg, b] = corRGB(hex); return 0.299 * r + 0.587 * gg + 0.114 * b; };
+  const casa = P.mandante === 1 ? 1 : 0, fora = 1 - casa;
   const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  function desenhar(t) {
-    const W = cv.width, H = cv.height, m = 18;
-    g.clearRect(0, 0, W, H);
-    for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#1f6b2e' : '#23742f'; g.fillRect(m + (W - 2 * m) * i / 10, m, (W - 2 * m) / 10 + 1, H - 2 * m); }
-    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2;
-    g.strokeRect(m, m, W - 2 * m, H - 2 * m);
-    g.beginPath(); g.moveTo(W / 2, m); g.lineTo(W / 2, H - m); g.stroke();
-    g.beginPath(); g.arc(W / 2, H / 2, 40, 0, Math.PI * 2); g.stroke();
-    const caixa = (x0, dir) => { const bw = 78, bh = 150; g.strokeRect(dir > 0 ? x0 : x0 - bw, H / 2 - bh / 2, bw, bh); const gw = 30, gh = 70; g.strokeRect(dir > 0 ? x0 : x0 - gw, H / 2 - gh / 2, gw, gh); };
-    caixa(m, 1); caixa(W - m, -1);
-    const cor = P.uniformes[t].camisa, txt = luz(cor) > 150 ? '#071430' : '#ffffff';
-    for (const p of TEAMS[t]) {
-      if (p.out) continue;
-      const x = W / 2 + (p.base.x / HALF_L) * (W / 2 - m - 14), y = H / 2 + (p.base.z / HALF_W) * (H / 2 - m - 18);
-      g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fillStyle = cor; g.fill();
-      g.lineWidth = p.isUser ? 4 : 2; g.strokeStyle = p.isUser ? (AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d') : '#ffffff'; g.stroke();
-      g.fillStyle = txt; g.font = 'bold 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(p.numero), x, y + 1);
-      const nome = p.isUser ? (P.usuario.nome || T('Você')) : String(p.name || '');
-      g.font = 'bold 11px Arial'; g.textBaseline = 'top'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.7)';
-      const n = nome.length > 11 ? nome.slice(0, 10) + '…' : nome;
-      g.strokeText(n, x, y + 16); g.fillStyle = '#ffffff'; g.fillText(n, x, y + 16);
-    }
-    const reservas = (P.reservas[t] || []).map((j) => esc(j.nome) + (j.posicao ? ' (' + esc(j.posicao) + ')' : '')).join(', ') || T('sem reservas');
+  const luz = (hex) => { const [r, gg, b] = corRGB(hex); return 0.299 * r + 0.587 * gg + 0.114 * b; };
+  const bloco = (t, rotulo) => {
+    const reservas = (P.reservas[t] || []).map((j) => esc(j.nome)).join(', ') || T('sem reservas');
     const tec = P.tecnicos[t] && P.tecnicos[t].nome ? esc(P.tecnicos[t].nome) : '—';
     const tat = TATICAS[P.taticas[t]] ? TATICAS[P.taticas[t]].nome : '—';
-    info.innerHTML = '<b>' + esc(nomeTime(t)) + '</b><br>' + T('Técnico') + ': <b>' + tec + '</b><br>' + T('Estratégia') + ': <b>' + esc(tat) + '</b> · ' + T('formação') + ' <b>' + esc(P.formacoes[t]) + '</b><br>' +
-      T('Banco') + ': ' + reservas;
+    return '<div style="flex:1 1 280px;min-width:0"><b style="color:' + esc(P.uniformes[t].camisa) + ';text-shadow:0 0 2px #000,0 0 2px #000">' + esc(rotulo) + ' · ' + esc(P.timesObj[t].nome) + '</b>' + (t === 0 ? ' <span style="color:#f7941d">(' + T('Meu time') + ')</span>' : '') + '<br>' +
+      T('Técnico') + ': <b>' + tec + '</b><br>' + T('Estratégia') + ': <b>' + esc(tat) + '</b> · ' + T('formação') + ' <b>' + esc(P.formacoes[t]) + '</b><br>' + T('Banco') + ': ' + reservas + '</div>';
+  };
+  ov.innerHTML = '<div style="font-family:var(--font-display);font-size:14px;margin-bottom:8px">' + T('FORMAÇÃO') + '</div>' +
+    '<canvas id="ajFormCv" width="720" height="400" style="width:min(94vw,720px,calc(54vh * 9 / 5));max-width:100%;height:auto;aspect-ratio:9/5;border:3px solid rgba(255,255,255,.5);background:#1f6b2e"></canvas>' +
+    '<div style="max-width:720px;margin:10px auto 0;font-size:13px;line-height:1.5;text-align:left;display:flex;flex-wrap:wrap;gap:12px">' + bloco(casa, T('Casa')) + bloco(fora, T('Fora')) + '</div>' +
+    '<button type="button" id="ajFormVoltar" style="margin-top:12px;font:inherit;font-family:var(--font-display);font-size:12px;padding:10px 18px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Voltar') + '</button>';
+  const cv = ov.querySelector('#ajFormCv'), g = cv.getContext('2d');
+  const W = cv.width, H = cv.height, m = 18;
+  for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#1f6b2e' : '#23742f'; g.fillRect(m + (W - 2 * m) * i / 10, m, (W - 2 * m) / 10 + 1, H - 2 * m); }
+  g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2;
+  g.strokeRect(m, m, W - 2 * m, H - 2 * m);
+  g.beginPath(); g.moveTo(W / 2, m); g.lineTo(W / 2, H - m); g.stroke();
+  g.beginPath(); g.arc(W / 2, H / 2, 40, 0, Math.PI * 2); g.stroke();
+  const caixa = (x0, dir) => { const bw = 78, bh = 150; g.strokeRect(dir > 0 ? x0 : x0 - bw, H / 2 - bh / 2, bw, bh); const gw = 30, gh = 70; g.strokeRect(dir > 0 ? x0 : x0 - gw, H / 2 - gh / 2, gw, gh); };
+  caixa(m, 1); caixa(W - m, -1);
+  const rot = (txt, x, alinha, cor) => { g.font = 'bold 12px Arial'; g.textAlign = alinha; g.textBaseline = 'top'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText(txt, x, 3); g.fillStyle = cor; g.fillText(txt, x, 3); };
+  rot(T('Casa') + ' · ' + P.timesObj[casa].sigla, m + 4, 'left', '#ffffff');
+  rot(T('Fora') + ' · ' + P.timesObj[fora].sigla, W - m - 4, 'right', '#ffffff');
+  for (const t of [casa, fora]) {
+    const sinal = t === casa ? 1 : -1;                    // o time de fora é visto "do outro lado": gira 180°
+    const cor = P.uniformes[t].camisa, txt = luz(cor) > 150 ? '#071430' : '#ffffff';
+    for (const p of TEAMS[t]) {
+      const x = W / 2 + sinal * (p.base.x / HALF_L) * (W / 2 - m - 14), y = H / 2 + sinal * (p.base.z / HALF_W) * (H / 2 - m - 18);
+      g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fillStyle = cor; g.fill();
+      g.lineWidth = p.isUser ? 4 : 2; g.strokeStyle = p.isUser ? (AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d') : (luz(cor) > 150 ? '#071430' : '#ffffff'); g.stroke();
+      g.fillStyle = txt; g.font = 'bold 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(p.numero), x, y + 1);
+      const nome = p.isUser ? (P.usuario.nome || T('Você')) : String(p.name || '');
+      const n = nome.length > 11 ? nome.slice(0, 10) + '…' : nome;
+      g.font = 'bold 11px Arial'; g.textBaseline = 'top'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)';
+      g.strokeText(n, x, y + 16); g.fillStyle = '#ffffff'; g.fillText(n, x, y + 16);
+    }
   }
-  [0, 1].forEach((t) => {
-    const b = document.createElement('button'); b.type = 'button';
-    b.textContent = t === 0 ? T('Meu time') : T('Adversário');
-    b.style.cssText = 'font:inherit;font-family:var(--font-display);font-size:11px;padding:7px 12px;border:2px solid rgba(255,255,255,.55);color:#fff;background:#0c1d3d';
-    b.addEventListener('click', () => { abas.querySelectorAll('button').forEach((x, i) => { x.style.background = i === t ? '#f7941d' : '#0c1d3d'; x.style.color = i === t ? '#071430' : '#fff'; }); desenhar(t); });
-    abas.appendChild(b);
-  });
   ov.querySelector('#ajFormVoltar').addEventListener('click', () => ov.remove());
   ($('raizJogo') || document.body).appendChild(ov);
-  abas.children[time].click();
 }
 
 $('pauseBtn').addEventListener('click', pauseGame);
@@ -9115,6 +9147,12 @@ function cameraGoal() {
   if (G.cine) {                                   // drible: câmera de lado, entre você e o marcador
     const C = G.cine, s = C.camSide, o = C.opp;
     const mx = (user.x + o.x) / 2, mz = (user.z + o.z) / 2;
+    if (C.tipo === 'protecao') {                  // (4.8.0) de cima e por trás: a finta para um lado e o corte para o outro aparecem (de lado a troca de direção ficava invisível)
+      if (!C.camBase) C.camBase = { x: mx, z: mz };
+      const bx = C.camBase.x, bz = C.camBase.z;     // ponto FIXO dos dois (do começo da cena): assim as idas e vindas para os lados aparecem na tela
+      const along = Math.max(0, (mx - bx) * C.fx + (mz - bz) * C.fz), ax = bx + C.fx * along, az = bz + C.fz * along;   // só acompanha para a frente
+      return { px: ax - C.fx * 3.7 + C.px * s * 1.3, py: 4.3, pz: az - C.fz * 3.7 + C.pz * s * 1.3, tx: ax + C.fx * 0.7, ty: 0.5, tz: az + C.fz * 0.7 };
+    }
     return { px: mx + C.px * s * 6.4, py: 1.8, pz: mz + C.pz * s * 6.4, tx: mx, ty: 1.0, tz: mz };
   }
   if (G.shotCine) return shotCameraGoal();
@@ -11509,6 +11547,14 @@ const I18N = {
   // (4.7.3) slot da história, ovo de páscoa e aviso do chute fraquinho
   "Ah, um aviso: no começo a FORÇA e o EFEITO do seu chute são fraquinhos. Calma, com o treino eles melhoram!": ["Oh, a heads-up: at the start the POWER and SPIN of your shot are pretty weak. Relax, they get better with training!", "Ah, un aviso: al principio la FUERZA y el EFECTO de tu tiro son flojitos. ¡Tranquilo, con el entrenamiento mejoran!", "Ah, un avviso: all'inizio la FORZA e l'EFFETTO del tuo tiro sono debolucci. Calma, con l'allenamento migliorano!", "Ah, un avertissement : au début la FORCE et l'EFFET de ton tir sont assez faibles. Pas de panique, ça s'améliore avec l'entraînement !"],
   // (4.8.0) ajustes do jogador, formação
+  "Menu inicial": ["Main menu", "Menú principal", "Menu principale", "Menu principal"],
+  "Voltar ao menu inicial? A partida atual será perdida.": ["Go back to the main menu? The current match will be lost.", "¿Volver al menú principal? Se perderá el partido actual.", "Tornare al menu principale? La partita in corso andrà persa.", "Retourner au menu principal ? Le match en cours sera perdu."],
+  "Voltar ao menu inicial? A partida atual será perdida (o seu jogo salvo continua como estava).": ["Go back to the main menu? The current match will be lost (your saved game stays as it was).", "¿Volver al menú principal? Se perderá el partido actual (tu partida guardada sigue como estaba).", "Tornare al menu principale? La partita in corso andrà persa (il salvataggio resta com'era).", "Retourner au menu principal ? Le match en cours sera perdu (ta sauvegarde reste comme avant)."],
+  "Sim, voltar ao menu": ["Yes, back to the menu", "Sí, volver al menú", "Sì, torna al menu", "Oui, retour au menu"],
+  "Continuar jogando": ["Keep playing", "Seguir jugando", "Continua a giocare", "Continuer à jouer"],
+  "Câmera padrão": ["Default camera", "Cámara por defecto", "Camera predefinita", "Caméra par défaut"],
+  "Casa": ["Home", "Local", "Casa", "Domicile"],
+  "Fora": ["Away", "Visitante", "Trasferta", "Extérieur"],
   "JOYSTICK": ["JOYSTICK", "JOYSTICK", "JOYSTICK", "JOYSTICK"],
   "CHUTAR / DESARMAR": ["SHOOT / TACKLE", "TIRAR / ENTRAR", "TIRA / CONTRASTA", "TIRER / TACLER"],
   "PASSAR": ["PASS", "PASAR", "PASSA", "PASSER"],
