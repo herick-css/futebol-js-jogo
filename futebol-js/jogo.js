@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.7.5
+   FUTEBOL JS · jogo.js · versão 4.7.6
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,9 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.7.6 — chute por baixo mais equilibrado:
+   • O 4.7.5 fazia a bola subir demais batendo embaixo (0,42 rad a mais). Agora é a média entre o valor antigo (0,12) e o do 4.7.5: ELEV_BAIXO = 0,27
+     (~15° a mais no ponto mais baixo) e, batendo em cima, ELEV_ALTO = 0,045 (média entre 0,04 e 0,05). A cavadinha não muda.
    Novidades da versão 4.7.5 — chute alto de verdade (onde se bate na bola):
    • Bater EMBAIXO da bola agora faz ela subir de verdade em qualquer força: no ponto mais baixo o ângulo ganha ~24° (o chute no verde saía a ~10° e
      a bola mal passava de 1 m; agora sai a ~28° e sobe alto). Bater no meio segue rasteiro e bater em cima abaixa. Constante: ELEV_BAIXO.
@@ -540,7 +543,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.7.5';
+const VERSAO_JOGO = '4.7.6';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -6564,7 +6567,8 @@ const curvaPor = (X, Y, x) => { if (x <= X[0]) return Y[0]; for (let i = 1; i < 
 const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
 const VEL_CHUTE = [3.5, 5, 9, 18, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; o AZUL é fraco de verdade: 5–9 m/s)
 const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
-const ELEV_BAIXO = 0.42;                                          // (4.7.5) rad a mais no chute quando se bate no ponto mais baixo da bola (oy = 1): ~24°
+const ELEV_BAIXO = 0.27;                                          // (4.7.6) rad a mais no chute quando se bate no ponto mais baixo da bola (oy = 1): ~15° (média entre o 0,12 antigo e o 0,42 do 4.7.5, que subia demais)
+const ELEV_ALTO = 0.045;                                          // (4.7.6) rad a menos quando se bate em cima (média entre 0,04 e 0,05)
 const ELEV_CHUTE = [0.03, 0.03, 0.04, 0.05, 0.09, 0.15, 0.27];   // ângulo de subida do chute (o vermelho sobe muito)
 const gauss = () => (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.22;   // ~normal(0,1), sem caudas absurdas
 function desvioDoToque(k, u, atributo) {
@@ -6733,7 +6737,7 @@ function executeUserKick() {
   if (k.faixa === 5) elev += rand(0, 0.1);
   // (4.7.5) Onde bate na bola decide a altura de verdade: embaixo = a bola SOBE (até ~24° a mais, como antes da reformulação do 4.7.0; o +0,12 rad de antes
   // quase não subia nada), em cima = rasteira. Vale em qualquer força; a cavadinha (AZUL) continua tratada à parte logo abaixo.
-  elev += Math.max(0, k.oy) * ELEV_BAIXO - Math.max(0, -k.oy) * 0.05 + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
+  elev += Math.max(0, k.oy) * ELEV_BAIXO - Math.max(0, -k.oy) * ELEV_ALTO + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
   if (k.throwIn) elev = Math.max(elev, 0.22);
   elev = clamp(elev, 0.005, 0.7);
   // CAVADINHA: força no AZUL (toque fraco) batendo bem embaixo da bola: ela sobe porque o toque é fraco. A bola sobe alto e cai devagar; ONDE ela cai depende só da força
@@ -13724,7 +13728,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.7.5',
+  versao: '4.7.6',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
