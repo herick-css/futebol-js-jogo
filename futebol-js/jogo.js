@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.7.6
+   FUTEBOL JS · jogo.js · versão 4.8.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,17 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.8.0 — IA cansa, drible de corpo, ajustes do jogador e formação:
+   • A IA também tem ARRANCADA: corre por um tempo, cansa (animação de cansaço, velocidade cai) e recarrega. O tempo vem dos atributos de cada um
+     (resistência, velocidade...). CONFIG.AI_RUN_TIME / AI_REGEN_TIME / AI_MIN_TO_RUN.
+   • Caminhar ficou um pouco mais rápido (USER_WALK) e a corrida só liga perto da borda do joystick (RUN_THRESHOLD = 0,97).
+   • DRIBLE DE CORPO: correr, desacelerar e mudar a direção de um jeito que o marcador se perca pode fazê-lo cair, escorregar ou ficar desnorteado
+     (animações novas 'escorrega' e 'desnorteado'). No drible de costas você finge para um lado com o corpo e sai pelo outro: aí o marcador se perde.
+   • Partida rápida: saíram os controles "passe quebrado" e "força da marcação". O erro de passe vem do nível do SEU time (habilidade 'passe' de quem
+     passa) e a marcação da IA vem do nível do adversário (habilidade 'desarme' + dificuldade).
+   • Pausa: botão FORMAÇÃO (campo 2D com posição, nome e número de todos, banco, técnico e estratégia), FPS/draw calls, cor do círculo do jogador
+     (12 cores ou nenhum), altura e distância da câmera, e editor de tamanho/posição do joystick e dos botões (salvos no aparelho).
+   • Replay: o círculo embaixo do jogador não aparece mais.
    Novidades da versão 4.7.6 — chute por baixo mais equilibrado:
    • O 4.7.5 fazia a bola subir demais batendo embaixo (0,42 rad a mais). Agora é a média entre o valor antigo (0,12) e o do 4.7.5: ELEV_BAIXO = 0,27
      (~15° a mais no ponto mais baixo) e, batendo em cima, ELEV_ALTO = 0,045 (média entre 0,04 e 0,05). A cavadinha não muda.
@@ -543,7 +554,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.7.6';
+const VERSAO_JOGO = '4.8.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -556,16 +567,19 @@ const CONFIG = {
   BALL_R: 0.22,
   MATCH_SECONDS: 300,
 
-  USER_WALK: 2.56,           // seu jogador andando (m/s) — (4.7.1) todas as velocidades de jogador 20% menores
+  USER_WALK: 3.1,              // seu jogador andando (m/s) — (4.7.1) todas as velocidades de jogador 20% menores
   USER_RUN: 5.76,            // ...correndo (joystick no fim)
-  USER_WALK_BALL: 2.4,
+  USER_WALK_BALL: 2.9,
   USER_RUN_BALL: 4.96,
-  RUN_THRESHOLD: 0.92,       // quanto do joystick precisa empurrar para correr (0 a 1)
+  RUN_THRESHOLD: 0.97,       // quanto do joystick precisa empurrar para correr (0 a 1) — (4.8.0) quase até a borda; no resto o jogador anda
   STAMINA_RUN_TIME: 10,      // segundos de corrida contínua com a barra cheia
   STAMINA_REGEN_TIME: 10,    // segundos para encher a barra do zero
   STAMINA_REGEN_DELAY: 0.6,  // espera depois de parar de correr antes de recuperar
   STAMINA_MIN_TO_RUN: 0.15,  // depois de esgotar, precisa recuperar isso para correr de novo
   AI_SPEED: 4.8, 
+  AI_RUN_TIME: 16,           // (4.8.0) segundos de arrancada da IA com resistência 7 (cai com resistência baixa/velocidade alta; sobe com resistência alta)
+  AI_REGEN_TIME: 14,         // (4.8.0) segundos para a IA recarregar a barra do zero (com recuperação 7)
+  AI_MIN_TO_RUN: 0.3,        // (4.8.0) depois de esgotar, a IA só volta a correr com isso recuperado
   AI_SPEED_BALL: 4.16,
   GK_SPEED: 4.4,
 
@@ -2629,7 +2643,10 @@ const flatRing = (r1, r2, color, opacity = 0.9) => {
   const m = new THREE.Mesh(new THREE.RingGeometry(r1, r2, 16), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; scene.add(m); return m;
 };
+// (4.8.0) Ajustes do jogador (guardados no aparelho): altura/distância da câmera, cor do círculo do jogador e layout dos botões (ver AJUSTES DO JOGADOR).
+const AJ = Object.assign({ camAlt: 1, camDist: 1, aro: '#f7941d', layout: {} }, (() => { try { const v = salvo.ler('futebolJs.ajustes.v1', {}); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })());
 const userRing = flatRing(0.5, 0.68, 0xf7941d);
+userRing.material.color.set(AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d');
 const targetRing = flatRing(0.7, 0.95, 0xffffff); targetRing.visible = false;
 const dribbleRing = flatRing(0.6, 0.8, 0xff7676, 0.8); dribbleRing.visible = false;
 
@@ -3558,7 +3575,7 @@ function aiCarry(p, dt) {
     return { vx: 0, vz: 0 };
   }
   if (p.team === 0 && G.userRequest > 0 && p.think <= 0 && user.stun <= 0) {
-    passTo(p, user, Math.random() < CONFIG.BROKEN_PASS_CHANCE);
+    passTo(p, user, Math.random() < erroDePasseParaVoce(p));
     G.userRequest = 0;
     return { vx: 0, vz: 0 };
   }
@@ -3641,7 +3658,7 @@ function aiCarry(p, dt) {
     if (quer) {
       const r = bestPassReceiver(p, { soFrente }) || (p.stuckT > 1.2 ? nearestOf(teamOf(p).filter((t) => !t.out), p, p).p : null);
       p.stuckT = 0;
-      if (r) { passTo(p, r, r.isUser && Math.random() < CONFIG.BROKEN_PASS_CHANCE * 0.4, r._plano ? (r._plano.style || 'chao') : undefined); return { vx: 0, vz: 0 }; }
+      if (r) { passTo(p, r, r.isUser && Math.random() < erroDePasseParaVoce(p) * 0.4, r._plano ? (r._plano.style || 'chao') : undefined); return { vx: 0, vz: 0 }; }
     }
   }
   if (ladoParaCruzar(p) && Math.abs(goalX - p.x) / ESC < 34) return conduzirPeloLado(p, near);
@@ -4465,7 +4482,7 @@ function gkThink(p, dt) {
 // tipo vazio = sorteio (34% / 38% / 28%). Vale para TODO desarme: seu, da IA em você, da IA na IA,
 // carrinho, saída do goleiro e drible errado.
 // ---------------------------------------------------------------------
-const PERDA_DUR = { passinhos: 0.85, joelho: 1.15, queda: 1.4 };
+const PERDA_DUR = { passinhos: 0.85, joelho: 1.15, queda: 1.4, escorrega: 1.25, desnorteado: 1.5 };   // (4.8.0) escorrega e desnorteado: vêm do drible de corpo
 function perderBola(p, tipo) {
   if (!p || p.role === 'GK') return;
   if (!tipo) { const r = Math.random(); tipo = r < 0.34 ? 'passinhos' : r < 0.72 ? 'joelho' : 'queda'; }   // (4.1.3) igual para você e para a IA
@@ -4473,6 +4490,8 @@ function perderBola(p, tipo) {
   p.stun = Math.max(p.stun, dur);
   const sp = Math.hypot(p.vx, p.vz), a = sp > 0.3 ? Math.atan2(p.vz, p.vx) : p.angle;
   p.perda = { tipo, t: 0, dur, lado: Math.random() < 0.5 ? -1 : 1, vx: Math.cos(a) * 1.8, vz: Math.sin(a) * 1.8 };
+  if (tipo === 'escorrega') { const v = clamp(sp * 0.9, 2.5, 5.5); p.perda.vx = Math.cos(a) * v; p.perda.vz = Math.sin(a) * v; }      // desliza para onde ia
+  if (tipo === 'desnorteado') { p.perda.vx *= 0.35; p.perda.vz *= 0.35; p.perda.giro = p.perda.lado * rand(6, 8.5); }               // gira sem rumo
   if (tipo === 'queda') { p.falling = true; p.fallKind = 'frente'; p.fallSide = p.perda.lado; }
 }
 
@@ -4650,6 +4669,69 @@ function updateStamina(u, dt) {
   if (u.exhausted && u.stamina >= CONFIG.STAMINA_MIN_TO_RUN) u.exhausted = false;
 }
 
+// (4.8.0) DRIBLE DE CORPO (automático, sem botão): você corre forte, desacelera e muda de direção de repente (≥ ~60°) com um marcador
+// em cima de você. Ele pode ser enganado: cai (queda de frente ou de costas), ESCORREGA (desliza de pernas abertas) ou fica DESNORTEADO (gira
+// sem saber para onde ir). Chance cresce com a velocidade e o ângulo da virada e com o seu drible; cai com a defesa do marcador.
+function detectarDribleDeCorpo(u, dt) {
+  if (G.state !== 'play' || u.scripted || u.stun > 0 || u.fall > 0) { u.dcFast = null; return; }
+  if (u.dcCd > 0) u.dcCd -= dt;
+  const sp = Math.hypot(u.vx, u.vz), now = G.time;
+  if (sp > 4.0) { u.dcFast = { ang: Math.atan2(u.vz, u.vx), sp, t: now }; return; }
+  const F = u.dcFast;
+  if (!F || now - F.t > 0.5 || sp < 0.8 || u.dcCd > 0) return;
+  const dAng = Math.abs(wrapAngle(Math.atan2(u.vz, u.vx) - F.ang));
+  if (dAng < 1.05 || sp > F.sp * 0.85) return;                       // virou pouco ou nem freou
+  u.dcFast = null; u.dcCd = 2.2;
+  const marcadores = TEAMS[1 - u.team].filter((o) => o.role !== 'GK' && !o.out && !o.scripted && o.stun <= 0 && o.fall === 0 && !o.perda && !o.celeb);
+  const comBola = G.possession === u;
+  for (const o of marcadores) {
+    const dx = u.x - o.x, dz = u.z - o.z, d = Math.hypot(dx, dz);
+    if (d > 3.2 || d < 0.05) continue;
+    const chegando = (o.vx * dx + o.vz * dz) / d;                    // ele vem para cima de você?
+    if (chegando < 1.0) continue;
+    if ((o.dcCd || 0) > G.time) continue;
+    const forca = clamp((dAng - 1.05) / 1.6, 0, 1), vel = clamp((F.sp - 4) / 3, 0, 1);
+    let chance = (0.2 + 0.3 * forca + 0.18 * vel + (comBola ? 0.08 : 0)) * Math.pow(Atributos.fator('drible'), 0.7) / Math.pow(fh(o, 'defesa'), 0.8);
+    chance = clamp(chance, 0.03, 0.75);
+    if (Math.random() > chance) continue;
+    o.dcCd = G.time + 3;
+    const r = Math.random(), pCai = 0.2 + 0.25 * forca, pEsc = 0.38;
+    if (r < pCai) {
+      if (Math.random() < 0.5) perderBola(o, 'queda');
+      else { o.stun = Math.max(o.stun, 1.3); o.fall = 1; o.fallKind = Math.random() < 0.5 ? 'costas' : 'lado'; o.fallSide = Math.random() < 0.5 ? -1 : 1; }
+    } else if (r < pCai + pEsc) perderBola(o, 'escorrega');
+    else perderBola(o, 'desnorteado');
+    G.stats.driblesCorpo = (G.stats.driblesCorpo || 0) + 1;
+  }
+}
+
+// (4.8.0) Chance de o passe de um companheiro chegar torto para você: sai da habilidade de passe dele (o nível do SEU time). Passe 5,5 = a base (45%).
+function erroDePasseParaVoce(p) {
+  return clamp(CONFIG.BROKEN_PASS_CHANCE * Math.pow(5.5 / Math.max(1, hab(p, 'passe')), 1.2), 0.08, 0.8);
+}
+
+// (4.8.0) FÔLEGO DA IA, o mesmo esquema do seu jogador: correr (arrancada) gasta a barra (p.stamina de 1 a 0); parado/andando ela recarrega; ao
+// zerar a IA fica ESGOTADA (só anda, mãos na cintura) até recuperar AI_MIN_TO_RUN. Quem decide os tempos são as habilidades de cada jogador:
+//   resistência alta = arrancada longa; velocidade alta cansa um pouco mais rápido; recuperação alta = recarrega mais depressa.
+function atualizarFolegoIA(p, dt, spd, des) {
+  if (G.state !== 'play' || p.role === 'GK' || p.out || p.stun > 0 || p.scripted) return;
+  const corre = spd > CONFIG.AI_SPEED * 0.77 && Math.hypot(des.vx, des.vz) > CONFIG.AI_SPEED * 0.6;
+  if (corre) {
+    const tempo = CONFIG.AI_RUN_TIME * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'));
+    p.stamina = Math.max(0, p.stamina - dt / tempo);
+    p.regenWait = 0.6;
+    if (p.stamina <= 0.005 && !p.exhausted) { p.stamina = 0; p.exhausted = true; p.cansadoT = 2.5; }
+  } else {
+    p.regenWait = (p.regenWait || 0) - dt;
+    if (p.regenWait <= 0) {
+      const tempo = CONFIG.AI_REGEN_TIME / fh(p, 'recuperacao') * (spd < 1 ? 0.6 : spd > 2.5 ? 1.5 : 1);
+      p.stamina = Math.min(1, p.stamina + dt / tempo);
+    }
+  }
+  if (p.cansadoT > 0) p.cansadoT -= dt;
+  if (p.exhausted && p.stamina >= CONFIG.AI_MIN_TO_RUN) p.exhausted = false;
+}
+
 function updatePlayers(dt) {
   const holder = G.possession;
   for (const p of players) {
@@ -4678,7 +4760,7 @@ function updatePlayers(dt) {
     if (p.role !== 'GK' && p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.jumpAlt = 0; }
     if (p.falling) { p.fall = Math.min(1, p.fall + dt * 2.8); if (p.fall >= 1) p.falling = false; }   // caindo aos poucos
     else if (p.fall > 0 && !p.scripted && p.stun < 0.5) p.fall = Math.max(0, p.fall - dt * (p.levantaRapido > 0 ? 4.5 : 2.5));   // (4.7.1) goleiro levanta com pressa
-    if (p.isUser) updateStamina(p, dt);
+    if (p.isUser) { updateStamina(p, dt); detectarDribleDeCorpo(p, dt); }
     if (p.scripted) continue;
 
     if (p.celeb) {
@@ -4701,6 +4783,8 @@ function updatePlayers(dt) {
       }
       const fv = 0.8 + 0.2 * (p.folego ?? 1);
       des = { vx: des.vx * fv, vz: des.vz * fv };
+      atualizarFolegoIA(p, dt, spd, des);                 // (4.8.0) arrancada, cansaço e recarga (como o seu jogador)
+      if (p.exhausted) { const dm = Math.hypot(des.vx, des.vz), lim = CONFIG.AI_SPEED * (p.speedMul || 1) * 0.45; if (dm > lim) des = { vx: des.vx / dm * lim, vz: des.vz / dm * lim }; }   // esgotado: só trota/anda
     }
     // Gol sofrido: todo mundo para na hora (antes andavam de costas até a reação começar); quem
     // fica de mão na cintura depois volta devagar, de frente, para a posição.
@@ -4719,6 +4803,8 @@ function updatePlayers(dt) {
       p.perda.t += dt;
       if (p.perda.t >= p.perda.dur) p.perda = null;
       else if (p.perda.tipo === 'passinhos') { const f = 1 - p.perda.t / p.perda.dur; des = { vx: p.perda.vx * f, vz: p.perda.vz * f }; p.anim += dt * 9; }
+      else if (p.perda.tipo === 'escorrega') { const f = Math.pow(1 - p.perda.t / p.perda.dur, 1.5); des = { vx: p.perda.vx * f, vz: p.perda.vz * f }; p.anim += dt * 3; }   // (4.8.0) desliza e vai parando
+      else if (p.perda.tipo === 'desnorteado') { const f = 1 - p.perda.t / p.perda.dur; des = { vx: p.perda.vx * f, vz: p.perda.vz * f }; p.anim += dt * 7; }
     }
     if (p.impacto) {                                // (4.2.3) levou um chutão: cambaleia no sentido da bola e para
       p.impacto.t += dt;
@@ -4751,7 +4837,11 @@ function updatePlayers(dt) {
     colisaoArredores(p);
 
     const sp = Math.hypot(p.vx, p.vz);
-    if (p.slideT > 0 || p.slidePose > 0.15 || (p.recvPose && !p.isUser)) {
+    if (p.perda && p.perda.tipo === 'desnorteado') {
+      p.angle = wrapAngle(p.angle + p.perda.giro * (1 - p.perda.t / p.perda.dur) * dt);      // (4.8.0) gira sem saber para onde ir
+    } else if (p.perda && p.perda.tipo === 'escorrega') {
+      // escorregando: o corpo mantém a direção
+    } else if (p.slideT > 0 || p.slidePose > 0.15 || (p.recvPose && !p.isUser)) {
       // Carrinho (e levantando dele) ou cabeceio/voleio/bicicleta da IA: o corpo não gira.
     } else if (p.lamento && (G.state === 'goal' || G.state === 'celebrate')) {
       if (sp > 0.3) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 6 * dt);   // triste: anda de frente
@@ -7368,6 +7458,26 @@ function aplicarPerda(p, m) {
     m.bracoE.rotation.z = 0.35 * f; m.bracoD.rotation.z = 0.35 * f;
     const bal = Math.sin(p.anim) * 0.5 * f;                               // passos curtos
     m.pernaE.rotation.z = bal; m.pernaD.rotation.z = -bal;
+  } else if (P.tipo === 'escorrega') {
+    // (4.8.0) Escorrega: o pé de trás perde o apoio — uma perna vai longe à frente, a outra dobra para trás, o tronco cai um pouco para trás
+    // e os braços vão para o alto balançando.
+    const env = u < 0.15 ? smooth(u / 0.15) : u < 0.65 ? 1 : 1 - smooth((u - 0.65) / 0.35);
+    m.raiz.rotation.x = Math.sin(P.t * 9) * 0.1 * env; m.raiz.position.y = -0.1 * env;
+    m.corpo.rotation.z = 0.38 * env;
+    m.pernaE.rotation.z = 1.15 * env; m.pernaD.rotation.z = -0.5 * env;
+    usarJoelhos(m, -0.1 * env, -0.95 * env);
+    const fl = Math.sin(P.t * 17) * 0.25 * env;
+    m.bracoE.rotation.z = 1.75 * env + fl; m.bracoD.rotation.z = 1.75 * env - fl;
+    m.bracoE.rotation.x = 0.9 * env; m.bracoD.rotation.x = -0.9 * env;
+  } else if (P.tipo === 'desnorteado') {
+    // (4.8.0) Desnorteado: roda sem rumo, o corpo balança para os lados, os braços batem alternados e a cabeça balança.
+    const env = u < 0.12 ? smooth(u / 0.12) : u < 0.7 ? 1 : 1 - smooth((u - 0.7) / 0.3);
+    m.raiz.rotation.x = Math.sin(P.t * 13) * 0.22 * env;
+    m.corpo.rotation.z = (-0.1 + Math.sin(P.t * 9) * 0.18) * env;
+    m.bracoE.rotation.z = (1.0 + 0.6 * Math.sin(P.t * 12)) * env; m.bracoD.rotation.z = (1.0 - 0.6 * Math.sin(P.t * 12)) * env;
+    m.bracoE.rotation.x = 0.6 * env; m.bracoD.rotation.x = -0.6 * env;
+    const pas = Math.sin(P.t * 14) * 0.5 * env; m.pernaE.rotation.z = pas; m.pernaD.rotation.z = -pas;
+    usarCabeca(m, Math.sin(P.t * 8) * 0.28 * env);
   } else if (P.tipo === 'joelho') {
     // Desce em 22% do tempo, fica apoiado, levanta nos últimos 32%. Conta (perna 0,74 m):
     // quadril a 0,42 m do chão; perna de trás reta para baixo com a canela deitada para trás
@@ -7759,13 +7869,17 @@ function prepararDribleNovo(C, u, o) {
   if (C.tipo === 'arrancada') {
     C.dur = 0.9; C.p1 = { x: u.x + f.x * 3, z: u.z + f.z * 3 }; C.p2 = { x: u.x + f.x * 6.5, z: u.z + f.z * 6.5 };
   } else if (C.tipo === 'protecao') {
-    // Proteção (1,6 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
-    // (4.7.2) ele perde o equilíbrio e fica desorientado (não cai); você sai com a bola para a frente.
-    C.dur = 1.6;
+    // Proteção (1,9 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
+    // (4.8.0) FINTA DE CORPO: você inclina o corpo e finge sair para o lado dele; ele vai atrás (cola nessa direção) e aí você sai
+    // para o lado CONTRÁRIO, com a bola protegida; ele erra a direção e fica desorientado (não cai).
+    C.dur = 1.9;
     C.encosta = { x: u.x - f.x * 0.15, z: u.z - f.z * 0.15 };
     C.oEncosta = { x: C.encosta.x - f.x * PROT.atras + C.px * lado * PROT.lado, z: C.encosta.z - f.z * PROT.atras + C.pz * lado * PROT.lado };
     C.oCai = { x: C.oEncosta.x - f.x * 0.45, z: C.oEncosta.z - f.z * 0.45 };
-    C.p1 = { x: C.encosta.x + f.x * 1.5, z: C.encosta.z + f.z * 1.5 }; C.p2 = { x: C.encosta.x + f.x * 4.5, z: C.encosta.z + f.z * 4.5 };
+    C.fintaPos = { x: C.encosta.x + C.px * lado * 0.45, z: C.encosta.z + C.pz * lado * 0.45 };               // finge para o lado dele
+    C.oMorde = { x: C.oEncosta.x + C.px * lado * 0.5 + f.x * 0.3, z: C.oEncosta.z + C.pz * lado * 0.5 + f.z * 0.3 };   // ele acompanha a finta
+    C.p1 = { x: C.encosta.x + f.x * 1.2 - C.px * lado * 1.5, z: C.encosta.z + f.z * 1.2 - C.pz * lado * 1.5 };     // e você sai pelo outro
+    C.p2 = { x: C.encosta.x + f.x * 4.5 - C.px * lado * 0.8, z: C.encosta.z + f.z * 4.5 - C.pz * lado * 0.8 };
     C.fallSide = lado;
   } else if (C.tipo === 'corpo') {
     C.dur = 1.1;
@@ -7808,23 +7922,29 @@ function atualizarDribleNovo(C, dt) {
       mover(lerp(C.p0.x, C.encosta.x, a), lerp(C.p0.z, C.encosta.z, a), 1.5);
       o.x = lerp(C.o0.x, C.oEncosta.x, a); o.z = lerp(C.o0.z, C.oEncosta.z, a); o.anim += 5 * dt;
       bolaNaFrente(0.55);
-    } else if (t < 1.0) {                           // empurra-empurra: os dois balançam juntos
+    } else if (t < 0.8) {                           // empurra-empurra: os dois balançam juntos
       const sw = Math.sin((t - 0.35) * 13) * 0.05;
       mover(C.encosta.x + C.px * sw, C.encosta.z + C.pz * sw, 0.5);
       o.x = C.oEncosta.x + C.px * sw * 1.2; o.z = C.oEncosta.z + C.pz * sw * 1.2;
       o.tackle = PROT.bote * Math.max(0, Math.sin((t - 0.35) * 9));      // tenta enfiar o pé
       ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.y = CONFIG.BALL_R;
       if (!C.empurrou && t > 0.6) { C.empurrou = true; Som.toque(0.3); }
-    } else {                                        // você sai com a bola e ele fica desorientado
-      const a = smooth((t - 1.0) / (C.dur - 1.0));
-      const pt = bezier(C.encosta, C.p1, C.p2, a);
+    } else if (t < 1.2) {                           // FINTA: você finge que vai para o lado dele e ele vai atrás
+      const a = smooth((t - 0.8) / 0.4);
+      mover(lerp(C.encosta.x, C.fintaPos.x, a), lerp(C.encosta.z, C.fintaPos.z, a), 2.5);
+      o.x = lerp(C.oEncosta.x, C.oMorde.x, a); o.z = lerp(C.oEncosta.z, C.oMorde.z, a); o.anim += 5 * dt;
+      o.tackle = PROT.bote * (1 - a * 0.5);
+      ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.2; ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.2; ball.y = CONFIG.BALL_R;
+    } else {                                        // você sai pelo lado contrário e ele, que foi para o lado errado, fica desorientado
+      const a = smooth((t - 1.2) / (C.dur - 1.2));
+      const pt = bezier(C.fintaPos, C.p1, C.p2, a);
       mover(pt.x, pt.z, 8);
       bolaNaFrente(lerp(0.55, 1.1, a));
       o.tackle = 0;
-      tropeca(C.fx * 0.6, C.fz * 0.6);                // (4.7.2) o marcador NÃO cai: fica desorientado (passinhos), como nos outros dribles
+      tropeca(C.px * C.oppSide * 0.7 + C.fx * 0.3, C.pz * C.oppSide * 0.7 + C.fz * 0.3);   // (4.7.2) NÃO cai: fica desorientado (passinhos); (4.8.0) escorregando para o lado da finta
     }
     // Você de costas para ele, um pouco virado para mostrar o ombro (do lado dele).
-    u.angle = t < 1.0 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) : turnToward(u.angle, ang, 10 * dt);
+    u.angle = t < 1.2 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) * (t < 0.8 ? 1 : 1 - (t - 0.8) / 0.4) : turnToward(u.angle, ang, 10 * dt);   // (4.8.0) na finta o ombro vira para o lado do giro
     o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
     o.vx = o.vz = 0;
   } else if (C.tipo === 'arrancada') {
@@ -7885,12 +8005,13 @@ function aplicarDriblePose(p, m) {
     m.raiz.rotation.x = Math.sin((P.t / 0.9) * Math.PI * 2) * 0.2;    // balanço do corpo
     m.corpo.rotation.z = -0.15;
     m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.7; m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2;
-  } else if (P.tipo === 'protecao' && P.t < 1.0) {
+  } else if (P.tipo === 'protecao' && P.t < 1.2) {
     // Corpo para trás (encostado nele), ombro do lado dele baixo, braço de lá segurando ele e o
     // outro aberto para equilibrar.
     const a = smooth(Math.min(1, P.t / 0.3)), sw = Math.sin(P.t * 13) * 0.05;
     m.corpo.rotation.z = PROT.tras * a;
-    m.raiz.rotation.x = (P.lado * PROT.tomba + sw) * a;
+    const fk = P.t < 0.8 ? 0 : Math.sin(clamp((P.t - 0.8) / 0.4, 0, 1) * Math.PI);                 // (4.8.0) finta: o corpo tomba bastante para o lado dele
+    m.raiz.rotation.x = (P.lado * PROT.tomba + sw) * a * (P.t < 0.8 ? 1 : 0.3) + P.lado * 0.38 * fk;
     const bL = P.lado > 0 ? m.bracoD : m.bracoE, bO = P.lado > 0 ? m.bracoE : m.bracoD, s = P.lado > 0 ? -1 : 1;
     bL.rotation.z = PROT.bz * a; bL.rotation.x = s * PROT.bx * a;
     bO.rotation.z = 0.25 * a; bO.rotation.x = -s * 0.6 * a;
@@ -7915,6 +8036,7 @@ function endCine(success) {
   if (success) {
     G.stats.driblesOk++;
     if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; }   // no carretel o marcador não cai, só fica parado
+    else if (C.tipo === 'protecao' || C.tipo === 'corpo') { user.driblePose = null; C.opp.stun = 0; perderBola(C.opp, 'desnorteado'); }   // (4.8.0) caiu na finta: fica DESNORTEADO (passinhos, tonto) em vez de só parar
     else if (C.tipo !== 'frente') { C.opp.stun = Math.max(C.opp.stun, 1.0); user.driblePose = null; }   // tropeçou (passinhos), não cai
     else { C.opp.stun = 2.4; C.opp.fall = 1; }
     const ex = C.p2.x - C.p1.x, ez = C.p2.z - C.p1.z, el = Math.hypot(ex, ez) || 1;
@@ -8028,7 +8150,7 @@ function finishTiming() {
 // 15. ENTRADAS
 // ---------------------------------------------------------------------
 const keys = {};
-const JOY_R = 50;
+let JOY_R = 50;                                  // (4.8.0) varia com o tamanho do joystick (ajustável)
 const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0 };
 const aimPad = { id: null, ox: 0, oy: 0, dx: 0, dy: 0, onJoy: false };
 
@@ -8638,11 +8760,12 @@ function endMatch(motivo) {
 function pauseGame() {
   if (!PLAY_STATES.includes(G.state) && G.state !== 'goal' && G.state !== 'celebrate') return;
   const hist = typeof Historia !== 'undefined' && Historia.emPartida();   // (4.3.6) história: a pausa só pausa (sem ajustes, nível da IA, tática nem reiniciar)
-  $('restartBtn').style.display = hist ? 'none' : ''; document.querySelector('#pauseScreen .settings').style.display = hist ? 'none' : '';
+  $('restartBtn').style.display = hist ? 'none' : ''; document.querySelector('#pauseScreen .settings').style.display = '';   // (4.8.0) os ajustes (câmera, botões, círculo, FPS) valem também na história
   G.pausedFrom = G.state; G.state = 'paused'; Som.pausar(true);
   power.holding = false;
   $('pauseStats').innerHTML = statsHTML();
   atualizarTelaDeTatica();
+  ajMontarPausa();
   syncSettings();
   $('pauseScreen').hidden = false;
 }
@@ -8653,8 +8776,6 @@ function resumeGame() {
 }
 
 const SETTINGS = [
-  { id: 'Broken', get: () => Math.round(CONFIG.BROKEN_PASS_CHANCE * 100), set: (v) => { CONFIG.BROKEN_PASS_CHANCE = v / 100; }, fmt: (v) => v + '%' },
-  { id: 'Tackle', get: () => Math.round(CONFIG.AI_TACKLE_CHANCE * 100), set: (v) => { CONFIG.AI_TACKLE_CHANCE = v / 100; }, fmt: (v) => v + '%' },
   { id: 'Res', get: () => CONFIG.RENDER_H, set: (v) => { CONFIG.RENDER_H = v; resize(); }, fmt: (v) => v + 'p' },
   { id: 'Shake', get: () => Math.round(CONFIG.RUN_SHAKE * 100), set: (v) => { CONFIG.RUN_SHAKE = v / 100; }, fmt: (v) => v === 0 ? 'desligada' : String(v) },
 ];
@@ -8666,6 +8787,210 @@ for (const s of SETTINGS) {
   $('set' + s.id).addEventListener('input', (e) => { const v = Number(e.target.value); s.set(v); $('out' + s.id).textContent = s.fmt(v); });
 }
 $('setFps').addEventListener('change', (e) => { $('fps').hidden = !e.target.checked; });
+
+// =====================================================================
+// (4.8.0) AJUSTES DO JOGADOR — ficam na tela de PAUSA e são guardados no aparelho (futebolJs.ajustes.v1):
+//   • câmera: altura e distância (multiplicam a câmera normal de jogo; cenas e replays não mudam)
+//   • círculo embaixo do seu jogador: 12 cores ou nenhum
+//   • botões: tamanho e posição do joystick, de CHUTAR/CRUZAR/DESARMAR, de PASSAR e de DRIBLAR (editor: arraste e use o controle de tamanho)
+//   • FORMAÇÃO: campo 2D com posição, nome e número de cada jogador, banco, técnico e estratégia
+// =====================================================================
+const AJ_ARO_CORES = [['Laranja', '#f7941d'], ['Amarelo', '#ffd400'], ['Vermelho', '#e53935'], ['Rosa', '#ff4fa3'], ['Roxo', '#8e44ff'], ['Azul', '#2f6bff'],
+  ['Ciano', '#18d6e8'], ['Verde', '#2ecc40'], ['Lima', '#b6e61a'], ['Branco', '#ffffff'], ['Preto', '#111111'], ['Marrom', '#8b5a2b']];
+const AJ_LAYOUT_PADRAO = { joy: { t: 132, x: 22, y: 30 }, s1: { t: 94, x: 18, y: 18 }, s2: { t: 84, x: 122, y: 23 }, s3: { t: 80, x: 25, y: 122 } };
+function ajLayout() {
+  const o = {};
+  for (const k of Object.keys(AJ_LAYOUT_PADRAO)) o[k] = Object.assign({}, AJ_LAYOUT_PADRAO[k], (AJ.layout && AJ.layout[k]) || {});
+  return o;
+}
+function ajGuardar() {
+  try { salvo.gravar('futebolJs.ajustes.v1', { camAlt: AJ.camAlt, camDist: AJ.camDist, aro: AJ.aro, layout: AJ.layout }); } catch (e) { /* sem armazenamento */ }
+}
+function ajAplicarLayout() {
+  let st = document.getElementById('ajLayoutCss');
+  if (!st) { st = document.createElement('style'); st.id = 'ajLayoutCss'; document.head.appendChild(st); }
+  const L = ajLayout(), k = L.joy.t / 132;
+  const sL = 'env(safe-area-inset-left, 0px)', sR = 'env(safe-area-inset-right, 0px)', sB = 'env(safe-area-inset-bottom, 0px)';
+  let css = '#joy{width:' + L.joy.t + 'px;height:' + L.joy.t + 'px;left:calc(' + L.joy.x + 'px + ' + sL + ');bottom:calc(' + L.joy.y + 'px + ' + sB + ')}' +
+    '#joy .knob{width:' + (58 * k).toFixed(1) + 'px;height:' + (58 * k).toFixed(1) + 'px;margin:' + (-29 * k).toFixed(1) + 'px 0 0 ' + (-29 * k).toFixed(1) + 'px}' +
+    '#stamina{left:calc(' + L.joy.x + 'px + ' + sL + ');bottom:calc(' + Math.max(4, L.joy.y - 18) + 'px + ' + sB + ');width:' + L.joy.t + 'px}' +
+    '#actions{left:0;top:0;right:0;bottom:0;display:block}';
+  for (const n of ['s1', 's2', 's3']) {
+    const c = L[n];
+    css += '#actions .act.' + n + '{position:absolute;width:' + c.t + 'px;height:' + c.t + 'px;right:calc(' + c.x + 'px + ' + sR + ');bottom:calc(' + c.y + 'px + ' + sB + ');font-size:' + Math.max(8, Math.min(18, c.t * 0.125)).toFixed(1) + 'px}';
+  }
+  st.textContent = css;
+  JOY_R = 50 * k;
+}
+ajAplicarLayout();
+
+// Editor de botões: arraste cada item; escolha um e mexa no tamanho.
+function ajAbrirLayout() {
+  const antigo = document.getElementById('ajEd'); if (antigo) antigo.remove();
+  const ed = document.createElement('div');
+  ed.id = 'ajEd';
+  ed.style.cssText = 'position:fixed;inset:0;z-index:40;background:rgba(7,20,48,.86);touch-action:none;user-select:none;-webkit-user-select:none;font-family:var(--font-display);color:#fff';
+  const L = ajLayout(); let sel = 's1';
+  const nomes = { joy: T('JOYSTICK'), s1: T('CHUTAR / DESARMAR'), s2: T('PASSAR'), s3: T('DRIBLAR') };
+  const els = {};
+  const pos = (k) => {
+    const e = els[k], c = L[k];
+    e.style.width = e.style.height = c.t + 'px'; e.style.bottom = c.y + 'px'; e.style.fontSize = Math.max(8, Math.min(16, c.t * 0.11)) + 'px';
+    if (k === 'joy') { e.style.left = c.x + 'px'; e.style.right = ''; } else { e.style.right = c.x + 'px'; e.style.left = ''; }
+    e.style.borderColor = k === sel ? '#f7941d' : 'rgba(255,255,255,.55)';
+    e.style.background = k === sel ? 'rgba(247,148,29,.35)' : 'rgba(14,37,71,.72)';
+  };
+  const barra = document.createElement('div');
+  barra.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;background:rgba(7,20,48,.92);border:2px solid rgba(255,255,255,.35);padding:10px 14px;max-width:92vw;box-sizing:border-box';
+  barra.innerHTML = '<div style="font-size:12px;text-align:center;line-height:1.4">' + T('Arraste cada botão para onde quiser. Toque em um para escolher e mude o tamanho.') + '</div>' +
+    '<label style="display:flex;gap:8px;align-items:center;font-size:11px"><span id="ajEdNome"></span><input id="ajEdTam" type="range" min="56" max="190" step="2" style="width:min(240px,50vw)"><output id="ajEdTamV" style="min-width:42px"></output></label>' +
+    '<div style="display:flex;gap:8px"><button type="button" id="ajEdRest" style="font:inherit;font-size:11px;padding:8px 12px;background:#0c1d3d;color:#fff;border:2px solid rgba(255,255,255,.55)">' + T('Restaurar padrão') + '</button>' +
+    '<button type="button" id="ajEdOk" style="font:inherit;font-size:11px;padding:8px 14px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Pronto') + '</button></div>';
+  ed.appendChild(barra);
+  const atualizaCtl = () => { barra.querySelector('#ajEdNome').textContent = nomes[sel]; barra.querySelector('#ajEdTam').value = L[sel].t; barra.querySelector('#ajEdTamV').textContent = L[sel].t + ' px'; };
+  const salvaItem = (k) => { AJ.layout = AJ.layout || {}; AJ.layout[k] = { t: L[k].t, x: L[k].x, y: L[k].y }; ajAplicarLayout(); };
+  for (const k of ['joy', 's1', 's2', 's3']) {
+    const e = document.createElement('div');
+    e.style.cssText = 'position:absolute;border-radius:50%;border:4px dashed rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;padding:4px;line-height:1.2;cursor:grab;touch-action:none';
+    e.textContent = nomes[k];
+    els[k] = e; ed.appendChild(e); pos(k);
+    e.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault(); ev.stopPropagation();
+      const velho = sel; sel = k; if (velho !== k) pos(velho); pos(k); atualizaCtl();
+      const x0 = ev.clientX, y0 = ev.clientY, c0 = Object.assign({}, L[k]);
+      e.setPointerCapture(ev.pointerId);
+      const mv = (m) => {
+        const dx = m.clientX - x0, dy = m.clientY - y0;
+        const W = ed.clientWidth, H = ed.clientHeight;
+        L[k].x = Math.round(clamp(c0.x + (k === 'joy' ? dx : -dx), 0, Math.max(0, W - L[k].t)));
+        L[k].y = Math.round(clamp(c0.y - dy, 0, Math.max(0, H - L[k].t)));
+        pos(k); salvaItem(k);
+      };
+      const up = () => { e.removeEventListener('pointermove', mv); e.removeEventListener('pointerup', up); e.removeEventListener('pointercancel', up); ajGuardar(); };
+      e.addEventListener('pointermove', mv); e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up);
+    });
+  }
+  barra.querySelector('#ajEdTam').addEventListener('input', (ev) => { L[sel].t = Number(ev.target.value); pos(sel); atualizaCtl(); salvaItem(sel); });
+  barra.querySelector('#ajEdTam').addEventListener('change', ajGuardar);
+  barra.querySelector('#ajEdRest').addEventListener('click', () => {
+    AJ.layout = {}; ajAplicarLayout(); ajGuardar();
+    const N = ajLayout(); for (const k of Object.keys(N)) { L[k] = N[k]; pos(k); } atualizaCtl();
+  });
+  barra.querySelector('#ajEdOk').addEventListener('click', () => { ed.remove(); ajGuardar(); $('pauseScreen').hidden = false; });
+  barra.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+  atualizaCtl();
+  ($('raizJogo') || document.body).appendChild(ed);
+  $('pauseScreen').hidden = true;
+}
+
+// Monta (uma vez) os controles novos dentro dos ajustes da tela de pausa.
+function ajMontarPausa() {
+  const box = document.querySelector('#pauseScreen .settings');
+  if (!box || box.dataset.aj) return;
+  box.dataset.aj = '1';
+  for (const id of ['setBroken', 'setTackle']) { const l = box.querySelector('label[for=' + id + ']'); if (l) l.remove(); }   // (4.8.0) o erro e a marcação saem do nível dos times
+  const titulo = Array.from(box.querySelectorAll('.sectionTitle')).pop(); if (titulo) titulo.textContent = T('AJUSTES');
+  const lbRes = box.querySelector('label[for=setRes]');
+  const extra = document.createElement('div');
+  extra.id = 'ajExtra';
+  extra.innerHTML =
+    '<label for="ajAlt">' + T('Altura da câmera') + '<output id="ajAltV"></output><input id="ajAlt" type="range" min="60" max="180" step="5"></label>' +
+    '<label for="ajDist">' + T('Distância da câmera') + '<output id="ajDistV"></output><input id="ajDist" type="range" min="60" max="170" step="5"></label>' +
+    '<div class="ajLinha"><span>' + T('Círculo do jogador') + '</span><div id="ajAro" class="ajCores"></div></div>' +
+    '<button type="button" id="ajBotoes" class="pxBtn ajBtn">' + T('Ajustar botões e joystick') + '</button>';
+  if (lbRes && lbRes.nextSibling) box.insertBefore(extra, lbRes.nextSibling); else box.appendChild(extra);
+  const css = document.createElement('style');
+  css.textContent = '#ajExtra{display:flex;flex-direction:column;gap:8px}#ajExtra label{display:flex;flex-direction:column;gap:4px}' +
+    '#ajExtra .ajLinha{display:flex;flex-direction:column;gap:6px;font-size:12px}.ajCores{display:flex;flex-wrap:wrap;gap:6px}' +
+    '.ajCor{width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.45);padding:0;cursor:pointer;box-sizing:border-box}' +
+    '.ajCor.on{border-color:#fff;box-shadow:0 0 0 2px #f7941d}.ajCor.nada{background:repeating-linear-gradient(45deg,#333,#333 4px,#777 4px,#777 8px);}' +
+    '.ajBtn{font-size:12px;padding:8px 10px}#pauseScreen .settings{max-height:min(72vh,520px);overflow-y:auto;-webkit-overflow-scrolling:touch}';
+  document.head.appendChild(css);
+  const alt = extra.querySelector('#ajAlt'), dist = extra.querySelector('#ajDist');
+  const pinta = () => { extra.querySelector('#ajAltV').textContent = Math.round(AJ.camAlt * 100) + '%'; extra.querySelector('#ajDistV').textContent = Math.round(AJ.camDist * 100) + '%'; };
+  alt.value = Math.round(AJ.camAlt * 100); dist.value = Math.round(AJ.camDist * 100); pinta();
+  alt.addEventListener('input', () => { AJ.camAlt = Number(alt.value) / 100; pinta(); });
+  dist.addEventListener('input', () => { AJ.camDist = Number(dist.value) / 100; pinta(); });
+  alt.addEventListener('change', ajGuardar); dist.addEventListener('change', ajGuardar);
+  const cores = extra.querySelector('#ajAro');
+  const marca = () => cores.querySelectorAll('.ajCor').forEach((b) => b.classList.toggle('on', b.dataset.cor === AJ.aro));
+  for (const [nome, hex] of AJ_ARO_CORES) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'ajCor'; b.dataset.cor = hex; b.style.background = hex; b.title = T(nome); b.setAttribute('aria-label', T(nome));
+    cores.appendChild(b);
+  }
+  const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'ajCor nada'; nada.dataset.cor = 'nenhum'; nada.title = T('Sem círculo'); nada.setAttribute('aria-label', T('Sem círculo'));
+  cores.appendChild(nada); marca();
+  cores.addEventListener('click', (e) => {
+    const b = e.target.closest('.ajCor'); if (!b) return;
+    AJ.aro = b.dataset.cor; if (AJ.aro !== 'nenhum') userRing.material.color.set(AJ.aro);
+    marca(); ajGuardar();
+  });
+  extra.querySelector('#ajBotoes').addEventListener('click', ajAbrirLayout);
+  // Botão FORMAÇÃO ao lado de Continuar / Reiniciar.
+  const linha = document.querySelector('#pauseScreen .btnRow');
+  if (linha && !$('formBtn')) {
+    const fb = document.createElement('button'); fb.id = 'formBtn'; fb.className = 'pxBtn'; fb.type = 'button'; fb.textContent = T('Formação');
+    fb.addEventListener('click', () => ajAbrirFormacao());
+    linha.appendChild(fb);
+  }
+}
+
+// FORMAÇÃO: o campo em 2D (o ataque vai para a direita) com as bolinhas na cor do time, número e nome; banco, técnico e estratégia.
+function ajAbrirFormacao(time = 0) {
+  const P = PARTIDA; if (!P) return;
+  const antigo = document.getElementById('ajForm'); if (antigo) antigo.remove();
+  const ov = document.createElement('div');
+  ov.id = 'ajForm';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:40;background:rgba(7,20,48,.94);overflow-y:auto;-webkit-overflow-scrolling:touch;color:#fff;font-family:var(--font-body);padding:calc(10px + env(safe-area-inset-top,0px)) 14px 16px;box-sizing:border-box;text-align:center';
+  const nomeTime = (t) => P.timesObj[t].nome;
+  ov.innerHTML = '<div style="font-family:var(--font-display);font-size:14px;margin-bottom:6px">' + T('FORMAÇÃO') + '</div>' +
+    '<div id="ajFormAbas" style="display:flex;gap:8px;justify-content:center;margin-bottom:8px"></div>' +
+    '<canvas id="ajFormCv" width="640" height="360" style="width:min(94vw,660px,calc(54vh * 16 / 9));max-width:100%;height:auto;aspect-ratio:16/9;border:3px solid rgba(255,255,255,.5);background:#1f6b2e;image-rendering:auto"></canvas>' +
+    '<div id="ajFormInfo" style="max-width:660px;margin:10px auto 0;font-size:13px;line-height:1.5;text-align:left"></div>' +
+    '<button type="button" id="ajFormVoltar" style="margin-top:12px;font:inherit;font-family:var(--font-display);font-size:12px;padding:10px 18px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Voltar') + '</button>';
+  const abas = ov.querySelector('#ajFormAbas');
+  const cv = ov.querySelector('#ajFormCv'), g = cv.getContext('2d'), info = ov.querySelector('#ajFormInfo');
+  const luz = (hex) => { const [r, gg, b] = corRGB(hex); return 0.299 * r + 0.587 * gg + 0.114 * b; };
+  const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function desenhar(t) {
+    const W = cv.width, H = cv.height, m = 18;
+    g.clearRect(0, 0, W, H);
+    for (let i = 0; i < 10; i++) { g.fillStyle = i % 2 ? '#1f6b2e' : '#23742f'; g.fillRect(m + (W - 2 * m) * i / 10, m, (W - 2 * m) / 10 + 1, H - 2 * m); }
+    g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 2;
+    g.strokeRect(m, m, W - 2 * m, H - 2 * m);
+    g.beginPath(); g.moveTo(W / 2, m); g.lineTo(W / 2, H - m); g.stroke();
+    g.beginPath(); g.arc(W / 2, H / 2, 40, 0, Math.PI * 2); g.stroke();
+    const caixa = (x0, dir) => { const bw = 78, bh = 150; g.strokeRect(dir > 0 ? x0 : x0 - bw, H / 2 - bh / 2, bw, bh); const gw = 30, gh = 70; g.strokeRect(dir > 0 ? x0 : x0 - gw, H / 2 - gh / 2, gw, gh); };
+    caixa(m, 1); caixa(W - m, -1);
+    const cor = P.uniformes[t].camisa, txt = luz(cor) > 150 ? '#071430' : '#ffffff';
+    for (const p of TEAMS[t]) {
+      if (p.out) continue;
+      const x = W / 2 + (p.base.x / HALF_L) * (W / 2 - m - 14), y = H / 2 + (p.base.z / HALF_W) * (H / 2 - m - 18);
+      g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fillStyle = cor; g.fill();
+      g.lineWidth = p.isUser ? 4 : 2; g.strokeStyle = p.isUser ? (AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d') : '#ffffff'; g.stroke();
+      g.fillStyle = txt; g.font = 'bold 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(p.numero), x, y + 1);
+      const nome = p.isUser ? (P.usuario.nome || T('Você')) : String(p.name || '');
+      g.font = 'bold 11px Arial'; g.textBaseline = 'top'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.7)';
+      const n = nome.length > 11 ? nome.slice(0, 10) + '…' : nome;
+      g.strokeText(n, x, y + 16); g.fillStyle = '#ffffff'; g.fillText(n, x, y + 16);
+    }
+    const reservas = (P.reservas[t] || []).map((j) => esc(j.nome) + (j.posicao ? ' (' + esc(j.posicao) + ')' : '')).join(', ') || T('sem reservas');
+    const tec = P.tecnicos[t] && P.tecnicos[t].nome ? esc(P.tecnicos[t].nome) : '—';
+    const tat = TATICAS[P.taticas[t]] ? TATICAS[P.taticas[t]].nome : '—';
+    info.innerHTML = '<b>' + esc(nomeTime(t)) + '</b><br>' + T('Técnico') + ': <b>' + tec + '</b><br>' + T('Estratégia') + ': <b>' + esc(tat) + '</b> · ' + T('formação') + ' <b>' + esc(P.formacoes[t]) + '</b><br>' +
+      T('Banco') + ': ' + reservas;
+  }
+  [0, 1].forEach((t) => {
+    const b = document.createElement('button'); b.type = 'button';
+    b.textContent = t === 0 ? T('Meu time') : T('Adversário');
+    b.style.cssText = 'font:inherit;font-family:var(--font-display);font-size:11px;padding:7px 12px;border:2px solid rgba(255,255,255,.55);color:#fff;background:#0c1d3d';
+    b.addEventListener('click', () => { abas.querySelectorAll('button').forEach((x, i) => { x.style.background = i === t ? '#f7941d' : '#0c1d3d'; x.style.color = i === t ? '#071430' : '#fff'; }); desenhar(t); });
+    abas.appendChild(b);
+  });
+  ov.querySelector('#ajFormVoltar').addEventListener('click', () => ov.remove());
+  ($('raizJogo') || document.body).appendChild(ov);
+  abas.children[time].click();
+}
 
 $('pauseBtn').addEventListener('click', pauseGame);
 // Botão de som (ao lado do radar). Lembra a escolha entre as partidas.
@@ -8822,7 +9147,7 @@ function cameraGoal() {
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
-  let back = c.back, h = c.height, ahead = c.ahead;
+  let back = c.back * AJ.camDist, h = c.height * AJ.camAlt, ahead = c.ahead;   // (4.8.0) distância e altura da câmera: escolha do jogador
   if (G.kick && KICK_STATES.includes(G.state)) {
     if (G.kick.throwIn) {
       // Lateral: atrás e de lado (por cima do ombro), alto o bastante para ver o campo e você.
@@ -9057,8 +9382,8 @@ function syncMeshes(dt) {
     }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
-    if (p.isUser) {                                 // (4.7.0) sem fôlego e sem a bola: mãos na cintura, respirando fundo
-      const quer = (p.exhausted || p.cansadoT > 0) && G.possession !== p && G.state === 'play' && !p.recvPose && p.fall === 0 && !G.kick && !p.celeb && !(p.slidePose > 0) && G.userRequest <= 0;
+    if (p.isUser || p.exhausted || p.cansK > 0) {   // (4.7.0) sem fôlego e sem a bola: mãos na cintura, respirando fundo (4.8.0: a IA também)
+      const quer = (p.exhausted || (p.isUser && p.cansadoT > 0)) && G.possession !== p && G.state === 'play' && !p.recvPose && p.fall === 0 && !G.kick && !p.celeb && !(p.slidePose > 0) && (!p.isUser || G.userRequest <= 0) && !p.lamento && !p.out;
       p.cansK = clamp((p.cansK || 0) + (quer ? dt * 4 : -dt * 6), 0, 1);
       if (p.cansK > 0.01) aplicarCansaco(p, m, agora);
     }
@@ -9085,7 +9410,7 @@ function syncMeshes(dt) {
   ball.shadow.position.set(ball.x, 0.02, ball.z);
   ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.y - CONFIG.BALL_R) * 0.12));
   userRing.position.set(user.x, 0.03, user.z);
-  userRing.visible = !G.cine && !G.espectador;
+  userRing.visible = !G.cine && !G.espectador && G.state !== 'replay' && AJ.aro !== 'nenhum';   // (4.8.0) sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
   aimArrow.visible = !!kk;
   if (kk) { aimArrow.position.set(ball.x, kk.throwIn ? 0.06 : 0.06, ball.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX); }
@@ -9299,6 +9624,7 @@ function atualizarReplay(rdt) {
   const R = G.replay;
   if (!R) return;
   const Q = R.quadros, t0 = Q[0].t;
+  userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;   // (4.8.0) o círculo do jogador ficava parado no replay
   let vel = 1;
   if (R.tipo === 'gol' && R.cam === 2) vel = 0.6;                   // a câmera de perto é em câmera lenta
   if (R.tipo === 'imped') vel = 0.6;
@@ -9476,8 +9802,8 @@ function calcularAjuste(P) {
     peso,
     velAdv: 1 + 0.07 * peso,                       // adversários um pouco mais rápidos (máx. +7%)
     velNossa: 1 - 0.05 * Math.max(0, peso) + 0.04 * Math.max(0, -peso),
-    desarme: clamp(0.25 + 0.1 * peso, 0.14, 0.35), // chance do bote da IA em você dar certo
-    passeQuebrado: clamp(0.45 + 0.15 * peso, 0.25, 0.6),
+    desarme: 0.25,                                 // (4.8.0) base do bote da IA em você: o nível do ADVERSÁRIO entra pela habilidade 'desarme' de cada marcador (e pelo seu drible)
+    passeQuebrado: 0.45,                           // (4.8.0) base do passe torto dos companheiros: o nível do SEU time entra pela habilidade 'passe' de quem passa (ver erroDePasseParaVoce)
     goleiroAdv: 0.07 * peso,                       // bônus na chance de defesa (o teto continua valendo)
     goleiroNosso: -0.06 * peso,
     miraAdv: 1 - 0.25 * peso,                      // erro do chute da IA (menor = chuta melhor)
@@ -10367,7 +10693,7 @@ function trocarNasListas(item) {
   const usados = P.numerosUsados[team];
   const num = NUMEROS[f.role].find((v) => !usados.has(v)) || (20 + usados.size); usados.add(num);
   const entra = criarJogador(P, team, f, j, num, false);
-  entra.folego = 1;
+  entra.folego = 1; entra.stamina = 1; entra.exhausted = false; entra.cansadoT = 0;   // (4.8.0)
   const i = players.indexOf(sai), t = TEAMS[team].indexOf(sai);
   if (i >= 0) players[i] = entra;
   if (t >= 0) TEAMS[team][t] = entra;
@@ -10782,7 +11108,7 @@ function montarTelaDeConfig() {
   const intro = side.querySelector('p:not(.eyebrow)');
   if (intro) intro.textContent = 'Você controla só o seu jogador (etiqueta laranja). Toque em OPÇÕES DA PARTIDA para ver e escolher tudo o que já dá para mudar (times, campo, clima, competição, tempo...).';
   const ult = salvo.ler('futebolJs.ultimaPartida.v1', null);
-  const val = (id, v) => { if (v !== undefined && v !== null && $(id).querySelector('option[value="' + v + '"]')) $(id).value = v; };
+  const val = (id, v) => { if (v !== undefined && v !== null && $(id) && $(id).querySelector('option[value="' + v + '"]')) $(id).value = v; };
   val('cfgTime0', 'azulao'); val('cfgTime1', 'ataliba'); val('cfgCampo', 'estadio'); val('cfgDif', 'normal'); val('cfgHora', 'noite');
   opcoesDePersonagem();
   if (ult) for (const [id, v] of Object.entries(ult)) val(id, v);
@@ -11182,6 +11508,43 @@ const I18N = {
   // ----- cena de abertura -----
   // (4.7.3) slot da história, ovo de páscoa e aviso do chute fraquinho
   "Ah, um aviso: no começo a FORÇA e o EFEITO do seu chute são fraquinhos. Calma, com o treino eles melhoram!": ["Oh, a heads-up: at the start the POWER and SPIN of your shot are pretty weak. Relax, they get better with training!", "Ah, un aviso: al principio la FUERZA y el EFECTO de tu tiro son flojitos. ¡Tranquilo, con el entrenamiento mejoran!", "Ah, un avviso: all'inizio la FORZA e l'EFFETTO del tuo tiro sono debolucci. Calma, con l'allenamento migliorano!", "Ah, un avertissement : au début la FORCE et l'EFFET de ton tir sont assez faibles. Pas de panique, ça s'améliore avec l'entraînement !"],
+  // (4.8.0) ajustes do jogador, formação
+  "JOYSTICK": ["JOYSTICK", "JOYSTICK", "JOYSTICK", "JOYSTICK"],
+  "CHUTAR / DESARMAR": ["SHOOT / TACKLE", "TIRAR / ENTRAR", "TIRA / CONTRASTA", "TIRER / TACLER"],
+  "PASSAR": ["PASS", "PASAR", "PASSA", "PASSER"],
+  "DRIBLAR": ["DRIBBLE", "REGATEAR", "DRIBBLA", "DRIBBLER"],
+  "Arraste cada botão para onde quiser. Toque em um para escolher e mude o tamanho.": ["Drag each button wherever you like. Tap one to select it and change its size.", "Arrastra cada botón adonde quieras. Toca uno para elegirlo y cambia su tamaño.", "Trascina ogni pulsante dove vuoi. Tocca un pulsante per sceglierlo e cambia la dimensione.", "Faites glisser chaque bouton où vous voulez. Touchez-en un pour le choisir et changez sa taille."],
+  "Restaurar padrão": ["Restore defaults", "Restaurar valores", "Ripristina predefiniti", "Rétablir par défaut"],
+  "Pronto": ["Done", "Listo", "Fatto", "Terminé"],
+  "AJUSTES": ["SETTINGS", "AJUSTES", "IMPOSTAZIONI", "RÉGLAGES"],
+  "Altura da câmera": ["Camera height", "Altura de la cámara", "Altezza della camera", "Hauteur de la caméra"],
+  "Distância da câmera": ["Camera distance", "Distancia de la cámara", "Distanza della camera", "Distance de la caméra"],
+  "Círculo do jogador": ["Player circle", "Círculo del jugador", "Cerchio del giocatore", "Cercle du joueur"],
+  "Ajustar botões e joystick": ["Adjust buttons and joystick", "Ajustar botones y joystick", "Regola pulsanti e joystick", "Régler boutons et joystick"],
+  "Sem círculo": ["No circle", "Sin círculo", "Nessun cerchio", "Sans cercle"],
+  "Formação": ["Formation", "Formación", "Formazione", "Formation"],
+  "FORMAÇÃO": ["FORMATION", "FORMACIÓN", "FORMAZIONE", "FORMATION"],
+  "Voltar": ["Back", "Volver", "Indietro", "Retour"],
+  "Meu time": ["My team", "Mi equipo", "La mia squadra", "Mon équipe"],
+  "Adversário": ["Opponent", "Rival", "Avversario", "Adversaire"],
+  "Técnico": ["Coach", "Entrenador", "Allenatore", "Entraîneur"],
+  "Estratégia": ["Strategy", "Estrategia", "Strategia", "Stratégie"],
+  "formação": ["formation", "formación", "formazione", "formation"],
+  "Banco": ["Bench", "Banquillo", "Panchina", "Banc"],
+  "sem reservas": ["no substitutes", "sin suplentes", "nessuna riserva", "pas de remplaçants"],
+  "Você": ["You", "Tú", "Tu", "Toi"],
+  "Laranja": ["Orange", "Naranja", "Arancione", "Orange"],
+  "Amarelo": ["Yellow", "Amarillo", "Giallo", "Jaune"],
+  "Vermelho": ["Red", "Rojo", "Rosso", "Rouge"],
+  "Rosa": ["Pink", "Rosa", "Rosa", "Rose"],
+  "Roxo": ["Purple", "Morado", "Viola", "Violet"],
+  "Azul": ["Blue", "Azul", "Blu", "Bleu"],
+  "Ciano": ["Cyan", "Cian", "Ciano", "Cyan"],
+  "Verde": ["Green", "Verde", "Verde", "Vert"],
+  "Lima": ["Lime", "Lima", "Lime", "Citron vert"],
+  "Branco": ["White", "Blanco", "Bianco", "Blanc"],
+  "Preto": ["Black", "Negro", "Nero", "Noir"],
+  "Marrom": ["Brown", "Marrón", "Marrone", "Marron"],
   "MINHA BOLA, PORRA!!": ["MY BALL, DAMN IT!!", "¡MI PELOTA, CARAJO!", "LA MIA PALLA, ACCIDENTI!!", "MON BALLON, BORDEL !!"],
   "Já vou buscar a bola!": ["I'll go get the ball!", "¡Ya voy a buscar la pelota!", "Vado a prendere il pallone!", "Je vais chercher le ballon !"],
   "Onde salvar o novo personagem?": ["Where to save the new character?", "¿Dónde guardar al nuevo personaje?", "Dove salvare il nuovo personaggio?", "Où sauvegarder le nouveau personnage ?"],
@@ -13728,7 +14091,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.7.6',
+  versao: '4.8.0',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
