@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.7.0
+   FUTEBOL JS · jogo.js · versão 4.7.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,22 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.7.1 — barra em gradiente, habilidades por jogador, bloqueios e finta:
+   • Barra de força em gradiente de baixo para cima: vermelho (fraco demais) · AZUL (especial: cavadinha, passe curto, por cima) ·
+     amarelo (começa a ficar bom) · VERDE (chute bom) · amarelo (forte demais) · vermelho (descalibrado). Quanto mais segura, mais
+     forte, escalado pelo atributo FORÇA de quem bate. Enche 10% mais rápido. Velocidades de bola reequilibradas pelas antigas.
+   • Habilidades por jogador (defesa, desarme, força, resistência, recuperação, velocidade, chute, efeito, passe, cruzamento, drible,
+     domínio, cabeceio, finalização, goleiro), sorteadas com semente (o mesmo jogador tem sempre as mesmas). Adversário pela
+     dificuldade: muito fácil 2-3, fácil 3-4, médio 5-6, difícil 6-8, muito difícil 8-10. Todos os jogadores 20% mais lentos.
+   • IA: entra na área (primeiro pau, segundo pau, meia) quando a bola vai pelo lado no terço final; domina no peito; cabeçada sem
+     força de chute e com erro; passe adiantado para quem corre (e no espaço) e com erro pelo atributo.
+   • Bloqueio de chute (pulo, perna esticada, mãos para trás virando o rosto) em ~5/10 quando está na linha, nos dois times; bola
+     resvala de verdade no corpo, também nos chutes da IA.
+   • Goleiro cai depois da ponte: com a bola fica 0,75 s no chão (sem repor); sem a bola levanta em 0,25 s olhando para a bola.
+   • Finta de chute (armar e cancelar): marcador compra em ~5/10 (conta como drible); goleiro de longe 1/10, na área 5/10, 1x1 8/10,
+     com câmera lenta em 2 ângulos. Câmera lenta em 3 ângulos volta a rodar para chute bom (verde) no gol.
+   • Jogadores genéricos com as bases do criador (pele, cabelo, rosto, lábios, chuteira). Partida rápida: masculino, feminino ou misto
+     (cabelos unissex/masc/fem; rostos com batom/delineado só nas mulheres) e "usar personagem do modo história" (até 3 dos saves).
    Novidades da versão 4.7.0 — passe/chute sem assistência (barra de força estilo Winning Eleven), IA mais esperta e regras:
    • Barra de força nos tons dos clássicos: AZUL fraco · VERDE médio/calibrado · AMARELO forte · VERMELHO descalibrado. Sem faixa "certa"
      desenhada e sem a mira travar em ninguém: a seta é a direção e a força decide até onde a bola vai (passe), onde cai (cruzamento) e
@@ -499,7 +515,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.7.0';
+const VERSAO_JOGO = '4.7.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -512,18 +528,18 @@ const CONFIG = {
   BALL_R: 0.22,
   MATCH_SECONDS: 300,
 
-  USER_WALK: 3.2,            // seu jogador andando (m/s)
-  USER_RUN: 7.2,             // ...correndo (joystick no fim)
-  USER_WALK_BALL: 3.0,
-  USER_RUN_BALL: 6.2,
+  USER_WALK: 2.56,           // seu jogador andando (m/s) — (4.7.1) todas as velocidades de jogador 20% menores
+  USER_RUN: 5.76,            // ...correndo (joystick no fim)
+  USER_WALK_BALL: 2.4,
+  USER_RUN_BALL: 4.96,
   RUN_THRESHOLD: 0.92,       // quanto do joystick precisa empurrar para correr (0 a 1)
   STAMINA_RUN_TIME: 10,      // segundos de corrida contínua com a barra cheia
   STAMINA_REGEN_TIME: 10,    // segundos para encher a barra do zero
   STAMINA_REGEN_DELAY: 0.6,  // espera depois de parar de correr antes de recuperar
   STAMINA_MIN_TO_RUN: 0.15,  // depois de esgotar, precisa recuperar isso para correr de novo
-  AI_SPEED: 6.0,
-  AI_SPEED_BALL: 5.2,
-  GK_SPEED: 5.5,
+  AI_SPEED: 4.8, 
+  AI_SPEED_BALL: 4.16,
+  GK_SPEED: 4.4,
 
   CAM: { back: 6.4, height: 4.3, ahead: 3.0, lookY: 0.9, turn: 2.2 }, // turn = rapidez do giro da câmera da bola
   RUN_SHAKE: 0.07,           // força da tremida da câmera na corrida (0 = sem tremer)
@@ -539,7 +555,7 @@ const CONFIG = {
   SHOT_SPEED: [12, 32],
   PASS_SPEED: [6, 24],
   THROW_MAX: 15,             // velocidade máxima do arremesso lateral
-  POWER_FILL_TIME: 1.25,     // (4.7.0) segundos para a barra de força encher (azul → verde → amarelo → vermelho)
+  POWER_FILL_TIME: 1.14,     // (4.7.1) segundos para a barra de força encher (10% mais rápida que na 4.7.0)
 
   DRIBBLE_TIME: 2.2,        // tela do drible (s)
   DRIBBLE_TIME_GK: 1.3,     // drible no goleiro (3 toques)
@@ -858,6 +874,15 @@ const NOMES = [
   'Fininho', 'Formiga', 'Fred', 'Gaúcho', 'Giba', 'Grafite', 'Gringo', 'Jacaré', 'Kaká', 'Lagarto', 'Lambari',
   'Mancha', 'Marrom', 'Michel', 'Miro', 'Neguinho', 'Pato', 'Pezão', 'Piá', 'Quixadá', 'Sapo', 'Tico', 'Tobias',
 ];
+// (4.7.1) Nomes para as jogadoras (partida feminina ou mista).
+const NOMES_F = [
+  'Ana', 'Bia', 'Carol', 'Duda', 'Gabi', 'Lari', 'Malu', 'Nina', 'Rafa', 'Tati', 'Vivi', 'Júlia', 'Marta', 'Formiga', 'Cristiane',
+  'Debinha', 'Andressa', 'Kerolin', 'Geyse', 'Adriana', 'Tamires', 'Bruna', 'Camila', 'Dani', 'Elisa', 'Fernanda', 'Giovana', 'Helena',
+  'Isa', 'Jaque', 'Kelly', 'Lívia', 'Mari', 'Natália', 'Olívia', 'Paulinha', 'Quel', 'Rebeca', 'Sofia', 'Thaís', 'Úrsula', 'Valéria',
+  'Yasmin', 'Zezé', 'Aline', 'Bárbara', 'Cecília', 'Dandara', 'Érica', 'Fabi', 'Gisele', 'Iara', 'Jéssica', 'Kaká', 'Letícia',
+  'Manu', 'Nayara', 'Patrícia', 'Rayssa', 'Sabrina', 'Tainá', 'Vanessa', 'Wendy', 'Ximena', 'Ludmila', 'Mônica', 'Nanda', 'Pri',
+  'Raquel', 'Sandrinha', 'Teca', 'Luana', 'Maísa', 'Jojô', 'Mila', 'Tuca', 'Bela', 'Cris', 'Lulu', 'Nati', 'Rosana', 'Sissi',
+];
 const NOMES_TECNICO = ['Professor Carlão', 'Seu Bené', 'Mister Raul', 'Tio Zeca', 'Mestre Dito', 'Dona Célia', 'Professor Moacir',
   'Seu Jorjão', 'Comandante Lula', 'Doutor Valter', 'Professora Neide', 'Tio Juca'];
 
@@ -869,23 +894,64 @@ const salvo = {
   gravar(chave, valor) { try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (e) { /* sem espaço/privado */ } },
 };
 
-// Elenco do time (16 jogadores: nome + aparência). Sorteado na primeira vez e salvo. Os nomes
-// não se repetem entre times enquanto o banco tiver nomes livres.
-function elencoDoTime(time) {
+// Elenco do time (16 jogadores). Sorteado na primeira vez e salvo. Os nomes não se repetem entre times enquanto o banco
+// tiver nomes livres.
+// (4.7.1) O elenco guarda só NOME + GÊNERO + SEMENTE: a aparência é montada a cada partida pelo MESMO banco do criador de
+// personagem (gerarAparencia) — cortes, barbas, rostos, lábios, tons de pele, chuteiras... Assim, todo corte/rosto/chuteira
+// novo que entrar no criador já aparece nos jogadores. Cada time tem um elenco masculino e um feminino (o misto junta 8 + 8).
+// Os nomes masculinos são os mesmos de antes (elencos.v1), para o histórico (suspensões, lesões) continuar valendo.
+function elencoDoTime(time, genero) {
   if (time.elenco) return time.elenco;               // (4.3.6) time da história: elenco fixo, não sorteia nem salva
-  const todos = salvo.ler('futebolJs.elencos.v1', {});
-  if (todos[time.id] && todos[time.id].length >= 16) return todos[time.id];
-  const usados = new Set(Object.values(todos).flat().map((j) => j.nome));
-  const livres = NOMES.filter((n) => !usados.has(n));
-  const fonte = livres.length >= 16 ? livres : NOMES.slice();
-  const elenco = [];
-  for (let i = 0; i < 16; i++) {
-    const nome = fonte.splice(Math.floor(Math.random() * fonte.length), 1)[0];
-    elenco.push({ nome, pele: PELES[Math.floor(Math.random() * PELES.length)], cabelo: CABELOS[Math.floor(Math.random() * CABELOS.length)], estilo: Math.floor(Math.random() * 3) });
-  }
-  todos[time.id] = elenco;
-  salvo.gravar('futebolJs.elencos.v1', todos);
-  return elenco;
+  const g = genero === 'F' || genero === 'X' ? genero : 'M';
+  const todos2 = salvo.ler('futebolJs.elencos.v2', {});
+  const E = todos2[time.id] = todos2[time.id] || {};
+  const sortear = (sexo) => {
+    if (E[sexo] && E[sexo].length >= 16) return;
+    let nomes = null;
+    if (sexo === 'M') { const v1 = salvo.ler('futebolJs.elencos.v1', {}); if (v1[time.id] && v1[time.id].length >= 16) nomes = v1[time.id].map((j) => j.nome); }
+    if (!nomes) {
+      const usados = new Set(Object.values(todos2).flatMap((x) => [...(x.M || []), ...(x.F || [])]).map((j) => j.nome));
+      const banco = sexo === 'F' ? NOMES_F : NOMES, livres = banco.filter((n) => !usados.has(n)), fonte = livres.length >= 16 ? livres : banco.slice();
+      nomes = []; for (let i = 0; i < 16; i++) nomes.push(fonte.splice(Math.floor(Math.random() * fonte.length), 1)[0]);
+    }
+    E[sexo] = nomes.map((nome) => ({ nome, genero: sexo, semente: (Math.random() * 4294967296) >>> 0 }));
+    salvo.gravar('futebolJs.elencos.v2', todos2);
+  };
+  if (g !== 'F') sortear('M');
+  if (g !== 'M') sortear('F');
+  const lista = g === 'X' ? E.M.slice(0, 8).flatMap((j, i) => [j, E.F[i]]) : E[g];
+  return lista.map((j) => Object.assign({}, j, gerarAparencia(j.semente, j.genero)));
+}
+
+// ---------------------------------------------------------------------
+// (4.7.1) GERADOR DE APARÊNCIA — usa as listas do criador de personagem (PELES_FITZ, CORES_CABELO, ESTILOS_CABELO,
+// ESTILOS_BARBA, ROSTOS, LABIOS, CHUTEIRAS). Cada corte/rosto pode ter g: 'M' | 'F' | 'U' (unissex). Sem g, vale a lista
+// abaixo; um corte NOVO sem classificação conta como unissex. Rostos com cílios/batom/delineado/blush... são só femininos.
+// Barba só nos homens. A semente faz o mesmo jogador ficar sempre igual.
+// ---------------------------------------------------------------------
+const CABELO_GENERO = {
+  M: [3, 4, 5, 6, 7, 9, 15, 17, 18, 19, 21, 25, 26],                        // careca, raspado, militar, degradê, topete, social, pompadour...
+  F: [30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44],             // chanel, franja reta, maria-chiquinha, tranças, coques, emo...
+  // os outros (curto, volumoso, para trás, franja, black power, cacheados, longo liso, coque longo, bagunçado, tigela, rabo de cavalo,
+  // dreads, mullet, repicado, pixie...) são UNISSEX
+};
+const generoDoCabelo = (i) => { const h = ESTILOS_CABELO[i]; if (h && h.g) return h.g; return CABELO_GENERO.M.includes(i) ? 'M' : CABELO_GENERO.F.includes(i) ? 'F' : 'U'; };
+const generoDoRosto = (i) => { const r = ROSTOS[i]; if (!r) return 'U'; if (r.g) return r.g; return /cilios|batom|delineado|sombra|blush|pinta/.test(r.extra || '') ? 'F' : 'U'; };
+function gerarAparencia(semente, genero) {
+  const r = sorteador(semente || 1), pick = (lst) => lst[Math.floor(r() * lst.length)];
+  const pesado = (pesos) => { let t = 0; for (const w of pesos) t += w; let x = r() * t; for (let i = 0; i < pesos.length; i++) { x -= pesos[i]; if (x <= 0) return i; } return pesos.length - 1; };
+  const fem = genero === 'F';
+  const iPele = pesado([1, 2, 3, 3, 2.5, 2]), pele = PELES_FITZ[Math.min(iPele, PELES_FITZ.length - 1)].cor;
+  const iCor = pesado([30, 24, 18, 9, 7, 3, 2, 1].slice(0, CORES_CABELO.length)), cabelo = CORES_CABELO[iCor].cor;
+  const cortes = [], ok = fem ? 'F' : 'M';
+  ESTILOS_CABELO.forEach((h, i) => { const g = generoDoCabelo(i); if (g === ok) cortes.push(i, i); else if (g === 'U') cortes.push(i); });   // do próprio gênero vale em dobro
+  const estilo = pick(cortes);
+  const rostosNeutros = [], rostosF = [];
+  ROSTOS.forEach((x, i) => (generoDoRosto(i) === 'F' ? rostosF : rostosNeutros).push(i));
+  const rosto = fem && rostosF.length && r() < 0.55 ? pick(rostosF) : (r() < 0.35 ? 0 : pick(rostosNeutros));
+  const barba = fem ? 0 : (r() < 0.5 ? 0 : 1 + Math.floor(r() * (ESTILOS_BARBA.length - 1)));
+  const labio = clamp(Math.round(iPele * 1.3 + (r() * 2 - 1)), 0, LABIOS.length - 1);
+  return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: Math.floor(r() * CHUTEIRAS.length), manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M' };
 }
 
 // Seu técnico: nome e aparência sorteados na primeira vez e salvos ('futebolJs.tecnico.v1').
@@ -935,21 +1001,27 @@ const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e par
 //       Atributos.iniciante()  → objeto com tudo 4     Atributos.fator('chute') → multiplicador atual
 // ---------------------------------------------------------------------
 const Atributos = (() => {
-  const NOMES = ['chute', 'passe', 'efeito', 'velocidade', 'resistencia', 'drible', 'dominio'];
+  // (4.7.1) Os mesmos componentes das HABILIDADES de qualquer jogador (ver HABILIDADES logo abaixo). Os 7 antigos continuam
+  // valendo do mesmo jeito; os novos, se não vierem, copiam o antigo mais parecido (força = chute, recuperação = resistência,
+  // cruzamento = passe, finalização = chute), assim o personagem iniciante da história (tudo 4) continua igual.
+  const NOMES = ['chute', 'passe', 'efeito', 'velocidade', 'resistencia', 'drible', 'dominio', 'forca', 'recuperacao', 'cruzamento', 'finalizacao', 'cabeceio', 'defesa', 'desarme', 'goleiro'];
   const CHAVES_BASE = ['USER_WALK', 'USER_RUN', 'USER_WALK_BALL', 'USER_RUN_BALL', 'STAMINA_RUN_TIME', 'STAMINA_REGEN_TIME', 'DRIBBLE_TIME', 'DRIBBLE_COOLDOWN'];
   const BASE = {}; for (const k of CHAVES_BASE) BASE[k] = CONFIG[k];
-  const EXP = { chute: 0.9, passe: 0.9, efeito: 1, velocidade: 0.35, resistencia: 1.24, drible: 0.5, dominio: 0.5 };
+  const EXP = { chute: 0.9, passe: 0.9, efeito: 1, velocidade: 0.35, resistencia: 1.24, drible: 0.5, dominio: 0.5, forca: 0.9, recuperacao: 1.0, cruzamento: 0.9, finalizacao: 0.9, cabeceio: 0.8, defesa: 0.8, desarme: 0.8, goleiro: 0.8 };
+  const COPIA = { forca: 'chute', recuperacao: 'resistencia', cruzamento: 'passe', finalizacao: 'chute' };
   const tudo = (n) => { const o = {}; for (const k of NOMES) o[k] = n; return o; };
   let atual = tudo(7);
-  const razao = (nome) => Math.pow(clampA(atual[nome] / 7, 0.15, 1.6), EXP[nome]);
+  const razao = (nome) => Math.pow(clampA((atual[nome] ?? 7) / 7, 0.15, 1.6), EXP[nome] ?? 1);
   function clampA(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function aplicar(attrs) {
-    atual = Object.assign(tudo(7), attrs || {});
+    const a = Object.assign({}, attrs || {});
+    for (const [novo, velho] of Object.entries(COPIA)) if (a[novo] == null && a[velho] != null) a[novo] = a[velho];
+    atual = Object.assign(tudo(7), a);
     const vel = razao('velocidade'), res = razao('resistencia'), dri = razao('drible');
     CONFIG.USER_WALK = BASE.USER_WALK * vel; CONFIG.USER_RUN = BASE.USER_RUN * vel;
     CONFIG.USER_WALK_BALL = BASE.USER_WALK_BALL * vel; CONFIG.USER_RUN_BALL = BASE.USER_RUN_BALL * vel;
     CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * res;
-    CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / res;
+    CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // (4.7.1) encher a barra: recuperação
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
   }
@@ -961,6 +1033,57 @@ const Atributos = (() => {
     get atual() { return Object.assign({}, atual); },
   };
 })();
+
+// ---------------------------------------------------------------------
+// (4.7.1) HABILIDADES — componentes de CADA jogador (a IA dos dois times e você). Cada uma vai de 1 a 10 e 7 é o jogo de
+// antes (nada muda). hab(p, nome) devolve o número; fh(p, nome) devolve o multiplicador (n / 7)^expoente.
+//   defesa ......... leitura de jogo sem a bola: reação para cortar passe, bote na hora certa, marcar colado
+//   desarme ........ chance do bote/carrinho pegar a bola (e de não fazer falta)
+//   forca .......... velocidade máxima de chute, passe longo, cabeçada e chutão
+//   resistencia .... quanto tempo corre até cansar          recuperacao ... quanto tempo para recuperar o fôlego
+//   velocidade ..... andar e correr                          chute ......... qualidade (mira) do chute
+//   efeito ......... curva/subida que a bola faz             passe ......... precisão do passe
+//   cruzamento ..... precisão do cruzamento e da bola longa  drible ........ chance de tentar e de passar no drible
+//   dominio ........ dominar bola forte/alta sem deixar escapar
+//   cabeceio ....... cabeçada (força, mira) e escolher entre cabecear e matar no peito
+//   finalizacao .... mira e frieza dentro/perto da área      goleiro ....... defesas, alcance do mergulho, saída
+// Partidas comuns: a IA ADVERSÁRIA nasce com valores da faixa do nível (muito fácil 2–3, fácil 3–4, normal 5–6, difícil 6–8,
+// muito difícil 8–10) e os SEUS companheiros com 5–6. Cada jogador tem um "perfil" fixo (pela semente dele): uns finalizam
+// melhor, outros marcam melhor; a posição puxa um pouco (zagueiro: defesa/desarme/cabeceio; atacante: finalização/chute;
+// meio: passe/drible; goleiro: goleiro). O seu jogador usa os Atributos (história) — na partida livre, tudo 7.
+// ---------------------------------------------------------------------
+const HABILIDADES = ['defesa', 'desarme', 'forca', 'resistencia', 'recuperacao', 'velocidade', 'chute', 'efeito', 'passe', 'cruzamento', 'drible', 'dominio', 'cabeceio', 'finalizacao', 'goleiro'];
+const HAB_EXP = { velocidade: 0.35, resistencia: 1.0, recuperacao: 1.0, forca: 0.6, chute: 1, efeito: 1, passe: 1, cruzamento: 1, drible: 1, dominio: 1, cabeceio: 1, finalizacao: 1, defesa: 1, desarme: 1, goleiro: 1 };
+const FAIXA_NIVEL = { muito_facil: [2, 3], facil: [3, 4], normal: [5, 6], dificil: [6, 8], muito_dificil: [8, 10] };
+const VIES_POSICAO = {
+  GK: { goleiro: 2, defesa: 0, drible: -2, finalizacao: -3, chute: -1, cabeceio: -1 },
+  DEF: { defesa: 1, desarme: 1, cabeceio: 1, finalizacao: -1, drible: -1, goleiro: -6 },
+  MID: { passe: 1, drible: 1, resistencia: 1, goleiro: -6 },
+  FWD: { finalizacao: 1, chute: 1, velocidade: 1, defesa: -1, desarme: -1, goleiro: -6 },
+};
+// Gerador com semente (o mesmo jogador tem sempre o mesmo perfil e a mesma aparência).
+function sorteador(semente) {
+  let a = (semente >>> 0) || 1;
+  return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+const sementeDe = (txt) => { let h = 2166136261; for (const c of String(txt)) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; };
+function gerarHabilidades(faixa, role, semente) {
+  const r = sorteador(semente ^ 0x9e3779b9), [lo, hi] = faixa, V = VIES_POSICAO[role] || {}, h = {};
+  for (const n of HABILIDADES) {
+    const base = lo + r() * (hi - lo + 0.999);                       // dentro da faixa do nível
+    const perfil = (r() - 0.5) * 2.2;                                 // ±1 do jeito de cada um
+    h[n] = clamp(Math.round(base + perfil + (V[n] || 0)), 1, 10);
+  }
+  return h;
+}
+function hab(p, nome) {
+  if (!p) return 7;
+  if (p.isUser) return Atributos.valor(nome) ?? 7;
+  return (p.hab && p.hab[nome]) ?? 7;
+}
+function fh(p, nome, exp) {
+  return Math.pow(clamp(hab(p, nome) / 7, 0.15, 1.6), exp ?? HAB_EXP[nome] ?? 1);
+}
 
 // ---------------------------------------------------------------------
 // 3. CENA 3D
@@ -3132,10 +3255,11 @@ function posicaoParaCruzamento(p, h, TT, bz0) {
   const fund = aerea ? 2 : 0;
   if (atacante) return { rx: 40 + fund * 0.5, rz: -ladoBola * (aerea ? 3 : 2) };
   if (aberto) {
-    if (lado !== ladoBola) return { rx: 38 + fund * 0.5, rz: -ladoBola * 9 };           // segundo pau
-    return aerea ? { rx: 40, rz: ladoBola * 5 } : null;                                 // do lado da bola: primeiro pau (só no aéreo)
+    if (lado !== ladoBola) return { rx: 39 + fund * 0.5, rz: -ladoBola * 8 };           // segundo pau
+    return { rx: 41.5, rz: ladoBola * 4.5 };                                            // (4.7.1) do lado da bola: primeiro pau (antes só no time de bola aérea)
   }
-  if (meia) return { rx: 31 + fund, rz: lado * 3 };                                      // meia-lua
+  if (f === 'volante') return { rx: 30 + fund, rz: lado * 3 };                           // volante: meia-lua (sobra / rebote)
+  if (meia) return { rx: 35 + fund, rz: lado * 2.5 };                                    // (4.7.1) meia: entra na área (era a meia-lua)
   return null;
 }
 
@@ -3267,6 +3391,10 @@ function aiThink(p, dt) {
   if (G.sp) { const t = restartTarget(p); return seek(p, t.x, t.z, CONFIG.AI_SPEED * 0.9 * p.speedMul); }
   const myTeamHas = holder && holder.team === p.team;
   updateDrift(p, dt, myTeamHas);
+  // (4.7.1) Bola pelo lado no terço final (sua ou de um companheiro): quem tem lugar na área (atacante, ponta do outro lado,
+  // meia) VAI PARA A ÁREA esperar o cruzamento — antes o "apoio" (os 2 mais perto) ficava fora dela, até no time de bola aérea.
+  const cruzArea = myTeamHas && holder !== p && G.state === 'play' && !G.sp ? posicaoParaCruzamento(p, holder, taticaDe(p.team), p.base.z / ESC_W) : null;
+  if (cruzArea) { const t = formationTarget(p, true), longe = Math.hypot(t.x - p.x, t.z - p.z) > 5; return seek(p, t.x, t.z, CONFIG.AI_SPEED * (longe ? 1.1 : 0.9) * p.speedMul); }   // longe: dá um pique para chegar antes do cruzamento
   const si = myTeamHas ? G.support[p.team].indexOf(p) : -1;
   if (si >= 0) {
     let t = supportTarget(p, holder, si);
@@ -3408,14 +3536,14 @@ function aiCarry(p, dt) {
     if (ahead > 0.3) {
       p.dribleTentou = near.p;                     // uma decisão por marcador (não fica sorteando todo quadro)
       const ataque = p.x * p.dir > -HALF_L * 0.15;
-      let ch = (ataque ? 0.34 : 0.1) * (p.role === 'FWD' ? 1.35 : p.role === 'DEF' ? 0.35 : 1) * (TT.drible || 1) * (campoPequeno() ? 0.7 : 1);
+      let ch = (ataque ? 0.34 : 0.1) * (p.role === 'FWD' ? 1.35 : p.role === 'DEF' ? 0.35 : 1) * (TT.drible || 1) * (campoPequeno() ? 0.7 : 1) * fh(p, 'drible');
       if (near.p.role === 'GK') ch = dG < 16 ? 0.45 : 0;
       if (!bestPassReceiver(p)) ch *= 1.8;            // sem passe seguro: vai para cima
       if (Math.random() < ch) { iniciarDribleIA(p, near.p); return dribleIAVel(p, dt); }
     }
   } else if (near.d > 4) p.dribleTentou = null;
   if (p.think <= 0 || p.stuckT > 1.2) {
-    p.think = rand(0.35, 0.75) * (p.team === 1 ? PARTIDA.ajuste.reacao : 1);
+    p.think = rand(0.35, 0.75) / (0.55 + 0.45 * fh(p, 'passe'));   // (4.7.1) quem passa bem decide mais rápido
     const limpo = linhaDeChuteLimpa(p);
     const cara = dG < 16 && ultimoHomem({ team: 1 - p.team, dir: -p.dir, x: p.x }, p, true);   // só o goleiro na frente
     let shootChance = (dG < 20 ? 0.6 : dG < 26 ? 0.25 : dG < 30 ? 0.08 : 0) * (TT.chute || 1);   // de longe chuta bem menos
@@ -3524,8 +3652,7 @@ function iniciarDribleIA(p, o) {
   const tipo = vel < 2.2 && r < 0.6 ? 'pedalada' : r < 0.55 ? 'corpo' : 'arrancada';
   const dur = tipo === 'pedalada' ? 1.5 : tipo === 'corpo' ? 1.0 : 0.8;
   const tDecide = tipo === 'pedalada' ? 0.9 : tipo === 'corpo' ? 0.4 : 0.25;
-  const aj = p.team === 1 ? PARTIDA.ajuste.miraAdv : PARTIDA.ajuste.miraNossa;
-  let chance = 0.5 + (p.role === 'FWD' ? 0.08 : p.role === 'DEF' ? -0.1 : 0) + (o.role === 'GK' ? -0.12 : 0) + (1 - (aj || 1)) * 0.3;
+  let chance = 0.5 + (p.role === 'FWD' ? 0.04 : p.role === 'DEF' ? -0.05 : 0) + (o.role === 'GK' ? -0.12 : 0) + (fh(p, 'drible') - (o.role === 'GK' ? fh(o, 'goleiro') : fh(o, 'defesa'))) * 0.6;   // (4.7.1) drible x defesa
   if (o.isUser) chance -= 0.05;
   const sai = tipo === 'pedalada' ? (Math.random() < 0.5 ? -1 : 1) : -lado;
   p.dribleIA = { tipo, t: 0, dur, tDecide, fx, fz, px, pz, lado, sai, o, ok: Math.random() < clamp(chance, 0.25, 0.75), feito: false };
@@ -3611,7 +3738,9 @@ function bestPassReceiver(p, opts = {}) {
     const forward = (t.x - p.x) * p.dir;
     if (opts.soFrente && forward < 3) continue;
     const corrida = (t.profT > 0 || t.runT > 0) && forward > 3;
-    const plano = planoDePasse(p, t, corrida && Math.random() < 0.75 ? 'espaco' : undefined);
+    // (4.7.1) enfiada também para quem está de frente com espaço na frente (não só para quem já está correndo)
+    const comEspaco = !corrida && forward > 2 && espacoAFrente(t) > 7 * Math.max(0.7, ESC) && Math.random() < 0.45;
+    const plano = planoDePasse(p, t, (corrida && Math.random() < 0.75) || comEspaco ? 'espaco' : undefined);
     const m = margemPasse(p, plano, t);
     if (m < (pressionado ? -0.05 : 0.08)) continue;                     // vai ser cortado: não
     const open = nearestOf(opps, { x: plano.tx, z: plano.tz }).d;
@@ -3656,8 +3785,14 @@ function planoDePasse(from, to, style) {
     let lead = style === 'cross' ? 1 : clamp(d0 * 0.15, 2, 4);
     if (from.role === 'GK' && campoPequeno()) lead = Math.min(lead, 0.9);       // (4.5.1) goleiro em campo pequeno: bola no pé/peito do companheiro, não 4 m à frente dele
     let lx = to.dir * 1 + to.vx * 0.15, lz = -to.z * 0.02 + to.vz * 0.15;
-    if (!style && !(to.runT > 0 || to.profT > 0) && Math.hypot(to.vx, to.vz) < 2.5) {   // (4.7.0) parado: ele VEM na bola (não 4 m à frente, onde o marcador chega antes)
+    const vRec = Math.hypot(to.vx, to.vz);
+    if (!style && !(to.runT > 0 || to.profT > 0) && vRec < 2.5) {   // (4.7.0) parado: ele VEM na bola (não 4 m à frente, onde o marcador chega antes)
       lead = 0.8; lx = from.x - to.x; lz = from.z - to.z;
+    } else if (!style && vRec >= 2.5) {
+      // (4.7.1) correndo: a bola vai para ONDE ELE VAI ESTAR (adiantada pelo tempo que ela leva), não para um ponto fixo
+      const tb = clamp(d0 / 13, 0.3, 2.2);
+      tx = to.x + to.vx * tb * rand(0.8, 1.05); tz = to.z + to.vz * tb * rand(0.8, 1.05);
+      lead = rand(0.5, 2); lx = to.vx; lz = to.vz;
     }
     const ll = Math.hypot(lx, lz) || 1;
     tx += lx / ll * lead; tz += lz / ll * lead;
@@ -3721,7 +3856,7 @@ function margemPasse(from, P, rec) {
       for (const o of opps) {
         if (o.out || o.stun > 0.5) continue;
         if (o.role === 'GK' && Math.abs(px - o.x) > 12) continue;
-        const to = Math.max(0, Math.hypot(o.x - px, o.z - pz) - 0.8) / vOpp(o) + 0.25;
+        const to = Math.max(0, Math.hypot(o.x - px, o.z - pz) - 0.8) / vOpp(o) + 0.25 / fh(o, 'defesa', 0.7);
         if (to - t < m) m = to - t;
       }
     }
@@ -3757,11 +3892,12 @@ function passTo(from, to, broken, style) {
     [dx, dz] = [dx * c - dz * s, dx * s + dz * c];
   } else if (!from.isUser) {
     // (4.7.0) a IA também erra um pouco: mais com o marcador em cima e nos passes longos (e conforme a dificuldade)
-    const o = nearestOf(opponentsOf(from), from), ajuste = from.team === 1 ? PARTIDA.ajuste.miraAdv : PARTIDA.ajuste.miraNossa;
-    const sd = (0.012 + (o.p && o.d < 2.2 ? (2.2 - o.d) * 0.02 : 0) + P.d * 0.0004) * (ajuste || 1);
+    const o = nearestOf(opponentsOf(from), from), ajuste = 1 / fh(from, style === 'cross' || style === 'long' || style === 'lob' ? 'cruzamento' : 'passe');   // (4.7.1) habilidade
+    // (4.7.1) mais humano: o passe da IA não cai sempre no ponto exato (erro de direção e de força maiores, menos para quem passa bem)
+    const sd = (0.02 + (o.p && o.d < 2.2 ? (2.2 - o.d) * 0.025 : 0) + P.d * 0.0007) * ajuste;
     const err = gauss() * sd, c = Math.cos(err), s = Math.sin(err);
     [dx, dz] = [dx * c - dz * s, dx * s + dz * c];
-    speed *= 1 + gauss() * 0.03;
+    speed *= 1 + gauss() * 0.06 * ajuste;
   }
   from.angle = Math.atan2(dz, dx);
   kickBall(from, dx * speed, vy, dz * speed, 0, 0, style === 'throw');
@@ -3794,9 +3930,113 @@ function sorteioChuteForte(p) {
   const kind = ball.y >= IMPACTO.ALT_CABECA ? 'cabeca' : ball.y >= IMPACTO.ALT_BARRIGA ? 'estomago' : 'balanco';
   p.impacto = { kind, t: 0, dur: IMPACTO.DUR[kind], nx: ball.vx / sp, nz: ball.vz / sp, lado: Math.random() < 0.5 ? -1 : 1 };
   p.controlCd = Math.max(p.controlCd, p.impacto.dur);
-  ball.vx *= 0.88; ball.vz *= 0.88; ball.vy *= 0.9;   // a bola segue o caminho, só perde um pouco de força
-  Som.toque(0.5);
+  desviarNoCorpo(p, kind === 'balanco' ? 0.3 : 0.4);   // (4.7.1) a bola RESVALA de verdade no corpo (antes seguia o caminho, só mais fraca)
   return 'impacto';
+}
+
+// ---------------------------------------------------------------------
+// (4.7.1) DESVIO NO CORPO: a bola bate no jogador e sai para onde a física manda — reflete na "superfície" do corpo
+// (um cilindro), perde força, sobe um pouco e ganha um efeito aleatório. Vale para QUALQUER chute em QUALQUER jogador
+// (o seu chute na IA, o chute da IA em você ou num companheiro seu, bloqueio, chutão em cima de alguém).
+// ---------------------------------------------------------------------
+function desviarNoCorpo(p, e = 0.35, raio = 0.45) {
+  let nx = ball.x - p.x, nz = ball.z - p.z, nl = Math.hypot(nx, nz);
+  if (nl < 0.05) { nx = -ball.vx; nz = -ball.vz; nl = Math.hypot(nx, nz) || 1; }
+  nx /= nl; nz /= nl;
+  const vn = ball.vx * nx + ball.vz * nz;
+  if (vn < 0) { ball.vx -= (1 + e) * vn * nx; ball.vz -= (1 + e) * vn * nz; }
+  const k = rand(0.55, 0.8), a = gauss() * 0.25, c = Math.cos(a), s = Math.sin(a);
+  [ball.vx, ball.vz] = [(ball.vx * c - ball.vz * s) * k, (ball.vx * s + ball.vz * c) * k];
+  ball.vy = Math.abs(ball.vy) * 0.4 + rand(0.5, 3.5);
+  ball.spinSide = rand(-0.5, 0.5); ball.spinVert = 0;
+  ball.x = p.x + nx * raio; ball.z = p.z + nz * raio; ball.y = Math.max(ball.y, CONFIG.BALL_R + 0.02);
+  ball.lastKicker = p; G.lastTouch = p; ball.isShot = false; ball.userShot = false; ball.cruzamento = null;
+  G.offside = null; G.passTarget = null; G.possession = null;
+  p.ignBolaT = 0.5; p.controlCd = Math.max(p.controlCd || 0, 0.4);
+  Som.toque(0.45);
+}
+// Levou uma bolada (chute forte): cambaleia (cabeça, barriga ou pernas, pela altura) e a bola desvia nele.
+function levarBolada(p) {
+  const sp = Math.hypot(ball.vx, ball.vz) || 1;
+  const kind = ball.y >= IMPACTO.ALT_CABECA ? 'cabeca' : ball.y >= IMPACTO.ALT_BARRIGA ? 'estomago' : 'balanco';
+  p.impacto = { kind, t: 0, dur: IMPACTO.DUR[kind] * 0.7, nx: ball.vx / sp, nz: ball.vz / sp, lado: Math.random() < 0.5 ? -1 : 1 };
+  desviarNoCorpo(p, kind === 'balanco' ? 0.3 : 0.4);
+}
+
+// ---------------------------------------------------------------------
+// (4.7.1) BLOQUEIO DE CHUTE. Quando sai um chute (seu ou da IA), cada adversário que está NA LINHA dele (até ~14 m)
+// tenta bloquear em 5 de cada 10 vezes — a IA dos dois times, inclusive os seus companheiros. Três jeitos:
+//   pulo ..... pula de lado para a bola (bola na altura do corpo/cabeça)
+//   perna .... estica a perna para o lado da bola (bola baixa) — alcança mais longe
+//   costas ... mãos para trás (para não fazer pênalti/mão) e vira o rosto
+// Se a bola passar no corpo de quem está bloqueando, ela desvia (desviarNoCorpo). O mesmo bloqueio é usado na FINTA
+// (você aperta CHUTAR e cancela): aí ele "compra" o chute e fica um instante sem reação.
+// ---------------------------------------------------------------------
+const BLOQUEIO = { pulo: { raio: 0.6, alt: 2.35, dur: 0.75 }, perna: { raio: 1.0, alt: 0.85, dur: 0.7 }, costas: { raio: 0.62, alt: 1.95, dur: 0.85 } };
+function iniciarBloqueio(o, tipo, finta, ponto) {
+  const B = BLOQUEIO[tipo];
+  o.bloqueio = { tipo, t: 0, dur: B.dur, finta: !!finta, lado: ponto ? (((ponto.x - o.x) * -Math.sin(o.angle) + (ponto.z - o.z) * Math.cos(o.angle)) >= 0 ? 1 : -1) : (Math.random() < 0.5 ? -1 : 1), ponto: ponto || null };
+  if (ponto) o.angle = Math.atan2(ball.z - o.z, ball.x - o.x);
+  if (tipo === 'pulo') { o.jumpT = 0.5; o.jumpAlt = 0.45; }
+}
+function prepararBloqueios(chutador) {
+  if (!chutador || !(G.state === 'play' || KICK_STATES.includes(G.state))) return;   // (o seu chute sai ainda no estado da mira)
+  const b = { x: ball.x, y: ball.y, z: ball.z, vx: ball.vx, vy: ball.vy, vz: ball.vz, ss: ball.spinSide, sv: ball.spinVert };
+  const pts = [];
+  for (let t = 0.04; t < 1.4; t += 0.04) {
+    passoBola(b, 0.04);
+    pts.push({ x: b.x, y: b.y, z: b.z, t });
+    if (Math.abs(b.x) > HALF_L + 0.5) break;
+  }
+  for (const o of TEAMS[1 - chutador.team]) {
+    if (o.isUser || o.role === 'GK' || o.out || o.stun > 0 || o.scripted || o.wallSlot >= 0 || o.bloqueio || o.slideT > 0) continue;
+    const d0 = dist2D(o, chutador);
+    if (d0 < 1.5 || d0 > 14) continue;
+    let best = null, bd = Infinity;
+    for (const q of pts) { const d = Math.hypot(q.x - o.x, q.z - o.z); if (d < bd) { bd = d; best = q; } }
+    if (!best || bd > 1.35 || best.y > 2.6 || best.t < 0.06) continue;
+    if (Math.random() >= 0.5) continue;              // 5 de cada 10
+    const tipo = best.y < 0.75 ? (Math.random() < 0.65 ? 'perna' : 'costas') : best.y > 1.5 ? (Math.random() < 0.6 ? 'pulo' : 'costas') : ['pulo', 'perna', 'costas'][Math.floor(Math.random() * 3)];
+    iniciarBloqueio(o, tipo, false, best);
+  }
+}
+// O corpo de quem bloqueia alcança a bola? (chamado no checkBallContacts)
+function checarBloqueios() {
+  if (G.possession) return false;
+  for (const p of players) {
+    const B = p.bloqueio;
+    if (!B || B.finta || p.out || B.t > B.dur * 0.9) continue;
+    if (!ball.lastKicker || ball.lastKicker.team === p.team || ball.lastKicker === p) continue;
+    const P = BLOQUEIO[B.tipo], alt = P.alt + (B.tipo === 'pulo' && p.jumpT > 0 ? 0.4 : 0);
+    if (dist2D(p, ball) < P.raio && ball.y < alt && Math.hypot(ball.vx, ball.vz) > 6) {
+      desviarNoCorpo(p, B.tipo === 'perna' ? 0.25 : 0.4, P.raio);
+      showToast(p.team === 0 ? 'Bloqueou!' : 'Bloqueado!', p.team === 0 ? 'good' : 'bad');
+      return true;
+    }
+  }
+  return false;
+}
+// Pose do bloqueio (por cima de tudo no syncMeshes).
+function aplicarBloqueio(p, m) {
+  const B = p.bloqueio, u = clamp(B.t / B.dur, 0, 1), w = Math.sin(u * Math.PI), l = B.lado || 1;
+  if (B.tipo === 'pulo') {
+    m.bracoE.rotation.z = 0.35 * w; m.bracoD.rotation.z = 0.35 * w; m.bracoE.rotation.x = 0.15; m.bracoD.rotation.x = -0.15;
+    m.pernaE.rotation.z = -0.15 * w; m.pernaD.rotation.z = 0.25 * w;
+    m.raiz.rotation.x = l * 0.18 * w; m.corpo.rotation.z = -0.1 * w;
+  } else if (B.tipo === 'perna') {
+    const pe = l > 0 ? m.pernaD : m.pernaE;          // a perna do lado da bola
+    pe.rotation.z = 0.7 * w; pe.rotation.x = -l * 0.75 * w;
+    (l > 0 ? m.pernaE : m.pernaD).rotation.z = -0.2 * w;
+    m.raiz.rotation.x = -l * 0.22 * w; m.raiz.position.y = Math.max(m.raiz.position.y, 0.04 * w);
+    m.bracoE.rotation.x = 0.7 * w + 0.1; m.bracoD.rotation.x = -0.7 * w - 0.1; m.bracoE.rotation.z = 0.3 * w; m.bracoD.rotation.z = 0.3 * w;
+  } else {
+    // mãos para trás, coladas nas costas (cotovelo dobrado) e o rosto virado para o lado
+    m.bracoE.rotation.z = -0.55 * w; m.bracoD.rotation.z = -0.55 * w; m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
+    usarCotovelo(m.bracoE, -0.6 * w, -0.9 * w); usarCotovelo(m.bracoD, 0.6 * w, -0.9 * w);
+    usarCabeca(m, -0.15 * w - 0.001);
+    m.cabeca.rotation.y = l * 0.9 * w;
+    m.corpo.rotation.z = -0.12 * w; m.raiz.rotation.x = -l * 0.06 * w;
+  }
 }
 
 function aiBolaAerea(p) {
@@ -3814,23 +4054,42 @@ function aiBolaAerea(p) {
     if (ang > 2.1) tipo = ball.y > 1.15 * ec && Math.random() < 0.5 ? 'bicicleta' : 'cabeca';
     if (tipo !== 'cabeca' || naArea) { aiFinalizaAereo(p, tipo); return; }
   }
-  if (dOwn < 30 * ESC && ball.y >= 1.4 * ec && ball.lastKicker && ball.lastKicker.team !== p.team) { aiCabeceia(p, null); return; }   // afasta
-  if (ball.y < 1.75 * ec || (ec < 1 && Math.random() < 0.5)) { givePossession(p); return; }               // peito (criança: metade das bolas altas ela também só domina)
+  const perigo = dOwn < 30 * ESC && ball.lastKicker && ball.lastKicker.team !== p.team;
+  const apertado = nearestOf(opponentsOf(p), p).d < 1.7;
+  if (perigo && ball.y >= 1.4 * ec && (apertado || Math.random() < 0.75)) { aiCabeceia(p, null); return; }   // afasta
+  // (4.7.1) DOMÍNIO NO PEITO: bola caindo e ninguém em cima → em vez de cabecear de cara, ele deixa a bola descer e mata no
+  // peito (quem domina melhor faz mais). A decisão é tomada uma vez por bola.
+  const desce = ball.vy < -0.5;
+  if (p.peitoBola !== ball.lastKicker || G.time - (p.peitoT || 0) > 2.5) { p.peitoBola = ball.lastKicker; p.peitoT = G.time; p.vaiPeito = !apertado && Math.random() < clamp(0.75 * fh(p, 'dominio'), 0.3, 0.95); }
+  if (ball.y < 1.75 * ec || (ec < 1 && Math.random() < 0.5) || (p.vaiPeito && ball.y < 2.05 * ec)) { dominioNoPeito(p); return; }   // peito (criança: metade das bolas altas ela também só domina)
+  if (p.vaiPeito && desce) return;                  // espera a bola descer até o peito
   aiCabeceia(p, bestPassReceiver(p) || nearestOf(teamOf(p), p, p).p);
+}
+// (4.7.1) A IA mata no peito: mesma pose do seu domínio no peito, e a bola cai no pé.
+function dominioNoPeito(p) {
+  if (!(p.escCorpo < 1)) p.recvPose = { kind: 'peito', t: 0, dur: POSE_DUR.peito, side: 1 };
+  const dx = ball.x - p.x, dz = ball.z - p.z;
+  if (Math.hypot(dx, dz) > 0.2) p.angle = Math.atan2(dz, dx);
+  givePossession(p);
+  p.think = Math.max(p.think, 0.45);                // tempo de ajeitar
 }
 
 // Finalização aérea da IA: mesma pose que a sua (começa no quadro do contato).
+// (4.7.1) Cabeçada não tem força de chute: 9–15 m/s (com a força e o cabeceio do jogador) e, quanto mais forte, MENOS precisa.
+function erroDeCabeca(p, sp, base) { return gauss() * (base + Math.max(0, sp - 10) * 0.22) / fh(p, 'cabeceio'); }
 function aiFinalizaAereo(p, tipo) {
-  const gx = p.dir * HALF_L, tz = rand(-GOAL_HALF + 0.6, GOAL_HALF - 0.6);
-  const ty = tipo === 'cabeca' ? rand(0.3, 2.0) : rand(0.3, 2.3);
-  const dx = gx - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1;
-  const sp = tipo === 'cabeca' ? rand(13, 18) : tipo === 'voleio' ? rand(20, 27) : rand(17, 23), T = D / sp;
+  const gx = p.dir * HALF_L;
+  let tz = rand(-GOAL_HALF + 0.6, GOAL_HALF - 0.6), ty = tipo === 'cabeca' ? rand(0.3, 2.0) : rand(0.3, 2.3);
+  const sp = (tipo === 'cabeca' ? rand(9.5, 14.5) : tipo === 'voleio' ? rand(17, 24) : rand(15, 20)) * Math.sqrt(fh(p, 'forca'));
+  if (tipo === 'cabeca') { tz += erroDeCabeca(p, sp, 0.6); ty += erroDeCabeca(p, sp, 0.3); }
+  else { tz += gauss() * (0.9 + (sp - 17) * 0.12) / fh(p, 'finalizacao'); ty += gauss() * 0.5 / fh(p, 'finalizacao'); }
+  const dx = gx - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp);
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
   if (tipo !== 'bicicleta') p.angle = Math.atan2(dz, dx);   // na bicicleta ele está de costas
   p.recvPose = { kind: tipo, t: CONTATO_T[tipo], dur: POSE_DUR[tipo], side: Math.random() < 0.5 ? 1 : -1 };
   kickBall(p, dx / D * sp, vy, dz / D * sp, 0, 0);
   p.kickT = 0;
-  ball.isShot = true;
+  ball.isShot = true; prepararBloqueios(p);   // (4.7.1)
   const nome = { cabeca: 'Cabeçada', voleio: 'Voleio', bicicleta: 'Bicicleta' }[tipo];
   showToast(nome + ' de ' + p.name + '!', p.team === 0 ? 'good' : 'bad');
 }
@@ -3838,11 +4097,12 @@ function aiFinalizaAereo(p, tipo) {
 // Cabeceio da IA: para um companheiro ou, sem alvo, para longe do próprio gol.
 function aiCabeceia(p, alvo) {
   let dx, dz, sp, vy;
+  const d0f = (a) => clamp(dist2D(p, a) / 10, 0.5, 2);   // o erro cresce com a distância do companheiro
   if (alvo) {
     // (4.7.0) Cabeceio de passe: a bola chega no PEITO/PÉ do companheiro (~0,8 m) para ele dominar — antes ela subia de novo
     // e virava um pingue-pongue de cabeçadas no meio-campo.
-    dx = alvo.x + alvo.vx * 0.4 - ball.x; dz = alvo.z + alvo.vz * 0.4 - ball.z; const d = Math.hypot(dx, dz) || 1;
-    const T = clamp(d / 12, 0.45, 1.2);
+    dx = alvo.x + alvo.vx * 0.4 - ball.x + erroDeCabeca(p, 11, 0.5) * d0f(alvo); dz = alvo.z + alvo.vz * 0.4 - ball.z + erroDeCabeca(p, 11, 0.5) * d0f(alvo); const d = Math.hypot(dx, dz) || 1;
+    const T = clamp(d / 11, 0.45, 1.25);
     vy = (0.8 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T; sp = vArrasto(d, T); dx /= d; dz /= d;
   }
   else {
@@ -3864,16 +4124,18 @@ function aiCabeceia(p, alvo) {
 
 // Cabeçada ou batida de primeira depois de um cruzamento.
 function finalizacaoDeCruzamento(p, como) {
-  const gx = p.dir * HALF_L, tz = rand(-GOAL_HALF + 0.6, GOAL_HALF - 0.6);
-  const ty = como === 'cabeca' ? rand(0.4, 2.2) : rand(0.3, 2.4);
-  const dx = gx - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1;
-  const sp = como === 'cabeca' ? rand(13, 18) : rand(18, 25), T = D / sp;
+  const gx = p.dir * HALF_L;
+  let tz = rand(-GOAL_HALF + 0.6, GOAL_HALF - 0.6), ty = como === 'cabeca' ? rand(0.4, 2.2) : rand(0.3, 2.4);
+  const sp = (como === 'cabeca' ? rand(9.5, 14.5) : rand(16, 23)) * Math.sqrt(fh(p, 'forca'));   // (4.7.1) cabeçada mais fraca e com erro
+  if (como === 'cabeca') { tz += erroDeCabeca(p, sp, 0.6); ty += erroDeCabeca(p, sp, 0.3); }
+  else { tz += gauss() * (0.8 + (sp - 16) * 0.12) / fh(p, 'finalizacao'); ty += gauss() * 0.45 / fh(p, 'finalizacao'); }
+  const dx = gx - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp);
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
   p.angle = Math.atan2(dz, dx);
   if (como === 'cabeca') p.jumpT = 0.5;            // sobe para cabecear
   kickBall(p, dx / D * sp, vy, dz / D * sp, 0, 0);
   if (como === 'cabeca') p.kickT = 0;
-  ball.isShot = true;
+  ball.isShot = true; prepararBloqueios(p);   // (4.7.1)
   showToast((como === 'cabeca' ? 'Cabeçada de ' : 'De primeira, ') + p.name + '!', p.team === 0 ? 'good' : 'bad');
 }
 
@@ -3892,19 +4154,21 @@ function aiShoot(p) {
   const longeDoGoleiro = gk ? (gk.z > 0 ? -1 : 1) : (Math.random() < 0.5 ? -1 : 1);
   const canto = Math.random() < 0.75 ? longeDoGoleiro : -longeDoGoleiro;
   let tz = canto * rand(GOAL_HALF - 1.4, GOAL_HALF - 0.45), ty, sp, curva = 0;
-  if (tipo === 'forte') { sp = rand(24, 31); ty = rand(0.4, 1.9); }
-  else if (tipo === 'colocado') { sp = rand(18, 23); ty = rand(0.25, 1.1); curva = -canto * 0.15; }
+  if (tipo === 'forte') { sp = rand(22, 28); ty = rand(0.4, 1.9); }          // (4.7.1) um pouco mais lento (era 24–31): a força do jogador ajusta abaixo
+  else if (tipo === 'colocado') { sp = rand(16, 21); ty = rand(0.25, 1.1); curva = -canto * 0.15; }
   else { sp = rand(11, 14); ty = rand(1.2, 2.0); tz = rand(-1.5, 1.5); }
-  const mira = p.team === 1 ? PARTIDA.ajuste.miraAdv : PARTIDA.ajuste.miraNossa;   // dificuldade
+  const mira = 1 / (fh(p, 'chute') * (dGoal < 18 * ESC ? fh(p, 'finalizacao') : 1));   // (4.7.1) qualidade do chute e da finalização
+  sp *= clamp(fh(p, 'forca'), 0.7, 1.2); curva *= fh(p, 'efeito');
   tz += rand(-1, 1) * dGoal * 0.05 * mira;         // erro pela distância
   ty += rand(-0.2, 0.5) * dGoal / 25;
-  const dx = goalX - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = D / sp;
+  const dx = goalX - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp);   // (4.7.1) com a resistência do ar
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
   p.angle = Math.atan2(dz, dx);
   kickBall(p, dx / D * sp, vy, dz / D * sp, curva, 0);
   p.kickT = 0.4;
   ball.isShot = true; ball.distChute = dGoal; ball.cavadinha = tipo === 'cavadinha';   // (depois do kickBall, que zera isso)
   if (ball.cavadinha) marcarCavadinha(1 - p.team, rand(0.3, 0.8));
+  else prepararBloqueios(p);                        // (4.7.1) quem está na linha tenta bloquear
 }
 
 // Guarda, no momento da cavadinha, o quanto o goleiro que vai ser encoberto está ADIANTADO
@@ -3996,9 +4260,13 @@ function gkThink(p, dt) {
       }
     }
     if (p.diveT <= 0) {
-      p.saidaPes = null;
-      if (G.possession === p) { p.stun = 0.3; p.diveVX = 0; return { vx: 0, vz: 0 }; }   // pegou: levanta com a bola
-      p.fall = 1; p.fallKind = 'lado'; p.fallSide = p.diveSide; p.stun = 0.7;          // termina deitado e levanta
+      // (4.7.1) Depois de pular, ele CAI no chão e levanta:
+      //   com a bola ... fica deitado segurando ~0,75 s (segura o jogo: nesse tempo não toca nem lança)
+      //   sem a bola ... levanta com pressa (~0,25 s), já se arrastando para o lado onde a bola está
+      p.saidaPes = null; p.diveVX = 0;
+      p.fall = 1; p.fallKind = 'lado'; p.fallSide = p.diveSide;
+      if (G.possession === p) { p.stun = 0.9; p.caidoComBola = 0.75; p.hold = Math.max(p.hold, 0.75 + 0.5); return { vx: 0, vz: 0 }; }
+      p.stun = 0.25; p.levantaRapido = 0.3;
     }
     return { vx: p.diveVX || 0, vz: p.diveVZ };
   }
@@ -4015,6 +4283,7 @@ function gkThink(p, dt) {
   if (G.possession === p) {
     if (G.state !== 'play') return { vx: 0, vz: 0 };
     if (G.sp && G.sp.taker === p) return aiSetPiece(p, dt);    // tiro de meta
+    if (p.caidoComBola > 0) { p.caidoComBola -= dt; return { vx: 0, vz: 0 }; }   // (4.7.1) deitado com a bola: não toca nem lança
     p.hold -= dt;
     if (p.comPe) {
       // Recuo: com a bola no pé ele NÃO pode pegar com a mão. Domina e toca rápido (ou dá um
@@ -4208,14 +4477,14 @@ function tryTackle(def, holder, dt) {
     }
     if (Math.random() < 0.1 && startSlide(def, holder)) return;              // de frente, às vezes vai de carrinho
   }
-  let chance = holder.isUser ? CONFIG.AI_TACKLE_CHANCE : 0.22;
+  let chance = (holder.isUser ? CONFIG.AI_TACKLE_CHANCE : 0.22) * fh(def, 'desarme') / Math.sqrt(fh(holder, 'drible'));   // (4.7.1) desarme x drible
   if (holder.isUser && Math.hypot(holder.vx, holder.vz) < 4.2) chance = Math.min(0.6, chance * 2);   // você andando: bote mais fácil
   if (holder.boost > 0) chance *= 0.6;
   if (Math.random() < chance) {
     givePossession(def, { silent: true });
     perderBola(holder);
     if (holder.isUser) { G.stats.perdas++; showToast('Desarmado!', 'bad'); }
-  } else if (def.role !== 'GK' && Math.random() < 0.07) {
+  } else if (def.role !== 'GK' && Math.random() < 0.07 / fh(def, 'desarme')) {
     commitFoul(def, holder, { tipo: 'desarme' });        // errou o bote e acertou o pé: falta leve
   }
 }
@@ -4350,6 +4619,7 @@ function updatePlayers(dt) {
     if (p.pedeT > 0) p.pedeT -= dt;                 // (4.7.0) mão levantada pedindo a bola
     if (p.profT > 0) { p.profT -= dt; if (G.passTarget && G.passTarget.p === p) p.profT = 0; }   // corrida em profundidade
     if (p.dribleIA && G.possession !== p) { p.dribleIA = null; p.driblePose = null; }   // perdeu a bola no meio do drible da IA
+    if (p.bloqueio) { p.bloqueio.t += dt; if (p.bloqueio.t >= p.bloqueio.dur) { if (p.bloqueio.finta) p.stun = Math.max(p.stun, 0.55); p.bloqueio = null; } }   // (4.7.1)
     if (p.lamento && (G.state === 'goal' || G.state === 'celebrate' || G.state === 'fim')) {
       p.lamentoAtraso -= dt;
       if (p.lamentoAtraso <= 0) p.lamentoK = Math.min(1, p.lamentoK + dt / 0.7);
@@ -4358,7 +4628,7 @@ function updatePlayers(dt) {
     // contador nos jogadores de linha, e quem pulava na barreira ficava de braços para cima pra sempre.
     if (p.role !== 'GK' && p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.jumpAlt = 0; }
     if (p.falling) { p.fall = Math.min(1, p.fall + dt * 2.8); if (p.fall >= 1) p.falling = false; }   // caindo aos poucos
-    else if (p.fall > 0 && !p.scripted && p.stun < 0.5) p.fall = Math.max(0, p.fall - dt * 2.5);
+    else if (p.fall > 0 && !p.scripted && p.stun < 0.5) p.fall = Math.max(0, p.fall - dt * (p.levantaRapido > 0 ? 4.5 : 2.5));   // (4.7.1) goleiro levanta com pressa
     if (p.isUser) updateStamina(p, dt);
     if (p.scripted) continue;
 
@@ -4376,7 +4646,10 @@ function updatePlayers(dt) {
     // da velocidade. A taxa acompanha a duração: no fim da partida quem correu muito está ~45%.
     if (!p.isUser) {
       const spd = Math.hypot(p.vx, p.vz);
-      if (G.state === 'play') p.folego = Math.max(0, (p.folego ?? 1) - dt * (spd > 4.6 ? 1 : spd > 2 ? 0.3 : 0) * 0.55 / (CONFIG.MATCH_SECONDS * 0.35));
+      if (G.state === 'play') {                     // (4.7.1) resistência: cansa mais devagar; recuperação: recupera andando/parado
+        p.folego = Math.max(0, (p.folego ?? 1) - dt * (spd > CONFIG.AI_SPEED * 0.77 ? 1 : spd > 2 ? 0.3 : 0) * 0.55 / (CONFIG.MATCH_SECONDS * 0.35) / fh(p, 'resistencia'));
+        if (spd < 2) p.folego = Math.min(1, p.folego + dt * 0.0025 * fh(p, 'recuperacao'));
+      }
       const fv = 0.8 + 0.2 * (p.folego ?? 1);
       des = { vx: des.vx * fv, vz: des.vz * fv };
     }
@@ -4404,6 +4677,16 @@ function updatePlayers(dt) {
       else { const f = 1 - p.impacto.t / p.impacto.dur; des = { vx: p.impacto.nx * 1.5 * f, vz: p.impacto.nz * 1.5 * f }; p.anim += dt * 4; }
     }
     if (p.slideT > 0) { const v = lerp(1.5, 9, p.slideT / p.slideDur); des = { vx: p.slideDX * v, vz: p.slideDZ * v }; }
+    if (p.bloqueio) {                               // (4.7.1) bloqueando: um passo rápido para a linha da bola e fica
+      const Bq = p.bloqueio, pt = Bq.ponto;
+      if (pt && Bq.t < 0.3) { const dx = pt.x - p.x, dz = pt.z - p.z, d = Math.hypot(dx, dz); des = d > 0.3 ? { vx: dx / d * Math.min(4, d * 6), vz: dz / d * Math.min(4, d * 6) } : { vx: 0, vz: 0 }; }
+      else des = { vx: 0, vz: 0 };
+    }
+    if (p.role === 'GK' && p.levantaRapido > 0) {   // (4.7.1) goleiro levantando com pressa: já vai se arrastando para o lado da bola
+      p.levantaRapido -= dt;
+      const dzb = clamp(ball.z, -GOAL_HALF, GOAL_HALF) - p.z;
+      des = { vx: 0, vz: Math.sign(dzb) * Math.min(2.5, Math.abs(dzb) * 3) };
+    }
     if (p.dash > 0) { p.dash -= dt; des = { vx: p.dashVX, vz: p.dashVZ }; }
 
     let acc = p.dash > 0 || p.diveT > 0 || p.slideT > 0 ? 60 : 22;
@@ -4696,6 +4979,7 @@ function givePossession(p, opts = {}) {
 
 function checkBallContacts() {
   if (G.possession) return;
+  if (checarBloqueios()) return;                   // (4.7.1) bloqueio de chute
   const sp3 = Math.hypot(ball.vx, ball.vy, ball.vz);
   for (const gk of players) {
     if (gk.role !== 'GK' || gk.controlCd > 0 || (gk.stun > 0 && gk.diveT <= 0) || (ball.lastKicker === gk && sp3 > 5)) continue;
@@ -4733,7 +5017,7 @@ function checkBallContacts() {
       const passa = Math.abs((gk.x - ball.x) * ball.vz - (gk.z - ball.z) * ball.vx) / hs;
       const noCorpo = passa < 0.6 && ball.y < 2.1;
       let chance = clamp(1.45 - sp3 / 30, 0.2, 0.95) + clamp(1 - passa / reach, 0, 1) * 0.45;
-      chance += gk.team === 1 ? PARTIDA.ajuste.goleiroAdv : PARTIDA.ajuste.goleiroNosso;   // dificuldade (teto abaixo)
+      chance += (fh(gk, 'goleiro') - 1) * 0.3;     // (4.7.1) habilidade de goleiro (era o ajuste de dificuldade; o teto abaixo continua)
       if (ball.y > 2.0 && gk.jumpT <= 0) chance -= 0.15;
       if (Math.abs(ball.spinSide) > 0.4) chance -= 0.08;
       if (sp3 < 8) chance = 0.97;
@@ -4806,6 +5090,11 @@ function checkBallContacts() {
         }
       }
     }
+    // (4.7.1) chute forte de um adversário bem em você: a bola bate e desvia (como acontece com a IA)
+    if (d < 0.75 && ball.y < 1.9 && ball.isShot && ball.lastKicker && ball.lastKicker.team !== u.team && sp3 > 15 && !(u.boladaT > G.time)) {
+      u.boladaT = G.time + 0.8;
+      if (Math.random() < 0.65) { levarBolada(u); return; }
+    }
     if (d < 0.9 && ball.y < 1.0) { givePossession(u); return; }
   }
   // Barreira: quem acabou de pular na cobrança bloqueia a bola até ~2,4 m de altura.
@@ -4856,7 +5145,7 @@ function checkBallContacts() {
   if (best) {
     const rr = sorteioChuteForte(best);              // (4.2.3) idem no chão
     if (rr === 'passa' || rr === 'impacto') return;
-    if (sp3 > 17 && Math.random() < 0.45) {
+    if (sp3 > 17 && Math.random() < clamp(0.45 / fh(best, 'dominio'), 0.15, 0.8)) {   // (4.7.1) domínio
       ball.vx *= -0.25; ball.vz = ball.vz * -0.25 + rand(-3, 3); ball.vy = rand(1, 3);
       ball.lastKicker = best; G.lastTouch = best; best.controlCd = 0.5;
     } else givePossession(best);
@@ -5355,7 +5644,8 @@ function endCelebration() {
 
 function clearFlags(p) {
   Object.assign(p, { driblePose: null, perda: null, saidaPes: null, fim: null, bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0,
-    dribleIA: null, pedeT: 0, profT: 0, profAlvo: null, espaco: null, espT: 0, jumpAlt: 0, cansadoT: 0 });   // (4.7.0)
+    dribleIA: null, pedeT: 0, profT: 0, profAlvo: null, espaco: null, espT: 0, jumpAlt: 0, cansadoT: 0,   // (4.7.0)
+    bloqueio: null, levantaRapido: 0, caidoComBola: 0 });   // (4.7.1)
 }
 
 // Saída de bola: o atacante fica na bola e o meia central ao lado dele, no próprio campo.
@@ -5388,7 +5678,7 @@ function kickoff(team) {
   G.kickoffPending = { team, taker, partner };
   if (window.__semApito) window.__apitoPendente = true; else Som.apito(0.5);   // apito da saída de bola (4.2.5: espera a tela de carregando sumir)
   G.userRequest = 0;
-  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null; G.direto = null;
+  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.fintaCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null; G.direto = null;
   esconderRecepcao(); user.recvPose = null;
   for (const sp of spares.concat(conesBola)) if (!sp.present) { sp.present = true; sp.fade = 1; }
   lostBall.life = 0; ball.hidden = false;
@@ -6201,24 +6491,34 @@ function confirmAim() {
 }
 
 // ---------------------------------------------------------------------
-// (4.7.0) BARRA DE FORÇA no estilo dos clássicos (Winning Eleven): segura e ela enche; a COR diz a força.
-//   AZUL ....... fraco (0 a 30%) — toque curto, chute colocado, cavadinha
-//   VERDE ...... médio, calibrado (30 a 60%) — o mais preciso
-//   AMARELO .... forte, meio calibrado (60 a 82%) — mais longe/mais forte, já começa a sair torto
-//   VERMELHO ... muito forte, descalibrado (82 a 100%) — sobe e sai torto (no chute, por cima do gol)
-// Não existe faixa "certa" desenhada: quem decide a força é você (passe: até onde a bola vai; cruzamento: onde ela cai).
-// A precisão também depende do atributo, do marcador em cima, do corpo virado em relação ao toque e do cansaço.
+// (4.7.1) BARRA DE FORÇA no estilo Winning Eleven: quanto MAIS tempo segurar, MAIS forte (a força máxima é a do atributo
+// FORÇA de quem chuta). Cores em degradê, de baixo para cima:
+//   VERMELHO (0–10%) ...... fraco demais
+//   AZUL (10–30%) ......... fraco "especial": cavadinha, passe curto, bola por cima
+//   AMARELO (30–45%) ...... começa a ser um chute bom
+//   VERDE (45–70%) ........ o chute/passe bom (o mais preciso)
+//   AMARELO (70–85%) ...... começa a ficar forte demais (sobe e sai mais torto)
+//   VERMELHO (85–100%) .... forte demais, descalibrado (no chute, por cima do gol)
+// A precisão também depende da habilidade (chute/finalização/passe/cruzamento), do marcador em cima, do corpo virado e do cansaço.
 // ---------------------------------------------------------------------
-const FAIXAS_FORCA = [0.3, 0.6, 0.82];
-const ERRO_FAIXA = [0.02, 0.014, 0.045, 0.1];      // desvio (rad) da direção em cada faixa: azul, verde, amarelo, vermelho
-const faixaDaForca = (v) => (v < FAIXAS_FORCA[0] ? 0 : v < FAIXAS_FORCA[1] ? 1 : v < FAIXAS_FORCA[2] ? 2 : 3);
+const FAIXAS_FORCA = [0.1, 0.3, 0.45, 0.7, 0.85];
+const ERRO_FAIXA = [0.035, 0.016, 0.02, 0.012, 0.04, 0.09];   // desvio (rad) da direção em cada faixa (de baixo para cima)
+const NOME_FAIXA = ['fraco demais', 'azul', 'amarelo', 'verde', 'amarelo forte', 'vermelho'];
+const faixaDaForca = (v) => { let i = 0; while (i < FAIXAS_FORCA.length && v >= FAIXAS_FORCA[i]) i++; return i; };
+const curvaPor = (X, Y, x) => { if (x <= X[0]) return Y[0]; for (let i = 1; i < X.length; i++) if (x <= X[i]) return lerp(Y[i - 1], Y[i], (x - X[i - 1]) / (X[i] - X[i - 1])); return Y[Y.length - 1]; };
+const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
+const VEL_CHUTE = [8, 11, 16, 20, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; antes a faixa certa dava 26–30)
+const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
+const ELEV_CHUTE = [0.03, 0.03, 0.04, 0.05, 0.09, 0.15, 0.27];   // ângulo de subida do chute (o vermelho sobe muito)
 const gauss = () => (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.22;   // ~normal(0,1), sem caudas absurdas
 function desvioDoToque(k, u, atributo) {
   let s = ERRO_FAIXA[k.faixa];
-  if (k.faixa === 3) s += (k.power - FAIXAS_FORCA[2]) * 0.4;               // quanto mais fundo no vermelho, pior
-  s *= clamp(1.4 - 0.4 * Atributos.fator(atributo), 0.75, 1.6);
+  if (k.faixa === 5) s += (k.power - FAIXAS_FORCA[4]) * 0.45;              // quanto mais fundo no vermelho, pior
+  let f = fh(u, atributo);
+  if (atributo === 'chute' && !u.setPiece && Math.hypot(HALF_L - u.x, u.z) < 18 * ESC) f *= fh(u, 'finalizacao');   // perto do gol: finalização
+  s *= clamp(1.4 - 0.4 * f, 0.7, 1.6);
   if (!u.setPiece && !u.throwIn && !u.bolaFixa) {
-    const o = nearestOf(TEAMS[1], u);
+    const o = nearestOf(TEAMS[1 - u.team], u);
     if (o.p && o.d < 2.6) s *= 1 + (2.6 - o.d) * 0.22;                     // marcador em cima
     const giro = Math.abs(wrapAngle(Math.atan2(k.dirZ, k.dirX) - u.angle));
     s *= 1 + clamp((giro - 0.7) / 2.4, 0, 0.9);                            // tocando para o lado/para trás do corpo
@@ -6334,14 +6634,14 @@ function executeUserKick() {
       D = lerp(3, 17 * clamp(0.8 + 0.2 * pf, 0.6, 1.1), k.power);
       T = clamp(0.5 + D * 0.03, 0.55, 1.05);
     } else {
-      const Dmax = clamp(HALF_L * 1.05, 20, 54) * clamp(0.75 + 0.25 * pf, 0.55, 1.1);
+      const Dmax = clamp(HALF_L * 1.05, 20, 54) * clamp(0.75 + 0.25 * fh(u, 'forca'), 0.55, 1.1);
       D = lerp(7, Dmax, k.power);
       T = clamp(0.75 + D * 0.026, 0.9, 2.0) * (k.kind === 'shot' ? 1 + clamp(k.oy || 0, -1, 1) * 0.18 : 1);   // efeito "sobe" = mais alta; "baixo" = mais tensa
       y1 = 0.6;
     }
-    const erroDist = gauss() * (k.faixa >= 2 ? 0.07 : 0.035) * (k.faixa === 3 ? 1.6 : 1);
+    const erroDist = gauss() * (k.faixa >= 4 || k.faixa === 0 ? 0.07 : 0.035) * (k.faixa === 5 ? 1.6 : 1);
     D *= 1 + erroDist;
-    const a = ang0 + desvioDoToque(k, u, 'passe') * 1.15;
+    const a = ang0 + desvioDoToque(k, u, k.throwIn ? 'passe' : 'cruzamento') * 1.15;
     const vy = (y1 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
     const hs = k.throwIn ? Math.min(CONFIG.THROW_MAX * 1.15, D / T) : vArrasto(D, T);
     const lado = k.kind === 'shot' ? (k.ox || 0) * 0.6 * fEf : 0;
@@ -6356,10 +6656,9 @@ function executeUserKick() {
   }
   // ---- PASSE RASTEIRO: a força é a distância ----
   if (k.kind === 'pass') {
-    const mn = 5, mx = mn + (CONFIG.PASS_SPEED[1] - mn) * Atributos.fator('passe');
-    const sp = lerp(mn, mx, k.power);
+    const sp = curvaPor(FORCA_X, VEL_PASSE, k.power) * clamp(0.7 + 0.3 * fh(u, 'forca'), 0.55, 1.15);   // (4.7.1) força do jogador
     const a = ang0 + desvioDoToque(k, u, 'passe');
-    const vy = k.faixa === 3 ? 0.3 + (k.power - FAIXAS_FORCA[2]) / (1 - FAIXAS_FORCA[2]) * rand(1, 3) : 0.25;   // vermelho: sai quicando
+    const vy = k.faixa === 5 ? 0.3 + (k.power - FAIXAS_FORCA[4]) / (1 - FAIXAS_FORCA[4]) * rand(1, 3) : 0.25;   // vermelho: sai quicando
     kickBall(u, Math.cos(a) * sp, vy, Math.sin(a) * sp);
     u.angle = a;
     ball.userPass = true; G.stats.passes++;
@@ -6368,22 +6667,22 @@ function executeUserKick() {
     return;
   }
   // ---- CHUTE ----
-  const [mn, mx0] = CONFIG.SHOT_SPEED;
-  const mx = mn + (mx0 - mn) * Atributos.fator('chute');   // (4.3.6) atributo de força
-  const speed = lerp(mn, mx, k.power);
+  // (4.7.1) Velocidade pela barra (tabela VEL_CHUTE) × força do jogador (o máximo cresce/encolhe com o atributo FORÇA).
+  const fF = fh(u, 'forca'), vb = curvaPor(FORCA_X, VEL_CHUTE, k.power);
+  const speed = vb * (k.power > 0.45 ? clamp(0.75 + 0.25 * fF, 0.55, 1.12) : 1);
   const a = ang0 + desvioDoToque(k, u, 'chute');
-  // Altura: cresce com a força (no vermelho a bola sobe muito), mais o efeito "sobe" (bater embaixo) ou "baixa" (em cima).
-  let elev = lerp(0.03, 0.1, Math.min(1, k.power / FAIXAS_FORCA[2]));
-  if (k.faixa === 3) elev += (k.power - FAIXAS_FORCA[2]) / (1 - FAIXAS_FORCA[2]) * rand(0.08, 0.2);
+  // Altura: cresce com a força (no amarelo de cima já sobe; no vermelho sobe muito), mais o efeito "sobe" (bater embaixo) ou "baixa" (em cima).
+  let elev = curvaPor(FORCA_X, ELEV_CHUTE, k.power);
+  if (k.faixa === 5) elev += rand(0, 0.1);
   elev += Math.max(0, k.oy) * 0.12 - Math.max(0, -k.oy) * 0.04 + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
   if (k.throwIn) elev = Math.max(elev, 0.22);
   elev = clamp(elev, 0.005, 0.7);
   // CAVADINHA: força no AZUL batendo bem embaixo da bola. A bola sobe alto e cai devagar; ONDE ela cai depende só da força
   // (e de um pouco de imprecisão) — se encobrir o goleiro e cair dentro do gol, é gol. Nada de "mal batida" decidido por fora.
-  const cavadinha = k.kind === 'shot' && k.oy > 0.5 && k.faixa === 0;
+  const cavadinha = k.kind === 'shot' && k.oy > 0.5 && k.faixa === 1;   // (4.7.1) cavadinha: força no AZUL
   let vx, vy, vz, qualCav = 0;
   if (cavadinha) {
-    const D = lerp(5, 34, k.power / FAIXAS_FORCA[0]) * (1 + gauss() * 0.05);
+    const D = lerp(5, 34, (k.power - FAIXAS_FORCA[0]) / (FAIXAS_FORCA[1] - FAIXAS_FORCA[0])) * (1 + gauss() * 0.05);
     vy = clamp(5.5 + D * 0.19, 6.5, 10.5);
     const T = 2 * vy / CONFIG.GRAVITY, hs = vArrasto(D, T);
     vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
@@ -6396,9 +6695,9 @@ function executeUserKick() {
   u.angle = a;
   if (cavadinha) qualCav = qualidadeDaCavadinha(1);
   ball.isShot = true; ball.userShot = true; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha;
-  if (cavadinha) marcarCavadinha(1, qualCav);
+  if (cavadinha) marcarCavadinha(1, qualCav); else prepararBloqueios(u);   // (4.7.1) bloqueio da IA
   fim();
-  checarCenaDoAngulo();
+  checarCenaDoAngulo(k.faixa === 3 && Math.hypot(HALF_L - u.x, u.z) > 9);
 }
 
 // (4.7.0) Quão bem a cavadinha encobre o goleiro, pela FÍSICA: a altura da bola quando ela passa por cima dele
@@ -6418,13 +6717,15 @@ function qualidadeDaCavadinha(timeGoleiro) {
 }
 
 // Chute indo no ângulo (pode entrar, bater na trave ou sair por pouco)? Cena lenta com cortes.
-function checarCenaDoAngulo() {
+// (4.7.1) Também vale para o chute BOM (força no verde) que vai no gol, não só para o que vai no ângulo.
+function checarCenaDoAngulo(bom) {
   const pr = predictShot();
   if (pr && pr.t > 0.35) {
     const az = Math.abs(pr.z);
     const pertoDaTrave = Math.abs(az - GOAL_HALF) < 0.8 && pr.y < CONFIG.GOAL_H + 0.5;
     const pertoDoTravessao = Math.abs(pr.y - CONFIG.GOAL_H) < 0.5 && az < GOAL_HALF + 0.8;
-    if (pertoDaTrave || pertoDoTravessao) startShotCine(pr);
+    const noGol = az < GOAL_HALF - 0.1 && pr.y < CONFIG.GOAL_H - 0.1;
+    if (pertoDaTrave || pertoDoTravessao || (bom && noGol)) startShotCine(pr);
   }
 }
 
@@ -6524,8 +6825,70 @@ function updateKickClock(rdt) {
 function cancelKick() {
   if (!['aim', 'power', 'spin'].includes(G.state)) return;
   if (G.kick && G.kick.semLimite) return;          // bola parada: não tem para onde voltar
+  const k = G.kick;
   G.kick = null; G.state = 'play'; G.targetScale = 1;
   hideKickUI();
+  if (k && k.kind === 'shot' && !k.cruzar && G.possession === user) fintaDeChute();   // (4.7.1) armou o chute e cancelou: finta
+}
+
+// ---------------------------------------------------------------------
+// (4.7.1) FINTA DE CHUTE. Todo mundo "lê" quando você arma o chute (CHUTAR). Se você cancelar, é uma finta:
+//   marcador na linha do chute (até ~7,5 m) ........ "compra" em 5 de cada 10: pula/estica a perna/vira de costas e fica um
+//                                                      instante sem reação (conta como drible nas estatísticas)
+//   goleiro ........................................ pula para um lado: de longe 1 em 10; você dentro da área 5 em 10;
+//                                                      cara a cara (sem zagueiro na frente) 8 em 10. Quando ele pula, a cena
+//                                                      fica em câmera lenta com 2 ângulos (atrás de você → de lado, no gol).
+// ---------------------------------------------------------------------
+function fintaDeChute() {
+  const u = user;
+  let enganou = false;
+  const alvo = { x: HALF_L, z: clamp(u.z * 0.3, -GOAL_HALF, GOAL_HALF) };
+  for (const o of TEAMS[1]) {
+    if (o.role === 'GK' || o.out || o.stun > 0 || o.scripted || o.bloqueio) continue;
+    const d = dist2D(o, u);
+    if (d < 0.8 || d > 7.5 || distPointSegment(o, u, alvo) > 1.8 || (o.x - u.x) < -0.5) continue;
+    if (Math.random() >= 0.5) continue;
+    const ax = alvo.x - u.x, az = alvo.z - u.z, l2 = ax * ax + az * az || 1, k = clamp(((o.x - u.x) * ax + (o.z - u.z) * az) / l2, 0, 1);
+    iniciarBloqueio(o, ['pulo', 'perna', 'costas'][Math.floor(Math.random() * 3)], true, { x: u.x + ax * k, z: u.z + az * k });
+    o.committing = 0; enganou = true;
+  }
+  const gk = TEAMS[1].find((g) => g.role === 'GK' && !g.out);
+  let pulou = false;
+  if (gk && gk.diveT <= 0 && gk.stun <= 0 && Math.hypot(HALF_L - u.x, u.z) < 36 * Math.max(0.5, ESC)) {
+    const naArea = dentroDaArea(u.x, u.z, 1);
+    const cara = ultimoHomem({ team: 1, dir: -1, x: u.x }, u, true);
+    const prob = cara ? 0.8 : naArea ? 0.5 : 0.1;
+    if (Math.random() < prob) {
+      const lado = Math.random() < 0.5 ? -1 : 1;
+      gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.5 ? 'baixo' : 'alto';
+      gk.diveSide = Math.sign(lado * Math.cos(gk.angle)) || 1;
+      pulou = true;
+      G.fintaCine = { t: 0, seg: -1, cut: true, gk, lado: Math.sign(u.z - gk.z) || 1 };
+      G.timeScale = G.targetScale = 0.28;
+      setLetterbox(true);
+      showBanner('ENGANOU O GOLEIRO!', 0, 2.0, true);
+    }
+  }
+  if (enganou || pulou) { G.stats.dribles++; G.stats.driblesOk++; Som.drible(); if (enganou && !pulou) showToast('Finta!', 'good'); }
+}
+function updateFintaCine(rdt) {
+  const F = G.fintaCine;
+  if (!F) return;
+  F.t += rdt;
+  const seg = F.t < 0.85 ? 0 : 1;
+  if (seg !== F.seg) { F.seg = seg; F.cut = true; }
+  if (F.t > 1.8 || G.state !== 'play' || G.shotCine || G.cine) {
+    G.fintaCine = null;
+    if (!G.shotCine && !G.cine) { setLetterbox(false); G.targetScale = 1; }
+  }
+}
+// Câmera da finta: 1) atrás de você, por cima do ombro, olhando o goleiro; 2) de lado, perto da trave, pegando os dois.
+function cameraFinta() {
+  const F = G.fintaCine, gk = F.gk, u = user;
+  const dx = gk.x - u.x, dz = gk.z - u.z, d = Math.hypot(dx, dz) || 1, fx = dx / d, fz = dz / d;
+  if (F.seg <= 0) return { px: u.x - fx * 3.0 - fz * 0.9, py: 1.75, pz: u.z - fz * 3.0 + fx * 0.9, tx: gk.x, ty: 1.0, tz: gk.z };
+  const mx = lerp(u.x, gk.x, 0.62), mz = lerp(u.z, gk.z, 0.62), sd = F.lado || 1;   // mais perto do goleiro (é ele que "comprou")
+  return { px: mx - fx * 1.5 - fz * sd * 5.5, py: 1.4, pz: mz - fz * 1.5 + fx * sd * 5.5, tx: mx, ty: 0.9, tz: mz };
 }
 
 // ---------------------------------------------------------------------
@@ -6902,7 +7265,7 @@ function finalizarAereo(tipo) {
   if (tipo === 'cabecada') user.angle = Math.atan2(dz, dx);
   kickBall(user, dx / D * sp, vy, dz / D * sp);
   if (tipo === 'cabecada') user.kickT = 0;
-  ball.isShot = true; ball.userShot = true; G.stats.chutes++;
+  ball.isShot = true; ball.userShot = true; G.stats.chutes++; prepararBloqueios(user);   // (4.7.1)
   showToast({ cabecada: 'Cabeçada!', voleio: 'Voleio!', bicicleta: 'Bicicleta!' }[tipo], 'good');
   checarCenaDoAngulo();
 }
@@ -7762,16 +8125,19 @@ function setClass(el, cls, on) { if (el.classList.contains(cls) !== on) el.class
 
 // Letreiro pequeno (domínio perfeito e outros avisos que não podem tampar a jogada).
 (function () { const st = document.createElement('style'); st.textContent = '#banner.pequeno{font-size:clamp(16px,3.6vw,28px)!important;top:22%!important;text-shadow:2px 2px 0 #000!important}'; document.head.appendChild(st); })();
-// (4.7.0) Barra de força em tons (de baixo para cima): azul fraco · verde médio · amarelo forte · vermelho descalibrado.
-// O preenchimento mostra a cor de cada trecho conforme sobe; sem faixa "certa", sem o "MÁX" e sem a zona de excesso.
+// (4.7.1) Barra de força em degradê (de baixo para cima): vermelho (fraco demais) · azul (fraco especial) · amarelo · VERDE (bom) ·
+// amarelo (forte demais) · vermelho (descalibrado). O degradê inteiro aparece apagado no fundo; a parte cheia acende, com um traço branco
+// marcando onde a força está. Sem o "MÁX" e sem a zona de excesso.
 (function () {
+  const G_ = 'linear-gradient(to top,#c8352b 0%,#c8352b 5%,#2a72d6 13%,#2a72d6 26%,#f2c230 33%,#f2c230 41%,#35b55a 49%,#35b55a 66%,#f2c230 74%,#f2c230 81%,#e0402c 89%,#e0402c 100%)';
   const st = document.createElement('style');
   st.textContent = '#powerZone,#powerOver,#powerLabel{display:none!important}' +
-    '#powerFill{left:5px!important;right:5px!important;background:linear-gradient(to top,#2a72d6 0 30%,#35b55a 30% 60%,#f2c230 60% 82%,#e0402c 82% 100%)!important;' +
+    '#powerBar{background:var(--panel-solid)!important}' +
+    '#powerBar::before{content:"";position:absolute;left:5px;right:5px;top:0;bottom:0;background:' + G_ + ';opacity:.32}' +
+    '#powerFill{left:5px!important;right:5px!important;background:' + G_ + '!important;border-top:3px solid #fff;box-sizing:border-box;' +
     'background-size:100% calc(min(52 * var(--avh, 1vh), 260px) - 6px)!important;background-position:bottom!important;background-repeat:no-repeat!important}' +
-    '#powerBar{background:repeating-linear-gradient(to top,rgba(255,255,255,.05) 0 2px,transparent 2px 10%),var(--panel-solid)!important}' +
-    '#powerBar[data-faixa="0"]{border-color:#7fb0f0!important}#powerBar[data-faixa="1"]{border-color:#8fe0a0!important}' +
-    '#powerBar[data-faixa="2"]{border-color:#ffe07a!important}#powerBar[data-faixa="3"]{border-color:#ff8a70!important}';
+    '#powerBar[data-faixa="0"],#powerBar[data-faixa="5"]{border-color:#ff8a70!important}#powerBar[data-faixa="1"]{border-color:#7fb0f0!important}' +
+    '#powerBar[data-faixa="2"],#powerBar[data-faixa="4"]{border-color:#ffe07a!important}#powerBar[data-faixa="3"]{border-color:#8fe0a0!important}';
   document.head.appendChild(st);
 })();
 // Avisos e letreiros SOMEM POR TEMPO (no JavaScript), não pelo fim da animação de CSS.
@@ -7800,7 +8166,7 @@ function showBanner(text, team, dur = 2.6, pequeno = false) {
 
 const STAGE_HINTS = {
   aim: 'Arraste para mirar: a seta segue o seu dedo. Solte para confirmar.',
-  power: 'Segure e solte: azul é fraco, verde é médio, amarelo é forte e vermelho sai descalibrado.',
+  power: 'Segure e solte: quanto mais tempo, mais forte. Verde é o chute bom; azul é o toque fraco (cavadinha, passe curto); vermelho é fraco demais ou forte demais.',
   spin: 'Toque no ponto da bola onde o pé vai bater.',
 };
 function showStage(stage) {
@@ -8075,7 +8441,7 @@ function apitoFinal() {
   G.targetScale = G.timeScale = 1;
   if (G.kick) { G.kick = null; }
   hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
-  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
   if (G.dominioPerfeito) { G.dominioPerfeito = false; }
   G.possession = null; ball.vx *= 0.3; ball.vz *= 0.3;
   setLetterbox(true);
@@ -8323,7 +8689,7 @@ const cam = { px: 0, py: 0, pz: 0, tx: 0, ty: 0, tz: 0, shake: 0, yaw: 0, mode: 
 const KICK_STATES = ['aim', 'power', 'spin'];
 
 function updateYaw(rdt) {
-  if (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul') return;   // nas cenas a câmera não gira
+  if (G.cine || G.shotCine || G.fintaCine || G.state === 'restart' || G.state === 'foul') return;   // nas cenas a câmera não gira
   let want, rapidez = CONFIG.CAM.turn;
   const S = G.sp;
   if (KICK_STATES.includes(G.state)) {
@@ -8359,6 +8725,7 @@ function cameraGoal() {
     return { px: mx + C.px * s * 6.4, py: 1.8, pz: mz + C.pz * s * 6.4, tx: mx, ty: 1.0, tz: mz };
   }
   if (G.shotCine) return shotCameraGoal();
+  if (G.fintaCine) return cameraFinta();           // (4.7.1)
   if (G.celebAuto) return cameraCelebAuto();
   if (G.state === 'goal' && G.golAutor) {         // gol de outro: câmera na comemoração de quem fez
     const a = G.golAutor, ang = a.angle + 0.6;
@@ -8417,8 +8784,8 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   const g = cameraGoal();
   let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
-  const corte = (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
-  if (corte) { k = 1; G.fimCorte = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.foul) G.foul.cut = false; }
+  const corte = (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
+  if (corte) { k = 1; G.fimCorte = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.foul) G.foul.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
   cam.tx = lerp(cam.tx, g.tx, k); cam.ty = lerp(cam.ty, g.ty, k); cam.tz = lerp(cam.tz, g.tz, k);
   const sp = Math.hypot(user.vx, user.vz);
@@ -8630,6 +8997,7 @@ function syncMeshes(dt) {
     if (p.perda) aplicarPerda(p, m);
     if (p.impacto) aplicarImpacto(p, m);
     if (p.driblePose) aplicarDriblePose(p, m); else if (m.pernaE.rotation.x || m.pernaD.rotation.x) { m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0; }
+    if (p.bloqueio) aplicarBloqueio(p, m); else if (m.cabeca.rotation.y) m.cabeca.rotation.y = 0;   // (4.7.1)
     m.etiqueta.visible = G.state !== 'fim' && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
@@ -8684,6 +9052,7 @@ function stepGame(dt, rdt) {
   updateDribbleWindow(dt);
   updateKickClock(rdt);
   updateShotCine(rdt);
+  updateFintaCine(rdt);
   updateSpares(dt);
   updateOfficials(dt, rdt);
   updateSlides(dt);
@@ -9017,7 +9386,8 @@ function resolverPartida(cfg = {}) {
   if (parecido) { const fora = P.mandante === 0 ? 1 : 0; P.uniformes[fora] = P.timesObj[fora].uniforme2 || P.uniformes[fora]; }
   P.formacoes = [0, 1].map((i) => (cfg.formacoes && cfg.formacoes[i]) || P.timesObj[i].formacao || '4-4-2');
   P.taticas = [0, 1].map((i) => (cfg.taticas && cfg.taticas[i]) || P.timesObj[i].tatica || 'tikitaka');
-  P.elencos = P.timesObj.map(elencoDoTime);
+  P.genero = cfg.genero === 'F' || cfg.genero === 'X' ? cfg.genero : 'M';   // (4.7.1) partida masculina, feminina ou mista
+  P.elencos = P.timesObj.map((t) => elencoDoTime(t, P.genero));
   P.tecnicos = [tecnicoDoUsuario(), P.timesObj[1].tecnico || { nome: 'Técnico', aparencia: { pele: '#BF8159', cabelo: '#1C140F', estilo: 0, roupa: '#222222' } }];
   P.ajuste = calcularAjuste(P);
   return P;
@@ -9608,7 +9978,11 @@ function criarJogador(P, team, f, j, num, isUser) {
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
   scene.add(mesh.raiz);
-  const vel = (team === 0 ? P.ajuste.velNossa : P.ajuste.velAdv) * (P.criancas ? Math.pow(3 / 7, 0.35) : 1);   // (4.4.2) crianças: velocidade 3 (de 7) em vez de correr na velocidade cheia do jogo (~0,74x)
+  const vel = P.criancas ? Math.pow(3 / 7, 0.35) : 1;   // (4.4.2) crianças: velocidade 3 (de 7) em vez de correr na velocidade cheia do jogo (~0,74x)
+  // (4.7.1) Habilidades: o adversário pela faixa do nível da partida; os seus companheiros 5–6. A velocidade vem da habilidade
+  // (antes: um ajuste fixo por time). O elenco da história pode trazer as habilidades prontas (j.hab).
+  const faixa = team === 1 ? (FAIXA_NIVEL[P.dificuldade] || FAIXA_NIVEL.normal) : FAIXA_NIVEL.normal;
+  const habs = isUser ? null : Object.assign(gerarHabilidades(faixa, f.role, j.semente != null ? j.semente : sementeDe((P.timesObj[team].id || team) + '|' + nome)), j.hab || {});
   const base = { x: f.fx * HALF_L, z: f.fz * HALF_W };
   return {
     id: G.proxId++, team, dir, role: f.role, funcao: f.funcao || null, base, slotF: f, name: nome, numero: num, ficha: isUser ? CHAVE_VOCE : j.nome, dados: j,
@@ -9619,7 +9993,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     celeb: null,
     diveT: 0, diveDur: 0.55, diveVX: 0, diveVZ: 0, diveSide: 1, jumpT: 0,
     throwIn: false, goalKick: false, setPiece: null, carry: false, slot: -1,
-    speedMul: rand(0.9, 1.05) * (isUser ? 1 : vel), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
+    hab: habs, speedMul: isUser ? 1 : rand(0.96, 1.03) * vel * Math.pow(clamp(habs.velocidade / 7, 0.15, 1.6), HAB_EXP.velocidade), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
     commitT: rand(0.5, 2), committing: 0, folego: 1,
     stamina: 1, exhausted: false, regenWait: 0, dribbleCd: 0, staminaMax: 1,
     isUser, mesh,
@@ -9665,7 +10039,9 @@ function montarTimes(P) {
     let k = trocaPos ? slots.length - 1 : 0;
     slots.forEach((f, i) => {
       const isUser = i === userSlot;
-      const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, P.usuario.aparencia || {}) : (trocaPos ? doElenco.get(i) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]));
+      // (4.7.1) sem personagem: na partida feminina você também é uma jogadora (aparência do gerador)
+      const apVoce = P.usuario.aparencia || (P.genero === 'F' ? gerarAparencia(sementeDe('voce-F'), 'F') : null);
+      const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, apVoce || {}) : (trocaPos ? doElenco.get(i) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]));
       const p = criarJogador(P, team, f, j, isUser && numPref ? numPref : numero(f.role), isUser);
       players.push(p); TEAMS[team].push(p); P.participantes.push(p);
       if (isUser) user = p;
@@ -10326,6 +10702,8 @@ function montarTelaDeConfig() {
     campo('cfgDur', 'DURAÇÃO', lista([['300', '5 min (padrão)'], ['180', '3 min (rápida)']])) +
     campo('cfgForm', 'FORMAÇÃO (SEU TIME)', '<option value="">Preferida do time</option>' + opc(FORMACOES)) +
     campo('cfgTat', 'TÁTICA (SEU TIME)', '<option value="">Preferida do time</option>' + opc(TATICAS)) +
+    campo('cfgGenero', 'JOGADORES', lista([['M', 'Masculino'], ['F', 'Feminino'], ['X', 'Misto']])) +
+    campo('cfgPersonagem', 'PERSONAGEM', '<option value="">Nenhum (você)</option>') +
     '</div>';
   side.insertBefore(box, $('startBtn'));
   const intro = side.querySelector('p:not(.eyebrow)');
@@ -10333,6 +10711,7 @@ function montarTelaDeConfig() {
   const ult = salvo.ler('futebolJs.ultimaPartida.v1', null);
   const val = (id, v) => { if (v !== undefined && v !== null && $(id).querySelector('option[value="' + v + '"]')) $(id).value = v; };
   val('cfgTime0', 'azulao'); val('cfgTime1', 'ataliba'); val('cfgCampo', 'estadio'); val('cfgDif', 'normal'); val('cfgHora', 'noite');
+  opcoesDePersonagem();
   if (ult) for (const [id, v] of Object.entries(ult)) val(id, v);
   montarTelaDeSelecao(box);
 }
@@ -10346,8 +10725,8 @@ function montarTelaDeConfig() {
 const SELECAO_GRUPOS = [
   { titulo: 'TIMES', itens: [['cfgTime0', 'Seu time'], ['cfgTime1', 'Adversário'], ['cfgMando', 'Mandante (torcida e uniforme)']] },
   { titulo: 'CAMPO E AMBIENTE', itens: [['cfgCampo', 'Campo'], ['cfgClima', 'Clima'], ['cfgHora', 'Horário'], ['cfgGrama', 'Gramado']] },
-  { titulo: 'JOGO', itens: [['cfgComp', 'Competição'], ['cfgDur', 'Tempo de jogo'], ['cfgDif', 'Dificuldade']] },
-  { titulo: 'VOCÊ E O TÉCNICO', itens: [['cfgPos', 'Sua posição'], ['cfgForm', 'Formação'], ['cfgTat', 'Tática (muda no pause também)']] },
+  { titulo: 'JOGO', itens: [['cfgComp', 'Competição'], ['cfgDur', 'Tempo de jogo'], ['cfgDif', 'Dificuldade'], ['cfgGenero', 'Jogadores']] },
+  { titulo: 'VOCÊ E O TÉCNICO', itens: [['cfgPersonagem', 'Usar personagem do modo história'], ['cfgPos', 'Sua posição'], ['cfgForm', 'Formação'], ['cfgTat', 'Tática (muda no pause também)']] },
 ];
 const SELECAO_EM_BREVE = [
   ['Bola', ['Clássica', 'Várzea gasta', 'Noturna']],
@@ -10355,7 +10734,6 @@ const SELECAO_EM_BREVE = [
   ['Árbitro', ['Normal ✓', 'Rigoroso', 'Deixa jogar']],
   ['Torcida', ['Pela popularidade ✓', 'Vazio', 'Lotado']],
   ['Prorrogação', ['Direto aos pênaltis ✓', '2 x 1 min']],
-  ['Seu personagem', ['Aparência', 'Nome', 'Número']],
   ['Modo história', ['Carreira', 'Tabela da liga', 'Chave da copa']],
 ];
 function infoSelecao(id, v) {
@@ -10367,7 +10745,9 @@ function infoSelecao(id, v) {
   }
   if (id === 'cfgClima') return v === 'chuva' ? 'Bola corre mais e quica menos' : v === 'neve' ? 'Bola segura no gramado' : 'Normal';
   if (id === 'cfgGrama') return v === 'alto' ? 'Bola rola mais devagar' : 'Bola rola rápido';
-  if (id === 'cfgDif') return 'Mexe só na IA. Você nunca piora: sempre dá para ganhar.';
+  if (id === 'cfgDif') { const f = FAIXA_NIVEL[v]; return 'Habilidades do adversário ' + (f ? f[0] + ' a ' + f[1] : '') + ' (de 10). Seus companheiros: 5 a 6. Você nunca piora.'; }
+  if (id === 'cfgGenero') return v === 'F' ? 'Só jogadoras' : v === 'X' ? 'Homens e mulheres nos dois times' : 'Só jogadores';
+  if (id === 'cfgPersonagem') return v ? 'Você joga com a aparência, o nome e o número desse personagem' : (personagensSalvos().length ? '' : 'Nenhum personagem salvo ainda (crie um no modo história)');
   if (id === 'cfgTat') return v && TATICAS[v] ? '' : 'Usa a tática preferida do seu time';
   if (id === 'cfgForm') return v ? '' : 'Usa a formação preferida do seu time';
   return '';
@@ -10402,6 +10782,7 @@ function montarTelaDeSelecao(box) {
   $('raizJogo').appendChild(tela);
   const corDe = (id, v) => (id === 'cfgTime0' || id === 'cfgTime1') && TIMES[v] ? TIMES[v].uniforme.camisa : null;
   const desenhar = () => {
+    opcoesDePersonagem();                                          // (4.7.1) os saves podem ter mudado
     let h = '<div class="selTopo"><span class="selTit">CONFIGURAÇÕES</span>' +
       '<button class="pxBtn pxPeq" data-acao="voltar">Voltar</button><button class="pxBtn pxPeq pxPrim" data-acao="jogar">Jogar</button></div><div class="selGrade">';
     for (const G0 of SELECAO_GRUPOS) {
@@ -10459,16 +10840,34 @@ function atualizarResumoConfig() {
   const txt = (id) => { const s = $(id); return s && s.selectedOptions[0] ? s.selectedOptions[0].textContent : ''; };
   r.textContent = txt('cfgTime0') + ' x ' + txt('cfgTime1') + ' · ' + txt('cfgCampo') + ' · ' + txt('cfgComp') + ' · ' + txt('cfgClima') + ', ' + txt('cfgHora').toLowerCase() + ' · ' + txt('cfgDur') + ' · ' + txt('cfgDif');
 }
+// (4.7.1) "Usar personagem do modo história" na partida rápida: até 3 personagens, um por espaço de save (CARREGAR).
+function personagensSalvos() {
+  const lst = [];
+  listarSaves().forEach((sv, i) => {
+    const pp = sv && sv.personagem;
+    if (pp && pp.aparencia && (pp.nome || pp.apelido)) lst.push({ slot: String(i + 1), nome: pp.apelido || pp.nome, p: pp });
+  });
+  return lst.slice(0, 3);
+}
+function opcoesDePersonagem() {
+  const sel = $('cfgPersonagem'); if (!sel) return;
+  const atual = sel.value;
+  sel.innerHTML = '<option value="">Nenhum (você)</option>' + personagensSalvos().map((x) => '<option value="' + x.slot + '">' + x.nome.replace(/[<>&"]/g, '') + ' (save ' + x.slot + ')</option>').join('');
+  if (sel.querySelector('option[value="' + atual + '"]')) sel.value = atual;
+}
 function lerTelaDeConfig() {
   const v = (id) => $(id).value;
+  const pers = v('cfgPersonagem') ? personagensSalvos().find((x) => x.slot === v('cfgPersonagem')) : null;   // (4.7.1)
   const t0 = v('cfgTime0'); let t1 = v('cfgTime1');
   if (t1 === t0) t1 = Object.keys(TIMES).find((k) => k !== t0);
-  salvo.gravar('futebolJs.ultimaPartida.v1', Object.fromEntries(['cfgTime0', 'cfgTime1', 'cfgCampo', 'cfgDif', 'cfgComp', 'cfgMando', 'cfgClima', 'cfgGrama', 'cfgHora', 'cfgPos', 'cfgDur', 'cfgForm', 'cfgTat'].map((id) => [id, v(id)])));
+  salvo.gravar('futebolJs.ultimaPartida.v1', Object.fromEntries(['cfgTime0', 'cfgTime1', 'cfgCampo', 'cfgDif', 'cfgComp', 'cfgMando', 'cfgClima', 'cfgGrama', 'cfgHora', 'cfgPos', 'cfgDur', 'cfgForm', 'cfgTat', 'cfgGenero', 'cfgPersonagem'].map((id) => [id, v(id)])));
   return {
     times: [t0, t1], campo: v('cfgCampo'), dificuldade: v('cfgDif'), competicao: COMPETICOES_TESTE[v('cfgComp')],
     mandante: Number(v('cfgMando')), clima: v('cfgClima'), gramado: v('cfgGrama'), horario: v('cfgHora'),
     duracao: Number(v('cfgDur')) || DURACOES.padrao,
-    usuario: Object.assign({ posicao: v('cfgPos') }, PERSONAGEM.ativo ? { nome: PERSONAGEM.apelido || PERSONAGEM.nome, numero: PERSONAGEM.numero, aparencia: personagemAparencia() } : {}), formacoes: [v('cfgForm') || null, null], taticas: [v('cfgTat') || null, null],
+    genero: v('cfgGenero') || 'M',
+    usuario: Object.assign({ posicao: v('cfgPos') }, PERSONAGEM.ativo ? { nome: PERSONAGEM.apelido || PERSONAGEM.nome, numero: PERSONAGEM.numero, aparencia: personagemAparencia() } : {},
+      pers ? { nome: pers.nome, numero: pers.p.numero || 9, aparencia: Object.assign({}, pers.p.aparencia, { nomeCamisa: pers.p.nomeCamisa || '' }) } : {}), formacoes: [v('cfgForm') || null, null], taticas: [v('cfgTat') || null, null],
   };
 }
 
@@ -11812,7 +12211,7 @@ const Historia = (() => {
     else { const i = l1.indexOf(j); if (i >= 0) l1.splice(i, 1); if (!l0.includes(j)) l0.push(j); }
   }
   function devolverBola() {
-    G.sp = null; G.kickoffPending = null; G.apito = null; G.golPend = null; G.passTarget = null; G.foul = null; G.offside = null; G.cine = null; G.shotCine = null; G.recv = null; G.corrida = null;
+    G.sp = null; G.kickoffPending = null; G.apito = null; G.golPend = null; G.passTarget = null; G.foul = null; G.offside = null; G.cine = null; G.shotCine = null; G.fintaCine = null; G.recv = null; G.corrida = null;
     esconderRecepcao(); hideKickUI(); user.recvPose = null; user.throwIn = false; user.setPiece = null; user.scripted = false; user.stun = 0; user.bolaFixa = null; G.kick = null;
     $('skipBtn').hidden = true; $('cineLabel').textContent = '';
     for (const p of players) { p.scripted = false; p.carry = false; p.throwIn = false; p.goalKick = false; p.setPiece = null; if (p !== user) p.parado = true; }
@@ -13113,7 +13512,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.7.0',
+  versao: '4.7.1',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
