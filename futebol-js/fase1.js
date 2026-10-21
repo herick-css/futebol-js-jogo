@@ -1048,6 +1048,16 @@ const Fase1 = (() => {
     voltarDaPartida();
     await parteConvite();
   }
+  // (4.7.1) Carregamento SECRETO da Fase 2: ~40 s depois de a primeira partida começar (no meio dela) o arquivo fase2.js é baixado e
+  // registrado, sem tela nem aviso. Se falhar, tenta de novo (até 3 vezes); se mesmo assim não vier, Fases.executar tenta no fim.
+  let pre2T = null, pre2Feito = false;
+  function preCarregarFase2() {
+    if (pre2Feito) return;
+    pre2Feito = true;
+    let tent = 0;
+    const tenta = () => { pre2T = null; Fases.carregar('fase2').catch(() => { if (++tent < 3) pre2T = setTimeout(tenta, 20000); }); };
+    pre2T = setTimeout(tenta, 40000);
+  }
   async function parteConvite() {
     const J = S.jog, Jo = S.joaoA, pat = S.sala;
     S.modo = 'cena'; S.lugar = 'patio'; S.bolaDono = Jo;
@@ -1089,6 +1099,7 @@ const Fase1 = (() => {
     Dialogo.esconder();
     await preto(true, 900);
     sairParaPartida();
+    preCarregarFase2();                                                // (4.7.1) a Fase 2 é baixada em segredo, no meio da partida
     // (4.4.3) Resultado ruim (derrota/empate sem jogar bem, ou expulsão): antes do João, oferece refazer a partida assistindo a um anúncio.
     //   A partida descartada NÃO deixa nada registrado (Historia.descartarResultado) e só a que valer é confirmada (confirmarResultado).
     let r, tentativas = 0;
@@ -1385,9 +1396,8 @@ const Fase1 = (() => {
     UI.missao.hidden = true; UI.ctl.hidden = true;
     UI.leg.classList.remove('on');
     UI.preto.hidden = false; UI.preto.classList.remove('claro');
-    UI.leg.innerHTML = esc1(T('Carregando a próxima fase...'));
-    UI.leg.classList.add('on');
-    const rf = await Fases.executar('fase2');
+    if (pre2T) { clearTimeout(pre2T); pre2T = null; }
+    const rf = await Fases.executar('fase2');                        // (4.7.1) já está carregada (sem texto de "carregando"); se não estiver, baixa aqui no escuro
     if (!rf.ok) {
       console.warn('[Fase 2] não rodou:', rf);
       UI.leg.innerHTML = esc1(T('Em desenvolvimento...')) + '<br><br><button type="button" class="pxBtn pxPrim" id="f1Voltar">' + esc1(T('Voltar ao menu')) + '</button>';
