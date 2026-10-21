@@ -1317,7 +1317,7 @@ const Fase1 = (() => {
   // lá fora é preto sólido (como nos jogos antigos): esconde o campo e o resto do mundo enquanto a fase roda
   function escurecerMundo() {
     S.mundo = { bg: scene.background, fogN: scene.fog ? scene.fog.near : 0, fogF: scene.fog ? scene.fog.far : 0, vis: [] };
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color(S.lugar === 'patio' ? 0x8cc4ee : 0x000000);   // (4.7.2) lá fora o céu continua azul quando a cena volta da partida (estava preto)
     if (scene.fog) { scene.fog.near = 1e5; scene.fog.far = 2e5; }
     for (const c of scene.children) if (!c.isLight && c !== S.sala.g) { S.mundo.vis.push([c, c.visible]); c.visible = false; }
   }

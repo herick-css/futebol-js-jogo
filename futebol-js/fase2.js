@@ -21,14 +21,23 @@
      2. A tela de anos avança 10 anos (a mesma tela de "12 anos atrás": de {ano-12} até {ano-2}) e o personagem diz "Quando eu tinha 16...".
      3. O QUARTO do personagem (às escuras: ele acorda, liga a luz, usa o computador/guarda-roupa/banheiro) com cores e objetos
         de quarto masculino ou feminino (PERSONAGEM.genero). Dois pôsteres (imagens minúsculas embutidas em POSTER_A / POSTER_B).
-     4. O guarda-roupa: 15 roupas masculinas e 15 femininas, cada uma com cor primária, secundária e (quando tem) terciária.
+     4. O guarda-roupa: 18 roupas masculinas e 21 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
      5. O computador: navegador → site "LoggedOn" → 3 notificações de vaga → escolher UM emprego (Mercado, Cafeteria ou Pizzaria).
         Qualquer um dá pontos em "Tranquilo" (espectro Tranquilo ↔ Problemático). A escolha fica salva.
      6. A escada do prédio (4 lances, câmeras fixas que mudam) com o vizinho que fuma, até a porta da rua.
         A fase termina na porta da rua com "Continua..." (a cidadezinha, o seu Valdemar e os empregos vêm depois).
 
+   NOVIDADES DESTA RODADA (só o fase2.js; o espaço de save agora vem de F.slotHistoria(), que já está no jogo.js)
+     - Escada: a câmera do saguão fica do lado de fora, olhando para dentro: a porta da rua (portão de grade) fica virada para a câmera e o
+       andar da pessoa é na direção dela. Sumiu o chão do térreo "barrado" atrás do armário de medidores (o resto do vão é preto).
+     - Guarda-roupa: 4ª cor (borda do emblema do peito); moletons, jaquetas e agasalhos caem POR CIMA da calça; 3 regatas masculinas,
+       3 regatas e 3 tops femininos (no fim das listas: os ids salvos continuam valendo; saves antigos com 3 cores ganham a 4ª branca).
+     - Chuveiro: banho estilo The Sims (corte seco, só pele, de costas para a câmera, tarja pixelada 2D (quadrado sempre virado para a câmera), água e vapor, o personagem se veste de novo).
+     - Quarto: cobertor e travesseiros não atravessam mais a cama; skate no chão; quadro de campo de verdade (masculino); bola com física
+       (bolaTick: andar e encostar faz rolar, bate nas paredes e nos móveis, não gruda no pé).
+
    O QUE FICA SALVO (FutebolJS.historia.ler('fase2'))
-     { ponto, ano, idade, luz, roupa: { id, cores:[c1,c2,c3] }, emprego: 'mercado'|'cafeteria'|'pizzaria'|null,
+     { ponto, ano, idade, luz, roupa: { id, cores:[c1,c2,c3,c4] }, emprego: 'mercado'|'cafeteria'|'pizzaria'|null,
        tranquilo: número (positivo = Tranquilo, negativo = Problemático),
        vizinho: { pediuCigarro, mandouFumarFora, perguntouComer, sabeValdemar } }
      e um save no espaço da tela CARREGAR: { fase:'fase2', ponto, autosave:true, historia, personagem, versao }. Espaço usado: o que já
@@ -58,40 +67,51 @@
     M: [
       { n: 'Camiseta e bermuda', t: 'bermuda', c: ['#3a64b8', '#8c9199', '#f2f2ee'] },
       { n: 'Camiseta e calça jeans', t: 'calca', c: ['#f2f2ee', '#2a3f66', '#c8352b'] },
-      { n: 'Moletom com capuz', t: 'calca', m: 1, capuz: 1, c: ['#7a7e86', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Moletom com capuz', t: 'calca', m: 1, capuz: 1, solta: 1, c: ['#7a7e86', '#1c1c1f', '#f2f2ee'] },
       { n: 'Polo e bermuda', t: 'bermuda', c: ['#1f7a4d', '#d8c39a', '#f2f2ee'] },
       { n: 'Camiseta de barra colorida', t: 'calca', c: ['#f2f2ee', '#4a6fa5', '#c8352b'] },
-      { n: 'Jaqueta e calça', t: 'calca', m: 1, jaqueta: 1, c: ['#1c1c1f', '#2a3f66', '#f2c230'] },
+      { n: 'Jaqueta e calça', t: 'calca', m: 1, jaqueta: 1, solta: 1, c: ['#1c1c1f', '#2a3f66', '#f2c230'] },
       { n: 'Camisa social e calça', t: 'calca', m: 1, c: ['#9bd1f0', '#1f3a73', '#f2f2ee'] },
       { n: 'Camisa de time e short', t: 'short', time: 1, c: ['#c8352b', '#f2f2ee', '#1c1c1f'] },
-      { n: 'Agasalho esportivo', t: 'calca', m: 1, c: ['#1f3a73', '#1f3a73', '#f2f2ee'] },
+      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, c: ['#1f3a73', '#1f3a73', '#f2f2ee'] },
       { n: 'Camiseta e short curto', t: 'short', c: ['#e8742a', '#1c1c1f', '#f2f2ee'] },
       { n: 'Camiseta de manga longa', t: 'calca', m: 1, c: ['#556b2f', '#1c1c1f', '#d8c39a'] },
-      { n: 'Moletom e bermuda', t: 'bermuda', m: 1, capuz: 1, c: ['#a3162a', '#8c9199', '#f2f2ee'] },
+      { n: 'Moletom e bermuda', t: 'bermuda', m: 1, capuz: 1, solta: 1, c: ['#a3162a', '#8c9199', '#f2f2ee'] },
       { n: 'Camiseta e jeans escuro', t: 'calca', c: ['#7a4fb0', '#2a3f66', '#f2f2ee'] },
-      { n: 'Camiseta larga e bermuda', t: 'bermuda', c: ['#f2c230', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta larga e bermuda', t: 'bermuda', solta: 1, c: ['#f2c230', '#1c1c1f', '#1c1c1f'] },
       { n: 'Camisa social e bermuda', t: 'bermuda', c: ['#f2f2ee', '#7a4a2a', '#1f3a73'] },
+      { n: 'Regata e bermuda', t: 'bermuda', regata: 1, c: ['#f2f2ee', '#2a3f66', '#c8352b'] },
+      { n: 'Regata de time e short', t: 'short', time: 1, regata: 1, c: ['#3a64b8', '#f2f2ee', '#f2c230'] },
+      { n: 'Regata e calça jeans', t: 'calca', regata: 1, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee'] },
     ],
     F: [
       { n: 'Camiseta e short', t: 'short', c: ['#d95fa0', '#4a6fa5', '#f2f2ee'] },
       { n: 'Camiseta e calça jeans', t: 'calca', c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
       { n: 'Vestido simples', t: 'vestido', c: ['#7a4fb0', '#f2f2ee', '#f2f2ee'] },
       { n: 'Saia e camiseta', t: 'saia', c: ['#f2f2ee', '#d95fa0', '#1c1c1f'] },
-      { n: 'Moletom e legging', t: 'calca', m: 1, capuz: 1, c: ['#f4a6c0', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Moletom e legging', t: 'calca', m: 1, capuz: 1, solta: 1, c: ['#f4a6c0', '#1c1c1f', '#f2f2ee'] },
       { n: 'Vestido com barra', t: 'vestido', c: ['#3a64b8', '#f2f2ee', '#f2f2ee'] },
-      { n: 'Jaqueta e saia', t: 'saia', m: 1, jaqueta: 1, c: ['#c8352b', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Jaqueta e saia', t: 'saia', m: 1, jaqueta: 1, solta: 1, c: ['#c8352b', '#1c1c1f', '#f2f2ee'] },
       { n: 'Blusa de manga longa e calça', t: 'calca', m: 1, c: ['#3fb7b0', '#2a3f66', '#f2f2ee'] },
       { n: 'Camisa social e saia', t: 'saia', c: ['#f2f2ee', '#1f3a73', '#3a64b8'] },
       { n: 'Polo e short', t: 'short', c: ['#6cae3e', '#f2f2ee', '#f2f2ee'] },
       { n: 'Jardineira', t: 'jardineira', c: ['#f2f2ee', '#4a6fa5', '#f2c230'] },
       { n: 'Vestido de manga longa', t: 'vestido', m: 1, c: ['#a3162a', '#1c1c1f', '#1c1c1f'] },
-      { n: 'Agasalho esportivo', t: 'calca', m: 1, c: ['#7a4fb0', '#7a4fb0', '#f2f2ee'] },
+      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, c: ['#7a4fb0', '#7a4fb0', '#f2f2ee'] },
       { n: 'Camiseta e bermuda', t: 'bermuda', c: ['#ffb199', '#d8c39a', '#f2f2ee'] },
       { n: 'Blusa e saia longa', t: 'saia', longa: 1, c: ['#f2c230', '#1f7a4d', '#f2f2ee'] },
+      { n: 'Regata e short', t: 'short', regata: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
+      { n: 'Regata e calça jeans', t: 'calca', regata: 1, c: ['#d95fa0', '#4a6fa5', '#f2f2ee'] },
+      { n: 'Regata e saia', t: 'saia', regata: 1, c: ['#3fb7b0', '#f2f2ee', '#1c1c1f'] },
+      { n: 'Top e short', t: 'short', top: 1, c: ['#e8742a', '#2a3f66', '#f2f2ee'] },
+      { n: 'Top e calça jeans', t: 'calca', top: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
+      { n: 'Top e saia', t: 'saia', top: 1, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee'] },
     ],
   };
+  const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
   const PIJAMA = { M: { n: 'Pijama', t: 'short', c: ['#6b7a99', '#6b7a99', '#6b7a99'] }, F: { n: 'Pijama', t: 'short', c: ['#e9a3c4', '#e9a3c4', '#e9a3c4'] } };
 
+  const c4 = (c) => [c[0], c[1], c[2], c[3] || '#f2f2ee'];                  // (4.7.3) 4ª cor: a BORDA do emblema do peito (saves antigos, com 3 cores, ganham branco)
   const hexN = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
   const sombra = (h, k) => { const n = hexN(h); const r = Math.round(((n >> 16) & 255) * k), g = Math.round(((n >> 8) & 255) * k), b = Math.round((n & 255) * k); return (r << 16) | (g << 8) | b; };
 
@@ -104,11 +124,37 @@
     else if (R.t === 'saia') { o.meiao = 0; o.meia = '#f2f2ee'; }
     else if (R.t === 'vestido') { o.camisa = c[0]; o.calcao = c[0]; o.listra = c[1]; o.gola = c[2]; o.meiao = 0; }
     else if (R.t === 'jardineira') { o.meia = c[1]; o.meiao = 1; o.gola = c[0]; }
+    if (R.nu) { o.camisa = o.calcao = o.listra = o.gola = o.meia = o.sola = pele; o.meiao = 0; o.manga = 0; }          // (4.7.3) banho: o corpo todo é só pele
     if (R.time) {
       o.meiao = 2; o.meia = c[2]; o.numero = '10'; o.nomeCamisa = (PERSONAGEM.nomeCamisa || '').toUpperCase();
       o.emblema = { forma: 'escudo', cor1: c[2], cor2: c[0], letras: 'FC' };
     }
     return o;
+  }
+  // (4.7.3) o emblema do peito é desenhado pelo jogo.js com borda sempre branca: aqui ele é repintado na textura da camisa com a 4ª cor
+  function pintarEmblema(m, R, c) {
+    let cv = null, tex = null;
+    m.raiz.traverse((o) => { if (!cv && o.material && o.material.map && o.material.map.image && o.material.map.image.getContext && o.material.map.image.width === 128) { tex = o.material.map; cv = tex.image; } });
+    if (!cv) return;
+    const g = cv.getContext('2d'), css = (h) => (typeof h === 'number' ? '#' + h.toString(16).padStart(6, '0') : h), borda = css(c[3]);
+    if (!R.time) {                                              // quadradinho do peito: borda (4ª cor) + miolo da cor de detalhe
+      g.fillStyle = borda; g.fillRect(35, 6, 7, 8); g.fillStyle = css(c[2]); g.fillRect(36, 7, 5, 6);
+    } else {                                                    // escudo do time: contorno com a 4ª cor
+      g.fillStyle = css(c[0]); g.fillRect(34, 4, 10, 11);
+      const escudo = (x, y, w, h, cor) => { g.fillStyle = cor; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.lineTo(x + w, y + h * 0.6); g.lineTo(x + w / 2, y + h); g.lineTo(x, y + h * 0.6); g.closePath(); g.fill(); };
+      escudo(35, 5, 8, 9, borda); escudo(36, 6, 6, 7, css(c[2]));
+      g.fillStyle = css(c[0]); g.fillRect(36, 9, 6, 1);
+    }
+    tex.needsUpdate = true;
+  }
+  // braços de regata/top: o ombro (primeira caixa de cada malha do braço) fica da cor da pele
+  function pintarBracos(m, pele) {
+    const n = hexN(pele), r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    for (const br of [m.bracoE, m.bracoD]) for (const mesh of [br.inteira, br.ombro]) {
+      const at = mesh && mesh.geometry && mesh.geometry.attributes.color; if (!at) continue;
+      for (let i = 0; i < 24 && i < at.count; i++) at.setXYZ(i, r, g, b);
+      at.needsUpdate = true;
+    }
   }
   // as pernas de calça/bermuda: a coxa (primeira caixa de cada malha da perna) ganha a cor da calça
   function pintarCoxas(m, cor) {
@@ -119,8 +165,16 @@
       at.needsUpdate = true;
     }
   }
+  // pernas inteiras da cor da pele (sem bota nem meia): o banho
+  function pintarPernasTodas(m, pele) {
+    const n = hexN(pele), r = ((n >> 16) & 255) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+    for (const pe of [m.pernaE, m.pernaD]) {
+      const meshes = [pe.inteira, pe.coxa]; pe.traverse((o) => { if (o.isMesh && meshes.indexOf(o) < 0) meshes.push(o); });
+      for (const mesh of meshes) { const at = mesh && mesh.geometry && mesh.geometry.attributes.color; if (!at) continue; for (let i = 0; i < at.count; i++) at.setXYZ(i, r, g, b); at.needsUpdate = true; }
+    }
+  }
   // peças extras coladas no corpo (saia, capuz, jaqueta, jardineira)
-  function extrasRoupa(m, R, c, longaSaia) {
+  function extrasRoupa(m, R, c, pele) {
     const L = new Lote(); let tem = false;
     const F = (w, h, d, cor, x, y, z) => { L.caixa(w, h, d, hexN(cor), x, y, z); tem = true; };
     if (R.t === 'saia' || R.t === 'vestido') {
@@ -130,6 +184,12 @@
       if (R.longa) { F(0.54, 0.2, 0.78, cs, 0, 0.5, 0); F(0.56, 0.22, 0.8, cs, 0, 0.3, 0); }
       else if (R.t === 'vestido') F(0.54, 0.12, 0.78, c[0], 0, 0.54, 0);
     }
+    if (R.solta) {                                              // (4.7.3) a barra da blusa/moletom cai POR CIMA da calça (antes o tronco acabava na cintura e a calça "subia" por dentro)
+      F(0.37, 0.22, 0.63, c[0], 0, 0.72, 0); F(0.38, 0.05, 0.64, sombra(c[0], 0.88), 0, 0.615, 0);
+      if (R.capuz) F(0.03, 0.13, 0.34, sombra(c[0], 0.9), 0.185, 0.9, 0);          // bolso canguru
+    }
+    if (R.regata || R.top) { F(0.327, 0.1, 0.24, pele, 0, 1.27, 0); }              // decote fundo (frente e costas); os braços ficam de fora
+    if (R.top) F(0.327, 0.27, 0.587, pele, 0, 0.875, 0);                           // top curto: a barriga aparece
     if (R.capuz) { F(0.2, 0.3, 0.5, sombra(c[0], 0.85), -0.2, 1.42, 0); F(0.04, 0.16, 0.42, sombra(c[0], 0.82), 0.17, 0.86, 0); }
     if (R.jaqueta) { F(0.06, 0.12, 0.5, c[2], 0.165, 1.32, 0); F(0.03, 0.56, 0.04, c[2], 0.168, 1.03, 0); }
     if (R.t === 'jardineira') { F(0.04, 0.36, 0.44, c[1], 0.17, 1.0, 0); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, 0.15); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, -0.15); }
@@ -326,7 +386,26 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     g.fillStyle = '#e6d9b0'; g.fillRect(0, 0, w, h); g.fillStyle = '#d9caa0'; for (let i = 0; i < 20; i++) g.fillRect((i * 29) % w, (i * 11) % 20, 2, 1);
     g.fillStyle = '#7d8c86'; g.fillRect(0, 22, w, 10); g.fillStyle = '#5f6c67'; g.fillRect(0, 22, w, 1);
   });
+  const texPortaRua = () => drawTexture(34, 43, (g, w, h) => {       // portão de ferro azul com grade: os vãos entre as barras ficam TRANSPARENTES (dá para ver o saguão por trás)
+    g.clearRect(0, 0, w, h);
+    g.fillStyle = '#243a57'; g.fillRect(0, 0, w, 3); g.fillRect(0, 0, 3, h); g.fillRect(w - 3, 0, 3, h); g.fillRect(0, h - 3, w, 3);       // moldura
+    g.fillStyle = '#2f4f74'; for (let x = 5; x < w - 4; x += 4) g.fillRect(x, 3, 2, h - 6);                                                  // barras
+    g.fillStyle = '#1c2d46'; g.fillRect(0, 14, w, 3); g.fillRect(0, 27, w, 3);                                                               // travessas
+    g.fillStyle = '#aab5c2'; g.fillRect(w - 8, 21, 3, 3);                                                                                    // fechadura
+  });
   const texPlaca = (txt, fundo, cor) => drawTexture(48, 24, (g, w, h) => { g.fillStyle = fundo; g.fillRect(0, 0, w, h); g.fillStyle = cor; g.fillRect(0, 0, w, 2); g.fillRect(0, h - 2, w, 2); g.fillStyle = cor; g.font = 'bold 15px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, h / 2 + 1); });
+  const texCampo = () => drawTexture(48, 32, (g, w, h) => {       // (4.7.3) pôster: campo de futebol visto de cima (listras no gramado, linhas brancas, áreas, círculo central, gols)
+    for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? '#3f8f3a' : '#4aa043'; g.fillRect(0, Math.floor(i * h / 6), w, Math.ceil(h / 6)); }
+    g.strokeStyle = '#f4f4ee'; g.lineWidth = 1; g.fillStyle = '#f4f4ee';
+    g.strokeRect(2.5, 2.5, w - 5, h - 5);                                   // linhas laterais e de fundo
+    g.beginPath(); g.moveTo(w / 2, 2.5); g.lineTo(w / 2, h - 2.5); g.stroke(); // meio de campo
+    g.beginPath(); g.arc(w / 2, h / 2, 5, 0, Math.PI * 2); g.stroke();      // círculo central
+    g.fillRect(Math.round(w / 2) - 1, Math.round(h / 2) - 1, 2, 2);
+    g.strokeRect(2.5, h / 2 - 8.5, 8, 17); g.strokeRect(w - 10.5, h / 2 - 8.5, 8, 17);            // grandes áreas
+    g.strokeRect(2.5, h / 2 - 4.5, 3, 9); g.strokeRect(w - 5.5, h / 2 - 4.5, 3, 9);               // pequenas áreas
+    g.fillRect(8, Math.round(h / 2), 1, 1); g.fillRect(w - 9, Math.round(h / 2), 1, 1);           // marcas do pênalti
+    g.fillStyle = '#e8e8e0'; g.fillRect(0, Math.floor(h / 2) - 2, 2, 4); g.fillRect(w - 2, Math.floor(h / 2) - 2, 2, 4);   // traves dos gols
+  });
   const texBolaF = () => drawTexture(32, 16, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1c1c1f'; for (const [x, y] of [[4, 4], [14, 3], [24, 5], [9, 11], [20, 11], [29, 11]]) g.fillRect(x, y, 4, 4); });
   function texDaImagem(url) {                                    // pôster: imagem minúscula, sem suavizar (pixels grandes de propósito)
     const img = new Image(), tx = new THREE.Texture(img); tx.magFilter = tx.minFilter = THREE.NearestFilter; tx.generateMipmaps = false;
@@ -360,12 +439,15 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // troca a roupa (refaz o modelo, como o vestir() da Fase 1) — R: roupa, c: 3 cores
   function vestirRoupa(A, R, c) {
     const velho = A.m, pai = velho.raiz.parent;
-    const base = A.base || A.opt;
+    const base = A.base || A.opt; c = c4(c);
     const opt = Object.assign({}, base, roupaOpts(R, c, base.pele));
     const m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
-    extrasRoupa(m, R, c);
+    if (R.nu) pintarPernasTodas(m, base.pele);
+    if (R.regata || R.top) pintarBracos(m, base.pele);
+    extrasRoupa(m, R, c, base.pele);
+    pintarEmblema(m, R, c);
     if (pai) { pai.add(m.raiz); pai.remove(velho.raiz); }
     velho.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); if (o.material && o.material !== SHADOW_MAT && o.material !== MAT_CORES) { if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
     ATLETAS.delete(velho);
@@ -411,6 +493,14 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const f = Math.sin(t * 11) * 0.12;
     m.bracoE.rotation.z = 0.85 + f; m.bracoD.rotation.z = 0.85 - f; m.bracoE.rotation.x = -0.28; m.bracoD.rotation.x = 0.28;
   }
+  function poseBanho(A, t, dt) {                                 // de costas para a câmera, as duas mãos esfregando o cabelo debaixo do chuveiro
+    const m = A.m, r = m.raiz, e = Math.min(1, dt * 10); usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0; r.position.y = A.y;
+    m.pernaE.rotation.z = m.pernaD.rotation.z = 0;
+    const f = Math.sin(t * 8.5), g = Math.cos(t * 8.5);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 2.5 + f * 0.14, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 2.5 - f * 0.14, e);
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.2 + g * 0.08, e); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.2 + g * 0.08, e);
+    m.corpo.rotation.y = Math.sin(t * 4.2) * 0.05;
+  }
   function poseLiga(A, t, dt) {                                  // estica o braço direito até o interruptor
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 14); usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0; r.position.y = A.y;
     m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, 0, e);
@@ -441,6 +531,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     else if (A.pose === 'deitado') poseDeitado(A);
     else if (A.pose === 'lava') poseLava(A, t, dt);
     else if (A.pose === 'liga') poseLiga(A, t, dt);
+    else if (A.pose === 'banho') poseBanho(A, t, dt);
     else if (A.pose === 'fuma') poseFuma(A, t, dt);
     else posePe(A, t, dt, false);
     r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
@@ -494,8 +585,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     // cama (cabeceira na parede do fundo)
     const cb = Q.cama;
     F(1.56, 0.26, 2.1, P.madeira, cb.cx, 0.17, -1.75); F(1.5, 0.22, 2.0, P.lencol, cb.cx, 0.42, -1.75); F(1.64, 0.95, 0.08, P.madeira, cb.cx, 0.72, -2.76); F(1.64, 0.4, 0.08, P.madeira, cb.cx, 0.33, -0.7);
-    F(0.7, 0.12, 0.38, P.trav, cb.cx, 0.59, -2.45); F(0.5, 0.1, 0.3, P.trav, cb.cx + 0.45, 0.58, -2.5);
-    F(1.54, 0.42, 1.05, P.coberta, cb.cx, 0.72, -1.05); F(1.56, 0.1, 0.34, sombra(P.coberta === 0x2f4a7a ? '#5f7fb8' : '#d9b8ee', 1), cb.cx, 0.93, -1.58);
+    F(0.5, 0.12, 0.36, P.trav, cb.cx - 0.35, 0.59, -2.45); F(0.5, 0.12, 0.36, P.trav, cb.cx + 0.3, 0.59, -2.45);   // (4.7.3) dois travesseiros lado a lado (antes um entrava no outro)
+    F(1.54, 0.42, 0.8, P.coberta, cb.cx, 0.72, -1.16); F(1.56, 0.1, 0.3, sombra(P.coberta === 0x2f4a7a ? '#5f7fb8' : '#d9b8ee', 1), cb.cx, 0.9, -1.6);   // (4.7.3) o cobertor termina antes do pé da cama (antes passava por dentro dele)
     // guarda-roupa
     const gr = Q.guarda;
     F(1.8, 2.2, 0.6, P.armario, gr.cx, 1.1, -2.5); F(0.03, 2.1, 0.02, sombra(P.armario, 0.7), gr.cx, 1.1, -2.19); F(0.03, 2.12, 0.02, sombra(P.armario, 0.7), gr.cx - 0.45, 1.1, -2.19); F(0.03, 2.12, 0.02, sombra(P.armario, 0.7), gr.cx + 0.45, 1.1, -2.19);
@@ -522,11 +613,16 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       F(0.04, 1.5, 0.62, 0xe8d3a0, -W / 2 + 0.03, 1.0, -0.8); F(0.02, 1.4, 0.52, 0xbfe4f5, -W / 2 + 0.05, 1.0, -0.8);                                                                       // espelho
     } else {
       F(0.3, 0.1, 0.12, 0x1c1c1f, -1.55, 0.05, -1.9); F(0.1, 0.05, 0.05, 0xe8742a, -1.55, 0.12, -1.9); F(0.3, 0.1, 0.12, 0x1c1c1f, -1.55, 0.05, -1.7); F(0.1, 0.05, 0.05, 0xe8742a, -1.55, 0.12, -1.7);   // chuteiras
-      F(0.7, 0.04, 0.2, 0xc8352b, 3.8, 0.7, 1.2); for (const sz of [-0.2, 0.2]) F(0.06, 0.06, 0.2, 0xf2f2ee, 3.8, 0.58, 1.2 + sz);                                                                          // skate
-      F(0.04, 0.9, 0.8, 0x2f6a3a, -W / 2 + 0.03, 1.55, -0.8); F(0.02, 0.05, 0.6, 0xf2f2ee, -W / 2 + 0.05, 1.55, -0.8); F(0.02, 0.5, 0.05, 0xf2f2ee, -W / 2 + 0.05, 1.55, -0.8);                         // bandeirinha de campo na parede
+      F(0.2, 0.03, 0.72, 0xc8352b, 3.45, 0.115, 1.55); for (const sz of [-0.24, 0.24]) for (const sx of [-0.06, 0.06]) F(0.05, 0.07, 0.05, 0xf2f2ee, 3.45 + sx * 1.3, 0.04, 1.55 + sz);          // (4.7.3) skate deitado no chão (antes flutuava e atravessava a parede)
+      { const mc = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 0.8), basic({ map: texCampo() })); mc.rotation.y = Math.PI / 2; mc.position.set(-W / 2 + 0.013, 1.62, -0.8); g.add(mc);     // quadro com um campo de verdade
+        F(0.03, 0.05, 1.28, 0x3a2a1a, -W / 2 + 0.018, 2.04, -0.8); F(0.03, 0.05, 1.28, 0x3a2a1a, -W / 2 + 0.018, 1.2, -0.8); F(0.03, 0.89, 0.05, 0x3a2a1a, -W / 2 + 0.018, 1.62, -1.43); F(0.03, 0.89, 0.05, 0x3a2a1a, -W / 2 + 0.018, 1.62, -0.17); }
     }
     const mob = L.malha(MAT_CORES); g.add(mob);
-    if (!fem) { const bola = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), new THREE.MeshLambertMaterial({ map: texBolaF() })); bola.position.set(0.9, 0.18, 1.6); g.add(bola); }
+    let bola = null, bolaSombra = null;
+    if (!fem) {                                                                                                                                            // (4.7.3) a bola do quarto tem física (bolaTick)
+      bola = new THREE.Mesh(new THREE.SphereGeometry(0.17, 12, 8), new THREE.MeshLambertMaterial({ map: texBolaF() })); bola.position.set(0.9, 0.17, 1.6); g.add(bola);
+      bolaSombra = new THREE.Mesh(new THREE.CircleGeometry(0.17, 12), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.3, depthWrite: false })); bolaSombra.rotation.x = -Math.PI / 2; bolaSombra.position.set(0.9, 0.02, 1.6); g.add(bolaSombra);
+    }
     else for (let i = 0; i < 14; i++) { const l = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.03), brilho([0xffd92b, 0xff7ab8, 0x7ad8ff, 0xb98bff][i % 4])); l.position.set(-3.7 + i * 0.55, 2.5 - Math.abs(Math.sin(i * 0.5)) * 0.18, -D / 2 + 0.03); g.add(l); }   // luzinhas
     // pôsteres colados na parede (imagens minúsculas, de baixa qualidade, com fita nos cantos)
     const poster = (url, w, h, x, y) => {
@@ -538,7 +634,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     poster(POSTER_B, 1.1, 0.82, 2.4, 1.95);
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
-    return { g, seta, tela, mats };
+    return { g, seta, tela, mats, bola, bolaSombra };
   }
 
   // ----- O BANHEIRO (4,4 x 4,4 m): porta na parede da esquerda; vaso, pia e chuveiro no fundo
@@ -569,7 +665,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const v2 = new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.0, 0.04), vidro); v2.position.set(1.65, 1.05, -0.9); g.add(v2);
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
-    return { g, seta };
+    return { g, seta, vidro };
   }
 
   // ----- A ESCADA DO PRÉDIO: um anel quadrado em volta de um vão vazio. Quatro lances de 1,4 m cada, de cima (5,6 m) até o térreo.
@@ -626,8 +722,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     planoParede(g, mp, 2 * OUT, ALTO, -Math.PI / 2, OUT, ALTO / 2, 0, 2.6, 1.4); planoParede(g, mp, 2 * OUT, ALTO, Math.PI, 0, ALTO / 2, OUT, 2.6, 1.4);
     chaoPreto(g);
     // chão do térreo: ladrilho de xadrez cinza
-    const tl = drawTexture(16, 16, (c, w, h) => { c.fillStyle = '#b9b6ae'; c.fillRect(0, 0, w, h); c.fillStyle = '#9c998f'; c.fillRect(0, 0, 8, 8); c.fillRect(8, 8, 8, 8); }); tl.wrapS = tl.wrapT = THREE.RepeatWrapping; tl.repeat.set(2 * OUT / 1.0, 2 * OUT / 1.0);
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(2 * OUT, 2 * OUT), basic({ map: tl })); chao.rotation.x = -Math.PI / 2; chao.position.y = 0.002; g.add(chao);
+    const tl = drawTexture(16, 16, (c, w, h) => { c.fillStyle = '#b9b6ae'; c.fillRect(0, 0, w, h); c.fillStyle = '#9c998f'; c.fillRect(0, 0, 8, 8); c.fillRect(8, 8, 8, 8); }); tl.wrapS = tl.wrapT = THREE.RepeatWrapping; tl.repeat.set((OUT - IN) / 1.0, (OUT - IN) / 1.0);
+    // (4.7.3) só o saguão tem chão: o resto do térreo (o vão e o que ficava "barrado" atrás do armário) não existe mais, vira preto
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(OUT - IN, OUT - IN), basic({ map: tl })); chao.rotation.x = -Math.PI / 2; chao.position.set(-MID, 0.002, -MID); g.add(chao);
     const peca = (yMin) => { const G = new THREE.Group(); G.userData.yMin = yMin; g.add(G); pecas.push(G); return G; };
     const cinza = [0xa89f88, 0x9a917b], pisoPat = 0x8f8874;
     // patamares dos cantos de cima (NW 5,6 · NE 4,2 · SE 2,8 · SW 1,4)
@@ -676,13 +773,16 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       peNW.add(Lb.malha(MAT_CORES)); viga(peNW, -OUT + 0.15, y + 1.0, -IN - 0.06, -IN - 0.15, y + 1.0, -IN - 0.06, 0.07, 0x3a3f4a); viga(peNW, -OUT + 0.15, y + 0.5, -IN - 0.06, -IN - 0.15, y + 0.5, -IN - 0.06, 0.04, 0x4a4f58); }
     // térreo (saguão): porta da rua na parede norte, caixas de correio na oeste, armário de medidores no lugar do lance N
     const T = peca(0), LT = new Lote(), FT = (w, h, d, c, x, y, z) => LT.caixa(w, h, d, c, x, y, z);
-    FT(OUT - IN, 0.04, OUT - IN, 0x8c8676, -MID, 0.0, -MID); FT(1.9, 2.3, 0.1, 0x5b4630, -MID, 1.15, -OUT + 0.06); FT(1.7, 2.14, 0.06, 0x3a3f4a, -MID, 1.07, -OUT + 0.1); FT(1.5, 0.04, 0.3, 0x3a3f4a, -MID, 0.02, -OUT + 0.3);
+    FT(OUT - IN, 0.04, OUT - IN, 0x8c8676, -MID, 0.0, -MID); FT(0.1, 2.3, 0.1, 0x5b4630, -MID - 0.9, 1.15, -OUT + 0.06); FT(0.1, 2.3, 0.1, 0x5b4630, -MID + 0.9, 1.15, -OUT + 0.06); FT(1.9, 0.1, 0.1, 0x5b4630, -MID, 2.25, -OUT + 0.06); FT(1.5, 0.04, 0.3, 0x3a3f4a, -MID, 0.02, -OUT + 0.3);   // (4.7.3) só a moldura: a folha é o portão de grade (o lado de fora, abaixo)
     FT(0.08, 2.0, 0.08, 0xd8d8d0, -MID - 0.1, 1.0, -OUT + 0.17); FT(0.08, 2.0, 0.08, 0xd8d8d0, -MID + 0.1, 1.0, -OUT + 0.17);
     for (let i = 0; i < 6; i++) { FT(0.06, 0.2, 0.28, i % 2 ? 0x8c9199 : 0x6c7279, -OUT + 0.06, 1.1 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34 + 0.0); FT(0.02, 0.05, 0.1, 0xf2c230, -OUT + 0.1, 1.15 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34); }
-    FT(0.14, 2.7, OUT - IN, 0x9a9484, -IN, 1.35, -MID); FT(0.04, 2.1, 0.9, 0x6c7279, -IN + 0.09, 1.05, -MID); FT(0.04, 0.05, 0.05, 0xd8d8d0, -IN + 0.12, 1.0, -MID + 0.3);
+    FT(0.14, 0.62, OUT - IN, 0x9a9484, -IN, 0.31, -MID); FT(0.2, 0.06, OUT - IN, 0xb3ad9c, -IN, 0.65, -MID);               // (4.7.3) mureta baixa no lugar do armário alto: o lado do saguão deixou de ser uma parede enorme
     T.add(LT.malha(MAT_CORES));
-    const vidroPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ color: 0xeaf6ff })); vidroPorta.position.set(-MID, 1.07, -OUT + 0.14); T.add(vidroPorta); portas.rua = { vidro: vidroPorta };
-    const plM = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.2), basic({ map: texPlaca('LUZ', '#f2c230', '#2a1206') })); plM.position.set(-IN + 0.125, 1.55, -MID); plM.rotation.y = Math.PI / 2; T.add(plM);
+    const vidroPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ color: 0xeaf6ff })); vidroPorta.position.set(-MID, 1.07, -OUT + 0.14); T.add(vidroPorta);
+    // (4.7.3) a câmera do saguão fica do lado de fora, olhando para dentro: a porta da rua (portão de ferro azul com grade) fica virada para ela
+    const foraPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ map: texPortaRua(), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); foraPorta.rotation.y = Math.PI; foraPorta.position.set(-MID, 1.07, -OUT - 0.012); T.add(foraPorta);
+    portas.rua = { vidro: vidroPorta, fora: foraPorta };
+    const plM = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.2), basic({ map: texPlaca('LUZ', '#f2c230', '#2a1206') })); plM.position.set(-OUT + 0.62, 1.7, -OUT + 0.04); T.add(plM);   // placa dos medidores, agora ao lado da porta
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
     return { g, pecas, portas, seta };
@@ -691,7 +791,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   const CAM_SETOR = { N: { k: 0, base: 4.9 }, E: { k: 1, base: 3.5 }, S: { k: 2, base: 2.1 }, W: { k: 3, base: 0.7 } };
   function camEscada(J) {
     const z = zonaEsc(J.x, J.z), nw = z === 'NW' && J.y <= 2.8;
-    if (nw) return [-3.1, 3.1, 2.0, -3.6, 0.9, -4.0, 'L'];
+    if (nw) return [-1.2, 5.2, -8.4, -3.9, 0.7, -3.5, 'L'];     // (4.7.3) do lado de fora do prédio, olhando para dentro: a saída fica na direção da câmera
     const set = z === 'N' || z === 'NW' || z === 'NE' ? 'N' : z === 'E' || z === 'SE' ? 'E' : z === 'S' || z === 'SW' ? 'S' : 'W';
     const c = CAM_SETOR[set], k = c.k, [ux] = rotK((4 - k) % 4, J.x, J.z);                    // ux: posição do personagem ao longo do lance (no referencial N)
     const [px, pz] = rotK(k, 0, 2.0), [tx, tz] = rotK(k, ux * 0.62, -3.7);
@@ -751,6 +851,17 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Na verdade, ela foi só o começo...': ['In fact, it was only the beginning...', 'En realidad, fue solo el comienzo...', "In realtà, è stato solo l'inizio...", "En fait, ce n'était que le début..."],
     'Cor principal': ['Main color', 'Color principal', 'Colore principale', 'Couleur principale'],
     'Cor secundária': ['Secondary color', 'Color secundario', 'Colore secondario', 'Couleur secondaire'],
+    'Cor da borda do emblema': ['Emblem border color', 'Color del borde del emblema', 'Colore del bordo dello stemma', 'Couleur du contour de l\'écusson'],
+    'o quadradinho ou escudo do peito': ['the little square or crest on the chest', 'el cuadradito o escudo del pecho', 'il quadratino o lo stemma sul petto', 'le petit carré ou l\'écusson sur la poitrine'],
+    'Regata e bermuda': ['Tank top and bermuda shorts', 'Camiseta sin mangas y bermudas', 'Canotta e bermuda', 'Débardeur et bermuda'],
+    'Regata de time e short': ['Team tank top and shorts', 'Camiseta de equipo sin mangas y short', 'Canotta della squadra e pantaloncini', 'Débardeur d\'équipe et short'],
+    'Regata e calça jeans': ['Tank top and jeans', 'Camiseta sin mangas y vaqueros', 'Canotta e jeans', 'Débardeur et jean'],
+    'Regata e short': ['Tank top and shorts', 'Camiseta sin mangas y short', 'Canotta e pantaloncini', 'Débardeur et short'],
+    'Regata e saia': ['Tank top and skirt', 'Camiseta sin mangas y falda', 'Canotta e gonna', 'Débardeur et jupe'],
+    'Top e short': ['Crop top and shorts', 'Top corto y short', 'Top corto e pantaloncini', 'Brassière et short'],
+    'Top e calça jeans': ['Crop top and jeans', 'Top corto y vaqueros', 'Top corto e jeans', 'Brassière et jean'],
+    'Top e saia': ['Crop top and skirt', 'Top corto y falda', 'Top corto e gonna', 'Brassière et jupe'],
+    'Ahh, agora sim! Banho tomado.': ['Ahh, that feels better! All clean.', '¡Ahh, ahora sí! Ya me bañé.', 'Ahh, ora sì! Doccia fatta.', 'Ahh, ça fait du bien ! Douche prise.'],
     'Cor dos detalhes': ['Detail color', 'Color de los detalles', 'Colore dei dettagli', 'Couleur des détails'],
     'blusa, camiseta ou vestido': ['top, T-shirt or dress', 'blusa, camiseta o vestido', 'top, maglietta o vestito', 'haut, t-shirt ou robe'],
     'calça, short ou saia': ['pants, shorts or skirt', 'pantalón, short o falda', 'pantaloni, pantaloncini o gonna', 'pantalon, short ou jupe'],
@@ -874,7 +985,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
 
   function gravarSlot(d) {                                       // espaço do CARREGAR: reaproveita o autosave desta história, senão o primeiro vazio, senão o mais antigo
     const F = window.FutebolJS; if (!F || !F.salvarJogo || !F.listarSaves) return;
-    const lista = F.listarSaves(); let slot = lista.findIndex((s) => s && s.autosave) + 1;
+    const lista = F.listarSaves(); let slot = (F.slotHistoria && F.slotHistoria()) || (lista.findIndex((s) => s && s.autosave) + 1);   // (4.7.3) o espaço escolhido ao começar a história vem primeiro
     if (!slot) slot = lista.findIndex((s) => !s) + 1;
     if (!slot) { let velho = Infinity; slot = 1; lista.forEach((s, i) => { const t = s && s.data ? Date.parse(s.data) || 0 : 0; if (t < velho) { velho = t; slot = i + 1; } }); }
     const per = JSON.parse(JSON.stringify(PERSONAGEM)); delete per.historia;
@@ -1026,15 +1137,15 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const J = S.jog, lista = ROUPAS[S.fem ? 'F' : 'M'], R0 = S.dados.roupa;
       await andar(J, [[Q.guarda.spot[0], -0.95]], 2.3); J.yawAlvo = -Math.PI / 2; await esperar(250);
       S.camEspecial = [0.85, 1.25, 2.5, 0.85, 1.0, -1.0]; S.modo = 'roupa'; UI.ctl.hidden = true; aviso('');
-      let idx = R0 ? R0.id : -1, cores = R0 ? R0.cores.slice() : PIJAMA[S.fem ? 'F' : 'M'].c.slice();
+      let idx = R0 ? R0.id : -1, cores = R0 ? c4(R0.cores) : c4(PIJAMA[S.fem ? 'F' : 'M'].c);
       const nomeDe = (i) => (i < 0 ? PIJAMA[S.fem ? 'F' : 'M'].n : lista[i].n);
-      const rot = [T('Cor principal'), T('Cor secundária'), T('Cor dos detalhes')], dica = [T('blusa, camiseta ou vestido'), T('calça, short ou saia'), T('gola, barra, listras')];
+      const rot = [T('Cor principal'), T('Cor secundária'), T('Cor dos detalhes'), T('Cor da borda do emblema')], dica = [T('blusa, camiseta ou vestido'), T('calça, short ou saia'), T('gola, barra, listras'), T('o quadradinho ou escudo do peito')];
       const aplicar = () => { const R = idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]; vestirRoupa(J, R, cores); S.dados.roupa = { id: idx, cores: cores.slice() }; };
       let aba = 'roupa';
       const render = () => {
         const bt = [-1].concat(lista.map((_, i) => i)).map((i) => '<button type="button" class="pxBtn' + (i === idx ? ' on' : '') + '" data-r="' + i + '">' + esc(T(nomeDe(i))) + '</button>').join('');
         const sw = (n) => '<p class="rSec">' + esc(rot[n]) + ' <small>(' + esc(dica[n]) + ')</small></p><div class="rCores">' + PAL.map((h) => '<button type="button" class="rCor' + (cores[n].toLowerCase() === h ? ' on' : '') + '" data-c="' + n + '" data-v="' + h + '" style="background:' + h + '" aria-label="' + h + '"></button>').join('') + '</div>';
-        const corpo = aba === 'roupa' ? '<div class="rGrade">' + bt + '</div>' : sw(0) + sw(1) + sw(2);
+        const corpo = aba === 'roupa' ? '<div class="rGrade">' + bt + '</div>' : sw(0) + sw(1) + sw(2) + sw(3);
         UI.roupa.innerHTML = '<p class="rTit">' + esc(T('Guarda-roupa')) + '</p><div class="rAbas"><button type="button" class="pxBtn' + (aba === 'roupa' ? ' on' : '') + '" data-aba="roupa">' + esc(T('Roupa')) + '</button><button type="button" class="pxBtn' + (aba === 'cores' ? ' on' : '') + '" data-aba="cores">' + esc(T('Cores')) + '</button></div><div class="rCorpo">' + corpo + '</div><div class="rFim"><button type="button" class="pxBtn pxPrim" data-fim="1">' + esc(T('Pronto')) + '</button></div>';
       };
       UI.roupa.hidden = false; render();
@@ -1042,7 +1153,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         const b = e.target.closest('button'); if (!b) return; somClique();
         if (b.dataset.aba) { aba = b.dataset.aba; render(); return; }
         if (b.dataset.fim) { UI.roupa.hidden = true; UI.roupa.onclick = null; S.camEspecial = null; S.modo = 'cena'; fim(); return; }
-        if (b.dataset.r != null) { idx = Number(b.dataset.r); cores = (idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]).c.slice(); }
+        if (b.dataset.r != null) { idx = Number(b.dataset.r); cores = c4((idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]).c); }
         else if (b.dataset.c != null) cores[Number(b.dataset.c)] = b.dataset.v;
         aplicar(); render();
       };
@@ -1136,7 +1247,59 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await andar(J, [[B.pia.x, -1.4]], 1.8); J.yawAlvo = Math.PI / 2; await esperar(200); J.pose = 'lava'; somAgua(2.6, false); await esperar(2700);
     J.pose = 'pe'; await andar(J, [[B.pia.spot[0], B.pia.spot[1]]], 1.8);
   }
-  async function usarChuveiro() { olhar(S.jog, 1.65, -1.5); await dizer(['jog', T('Eu não preciso tomar banho agora.')]); }
+  // ----- o banho (estilo The Sims): corte seco, o personagem só de pele, de costas para a câmera, com a tarja pixelada no meio
+  const texTarja = (pele) => drawTexture(6, 6, (g, w, h) => {          // mosaico de pixels grandes em tons de pele e cinza, trocado a cada instante (a "tremida" da tarja)
+    const n = hexN(pele);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const f = 0.72 + Math.random() * 0.5, cinza = Math.random() < 0.28 ? 0.55 : 0, v = (c) => Math.max(0, Math.min(255, Math.round(c * f * (1 - cinza) + 140 * cinza)));
+      g.fillStyle = 'rgb(' + v((n >> 16) & 255) + ',' + v((n >> 8) & 255) + ',' + v(n & 255) + ')'; g.fillRect(x, y, 1, 1);
+    }
+  });
+  function tarja(A, ligar) {
+    if (A.tarja) { if (A.tarja.parent) A.tarja.parent.remove(A.tarja); A.tarja.material.dispose(); A.tarja = null; }
+    for (const t of (S.tarjaTex || [])) t.dispose();
+    S.tarjaTex = null; if (!ligar) return;
+    const ts = S.tarjaTex = [texTarja(A.opt.pele), texTarja(A.opt.pele), texTarja(A.opt.pele)];
+    // 2D de verdade: um quadrado (Sprite) que fica SEMPRE virado para a câmera, desenhado por cima de tudo, como a tarja do The Sims
+    const mt = new THREE.Sprite(new THREE.SpriteMaterial({ map: ts[0], depthTest: false, depthWrite: false }));
+    mt.scale.set(0.52, 0.52, 1); mt.position.set(0, 0.8, 0); mt.renderOrder = 30; A.m.corpo.add(mt); A.tarja = mt; S.tarjaK = 0;
+  }
+  function aguaTick(dt) {                                        // gotas caindo do chuveiro e vapor subindo
+    const W = S.agua; if (!W) return;
+    if (W.on) {
+      W.acc += dt * 90; while (W.acc >= 1) { W.acc -= 1; const d = new THREE.Mesh(W.geoGota, W.matGota); d.position.set(1.45 + Math.random() * 0.65, 1.92, -1.55 + Math.random() * 0.5); d.userData.v = 3.2 + Math.random() * 1.2; d.userData.vx = 0; W.g.add(d); W.gotas.push(d); }
+      W.vac += dt * 5; if (W.vac >= 1 && W.vapor.length < 16) { W.vac = 0; const p = new THREE.Mesh(W.geoVapor, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false })); p.position.set(1.35 + Math.random() * 0.8, 0.5 + Math.random() * 0.4, -1.2 - Math.random() * 0.9); p.userData.t = 0; W.g.add(p); W.vapor.push(p); }
+    }
+    for (let i = W.gotas.length - 1; i >= 0; i--) { const d = W.gotas[i]; d.position.y -= d.userData.v * dt; d.position.x += d.userData.vx * dt; if (d.position.y < 0.12) { W.g.remove(d); W.gotas.splice(i, 1); } }
+    for (let i = W.vapor.length - 1; i >= 0; i--) { const p = W.vapor[i]; p.userData.t += dt; p.position.y += 0.32 * dt; p.scale.setScalar(1 + p.userData.t * 0.9); p.material.opacity = Math.max(0, 0.22 * (1 - p.userData.t / 1.8)); if (p.userData.t > 1.8) { W.g.remove(p); p.material.dispose(); W.vapor.splice(i, 1); } }
+    if (S.jog.tarja && S.tarjaTex) { S.tarjaK += dt; if (S.tarjaK > 0.11) { S.tarjaK = 0; S.jog.tarja.material.map = S.tarjaTex[Math.floor(Math.random() * S.tarjaTex.length)]; S.jog.tarja.material.needsUpdate = true; } }
+  }
+  async function usarChuveiro() {
+    const J = S.jog; olhar(J, 1.9, -1.6); await esperar(250);
+    const antes = J.roupaAtual ? { R: J.roupaAtual.R, c: J.roupaAtual.c.slice() } : { R: PIJAMA[S.fem ? 'F' : 'M'], c: PIJAMA[S.fem ? 'F' : 'M'].c.slice() };
+    const W = S.agua = { on: false, g: S.banh.g, gotas: [], vapor: [], acc: 0, vac: 0, geoGota: new THREE.BoxGeometry(0.03, 0.22, 0.03), geoVapor: new THREE.BoxGeometry(0.26, 0.26, 0.26), matGota: new THREE.MeshBasicMaterial({ color: 0xa8dcff, transparent: true, opacity: 0.9 }) };
+    try {
+      somClique(); await preto(true, 280);                       // corte rápido (igual ao de levantar da cama)
+      const pele = (J.base || J.opt).pele;
+      vestirRoupa(J, NU, [pele, pele, pele, pele]); tarja(J, true);
+      J.rota = null; J.x = 1.8; J.z = -1.58; J.yaw = J.yawAlvo = Math.PI / 2; J.pose = 'banho'; J.seguir = true; J.ySnap = true;
+      S.camEspecial = [1.45, 2.3, 3.3, 1.8, 1.0, -1.6]; S.camSnap = true; S.banh.vidro.opacity = 0.1;
+      W.on = true; await esperar(160); await preto(false, 280);
+      somAgua(4.6, false); await esperar(4700);
+      W.on = false; await preto(true, 280);
+      tarja(J, false); vestirRoupa(J, antes.R, antes.c);
+      J.pose = 'pe'; J.x = B.chuveiro.spot[0]; J.z = B.chuveiro.spot[1]; J.yaw = J.yawAlvo = Math.PI / 2; J.ySnap = true;
+      S.camEspecial = null; S.camSnap = true; S.banh.vidro.opacity = 0.28;
+      for (const d of W.gotas.splice(0)) W.g.remove(d); for (const p of W.vapor.splice(0)) { W.g.remove(p); p.material.dispose(); }
+      await esperar(160); await preto(false, 280);
+      await dizer(['jog', T('Ahh, agora sim! Banho tomado.')]);
+    } finally {
+      W.on = false; if (S.banh.vidro) S.banh.vidro.opacity = 0.28; if (J.tarja) tarja(J, false);
+      if (J.roupaAtual && J.roupaAtual.R === NU) vestirRoupa(J, antes.R, antes.c);
+      for (const d of W.gotas.splice(0)) W.g.remove(d); for (const p of W.vapor.splice(0)) { W.g.remove(p); p.material.dispose(); }
+      W.geoGota.dispose(); W.geoVapor.dispose(); W.matGota.dispose(); S.agua = null;
+    }
+  }
 
   // ----- sair do quarto / voltar
   async function sairQuarto() {
@@ -1218,12 +1381,49 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   async function sairDoPredio() {
     const J = S.jog; S.fimDaFase = true; missao(''); aviso('');
     await andar(J, [[-MID, -OUT + 1.0]], 1.8); J.yawAlvo = Math.PI / 2; await esperar(300);
-    somPorta(false); S.esc.portas.rua.vidro.material.color.setHex(0xffffff);
+    somPorta(false); { const R = S.esc.portas.rua; R.vidro.material.color.setHex(0xffffff); R.fora.material.map = null; R.fora.material.alphaTest = 0; R.fora.material.color.setHex(0xffffff); R.fora.material.needsUpdate = true; }
     await andar(J, [[-MID, -OUT + 0.25]], 1.2);
     gravar('fim');
     await preto(true, 1400);
     await legenda(T('Continua...'), 3600);
     if (S.fimRes) S.fimRes();
+  }
+
+  // ----- a bola do quarto masculino: física simples (a gente encosta andando e ela sai rolando; não gruda no pé)
+  const BOLA_R = 0.17;
+  function bolaTick(dt) {
+    const B = S.bolaQ, J = S.jog; if (!B || !J) return;
+    if (B.jx == null) { B.jx = J.x; B.jz = J.z; }
+    const cl = (v) => Math.max(-3, Math.min(3, v)), pvx = cl((J.x - B.jx) / Math.max(dt, 1e-3)), pvz = cl((J.z - B.jz) / Math.max(dt, 1e-3)); B.jx = J.x; B.jz = J.z;
+    if (S.lugar !== 'quarto') return;
+    // empurrão: o jogador é um círculo de 0,27 m; só empurra se estiver indo na direção da bola
+    const dx = B.x - J.x, dz = B.z - J.z, d = Math.hypot(dx, dz), lim = BOLA_R + 0.27;
+    if (d < lim && d > 1e-4 && !J.oculto && J.pose !== 'deitado') {
+      const nx = dx / d, nz = dz / d, vn = pvx * nx + pvz * nz;
+      if (vn > 0.15) { const v = Math.min(5.5, vn * 1.5 + 0.6); const at = B.vx * nx + B.vz * nz; if (v > at) { B.vx += (v - at) * nx; B.vz += (v - at) * nz; } }
+      B.x = J.x + nx * lim; B.z = J.z + nz * lim;
+    }
+    const sp = Math.hypot(B.vx, B.vz);
+    if (sp > 0.01) {
+      const k = Math.max(0, 1 - (0.7 + 1.1 / Math.max(sp, 0.6)) * dt);              // atrito: rola um pouco e para
+      B.vx *= k; B.vz *= k;
+      B.x += B.vx * dt; B.z += B.vz * dt;
+      // paredes do quarto (a frente é aberta, mas a bola não sai)
+      const xm = Q.W / 2 - 0.12 - BOLA_R, zm0 = -Q.D / 2 + 0.05 + BOLA_R, zm1 = Q.D / 2 - 0.2 - BOLA_R;
+      if (B.x < -xm) { B.x = -xm; B.vx = Math.abs(B.vx) * 0.55; } else if (B.x > xm) { B.x = xm; B.vx = -Math.abs(B.vx) * 0.55; }
+      if (B.z < zm0) { B.z = zm0; B.vz = Math.abs(B.vz) * 0.55; } else if (B.z > zm1) { B.z = zm1; B.vz = -Math.abs(B.vz) * 0.55; }
+      // móveis (cama, guarda-roupa, mesa, computador): a bola bate e volta
+      for (const r of Q_RETS) {
+        const x0 = r[0] - BOLA_R, x1 = r[1] + BOLA_R, z0 = r[2] - BOLA_R, z1 = r[3] + BOLA_R;
+        if (B.x > x0 && B.x < x1 && B.z > z0 && B.z < z1) {
+          const pe = B.x - x0, pd = x1 - B.x, pt = B.z - z0, pf = z1 - B.z, m = Math.min(pe, pd, pt, pf);
+          if (m === pe) { B.x = x0; B.vx = -Math.abs(B.vx) * 0.5; } else if (m === pd) { B.x = x1; B.vx = Math.abs(B.vx) * 0.5; } else if (m === pt) { B.z = z0; B.vz = -Math.abs(B.vz) * 0.5; } else { B.z = z1; B.vz = Math.abs(B.vz) * 0.5; }
+        }
+      }
+      // gira rolando: eixo = cima x direção do movimento
+      const ds = Math.hypot(B.vx, B.vz) * dt; if (ds > 1e-5) { B.eixo.set(B.vz, 0, -B.vx).normalize(); B.q.setFromAxisAngle(B.eixo, ds / BOLA_R); B.mesh.quaternion.premultiply(B.q); }
+    } else { B.vx = B.vz = 0; }
+    B.mesh.position.set(B.x, BOLA_R, B.z); if (B.sombra) B.sombra.position.set(B.x, 0.02, B.z);
   }
 
   // ------------------------------------------------------------------ o quadro
@@ -1234,7 +1434,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (S.modo === 'livre') mover(dt);
     for (const A of S.elenco) tickAtor(A, S.t, dt);
     if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
-    fumacaTick(dt);
+    fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
     const cast = new Map(S.elenco.map((a) => [a.m, a]));
     for (const a of ATLETAS) { const A = cast.get(a); a.raiz.visible = A ? !A.oculto : false; }
     if (S.lugar === 'escada') for (const p of S.esc.pecas) p.visible = p.userData.yMin <= S.cam.py - 1.0;
@@ -1305,6 +1505,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       S.palco = new THREE.Group(); scene.add(S.palco);
       S.quarto = montarQuarto(S.fem); S.banh = montarBanheiro(); S.esc = montarEscada();
       S.quarto.g.visible = S.banh.g.visible = S.esc.g.visible = false;
+      if (S.quarto.bola) S.bolaQ = { mesh: S.quarto.bola, sombra: S.quarto.bolaSombra, x: 0.9, z: 1.6, vx: 0, vz: 0, jx: null, jz: null, eixo: new THREE.Vector3(), q: new THREE.Quaternion() };
       GANCHO_RENDER = gancho;
       // o personagem (com 16 anos: sem barba) e a roupa
       const ap = aparenciaJogador(), pij = PIJAMA[S.fem ? 'F' : 'M'];

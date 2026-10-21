@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.7.1
+   FUTEBOL JS · jogo.js · versão 4.7.3
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,24 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.7.3 — bola do João, escolha do espaço de save, festa no apito final e ovo de páscoa:
+   • No treino e na 1ª partida da história a bola é a do João (branca, quadradinhos azuis e faixa laranja) — bolaDoJoao(on).
+   • O João avisa no tutorial do chute que FORÇA e EFEITO são fraquinhos no começo. Velocidade inicial (iniciante) = 5 (o resto continua 4).
+   • "Modo história" agora abre primeiro a escolha do espaço (1 a 3) onde o personagem novo será salvo. Espaço ocupado pede confirmação
+     ("salvar por cima apaga todos os dados desse personagem"). O save só é substituído quando a história de fato começa. FutebolJS.slotHistoria().
+   • Em jogos sem torcida (quadra de futsal) os jogadores do time vencedor (os dois, se empatar) pulam no apito final (G.fimFesta).
+   • Ovo de páscoa: fez gol na 1ª partida e pegou a bola do fundo da rede → cena "MINHA BOLA, PORRA!!" antes de voltar ao meio.
+   Novidades da versão 4.7.2 — tutorial, azul/cavadinha, finta e drible de costas:
+   • AZUL de verdade fraco: o chute no azul sai a 5–9 m/s. Bater EMBAIXO da bola nele faz ela subir devagar = CAVADINHA, que agora é
+     coisa de perto do goleiro (cai de 2,5 a 13 m; antes ia a 34 m, "do meio do campo"). O passe no azul é só curto e suave (não é por cima).
+   • FINTA: só vale se você escolheu a FORÇA (soltou a barra) e cancelou na hora de tocar na bola. Cancelar na mira ou na barra é só desistir.
+   • Drible de COSTAS (proteger a bola): o marcador não cai mais, fica desorientado (passinhos), igual aos outros dribles.
+   • Cena antes da partida do Professor Roberto: o céu voltou a ser azul (ficava preto ao voltar do treino).
+   • Tutorial da Fase 1 ajustado: explica a barra em degradê (verde = bom; amarelo/vermelho de cima = forte demais), ganhou as aulas da
+     CAVADINHA (soltar no azul + bater embaixo da bola) e da FINTA (armar o chute e cancelar), e só julga o gol depois que a bola
+     se resolve. A câmera lenta do chute bom não corta mais antes de a bola entrar (limite agora acompanha o tempo de voo).
+   • Fase 2: o fase2.js é baixado em segredo no meio da primeira partida; a tela "Carregando a próxima fase..." foi removida.
+   • No tutorial a aula da finta faz o João SEMPRE cair, e a da cavadinha começa perto do gol.
    Novidades da versão 4.7.1 — barra em gradiente, habilidades por jogador, bloqueios e finta:
    • Barra de força em gradiente de baixo para cima: vermelho (fraco demais) · AZUL (especial: cavadinha, passe curto, por cima) ·
      amarelo (começa a ficar bom) · VERDE (chute bom) · amarelo (forte demais) · vermelho (descalibrado). Quanto mais segura, mais
@@ -33,10 +51,6 @@
    • Goleiro cai depois da ponte: com a bola fica 0,75 s no chão (sem repor); sem a bola levanta em 0,25 s olhando para a bola.
    • Finta de chute (armar e cancelar): marcador compra em ~5/10 (conta como drible); goleiro de longe 1/10, na área 5/10, 1x1 8/10,
      com câmera lenta em 2 ângulos. Câmera lenta em 3 ângulos volta a rodar para chute bom (verde) no gol.
-   • Tutorial da Fase 1 ajustado: explica a barra em degradê (verde = bom; amarelo/vermelho de cima = forte demais), ganhou as aulas da
-     CAVADINHA (soltar no azul + bater embaixo da bola) e da FINTA (armar o chute e cancelar), e só julga o gol depois que a bola
-     se resolve. A câmera lenta do chute bom não corta mais antes de a bola entrar (limite agora acompanha o tempo de voo).
-   • Fase 2: o fase2.js é baixado em segredo no meio da primeira partida; a tela "Carregando a próxima fase..." foi removida.
    • Jogadores genéricos com as bases do criador (pele, cabelo, rosto, lábios, chuteira). Partida rápida: masculino, feminino ou misto
      (cabelos unissex/masc/fem; rostos com batom/delineado só nas mulheres) e "usar personagem do modo história" (até 3 dos saves).
    Novidades da versão 4.7.0 — passe/chute sem assistência (barra de força estilo Winning Eleven), IA mais esperta e regras:
@@ -519,7 +533,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.7.1';
+const VERSAO_JOGO = '4.7.3';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1002,7 +1016,7 @@ const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e par
 //   domínio ......... tamanho da faixa verde do minigame de receber a bola      expoente 0.5
 // Com 4 (jogador iniciante da história): resistência 5 s de corrida e 20 s para voltar ao total.
 // Uso:  Atributos.aplicar({ chute: 4, ... })  |  Atributos.aplicar(null) volta tudo para 7
-//       Atributos.iniciante()  → objeto com tudo 4     Atributos.fator('chute') → multiplicador atual
+//       Atributos.iniciante()  → objeto com tudo 4 (velocidade 5)     Atributos.fator('chute') → multiplicador atual
 // ---------------------------------------------------------------------
 const Atributos = (() => {
   // (4.7.1) Os mesmos componentes das HABILIDADES de qualquer jogador (ver HABILIDADES logo abaixo). Os 7 antigos continuam
@@ -1031,7 +1045,7 @@ const Atributos = (() => {
   }
   return {
     NOMES, aplicar,
-    padrao: () => tudo(7), iniciante: () => tudo(4),
+    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(4), { velocidade: 5 }),   // (4.7.3) iniciante: tudo 4, mas corre um pouco mais (velocidade 5)
     valor: (nome) => atual[nome],
     fator: (nome) => razao(nome),
     get atual() { return Object.assign({}, atual); },
@@ -2727,6 +2741,24 @@ function makeBallMesh() {
 }
 { const bm = makeBallMesh(); ball.mesh = bm.m; ball.shadow = bm.s; }
 const ballSpeed = () => Math.hypot(ball.vx, ball.vz);
+// (4.7.3) Treino e primeira partida da história: a bola é a do João (a bola de futsal nova: branca, quadradinhos azuis e faixa laranja).
+let BOLA_JOAO_ON = false, BOLA_JOAO_GEO = null, BOLA_JOAO_MAT = null;
+function bolaDoJoao(on) {
+  on = !!on;
+  if (on === BOLA_JOAO_ON) return;
+  if (on && !BOLA_JOAO_MAT) {
+    BOLA_JOAO_GEO = new THREE.SphereGeometry(CONFIG.BALL_R, 12, 8);
+    BOLA_JOAO_MAT = new THREE.MeshLambertMaterial({ map: drawTexture(64, 32, (g, w, h) => {
+      g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h);
+      g.fillStyle = '#1d3f8f';
+      for (let i = 0; i < 6; i++) { const x = 5 + i * 11; g.fillRect(x, 6, 6, 6); g.fillRect(x + 5, 20, 6, 6); }
+      g.fillStyle = '#e0762a'; g.fillRect(0, 14, w, 2);
+    }) });
+  }
+  ball.mesh.geometry = on ? BOLA_JOAO_GEO : BALL_GEO;
+  ball.mesh.material = on ? BOLA_JOAO_MAT : BALL_MAT;
+  BOLA_JOAO_ON = on;
+}
 
 // Bolas reservas: uma em cima do suporte ao lado de cada gol. No tiro de meta o goleiro pega
 // a reserva (ela some do suporte) e, depois da cobrança, aparece outra aos poucos (3 s).
@@ -5268,7 +5300,7 @@ const CELEB_POR_CAMPO = {
   society: ['grade', 'bola'],
 };
 function checarComemoracaoAuto() {
-  if (G.state !== 'celebrate' || G.celebAuto || user.celeb) return;
+  if (G.state !== 'celebrate' || G.celebAuto || user.celeb || G.fading) return;
   const u = user, pode = CELEB_POR_CAMPO[(PARTIDA && PARTIDA.campo.estadio) || 'arena'] || CELEB_POR_CAMPO.arena;
   // 4.1.1 (secreta): correu até o SEU técnico → abraça ele e os dois comemoram juntos.
   const tec = pode.includes('tecnico') && tecnicos.find((t) => t.team === u.team);
@@ -5368,6 +5400,7 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     }
   }
   G.celebAuto = A;
+  if (tipo === 'bola' && typeof Historia !== 'undefined' && Historia.emJogo()) G.ovoBola = true;   // (4.7.3) ovo de páscoa: pegou a bola da rede na partida da história
   u.scripted = true; u.vx = u.vz = 0;
   G.celebT = Math.max(G.celebT, A.dur + 0.6);
   showToast({ bandeira: 'Chutou a bandeirinha!', tecnico: 'Comemoração secreta: abraço no técnico!', placa: 'Subiu na placa!', grade: 'Pulou na grade!', bola: 'Bola para a torcida!' }[tipo], 'good');
@@ -5642,8 +5675,16 @@ function endCelebration() {
   if (G.fading) return;
   if (!G.replayFeito) { G.replayFeito = true; iniciarReplayGol(endCelebration); return; }   // replay antes da saída
   G.fading = true;
+  if (G.ovoBola && !G.ovoFeito && typeof Historia !== 'undefined' && Historia.emJogo()) {      // (4.7.3) ovo de páscoa antes de voltar ao meio
+    G.ovoFeito = true;
+    Historia.ovoBola().catch((e) => console.error(e)).then(() => saidaDaComemoracao());
+    return;
+  }
+  saidaDaComemoracao();
+}
+function saidaDaComemoracao() {
   $('fade').classList.add('on');
-  setTimeout(() => { kickoff(G.lastConceded); snapCamera(); $('fade').classList.remove('on'); G.fading = false; }, 380);
+  setTimeout(() => { kickoff(G.lastConceded); G.camOvo = null; if (typeof Historia !== 'undefined') Historia.ovoFim(); snapCamera(); $('fade').classList.remove('on'); G.fading = false; }, 380);
 }
 
 function clearFlags(p) {
@@ -6498,7 +6539,7 @@ function confirmAim() {
 // (4.7.1) BARRA DE FORÇA no estilo Winning Eleven: quanto MAIS tempo segurar, MAIS forte (a força máxima é a do atributo
 // FORÇA de quem chuta). Cores em degradê, de baixo para cima:
 //   VERMELHO (0–10%) ...... fraco demais
-//   AZUL (10–30%) ......... fraco "especial": cavadinha, passe curto, bola por cima
+//   AZUL (10–30%) ......... fraco "especial": passe curto e suave; no chute, bater EMBAIXO da bola faz ela subir devagar = cavadinha (perto do goleiro)
 //   AMARELO (30–45%) ...... começa a ser um chute bom
 //   VERDE (45–70%) ........ o chute/passe bom (o mais preciso)
 //   AMARELO (70–85%) ...... começa a ficar forte demais (sobe e sai mais torto)
@@ -6511,7 +6552,7 @@ const NOME_FAIXA = ['fraco demais', 'azul', 'amarelo', 'verde', 'amarelo forte',
 const faixaDaForca = (v) => { let i = 0; while (i < FAIXAS_FORCA.length && v >= FAIXAS_FORCA[i]) i++; return i; };
 const curvaPor = (X, Y, x) => { if (x <= X[0]) return Y[0]; for (let i = 1; i < X.length; i++) if (x <= X[i]) return lerp(Y[i - 1], Y[i], (x - X[i - 1]) / (X[i] - X[i - 1])); return Y[Y.length - 1]; };
 const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
-const VEL_CHUTE = [8, 11, 16, 20, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; antes a faixa certa dava 26–30)
+const VEL_CHUTE = [3.5, 5, 9, 18, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; o AZUL é fraco de verdade: 5–9 m/s)
 const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
 const ELEV_CHUTE = [0.03, 0.03, 0.04, 0.05, 0.09, 0.15, 0.27];   // ângulo de subida do chute (o vermelho sobe muito)
 const gauss = () => (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 1.22;   // ~normal(0,1), sem caudas absurdas
@@ -6682,13 +6723,13 @@ function executeUserKick() {
   elev += Math.max(0, k.oy) * 0.12 - Math.max(0, -k.oy) * 0.04 + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
   if (k.throwIn) elev = Math.max(elev, 0.22);
   elev = clamp(elev, 0.005, 0.7);
-  // CAVADINHA: força no AZUL batendo bem embaixo da bola. A bola sobe alto e cai devagar; ONDE ela cai depende só da força
+  // CAVADINHA: força no AZUL (toque fraco) batendo bem embaixo da bola: ela sobe porque o toque é fraco. A bola sobe alto e cai devagar; ONDE ela cai depende só da força
   // (e de um pouco de imprecisão) — se encobrir o goleiro e cair dentro do gol, é gol. Nada de "mal batida" decidido por fora.
   const cavadinha = k.kind === 'shot' && k.oy > 0.5 && k.faixa === 1;   // (4.7.1) cavadinha: força no AZUL
   let vx, vy, vz, qualCav = 0;
   if (cavadinha) {
-    const D = lerp(5, 34, (k.power - FAIXAS_FORCA[0]) / (FAIXAS_FORCA[1] - FAIXAS_FORCA[0])) * (1 + gauss() * 0.05);
-    vy = clamp(5.5 + D * 0.19, 6.5, 10.5);
+    const D = lerp(2.5, 13, (k.power - FAIXAS_FORCA[0]) / (FAIXAS_FORCA[1] - FAIXAS_FORCA[0])) * (1 + gauss() * 0.05);   // (4.7.2) cavadinha é coisa de perto do goleiro: 2,5 a 13 m (antes ia a 34 m)
+    vy = clamp(5.4 + D * 0.17, 5.8, 7.8);
     const T = 2 * vy / CONFIG.GRAVITY, hs = vArrasto(D, T);
     vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
   } else {
@@ -6831,14 +6872,14 @@ function updateKickClock(rdt) {
 function cancelKick() {
   if (!['aim', 'power', 'spin'].includes(G.state)) return;
   if (G.kick && G.kick.semLimite) return;          // bola parada: não tem para onde voltar
-  const k = G.kick;
+  const k = G.kick, escolheuForca = G.state === 'spin';       // (4.7.2) a finta só vale depois de escolher a FORÇA (cancelar na mira ou na barra é só desistir)
   G.kick = null; G.state = 'play'; G.targetScale = 1;
   hideKickUI();
-  if (k && k.kind === 'shot' && !k.cruzar && G.possession === user) fintaDeChute();   // (4.7.1) armou o chute e cancelou: finta
+  if (k && escolheuForca && k.kind === 'shot' && !k.cruzar && G.possession === user) fintaDeChute();   // armou o chute, escolheu a força e cancelou: finta
 }
 
 // ---------------------------------------------------------------------
-// (4.7.1) FINTA DE CHUTE. Todo mundo "lê" quando você arma o chute (CHUTAR). Se você cancelar, é uma finta:
+// (4.7.1) FINTA DE CHUTE. Todo mundo "lê" o seu chute. (4.7.2) Só conta como finta se você escolheu a FORÇA (soltou a barra) e cancelou na hora de tocar na bola:
 //   marcador na linha do chute (até ~7,5 m) ........ "compra" em 5 de cada 10: pula/estica a perna/vira de costas e fica um
 //                                                      instante sem reação (conta como drible nas estatísticas)
 //   goleiro ........................................ pula para um lado: de longe 1 em 10; você dentro da área 5 em 10;
@@ -6853,7 +6894,7 @@ function fintaDeChute() {
     if (o.role === 'GK' || o.out || o.stun > 0 || o.scripted || o.bloqueio) continue;
     const d = dist2D(o, u);
     if (d < 0.8 || d > 7.5 || distPointSegment(o, u, alvo) > 1.8 || (o.x - u.x) < -0.5) continue;
-    if (Math.random() >= 0.5) continue;
+    if (Math.random() >= (G.fintaCerta ? 1 : 0.5)) continue;     // (G.fintaCerta: na aula do João o marcador sempre cai)
     const ax = alvo.x - u.x, az = alvo.z - u.z, l2 = ax * ax + az * az || 1, k = clamp(((o.x - u.x) * ax + (o.z - u.z) * az) / l2, 0, 1);
     iniciarBloqueio(o, ['pulo', 'perna', 'costas'][Math.floor(Math.random() * 3)], true, { x: u.x + ax * k, z: u.z + az * k });
     o.committing = 0; enganou = true;
@@ -7702,7 +7743,7 @@ function prepararDribleNovo(C, u, o) {
     C.dur = 0.9; C.p1 = { x: u.x + f.x * 3, z: u.z + f.z * 3 }; C.p2 = { x: u.x + f.x * 6.5, z: u.z + f.z * 6.5 };
   } else if (C.tipo === 'protecao') {
     // Proteção (1,6 s): recua 15 cm e encosta as costas/o ombro nele; os dois se empurram;
-    // ele perde o equilíbrio e cai de costas; você sai com a bola para a frente.
+    // (4.7.2) ele perde o equilíbrio e fica desorientado (não cai); você sai com a bola para a frente.
     C.dur = 1.6;
     C.encosta = { x: u.x - f.x * 0.15, z: u.z - f.z * 0.15 };
     C.oEncosta = { x: C.encosta.x - f.x * PROT.atras + C.px * lado * PROT.lado, z: C.encosta.z - f.z * PROT.atras + C.pz * lado * PROT.lado };
@@ -7757,14 +7798,13 @@ function atualizarDribleNovo(C, dt) {
       o.tackle = PROT.bote * Math.max(0, Math.sin((t - 0.35) * 9));      // tenta enfiar o pé
       ball.x = u.x + C.fx * 0.55 - C.px * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.z = u.z + C.fz * 0.55 - C.pz * C.oppSide * 0.12 * Math.max(0, Math.sin(t * 7)); ball.y = CONFIG.BALL_R;
       if (!C.empurrou && t > 0.6) { C.empurrou = true; Som.toque(0.3); }
-    } else {                                        // ele cai de costas e você sai com a bola
+    } else {                                        // você sai com a bola e ele fica desorientado
       const a = smooth((t - 1.0) / (C.dur - 1.0));
       const pt = bezier(C.encosta, C.p1, C.p2, a);
       mover(pt.x, pt.z, 8);
       bolaNaFrente(lerp(0.55, 1.1, a));
-      const q = smooth(clamp((t - 1.0) / 0.35, 0, 1));
-      o.x = lerp(C.oEncosta.x, C.oCai.x, q); o.z = lerp(C.oEncosta.z, C.oCai.z, q);
-      o.tackle = 0; o.fallKind = 'costas'; o.fallSide = C.fallSide; o.fall = Math.pow(q, 1.4);
+      o.tackle = 0;
+      tropeca(C.fx * 0.6, C.fz * 0.6);                // (4.7.2) o marcador NÃO cai: fica desorientado (passinhos), como nos outros dribles
     }
     // Você de costas para ele, um pouco virado para mostrar o ombro (do lado dele).
     u.angle = t < 1.0 ? ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3)) : turnToward(u.angle, ang, 10 * dt);
@@ -7858,7 +7898,6 @@ function endCine(success) {
   if (success) {
     G.stats.driblesOk++;
     if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; }   // no carretel o marcador não cai, só fica parado
-    else if (C.tipo === 'protecao') { C.opp.stun = 2.0; C.opp.fall = 1; C.opp.fallKind = 'costas'; user.driblePose = null; }   // caiu de costas
     else if (C.tipo !== 'frente') { C.opp.stun = Math.max(C.opp.stun, 1.0); user.driblePose = null; }   // tropeçou (passinhos), não cai
     else { C.opp.stun = 2.4; C.opp.fall = 1; }
     const ex = C.p2.x - C.p1.x, ez = C.p2.z - C.p1.z, el = Math.hypot(ex, ez) || 1;
@@ -8174,7 +8213,7 @@ function showBanner(text, team, dur = 2.6, pequeno = false) {
 const STAGE_HINTS = {
   aim: 'Arraste para mirar: a seta segue o seu dedo. Solte para confirmar.',
   power: 'Segure e solte: quanto mais tempo, mais forte. Verde é o chute bom; azul é o toque fraco (cavadinha, passe curto); vermelho é fraco demais ou forte demais.',
-  spin: 'Toque no ponto da bola onde o pé vai bater.',
+  spin: 'Toque no ponto da bola onde o pé vai bater. Cancelar agora é uma finta!',
 };
 function showStage(stage) {
   document.body.classList.add('mirando');         // esconde os avisos de texto por cima da etiqueta
@@ -8360,6 +8399,7 @@ function resetMatch() {
   Object.assign(G, { subsFila: [], trocas: [], lesoes: [], espectador: false, pulando: false, subst: null, substToque: null, pen: null, penaltisPlacar: null, resultado: null });
   $('skipBtn').textContent = 'Pular ▶'; painelPenaltis();
   if (PARTIDA.usuarioIndisponivel) setTimeout(() => showToast('Atenção: você está ' + PARTIDA.usuarioIndisponivel + ' (no teste, joga assim mesmo)', 'bad'), 400);
+  G.fimFesta = null; G.ovoBola = false; G.ovoFeito = false; G.camOvo = null;   // (4.7.3)
   G.score = [0, 0]; G.clock = CONFIG.MATCH_SECONDS; G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
   resetStats();
   // Volta todo mundo (inclusive expulsos) e zera faltas e cartões.
@@ -8560,6 +8600,9 @@ function endMatch(motivo) {
   G.state = 'end';
   G.pulando = false;
   const res = registrarResultado(motivo);
+  // (4.7.3) Jogo sem torcida (quadra de futsal): no apito final os jogadores comemoram pulando (a mesma pose do gol). Vence quem tem mais gols; empate: os dois times.
+  G.fimFesta = null;
+  if (PARTIDA && PARTIDA.campo.semTorcida && motivo !== 'expulso') { const a = G.score[0], b = G.score[1]; G.fimFesta = { times: a > b ? [0] : b > a ? [1] : [0, 1] }; }
   if (typeof Historia !== 'undefined' && Historia.emPartida()) { esconderRecepcao(); hideKickUI(); $('timingLayer').hidden = true; Historia.fimDaPartida(res); return; }   // (4.3.6) a história cuida do fim
   $('endTitle').textContent = motivo === 'expulso' ? Tg('VOCÊ FOI EXPULSO') : 'FIM DE JOGO';
   esconderRecepcao();
@@ -8733,6 +8776,7 @@ function cameraGoal() {
   }
   if (G.shotCine) return shotCameraGoal();
   if (G.fintaCine) return cameraFinta();           // (4.7.1)
+  if (G.camOvo) return G.camOvo;                   // (4.7.3) cena do ovo de páscoa
   if (G.celebAuto) return cameraCelebAuto();
   if (G.state === 'goal' && G.golAutor) {         // gol de outro: câmera na comemoração de quem fez
     const a = G.golAutor, ang = a.angle + 0.6;
@@ -8811,6 +8855,7 @@ function updateCamera(rdt) {
 // e 'hold' (braços para a frente: goleiro com a bola nas mãos).
 function poseOf(p) {
   if (G.state === 'goal' && p.team === G.scoredBy && p.role !== 'GK') return 'up';
+  if (G.state === 'end' && G.fimFesta && G.fimFesta.times.includes(p.team) && !p.out && !p.red) return 'up';   // (4.7.3) pulinhos do apito final (sem torcida)
   if (G.state === 'celebrate' && p.team === 0 && !p.isUser && (p.role !== 'GK' || p.gkFesta) && dist2D(p, user) < 4) return 'up';
   if (p.throwIn || p.diveT > 0 || p.jumpT > 0) return 'up';
   if (p.carry || (p.role === 'GK' && G.possession === p && !p.goalKick && !p.comPe)) return 'hold';
@@ -8925,7 +8970,7 @@ function syncMeshes(dt) {
     let y = 0;
     if (p.diveT > 0) y = alturaMergulho(p);
     else if (p.jumpT > 0) y = Math.sin((1 - p.jumpT / 0.5) * Math.PI) * (p.jumpAlt || 0.7);   // (4.7.0) barreira pula mais baixo
-    else if (pose === 'up' && (G.state === 'goal' || G.state === 'celebrate')) y = Math.abs(Math.sin(agora / 160 + p.id)) * 0.25;
+    else if (pose === 'up' && (G.state === 'goal' || G.state === 'celebrate' || (G.state === 'end' && G.fimFesta))) y = Math.abs(Math.sin(agora / 160 + p.id)) * 0.25;
     m.raiz.position.y = y;
     // Tombos: mergulho do goleiro (de lado) ou marcador driblado (cai de frente, meio de lado).
     let tomb = 0, frente = 0;
@@ -11000,6 +11045,7 @@ function spPainel(miolo, borda) {
 // ---- Saves (só o sistema de carregar; quem grava é o modo história) ----
 const SAVES_CHAVE = 'futebolJs.saves.v1';
 const SAVES_SLOTS = 3;
+let SLOT_HISTORIA = 0;   // (4.7.3) espaço do CARREGAR escolhido para o personagem da história atual (0 = ainda não escolhido)
 function lerSaves() {
   const v = salvo.ler(SAVES_CHAVE, {});
   return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
@@ -11113,6 +11159,18 @@ const I18N = {
   'Arraste o boneco para girar': ['Drag the character to spin', 'Arrastra el muñeco para girar', 'Trascina il personaggio per ruotare', 'Fais glisser le personnage pour tourner'],
   'Girar para a esquerda': ['Spin left', 'Girar a la izquierda', 'Ruota a sinistra', 'Tourner à gauche'], 'Girar para a direita': ['Spin right', 'Girar a la derecha', 'Ruota a destra', 'Tourner à droite'],
   // ----- cena de abertura -----
+  // (4.7.3) slot da história, ovo de páscoa e aviso do chute fraquinho
+  "Ah, um aviso: no começo a FORÇA e o EFEITO do seu chute são fraquinhos. Calma, com o treino eles melhoram!": ["Oh, a heads-up: at the start the POWER and SPIN of your shot are pretty weak. Relax, they get better with training!", "Ah, un aviso: al principio la FUERZA y el EFECTO de tu tiro son flojitos. ¡Tranquilo, con el entrenamiento mejoran!", "Ah, un avviso: all'inizio la FORZA e l'EFFETTO del tuo tiro sono debolucci. Calma, con l'allenamento migliorano!", "Ah, un avertissement : au début la FORCE et l'EFFET de ton tir sont assez faibles. Pas de panique, ça s'améliore avec l'entraînement !"],
+  "MINHA BOLA, PORRA!!": ["MY BALL, DAMN IT!!", "¡MI PELOTA, CARAJO!", "LA MIA PALLA, ACCIDENTI!!", "MON BALLON, BORDEL !!"],
+  "Já vou buscar a bola!": ["I'll go get the ball!", "¡Ya voy a buscar la pelota!", "Vado a prendere il pallone!", "Je vais chercher le ballon !"],
+  "Onde salvar o novo personagem?": ["Where to save the new character?", "¿Dónde guardar al nuevo personaje?", "Dove salvare il nuovo personaggio?", "Où sauvegarder le nouveau personnage ?"],
+  "Escolha um espaço para guardar a sua história.": ["Choose a slot to keep your story.", "Elige un espacio para guardar tu historia.", "Scegli uno spazio per conservare la tua storia.", "Choisis un emplacement pour garder ton histoire."],
+  "Substituir este personagem?": ["Replace this character?", "¿Reemplazar a este personaje?", "Sostituire questo personaggio?", "Remplacer ce personnage ?"],
+  "Salvar por cima de {0} apaga TODOS os dados desse personagem. Você tem certeza?": ["Saving over {0} deletes ALL of that character's data. Are you sure?", "Guardar sobre {0} borra TODOS los datos de ese personaje. ¿Estás seguro?", "Salvare sopra {0} cancella TUTTI i dati di quel personaggio. Sei sicuro?", "Sauvegarder par-dessus {0} efface TOUTES les données de ce personnage. Tu en es sûr ?"],
+  "Sim, apagar e usar este espaço": ["Yes, delete and use this slot", "Sí, borrar y usar este espacio", "Sì, cancella e usa questo spazio", "Oui, effacer et utiliser cet emplacement"],
+  "Não, escolher outro espaço": ["No, pick another slot", "No, elegir otro espacio", "No, scegli un altro spazio", "Non, choisir un autre emplacement"],
+  "Modo história · Fase 1 · Começo": ["Story mode · Phase 1 · Start", "Modo historia · Fase 1 · Inicio", "Modalità storia · Fase 1 · Inizio", "Mode histoire · Phase 1 · Début"],
+  "Foi mal, João! Eu me empolguei com o gol...": ["Sorry, João! I got carried away with the goal...", "¡Perdón, João! Me emocioné con el gol...", "Scusa, João! Mi sono esaltato con il gol...", "Désolé, João ! Je me suis emballé avec le but..."],
   'É, esse aí sou eu... me preparando...': ["Yeah, that's me... getting ready...", 'Sí, ese soy yo... preparándome...', 'Sì, quello sono io... che mi preparo...', "Ouais, c'est moi... en train de me préparer..."],
   'Mas... minha história com o futebol não começou aí não.': ["But... my story with football didn't start there.", 'Pero... mi historia con el fútbol no empezó ahí.', 'Ma... la mia storia con il calcio non è iniziata lì.', "Mais... mon histoire avec le foot n'a pas commencé là."],
   'É, na verdade, ela começou há muito tempo atrás...': ['Yeah, actually, it began a long time ago...', 'Sí, en realidad empezó hace mucho tiempo...', 'Sì, in realtà è iniziata tanto tempo fa...', "Ouais, en fait, elle a commencé il y a très longtemps..."],
@@ -11843,19 +11901,22 @@ Object.assign(I18N, {
 Object.assign(I18N, {
   'Agora o chute! Chegue perto do gol e toque em CHUTAR. Primeiro arraste o dedo para mirar, depois segure: a barra enche de baixo para cima e quanto mais tempo, mais forte o chute. Solte no VERDE para um chute bom. O amarelo de cima já é forte demais, e o vermelho do topo sai descontrolado. Por último, toque na bola para dar efeito, se quiser.': ["Now the shot! Get close to the goal and tap SHOOT. First drag your finger to aim, then hold: the bar fills from bottom to top and the longer you hold, the harder the shot. Release on GREEN for a good shot. The upper yellow is already too strong, and the red at the top goes wild. Finally, tap the ball to add spin, if you want.", "¡Ahora el tiro! Acércate al arco y toca TIRAR. Primero arrastra el dedo para apuntar, luego mantén: la barra se llena de abajo hacia arriba y cuanto más tiempo, más fuerte el tiro. Suelta en VERDE para un buen tiro. El amarillo de arriba ya es demasiado fuerte y el rojo del tope sale descontrolado. Por último, toca la pelota para darle efecto, si quieres.", "Ora il tiro! Avvicinati alla porta e tocca TIRA. Prima trascina il dito per mirare, poi tieni premuto: la barra si riempie dal basso verso l'alto e più a lungo tieni, più forte è il tiro. Rilascia sul VERDE per un buon tiro. Il giallo in alto è già troppo forte e il rosso in cima esce fuori controllo. Infine tocca il pallone per dare effetto, se vuoi.", "Maintenant le tir ! Approche-toi du but et touche TIRER. D'abord fais glisser le doigt pour viser, puis maintiens : la barre se remplit de bas en haut et plus tu maintiens, plus le tir est fort. Relâche sur le VERT pour un bon tir. Le jaune du haut est déjà trop fort, et le rouge tout en haut part n'importe où. Enfin, touche le ballon pour donner de l'effet, si tu veux."],
   'Quase! Mire no gol e solte no VERDE: nem fraco, nem forte demais. Vamos tentar mais uma vez!': ["Almost! Aim at the goal and release on GREEN: not too weak, not too strong. Let's try once more!", '¡Casi! Apunta al arco y suelta en VERDE: ni flojo, ni demasiado fuerte. ¡Probemos una vez más!', 'Quasi! Mira alla porta e rilascia sul VERDE: né debole, né troppo forte. Proviamo ancora una volta!', 'Presque ! Vise le but et relâche sur le VERT : ni trop faible, ni trop fort. On réessaie une fois !'],
-  'Agora um toque especial: a faixa AZUL! Ela é fraca, mas não fraca demais, e serve para a cavadinha, quando o goleiro está adiantado. Mire no gol, solte no AZUL e, na bola, toque na parte de BAIXO.': ["Now a special touch: the BLUE band! It's soft, but not too soft, and it's used for the chip when the goalkeeper is off his line. Aim at the goal, release on BLUE and, on the ball, tap the BOTTOM part.", 'Ahora un toque especial: ¡la franja AZUL! Es suave, pero no demasiado, y sirve para la vaselina cuando el portero está adelantado. Apunta al arco, suelta en AZUL y, en la pelota, toca la parte de ABAJO.', "Ora un tocco speciale: la fascia BLU! È morbida, ma non troppo, e serve per il cucchiaio quando il portiere è avanzato. Mira alla porta, rilascia sul BLU e, sul pallone, tocca la parte in BASSO.", "Maintenant un geste spécial : la bande BLEUE ! Elle est douce, mais pas trop, et sert à la sautée quand le gardien est avancé. Vise le but, relâche sur le BLEU et, sur le ballon, touche la partie du BAS."],
   'CAVADINHA: solte no AZUL e toque embaixo da bola': ['CHIP: release on BLUE and tap the bottom of the ball', 'VASELINA: suelta en AZUL y toca abajo de la pelota', 'CUCCHIAIO: rilascia sul BLU e tocca sotto il pallone', 'SAUTÉE : relâche sur le BLEU et touche le bas du ballon'],
   'Isso! A bola subiu e passou por cima. Contra o goleiro adiantado, é um golaço!': ['That\'s it! The ball went up and over. Against an advanced goalkeeper, it\'s a beauty!', '¡Eso! La pelota subió y pasó por encima. Contra un portero adelantado, ¡es un golazo!', 'Ecco! Il pallone è salito ed è passato sopra. Contro un portiere avanzato, è un gol bellissimo!', 'Voilà ! Le ballon est monté et est passé par-dessus. Contre un gardien avancé, c\'est un but magnifique !'],
   'Quase! Solte quando a barra estiver no AZUL e toque na parte de baixo da bola. Mais uma tentativa!': ['Almost! Release when the bar is on BLUE and tap the bottom of the ball. One more try!', '¡Casi! Suelta cuando la barra esté en AZUL y toca la parte de abajo de la pelota. ¡Un intento más!', 'Quasi! Rilascia quando la barra è sul BLU e tocca la parte bassa del pallone. Ancora un tentativo!', 'Presque ! Relâche quand la barre est sur le BLEU et touche le bas du ballon. Encore un essai !'],
-  'Agora, o passe! Toque em PASSAR e mire em mim. Segure e solte: quanto mais tempo, mais forte o passe. O AZUL é um toque curto e por cima; o VERDE é o passe firme. Passe no espaço: eu corro até a bola!': ["Now, the pass! Tap PASS and aim at me. Hold and release: the longer you hold, the harder the pass. BLUE is a short, lofted touch; GREEN is the firm pass. Pass into space: I'll run to the ball!", '¡Ahora, el pase! Toca PASAR y apunta hacia mí. Mantén y suelta: cuanto más tiempo, más fuerte el pase. El AZUL es un toque corto y por arriba; el VERDE es el pase firme. Pasa al espacio: ¡yo corro hasta la pelota!', "Ora, il passaggio! Tocca PASSA e mira verso di me. Tieni premuto e rilascia: più a lungo tieni, più forte è il passaggio. Il BLU è un tocco corto e alto; il VERDE è il passaggio deciso. Passa nello spazio: io corro verso il pallone!", "Maintenant, la passe ! Touche PASSER et vise-moi. Maintiens et relâche : plus tu maintiens, plus la passe est forte. Le BLEU est une touche courte et en cloche ; le VERT est la passe ferme. Passe dans l'espace : je cours vers le ballon !"],
   'Faltou pontaria! Mire em mim e solte no VERDE, sem exagerar na força. Mais uma tentativa!': ['Off target! Aim at me and release on GREEN, without overdoing the power. One more try!', '¡Falta puntería! Apúntame y suelta en VERDE, sin exagerar la fuerza. ¡Un intento más!', 'Mira sbagliata! Mira verso di me e rilascia sul VERDE, senza esagerare con la forza. Ancora un tentativo!', 'Pas assez précis ! Vise-moi et relâche sur le VERT, sans trop forcer. Encore un essai !'],
   'Quando alguém é derrubado, o juiz apita e a gente cobra do lugar da falta. Você mira no gol, segura a força e solta no VERDE, igual ao chute. Pode dar efeito na bola também!': ['When someone is fouled, the referee blows the whistle and we take the kick from where the foul happened. Aim at the goal, hold the power and release on GREEN, just like a shot. You can add spin too!', 'Cuando alguien es derribado, el árbitro pita y cobramos desde el lugar de la falta. Apuntas al arco, mantienes la fuerza y sueltas en VERDE, igual que en el tiro. ¡También puedes darle efecto a la pelota!', 'Quando qualcuno viene atterrato, l\'arbitro fischia e battiamo dal punto del fallo. Mira alla porta, tieni premuta la forza e rilascia sul VERDE, come nel tiro. Puoi anche dare effetto al pallone!', 'Quand un joueur est fauché, l\'arbitre siffle et on tire depuis l\'endroit de la faute. Tu vises le but, tu maintiens la puissance et tu relâches sur le VERT, comme pour un tir. Tu peux aussi donner de l\'effet au ballon !'],
-  'Agora um truque: a finta! Todo mundo lê quando você arma o chute. Toque em CHUTAR e, antes de bater, toque em CANCELAR. Marcadores e goleiros podem cair na finta! Eu fico aqui de marcador.': ["Now a trick: the feint! Everyone reads it when you set up a shot. Tap SHOOT and, before kicking, tap CANCEL. Defenders and goalkeepers can fall for it! I'll stay here as the defender.", 'Ahora un truco: ¡la finta! Todos lo notan cuando armas el tiro. Toca TIRAR y, antes de patear, toca CANCELAR. ¡Defensores y porteros pueden caer en la finta! Yo me quedo aquí de marcador.', 'Ora un trucco: la finta! Tutti lo notano quando prepari il tiro. Tocca TIRA e, prima di calciare, tocca ANNULLA. Difensori e portieri possono cascarci! Io resto qui da marcatore.', 'Maintenant une ruse : la feinte ! Tout le monde le voit quand tu armes le tir. Touche TIRER et, avant de frapper, touche ANNULER. Les défenseurs et les gardiens peuvent se faire avoir ! Je reste ici en défenseur.'],
-  'FINTA: toque em CHUTAR e depois em CANCELAR': ['FEINT: tap SHOOT and then CANCEL', 'FINTA: toca TIRAR y luego CANCELAR', 'FINTA: tocca TIRA e poi ANNULLA', 'FEINTE : touche TIRER puis ANNULER'],
-  'Eu caí direitinho! É assim que se engana o marcador.': ['I fell for it! That\'s how you fool a defender.', '¡Caí de lleno! Así se engaña al marcador.', 'Ci sono cascato! Così si inganna il marcatore.', 'Je me suis fait avoir ! C\'est comme ça qu\'on trompe un défenseur.'],
-  'Dessa vez eu não caí, mas pode acontecer em metade das vezes. Vale a pena tentar!': ["I didn't fall for it this time, but it works about half the time. Worth a try!", 'Esta vez no caí, pero pasa la mitad de las veces. ¡Vale la pena intentarlo!', 'Stavolta non ci sono cascato, ma succede circa metà delle volte. Vale la pena provare!', 'Cette fois je ne me suis pas fait avoir, mais ça marche environ une fois sur deux. Ça vaut le coup !'],
-  'Para a finta, toque em CHUTAR e depois em CANCELAR, sem soltar o chute. Mais uma tentativa!': ['For the feint, tap SHOOT and then CANCEL, without kicking. One more try!', 'Para la finta, toca TIRAR y luego CANCELAR, sin patear. ¡Un intento más!', 'Per la finta, tocca TIRA e poi ANNULLA, senza calciare. Ancora un tentativo!', 'Pour la feinte, touche TIRER puis ANNULER, sans frapper. Encore un essai !'],
   'É isso! Você já sabe o básico: correr, chutar, passar, driblar, fintar e dominar.': ["That's it! You already know the basics: running, shooting, passing, dribbling, feinting and controlling.", '¡Eso es todo! Ya sabes lo básico: correr, tirar, pasar, driblar, fintar y controlar.', 'Ecco fatto! Ora sai le basi: correre, tirare, passare, dribblare, fintare e controllare.', "Voilà ! Tu connais les bases : courir, tirer, passer, dribbler, feinter et contrôler."],
+});
+
+// (4.7.2) Tutorial: azul fraco de verdade (cavadinha perto do goleiro), passe azul curto e suave, finta só depois de escolher a força.
+Object.assign(I18N, {
+  'Agora um toque especial: a faixa AZUL! Ela é um toque bem fraco, e bater embaixo da bola nela faz a bola subir devagar: é a cavadinha, para usar perto do goleiro quando ele sai da meta. Mire no gol, solte no AZUL e, na bola, toque na parte de BAIXO.': ["Now a special touch: the BLUE band! It's a very soft touch, and hitting under the ball on it makes the ball rise slowly: that's the chip, to use near the goalkeeper when he comes off his line. Aim at the goal, release on BLUE and, on the ball, tap the BOTTOM part.", 'Ahora un toque especial: ¡la franja AZUL! Es un toque muy suave, y al golpear debajo de la pelota con ella, la pelota sube despacio: es la vaselina, para usar cerca del portero cuando sale de su arco. Apunta al arco, suelta en AZUL y, en la pelota, toca la parte de ABAJO.', "Ora un tocco speciale: la fascia BLU! È un tocco molto leggero e, colpendo sotto il pallone con essa, il pallone sale piano: è il cucchiaio, da usare vicino al portiere quando esce dalla porta. Mira alla porta, rilascia sul BLU e, sul pallone, tocca la parte in BASSO.", "Maintenant un geste spécial : la bande BLEUE ! C'est une touche très douce, et en frappant sous le ballon avec elle, le ballon monte lentement : c'est la sautée, à utiliser près du gardien quand il sort de ses buts. Vise le but, relâche sur le BLEU et, sur le ballon, touche la partie du BAS."],
+  'Agora, o passe! Toque em PASSAR e mire em mim. Segure e solte: quanto mais tempo, mais forte o passe. O AZUL é um toque curto e suave; o VERDE é o passe firme. Passe no espaço: eu corro até a bola!': ["Now, the pass! Tap PASS and aim at me. Hold and release: the longer you hold, the harder the pass. BLUE is a short, soft touch; GREEN is the firm pass. Pass into space: I'll run to the ball!", '¡Ahora, el pase! Toca PASAR y apunta hacia mí. Mantén y suelta: cuanto más tiempo, más fuerte el pase. El AZUL es un toque corto y suave; el VERDE es el pase firme. Pasa al espacio: ¡yo corro hasta la pelota!', "Ora, il passaggio! Tocca PASSA e mira verso di me. Tieni premuto e rilascia: più a lungo tieni, più forte è il passaggio. Il BLU è un tocco corto e morbido; il VERDE è il passaggio deciso. Passa nello spazio: io corro verso il pallone!", "Maintenant, la passe ! Touche PASSER et vise-moi. Maintiens et relâche : plus tu maintiens, plus la passe est forte. Le BLEU est une touche courte et douce ; le VERT est la passe ferme. Passe dans l'espace : je cours vers le ballon !"],
+  'Agora um truque: a finta! Toque em CHUTAR, mire e escolha a força, como num chute de verdade. Aí, na hora de tocar na bola, toque em CANCELAR: marcadores e goleiros acham que o chute vem e se jogam! Eu fico aqui de marcador, e pode deixar que eu caio.': ["Now a trick: the feint! Tap SHOOT, aim and choose the power, like a real shot. Then, when it's time to touch the ball, tap CANCEL: defenders and goalkeepers think the shot is coming and throw themselves at it! I'll stay here as the defender, and I promise I'll fall for it.", 'Ahora un truco: ¡la finta! Toca TIRAR, apunta y elige la fuerza, como en un tiro de verdad. Luego, a la hora de tocar la pelota, toca CANCELAR: ¡defensores y porteros creen que viene el tiro y se lanzan! Yo me quedo aquí de marcador, y caeré en la finta.', "Ora un trucco: la finta! Tocca TIRA, mira e scegli la forza, come in un tiro vero. Poi, al momento di toccare il pallone, tocca ANNULLA: difensori e portieri pensano che il tiro arrivi e si buttano! Io resto qui da marcatore, e ci casco.", "Maintenant une ruse : la feinte ! Touche TIRER, vise et choisis la puissance, comme pour un vrai tir. Puis, au moment de toucher le ballon, touche ANNULER : défenseurs et gardiens croient que le tir arrive et se jettent ! Je reste ici en défenseur, et je me ferai avoir."],
+  'FINTA: CHUTAR, escolha a força e depois CANCELAR': ['FEINT: SHOOT, choose the power and then CANCEL', 'FINTA: TIRAR, elige la fuerza y luego CANCELAR', 'FINTA: TIRA, scegli la forza e poi ANNULLA', 'FEINTE : TIRER, choisis la puissance puis ANNULER'],
+  'Para a finta, primeiro escolha a força na barra e só depois, na hora de tocar na bola, toque em CANCELAR. Mais uma tentativa!': ['For the feint, first choose the power on the bar and only then, when it\'s time to touch the ball, tap CANCEL. One more try!', 'Para la finta, primero elige la fuerza en la barra y solo después, a la hora de tocar la pelota, toca CANCELAR. ¡Un intento más!', "Per la finta, prima scegli la forza sulla barra e solo dopo, al momento di toccare il pallone, tocca ANNULLA. Ancora un tentativo!", "Pour la feinte, choisis d'abord la puissance sur la barre et seulement ensuite, au moment de toucher le ballon, touche ANNULER. Encore un essai !"],
+  'Eu caí direitinho! É assim que se engana o marcador.': ['I fell for it! That\'s how you fool a defender.', '¡Caí de lleno! Así se engaña al marcador.', 'Ci sono cascato! Così si inganna il marcatore.', 'Je me suis fait avoir ! C\'est comme ça qu\'on trompe un défenseur.'],
 });
 // (4.6.1) Textos novos: tutorial com uma chance extra, professora preocupada com os horários, mariposa e o goleiro Sérgio.
 Object.assign(I18N, {
@@ -12202,9 +12263,10 @@ const Historia = (() => {
   }
   function sair() {
     const cr = document.getElementById('criador'); if (cr) cr.style.visibility = '';
-    objetivo(''); esp = null; TT = null;
+    objetivo(''); esp = null; TT = null; bolaDoJoao(false);
   }
   const emPartida = () => modo !== null;
+  const emJogo = () => modo === 'jogo';
 
   // ---- treino ---------------------------------------------------------
   const fix = (p, x, z, ang) => { p.x = x; p.z = z; p.vx = p.vz = 0; p.angle = ang; p.parado = true; p.stun = 0; p.fall = 0; p.falling = false; TT.spots.set(p, { x, z }); };
@@ -12312,8 +12374,37 @@ const Historia = (() => {
       if (G.sp) { TT.tSp += dt; if (TT.tSp > 1.2) { TT.tSp = 0; devolverBola(); } } else TT.tSp = 0;
     }
   }
+  // (4.7.3) OVO DE PÁSCOA: fez gol na 1ª partida e foi pegar a bola do fundo da rede (a comemoração de chutar para a torcida): a bola é do João!
+  // Cena antes de voltar ao meio de campo: o João grita, o personagem pede desculpas e sai correndo (de quadro) para buscar a bola.
+  let ovo = null;
+  async function ovoBola() {
+    const u = user, jo = TEAMS[0].find((p) => p.name === 'João'), nome = PERSONAGEM.apelido || PERSONAGEM.nome || 'Você';
+    const sx = Math.sign(u.x) || 1, sz = Math.sign(u.z) || 1;
+    if (G.celebAuto) G.celebAuto = null;                                                       // a comemoração automática acabou: o personagem volta ao controle da cena
+    G.camOvo = { px: u.x - sx * 6.5, py: 1.7, pz: u.z, tx: u.x, ty: 1.15, tz: u.z };       // de frente para o personagem; ele vai sair de lado
+    snapCamera();
+    if (jo) { jo.scripted = true; jo.vx = jo.vz = 0; jo.angle = Math.atan2(u.z - jo.z, u.x - jo.x); }
+    u.scripted = true; u.vx = u.vz = 0; u.celeb = null;
+    if (jo) u.angle = Math.atan2(jo.z - u.z, jo.x - u.x);
+    await esperar(700);
+    await Dialogo.mostrar([T('MINHA BOLA, PORRA!!')], { nome: 'João Pinha', voz: 3 });
+    await Dialogo.mostrar([Tg('Foi mal, João! Eu me empolguei com o gol...'), T('Já vou buscar a bola!')], { nome, voz: PERSONAGEM.voz == null ? 2 : PERSONAGEM.voz });
+    Dialogo.esconder();
+    ovo = { x: u.x, z: sz * (HALF_W + 11), t: 0 };                                          // corre ao longo do fundo, para fora da câmera
+    await new Promise((res) => { ovo.fim = res; setTimeout(res, 3200); });
+    await esperar(300);
+  }
+  function ovoFim() { if (ovo) { ovo = null; } const jo = TEAMS[0].find((p) => p.name === 'João'); if (jo) jo.scripted = false; }
   function atualizar(dt) {
     if (!modo) return;
+    if (ovo && ovo.fim) {
+      const u = user, dx = ovo.x - u.x, dz = ovo.z - u.z, d = Math.hypot(dx, dz) || 1;
+      if (d < 0.5) { const f = ovo.fim; ovo.fim = null; f(); }
+      else {
+        const v = 6.2; u.vx = dx / d * v; u.vz = dz / d * v; u.x += u.vx * dt; u.z += u.vz * dt; u.anim += v * dt * 2.6;
+        u.angle = turnToward(u.angle, Math.atan2(dz, dx), 14 * dt);
+      }
+    }
     if (modo === 'treino' && TT) atualizarTreino(dt);
     if (esp) {
       const agora = performance.now() - esp.t0;
@@ -12326,7 +12417,7 @@ const Historia = (() => {
   async function treino(op) {
     montarUI();
     modo = 'treino'; G.treinoGol = 0;
-    entrar(cfg(true));
+    entrar(cfg(true)); bolaDoJoao(true);              // (4.7.3) a bola é a do João
     TT = { spots: new Map(), corrida: 0, tErrada: 0, tParada: 0, tSp: 0, congelado: false, joaoSegura: false, livreBola: false, joao: null, fantasma: null, minJ: 99, medeJoao: false };
     TT.joao = TEAMS[0].find((p) => p.name === 'João');
     soJoaoEVoce();
@@ -12337,7 +12428,7 @@ const Historia = (() => {
     if (op && op.aoPronto) { try { await op.aoPronto(); } catch (e) { console.error(e); } }
     try { await roteiro(); } catch (e) { console.error(e); }
     objetivo('');
-    G.treinoGol = 0; modo = null; sair();
+    G.treinoGol = 0; G.fintaCerta = false; modo = null; sair();
   }
 
   // ---- bolas paradas na aula (4.4.0): falta, lateral e escanteio -----------------------------------------
@@ -12404,6 +12495,7 @@ const Historia = (() => {
       tentar: async (n) => {
         reposicionar(-4, 0);
         if (n === 0) await dizer(T('Agora o chute! Chegue perto do gol e toque em CHUTAR. Primeiro arraste o dedo para mirar, depois segure: a barra enche de baixo para cima e quanto mais tempo, mais forte o chute. Solte no VERDE para um chute bom. O amarelo de cima já é forte demais, e o vermelho do topo sai descontrolado. Por último, toque na bola para dar efeito, se quiser.'));
+        if (n === 0) await dizer(T('Ah, um aviso: no começo a FORÇA e o EFEITO do seu chute são fraquinhos. Calma, com o treino eles melhoram!'));
         objetivo(T('CHUTAR: faça um chute em direção ao gol'));
         const c0 = S0().chutes;
         const fez = await esperarCond(() => S0().chutes > c0, { pularEm: 30000 });
@@ -12421,8 +12513,8 @@ const Historia = (() => {
       let n0 = 0;
       await duasChances({
         tentar: async (n) => {
-          reposicionar(-5, 0);
-          if (n === 0) await dizer(T('Agora um toque especial: a faixa AZUL! Ela é fraca, mas não fraca demais, e serve para a cavadinha, quando o goleiro está adiantado. Mire no gol, solte no AZUL e, na bola, toque na parte de BAIXO.'));
+          reposicionar(15, 0);                       // (4.7.2) a cavadinha é perto do goleiro: a aula começa a ~7 m do gol
+          if (n === 0) await dizer(T('Agora um toque especial: a faixa AZUL! Ela é um toque bem fraco, e bater embaixo da bola nela faz a bola subir devagar: é a cavadinha, para usar perto do goleiro quando ele sai da meta. Mire no gol, solte no AZUL e, na bola, toque na parte de BAIXO.'));
           n0 = G.ultToque ? G.ultToque.n : 0;
           objetivo(T('CAVADINHA: solte no AZUL e toque embaixo da bola'));
           const c0 = S0().chutes;
@@ -12442,7 +12534,7 @@ const Historia = (() => {
     await duasChances({
       tentar: async (n) => {
         reposicionar(-8, 0);
-        if (n === 0) await dizer(T('Agora, o passe! Toque em PASSAR e mire em mim. Segure e solte: quanto mais tempo, mais forte o passe. O AZUL é um toque curto e por cima; o VERDE é o passe firme. Passe no espaço: eu corro até a bola!'));
+        if (n === 0) await dizer(T('Agora, o passe! Toque em PASSAR e mire em mim. Segure e solte: quanto mais tempo, mais forte o passe. O AZUL é um toque curto e suave; o VERDE é o passe firme. Passe no espaço: eu corro até a bola!'));
         objetivo(T('PASSAR: passe a bola para o João'));
         const p0 = S0().passes;
         const fez = await esperarCond(() => S0().passes > p0, { pularEm: 30000 });
@@ -12480,12 +12572,13 @@ const Historia = (() => {
     // 4b. (4.7.1) a finta: armar o chute e cancelar — o marcador pode comprar (e o goleiro também)
     {
       const f0 = S0().fintas || 0;
+      G.fintaCerta = true;                          // (4.7.2) na aula o João (marcador) SEMPRE cai na finta
       await duasChances({
         tentar: async (n) => {
           reposicionar(-8, 0);
           fix(TT.joao, -3.4, 0, Math.PI);
-          if (n === 0) await dizer(T('Agora um truque: a finta! Todo mundo lê quando você arma o chute. Toque em CHUTAR e, antes de bater, toque em CANCELAR. Marcadores e goleiros podem cair na finta! Eu fico aqui de marcador.'));
-          objetivo(T('FINTA: toque em CHUTAR e depois em CANCELAR'));
+          if (n === 0) await dizer(T('Agora um truque: a finta! Toque em CHUTAR, mire e escolha a força, como num chute de verdade. Aí, na hora de tocar na bola, toque em CANCELAR: marcadores e goleiros acham que o chute vem e se jogam! Eu fico aqui de marcador, e pode deixar que eu caio.'));
+          objetivo(T('FINTA: CHUTAR, escolha a força e depois CANCELAR'));
           const fz0 = S0().fintas || 0;
           const fez = await esperarCond(() => (S0().fintas || 0) > fz0, { pularEm: 30000 });
           objetivo('');
@@ -12495,10 +12588,11 @@ const Historia = (() => {
           return false;
         },
         ok: () => (S0().fintas || 0) > f0,
-        sucesso: () => (G.ultFinta && G.ultFinta.enganou) ? T('Eu caí direitinho! É assim que se engana o marcador.') : T('Dessa vez eu não caí, mas pode acontecer em metade das vezes. Vale a pena tentar!'),
-        erro1: T('Para a finta, toque em CHUTAR e depois em CANCELAR, sem soltar o chute. Mais uma tentativa!'),
+        sucesso: T('Eu caí direitinho! É assim que se engana o marcador.'),
+        erro1: T('Para a finta, primeiro escolha a força na barra e só depois, na hora de tocar na bola, toque em CANCELAR. Mais uma tentativa!'),
       });
     }
+    G.fintaCerta = false;
     joaoMarca(false);
     // 5. dominar
     await dizer(T('Agora dominar a bola! Quando ela vier alta ou forte, aparece uma barra. Toque em DOMINAR quando o marcador estiver na faixa verde.'));
@@ -12593,7 +12687,7 @@ const Historia = (() => {
     pendente = null;                        // (4.4.3) partida nova (ou refeita): começa sem nada pendente
     const r = await new Promise((res) => {
       fimResolve = res;
-      entrar(cfg(false));
+      entrar(cfg(false)); bolaDoJoao(true);
       if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // (4.4.0) a tela só clareia com a quadra pronta
       setTimeout(() => showToast(T('Racha da escola: 4 contra 4!')), 900);
     });
@@ -12607,15 +12701,15 @@ const Historia = (() => {
     const pos = user && user.role ? user.role : 'FWD', sofridos = G.score[1];
     const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
     const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s) };
-    if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), 1800); }
+    if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), G.fimFesta ? 3600 : 1800); }   // (4.7.3) com a festa do apito final, fica um pouco mais
   }
-  function abortar() { G.treinoGol = 0; modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
+  function abortar() { G.treinoGol = 0; G.fintaCerta = false; modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
   // (4.6.1) Gol no TREINO: só aparece o letreiro e a bola fica na rede por ~1,4 s; depois volta para o jogador (nada de comemoração, replay ou bola no meio do campo).
   const emTreino = () => modo === 'treino' && !!TT;
   function golNoTreino() {
     G.treinoGol = 1.4; G.possession = null; hideKickUI(); showBanner('GOL!', 0, 1.4);
   }
-  return { emTreino, golNoTreino, treino, partida, emPartida, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
+  return { emTreino, golNoTreino, treino, partida, emPartida, emJogo, ovoBola, ovoFim, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
 })();
 
 // ---------------------------------------------------------------------
@@ -12915,6 +13009,13 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
   const cenaAbertura = async () => {
     if (emCena) return;
     emCena = true; salvar(); PERSONAGEM.ativo = true;
+    if (SLOT_HISTORIA >= 1) {                         // (4.7.3) o personagem novo já nasce no espaço escolhido (só aqui o save antigo é substituído)
+      try {
+        const per = JSON.parse(JSON.stringify(PERSONAGEM)); delete per.historia;
+        HistoriaSave.limpar();
+        salvarJogo(SLOT_HISTORIA, { nome: per.apelido || per.nome || T('Jogo salvo'), resumo: T('Modo história · Fase 1 · Começo'), fase: 'fase1', ponto: 'inicio', autosave: true, historia: {}, personagem: per, versao: VERSAO_JOGO });
+      } catch (err) { console.warn('[save inicial]', err); }
+    }
     Fases.carregar('fase1').catch(() => {});          // (4.5.0) baixa o fase1.js já, durante as falas e o "12 anos atrás"
     if (Som.ligar) Som.ligar();
     reconstruir(); aquece = true; autoGira = false;
@@ -13256,13 +13357,29 @@ function montarMenuInicial() {
     abrirPainel(T('Carregar jogo'), '<ul class="mxSlots">' + itens + '</ul><p class="mxMsg" role="status">' + esc(msg ? T(msg) : (lista.some(Boolean) ? '' : T('Ainda não há jogos salvos.'))) + '</p>');
   };
 
+  // (4.7.3) Depois de "Modo história": primeiro escolhe onde o personagem novo será salvo. Espaço ocupado pede confirmação.
+  const abrirSlotsNovo = (msg) => {
+    const lista = listarSaves();
+    const itens = lista.map((sv, i) => '<li><button type="button" class="mxSlot" data-novo="' + (i + 1) + '"><span class="mxSlotN">' + (i + 1) + '</span><span class="mxSlotInfo">' + (sv
+      ? '<b>' + esc(sv.nome || T('Jogo salvo')) + '</b><small>' + esc([sv.resumo, quando(sv.data)].filter(Boolean).join(' · ')) + '</small>'
+      : '<b>' + T('Vazio') + '</b><small>' + T('Nenhum jogo salvo aqui') + '</small>') + '</span></button></li>').join('');
+    abrirPainel(T('Onde salvar o novo personagem?'), '<p class="mxMsg">' + T('Escolha um espaço para guardar a sua história.') + '</p><ul class="mxSlots">' + itens + '</ul>');
+  };
+  const confirmarSobrescrever = (n) => {
+    const sv = listarSaves()[n - 1];
+    abrirPainel(T('Substituir este personagem?'), '<p class="mxMsg">' + esc(Tf('Salvar por cima de {0} apaga TODOS os dados desse personagem. Você tem certeza?', (sv && sv.nome) || T('Jogo salvo'))) + '</p>' +
+      '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="sobrescrever" data-novo="' + n + '">' + T('Sim, apagar e usar este espaço') + '</button>' +
+      '<button type="button" class="pxBtn" data-acao="outroSlot">' + T('Não, escolher outro espaço') + '</button></div>');
+    const nao = veu.querySelector('[data-acao="outroSlot"]'); if (nao) nao.focus({ preventScroll: true });   // o foco inicial é o "não" (Enter sem querer não apaga nada)
+  };
+
   const criador = montarCriador(tela, (como) => {          // (4.3.0) criador de personagem (modo história)
     if (como === 'testar') { telaFecharVeu(); $('startBtn').click(); }
   });
   window.addEventListener('futebolJs:carregar', (e) => {   // (4.6.0) save do modo história (Fase 2 em diante): o criador abre a fase no ponto salvo
     const sv = e.detail && e.detail.save;
     if (!sv || !sv.fase || !sv.historia) return;
-    e.preventDefault(); criador.retomar(sv);
+    e.preventDefault(); SLOT_HISTORIA = Number(e.detail.slot) || SLOT_HISTORIA; criador.retomar(sv);
   });
   const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
   const MENU_ACOES = {
@@ -13287,7 +13404,13 @@ function montarMenuInicial() {
     if (Som.clique) Som.clique();
     if (b.dataset.acao === 'fechar') { fecharPainel(); return; }
     if (b.dataset.acao === 'partidaLivre') { PERSONAGEM.ativo = false; telaFecharVeu(); $('startBtn').click(); return; }   // jogo de sempre, com o que está nas configurações
-    if (b.dataset.acao === 'modoHistoria') { telaFecharVeu(); criador.abrir(); return; }
+    if (b.dataset.acao === 'modoHistoria') { abrirSlotsNovo(); return; }
+    if (b.dataset.acao === 'outroSlot') { abrirSlotsNovo(); return; }
+    if (b.dataset.novo) {
+      const n = Number(b.dataset.novo);
+      if (!b.dataset.acao && listarSaves()[n - 1]) { confirmarSobrescrever(n); return; }
+      SLOT_HISTORIA = n; telaFecharVeu(); criador.abrir(); return;
+    }
     if (b.dataset.slot) {
       const r = carregarJogo(Number(b.dataset.slot));
       if (r === 'sem-partida') abrirCarregar('Este save não tem uma partida para abrir.');
@@ -13584,11 +13707,12 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.7.1',
+  versao: '4.7.3',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
   salvarJogo, listarSaves, apagarSave,
+  slotHistoria: () => SLOT_HISTORIA,            // (4.7.3) espaço escolhido para o personagem da história (0 = nenhum)
   partida: () => PARTIDA,
   // (4.5.0) história salva por fase + fases em arquivos separados (veja Fases / HistoriaSave)
   historia: { ler: HistoriaSave.ler, gravar: HistoriaSave.gravar, tudo: HistoriaSave.tudo, limpar: HistoriaSave.limpar },
