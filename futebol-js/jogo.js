@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.7.3
+   FUTEBOL JS · jogo.js · versão 4.7.4
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,9 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.7.4 — fôlego do iniciante:
+   • Final de jogo sem torcida (futsal): na cena do apito final, no lugar do tchau, o time vencedor (os dois, se empatar) fica pulando.
+   • O personagem iniciante corre 5 s (cravado) e recupera 1 s de fôlego a cada 1,5 s parado/andando (antes a barra levava ~17 s para encher).
    Novidades da versão 4.7.3 — bola do João, escolha do espaço de save, festa no apito final e ovo de páscoa:
    • No treino e na 1ª partida da história a bola é a do João (branca, quadradinhos azuis e faixa laranja) — bolaDoJoao(on).
    • O João avisa no tutorial do chute que FORÇA e EFEITO são fraquinhos no começo. Velocidade inicial (iniciante) = 5 (o resto continua 4).
@@ -533,7 +536,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.7.3';
+const VERSAO_JOGO = '4.7.4';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1014,7 +1017,7 @@ const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e par
 //   resistência ..... segundos de corrida (e o tempo para encher é o inverso)   expoente 1.24
 //   drible .......... tempo da tela do drible (e a recarga é o inverso)         expoente 0.5 / 0.8
 //   domínio ......... tamanho da faixa verde do minigame de receber a bola      expoente 0.5
-// Com 4 (jogador iniciante da história): resistência 5 s de corrida e 20 s para voltar ao total.
+// Com 4 (jogador iniciante da história): 5 s de corrida e recupera 1 s de corrida a cada 1,5 s de descanso (barra cheia em 7,5 s).
 // Uso:  Atributos.aplicar({ chute: 4, ... })  |  Atributos.aplicar(null) volta tudo para 7
 //       Atributos.iniciante()  → objeto com tudo 4 (velocidade 5)     Atributos.fator('chute') → multiplicador atual
 // ---------------------------------------------------------------------
@@ -1040,12 +1043,15 @@ const Atributos = (() => {
     CONFIG.USER_WALK_BALL = BASE.USER_WALK_BALL * vel; CONFIG.USER_RUN_BALL = BASE.USER_RUN_BALL * vel;
     CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * res;
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // (4.7.1) encher a barra: recuperação
+    // (4.7.4) Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
+    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg;
+    if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada;
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
   }
   return {
     NOMES, aplicar,
-    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(4), { velocidade: 5 }),   // (4.7.3) iniciante: tudo 4, mas corre um pouco mais (velocidade 5)
+    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(4), { velocidade: 5, _corridaSeg: 5, _recuperaCada: 1.5 }),   // (4.7.3) iniciante: tudo 4, mas corre um pouco mais (velocidade 5)
     valor: (nome) => atual[nome],
     fator: (nome) => razao(nome),
     get atual() { return Object.assign({}, atual); },
@@ -8484,6 +8490,7 @@ function lanceAcabou() {
 // ---------------------------------------------------------------------
 function apitoFinal() {
   G.fimPendente = false;
+  G.fimPula = !!(PARTIDA && PARTIDA.campo.semTorcida);   // (4.7.4) sem torcida: no lugar do tchau, quem ganha (ou todos, se empatar) fica pulando
   G.state = 'fim'; G.fimT = 0; G.fimCorte = true; G.fimFase = -1; G.fimBanner = false;
   G.targetScale = G.timeScale = 1;
   if (G.kick) { G.kick = null; }
@@ -8853,8 +8860,11 @@ function updateCamera(rdt) {
 // Animação dos bonecos (estilo Super Lan Master): membros "perseguem" o balanço do passo.
 // Poses especiais: 'up' (braços para cima: comemoração, lateral, mergulho do goleiro)
 // e 'hold' (braços para a frente: goleiro com a bola nas mãos).
+// (4.7.4) Cena final sem torcida: depois do "toca aqui" o jogador que daria tchau pula (o time que perdeu fica com as poses de derrota).
+function fimPulando(p) { return !!(p.fim && p.fim.tipo === 'tchau' && G.fimT > p.fim.t0 && !p.out && !p.lamento); }
 function poseOf(p) {
   if (G.state === 'goal' && p.team === G.scoredBy && p.role !== 'GK') return 'up';
+  if (G.state === 'fim' && G.fimPula && fimPulando(p)) return 'up';   // (4.7.4)
   if (G.state === 'end' && G.fimFesta && G.fimFesta.times.includes(p.team) && !p.out && !p.red) return 'up';   // (4.7.3) pulinhos do apito final (sem torcida)
   if (G.state === 'celebrate' && p.team === 0 && !p.isUser && (p.role !== 'GK' || p.gkFesta) && dist2D(p, user) < 4) return 'up';
   if (p.throwIn || p.diveT > 0 || p.jumpT > 0) return 'up';
@@ -8931,7 +8941,7 @@ function syncMeshes(dt) {
     if (G.substToque && G.substToque.includes(p)) { aZR = 2.5; aXR = -0.1; }   // substituição: "toca aqui"
     if (G.state === 'fim' && p.fim) {               // cena final: tchau para a torcida e "toca aqui"
       const F = p.fim, tt = G.fimT;
-      if (F.tipo === 'tchau' && tt > F.t0) {
+      if (F.tipo === 'tchau' && tt > F.t0 && !G.fimPula) {
         aZR = 2.85; aXR = -0.35 + Math.sin(tt * 9 + p.id) * 0.4;      // braço direito no alto balançando
         aZL = -bal * 0.5; aXL = 0.1;
       } else if (F.tipo === 'toca' && F.batida > 0) {
@@ -8970,7 +8980,7 @@ function syncMeshes(dt) {
     let y = 0;
     if (p.diveT > 0) y = alturaMergulho(p);
     else if (p.jumpT > 0) y = Math.sin((1 - p.jumpT / 0.5) * Math.PI) * (p.jumpAlt || 0.7);   // (4.7.0) barreira pula mais baixo
-    else if (pose === 'up' && (G.state === 'goal' || G.state === 'celebrate' || (G.state === 'end' && G.fimFesta))) y = Math.abs(Math.sin(agora / 160 + p.id)) * 0.25;
+    else if (pose === 'up' && (G.state === 'goal' || G.state === 'celebrate' || (G.state === 'end' && G.fimFesta) || (G.state === 'fim' && G.fimPula))) y = Math.abs(Math.sin(agora / 160 + p.id)) * 0.25;
     m.raiz.position.y = y;
     // Tombos: mergulho do goleiro (de lado) ou marcador driblado (cai de frente, meio de lado).
     let tomb = 0, frente = 0;
@@ -13707,7 +13717,7 @@ window.addEventListener('orientationchange', ajustarPixelArt);
 //   FutebolJS.trocarTatica(0, 'retranca')
 // ---------------------------------------------------------------------
 window.FutebolJS = {
-  versao: '4.7.3',
+  versao: '4.7.4',
   personagem: PERSONAGEM,                       // (4.3.0) personagem do modo história (nome, número, aparência, pé, comemoração, voz)
   novaPartida(cfg) { montarPartida(cfg); resetMatch(); return PARTIDA; },
   // Saves (tela CARREGAR do menu): salvarJogo(1..3, { nome, resumo, partida }), listarSaves(), apagarSave(n).
