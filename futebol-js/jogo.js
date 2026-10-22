@@ -22,10 +22,13 @@
    Novidades da versão 4.8.2 — câmera, drible de costas, chute baixo, tutorial, grade da várzea e ovo do João:
    • Pausa: "Ângulo da câmera" (o antigo "altura", que só inclinava a câmera) e uma "Altura da câmera" de verdade (sobe/desce a câmera inteira, em metros). "Câmera padrão" zera as três.
    • Drible de costas: a MESMA câmera dos outros dribles (de cima/por trás) e o seu personagem ANDA para um lado (finta) e depois para o outro (corte), em vez de só inclinar.
-   • Fase 1: o João anda de verdade (pernas se mexem quando ele corre atrás da bola ou volta).
+   • Tutorial: o João anda pelo MOTOR (desTreino: o treino só diz para onde ele vai) — pernas de verdade e velocidade normal (antes deslizava/andava dobrado).
    • Tutorial: a bola nunca sai da quadra (só o gol vale); passou da linha, ela volta rebatendo. Só no tutorial.
-   • Chute bem embaixo (efeito) = cavadinha em QUALQUER faixa de força (menos "fraco demais"): quanto mais forte, mais longe cai (azul ~2–13 m, amarelo ~13–24 m, verde ~24–38 m, amarelo forte ~38–46 m, vermelho até ~54 m e mais torto). A aula da cavadinha continua exigindo o AZUL.
+   • CAVADINHA = tocar bem embaixo da bola, em qualquer força. Uma reta só de velocidade (VEL_CAV = 5 + 20 × força) num ângulo fixo (ELEV_CAV): quanto mais forte, mais alta e mais longe
+     (azul ~4–12 m, amarelo ~12–19 m, verde ~19–30 m, vermelho até ~50 m). Entrar ou não depende da distância. A aula da cavadinha continua exigindo o AZUL.
    • Várzea: na comemoração da grade o jogador ESCALA, SENTA no cano de cima e levanta os braços para a torcida (antes ficava pendurado). Society/futsal continuam como estavam.
+   • PULAR CENA (Cena): botão "Pular cena ▶" em toda cutscene (abertura, Fase 1, Fase 2, falas do tutorial). Vai direto ao estado final da cena
+     (esperas e falas passam na hora, a simulação da fase roda 25× mais rápido até o fim) e para sozinho nas escolhas, na prova e no controle livre.
    • Ovo de páscoa do João ("MINHA BOLA, PORRA!!") agora vem ANTES do replay do gol.
    • Finta de chute (armar e cancelar): o marcador compra em 65% (era 50%), e a linha considerada é a que você MIROU, com tolerância maior (2,4 m do traço, até 8 m).
      Na aula do João ele cai SEMPRE (qualquer distância/lado). Corrigido: o embalo do drible anterior (2,5 s) fazia você já começar a aula da finta correndo e passar direto pelo João.
@@ -4784,7 +4787,7 @@ function updatePlayers(dt) {
     if (p.tackle > 0 && !p.scripted && p.stun < 0.8) p.tackle = Math.max(0, p.tackle - dt * 3);
     if (p.fall <= 0) p.fallKind = 'lado';
     let des = p.isUser ? userDesired(p, dt) : (p.role === 'GK' ? gkThink(p, dt) : aiThink(p, dt));
-    if (p.parado && !p.isUser) des = { vx: 0, vz: 0 };            // (4.3.6) tutorial: fica parado onde está
+    if (p.parado && !p.isUser) des = p.desTreino ? { vx: p.desTreino.vx, vz: p.desTreino.vz } : { vx: 0, vz: 0 };   // (4.8.2) no tutorial o João anda pelo motor (desTreino) quando a aula pede            // (4.3.6) tutorial: fica parado onde está
     // CANSAÇO DA IA (4.1.0): o fôlego cai correndo (bem menos andando) e o jogador perde até 20%
     // da velocidade. A taxa acompanha a duração: no fim da partida quem correu muito está ~45%.
     if (!p.isUser) {
@@ -4864,6 +4867,8 @@ function updatePlayers(dt) {
       p.giro = lerp(p.giro || 0, dt > 0 ? wrapAngle(p.angle - ang0) / dt : 0, Math.min(1, dt * 6));
     } else if (p.celeb) {
       // IA comemorando: o corpo segue a animação (não fica olhando para a bola).
+    } else if (p.parado && p.desTreino && p.desTreino.olha && sp > 0.5) {
+      p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 8 * dt);   // (4.8.2) tutorial: voltando ao lugar, anda de frente
     } else if (holder === p) {
       if (sp > 0.3) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 12 * dt);
     } else if (p.diveT <= 0) {
@@ -6703,6 +6708,8 @@ const curvaPor = (X, Y, x) => { if (x <= X[0]) return Y[0]; for (let i = 1; i < 
 const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
 const VEL_CHUTE = [3.5, 5, 9, 18, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; o AZUL é fraco de verdade: 5–9 m/s)
 const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
+const VEL_CAV = [5, 20];                                          // (4.8.2) cavadinha: m/s = 5 + 20 × força (azul ~7–11, amarelo ~11–14, verde ~14–19, vermelho até ~25)
+const ELEV_CAV = 0.75;                                            // (4.8.2) ângulo de saída da cavadinha (~43°): a força decide altura e distância
 const ELEV_BAIXO = 0.27;                                          // (4.7.6) rad a mais no chute quando se bate no ponto mais baixo da bola (oy = 1): ~15° (média entre o 0,12 antigo e o 0,42 do 4.7.5, que subia demais)
 const ELEV_ALTO = 0.045;                                          // (4.7.6) rad a menos quando se bate em cima (média entre 0,04 e 0,05)
 const ELEV_CHUTE = [0.03, 0.03, 0.04, 0.05, 0.09, 0.15, 0.27];   // ângulo de subida do chute (o vermelho sobe muito)
@@ -6878,23 +6885,19 @@ function executeUserKick() {
   elev = clamp(elev, 0.005, 0.7);
   // CAVADINHA: força no AZUL (toque fraco) batendo bem embaixo da bola: ela sobe porque o toque é fraco. A bola sobe alto e cai devagar; ONDE ela cai depende só da força
   // (e de um pouco de imprecisão) — se encobrir o goleiro e cair dentro do gol, é gol. Nada de "mal batida" decidido por fora.
-  // (4.8.2) Bater bem EMBAIXO da bola vira cavadinha em QUALQUER faixa de força (menos o "fraco demais"); só a distância muda: quanto mais forte, mais longe cai.
-  // (Antes só o AZUL era cavadinha e, no amarelo, a bola nem subia, embora o amarelo seja mais forte.)
-  const cavadinha = k.kind === 'shot' && k.oy > 0.5 && k.faixa >= 1;
+  // (4.8.2) CAVADINHA = tocar bem EMBAIXO da bola, em QUALQUER força. Não tem tabela à parte: a bola sai com a MESMA velocidade do chute
+  // daquela força (VEL_CHUTE × força do jogador), só que num ângulo de cavadinha (ELEV_CAV, alto). Então quanto mais forte, mais alta e
+  // mais longe ela vai — se entra ou não depende só da sua distância até o gol (e do goleiro adiantado).
+  const cavadinha = k.kind === 'shot' && k.oy > 0.5;
   let vx, vy, vz, qualCav = 0;
-  if (cavadinha) {
-    // distância de queda pela força: AZUL 2,5–13 m (perto do goleiro) · amarelo ~13–24 m · verde ~24–38 m · amarelo forte ~38–46 m · vermelho até ~54 m (e mais torta)
-    const D = curvaPor(FORCA_X, [2.5, 2.5, 13, 24, 38, 46, 54], k.power) * (1 + gauss() * (k.faixa >= 4 ? 0.09 : 0.05)) * (k.faixa >= 2 ? clamp(0.8 + 0.2 * fF, 0.7, 1.08) : 1);
-    vy = D <= 14 ? clamp(5.4 + D * 0.17, 5.8, 7.8) : Math.min(13, 7.8 + (D - 14) * 0.12);   // mais longe = sobe mais, mas o arco fica mais esticado
-    const T = 2 * vy / CONFIG.GRAVITY, hs = vArrasto(D, T);
-    const aC = k.faixa >= 4 ? a + gauss() * 0.03 * (k.faixa === 5 ? 1.6 : 1) : a;
-    vx = Math.cos(aC) * hs; vz = Math.sin(aC) * hs;
-  } else {
-    vy = Math.max(0.3, speed * Math.sin(elev));
-    const hs = speed * Math.cos(elev);
-    vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
-  }
-  kickBall(u, vx, vy, vz, cavadinha ? 0 : k.ox * fEf, cavadinha ? 0 : k.oy * fEf, k.throwIn);  // sai de onde a bola está
+  // A velocidade da cavadinha é UMA reta pela força (sem degrau entre as faixas, porque a tabela do chute dobra a velocidade no amarelo e a
+  // cavadinha ficava exagerada): VEL_CAV[0] + VEL_CAV[1] × força, × força do jogador como no chute.
+  const vC = cavadinha ? (VEL_CAV[0] + VEL_CAV[1] * k.power) * (k.power > 0.45 ? clamp(0.75 + 0.25 * fF, 0.55, 1.12) : 1) : speed;
+  if (cavadinha) elev = ELEV_CAV + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
+  vy = Math.max(0.3, vC * Math.sin(elev));
+  const hs = vC * Math.cos(elev);
+  vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
+  kickBall(u, vx, vy, vz, k.ox * fEf, cavadinha ? 0 : k.oy * fEf, k.throwIn);  // sai de onde a bola está
   u.angle = a;
   if (cavadinha) qualCav = qualidadeDaCavadinha(1);
   ball.isShot = true; ball.userShot = true; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha;
@@ -9824,6 +9827,7 @@ function frame(now) {
       if (dt > 0 && !pararDeGravar && G.state !== 'menu') gravarQuadro(dt);
     }
   }
+  Cena.tick();                                               // (4.8.2) botão "Pular cena"
   crowd.atualizar(rdt);
   particulas.atualizar(rdt);
   atualizarTecnicos(rdt);
@@ -11914,13 +11918,22 @@ const Dialogo = (() => {
   }
   function mostrar(ls, op) {
     montar(); op = op || {};
+    if (typeof Cena !== 'undefined' && Cena.pulando) { if (!op.manter) el.hidden = true; return Promise.resolve(); }   // (4.8.2) pulando a cena: a fala passa direto
     linhas = ls.slice(); idx = 0; voz = op.voz == null ? 2 : op.voz; cps = op.cps || 24; aoLinha = op.aoLinha || null; manter = !!op.manter;
     nomeEl.textContent = op.nome || ''; nomeEl.hidden = !op.nome;
     el.hidden = false;
     return new Promise((res) => { resolver = res; linha(); });
   }
   const esconder = () => { if (el) el.hidden = true; };
-  return { mostrar, esconder };
+  // (4.8.2) PULAR CENA: termina a fala que está na tela na hora (sem digitar o resto) e resolve quem estava esperando.
+  function pularTudo() {
+    if (!el || !resolver) return;
+    if (digitando && fala) { try { fala.pular(); } catch (e) { /* ok */ } }
+    digitando = false; idx = linhas.length; el.hidden = true;
+    const r = resolver; resolver = null; r();
+  }
+  const aberto = () => !!(el && !el.hidden);
+  return { mostrar, esconder, pularTudo, aberto };
 })();
 
 
@@ -12239,6 +12252,62 @@ Object.assign(I18N, {
   'Mover': ['Move', 'Mover', 'Muovi', 'Bouger'],
 });
 
+// =====================================================================
+// (4.8.2) PULAR CENA — vale para TODA cutscene (história, tutorial, abertura). Um botão "Pular cena ▶" aparece enquanto uma cena roda;
+// tocando nele a cena vai direto para o ESTADO FINAL dela: as esperas (Cena.esperar) passam na hora, as falas fecham sozinhas, as
+// telas pretas e contadores terminam, e as fases rodam a simulação em alta velocidade (Cena.passos(): andar, portas, câmera...) até o fim.
+// Assim cada cena chega no fim do jeito certo (cada um no lugar onde termina), sem precisar escrever o "estado final" de cada uma.
+// O pulo PARA sozinho quando o jogador tem que decidir algo (Escolha.mostrar, prova, controle livre): essas coisas não são puladas.
+//   Cena.esperar(ms) ........ use no lugar de setTimeout nas cenas (pulando: resolve na hora)
+//   Cena.marcar(sim) ........ as fases chamam a cada quadro: "estou numa cena agora?"
+//   Cena.entrar() / sair() .. cenas fora das fases (ex.: a abertura do criador) marcam o começo e o fim
+//   Cena.rodar(fn) .......... roda uma função de cena como cena (entrar/sair automático); Cena.pular() pula (o mesmo que o botão)
+//   Cena.pulando ............ true enquanto pula; Cena.passos() = quantos passos de simulação dar por quadro (1, ou 25 pulando)
+//   Cena.interativo() ....... chamado nas decisões do jogador: para de pular
+// =====================================================================
+const Cena = (() => {
+  let pulando = false, manual = 0, marca = 0, btn = null, semCena = 0;
+  const pend = new Set();
+  function montar() {
+    if (btn) return;
+    const css = document.createElement('style');
+    css.textContent = '#cenaPular { position: fixed; z-index: 40; top: calc(8px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); width: auto; min-width: 128px; height: 40px; padding: 0 12px; font-size: 12px; --p: var(--p2, 2px); white-space: nowrap; }\n#cenaPular[hidden] { display: none; }';
+    document.head.appendChild(css);
+    btn = document.createElement('button'); btn.id = 'cenaPular'; btn.type = 'button'; btn.className = 'pxBtn'; btn.hidden = true;
+    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); pular(); });
+    btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
+    ($('raizJogo') || document.body).appendChild(btn);
+  }
+  function esperar(ms) {
+    if (pulando || !(ms > 0)) return new Promise((r) => setTimeout(r, 0));
+    return new Promise((r) => { const t = { r }; t.id = setTimeout(() => { pend.delete(t); r(); }, ms); pend.add(t); });
+  }
+  const ativa = () => manual > 0 || performance.now() - marca < 250 || (typeof Dialogo !== 'undefined' && Dialogo.aberto());
+  function pular() {
+    if (pulando || !ativa()) return;
+    pulando = true; semCena = 0;
+    for (const t of pend) { clearTimeout(t.id); setTimeout(t.r, 0); }
+    pend.clear();
+    if (typeof Dialogo !== 'undefined') Dialogo.pularTudo();
+    if (btn) btn.hidden = true;
+  }
+  const interativo = () => { pulando = false; };
+  const marcar = (sim) => { if (sim) marca = performance.now(); };
+  const entrar = () => { manual++; };
+  const sair = () => { manual = Math.max(0, manual - 1); };
+  async function rodar(fn) { entrar(); try { return await fn(); } finally { sair(); } }
+  function tick() {                                   // (main loop) mostra/esconde o botão e encerra o pulo quando a cena acaba
+    const a = ativa();
+    if (!a) { if (++semCena > 3) pulando = false; } else semCena = 0;
+    if (pulando && typeof Dialogo !== 'undefined' && Dialogo.aberto()) Dialogo.pularTudo();
+    const escolhendo = !!document.querySelector('#escolha:not([hidden])');
+    const pausa = $('pauseScreen'), mostra = a && !pulando && !escolhendo && !(pausa && !pausa.hidden);
+    if (mostra) { montar(); const tx = T('Pular cena ▶'); if (btn.textContent !== tx) btn.textContent = tx; }
+    if (btn && btn.hidden === mostra) btn.hidden = !mostra;
+  }
+  return { esperar, pular, interativo, marcar, entrar, sair, rodar, tick, passos: () => (pulando ? 25 : 1), get pulando() { return pulando; } };
+})();
+
 const Escolha = (() => {                              // caixa de ESCOLHAS (reutilizável): Escolha.mostrar(titulo, ['op1', 'op2']) → Promise(índice)
   let el = null;
   function montar() {
@@ -12257,6 +12326,7 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
     ($('raizJogo') || document.body).appendChild(el);
   }
   function mostrar(titulo, ops) {
+    if (typeof Cena !== 'undefined') Cena.interativo();      // (4.8.2) decisão do jogador: o "Pular cena" para aqui
     montar();
     el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p>' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div>';
     el.querySelector('.escTit').textContent = titulo || '';
@@ -12339,6 +12409,7 @@ Object.assign(I18N, {
   'Atenção: essa partida influencia a história!': ['Heads up: this match affects the story!', '¡Atención: este partido influye en la historia!', 'Attenzione: questa partita influenza la storia!', 'Attention : ce match influence l\'histoire !'],
   'Assistir ao anúncio': ['Watch the ad', 'Ver el anuncio', 'Guarda l\'annuncio', 'Regarder la pub'],
   'Pular': ['Skip', 'Saltar', 'Salta', 'Passer'],
+  'Pular cena ▶': ['Skip scene ▶', 'Saltar escena ▶', 'Salta scena ▶', 'Passer la scène ▶'],
   'A história continua em {0} s...': ['The story continues in {0} s...', 'La historia continúa en {0} s...', 'La storia continua tra {0} s...', 'L\'histoire continue dans {0} s...'],
   'Anúncio': ['Ad', 'Anuncio', 'Annuncio', 'Publicité'],
   'Espaço do anúncio do Google (demonstração)': ['Google ad space (demo)', 'Espacio del anuncio de Google (demostración)', 'Spazio per l\'annuncio di Google (demo)', 'Espace de la pub Google (démo)'],
@@ -12694,7 +12765,7 @@ const Historia = (() => {
   let modo = null;                       // null | 'treino' | 'jogo'
   let UI = null, esp = null, TT = null, fimResolve = null;
   let pendente = null;                   // (4.4.3) o que a partida quer gravar ({ H: histórico, res: resultado }) — só vale depois de confirmarResultado()
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esperar = (ms) => Cena.esperar(ms);                   // (4.8.2) pulável
   function guardarPendente(o) { pendente = Object.assign(pendente || {}, o); }
   function descartarResultado() { pendente = null; }          // a partida refeita não deixa nada (o ultimoResultado nem chegou a mudar)
   function confirmarResultado() {          // a história aceitou o resultado: agora sim registra (como uma partida normal)
@@ -12765,7 +12836,7 @@ const Historia = (() => {
   const emJogo = () => modo === 'jogo';
 
   // ---- treino ---------------------------------------------------------
-  const fix = (p, x, z, ang) => { p.x = x; p.z = z; p.vx = p.vz = 0; p.angle = ang; p.parado = true; p.stun = 0; p.fall = 0; p.falling = false; TT.spots.set(p, { x, z }); };
+  const fix = (p, x, z, ang) => { p.desTreino = null; p.x = x; p.z = z; p.vx = p.vz = 0; p.angle = ang; p.parado = true; p.stun = 0; p.fall = 0; p.falling = false; TT.spots.set(p, { x, z }); };
   function posicoes() {
     // (4.4.0) Só o João e você em campo. O João fica parado neste ponto (ele só anda quando a aula pede).
     fix(TT.joao, -3.5, 5.5, -0.5);
@@ -12849,16 +12920,18 @@ const Historia = (() => {
     if (buscando) {
       const s0 = TT.spots.get(jv), e = pontoDeEncontro(jv, 5.5, 2.5);
       const ex = s0.x + clamp(e.x - s0.x, -4, 4), ez = s0.z + clamp(e.z - s0.z, -4, 4), d = Math.hypot(ex - jv.x, ez - jv.z);
-      if (d > 0.1) { const k = Math.min(1, 5.5 * dt / d), mx = (ex - jv.x) * k, mz = (ez - jv.z) * k; jv.x += mx; jv.z += mz; jv.vx = mx / Math.max(dt, 1e-4); jv.vz = mz / Math.max(dt, 1e-4); jv.angle = turnToward(jv.angle, Math.atan2(ball.z - jv.z, ball.x - jv.x), 10 * dt); jv.anim += dt * 12; }   // (4.8.2) a velocidade alimenta a animação das pernas (antes ele deslizava com os pés parados)
-      else { jv.vx = jv.vz = 0; }
+      // (4.8.2) o João não é mais "teletransportado" quadro a quadro: o treino só diz para onde ele quer ir (desTreino) e o motor anda com ele
+      // (aceleração, pernas, passos) — mexer em x/z E em vx/vz ao mesmo tempo fazia ele andar dobrado ("the flash") e deslizar.
+      jv.desTreino = d > 0.1 ? { vx: (ex - jv.x) / d * Math.min(5.5, d * 3), vz: (ez - jv.z) / d * Math.min(5.5, d * 3), olha: false } : null;
     }
+    if (!(G.state === 'play' && !G.sp)) for (const p of TT.spots.keys()) p.desTreino = null;
     if (G.state === 'play' && !G.sp) {
       for (const [p, s] of TT.spots) {                                // volta ao lugar de cada um (passo suave)
         if (buscando && p === jv) continue;
-        if (p.stun > 0 || p.fall > 0 || p.out || p.diveT > 0 || p.slideT > 0) continue;
+        if (p.stun > 0 || p.fall > 0 || p.out || p.diveT > 0 || p.slideT > 0) { p.desTreino = null; continue; }
         const d = Math.hypot(s.x - p.x, s.z - p.z);
-        if (d > 0.12) { const k = Math.min(1, 3.4 * dt / d), mx = (s.x - p.x) * k, mz = (s.z - p.z) * k; p.x += mx; p.z += mz; p.vx = mx / Math.max(dt, 1e-4); p.vz = mz / Math.max(dt, 1e-4); p.angle = turnToward(p.angle, Math.atan2(s.z - p.z, s.x - p.x), 8 * dt); p.anim += dt * 8; }
-        else if (p !== user) { p.vx = p.vz = 0; }
+        if (p === user) { if (d > 0.12) { const k = Math.min(1, 3.4 * dt / d); p.x += (s.x - p.x) * k; p.z += (s.z - p.z) * k; } continue; }
+        p.desTreino = d > 0.12 ? { vx: (s.x - p.x) / d * Math.min(3.4, d * 2.5), vz: (s.z - p.z) / d * Math.min(3.4, d * 2.5), olha: true } : null;   // (4.8.2) volta ANDANDO (o motor anima as pernas)
       }
     }
     // a bola nunca fica com quem não deve, nem parada no meio do nada
@@ -13504,10 +13577,11 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
   // Os menus somem, o boneco aquece, o campo vai aparecendo em volta e ele fala (caixa de diálogo + voz mumble).
   // No fim, a tela fica preta mostrando o ano atual, que volta 12 anos — é um "loading escondido" para a próxima cena
   // (a fase 1 ainda não existe: por enquanto o contador termina num aviso e volta ao menu).
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esperar = (ms) => Cena.esperar(ms);                   // (4.8.2) pulável
   const cenaAbertura = async () => {
     if (emCena) return;
     emCena = true; salvar(); PERSONAGEM.ativo = true;
+    Cena.entrar();                                            // (4.8.2) a abertura é uma cena (dá para pular até a Fase 1)
     if (SLOT_HISTORIA >= 1) {                         // (4.7.3) o personagem novo já nasce no espaço escolhido (só aqui o save antigo é substituído)
       try {
         const per = JSON.parse(JSON.stringify(PERSONAGEM)); delete per.historia;
@@ -13529,6 +13603,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       Tf('Precisamente... {0} anos atrás', 12),
     ], { nome, voz: E.voz, aoLinha: (i) => { if (i === 1) aquece = false; } });
     await anoVoltando();
+    Cena.sair();
     // fim (por enquanto): volta ao menu
     aquece = false; desligar3D();
     for (;;) {                                                                               // (4.3.2) Fase 1: a escola (4.5.0: no arquivo fase1.js)
@@ -13565,7 +13640,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     const dur = 4200, ini = performance.now();
     await new Promise((fim) => {
       const passoAno = (agora) => {
-        const k = Math.min(1, (agora - ini) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;       // acelera e freia
+        const k = Cena.pulando ? 1 : Math.min(1, (agora - ini) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;       // acelera e freia
         num.textContent = String(Math.round(ano0 + (ano1 - ano0) * e));
         if (k < 1) requestAnimationFrame(passoAno); else fim();
       };

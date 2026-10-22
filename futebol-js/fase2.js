@@ -48,7 +48,8 @@
   'use strict';
 
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esperar = (ms) => (typeof Cena !== 'undefined' ? Cena.esperar(ms) : new Promise((r) => setTimeout(r, ms)));   // (4.8.2) pulável (botão "Pular cena")
+  const pulando = () => typeof Cena !== 'undefined' && Cena.pulando;
   const rad = Math.PI / 180;
   const OX = 2000;                       // onde as cenas ficam no mundo (longe do campo, da Fase 1 e do criador)
   const IDADE = 16, ANOS_ATRAS = 12, ANOS_FRENTE = 10;
@@ -326,7 +327,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     return UI;
   }
   const preto = async (ligado, ms) => {
-    UI.preto.hidden = false; UI.preto.style.transitionDuration = ((ms == null ? 900 : ms) / 1000) + 's'; await esperar(30);
+    UI.preto.hidden = false; UI.preto.style.transitionDuration = pulando() ? '0s' : ((ms == null ? 900 : ms) / 1000) + 's'; await esperar(30);
     UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true;
   };
   const legenda = async (txt, ms) => { UI.leg.textContent = txt; UI.leg.classList.add('on'); await esperar(ms || 2600); UI.leg.classList.remove('on'); await esperar(850); };
@@ -1339,7 +1340,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       if (k >= 1) { S.palco.remove(p); p.material.dispose(); S.fumaca.splice(i, 1); }
     }
   }
-  const animPorta = (porta, de, ate, ms) => new Promise((ok) => { const t0 = performance.now(); const f = (n) => { const k = Math.min(1, (n - t0) / ms); porta.abrir(de + (ate - de) * k); if (k < 1) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); });
+  const animPorta = (porta, de, ate, ms) => new Promise((ok) => { const t0 = performance.now(); const f = (n) => { const k = pulando() ? 1 : Math.min(1, (n - t0) / ms); porta.abrir(de + (ate - de) * k); if (k < 1) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); });
   async function conversarViz() {
     const J = S.jog, V = S.viz, vz = S.dados.vizinho;
     const dx = J.x - V.x, dz = J.z - V.z, d = Math.hypot(dx, dz) || 1;
@@ -1429,12 +1430,19 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ------------------------------------------------------------------ o quadro
   function gancho(rdt) {
     if (!S || !S.ativo) return;
-    const dt = Math.min(0.05, rdt || 0.016); S.t += dt;
+    const dt = Math.min(0.05, rdt || 0.016);
     esconderBola();
-    if (S.modo === 'livre') mover(dt);
-    for (const A of S.elenco) tickAtor(A, S.t, dt);
-    if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
-    fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
+    // (4.8.2) "Pular cena": enquanto pula, a cena roda 25 passos por quadro (andar, portas, fumaça...) até o fim, com corte seco de câmera
+    const nPassos = typeof Cena !== 'undefined' ? Cena.passos() : 1;
+    for (let i = 0; i < nPassos; i++) {
+      S.t += dt;
+      if (S.modo === 'livre') mover(dt);
+      for (const A of S.elenco) tickAtor(A, S.t, dt);
+      if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
+      fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
+    }
+    if (nPassos > 1) S.camSnap = true;
+    if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena');
     const cast = new Map(S.elenco.map((a) => [a.m, a]));
     for (const a of ATLETAS) { const A = cast.get(a); a.raiz.visible = A ? !A.oculto : false; }
     if (S.lugar === 'escada') for (const p of S.esc.pecas) p.visible = p.userData.yMin <= S.cam.py - 1.0;
@@ -1482,7 +1490,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   async function anos(a0, a1) {
     UI.leg.classList.remove('on'); UI.num.textContent = String(a0); UI.num.classList.add('on'); await esperar(1500);
     const dur = 3600, ini = performance.now();
-    await new Promise((fim) => { const passo = (n) => { const k = Math.min(1, (n - ini) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; UI.num.textContent = String(Math.round(a0 + (a1 - a0) * e)); if (k < 1) requestAnimationFrame(passo); else fim(); }; requestAnimationFrame(passo); });
+    await new Promise((fim) => { const passo = (n) => { const k = pulando() ? 1 : Math.min(1, (n - ini) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; UI.num.textContent = String(Math.round(a0 + (a1 - a0) * e)); if (k < 1) requestAnimationFrame(passo); else fim(); }; requestAnimationFrame(passo); });
     await esperar(1300); UI.num.classList.remove('on'); await esperar(300);
   }
   function aparecerNaCama() {

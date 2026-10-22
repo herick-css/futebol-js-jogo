@@ -31,7 +31,8 @@ const Fase1 = (() => {
   const PROF = { x: -2.4, z: -3.9 }, MESA_PROF = { x: -4.5, z: -4.2 };
   const SPOT = { joao: [1.9, LINHAS[1] + 0.62], lucia: [-1.9, LINHAS[1] + 0.62], prof: [PROF.x + 1.25, PROF.z] };   // pontos fixos (afastados) de conversa
   const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves', valentao: '??', oculos: 'Menino de óculos', rob: 'Professor Roberto' };       // (a tabela I18N traz os nomes de cada idioma)
-  const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+  const esperar = (ms) => (typeof Cena !== 'undefined' ? Cena.esperar(ms) : new Promise((r) => setTimeout(r, ms)));   // (4.8.2) pulável (botão "Pular cena")
+  const pulando = () => typeof Cena !== 'undefined' && Cena.pulando;
   const rad = Math.PI / 180;
   let UI = null, S = null;
 
@@ -106,7 +107,7 @@ const Fase1 = (() => {
     window.addEventListener('keyup', (e) => { UI.teclas[e.code] = false; });
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
   }
-  const preto = async (ligado, ms) => { UI.preto.hidden = false; UI.preto.style.transitionDuration = ((ms || 900) / 1000) + 's'; await esperar(30); UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true; };
+  const preto = async (ligado, ms) => { UI.preto.hidden = false; UI.preto.style.transitionDuration = pulando() ? '0s' : ((ms || 900) / 1000) + 's'; await esperar(30); UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true; };
   const legenda = async (txt, ms) => { UI.leg.textContent = txt; UI.leg.classList.add('on'); await esperar(ms || 2600); UI.leg.classList.remove('on'); await esperar(850); };
   const nm = (k) => T(k === 'oculos' && S && S.caduNome ? 'Cadu' : NOMES[k]);                    // (4.5.1) depois de se apresentar, o menino de óculos é o Cadu
 
@@ -653,6 +654,7 @@ const Fase1 = (() => {
   }
 
   async function prova() {
+    if (typeof Cena !== 'undefined') Cena.interativo();             // (4.8.2) a prova é do jogador: o "Pular cena" para aqui
     const resp = [];
     UI.prova.hidden = false; UI.missao.hidden = true;
     for (let i = 0; i < S.quiz.length; i++) {
@@ -1290,7 +1292,11 @@ const Fase1 = (() => {
   function gancho(rdt) {
     if (!S || !S.ativo) return;
     const dt = Math.min(0.05, rdt || 0.016);
-    atualizar(dt);
+    // (4.8.2) "Pular cena": enquanto pula, a cena roda 25 passos por quadro (todo mundo anda/vira/abre porta até o fim) e a câmera corta seco
+    const nPassos = typeof Cena !== 'undefined' ? Cena.passos() : 1;
+    for (let i = 0; i < nPassos; i++) atualizar(dt);
+    if (nPassos > 1) S.camSnap = true;
+    if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena' && UI.prova.hidden);
     const cast = new Set(S.elenco.map((a) => a.m));
     for (const a of ATLETAS) a.raiz.visible = cast.has(a) ? !S.elenco.find((x) => x.m === a).oculto : false;
     ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;
