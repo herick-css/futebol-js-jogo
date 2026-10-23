@@ -26,6 +26,16 @@
      - (4.9.x) Pessoas: 8 andando por uma rede de caminhos (desviam, esperam o carro na faixa, levam esbarrão), 4 sentadas em bancos
        da praça e 2 duplas em pé conversando. Os carros param para elas também.
      - (4.9.x) O portão do prédio fecha depois que o jogador sai; quadra de futsal com grade e uma entrada só.
+     - (4.9.3) Cinema trocou de lugar com o supermercado (fica perto do prédio do jogador); HOSPITAL ao lado do prédio (a ficha médica
+       mostra a saúde: só lá). Dois societys do tamanho certo (um com 2 batedores e um goleiro treinando pênalti). Quadra de futsal com
+       4 colunas por fora e uma BOLA com física: levou até o gol = comemoração de 5 s, sem corte. Graminhas e taboas com física (vergam
+       quando alguém passa), cerquinhas velhas de madeira no lago. INTERAGIR: sentar em bancos, cadeiras e banquetas; no balcão do lanche
+       o seu Valdemar atende (cardápio, dinheiro, comer). Fome: 2 por dia livre; cada lanche enche um tanto e é NÃO saudável
+       (Espectros 'saudavel' e a condição 'refeicaoPesada' = −15% de corrida e recuperação no próximo jogo).
+     - (4.9.4) INTERIORES (arquivo interiores.js, baixado em segundo plano): supermercado, cafeteria, pizzaria, restaurante, academia, bar,
+       cinema, hospital e o salão do lanche. "Entrar" na porta de cada um; a cidade fica escondida e parada, a sala aparece no mesmo lugar,
+       com pessoas de enfeite (paradas, andando, sentadas, na esteira, fazendo rosca) e lugares para sentar. A ficha médica agora é com a
+       enfermeira da recepção do hospital. Sem compra/trabalho ainda. Mesas do bar foram para entre as portas.
 
    CUIDADO COM "PISCAR" (z-fighting): nenhuma superfície fica no mesmo plano que outra virada para o mesmo lado.
      - O chão da cidade é UMA textura só (grama, terra, asfalto, faixas, praça, várzea pintados juntos); fora da cidade, faixas
@@ -55,6 +65,33 @@
     'Modo história · Cidadezinha': ['Story mode · Small town', 'Modo historia · Pueblito', 'Modalità storia · Paesino', 'Mode histoire · Petite ville'],
     'Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.': ['Push the joystick to the edge to run. Drag the screen to turn the camera.', 'Empuja el joystick hasta el borde para correr. Arrastra la pantalla para girar la cámara.', 'Spingi il joystick fino al bordo per correre. Trascina lo schermo per ruotare la telecamera.', "Pousse le joystick jusqu'au bord pour courir. Fais glisser l'écran pour tourner la caméra."],
     'Mapa': ['Map', 'Mapa', 'Mappa', 'Carte'],
+    'Entrar': ['Enter', 'Entrar', 'Entra', 'Entrer'], 'Sair': ['Leave', 'Salir', 'Esci', 'Sortir'],
+    'Supermercado': ['Supermarket', 'Supermercado', 'Supermercato', 'Supermarché'], 'Cafeteria': ['Café', 'Cafetería', 'Caffetteria', 'Café'],
+    'Pizzaria': ['Pizzeria', 'Pizzería', 'Pizzeria', 'Pizzeria'], 'Restaurante': ['Restaurant', 'Restaurante', 'Ristorante', 'Restaurant'],
+    'Academia': ['Gym', 'Gimnasio', 'Palestra', 'Salle de sport'], 'Bar': ['Bar', 'Bar', 'Bar', 'Bar'], 'Cinema': ['Movie theater', 'Cine', 'Cinema', 'Cinéma'],
+    'Hospital': ['Hospital', 'Hospital', 'Ospedale', 'Hôpital'], 'Lanche do seu Valdemar': ["Mr. Valdemar's snack bar", 'Lonchería de don Valdemar', 'Chiosco del signor Valdemar', 'Snack de monsieur Valdemar'],
+    'Falar com a enfermeira': ['Talk to the nurse', 'Hablar con la enfermera', "Parla con l'infermiera", "Parler à l'infirmière"],
+    'Interagir': ['Interact', 'Interactuar', 'Interagisci', 'Interagir'],
+    'Levantar': ['Stand up', 'Levantarse', 'Alzati', 'Se lever'],
+    'Sentar': ['Sit down', 'Sentarse', 'Siediti', "S'asseoir"],
+    'Sentar no balcão': ['Sit at the counter', 'Sentarse en la barra', 'Siediti al bancone', "S'asseoir au comptoir"],
+    'Entrar no hospital': ['Enter the hospital', 'Entrar al hospital', "Entra nell'ospedale", "Entrer à l'hôpital"],
+    'Seu Valdemar': ['Mr. Valdemar', 'Don Valdemar', 'Signor Valdemar', 'Monsieur Valdemar'],
+    'Opa, freguês novo! Eu sou o Valdemar, prazer. Aqui é o melhor lanche da cidade!': ['Hey, a new customer! I am Valdemar, nice to meet you. This is the best snack bar in town!', '¡Epa, cliente nuevo! Soy Valdemar, mucho gusto. ¡Aquí está la mejor lonchería del pueblo!', 'Ehi, un cliente nuovo! Sono Valdemar, piacere. Qui c\'è il miglior chiosco del paese!', 'Tiens, un nouveau client ! Je suis Valdemar, enchanté. Ici, c\'est le meilleur snack de la ville !'],
+    'E aí, o que vai ser hoje?': ['So, what will it be today?', 'Bueno, ¿qué va a ser hoy?', 'Allora, cosa prendi oggi?', "Alors, qu'est-ce que ce sera aujourd'hui ?"],
+    'Valeu, seu Valdemar, mas eu tô cheio. Hoje não cabe mais nada.': ['Thanks, Mr. Valdemar, but I am full. Nothing else fits today.', 'Gracias, don Valdemar, pero estoy lleno. Hoy no me cabe nada más.', 'Grazie, signor Valdemar, ma sono pieno. Oggi non ci sta più niente.', "Merci, monsieur Valdemar, mais je n'ai plus faim. Plus rien ne rentre aujourd'hui."],
+    'Cardápio do seu Valdemar (você tem {0} fakes)': ["Mr. Valdemar's menu (you have {0} fakes)", 'Menú de don Valdemar (tienes {0} fakes)', 'Menù del signor Valdemar (hai {0} fakes)', 'Menu de monsieur Valdemar (tu as {0} fakes)'],
+    'Nada, obrigado': ['Nothing, thanks', 'Nada, gracias', 'Niente, grazie', 'Rien, merci'],
+    'Tranquilo, fica à vontade!': ['No problem, make yourself at home!', '¡Tranquilo, siéntete como en casa!', 'Tranquillo, fai come se fossi a casa tua!', 'Pas de souci, fais comme chez toi !'],
+    'Ih... tá faltando dinheiro aí, hein?': ['Uh-oh... looks like you are short on money, huh?', 'Uy... te está faltando plata, ¿eh?', 'Ehm... mancano un po\' di soldi, eh?', "Oh là... il te manque des sous, hein ?"],
+    'Saindo um {0}!': ['One {0}, coming right up!', '¡Sale un {0}!', 'Ecco un {0} in arrivo!', 'Un {0}, ça arrive !'],
+    'Ufa... agora sim, matei a fome!': ['Phew... now that hit the spot!', '¡Uf... ahora sí, maté el hambre!', 'Uff... adesso sì, ho fatto il pieno!', "Ouf... là, j'ai bien mangé !"],
+    'Hmm... ainda dava para comer mais um pouco.': ['Hmm... I could still eat a bit more.', 'Mmm... todavía podría comer un poco más.', 'Mmm... potrei mangiare ancora un po\'.', "Hmm... je pourrais encore manger un peu."],
+    'Ficha médica': ['Medical record', 'Ficha médica', 'Cartella clinica', 'Dossier médical'],
+    'A enfermeira confere como você está.': ['The nurse checks how you are doing.', 'La enfermera revisa cómo estás.', "L'infermiera controlla come stai.", "L'infirmière vérifie comment tu vas."],
+    'Refeição pesada: no próximo jogo você corre menos e recupera o fôlego mais devagar.': ['Heavy meal: in the next match you run less and get your breath back more slowly.', 'Comida pesada: en el próximo partido corres menos y recuperas el aliento más despacio.', 'Pasto pesante: nella prossima partita corri meno e recuperi il fiato più lentamente.', 'Repas lourd : au prochain match, tu cours moins et tu récupères ton souffle plus lentement.'],
+    'Lanches não saudáveis neste mês: {0}.': ['Unhealthy snacks this month: {0}.', 'Comidas poco saludables este mes: {0}.', 'Spuntini poco sani questo mese: {0}.', 'Snacks pas sains ce mois-ci : {0}.'],
+    'Nenhuma observação por enquanto.': ['No notes for now.', 'Ninguna observación por ahora.', 'Nessuna osservazione per ora.', "Aucune remarque pour l'instant."],
     'Missão': ['Mission', 'Misión', 'Missione', 'Mission'],
     'Pausar': ['Pause', 'Pausar', 'Pausa', 'Pause'],
     'Pausado': ['Paused', 'En pausa', 'In pausa', 'En pause'],
@@ -266,13 +303,14 @@
     }, true);
   }
   // pisos das quadras (a quadra inteira numa textura: as linhas não ficam "por cima")
-  const texSociety = () => texCanvas(512, 256, (g, w, h) => {
-    const rnd = semente(31), sx = w / 52, sz = h / 35;
-    for (let i = 0; i < 13; i++) { g.fillStyle = i % 2 ? '#4f9a3f' : '#5aa848'; g.fillRect(i * 4 * sx, 0, 4 * sx + 1, h); }
-    g.strokeStyle = '#f4f4ec'; g.lineWidth = 2; const X = (m) => (m + 4) * sx, Z = (m) => (m + 3.6) * sz;
-    g.strokeRect(X(0), Z(0), 44 * sx, 28 * sz); g.beginPath(); g.moveTo(X(22), Z(0)); g.lineTo(X(22), Z(28)); g.stroke();
-    g.beginPath(); g.ellipse(X(22), Z(14), 4.5 * sx, 4.5 * sz, 0, 0, Math.PI * 2); g.stroke();
-    g.strokeRect(X(0), Z(14 - 6), 6 * sx, 12 * sz); g.strokeRect(X(44 - 6), Z(14 - 6), 6 * sx, 12 * sz);
+  const texSociety = () => texCanvas(256, 512, (g, w, h) => {           // (4.9.3) 25 × 35 m, campo de 18 × 30 (comprido em z)
+    const rnd = semente(31), sx = w / 25, sz = h / 35;
+    for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? '#4f9a3f' : '#5aa848'; g.fillRect(0, i * 4 * sz, w, 4 * sz + 1); }
+    g.strokeStyle = '#f4f4ec'; g.lineWidth = 2; const X = (m) => (m + 3.5) * sx, Z = (m) => (m + 2.5) * sz;
+    g.strokeRect(X(0), Z(0), 18 * sx, 30 * sz); g.beginPath(); g.moveTo(X(0), Z(15)); g.lineTo(X(18), Z(15)); g.stroke();
+    g.beginPath(); g.ellipse(X(9), Z(15), 3 * sx, 3 * sz, 0, 0, Math.PI * 2); g.stroke();
+    g.strokeRect(X(4), Z(0), 10 * sx, 5 * sz); g.strokeRect(X(4), Z(25), 10 * sx, 5 * sz);
+    g.fillStyle = '#f4f4ec'; g.fillRect(X(9) - 1, Z(8) - 1, 3, 3); g.fillRect(X(9) - 1, Z(22) - 1, 3, 3);
     granular(g, w, h, 0.08, rnd);
   }, true);
   const texFutsal = () => texCanvas(256, 256, (g, w, h) => {
@@ -362,7 +400,13 @@
   function edificio(o) {
     const r = o.r, w = r.x1 - r.x0, d = r.z1 - r.z0, cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, G = new Geo();
     const h = o.h, cor = o.cor;
-    G.box(w, h, d, cor, 0, 0, 0, '#9a968c');
+    if (o.nicho) {                                                    // (4.9.3) vão de verdade na frente (o balcão do lanche): o corpo é montado em pedaços em volta dele
+      const N = o.nicho, zf = d / 2 - N.prof / 2, xl = N.u - N.larg / 2, xr = N.u + N.larg / 2;
+      G.box(w, h, d - N.prof, cor, 0, 0, -N.prof / 2, '#9a968c');
+      if (xl > -w / 2 + 0.01) G.box(xl + w / 2, h, N.prof, cor, (-w / 2 + xl) / 2, 0, zf, '#9a968c');
+      if (xr < w / 2 - 0.01) G.box(w / 2 - xr, h, N.prof, cor, (xr + w / 2) / 2, 0, zf, '#9a968c');
+      G.box(N.larg, h - N.alt, N.prof, cor, N.u, N.alt, zf, '#9a968c');
+    } else G.box(w, h, d, cor, 0, 0, 0, '#9a968c');
     G.box(w + 0.08, 0.9, d + 0.08, o.barrado || escurece(cor, 0.72), 0, 0, 0);
     if (o.andares > 1) for (let a = 1; a < o.andares; a++) G.box(w + 0.06, 0.2, d + 0.06, o.faixa || escurece(cor, 0.85), 0, a * (h / o.andares) - 0.1, 0);
     if (o.montar) o.montar(G, w, d, h);
@@ -452,16 +496,7 @@
     S.pisos.push({ x0: SPAWN.x - 1.2, x1: SPAWN.x + 1.2, z0: -5.0, z1: -4.1, y: 0.22 });                                                         // degrau
 
     // --- comércio da avenida (lado norte: frente para o sul; lado sul: frente para o norte)
-    edificio({ r: R(335, 275, 115, 80), frente: 1, h: 5.2, andares: 1, cor: '#f4efe2', barrado: '#c8352b', platibanda: '#c8352b',
-      letreiro: { txt: 'SUPERMERCADO', fundo: '#c8352b', cor: '#fff6e0', w: 12, h: 1.3, y: 4.15 },
-      montar: (G, w, d) => { naFace(G, w, d, 'f', -3, 0, 0, 7.5, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 5.5, 0, 0, 5.5, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 1.6, 0, 0, 2.4, 2.6, 0.18, '#2e3a44');
-        for (let i = -2; i <= 2; i++) naFace(G, w, d, 'f', -3 + i * 1.5, 0, 0, 0.08, 2.8, 0.18, '#d8d8d0'); toldo(G, w, d, 0, w - 1, 3.2, 1.3, ['#c8352b', '#f4efe2']); } });
-    edificio({ r: R(462, 305, 64, 50), frente: 1, h: 6.2, andares: 2, cor: '#f2d27a', faixa: '#e3b95a',
-      letreiro: { txt: 'CAFETERIA', fundo: '#5b3a22', cor: '#f6e2b8', w: 7.5, h: 1.0, y: 6.75 },
-      montar: (G, w, d) => { porta(G, w, d, 'f', -3.5, 1.4, 2.3, '#6a4428'); naFace(G, w, d, 'f', 2, 0.6, 0, 6, 1.9, 0.14, '#5d7f96');
-        toldo(G, w, d, 0, w - 0.6, 2.85, 1.4, ['#6a4428', '#f2e6c8']); for (let i = 0; i < 3; i++) janela(G, w, d, 'f', -4 + i * 4, 4.1, 1.3, 1.3);
-        G.box(w - 1, 0.12, 1.0, '#cdbf9f', 0, 3.15, d / 2 + 0.5); G.box(w - 1, 0.85, 0.06, '#3f3a34', 0, 3.27, d / 2 + 0.98); } });
-    edificio({ r: R(775, 268, 92, 87), frente: 1, h: 8.5, andares: 1, cor: '#a8443d', barrado: '#6e2a26', platibanda: '#8a3530',
+    edificio({ r: R(335, 268, 92, 87), frente: 1, h: 8.5, andares: 1, cor: '#a8443d', barrado: '#6e2a26', platibanda: '#8a3530',
       letreiro: { txt: 'CINEMA', fundo: '#1c1c22', cor: '#f2c230', w: 9, h: 1.6, y: 5.6, fora: 0.5 },
       montar: (G, w, d) => {
         naFace(G, w, d, 'f', 0, 0, 0, 4.2, 2.8, 0.14, '#2c2c34');
@@ -470,6 +505,25 @@
         for (const s of [-1, 1]) { naFace(G, w, d, 'f', s * 5.2, 0.9, 0.02, 2.1, 2.9, 0.12, '#f2f2ea'); naFace(G, w, d, 'f', s * 5.2, 1.0, 0.03, 1.8, 2.6, 0.14, s < 0 ? '#3a64b8' : '#7a4fb0'); }
         naFace(G, w, d, 'f', -6.8, 0, 0, 1.3, 1.1, 0.5, '#f4efe2');                                             // bilheteria
       } });
+    edificio({ r: R(462, 305, 64, 50), frente: 1, h: 6.2, andares: 2, cor: '#f2d27a', faixa: '#e3b95a',
+      letreiro: { txt: 'CAFETERIA', fundo: '#5b3a22', cor: '#f6e2b8', w: 7.5, h: 1.0, y: 6.75 },
+      montar: (G, w, d) => { porta(G, w, d, 'f', -3.5, 1.4, 2.3, '#6a4428'); naFace(G, w, d, 'f', 2, 0.6, 0, 6, 1.9, 0.14, '#5d7f96');
+        toldo(G, w, d, 0, w - 0.6, 2.85, 1.4, ['#6a4428', '#f2e6c8']); for (let i = 0; i < 3; i++) janela(G, w, d, 'f', -4 + i * 4, 4.1, 1.3, 1.3);
+        G.box(w - 1, 0.12, 1.0, '#cdbf9f', 0, 3.15, d / 2 + 0.5); G.box(w - 1, 0.85, 0.06, '#3f3a34', 0, 3.27, d / 2 + 0.98); } });
+    edificio({ r: R(767, 275, 100, 80), frente: 1, h: 5.2, andares: 1, cor: '#f4efe2', barrado: '#c8352b', platibanda: '#c8352b',
+      letreiro: { txt: 'SUPERMERCADO', fundo: '#c8352b', cor: '#fff6e0', w: 11, h: 1.3, y: 4.15 },
+      montar: (G, w, d) => { naFace(G, w, d, 'f', -3, 0, 0, 7.5, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 5.2, 0, 0, 4.6, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 1.6, 0, 0, 2.4, 2.6, 0.18, '#2e3a44');
+        for (let i = -2; i <= 2; i++) naFace(G, w, d, 'f', -3 + i * 1.5, 0, 0, 0.08, 2.8, 0.18, '#d8d8d0'); toldo(G, w, d, 0, w - 1, 3.2, 1.3, ['#c8352b', '#f4efe2']); } });
+    // (4.9.3) HOSPITAL (perto do prédio do jogador): a saúde do personagem só aparece aqui dentro (ficha médica)
+    S.hospital = edificio({ r: { x0: -115, x1: -93, z0: -21, z1: -5 }, frente: 1, h: 7.0, andares: 2, cor: '#f4f6f8', barrado: '#2f6f9a', faixa: '#3a8ac8', mapa: '#e8eef4',
+      letreiro: { txt: 'HOSPITAL', fundo: '#f4f6f8', cor: '#c8352b', w: 8, h: 1.2, y: 7.55 },
+      montar: (G, w, d) => {
+        naFace(G, w, d, 'f', 0, 0, 0, 3.2, 2.6, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 0, 0.02, 0.08, 2.6, 0.18, '#d8d8d0');
+        G.box(5.0, 0.25, 1.6, '#d8dde2', 0, 2.9, d / 2 + 0.8); for (const s of [-2.3, 2.3]) G.box(0.18, 2.78, 0.18, '#d8dde2', s, 0.12, d / 2 + 1.45);   // marquise da entrada
+        for (const s of [-1, 1]) for (let i = 0; i < 2; i++) janela(G, w, d, 'f', s * (4.5 + i * 3.6), 1.0, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
+        for (let i = 0; i < 5; i++) if (i !== 2) janela(G, w, d, 'f', -8.4 + i * 4.2, 4.5, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
+        G.box(1.6, 0.5, 0.2, '#c8352b', 0, 5.75, d / 2 + 0.1); G.box(0.5, 1.6, 0.2, '#c8352b', 0, 5.2, d / 2 + 0.12);   // cruz vermelha
+      }, obst: [[-2.3, 1.45, 0.3, 0.3], [2.3, 1.45, 0.3, 0.3]] });
     edificio({ r: R(55, 432, 88, 58), frente: -1, h: 3.6, andares: 1, cor: '#d9c27a', barrado: '#8a6b3a', platibanda: '#c9ae62',
       letreiro: { txt: 'BAR', fundo: '#1f7a4d', cor: '#f2e6c8', w: 4, h: 1.0, y: 3.65 },
       montar: (G, w, d) => { for (const u of [-5, 0, 5]) { naFace(G, w, d, 'f', u, 0, 0, 3.6, 2.7, 0.14, '#24262b'); naFace(G, w, d, 'f', u, 2.35, 0.01, 3.7, 0.4, 0.16, '#8c9199'); } } });
@@ -485,15 +539,29 @@
       obst: [[-2.2, 0.75, 0.8, 0.8], [2.2, 0.75, 0.8, 0.8]] });                                                 // os vasos de planta têm corpo
     edificio({ r: R(788, 432, 74, 48), frente: -1, h: 3.4, andares: 1, cor: '#f2b33a', barrado: '#a8442a', platibanda: '#e09a2a',
       letreiro: { txt: 'LANCHE DO SEU VALDEMAR', fundo: '#a8202a', cor: '#ffe9a8', w: 12.5, h: 1.0, y: 3.45 },
-      montar: (G, w, d) => { naFace(G, w, d, 'f', -2, 0.95, 0, 7, 1.7, 0.14, '#3b2a20'); G.box(7.4, 0.12, 0.7, '#d6c6a6', -2, 0.95, d / 2 + 0.3); naFace(G, w, d, 'f', 4.6, 0, 0, 1.0, 2.2, 0.14, '#5b3a22');
+      nicho: { u: -2, larg: 7, prof: 2.0, alt: 2.6 },                  // (4.9.3) o balcão é um vão de verdade: o seu Valdemar fica lá dentro
+      montar: (G, w, d) => { G.box(7.4, 0.12, 0.7, '#d6c6a6', -2, 0.95, d / 2 + 0.3); naFace(G, w, d, 'f', 4.6, 0, 0, 1.0, 2.2, 0.14, '#5b3a22');
+        const zb = d / 2 - 2.0;                                              // parede do fundo do vão
+        G.box(6.6, 0.1, 0.45, '#6a4428', -2, 1.55, zb + 0.23); G.box(6.6, 0.1, 0.45, '#6a4428', -2, 2.05, zb + 0.23);   // prateleiras
+        for (let i = 0; i < 12; i++) G.box(0.12, 0.28, 0.12, ['#c8352b', '#2f8a4a', '#f2c230', '#3a64b8'][i % 4], -5 + i * 0.55, 1.65 + (i % 2) * 0.5, zb + 0.22);
+        G.box(1.6, 0.12, 0.7, '#3a3a3e', -4.4, 0.92, zb + 0.6); G.box(1.4, 0.04, 0.6, '#8c9199', -4.4, 1.04, zb + 0.6);   // a chapa
+        G.box(0.5, 0.6, 0.35, '#e8e8e0', 0.6, 0.92, zb + 0.35);             // estufa
         for (let i = 0; i < 4; i++) { G.box(0.12, 0.7, 0.12, '#6c6c70', -4.6 + i * 1.7, 0, d / 2 + 1.1); G.box(0.45, 0.1, 0.45, '#c8352b', -4.6 + i * 1.7, 0.7, d / 2 + 1.1); } } });
+    { const L = R(788, 432, 74, 48), cx = (L.x0 + L.x1) / 2, cz = (L.z0 + L.z1) / 2, d = L.z1 - L.z0;     // as banquetas do balcão (frente virada para o norte: x e z invertem)
+      for (let i = 0; i < 4; i++) { const a = assento(cx - (-4.6 + i * 1.7), cz - (d / 2 + 1.1), 0, 1, 0.8, 'banqueta'); a.lanche = true; S.col.push({ x0: a.x - 0.2, x1: a.x + 0.2, z0: a.z - 0.2, z1: a.z + 0.2 }); }
+      S.balcao = { x: cx + 2.5, z: cz - (d / 2 - 0.9) }; }
     edificio({ r: R(908, 432, 98, 72), frente: -1, h: 6.8, andares: 2, cor: '#5f6b7a', faixa: '#f2c230', barrado: '#3a414b',
       letreiro: { txt: 'ACADEMIA', fundo: '#1c1c1f', cor: '#f2c230', w: 9, h: 1.2, y: 3.45 },
       montar: (G, w, d) => { porta(G, w, d, 'f', -5, 1.8, 2.4, '#2e3a44'); naFace(G, w, d, 'f', 2, 0.5, 0, 9, 2.2, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 4.0, 0, w - 2, 2.1, 0.14, '#7aa2bd');
         for (let i = -4; i <= 4; i++) naFace(G, w, d, 'f', i * 2.0, 4.0, 0.01, 0.1, 2.1, 0.17, '#2e3a44'); } });
     // mesas de plástico do bar (na calçada) e banquinhos do lanche já estão no prédio; mesas aqui:
-    { const G = new Geo(); for (const x of [-105.5, -100.5, -95.5]) { const z = 9.5; G.box(0.85, 0.06, 0.85, '#d23a2a', x, 0.82, z); G.box(0.08, 0.7, 0.08, '#d23a2a', x, 0.12, z);
-        for (const [dx, dz] of [[-0.75, 0], [0.75, 0], [0, -0.75], [0, 0.75]]) { G.box(0.45, 0.06, 0.45, '#e8b02a', x + dx, 0.55, z + dz); G.box(0.42, 0.43, 0.06, '#e8b02a', x + dx * 1.3, 0.12, z + dz * 1.3); G.box(0.42, 0.45, 0.06, '#e8b02a', x + dx * 1.3, 0.61, z + dz * 1.3); }
+    { const G = new Geo(); for (const x of [-102.7, -97.7]) { const z = 9.5; G.box(0.85, 0.06, 0.85, '#d23a2a', x, 0.82, z); G.box(0.08, 0.7, 0.08, '#d23a2a', x, 0.12, z);
+        for (const [dx, dz] of [[-0.75, 0], [0.75, 0], [0, -0.75], [0, 0.75]]) {          // cadeiras de plástico (dá para sentar)
+          const ux = Math.sign(dx), uz = Math.sign(dz), cxa = x + dx, cza = z + dz;
+          G.box(0.45, 0.06, 0.45, '#e8b02a', cxa, 0.5, cza); for (const [lx, lz] of [[-0.18, -0.18], [0.18, -0.18], [-0.18, 0.18], [0.18, 0.18]]) G.box(0.05, 0.5, 0.05, '#d9a020', cxa + lx, 0, cza + lz);
+          G.box(ux ? 0.06 : 0.42, 0.5, ux ? 0.42 : 0.06, '#e8b02a', cxa + ux * 0.21, 0.56, cza + uz * 0.21);
+          assento(cxa, cza, -ux, -uz, 0.56, 'cadeira');
+        }
         S.col.push({ x0: x - 0.9, x1: x + 0.9, z0: z - 0.9, z1: z + 0.9 }); } addMalha(G, 0, 0); }
 
     // --- igrejinha (nave branca, torre na frente virada para a praça, cruz)
@@ -534,7 +602,11 @@
       const band = new THREE.Mesh(guardar(new THREE.PlaneGeometry(2.4, 1.68)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBandeira()), side: THREE.DoubleSide })));
       band.position.set(cx + 1.3, 9.4, cz); g.add(band); S.bandeira = band;
       S.circ.push({ x: cx, z: cz, r: 2.45 });                         // o canteiro é REDONDO (antes a colisão era um quadrado de 5 m)
-      const banco = (x, z, rot) => { const lx = rot ? 0.5 : 1.8, lz = rot ? 1.8 : 0.5; G.box(lx, 0.1, lz, '#8a5a2b', x, 0.42, z); for (const s of [-0.7, 0.7]) G.box(rot ? 0.4 : 0.12, 0.42, rot ? 0.12 : 0.4, '#9a968c', x + (rot ? 0 : s), 0, z + (rot ? s : 0)); S.col.push({ x0: x - lx / 2, x1: x + lx / 2, z0: z - lz / 2, z1: z + lz / 2 }); };
+      const banco = (x, z, rot) => { const lx = rot ? 0.5 : 1.8, lz = rot ? 1.8 : 0.5; G.box(lx, 0.1, lz, '#8a5a2b', x, 0.42, z); for (const s of [-0.7, 0.7]) G.box(rot ? 0.4 : 0.12, 0.42, rot ? 0.12 : 0.4, '#9a968c', x + (rot ? 0 : s), 0, z + (rot ? s : 0)); S.col.push({ x0: x - lx / 2, x1: x + lx / 2, z0: z - lz / 2, z1: z + lz / 2 });
+        // dois lugares, virados para o caminho mais perto (o do meio da praça)
+        const fx = rot ? Math.sign(cx - x) || 1 : 0, fz = rot ? 0 : Math.sign(cz - z) || 1, lugares = [];
+        for (const t of [-0.45, 0.45]) { const sx = x + (rot ? 0 : t), sz = z + (rot ? t : 0); lugares.push(assento(sx, sz, fx, fz, 0.52, 'banco')); }
+        S.bancos.push({ x, z, lugares }); };
       for (const [dx, dz, ro] of [[-6.5, -3, 0], [6.5, -3, 0], [-6.5, 3, 0], [6.5, 3, 0], [-3, -7.5, 1], [3, 7.5, 1], [-14, -3, 0], [14, 3, 0]]) banco(cx + dx, cz + dz, ro);
       for (const [dx, dz] of [[-9, -6], [9, -6], [-9, 6], [9, 6], [-20, 2.6], [20, 2.6]]) { G.box(0.14, 4, 0.14, '#3f4348', cx + dx, 0, cz + dz); G.box(0.5, 0.45, 0.5, '#f4efc8', cx + dx, 4, cz + dz); S.col.push({ x0: cx + dx - 0.2, x1: cx + dx + 0.2, z0: cz + dz - 0.2, z1: cz + dz + 0.2 }); }
       addMalha(G, 0, 0); }
@@ -546,7 +618,7 @@
         S.col.push({ x0: x - 0.2, x1: x + 0.2, z0: z - 0.2, z1: z + 0.2 }); }
       const bx = -114.6, bz = 9.0;                                       // ponto de ônibus (calçada sul, lado da saída da cidade)
       G.box(3.6, 0.1, 1.9, '#2f6f9a', bx, 2.5, bz); for (const s of [-1.6, 1.6]) G.box(0.1, 2.38, 0.1, '#5c6670', bx + s, 0.12, bz + 0.75);
-      G.box(3.4, 1.6, 0.06, '#9ec7dd', bx, 0.75, bz + 0.85); G.box(2.6, 0.08, 0.45, '#8a5a2b', bx, 0.55, bz + 0.5); G.box(0.1, 2.6, 0.1, '#5c6670', bx + 2.4, 0.12, bz - 0.2); G.box(0.7, 0.5, 0.06, '#2f6f9a', bx + 2.4, 2.55, bz - 0.2);
+      G.box(3.4, 1.6, 0.06, '#9ec7dd', bx, 0.75, bz + 0.85); G.box(2.6, 0.08, 0.45, '#8a5a2b', bx, 0.55, bz + 0.5); for (const t of [-0.6, 0.6]) assento(bx + t, bz + 0.45, 0, -1, 0.63, 'banco'); G.box(0.1, 2.6, 0.1, '#5c6670', bx + 2.4, 0.12, bz - 0.2); G.box(0.7, 0.5, 0.06, '#2f6f9a', bx + 2.4, 2.55, bz - 0.2);
       S.col.push({ x0: bx - 1.8, x1: bx + 1.8, z0: bz + 0.5, z1: bz + 0.95 }, { x0: bx + 2.25, x1: bx + 2.55, z0: bz - 0.35, z1: bz - 0.05 });
       addMalha(G, 0, 0); }
 
@@ -556,25 +628,32 @@
       const piso = new THREE.Mesh(guardar(new THREE.BoxGeometry(w, 0.1, d)), [mc, mc, mt, mc, mc, mc]); piso.position.set(cx, 0.05, cz); g.add(piso);
       S.pisos.push({ x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1, y: 0.1 });
       const G = new Geo(), hc = 6.2, rh = 1.8;
-      for (let i = 0; i <= 4; i++) for (const s of [-1, 1]) { const x = r.x0 + 0.3 + i * (w - 0.6) / 4, z = cz + s * (d / 2 - 0.3); G.box(0.4, hc, 0.4, '#8c949c', x, 0.1, z); S.col.push({ x0: x - 0.25, x1: x + 0.25, z0: z - 0.25, z1: z + 0.25 }); }
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = cx + sx * (w / 2 + 0.45), z = cz + sz * (d / 2 + 0.45); G.box(0.4, hc + 0.1, 0.4, '#8c949c', x, 0, z); S.col.push({ x0: x - 0.25, x1: x + 0.25, z0: z - 0.25, z1: z + 0.25 }); }   // (4.9.3) só 4, nos cantos, por fora
       { const e = 0.6, xa = r.x0 - e, xb = r.x1 + e, yE = hc + 0.1 - e * rh / (d / 2), top = hc + 0.1 + rh;
         for (const s of [1, -1]) { const a = [xa, yE, cz + s * (d / 2 + e)], b = [xb, yE, cz + s * (d / 2 + e)], c = [xb, top, cz], dd = [xa, top, cz]; G.quad(a, b, c, dd, '#a7b0b8', [0, 1, s]); G.quad(a, b, c, dd, '#5f666d', [0, -1, -s]); }
-        for (let i = 0; i <= 4; i++) { const x = r.x0 + 0.3 + i * (w - 0.6) / 4; G.box(0.2, 0.3, d - 0.2, '#7d868b', x, hc + 0.1, cz); }
+        for (const sx of [-1, 1]) G.box(0.2, 0.3, d + 1.1, '#7d868b', cx + sx * (w / 2 + 0.45), hc + 0.1, cz);
+        for (const sz of [-1, 1]) G.box(w + 1.1, 0.3, 0.2, '#7d868b', cx, hc + 0.1, cz + sz * (d / 2 + 0.45));
         S.tetoFutsal = { x0: xa, x1: xb, z0: r.z0 - e, z1: r.z1 + e, y0: hc - 0.3, y1: top }; S.camBox.push(S.tetoFutsal); }
       for (const s of [-1, 1]) { const gx = cx + s * 11.8; for (const t of [-1.5, 1.5]) G.box(0.1, 2.0, 0.1, '#f4f4ec', gx + s * 0.05, 0.1, cz + t); G.box(0.1, 0.1, 3.1, '#f4f4ec', gx + s * 0.05, 2.1, cz); }
       oclusor(S.tetoFutsal, addMalha(G, 0, 0));
       cerca(r, 3.0, [{ lado: 'n', a: -41, b: -37 }], 0.1);                    // grade em volta, uma entrada só (do lado da avenida)
-      S.redes.push({ x: cx - 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: -1, y: 0.1 }, { x: cx + 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: 1, y: 0.1 }); }
+      S.redes.push({ x: cx - 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: -1, y: 0.1 }, { x: cx + 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: 1, y: 0.1 });
+      S.quadra = { x0: r.x0 + 0.15, x1: r.x1 - 0.15, z0: r.z0 + 0.15, z1: r.z1 - 0.15, cx, cz, gl: 11.8, gm: 1.45, gp: 1.0 }; }
 
-    // --- society (grama sintética 8 cm, alambrado alto, gols)
-    { const r = SOCIETY, w = r.x1 - r.x0, d = r.z1 - r.z0, cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2;
+    // --- (4.9.3) DOIS societys do tamanho de verdade (cada um 25 × 35 m, campo de 30 × 18 no comprimento z), um caminho entre eles
+    S.societys = [];
+    for (const [x0, x1, portao] of [[SOCIETY.x0, SOCIETY.x0 + 25, [SOCIETY.x0 + 2, SOCIETY.x0 + 5.5]], [SOCIETY.x1 - 25, SOCIETY.x1, [SOCIETY.x1 - 5.5, SOCIETY.x1 - 2]]]) {
+      const r = { x0, x1, z0: SOCIETY.z0, z1: SOCIETY.z1 }, w = x1 - x0, d = r.z1 - r.z0, cx = (x0 + x1) / 2, cz = (r.z0 + r.z1) / 2;
       const mt = guardar(new THREE.MeshLambertMaterial({ map: guardar(texSociety()) })), mc = guardar(new THREE.MeshLambertMaterial({ color: 0x3f7a33 }));
       const piso = new THREE.Mesh(guardar(new THREE.BoxGeometry(w, 0.08, d)), [mc, mc, mt, mc, mc, mc]); piso.position.set(cx, 0.04, cz); g.add(piso);
-      S.pisos.push({ x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1, y: 0.08 });
-      cerca(r, 4.0, [{ lado: 'n', a: 88, b: 92 }], 0.08);
-      const G = new Geo(); for (const s of [-1, 1]) { const gx = cx + s * 22; for (const t of [-2.5, 2.5]) G.box(0.12, 2.2, 0.12, '#f4f4ec', gx, 0.08, cz + t); G.box(0.12, 0.12, 5.12, '#f4f4ec', gx, 2.28, cz); }
+      S.pisos.push({ x0, x1, z0: r.z0, z1: r.z1, y: 0.08 });
+      cerca(r, 4.0, [{ lado: 'n', a: portao[0], b: portao[1] }], 0.08);
+      const G = new Geo(); for (const sz of [-1, 1]) { const gz = cz + sz * 15; for (const t of [-2.5, 2.5]) G.box(0.12, 2.2, 0.12, '#f4f4ec', cx + t, 0.08, gz); G.box(5.12, 0.12, 0.12, '#f4f4ec', cx, 2.28, gz); }
       addMalha(G, 0, 0);
-      S.redes.push({ x: cx - 22, z: cz, larg: 5, alt: 2.2, prof: 1.2, dir: -1, y: 0.08 }, { x: cx + 22, z: cz, larg: 5, alt: 2.2, prof: 1.2, dir: 1, y: 0.08 }); }
+      S.redes.push({ x: cx, z: cz - 15, larg: 5, alt: 2.2, prof: 1.2, dir: -1, y: 0.08, ez: true }, { x: cx, z: cz + 15, larg: 5, alt: 2.2, prof: 1.2, dir: 1, y: 0.08, ez: true });
+      S.societys.push({ r, cx, cz });
+      S.planta.push({ r, cor: '#4f9a3f', chao: true });
+    }
 
     // --- várzea (o chão já está pintado): alambrado baixo, gols de ferro e o portão do lado da avenida
     { const r = VARZEA, cz = (VARZEA_L.z0 + VARZEA_L.z1) / 2;
@@ -591,9 +670,8 @@
       G.box(p.x1 - p.x0, 0.12, p.z1 - p.z0, '#9a6a3a', (p.x0 + p.x1) / 2, 0.3, (p.z0 + p.z1) / 2, '#a8763f');
       for (let x = p.x0 + 0.3; x < p.x1; x += 2.4) for (const z of [p.z0 + 0.15, p.z1 - 0.15]) G.box(0.18, 0.62, 0.18, '#6c4a2a', x, -0.2, z);
       S.pisos.push({ x0: p.x0, x1: p.x1, z0: p.z0, z1: p.z1, y: 0.42 });
-      for (let i = 0; i < 70; i++) { const a = rnd() * Math.PI * 2, k = 0.97 + rnd() * 0.06, x = LAGO.cx + Math.cos(a) * LAGO.rx * k, z = LAGO.cz + Math.sin(a) * LAGO.rz * k;
-        if (x > p.x0 - 2 && z > p.z0 - 3 && z < p.z1 + 3) continue; for (let j = 0; j < 3; j++) G.box(0.07, 0.8 + rnd() * 0.9, 0.07, rnd() < 0.5 ? '#5f8a3a' : '#7a9a44', x + (rnd() - 0.5) * 0.6, 0, z + (rnd() - 0.5) * 0.6); }
-      addMalha(G, 0, 0); }
+      addMalha(G, 0, 0);
+      cerquinhasDoLago(rnd); }
 
     // --- árvores (as da planta + as de fora da cidade)
     { const G = new Geo();
@@ -604,7 +682,7 @@
         for (let i = 0; i < n; i++) { const s = (2.6 - i * 0.55 + rnd() * 0.4) * k; G.box(s, (1.1 + rnd() * 0.4) * k, s * (0.85 + rnd() * 0.3), verdes[Math.floor(rnd() * 4)], x + (rnd() - 0.5) * 0.5 * k, ht * 0.85 + i * 0.95 * k + rnd() * 0.05, z + (rnd() - 0.5) * 0.5 * k); }
         if (colide) S.col.push({ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 });
       };
-      const mapa = [[20, 30], [120, 60], [280, 70], [560, 70], [905, 80], [1150, 90], [526, 236], [526, 330], [746, 236], [746, 330], [566, 250], [720, 306], [275, 300], [100, 300], [858, 230], [430, 540], [90, 590], [420, 620], [100, 720], [430, 720], [830, 700], [600, 720], [1100, 725], [10, 700]];
+      const mapa = [[20, 30], [120, 60], [280, 70], [560, 70], [905, 80], [1150, 90], [526, 236], [526, 330], [746, 236], [746, 330], [566, 250], [720, 306], [275, 300], [858, 230], [430, 540], [90, 590], [420, 620], [100, 720], [430, 720], [830, 700], [600, 720], [1100, 725], [10, 700]];
       for (const [px, py] of mapa) arvore(PX(px + 9), PZ(py + 9), 1 + rnd() * 0.4, true);
       for (let i = 0; i < 170; i++) {                                 // fora da cidade (sem colisão: o jogador não chega lá)
         const x = -230 + rnd() * 460, z = -190 + rnd() * 380;
@@ -642,10 +720,261 @@
     for (const t of S.telas) { const m = plano(t.L, t.alt - 0.1, 0.7, mT); m.position.set(t.x, t.y + (t.alt - 0.1) / 2 + 0.02, t.z); if (!t.hor) m.rotation.y = Math.PI / 2; S.grupo.add(m); }
     for (const r of S.redes) {      // fundo, dois lados e teto (a rede fica ATRÁS da linha do gol: nada encosta nas traves)
       const bx = r.x + r.dir * r.prof, y = r.y;
+      if (r.ez) {                    // (4.9.3) gol com a linha ao longo de x (societys)
+        const f = plano(r.larg, r.alt, 0.25, mR); f.position.set(r.x, y + r.alt / 2, r.z + r.dir * r.prof); S.grupo.add(f);
+        for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.rotation.y = Math.PI / 2; l.position.set(r.x + s * (r.larg / 2 + 0.03), y + r.alt / 2, r.z + r.dir * (r.prof / 2 + 0.04)); S.grupo.add(l); }
+        const t = plano(r.larg, r.prof - 0.08, 0.25, mR); t.rotation.x = -Math.PI / 2; t.position.set(r.x, y + r.alt + 0.03, r.z + r.dir * (r.prof / 2 + 0.04)); S.grupo.add(t);
+        continue;
+      }
       const fundo = plano(r.larg, r.alt, 0.25, mR); fundo.position.set(bx, y + r.alt / 2, r.z); fundo.rotation.y = Math.PI / 2; S.grupo.add(fundo);
       for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt / 2, r.z + s * (r.larg / 2 + 0.03)); S.grupo.add(l); }
       const teto = plano(r.prof - 0.08, r.larg, 0.25, mR); teto.rotation.x = -Math.PI / 2; teto.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt + 0.03, r.z); S.grupo.add(teto);
     }
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) lugares para sentar (bancos, cadeiras, banquetas)
+  // fx, fz = para onde a pessoa sentada olha; o ponto de levantar é escolhido na hora (atrás, frente ou dos lados, o que estiver livre)
+  function assento(x, z, fx, fz, h, tipo) {
+    const a = { x, z, h, tipo, yaw: Math.atan2(-fz, fx), fx, fz, ocupado: null };
+    S.assentos.push(a); return a;
+  }
+  function pontoDeLevantar(a) {
+    const op = [[a.fx, a.fz], [-a.fz, a.fx], [a.fz, -a.fx], [-a.fx, -a.fz]];
+    for (const [ux, uz] of op) for (const dd of [0.8, 1.1, 1.5]) { const x = a.x + ux * dd, z = a.z + uz * dd; if (livre(x, z)) return { x, z }; }
+    return { x: a.x + a.fx * 0.8, z: a.z + a.fz * 0.8 };
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) cerquinhas velhas de madeira em volta do lago (poucas, com falhas)
+  function cerquinhasDoLago(rnd) {
+    const G = new Geo(), tons = ['#8a5a2b', '#7a4f26', '#9c6a38', '#6e4824', '#a8763f', '#5f4022'];
+    const pk = () => tons[Math.floor(rnd() * tons.length)];
+    // trechos (ângulo inicial e final na elipse, em graus): longe do píer (leste, ~0°) e do caminho do lago (nordeste)
+    for (const [a0, a1] of [[150, 185], [205, 230], [250, 275], [100, 122]]) {
+      const pts = [];
+      for (let a = a0; a <= a1 + 0.01; a += 6) { const t = a * Math.PI / 180; pts.push([LAGO.cx + Math.cos(t) * (LAGO.rx + 1.3), LAGO.cz + Math.sin(t) * (LAGO.rz + 1.3)]); }
+      for (let i = 0; i < pts.length; i++) {
+        const [x, z] = pts[i], torto = (rnd() - 0.5) * 0.25;
+        if (rnd() < 0.12) continue;                                       // mourão que caiu
+        G.box(0.14, 0.95 + rnd() * 0.2, 0.14, pk(), x + torto * 0.2, 0, z);
+        if (i === pts.length - 1) break;
+        const [x2, z2] = pts[i + 1], L = Math.hypot(x2 - x, z2 - z), ux = (x2 - x) / L, uz = (z2 - z) / L;
+        for (const y of [0.45, 0.8]) {                                   // duas ripas, em pedaços de tons diferentes (os "quadradinhos")
+          if (rnd() < 0.15) continue;                                    // ripa faltando
+          const n = Math.max(2, Math.round(L / 0.5));
+          for (let j = 0; j < n; j++) {
+            const t0 = (j + 0.5) / n, px = x + (x2 - x) * t0, pz = z + (z2 - z) * t0, len = L / n - 0.01, yy = y + (rnd() - 0.5) * 0.03;
+            if (Math.abs(ux) > Math.abs(uz)) G.box(len * Math.abs(ux) + 0.02, 0.1, 0.06 + Math.abs(uz) * len, pk(), px, yy, pz);
+            else G.box(0.06 + Math.abs(ux) * len, 0.1, len * Math.abs(uz) + 0.02, pk(), px, yy, pz);
+          }
+        }
+        S.col.push({ x0: Math.min(x, x2) - 0.08, x1: Math.max(x, x2) + 0.08, z0: Math.min(z, z2) - 0.08, z1: Math.max(z, z2) + 0.08 });
+      }
+    }
+    addMalha(G, 0, 0);
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) PLANTAS COM FÍSICA: graminhas altas pelo gramado e taboas na beira do lago
+  // Cada planta é uma instância (InstancedMesh): quando alguém passa perto, ela verga para longe e volta balançando (mola).
+  function geoPlanta(alt, n, cor0, cor1) {
+    const G = new Geo();
+    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, r = 0.06, x = Math.cos(a) * r, z = Math.sin(a) * r, h = alt * (0.75 + 0.25 * ((i * 7) % 3) / 2);
+      G.box(0.035, h * 0.55, 0.035, cor0, x, 0, z); G.box(0.03, h * 0.45, 0.03, cor1, x * 1.4, h * 0.55, z * 1.4); }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(G.p, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(G.n, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(G.c, 3));
+    return guardar(g);
+  }
+  function lugarDeGrama(x, z) {
+    if (x < LIM.x0 + 2 || x > LIM.x1 - 2 || z < LIM.z0 + 2 || z > LIM.z1 - 2) return false;
+    if (z > -6 && z < 11) return false;                                   // avenida e calçadas
+    for (const r of RUAS_TERRA) if (x > r.x0 - 1 && x < r.x1 + 1 && z > r.z0 - 1 && z < r.z1 + 1) return false;
+    for (const r of [PRACA, VARZEA, SOCIETY, FUTSAL]) if (x > r.x0 - 1 && x < r.x1 + 1 && z > r.z0 - 1 && z < r.z1 + 1) return false;
+    for (const b of S.col) if (x > b.x0 - 0.8 && x < b.x1 + 0.8 && z > b.z0 - 0.8 && z < b.z1 + 0.8) return false;
+    const ex = (x - LAGO.cx) / (LAGO.rx + 3), ez = (z - LAGO.cz) / (LAGO.rz + 3); if (ex * ex + ez * ez < 1) return false;
+    return true;
+  }
+  function criarPlantas() {
+    const rnd = semente(3131), lista = [];
+    // graminhas: touceiras de 3 a 6 tufos
+    let tent = 0; while (lista.length < 620 && tent++ < 6000) {
+      const x = LIM.x0 + rnd() * 240, z = LIM.z0 + rnd() * 152; if (!lugarDeGrama(x, z)) continue;
+      const n = 3 + Math.floor(rnd() * 4); for (let i = 0; i < n; i++) { const px = x + (rnd() - 0.5) * 1.4, pz = z + (rnd() - 0.5) * 1.4; if (lugarDeGrama(px, pz)) lista.push({ x: px, z: pz, k: 0.7 + rnd() * 0.6, tipo: 0, yaw: rnd() * 6.28, t: 0.85 + rnd() * 0.3 }); }
+    }
+    // taboas: poucas moitas na beira do lago (antes era uma cerca de taboas em volta inteira)
+    for (let i = 0; i < 26; i++) {
+      const a = rnd() * Math.PI * 2, x = LAGO.cx + Math.cos(a) * (LAGO.rx + 0.2), z = LAGO.cz + Math.sin(a) * (LAGO.rz + 0.2);
+      if (x > PIER.x0 - 3 && z > PIER.z0 - 4 && z < PIER.z1 + 4) continue;
+      if (Math.abs(x + 41) < 3 && z < LAGO.cz) continue;                  // o caminho que chega no lago
+      for (let j = 0; j < 3 + Math.floor(rnd() * 2); j++) lista.push({ x: x + (rnd() - 0.5) * 0.9, z: z + (rnd() - 0.5) * 0.9, k: 0.85 + rnd() * 0.5, tipo: 1, yaw: rnd() * 6.28, t: 0.85 + rnd() * 0.3 });
+    }
+    const mat = guardar(new THREE.MeshLambertMaterial({ vertexColors: true }));
+    const meshes = [new THREE.InstancedMesh(geoPlanta(0.42, 5, '#4f8a3a', '#8dbb57'), mat, lista.filter((p) => p.tipo === 0).length),
+      new THREE.InstancedMesh(geoPlanta(1.35, 4, '#4a7a30', '#7a9a44'), mat, lista.filter((p) => p.tipo === 1).length)];
+    const cont = [0, 0], cor = new THREE.Color();
+    S.plantas = { lista, meshes, grade: new Map(), m4: new THREE.Matrix4(), q: new THREE.Quaternion(), v: new THREE.Vector3(), e: new THREE.Vector3(), ativos: new Set() };
+    for (const p of lista) {
+      p.i = cont[p.tipo]++; p.bx = 0; p.bz = 0; p.vx = 0; p.vz = 0;
+      const k = (Math.floor(p.x / 4)) + ',' + (Math.floor(p.z / 4)); if (!S.plantas.grade.has(k)) S.plantas.grade.set(k, []); S.plantas.grade.get(k).push(p);
+      matrizPlanta(p); cor.setRGB(p.t, p.t * (0.95 + Math.random() * 0.1), p.t); meshes[p.tipo].setColorAt(p.i, cor);
+    }
+    for (const m of meshes) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; S.grupo.add(m); }
+  }
+  function matrizPlanta(p) {
+    const P = S.plantas, ang = Math.hypot(p.bx, p.bz);
+    if (ang > 1e-4) { P.e.set(p.bz / ang, 0, -p.bx / ang); P.q.setFromAxisAngle(P.e, ang); } else P.q.identity();
+    const q2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), p.yaw); P.q.multiply(q2);
+    P.m4.compose(P.v.set(p.x, 0, p.z), P.q, P.e.set(p.k, p.k, p.k));
+    P.meshes[p.tipo].setMatrixAt(p.i, P.m4);
+  }
+  function tickPlantas(dt) {
+    const P = S.plantas; if (!P) return;
+    const atores = [S.jog, ...S.npcs.filter((A) => !A.sentado)];
+    for (const A of atores) {
+      const gx = Math.floor(A.x / 4), gz = Math.floor(A.z / 4);
+      for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const L = P.grade.get((gx + i) + ',' + (gz + j)); if (!L) continue;
+        for (const p of L) { const dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), R = p.tipo ? 0.75 : 0.6;
+          if (d < R) { const f = (1 - d / R) * (p.tipo ? 0.8 : 1.1) / Math.max(0.05, d); p.alvoX = (p.alvoX || 0) + dx * f; p.alvoZ = (p.alvoZ || 0) + dz * f; P.ativos.add(p); } } }
+    }
+    const sujos = new Set();
+    for (const p of P.ativos) {                                            // mola: verga para o alvo e volta balançando
+      const tx = clamp(p.alvoX || 0, -1.1, 1.1), tz = clamp(p.alvoZ || 0, -1.1, 1.1); p.alvoX = p.alvoZ = 0;
+      p.vx += ((tx - p.bx) * 60 - p.vx * 7) * dt; p.vz += ((tz - p.bz) * 60 - p.vz * 7) * dt;
+      p.bx += p.vx * dt; p.bz += p.vz * dt;
+      matrizPlanta(p); sujos.add(p.tipo);
+      if (Math.abs(p.bx) + Math.abs(p.bz) + Math.abs(p.vx) + Math.abs(p.vz) < 0.002 && !tx && !tz) { p.bx = p.bz = p.vx = p.vz = 0; matrizPlanta(p); P.ativos.delete(p); }
+    }
+    for (const t of sujos) P.meshes[t].instanceMatrix.needsUpdate = true;
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) a BOLA da quadra de futsal (física simples) e o gol com comemoração
+  const texBolinha = () => texCanvas(32, 16, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1c1c1f'; for (const [x, y] of [[4, 4], [14, 3], [24, 5], [9, 11], [20, 11], [29, 11]]) g.fillRect(x, y, 4, 4); }, false);
+  function criarBolaQuadra() {
+    const Q = S.quadra, R0 = 0.15;
+    const mesh = new THREE.Mesh(guardar(new THREE.SphereGeometry(R0, 12, 8)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) })));
+    const sombra = sombraAtor(0.17); S.grupo.add(mesh);
+    S.bola = { mesh, sombra, R: R0, x: Q.cx, z: Q.cz, vx: 0, vz: 0, jx: null, jz: null, noGol: 0, eixo: new THREE.Vector3(), q: new THREE.Quaternion() };
+    // as redes dos gols da quadra viram parede para o jogador (não dá para entrar no gol andando)
+    for (const s of [-1, 1]) { const gx = Q.cx + s * Q.gl; S.col.push({ x0: Math.min(gx, gx + s * Q.gp), x1: Math.max(gx, gx + s * Q.gp), z0: Q.cz - Q.gm - 0.1, z1: Q.cz + Q.gm + 0.1 }); }
+    posBola();
+  }
+  function posBola() { const B = S.bola; B.mesh.position.set(B.x, 0.1 + B.R, B.z); B.sombra.position.set(B.x, 0.12, B.z); }
+  function tickBola(dt) {
+    const B = S.bola, Q = S.quadra, J = S.jog; if (!B) return;
+    if (B.jx == null) { B.jx = J.x; B.jz = J.z; }
+    const cl = (v) => clamp(v, -7, 7), pvx = cl((J.x - B.jx) / Math.max(dt, 1e-3)), pvz = cl((J.z - B.jz) / Math.max(dt, 1e-3)); B.jx = J.x; B.jz = J.z;
+    // empurrão do jogador (só se ele estiver indo na direção da bola) — correndo ela vai mais longe
+    const dx = B.x - J.x, dz = B.z - J.z, d = Math.hypot(dx, dz), lim = B.R + 0.27;
+    if (!B.noGol && d < lim && d > 1e-4 && !J.sentado) {
+      const nx = dx / d, nz = dz / d, vn = pvx * nx + pvz * nz;
+      if (vn > 0.15) { const v = Math.min(8, vn * 1.45 + 0.6), at = B.vx * nx + B.vz * nz; if (v > at) { B.vx += (v - at) * nx; B.vz += (v - at) * nz; } }
+      B.x = J.x + nx * lim; B.z = J.z + nz * lim;
+    }
+    const sp = Math.hypot(B.vx, B.vz);
+    if (sp > 0.01) {
+      const k = Math.max(0, 1 - (0.55 + 0.9 / Math.max(sp, 0.6)) * dt); B.vx *= k; B.vz *= k;
+      const ox = B.x; B.x += B.vx * dt; B.z += B.vz * dt;
+      const ldx = Q.cx - Q.gl, rdx = Q.cx + Q.gl, naBoca = Math.abs(B.z - Q.cz) < Q.gm - B.R;
+      if (B.noGol) {                                                       // dentro do gol: a rede segura
+        const s = B.noGol, fundo = Q.cx + s * (Q.gl + Q.gp - B.R - 0.05);
+        if (s * (B.x - fundo) > 0) { B.x = fundo; B.vx = -B.vx * 0.15; }
+        if (Math.abs(B.z - Q.cz) > Q.gm - B.R) { B.z = Q.cz + Math.sign(B.z - Q.cz) * (Q.gm - B.R); B.vz = -B.vz * 0.3; }
+      } else if ((B.x < ldx && ox >= ldx) || (B.x > rdx && ox <= rdx)) {   // cruzou a linha do gol
+        if (naBoca) { B.noGol = B.x < Q.cx ? -1 : 1; gol(); }
+        else if (Math.abs(B.z - Q.cz) < Q.gm + 0.2) { B.x = ox; B.vx = -B.vx * 0.5; }   // bateu na trave / na rede por fora
+      }
+      if (!B.noGol) {                                                      // paredes (a grade em volta)
+        if (B.x < Q.x0 + B.R) { B.x = Q.x0 + B.R; B.vx = Math.abs(B.vx) * 0.55; } else if (B.x > Q.x1 - B.R) { B.x = Q.x1 - B.R; B.vx = -Math.abs(B.vx) * 0.55; }
+        if (B.z < Q.z0 + B.R) { B.z = Q.z0 + B.R; B.vz = Math.abs(B.vz) * 0.55; } else if (B.z > Q.z1 - B.R) { B.z = Q.z1 - B.R; B.vz = -Math.abs(B.vz) * 0.55; }
+        // por trás do gol a rede também é parede
+        for (const s of [-1, 1]) { const gx = Q.cx + s * Q.gl; if (s * (B.x - gx) > 0 && s * (B.x - gx) < Q.gp + B.R && Math.abs(B.z - Q.cz) < Q.gm + B.R) { if (Math.abs(ox - gx) * s > Q.gp) { B.x = gx + s * (Q.gp + B.R); B.vx = s * Math.abs(B.vx) * 0.4; } else { B.z = Q.cz + Math.sign(B.z - Q.cz) * (Q.gm + B.R); B.vz = -B.vz * 0.4; } } }
+      }
+      const ds = Math.hypot(B.vx, B.vz) * dt; if (ds > 1e-5) { B.eixo.set(B.vz, 0, -B.vx).normalize(); B.q.setFromAxisAngle(B.eixo, ds / B.R); B.mesh.quaternion.premultiply(B.q); }
+    } else { B.vx = B.vz = 0; }
+    posBola();
+  }
+  function gol() {
+    somGol();
+    if (S.modo !== 'livre' || S.jog.sentado) return;
+    const nomes = Object.keys(CELEBRACOES), c = CELEBRACOES[nomes[Math.floor(Math.random() * nomes.length)]];
+    S.modo = 'cena'; UI.ctl.hidden = true; S.jog.celeb = { c, t: 0, giro: (Math.random() < 0.5 ? -1 : 1) * (c.giro || 0) };
+  }
+  function tickComemoracao(dt) {
+    const J = S.jog, C = J.celeb; if (!C) return;
+    C.t += dt; J.anim = (J.anim || 0) + dt * 9;
+    const tc = C.t % C.c.dur, v = celebVel(C.c, tc) * 0.55;                // repete a comemoração até dar os 5 s (sem corte nenhum)
+    J.yawAlvo += C.giro * dt; J.yaw = J.yawAlvo;
+    const nx = J.x + Math.cos(J.yaw) * v * dt, nz = J.z - Math.sin(J.yaw) * v * dt;
+    if (v > 0.05) { if (livre(nx, nz)) { J.x = nx; J.z = nz; } else J.yawAlvo += 1.2; }
+    if (C.t >= 5) {
+      J.celeb = null; liberar();
+      const B = S.bola, Q = S.quadra; B.noGol = 0; B.vx = B.vz = 0; B.x = Q.cx; B.z = Q.cz; posBola();   // a bola volta para o meio
+    }
+  }
+  function somGol() {
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    try { const t0 = A.currentTime; [523, 659, 784, 1046].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.06, t0 + i * 0.11); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.11 + 0.25); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.11); o.stop(t0 + i * 0.11 + 0.27); }); } catch (e) { /* sem som */ }
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) TREINO no primeiro society: dois batem pênalti, um goleiro defende (ou não)
+  function criarTreino(f2) {
+    const rnd = semente(808), F = S.societys[0], gz = F.cz + 15, spot = { x: F.cx, z: F.cz + 8 };
+    const bat = [criarPessoa(f2, rnd, false), criarPessoa(f2, rnd, rnd() < 0.4)], gol_ = criarPessoa(f2, rnd, false);
+    const esp = [{ x: F.cx - 1.6, z: F.cz + 3 }, { x: F.cx + 1.6, z: F.cz + 3 }];
+    bat.forEach((A, i) => { A.tipo = 'treino'; A.x = esp[i].x; A.z = esp[i].z; A.yaw = A.yawAlvo = -Math.PI / 2; A.y = 0.08; S.npcs.push(A); });
+    gol_.tipo = 'treino'; gol_.goleiro = true; gol_.x = F.cx; gol_.z = gz - 0.5; gol_.yaw = gol_.yawAlvo = Math.PI / 2; gol_.y = 0.08; S.npcs.push(gol_);
+    const mesh = new THREE.Mesh(guardar(new THREE.SphereGeometry(0.15, 12, 8)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) })));
+    S.grupo.add(mesh);
+    S.treino = { F, gz, spot, bat, gol: gol_, esp, vez: 0, fase: 'anda', t: 0, bola: { mesh, sombra: sombraAtor(0.17), x: spot.x, y: 0.23, z: spot.z, vx: 0, vy: 0, vz: 0 } };
+  }
+  function tickTreino(dt) {
+    const T_ = S.treino; if (!T_) return;
+    const B = T_.bola, A = T_.bat[T_.vez], K = T_.gol, g = 9.8, chao = 0.08 + 0.15;
+    const ir = (P, x, z, v) => { const dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz); if (d < 0.05) { P.andando = false; return true; } const st = Math.min(d, v * dt); P.x += dx / d * st; P.z += dz / d * st; P.yawAlvo = Math.atan2(-dz, dx); P.andando = true; P.vel = v; return false; };
+    T_.t += dt;
+    if (T_.fase === 'anda') { if (ir(A, T_.spot.x - 0.25, T_.spot.z - 2.4, 1.6)) { A.yawAlvo = -Math.PI / 2; T_.fase = 'mira'; T_.t = 0; } }
+    else if (T_.fase === 'mira') { A.andando = false; if (T_.t > 1.2) { T_.fase = 'corre'; T_.t = 0; } }
+    else if (T_.fase === 'corre') { if (ir(A, T_.spot.x - 0.15, T_.spot.z - 0.45, 3.4)) { T_.fase = 'chuta'; T_.t = 0; A.chuteT = 0; } }
+    else if (T_.fase === 'chuta') {
+      A.andando = false; A.chuteT = T_.t;
+      if (T_.t > 0.18 && !B.saiu) {                                        // a bola sai
+        B.saiu = true; const tx = T_.F.cx + (Math.random() - 0.5) * 5.2, ty = 0.3 + Math.random() * 1.7, dist = T_.gz - B.z, vz = 13 + Math.random() * 5, tt = dist / vz;
+        B.vz = vz; B.vx = (tx - B.x) / tt; B.vy = (ty - B.y + 0.5 * g * tt * tt) / tt; K.alvoX = tx; K.reage = 0.22;
+      }
+      if (T_.t > 0.6) { A.chuteT = -1; T_.fase = 'volta'; T_.t = 0; }
+    } else if (T_.fase === 'volta') { const e = T_.esp[T_.vez]; if (ir(A, e.x, e.z, 1.5) && T_.t > 2.5) { A.yawAlvo = -Math.PI / 2; T_.fase = 'devolve'; T_.t = 0; } }
+    else if (T_.fase === 'devolve') {                                       // o goleiro rola a bola de volta para a marca
+      if (!B.rolando) { const dx = T_.spot.x - B.x, dz = T_.spot.z - B.z, d = Math.hypot(dx, dz) || 1, v = Math.sqrt(2 * 2.2 * d); B.vx = dx / d * v; B.vz = dz / d * v; B.vy = 0; B.y = chao; B.rolando = true; }
+      if (Math.hypot(B.vx, B.vz) < 0.05) { B.x = T_.spot.x; B.z = T_.spot.z; B.vx = B.vz = 0; B.rolando = false; B.saiu = false; B.defendida = false; T_.vez = 1 - T_.vez; T_.fase = 'anda'; T_.t = 0; }
+    }
+    // goleiro: anda de lado até onde acha que a bola vai, com um tempinho de reação
+    if (K.reage > 0) K.reage -= dt; const kx = K.reage > 0 || K.alvoX == null ? T_.F.cx : clamp(K.alvoX, T_.F.cx - 2.2, T_.F.cx + 2.2);
+    { const dx = kx - K.x; K.x += clamp(dx, -3.5 * dt, 3.5 * dt); K.z = T_.gz - 0.5; K.andando = Math.abs(dx) > 0.05; K.vel = 2; K.yawAlvo = Math.PI / 2; K.mira = B.saiu && !B.rolando; }
+    // bola
+    if (B.rolando) { const sp = Math.hypot(B.vx, B.vz), k = Math.max(0, sp - 2.2 * dt) / (sp || 1); B.vx *= k; B.vz *= k; B.x += B.vx * dt; B.z += B.vz * dt; }
+    else if (B.saiu) {
+      B.vy -= g * dt; B.x += B.vx * dt; B.y += B.vy * dt; B.z += B.vz * dt;
+      if (B.y < chao) { B.y = chao; B.vy = Math.abs(B.vy) * 0.45; B.vx *= 0.8; B.vz *= 0.8; if (B.vy < 0.4) B.vy = 0; }
+      if (!B.defendida && Math.abs(B.z - K.z) < 0.35 && Math.abs(B.x - K.x) < 0.75 && B.y < 2.1) { B.defendida = true; B.vz = -Math.abs(B.vz) * 0.35; B.vx = (Math.random() - 0.5) * 3; B.vy = 2; }
+      if (B.z > T_.gz && Math.abs(B.x - T_.F.cx) < 2.5 && B.y < 2.2) { if (B.z > T_.gz + 1.05) { B.z = T_.gz + 1.05; B.vz = -B.vz * 0.15; B.vx *= 0.3; } }
+      else if (B.z > T_.F.r.z1 - 0.3) { B.z = T_.F.r.z1 - 0.3; B.vz = -B.vz * 0.3; }
+      B.x = clamp(B.x, T_.F.r.x0 + 0.3, T_.F.r.x1 - 0.3);
+      if (B.z < T_.F.r.z0 + 0.3) { B.z = T_.F.r.z0 + 0.3; B.vz = Math.abs(B.vz) * 0.3; }
+      if (B.y <= chao + 0.001) { const sp = Math.hypot(B.vx, B.vz), k = Math.max(0, sp - 3 * dt) / (sp || 1); B.vx *= k; B.vz *= k; }
+    }
+    B.mesh.position.set(B.x, B.y, B.z); B.sombra.position.set(B.x, 0.1, B.z);
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) o SEU VALDEMAR, atrás do balcão do lanche
+  function criarValdemar(f2) {
+    const rnd = semente(1960);
+    const ap = { pele: '#c98e65', cabelo: '#b9b6ae', estilo: 2, rosto: 0, labio: 3, corBarba: '#9a968c', barba: Math.max(0, ESTILOS_BARBA.findIndex((b) => /bigode/i.test(b.nome))) };
+    let m = null, opt = null;
+    try { if (f2 && f2.modeloPessoa) { const r = f2.modeloPessoa({ ap, fem: false, roupa: 0, cores: ['#f2f2ee', '#2a3f66', '#f2f2ee', '#f2f2ee'] }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] Valdemar:', e); }
+    if (!m) { opt = Object.assign({ camisa: '#f2f2ee', listra: '#f2f2ee', gola: '#f2f2ee', calcao: '#2a3f66', meia: '#2a3f66', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
+    const av = new Geo(); av.box(0.05, 0.62, 0.46, '#e8e2d2', 0.17, 0.55, 0); av.box(0.04, 0.05, 0.6, '#c8352b', 0.18, 1.0, 0);   // avental com a faixa vermelha
+    m.corpo.add(av.malha(MAT));
+    S.grupo.add(m.raiz); S.meus.add(m); void rnd;
+    const V = { m, opt, blob: sombraAtor(0.3), x: S.balcao.x, z: S.balcao.z, y: 0, yaw: Math.PI / 2, yawAlvo: Math.PI / 2, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, tipo: 'valdemar' };
+    S.valdemar = V; S.npcs.push(V);
   }
 
   // ------------------------------------------------------------------ carros
@@ -732,12 +1061,33 @@
   function poseAtor(A, dt) {
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 10), es = A.opt.escala || 1;
     usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0;
+    if (m.cabecaLigada) usarCabeca(m, 0);
+    if (A.celeb) {                                                   // (4.9.3) comemoração de gol (as mesmas poses da partida)
+      const C = A.celeb, tc = C.t % C.c.dur, P = celebPose(C.c, tc), corre = tc < C.c.swing ? Math.sin(A.anim || 0) * 0.9 : 0;
+      r.position.y = A.y + P.y; r.rotation.x = P.roll; m.corpo.rotation.z = P.lean;
+      m.bracoE.rotation.z = P.aLz; m.bracoD.rotation.z = P.aRz; m.bracoE.rotation.x = P.aLx; m.bracoD.rotation.x = P.aRx;
+      m.pernaE.rotation.z = P.lLz + corre; m.pernaD.rotation.z = P.lRz - corre; usarJoelhos(m, P.jL || 0, P.jR || 0);
+      r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z);
+      return;
+    }
     if (A.sentado) {                                                 // sentado no banco (as mãos gesticulam quando fala)
       r.position.y = A.y + A.assento - 0.67 * es; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5);
       const f = Math.sin(A.t * 5.5) * 0.3;
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? 0.55 + f * 0.4 : 0.4, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? 1.0 + f : 0.4, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.8 + f);
-    } else if (A.andando) {
+      if (A.comendo > 0) {                                           // (4.9.3) comendo: as duas mãos levam o lanche à boca e a cabeça balança mastigando
+        m.bracoE.rotation.z = 1.25; m.bracoD.rotation.z = 1.25; m.bracoE.rotation.x = -0.32; m.bracoD.rotation.x = 0.32;
+        const mord = Math.max(0, Math.sin(A.t * 7)); usarCotovelo(m.bracoE, 0, 1.55 + mord * 0.25); usarCotovelo(m.bracoD, 0, 1.55 + mord * 0.25);
+        usarCabeca(m, -0.05 + Math.sin(A.t * 9) * 0.12);
+      }
+    } else if (A.tipo === 'rosca' && !A.andando) {                   // (4.9.4) academia: rosca com halteres
+      const c = Math.max(0, Math.sin(A.t * 2.4)); m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
+      usarCotovelo(m.bracoE, 0, 0.2 + c * 1.9); usarCotovelo(m.bracoD, 0, 0.2 + c * 1.9); r.position.y = A.y;
+    } else if (A.chuteT >= 0) {                                      // (4.9.3) chute do treino: perna de trás e depois para a frente
+      const t = A.chuteT, pr = t < 0.16 ? -t / 0.16 * 0.9 : -0.9 + Math.min(1, (t - 0.16) / 0.14) * 2.2;
+      m.pernaD.rotation.z = pr; m.pernaE.rotation.z = -0.15; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.5; m.bracoE.rotation.z = 0.3;
+      r.position.y = A.y;
+    } else if (A.andando && !A.goleiro) {
       const k = A.correndo ? 1.1 : 0.75; A.fase += dt * A.vel * (A.correndo ? 2.9 : 4.6); const s = Math.sin(A.fase);
       m.pernaE.rotation.z = s * k; m.pernaD.rotation.z = -s * k; m.bracoE.rotation.z = -s * k * 0.8; m.bracoD.rotation.z = s * k * 0.8;
       if (A.correndo) { usarCotovelo(m.bracoE, 0, 1.3); usarCotovelo(m.bracoD, 0, 1.3); }
@@ -745,6 +1095,7 @@
     } else {
       m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, 0, e);
       const f = Math.sin(A.t * 5), g = Math.sin(A.t * 5 + 2);
+      if (A.goleiro) { usarJoelhos(m, -0.45, -0.45); m.bracoE.rotation.x = 0.75; m.bracoD.rotation.x = -0.75; m.bracoE.rotation.z = 0.35; m.bracoD.rotation.z = 0.35; r.position.y = A.y - 0.06; m.bracoE.rotation.y = 0; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return; }
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? f * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? g * 0.35 + 0.45 : 0, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.6 + g * 0.3);
       r.position.y = A.y;
@@ -808,14 +1159,15 @@
     S.rede = nos;
   }
   function livreNPC(x, z, A, semJog) {
-    if (x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) return false;
-    if (z > AV.z0 - 0.05 && z < AV.z1 + 0.05 && !(x > 7.7 && x < 11.9)) return false;      // no asfalto, só pela faixa de pedestre
+    if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
+    else if (x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) return false;
+    if (!S.dentro && z > AV.z0 - 0.05 && z < AV.z1 + 0.05 && !(x > 7.7 && x < 11.9)) return false;      // no asfalto, só pela faixa de pedestre
     const rr = 0.28;
     for (const b of S.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     for (const c of S.circ) if (Math.hypot(x - c.x, z - c.z) < c.r + rr) return false;
-    { const ex = (x - LAGO.cx) / (LAGO.rx - 0.4), ez = (z - LAGO.cz) / (LAGO.rz - 0.4); if (ex * ex + ez * ez < 1) return false; }
-    if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
-    for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
+    if (!S.dentro) { const ex = (x - LAGO.cx) / (LAGO.rx - 0.4), ez = (z - LAGO.cz) / (LAGO.rz - 0.4); if (ex * ex + ez * ez < 1) return false; }
+    if (!S.dentro && S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
+    if (!S.dentro) for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
     if (!semJog && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;
     for (const B of S.npcs) if (B !== A && Math.hypot(x - B.x, z - B.z) < 0.58) return false;
     return true;
@@ -853,13 +1205,13 @@
     }
     const cx = PRACA_C.x, cz = PRACA_C.z;
     // 4 sentados em dois bancos da praça, conversando
-    for (const [bx, bz, frente] of [[cx - 6.5, cz + 3, 1], [cx + 6.5, cz - 3, -1]]) {
+    for (const B of [S.bancos[2], S.bancos[1]]) {
       const par = [];
-      for (const s of [-1, 1]) {
-        const A = criarPessoa(f2, rnd, rnd() < 0.5); A.tipo = 'senta'; A.sentado = true; A.x = bx + s * 0.45; A.z = bz - frente * 0.05;
-        A.yaw = A.yawAlvo = Math.atan2(frente, 0) + s * frente * 0.4;      // de frente para o caminho, virados um para o outro
+      B.lugares.forEach((L, i) => {
+        const A = criarPessoa(f2, rnd, rnd() < 0.5), s = i ? -1 : 1; A.tipo = 'senta'; A.sentado = true; A.x = L.x; A.z = L.z; A.assento = L.h; L.ocupado = A;
+        A.yaw = A.yawAlvo = Math.atan2(-L.fz, L.fx + s * 0.35 * (L.fz ? 1 : 0)) ;   // de frente para o caminho, virados um para o outro
         S.npcs.push(A); par.push(A);
-      }
+      });
       S.conversas.push({ a: par[0], b: par[1], t: 0, quem: 0, prox: 2 });
     }
     // 2 em pé conversando (na praça e no adro da igreja)
@@ -880,23 +1232,39 @@
     for (const A of S.npcs) {
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
+      else if (A.tipo === 'vaga') vagar(A, dt);
+      else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
       if (!A.sentado) { const ty = altura(A.x, A.z); A.y += (ty - A.y) * Math.min(1, dt * 18); }
       poseAtor(A, dt);
     }
   }
 
+  // (4.9.4) dentro dos interiores: anda até um ponto qualquer da área, para um pouco e escolhe outro
+  function vagar(A, dt) {
+    if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
+    if (!A.alvoV) { const a = A.area; A.alvoV = { x: a.x0 + Math.random() * (a.x1 - a.x0), z: a.z0 + Math.random() * (a.z1 - a.z0) }; }
+    const dx = A.alvoV.x - A.x, dz = A.alvoV.z - A.z, d = Math.hypot(dx, dz);
+    if (d < 0.4) { A.alvoV = null; A.espera = 1.5 + Math.random() * 4; A.andando = false; return; }
+    const v = A.vel * dt; let moveu = false;
+    for (const ang of [0, 0.5, -0.5, 1.0, -1.0, 1.5, -1.5]) { const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
+      if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); moveu = true; break; } }
+    A.andando = moveu; if (!moveu) { A.bloq = (A.bloq || 0) + dt; if (A.bloq > 1.2) { A.alvoV = null; A.bloq = 0; } }
+  }
+
   // ------------------------------------------------------------------ física do jogador
   function altura(x, z) {
     for (const p of S.pisos) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return p.y;
-    for (const c of CALCADAS) if (x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return c.y;
+    if (!S.dentro) for (const c of CALCADAS) if (x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return c.y;
     return 0;
   }
   const RJ = 0.3;
   function livre(x, z) {
-    if (x < LIM.x0 + 1.5 || x > LIM.x1 - 1.5 || z < LIM.z0 + 1.5 || z > LIM.z1 - 1.5) return false;
+    if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
+    else if (x < LIM.x0 + 1.5 || x > LIM.x1 - 1.5 || z < LIM.z0 + 1.5 || z > LIM.z1 - 1.5) return false;
     for (const b of S.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     for (const c of S.circ) if (Math.hypot(x - c.x, z - c.z) < c.r + RJ) return false;
+    if (S.dentro) { for (const A of S.npcs) if (Math.hypot(x - A.x, z - A.z) < 0.58) return false; return true; }
     if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     const naPier = x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15;
     if (!naPier) { const ex = (x - LAGO.cx) / (LAGO.rx - 0.4), ez = (z - LAGO.cz) / (LAGO.rz - 0.4); if (ex * ex + ez * ez < 1) return false; }
@@ -922,6 +1290,7 @@
     if (T_.KeyQ) S.cam.yaw += dt * 1.8; if (T_.KeyE) S.cam.yaw -= dt * 1.8;
     const corre = e.m > 0.12 && (T_.ShiftLeft || T_.ShiftRight || (UI.joy.id != null && e.m >= LIMIAR_CORRER));
     UI.pad.classList.toggle('corre', !!corre);
+    if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0)) levantar(); return; }      // (4.9.3) sentado: empurrar o direcional levanta
     if (e.m < 0.12) { J.andando = false; J.correndo = false; return; }
     const sy = Math.sin(S.cam.yaw), cy = Math.cos(S.cam.yaw);
     const fx = -sy, fz = -cy, rx = cy, rz = -sy;                     // frente (da câmera para o jogador) e direita
@@ -942,7 +1311,8 @@
       else { J.x += dx / d * st; J.z += dz / d * st; J.yawAlvo = Math.atan2(-dz, dx); J.andando = true; }
     }
     const dy = ((J.yawAlvo - J.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; J.yaw += dy * Math.min(1, dt * 10);
-    const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18);
+    if (J.sentado) J.y = 0; else { const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18); }
+    if (J.comendo > 0) J.comendo -= dt;
     poseAtor(J, dt);
     J.anel.position.set(J.x, J.y + 0.03, J.z);
   }
@@ -1049,6 +1419,171 @@
   function atualizarCoresMapa() { for (const b of UI.cores.children) b.classList.toggle('on', b.dataset.cor === (S.dados.corMarca || CORES_MARCA[0])); UI.remover.disabled = !S.marca; }
   const som = () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); };
 
+  // ------------------------------------------------------------------ (4.9.3) INTERAGIR: sentar em bancos/cadeiras/banquetas, o balcão do seu Valdemar e o hospital
+  // (4.9.4) as portas dos lugares (do lado de fora, na calçada) e o nome de cada um
+  const PORTAS = [
+    { nome: 'cinema', x: -43.8, z: -4.4, sai: -Math.PI / 2 }, { nome: 'cafeteria', x: -24.7, z: -4.4, sai: -Math.PI / 2 }, { nome: 'supermercado', x: 45.0, z: -4.4, sai: -Math.PI / 2 },
+    { nome: 'hospital', x: -104, z: -4.4, sai: -Math.PI / 2 }, { nome: 'bar', x: -100.2, z: 8.6, sai: Math.PI / 2 }, { nome: 'pizzaria', x: 1.2, z: 8.6, sai: Math.PI / 2 },
+    { nome: 'restaurante', x: 23.6, z: 8.6, sai: Math.PI / 2 }, { nome: 'lanche', x: 40.4, z: 8.6, sai: Math.PI / 2 }, { nome: 'academia', x: 76.4, z: 8.6, sai: Math.PI / 2 },
+  ];
+  const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia' };
+  // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
+  async function entrarEm(P) {
+    const I = S.interiores, J = S.jog; if (!I) return;
+    await preto(true, 380);
+    const R = I.construir(P.nome, { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro });
+    if (!R) { await preto(false, 300); return; }
+    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P };
+    S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
+    S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = [];
+    S.dentro = Object.assign({ nome: P.nome }, R);
+    for (const o of R.ocl || []) oclusor(o.b, o.mesh);
+    R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
+    const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
+    const rnd = semente(P.nome.length * 31 + 7);
+    for (const p of R.pessoas) {
+      const A = criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
+      if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
+      else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
+      else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
+      S.npcs.push(A);
+    }
+    S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
+    J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
+    S.cam.yaw = 0; S.cam.dist = R.cam.dist; S.cam.pitch = R.cam.pitch; S.cam.snap = true;
+    scene.background = new THREE.Color(R.fundo); if (scene.fog) { scene.fog.near = 200; scene.fog.far = 400; }
+    UI.btnMapa.hidden = true; UI.seta.hidden = true; if (S.setaAlvo) S.setaAlvo.visible = false; S.setaAlvo = null; if (S.bola) S.bola.jx = null;
+    await preto(false, 380);
+  }
+  async function sairDoLugar() {
+    const F = S.fora, J = S.jog; if (!F) return;
+    await preto(true, 380);
+    if (J.sentado) levantar();
+    for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
+    S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
+    const g = S.grupo; scene.remove(g);
+    g.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
+    Object.assign(S, { col: F.col, circ: F.circ, pisos: F.pisos, assentos: F.assentos, npcs: F.npcs, conversas: F.conversas, camBox: F.camBox, oclusores: F.oclusores, grupo: F.grupo });
+    S.dentro = null; S.fora = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;
+    const P = F.porta; J.x = P.x + Math.cos(P.sai) * 0.4; J.z = P.z - Math.sin(P.sai) * 0.4; J.yaw = J.yawAlvo = P.sai; J.y = altura(J.x, J.z);
+    Object.assign(S.cam, F.cam); S.cam.snap = true;
+    scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
+    UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
+    await preto(false, 380);
+  }
+  function alvos() {
+    const J = S.jog, v = [];
+    if (J.sentado) return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
+    for (const a of S.assentos) if (!a.ocupado) v.push({ x: a.x, z: a.z, r: 1.15, txt: a.lanche ? T('Sentar no balcão') : T('Sentar'), fn: () => sentar(a), y: a.h + 1.3 });
+    if (S.dentro) {
+      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: sairDoLugar, y: 2.6 });
+      for (const e of D.extras) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : null, y: 2.4 });
+    } else if (S.interiores) for (const P of PORTAS) v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
+    return v;
+  }
+  function alvoAtual() {
+    if (!S || S.modo !== 'livre') return null;
+    const J = S.jog; let best = null, bs = 1e9;
+    for (const a of alvos()) { const d = Math.hypot(a.x - J.x, a.z - J.z); if (d > a.r) continue; if (d < bs) { bs = d; best = a; } }
+    return best;
+  }
+  function atualizarAlvo() {
+    const a = S.modo === 'livre' ? alvoAtual() : null, txt = a ? a.txt : '';
+    if (UI.dica.textContent !== txt) UI.dica.textContent = txt;
+    UI.btn.disabled = !a; const bt = T('Interagir'); if (UI.btn.textContent !== bt) UI.btn.textContent = bt;
+    if (!S.setaAlvo) { const m = new THREE.Mesh(guardar(new THREE.OctahedronGeometry(0.16)), guardar(new THREE.MeshBasicMaterial({ color: 0xf0a020 }))); m.scale.y = 1.6; S.grupo.add(m); S.setaAlvo = m; }
+    S.setaAlvo.visible = !!a && !S.jog.sentado;
+    if (a) { S.setaAlvo.position.set(a.x, (a.y || 1.6) + Math.sin(S.t * 4) * 0.07, a.z); S.setaAlvo.rotation.y = S.t * 2; }
+  }
+  async function interagir() {
+    if (!S || S.modo !== 'livre') return;
+    const a = alvoAtual(); if (!a) return;
+    som(); S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    try { await a.fn(a); } catch (e) { console.error(e); }
+    if (S && S.ativo && S.modo === 'cena' && UI.ficha.hidden) liberar();
+  }
+  async function sentar(a) {
+    const J = S.jog, p = pontoDeLevantar(a);
+    if (Math.hypot(J.x - p.x, J.z - p.z) > 0.25) await andar(J, [[p.x, p.z]], 2.4);
+    J.sentado = true; J.assento = a.h; J.x = a.x; J.z = a.z; J.yaw = J.yawAlvo = a.yaw; J.y = 0; a.ocupado = J; S.sentadoEm = a;
+    if (a.lanche) await atendimento();
+  }
+  function levantar() {
+    const J = S.jog, a = S.sentadoEm; if (!J.sentado) return;
+    const p = a ? pontoDeLevantar(a) : { x: J.x, z: J.z };
+    J.sentado = false; J.x = p.x; J.z = p.z; if (a) a.ocupado = null; S.sentadoEm = null;
+  }
+  async function fala(quem, texto) {
+    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : null;
+    if (A) A.fala = true;
+    await Dialogo.mostrar([texto], { nome: quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : '', voz: quem === 'val' ? 1 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2), manter: true });
+    if (A) A.fala = false;
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) o cardápio do seu Valdemar, a FOME do dia e o dinheiro
+  // enche = quanto tira da fome (a fome do dia vale 2). Tudo daqui é comida NÃO saudável.
+  const CARDAPIO = [
+    { id: 'podrao', nome: 'X-podrão', preco: 20, enche: 1 },
+    { id: 'meiofrio', nome: 'Cachorro meio-frio', preco: 10, enche: 0.5 },
+    { id: 'especial', nome: 'Cachorro-quente especial', preco: 15, enche: 1 },
+    { id: 'quasetudo', nome: 'X-quase-tudo', preco: 30, enche: 2 },
+    { id: 'semsalada', nome: 'X-sem-salada com refri', preco: 22, enche: 1.5 },
+  ];
+  const FOME_DO_DIA = 2;
+  // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
+  function prepararDia(d) {
+    d.dia = d.dia || 1; d.mes = d.mes || 1;
+    if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
+    if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
+  }
+  async function atendimento() {
+    const d = S.dados, V = S.valdemar, J = S.jog;
+    V.yawAlvo = Math.atan2(-(J.z - V.z), J.x - V.x);
+    if (!d.conheceValdemar) { await fala('val', T('Opa, freguês novo! Eu sou o Valdemar, prazer. Aqui é o melhor lanche da cidade!')); d.conheceValdemar = true; }
+    await fala('val', T('E aí, o que vai ser hoje?'));
+    if ((d.fome || 0) <= 0) { await fala('jog', T('Valeu, seu Valdemar, mas eu tô cheio. Hoje não cabe mais nada.')); Dialogo.esconder(); return; }
+    Dialogo.esconder();
+    const ops = CARDAPIO.map((c) => c.nome + ' — ' + c.preco + ' ' + T('fakes')).concat([T('Nada, obrigado')]);
+    const i = await Escolha.mostrar(Tf('Cardápio do seu Valdemar (você tem {0} fakes)', d.fakes), ops);
+    const c = CARDAPIO[i];
+    if (!c) { await fala('val', T('Tranquilo, fica à vontade!')); Dialogo.esconder(); return; }
+    if (d.fakes < c.preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+    d.fakes -= c.preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(c.preco);
+    await fala('val', Tf('Saindo um {0}!', c.nome)); Dialogo.esconder();
+    await esperar(1400);
+    J.comendo = 3.6; await esperar(3700);
+    d.fome = Math.max(0, (d.fome || 0) - c.enche);
+    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1;
+    Espectros.mover('saudavel', -4, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // não saudável; e a próxima partida fica mais pesada
+    if (S.missao) { S.missao = ''; recolherMissao(); }                                                 // a missão de achar comida acabou
+    gravar('chegada');
+    await fala('jog', d.fome <= 0 ? T('Ufa... agora sim, matei a fome!') : T('Hmm... ainda dava para comer mais um pouco.')); Dialogo.esconder();
+  }
+  function somDinheiro() {                                             // "plim-plim" de moeda saindo
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    try { const t0 = A.currentTime; [[1318, 0], [1760, 0.07], [1318, 0.16]].forEach(([f, dt]) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.045, t0 + dt); g.gain.exponentialRampToValueAtTime(0.001, t0 + dt + 0.12); o.connect(g); g.connect(A.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.13); }); } catch (e) { /* sem som */ }
+  }
+  function gastoNaTela(v) {
+    const el = document.createElement('div'); el.textContent = '−' + v; el.style.cssText = 'position:fixed;z-index:12;right:max(60px,env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));font:700 16px/1 var(--font-display);color:#ff6a5a;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.2s ease,opacity 1.2s ease;';
+    UI.hud.parentNode.appendChild(el); requestAnimationFrame(() => { el.style.transform = 'translateY(22px)'; el.style.opacity = '0'; }); setTimeout(() => el.remove(), 1300);
+  }
+
+  // ------------------------------------------------------------------ (4.9.3) HOSPITAL: a ficha médica (a saúde só aparece aqui)
+  function abrirFicha() {
+    S.pausado = true; const F = UI.ficha, d = S.dados;
+    F.querySelector('.cdTit').textContent = T('Ficha médica');
+    F.querySelector('.cdSub').textContent = T('A enfermeira confere como você está.');
+    F.querySelector('.cdBarras').innerHTML = ['saudavel', 'ativo'].map((e) => { const D = ESPECTROS[e], v = Espectros.valor(e); return '<div class="cdEixo"><span>' + T(D.polos[1]) + '</span><span></span><span>' + T(D.polos[0]) + '</span><div class="cdTrilho"><i style="left:' + (50 + v / 2) + '%"></i></div></div>'; }).join('');
+    F.querySelector('.cdFrase').textContent = Espectros.frase(['saudavel', 'ativo']);
+    const cond = [];
+    if (Espectros.condicao('refeicaoPesada')) cond.push(T('Refeição pesada: no próximo jogo você corre menos e recupera o fôlego mais devagar.'));
+    if ((d.ruinsNoMes && d.ruinsNoMes.n) > 0) cond.push(Tf('Lanches não saudáveis neste mês: {0}.', d.ruinsNoMes.n));
+    if (!cond.length) cond.push(T('Nenhuma observação por enquanto.'));
+    F.querySelector('.cdCond').innerHTML = cond.map((c) => '<li></li>').join(''); F.querySelectorAll('.cdCond li').forEach((li, i) => { li.textContent = cond[i]; });
+    F.querySelector('.cdFecharF').textContent = T('Fechar');
+    F.hidden = false;
+  }
+
   // ------------------------------------------------------------------ interface (joystick, arrastar a câmera, missão recolhível, mapa, pausa, dinheiro, setinha)
   function montarUI() {
     if (UI) return UI;
@@ -1063,6 +1598,22 @@
 #cdCtl .cdPad { position: absolute; left: max(18px, env(safe-area-inset-left, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 112px; height: 112px; border-radius: 50%; pointer-events: auto; touch-action: none;
   background: rgba(21, 13, 6, 0.38); border: 4px solid rgba(255, 240, 200, 0.55); box-sizing: border-box; transition: border-color 0.15s; }
 #cdCtl .cdPad.corre { border-color: #f0a020; }
+#cdCtl .cdDica { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); max-width: 46vw; text-align: right; font: 700 13px/1.2 var(--font-display); letter-spacing: 0.04em;
+  color: #fff0c8; text-shadow: 0 2px 0 #2a1206, 0 0 6px #000; min-height: 16px; }
+#cdCtl .cdBtn { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 128px; pointer-events: auto; --p: var(--p3, 3px); height: 52px; font-size: 14px; }
+#cdCtl .cdBtn:disabled { opacity: 0.45; }
+#cdFicha { position: fixed; inset: 0; z-index: 14; display: grid; place-items: center; background: rgba(6, 4, 2, 0.6); padding: 10px; box-sizing: border-box; }
+#cdFicha[hidden] { display: none; }
+#cdFicha .cdCard { width: min(460px, 100%); max-height: 96%; overflow: auto; background: #f4f6f8; border: 4px solid #2f6f9a; color: #1c2a36; padding: 12px 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
+#cdFicha h3 { margin: 0; font: 700 15px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #c8352b; }
+#cdFicha .cdSub, #cdFicha .cdFrase { margin: 0; font: 400 13px/1.35 var(--font-body); }
+#cdFicha .cdFrase { font-weight: 700; }
+#cdFicha .cdEixo { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px; align-items: center; font: 700 11px/1.2 var(--font-display); }
+#cdFicha .cdEixo span:last-child { text-align: right; }
+#cdFicha .cdTrilho { grid-column: 1 / -1; position: relative; height: 12px; background: linear-gradient(90deg, #e8a0a0, #e8e8e0 50%, #a8d8a0); border: 2px solid #1c2a36; }
+#cdFicha .cdTrilho i { position: absolute; top: -5px; width: 6px; height: 18px; margin-left: -3px; background: #1c2a36; }
+#cdFicha .cdCond { margin: 0; padding-left: 18px; font: 400 12px/1.35 var(--font-body); }
+#cdFicha .pxBtn { --p: var(--p2, 2px); height: 38px; padding: 0 14px; font-size: 12px; }
 #cdCtl .cdKnob { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: #f0a020; border: 4px solid #2a1206; box-sizing: border-box; }
 #cdHud { position: fixed; z-index: 9; right: max(10px, env(safe-area-inset-right, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); display: flex; gap: 6px; align-items: center; }
 #cdHud .cdGrana { display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 10px 0 6px; background: rgba(42, 18, 6, 0.86); border: 3px solid #f0a020; color: #fff0c8;
@@ -1093,7 +1644,7 @@
 #cdMapa .cdCard, #cdPausa .cdCard { background: #2a1206; border: 4px solid #f0a020; color: #fff0c8; padding: 10px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; max-height: 96%; overflow: auto; --mx-ink: #2a1206; --mx-creme: #fff0c8; }
 #cdMapa .cdCard { width: min(760px, 100%); }
 #cdMapa h3, #cdPausa h3 { margin: 0; font: 700 15px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #f0a020; }
-#cdMapa canvas { width: auto; height: auto; max-width: 100%; max-height: calc(100vh - 215px); align-self: center; image-rendering: pixelated; border: 2px solid #f2e6c8; cursor: crosshair; touch-action: none; display: block; }
+#cdMapa canvas { width: auto; height: auto; max-width: 100%; max-height: calc(100vh - 215px); align-self: center; image-rendering: pixelated; border: 2px solid #f2e6c8; cursor: crosshair; touch-action: pan-x pan-y; display: block; }
 #cdMapa p { margin: 0; font: 400 12px/1.3 var(--font-body); color: #e8d8b0; }
 #cdMapa .cdLinha { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 #cdMapa .cdCores { display: flex; gap: 6px; }
@@ -1107,15 +1658,16 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     document.head.appendChild(css);
     const raiz = $('raizJogo') || document.body, div = (id, html) => { const d = document.createElement('div'); d.id = id; d.hidden = true; if (html) d.innerHTML = html; return d; };
     const preto = div('cdPreto'), arrasto = div('cdArrasto'), aviso = div('cdAviso');
-    const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div>');
+    const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
+    const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
     const hud = div('cdHud', '<div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
     const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdMenu"></button></div></div>');
-    raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa);
+    raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
-    UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
+    UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
       btnPausa: q(hud, '.cdPausar'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
@@ -1145,6 +1697,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if (e.repeat || S.modo !== 'livre') return;
       if (e.code === 'Escape' || e.code === 'KeyP') { if (!UI.mapa.hidden) fecharMapa(); else alternarPausa(); }
       if (e.code === 'KeyM') { if (UI.mapa.hidden) abrirMapa(); else fecharMapa(); }
+      if ((e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyF') && UI.mapa.hidden && UI.pausa.hidden) { e.preventDefault(); interagir(); }
     });
     window.addEventListener('keyup', (e) => { UI.teclas[e.code] = false; });
     // missão: aparece inteira por 5 s e recolhe num quadradinho; tocar no quadradinho mostra de novo
@@ -1154,11 +1707,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.fechar.addEventListener('click', fecharMapa);
     UI.remover.addEventListener('click', () => { som(); definirMarca(null); atualizarCoresMapa(); desenharMapa(); });
     UI.cores.addEventListener('click', (e) => { const b = e.target.closest('.cdCor'); if (!b || !S) return; som(); S.dados.corMarca = b.dataset.cor; if (S.marca) definirMarca(S.marca.x, S.marca.z); atualizarCoresMapa(); desenharMapa(); });
-    UI.mapaCv.addEventListener('pointerdown', (e) => {
+    UI.mapaCv.addEventListener('click', (e) => {                       // (4.9.3) clique/toque solto marca; arrastar o dedo rola o mapa (antes todo toque marcava)
       if (!S) return; const r = UI.mapaCv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 240 - 120, z = (e.clientY - r.top) / r.height * 152 - 76;
       som(); definirMarca(clamp(x, LIM.x0 + 2, LIM.x1 - 2), clamp(z, LIM.z0 + 2, LIM.z1 - 2)); atualizarCoresMapa(); desenharMapa();
     });
     UI.btnPausa.addEventListener('click', () => { if (S && S.modo === 'livre') alternarPausa(); });
+    UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
+    UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
     UI.cont.addEventListener('click', () => alternarPausa());
     UI.menu.addEventListener('click', () => { if (!S || !S.ativo) return; som(); UI.pausa.hidden = true; S.modo = 'saindo'; sair(); });
     return UI;
@@ -1232,14 +1787,16 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       for (let i = 0; i < n; i++) {
         S.t += dt;
         if (S.modo === 'livre') mover(dt);
-        tickJogador(dt); tickPessoas(dt); tickCarros(dt); tickPortao(dt);
+        tickComemoracao(dt); tickJogador(dt); tickPessoas(dt);
+        if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
-      if (S.bandeira) { S.bandeira.rotation.y = Math.sin(S.t * 1.3) * 0.25; S.bandeira.position.x = PRACA_C.x + 1.3 * Math.cos(S.bandeira.rotation.y); S.bandeira.position.z = PRACA_C.z - 1.3 * Math.sin(S.bandeira.rotation.y); }
+      if (S.bandeira && !S.dentro) { S.bandeira.rotation.y = Math.sin(S.t * 1.3) * 0.25; S.bandeira.position.x = PRACA_C.x + 1.3 * Math.cos(S.bandeira.rotation.y); S.bandeira.position.z = PRACA_C.z - 1.3 * Math.sin(S.bandeira.rotation.y); }
       if (S.agua) { const k = 0.5 + 0.5 * Math.sin(S.t * 0.8); S.agua.material.color.setRGB(0.29 + 0.04 * k, 0.6 + 0.04 * k, 0.8 + 0.03 * k); }
-      atualizarMarca();
+      if (!S.dentro) atualizarMarca();
+      atualizarAlvo();
     }
-    if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena');
+    if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena' && S.intro);   // só a chegada é cutscene (conversa no balcão e comemoração não)
     for (const a of ATLETAS) a.raiz.visible = S.meus.has(a);
     atualizarCamera(dt);
   }
@@ -1247,6 +1804,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!S) return;
     S.ativo = false; GANCHO_RENDER = null; clearTimeout(tMissao);
     for (const m of S.meus) ATLETAS.delete(m);
+    if (S.dentro && S.grupo && S.grupo !== S.grupoCidade) { scene.remove(S.grupo); S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); }); S.grupo = S.grupoCidade; }
     if (S.grupo) {
       scene.remove(S.grupo);
       S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT && m !== MAT_DUPLO && m !== MAT_PRE) { if (m.map) m.map.dispose(); m.dispose(); } });
@@ -1254,7 +1812,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (const o of descartaveis.splice(0)) { try { o.dispose(); } catch (e) { /* já foi */ } }
     restaurarMundo();
     document.body.classList.remove('cdAtivo');
-    for (const k of ['ctl', 'arrasto', 'hud', 'esq', 'aviso', 'seta', 'mapa', 'pausa']) UI[k].hidden = true;
+    for (const k of ['ctl', 'arrasto', 'hud', 'esq', 'aviso', 'seta', 'mapa', 'pausa', 'ficha']) UI[k].hidden = true;
     UI.preto.hidden = true; UI.preto.classList.add('claro');
     if (typeof Dialogo !== 'undefined') Dialogo.esconder(); Musica.parar();
     S = null;
@@ -1269,16 +1827,18 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!MAT) { MAT = new THREE.MeshLambertMaterial({ vertexColors: true }); MAT_DUPLO = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }); MAT_PRE = new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true }); }
     const H = ctx.historia || {};
     const dados = Object.assign({ ponto: 'chegada', fakes: 150, visitas: 0, corMarca: CORES_MARCA[0] }, H.cidade || {});
-    S = { ativo: true, modo: 'cena', pausado: false, t: 0, dados, col: [], circ: [], camBox: [], oclusores: [], planta: [], pisos: [], telas: [], redes: [], carros: [], npcs: [], conversas: [], pedestres: [], meus: new Set(),
+    S = { ativo: true, modo: 'cena', pausado: false, t: 0, dados, assentos: [], bancos: [], col: [], circ: [], camBox: [], oclusores: [], planta: [], pisos: [], telas: [], redes: [], carros: [], npcs: [], conversas: [], pedestres: [], meus: new Set(),
       portao: { k: 1, alvo: 1, col: [], piv: [] }, cam: { yaw: 0.55, dist: 9.5, dAt: 9.5, snap: true }, marca: null, missao: '' };
     try {
       let f2 = null; try { f2 = await Fases.carregar('fase2'); } catch (e) { console.warn('[Cidade] fase2.js não veio (roupa padrão):', e); }
       prepararMundo(); textos();
-      S.grupo = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo);
-      montarCidade(); criarCarros(); montarMarca();
+      S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
+      Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
+      prepararDia(dados);
+      montarCidade(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
       S.jog = criarJogador(f2, H);
-      criarPessoas(f2);
+      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); criarPlantas();
       const J = S.jog; J.x = SPAWN.x; J.z = -4.9; J.y = 0.22; J.yaw = J.yawAlvo = -Math.PI / 2;
       tickJogador(0.016); tickPortao(1); atualizarCamera(0.016);
       GANCHO_RENDER = gancho;
@@ -1286,8 +1846,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const primeira = !dados.visitas; dados.visitas = (dados.visitas | 0) + 1;
       gravar('chegada');
       Musica.tocar('jazz');
+      S.intro = true;
       await preto(false, 1100);
       await andar(J, [[SPAWN.x, -3.7]], 1.9);
+      S.intro = false;
       S.portao.alvo = 0; somPortao();                                  // o portão fecha depois que ele sai
       mostrarDinheiro(primeira);
       const f2d = H.fase2 || {};
@@ -1302,6 +1864,6 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
   }
 
-  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '4.8.2', iniciar,
+  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '4.9.4', iniciar,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN } });   // (_estado/_planta: para testes)
 })();

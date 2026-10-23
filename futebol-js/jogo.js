@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.9.2
+   FUTEBOL JS · jogo.js · versão 4.9.4
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,18 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.9.4 — crianças, fadiga em toda partida, poses de cansaço e interiores da cidade:
+   • Partida das crianças: você continua com velocidade 5 e as crianças agora têm 4 na MESMA régua (≈4,7 m/s contra os seus 5,1; antes
+     elas corriam ≈3,3), todas iguais, e 15 s de corrida (CRIANCA_VEL / CRIANCA_CORRIDA).
+   • FADIGA em TODA partida (história e livre, você e a IA): correu até a barra chegar a 20% (FADIGA_LIMIAR) = perde 0,25 s de corrida de vez
+     naquela partida; nunca abaixo de 40% do que tinha (FADIGA_MIN).
+   • Cansaço: a padrão (mãos na cintura) + cabeça baixa, mão no peito, uma mão na cintura e o respiro fundo (levanta a cabeça e os ombros e volta).
+
+   Novidades da versão 4.9.3 — ESPECTROS (o jeito do personagem) e a cidadezinha 4.9.3:
+   • Espectros: 6 eixos de −100 a +100 (saudável, ativo, tranquilo, disciplinado, confiante, humilde), guardados no save, com efeitos graduais
+     (no máximo ±15%) e retorno decrescente; condições temporárias (refeição pesada: −15% de corrida e de recuperação na PRÓXIMA partida da história).
+     O "tranquilo" da Fase 2 vira o eixo tranquilo. Na partida da história o fôlego e a chance de lesão já usam isso. Ver ESPECTROS / Espectros.
+
    Novidades da versão 4.9.2 — fôlego da partida livre, fadiga e cansaço variado:
    • PARTIDA LIVRE (fora da história): você e a IA têm 15 s de corrida (LIVRE_CORRIDA) e recuperam 1 s de corrida a cada 1 s sem correr (LIVRE_RECUPERA).
      Na história nada muda (iniciante: 5 s; crianças/IA da história com AI_RUN_TIME/AI_REGEN_TIME).
@@ -580,7 +592,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.9.2';
+const VERSAO_JOGO = '4.9.4';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -611,8 +623,11 @@ const CONFIG = {
   LIVRE_CORRIDA: 15,         // segundos de corrida com resistência 7 (resistência/velocidade de cada um ainda mudam um pouco)
   LIVRE_RECUPERA: 1,         // segundos de descanso para devolver 1 s de corrida
   FADIGA_PERDA: 0.25,        // segundos de corrida perdidos a cada "corridão"
-  FADIGA_LIMIAR: 5,          // conta como corridão quando sobram 5 s ou menos
-  FADIGA_MIN: 6,             // nunca fica com menos que isso de corrida
+  FADIGA_LIMIAR: 0.2,        // (4.9.4) conta como corridão quando a barra chega a 20% (ou menos) — em TODA partida, para todo mundo
+  FADIGA_MIN: 0.4,           // (4.9.4) nunca fica com menos que 40% da corrida que tinha no começo
+  CRIANCA_VEL: 4,            // (4.9.4) partida das crianças (Fase 1): velocidade 4 na mesma escala do seu personagem (você: 5)
+  CRIANCA_CORRIDA: 15,       // (4.9.4) ...e 15 s de corrida (mais que os 5 s do seu iniciante)
+  VEL_CORRIDA_BASE: 5.76,    // corrida de quem tem velocidade 7 (USER_RUN de base) — a régua da velocidade das crianças
   AI_SPEED_BALL: 4.16,
   GK_SPEED: 4.4,
 
@@ -2463,28 +2478,34 @@ function aplicarLamento(p, m) {
 // funda (o peito sobe e desce, os ombros acompanham). k (cansK) liga/desliga suave.
 function aplicarCansaco(p, m, agora) {
   const k = smooth(p.cansK), r = Math.sin(agora / 420 + (p.id || 0) * 1.7), r2 = Math.max(0, r), v = p.cansVar | 0;     // ~1,3 s por respiração (cada um no seu ritmo)
-  if (v === 1) {                                         // (4.9.2) MÃOS NA CABEÇA, olhando para cima, peito subindo e descendo
-    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 2.9, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -2.9, k);
-    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.2, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.2, k);
-    usarCotovelos(m, -2.5 * k, 2.5 * k);
-    m.corpo.rotation.z = lerp(m.corpo.rotation.z, 0.05 + r * 0.03, k);
-    m.corpo.position.y += (0.01 + r2 * 0.025) * k;
-    usarCabeca(m, (0.2 + r * 0.06) * k);
-  } else if (v === 2) {                                  // (4.9.2) CURVADO, MÃOS NOS JOELHOS (o tronco inclina e as pernas continuam em pé)
-    const a = (0.42 + r * 0.03) * k;
-    m.corpo.rotation.z = -a; m.pernaE.rotation.z = a; m.pernaD.rotation.z = a;
-    m.corpo.position.x = -0.74 * Math.sin(a); m.corpo.position.y += 0.74 * (1 - Math.cos(a)) - 0.04 * k;
-    usarJoelhos(m, -0.3 * k, -0.3 * k);
-    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.95, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.95, k);
-    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.1, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.1, k);
-    usarCabeca(m, (-0.05 + r * 0.06) * k);
-  } else if (v === 3) {                                  // (4.9.2) BRAÇOS SOLTOS, OFEGANTE: ombros sobem e descem, cabeça balançando para trás
-    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.22 + r * 0.07, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.22 - r * 0.07, k);
+  if (v === 1) {                                         // (4.9.4) CABEÇA BAIXA: braços soltos, olhando para o chão, respirando
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.12, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.12, k);
     m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.12, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.12, k);
-    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.04 + r * 0.07, k);
-    m.corpo.position.y += (0.015 + r2 * 0.04) * k;
-    usarCabeca(m, (0.1 + r * 0.14) * k);
-  } else {                                               // (4.7.0) mãos na cintura, cabeça baixa
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.16 + r * 0.04, k);
+    m.corpo.position.y += (0.01 + r2 * 0.02) * k;
+    usarCabeca(m, (-0.6 + r * 0.06) * k);
+  } else if (v === 2) {                                  // (4.9.4) MÃO NO PEITO: a direita no peito, a esquerda solta
+    m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.5, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, 0.42, k);
+    usarCotovelo(m.bracoD, 0, 2.0 * k);
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.1, k); m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.08, k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.08 + r * 0.05, k);
+    m.corpo.position.y += (0.012 + r2 * 0.025) * k;
+    usarCabeca(m, (-0.2 + r * 0.07) * k);
+  } else if (v === 3) {                                  // (4.9.4) UMA MÃO NA CINTURA, a outra solta, e o corpo cansado
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 1.12 + r * 0.05, k); m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.05, k);
+    usarCotovelo(m.bracoE, -2.0 * k, 0);
+    m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.12, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.1, k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.12 + r * 0.05, k);
+    m.corpo.position.y += (0.012 + r2 * 0.022) * k;
+    usarCabeca(m, (-0.3 + r * 0.08) * k);
+  } else if (v === 4) {                                  // (4.9.4) RESPIRO FUNDO: levanta a cabeça, sobe os ombros, solta o ar e volta ao normal
+    const b = Math.pow(Math.max(0, Math.sin(agora / 650 + (p.id || 0))), 2);
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.1 + b * 0.22, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.1 - b * 0.22, k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, -b * 0.15, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, -b * 0.15, k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, 0.04 * b, k);
+    m.corpo.position.y += (0.045 * b) * k;
+    usarCabeca(m, (-0.1 + b * 0.42) * k);
+  } else {                                               // (4.7.0) a padrão: as duas mãos na cintura, cabeça baixa
     m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 1.12 + r * 0.05, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -1.12 - r * 0.05, k);
     m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.05, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.05, k);
     usarCotovelos(m, -2.0 * k, 2.0 * k);
@@ -4714,16 +4735,16 @@ function updateStamina(u, dt) {
   talvezLesaoMuscular(u, dt);
   if (u.cansadoT > 0) { u.cansadoT -= dt; if (u.running && Math.hypot(u.vx, u.vz) > 4) u.cansadoT = 0; }   // (4.7.0) tempo da pose de cansaço
   if (G.state === 'celebrate') { u.stamina = 1; u.exhausted = false; return; }   // na comemoração não cansa
-  const livre = partidaLivre(), T = livre ? tempoCorrida(u, CONFIG.LIVRE_CORRIDA * CONFIG.STAMINA_RUN_TIME / 10) : CONFIG.STAMINA_RUN_TIME;   // (4.9.2) partida livre: 15 s menos a fadiga
+  const livre = partidaLivre(), T = tempoCorrida(u, livre ? CONFIG.LIVRE_CORRIDA * CONFIG.STAMINA_RUN_TIME / 10 : CONFIG.STAMINA_RUN_TIME);   // (4.9.2) partida livre: 15 s; (4.9.4) a fadiga vale em toda partida
   if (u.running && Math.hypot(u.vx, u.vz) > 3) {
     u.stamina = Math.max(0, u.stamina - dt / T);
     u.regenWait = CONFIG.STAMINA_REGEN_DELAY;
-    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; u.cansVar = Math.floor(Math.random() * 4); showToast('Sem fôlego!', 'bad'); }
+    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; u.cansVar = Math.floor(Math.random() * 5); showToast('Sem fôlego!', 'bad'); }
   } else {
     u.regenWait -= dt;
     if (u.regenWait <= 0) u.stamina = Math.min(u.staminaMax ?? 1, u.stamina + dt / (livre ? T * CONFIG.LIVRE_RECUPERA : CONFIG.STAMINA_REGEN_TIME));   // lesão leve: máximo 70%
   }
-  if (livre) checarFadiga(u, T);
+  checarFadiga(u);                                  // (4.9.4) em toda partida
   if (u.exhausted && u.stamina >= CONFIG.STAMINA_MIN_TO_RUN) u.exhausted = false;
 }
 
@@ -4771,9 +4792,9 @@ function erroDePasseParaVoce(p) {
 // (4.9.2) PARTIDA LIVRE e FADIGA. A barra (stamina 0–1) vale T segundos de corrida; T começa em LIVRE_CORRIDA e cai FADIGA_PERDA
 // a cada "corridão" (correr até sobrarem FADIGA_LIMIAR s ou menos). Só conta de novo depois de recuperar 60% da barra.
 const partidaLivre = () => !(typeof Historia !== 'undefined' && Historia.emPartida());
-function tempoCorrida(p, base) { return Math.max(CONFIG.FADIGA_MIN, base - (p.fadiga || 0) * CONFIG.FADIGA_PERDA); }
-function checarFadiga(p, T) {
-  if (p.fadigaArmada !== false && p.stamina * T <= CONFIG.FADIGA_LIMIAR) { p.fadiga = (p.fadiga || 0) + 1; p.fadigaArmada = false; }
+function tempoCorrida(p, base) { return Math.max(base * CONFIG.FADIGA_MIN, base - (p.fadiga || 0) * CONFIG.FADIGA_PERDA); }
+function checarFadiga(p) {
+  if (p.fadigaArmada !== false && p.stamina <= CONFIG.FADIGA_LIMIAR) { p.fadiga = (p.fadiga || 0) + 1; p.fadigaArmada = false; }
   else if (p.fadigaArmada === false && p.stamina >= 0.6) p.fadigaArmada = true;
 }
 
@@ -4785,11 +4806,11 @@ function atualizarFolegoIA(p, dt, spd, des) {
   const vref = CONFIG.AI_SPEED * Math.min(1, p.speedMul || 1);   // (4.8.3) "correr" = perto da PRÓPRIA velocidade máxima (as crianças da Fase 1 nunca passavam de 0,77 × a velocidade cheia e não cansavam)
   const corre = spd > vref * 0.77 && Math.hypot(des.vx, des.vz) > vref * 0.6;
   const livre = partidaLivre();
-  const T = livre ? tempoCorrida(p, CONFIG.LIVRE_CORRIDA * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'))) : CONFIG.AI_RUN_TIME * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'));
+  const T = tempoCorrida(p, PARTIDA.criancas ? CONFIG.CRIANCA_CORRIDA : (livre ? CONFIG.LIVRE_CORRIDA : CONFIG.AI_RUN_TIME) * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade')));   // (4.9.4) crianças: 15 s; fadiga em toda partida
   if (corre) {
     p.stamina = Math.max(0, p.stamina - dt / T);
     p.regenWait = 0.6;
-    if (p.stamina <= 0.005 && !p.exhausted) { p.stamina = 0; p.exhausted = true; p.cansadoT = 2.5; p.cansVar = Math.floor(Math.random() * 4); }
+    if (p.stamina <= 0.005 && !p.exhausted) { p.stamina = 0; p.exhausted = true; p.cansadoT = 2.5; p.cansVar = Math.floor(Math.random() * 5); }
   } else {
     p.regenWait = (p.regenWait || 0) - dt;
     if (p.regenWait <= 0) {
@@ -4797,7 +4818,7 @@ function atualizarFolegoIA(p, dt, spd, des) {
       p.stamina = Math.min(1, p.stamina + dt / tempo);
     }
   }
-  if (livre) checarFadiga(p, T);
+  checarFadiga(p);
   if (p.cansadoT > 0) p.cansadoT -= dt;
   if (p.exhausted && p.stamina >= CONFIG.AI_MIN_TO_RUN) p.exhausted = false;
 }
@@ -9544,7 +9565,6 @@ function syncMeshes(dt) {
     }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
-    if (m.corpo.position.x) m.corpo.position.x = 0;   // (4.9.2) só a pose "mãos nos joelhos" mexe nisso
     if (p.isUser || p.exhausted || p.cansK > 0) {   // (4.7.0) sem fôlego e sem a bola: mãos na cintura, respirando fundo (4.8.0: a IA também)
       const quer = (p.exhausted || (p.isUser && p.cansadoT > 0)) && G.possession !== p && G.state === 'play' && !p.recvPose && p.fall === 0 && !G.kick && !p.celeb && !(p.slidePose > 0) && (!p.isUser || G.userRequest <= 0) && !p.lamento && !p.out;
       p.cansK = clamp((p.cansK || 0) + (quer ? dt * 4 : -dt * 6), 0, 1);
@@ -10541,7 +10561,9 @@ function criarJogador(P, team, f, j, num, isUser) {
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
   scene.add(mesh.raiz);
-  const vel = P.criancas ? Math.pow(3 / 7, 0.35) : 1;   // (4.4.2) crianças: velocidade 3 (de 7) em vez de correr na velocidade cheia do jogo (~0,74x)
+  // (4.9.4) crianças: velocidade CRIANCA_VEL (4) na MESMA régua do seu personagem (que corre com a velocidade dele, 5): 5,76 × (4/7)^0,35 ≈ 4,7 m/s.
+  //   Antes era 3 só para a IA (~3,3 m/s) e você corria a 5,1: elas pareciam paradas. Todas iguais (só uma variação pequena).
+  const vel = P.criancas ? CONFIG.VEL_CORRIDA_BASE / CONFIG.AI_SPEED * Math.pow(CONFIG.CRIANCA_VEL / 7, HAB_EXP.velocidade) : 1;
   // (4.7.1) Habilidades: o adversário pela faixa do nível da partida; os seus companheiros 5–6. A velocidade vem da habilidade
   // (antes: um ajuste fixo por time). O elenco da história pode trazer as habilidades prontas (j.hab).
   const faixa = team === 1 ? (FAIXA_NIVEL[P.dificuldade] || FAIXA_NIVEL.normal) : FAIXA_NIVEL.normal;
@@ -10556,7 +10578,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     celeb: null,
     diveT: 0, diveDur: 0.55, diveVX: 0, diveVZ: 0, diveSide: 1, jumpT: 0,
     throwIn: false, goalKick: false, setPiece: null, carry: false, slot: -1,
-    hab: habs, speedMul: isUser ? 1 : rand(0.96, 1.03) * vel * Math.pow(clamp(habs.velocidade / 7, 0.15, 1.6), HAB_EXP.velocidade), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
+    hab: habs, speedMul: isUser ? 1 : P.criancas ? rand(0.98, 1.02) * vel : rand(0.96, 1.03) * vel * Math.pow(clamp(habs.velocidade / 7, 0.15, 1.6), HAB_EXP.velocidade), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
     commitT: rand(0.5, 2), committing: 0, folego: 1,
     stamina: 1, exhausted: false, regenWait: 0, dribbleCd: 0, staminaMax: 1,
     isUser, mesh,
@@ -10802,7 +10824,7 @@ function lesionar(p, grav) {
 function talvezLesaoMuscular(u, dt) {
   if (u.lesao || !u.exhausted || !u.running || G.state !== 'play') return;
   const a = clamp(PARTIDA.usuario.autocuidado ?? 0.7, 0, 1);
-  if (Math.random() < dt * 0.005 * Math.pow(1 - a, 1.5)) {
+  if (Math.random() < dt * 0.005 * Math.pow(1 - a, 1.5) * Espectros.multLesao()) {   // (4.9.3) saudável/não saudável mexe na chance
     perderBola(u, 'queda');
     lesionar(u);
     const dono = G.possession ? G.possession.team : 1 - u.team;
@@ -12805,6 +12827,84 @@ const Fases = (() => {
   return { registrar, carregar, executar, versaoOk, get registradas() { return Object.keys(reg); } };
 })();
 
+// =====================================================================
+// (4.9.3) ESPECTROS — o "jeito" do personagem na história. Cada eixo é UM número de −100 a +100 (0 = neutro), guardado no save
+// (HistoriaSave 'espectros'). Os efeitos saem do número de forma gradual (no máximo ±15%) e as escolhas/rotina/partidas mexem nele com
+// Espectros.mover(eixo, delta, motivo) — o motivo fica guardado para dar para mostrar "por que mudou".
+//   Tipos: TRAÇO (muda devagar, quase não volta sozinho) · CONDIÇÃO (temporária: ex. refeição pesada vale só para a próxima partida)
+//          · REPUTAÇÃO (0–100, ainda não usada).
+//   Andar contra o polo é fácil; ir mais longe no mesmo polo rende cada vez menos (retorno decrescente).
+//   O que o jogador vê: palavras e barras (nunca o número). A SAÚDE só aparece no hospital da cidadezinha.
+//   Espectros.valor(e) · mover(e, d, motivo) · efeito(nome) · condicao(nome, liga) · aplicarNaPartida() · rotulo(e) · frase(lista)
+// =====================================================================
+const ESPECTROS = {
+  saudavel:     { tipo: 'traco', polos: ['Saudável', 'Não saudável'],      efeitos: { corrida: 0.12, recuperacao: 0.12, lesao: -0.15 } },
+  ativo:        { tipo: 'traco', polos: ['Ativo', 'Sedentário'],           efeitos: { corrida: 0.10, velocidade: 0.06 } },
+  tranquilo:    { tipo: 'traco', polos: ['Tranquilo', 'Problemático'],     efeitos: { cartao: -0.15 } },
+  disciplinado: { tipo: 'traco', polos: ['Disciplinado', 'Relaxado'],      efeitos: { treino: 0.15 } },
+  confiante:    { tipo: 'traco', polos: ['Confiante', 'Inseguro'],         efeitos: { precisao: 0.08 } },
+  humilde:      { tipo: 'traco', polos: ['Humilde', 'Arrogante'],          efeitos: { quimica: 0.10 } },
+};
+// condições temporárias: valem até serem consumidas (ex.: na próxima partida da história)
+const CONDICOES = {
+  refeicaoPesada: { efeitos: { corrida: -0.15, recuperacao: -0.15 }, ate: 'proximaPartida' },
+};
+const Espectros = (() => {
+  let multLesao = 1;
+  const ler = () => { const e = HistoriaSave.ler('espectros') || {}; e.v = e.v || {}; e.hist = e.hist || []; e.cond = e.cond || {};
+    if (e.v.tranquilo == null) { const f2 = HistoriaSave.ler('fase2'); if (f2 && typeof f2.tranquilo === 'number') e.v.tranquilo = clamp(f2.tranquilo * 10, -100, 100); }   // a Fase 2 tinha um contador: vira o 1º eixo
+    return e; };
+  const gravar = (e) => { try { HistoriaSave.gravar('espectros', e); } catch (err) { console.warn('[Espectros]', err); } };
+  const valor = (eixo) => clamp(+ler().v[eixo] || 0, -100, 100);
+  const faixa = (v) => (Math.abs(v) < 20 ? 0 : Math.abs(v) < 55 ? 1 : 2);
+  function mover(eixo, delta, motivo) {
+    if (!ESPECTROS[eixo] || !delta) return null;
+    const e = ler(), v0 = clamp(+e.v[eixo] || 0, -100, 100);
+    const mesmoLado = Math.sign(delta) === Math.sign(v0) && v0 !== 0;
+    const real = mesmoLado ? delta * (1 - Math.abs(v0) / 100 * 0.7) : delta;                    // retorno decrescente
+    const v1 = clamp(v0 + real, -100, 100); e.v[eixo] = Math.round(v1 * 10) / 10;
+    e.hist.push({ eixo, d: Math.round(real * 10) / 10, motivo: motivo || '', t: Date.now() }); if (e.hist.length > 60) e.hist.splice(0, e.hist.length - 60);
+    gravar(e);
+    return faixa(v1) !== faixa(v0) || Math.sign(v1) !== Math.sign(v0) ? { eixo, v: v1, rotulo: rotulo(eixo, v1) } : null;   // cruzou uma faixa
+  }
+  // multiplicador gradual de um efeito (1 = nada): soma a contribuição de cada eixo e das condições ativas
+  function efeito(nome, semCondicoes) {
+    const e = ler(); let k = 1;
+    for (const [eixo, d] of Object.entries(ESPECTROS)) if (d.efeitos[nome]) k += (clamp(+e.v[eixo] || 0, -100, 100) / 100) * d.efeitos[nome];
+    if (!semCondicoes) for (const [c, on] of Object.entries(e.cond)) if (on && CONDICOES[c] && CONDICOES[c].efeitos[nome]) k += CONDICOES[c].efeitos[nome];
+    return clamp(k, 0.7, 1.3);
+  }
+  function condicao(nome, liga) { const e = ler(); if (liga === undefined) return !!e.cond[nome]; e.cond[nome] = !!liga; gravar(e); return !!liga; }
+  function rotulo(eixo, v) { const d = ESPECTROS[eixo]; if (!d) return ''; v = v == null ? valor(eixo) : v; if (Math.abs(v) < 20) return T('Neutro'); return (Math.abs(v) >= 55 ? T('Muito') + ' ' : '') + T(d.polos[v >= 0 ? 0 : 1]).toLowerCase(); }
+  function frase(lista) {
+    const eixos = (lista || Object.keys(ESPECTROS)).map((k) => [k, valor(k)]).filter(([, v]) => Math.abs(v) >= 20).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 3);
+    if (!eixos.length) return T('Nada fora do normal por enquanto.');
+    return Tf('Seu personagem está {0}.', eixos.map(([k, v]) => rotulo(k, v)).join(', '));
+  }
+  // chamado quando começa uma partida da história: fôlego/recuperação pelos espectros e condições; consome as de "próxima partida"
+  function aplicarNaPartida() {
+    const corrida = efeito('corrida'), rec = efeito('recuperacao');
+    CONFIG.STAMINA_RUN_TIME *= corrida; CONFIG.STAMINA_REGEN_TIME /= rec;
+    multLesao = clamp(efeito('lesao'), 0.7, 1.3);
+    const e = ler(); let mudou = false;
+    for (const [c, on] of Object.entries(e.cond)) if (on && CONDICOES[c] && CONDICOES[c].ate === 'proximaPartida') { e.cond[c] = false; mudou = true; }
+    if (mudou) gravar(e);
+    return { corrida, rec };
+  }
+  return { valor, mover, efeito, condicao, rotulo, frase, aplicarNaPartida, multLesao: () => (typeof Historia !== 'undefined' && Historia.emPartida() ? multLesao : 1), _ler: ler };
+})();
+Object.assign(I18N, {
+  'Saudável': ['Healthy', 'Saludable', 'In salute', 'En bonne santé'], 'Não saudável': ['Unhealthy', 'Poco saludable', 'Poco sano', 'Pas en forme'],
+  'Ativo': ['Active', 'Activo', 'Attivo', 'Actif'], 'Sedentário': ['Sedentary', 'Sedentario', 'Sedentario', 'Sédentaire'],
+  'Tranquilo': ['Calm', 'Tranquilo', 'Tranquillo', 'Calme'], 'Problemático': ['Troublemaker', 'Problemático', 'Problematico', 'Problématique'],
+  'Disciplinado': ['Disciplined', 'Disciplinado', 'Disciplinato', 'Discipliné'], 'Relaxado': ['Slack', 'Relajado', 'Rilassato', 'Relâché'],
+  'Confiante': ['Confident', 'Seguro', 'Sicuro', 'Confiant'], 'Inseguro': ['Insecure', 'Inseguro', 'Insicuro', 'Peu sûr'],
+  'Humilde': ['Humble', 'Humilde', 'Umile', 'Humble'], 'Arrogante': ['Arrogant', 'Arrogante', 'Arrogante', 'Arrogant'],
+  'Neutro': ['Neutral', 'Neutral', 'Neutro', 'Neutre'], 'Muito': ['Very', 'Muy', 'Molto', 'Très'],
+  'Nada fora do normal por enquanto.': ['Nothing out of the ordinary for now.', 'Nada fuera de lo normal por ahora.', 'Niente di insolito per ora.', "Rien d'anormal pour l'instant."],
+  'Seu personagem está {0}.': ['Your character is {0}.', 'Tu personaje está {0}.', 'Il tuo personaggio è {0}.', 'Ton personnage est {0}.'],
+});
+
 // (4.5.0) A Fase 1 (const Fase1) mudou para o arquivo fase1.js — baixado pelo jogo na hora (veja Fases e cenaAbertura).
 
 // ---------------------------------------------------------------------
@@ -13316,7 +13416,7 @@ const Historia = (() => {
     pendente = null;                        // (4.4.3) partida nova (ou refeita): começa sem nada pendente
     const r = await new Promise((res) => {
       fimResolve = res;
-      entrar(cfg(false)); bolaDoJoao(true);
+      entrar(cfg(false)); bolaDoJoao(true); Espectros.aplicarNaPartida();   // (4.9.3) espectros e condições (ex.: refeição pesada) valem nesta partida
       if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // (4.4.0) a tela só clareia com a quadra pronta
       setTimeout(() => showToast(T('Racha da escola: 4 contra 4!')), 900);
     });
