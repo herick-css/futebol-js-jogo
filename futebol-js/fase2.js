@@ -1,6 +1,11 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 4.9.5
+     - Cigarro do vizinho preso à mão (vai da mão à boca, brasa para fora).
+     - Porta da rua = grade azul por fora e por dentro; dá para voltar ao apartamento a qualquer hora ({ volta: true }, vindo da cidade).
+     - Cama: dormir depois das 20h grava 6h do dia seguinte e o sono (dados.sono); antes disso "Ainda não estou com sono."
+   ---------------------------------------------------------------------
    Como funciona
      - O jogo.js NÃO traz este arquivo junto. Quando a Fase 1 termina, o jogo baixa o fase2.js do mesmo lugar de onde veio
        (GitHub → jsDelivr, ou a pasta local), roda e chama iniciar(ctx).
@@ -476,8 +481,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     return vestirModelo(base, R, c);
   }
   function fazCigarro(A) {
-    const L = new Lote(); L.caixa(0.16, 0.028, 0.028, 0xf2f2ee, 0.1, 0, 0); L.caixa(0.03, 0.03, 0.03, 0xe8742a, 0.2, 0, 0);
-    const mesh = L.malha(MAT_CORES); mesh.position.set(0.02, -0.62, 0.0); mesh.rotation.z = 0.2; A.m.bracoD.add(mesh); A.cigarro = mesh;
+    // (4.9.5) o cigarro fica NA MÃO (no antebraço, que dobra no cotovelo) e acompanha o braço até a boca; a ponta acesa aponta para fora
+    const L = new Lote(); L.caixa(0.17, 0.028, 0.028, 0xf2f2ee, 0.03, 0, 0); L.caixa(0.03, 0.03, 0.03, 0xe8742a, 0.125, 0, 0);
+    const mesh = L.malha(MAT_CORES); mesh.position.set(0.07, -0.27, 0.0); A.m.bracoD.cotovelo.add(mesh); A.cigarro = mesh;
   }
 
   // poses (as mesmas ideias da Fase 1, com a altura do chão A.y)
@@ -531,8 +537,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 8); usarJoelhos(m, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0; r.position.y = A.y;
     m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0.08, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, -0.05, e);
     const ciclo = (t * 0.28 + A.fase) % 1, puxa = ciclo > 0.55 && ciclo < 0.8, k = puxa ? 1 : 0; A.puxando = puxa;
-    usarCotovelo(m.bracoD, 0, k ? 2.1 : 0.25);
-    m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, k ? 0.8 : 0.3, e); m.bracoD.rotation.x = 0;
+    A.kf = lerp(A.kf || 0, k, Math.min(1, dt * 5));                 // 0 = braço relaxado com o cigarro na mão, 1 = mão na boca
+    const ombro = lerp(0.3, 1.75, A.kf), cot = lerp(0.35, 2.15, A.kf);
+    m.bracoD.rotation.z = ombro; m.bracoD.rotation.x = 0.9 * A.kf; usarCotovelo(m.bracoD, 0, cot);                   // (o braço também fecha para dentro, para a mão ficar na frente da boca)
+    if (A.cigarro) A.cigarro.rotation.z = lerp(-0.8, -0.1, A.kf) - (ombro + cot);   // o ângulo do cigarro no mundo: apontando para a frente/baixo e a ponta acesa longe do rosto
     m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.15, e); m.bracoE.rotation.x = 0; usarCotovelo(m.bracoE, 0, 0);
     m.corpo.rotation.z = lerp(m.corpo.rotation.z, k ? -0.05 : 0.02, e);
   }
@@ -795,16 +803,16 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       peNW.add(Lb.malha(MAT_CORES)); viga(peNW, -OUT + 0.15, y + 1.0, -IN - 0.06, -IN - 0.15, y + 1.0, -IN - 0.06, 0.07, 0x3a3f4a); viga(peNW, -OUT + 0.15, y + 0.5, -IN - 0.06, -IN - 0.15, y + 0.5, -IN - 0.06, 0.04, 0x4a4f58); }
     // térreo (saguão): porta da rua na parede norte, caixas de correio na oeste, armário de medidores no lugar do lance N
     const T = peca(0), LT = new Lote(), FT = (w, h, d, c, x, y, z) => LT.caixa(w, h, d, c, x, y, z);
-    FT(OUT - IN, 0.04, OUT - IN, 0x8c8676, -MID, 0.0, -MID); FT(0.1, 2.3, 0.1, 0x5b4630, -MID - 0.9, 1.15, -OUT + 0.06); FT(0.1, 2.3, 0.1, 0x5b4630, -MID + 0.9, 1.15, -OUT + 0.06); FT(1.9, 0.1, 0.1, 0x5b4630, -MID, 2.25, -OUT + 0.06); FT(1.5, 0.04, 0.3, 0x3a3f4a, -MID, 0.02, -OUT + 0.3);   // (4.7.3) só a moldura: a folha é o portão de grade (o lado de fora, abaixo)
-    FT(0.08, 2.0, 0.08, 0xd8d8d0, -MID - 0.1, 1.0, -OUT + 0.17); FT(0.08, 2.0, 0.08, 0xd8d8d0, -MID + 0.1, 1.0, -OUT + 0.17);
-    for (let i = 0; i < 6; i++) { FT(0.06, 0.2, 0.28, i % 2 ? 0x8c9199 : 0x6c7279, -OUT + 0.06, 1.1 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34 + 0.0); FT(0.02, 0.05, 0.1, 0xf2c230, -OUT + 0.1, 1.15 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34); }
+    FT(OUT - IN, 0.04, OUT - IN, 0x8c8676, -MID, 0.0, -MID); FT(0.1, 2.3, 0.1, 0x243a57, -MID - 0.9, 1.15, -OUT + 0.06); FT(0.1, 2.3, 0.1, 0x243a57, -MID + 0.9, 1.15, -OUT + 0.06); FT(1.9, 0.1, 0.1, 0x243a57, -MID, 2.25, -OUT + 0.06); FT(1.5, 0.04, 0.3, 0x3a3f4a, -MID, 0.02, -OUT + 0.3);   // (4.7.3) só a moldura: a folha é o portão de grade (o lado de fora, abaixo)
+        for (let i = 0; i < 6; i++) { FT(0.06, 0.2, 0.28, i % 2 ? 0x8c9199 : 0x6c7279, -OUT + 0.06, 1.1 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34 + 0.0); FT(0.02, 0.05, 0.1, 0xf2c230, -OUT + 0.1, 1.15 + (i >> 1) * 0.24, -4.2 + (i & 1) * 0.34); }
     FT(0.14, 0.62, OUT - IN, 0x9a9484, -IN, 0.31, -MID); FT(0.2, 0.06, OUT - IN, 0xb3ad9c, -IN, 0.65, -MID);               // (4.7.3) mureta baixa no lugar do armário alto: o lado do saguão deixou de ser uma parede enorme
     T.add(LT.malha(MAT_CORES));
-    const vidroPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ color: 0xeaf6ff })); vidroPorta.position.set(-MID, 1.07, -OUT + 0.14); T.add(vidroPorta);
+    const vidroPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ color: 0xeaf6ff })); vidroPorta.position.set(-MID, 1.07, -OUT + 0.015); T.add(vidroPorta);   // (4.9.5) fundo claro atrás da grade, só visto de dentro (a parede interna fica em -OUT): a porta é a mesma grade azul dos dois lados
     // (4.7.3) a câmera do saguão fica do lado de fora, olhando para dentro: a porta da rua (portão de ferro azul com grade) fica virada para ela
     const foraPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ map: texPortaRua(), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); foraPorta.rotation.y = Math.PI; foraPorta.position.set(-MID, 1.07, -OUT - 0.012); T.add(foraPorta);
-    portas.rua = { vidro: vidroPorta, fora: foraPorta };
-    const plM = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.2), basic({ map: texPlaca('LUZ', '#f2c230', '#2a1206') })); plM.position.set(-OUT + 0.62, 1.7, -OUT + 0.04); T.add(plM);   // placa dos medidores, agora ao lado da porta
+    const dentroPorta = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 2.14), basic({ map: texPortaRua(), transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })); dentroPorta.position.set(-MID, 1.07, -OUT + 0.028); T.add(dentroPorta);   // (4.9.5) a mesma grade azul vista de dentro
+    portas.rua = { vidro: vidroPorta, fora: foraPorta, dentro: dentroPorta };
+    const plM = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.2), basic({ map: texPlaca('LUZ', '#f2c230', '#2a1206') })); plM.rotation.y = Math.PI / 2; plM.position.set(-OUT + 0.04, 1.75, -4.03); T.add(plM);   // placa dos medidores, agora ao lado da porta
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
     return { g, pecas, portas, seta };
@@ -835,6 +843,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ---------------------------------------------------------------------------------------------------
   // IDIOMAS: textos novos da Fase 2 (chave = português; ordem [en, es, it, fr]). Só entra o que ainda NÃO existe na tabela I18N do jogo.js.
   const TRAD_F2 = {
+    'Dormir': ['Sleep', 'Dormir', 'Dormi', 'Dormir'],
+    'Ainda não estou com sono.': ["I'm not sleepy yet.", 'Todavía no tengo sueño.', 'Non ho ancora sonno.', "Je n'ai pas encore sommeil."],
+    'Bom dia! Hora de começar o dia.': ['Good morning! Time to start the day.', '¡Buenos días! Hora de empezar el día.', 'Buongiorno! È ora di iniziare la giornata.', "Bonjour ! C'est l'heure de commencer la journée."],
+    'Dormi pouco... acho que não vou render como deveria hoje.': ["I barely slept... I don't think I'll perform as well as I should today.", 'Dormí poco... creo que hoy no voy a rendir como debería.', 'Ho dormito poco... credo che oggi non renderò come dovrei.', "J'ai peu dormi... je crois que je ne serai pas aussi performant que je devrais aujourd'hui."],
     'Você': ['You', 'Tú', 'Tu', 'Toi'],
     'Modo história · Fase 2 · {0}': ['Story mode · Phase 2 · {0}', 'Modo historia · Fase 2 · {0}', 'Modalità storia · Fase 2 · {0}', 'Mode histoire · Phase 2 · {0}'],
     'Fase 2 · {0}': ['Phase 2 · {0}', 'Fase 2 · {0}', 'Fase 2 · {0}', 'Phase 2 · {0}'],
@@ -1089,6 +1101,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       if (S.escuro) return [{ id: 'luz', x: Q.luz.spot[0], z: Q.luz.spot[1], r: 1.25, alt: 1.9, txt: T('Interruptor'), fn: ligarLuz }];
       v.push({ id: 'guarda', x: Q.guarda.spot[0], z: Q.guarda.spot[1], r: 1.0, alt: 2.5, txt: T('Guarda-roupa'), fn: abrirGuardaRoupa });
       v.push({ id: 'pc', x: 2.4, z: -1.15, r: 0.95, alt: 1.9, txt: T('Computador'), fn: usarPc });
+      if (S.volta) v.push({ id: 'cama', x: -1.95, z: -1.5, r: 0.95, alt: 1.3, txt: T('Dormir'), fn: dormir });       // (4.9.5) depois que saiu para a cidade: dá para dormir (acorda às 6h)
       v.push({ id: 'banh', x: Q.pBanheiro.spot[0], z: Q.pBanheiro.spot[1], r: 0.9, alt: 2.5, txt: T('Banheiro'), fn: irBanheiro });
       v.push({ id: 'saida', x: Q.pSaida.spot[0], z: Q.pSaida.spot[1], r: 0.9, alt: 2.5, txt: T('Sair do quarto'), fn: sairQuarto });
     } else if (L === 'banheiro') {
@@ -1399,11 +1412,27 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     Dialogo.esconder(); if (!V.sumiu) V.pose = 'fuma';
   }
 
+  // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 6h do dia seguinte
+  async function dormir() {
+    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
+    await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
+    if (h >= 6 && h < 20) { await dizer(['jog', T('Ainda não estou com sono.')]); return; }
+    await preto(true, 900);
+    const horas = h >= 6 ? 24 - h + 6 : 6 - h;
+    const novo = Object.assign({}, c, { hora: 6, dia: (c.dia || 1) + (h >= 6 ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
+    try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
+    gravar('fim');
+    aparecerNaCama(); await esperar(1600); await preto(false, 1400); await esperar(900);
+    J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(200);
+    await dizer(['jog', T('Bom dia! Hora de começar o dia.')]);
+    if (horas < 8) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
+  }
+
   // ----- a porta da rua
   async function sairDoPredio() {
     const J = S.jog; S.fimDaFase = true; missao(''); aviso('');
     await andar(J, [[-MID, -OUT + 1.0]], 1.8); J.yawAlvo = Math.PI / 2; await esperar(300);
-    somPorta(false); { const R = S.esc.portas.rua; R.vidro.material.color.setHex(0xffffff); R.fora.material.map = null; R.fora.material.alphaTest = 0; R.fora.material.color.setHex(0xffffff); R.fora.material.needsUpdate = true; }
+    somPorta(false); { const R = S.esc.portas.rua; R.vidro.material.color.setHex(0xffffff); R.fora.material.map = null; R.fora.material.alphaTest = 0; R.fora.material.color.setHex(0xffffff); R.fora.material.needsUpdate = true; R.dentro.material.map = null; R.dentro.material.alphaTest = 0; R.dentro.material.color.setHex(0xffffff); R.dentro.material.needsUpdate = true; }
     await andar(J, [[-MID, -OUT + 0.25]], 1.2);
     gravar('fim');
     await preto(true, 1400);
@@ -1521,11 +1550,11 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   async function iniciar(ctx) {
     API = ctx.api; montarUI();
-    const retomar = ctx.args && ctx.args.retomar;
+    const retomar = ctx.args && ctx.args.retomar, volta = !!(ctx.args && ctx.args.volta);          // (4.9.5) volta: o jogador entrou no prédio de novo, vindo da cidade
     const dados = dadosPadrao(), svF2 = ctx.historia && ctx.historia.fase2;
-    if (retomar && retomar !== 'inicio' && svF2) Object.assign(dados, JSON.parse(JSON.stringify(svF2)));
+    if (((retomar && retomar !== 'inicio') || volta) && svF2) Object.assign(dados, JSON.parse(JSON.stringify(svF2)));
     dados.ano = new Date().getFullYear() - ANOS_ATRAS + ANOS_FRENTE;
-    S = { ativo: true, modo: 'cena', lugar: 'quarto', elenco: [], t: 0, k: 1, dados, fem: PERSONAGEM.genero === 'F', escuro: false, face: { x: 0, z: -1 }, fumaca: [], camSnap: true, mapa: null,
+    S = { ativo: true, volta, modo: 'cena', lugar: 'quarto', elenco: [], t: 0, k: 1, dados, fem: PERSONAGEM.genero === 'F', escuro: false, face: { x: 0, z: -1 }, fumaca: [], camSnap: true, mapa: null,
       cam: { px: Q_CAM[0], py: Q_CAM[1], pz: Q_CAM[2], tx: Q_CAM[3], ty: Q_CAM[4], tz: Q_CAM[5] }, altura: () => 0 };
     const f1p = document.getElementById('f1Preto');
     let paraCidade = false;
@@ -1549,7 +1578,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const fim = new Promise((r) => { S.fimRes = r; });
       const ponto = retomar && svF2 ? retomar : 'inicio';
 
-      if (ponto === 'inicio') {
+      if (volta) {
+        dados.luz = true; S.noTerreo = true; Musica.tocar('jazz');
+        mudarLugar('escada', -MID, -OUT + 1.1, -Math.PI / 2, 0); await preto(false, 900); liberar();
+      } else if (ponto === 'inicio') {
         Musica.tocar('jazz');
         const nome = nomeJog();
         await Dialogo.mostrar([T('Mas... isso não é tudo.'), Tj('Eu não cheguei onde eu estou só por causa dessa partida...'), T('Na verdade, ela foi só o começo...')], { nome, voz: vozJog() });
@@ -1585,5 +1617,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', { origem: 'fase2' }); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa });
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S });   // (_estado: para testes)
 })();

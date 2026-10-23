@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.9.4
+   FUTEBOL JS · jogo.js · versão 4.9.5
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.9.5 — a cidadezinha ganha hora, clima e vida (cidade.js / fase2.js):
+   • particulas.intens(k) (0 a 1: densidade e opacidade da chuva) e particulas.tipo(): a cidade liga e desliga a chuva aos poucos.
+   • O resto da 4.9.5 está nos cabeçalhos do cidade.js e do fase2.js (relógio de 10 min por dia, dia/tarde/noite, chuva, loja do Valdemar).
+
    Novidades da versão 4.9.4 — crianças, fadiga em toda partida, poses de cansaço e interiores da cidade:
    • Partida das crianças: você continua com velocidade 5 e as crianças agora têm 4 na MESMA régua (≈4,7 m/s contra os seus 5,1; antes
      elas corriam ≈3,3), todas iguais, e 15 s de corrida (CRIANCA_VEL / CRIANCA_CORRIDA).
@@ -592,7 +596,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.9.4';
+const VERSAO_JOGO = '4.9.5';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -10422,7 +10426,7 @@ function aplicarAmbiente(P) {
 const particulas = (() => {
   const N = 1400, CAIXA = 40, ALT = 22;
   let obj = null, tipo = 'seco';
-  const U = { uTempo: { value: 0 }, uCam: { value: new THREE.Vector3() }, uVel: { value: 18 }, uVento: { value: 0 } };
+  const U = { uTempo: { value: 0 }, uCam: { value: new THREE.Vector3() }, uVel: { value: 18 }, uVento: { value: 0 }, uInt: { value: 1 } };
   function criar(t) {
     if (obj) { scene.remove(obj); obj.geometry.dispose(); obj.material.dispose(); obj = null; }
     tipo = t;
@@ -10439,9 +10443,10 @@ const particulas = (() => {
     g.setAttribute('aBase', new THREE.BufferAttribute(base, 3));   // ponto de cima da gota (as 2 pontas andam juntas)
     U.uVel.value = chuva ? 18 : 1.6; U.uVento.value = chuva ? 0.5 : 0.8;
     const C = CAIXA.toFixed(1), C2 = (CAIXA * 2).toFixed(1), H = ALT.toFixed(1);
-    const vs = `uniform float uTempo; uniform vec3 uCam; uniform float uVel; uniform float uVento;
+    const vs = `uniform float uTempo; uniform vec3 uCam; uniform float uVel; uniform float uVento; uniform float uInt;
       attribute vec3 aBase;
       void main() {
+        if (fract(sin(dot(aBase.xz, vec2(12.9898, 78.233))) * 43758.5453) > uInt) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }   // (4.9.5) intensidade: só uma parte das gotas
         vec3 off = position - aBase;
         vec3 b = aBase;
         b.y = mod(b.y - uTempo * uVel, ${H});                         // cai e volta lá de cima
@@ -10459,6 +10464,8 @@ const particulas = (() => {
   }
   return {
     definir(t) { if (t !== tipo || (!obj && (t === 'chuva' || t === 'neve'))) criar(t); },
+    tipo: () => tipo,                                                      // (4.9.5)
+    intens(k) { U.uInt.value = Math.max(0, Math.min(1, k)); if (obj) obj.visible = U.uInt.value > 0.01; },   // (4.9.5) 0 a 1 (chuva que começa/para aos poucos; some dentro dos lugares)
     atualizar(dt) { if (!obj) return; U.uTempo.value = (U.uTempo.value + dt) % 1000; U.uCam.value.copy(camera.position); },
   };
 })();
