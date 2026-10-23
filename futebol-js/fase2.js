@@ -25,7 +25,7 @@
      5. O computador: navegador → site "LoggedOn" → 3 notificações de vaga → escolher UM emprego (Mercado, Cafeteria ou Pizzaria).
         Qualquer um dá pontos em "Tranquilo" (espectro Tranquilo ↔ Problemático). A escolha fica salva.
      6. A escada do prédio (4 lances, câmeras fixas que mudam) com o vizinho que fuma, até a porta da rua.
-        A fase termina na porta da rua com "Continua..." (a cidadezinha, o seu Valdemar e os empregos vêm depois).
+        Na porta da rua a fase passa o bastão para a CIDADEZINHA (cidade.js, arquivo separado; se ele não vier, fica o "Continua...").
 
    NOVIDADES DESTA RODADA (só o fase2.js; o espaço de save agora vem de F.slotHistoria(), que já está no jogo.js)
      - Escada: a câmera do saguão fica do lado de fora, olhando para dentro: a porta da rua (portão de grade) fica virada para a câmera e o
@@ -454,6 +454,17 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     ATLETAS.delete(velho);
     A.m = m; A.opt = opt; A.base = base; A.mats = null; A.roupaAtual = { R, c: c.slice() };
     if (A.cigarro) { A.cigarro = null; fazCigarro(A); }
+  }
+  // (cidade.js) o personagem com a roupa salva no guarda-roupa, sem ator nem cena: a cidadezinha usa isto (Fases.carregar('fase2').modeloJogador)
+  function modeloJogador(d) {
+    const fem = PERSONAGEM.genero === 'F', base = aparenciaJogador(), lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
+    const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
+    const opt = Object.assign({ corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', barba: 0, manga: 0, meiao: 1, labio: 3, cabecao: 1.08, escala: 0.9 }, base, roupaOpts(R, c, base.pele)), m = makeAthlete(opt);
+    m.etiqueta.visible = false; m.sombra.visible = false;
+    if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
+    if (R.regata || R.top) pintarBracos(m, base.pele);
+    extrasRoupa(m, R, c, base.pele); pintarEmblema(m, R, c);
+    return { m, opt };
   }
   function fazCigarro(A) {
     const L = new Lote(); L.caixa(0.16, 0.028, 0.028, 0xf2f2ee, 0.1, 0, 0); L.caixa(0.03, 0.03, 0.03, 0xe8742a, 0.2, 0, 0);
@@ -1386,7 +1397,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await andar(J, [[-MID, -OUT + 0.25]], 1.2);
     gravar('fim');
     await preto(true, 1400);
-    await legenda(T('Continua...'), 3600);
+    // (cidade.js) lá fora é a CIDADEZINHA (arquivo separado). Se ela não carregar, fica o "Continua..." de antes.
+    let ok = false; try { ok = !!(await Fases.carregar('cidade')); } catch (e) { console.warn('[Fase 2] cidade.js não carregou:', e); }
+    if (ok) S.paraCidade = true; else await legenda(T('Continua...'), 3600);
     if (S.fimRes) S.fimRes();
   }
 
@@ -1505,6 +1518,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     S = { ativo: true, modo: 'cena', lugar: 'quarto', elenco: [], t: 0, k: 1, dados, fem: PERSONAGEM.genero === 'F', escuro: false, face: { x: 0, z: -1 }, fumaca: [], camSnap: true, mapa: null,
       cam: { px: Q_CAM[0], py: Q_CAM[1], pz: Q_CAM[2], tx: Q_CAM[3], ty: Q_CAM[4], tz: Q_CAM[5] }, altura: () => 0 };
     const f1p = document.getElementById('f1Preto');
+    let paraCidade = false;
     document.body.classList.add('f2Ativo');
     try {
       UI.preto.hidden = false; UI.preto.style.transitionDuration = '0s'; UI.preto.classList.remove('claro'); UI.leg.classList.remove('on'); UI.num.classList.remove('on');
@@ -1546,15 +1560,20 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       } else if (ponto === 'emprego') {
         dados.luz = true; mudarLugar('quarto', 2.4, -1.15, Math.PI); Musica.tocar('jazz');
         missao(T('Missão: troque de roupa e saia do quarto.')); await preto(false, 900); liberar();
+      } else if (ponto === 'fim' && await Fases.carregar('cidade').then(() => true, () => false)) {
+        S.paraCidade = true; S.fimRes();                               // (cidade.js) o save da porta da rua abre a cidadezinha
       } else {
         dados.luz = true; S.noTerreo = false; mudarLugar('escada', -4.1, -MID, 0, 5.6); Musica.tocar('jazz');
         missao(dados.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.')); await preto(false, 900); liberar();
       }
       await fim;
+      paraCidade = !!S.paraCidade;
     } finally {
       limpar(f1p);
     }
+    // (cidade.js) a Fase 2 terminou na porta da rua: a cidadezinha começa já no preto (ela mesma cobre a tela antes de qualquer espera)
+    if (paraCidade) { const rc = await Fases.executar('cidade', { origem: 'fase2' }); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar });
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador });
 })();
