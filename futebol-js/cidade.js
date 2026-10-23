@@ -1,6 +1,19 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.1.0
+     - Emprego da cafeteria: a Lúcia Alves (colega da fase1.js) é a moça do caixa (ver falarComLucia). Ela reconhece o jogador de
+       3 jeitos diferentes conforme o que rolou na fase 1 (o easter egg da mariposa, uma conversa marcante na sala, ou nunca ter
+       conversado). Expediente das 8h às 16h (H_TRAB_INI/H_TRAB_FIM): ao chegar um cliente, joguinho de combinar cafés na bancada
+       (turnoTrabalho/TIERS, 8 níveis até Cappuccino com chantilly e borda de chocolate), sempre com a mesma xícara genérica na mão.
+       Cada dia de trabalho rende PAGA_TRABALHO (50) fakes, cravados de uma vez ao sair do expediente, a partir do 2º dia na cidade.
+     - Correções: menu do balcão do Valdemar centralizado na tela (opcoes.centro do Escolha.mostrar) em vez de preso embaixo e
+       grudando no personagem ao girar a câmera; caixa de colisão faltando no balcão do Valdemar; casas de NPCs com nome só revelam
+       o nome depois de o jogador flagrar alguém entrando (antes ficavam reveladas de cara); nomes dos marcos do mapa (tickDescobertas)
+       aparecem corretamente ao serem descobertos; avisoDormir()/madrugada() agora zeram andando/correndo do jogador, então a
+       animação de corrida não fica mais presa numa cutscene seguinte; a gota do vômito (gotaVomito) agora nasce na boca, seguindo a
+       curvatura do tronco, e não mais flutuando na altura da barriga.
+
    NOVIDADES DA 5.0.1
      - Janelas acendem à noite (~55% delas, luz amarelada; vidros numa peça própria com material de brilho). Carros com faróis e lanternas
        que acendem à noite (e na chuva) e um facho no chão à frente.
@@ -157,6 +170,55 @@
     'Acho que eu exagerei...': ['I think I overdid it...', 'Creo que me pasé...', 'Credo di aver esagerato...', "Je crois que j'ai exagéré..."],
     'Rapaz, já são 10 dias vindo aqui! Agora você é cliente fiel: de hoje em diante, 20% de desconto em tudo!': ["Kid, that's 10 days coming here! You're a loyal customer now: from today on, 20% off everything!", '¡Muchacho, ya son 10 días viniendo aquí! Ahora eres cliente fiel: desde hoy, 20% de descuento en todo.', 'Ragazzo, sono già 10 giorni che vieni qui! Ora sei un cliente fedele: da oggi, 20% di sconto su tutto!', "Mon garçon, ça fait 10 jours que tu viens ici ! Tu es un client fidèle : à partir d'aujourd'hui, 20 % de réduction sur tout !"],
     'Cliente fiel: −20%': ['Loyal customer: −20%', 'Cliente fiel: −20%', 'Cliente fedele: −20%', 'Client fidèle : −20 %'],
+    // (5.1.0)
+    'Nem lembro de ter chegado em casa... apaguei de cansaço.': ["I don't even remember getting home... I passed out from exhaustion.", 'Ni me acuerdo de haber llegado a casa... me apagué de cansancio.', 'Non mi ricordo nemmeno di essere arrivato a casa... sono crollato dalla stanchezza.', "Je ne me souviens même pas d'être rentré... je me suis endormi d'épuisement."],
+    'Você descobriu: {0}': ['You discovered: {0}', 'Descubriste: {0}', 'Hai scoperto: {0}', 'Tu as découvert : {0}'],
+    'Lago do Sapo Cururu': ['Cururu Toad Lake', 'Lago del Sapo Cururu', 'Lago del Rospo Cururu', 'Lac du Crapaud Cururu'],
+    'Campo de Várzea Henrique Antônio': ['Henrique Antônio Field', 'Campo Henrique Antônio', 'Campo Henrique Antônio', 'Terrain Henrique Antônio'],
+    'Society do Seu Nonato': ["Seu Nonato's Society", 'Society de don Nonato', 'Society di Seu Nonato', 'Society de Seu Nonato'],
+    'Society Doutor Bryan': ['Doctor Bryan Society', 'Society del Doctor Bryan', 'Society del Dottor Bryan', 'Society du Docteur Bryan'],
+    'Casa do João': ["João's house", 'Casa de João', 'Casa di João', 'Maison de João'],
+    'Casa dos Alves': ['The Alves house', 'Casa de los Alves', 'Casa degli Alves', 'Maison des Alves'],
+    // (5.1.0) emprego da cafeteria: a Lúcia Alves no caixa e o Merge Game do expediente
+    'Lúcia Alves': ['Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves'],
+    'Falar com a Lúcia': ['Talk to Lúcia', 'Hablar con Lúcia', 'Parla con Lúcia', 'Parler à Lúcia'],
+    'Oi! Seja bem-vindo à cafeteria. Posso te ajudar com alguma coisa?': ['Hi! Welcome to the café. Can I help you with something?', '¡Hola! Bienvenido a la cafetería. ¿Te puedo ayudar en algo?', 'Ciao! Benvenuto nella caffetteria. Posso aiutarti con qualcosa?', 'Salut ! Bienvenue au café. Je peux t\'aider avec quelque chose ?'],
+    'Espera... {0}?! Não acredito que é você!': ['Wait... {0}?! I can\'t believe it\'s you!', '¿Espera... {0}?! ¡No puedo creer que seas tú!', 'Aspetta... {0}?! Non ci credo che sei tu!', 'Attends... {0} ?! Je n\'arrive pas à croire que c\'est toi !'],
+    'A quanto tempo você mora aqui?': ['How long have you lived here?', '¿Hace cuánto que vives aquí?', 'Da quanto tempo vivi qui?', 'Depuis quand habites-tu ici ?'],
+    'Acabei de me mudar para a cidade.': ['I just moved to town.', 'Me acabo de mudar a la ciudad.', 'Mi sono appena trasferito in città.', 'Je viens juste de m\'installer en ville.'],
+    'Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.': ['That\'s great, we\'ll work together then! I mean... it\'ll be nice having company around here, that\'s all.', '¡Qué bueno, entonces vamos a trabajar juntos! Es decir... va a estar bueno tener compañía aquí, eso sí.', 'Che bello, allora lavoreremo insieme! Cioè... sarà bello avere compagnia qui, ecco.', 'Super, on va travailler ensemble alors ! Je veux dire... ça va être sympa d\'avoir de la compagnie ici, c\'est tout.'],
+    'Eu também fico feliz de ver você': ['I\'m happy to see you too', 'Yo también estoy feliz de verte', 'Anche io sono felice di vederti', 'Moi aussi je suis content(e) de te voir'],
+    'Como funciona o trabalho?': ['How does the job work?', '¿Cómo funciona el trabajo?', 'Come funziona il lavoro?', 'Comment fonctionne le travail ?'],
+    'A-ah... é... deixa eu te explicar como funciona por aqui.': ['A-ah... right... let me explain how things work around here.', 'A-ah... sí... déjame explicarte cómo funciona esto.', 'A-ah... sì... lascia che ti spieghi come funziona qui.', 'A-ah... oui... laisse-moi t\'expliquer comment ça marche ici.'],
+    'Deixa eu te explicar como funciona por aqui.': ['Let me explain how things work around here.', 'Déjame explicarte cómo funciona esto.', 'Lascia che ti spieghi come funziona qui.', 'Laisse-moi t\'expliquer comment ça marche ici.'],
+    'Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?': ['Hey, didn\'t you go to school with me? We know each other. Do you remember me?', 'Ey, ¿no estudiaste en la escuela conmigo? Nos conocemos. ¿Te acuerdas de mí?', 'Ehi, non hai studiato a scuola con me? Ci conosciamo. Ti ricordi di me?', 'Hé, tu n\'as pas étudié à l\'école avec moi ? On se connaît. Tu te souviens de moi ?'],
+    'Sim, me lembro': ['Yes, I remember', 'Sí, me acuerdo', 'Sì, mi ricordo', 'Oui, je me souviens'],
+    'Não, não lembro': ["No, I don't remember", 'No, no me acuerdo', 'No, non mi ricordo', 'Non, je ne me souviens pas'],
+    'Que bom te ver de novo! Deixa eu te explicar como funciona o trabalho aqui.': ['Good to see you again! Let me explain how the job works here.', '¡Qué bueno verte de nuevo! Déjame explicarte cómo funciona el trabajo aquí.', 'Che bello rivederti! Lascia che ti spieghi come funziona il lavoro qui.', 'Content(e) de te revoir ! Laisse-moi t\'expliquer comment marche le travail ici.'],
+    'Ah... tudo bem, faz tempo mesmo. Deixa eu te explicar como funciona o trabalho aqui.': ['Ah... that\'s okay, it has been a while. Let me explain how the job works here.', 'Ah... está bien, ha pasado tiempo. Déjame explicarte cómo funciona el trabajo aquí.', 'Ah... va bene, è passato tempo. Lascia che ti spieghi come funziona il lavoro qui.', 'Ah... c\'est pas grave, ça fait longtemps. Laisse-moi t\'expliquer comment marche le travail ici.'],
+    'Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.': ['You look familiar, but I don\'t know from where... Anyway, let me explain how the job works here.', 'Me pareces familiar, pero no sé de dónde... En fin, déjame explicarte cómo funciona el trabajo aquí.', 'Mi sembri familiare, ma non so da dove... Comunque, lascia che ti spieghi come funziona il lavoro qui.', 'Tu me sembles familier(ère), mais je ne sais pas d\'où... Bref, laisse-moi t\'expliquer comment marche le travail ici.'],
+    'O expediente é das 8h às 16h. Quando um cliente chegar, vá até a bancada e prepare o pedido num joguinho de combinar cafés: junte dois iguais para subir de nível, até chegar no que foi pedido.': ["The shift runs from 8 AM to 4 PM. When a customer arrives, go to the counter and make the order in a little coffee-matching game: combine two of the same kind to level up, until you reach what was ordered.", 'El turno es de 8h a 16h. Cuando llegue un cliente, ve al mostrador y prepara el pedido en un jueguito de combinar cafés: junta dos iguales para subir de nivel, hasta llegar a lo que se pidió.', "Il turno è dalle 8 alle 16. Quando arriva un cliente, vai al bancone e prepara l'ordine in un mini gioco di unione dei caffè: unisci due uguali per salire di livello, finché non arrivi a quello richiesto.", "Le service va de 8h à 16h. Quand un client arrive, va au comptoir et prépare la commande dans un petit jeu de fusion de cafés : combine deux identiques pour monter de niveau, jusqu'à obtenir ce qui a été commandé."],
+    'Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!': ["You only start working tomorrow. You can come back here!", 'Recién empiezas a trabajar a partir de mañana. ¡Puedes volver aquí!', "Inizierai a lavorare solo da domani. Puoi tornare qui!", "Tu ne commences à travailler qu'à partir de demain. Tu peux revenir ici !"],
+    'Já fechamos o seu turno de hoje. Até amanhã!': ["We already closed your shift for today. See you tomorrow!", 'Ya cerramos tu turno de hoy. ¡Hasta mañana!', "Abbiamo già chiuso il tuo turno di oggi. A domani!", "On a déjà fermé ton service d'aujourd'hui. À demain !"],
+    'O expediente é das 8h às 16h. Volta nesse horário!': ["The shift runs from 8 AM to 4 PM. Come back during that time!", 'El turno es de 8h a 16h. ¡Vuelve en ese horario!', "Il turno è dalle 8 alle 16. Torna in quell'orario!", "Le service va de 8h à 16h. Reviens à cette heure-là !"],
+    'Quer começar o seu turno agora?': ['Do you want to start your shift now?', '¿Quieres empezar tu turno ahora?', 'Vuoi iniziare il tuo turno adesso?', 'Tu veux commencer ton service maintenant ?'],
+    'Sim, vamos trabalhar': ["Yes, let's work", 'Sí, vamos a trabajar', 'Sì, andiamo a lavorare', 'Oui, allons travailler'],
+    'Ainda não': ['Not yet', 'Todavía no', 'Non ancora', 'Pas encore'],
+    'Acabou o seu turno de hoje! Toma, {0} fakes. Até a próxima!': ["Your shift for today is over! Here, {0} fakes. See you next time!", '¡Terminó tu turno de hoy! Toma, {0} fakes. ¡Hasta la próxima!', "Il tuo turno di oggi è finito! Ecco, {0} fakes. Alla prossima!", "Ton service d'aujourd'hui est terminé ! Tiens, {0} fakes. À la prochaine !"],
+    'Expediente da cafeteria': ['Café shift', 'Turno de la cafetería', 'Turno in caffetteria', 'Service au café'],
+    'Clientes atendidos: {0}': ['Customers served: {0}', 'Clientes atendidos: {0}', 'Clienti serviti: {0}', 'Clients servis : {0}'],
+    'Pedido: {0}': ['Order: {0}', 'Pedido: {0}', 'Ordine: {0}', 'Commande : {0}'],
+    'Gerar cafezinho': ['Make coffee', 'Generar cafecito', 'Prepara un caffè', 'Préparer un café'],
+    'Servir': ['Serve', 'Servir', 'Servi', 'Servir'],
+    'Sair do expediente': ['Leave the shift', 'Salir del turno', 'Esci dal turno', 'Quitter le service'],
+    'Cafezinho preto': ['Black coffee', 'Cafecito negro', 'Caffè nero', 'Café noir'],
+    'Café com leite': ['Coffee with milk', 'Café con leche', 'Caffè con latte', 'Café au lait'],
+    'Café cremoso': ['Creamy coffee', 'Café cremoso', 'Caffè cremoso', 'Café crémeux'],
+    'Cremoso com borda de chocolate': ['Creamy with chocolate rim', 'Cremoso con borde de chocolate', 'Cremoso con bordo di cioccolato', 'Crémeux avec bord de chocolat'],
+    'Borda de chocolate e chantilly': ['Chocolate rim and whipped cream', 'Borde de chocolate y chantillí', 'Bordo di cioccolato e panna', 'Bord de chocolat et chantilly'],
+    'Cappuccino': ['Cappuccino', 'Capuchino', 'Cappuccino', 'Cappuccino'],
+    'Cappuccino com borda de chocolate': ['Cappuccino with chocolate rim', 'Capuchino con borde de chocolate', 'Cappuccino con bordo di cioccolato', 'Cappuccino avec bord de chocolat'],
+    'Cappuccino com chantilly e borda de chocolate': ['Cappuccino with whipped cream and chocolate rim', 'Capuchino con chantillí y borde de chocolate', 'Cappuccino con panna e bordo di cioccolato', 'Cappuccino avec chantilly et bord de chocolat'],
   });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
@@ -691,6 +753,9 @@
         const piv2 = new THREE.Group(); piv2.position.set(1.5 - 0.08, 0, d / 2 - 1.0 + 0.45); piv2.add(Gi.malha(MAT)); mLanche.add(piv2);
         S.loja = { porta: piv, k: 0, alvo: 0, porta2: piv2, k2: 0, alvo2: 0, per, tex: texP, pk: 0, palvo: 0, portaX: cx - 4.6, portaZ: L.z0 }; }
       for (let i = 0; i < 4; i++) { const a = assento(cx - (-4.6 + i * 1.7), cz - (d / 2 + 1.1), 0, 1, 0.8, 'banqueta'); a.lanche = true; S.col.push({ x0: a.x - 0.2, x1: a.x + 0.2, z0: a.z - 0.2, z1: a.z + 0.2 }); }
+      // (5.1.0) o próprio balcão (o corpo de madeira + o tampo, montados lá em cima) não tinha colisão: só as banquetas.
+      // O tampo é um pouco mais largo que o corpo e sai mais para fora (ver "montar" do mLanche), por isso a caixa é generosa.
+      S.col.push({ x0: cx - 1.7, x1: cx + 5.7, z0: cz - d / 2 - 0.7, z1: cz - d / 2 + 0.1 });
       S.balcao = { x: cx + 2.5, z: cz - (d / 2 - 0.9) }; }
     edificio({ r: R(908, 432, 98, 72), frente: -1, h: 6.8, andares: 2, cor: '#5f6b7a', faixa: '#f2c230', barrado: '#3a414b',
       letreiro: { txt: 'ACADEMIA', fundo: '#1c1c1f', cor: '#f2c230', w: 9, h: 1.2, y: 3.45 },
@@ -1152,6 +1217,7 @@
 
   // ------------------------------------------------------------------ (4.9.5) a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
   const H_ABRE = 8, H_FECHA = 20, H_ACORDA_V = 6.3, VEL_V = 2.2;
+  const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_TRABALHO = 50;   // (5.1.0) expediente da cafeteria (ver falarComLucia/turnoTrabalho)
   const lojaAberta = () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA;
   const sumirV = (V) => { V.puxa = false; V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
   const surgirV = (V, x, z, yaw) => { V.oculto = false; V.x = x; V.z = z; V.yaw = V.yawAlvo = yaw; S.meus.add(V.m); V.blob.visible = true; };
@@ -1709,6 +1775,38 @@
     const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
     try { const t0 = A.currentTime; [660, 880].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.08, t0 + i * 0.12); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.12 + 0.2); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.12); o.stop(t0 + i * 0.12 + 0.22); }); } catch (e) { /* sem som */ }
   }
+  // ------------------------------------------------------------------ (5.1.0) PONTOS NOMEADOS: lugares sem placa (lago, societys, várzea) ganham
+  // um nome quando o jogador chega perto deles pela primeira vez (fica guardado; o mapa passa a escrever o nome ali). As casas de NPCs
+  // nomeados (ver montarMoradores) são diferentes: elas só mostram o nome quando algo específico revelar (ver revelarCasaNPC), exceto a
+  // do seu Valdemar, que já tem placa "VALDEMAR" plantada no mundo (então não faz sentido escondê-la no mapa).
+  let MARCOS_CACHE = null;
+  function marcos() {
+    if (MARCOS_CACHE || !S.societys || !S.societys.length) return MARCOS_CACHE || [];
+    MARCOS_CACHE = [
+      { id: 'lago', nome: T('Lago do Sapo Cururu'), x: LAGO.cx, z: LAGO.cz, raio: 20 },
+      { id: 'varzea', nome: T('Campo de Várzea Henrique Antônio'), x: (VARZEA.x0 + VARZEA.x1) / 2, z: (VARZEA.z0 + VARZEA.z1) / 2, raio: 22 },
+      { id: 'society1', nome: T('Society do Seu Nonato'), x: S.societys[0].cx, z: S.societys[0].cz, raio: 16 },
+      { id: 'society2', nome: T('Society Doutor Bryan'), x: S.societys[1].cx, z: S.societys[1].cz, raio: 16 },
+    ];
+    return MARCOS_CACHE;
+  }
+  function tickDescobertas() {
+    const d = S.dados, J = S.jog, M = marcos(); if (!M.length) return;
+    for (const m of M) {
+      if (d.descobertos[m.id]) continue;
+      if (Math.hypot(J.x - m.x, J.z - m.z) > m.raio) continue;
+      d.descobertos[m.id] = true;
+      aviso(Tf('Você descobriu: {0}', m.nome)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3200);
+      gravar(d.ponto);
+    }
+  }
+  const NOME_CASA = { joao: T('Casa do João'), alves: T('Casa dos Alves') };     // (a do seu Valdemar já tem a placa própria, ver NOME_CASA_SEMPRE)
+  // chame isto de onde quer que a história venha a precisar: ao ver o NPC entrando em casa, ou quando ele "chamar" o jogador pelo mapa.
+  // (nenhuma cena do jogo chama isto ainda: nem o João nem a Lúcia Alves andam pela cidade como personagens à parte por enquanto.)
+  function revelarCasaNPC(marca) {
+    const d = S.dados; if (d.casasConhecidas[marca]) return;
+    d.casasConhecidas[marca] = true; gravar(d.ponto);
+  }
   // o mapa (2D): o próprio chão pintado + os prédios + você + a marca
   function desenharMapa() {
     const c = UI.mapaCv, g = c.getContext('2d'), W = c.width, H = c.height, kx = W / 240, kz = H / 152;
@@ -1718,6 +1816,15 @@
     if (S.aguaImg) g.drawImage(S.aguaImg, X(LAGO.cx - LAGO.rx), Z(LAGO.cz - LAGO.rz), LAGO.rx * 2 * kx, LAGO.rz * 2 * kz); else { g.fillStyle = '#4f9fd0'; g.fill(); }
     g.restore();
     for (const p of S.planta) { g.fillStyle = p.cor; g.fillRect(X(p.r.x0), Z(p.r.z0), (p.r.x1 - p.r.x0) * kx, (p.r.z1 - p.r.z0) * kz); if (!p.chao) { g.strokeStyle = 'rgba(42,18,6,0.85)'; g.lineWidth = 1; g.strokeRect(X(p.r.x0) + 0.5, Z(p.r.z0) + 0.5, (p.r.x1 - p.r.x0) * kx - 1, (p.r.z1 - p.r.z0) * kz - 1); } }
+    // (5.1.0) nomes descobertos (lago, societys, várzea) e casas de NPCs já reveladas
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = "bold 9px Silkscreen, 'Courier New', monospace";
+    const rotulo = (x, z, txt) => { const mx = X(x), mz = Z(z); g.fillStyle = 'rgba(20,10,4,0.75)'; g.fillText(txt, mx + 1, mz + 1); g.fillStyle = '#fff0c8'; g.fillText(txt, mx, mz); };
+    for (const m of marcos()) if (S.dados.descobertos[m.id]) rotulo(m.x, m.z, m.nome);
+    for (const cs of S.casas || []) {
+      if (!cs.marca) continue;
+      const nome = cs.marca === 'valdemar' ? T('Seu Valdemar') : (S.dados.casasConhecidas[cs.marca] ? NOME_CASA[cs.marca] : null);
+      if (nome) rotulo(cs.x, cs.z, nome);
+    }
     if (S.marca) { const mx = X(S.marca.x), mz = Z(S.marca.z); g.fillStyle = S.dados.corMarca || CORES_MARCA[0]; g.strokeStyle = '#2a1206'; g.lineWidth = 2; g.beginPath(); g.arc(mx, mz, 7, 0, Math.PI * 2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(mx - 4, mz + 9); g.lineTo(mx + 4, mz + 9); g.lineTo(mx, mz + 16); g.closePath(); g.fill(); }
     const J = S.jog, px = X(J.x), pz = Z(J.z), fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw);     // você: setinha na direção em que olha
     g.fillStyle = '#ffffff'; g.strokeStyle = '#2a1206'; g.lineWidth = 2; g.beginPath();
@@ -1747,7 +1854,7 @@
     if (!R) { await preto(false, 300); return; }
     S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P };
     S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
-    S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = [];
+    S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
     S.dentro = Object.assign({ nome: P.nome }, R);
     for (const o of R.ocl || []) oclusor(o.b, o.mesh);
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
@@ -1760,6 +1867,7 @@
       if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
       else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
       else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
+      if (p.marca === 'lucia') S.lucia = A;    // (5.1.0) a moça do caixa da cafeteria é a Lúcia Alves (ver falarComLucia)
       S.npcs.push(A);
     }
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
@@ -1845,7 +1953,7 @@
     const g = S.grupo; scene.remove(g);
     g.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
     Object.assign(S, { col: F.col, circ: F.circ, pisos: F.pisos, assentos: F.assentos, npcs: F.npcs, conversas: F.conversas, camBox: F.camBox, oclusores: F.oclusores, grupo: F.grupo });
-    S.dentro = null; S.fora = null; S.fluxo = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;
+    S.dentro = null; S.fora = null; S.fluxo = null; S.lucia = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;   // (5.1.0) S.lucia só existe dentro da cafeteria; já foi descartada junto do grupo acima
     const P = F.porta; J.x = P.x + Math.cos(P.sai) * 0.4; J.z = P.z - Math.sin(P.sai) * 0.4; J.yaw = J.yawAlvo = P.sai; J.y = altura(J.x, J.z);
     Object.assign(S.cam, F.cam); S.cam.snap = true;
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
@@ -1866,7 +1974,7 @@
     if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: T('Entrar no prédio'), fn: entrarNoPredio, y: 2.7 });       // (4.9.5) dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
       const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: sairDoLugar, y: 2.6 });
-      for (const e of D.extras) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : null, y: 2.4 });
+      for (const e of D.extras) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : null, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
     } else if (S.interiores) for (const P of PORTAS) v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     return v;
   }
@@ -1888,6 +1996,7 @@
     if (!S || S.modo !== 'livre') return;
     const a = alvoAtual(); if (!a) return;
     som(); S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    S.jog.andando = false; S.jog.correndo = false;     // (5.1.0) sem isto, interagir andando/correndo deixava a animação "correndo" travada até a cena acabar
     try { await a.fn(a); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena' && UI.ficha.hidden) liberar();
   }
@@ -1905,7 +2014,7 @@
     if (S.fimRes) S.fimRes();
   }
   async function menuBalcao() {
-    const i = await Escolha.mostrar(T('No balcão'), [T('Valdemar'), T('Sair')]);
+    const i = await Escolha.mostrar(T('No balcão'), [T('Valdemar'), T('Sair')], { centro: true });   // (5.1.0) no balcão do lanche fica no meio da tela, não embaixo
     if (i === 0) { if (S.valdemar && !S.valdemar.oculto) await atendimento(); }
     else levantar();
   }
@@ -1915,9 +2024,12 @@
     J.sentado = false; J.x = p.x; J.z = p.z; if (a) a.ocupado = null; S.sentadoEm = null;
   }
   async function fala(quem, texto) {
-    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : null;
+    // (5.1.0) quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
+    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : null;
     if (A) A.fala = true;
-    await Dialogo.mostrar([texto], { nome: quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : '', voz: quem === 'val' ? 1 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2), manter: true });
+    const nome = quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : '';
+    const voz = quem === 'val' ? 1 : quem === 'lucia' ? 0 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
+    await Dialogo.mostrar([texto], { nome, voz, manter: true });
     if (A) A.fala = false;
   }
 
@@ -1936,6 +2048,7 @@
     d.dia = d.dia || 1; d.mes = d.mes || 1;
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
+    d.trabalhouHoje = false;   // (5.1.0) libera o expediente de novo a cada dia (ver falarComLucia/turnoTrabalho)
   }
   const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // (5.0.0) cliente fiel: −20% em tudo
   async function atendimento() {
@@ -1993,12 +2106,164 @@
   function gotaVomito(J) {
     const P = S.vomGeo || (S.vomGeo = { g: guardar(new THREE.BoxGeometry(0.06, 0.06, 0.06)), m: [0x9ab83a, 0xc8c25a, 0x7a9a2a].map((c) => guardar(new THREE.MeshBasicMaterial({ color: c }))) });
     const fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw), es = J.opt.escala || 1;
-    const m = new THREE.Mesh(P.g, P.m[Math.floor(Math.random() * 3)]); m.position.set(J.x + fx * 0.42 * es, J.y + 1.15 * es, J.z + fz * 0.42 * es); S.grupo.add(m);
+    // (5.1.0) de onde sai o vômito: a pose "vomita" (poseAtor) dobra o CORPO (tronco + cabeça) -0,6 rad para a frente, em torno do
+    // quadril. A cabeça fica fixa em (x 0,02, y 1,36) dentro do tronco; giramos esse mesmo ponto pelo mesmo ângulo para achar onde a
+    // boca realmente fica no mundo, em vez de um valor fixo "no olho" (que estava saindo perto da barriga, não da boca).
+    const DOBRA = 0.6, cb = Math.cos(DOBRA), sb = Math.sin(DOBRA);
+    const bocaX = 0.02 * cb + 1.36 * sb + 0.22;    // 0,22: do centro da cabeça até a boca, já na frente do rosto
+    const bocaY = -0.02 * sb + 1.36 * cb - 0.08;   // um pouco abaixo do centro da cabeça
+    const m = new THREE.Mesh(P.g, P.m[Math.floor(Math.random() * 3)]); m.position.set(J.x + fx * bocaX * es, J.y - 0.05 + bocaY * es, J.z + fz * bocaX * es); S.grupo.add(m);
     (S.vomPart || (S.vomPart = [])).push({ m, t: 0, chao: false, vx: fx * (0.6 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3, vy: -0.4 - Math.random() * 0.6, vz: fz * (0.6 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3 });
     if (!S.poca) {
       const m2 = new THREE.Mesh(guardar(new THREE.CircleGeometry(0.42, 10)), guardar(new THREE.MeshBasicMaterial({ color: 0x8aa83a, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 })));
       m2.rotation.x = -Math.PI / 2; m2.position.set(J.x + fx * 0.75 * es, altura(J.x + fx * 0.75, J.z + fz * 0.75) + 0.02, J.z + fz * 0.75 * es); m2.scale.set(0.2, 0.2, 1); S.grupo.add(m2); S.poca = { m: m2, t: 0 };
     } else if (S.poca.t < 3) { const k = Math.min(1, S.poca.m.scale.x + 0.02); S.poca.m.scale.set(k, k * 0.8, 1); }
+  }
+
+  // ------------------------------------------------------------------ (5.1.0) CAFETERIA: o emprego da Lúcia Alves (Merge Game)
+  //   Lê o que a Fase 1 deixou salvo (historia.fase1.lucia / .mariposa) para saber como ela reconhece o jogador, e o que a Fase 2
+  //   deixou salvo (historia.fase2.emprego) para só liberar o turno quem escolheu trabalhar na cafeteria. O "dia" e a "hora" do
+  //   expediente (8h–16h) são só para liberar a conversa: o turno em si é o próprio Merge Game, e ao sair dele a hora pula pra
+  //   16h e paga 50 fakes (um valor fixo por dia, não por pedido — ver turnoTrabalho).
+  function fase1Lucia() {
+    const h1 = (API.historia.ler('fase1')) || {};
+    return { mariposa: !!h1.mariposa, falou: !!h1.lucia };
+  }
+  function empregoEscolhido() {
+    const h2 = API.historia.ler('fase2');
+    return (h2 && h2.emprego) || null;
+  }
+  const TIERS = [                                 // ordem fixa da mistura: cada um nasce de dois do tier anterior
+    { nome: 'Cafezinho preto', cor: '#3a2213', creme: false, cacau: false, chantilly: false, chocBorda: false },
+    { nome: 'Café com leite', cor: '#8a5a2a', creme: false, cacau: false, chantilly: false, chocBorda: false },
+    { nome: 'Café cremoso', cor: '#c89a5a', creme: true, cacau: false, chantilly: false, chocBorda: false },
+    { nome: 'Cremoso com borda de chocolate', cor: '#c89a5a', creme: true, cacau: false, chantilly: false, chocBorda: true },
+    { nome: 'Borda de chocolate e chantilly', cor: '#c89a5a', creme: true, cacau: false, chantilly: true, chocBorda: true },
+    { nome: 'Cappuccino', cor: '#e8d0a8', creme: true, cacau: true, chantilly: false, chocBorda: false },
+    { nome: 'Cappuccino com borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: false, chocBorda: true },
+    { nome: 'Cappuccino com chantilly e borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: true, chocBorda: true },
+  ];
+  function iconeCafezinho(tier) {                 // (5.1.0) xícara pixel-art (16x16) que muda com o tier: cor, espuma, cacau, chantilly e borda de chocolate
+    const t = TIERS[tier] || TIERS[0];
+    const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null));
+    const px = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
+    const rc = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c); };
+    const PIRES = '#e8e2d4', CHOC = '#5a3418', CREME = '#fff4e2', ALCA = '#e8e2d4';
+    rc(2, 13, 12, 1, PIRES);                                                       // pires
+    rc(3, 7, 10, 6, t.cor); rc(3, 12, 10, 1, '#2a1206');                            // corpo líquido da xícara + sombra da base
+    rc(2, 6, 12, 1, PIRES);                                                        // borda da xícara
+    px(12, 8, ALCA); px(13, 8, ALCA); px(13, 9, ALCA); px(13, 10, ALCA); px(12, 10, ALCA);  // alça
+    if (t.creme) { rc(3, 6, 10, 1, CREME); px(5, 5, CREME); px(9, 5, CREME); }      // espuma/creme por cima
+    if (t.cacau) { px(5, 6, CHOC); px(8, 6, CHOC); px(10, 7, CHOC); }               // pó de cacau salpicado na espuma
+    if (t.chocBorda) { for (let i = 0; i < 12; i += 2) px(2 + i, 6, CHOC); }        // fio de chocolate correndo pela borda
+    if (t.chantilly) { rc(6, 2, 4, 2, CREME); px(5, 3, CREME); px(10, 3, CREME); px(7, 1, CREME); px(8, 1, CREME); }  // topete de chantilly
+    const k = '#2a1206', out = g.map((r) => r.slice());
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!g[y][x]) { for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const yy = y + dy, xx = x + dx; if (yy >= 0 && yy < N && xx >= 0 && xx < N && g[yy][xx]) { out[y][x] = k; break; } } }
+    const cv = document.createElement('canvas'); cv.width = cv.height = N; const cx = cv.getContext('2d');
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (out[y][x]) { cx.fillStyle = out[y][x]; cx.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
+    return cv;
+  }
+  function ganhoNaTela(v) {                        // "+v" verde subindo (o oposto do gastoNaTela, que é vermelho e desce)
+    const el = document.createElement('div'); el.textContent = '+' + v; el.style.cssText = 'position:fixed;z-index:12;right:max(60px,env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));font:700 16px/1 var(--font-display);color:#8fe04a;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.2s ease,opacity 1.2s ease;';
+    UI.hud.parentNode.appendChild(el); requestAnimationFrame(() => { el.style.transform = 'translateY(-22px)'; el.style.opacity = '0'; }); setTimeout(() => el.remove(), 1300);
+  }
+  // (5.1.0) o Merge Game do expediente: uma grade 4×4, "Gerar" solta um cafezinho preto numa casa vazia, tocar em dois do
+  // mesmo tier junta os dois no segundo (o primeiro esvazia) e sobe um tier. "Servir" entrega ao cliente um item do tier pedido.
+  function turnoTrabalho() {
+    return new Promise((res) => {
+      const COLS = 4, LINS = 4, NC = COLS * LINS;
+      let grade = Array(NC).fill(-1), sel = -1, pedido = Math.floor(Math.random() * TIERS.length), atendidos = 0;
+      const el = document.createElement('div'); el.id = 'cdTrabalho';
+      el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
+      const card = document.createElement('div');
+      card.style.cssText = 'width:min(420px,100%);max-height:96%;overflow:auto;background:#2a1206;border:4px solid #8a5a2a;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
+      const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:#f0a020;';
+      h.textContent = T('Expediente da cafeteria');
+      const sub = document.createElement('div'); sub.style.cssText = 'font:400 13px/1.3 var(--font-body);color:#e8d8b8;';
+      const pedidoBox = document.createElement('div'); pedidoBox.style.cssText = 'display:flex;align-items:center;gap:8px;background:#3a1c0a;border:3px solid #6a4428;padding:6px 8px;';
+      const pedidoIc = document.createElement('div'); const pedidoTxt = document.createElement('div'); pedidoTxt.style.cssText = 'font:700 12px/1.2 var(--font-display);';
+      pedidoBox.append(pedidoIc, pedidoTxt);
+      const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + COLS + ',1fr);gap:5px;';
+      const cels = []; for (let i = 0; i < NC; i++) { const c = document.createElement('button'); c.type = 'button'; c.style.cssText = 'aspect-ratio:1;background:#1f0f06;border:2px solid #4a2c14;padding:0;display:grid;place-items:center;cursor:pointer;'; grid.appendChild(c); cels.push(c); }
+      const linha = document.createElement('div'); linha.style.cssText = 'display:flex;gap:8px;';
+      const btnGerar = document.createElement('button'); btnGerar.type = 'button'; btnGerar.className = 'pxBtn'; btnGerar.textContent = T('Gerar cafezinho'); btnGerar.style.cssText = '--p:var(--p2,2px);flex:1;height:38px;font-size:12px;';
+      const btnServir = document.createElement('button'); btnServir.type = 'button'; btnServir.className = 'pxBtn'; btnServir.textContent = T('Servir'); btnServir.style.cssText = '--p:var(--p2,2px);flex:1;height:38px;font-size:12px;';
+      linha.append(btnGerar, btnServir);
+      const btnSair = document.createElement('button'); btnSair.type = 'button'; btnSair.className = 'pxBtn'; btnSair.textContent = T('Sair do expediente'); btnSair.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;';
+      card.append(h, sub, pedidoBox, grid, linha, btnSair); el.appendChild(card); document.body.appendChild(el);
+      function novoPedido() { pedido = Math.floor(Math.random() * TIERS.length); pedidoIc.innerHTML = ''; pedidoIc.appendChild(iconeCafezinho(pedido)); pedidoTxt.textContent = Tf('Pedido: {0}', T(TIERS[pedido].nome)); }
+      function redesenhar() {
+        sub.textContent = Tf('Clientes atendidos: {0}', atendidos);
+        for (let i = 0; i < NC; i++) {
+          const c = cels[i], v = grade[i]; c.innerHTML = ''; c.style.borderColor = i === sel ? '#f0a020' : '#4a2c14';
+          if (v >= 0) { c.appendChild(iconeCafezinho(v)); c.title = T(TIERS[v].nome); c.dataset.tier = String(v); } else { c.title = ''; delete c.dataset.tier; }
+        }
+        btnGerar.disabled = !grade.includes(-1);
+        btnServir.disabled = !grade.includes(pedido);
+        pedidoBox.dataset.pedidoTier = String(pedido);
+      }
+      novoPedido(); redesenhar();
+      btnGerar.onclick = () => {
+        if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+        const vazias = grade.reduce((a, v, i) => (v === -1 ? (a.push(i), a) : a), []);
+        if (!vazias.length) return;
+        grade[vazias[Math.floor(Math.random() * vazias.length)]] = 0; redesenhar();
+      };
+      cels.forEach((c, i) => {
+        c.onclick = () => {
+          if (grade[i] === -1) return;
+          if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+          if (sel === -1) { sel = i; redesenhar(); return; }
+          if (sel === i) { sel = -1; redesenhar(); return; }
+          if (grade[sel] === grade[i] && grade[i] < TIERS.length - 1) { grade[i] = grade[i] + 1; grade[sel] = -1; }
+          sel = -1; redesenhar();
+        };
+      });
+      btnServir.onclick = () => {
+        const i = grade.indexOf(pedido); if (i === -1) return;
+        if (typeof Som !== 'undefined' && Som.clique) Som.clique();
+        grade[i] = -1; atendidos++; sel = -1; novoPedido(); redesenhar();
+      };
+      btnSair.onclick = () => { el.remove(); res(atendidos); };
+    });
+  }
+  // (5.1.0) a conversa no caixa: três jeitos de ela reconhecer o jogador (ou não), e depois a oferta do turno
+  async function falarComLucia() {
+    const d = S.dados, L = S.lucia, J = S.jog;
+    if (L) L.yawAlvo = Math.atan2(-(J.z - L.z), J.x - L.x);
+    if (empregoEscolhido() !== 'cafeteria') { await fala('lucia', T('Oi! Seja bem-vindo à cafeteria. Posso te ajudar com alguma coisa?')); Dialogo.esconder(); return; }
+    if (!d.luciaApresentou) {
+      const { mariposa, falou } = fase1Lucia();
+      if (mariposa) {
+        await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
+        await fala('lucia', T('A quanto tempo você mora aqui?'));
+        await fala('jog', T('Acabei de me mudar para a cidade.'));
+        await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
+        const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')], { centro: true });   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
+        if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); }
+        else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
+      } else if (falou) {
+        const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
+        await fala('lucia', r0 === 0 ? T('Que bom te ver de novo! Deixa eu te explicar como funciona o trabalho aqui.') : T('Ah... tudo bem, faz tempo mesmo. Deixa eu te explicar como funciona o trabalho aqui.'));
+      } else {
+        await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
+      }
+      await fala('lucia', T('O expediente é das 8h às 16h. Quando um cliente chegar, vá até a bancada e prepare o pedido num joguinho de combinar cafés: junte dois iguais para subir de nível, até chegar no que foi pedido.'));
+      d.luciaApresentou = true; gravar('chegada');
+    }
+    Dialogo.esconder();
+    if ((d.dia || 1) < 2) { await fala('lucia', T('Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!')); Dialogo.esconder(); return; }
+    if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
+    if (d.hora < H_TRAB_INI || d.hora >= H_TRAB_FIM) { await fala('lucia', T('O expediente é das 8h às 16h. Volta nesse horário!')); Dialogo.esconder(); return; }
+    const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')], { centro: true });
+    Dialogo.esconder();
+    if (r !== 0) return;
+    await turnoTrabalho();
+    d.trabalhouHoje = true; d.hora = H_TRAB_FIM; d.fakes += PAGA_TRABALHO; somDinheiro(); mostrarDinheiro(true); ganhoNaTela(PAGA_TRABALHO);
+    gravar('chegada');
+    await fala('lucia', Tf('Acabou o seu turno de hoje! Toma, {0} fakes. Até a próxima!', PAGA_TRABALHO));
+    Dialogo.esconder();
   }
   // (4.9.5) ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
   function iconePx(id) {
@@ -2195,6 +2460,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const soltaArr = (e) => { if (e.pointerId === arr.id) arr.id = null; };
     arrasto.addEventListener('pointerup', soltaArr); arrasto.addEventListener('pointercancel', soltaArr);
     arrasto.addEventListener('wheel', (e) => { if (!S) return; e.preventDefault(); S.cam.dist = Math.max(5, Math.min(16, S.cam.dist + Math.sign(e.deltaY) * 0.8)); }, { passive: false });
+    // (5.1.0) ao girar a tela (ou qualquer resize) com o dedo em cima do direcional ou do arrasto da câmera, o toque pode não soltar
+    // de verdade (o layout muda debaixo do dedo); sem isto o personagem ficava "andando sozinho" na direção em que o joystick travou.
+    const soltarTudo = () => { joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; arr.id = null; };
+    window.addEventListener('resize', soltarTudo); window.addEventListener('orientationchange', soltarTudo);
     UI.joy = joy; UI.teclas = {};
     window.addEventListener('keydown', (e) => {
       if (!S || !S.ativo) return; UI.teclas[e.code] = true;
@@ -2397,6 +2666,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // (5.0.0) 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
   async function madrugada() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
+    J.andando = false; J.correndo = false;             // (5.1.0) a cutscene das 2h cortava mesmo se ele estivesse correndo na hora
     if (J.sentado) levantar();
     try { await fala('jog', T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (!S.dentro) {
@@ -2411,7 +2681,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.fimRes) S.fimRes();
   }
   async function avisoDormir() {
-    S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.jog.andando = false; S.jog.correndo = false;
     try { await fala('jog', T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
@@ -2585,7 +2855,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       for (let k = 0; k < 3; k++) { const a = base + k * Math.PI * 2 / 3, sx = t.x + Math.cos(a) * 1.5, sz = t.z + Math.sin(a) * 1.5; if (livreNPC(sx, sz, null, true) && distRede(sx, sz) < 14) t.slots.push({ x: sx, z: sz, t, ocupado: null }); }
     }
     const gente = S.npcs.filter((A) => A !== S.valdemar && (A.tipo === 'senta' || A.tipo === 'conversa' || A.tipo === 'treino'));
-    const casas = (S.casas || []).filter((c) => c !== S.casaValdemar && distRede(c.sx, c.sz) < 11);
+    // (5.1.0) casas com "marca" (seu Valdemar, João, os Alves) são exclusivas de quem a planta já reservou para: moradores sem
+    // nome não vivem nelas. Antes só a do seu Valdemar era excluída; as outras ainda podiam "sortear" um morador qualquer.
+    const casas = (S.casas || []).filter((c) => !c.marca && distRede(c.sx, c.sz) < 11);
     for (let i = casas.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [casas[i], casas[j]] = [casas[j], casas[i]]; }
     S.moradores = [];
     gente.forEach((A, i) => {
@@ -2700,7 +2972,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const n = typeof Cena !== 'undefined' ? Cena.passos() : 1;
       for (let i = 0; i < n; i++) {
         S.t += dt;
-        if (S.modo === 'livre') { mover(dt); tickHorario(dt); }
+        if (S.modo === 'livre') { mover(dt); tickHorario(dt); tickDescobertas(); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
@@ -2743,7 +3015,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const f1p = document.getElementById('f1Preto'), f1Vis = !!(f1p && !f1p.hidden); if (f1p) f1p.hidden = true;   // o preto da Fase 1 (quando ela chamou a Fase 2) volta no fim
     if (!MAT) { MAT = new THREE.MeshLambertMaterial({ vertexColors: true }); MAT_DUPLO = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }); MAT_PRE = new THREE.MeshBasicMaterial({ colorWrite: false, transparent: true, depthWrite: true }); }
     const H = ctx.historia || {};
-    const dados = Object.assign({ ponto: 'chegada', fakes: 150, visitas: 0, corMarca: CORES_MARCA[0], hora: 8.5, avisouDormir: false }, H.cidade || {});
+    const dados = Object.assign({ ponto: 'chegada', fakes: 150, visitas: 0, corMarca: CORES_MARCA[0], hora: 8.5, avisouDormir: false, descobertos: {}, casasConhecidas: {}, luciaApresentou: false, trabalhouHoje: false }, H.cidade || {});
     S = { ativo: true, modo: 'cena', pausado: false, t: 0, dados, assentos: [], bancos: [], col: [], circ: [], camBox: [], oclusores: [], planta: [], pisos: [], telas: [], redes: [], carros: [], npcs: [], conversas: [], pedestres: [], meus: new Set(),
       clima: novoClima(), portao: { k: 1, alvo: 1, col: [], piv: [] }, cam: { yaw: 0.55, dist: 9.5, dAt: 9.5, snap: true }, marca: null, missao: '' };
     let paraFase2 = false;
@@ -2785,5 +3057,6 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
 
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar,
-    _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN } });   // (_estado/_planta: para testes)
+    _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
+    _fns: { interagir, falarComLucia, turnoTrabalho, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
 })();

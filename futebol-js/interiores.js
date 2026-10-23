@@ -93,7 +93,8 @@
       balcao(0, -4.6, 9, 1.0, '#6a4428', '#e8d8b8');
       G.box(0.8, 0.6, 0.5, '#3a3a3e', -2.5, 1.06, -4.7); G.box(0.2, 0.3, 0.2, '#c9ced4', -2.5, 1.66, -4.6);              // máquina de café
       G.box(2.4, 0.5, 0.7, '#e8f4f8', 2, 1.06, -4.6); for (let i = 0; i < 6; i++) G.box(0.3, 0.18, 0.3, pk(['#7a4a2a', '#f4a6c0', '#f2e6c8', '#c8352b']), 1.2 + i * 0.32, 1.1, -4.6);   // vitrine de bolos
-      R.pessoas.push({ tipo: 'parado', x: 0, z: -5.5, yaw: -Math.PI / 2, fem: true });
+      R.pessoas.push({ tipo: 'parado', x: 0, z: -5.5, yaw: -Math.PI / 2, fem: true, marca: 'lucia' });    // (5.1.0) moça do caixa = Lúcia Alves (ver falarComLucia em cidade.js)
+      R.extras.push({ x: 0, z: -3.6, r: 1.6, txt: 'Falar com a Lúcia', acao: 'caixa' });
       const ms = [[-5, -1], [-1.5, -0.5], [2.5, -0.8], [-4.5, 2.6], [0, 2.8], [4.5, 2.2]];
       const lugares = []; for (const [x, z] of ms) lugares.push(...mesa(x, z, '#8a5a2b', 2, '#e8d8b8'));
       for (const i of [0, 3, 6, 9]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });

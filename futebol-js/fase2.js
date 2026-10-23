@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.1.0
+     - Corrigido: quando a madrugada() da cidade pega o jogador acordado até as 2h, a volta para a fase 2 agora manda ele direto para
+       a cama (ctx.args.acordar; ver aparecerNaCama() e o trecho "volta && acordar" em iniciar) em vez de deixá-lo largado na entrada
+       do prédio como antes.
+     - Corrigido: o guarda-roupa (abrirGuardaRoupa) agora guarda e devolve a posição do scroll da lista de roupas (.rCorpo.scrollTop)
+       ao trocar de roupa ou cor, em vez de voltar pro topo a cada clique (a lista é recriada do zero a cada render()).
    NOVIDADES DA 4.9.5
      - Cigarro do vizinho preso à mão (vai da mão à boca, brasa para fora).
      - Porta da rua = grade azul por fora e por dentro; dá para voltar ao apartamento a qualquer hora ({ volta: true }, vindo da cidade).
@@ -18,6 +24,8 @@
      ctx.historia   tudo o que está salvo da história: { fase1: {...}, fase2: {...} }  (cópia: mexer aqui não grava nada)
      ctx.personagem nome, apelido, nomeCamisa, numero, aparencia, pe, genero, voz...   (cópia)
      ctx.args       { retomar: 'inicio' | 'emprego' | 'escada' | 'fim' } quando a fase é aberta por um save (tela CARREGAR; o jogo.js 4.6.0 chama a fase)
+                    { volta: true } o jogador voltou do prédio vindo da cidade; { volta: true, acordar: true } (5.1.0) além de voltar,
+                    a madrugada() da cidade pegou ele acordado até as 2h: acorda direto na cama em vez de parar na entrada do prédio
      ctx.api        ferramentas do jogo: T, Tf, Tg, Tgf, Dialogo, Escolha, Musica, Som, Atributos, salvo, PERSONAGEM, esperar(ms) e api.historia
      ctx.raiz       elemento onde as telas da fase podem ser colocadas
 
@@ -1126,6 +1134,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (performance.now() < (S.bloq || 0)) return;
     const a = alvoAtual(); if (!a) return;
     somClique(); S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    S.jog.livreAndando = false;    // (5.1.0) idem cidade.js: não travar a animação de andar se a cena começou enquanto ele andava
     try { await a.fn(a); } catch (e) { console.error(e); }
     if (S && S.ativo && !S.fimDaFase && S.modo === 'cena') liberar();
   }
@@ -1177,20 +1186,22 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const rot = [T('Cor principal'), T('Cor secundária'), T('Cor dos detalhes'), T('Cor da borda do emblema')], dica = [T('blusa, camiseta ou vestido'), T('calça, short ou saia'), T('gola, barra, listras'), T('o quadradinho ou escudo do peito')];
       const aplicar = () => { const R = idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]; vestirRoupa(J, R, cores); S.dados.roupa = { id: idx, cores: cores.slice() }; };
       let aba = 'roupa';
-      const render = () => {
+      const render = (manterScroll) => {
+        const corpoAntes = UI.roupa.querySelector('.rCorpo'), scrollAntes = manterScroll && corpoAntes ? corpoAntes.scrollTop : 0;   // (5.1.0) o innerHTML abaixo recria a lista do zero; sem guardar e devolver o scroll, cada clique voltava pro topo
         const bt = [-1].concat(lista.map((_, i) => i)).map((i) => '<button type="button" class="pxBtn' + (i === idx ? ' on' : '') + '" data-r="' + i + '">' + esc(T(nomeDe(i))) + '</button>').join('');
         const sw = (n) => '<p class="rSec">' + esc(rot[n]) + ' <small>(' + esc(dica[n]) + ')</small></p><div class="rCores">' + PAL.map((h) => '<button type="button" class="rCor' + (cores[n].toLowerCase() === h ? ' on' : '') + '" data-c="' + n + '" data-v="' + h + '" style="background:' + h + '" aria-label="' + h + '"></button>').join('') + '</div>';
         const corpo = aba === 'roupa' ? '<div class="rGrade">' + bt + '</div>' : sw(0) + sw(1) + sw(2) + sw(3);
         UI.roupa.innerHTML = '<p class="rTit">' + esc(T('Guarda-roupa')) + '</p><div class="rAbas"><button type="button" class="pxBtn' + (aba === 'roupa' ? ' on' : '') + '" data-aba="roupa">' + esc(T('Roupa')) + '</button><button type="button" class="pxBtn' + (aba === 'cores' ? ' on' : '') + '" data-aba="cores">' + esc(T('Cores')) + '</button></div><div class="rCorpo">' + corpo + '</div><div class="rFim"><button type="button" class="pxBtn pxPrim" data-fim="1">' + esc(T('Pronto')) + '</button></div>';
+        const corpoDepois = UI.roupa.querySelector('.rCorpo'); if (corpoDepois) corpoDepois.scrollTop = scrollAntes;
       };
-      UI.roupa.hidden = false; render();
+      UI.roupa.hidden = false; render(false);
       UI.roupa.onclick = (e) => {
         const b = e.target.closest('button'); if (!b) return; somClique();
-        if (b.dataset.aba) { aba = b.dataset.aba; render(); return; }
+        if (b.dataset.aba) { aba = b.dataset.aba; render(false); return; }          // troca de aba: conteúdo é outro, volta pro topo mesmo
         if (b.dataset.fim) { UI.roupa.hidden = true; UI.roupa.onclick = null; S.camEspecial = null; S.modo = 'cena'; fim(); return; }
         if (b.dataset.r != null) { idx = Number(b.dataset.r); cores = c4((idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]).c); }
         else if (b.dataset.c != null) cores[Number(b.dataset.c)] = b.dataset.v;
-        aplicar(); render();
+        aplicar(); render(true);                                                   // escolheu roupa/cor na mesma aba: mantém o scroll onde estava
       };
       aplicar(); S.jog.yawAlvo = -Math.PI / 2;
     });
@@ -1551,6 +1562,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   async function iniciar(ctx) {
     API = ctx.api; montarUI();
     const retomar = ctx.args && ctx.args.retomar, volta = !!(ctx.args && ctx.args.volta);          // (4.9.5) volta: o jogador entrou no prédio de novo, vindo da cidade
+    const acordar = !!(ctx.args && ctx.args.acordar);        // (5.1.0) madrugada() na cidade (ficou acordado até as 2h): não para na entrada, acorda direto na cama
     const dados = dadosPadrao(), svF2 = ctx.historia && ctx.historia.fase2;
     if (((retomar && retomar !== 'inicio') || volta) && svF2) Object.assign(dados, JSON.parse(JSON.stringify(svF2)));
     dados.ano = new Date().getFullYear() - ANOS_ATRAS + ANOS_FRENTE;
@@ -1578,7 +1590,16 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const fim = new Promise((r) => { S.fimRes = r; });
       const ponto = retomar && svF2 ? retomar : 'inicio';
 
-      if (volta) {
+      if (volta && acordar) {
+        // (5.1.0) passou das 2h da madrugada na rua: antes ele "chegava" na entrada do prédio e um novo dia começava ali mesmo
+        // (o jogador ficava largado do lado de fora). Agora o corte vai direto para a cama do próprio quarto, como um apagão.
+        dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');
+        mudarLugar('quarto', 0, 0, 0, 0); aparecerNaCama(); missao('');
+        await preto(false, 900); await esperar(500);
+        await dizer(['jog', T('Nem lembro de ter chegado em casa... apaguei de cansaço.')]);
+        S.jog.seguir = true; S.jog.pose = 'pe'; S.jog.x = -1.9; S.jog.z = -1.3; S.jog.yaw = S.jog.yawAlvo = 0; S.jog.ySnap = true;
+        liberar();
+      } else if (volta) {
         dados.luz = true; S.noTerreo = true; Musica.tocar('jazz');
         mudarLugar('escada', -MID, -OUT + 1.1, -Math.PI / 2, 0); await preto(false, 900); liberar();
       } else if (ponto === 'inicio') {
@@ -1617,5 +1638,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', { origem: 'fase2' }); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S });   // (_estado: para testes)
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa } });   // (_estado/_fns: para testes)
 })();

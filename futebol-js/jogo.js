@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 5.0.1
+   FUTEBOL JS · jogo.js · versão 5.1.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,18 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.1.0:
+   • Emprego da cafeteria (cidade.js): a Lúcia Alves (da fase1.js) é a moça do caixa; reconhece o jogador de 3 jeitos
+     diferentes conforme o que rolou na fase 1 (o easter egg da mariposa, uma conversa marcante, ou nunca ter conversado).
+     Expediente das 8h às 16h com um joguinho de combinar cafés (8 níveis, até Cappuccino com chantilly e borda de
+     chocolate); cada dia trabalhado rende 50 fakes, a partir do 2º dia na cidade.
+   • Correções: teleporte ao dormir/acordar na cama (antes o jogador ficava largado na entrada do prédio); o guarda-roupa
+     mantém a posição do scroll da lista ao trocar de roupa/cor (antes voltava pro topo a cada clique); menu do balcão
+     do Valdemar centralizado na tela (e não mais preso embaixo, grudando no personagem ao girar a câmera); caixa de
+     colisão no balcão do Valdemar; casas de NPCs com nome só revelam o nome depois de o jogador flagrar alguém entrando;
+     nomes dos marcos do mapa aparecem ao descobri-los; a animação de correr não trava mais presa numa cutscene; o
+     vômito agora sai da boca (acompanhando a curvatura do tronco), não da barriga.
+
    Novidades da versão 5.0.1:
    • Espectros: soma simples (cada ação soma/subtrai o seu valor; só o limite −100/+100). Saiu o retorno decrescente.
    • Cidade (cidade.js): janelas acendem à noite, faróis nos carros, e otimizações (boneco de 1 peça para quem está longe,
@@ -613,7 +625,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '5.0.1';
+const VERSAO_JOGO = '5.1.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -12452,6 +12464,8 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
 #escolha { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; display: flex; justify-content: center; padding: 0 max(12px, env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
   --mx-ink: #2a1206; --mx-creme: #fff0c8; --mx-laranja: #f0a020; color: var(--mx-creme); }
 #escolha[hidden] { display: none; }
+/* (5.1.0) algumas escolhas (ex.: o balcão do seu Valdemar) pedem o meio da tela, não embaixo */
+#escolha.centro { top: 0; align-items: center; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
 #escolha .escCaixa { --p: var(--p3, 3px); box-sizing: border-box; width: min(720px, 100%); padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 8px;
   border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
 #escolha .escTit { margin: 0; font: 600 clamp(14px, 3.8vh, 19px)/1.3 var(--font-body); }
@@ -12460,9 +12474,10 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
     el = document.createElement('div'); el.id = 'escolha'; el.hidden = true;
     ($('raizJogo') || document.body).appendChild(el);
   }
-  function mostrar(titulo, ops) {
+  function mostrar(titulo, ops, opcoes) {
     if (typeof Cena !== 'undefined') Cena.interativo();      // (4.8.2) decisão do jogador: o "Pular cena" para aqui
     montar();
+    el.classList.toggle('centro', !!(opcoes && opcoes.centro));   // (5.1.0) ex.: Escolha.mostrar(titulo, ops, { centro: true })
     el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p>' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div>';
     el.querySelector('.escTit').textContent = titulo || '';
     el.querySelectorAll('button').forEach((b, i) => { b.textContent = ops[i]; });
