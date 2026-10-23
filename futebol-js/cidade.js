@@ -1,6 +1,31 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.0.1
+     - Janelas acendem à noite (~55% delas, luz amarelada; vidros numa peça própria com material de brilho). Carros com faróis e lanternas
+       que acendem à noite (e na chuva) e um facho no chão à frente.
+     - Otimização: NPC a mais de ~32 m vira um boneco de 1 peça (sem calcular pose); brilhos dos postes não são desenhados de dia;
+       alambrados e redes dos campos só aparecem com o jogador a até ~42 m.
+
+   NOVIDADES DA 5.0.0
+     - Luz do dia mais baixa (antes estourava: água branca, mato marrom à tarde, interiores "de vidro").
+     - Dia da semana no relógio (dia 1 = segunda). Dentro dos lugares tem FLUXO de clientes: quem está sai e, com lugar vazio, entra outro.
+       Seg–qua vazio, qui médio, sex–dom cheio (2 a 4 lugares vazios). Nunca lota. Hospital e academia continuam como eram.
+     - Morador que acha o lugar dele ocupado (pelo jogador) vai para o banco vazio mais perto. Clientes do lanche: sentam, esperam, comem e vão embora.
+     - 2h da manhã acordado: cutscene, ele corre para o prédio e acorda no dia seguinte (sono nível 3, ver Sono no jogo.js).
+     - Lanche: 2 de "não saudável" cada; comer satisfeito soma mais 4, ele diz que exagerou e 20 s depois vomita. 10 dias comprando no
+       Valdemar = cliente fiel (−20% em tudo). Cardápio numa linha só, deslizando na horizontal. Aviso de hábitos não saudáveis em −50.
+
+   NOVIDADES DA 4.9.6
+     - NPCs: acabou a sobreposição (quem ficava preso um dentro do outro agora se afasta) e o "entra e sai de casa" sem fim. Os moradores (sentados, os que
+       conversam e os três do treino) moram em casas, vários por casa: saem de manhã (6h–7h30), vão para o seu lugar e voltam às 18h, 19h ou 20h.
+     - Chuva: cada morador escolhe entre uma árvore (3 pontos fixos por árvore; se estiver ocupado, vai para o próximo; em pé, sentado no chão ou deitado)
+       e a casa. Quem vai para casa só volta no dia seguinte; quem se abrigou volta ao lugar quando a chuva para. O treino pausa quando falta alguém.
+     - Pedestres: de cada 10 que decidem, 5 entram num lugar (cinema, cafeteria, mercado, bar, pizzaria, restaurante, academia ou sentam no lanche; hospital não).
+     - Lanche do Valdemar: porta de DENTRO (na lateral do vão do balcão) além da de serviço; ele puxa a persiana (animação) e sai por uma porta e depois pela outra.
+     - Árvores perto da cidade ficam translúcidas na frente da câmera; calçada com lajotas cinza pixeladas (antes estourava de branco).
+     - Tempo: dia de 15 min, 2% de chance de chuva por minuto, relógio mostra de 10 em 10 minutos.
+
    NOVIDADES DA 4.9.5
      - Hora e clima: o dia dura 10 min (6h acorda · 22h hora de dormir; aviso às 21h). Dia claro, tarde amarelada, noite escura com os
        postes acesos. Chuva pode começar do nada (5% a cada 1 min; dura de 2 a 10 min, sorteado uma vez). Quando chove, uns NPCs se
@@ -124,6 +149,14 @@
     'Cachorro-quente especial': ['Special hot dog', 'Perrito especial', 'Hot dog speciale', 'Hot-dog spécial'],
     'X-quase-tudo': ['Almost-everything burger', 'X-casi-todo', 'X-quasi-tutto', 'X-presque-tout'],
     'X-sem-salada com refri': ['No-salad burger with soda', 'X-sin-ensalada con refresco', 'X-senza-insalata con bibita', 'X-sans-salade avec soda'],
+    // (5.0.0)
+    'Seg': ['Mon', 'Lun', 'Lun', 'Lun'], 'Ter': ['Tue', 'Mar', 'Mar', 'Mar'], 'Qua': ['Wed', 'Mié', 'Mer', 'Mer'], 'Qui': ['Thu', 'Jue', 'Gio', 'Jeu'],
+    'Sex': ['Fri', 'Vie', 'Ven', 'Ven'], 'Sáb': ['Sat', 'Sáb', 'Sab', 'Sam'], 'Dom': ['Sun', 'Dom', 'Dom', 'Dim'],
+    'Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??': ["Oh my God, it's 2 AM?! What am I still doing awake??", 'Dios mío, ¿son las 2?! ¿¿Qué hago todavía despierto??', 'Mio Dio, sono le 2?! Cosa ci faccio ancora sveglio??', "Mon Dieu, il est 2 h ?! Qu'est-ce que je fais encore debout ??"],
+    'Eu já tô satisfeito... mas bem que cabia mais um.': ["I'm already full... but I could fit one more.", 'Ya estoy lleno... pero me cabe uno más.', 'Sono già sazio... ma ce ne starebbe un altro.', "Je suis déjà rassasié... mais j'en mangerais bien un autre."],
+    'Acho que eu exagerei...': ['I think I overdid it...', 'Creo que me pasé...', 'Credo di aver esagerato...', "Je crois que j'ai exagéré..."],
+    'Rapaz, já são 10 dias vindo aqui! Agora você é cliente fiel: de hoje em diante, 20% de desconto em tudo!': ["Kid, that's 10 days coming here! You're a loyal customer now: from today on, 20% off everything!", '¡Muchacho, ya son 10 días viniendo aquí! Ahora eres cliente fiel: desde hoy, 20% de descuento en todo.', 'Ragazzo, sono già 10 giorni che vieni qui! Ora sei un cliente fedele: da oggi, 20% di sconto su tutto!', "Mon garçon, ça fait 10 jours que tu viens ici ! Tu es un client fidèle : à partir d'aujourd'hui, 20 % de réduction sur tout !"],
+    'Cliente fiel: −20%': ['Loyal customer: −20%', 'Cliente fiel: −20%', 'Cliente fedele: −20%', 'Client fidèle : −20 %'],
   });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
@@ -215,7 +248,7 @@
     }
     g.putImageData(im, 0, 0);
   }
-  const VERDE = '#78a54c', TERRA = '#c39a63', ASFALTO = '#5f6267', CALCADA = '#c9c3b5', PISO_PRACA = '#ddd2b6';
+  const VERDE = '#78a54c', TERRA = '#c39a63', ASFALTO = '#5f6267', CALCADA = '#8a8d92', PISO_PRACA = '#ddd2b6';
 
   const TONS_GRAMA = ['#6f9c45', '#78a54c', '#82ae53', '#6a943f', '#8db75a', '#739f48', '#7fa94f', '#668f3c'];
   const TONS_TERRA = ['#c39a63', '#b98f58', '#cda56c', '#ad8450', '#d4b07a', '#bd9460', '#c8a068'];
@@ -318,8 +351,8 @@
   const texTela = (cor, passo) => { const t = texCanvas(16, 16, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = cor; for (let i = 0; i < 16; i++) { g.fillRect(i, i, 1, 1); g.fillRect(15 - i, i, 1, 1); } if (passo) { g.fillRect(0, 0, 16, 1); } }, false); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
   // (4.9.5) calçada: lajotas quadradas (0,75 m), cada uma com um tom, rejunte escuro e pontinhos de sujeira
   const texCalcada = () => { const t = texCanvas(64, 64, (g, w, h) => {
-    const rnd = semente(88), tons = ['#cdc7b9', '#c4beb0', '#d3cdbf', '#bfb9ab', '#c9c3b5', '#d0cabc'];
-    g.fillStyle = '#8f897d'; g.fillRect(0, 0, w, h);
+    const rnd = semente(88), tons = ['#7c7f85', '#72757b', '#85888e', '#696c72', '#797c83', '#80838a'];     // (4.9.6) tons de cinza escuros o bastante para a luz do dia não estourar
+    g.fillStyle = '#4d5056'; g.fillRect(0, 0, w, h);
     for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) {
       g.fillStyle = tons[Math.floor(rnd() * tons.length)]; g.fillRect(i * 16 + 1, j * 16 + 1, 15, 15);
       g.fillStyle = 'rgba(255,255,255,0.20)'; g.fillRect(i * 16 + 1, j * 16 + 1, 15, 1); g.fillRect(i * 16 + 1, j * 16 + 1, 1, 15);
@@ -415,7 +448,8 @@
   // janela: moldura (frente a +5 cm), vidro (+7 cm) e peitoril (+15 cm) — nenhuma face no plano da parede
   function janela(G, w, d, face, u, y, jw, jh, moldura, vidro) {
     naFace(G, w, d, face, u, y - 0.1, 0, jw + 0.2, jh + 0.2, 0.1, moldura || '#f4f2ea');
-    naFace(G, w, d, face, u, y, 0, jw, jh, 0.14, vidro || '#4f6f86');
+    const h = Math.sin(u * 12.9898 + y * 78.233 + w * 3.71 + d * 1.37 + face.charCodeAt(0) * 0.7) * 43758.5453, acesa = G.vid && h - Math.floor(h) < 0.55;   // (5.0.1) ~55% das janelas acendem à noite
+    naFace(acesa ? G.vid : G, w, d, face, u, y, 0, jw, jh, 0.14, vidro || '#4f6f86');
     if (jw > 0.7) naFace(G, w, d, face, u, y + jh * 0.48, 0, 0.07, jh * 0.04 + 0.03, 0.16, moldura || '#f4f2ea');
     naFace(G, w, d, face, u, y - 0.16, 0.04, jw + 0.34, 0.08, 0.22, moldura || '#f4f2ea');
   }
@@ -486,6 +520,7 @@
         if (xr < w / 2 - 0.01) G.box(w / 2 - xr + 0.08, 0.9, N.prof + 0.04, bc, (xr + w / 2) / 2, 0, zf + 0.02);
       } else G.box(w + 0.08, 0.9, d + 0.08, bc, 0, 0, 0); }
     if (o.andares > 1) for (let a = 1; a < o.andares; a++) G.box(w + 0.06, 0.2, d + 0.06, o.faixa || escurece(cor, 0.85), 0, a * (h / o.andares) - 0.1, 0);
+    G.vid = new Geo();                                                // (5.0.1) os vidros que acendem à noite ficam numa peça à parte (material com brilho)
     if (o.montar) o.montar(G, w, d, h);
     if (o.fundos !== false) {                                         // janelas nos fundos e nos lados (prédios comerciais: ninguém fica "cego" de costas)
       for (const f of ['b', 'l', 'r']) { const L = f === 'b' ? w : d, n = Math.floor((L - 2) / 4); if (n < 1) continue;
@@ -498,6 +533,11 @@
     if (o.telhado) { telhado(G, w, d, h, o.telhado.rh, o.telhado.e || 0.45, o.telhado.cor || '#b5552e', o.telhado.eixo || 'x', cor); topo = h + o.telhado.rh; }
     else { G.box(w + 0.14, 0.55, d + 0.14, o.platibanda || escurece(cor, 0.92), 0, h - 0.06, 0, '#8d8a82'); topo = h + 0.5; }
     const mesh = addMalha(G, cx, cz, o.frente < 0 ? Math.PI : 0), placas = [];
+    if (mesh && G.vid.p.length) {                                     // vidros acesos: todos os prédios numa malha só (1 desenho para a cidade inteira)
+      const V = S.vidros || (S.vidros = new Geo()), sg = o.frente < 0 ? -1 : 1, P = G.vid.p, N = G.vid.n;
+      for (let i = 0; i < P.length; i += 3) { V.p.push(cx + sg * P[i], P[i + 1], cz + sg * P[i + 2]); V.n.push(sg * N[i], N[i + 1], sg * N[i + 2]); }
+      for (const c of G.vid.c) V.c.push(c);
+    }
     if (o.letreiro && mesh) {
       const L = o.letreiro, tex = guardar(texLetreiro(L.txt, L.fundo, L.cor, L.w, L.h));
       const mf = guardar(new THREE.MeshLambertMaterial({ map: tex, emissive: 0x000000, emissiveMap: tex })), mb = guardar(new THREE.MeshLambertMaterial({ color: hexN(L.fundo) }));
@@ -556,7 +596,7 @@
     for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const z = (i < 2 ? -1 : 1) * (40 + rnd() * 60); morro(s * (175 + rnd() * 50), z, 24 + rnd() * 14, 8 + rnd() * 10, 22 + rnd() * 12); }
 
     // --- calçadas elevadas (12 cm) com meio-fio mais escuro
-    { const tc = guardar(texCalcada()), mTop = guardar(new THREE.MeshLambertMaterial({ map: tc })), mLado = guardar(new THREE.MeshLambertMaterial({ color: 0x8f8b80 }));   // (4.9.5) lajotas quadradas no topo
+    { const tc = guardar(texCalcada()), mTop = guardar(new THREE.MeshLambertMaterial({ map: tc })), mLado = guardar(new THREE.MeshLambertMaterial({ color: 0x6f7278 }));   // (4.9.5) lajotas quadradas no topo (4.9.6: cinza)
       for (const c of CALCADAS) {
         const w = c.x1 - c.x0, d = c.z1 - c.z0, geo = guardar(new THREE.BoxGeometry(w, 0.12, d)), uv = geo.attributes.uv;
         for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 3 + c.x0 / 3, uv.getY(i) * d / 3);
@@ -633,6 +673,7 @@
         G.box(7.2, 0.95, 0.5, '#8a5a2b', -2, 0, d / 2 + 0.2, '#8a5a2b'); G.box(7.4, 0.12, 0.7, '#d6c6a6', -2, 0.95, d / 2 + 0.3);
         G.box(6.9, 0.04, 2.0, '#bdb4a0', -2, 0, d / 2 - 1.0);
         naFace(G, w, d, 'f', 4.6, 0, 0, 1.2, 2.3, 0.1, '#f4f2ea'); naFace(G, w, d, 'f', 4.6, 0.12, 0, 1.0, 2.1, 0.12, '#17110c');
+        G.box(0.06, 2.2, 1.1, '#f4f2ea', 1.5 - 0.03, 0, d / 2 - 1.0); G.box(0.07, 2.05, 0.92, '#17110c', 1.5 - 0.035, 0, d / 2 - 1.0);   // (4.9.6) a porta de DENTRO (é por ela que o seu Valdemar entra e sai do balcão)
         const zb = d / 2 - 2.0;                                              // parede do fundo do vão
         G.box(6.6, 0.92, 0.7, '#6a4428', -2, 0, zb + 0.4);
         G.box(6.6, 0.1, 0.45, '#6a4428', -2, 1.55, zb + 0.23); G.box(6.6, 0.1, 0.45, '#6a4428', -2, 2.05, zb + 0.23);   // prateleiras
@@ -646,7 +687,9 @@
         const piv = new THREE.Group(); piv.position.set(4.1, 0, d / 2 + 0.1); piv.add(Gd.malha(MAT)); mLanche.add(piv);
         const texP = guardar(texPersiana()), geoP = guardar(new THREE.BoxGeometry(6.9, 1, 0.08)); geoP.translate(0, -0.5, 0);
         const per = new THREE.Mesh(geoP, guardar(new THREE.MeshLambertMaterial({ map: texP }))); per.position.set(-2, 2.6, d / 2 + 0.02); per.scale.y = 0.001; per.visible = false; mLanche.add(per);
-        S.loja = { porta: piv, k: 0, alvo: 0, per, tex: texP, pk: 0, palvo: 0, portaX: cx - 4.6, portaZ: L.z0 }; }
+        const Gi = new Geo(); Gi.box(0.06, 2.0, 0.9, '#6a4a2a', 0, 0.03, -0.45); Gi.box(0.08, 0.9, 0.6, '#7a5a34', 0, 1.1, -0.45); Gi.box(0.1, 0.07, 0.07, '#d8c070', 0, 1.05, -0.8);
+        const piv2 = new THREE.Group(); piv2.position.set(1.5 - 0.08, 0, d / 2 - 1.0 + 0.45); piv2.add(Gi.malha(MAT)); mLanche.add(piv2);
+        S.loja = { porta: piv, k: 0, alvo: 0, porta2: piv2, k2: 0, alvo2: 0, per, tex: texP, pk: 0, palvo: 0, portaX: cx - 4.6, portaZ: L.z0 }; }
       for (let i = 0; i < 4; i++) { const a = assento(cx - (-4.6 + i * 1.7), cz - (d / 2 + 1.1), 0, 1, 0.8, 'banqueta'); a.lanche = true; S.col.push({ x0: a.x - 0.2, x1: a.x + 0.2, z0: a.z - 0.2, z1: a.z + 0.2 }); }
       S.balcao = { x: cx + 2.5, z: cz - (d / 2 - 0.9) }; }
     edificio({ r: R(908, 432, 98, 72), frente: -1, h: 6.8, andares: 2, cor: '#5f6b7a', faixa: '#f2c230', barrado: '#3a414b',
@@ -754,7 +797,7 @@
       const G = new Geo(); for (const sz of [-1, 1]) { const gz = cz + sz * 15; for (const t of [-2.5, 2.5]) G.box(0.12, 2.2, 0.12, '#f4f4ec', cx + t, 0.08, gz); G.box(5.12, 0.12, 0.12, '#f4f4ec', cx, 2.28, gz); }
       addMalha(G, 0, 0);
       S.redes.push({ x: cx, z: cz - 15, larg: 5, alt: 2.2, prof: 1.2, dir: -1, y: 0.08, ez: true }, { x: cx, z: cz + 15, larg: 5, alt: 2.2, prof: 1.2, dir: 1, y: 0.08, ez: true });
-      S.societys.push({ r, cx, cz });
+      S.societys.push({ r, cx, cz, gate: { out: { x: (portao[0] + portao[1]) / 2, z: r.z0 - 1.4 }, in: { x: (portao[0] + portao[1]) / 2, z: r.z0 + 1.4 } } });   // (4.9.6) o portão: quem sai do campo passa por ele
       S.planta.push({ r, cor: '#4f9a3f', chao: true });
     }
 
@@ -791,11 +834,16 @@
     // --- árvores (as da planta + as de fora da cidade)
     { const G = new Geo();
       const arvore = (x, z, k, colide) => {
-        const tr = 0.32 * k, ht = 2.0 * k; G.box(tr, ht, tr, '#6c4a2a', x, 0, z);
+        const Gt = colide ? new Geo() : G;                                   // (4.9.6) as árvores onde o jogador chega são peças separadas: a copa fica translúcida na frente da câmera
+        const tr = 0.32 * k, ht = 2.0 * k; Gt.box(tr, ht, tr, '#6c4a2a', x, 0, z);
         const verdes = ['#3f7a33', '#4f8a3a', '#5a9a44', '#356b2c'];
         const n = 2 + Math.floor(rnd() * 2);
-        for (let i = 0; i < n; i++) { const s = (2.6 - i * 0.55 + rnd() * 0.4) * k; G.box(s, (1.1 + rnd() * 0.4) * k, s * (0.85 + rnd() * 0.3), verdes[Math.floor(rnd() * 4)], x + (rnd() - 0.5) * 0.5 * k, ht * 0.85 + i * 0.95 * k + rnd() * 0.05, z + (rnd() - 0.5) * 0.5 * k); }
-        if (colide) { S.col.push({ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 }); (S.abrigos || (S.abrigos = [])).push({ x, z }); }
+        for (let i = 0; i < n; i++) { const s = (2.6 - i * 0.55 + rnd() * 0.4) * k; Gt.box(s, (1.1 + rnd() * 0.4) * k, s * (0.85 + rnd() * 0.3), verdes[Math.floor(rnd() * 4)], x + (rnd() - 0.5) * 0.5 * k, ht * 0.85 + i * 0.95 * k + rnd() * 0.05, z + (rnd() - 0.5) * 0.5 * k); }
+        if (colide) {
+          S.col.push({ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 }); (S.abrigos || (S.abrigos = [])).push({ x, z, k, slots: [] });
+          const mesh = addMalha(Gt, 0, 0), topo = ht * 0.85 + (n - 1) * 0.95 * k + 1.7 * k;
+          oclusor({ x0: x - 1.6 * k, x1: x + 1.6 * k, z0: z - 1.6 * k, z1: z + 1.6 * k, y0: 1.5 * k, y1: topo }, mesh);
+        }
       };
       const mapa = [[20, 30], [120, 60], [280, 70], [560, 70], [905, 80], [1150, 90], [526, 236], [526, 330], [746, 236], [746, 330], [566, 250], [720, 306], [275, 300], [858, 230], [430, 540], [90, 590], [420, 620], [100, 720], [430, 720], [830, 700], [600, 720], [1100, 725], [10, 700]];
       for (const [px, py] of mapa) arvore(PX(px + 9), PZ(py + 9), 1 + rnd() * 0.4, true);
@@ -832,19 +880,26 @@
     const mT = guardar(new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }));
     const mR = guardar(new THREE.MeshLambertMaterial({ map: texR, alphaTest: 0.5, side: THREE.DoubleSide }));
     const plano = (w, h, passo, mat) => { const geo = guardar(new THREE.PlaneGeometry(w, h)), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / passo, uv.getY(i) * h / passo); return new THREE.Mesh(geo, mat); };
-    for (const t of S.telas) { const m = plano(t.L, t.alt - 0.1, 0.7, mT); m.position.set(t.x, t.y + (t.alt - 0.1) / 2 + 0.02, t.z); if (!t.hor) m.rotation.y = Math.PI / 2; S.grupo.add(m); }
+    S.telasM = [];                                                     // (5.0.1) desenhadas só com o jogador por perto (atualizarTelas)
+    const add = (m, r) => { S.grupo.add(m); S.telasM.push({ m, r }); };
+    for (const t of S.telas) { const m = plano(t.L, t.alt - 0.1, 0.7, mT); m.position.set(t.x, t.y + (t.alt - 0.1) / 2 + 0.02, t.z); if (!t.hor) m.rotation.y = Math.PI / 2; add(m, t.L / 2); }
     for (const r of S.redes) {      // fundo, dois lados e teto (a rede fica ATRÁS da linha do gol: nada encosta nas traves)
       const bx = r.x + r.dir * r.prof, y = r.y;
       if (r.ez) {                    // (4.9.3) gol com a linha ao longo de x (societys)
-        const f = plano(r.larg, r.alt, 0.25, mR); f.position.set(r.x, y + r.alt / 2, r.z + r.dir * r.prof); S.grupo.add(f);
-        for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.rotation.y = Math.PI / 2; l.position.set(r.x + s * (r.larg / 2 + 0.03), y + r.alt / 2, r.z + r.dir * (r.prof / 2 + 0.04)); S.grupo.add(l); }
-        const t = plano(r.larg, r.prof - 0.08, 0.25, mR); t.rotation.x = -Math.PI / 2; t.position.set(r.x, y + r.alt + 0.03, r.z + r.dir * (r.prof / 2 + 0.04)); S.grupo.add(t);
+        const f = plano(r.larg, r.alt, 0.25, mR); f.position.set(r.x, y + r.alt / 2, r.z + r.dir * r.prof); add(f, r.larg);
+        for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.rotation.y = Math.PI / 2; l.position.set(r.x + s * (r.larg / 2 + 0.03), y + r.alt / 2, r.z + r.dir * (r.prof / 2 + 0.04)); add(l, r.larg); }
+        const t = plano(r.larg, r.prof - 0.08, 0.25, mR); t.rotation.x = -Math.PI / 2; t.position.set(r.x, y + r.alt + 0.03, r.z + r.dir * (r.prof / 2 + 0.04)); add(t, r.larg);
         continue;
       }
-      const fundo = plano(r.larg, r.alt, 0.25, mR); fundo.position.set(bx, y + r.alt / 2, r.z); fundo.rotation.y = Math.PI / 2; S.grupo.add(fundo);
-      for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt / 2, r.z + s * (r.larg / 2 + 0.03)); S.grupo.add(l); }
-      const teto = plano(r.prof - 0.08, r.larg, 0.25, mR); teto.rotation.x = -Math.PI / 2; teto.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt + 0.03, r.z); S.grupo.add(teto);
+      const fundo = plano(r.larg, r.alt, 0.25, mR); fundo.position.set(bx, y + r.alt / 2, r.z); fundo.rotation.y = Math.PI / 2; add(fundo, r.larg);
+      for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt / 2, r.z + s * (r.larg / 2 + 0.03)); add(l, r.larg); }
+      const teto = plano(r.prof - 0.08, r.larg, 0.25, mR); teto.rotation.x = -Math.PI / 2; teto.position.set(r.x + r.dir * (r.prof / 2 + 0.04), y + r.alt + 0.03, r.z); add(teto, r.larg);
     }
+  }
+  const DIST_TELAS = 42;
+  function atualizarTelas(dt) {
+    S.telasT = (S.telasT || 0) - dt; if (S.telasT > 0 || !S.telasM) return; S.telasT = 0.25;
+    const J = S.jog; for (const o of S.telasM) { const v = Math.hypot(o.m.position.x - J.x, o.m.position.z - J.z) - o.r < DIST_TELAS; if (o.m.visible !== v) o.m.visible = v; }
   }
 
   // ------------------------------------------------------------------ (4.9.3) lugares para sentar (bancos, cadeiras, banquetas)
@@ -1042,6 +1097,8 @@
   }
   function tickTreino(dt) {
     const T_ = S.treino; if (!T_) return;
+    if (T_.pausa) { T_.parado = true; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; return; }          // (4.9.6) quem treina foi para casa (ou está na chuva): o treino para
+    if (T_.parado) { T_.parado = false; const b = T_.bola; b.x = T_.spot.x; b.z = T_.spot.z; b.y = 0.23; b.vx = b.vy = b.vz = 0; b.saiu = false; b.rolando = false; b.defendida = false; T_.fase = 'anda'; T_.t = 0; T_.vez = 0; T_.gol.x = T_.F.cx; b.mesh.visible = true; b.sombra.visible = true; for (const P of T_.bat) { P.chuteT = -1; } }
     const B = T_.bola, A = T_.bat[T_.vez], K = T_.gol, g = 9.8, chao = 0.08 + 0.15;
     const ir = (P, x, z, v) => { const dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz); if (d < 0.05) { P.andando = false; return true; } const st = Math.min(d, v * dt); P.x += dx / d * st; P.z += dz / d * st; P.yawAlvo = Math.atan2(-dz, dx); P.andando = true; P.vel = v; return false; };
     T_.t += dt;
@@ -1096,37 +1153,50 @@
   // ------------------------------------------------------------------ (4.9.5) a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
   const H_ABRE = 8, H_FECHA = 20, H_ACORDA_V = 6.3, VEL_V = 2.2;
   const lojaAberta = () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA;
-  const sumirV = (V) => { V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
+  const sumirV = (V) => { V.puxa = false; V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
   const surgirV = (V, x, z, yaw) => { V.oculto = false; V.x = x; V.z = z; V.yaw = V.yawAlvo = yaw; S.meus.add(V.m); V.blob.visible = true; };
   // pontos da rua: da porta de serviço até a porta da casa dele (calçada → rua de terra leste → rua de terra sul → porta)
   function rotaCasaV() {
     const L = S.loja, C = S.casaValdemar;
     return [[L.portaX, L.portaZ - 1.7], [57, 8.1], [57, 38.2], [C.sx, 38.2], [C.sx, C.sz]];
   }
+  // (4.9.6) a porta de dentro fica na parede lateral do vão do balcão; atrás dela ele anda "dentro" da loja (some) até a porta de serviço
+  function portaDentroV() { const cx = (LANCHE.x0 + LANCHE.x1) / 2, cz = (LANCHE.z0 + LANCHE.z1) / 2, d = LANCHE.z1 - LANCHE.z0; return { x: cx - 1.9, px: cx - 0.8, z: cz - (d / 2 - 1.0) }; }
+  const persianaPronta = (a) => () => Math.abs(S.loja.pk - a) < 0.01;
   function planoFechar() {
-    const L = S.loja, B = S.balcao, C = S.casaValdemar;
-    return [{ t: 'ir', pts: [[44.0, B.z]], vel: 1.5 }, { t: 'sumir' }, { t: 'persiana', a: 1 }, { t: 'espera', s: 3.0 }, { t: 'porta', a: 1 }, { t: 'espera', s: 0.7 },
+    const L = S.loja, B = S.balcao, D = portaDentroV();
+    return [{ t: 'ir', pts: [[B.x, B.z - 0.35]], vel: 1.2 }, { t: 'virar', yaw: Math.PI / 2 }, { t: 'espera', s: 0.5 }, { t: 'puxa', a: true }, { t: 'persiana', a: 1 }, { t: 'ate', f: persianaPronta(1) }, { t: 'puxa', a: false }, { t: 'espera', s: 0.5 },
+      { t: 'ir', pts: [[D.px, D.z]], vel: 1.5 }, { t: 'porta2', a: 1 }, { t: 'espera', s: 0.6 }, { t: 'ir', pts: [[D.x, D.z]], vel: 1.2 }, { t: 'sumir' }, { t: 'porta2', a: 0 },
+      { t: 'espera', s: 2.4 }, { t: 'porta', a: 1 }, { t: 'espera', s: 0.7 },
       { t: 'surgir', x: L.portaX, z: L.portaZ + 0.1, yaw: Math.PI / 2 }, { t: 'ir', pts: [[L.portaX, L.portaZ - 1.6]], vel: 1.5 }, { t: 'porta', a: 0 },
       { t: 'ir', pts: rotaCasaV().slice(1), vel: VEL_V }, { t: 'sumir' }, { t: 'estado', e: 'casa' }];
   }
+  // da hora de abrir até ele estar no balcão com a persiana levantada (usado ao chegar e ao carregar já de manhã cedo)
+  function planoAbrirLoja() {
+    const B = S.balcao, D = portaDentroV();
+    return [{ t: 'ate', f: () => lojaAberta() }, { t: 'espera', s: 1.2 }, { t: 'porta2', a: 1 }, { t: 'surgir', x: D.x, z: D.z, yaw: 0 }, { t: 'ir', pts: [[D.px, D.z]], vel: 1.3 }, { t: 'porta2', a: 0 },
+      { t: 'ir', pts: [[B.x, B.z - 0.35]], vel: 1.5 }, { t: 'virar', yaw: Math.PI / 2 }, { t: 'espera', s: 0.4 }, { t: 'puxa', a: true }, { t: 'persiana', a: 0 }, { t: 'ate', f: persianaPronta(0) }, { t: 'puxa', a: false }, { t: 'espera', s: 0.4 },
+      { t: 'ir', pts: [[B.x, B.z]], vel: 1.0 }, { t: 'virar', yaw: Math.PI / 2 }, { t: 'estado', e: 'balcao' }];
+  }
   function planoAbrir() {
-    const L = S.loja, B = S.balcao, C = S.casaValdemar, volta = rotaCasaV().reverse();
+    const L = S.loja, C = S.casaValdemar, volta = rotaCasaV().reverse();
     return [{ t: 'surgir', x: C.sx, z: C.sz, yaw: Math.PI / 2 }, { t: 'ir', pts: volta.slice(1), vel: VEL_V }, { t: 'ir', pts: [[L.portaX, L.portaZ - 0.9]], vel: 1.5 }, { t: 'porta', a: 1 }, { t: 'ir', pts: [[L.portaX, L.portaZ + 0.2]], vel: 1.2 },
-      { t: 'sumir' }, { t: 'porta', a: 0 }, { t: 'ate', f: () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA }, { t: 'persiana', a: 0 }, { t: 'espera', s: 1.9 },
-      { t: 'surgir', x: 44.0, z: B.z, yaw: 0 }, { t: 'ir', pts: [[B.x, B.z]], vel: 1.5 }, { t: 'virar', yaw: Math.PI / 2 }, { t: 'estado', e: 'balcao' }];
+      { t: 'sumir' }, { t: 'porta', a: 0 }].concat(planoAbrirLoja());
   }
   // posição "de partida" a partir da hora (usado ao carregar e ao voltar de dentro de um lugar, quando passou tempo)
   function snapValdemar() {
     const V = S.valdemar, L = S.loja, B = S.balcao, h = S.dados.hora; if (!V || !L) return;
     V.plano = null; V.avisando = false;
+    V.puxa = false; L.k2 = L.alvo2 = 0;
     if (h >= H_ABRE && h < H_FECHA) { L.pk = L.palvo = 0; L.k = L.alvo = 0; surgirV(V, B.x, B.z, Math.PI / 2); V.estado = 'balcao'; }
-    else { L.pk = L.palvo = 1; L.k = L.alvo = 0; sumirV(V); V.estado = h >= H_ACORDA_V && h < H_FECHA ? 'espera' : 'casa'; if (V.estado === 'espera') V.plano = [{ t: 'ate', f: () => lojaAberta() }, { t: 'persiana', a: 0 }, { t: 'espera', s: 1.9 }, { t: 'surgir', x: 44.0, z: B.z, yaw: 0 }, { t: 'ir', pts: [[B.x, B.z]], vel: 1.5 }, { t: 'virar', yaw: Math.PI / 2 }, { t: 'estado', e: 'balcao' }]; }
+    else { L.pk = L.palvo = 1; L.k = L.alvo = 0; sumirV(V); V.estado = h >= H_ACORDA_V && h < H_FECHA ? 'espera' : 'casa'; if (V.estado === 'espera') V.plano = planoAbrirLoja(); }
     tickLoja(0, true);
   }
   function tickLoja(dt, seco) {
     const L = S.loja; if (!L) return;
     L.k = seco ? L.alvo : L.k + (L.alvo - L.k) * Math.min(1, dt * 7); L.porta.rotation.y = -1.45 * L.k;
-    L.pk = seco ? L.palvo : L.pk + clamp(L.palvo - L.pk, -dt * 0.65, dt * 0.65);
+    L.k2 = seco ? L.alvo2 : L.k2 + (L.alvo2 - L.k2) * Math.min(1, dt * 7); L.porta2.rotation.y = 1.45 * L.k2;
+    L.pk = seco ? L.palvo : L.pk + clamp(L.palvo - L.pk, -dt * 0.4, dt * 0.4);
     const h = Math.max(0.0001, 1.53 * L.pk); L.per.visible = L.pk > 0.005; L.per.scale.y = h; L.tex.repeat.set(7, Math.max(0.01, h * 5)); L.tex.offset.y = -L.tex.repeat.y;
   }
   function tickValdemar(V, dt) {
@@ -1153,6 +1223,8 @@
     else if (P.t === 'sumir') sumirV(V);
     else if (P.t === 'surgir') surgirV(V, P.x, P.z, P.yaw);
     else if (P.t === 'porta') L.alvo = P.a;
+    else if (P.t === 'porta2') L.alvo2 = P.a;
+    else if (P.t === 'puxa') V.puxa = P.a;
     else if (P.t === 'persiana') L.palvo = P.a;
     else if (P.t === 'virar') V.yawAlvo = P.yaw;
     else if (P.t === 'estado') V.estado = P.e;
@@ -1181,9 +1253,13 @@
     }
     for (const [x, z] of [[1.3, 0.8], [1.3, -0.8], [-1.3, 0.8], [-1.3, -0.8]]) { G.box(0.7, 0.66, 0.3, '#1c1c1f', x, 0, z); G.box(0.3, 0.3, 0.32, '#9a9a9a', x, 0.18, z); }
     G.box(0.12, 0.26, 1.86, '#3a3a3e', 2.12, 0.3, 0); G.box(0.12, 0.26, 1.86, '#3a3a3e', -2.12, 0.3, 0);   // para-choques
-    for (const z of [0.6, -0.6]) { G.box(0.08, 0.18, 0.36, '#fff3b0', 2.12, 0.74, z); G.box(0.08, 0.18, 0.36, '#d0302a', -2.12, 0.74, z); }
     G.box(0.04, 0.16, 0.6, esc, 2.12, 0.62, 0);
-    return G.malha(MAT);
+    const m = G.malha(MAT), L = new Geo();                          // (5.0.1) faróis e lanternas numa peça que "acende" à noite (material sem sombreamento)
+    for (const z of [0.6, -0.6]) { L.box(0.08, 0.18, 0.36, '#fff6c8', 2.14, 0.74, z); L.box(0.08, 0.18, 0.36, '#e0302a', -2.14, 0.74, z); }
+    m.add(L.malha(S.matFarol || (S.matFarol = guardar(new THREE.MeshBasicMaterial({ vertexColors: true })))));
+    if (!S.matFarolChao) { S.geoFarol = guardar(new THREE.PlaneGeometry(1, 1)); S.geoFarol.rotateX(-Math.PI / 2); S.matFarolChao = guardar(new THREE.MeshBasicMaterial({ map: guardar(texBrilho()), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xfff0c0, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); }
+    const chao = new THREE.Mesh(S.geoFarol, S.matFarolChao); chao.scale.set(9, 1, 3.6); chao.position.set(6.2, 0.06, 0); chao.renderOrder = 2; chao.visible = false; m.add(chao); m.userData.chao = chao;
+    return m;
   }
   function criarCarros() {
     const rnd = semente(404);
@@ -1191,7 +1267,7 @@
     for (let i = 0; i < 12; i++) {
       const m = modeloCarro(CORES_CARRO[Math.floor(rnd() * CORES_CARRO.length)], rnd() < 0.25 ? 'picape' : 'carro');
       m.visible = false; S.grupo.add(m);
-      S.carros.push({ m, ativo: false, x: 0, z: 0, dir: 1, v: 0, vmax: 10, parado: 0, buzinou: false, porJog: false });
+      S.carros.push({ m, chao: m.userData.chao, ativo: false, x: 0, z: 0, dir: 1, v: 0, vmax: 10, parado: 0, buzinou: false, porJog: false });
     }
     S.pistaT = [1.5, 3.5];
     // já começa com alguns carros espalhados pela avenida (a cidade não começa vazia)
@@ -1258,8 +1334,20 @@
       r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z);
       return;
     }
+    if (A.vomita > 0) {                                              // (5.0.0) passando mal: curvado, mãos nos joelhos, o corpo dá uns trancos
+      const h = A.vomita > 0.7 && A.vomita < 2.6 ? Math.sin(A.vomita * 13) * 0.07 : 0, k = Math.min(1, A.vomita / 0.5);
+      m.corpo.rotation.z = (-0.6 + h) * k; usarJoelhos(m, -0.35 * k, -0.35 * k); m.pernaE.rotation.z = m.pernaD.rotation.z = 0.22 * k;
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 0.8 * k; m.bracoE.rotation.x = -0.12; m.bracoD.rotation.x = 0.12;
+      r.position.y = A.y - 0.05 * k; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return;
+    }
+    if (A.deitado) {                                                 // (4.9.6) deitado de barriga para cima (a cabeça fica para o lado de -x do personagem)
+      const yw = A.yaw; r.rotation.z = Math.PI / 2; r.rotation.y = yw; r.position.y = A.y + 0.24 * es;
+      r.position.x = A.x + 0.8 * es * Math.cos(yw); r.position.z = A.z - 0.8 * es * Math.sin(yw);
+      m.pernaE.rotation.z = m.pernaD.rotation.z = 0; m.bracoE.rotation.z = m.bracoD.rotation.z = 0.1; m.bracoE.rotation.x = m.bracoD.rotation.x = 0;
+      A.blob.position.set(A.x, A.y + 0.02, A.z); return;
+    }
     if (A.sentado) {                                                 // sentado no banco (as mãos gesticulam quando fala)
-      r.position.y = A.y + A.assento - 0.67 * es; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5);
+      r.position.y = A.y + A.assento - 0.67 * es; if (A.chao) { m.pernaE.rotation.z = m.pernaD.rotation.z = 1.4; usarJoelhos(m, -0.3, -0.3); } else { m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5); }
       const f = Math.sin(A.t * 5.5) * 0.3;
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? 0.55 + f * 0.4 : 0.4, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? 1.0 + f : 0.4, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.8 + f);
@@ -1288,6 +1376,7 @@
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.6 + g * 0.3);
       r.position.y = A.y;
     }
+    if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // (4.9.6) puxando a persiana
     if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // (4.9.5) na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0;
     r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
@@ -1358,14 +1447,21 @@
     if (!S.dentro && S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     if (!S.dentro) for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
     if (!semJog && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;
-    for (const B of S.npcs) if (B !== A && Math.hypot(x - B.x, z - B.z) < 0.58) return false;
+    for (const B of S.npcs) {
+      if (B === A || B.oculto) continue;
+      const dn = Math.hypot(x - B.x, z - B.z);
+      if (dn < 0.58) { if (A && dn >= Math.hypot(A.x - B.x, A.z - B.z) - 1e-4 && Math.hypot(A.x - B.x, A.z - B.z) < 0.58) continue; return false; }   // (4.9.6) já sobrepostos: afastar é sempre permitido
+    }
     return true;
   }
   const carroVindo = () => S.carros.some((c) => { if (!c.ativo || c.v < 1) return false; const fr = (PRACA_C.x - c.x) * c.dir; return fr > -3 && fr < 28; });
   function passoNPC(A, dt) {
+    if (A.dest) { tickDestino(A, dt); return; }
+    A.cool = (A.cool == null ? 5 + Math.random() * 25 : A.cool) - dt;
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
     const N = S.rede[A.alvo], dx = N.x - A.x, dz = N.z - A.z, d = Math.hypot(dx, dz);
     if (d < 0.6) {                                                   // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
+      if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // (4.9.6) de cada 10 pedestres que decidem, 5 entram num lugar
       const op = N.viz.filter((i) => i !== A.ant), prox = op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;
       if (N.faixa && S.rede[prox].faixa && carroVindo()) { A.espera = 0.8; A.andando = false; return; }   // espera o carro passar antes de atravessar
       A.ant = A.alvo; A.alvo = prox; if (Math.random() < 0.05) A.espera = 2 + Math.random() * 4;
@@ -1397,7 +1493,7 @@
     for (const B of [S.bancos[2], S.bancos[1]]) {
       const par = [];
       B.lugares.forEach((L, i) => {
-        const A = criarPessoa(f2, rnd, rnd() < 0.5), s = i ? -1 : 1; A.tipo = 'senta'; A.sentado = true; A.x = L.x; A.z = L.z; A.assento = L.h; L.ocupado = A;
+        const A = criarPessoa(f2, rnd, rnd() < 0.5), s = i ? -1 : 1; A.tipo = 'senta'; A.sentado = true; A.x = L.x; A.z = L.z; A.assento = L.h; L.ocupado = A; A.lugar = L;
         A.yaw = A.yawAlvo = Math.atan2(-L.fz, L.fx + s * 0.35 * (L.fz ? 1 : 0)) ;   // de frente para o caminho, virados um para o outro
         S.npcs.push(A); par.push(A);
       });
@@ -1416,20 +1512,41 @@
     for (const C of S.conversas) {                                    // revezam quem fala
       C.t += dt; if (C.t > C.prox) { C.t = 0; C.quem = Math.random() < 0.2 ? -1 : 1 - Math.max(0, C.quem); C.prox = 1.5 + Math.random() * 3; }
       C.a.fala = C.quem === 0; C.b.fala = C.quem === 1;
-      if (!C.a.sentado && !C.a.abrigo && !C.b.abrigo) { C.a.yawAlvo = Math.atan2(-(C.b.z - C.a.z), C.b.x - C.a.x); C.b.yawAlvo = Math.atan2(-(C.a.z - C.b.z), C.a.x - C.b.x); }
+      if (C.a.tipo === 'morador' || C.b.tipo === 'morador' || C.a.oculto || C.b.oculto) { C.a.fala = C.b.fala = false; continue; }   // (4.9.6) quem saiu para casa/árvore não conversa
+      if (!C.a.sentado) { C.a.yawAlvo = Math.atan2(-(C.b.z - C.a.z), C.b.x - C.a.x); C.b.yawAlvo = Math.atan2(-(C.a.z - C.b.z), C.a.x - C.b.x); }
     }
-    for (const A of S.npcs) {
+    if (!S.dentro) { tickMoradores(dt); separarPessoas(); } else tickFluxo(dt);
+    for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
+      if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
       else if (A.tipo === 'vaga') vagar(A, dt);
+      else if (A.tipo === 'cliente') tickCliente(A, dt);
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
-      else if (A.tipo === 'abrigo') tickAbrigo(A, dt);
       if (A === S.valdemar && S.loja) tickLoja(dt);
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
       if (!A.sentado) { const ty = altura(A.x, A.z); A.y += (ty - A.y) * Math.min(1, dt * 18); }
-      poseAtor(A, dt); if (A.prop) atualizarProp(A);
+      // (5.0.1) LONGE (mais de ~32 m): no lugar do boneco completo (~16 peças) aparece um boneco de 1 peça e a pose nem é calculada
+      const J = S.jog, dl = Math.hypot(A.x - J.x, A.z - J.z), longe = !S.dentro && !A.oculto && dl > (A.m.longe ? 30 : 34);
+      if (longe !== !!A.m.longe) A.m.longe = longe;
+      if (longe) {
+        const b = A.boneco || (A.boneco = bonecoSimples(A)), es = A.opt.escala || 1; b.visible = true;
+        if (A.deitado) { b.rotation.set(0, A.yaw, Math.PI / 2); b.position.set(A.x + 0.8 * es * Math.cos(A.yaw), A.y + 0.22 * es, A.z - 0.8 * es * Math.sin(A.yaw)); }
+        else { b.rotation.set(0, A.yaw, 0); b.position.set(A.x, A.y + (A.sentado ? A.assento - 0.62 * es : 0), A.z); }
+        A.blob.position.set(A.x, A.y + 0.02, A.z);
+      } else { if (A.boneco) A.boneco.visible = false; poseAtor(A, dt); }
+      if (A.prop) atualizarProp(A);
     }
+  }
+  function bonecoSimples(A) {                                         // pernas, tronco com braços, cabeça e cabelo: UMA malha (cores do próprio NPC)
+    const o = A.opt, es = o.escala || 1, G = new Geo(), k = (v) => v * es;
+    G.box(k(0.26), k(0.82), k(0.44), o.calcao || '#2a3f66', 0, 0, 0);
+    G.box(k(0.3), k(0.62), k(0.5), o.camisa || '#8c9199', 0, k(0.82), 0);
+    for (const z of [-0.31, 0.31]) G.box(k(0.16), k(0.56), k(0.12), o.pele || '#946042', 0, k(0.86), k(z));
+    G.box(k(0.36), k(0.36), k(0.36), o.pele || '#946042', 0, k(1.44), 0);
+    G.box(k(0.38), k(0.12), k(0.38), o.cabelo || '#1c140f', 0, k(1.76), 0);
+    const m = G.malha(MAT); S.grupo.add(m); return m;
   }
 
   // (4.9.4) dentro dos interiores: anda até um ponto qualquer da área, para um pouco e escolhe outro
@@ -1550,6 +1667,7 @@
   }
   function atualizarCamera(dt) {
     const J = S.jog, C = S.cam, P = C.pitch || 0.48;
+    if (S.camParada) return;                                          // (5.0.0) cutscene das 2h: ele sai correndo da câmera
     const tx = J.x, ty = J.y + 1.35, tz = J.z;
     C.dAt = C.snap ? C.dist : C.dAt + (C.dist - C.dAt) * (1 - Math.exp(-dt * 4)); C.snap = false;
     const ux = Math.sin(C.yaw) * Math.cos(P), uy = Math.sin(P), uz = Math.cos(C.yaw) * Math.cos(P);
@@ -1635,19 +1753,88 @@
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
     const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
     const rnd = semente(P.nome.length * 31 + 7);
+    const comFluxo = !SEM_FLUXO[P.nome], areaCli = [];                   // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
+      if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       const A = criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
       if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
       else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
       else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
       S.npcs.push(A);
     }
+    S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
     S.cam.yaw = 0; S.cam.dist = R.cam.dist; S.cam.pitch = R.cam.pitch; S.cam.snap = true;
     scene.background = new THREE.Color(R.fundo); if (scene.fog) { scene.fog.near = 200; scene.fog.far = 400; }
     UI.btnMapa.hidden = true; UI.seta.hidden = true; if (S.setaAlvo) S.setaAlvo.visible = false; S.setaAlvo = null; if (S.bola) S.bola.jx = null;
     await preto(false, 380);
+  }
+  // (5.0.0) FLUXO DE CLIENTES: a cidade lá fora fica parada, mas aqui dentro gente sai e, quando tem lugar vazio, entra outra.
+  // Segunda a quarta: vazio (pouca gente) · quinta: médio · sexta a domingo: cheio (só 2 a 4 lugares vazios). NUNCA lota (sempre 2+ vazios).
+  const FLUXO_SEM = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'];
+  const SEM_FLUXO = { hospital: 1, academia: 1 };
+  function alvoClientes(n) {
+    if (n <= 2) return 0;
+    const f = FLUXO_SEM[diaSemana()], v = f === 'vazio' ? Math.round(n * 0.15) + 1 : f === 'medio' ? Math.round(n * 0.45) : n - (2 + Math.floor(Math.random() * 3));
+    return clamp(v, 1, n - 2);
+  }
+  function montarFluxo(nome, lugares, area, ent) {
+    const f = FLUXO_SEM[diaSemana()], F = { nome, lugares, area, ent, alvo: alvoClientes(lugares.length), alvoVaga: area ? (f === 'vazio' ? 2 : f === 'medio' ? 4 : 7) : 0, prox: 3 + Math.random() * 4 };
+    const livres = lugares.slice().sort(() => Math.random() - 0.5);
+    for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70; }   // já tem gente quando ele entra, cada um num ponto da visita
+    for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
+    return F;
+  }
+  function novoCliente(a, jaDentro) {
+    const e = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = criarPessoa(S.f2, Math.random, Math.random() < 0.5);
+    A.tipo = 'cliente'; A.cli = { a, fase: 'ir', t: 40 + Math.random() * 70, rota: null }; A.vel = 1.1 + Math.random() * 0.3;
+    if (a) {
+      a.ocupado = A;
+      if (jaDentro) { A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.cli.fase = 'fica'; }
+      else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = e.yaw; const q = pontoLev(a, A); A.cli.rota = [{ x: q.x, z: q.z }]; }
+    } else {
+      const ar = (S.fluxo && S.fluxo.area) || { x0: e.x - 2, x1: e.x + 2, z0: e.z - 3, z1: e.z }; A.area = ar; A.cli.fase = 'fica';
+      if (jaDentro) { A.x = ar.x0 + Math.random() * (ar.x1 - ar.x0); A.z = ar.z0 + Math.random() * (ar.z1 - ar.z0); } else { A.x = e.x; A.z = e.z; }
+    }
+    S.npcs.push(A); poseAtor(A, 0.016); return A;
+  }
+  function descartarPessoa(A) {
+    const i = S.npcs.indexOf(A); if (i >= 0) S.npcs.splice(i, 1);
+    S.conversas = S.conversas.filter((C) => C.a !== A && C.b !== A);
+    ATLETAS.delete(A.m); S.meus.delete(A.m); removerProp(A);
+    for (const o of [A.m.raiz, A.blob, A.boneco]) if (o && o.parent) o.parent.remove(o);
+    A.m.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
+  }
+  function tickFluxo(dt) {
+    const F = S.fluxo; if (!F) return;
+    F.prox -= dt;
+    if (F.prox <= 0) {
+      F.prox = 5 + Math.random() * 9; const e = F.ent;
+      const pe = [[0, 0], [1.1, 0], [-1.1, 0], [0, -1.1]].map(([dx, dz]) => ({ x: e.x + dx, z: e.z + dz })).find((q) => livreNPC(q.x, q.z, null, false));   // a porta (ou do lado, se o jogador estiver na frente)
+      if (pe) { F.entAgora = pe;
+        const ativos = S.npcs.filter((A) => A.cli && A.cli.fase !== 'sai'), sent = ativos.filter((A) => A.cli.a).length, pass = ativos.filter((A) => !A.cli.a).length;
+        const livres = F.lugares.filter((a) => !a.ocupado);
+        if (sent < F.alvo && livres.length >= 3) novoCliente(livres[Math.floor(Math.random() * livres.length)], false);   // sempre sobram 2+ lugares
+        else if (F.area && pass < F.alvoVaga) novoCliente(null, false);
+      }
+    }
+  }
+  function tickCliente(A, dt) {
+    const C = A.cli, e = S.fluxo ? S.fluxo.ent : S.dentro.entrada;
+    if (C.fase === 'ir') {
+      if (seguir(A, C.rota, A.vel, dt)) { const a = C.a; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.andando = false; C.fase = 'fica'; }
+    } else if (C.fase === 'fica') {
+      C.t -= dt;
+      if (!C.a) vagar(A, dt); else A.andando = false;
+      if (C.t <= 0) {
+        if (C.a) { const p = pontoLev(C.a, A); A.sentado = false; A.assento = 0.52; A.x = p.x; A.z = p.z; C.a.ocupado = null; C.a = null; A.fala = false; S.conversas = S.conversas.filter((K) => K.a !== A && K.b !== A); }
+        const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }];
+      }
+    } else if (C.fase === 'sai') {                                   // sai pela porta (some perto dela; não espera o jogador sair da frente)
+      C.tSai = (C.tSai || 0) + dt; const q = C.rota[C.rota.length - 1] || e;
+      if (seguir(A, C.rota, A.vel, dt) || Math.hypot(A.x - q.x, A.z - q.z) < 1.1 || C.tSai > 14) descartarPessoa(A);
+    }
   }
   async function sairDoLugar() {
     const F = S.fora, J = S.jog; if (!F) return;
@@ -1658,7 +1845,7 @@
     const g = S.grupo; scene.remove(g);
     g.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
     Object.assign(S, { col: F.col, circ: F.circ, pisos: F.pisos, assentos: F.assentos, npcs: F.npcs, conversas: F.conversas, camBox: F.camBox, oclusores: F.oclusores, grupo: F.grupo });
-    S.dentro = null; S.fora = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;
+    S.dentro = null; S.fora = null; S.fluxo = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;
     const P = F.porta; J.x = P.x + Math.cos(P.sai) * 0.4; J.z = P.z - Math.sin(P.sai) * 0.4; J.yaw = J.yawAlvo = P.sai; J.y = altura(J.x, J.z);
     Object.assign(S.cam, F.cam); S.cam.snap = true;
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
@@ -1750,27 +1937,68 @@
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
   }
+  const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // (5.0.0) cliente fiel: −20% em tudo
   async function atendimento() {
     const d = S.dados, V = S.valdemar, J = S.jog;
     V.yawAlvo = Math.atan2(-(J.z - V.z), J.x - V.x);
     if (!d.conheceValdemar) { await fala('val', T('Opa, freguês novo! Eu sou o Valdemar, prazer. Aqui é o melhor lanche da cidade!')); d.conheceValdemar = true; }
     await fala('val', T('E aí, o que vai ser hoje?'));
-    if ((d.fome || 0) <= 0) { await fala('jog', T('Valeu, seu Valdemar, mas eu tô cheio. Hoje não cabe mais nada.')); Dialogo.esconder(); return; }
+    const cheio = (d.fome || 0) <= 0;                                // (5.0.0) satisfeito ainda pode pedir (e aí exagera)
+    if (cheio) await fala('jog', T('Eu já tô satisfeito... mas bem que cabia mais um.'));
     Dialogo.esconder();
     const i = await cardapio(d.fakes);
     const c = CARDAPIO[i];
     if (!c) { await fala('val', T('Tranquilo, fica à vontade!')); Dialogo.esconder(); return; }
-    if (d.fakes < c.preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
-    d.fakes -= c.preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(c.preco);
-    await fala('val', Tf('Saindo um {0}!', c.nome)); Dialogo.esconder();
+    const preco = precoDe(c);
+    if (d.fakes < preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+    d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
+    await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder();
     await esperar(1400);
     J.comendo = 3.6; await esperar(3700);
     d.fome = Math.max(0, (d.fome || 0) - c.enche);
     d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1;
-    Espectros.mover('saudavel', -4, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // não saudável; e a próxima partida fica mais pesada
-    if (S.missao) { S.missao = ''; recolherMissao(); }                                                 // a missão de achar comida acabou
+    Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // (5.0.0) cada lanche: 2 de "não saudável"
+    if (cheio) Espectros.mover('saudavel', -4, 'comeu sem fome');                                    // comeu satisfeito: mais 4
+    d.diasValdemar = d.diasValdemar || []; if (!d.diasValdemar.includes(d.dia)) d.diasValdemar.push(d.dia);
+    if (S.missao) { S.missao = ''; recolherMissao(); }
     gravar('chegada');
-    await fala('jog', d.fome <= 0 ? T('Ufa... agora sim, matei a fome!') : T('Hmm... ainda dava para comer mais um pouco.')); Dialogo.esconder();
+    if (cheio) { await fala('jog', T('Acho que eu exagerei...')); S.vomitoT = 20; }               // 20 s depois ele passa mal
+    else await fala('jog', d.fome <= 0 ? T('Ufa... agora sim, matei a fome!') : T('Hmm... ainda dava para comer mais um pouco.'));
+    if (d.diasValdemar.length >= 10 && !d.clienteFiel) { d.clienteFiel = true; gravar('chegada'); await fala('val', T('Rapaz, já são 10 dias vindo aqui! Agora você é cliente fiel: de hoje em diante, 20% de desconto em tudo!')); }
+    if (Sono.deveAvisarSaude()) await fala('jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....'));
+    Dialogo.esconder();
+  }
+  // (5.0.0) passou mal: inclina, põe as mãos nos joelhos e vomita (partículas verdes e uma poça que some depois)
+  async function vomitar() {
+    const J = S.jog; S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    if (J.sentado) levantar();
+    J.andando = false; J.correndo = false; J.rota = null; J.vomita = 0.001;
+    await esperar(3400);
+    J.vomita = 0; if (S && S.ativo && S.modo === 'cena') liberar();
+  }
+  function tickVomito(dt) {
+    if (S.vomitoT > 0 && S.modo === 'livre' && !S.pausado) { S.vomitoT -= dt; if (S.vomitoT <= 0) vomitar(); }
+    const J = S.jog;
+    if (J.vomita > 0) {
+      J.vomita += dt;
+      if (J.vomita > 0.7 && J.vomita < 2.6) { S.vomAcc = (S.vomAcc || 0) + dt; while (S.vomAcc > 0.03) { S.vomAcc -= 0.03; gotaVomito(J); } }
+    }
+    const L = S.vomPart || []; for (let i = L.length - 1; i >= 0; i--) {
+      const g = L[i]; g.t += dt;
+      if (!g.chao) { g.vy -= 9.8 * dt; g.m.position.x += g.vx * dt; g.m.position.y += g.vy * dt; g.m.position.z += g.vz * dt; if (g.m.position.y <= 0.14) { g.chao = true; g.m.position.y = 0.14; } }
+      if (g.t > 4) { g.m.parent && g.m.parent.remove(g.m); L.splice(i, 1); }
+    }
+    if (S.poca) { S.poca.t += dt; S.poca.m.material.opacity = Math.max(0, 0.85 - Math.max(0, S.poca.t - 25) / 10); if (S.poca.t > 35) { S.poca.m.parent && S.poca.m.parent.remove(S.poca.m); S.poca = null; } }
+  }
+  function gotaVomito(J) {
+    const P = S.vomGeo || (S.vomGeo = { g: guardar(new THREE.BoxGeometry(0.06, 0.06, 0.06)), m: [0x9ab83a, 0xc8c25a, 0x7a9a2a].map((c) => guardar(new THREE.MeshBasicMaterial({ color: c }))) });
+    const fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw), es = J.opt.escala || 1;
+    const m = new THREE.Mesh(P.g, P.m[Math.floor(Math.random() * 3)]); m.position.set(J.x + fx * 0.42 * es, J.y + 1.15 * es, J.z + fz * 0.42 * es); S.grupo.add(m);
+    (S.vomPart || (S.vomPart = [])).push({ m, t: 0, chao: false, vx: fx * (0.6 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3, vy: -0.4 - Math.random() * 0.6, vz: fz * (0.6 + Math.random() * 0.5) + (Math.random() - 0.5) * 0.3 });
+    if (!S.poca) {
+      const m2 = new THREE.Mesh(guardar(new THREE.CircleGeometry(0.42, 10)), guardar(new THREE.MeshBasicMaterial({ color: 0x8aa83a, transparent: true, opacity: 0.85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 })));
+      m2.rotation.x = -Math.PI / 2; m2.position.set(J.x + fx * 0.75 * es, altura(J.x + fx * 0.75, J.z + fz * 0.75) + 0.02, J.z + fz * 0.75 * es); m2.scale.set(0.2, 0.2, 1); S.grupo.add(m2); S.poca = { m: m2, t: 0 };
+    } else if (S.poca.t < 3) { const k = Math.min(1, S.poca.m.scale.x + 0.02); S.poca.m.scale.set(k, k * 0.8, 1); }
   }
   // (4.9.5) ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
   function iconePx(id) {
@@ -1815,17 +2043,23 @@
       card.style.cssText = 'width:min(560px,100%);max-height:96%;overflow:auto;background:#2a1206;border:4px solid #f0a020;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
       const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:#f0a020;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;';
       const h1 = document.createElement('span'); h1.textContent = T('Cardápio do seu Valdemar'); const h2 = document.createElement('span'); h2.style.color = '#fff0c8'; h2.textContent = fakes + ' ' + T('fakes'); h.append(h1, h2);
-      const grade = document.createElement('div'); grade.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;';
+      const grade = document.createElement('div'); grade.className = 'cdGrade';   // (5.0.0) uma linha só, desliza na horizontal (não quebra o layout)
+      grade.style.cssText = 'display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding-bottom:6px;';
+      if (S.dados.clienteFiel) { const f = document.createElement('div'); f.style.cssText = 'font:700 11px/1.2 var(--font-display);color:#8fe04a;letter-spacing:.06em;'; f.textContent = T('Cliente fiel: −20%'); h.appendChild(f); }
       const fim = (i) => { el.remove(); res(i); };
       CARDAPIO.forEach((c, i) => {
         const b = document.createElement('button'); b.type = 'button';
-        b.style.cssText = 'display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 12px/1.2 var(--font-display);text-align:center;' + (fakes < c.preco ? 'opacity:.55;' : '');
+        const pr = precoDe(c);
+        b.style.cssText = 'flex:0 0 124px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 12px/1.2 var(--font-display);text-align:center;' + (fakes < pr ? 'opacity:.55;' : '');
         b.appendChild(iconePx(c.id));
-        const n = document.createElement('span'); n.textContent = T(c.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = c.preco + ' ' + T('fakes');
+        const n = document.createElement('span'); n.textContent = T(c.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = pr + ' ' + T('fakes'); if (pr !== c.preco) { const v = document.createElement('s'); v.style.cssText = 'color:#a88a5a;margin-right:4px;'; v.textContent = c.preco; p.prepend(v); }
         b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(-1);
       card.append(h, grade, nada); el.appendChild(card); document.body.appendChild(el);
+      const sombra = () => { const fimX = grade.scrollLeft + grade.clientWidth >= grade.scrollWidth - 4, iniX = grade.scrollLeft <= 4;   // (5.0.0) as bordas somem para mostrar que tem mais produtos para os lados
+        const m = 'linear-gradient(90deg,' + (iniX ? '#000 0' : 'transparent 0,#000 14%') + ',' + (fimX ? '#000 100%' : '#000 86%,transparent 100%') + ')'; grade.style.webkitMaskImage = grade.style.maskImage = m; };
+      grade.addEventListener('scroll', sombra, { passive: true }); requestAnimationFrame(sombra);
     });
   }
   function somDinheiro() {                                             // "plim-plim" de moeda saindo
@@ -2048,19 +2282,20 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   const esconderBola = () => { try { ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false; } catch (e) { /* sem bola */ } };
 
-  // ------------------------------------------------------------------ (4.9.5) RELÓGIO (dia de 10 min), céu, clima, chuva, luz da noite e a reação das pessoas
-  const SEG_DIA = 600, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 6;
+  // ------------------------------------------------------------------ (4.9.5) RELÓGIO (dia de 15 min), céu, clima, chuva, luz da noite e a reação das pessoas
+  const SEG_DIA = 900, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 6;
   const K = (h, ceu, hc, hg, hi, sc, si, sp, ng, lamp) => ({ h, ceu: new THREE.Color(ceu), hc: new THREE.Color(hc), hg: new THREE.Color(hg), hi, sc: new THREE.Color(sc), si, sp, ng, lamp });
   const NOITE_ = [0x0a1424, 0x6f82b4, 0x1a2a18, 0.5, 0x8aa0d8, 0.26, [-25, 45, 15], [45, 150], 1];
+  // (5.0.0) luz do dia mais baixa: antes céu 0,97 + sol 0,95 estourava (água branca, mato marrom à tarde, interiores "de vidro")
   const CHAVES = [K(0, ...NOITE_), K(5.4, ...NOITE_),
-    K(6.2, 0xe8a07a, 0xffcfa8, 0x4a4a30, 0.68, 0xffa860, 0.6, [-70, 10, 20], [55, 170], 0.8),
-    K(7.4, 0xbcd8ec, 0xfff0dd, 0x4a6a35, 0.92, 0xfff0d0, 0.9, [-45, 35, 25], [70, 205], 0),
-    K(9, 0x9fd0ef, 0xffffff, 0x4a6a35, 0.97, 0xfff3dd, 0.95, [-25, 55, 25], [70, 215], 0),
-    K(14.5, 0x9fd0ef, 0xffffff, 0x4a6a35, 0.97, 0xfff3dd, 0.95, [30, 55, 25], [70, 215], 0),
-    K(16.3, 0xf3d98e, 0xffe6b0, 0x55522f, 0.9, 0xffd070, 0.95, [55, 30, 28], [65, 195], 0),
-    K(17.8, 0xf2b070, 0xffd8a0, 0x4a4a30, 0.8, 0xffb060, 0.9, [65, 16, 30], [60, 180], 0.1),
-    K(18.7, 0xc0705a, 0xe8a888, 0x3a3a30, 0.62, 0xff8a50, 0.6, [70, 8, 25], [55, 165], 0.7),
-    K(19.5, 0x2c2c4c, 0x8090b8, 0x1a2a18, 0.52, 0x8aa0d8, 0.3, [-25, 45, 15], [48, 150], 1),
+    K(6.2, 0xe8a07a, 0xffd8b8, 0x4a4a30, 0.5, 0xffb070, 0.42, [-70, 10, 20], [55, 170], 0.8),
+    K(7.4, 0xbcd8ec, 0xfff4e6, 0x4a6a35, 0.66, 0xfff2dc, 0.56, [-45, 35, 25], [70, 205], 0),
+    K(9, 0x9fd0ef, 0xffffff, 0x4a6a35, 0.72, 0xfff6e8, 0.62, [-25, 55, 25], [70, 215], 0),
+    K(14.5, 0x9fd0ef, 0xffffff, 0x4a6a35, 0.72, 0xfff6e8, 0.6, [30, 55, 25], [70, 215], 0),
+    K(16.3, 0xe9dca8, 0xfff2d8, 0x4f6a35, 0.68, 0xffe6b8, 0.56, [55, 30, 28], [65, 195], 0),
+    K(17.8, 0xf2b070, 0xffe2c0, 0x4a4a30, 0.6, 0xffc88a, 0.5, [65, 16, 30], [60, 180], 0.1),
+    K(18.7, 0xc0705a, 0xe8b098, 0x3a3a30, 0.5, 0xff9a60, 0.38, [70, 8, 25], [55, 165], 0.7),
+    K(19.5, 0x2c2c4c, 0x8090b8, 0x1a2a18, 0.5, 0x8aa0d8, 0.28, [-25, 45, 15], [48, 150], 1),
     K(20.4, ...NOITE_), K(24, ...NOITE_)];
   const LUZ = { ceu: new THREE.Color(), hc: new THREE.Color(), hg: new THREE.Color(), sc: new THREE.Color(), hi: 0, si: 0, sp: [0, 0, 0], ng: [0, 0], lamp: 0 };
   const _cinza = new THREE.Color(), _tmp = new THREE.Color(), _cOff = new THREE.Color(0x9a9a92), _cOn = new THREE.Color(0xffffff);
@@ -2074,12 +2309,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return L;
   }
   const novoClima = () => ({ estado: 'limpo', nuv: 0, chuva: 0, acum: 0, t: 0, dur: 0, flash: 0, trov: 12, molhado: false });
-  const fmtHora = (h) => { const m = Math.floor(h * 60 + 0.001), hh = Math.floor(m / 60) % 24, mm = m % 60; return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm; };
+  const fmtHora = (h) => { const m = Math.floor((h * 60 + 0.001) / 10) * 10, hh = Math.floor(m / 60) % 24, mm = m % 60; return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm; };
 
   // o céu e as luzes: a cada quadro, a partir da hora e do clima (dentro de um lugar fechado a luz é fixa)
   function atualizarCeu() {
     const d = S.dados, C = S.clima;
-    if (S.dentro) { luzCeu.color.setHex(0xffffff); luzCeu.groundColor.setHex(0x4a6a35); luzCeu.intensity = 0.95; sun.color.setHex(0xfff3dd); sun.intensity = 0.6; sun.position.set(20, 60, 25); if (typeof particulas.intens === 'function') particulas.intens(0); return; }
+    if (S.dentro) { luzCeu.color.setHex(0xffffff); luzCeu.groundColor.setHex(0x4a6a35); luzCeu.intensity = 0.72; sun.color.setHex(0xfff6ea); sun.intensity = 0.42; sun.position.set(20, 60, 25); if (typeof particulas.intens === 'function') particulas.intens(0); return; }
     const R = luzDoDia(d.hora), nuv = C.nuv;
     _tmp.copy(R.ceu); if (nuv > 0.001) { const g = (R.ceu.r + R.ceu.g + R.ceu.b) / 3 * 0.72; _cinza.setRGB(g * 0.97, g, g * 1.04); _tmp.lerp(_cinza, 0.8 * nuv); }
     if (!scene.background || !scene.background.isColor) scene.background = new THREE.Color();
@@ -2088,7 +2323,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     sun.color.copy(R.sc); sun.intensity = R.si * (1 - 0.7 * nuv) + C.flash * 0.6; sun.position.set(R.sp[0], R.sp[1], R.sp[2]);
     const on = Math.max(R.lamp, nuv * 0.4);                            // os postes acendem de noite (e um pouco quando o dia escurece com a chuva)
     if (S.lampMat) S.lampMat.color.copy(_cOff).lerp(_cOn, on);
-    if (S.luzes) { S.luzes.matP.opacity = on * 0.62; S.luzes.matH.opacity = on * 0.9; S.luzes.pools.visible = S.luzes.matP.opacity > 0.01; }
+    if (S.luzes) { S.luzes.matP.opacity = on * 0.62; S.luzes.matH.opacity = on * 0.9; S.luzes.pools.visible = S.luzes.matP.opacity > 0.01;
+      const hv = S.luzes.matH.opacity > 0.01; if (hv !== S.luzes.hv) { S.luzes.hv = hv; for (const h of S.luzes.halos) h.visible = hv; } }   // (5.0.1) de dia os brilhos nem são desenhados
+    // (5.0.1) janelas acesas e faróis: só pela hora (a luz da rua também acende um pouco na chuva, as casas não)
+    const noite = R.lamp;
+    if (S.matJanela) S.matJanela.emissive.setRGB(noite * 0.95, noite * 0.74, noite * 0.38);
+    if (S.matFarol) { const f = 0.78 + 0.22 * Math.max(noite, nuv * 0.6); S.matFarol.color.setRGB(f, f, f); }
+    if (S.matFarolChao) { const fo = Math.max(noite, nuv * 0.5) * 0.5; S.matFarolChao.opacity = fo; const fv = fo > 0.01; if (fv !== S.farolLigado) { S.farolLigado = fv; for (const c of S.carros || []) if (c.chao) c.chao.visible = fv; } }
     if (S.letreiros) for (const m of S.letreiros) m.emissive.setRGB(on * 0.85, on * 0.85, on * 0.85);
     if (typeof particulas.intens === 'function') particulas.intens(C.chuva);
   }
@@ -2101,8 +2342,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     L.forEach((l, i) => { m4.compose(new THREE.Vector3(l.px, 0.16, l.pz), q, new THREE.Vector3(l.r * 2, 1, l.r * 2)); pools.setMatrixAt(i, m4); });
     pools.frustumCulled = false; pools.renderOrder = 2; g.add(pools);
     const matH = guardar(new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    for (const l of L) { const s = new THREE.Sprite(matH); s.position.set(l.x, l.y, l.z); s.scale.set(2.8, 2.8, 1); s.renderOrder = 3; g.add(s); }
-    S.luzes = { matP, matH, pools };
+    const halos = []; for (const l of L) { const s = new THREE.Sprite(matH); s.position.set(l.x, l.y, l.z); s.scale.set(2.8, 2.8, 1); s.renderOrder = 3; s.visible = false; g.add(s); halos.push(s); }
+    S.luzes = { matP, matH, pools, halos, hv: false };
   }
 
   // ---- som da chuva (ruído filtrado) e do trovão
@@ -2124,13 +2365,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     },
   };
 
-  // ---- o clima: a cada 1 min de jogo, 5% de chance de começar a chover; a duração (2 a 10 min) é sorteada uma vez
+  // ---- o clima: a cada 1 min de tempo real, 2% de chance de começar a chover; a duração (2 a 10 min) é sorteada uma vez
   function tickClima(dt) {
     const C = S.clima;
     C.acum += dt;
     if (C.acum >= 60) {
       C.acum -= 60;
-      if (C.estado !== 'chuva' && Math.random() < 0.05) { C.estado = 'chuva'; C.t = 0; C.dur = (2 + Math.random() * 8) * 60; }
+      if (C.estado !== 'chuva' && Math.random() < 0.02) { C.estado = 'chuva'; C.t = 0; C.dur = (2 + Math.random() * 8) * 60; }
       else if (C.estado === 'limpo' && Math.random() < 0.15) { C.estado = 'nublado'; C.t = 0; C.dur = 60 + Math.random() * 120; }
     }
     if (C.estado !== 'limpo') { C.t += dt; if (C.t >= C.dur) C.estado = 'limpo'; }
@@ -2144,22 +2385,41 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (C.estado === 'chuva' && C.chuva > 0.9) { C.trov -= dt; if (C.trov <= 0) { C.trov = 20 + Math.random() * 40; C.flash = 1; setTimeout(() => { if (S && S.ativo) SomChuva.trovao(); }, 500 + Math.random() * 1800); } }
   }
 
-  // ---- as horas (1 dia = 10 min), o aviso das 21h e a virada do dia às 6h
+  // ---- as horas (1 dia = 15 min; o relógio mostra de 10 em 10 minutos), o aviso das 21h e a virada do dia às 6h
   function tickHorario(dt) {
     const d = S.dados, ant = d.hora;
     d.hora += dt * H_POR_S; if (d.hora >= 24) d.hora -= 24;
     if (ant < H_ACORDAR && d.hora >= H_ACORDAR) novoDia();
+    if (ant < 2 && d.hora >= 2 && !S.madrugada) { S.madrugada = true; madrugada(); return; }     // (5.0.0) passou das 2h acordado
     if (!d.avisouDormir && d.hora >= 21 && d.hora < 24 && S.modo === 'livre' && !S.dentro) { d.avisouDormir = true; avisoDormir(); }
   }
   function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
+  // (5.0.0) 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
+  async function madrugada() {
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
+    if (J.sentado) levantar();
+    try { await fala('jog', T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
+    if (!S.dentro) {
+      S.camParada = true;
+      const pts = caminhoRede(J.x, J.z, SPAWN.x, -4.2).map((q) => [q.x, q.z]); pts.push([SPAWN.x, -5.5]);
+      await Promise.race([andar(J, pts, 5.2), esperar(2600)]);
+    }
+    await preto(true, 900);
+    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = 6; d.avisouDormir = false; prepararDia(d);
+    try { Sono.registrar(3, 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
+    gravar('predio'); S.paraFase2 = 'acordar';
+    if (S.fimRes) S.fimRes();
+  }
   async function avisoDormir() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
     try { await fala('jog', T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
   let relUlt = '', relIco = '';
+  const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // (5.0.0) o dia 1 é uma segunda-feira
+  const diaSemana = () => ((((S.dados.dia || 1) - 1) % 7) + 7) % 7;
   function atualizarRelogioUI() {
-    const d = S.dados, C = S.clima, t = fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }
+    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
   }
@@ -2205,16 +2465,6 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!A.prop) return; const es = A.opt.escala || 1;
     A.prop.visible = !A.oculto; A.prop.position.set(A.x, A.y + (A.chuva === 'guarda' ? 2.22 : 1.95) * es, A.z); A.prop.rotation.y = A.yaw;
   }
-  function chuvaComecou() {
-    for (const A of npcsFora()) {
-      if (A === S.valdemar || A.oculto || A.chuva || A.abrigo) continue;
-      if (A.tipo === 'anda') { A.chuva = PROPS[Math.floor(Math.random() * 3)]; A.velBase = A.velBase || A.vel; A.vel = A.velBase * 1.9; A.correndo = true; criarProp(A); }
-      else if (A.tipo === 'senta' || A.tipo === 'conversa') irAbrigo(A);
-    }
-  }
-  function chuvaTerminou() {
-    for (const A of npcsFora()) if (A.chuva && !A.abrigo) { A.chuva = null; removerProp(A); if (A.velBase) A.vel = A.velBase; A.correndo = false; }
-  }
   function caminhoRede(x0, z0, x1, z1) {
     const N = S.rede, perto = (x, z) => { let b = 0, bd = 1e9; N.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
     const a = perto(x0, z0), b = perto(x1, z1), prev = new Map([[a, -1]]), fila = [a];
@@ -2223,54 +2473,221 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     cam.reverse(); cam.push({ x: x1, z: z1 }); return cam;
   }
   function distRede(x, z) { let bd = 1e9; for (const n of S.rede) bd = Math.min(bd, Math.hypot(n.x - x, n.z - z)); return bd; }
-  function irAbrigo(A) {
-    const orig = { x: A.x, z: A.z, yaw: A.yaw, sentado: A.sentado, tipo: A.tipo, assento: A.assento };
-    let arv = null, bd = 80;                                         // a árvore mais perto (com um lugarzinho livre embaixo da copa)
-    for (const t of S.abrigos || []) { const d = Math.hypot(t.x - A.x, t.z - A.z); if (d >= bd) continue;
-      for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, sx = t.x + Math.cos(a) * 1.0, sz = t.z + Math.sin(a) * 1.0; if (livreNPC(sx, sz, A, true) && distRede(sx, sz) < 11) { arv = { x: sx, z: sz }; bd = d; break; } } }
-    let casa = null, cd = 1e9;
-    for (const c of S.casas || []) { const d = Math.hypot(c.sx - A.x, c.sz - A.z); if (d < cd && distRede(c.sx, c.sz) < 11) { cd = d; casa = c; } }
-    const porArvore = arv && (Math.random() < 0.5 || !casa);
-    let rota;
-    if (porArvore) rota = caminhoRede(A.x, A.z, arv.x, arv.z);
-    else if (casa) { rota = caminhoRede(A.x, A.z, casa.sx, casa.sz); rota.push({ x: casa.x, z: casa.z }); }
-    else return;                                                     // sem abrigo por perto: fica onde está (leva a chuva)
-    A.abrigo = { fase: 'ir', casa: !porArvore, rota, ida: rota.map((p) => ({ x: p.x, z: p.z })), orig, espera: 3 + Math.random() * 14 };
-    A.sentado = false; A.tipo = 'abrigo'; A.chuva = 'mao'; A.vel = 2.9; A.correndo = true; A.fala = false;
-  }
   function seguir(A, rota, vel, dt) {
     if (!rota.length) return true;
     const q = rota[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = vel * dt;
-    A.vel = vel; A.correndo = vel > 2;
-    if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
+    A.vel = vel; A.correndo = vel > 2.5 || !!A.chuva;
+    if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
     let moveu = false;
     for (const ang of [0, 0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) {
       const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
       if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); moveu = true; break; }
     }
     A.andando = moveu;
-    if (!moveu) { A.bloq = (A.bloq || 0) + dt; if (A.bloq > 2.2) { A.x += dx / d * 0.7; A.z += dz / d * 0.7; A.bloq = 0; } } else A.bloq = Math.max(0, (A.bloq || 0) - dt * 0.5);
+    if (!moveu) {
+      A.bloq = (A.bloq || 0) + dt;
+      if (A.bloq > 1.4) { let ok = false; for (const sg of [1, -1]) { const nx = A.x - dz / d * 0.6 * sg, nz = A.z + dx / d * 0.6 * sg; if (livreNPC(nx, nz, A, true)) { A.x = nx; A.z = nz; ok = true; break; } } if (ok) A.bloq = 0.6; }
+      if (A.bloq > 5) { A.bloq = 0; rota.shift(); if (!rota.length) { A.andando = false; return true; } }       // (4.9.6) não consegue passar: desiste desse ponto (nada de empurrar para dentro de outra pessoa)
+    } else A.bloq = Math.max(0, (A.bloq || 0) - dt * 0.5);
     return false;
   }
-  function tickAbrigo(A, dt) {
-    const B = A.abrigo; if (!B) return;
-    if (B.fase === 'ir') {
-      if (seguir(A, B.rota, 2.9, dt)) {
-        A.chuva = null; removerProp(A); A.vel = 1.2; A.correndo = false;
-        if (B.casa) { A.oculto = true; S.meus.delete(A.m); A.blob.visible = false; A.x = 0; A.z = -500; B.fase = 'casa'; } else B.fase = 'abrigado';
+
+  // ------------------------------------------------------------------ (4.9.6) A ROTINA DAS PESSOAS
+  // MORADORES (quem não anda pela rua: os sentados, os que conversam e os três do treino): saem de casa de manhã, vão para o seu lugar e voltam às 18h, 19h ou 20h.
+  // Vários moram na mesma casa. Na chuva: quem está na rua escolhe entre se abrigar sob uma árvore (até 3 por árvore, cada um num ponto fixo e em pé, sentado ou deitado)
+  // ou ir para casa; quem vai para casa só volta no dia seguinte, quem se abrigou volta ao seu lugar quando a chuva para.
+  // PEDESTRES: a cada 10 que decidem, 5 entram num lugar (cinema, cafeteria, mercado, bar, pizzaria, restaurante, academia ou o lanche; o hospital não).
+  const VEL_MOR = 2.0, VEL_CORRE = 2.9;
+  const horaEntre = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
+  const yawPara = (dx, dz) => Math.atan2(-dz, dx);
+  function pontoLev(a, A) {                                          // onde a pessoa fica de pé ao levantar de um assento (o primeiro ponto livre em volta)
+    for (const [ux, uz] of [[a.fx, a.fz], [-a.fz, a.fx], [a.fz, -a.fx], [-a.fx, -a.fz]]) for (const dd of [0.8, 1.1, 1.5]) { const x = a.x + ux * dd, z = a.z + uz * dd; if (livreNPC(x, z, A, true)) return { x, z }; }
+    return { x: a.x + a.fx * 0.8, z: a.z + a.fz * 0.8 };
+  }
+  const noMaisPerto = (x, z) => { let b = 0, bd = 1e9; S.rede.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
+  function correrNaChuva(A) { A.chuva = PROPS[Math.floor(Math.random() * 3)]; A.velBase = A.velBase || A.vel; A.vel = A.velBase * 1.9; A.correndo = true; criarProp(A); }
+  function chuvaComecou() {
+    for (const A of npcsFora()) if (A.tipo === 'anda' && !A.oculto && !A.chuva && !(A.dest && A.sentado)) correrNaChuva(A);
+    if (S.moradores) for (const r of S.moradores) r.reagiu = false;   // cada morador decide (árvore ou casa) quando a cidade estiver à vista (tickMoradores)
+  }
+  function chuvaTerminou() {
+    for (const A of npcsFora()) if (A.tipo === 'anda' && A.chuva) { A.chuva = null; removerProp(A); if (A.velBase) A.vel = A.velBase; A.correndo = false; }
+    if (S.moradores) for (const r of S.moradores) r.reagiu = false;
+  }
+
+  // ---- moradores
+  const lugarDe = (r) => r.lugarAtual || r.posto.lugar;
+  const soltarLugar = (r) => { const L = lugarDe(r); if (L && L.ocupado === r.A) L.ocupado = null; r.lugarAtual = null; };
+  function assentoLivrePerto(ref) {                                   // (5.0.0) o lugar dele está ocupado (pelo jogador): o vazio mais perto
+    let best = null, bd = 40; for (const a of S.assentos) { if (a.ocupado || a.lanche || a === ref) continue; const d = Math.hypot(a.x - ref.x, a.z - ref.z); if (d < bd) { bd = d; best = a; } } return best;
+  }
+  const liberarSlot = (r) => { if (r.slot) { if (r.slot.ocupado === r) r.slot.ocupado = null; r.slot = null; } };
+  function surgirMor(r, x, z, yaw) { const A = r.A; A.oculto = false; A.x = x; A.z = z; A.yaw = A.yawAlvo = yaw; A.y = altura(x, z); S.meus.add(A.m); A.blob.visible = true; A.andando = false; }
+  function esconderMor(r) {
+    const A = r.A; liberarSlot(r); soltarLugar(r);
+    A.oculto = true; A.sentado = false; A.deitado = false; A.chao = false; A.fala = false; A.andando = false; A.chuva = null; A.correndo = false; removerProp(A);
+    A.x = 0; A.z = -500; S.meus.delete(A.m); A.blob.visible = false; A.tipo = 'morador'; r.estado = 'casa'; r.rota = null;
+  }
+  function levantarMor(r) {                                          // sai do banco (ou do chão) e fica de pé
+    const A = r.A, L = lugarDe(r);
+    if (A.sentado && !A.chao && L && L.ocupado === A) { const p = pontoLev(L, A); A.x = p.x; A.z = p.z; }
+    if (L && L.ocupado === A) L.ocupado = null; r.lugarAtual = null;
+    A.sentado = false; A.chao = false; A.deitado = false; A.assento = 0.52; A.fala = false; A.comendo = 0;
+  }
+  function pontoPosto(r) { const p = r.posto, L = p.lugar; return L ? pontoLev(L, null) : { x: p.x, z: p.z }; }
+  function colocarNoPosto(r) {
+    const A = r.A, p = r.posto; let L = lugarDe(r);
+    if (L && L.ocupado && L.ocupado !== A) {                          // (5.0.0) alguém (o jogador) está no lugar dele: vai para o banco vazio mais perto
+      const N = assentoLivrePerto(L);
+      if (N) { N.ocupado = A; r.lugarAtual = N; A.tipo = 'morador'; r.rota = [pontoLev(N, A)]; r.estado = 'ida'; if (A.oculto) surgirMor(r, r.rota[0].x, r.rota[0].z, p.yaw); return; }
+      L = null;
+    }
+    const x = L ? L.x : p.x, z = L ? L.z : p.z;
+    surgirMor(r, x, z, L ? L.yaw : p.yaw); A.vel = 1.2; A.correndo = false; A.chuva = null; removerProp(A); A.deitado = false; A.chao = false; A.andando = false;
+    if (L) { L.ocupado = A; A.sentado = true; A.assento = L.h; A.tipo = p.tipo; }
+    else if (p.lugar) { const q = pontoLev(p.lugar, A); A.x = q.x; A.z = q.z; A.sentado = false; A.assento = 0.52; A.tipo = 'conversa'; }
+    else { A.sentado = false; A.assento = 0.52; A.tipo = p.tipo; }
+    r.estado = 'posto';
+  }
+  function rotaGente(x0, z0, x1, z1) {                               // como caminhoRede, mas quem está dentro do campo (cercado) sai e entra pelo portão
+    for (const F of S.societys || []) {
+      const r = F.r, dentro = (x, z) => x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5, g = F.gate, d0 = dentro(x0, z0), d1 = dentro(x1, z1);
+      if (d0 && d1) return [{ x: x1, z: z1 }];
+      if (d0) return [{ x: g.in.x, z: g.in.z }, { x: g.out.x, z: g.out.z }].concat(caminhoRede(g.out.x, g.out.z, x1, z1));
+      if (d1) return caminhoRede(x0, z0, g.out.x, g.out.z).concat([{ x: g.out.x, z: g.out.z }, { x: g.in.x, z: g.in.z }, { x: x1, z: z1 }]);
+    }
+    return caminhoRede(x0, z0, x1, z1);
+  }
+  const yawFora = (c) => yawPara(c.sx - c.x, c.sz - c.z);
+  function irAoPosto(r) {
+    const A = r.A, c = r.casa, f = pontoPosto(r);
+    surgirMor(r, c.sx, c.sz, yawFora(c)); A.tipo = 'morador'; A.vel = VEL_MOR; r.rota = rotaGente(c.sx, c.sz, f.x, f.z); r.estado = 'ida';
+  }
+  function irParaCasa(r) { const A = r.A, c = r.casa; levantarMor(r); liberarSlot(r); A.tipo = 'morador'; r.rota = rotaGente(A.x, A.z, c.sx, c.sz); r.estado = 'volta'; }
+  function irParaArvore(r, s) { const A = r.A; levantarMor(r); A.tipo = 'morador'; s.ocupado = r; r.slot = s; r.rota = rotaGente(A.x, A.z, s.x, s.z); r.estado = 'paraArvore'; }
+  function acharSlot(A) {                                            // o ponto livre mais perto (se alguém ocupa um, escolhe o próximo)
+    let best = null, bd = 90;
+    for (const t of S.abrigos || []) for (const sl of t.slots || []) { if (sl.ocupado) continue; const d = Math.hypot(sl.x - A.x, sl.z - A.z); if (d < bd) { bd = d; best = sl; } }
+    return best;
+  }
+  function poseNaArvore(r) {
+    const A = r.A, sl = r.slot, k = ['pe', 'chao', 'deitado'][Math.floor(Math.random() * 3)], fora = yawPara(sl.x - sl.t.x, sl.z - sl.t.z);
+    A.andando = false; A.correndo = false; A.chuva = null; removerProp(A); A.vel = 1.2;
+    if (k === 'deitado') { A.deitado = true; A.yaw = A.yawAlvo = fora; }                    // a cabeça fica do lado do tronco
+    else if (k === 'chao') { A.sentado = true; A.chao = true; A.assento = 0.17; A.yaw = A.yawAlvo = fora + (Math.random() - 0.5) * 1.2; }
+    else A.yawAlvo = fora + (Math.random() - 0.5) * 2.4;
+    r.pose = k; r.estado = 'arvore'; r.espera = 3 + Math.random() * 7;
+  }
+  function montarMoradores() {
+    const rnd = semente(4242), tR = semente(909);
+    for (const t of S.abrigos || []) {                                // 3 pontos fixos em volta de cada árvore (só os livres)
+      t.slots = []; const base = tR() * Math.PI * 2;
+      for (let k = 0; k < 3; k++) { const a = base + k * Math.PI * 2 / 3, sx = t.x + Math.cos(a) * 1.5, sz = t.z + Math.sin(a) * 1.5; if (livreNPC(sx, sz, null, true) && distRede(sx, sz) < 14) t.slots.push({ x: sx, z: sz, t, ocupado: null }); }
+    }
+    const gente = S.npcs.filter((A) => A !== S.valdemar && (A.tipo === 'senta' || A.tipo === 'conversa' || A.tipo === 'treino'));
+    const casas = (S.casas || []).filter((c) => c !== S.casaValdemar && distRede(c.sx, c.sz) < 11);
+    for (let i = casas.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [casas[i], casas[j]] = [casas[j], casas[i]]; }
+    S.moradores = [];
+    gente.forEach((A, i) => {
+      const r = { A, casa: casas[Math.floor(i / 3) % casas.length], posto: { x: A.x, z: A.z, yaw: A.yaw, sentado: A.sentado, assento: A.assento, tipo: A.tipo, lugar: A.lugar || null },
+        saida: 6.0 + rnd() * 1.5, volta: [18, 19, 20][Math.floor(rnd() * 3)], estado: 'posto', rota: null, slot: null, folga: -1, reagiu: false, espera: 0 };
+      S.moradores.push(r);
+      if (!horaEntre(S.dados.hora, r.saida, r.volta)) esconderMor(r);
+    });
+  }
+  function tickMoradores(dt) {
+    const M = S.moradores; if (!M || S.dentro) return;
+    const h = S.dados.hora, dia = S.dados.dia || 1, molhado = !!S.clima.molhado;
+    for (const r of M) {
+      const A = r.A;
+      if (molhado && !r.reagiu && r.estado !== 'arvore' && r.estado !== 'paraArvore') {
+        r.reagiu = true;
+        if (r.estado === 'casa' || r.estado === 'volta') r.folga = dia;
+        else { const sl = Math.random() < 0.45 ? acharSlot(A) : null; if (sl) irParaArvore(r, sl); else { r.folga = dia; irParaCasa(r); } }
       }
-    } else if (B.fase === 'casa' || B.fase === 'abrigado') {
-      A.andando = false;
-      if (S.clima.chuva <= 0.05 && S.clima.estado !== 'chuva') {
-        B.espera -= dt;
-        if (B.espera <= 0) {
-          B.fase = 'volta'; B.rota = B.ida.slice().reverse(); B.rota.push({ x: B.orig.x, z: B.orig.z });
-          if (B.casa) { const p = B.ida[B.ida.length - 1]; A.oculto = false; S.meus.add(A.m); A.blob.visible = true; A.x = p.x; A.z = p.z; }
+      const e = r.estado;
+      if (e === 'casa') {
+        if (r.folga === dia || molhado || !horaEntre(h, r.saida, r.volta)) continue;
+        if (r.espera > 0) { r.espera -= dt; continue; }
+        if (!livreNPC(r.casa.sx, r.casa.sz, null, false)) { r.espera = 0.7; continue; }
+        irAoPosto(r);
+      } else if (e === 'posto') {
+        if (!horaEntre(h, r.saida, r.volta)) irParaCasa(r);
+      } else if (e === 'arvore') {
+        A.andando = false;
+        if (!molhado) {
+          r.espera -= dt;
+          if (r.espera <= 0) { levantarMor(r); liberarSlot(r); if (horaEntre(h, r.saida, r.volta)) { const f = pontoPosto(r); r.rota = rotaGente(A.x, A.z, f.x, f.z); r.estado = 'voltaPosto'; A.tipo = 'morador'; } else irParaCasa(r); }
+        }
+      } else {                                                       // ida, voltaPosto, volta, paraArvore: andando
+        if ((e === 'ida' || e === 'voltaPosto') && !horaEntre(h, r.saida, r.volta)) { irParaCasa(r); continue; }
+        A.chuva = molhado ? 'mao' : null;
+        if (seguir(A, r.rota, molhado ? VEL_CORRE : VEL_MOR, dt)) {
+          if (e === 'volta') { A.yawAlvo = yawPara(r.casa.x - A.x, r.casa.z - A.z); esconderMor(r); }
+          else if (e === 'paraArvore') poseNaArvore(r);
+          else colocarNoPosto(r);
         }
       }
-    } else if (B.fase === 'volta') {
-      if (seguir(A, B.rota, 1.3, dt)) { A.tipo = B.orig.tipo; A.sentado = B.orig.sentado; A.x = B.orig.x; A.z = B.orig.z; A.yaw = A.yawAlvo = B.orig.yaw; A.assento = B.orig.assento; A.vel = 1.2; A.correndo = false; A.abrigo = null; }
     }
+    if (S.treino) S.treino.pausa = M.some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto');
+  }
+
+  // ---- pedestres que entram nos lugares
+  const DESTINOS = ['cinema', 'cafeteria', 'supermercado', 'bar', 'pizzaria', 'restaurante', 'academia', 'lanche'];
+  function decidirDestino(A) {
+    if (!S.sacola || !S.sacola.length) S.sacola = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0].sort(() => Math.random() - 0.5);     // de cada 10 decisões, 5 entram
+    A.cool = 20 + Math.random() * 30;
+    if (!S.sacola.pop()) return;
+    let nome = DESTINOS[Math.floor(Math.random() * DESTINOS.length)];
+    if (nome === 'lanche') {
+      const V = S.valdemar, vagas = S.assentos.filter((a) => a.lanche && !a.ocupado);
+      if (V && !V.oculto && V.estado === 'balcao' && vagas.length) {
+        const a = vagas[Math.floor(Math.random() * vagas.length)]; a.ocupado = A;
+        A.dest = { tipo: 'lanche', a, fase: 'ir', rota: caminhoRede(A.x, A.z, a.x, a.z - 0.95), t: 0 }; return;
+      }
+      nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))];
+    }
+    const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
+    A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
+  }
+  function fimDest(A) { A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.espera = 0; A.bloq = 0; if (S.clima.molhado && !A.chuva) correrNaChuva(A); }
+  function tickDestino(A, dt) {
+    const D = A.dest;
+    if (D.fase === 'ir') {
+      if (!seguir(A, D.rota, A.vel, dt)) return;
+      if (D.tipo === 'lugar') {                                      // entra: some da rua e volta pela mesma porta depois de um tempo
+        D.fase = 'dentro'; D.t = 20 + Math.random() * 50; A.andando = false; A.chuva = null; A.correndo = false; removerProp(A); if (A.velBase) A.vel = A.velBase;
+        A.oculto = true; S.meus.delete(A.m); A.blob.visible = false; A.x = 0; A.z = -500;
+      } else {                                                       // lanche: senta na banqueta e come
+        const a = D.a; D.fase = 'pede'; D.t = 4 + Math.random() * 5;
+        A.chuva = null; A.correndo = false; removerProp(A); if (A.velBase) A.vel = A.velBase;
+        A.sentado = true; A.assento = a.h; A.x = a.x; A.z = a.z; A.yaw = A.yawAlvo = a.yaw; A.andando = false; A.comendo = 0;
+      }
+    } else if (D.fase === 'dentro') {
+      D.t -= dt; if (D.t > 0) return;
+      const P = D.P, x = P.x + Math.cos(P.sai) * 0.45, z = P.z - Math.sin(P.sai) * 0.45;
+      if (!livreNPC(x, z, A, false)) return;
+      A.oculto = false; A.x = x; A.z = z; A.yaw = A.yawAlvo = P.sai; S.meus.add(A.m); A.blob.visible = true; fimDest(A);
+    } else if (D.fase === 'pede') {                                   // (5.0.0) senta, espera o lanche um pouco e começa a comer
+      A.andando = false; D.t -= dt; A.fala = D.t > 2.5 && D.t < 4; if (D.t > 0) return;
+      A.fala = false; D.fase = 'come'; D.t = 12 + Math.random() * 12; A.comendo = 1;
+    } else if (D.fase === 'come') {
+      A.andando = false; D.t -= dt; if (D.t > 0) return;
+      const a = D.a, p = pontoLev(a, A); A.sentado = false; A.comendo = 0; A.assento = 0.52; A.x = p.x; A.z = p.z; a.ocupado = null; fimDest(A);
+    }
+  }
+  // separa quem ficou sobreposto (só os que andam; quem está parado no seu lugar não é empurrado)
+  function separarPessoas() {
+    const L = S.npcs, mov = (A) => (A.tipo === 'anda' || A.tipo === 'morador') && !A.oculto && !A.sentado && !A.deitado;
+    for (let i = 0; i < L.length; i++) { const a = L[i]; if (a.oculto || a === S.valdemar || a.deitado) continue;
+      for (let j = i + 1; j < L.length; j++) { const b = L[j]; if (b.oculto || b === S.valdemar || b.deitado) continue;
+        const ma = mov(a), mb = mov(b); if (!ma && !mb) continue;
+        let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
+        if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
+        const f = (0.46 - d) / d, kA = ma && mb ? 0.5 : ma ? 1 : 0, kB = ma && mb ? 0.5 : mb ? 1 : 0;
+        if (kA) { const nx = a.x - dx * f * kA, nz = a.z - dz * f * kA; if (livreNPC(nx, nz, a, true)) { a.x = nx; a.z = nz; } }
+        if (kB) { const nx = b.x + dx * f * kB, nz = b.z + dz * f * kB; if (livreNPC(nx, nz, b, true)) { b.x = nx; b.z = nz; } }
+      } }
   }
 
   // ------------------------------------------------------------------ o quadro
@@ -2285,18 +2702,18 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         S.t += dt;
         if (S.modo === 'livre') { mover(dt); tickHorario(dt); }
         tickClima(dt);
-        tickComemoracao(dt); tickJogador(dt); tickPessoas(dt);
+        tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
       if (S.bandeira && !S.dentro) { S.bandeira.rotation.y = Math.sin(S.t * 1.3) * 0.25; S.bandeira.position.x = PRACA_C.x + 1.3 * Math.cos(S.bandeira.rotation.y); S.bandeira.position.z = PRACA_C.z - 1.3 * Math.sin(S.bandeira.rotation.y); }
       if (S.ondas && !S.dentro) for (const o of S.ondas) { o.tx.offset.x = (o.tx.offset.x + o.vx * dt) % 1; o.tx.offset.y = (o.tx.offset.y + o.vz * dt) % 1; }
-      if (!S.dentro) atualizarMarca();
+      if (!S.dentro) { atualizarMarca(); atualizarTelas(dt); }
       atualizarAlvo();
     }
     atualizarCeu(); atualizarRelogioUI();
     if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena' && S.intro);   // só a chegada é cutscene (conversa no balcão e comemoração não)
-    for (const a of ATLETAS) a.raiz.visible = S.meus.has(a);
+    for (const a of ATLETAS) a.raiz.visible = S.meus.has(a) && !a.longe;
     atualizarCamera(dt);
     particulas.atualizar(0);                                            // (4.9.5) a chuva acompanha a câmera da cidade (o quadro do jogo já usou a câmera antiga)
   }
@@ -2336,10 +2753,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
       prepararDia(dados);
-      montarCidade(); montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
+      montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
       S.jog = criarJogador(f2, H);
-      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); criarPlantas();
+      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); montarMoradores(); criarPlantas();
       const J = S.jog; J.x = SPAWN.x; J.z = -4.9; J.y = 0.22; J.yaw = J.yawAlvo = -Math.PI / 2;
       tickJogador(0.016); tickPortao(1); atualizarCamera(0.016);
       GANCHO_RENDER = gancho;
@@ -2358,15 +2775,15 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       liberar(); if (S.missao) mostrarMissao();
       if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
       aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500);
-      await fim; paraFase2 = !!S.paraFase2;
+      await fim; paraFase2 = S.paraFase2 || false;
     } finally {
       limpar();
       if (f1p && f1Vis) { f1p.hidden = false; f1p.classList.remove('claro'); }
     }
     // (4.9.5) entrou no prédio: o apartamento (Fase 2) abre no saguão, com o personagem livre (e a cidade volta quando ele sair pela porta da rua)
-    if (paraFase2) { const rc = await Fases.executar('fase2', { volta: true }); if (!rc.ok) console.warn('[Cidade] fase2 não rodou:', rc); }
+    if (paraFase2) { const rc = await Fases.executar('fase2', paraFase2 === 'acordar' ? { volta: true, acordar: true } : { volta: true }); if (!rc.ok) console.warn('[Cidade] fase2 não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '4.9.5', iniciar,
+  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN } });   // (_estado/_planta: para testes)
 })();

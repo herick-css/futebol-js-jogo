@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.9.5
+   FUTEBOL JS · jogo.js · versão 5.0.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,23 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.0.1:
+   • Espectros: soma simples (cada ação soma/subtrai o seu valor; só o limite −100/+100). Saiu o retorno decrescente.
+   • Cidade (cidade.js): janelas acendem à noite, faróis nos carros, e otimizações (boneco de 1 peça para quem está longe,
+     brilho dos postes desligado de dia, alambrados e redes só desenhados perto do jogador).
+
+   Novidades da versão 5.0.0 — começando a lapidar:
+   • PAUSA GLOBAL (PausaGlobal): o aviso "gire o celular" fica por cima de TUDO e pausa o jogo em qualquer modo (partida, fases, cidade);
+     o jogo e a música também pausam quando a aba/app vai para segundo plano. Na partida abre a tela de pausa; Cena.esperar congela junto.
+   • SONO (Sono): dormir depois das 22h, depois de 00h ou ser pego às 2h (cutscene da cidade) deixa a faixa do domínio menor (10/25/50%) e o
+     tracinho mais rápido (1,25/1,5/2×) até a próxima noite bem dormida, e soma em "não saudável" (5/7/10).
+   • Não saudável em −50 ou menos: aviso do personagem; na partida da história −2 (na régua 1–10, = −20 na 0–100) em velocidade, força e
+     resistência e −20% do tempo de corrida; Espectros.penalidadeTime() devolve { banco: true } para o futuro sistema de time.
+   • O resto (fluxo de clientes nos lugares, dia da semana, luz do dia, cardápio deslizável, vômito, cliente fiel) está no cidade.js.
+
+   Novidades da versão 4.9.6 — só o cidade.js muda (vida da cidadezinha): ver o cabeçalho dele (rotina dos moradores, abrigo sob as árvores,
+   pedestres entrando nos lugares, dia de 15 min, porta de dentro do lanche, árvores translúcidas, calçada cinza).
+
    Novidades da versão 4.9.5 — a cidadezinha ganha hora, clima e vida (cidade.js / fase2.js):
    • particulas.intens(k) (0 a 1: densidade e opacidade da chuva) e particulas.tipo(): a cidade liga e desliga a chuva aos poucos.
    • O resto da 4.9.5 está nos cabeçalhos do cidade.js e do fase2.js (relógio de 10 min por dia, dia/tarde/noite, chuva, loja do Valdemar).
@@ -596,7 +613,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.9.5';
+const VERSAO_JOGO = '5.0.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -7296,7 +7313,8 @@ function startReceive(pr) {
     kind, pr, risco, motivo, dificil, forcedMiss: false, fin: tipoFinalizacao(),
     t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, azul: null, done: false,
   };
-  const tam = RECV.ZONA[kind] * Atributos.fator('dominio');
+  const SD = typeof Historia !== 'undefined' && Historia.emPartida() ? Sono.debuff() : null;   // (5.0.0) dormiu mal: faixa menor e tracinho mais rápido
+  const tam = RECV.ZONA[kind] * Atributos.fator('dominio') * (SD ? SD.zona : 1); R.velK = SD ? SD.vel : 1;
   R.zona.ini = 0.06 + Math.random() * (0.88 - tam); R.zona.fim = R.zona.ini + tam;
   R.pos = R.zona.ini > 0.5 ? Math.random() * 0.15 : 0.85 + Math.random() * 0.1;   // começa longe da faixa
   R.dir = R.pos > 0.5 ? -1 : 1;
@@ -7375,7 +7393,7 @@ function updateReceive(rdt) {
   const R = G.recv;
   if (R && !R.done) {
     R.t += rdt;
-    R.pos += R.dir * RECV.VEL * rdt;
+    R.pos += R.dir * RECV.VEL * (R.velK || 1) * rdt;
     if (R.pos >= 1) { R.pos = 2 - R.pos; R.dir = -1; }
     if (R.pos <= 0) { R.pos = -R.pos; R.dir = 1; }
     desenharMartelo();
@@ -9885,8 +9903,33 @@ function iniciarReplayImpedimento(reg, depois) {
 
 let last = performance.now(), radarT = 0, fpsT = 0, fpsN = 0;
 let GANCHO_RENDER = null;
+// (5.0.0) PAUSA GLOBAL: "gire o celular" (em pé) e segundo plano param o jogo inteiro (partida, fases, cidade), o som e as esperas das cenas
+const PausaGlobal = (() => {
+  const motivos = new Set(); let ativa = false;
+  const mq = window.matchMedia ? window.matchMedia('(orientation: portrait) and (max-width: 820px)') : null;
+  function aplicar() {
+    const on = motivos.size > 0; if (on === ativa) return; ativa = on;
+    if (on) {
+      try { if (PLAY_STATES.includes(G.state) || G.state === 'goal' || G.state === 'celebrate') pauseGame(); } catch (e) { /* ainda montando */ }
+      try { Som.pausar(true); } catch (e) { /* sem som */ }
+      Cena.congelar(true);
+    } else {
+      last = performance.now(); Cena.congelar(false);
+      try { if (G.state !== 'paused') Som.pausar(false); } catch (e) { /* sem som */ }
+    }
+  }
+  const motivo = (m, on) => { if (on) motivos.add(m); else motivos.delete(m); aplicar(); };
+  const girar = () => motivo('girar', !!(mq && mq.matches));
+  if (mq) { if (mq.addEventListener) mq.addEventListener('change', girar); else if (mq.addListener) mq.addListener(girar); }
+  window.addEventListener('resize', girar); window.addEventListener('orientationchange', girar);
+  document.addEventListener('visibilitychange', () => motivo('fundo', document.hidden));
+  window.addEventListener('pagehide', () => motivo('fundo', true)); window.addEventListener('pageshow', () => motivo('fundo', document.hidden));
+  setTimeout(girar, 0);
+  return { get ativa() { return ativa; }, motivo };
+})();
 function frame(now) {
   requestAnimationFrame(frame);
+  if (PausaGlobal.ativa) { last = now; return; }             // (5.0.0) celular em pé ou app em segundo plano: tudo parado
   const rdt = Math.min(0.05, (now - last) / 1000);
   last = now;
   let dt = 0;
@@ -12364,15 +12407,21 @@ const Cena = (() => {
     btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); });
     ($('raizJogo') || document.body).appendChild(btn);
   }
+  let congelado = false;
+  const armar = (t) => { t.t0 = performance.now(); t.id = setTimeout(() => { pend.delete(t); t.r(); }, t.ms); };
   function esperar(ms) {
     if (pulando || !(ms > 0)) return new Promise((r) => setTimeout(r, 0));
-    return new Promise((r) => { const t = { r }; t.id = setTimeout(() => { pend.delete(t); r(); }, ms); pend.add(t); });
+    return new Promise((r) => { const t = { r, ms }; pend.add(t); if (!congelado) armar(t); });
+  }
+  function congelar(on) {                             // (5.0.0) pausa global: as esperas das cenas param de contar e continuam depois
+    if (on === congelado) return; congelado = on; const agora = performance.now();
+    for (const t of pend) { if (on) { if (t.id != null) { clearTimeout(t.id); t.id = null; t.ms = Math.max(0, t.ms - (agora - t.t0)); } } else armar(t); }
   }
   const ativa = () => manual > 0 || performance.now() - marca < 250 || (typeof Dialogo !== 'undefined' && Dialogo.aberto());
   function pular() {
     if (pulando || !ativa()) return;
     pulando = true; semCena = 0;
-    for (const t of pend) { clearTimeout(t.id); setTimeout(t.r, 0); }
+    for (const t of pend) { if (t.id != null) clearTimeout(t.id); setTimeout(t.r, 0); }
     pend.clear();
     if (typeof Dialogo !== 'undefined') Dialogo.pularTudo();
     if (btn) btn.hidden = true;
@@ -12391,7 +12440,7 @@ const Cena = (() => {
     if (mostra) { montar(); const tx = T('Pular cena ▶'); if (btn.textContent !== tx) btn.textContent = tx; }
     if (btn && btn.hidden === mostra) btn.hidden = !mostra;
   }
-  return { esperar, pular, interativo, marcar, entrar, sair, rodar, tick, passos: () => (pulando ? 25 : 1), get pulando() { return pulando; } };
+  return { esperar, congelar, pular, interativo, marcar, entrar, sair, rodar, tick, passos: () => (pulando ? 25 : 1), get pulando() { return pulando; } };
 })();
 
 const Escolha = (() => {                              // caixa de ESCOLHAS (reutilizável): Escolha.mostrar(titulo, ['op1', 'op2']) → Promise(índice)
@@ -12840,7 +12889,7 @@ const Fases = (() => {
 // Espectros.mover(eixo, delta, motivo) — o motivo fica guardado para dar para mostrar "por que mudou".
 //   Tipos: TRAÇO (muda devagar, quase não volta sozinho) · CONDIÇÃO (temporária: ex. refeição pesada vale só para a próxima partida)
 //          · REPUTAÇÃO (0–100, ainda não usada).
-//   Andar contra o polo é fácil; ir mais longe no mesmo polo rende cada vez menos (retorno decrescente).
+//   (5.0.1) Cada ação SOMA (ou subtrai) o seu valor, direto: 0 → −7 → −17... (limite −100 a +100). Sem retorno decrescente.
 //   O que o jogador vê: palavras e barras (nunca o número). A SAÚDE só aparece no hospital da cidadezinha.
 //   Espectros.valor(e) · mover(e, d, motivo) · efeito(nome) · condicao(nome, liga) · aplicarNaPartida() · rotulo(e) · frase(lista)
 // =====================================================================
@@ -12867,8 +12916,7 @@ const Espectros = (() => {
   function mover(eixo, delta, motivo) {
     if (!ESPECTROS[eixo] || !delta) return null;
     const e = ler(), v0 = clamp(+e.v[eixo] || 0, -100, 100);
-    const mesmoLado = Math.sign(delta) === Math.sign(v0) && v0 !== 0;
-    const real = mesmoLado ? delta * (1 - Math.abs(v0) / 100 * 0.7) : delta;                    // retorno decrescente
+    const real = delta;                                                                          // (5.0.1) soma simples: −7 e depois −10 = −17 (sem retorno decrescente)
     const v1 = clamp(v0 + real, -100, 100); e.v[eixo] = Math.round(v1 * 10) / 10;
     e.hist.push({ eixo, d: Math.round(real * 10) / 10, motivo: motivo || '', t: Date.now() }); if (e.hist.length > 60) e.hist.splice(0, e.hist.length - 60);
     gravar(e);
@@ -12889,17 +12937,44 @@ const Espectros = (() => {
     return Tf('Seu personagem está {0}.', eixos.map(([k, v]) => rotulo(k, v)).join(', '));
   }
   // chamado quando começa uma partida da história: fôlego/recuperação pelos espectros e condições; consome as de "próxima partida"
+  const ruimDeSaude = () => valor('saudavel') <= -50;
+  // (5.0.0) não saudável em −50 ou menos: começa no banco (quando existir time) e −20 (na régua 0–100; aqui 1–10 = −2) em velocidade, força e resistência
+  const penalidadeTime = () => (ruimDeSaude() ? { banco: true, atributos: { velocidade: -20, forca: -20, resistencia: -20 }, corrida: 0.8 } : null);
   function aplicarNaPartida() {
+    const pen = penalidadeTime();
+    if (pen) { const a = Atributos.atual; for (const k of ['velocidade', 'forca', 'resistencia']) a[k] = Math.max(1, (a[k] ?? 7) - 2); Atributos.aplicar(a); }
     const corrida = efeito('corrida'), rec = efeito('recuperacao');
-    CONFIG.STAMINA_RUN_TIME *= corrida; CONFIG.STAMINA_REGEN_TIME /= rec;
+    CONFIG.STAMINA_RUN_TIME *= corrida * (pen ? pen.corrida : 1); CONFIG.STAMINA_REGEN_TIME /= rec;
     multLesao = clamp(efeito('lesao'), 0.7, 1.3);
     const e = ler(); let mudou = false;
     for (const [c, on] of Object.entries(e.cond)) if (on && CONDICOES[c] && CONDICOES[c].ate === 'proximaPartida') { e.cond[c] = false; mudou = true; }
     if (mudou) gravar(e);
     return { corrida, rec };
   }
-  return { valor, mover, efeito, condicao, rotulo, frase, aplicarNaPartida, multLesao: () => (typeof Historia !== 'undefined' && Historia.emPartida() ? multLesao : 1), _ler: ler };
+  return { valor, mover, efeito, condicao, rotulo, frase, aplicarNaPartida, penalidadeTime, ruimDeSaude, _gravar: gravar, multLesao: () => (typeof Historia !== 'undefined' && Historia.emPartida() ? multLesao : 1), _ler: ler };
 })();
+// (5.0.0) SONO — a hora em que o personagem dormiu vira um nível (0 bem dormido · 1 depois das 22h · 2 depois de 00h · 3 pego às 2h)
+// que vale até a próxima noite: faixa do domínio menor e tracinho mais rápido. Cada noite ruim soma em "não saudável".
+const Sono = (() => {
+  const NIVEIS = [{ zona: 1, vel: 1, saude: 0 }, { zona: 0.9, vel: 1.25, saude: -5 }, { zona: 0.75, vel: 1.5, saude: -7 }, { zona: 0.5, vel: 2, saude: -10 }];
+  const nivelPelaHora = (h) => (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
+  function registrar(nivel, motivo) {
+    const e = Espectros._ler(); e.cond.sono = nivel | 0; Espectros._gravar(e);
+    if (NIVEIS[nivel] && NIVEIS[nivel].saude) Espectros.mover('saudavel', NIVEIS[nivel].saude, motivo || 'dormiu tarde');
+  }
+  const nivel = () => (Espectros._ler().cond.sono | 0);
+  const debuff = () => NIVEIS[nivel()] || NIVEIS[0];
+  // aviso "hábitos não saudáveis": uma vez a cada vez que cruza −50 (volta a valer depois de sair dessa faixa)
+  function deveAvisarSaude() {
+    const e = Espectros._ler(), ruim = Espectros.ruimDeSaude();
+    if (!ruim) { if (e.cond.avisoSaude) { e.cond.avisoSaude = false; Espectros._gravar(e); } return false; }
+    if (e.cond.avisoSaude) return false; e.cond.avisoSaude = true; Espectros._gravar(e); return true;
+  }
+  return { NIVEIS, nivelPelaHora, registrar, nivel, debuff, deveAvisarSaude };
+})();
+Object.assign(I18N, {
+  'Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....': ['My habits are really unhealthy, this is definitely going to hurt me in games....', 'Tengo hábitos poco saludables, esto seguro me va a perjudicar en los partidos....', 'Ho abitudini poco sane, questo mi danneggerà di sicuro nelle partite....', "J'ai des habitudes pas saines, ça va sûrement me nuire pendant les matchs...."],
+});
 Object.assign(I18N, {
   'Saudável': ['Healthy', 'Saludable', 'In salute', 'En bonne santé'], 'Não saudável': ['Unhealthy', 'Poco saludable', 'Poco sano', 'Pas en forme'],
   'Ativo': ['Active', 'Activo', 'Attivo', 'Actif'], 'Sedentário': ['Sedentary', 'Sedentario', 'Sedentario', 'Sédentaire'],
@@ -14285,6 +14360,7 @@ function montarTelasPixel() {
   const troca = (id, cls) => { const b = $(id); if (b) { b.classList.remove('big', 'ghost'); b.classList.add(...cls.split(' ')); } };
   troca('resumeBtn', 'pxBtn pxPrim'); troca('againBtn', 'pxBtn pxPrim'); troca('restartBtn', 'pxBtn');
   const r = $('rotate');
+  if (r) { document.body.appendChild(r); const z = document.createElement('style'); z.textContent = '#rotate { z-index: 2147483000 !important; }'; document.head.appendChild(z); }   // (5.0.0) por cima de TUDO (cardápio, diálogos, fases)
   const textoGire = () => { const t = r && r.querySelector('.rotTexto'); if (t) t.innerHTML = T('Gire o celular') + '<small>' + T('para a horizontal') + '</small>'; };
   Idioma.aoMudar.push(textoGire);
   if (r) r.innerHTML = '<div class="mxCaixa"><svg class="rotCel" viewBox="0 0 14 22" aria-hidden="true">' +
