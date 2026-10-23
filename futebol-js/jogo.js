@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 4.8.2
+   FUTEBOL JS · jogo.js · versão 4.9.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,15 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 4.9.2 — fôlego da partida livre, fadiga e cansaço variado:
+   • PARTIDA LIVRE (fora da história): você e a IA têm 15 s de corrida (LIVRE_CORRIDA) e recuperam 1 s de corrida a cada 1 s sem correr (LIVRE_RECUPERA).
+     Na história nada muda (iniciante: 5 s; crianças/IA da história com AI_RUN_TIME/AI_REGEN_TIME).
+   • FADIGA: cada vez que alguém corre até esgotar ou até sobrar 5 s (FADIGA_LIMIAR), perde de vez 0,25 s de corrida nesta partida (FADIGA_PERDA;
+     mínimo de 6 s, FADIGA_MIN). Só conta de novo depois de recuperar 60% da barra. Vale para você e para a IA.
+   • CANSAÇO com 4 poses sorteadas a cada vez: mãos na cintura (a de antes), mãos na cabeça olhando para cima, curvado com as mãos nos
+     joelhos e braços soltos ofegante. Cada um respira no seu ritmo.
+   (4.9.0 / 4.9.1: a cidadezinha — cidade.js — e a ida da Fase 2 para ela; o jogo.js não mudou nelas.)
+
    Novidades da versão 4.8.2 — câmera, drible de costas, chute baixo, tutorial, grade da várzea e ovo do João:
    • Pausa: "Ângulo da câmera" (o antigo "altura", que só inclinava a câmera) e uma "Altura da câmera" de verdade (sobe/desce a câmera inteira, em metros). "Câmera padrão" zera as três.
    • Drible de costas: a MESMA câmera dos outros dribles (de cima/por trás) e o seu personagem ANDA para um lado (finta) e depois para o outro (corte), em vez de só inclinar.
@@ -571,7 +580,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '4.8.2';
+const VERSAO_JOGO = '4.9.2';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -597,6 +606,13 @@ const CONFIG = {
   AI_RUN_TIME: 16,           // (4.8.0) segundos de arrancada da IA com resistência 7 (cai com resistência baixa/velocidade alta; sobe com resistência alta)
   AI_REGEN_TIME: 14,         // (4.8.0) segundos para a IA recarregar a barra do zero (com recuperação 7)
   AI_MIN_TO_RUN: 0.3,        // (4.8.0) depois de esgotar, a IA só volta a correr com isso recuperado
+  // (4.9.2) PARTIDA LIVRE (fora da história): você E a IA têm 15 s de corrida e recuperam 1 s de corrida a cada 1 s sem correr.
+  //   Cada vez que alguém corre até esgotar (ou até sobrar só FADIGA_LIMIAR segundos), perde de vez (nesta partida) FADIGA_PERDA s de corrida.
+  LIVRE_CORRIDA: 15,         // segundos de corrida com resistência 7 (resistência/velocidade de cada um ainda mudam um pouco)
+  LIVRE_RECUPERA: 1,         // segundos de descanso para devolver 1 s de corrida
+  FADIGA_PERDA: 0.25,        // segundos de corrida perdidos a cada "corridão"
+  FADIGA_LIMIAR: 5,          // conta como corridão quando sobram 5 s ou menos
+  FADIGA_MIN: 6,             // nunca fica com menos que isso de corrida
   AI_SPEED_BALL: 4.16,
   GK_SPEED: 4.4,
 
@@ -2446,13 +2462,36 @@ function aplicarLamento(p, m) {
 // até a mão encostar no quadril, como na mão-na-cintura do gol sofrido), tronco um pouco para a frente e a respiração
 // funda (o peito sobe e desce, os ombros acompanham). k (cansK) liga/desliga suave.
 function aplicarCansaco(p, m, agora) {
-  const k = smooth(p.cansK), r = Math.sin(agora / 420), r2 = Math.max(0, r);     // ~1,3 s por respiração
-  m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 1.12 + r * 0.05, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -1.12 - r * 0.05, k);
-  m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.05, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.05, k);
-  usarCotovelos(m, -2.0 * k, 2.0 * k);
-  m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.12 + r * 0.05, k);
-  m.corpo.position.y += (0.012 + r2 * 0.022) * k;
-  usarCabeca(m, (-0.18 + r * 0.08) * k);
+  const k = smooth(p.cansK), r = Math.sin(agora / 420 + (p.id || 0) * 1.7), r2 = Math.max(0, r), v = p.cansVar | 0;     // ~1,3 s por respiração (cada um no seu ritmo)
+  if (v === 1) {                                         // (4.9.2) MÃOS NA CABEÇA, olhando para cima, peito subindo e descendo
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 2.9, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -2.9, k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.2, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.2, k);
+    usarCotovelos(m, -2.5 * k, 2.5 * k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, 0.05 + r * 0.03, k);
+    m.corpo.position.y += (0.01 + r2 * 0.025) * k;
+    usarCabeca(m, (0.2 + r * 0.06) * k);
+  } else if (v === 2) {                                  // (4.9.2) CURVADO, MÃOS NOS JOELHOS (o tronco inclina e as pernas continuam em pé)
+    const a = (0.42 + r * 0.03) * k;
+    m.corpo.rotation.z = -a; m.pernaE.rotation.z = a; m.pernaD.rotation.z = a;
+    m.corpo.position.x = -0.74 * Math.sin(a); m.corpo.position.y += 0.74 * (1 - Math.cos(a)) - 0.04 * k;
+    usarJoelhos(m, -0.3 * k, -0.3 * k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.95, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.95, k);
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.1, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.1, k);
+    usarCabeca(m, (-0.05 + r * 0.06) * k);
+  } else if (v === 3) {                                  // (4.9.2) BRAÇOS SOLTOS, OFEGANTE: ombros sobem e descem, cabeça balançando para trás
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 0.22 + r * 0.07, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -0.22 - r * 0.07, k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.12, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.12, k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.04 + r * 0.07, k);
+    m.corpo.position.y += (0.015 + r2 * 0.04) * k;
+    usarCabeca(m, (0.1 + r * 0.14) * k);
+  } else {                                               // (4.7.0) mãos na cintura, cabeça baixa
+    m.bracoE.rotation.x = lerp(m.bracoE.rotation.x, 1.12 + r * 0.05, k); m.bracoD.rotation.x = lerp(m.bracoD.rotation.x, -1.12 - r * 0.05, k);
+    m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.05, k); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.05, k);
+    usarCotovelos(m, -2.0 * k, 2.0 * k);
+    m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.12 + r * 0.05, k);
+    m.corpo.position.y += (0.012 + r2 * 0.022) * k;
+    usarCabeca(m, (-0.18 + r * 0.08) * k);
+  }
 }
 // Liga/desliga o joelho das duas pernas. ang = quanto a canela dobra para trás (negativo).
 function usarJoelhos(m, angE, angD) {
@@ -4675,14 +4714,16 @@ function updateStamina(u, dt) {
   talvezLesaoMuscular(u, dt);
   if (u.cansadoT > 0) { u.cansadoT -= dt; if (u.running && Math.hypot(u.vx, u.vz) > 4) u.cansadoT = 0; }   // (4.7.0) tempo da pose de cansaço
   if (G.state === 'celebrate') { u.stamina = 1; u.exhausted = false; return; }   // na comemoração não cansa
+  const livre = partidaLivre(), T = livre ? tempoCorrida(u, CONFIG.LIVRE_CORRIDA * CONFIG.STAMINA_RUN_TIME / 10) : CONFIG.STAMINA_RUN_TIME;   // (4.9.2) partida livre: 15 s menos a fadiga
   if (u.running && Math.hypot(u.vx, u.vz) > 3) {
-    u.stamina = Math.max(0, u.stamina - dt / CONFIG.STAMINA_RUN_TIME);
+    u.stamina = Math.max(0, u.stamina - dt / T);
     u.regenWait = CONFIG.STAMINA_REGEN_DELAY;
-    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; showToast('Sem fôlego!', 'bad'); }
+    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; u.cansVar = Math.floor(Math.random() * 4); showToast('Sem fôlego!', 'bad'); }
   } else {
     u.regenWait -= dt;
-    if (u.regenWait <= 0) u.stamina = Math.min(u.staminaMax ?? 1, u.stamina + dt / CONFIG.STAMINA_REGEN_TIME);   // lesão leve: máximo 70%
+    if (u.regenWait <= 0) u.stamina = Math.min(u.staminaMax ?? 1, u.stamina + dt / (livre ? T * CONFIG.LIVRE_RECUPERA : CONFIG.STAMINA_REGEN_TIME));   // lesão leve: máximo 70%
   }
+  if (livre) checarFadiga(u, T);
   if (u.exhausted && u.stamina >= CONFIG.STAMINA_MIN_TO_RUN) u.exhausted = false;
 }
 
@@ -4727,6 +4768,15 @@ function erroDePasseParaVoce(p) {
   return clamp(CONFIG.BROKEN_PASS_CHANCE * Math.pow(5.5 / Math.max(1, hab(p, 'passe')), 1.2), 0.08, 0.8);
 }
 
+// (4.9.2) PARTIDA LIVRE e FADIGA. A barra (stamina 0–1) vale T segundos de corrida; T começa em LIVRE_CORRIDA e cai FADIGA_PERDA
+// a cada "corridão" (correr até sobrarem FADIGA_LIMIAR s ou menos). Só conta de novo depois de recuperar 60% da barra.
+const partidaLivre = () => !(typeof Historia !== 'undefined' && Historia.emPartida());
+function tempoCorrida(p, base) { return Math.max(CONFIG.FADIGA_MIN, base - (p.fadiga || 0) * CONFIG.FADIGA_PERDA); }
+function checarFadiga(p, T) {
+  if (p.fadigaArmada !== false && p.stamina * T <= CONFIG.FADIGA_LIMIAR) { p.fadiga = (p.fadiga || 0) + 1; p.fadigaArmada = false; }
+  else if (p.fadigaArmada === false && p.stamina >= 0.6) p.fadigaArmada = true;
+}
+
 // (4.8.0) FÔLEGO DA IA, o mesmo esquema do seu jogador: correr (arrancada) gasta a barra (p.stamina de 1 a 0); parado/andando ela recarrega; ao
 // zerar a IA fica ESGOTADA (só anda, mãos na cintura) até recuperar AI_MIN_TO_RUN. Quem decide os tempos são as habilidades de cada jogador:
 //   resistência alta = arrancada longa; velocidade alta cansa um pouco mais rápido; recuperação alta = recarrega mais depressa.
@@ -4734,18 +4784,20 @@ function atualizarFolegoIA(p, dt, spd, des) {
   if (G.state !== 'play' || p.role === 'GK' || p.out || p.stun > 0 || p.scripted) return;
   const vref = CONFIG.AI_SPEED * Math.min(1, p.speedMul || 1);   // (4.8.3) "correr" = perto da PRÓPRIA velocidade máxima (as crianças da Fase 1 nunca passavam de 0,77 × a velocidade cheia e não cansavam)
   const corre = spd > vref * 0.77 && Math.hypot(des.vx, des.vz) > vref * 0.6;
+  const livre = partidaLivre();
+  const T = livre ? tempoCorrida(p, CONFIG.LIVRE_CORRIDA * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'))) : CONFIG.AI_RUN_TIME * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'));
   if (corre) {
-    const tempo = CONFIG.AI_RUN_TIME * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'));
-    p.stamina = Math.max(0, p.stamina - dt / tempo);
+    p.stamina = Math.max(0, p.stamina - dt / T);
     p.regenWait = 0.6;
-    if (p.stamina <= 0.005 && !p.exhausted) { p.stamina = 0; p.exhausted = true; p.cansadoT = 2.5; }
+    if (p.stamina <= 0.005 && !p.exhausted) { p.stamina = 0; p.exhausted = true; p.cansadoT = 2.5; p.cansVar = Math.floor(Math.random() * 4); }
   } else {
     p.regenWait = (p.regenWait || 0) - dt;
     if (p.regenWait <= 0) {
-      const tempo = CONFIG.AI_REGEN_TIME / fh(p, 'recuperacao') * (spd < 1 ? 0.6 : spd > 2.5 ? 1.5 : 1);
+      const tempo = livre ? T * CONFIG.LIVRE_RECUPERA / fh(p, 'recuperacao') : CONFIG.AI_REGEN_TIME / fh(p, 'recuperacao') * (spd < 1 ? 0.6 : spd > 2.5 ? 1.5 : 1);   // (4.9.2) livre: 1 s de descanso = 1 s de corrida
       p.stamina = Math.min(1, p.stamina + dt / tempo);
     }
   }
+  if (livre) checarFadiga(p, T);
   if (p.cansadoT > 0) p.cansadoT -= dt;
   if (p.exhausted && p.stamina >= CONFIG.AI_MIN_TO_RUN) p.exhausted = false;
 }
@@ -9492,6 +9544,7 @@ function syncMeshes(dt) {
     }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
+    if (m.corpo.position.x) m.corpo.position.x = 0;   // (4.9.2) só a pose "mãos nos joelhos" mexe nisso
     if (p.isUser || p.exhausted || p.cansK > 0) {   // (4.7.0) sem fôlego e sem a bola: mãos na cintura, respirando fundo (4.8.0: a IA também)
       const quer = (p.exhausted || (p.isUser && p.cansadoT > 0)) && G.possession !== p && G.state === 'play' && !p.recvPose && p.fall === 0 && !G.kick && !p.celeb && !(p.slidePose > 0) && (!p.isUser || G.userRequest <= 0) && !p.lamento && !p.out;
       p.cansK = clamp((p.cansK || 0) + (quer ? dt * 4 : -dt * 6), 0, 1);
