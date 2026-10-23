@@ -456,15 +456,24 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (A.cigarro) { A.cigarro = null; fazCigarro(A); }
   }
   // (cidade.js) o personagem com a roupa salva no guarda-roupa, sem ator nem cena: a cidadezinha usa isto (Fases.carregar('fase2').modeloJogador)
-  function modeloJogador(d) {
-    const fem = PERSONAGEM.genero === 'F', base = aparenciaJogador(), lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
-    const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
+  function vestirModelo(base, R, c) {
     const opt = Object.assign({ corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', barba: 0, manga: 0, meiao: 1, labio: 3, cabecao: 1.08, escala: 0.9 }, base, roupaOpts(R, c, base.pele)), m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
     if (R.regata || R.top) pintarBracos(m, base.pele);
     extrasRoupa(m, R, c, base.pele); pintarEmblema(m, R, c);
     return { m, opt };
+  }
+  function modeloJogador(d) {
+    const fem = PERSONAGEM.genero === 'F', lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
+    const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
+    return vestirModelo(aparenciaJogador(), R, c);
+  }
+  // (cidade.js) as pessoas da cidade: adultas (corpo e cabeça normais), com as mesmas roupas do guarda-roupa (menos as de time, que levam o nome do jogador)
+  function modeloPessoa(o) {
+    const lista = ROUPAS[o.fem ? 'F' : 'M'].filter((R) => !R.time), R = lista[(o.roupa | 0) % lista.length], c = c4(o.cores || R.c);
+    const ap = o.ap || {}, base = { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.corBarba || ap.cabelo, barba: o.fem ? 0 : ap.barba | 0, cabecao: o.cabecao || 1, escala: o.escala || 1 };
+    return vestirModelo(base, R, c);
   }
   function fazCigarro(A) {
     const L = new Lote(); L.caixa(0.16, 0.028, 0.028, 0xf2f2ee, 0.1, 0, 0); L.caixa(0.03, 0.03, 0.03, 0xe8742a, 0.2, 0, 0);
@@ -573,7 +582,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   Q.luz = { x: 1.05, spot: [1.05, -2.3] };
   Q.pBanheiro = { z: 0.2, spot: [3.35, 0.2] };
   Q.pSaida = { z: 1.5, spot: [-3.35, 1.5] };
-  const Q_RETS = [[Q.cama.x0, Q.cama.x1, Q.cama.z0, Q.cama.z1], [Q.guarda.x0, Q.guarda.x1, Q.guarda.z0, Q.guarda.z1 + 0.05], [Q.mesa.x0, Q.mesa.x1, Q.mesa.z0, Q.mesa.z1 + 0.15], [3.15, 3.55, -2.7, -2.1]];
+  const Q_RETS = [[Q.cama.x0, Q.cama.x1, Q.cama.z0, Q.cama.z1], [Q.guarda.x0, Q.guarda.x1, Q.guarda.z0, Q.guarda.z1 + 0.05], [Q.mesa.x0, Q.mesa.x1, Q.mesa.z0, Q.mesa.z1 + 0.15], [3.15, 3.55, -2.7, -2.1],
+    [3.3, 3.8, 2.15, 2.65], [-3.8, -3.3, 2.15, 2.65]];   // (4.9.x) os dois vasos de planta perto da porta agora têm corpo (o jogador e a bola batem neles)
   function montarQuarto(fem) {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const mats = S.matsQuarto = [];
@@ -1575,5 +1585,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', { origem: 'fase2' }); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador });
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa });
 })();
