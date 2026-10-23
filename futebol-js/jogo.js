@@ -24,7 +24,9 @@
    • Drible de costas: a MESMA câmera dos outros dribles (de cima/por trás) e o seu personagem ANDA para um lado (finta) e depois para o outro (corte), em vez de só inclinar.
    • Tutorial: o João anda pelo MOTOR (desTreino: o treino só diz para onde ele vai) — pernas de verdade e velocidade normal (antes deslizava/andava dobrado).
    • Tutorial: a bola nunca sai da quadra (só o gol vale); passou da linha, ela volta rebatendo. Só no tutorial.
-   • CAVADINHA = tocar bem embaixo da bola, em qualquer força. Uma reta só de velocidade (VEL_CAV = 5 + 20 × força) num ângulo fixo (ELEV_CAV): quanto mais forte, mais alta e mais longe
+   • CAVADINHA = tocar no PONTO MAIS BAIXO da bola (dos 5% de baixo; CAV_OY_MIN = 0,9), em qualquer força. Em qualquer outro ponto é chute normal, com efeito.
+   • As crianças da Fase 1 agora também têm ARRANCADA e CANSAÇO (antes a velocidade delas ficava abaixo do limite que conta como correr e nunca cansavam).
+   • (cavadinha, detalhe)  Uma reta só de velocidade (VEL_CAV = 5 + 20 × força) num ângulo fixo (ELEV_CAV): quanto mais forte, mais alta e mais longe
      (azul ~4–12 m, amarelo ~12–19 m, verde ~19–30 m, vermelho até ~50 m). Entrar ou não depende da distância. A aula da cavadinha continua exigindo o AZUL.
    • Várzea: na comemoração da grade o jogador ESCALA, SENTA no cano de cima e levanta os braços para a torcida (antes ficava pendurado). Society/futsal continuam como estavam.
    • PULAR CENA (Cena): botão "Pular cena ▶" em toda cutscene (abertura, Fase 1, Fase 2, falas do tutorial). Vai direto ao estado final da cena
@@ -4730,7 +4732,8 @@ function erroDePasseParaVoce(p) {
 //   resistência alta = arrancada longa; velocidade alta cansa um pouco mais rápido; recuperação alta = recarrega mais depressa.
 function atualizarFolegoIA(p, dt, spd, des) {
   if (G.state !== 'play' || p.role === 'GK' || p.out || p.stun > 0 || p.scripted) return;
-  const corre = spd > CONFIG.AI_SPEED * 0.77 && Math.hypot(des.vx, des.vz) > CONFIG.AI_SPEED * 0.6;
+  const vref = CONFIG.AI_SPEED * Math.min(1, p.speedMul || 1);   // (4.8.3) "correr" = perto da PRÓPRIA velocidade máxima (as crianças da Fase 1 nunca passavam de 0,77 × a velocidade cheia e não cansavam)
+  const corre = spd > vref * 0.77 && Math.hypot(des.vx, des.vz) > vref * 0.6;
   if (corre) {
     const tempo = CONFIG.AI_RUN_TIME * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade'));
     p.stamina = Math.max(0, p.stamina - dt / tempo);
@@ -4793,7 +4796,7 @@ function updatePlayers(dt) {
     if (!p.isUser) {
       const spd = Math.hypot(p.vx, p.vz);
       if (G.state === 'play') {                     // (4.7.1) resistência: cansa mais devagar; recuperação: recupera andando/parado
-        p.folego = Math.max(0, (p.folego ?? 1) - dt * (spd > CONFIG.AI_SPEED * 0.77 ? 1 : spd > 2 ? 0.3 : 0) * 0.55 / (CONFIG.MATCH_SECONDS * 0.35) / fh(p, 'resistencia'));
+        p.folego = Math.max(0, (p.folego ?? 1) - dt * (spd > CONFIG.AI_SPEED * Math.min(1, p.speedMul || 1) * 0.77 ? 1 : spd > 2 ? 0.3 : 0) * 0.55 / (CONFIG.MATCH_SECONDS * 0.35) / fh(p, 'resistencia'));
         if (spd < 2) p.folego = Math.min(1, p.folego + dt * 0.0025 * fh(p, 'recuperacao'));
       }
       const fv = 0.8 + 0.2 * (p.folego ?? 1);
@@ -6709,6 +6712,7 @@ const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
 const VEL_CHUTE = [3.5, 5, 9, 18, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; o AZUL é fraco de verdade: 5–9 m/s)
 const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
 const VEL_CAV = [5, 20];                                          // (4.8.2) cavadinha: m/s = 5 + 20 × força (azul ~7–11, amarelo ~11–14, verde ~14–19, vermelho até ~25)
+const CAV_OY_MIN = 0.9;                                           // (4.8.3) cavadinha só se o toque cair do ponto mais baixo da bola até ~5% do diâmetro acima (oy vai de -1 em cima a 1 embaixo; 0,9 = 5%)
 const ELEV_CAV = 0.75;                                            // (4.8.2) ângulo de saída da cavadinha (~43°): a força decide altura e distância
 const ELEV_BAIXO = 0.27;                                          // (4.7.6) rad a mais no chute quando se bate no ponto mais baixo da bola (oy = 1): ~15° (média entre o 0,12 antigo e o 0,42 do 4.7.5, que subia demais)
 const ELEV_ALTO = 0.045;                                          // (4.7.6) rad a menos quando se bate em cima (média entre 0,04 e 0,05)
@@ -6888,7 +6892,7 @@ function executeUserKick() {
   // (4.8.2) CAVADINHA = tocar bem EMBAIXO da bola, em QUALQUER força. Não tem tabela à parte: a bola sai com a MESMA velocidade do chute
   // daquela força (VEL_CHUTE × força do jogador), só que num ângulo de cavadinha (ELEV_CAV, alto). Então quanto mais forte, mais alta e
   // mais longe ela vai — se entra ou não depende só da sua distância até o gol (e do goleiro adiantado).
-  const cavadinha = k.kind === 'shot' && k.oy > 0.5;
+  const cavadinha = k.kind === 'shot' && k.oy >= CAV_OY_MIN;   // (4.8.3) só no ponto mais baixo da bola (os 5% de baixo)
   let vx, vy, vz, qualCav = 0;
   // A velocidade da cavadinha é UMA reta pela força (sem degrau entre as faixas, porque a tabela do chute dobra a velocidade no amarelo e a
   // cavadinha ficava exagerada): VEL_CAV[0] + VEL_CAV[1] × força, × força do jogador como no chute.
