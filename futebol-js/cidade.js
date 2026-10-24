@@ -1,12 +1,38 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.2.0
+     - EXPEDIENTE NOVO na cafeteria (iniciarTurno/tickTurno/encerrarTurno): os clientes entram, sentam e mostram num balão o café que
+       querem ("!" = ainda não anotado). Anote na mesa, prepare na BANCADA DE PREPARO (abrirBancada: a grade do joguinho fica guardada o
+       turno todo) e o café pronto vai para a MÃO do personagem (copoNaMao). Entregou: gorjeta de 1 a 5 fakes na hora, o cliente toma,
+       paga no caixa (som de registradora) e vai embora. Carga controlada (MAX_ESPERANDO, custoTier) para dar tempo de atender todos.
+       Fim às 16h: 20 do dia + 5 por pedido. "Acelerar final do turno" (e sair no meio do turno) paga só os 20 do dia.
+     - Cafeteria abre às 8h e fecha às 20h. A Lúcia mora na casa dos Alves: sai de casa a tempo de chegar às 7h50 (rotaLucia pela rede
+       de calçadas, posição tirada direto da hora) e volta às 20h. Às 20h ela fecha a cafeteria (quem estiver dentro sai).
+     - Sala da cafeteria maior (20 x 14) com a bancada decorada (espresso, moedor, xaropes, xícaras, sacas de café, quadro de giz).
+     - Música tema da cafeteria (MusicaCafe: bossa animada) e efeitos (SomCafe: gerar, juntar por nível, anotar, pronto, entregar,
+       registradora, sininho da porta, fim do turno). Corrigido: os sons antigos da cidade (dinheiro, portão, chuva...) usavam o
+       Som.audio como se fosse o AudioContext e não tocavam.
+     - Acorda às 5h (H_ACORDAR). A missão "procure um lugar para comer" e a dica de controles só aparecem no 1º dia. Ícone da COXINHA
+       no canto superior direito enquanto ele não comeu no dia (toque: "Seu personagem ainda não comeu hoje.").
+
+   NOVIDADES DA 5.1.1
+     - Merge Game da cafeteria: xícaras novas em pixel art 24x24 (cada família com sua louça: cafezinho branco, caneca terracota,
+       xícara azul do cremoso, xícara larga verde-água do cappuccino; espuma, coração no leite, pingos de chocolate, torre de chantilly,
+       vapor e brilho no último nível) e o número do nível no canto. Tocar num café mostra o NOME dele e no que ele vira juntando.
+     - A janela do expediente e o cardápio do Valdemar agora ficam dentro do #raizJogo (antes iam para o <body> e parte ficava fora
+       da área visível do Canva); o expediente se arruma na horizontal (informações à esquerda, grade quadrada do tamanho da altura).
+     - O relógio continua andando no expediente (S.trabalhando) e o turno só acaba às 16h. Salário: PAGA_BASE (20) pelo dia +
+       PAGA_PEDIDO (5) por pedido atendido. "Sair mais cedo" pede confirmação e perde os 20 do dia.
+     - A Lúcia Alves adulta (criarLucia) tem a aparência da Lúcia da Fase 1: pele, cabelo castanho em rabo de cavalo, rosto e lábio
+       iguais, agora de avental da cafeteria.
+
    NOVIDADES DA 5.1.0
      - Emprego da cafeteria: a Lúcia Alves (colega da fase1.js) é a moça do caixa (ver falarComLucia). Ela reconhece o jogador de
        3 jeitos diferentes conforme o que rolou na fase 1 (o easter egg da mariposa, uma conversa marcante na sala, ou nunca ter
        conversado). Expediente das 8h às 16h (H_TRAB_INI/H_TRAB_FIM): ao chegar um cliente, joguinho de combinar cafés na bancada
        (turnoTrabalho/TIERS, 8 níveis até Cappuccino com chantilly e borda de chocolate), sempre com a mesma xícara genérica na mão.
-       Cada dia de trabalho rende PAGA_TRABALHO (50) fakes, cravados de uma vez ao sair do expediente, a partir do 2º dia na cidade.
+       Cada dia de trabalho rende fakes ao sair do expediente, a partir do 2º dia na cidade (na 5.1.1: 20 + 5 por pedido).
      - Correções: menu do balcão do Valdemar centralizado na tela (opcoes.centro do Escolha.mostrar) em vez de preso embaixo e
        grudando no personagem ao girar a câmera; caixa de colisão faltando no balcão do Valdemar; casas de NPCs com nome só revelam
        o nome depois de o jogador flagrar alguém entrando (antes ficavam reveladas de cara); nomes dos marcos do mapa (tickDescobertas)
@@ -181,6 +207,54 @@
     'Casa dos Alves': ['The Alves house', 'Casa de los Alves', 'Casa degli Alves', 'Maison des Alves'],
     // (5.1.0) emprego da cafeteria: a Lúcia Alves no caixa e o Merge Game do expediente
     'Lúcia Alves': ['Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves'],
+    // (5.2.0) expediente com clientes, bancada, gorjeta e caixa; Lúcia com casa e horário; coxinha da fome
+    "Clientes com \"!\" querem fazer um pedido. Anote na mesa e prepare na bancada (à esquerda).": ["Customers with \"!\" want to order. Take the order at the table and make it at the prep counter (on the left).", "Los clientes con \"!\" quieren pedir. Anota en la mesa y prepara en la barra (a la izquierda).", "I clienti con \"!\" vogliono ordinare. Prendi l'ordine al tavolo e preparalo al bancone (a sinistra).", "Les clients avec \"!\" veulent commander. Note la commande à table et prépare-la au comptoir (à gauche)."],
+    "Anotar pedido": ["Take order", "Anotar pedido", "Prendi l'ordine", "Prendre la commande"],
+    "Entregar: {0}": ["Deliver: {0}", "Entregar: {0}", "Consegna: {0}", "Servir : {0}"],
+    "Pedido: {0}": ["Order: {0}", "Pedido: {0}", "Ordine: {0}", "Commande : {0}"],
+    "Esse café na sua mão não é o que este cliente pediu.": ["The coffee in your hand is not what this customer ordered.", "El café en tu mano no es lo que pidió este cliente.", "Il caffè che hai in mano non è quello che ha ordinato questo cliente.", "Le café dans ta main n'est pas ce que ce client a commandé."],
+    "Prepare esse pedido na bancada.": ["Make this order at the prep counter.", "Prepara este pedido en la barra.", "Prepara questo ordine al bancone.", "Prépare cette commande au comptoir."],
+    "Pedido anotado: {0}. Prepare na bancada.": ["Order taken: {0}. Make it at the prep counter.", "Pedido anotado: {0}. Prepáralo en la barra.", "Ordine preso: {0}. Preparalo al bancone.", "Commande notée : {0}. Prépare-la au comptoir."],
+    "Gorjeta: +{0} fakes!": ["Tip: +{0} fakes!", "¡Propina: +{0} fakes!", "Mancia: +{0} fakes!", "Pourboire : +{0} fakes !"],
+    "Você já está com um café na mão. Entregue primeiro!": ["You are already holding a coffee. Deliver it first!", "Ya tienes un café en la mano. ¡Entrégalo primero!", "Hai già un caffè in mano. Consegnalo prima!", "Tu as déjà un café en main. Sers-le d'abord !"],
+    "Bancada de preparo": ["Prep counter", "Barra de preparación", "Bancone di preparazione", "Comptoir de préparation"],
+    "Fechar": ["Close", "Cerrar", "Chiudi", "Fermer"],
+    "Pedidos anotados": ["Orders taken", "Pedidos anotados", "Ordini presi", "Commandes notées"],
+    "Nenhum pedido anotado. Anote nas mesas!": ["No orders taken. Take them at the tables!", "Ningún pedido anotado. ¡Anota en las mesas!", "Nessun ordine preso. Prendili ai tavoli!", "Aucune commande notée. Va aux tables !"],
+    "Pronto! Leve o {0} para o cliente.": ["Done! Take the {0} to the customer.", "¡Listo! Lleva el {0} al cliente.", "Pronto! Porta il {0} al cliente.", "Prêt ! Apporte le {0} au client."],
+    "Acelerar final do turno": ["Speed up end of shift", "Acelerar el final del turno", "Accelera la fine del turno", "Accélérer la fin du service"],
+    "Atendidos: {0}": ["Served: {0}", "Atendidos: {0}", "Serviti: {0}", "Servis : {0}"],
+    "Gorjetas: {0}": ["Tips: {0}", "Propinas: {0}", "Mance: {0}", "Pourboires : {0}"],
+    "Na mão:": ["In hand:", "En la mano:", "In mano:", "En main :"],
+    "Acelerar até as 16h? Você só ganha os 20 fakes do dia, sem nenhum adicional pelos clientes atendidos (as gorjetas que já recebeu ficam com você).": ["Speed up to 4 PM? You only get the 20 fakes for the day, with no extra for the customers served (the tips you already got are yours).", "¿Acelerar hasta las 16h? Solo ganas los 20 fakes del día, sin ningún adicional por los clientes atendidos (las propinas que ya recibiste son tuyas).", "Accelerare fino alle 16? Guadagni solo i 20 fakes del giorno, senza nessun extra per i clienti serviti (le mance già ricevute restano tue).", "Accélérer jusqu'à 16 h ? Tu ne gagnes que les 20 fakes du jour, sans bonus pour les clients servis (les pourboires déjà reçus restent à toi)."],
+    "Acelerar": ["Speed up", "Acelerar", "Accelera", "Accélérer"],
+    "Continuar trabalhando": ["Keep working", "Seguir trabajando", "Continua a lavorare", "Continuer à travailler"],
+    "Turno encerrado! Hoje fica só o do dia: {0} fakes. Até amanhã!": ["Shift over! Today it's just the day's pay: {0} fakes. See you tomorrow!", "¡Turno terminado! Hoy solo lo del día: {0} fakes. ¡Hasta mañana!", "Turno finito! Oggi solo la paga del giorno: {0} fakes. A domani!", "Service terminé ! Aujourd'hui, juste la paie du jour : {0} fakes. À demain !"],
+    "Acabou o seu turno de hoje! Você atendeu {0} clientes: toma, {1} fakes ({2} do dia + {3} dos pedidos). Até a próxima!": ["Your shift is over! You served {0} customers: here, {1} fakes ({2} for the day + {3} for the orders). See you next time!", "¡Se acabó tu turno! Atendiste {0} clientes: toma, {1} fakes ({2} del día + {3} de los pedidos). ¡Hasta la próxima!", "Il tuo turno è finito! Hai servito {0} clienti: tieni, {1} fakes ({2} del giorno + {3} degli ordini). Alla prossima!", "Ton service est fini ! Tu as servi {0} clients : tiens, {1} fakes ({2} du jour + {3} des commandes). À la prochaine !"],
+    "O expediente é das 8h às 16h. Os clientes sentam e mostram o que querem: vá até a mesa, anote o pedido e prepare na bancada, juntando dois cafés iguais para subir de nível. Depois é só levar até o cliente!": ["The shift is from 8 AM to 4 PM. Customers sit and show what they want: go to the table, take the order and make it at the prep counter, merging two equal coffees to level up. Then just take it to the customer!", "El turno es de 8h a 16h. Los clientes se sientan y muestran lo que quieren: ve a la mesa, anota el pedido y prepáralo en la barra, juntando dos cafés iguales para subir de nivel. ¡Luego llévalo al cliente!", "Il turno è dalle 8 alle 16. I clienti si siedono e mostrano cosa vogliono: vai al tavolo, prendi l'ordine e preparalo al bancone, unendo due caffè uguali per salire di livello. Poi portalo al cliente!", "Le service est de 8 h à 16 h. Les clients s'assoient et montrent ce qu'ils veulent : va à la table, note la commande et prépare-la au comptoir en fusionnant deux cafés pareils pour monter de niveau. Ensuite, apporte-le au client !"],
+    "Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.": ["Good job! Take the orders at the tables and make them at the prep counter.", "¡Buen trabajo! Anota los pedidos en las mesas y prepáralos en la barra.", "Buon lavoro! Prendi gli ordini ai tavoli e preparali al bancone.", "Bon travail ! Note les commandes aux tables et prépare-les au comptoir."],
+    "Boa! Vou abrir as portas. Os clientes já vão chegar.": ["Great! I'll open the doors. Customers will arrive soon.", "¡Bien! Voy a abrir las puertas. Los clientes ya van a llegar.", "Bene! Apro le porte. I clienti arriveranno presto.", "Super ! J'ouvre les portes. Les clients vont arriver."],
+    "A bancada é usada no seu turno.": ["The prep counter is used during your shift.", "La barra se usa en tu turno.", "Il bancone si usa durante il tuo turno.", "Le comptoir sert pendant ton service."],
+    "Cafeteria fechada. Abre às 8h.": ["Café closed. Opens at 8 AM.", "Cafetería cerrada. Abre a las 8h.", "Caffetteria chiusa. Apre alle 8.", "Café fermé. Ouvre à 8 h."],
+    "Sair agora encerra o seu turno: você só ganha os 20 fakes do dia, sem nenhum adicional pelos clientes atendidos.": ["Leaving now ends your shift: you only get the 20 fakes for the day, with no extra for the customers served.", "Salir ahora termina tu turno: solo ganas los 20 fakes del día, sin ningún adicional por los clientes atendidos.", "Uscire ora chiude il tuo turno: guadagni solo i 20 fakes del giorno, senza extra per i clienti serviti.", "Sortir maintenant termine ton service : tu ne gagnes que les 20 fakes du jour, sans bonus pour les clients servis."],
+    "Sair mesmo assim": ["Leave anyway", "Salir igual", "Esci comunque", "Sortir quand même"],
+    "Já são 20h, vamos fechar! Até amanhã!": ["It's already 8 PM, we're closing! See you tomorrow!", "¡Ya son las 20h, vamos a cerrar! ¡Hasta mañana!", "Sono già le 20, chiudiamo! A domani!", "Il est déjà 20 h, on ferme ! À demain !"],
+    "Seu personagem ainda não comeu hoje.": ["Your character hasn't eaten today yet.", "Tu personaje todavía no comió hoy.", "Il tuo personaggio non ha ancora mangiato oggi.", "Ton personnage n'a pas encore mangé aujourd'hui."],
+    "Fome": ["Hunger", "Hambre", "Fame", "Faim"],
+    // (5.1.1) expediente com relógio, nome do café tocado e salário 20 + 5 por pedido
+    'Sair mais cedo': ['Leave early', 'Salir antes', 'Esci prima', 'Partir plus tôt'],
+    'Sair? Perde os 20 do dia': ['Leave? You lose the 20 for the day', '¿Salir? Pierdes los 20 del día', 'Uscire? Perdi i 20 del giorno', 'Partir ? Tu perds les 20 du jour'],
+    'Pedido': ['Order', 'Pedido', 'Ordine', 'Commande'],
+    'fim às {0}': ['ends at {0}', 'termina a las {0}', 'fine alle {0}', 'fin à {0}'],
+    'Atendidos: {0} · Ganho: {1} fakes': ['Served: {0} · Earned: {1} fakes', 'Atendidos: {0} · Ganado: {1} fakes', 'Serviti: {0} · Guadagno: {1} fakes', 'Servis : {0} · Gain : {1} fakes'],
+    'Toque num café para ver o nome dele.': ['Tap a coffee to see its name.', 'Toca un café para ver su nombre.', 'Tocca un caffè per vedere il nome.', 'Touche un café pour voir son nom.'],
+    'Junte com outro igual: vira {0}': ['Merge with another one: becomes {0}', 'Júntalo con otro igual: se vuelve {0}', 'Uniscilo a un altro uguale: diventa {0}', 'Fusionne avec un autre pareil : devient {0}'],
+    'O melhor café da casa!': ['The best coffee in the house!', '¡El mejor café de la casa!', 'Il miglior caffè della casa!', 'Le meilleur café de la maison !'],
+    'Virou: {0}': ['Became: {0}', 'Se volvió: {0}', 'È diventato: {0}', 'Devenu : {0}'],
+    'Fim do expediente!': ['End of the shift!', '¡Fin del turno!', 'Fine del turno!', 'Fin du service !'],
+    'Acabou o seu turno de hoje! Você atendeu {0} pedidos: toma, {1} fakes. Até a próxima!': ['Your shift is over for today! You served {0} orders: here, {1} fakes. See you next time!', '¡Se acabó tu turno de hoy! Atendiste {0} pedidos: toma, {1} fakes. ¡Hasta la próxima!', 'Il tuo turno di oggi è finito! Hai servito {0} ordini: tieni, {1} fakes. Alla prossima!', 'Ton service est fini pour aujourd\'hui ! Tu as servi {0} commandes : tiens, {1} fakes. À la prochaine !'],
+    'Já vai? Tudo bem... pelos {0} pedidos, toma {1} fakes. Até amanhã!': ['Leaving already? Okay... for the {0} orders, here are {1} fakes. See you tomorrow!', '¿Ya te vas? Está bien... por los {0} pedidos, toma {1} fakes. ¡Hasta mañana!', 'Te ne vai già? Va bene... per i {0} ordini, tieni {1} fakes. A domani!', 'Tu pars déjà ? D\'accord... pour les {0} commandes, voilà {1} fakes. À demain !'],
+    'Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.': ['You earn {0} fakes for the day plus {1} for each order served.', 'Ganas {0} fakes por el día y {1} más por cada pedido atendido.', 'Guadagni {0} fakes al giorno più {1} per ogni ordine servito.', 'Tu gagnes {0} fakes par jour, plus {1} par commande servie.'],
     'Falar com a Lúcia': ['Talk to Lúcia', 'Hablar con Lúcia', 'Parla con Lúcia', 'Parler à Lúcia'],
     'Oi! Seja bem-vindo à cafeteria. Posso te ajudar com alguma coisa?': ['Hi! Welcome to the café. Can I help you with something?', '¡Hola! Bienvenido a la cafetería. ¿Te puedo ayudar en algo?', 'Ciao! Benvenuto nella caffetteria. Posso aiutarti con qualcosa?', 'Salut ! Bienvenue au café. Je peux t\'aider avec quelque chose ?'],
     'Espera... {0}?! Não acredito que é você!': ['Wait... {0}?! I can\'t believe it\'s you!', '¿Espera... {0}?! ¡No puedo creer que seas tú!', 'Aspetta... {0}?! Non ci credo che sei tu!', 'Attends... {0} ?! Je n\'arrive pas à croire que c\'est toi !'],
@@ -619,7 +693,7 @@
   function casa(r, frente, cor, rnd, especial, marca) {
     const w = r.x1 - r.x0, d = r.z1 - r.z0, laje = !especial && rnd() < 0.3, lado = rnd() < 0.5 ? -1 : 1;
     const sg = frente < 0 ? -1 : 1, uP = lado * w * 0.27, cxc = (r.x0 + r.x1) / 2, czc = (r.z0 + r.z1) / 2;   // (4.9.5) onde fica a porta no mundo e onde a pessoa para na frente dela
-    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null };
+    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null, especial: typeof especial === 'string' ? especial : null };   // (5.2.0) especial: 'joao' | 'alves' (a Lúcia mora na dos Alves)
     (S.casas || (S.casas = [])).push(pt); if (marca === 'valdemar') S.casaValdemar = pt;
     edificio({ r, frente, h: 2.9, cor, andares: 1, fundos: false, equipamentos: false,
       letreiro: marca === 'valdemar' ? { txt: 'VALDEMAR', fundo: '#5b3a22', cor: '#f6e2b8', w: 1.9, h: 0.42, y: 2.5, u: uP, fora: 0.12 } : null,
@@ -1145,7 +1219,7 @@
     }
   }
   function somGol() {
-    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try { const t0 = A.currentTime; [523, 659, 784, 1046].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.06, t0 + i * 0.11); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.11 + 0.25); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.11); o.stop(t0 + i * 0.11 + 0.27); }); } catch (e) { /* sem som */ }
   }
 
@@ -1200,6 +1274,64 @@
     B.mesh.position.set(B.x, B.y, B.z); B.sombra.position.set(B.x, 0.1, B.z);
   }
 
+  // ------------------------------------------------------------------ (5.2.0) a cafeteria abre às 8h e fecha às 20h; a LÚCIA mora na casa dos Alves:
+  //   sai de casa a tempo de chegar às 7h50, entra na cafeteria e às 20h volta para casa pelo mesmo caminho (pela rede de calçadas).
+  //   A posição dela na rua sai direto da hora (sem estado): funciona também ao carregar e ao sair de dentro de um lugar.
+  const H_CAFE_ABRE = 8, H_CAFE_FECHA = 20, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;
+  const cafeAberto = () => S.dados.hora >= H_CAFE_ABRE && S.dados.hora < H_CAFE_FECHA;
+  const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < H_CAFE_FECHA;
+  function rotaLucia() {
+    if (S.rotaLucia) return S.rotaLucia;
+    const C = (S.casas || []).find((c) => c.especial === 'alves'), P = PORTAS.find((p) => p.nome === 'cafeteria');
+    if (!C || !P || !S.rede) return null;
+    const pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6)), acc = [0];
+    for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+    const L = acc[acc.length - 1];
+    return (S.rotaLucia = { pts, acc, L, dur: L / VEL_LUCIA * H_POR_S });
+  }
+  function pontoNaRota(R, k) {
+    const alvo = clamp(k, 0, 1) * R.L; let i = 1; while (i < R.acc.length - 1 && R.acc[i] < alvo) i++;
+    const a = R.pts[i - 1], b = R.pts[i], seg = (R.acc[i] - R.acc[i - 1]) || 1, u = clamp((alvo - R.acc[i - 1]) / seg, 0, 1);
+    return { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u, yaw: Math.atan2(-(b.z - a.z), b.x - a.x) };
+  }
+  function criarLuciaRua(f2) {
+    const A = criarLucia(f2); A.tipo = 'luciaRua'; S.npcs.push(A); S.luciaRua = A; sumirV(A);
+  }
+  function tickLuciaRua(A) {
+    const R = rotaLucia(), h = S.dados.hora; if (!R) { if (!A.oculto) sumirV(A); return; }
+    let k = -1, ida = true; const t0 = H_LUCIA_CHEGA - R.dur;
+    if (h >= t0 && h < H_LUCIA_CHEGA) k = (h - t0) / R.dur;
+    else if (h >= H_CAFE_FECHA && h < H_CAFE_FECHA + R.dur) { k = 1 - (h - H_CAFE_FECHA) / R.dur; ida = false; }
+    if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
+    const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
+    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = VEL_LUCIA;
+  }
+  // sair da cafeteria no meio do turno = encerrar o turno (como o "Acelerar final do turno": só os 20 do dia)
+  async function sairNoTurno() {
+    const r = await Escolha.mostrar(T('Sair agora encerra o seu turno: você só ganha os 20 fakes do dia, sem nenhum adicional pelos clientes atendidos.'), [T('Sair mesmo assim'), T('Continuar trabalhando')], { centro: true });
+    Dialogo.esconder(); if (r !== 0 || !S.turno) return;
+    await encerrarTurno(true); await sairDoLugar();
+  }
+  // 20h com o jogador dentro da cafeteria: a Lúcia avisa e ele sai
+  async function fecharCafe() {
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    try { await fala('lucia', T('Já são 20h, vamos fechar! Até amanhã!')); Dialogo.esconder(); if (S.jog.sentado) levantar(); await sairDoLugar(); } catch (e) { console.error(e); }
+    if (S && S.ativo && S.modo === 'cena') liberar();
+  }
+  // ------------------------------------------------------------------ (5.1.1) a LÚCIA ALVES adulta: a mesma da Fase 1 (fase1.js, S.luciaA), crescida
+  //   pele 2 da escala, cabelo castanho (CORES_CABELO[4]), rabo de cavalo, rosto "Padrão", lábio 2 — só sem a cabeça grande de criança.
+  //   Roupa de trabalho: camiseta branca, calça jeans e avental marrom da cafeteria.
+  function criarLucia(f2) {
+    const acha = (lista, n) => Math.max(0, lista.findIndex((x) => x.nome === n));      // mesma busca da Fase 1 (ci/ri no fase1.js)
+    const ap = { pele: PELES_FITZ[1].cor, cabelo: CORES_CABELO[4].cor, estilo: acha(ESTILOS_CABELO, 'Rabo de cavalo'), rosto: acha(ROSTOS, 'Padrão'), labio: 2, barba: 0 };
+    let m = null, opt = null;
+    try { if (f2 && f2.modeloPessoa) { const r = f2.modeloPessoa({ ap, fem: true, roupa: 1, cores: ['#f2f2ee', '#2a3f66', '#6a4428', '#6a4428'] }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] Lúcia:', e); }
+    if (!m) { opt = Object.assign({ camisa: '#f2f2ee', listra: '#6a4428', gola: '#6a4428', calcao: '#2a3f66', meia: '#2a3f66', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
+    const av = new Geo(); av.box(0.05, 0.62, 0.46, '#7a4a24', 0.17, 0.55, 0); av.box(0.04, 0.04, 0.5, '#4a2a12', 0.18, 0.86, 0); av.box(0.02, 0.06, 0.1, '#f2c230', 0.2, 1.12, 0.1);   // avental da cafeteria + crachá
+    m.corpo.add(av.malha(MAT));
+    S.grupo.add(m.raiz); S.meus.add(m);
+    return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'parado' };
+  }
   // ------------------------------------------------------------------ (4.9.3) o SEU VALDEMAR, atrás do balcão do lanche
   function criarValdemar(f2) {
     const rnd = semente(1960);
@@ -1217,7 +1349,7 @@
 
   // ------------------------------------------------------------------ (4.9.5) a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
   const H_ABRE = 8, H_FECHA = 20, H_ACORDA_V = 6.3, VEL_V = 2.2;
-  const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_TRABALHO = 50;   // (5.1.0) expediente da cafeteria (ver falarComLucia/turnoTrabalho)
+  const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_BASE = 20, PAGA_PEDIDO = 5;   // (5.1.1) expediente da cafeteria: 20 fakes pelo dia + 5 por pedido atendido (ver falarComLucia/turnoTrabalho)
   const lojaAberta = () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA;
   const sumirV = (V) => { V.puxa = false; V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
   const surgirV = (V, x, z, yaw) => { V.oculto = false; V.x = x; V.z = z; V.yaw = V.yawAlvo = yaw; S.meus.add(V.m); V.blob.visible = true; };
@@ -1369,7 +1501,7 @@
   }
   // buzina "bi-bi" (sintetizada, mais baixa quando longe)
   function buzina(c) {
-    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try {
       const d = Math.hypot(c.x - S.jog.x, c.z - S.jog.z), vol = 0.07 / Math.max(1, d / 6), t0 = A.currentTime;
       for (const [ini, dur] of [[0, 0.13], [0.2, 0.22]]) for (const f of [415, 523]) {
@@ -1583,6 +1715,7 @@
     }
     if (!S.dentro) { tickMoradores(dt); separarPessoas(); } else tickFluxo(dt);
     for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
+      if (A.tipo === 'luciaRua') tickLuciaRua(A);
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
@@ -1688,7 +1821,7 @@
     const dy = ((J.yawAlvo - J.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; J.yaw += dy * Math.min(1, dt * 10);
     if (J.sentado) J.y = 0; else { const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18); }
     if (J.comendo > 0) J.comendo -= dt;
-    poseAtor(J, dt);
+    poseAtor(J, dt); poseCopo(J);
     J.anel.position.set(J.x, J.y + 0.03, J.z);
   }
   const andar = (A, pts, vel) => new Promise((ok) => { A.vel = vel || 2.2; A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.rotaRes = ok; });
@@ -1697,7 +1830,7 @@
     P.piv[0].rotation.y = -P.k * Math.PI / 2; P.piv[1].rotation.y = P.k * Math.PI / 2;
   }
   function somPortao() {
-    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try { const t0 = A.currentTime + 0.35; for (const [f, v] of [[180, 0.08], [95, 0.06]]) { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.setValueAtTime(f, t0); o.frequency.exponentialRampToValueAtTime(f * 0.6, t0 + 0.18); g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.25); o.connect(g); g.connect(A.destination); o.start(t0); o.stop(t0 + 0.27); } } catch (e) { /* sem som */ }
   }
 
@@ -1772,7 +1905,7 @@
     S.marca3d.gema.position.y = 2.6 + Math.sin(S.t * 3) * 0.25; S.marca3d.gema.rotation.y = S.t * 2;
   }
   function somChegou() {
-    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try { const t0 = A.currentTime; [660, 880].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.08, t0 + i * 0.12); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.12 + 0.2); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.12); o.stop(t0 + i * 0.12 + 0.22); }); } catch (e) { /* sem som */ }
   }
   // ------------------------------------------------------------------ (5.1.0) PONTOS NOMEADOS: lugares sem placa (lago, societys, várzea) ganham
@@ -1863,7 +1996,8 @@
     const comFluxo = !SEM_FLUXO[P.nome], areaCli = [];                   // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
-      const A = criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
+      if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // (5.2.0) a Lúcia só está lá das 7h50 às 20h
+      const A = p.marca === 'lucia' ? criarLucia(S.f2) : criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
       if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
       else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
       else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
@@ -1915,7 +2049,7 @@
     A.m.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
   }
   function tickFluxo(dt) {
-    const F = S.fluxo; if (!F) return;
+    const F = S.fluxo; if (!F || S.turno) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno
     F.prox -= dt;
     if (F.prox <= 0) {
       F.prox = 5 + Math.random() * 9; const e = F.ent;
@@ -1937,8 +2071,12 @@
       if (!C.a) vagar(A, dt); else A.andando = false;
       if (C.t <= 0) {
         if (C.a) { const p = pontoLev(C.a, A); A.sentado = false; A.assento = 0.52; A.x = p.x; A.z = p.z; C.a.ocupado = null; C.a = null; A.fala = false; S.conversas = S.conversas.filter((K) => K.a !== A && K.b !== A); }
-        const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }];
+        const sd = (S.dentro && S.dentro.saida) || e;
+        if (C.pedido && !C.semPagar && !C.pagou) { C.fase = 'caixa'; C.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; C.tc = 0; }   // (5.2.0) vai pagar no caixa
+        else { C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; }
       }
+    } else if (C.fase === 'caixa') {                                 // (5.2.0) no caixa: vira para a Lúcia, a registradora toca e ele vai embora
+      if (seguir(A, C.rota, A.vel, dt)) { A.andando = false; A.yawAlvo = Math.PI / 2; C.tc += dt; if (C.tc > 0.6 && !C.pagou) { C.pagou = true; SomCafe.caixa(); } if (C.tc > 1.6) { const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; } }
     } else if (C.fase === 'sai') {                                   // sai pela porta (some perto dela; não espera o jogador sair da frente)
       C.tSai = (C.tSai || 0) + dt; const q = C.rota[C.rota.length - 1] || e;
       if (seguir(A, C.rota, A.vel, dt) || Math.hypot(A.x - q.x, A.z - q.z) < 1.1 || C.tSai > 14) descartarPessoa(A);
@@ -1967,21 +2105,29 @@
       if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // (4.9.5) sentado no balcão: "Valdemar" ou "Sair"
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
-    for (const a of S.assentos) if (!a.ocupado) {
+    if (!S.turno) for (const a of S.assentos) if (!a.ocupado) {      // (5.2.0) no turno ele trabalha: nada de sentar
       if (a.lanche && !lojaAberta()) { v.push({ x: a.x, z: a.z, r: 1.15, txt: T('Lanche fechado. Abre às 8h.'), fn: async () => {}, y: a.h + 1.3 }); continue; }
       v.push({ x: a.x, z: a.z, r: 1.15, txt: a.lanche ? T('Sentar no balcão') : T('Sentar'), fn: () => sentar(a), y: a.h + 1.3 });
     }
     if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: T('Entrar no prédio'), fn: entrarNoPredio, y: 2.7 });       // (4.9.5) dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
-      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: sairDoLugar, y: 2.6 });
-      for (const e of D.extras) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : null, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
-    } else if (S.interiores) for (const P of PORTAS) v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
+      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : sairDoLugar, y: 2.6 });
+      for (const e of D.extras) {
+        if (e.acao === 'caixa' && !S.lucia) continue;
+        if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
+        v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
+      }
+      alvosTurno(v);
+    } else if (S.interiores) for (const P of PORTAS) {
+      if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
+      v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
+    }
     return v;
   }
   function alvoAtual() {
     if (!S || S.modo !== 'livre') return null;
     const J = S.jog; let best = null, bs = 1e9;
-    for (const a of alvos()) { const d = Math.hypot(a.x - J.x, a.z - J.z); if (d > a.r) continue; if (d < bs) { bs = d; best = a; } }
+    for (const a of alvos()) { const d = Math.hypot(a.x - J.x, a.z - J.z); if (d > a.r) continue; const sc = d - (a.pri ? 1 : 0); if (sc < bs) { bs = sc; best = a; } }   // (5.2.0) pri: alvos do turno ganham dos outros
     return best;
   }
   function atualizarAlvo() {
@@ -2069,7 +2215,7 @@
     await esperar(1400);
     J.comendo = 3.6; await esperar(3700);
     d.fome = Math.max(0, (d.fome || 0) - c.enche);
-    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1;
+    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // (5.2.0) some o ícone da coxinha
     Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // (5.0.0) cada lanche: 2 de "não saudável"
     if (cheio) Espectros.mover('saudavel', -4, 'comeu sem fome');                                    // comeu satisfeito: mais 4
     d.diasValdemar = d.diasValdemar || []; if (!d.diasValdemar.includes(d.dia)) d.diasValdemar.push(d.dia);
@@ -2143,91 +2289,457 @@
     { nome: 'Cappuccino com borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: false, chocBorda: true },
     { nome: 'Cappuccino com chantilly e borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: true, chocBorda: true },
   ];
-  function iconeCafezinho(tier) {                 // (5.1.0) xícara pixel-art (16x16) que muda com o tier: cor, espuma, cacau, chantilly e borda de chocolate
+  // (5.1.1) xícaras em pixel art 24x24, uma silhueta para cada fase do café: a xícara cresce com o nível (cafezinho pequeno →
+  // caneca de café com leite → xícara de cremoso → xícara larga de cappuccino), com sombra na louça, espuma, arte no leite,
+  // borda e pingos de chocolate, torre de chantilly (com calda no último) e vapor nos que estão quentes e sem cobertura.
+  function iconeCafezinho(tier, px) {
     const t = TIERS[tier] || TIERS[0];
-    const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null));
-    const px = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
-    const rc = (x, y, w, h, c) => { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c); };
-    const PIRES = '#e8e2d4', CHOC = '#5a3418', CREME = '#fff4e2', ALCA = '#e8e2d4';
-    rc(2, 13, 12, 1, PIRES);                                                       // pires
-    rc(3, 7, 10, 6, t.cor); rc(3, 12, 10, 1, '#2a1206');                            // corpo líquido da xícara + sombra da base
-    rc(2, 6, 12, 1, PIRES);                                                        // borda da xícara
-    px(12, 8, ALCA); px(13, 8, ALCA); px(13, 9, ALCA); px(13, 10, ALCA); px(12, 10, ALCA);  // alça
-    if (t.creme) { rc(3, 6, 10, 1, CREME); px(5, 5, CREME); px(9, 5, CREME); }      // espuma/creme por cima
-    if (t.cacau) { px(5, 6, CHOC); px(8, 6, CHOC); px(10, 7, CHOC); }               // pó de cacau salpicado na espuma
-    if (t.chocBorda) { for (let i = 0; i < 12; i += 2) px(2 + i, 6, CHOC); }        // fio de chocolate correndo pela borda
-    if (t.chantilly) { rc(6, 2, 4, 2, CREME); px(5, 3, CREME); px(10, 3, CREME); px(7, 1, CREME); px(8, 1, CREME); }  // topete de chantilly
+    const N = 24, g = Array.from({ length: N }, () => Array(N).fill(null)), fumo = [];
+    const p = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
+    const linha = (x0, x1, y, c) => { for (let x = x0; x <= x1; x++) p(x, y, c); };
+    const LOUCA = tier === 0 ? ['#ffffff', '#efe8da', '#d6ccb8', '#ad9f86']            // xícara de cafezinho: branca
+      : tier === 1 ? ['#f08a6a', '#d4583a', '#b0442c', '#7e2e1e']                         // caneca de café com leite: terracota
+      : tier <= 4 ? ['#bfe6ff', '#7cb8e8', '#5a92c8', '#3a6698']                          // xícara do cremoso: azul
+      : ['#b8f0d8', '#5cc7a0', '#3e9e7c', '#2a7058'];                                     // xícara larga do cappuccino: verde-água
+    const [CL, CE, CM, CD] = LOUCA, BORDA = '#fffaf0';
+    const CHOC = '#5a3418', CHOCL = '#80502a', CREME = '#fff7ea', CREMED = '#e9d6b6', CACAU = '#6a3a1a';
+    // formato: [meia largura, linha da borda de trás, base]
+    const forma = tier === 0 ? [5, 12, 18] : tier === 1 ? [6, 8, 18] : tier >= 5 ? [8, 11, 18] : [7, 10, 18];
+    const cx = 11, hw = forma[0], x0 = cx - hw, x1 = cx + hw + 1, top = forma[1], base = forma[2];
+    // pires
+    linha(x0 - 3, x1 + 3, base + 1, CE); linha(x0 - 2, x1 + 2, base + 2, CM); p(x0 - 3, base + 1, CM); p(x1 + 3, base + 1, CD);
+    // alça (do lado direito)
+    const ay = top + 5;
+    p(x1 + 1, ay, CM); p(x1 + 2, ay, CM); p(x1 + 3, ay + 1, CD); p(x1 + 3, ay + 2, CD); if (base - top > 7) p(x1 + 3, ay + 3, CD); p(x1 + 2, ay + (base - top > 7 ? 4 : 3), CD); p(x1 + 1, ay + (base - top > 7 ? 4 : 3), CD);
+    // corpo da xícara (sombreado: brilho à esquerda, sombra à direita, base mais escura)
+    for (let y = top + 4; y <= base; y++) {
+      const tp = y === base ? 1 : 0;
+      for (let x = x0 + tp; x <= x1 - tp; x++) p(x, y, x <= x0 + 1 ? CL : x >= x1 - 1 ? CD : x >= x1 - 3 ? CM : CE);
+      if (y === base) linha(x0 + 1, x1 - 1, y, CM);
+    }
+    // boca: borda de trás, líquido (2 linhas) e borda da frente
+    linha(x0 + 1, x1 - 1, top, BORDA); for (const yy of [top + 1, top + 2, top + 3]) { p(x0, yy, BORDA); p(x1, yy, BORDA); }
+    const liq1 = t.cor, liq2 = tier === 0 ? '#5a3418' : tier === 1 ? '#a8743e' : t.cor, liq3 = tier === 0 ? '#b8783a' : tier === 1 ? '#c49260' : t.cor;
+    linha(x0 + 1, x1 - 1, top + 1, '#1c0c04'); linha(x0 + 1, x1 - 1, top + 2, liq1); linha(x0 + 1, x1 - 1, top + 3, liq2); linha(x0 + 2, x1 - 2, top + 3, liq3);
+    p(x0 + 1, top + 1, liq1); p(x1 - 1, top + 1, liq1);
+    linha(x0, x1, top + 4, BORDA);
+    if (tier === 0) { p(cx - 1, top + 2, '#d89a52'); p(cx + 2, top + 3, '#d89a52'); p(cx + 1, top + 2, '#c88442'); }          // crema do cafezinho
+    if (t.creme) { linha(x0 + 1, x1 - 1, top + 1, CREMED); linha(x0 + 1, x1 - 1, top + 2, CREME); linha(x0 + 1, x1 - 1, top + 3, CREME); p(x1 - 1, top + 3, CREMED); }   // espuma
+    if (t.creme && !t.cacau && !t.chantilly) { linha(x0 + 3, x1 - 3, top, CREME); linha(x0 + 5, x1 - 5, top - 1, CREME); p(x1 - 4, top, CREMED); }   // montinho de espuma
+    if (t.cacau) {                                                                          // cappuccino: arte de coração no leite + cacau
+      for (const yy of [top + 1, top + 2, top + 3]) { linha(x0 + 1, x1 - 1, yy, '#c99766'); linha(x0 + 2, x1 - 2, yy, CREME); }
+      if (!t.chantilly) { const HC = '#a86e3c'; p(cx - 1, top + 1, HC); p(cx, top + 1, HC); p(cx + 2, top + 1, HC); p(cx + 3, top + 1, HC); linha(cx - 1, cx + 3, top + 2, HC); linha(cx, cx + 2, top + 3, HC); }   // coração no leite
+      if (!t.chantilly) { p(x0 + 2, top + 3, CACAU); p(x1 - 3, top + 2, CACAU); p(x0 + 3, top + 1, CACAU); }
+    }
+    if (t.chocBorda) {                                                                      // chocolate escorrendo pela borda
+      for (let x = x0; x <= x1; x++) p(x, top + 4, x % 2 ? CHOC : CHOCL);
+      const pingos = [[x0 + 1, 2], [x0 + 4, 3], [cx + 2, 1], [x1 - 2, 2]];
+      for (const [x, n] of pingos) for (let k = 1; k <= n; k++) p(x, top + 4 + k, k === n ? CHOCL : CHOC);
+    }
+    if (t.chantilly) {                                                                      // torre de chantilly em espiral
+      const cam = [[x0 + 1, x1 - 1], [x0 + 2, x1 - 2], [x0 + 3, x1 - 3], [x0 + 4, x1 - 4], [cx - 1, cx + 2], [cx, cx + 1]];
+      cam.forEach(([a, b], i) => { const y = top - i; for (let x = a; x <= b; x++) p(x, y, x >= b - 1 ? CREMED : x === a ? CL : CREME); });
+      p(cx, top - 6, CREME);
+      if (t.cacau) { p(cx - 2, top - 1, CACAU); p(cx + 3, top - 2, CACAU); p(cx, top - 3, CACAU); }
+      if (tier === TIERS.length - 1) {                                                        // calda de chocolate em zigue-zague por cima
+        p(x0 + 2, top, CHOC); p(x0 + 3, top - 1, CHOC); p(x0 + 4, top - 2, CHOC); p(cx - 1, top - 3, CHOC); p(cx, top - 4, CHOC); p(cx + 1, top - 3, CHOC); p(x1 - 4, top - 2, CHOC); p(x1 - 3, top - 1, CHOC); p(x1 - 2, top, CHOC);
+      }
+    }
+    if (!t.chantilly && !(t.creme && !t.cacau)) {                                           // vapor (quente, sem cobertura)
+      const vy = top - 2;
+      for (const [x, y] of [[cx - 2, vy], [cx - 1, vy - 1], [cx - 1, vy - 2], [cx - 2, vy - 3], [cx + 2, vy - 1], [cx + 3, vy - 2], [cx + 3, vy - 3], [cx + 2, vy - 4]]) fumo.push([x, y]);
+    }
+    // contorno escuro automático (tudo menos o vapor)
     const k = '#2a1206', out = g.map((r) => r.slice());
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!g[y][x]) { for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const yy = y + dy, xx = x + dx; if (yy >= 0 && yy < N && xx >= 0 && xx < N && g[yy][xx]) { out[y][x] = k; break; } } }
-    const cv = document.createElement('canvas'); cv.width = cv.height = N; const cx = cv.getContext('2d');
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (out[y][x]) { cx.fillStyle = out[y][x]; cx.fillRect(x, y, 1, 1); }
-    cv.style.cssText = 'width:48px;height:48px;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
+    for (const [x, y] of fumo) if (y >= 0 && !out[y][x]) out[y][x] = 'rgba(235,240,246,0.75)';
+    if (tier === TIERS.length - 1) for (const [x, y, c] of [[3, 3, '#ffe066'], [2, 3, '#fff3b0'], [4, 3, '#fff3b0'], [3, 2, '#fff3b0'], [3, 4, '#fff3b0'], [20, 6, '#ffe066']]) out[y][x] = c;   // brilho: é o melhor da casa
+    const cv = document.createElement('canvas'); cv.width = cv.height = N; const c2 = cv.getContext('2d');
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (out[y][x]) { c2.fillStyle = out[y][x]; c2.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:' + (px || '84%') + ';height:auto;aspect-ratio:1;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
     return cv;
   }
   function ganhoNaTela(v) {                        // "+v" verde subindo (o oposto do gastoNaTela, que é vermelho e desce)
     const el = document.createElement('div'); el.textContent = '+' + v; el.style.cssText = 'position:fixed;z-index:12;right:max(60px,env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));font:700 16px/1 var(--font-display);color:#8fe04a;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.2s ease,opacity 1.2s ease;';
     UI.hud.parentNode.appendChild(el); requestAnimationFrame(() => { el.style.transform = 'translateY(-22px)'; el.style.opacity = '0'; }); setTimeout(() => el.remove(), 1300);
   }
-  // (5.1.0) o Merge Game do expediente: uma grade 4×4, "Gerar" solta um cafezinho preto numa casa vazia, tocar em dois do
-  // mesmo tier junta os dois no segundo (o primeiro esvazia) e sobe um tier. "Servir" entrega ao cliente um item do tier pedido.
-  function turnoTrabalho() {
-    return new Promise((res) => {
-      const COLS = 4, LINS = 4, NC = COLS * LINS;
-      let grade = Array(NC).fill(-1), sel = -1, pedido = Math.floor(Math.random() * TIERS.length), atendidos = 0;
-      const el = document.createElement('div'); el.id = 'cdTrabalho';
-      el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
-      const card = document.createElement('div');
-      card.style.cssText = 'width:min(420px,100%);max-height:96%;overflow:auto;background:#2a1206;border:4px solid #8a5a2a;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
-      const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:#f0a020;';
-      h.textContent = T('Expediente da cafeteria');
-      const sub = document.createElement('div'); sub.style.cssText = 'font:400 13px/1.3 var(--font-body);color:#e8d8b8;';
-      const pedidoBox = document.createElement('div'); pedidoBox.style.cssText = 'display:flex;align-items:center;gap:8px;background:#3a1c0a;border:3px solid #6a4428;padding:6px 8px;';
-      const pedidoIc = document.createElement('div'); const pedidoTxt = document.createElement('div'); pedidoTxt.style.cssText = 'font:700 12px/1.2 var(--font-display);';
-      pedidoBox.append(pedidoIc, pedidoTxt);
-      const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + COLS + ',1fr);gap:5px;';
-      const cels = []; for (let i = 0; i < NC; i++) { const c = document.createElement('button'); c.type = 'button'; c.style.cssText = 'aspect-ratio:1;background:#1f0f06;border:2px solid #4a2c14;padding:0;display:grid;place-items:center;cursor:pointer;'; grid.appendChild(c); cels.push(c); }
-      const linha = document.createElement('div'); linha.style.cssText = 'display:flex;gap:8px;';
-      const btnGerar = document.createElement('button'); btnGerar.type = 'button'; btnGerar.className = 'pxBtn'; btnGerar.textContent = T('Gerar cafezinho'); btnGerar.style.cssText = '--p:var(--p2,2px);flex:1;height:38px;font-size:12px;';
-      const btnServir = document.createElement('button'); btnServir.type = 'button'; btnServir.className = 'pxBtn'; btnServir.textContent = T('Servir'); btnServir.style.cssText = '--p:var(--p2,2px);flex:1;height:38px;font-size:12px;';
-      linha.append(btnGerar, btnServir);
-      const btnSair = document.createElement('button'); btnSair.type = 'button'; btnSair.className = 'pxBtn'; btnSair.textContent = T('Sair do expediente'); btnSair.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;';
-      card.append(h, sub, pedidoBox, grid, linha, btnSair); el.appendChild(card); document.body.appendChild(el);
-      function novoPedido() { pedido = Math.floor(Math.random() * TIERS.length); pedidoIc.innerHTML = ''; pedidoIc.appendChild(iconeCafezinho(pedido)); pedidoTxt.textContent = Tf('Pedido: {0}', T(TIERS[pedido].nome)); }
-      function redesenhar() {
-        sub.textContent = Tf('Clientes atendidos: {0}', atendidos);
-        for (let i = 0; i < NC; i++) {
-          const c = cels[i], v = grade[i]; c.innerHTML = ''; c.style.borderColor = i === sel ? '#f0a020' : '#4a2c14';
-          if (v >= 0) { c.appendChild(iconeCafezinho(v)); c.title = T(TIERS[v].nome); c.dataset.tier = String(v); } else { c.title = ''; delete c.dataset.tier; }
-        }
-        btnGerar.disabled = !grade.includes(-1);
-        btnServir.disabled = !grade.includes(pedido);
-        pedidoBox.dataset.pedidoTier = String(pedido);
+  // ================================================================== (5.2.0) O EXPEDIENTE NA CAFETERIA (Merge Game de verdade)
+  //   Os clientes entram, sentam e mostram num balãozinho o café que querem (com "!" enquanto ninguém anotou). O jogador vai até a mesa
+  //   e ANOTA o pedido; na BANCADA DE PREPARO (parede oeste) abre o joguinho de juntar cafés. A grade fica guardada o turno inteiro.
+  //   Quando sai do joguinho o café de um pedido anotado, ele vai para a MÃO do jogador (o jogo fecha sozinho) e é só levar até o
+  //   cliente: ele dá uma GORJETA de 1 a 5 fakes, toma o café, levanta, paga no caixa (plim da registradora) e vai embora.
+  //   Controle de carga: no máximo 3 clientes esperando e só chega cliente novo se der tempo de fazer o pedido dele até as 16h
+  //   (custo estimado em segundos reais = deslocamento + 2^nível de toques), então dá para atender todo mundo no turno.
+  //   O relógio não para (S.trabalhando) e o turno acaba às 16h: 20 fakes do dia + 5 por pedido (PAGA_BASE/PAGA_PEDIDO).
+  //   "Acelerar final do turno" pula para as 16h e paga SÓ os 20 do dia (as gorjetas já recebidas ficam com você).
+  const MAX_ESPERANDO = 3, PESO_TIER = [26, 22, 18, 13, 9, 6, 4, 2];
+  const custoTier = (t) => 16 + Math.pow(2, t) * 1.05;                 // segundos reais para fazer e entregar um pedido desse nível
+  const segAteFim = () => Math.max(0, (H_TRAB_FIM - S.dados.hora) / H_POR_S);
+  const CAIXA_CLI = { x: 0.9, z: -4.25 };                               // onde o cliente para para pagar (na frente do caixa da Lúcia)
+  function iniciarTurno() {
+    const d = S.dados;
+    S.turno = { grade: Array(16).fill(-1), anotados: [], naMao: -1, atendidos: 0, gorjetas: 0, prox: 3, fim: false };
+    S.trabalhando = true;
+    if (S.fluxo) for (const A of S.npcs) if (A.cli && !A.cli.pedido && A.cli.fase === 'fica') A.cli.t = Math.min(A.cli.t, 3 + Math.random() * 12);   // os clientes "de enfeite" vão saindo
+    MusicaCafe.tocar(); SomCafe.sino();
+    montarPainelTurno(); atualizarPainelTurno();
+    aviso(T('Clientes com "!" querem fazer um pedido. Anote na mesa e prepare na bancada (à esquerda).')); setTimeout(() => { if (S && UI && S.turno) aviso(''); }, 5200);
+    void d;
+  }
+  function clientesDoTurno() { return S.npcs.filter((A) => A.cli && A.cli.pedido && A.cli.pedido.estado !== 'feito' && A.cli.fase !== 'sai' && A.cli.fase !== 'caixa'); }
+  function tickTurno(dt) {
+    const U = S.turno; if (!U || U.fim) return;
+    if (S.dados.hora >= H_TRAB_FIM) { encerrarTurno(false); return; }
+    U.prox -= dt;
+    const pend = clientesDoTurno();
+    if (U.prox <= 0 && pend.length < MAX_ESPERANDO && S.fluxo) {
+      U.prox = 7 + Math.random() * 9;
+      const resto = segAteFim() * 0.85 - pend.reduce((a, A) => a + custoTier(A.cli.pedido.tier), 0);
+      const ok = PESO_TIER.map((w, t) => (custoTier(t) <= resto ? w : 0)), soma = ok.reduce((a, b) => a + b, 0);
+      const livres = S.fluxo.lugares.filter((a) => !a.ocupado);
+      if (soma > 0 && livres.length) {
+        let r = Math.random() * soma, tier = 0; for (let t = 0; t < ok.length; t++) { r -= ok[t]; if (r <= 0) { tier = t; break; } }
+        const A = novoCliente(livres[Math.floor(Math.random() * livres.length)], false);
+        A.cli.t = 1e9; A.cli.pedido = { tier, estado: 'chegando' }; SomCafe.sino();
       }
-      novoPedido(); redesenhar();
+    }
+    for (const A of S.npcs) if (A.cli && A.cli.pedido) atualizarBalao(A);
+    atualizarPainelTurno();
+  }
+  // ---- balão em cima do cliente (sprite de pixel art: o café pedido; "!" laranja = ainda não anotado; borda amarela = anotado; coração = servido)
+  function desenharBalao(cv, tier, estado) {
+    const g = cv.getContext('2d'); g.clearRect(0, 0, 40, 46); g.imageSmoothingEnabled = false;
+    const borda = estado === 'anotado' ? '#f2c230' : '#2a1206';
+    g.fillStyle = borda; g.fillRect(3, 1, 34, 34); g.fillRect(16, 35, 8, 3); g.fillRect(18, 38, 4, 3);
+    g.fillStyle = '#fffaf0'; g.fillRect(5, 3, 30, 30); g.fillRect(18, 33, 4, 4);
+    if (estado === 'feliz') {
+      g.fillStyle = '#e0405a'; for (const [x, y, w] of [[11, 10, 6], [23, 10, 6], [9, 12, 22], [9, 14, 22], [11, 16, 18], [13, 18, 14], [15, 20, 10], [17, 22, 6], [19, 24, 2]]) g.fillRect(x, y, w, 2);
+      g.fillStyle = '#ff9aaa'; g.fillRect(12, 12, 3, 2);
+    } else g.drawImage(iconeCafezinho(tier, '1px'), 7, 5, 26, 26);
+    if (estado === 'espera') { g.fillStyle = '#2a1206'; g.fillRect(28, 0, 12, 14); g.fillStyle = '#f0a020'; g.fillRect(29, 1, 10, 12); g.fillStyle = '#2a1206'; g.fillRect(33, 3, 2, 5); g.fillRect(33, 9, 2, 2); }
+  }
+  function atualizarBalao(A) {
+    const P = A.cli.pedido; if (!P) return;
+    if (P.estado === 'chegando' && A.cli.fase === 'fica') P.estado = 'espera';
+    const visivel = P.estado !== 'chegando' && P.estado !== 'feito' && A.cli.fase !== 'sai' && A.cli.fase !== 'caixa';
+    if (!visivel) { if (A.balao) A.balao.visible = false; return; }
+    if (!A.balao) {
+      const cv = document.createElement('canvas'); cv.width = 40; cv.height = 46;
+      const tx = new THREE.CanvasTexture(cv); tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.NearestFilter;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx, depthTest: false, transparent: true })); sp.scale.set(0.8, 0.92, 1); sp.renderOrder = 20;
+      A.m.raiz.add(sp); A.balao = sp; A.balaoCv = cv; A.balaoEst = '';
+    }
+    A.balao.visible = true; A.balao.position.set(0, 2.25 + Math.sin(A.t * 3) * 0.04, 0);
+    if (A.balaoEst !== P.estado) { A.balaoEst = P.estado; desenharBalao(A.balaoCv, P.tier, P.estado); A.balao.material.map.needsUpdate = true; }
+  }
+  // ---- o café na mão do jogador (xícara com pires; a cor da louça segue a família do café, como nos ícones)
+  function copoNaMao(tier) {
+    const J = S.jog;
+    if (J.copo) { if (J.copo.parent) J.copo.parent.remove(J.copo); J.copo = null; }
+    if (tier < 0) return;
+    const louca = tier === 0 ? '#efe8da' : tier === 1 ? '#d4583a' : tier <= 4 ? '#7cb8e8' : '#5cc7a0', t = TIERS[tier];
+    const G = new Geo();
+    G.box(0.2, 0.025, 0.2, '#efe8da', 0, 0, 0);                                            // pires
+    G.box(0.12, 0.1, 0.12, louca, 0, 0.025, 0);                                             // xícara
+    G.box(0.1, 0.012, 0.1, t.creme ? '#fff4e2' : t.cor, 0, 0.125, 0);                       // o café (ou a espuma)
+    G.box(0.03, 0.05, 0.02, louca, 0.075, 0.05, 0);                                         // alça
+    if (t.chantilly) { G.box(0.08, 0.05, 0.08, '#fff7ea', 0, 0.137, 0); G.box(0.04, 0.04, 0.04, '#fff7ea', 0, 0.187, 0); }
+    if (t.chocBorda) G.box(0.124, 0.015, 0.124, '#5a3418', 0, 0.112, 0);
+    const m = G.malha(MAT); m.rotation.z = -1.55; m.position.set(0.12, -0.27, 0);
+    J.m.bracoD.cotovelo.add(m); J.copo = m;
+  }
+  function poseCopo(J) {                                                                    // braço direito dobrado para a frente segurando a xícara de pé
+    if (!J.copo) return;
+    const m = J.m; m.bracoD.rotation.z = 0.35; m.bracoD.rotation.x = 0; usarCotovelo(m.bracoD, 0, 1.2);
+    J.copo.rotation.z = -1.55;
+  }
+  // ---- os alvos do turno (dentro da cafeteria)
+  function alvosTurno(v) {
+    const U = S.turno; if (!U || U.fim) return;
+    for (const A of S.npcs) {
+      const P = A.cli && A.cli.pedido; if (!P || A.cli.fase !== 'fica') continue;
+      const nome = T(TIERS[P.tier].nome);
+      if (P.estado === 'espera') v.push({ x: A.x, z: A.z, r: 1.7, txt: T('Anotar pedido'), fn: () => anotarPedido(A), y: 2.9, pri: true });
+      else if (P.estado === 'anotado' && U.naMao === P.tier) v.push({ x: A.x, z: A.z, r: 1.7, txt: Tf('Entregar: {0}', nome), fn: () => entregarPedido(A), y: 2.9, pri: true });
+      else if (P.estado === 'anotado') v.push({ x: A.x, z: A.z, r: 1.5, txt: Tf('Pedido: {0}', nome), fn: async () => { aviso(U.naMao >= 0 ? T('Esse café na sua mão não é o que este cliente pediu.') : T('Prepare esse pedido na bancada.')); setTimeout(() => aviso(''), 2600); }, y: 2.9 });
+    }
+  }
+  async function anotarPedido(A) {
+    const U = S.turno, P = A.cli.pedido; if (!U || P.estado !== 'espera') return;
+    S.jog.yawAlvo = Math.atan2(-(A.z - S.jog.z), A.x - S.jog.x); A.fala = true;
+    SomCafe.anotar(); P.estado = 'anotado'; U.anotados.push(A); atualizarBalao(A);
+    aviso(Tf('Pedido anotado: {0}. Prepare na bancada.', T(TIERS[P.tier].nome))); await esperar(900); A.fala = false;
+    setTimeout(() => { if (S && UI) aviso(''); }, 1800);
+  }
+  async function entregarPedido(A) {
+    const U = S.turno, P = A.cli.pedido, d = S.dados; if (!U || U.naMao !== P.tier) return;
+    S.jog.yawAlvo = Math.atan2(-(A.z - S.jog.z), A.x - S.jog.x);
+    U.naMao = -1; copoNaMao(-1); SomCafe.entregar();
+    P.estado = 'feliz'; atualizarBalao(A); U.anotados = U.anotados.filter((q) => q !== A);
+    const gorjeta = 1 + Math.floor(Math.random() * 5);                 // gorjeta aleatória de 1 a 5 fakes, na hora
+    U.atendidos++; U.gorjetas += gorjeta; d.fakes += gorjeta;
+    await esperar(350); somDinheiro(); ganhoNaTela(gorjeta); mostrarDinheiro(true);
+    aviso(Tf('Gorjeta: +{0} fakes!', gorjeta)); setTimeout(() => { if (S && UI) aviso(''); }, 1800);
+    A.comendo = 3.2; A.cli.t = 4.2;                                     // toma o café e depois vai pagar no caixa (tickCliente)
+    setTimeout(() => { if (A.cli && A.cli.pedido) A.cli.pedido.estado = 'feito'; if (A.balao) A.balao.visible = false; }, 1600);
+    atualizarPainelTurno();
+  }
+  // ---- a bancada de preparo: o joguinho de juntar (a grade é do turno inteiro)
+  function abrirBancada() {
+    const U = S.turno;
+    if (!U || U.fim) return Promise.resolve();
+    if (U.naMao >= 0) { aviso(T('Você já está com um café na mão. Entregue primeiro!')); setTimeout(() => aviso(''), 2400); return Promise.resolve(); }
+    return new Promise((res) => {
+      const COLS = 4, LINS = 4, NC = COLS * LINS, d = S.dados, grade = U.grade, esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      let sel = -1, acabou = false, avisoT = null;
+      const el = document.createElement('div'); el.id = 'cdTrabalho';
+      el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:max(6px,env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) max(6px,env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));box-sizing:border-box;';
+      const lado = 'min(calc(var(--avh, 1vh) * 100 - 36px), 52vw, 440px)';
+      const card = document.createElement('div');
+      card.style.cssText = 'display:grid;grid-template-columns:minmax(150px,230px) auto;gap:10px;align-items:stretch;max-width:100%;max-height:100%;overflow:auto;background:#2a1206;border:4px solid #8a5a2a;color:#fff0c8;padding:8px 10px;box-sizing:border-box;font-family:var(--font-body);';
+      const col = document.createElement('div'); col.style.cssText = 'display:flex;flex-direction:column;gap:6px;min-width:0;';
+      const h = document.createElement('div'); h.style.cssText = 'font:700 12px/1.2 var(--font-display);letter-spacing:.06em;text-transform:uppercase;color:#f0a020;';
+      h.textContent = T('Bancada de preparo');
+      const btnFechar = document.createElement('button'); btnFechar.type = 'button'; btnFechar.className = 'pxBtn'; btnFechar.textContent = T('Fechar'); btnFechar.style.cssText = '--p:var(--p2,2px);min-height:26px;font-size:9px;padding:0 8px;align-self:flex-start;';
+      const topo = document.createElement('div'); topo.style.cssText = 'display:flex;justify-content:space-between;align-items:flex-start;gap:6px;'; topo.append(h, btnFechar);
+      const relogio = document.createElement('div'); relogio.style.cssText = 'font:700 12px/1.2 var(--font-display);font-variant-numeric:tabular-nums;';
+      const barra = document.createElement('div'); barra.style.cssText = 'height:6px;background:#1f0f06;border:2px solid #4a2c14;'; const barraF = document.createElement('div'); barraF.style.cssText = 'height:100%;width:0;background:#f0a020;'; barra.appendChild(barraF);
+      const pedT = document.createElement('div'); pedT.style.cssText = 'font:700 10px/1.2 var(--font-display);color:#e8d8b8;'; pedT.textContent = T('Pedidos anotados');
+      const pedidos = document.createElement('div'); pedidos.style.cssText = 'display:flex;gap:5px;min-height:46px;';
+      const selBox = document.createElement('div'); selBox.style.cssText = 'display:flex;align-items:center;gap:6px;background:#3a1c0a;border:3px solid #4a2c14;padding:3px 6px;min-height:42px;';
+      const selIc = document.createElement('div'), selTxt = document.createElement('div'); selIc.style.cssText = 'flex:0 0 40px;width:40px;'; selTxt.style.cssText = 'font:400 12px/1.25 var(--font-body);min-width:0;'; selBox.append(selIc, selTxt);
+      const btnGerar = document.createElement('button'); btnGerar.type = 'button'; btnGerar.className = 'pxBtn pxPrim'; btnGerar.textContent = T('Gerar cafezinho'); btnGerar.style.cssText = '--p:var(--p2,2px);min-height:38px;font-size:11px;';
+      col.append(topo, relogio, barra, pedT, pedidos, selBox, btnGerar);
+      const grid = document.createElement('div'); grid.style.cssText = 'display:grid;grid-template-columns:repeat(' + COLS + ',1fr);grid-template-rows:repeat(' + LINS + ',1fr);gap:4px;width:' + lado + ';height:' + lado + ';';
+      const cels = []; for (let i = 0; i < NC; i++) { const c = document.createElement('button'); c.type = 'button'; c.style.cssText = 'position:relative;min-width:0;min-height:0;background:#1f0f06;border:2px solid #4a2c14;padding:0;display:grid;place-items:center;cursor:pointer;'; grid.appendChild(c); cels.push(c); }
+      card.append(col, grid); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);
+      const icone = (alvo, tier) => { alvo.innerHTML = ''; if (tier >= 0) alvo.appendChild(iconeCafezinho(tier, '100%')); };
+      const nomeT = (v) => T(TIERS[v].nome);
+      const precisa = () => new Set(U.anotados.filter((A) => A.cli && A.cli.pedido && A.cli.pedido.estado === 'anotado').map((A) => A.cli.pedido.tier));
+      function mostrarSel(texto) {
+        if (avisoT) { clearTimeout(avisoT); avisoT = null; }
+        if (texto) { selTxt.innerHTML = texto; return; }
+        if (sel >= 0) {
+          const v = grade[sel]; icone(selIc, v);
+          selTxt.innerHTML = '<b style="font:700 11px/1.2 var(--font-display);color:#f0a020">' + esc(nomeT(v)) + '</b><br>' + (v < TIERS.length - 1 ? esc(Tf('Junte com outro igual: vira {0}', nomeT(v + 1))) : esc(T('O melhor café da casa!')));
+        } else { icone(selIc, -1); selTxt.textContent = T('Toque num café para ver o nome dele.'); }
+      }
+      function atualizarTopo() {
+        const k = clamp((d.hora - H_TRAB_INI) / (H_TRAB_FIM - H_TRAB_INI), 0, 1);
+        relogio.textContent = fmtHora(d.hora) + ' · ' + Tf('fim às {0}', fmtHora(H_TRAB_FIM)); barraF.style.width = (k * 100).toFixed(1) + '%';
+        const pr = precisa(), chave = [...U.anotados].map((A) => A.cli && A.cli.pedido ? A.cli.pedido.tier : -1).join(',');
+        if (pedidos.dataset.k !== chave) {
+          pedidos.dataset.k = chave; pedidos.innerHTML = '';
+          if (!pr.size) { const s = document.createElement('div'); s.style.cssText = 'font:400 11px/1.3 var(--font-body);color:#c8b898;'; s.textContent = T('Nenhum pedido anotado. Anote nas mesas!'); pedidos.appendChild(s); }
+          for (const A of U.anotados) { const P = A.cli && A.cli.pedido; if (!P || P.estado !== 'anotado') continue; const b = document.createElement('div'); b.style.cssText = 'flex:0 0 44px;width:44px;background:#3a1c0a;border:2px solid #f2c230;'; b.title = nomeT(P.tier); b.appendChild(iconeCafezinho(P.tier, '100%')); pedidos.appendChild(b); }
+        }
+      }
+      function redesenhar() {
+        const pr = precisa();
+        for (let i = 0; i < NC; i++) {
+          const c = cels[i], v = grade[i]; c.innerHTML = ''; c.style.borderColor = i === sel ? '#f0a020' : v >= 0 && pr.has(v) ? '#8fe04a' : '#4a2c14';
+          if (v >= 0) { c.appendChild(iconeCafezinho(v, '86%')); c.title = nomeT(v); const nv = document.createElement('span'); nv.textContent = String(v + 1); nv.style.cssText = 'position:absolute;right:2px;bottom:1px;font:700 9px/1 var(--font-display);color:#f0a020;text-shadow:1px 1px 0 #000;pointer-events:none;'; c.appendChild(nv); }
+          else c.title = '';
+        }
+        btnGerar.disabled = acabou || !grade.includes(-1);
+        atualizarTopo();
+      }
+      function fechar() { if (acabou) return; acabou = true; clearInterval(tk); el.remove(); res(); }
+      // o café que acabou de sair é de um pedido anotado? vai para a mão e o joguinho fecha
+      function pegarSePronto(i) {
+        const v = grade[i]; if (v < 0 || !precisa().has(v)) return false;
+        grade[i] = -1; sel = -1; U.naMao = v; copoNaMao(v); SomCafe.pronto();
+        acabou = true; clearInterval(tk); redesenhar();
+        mostrarSel('<b style="font:700 12px/1.25 var(--font-display);color:#8fe04a">' + esc(Tf('Pronto! Leve o {0} para o cliente.', nomeT(v))) + '</b>'); icone(selIc, v);
+        setTimeout(() => { el.remove(); res(); }, 1100);
+        return true;
+      }
+      mostrarSel(); redesenhar();
+      { const pr = precisa(); const i = grade.findIndex((v) => v >= 0 && pr.has(v)); if (i >= 0) setTimeout(() => pegarSePronto(i), 250); }   // já tinha um pronto guardado na grade
+      const tk = setInterval(() => { if (!S || !S.ativo || !S.turno || S.turno.fim) { fechar(); return; } atualizarTopo(); }, 200);
+      btnFechar.onclick = () => { som(); fechar(); };
       btnGerar.onclick = () => {
-        if (typeof Som !== 'undefined' && Som.clique) Som.clique();
-        const vazias = grade.reduce((a, v, i) => (v === -1 ? (a.push(i), a) : a), []);
-        if (!vazias.length) return;
-        grade[vazias[Math.floor(Math.random() * vazias.length)]] = 0; redesenhar();
+        if (acabou) return;
+        const vazias = grade.reduce((a, v, i) => (v === -1 ? (a.push(i), a) : a), []); if (!vazias.length) { SomCafe.erro(); return; }
+        const i = vazias[Math.floor(Math.random() * vazias.length)]; grade[i] = 0; SomCafe.gerar();
+        if (!pegarSePronto(i)) redesenhar();
       };
       cels.forEach((c, i) => {
         c.onclick = () => {
-          if (grade[i] === -1) return;
-          if (typeof Som !== 'undefined' && Som.clique) Som.clique();
-          if (sel === -1) { sel = i; redesenhar(); return; }
-          if (sel === i) { sel = -1; redesenhar(); return; }
-          if (grade[sel] === grade[i] && grade[i] < TIERS.length - 1) { grade[i] = grade[i] + 1; grade[sel] = -1; }
-          sel = -1; redesenhar();
+          if (acabou || grade[i] === -1) return;
+          if (sel === -1 || sel === i) { sel = sel === i ? -1 : i; SomCafe.toque(); mostrarSel(); redesenhar(); return; }
+          if (grade[sel] === grade[i] && grade[i] < TIERS.length - 1) {
+            grade[i] = grade[i] + 1; grade[sel] = -1; sel = -1; SomCafe.juntar(grade[i]);
+            if (pegarSePronto(i)) return;
+            mostrarSel('<b style="font:700 11px/1.2 var(--font-display);color:#8fe04a">' + esc(Tf('Virou: {0}', nomeT(grade[i]))) + '</b>'); icone(selIc, grade[i]);
+            avisoT = setTimeout(() => { avisoT = null; mostrarSel(); }, 1600);
+          } else { if (grade[sel] !== grade[i]) SomCafe.erro(); sel = i; mostrarSel(); }
+          redesenhar();
         };
       });
-      btnServir.onclick = () => {
-        const i = grade.indexOf(pedido); if (i === -1) return;
-        if (typeof Som !== 'undefined' && Som.clique) Som.clique();
-        grade[i] = -1; atendidos++; sel = -1; novoPedido(); redesenhar();
-      };
-      btnSair.onclick = () => { el.remove(); res(atendidos); };
     });
   }
+  // ---- o painel do turno (no alto, no meio): relógio, atendidos, gorjetas, o que está na mão e "Acelerar final do turno"
+  function montarPainelTurno() {
+    if (UI.turno) { UI.turno.hidden = false; return; }
+    const p = document.createElement('div'); p.id = 'cdTurno';
+    p.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(48px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.9);border:3px solid #8a5a2a;color:#fff0c8;padding:3px 6px 3px 8px;font:700 11px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);';
+    p.innerHTML = '<span class="tTxt"></span><span class="tMao" style="display:inline-block;width:26px;height:26px"></span><button type="button" class="pxBtn tAcel" style="--p:var(--p2,2px);min-height:26px;font-size:9px;padding:0 6px"></button>';
+    ($('raizJogo') || document.body).appendChild(p);
+    UI.turno = p; UI.turnoTxt = p.querySelector('.tTxt'); UI.turnoMao = p.querySelector('.tMao'); UI.turnoAcel = p.querySelector('.tAcel');
+    UI.turnoAcel.textContent = T('Acelerar final do turno');
+    UI.turnoAcel.onclick = () => { if (S && S.modo === 'livre' && S.turno && !S.turno.fim) { som(); S.modo = 'cena'; UI.ctl.hidden = true; acelerarTurno().finally(() => { if (S && S.ativo && S.modo === 'cena') liberar(); }); } };
+  }
+  function atualizarPainelTurno() {
+    const U = S.turno; if (!U || !UI.turno) return;
+    const txt = fmtHora(S.dados.hora) + ' → ' + fmtHora(H_TRAB_FIM) + ' · ' + Tf('Atendidos: {0}', U.atendidos) + ' · ' + Tf('Gorjetas: {0}', U.gorjetas) + ' · ' + T('Na mão:');
+    if (UI.turnoTxt.textContent !== txt) UI.turnoTxt.textContent = txt;
+    if (UI.turnoMao.dataset.t !== String(U.naMao)) { UI.turnoMao.dataset.t = String(U.naMao); UI.turnoMao.innerHTML = U.naMao >= 0 ? '' : '<span style="color:#a88a5a">—</span>'; if (U.naMao >= 0) UI.turnoMao.appendChild(iconeCafezinho(U.naMao, '26px')); }
+  }
+  async function acelerarTurno() {
+    const r = await Escolha.mostrar(T('Acelerar até as 16h? Você só ganha os 20 fakes do dia, sem nenhum adicional pelos clientes atendidos (as gorjetas que já recebeu ficam com você).'), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
+    Dialogo.esconder();
+    if (r !== 0 || !S.turno || S.turno.fim) return;
+    await preto(true, 450); S.dados.hora = H_TRAB_FIM; await encerrarTurno(true); await preto(false, 450);
+  }
+  // ---- fim do turno (16h ou acelerado): os clientes que esperavam vão embora, paga e a Lúcia se despede
+  async function encerrarTurno(acelerado) {
+    const U = S.turno, d = S.dados; if (!U || U.fim) return; U.fim = true;
+    S.trabalhando = false; MusicaCafe.parar(); copoNaMao(-1);
+    for (const A of S.npcs) if (A.cli && A.cli.pedido) { if (A.balao) A.balao.visible = false; if (A.cli.pedido.estado !== 'feliz' && A.cli.pedido.estado !== 'feito') { A.cli.pedido.estado = 'feito'; A.cli.semPagar = true; A.cli.t = Math.min(A.cli.t, 1 + Math.random() * 4); } }
+    if (UI.turno) UI.turno.hidden = true;
+    const el = document.getElementById('cdTrabalho'); if (el) el.remove();
+    const paga = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos);
+    d.trabalhouHoje = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
+    gravar('chegada');
+    const espera = S.modo !== 'livre'; if (!espera) { S.modo = 'cena'; UI.ctl.hidden = true; }
+    try {
+      if (acelerado) await fala('lucia', Tf('Turno encerrado! Hoje fica só o do dia: {0} fakes. Até amanhã!', paga));
+      else await fala('lucia', Tf('Acabou o seu turno de hoje! Você atendeu {0} clientes: toma, {1} fakes ({2} do dia + {3} dos pedidos). Até a próxima!', U.atendidos, paga, PAGA_BASE, PAGA_PEDIDO * U.atendidos));
+      Dialogo.esconder();
+    } catch (e) { console.error(e); }
+    S.turno = null; try { Musica.tocar('jazz'); } catch (e) { /* sem música */ }
+    if (!espera && S && S.ativo && S.modo === 'cena') liberar();
+  }
+  // ================================================================== (5.2.0) SONS DA CAFETERIA (tudo sintetizado no WebAudio, como a música do jogo.js)
+  //   Som.audio é { ctx, mestre }: o volume geral (e o "mudo") do jogo vale para tudo daqui.
+  const audioCafe = () => (typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null);
+  const SomCafe = (() => {
+    const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    let ruido = null;
+    function tom(A, m, t, dur, vol, tipo, o) {
+      o = o || {}; const c = A.ctx, osc = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+      osc.type = tipo || 'sine'; osc.frequency.setValueAtTime(typeof m === 'number' && m < 200 ? hz(m) : m, t);
+      if (o.ate) osc.frequency.exponentialRampToValueAtTime(o.ate, t + dur * 0.9);
+      f.type = 'lowpass'; f.frequency.value = o.corte || 5000;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + (o.ataque || 0.006)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(f); f.connect(g); g.connect(A.mestre); osc.start(t); osc.stop(t + dur + 0.05);
+    }
+    function chiado(A, t, dur, vol, freq, tipo, q) {
+      const c = A.ctx; if (!ruido || ruido.sampleRate !== c.sampleRate) { ruido = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = ruido;
+      f.type = tipo || 'bandpass'; f.frequency.value = freq || 3000; if (q) f.Q.value = q;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      s.connect(f); f.connect(g); g.connect(A.mestre); s.start(t, Math.random() * 0.5, dur + 0.02);
+    }
+    const com = (fn) => () => { const A = audioCafe(); if (!A) return; try { fn(A, A.ctx.currentTime + 0.01); } catch (e) { /* sem som */ } };
+    const PENTA = [72, 74, 76, 79, 81, 84, 86, 88];                    // dó maior pentatônica: cada nível do café sobe uma nota
+    return {
+      gerar: com((A, t) => { chiado(A, t, 0.12, 0.12, 900, 'bandpass', 2); tom(A, 520, t + 0.02, 0.12, 0.09, 'sine', { ate: 260 }); tom(A, 60, t + 0.09, 0.08, 0.05, 'triangle'); }),   // "blup" do café caindo na xícara
+      toque: com((A, t) => { tom(A, 84, t, 0.05, 0.05, 'square', { corte: 2400 }); }),
+      juntar: (tier) => com((A, t) => {                                // dois cafés viram um: tilintar subindo + um brilhinho no fim (mais alto quanto maior o nível)
+        const n = PENTA[Math.min(PENTA.length - 1, tier)];
+        tom(A, n - 5, t, 0.09, 0.07, 'triangle'); tom(A, n, t + 0.07, 0.16, 0.08, 'triangle'); tom(A, n + 12, t + 0.07, 0.22, 0.03, 'sine');
+        if (tier >= 5) for (let k = 0; k < 3; k++) tom(A, n + 7 + k * 5, t + 0.18 + k * 0.05, 0.12, 0.03, 'sine');
+        if (tier === TIERS.length - 1) { tom(A, 84, t + 0.3, 0.18, 0.05, 'square', { corte: 3000 }); tom(A, 88, t + 0.42, 0.18, 0.05, 'square', { corte: 3000 }); tom(A, 91, t + 0.54, 0.4, 0.06, 'square', { corte: 3000 }); }
+      })(),
+      erro: com((A, t) => { tom(A, 51, t, 0.16, 0.06, 'square', { corte: 900, ate: 110 }); }),
+      anotar: com((A, t) => { for (let k = 0; k < 5; k++) chiado(A, t + k * 0.055, 0.04, 0.09, 4200 + Math.random() * 1500, 'bandpass', 4); tom(A, 88, t + 0.3, 0.07, 0.04, 'sine'); }),   // lápis no bloquinho
+      pronto: com((A, t) => { tom(A, 2093, t, 0.25, 0.06, 'sine'); tom(A, 2637, t + 0.06, 0.3, 0.05, 'sine'); tom(A, 79, t + 0.12, 0.2, 0.05, 'triangle'); tom(A, 84, t + 0.22, 0.3, 0.06, 'triangle'); }),   // xícara no pires: "tlin" + nota feliz
+      entregar: com((A, t) => { for (const [i, m] of [[0, 76], [1, 79], [2, 84]]) tom(A, m, t + i * 0.08, 0.18, 0.07, 'triangle'); }),
+      caixa: com((A, t) => {                                           // registradora: teclinhas, a gaveta abrindo e o "plim"
+        for (let k = 0; k < 3; k++) chiado(A, t + k * 0.07, 0.03, 0.12, 2500, 'highpass');
+        chiado(A, t + 0.25, 0.18, 0.12, 700, 'bandpass', 1.5);
+        tom(A, 2349, t + 0.36, 0.6, 0.06, 'sine'); tom(A, 3136, t + 0.36, 0.45, 0.04, 'sine'); tom(A, 1568, t + 0.36, 0.5, 0.03, 'triangle');
+      }),
+      sino: com((A, t) => { tom(A, 1760, t, 0.6, 0.05, 'sine'); tom(A, 1319, t + 0.18, 0.8, 0.05, 'sine'); }),   // sininho da porta
+      fim: com((A, t) => { for (const [i, m] of [[0, 72], [1, 76], [2, 79], [3, 84], [5, 79], [6, 84]]) tom(A, m, t + i * 0.11, 0.22, 0.06, 'square', { corte: 2600 }); }),
+    };
+  })();
+  // ---- MÚSICA TEMA DA CAFETERIA: bossa animadinha (120 bpm): baixo de bossa, piano elétrico sincopado, vibrafone com o tema,
+  //      chocalho em semicolcheias e o "clique" de aro na clave. Toca durante o turno.
+  const MusicaCafe = (() => {
+    let bus = null, timer = 0, prox = 0, comp = 0, ruido = null;
+    const BPM = 120, B = 60 / BPM, S16 = B / 4;
+    const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    const ACORDES = [                                                    // raiz do baixo, notas do piano
+      { r: 36, n: [52, 55, 59, 62] },   // Cmaj9
+      { r: 33, n: [52, 55, 57, 61] },   // A7(13)
+      { r: 38, n: [53, 57, 60, 64] },   // Dm9
+      { r: 31, n: [53, 57, 59, 64] },   // G13
+      { r: 40, n: [55, 59, 62, 66] },   // Em7
+      { r: 33, n: [55, 57, 61, 64] },   // A7
+      { r: 38, n: [53, 57, 60, 65] },   // Dm7
+      { r: 31, n: [53, 55, 59, 65] },   // G7
+    ];
+    // o tema (vibrafone): [semicolcheia, nota, duração em semicolcheias], um compasso por acorde
+    const TEMA = [
+      [[0, 76, 2], [3, 79, 2], [6, 83, 2], [8, 81, 2], [10, 79, 4]],
+      [[0, 79, 2], [2, 76, 2], [6, 73, 2], [8, 76, 6]],
+      [[0, 77, 2], [3, 81, 2], [6, 84, 2], [8, 83, 2], [10, 81, 4]],
+      [[0, 79, 2], [2, 77, 2], [4, 74, 3], [8, 71, 2], [11, 74, 4]],
+      [[0, 76, 2], [3, 79, 2], [6, 83, 2], [10, 86, 4]],
+      [[0, 85, 3], [4, 81, 2], [8, 79, 2], [10, 76, 4]],
+      [[0, 77, 2], [2, 81, 2], [6, 86, 2], [8, 83, 2], [10, 79, 2], [12, 77, 2]],
+      [[0, 76, 6], [8, 72, 4], [12, 79, 2]],
+    ];
+    const CLAVE = [0, 3, 6, 10, 12];                                    // clave de bossa (rim click)
+    function nota(c, m, t, dur, vol, tipo, corte, ataque) {
+      const o = c.createOscillator(), g = c.createGain(), f = c.createBiquadFilter();
+      o.type = tipo; o.frequency.value = hz(m); f.type = 'lowpass'; f.frequency.value = corte || 3000;
+      g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(vol, t + (ataque || 0.008)); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(f); f.connect(g); g.connect(bus); o.start(t); o.stop(t + dur + 0.05);
+    }
+    function chiado(c, t, dur, vol, freq) {
+      if (!ruido || ruido.sampleRate !== c.sampleRate) { ruido = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+      const s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = ruido; f.type = 'highpass'; f.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(bus); s.start(t, Math.random() * 0.5, dur + 0.02);
+    }
+    function compasso(c, t0, n) {
+      const A = ACORDES[n % 8], prox = ACORDES[(n + 1) % 8], parte = Math.floor(n / 8) % 2;
+      // baixo de bossa: raiz no 1, quinta no "e" do 2, raiz no 3, quinta no "e" do 4 (e uma aproximação cromática no fim)
+      for (const [s, m, d] of [[0, A.r, 5], [6, A.r + 7, 2], [8, A.r, 5], [14, prox.r + (prox.r > A.r ? -1 : 1), 2]]) nota(c, m, t0 + s * S16, d * S16 * 1.1, 0.28, 'triangle', 600);
+      // piano elétrico: acordes sincopados (seno + triângulo uma oitava acima, bem baixinho)
+      for (const s of [0, 3, 6, 10, 13]) for (const m of A.n) { nota(c, m, t0 + s * S16, S16 * 2.4, 0.032, 'sine', 2600); nota(c, m + 12, t0 + s * S16, S16 * 1.6, 0.009, 'triangle', 2200); }
+      // vibrafone com o tema (na 2ª passada, uma oitava abaixo com uns enfeites)
+      for (const [s, m, d] of TEMA[n % 8]) {
+        const mm = parte ? m - 12 : m;
+        nota(c, mm, t0 + s * S16, d * S16 * 1.6, 0.06, 'sine', 4000, 0.004); nota(c, mm + 12, t0 + s * S16, d * S16 * 0.6, 0.012, 'sine', 5000, 0.002);
+        if (parte && s % 4 === 2) nota(c, mm + 7, t0 + (s + 1) * S16, S16 * 1.2, 0.02, 'sine', 4000);
+      }
+      // percussão: chocalho (semicolcheias, acentuado), aro na clave, bumbo leve no 1 e no 3
+      for (let i = 0; i < 16; i++) chiado(c, t0 + i * S16, 0.05, i % 4 === 2 ? 0.05 : 0.025, 7000);
+      for (const s of CLAVE) { const t = t0 + s * S16 + (n % 2 ? 0 : 0); chiado(c, t, 0.035, 0.07, 2200); }
+      for (const s of [0, 8]) { const o = c.createOscillator(), g = c.createGain(); o.frequency.setValueAtTime(110, t0 + s * S16); o.frequency.exponentialRampToValueAtTime(45, t0 + s * S16 + 0.12); g.gain.setValueAtTime(0.22, t0 + s * S16); g.gain.exponentialRampToValueAtTime(0.0001, t0 + s * S16 + 0.18); o.connect(g); g.connect(bus); o.start(t0 + s * S16); o.stop(t0 + s * S16 + 0.2); }
+      return B * 4;
+    }
+    function laco() { const A = audioCafe(); if (!A || !bus) return; const c = A.ctx; if (prox < c.currentTime) prox = c.currentTime + 0.05; while (prox < c.currentTime + 1.0) prox += compasso(c, prox, comp++); }
+    return {
+      tocar() {
+        const A = typeof Som !== 'undefined' ? Som.audio : null; if (!A || bus) return;
+        try { if (typeof Musica !== 'undefined' && Musica.tocando) Musica.parar(); } catch (e) { /* nada */ }
+        const c = A.ctx; if (c.state === 'suspended') c.resume();
+        bus = c.createGain(); bus.gain.value = 0; bus.connect(A.mestre); bus.gain.linearRampToValueAtTime(0.75, c.currentTime + 1.2);
+        comp = 0; prox = c.currentTime + 0.15; laco(); timer = setInterval(laco, 200);
+      },
+      parar() {
+        if (!bus) return; clearInterval(timer); const b = bus; bus = null;
+        try { const c = b.context; b.gain.cancelScheduledValues(c.currentTime); b.gain.setValueAtTime(b.gain.value, c.currentTime); b.gain.linearRampToValueAtTime(0, c.currentTime + 1.2); } catch (e) { /* nada */ }
+        setTimeout(() => { try { b.disconnect(); } catch (e) { /* nada */ } }, 2000);
+      },
+      get tocando() { return !!bus; },
+    };
+  })();
   // (5.1.0) a conversa no caixa: três jeitos de ela reconhecer o jogador (ou não), e depois a oferta do turno
   async function falarComLucia() {
     const d = S.dados, L = S.lucia, J = S.jog;
@@ -2249,21 +2761,20 @@
       } else {
         await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
       }
-      await fala('lucia', T('O expediente é das 8h às 16h. Quando um cliente chegar, vá até a bancada e prepare o pedido num joguinho de combinar cafés: junte dois iguais para subir de nível, até chegar no que foi pedido.'));
+      await fala('lucia', T('O expediente é das 8h às 16h. Os clientes sentam e mostram o que querem: vá até a mesa, anote o pedido e prepare na bancada, juntando dois cafés iguais para subir de nível. Depois é só levar até o cliente!'));
+      await fala('lucia', Tf('Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.', PAGA_BASE, PAGA_PEDIDO));   // (5.1.1)
       d.luciaApresentou = true; gravar('chegada');
     }
     Dialogo.esconder();
+    if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
     if ((d.dia || 1) < 2) { await fala('lucia', T('Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!')); Dialogo.esconder(); return; }
     if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
     if (d.hora < H_TRAB_INI || d.hora >= H_TRAB_FIM) { await fala('lucia', T('O expediente é das 8h às 16h. Volta nesse horário!')); Dialogo.esconder(); return; }
     const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')], { centro: true });
     Dialogo.esconder();
     if (r !== 0) return;
-    await turnoTrabalho();
-    d.trabalhouHoje = true; d.hora = H_TRAB_FIM; d.fakes += PAGA_TRABALHO; somDinheiro(); mostrarDinheiro(true); ganhoNaTela(PAGA_TRABALHO);
-    gravar('chegada');
-    await fala('lucia', Tf('Acabou o seu turno de hoje! Toma, {0} fakes. Até a próxima!', PAGA_TRABALHO));
-    Dialogo.esconder();
+    await fala('lucia', T('Boa! Vou abrir as portas. Os clientes já vão chegar.')); Dialogo.esconder();
+    iniciarTurno();
   }
   // (4.9.5) ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
   function iconePx(id) {
@@ -2321,14 +2832,14 @@
         b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(-1);
-      card.append(h, grade, nada); el.appendChild(card); document.body.appendChild(el);
+      card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);   // (5.1.1) dentro do #raizJogo (parte visível do iframe do Canva)
       const sombra = () => { const fimX = grade.scrollLeft + grade.clientWidth >= grade.scrollWidth - 4, iniX = grade.scrollLeft <= 4;   // (5.0.0) as bordas somem para mostrar que tem mais produtos para os lados
         const m = 'linear-gradient(90deg,' + (iniX ? '#000 0' : 'transparent 0,#000 14%') + ',' + (fimX ? '#000 100%' : '#000 86%,transparent 100%') + ')'; grade.style.webkitMaskImage = grade.style.maskImage = m; };
       grade.addEventListener('scroll', sombra, { passive: true }); requestAnimationFrame(sombra);
     });
   }
   function somDinheiro() {                                             // "plim-plim" de moeda saindo
-    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; if (!A) return;
+    const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try { const t0 = A.currentTime; [[1318, 0], [1760, 0.07], [1318, 0.16]].forEach(([f, dt]) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.045, t0 + dt); g.gain.exponentialRampToValueAtTime(0.001, t0 + dt + 0.12); o.connect(g); g.connect(A.destination); o.start(t0 + dt); o.stop(t0 + dt + 0.13); }); } catch (e) { /* sem som */ }
   }
   function gastoNaTela(v) {
@@ -2430,7 +2941,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const preto = div('cdPreto'), arrasto = div('cdArrasto'), aviso = div('cdAviso');
     const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
     const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
-    const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
+    const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome" hidden></button><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
@@ -2438,7 +2949,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
-      btnPausa: q(hud, '.cdPausar'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
+      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
     // joystick
@@ -2486,6 +2997,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       som(); definirMarca(clamp(x, LIM.x0 + 2, LIM.x1 - 2), clamp(z, LIM.z0 + 2, LIM.z1 - 2)); atualizarCoresMapa(); desenharMapa();
     });
     UI.btnPausa.addEventListener('click', () => { if (S && S.modo === 'livre') alternarPausa(); });
+    UI.fome.appendChild(iconeCoxinha()); UI.fome.setAttribute('aria-label', T('Fome'));
+    UI.fome.addEventListener('click', () => { if (!S) return; som(); UI.aviso.textContent = T('Seu personagem ainda não comeu hoje.'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
     UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
     UI.cont.addEventListener('click', () => alternarPausa());
@@ -2552,7 +3065,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const esconderBola = () => { try { ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false; } catch (e) { /* sem bola */ } };
 
   // ------------------------------------------------------------------ (4.9.5) RELÓGIO (dia de 15 min), céu, clima, chuva, luz da noite e a reação das pessoas
-  const SEG_DIA = 900, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 6;
+  const SEG_DIA = 900, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 5;   // (5.2.0) acorda às 5h
   const K = (h, ceu, hc, hg, hi, sc, si, sp, ng, lamp) => ({ h, ceu: new THREE.Color(ceu), hc: new THREE.Color(hc), hg: new THREE.Color(hg), hi, sc: new THREE.Color(sc), si, sp, ng, lamp });
   const NOITE_ = [0x0a1424, 0x6f82b4, 0x1a2a18, 0.5, 0x8aa0d8, 0.26, [-25, 45, 15], [45, 150], 1];
   // (5.0.0) luz do dia mais baixa: antes céu 0,97 + sol 0,95 estourava (água branca, mato marrom à tarde, interiores "de vidro")
@@ -2618,7 +3131,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // ---- som da chuva (ruído filtrado) e do trovão
   const SomChuva = {
     no: null, g: null,
-    audio() { return typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null; },
+    audio() { return typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; },
     ruido(A, seg) { const n = Math.floor(A.sampleRate * seg), b = A.createBuffer(1, n, A.sampleRate), d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1; return b; },
     nivel(v) {
       const A = this.audio(); if (!A) return;
@@ -2675,7 +3188,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       await Promise.race([andar(J, pts, 5.2), esperar(2600)]);
     }
     await preto(true, 900);
-    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = 6; d.avisouDormir = false; prepararDia(d);
+    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = H_ACORDAR; d.avisouDormir = false; prepararDia(d);
     try { Sono.registrar(3, 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
     gravar('predio'); S.paraFase2 = 'acordar';
     if (S.fimRes) S.fimRes();
@@ -2692,6 +3205,19 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
+    const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;   // (5.2.0) a coxinha fica até ele comer no dia
+  }
+  // (5.2.0) coxinha de frango em pixel art 16x16 (o ícone de "ainda não comeu hoje")
+  function iconeCoxinha() {
+    const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null)), p = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
+    const L = ['......##........', '.....#AA#.......', '.....#AA#.......', '....#BAAB#......', '...#BBAABB#.....', '...#BBBAABB#....', '..#BBBBBAABB#...', '..#BBBBBBBBB#...', '.#CBBBBBBBBBC#..', '.#CBBBBDBBBBC#..', '.#CCBBBBBBDCC#..', '.#CCCBBBBBCCC#..', '..#CCCCCCCCC#...', '...##CCCCC##....', '.....#####......', '................'];
+    const COR = { '#': '#3a1806', A: '#f2c98a', B: '#d98a2e', C: '#a85a1a', D: '#f6d36a' };
+    L.forEach((r, y) => [...r].forEach((ch, x) => { if (COR[ch]) p(x, y, COR[ch]); }));
+    for (const [x, y] of [[6, 6], [9, 8], [5, 9], [10, 10], [7, 11]]) p(x, y, '#f2b860');           // farelinho da casquinha
+    const cv = document.createElement('canvas'); cv.width = cv.height = N; const c = cv.getContext('2d');
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x]) { c.fillStyle = g[y][x]; c.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:24px;height:24px;image-rendering:pixelated;display:block;pointer-events:none;';
+    return cv;
   }
   function iconeClima(tipo) {
     const N = 12, g = Array.from({ length: N }, () => Array(N).fill(null));
@@ -2973,6 +3499,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       for (let i = 0; i < n; i++) {
         S.t += dt;
         if (S.modo === 'livre') { mover(dt); tickHorario(dt); tickDescobertas(); }
+        else if (S.trabalhando) tickHorario(dt);       // (5.1.1) o relógio continua andando durante o expediente
+        if (S.turno) tickTurno(dt);
+        if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !cafeAberto() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
@@ -3028,7 +3557,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
       S.jog = criarJogador(f2, H);
-      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); montarMoradores(); criarPlantas();
+      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); criarLuciaRua(f2); montarMoradores(); criarPlantas();
       const J = S.jog; J.x = SPAWN.x; J.z = -4.9; J.y = 0.22; J.yaw = J.yawAlvo = -Math.PI / 2;
       tickJogador(0.016); tickPortao(1); atualizarCamera(0.016);
       GANCHO_RENDER = gancho;
@@ -3043,10 +3572,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       S.portao.alvo = 0; somPortao();                                  // o portão fecha depois que ele sai
       mostrarDinheiro(primeira);
       const f2d = H.fase2 || {};
-      S.missao = (dados.comidas | 0) > 0 ? '' : f2d.vizinho && f2d.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.');
+      S.missao = (dados.comidas | 0) > 0 || (dados.dia || 1) > 1 ? '' :      // (5.2.0) a missão de comer só aparece no 1º dia
+        f2d.vizinho && f2d.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.');
       liberar(); if (S.missao) mostrarMissao();
       if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
-      aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500);
+      if ((dados.dia || 1) === 1) { aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500); }   // (5.2.0) só no 1º dia
       await fim; paraFase2 = S.paraFase2 || false;
     } finally {
       limpar();
@@ -3058,5 +3588,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
 
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { interagir, falarComLucia, turnoTrabalho, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
+    _fns: { MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
 })();

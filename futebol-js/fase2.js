@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.2.0
+     - O tempo anda no condomínio (relogioTick/S.relogio; a hora continua sendo a da cidade, historia.cidade.hora) enquanto o personagem
+       está livre: banho, banheiro, pia, guarda-roupa, computador e conversas não contam. Relógio no canto (f2Relogio). Grava ao sair do
+       prédio e de 20 em 20 s. Passou das 2h acordado aqui: apaga de sono e acorda às 5h (apagarDeSono).
+     - Dá para CORRER na escada (direcional na borda ou Shift): 4,4 m/s, com a passada de corrida.
+     - Acorda às 5h (H_ACORDA): dormir antes das 20h segue "Ainda não estou com sono."; depois leva para as 5h.
    NOVIDADES DA 5.1.0
      - Corrigido: quando a madrugada() da cidade pega o jogador acordado até as 2h, a volta para a fase 2 agora manda ele direto para
        a cama (ctx.args.acordar; ver aparecerNaCama() e o trecho "volta && acordar" em iniciar) em vez de deixá-lo largado na entrada
@@ -498,7 +504,12 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function posePe(A, t, dt, andando) {
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 10);
     usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0;
-    if (andando) {
+    if (andando && A.correndo) {                                  // (5.2.0) correndo (escada): passada larga, cotovelos dobrados
+      A.fase += dt * A.vel * 2.9; const s = Math.sin(A.fase);
+      m.pernaE.rotation.z = s * 1.1; m.pernaD.rotation.z = -s * 1.1; m.bracoE.rotation.z = -s * 0.9; m.bracoD.rotation.z = s * 0.9;
+      usarCotovelo(m.bracoE, 0, 1.3); usarCotovelo(m.bracoD, 0, 1.3);
+      r.position.y = A.y + Math.abs(Math.cos(A.fase)) * 0.07;
+    } else if (andando) {
       A.fase += dt * A.vel * 4.6; const s = Math.sin(A.fase);
       m.pernaE.rotation.z = s * 0.75; m.pernaD.rotation.z = -s * 0.75; m.bracoE.rotation.z = -s * 0.6; m.bracoD.rotation.z = s * 0.6;
       r.position.y = A.y + Math.abs(Math.cos(A.fase)) * 0.025;
@@ -904,6 +915,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Top e calça jeans': ['Crop top and jeans', 'Top corto y vaqueros', 'Top corto e jeans', 'Brassière et jean'],
     'Top e saia': ['Crop top and skirt', 'Top corto y falda', 'Top corto e gonna', 'Brassière et jupe'],
     'Ahh, agora sim! Banho tomado.': ['Ahh, that feels better! All clean.', '¡Ahh, ahora sí! Ya me bañé.', 'Ahh, ora sì! Doccia fatta.', 'Ahh, ça fait du bien ! Douche prise.'],
+    'Nossa, já são 2h da manhã... não aguento mais de sono.': ['Wow, it\'s already 2 AM... I can\'t stay awake anymore.', 'Uf, ya son las 2 de la mañana... no aguanto más el sueño.', 'Accidenti, sono già le 2 di notte... non ce la faccio più dal sonno.', 'Ouah, il est déjà 2 h du matin... je tombe de sommeil.'],
     'Cor dos detalhes': ['Detail color', 'Color de los detalles', 'Colore dei dettagli', 'Couleur des détails'],
     'blusa, camiseta ou vestido': ['top, T-shirt or dress', 'blusa, camiseta o vestido', 'top, maglietta o vestito', 'haut, t-shirt ou robe'],
     'calça, short ou saia': ['pants, shorts or skirt', 'pantalón, short o falda', 'pantaloni, pantaloncini o gonna', 'pantalon, short ou jupe'],
@@ -1092,13 +1104,15 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   function mover(dt) {
     const J = S.jog, e = entrada();
-    if (e.m < 0.12) { atualizarMapa(); J.livreAndando = false; return; }
+    if (e.m < 0.12) { atualizarMapa(); J.livreAndando = false; J.correndo = false; return; }
     const M = S.mapa || { fx: 0, fz: -1 };
-    const dx = M.fx * -e.iy - M.fz * e.ix, dz = M.fz * -e.iy + M.fx * e.ix, sp = 2.15 * dt;
+    // (5.2.0) na escada dá para CORRER (direcional na borda ou Shift), como na cidade
+    const tc = UI.teclas, corre = S.lugar === 'escada' && (tc.ShiftLeft || tc.ShiftRight || (UI.joy.id != null && e.m >= 0.95));
+    const vb = corre ? 4.4 : 2.15, dx = M.fx * -e.iy - M.fz * e.ix, dz = M.fz * -e.iy + M.fx * e.ix, sp = vb * dt;
     let moveu = false;
     if (livre(J.x + dx * sp, J.z, J)) { J.x += dx * sp; moveu = true; }
     if (livre(J.x, J.z + dz * sp, J)) { J.z += dz * sp; moveu = true; }
-    J.livreAndando = moveu; J.vel = 2.15 * Math.max(0.5, e.m);
+    J.livreAndando = moveu; J.correndo = moveu && corre; J.vel = corre ? 4.4 : 2.15 * Math.max(0.5, e.m);
     const d = Math.hypot(dx, dz) || 1; J.yawAlvo = Math.atan2(-dz, dx); S.face = { x: dx / d, z: dz / d };
   }
 
@@ -1425,12 +1439,14 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
 
   // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 6h do dia seguinte
   async function dormir() {
+    salvarRelogio();
     const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
-    if (h >= 6 && h < 20) { await dizer(['jog', T('Ainda não estou com sono.')]); return; }
+    if (h >= H_ACORDA && h < 20) { await dizer(['jog', T('Ainda não estou com sono.')]); return; }   // (5.2.0) acorda às 5h
     await preto(true, 900);
-    const horas = h >= 6 ? 24 - h + 6 : 6 - h;
-    const novo = Object.assign({}, c, { hora: 6, dia: (c.dia || 1) + (h >= 6 ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
+    const horas = h >= H_ACORDA ? 24 - h + H_ACORDA : H_ACORDA - h;
+    const novo = Object.assign({}, c, { hora: H_ACORDA, dia: (c.dia || 1) + (h >= H_ACORDA ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
+    if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
     try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
     gravar('fim');
     aparecerNaCama(); await esperar(1600); await preto(false, 1400); await esperar(900);
@@ -1445,6 +1461,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await andar(J, [[-MID, -OUT + 1.0]], 1.8); J.yawAlvo = Math.PI / 2; await esperar(300);
     somPorta(false); { const R = S.esc.portas.rua; R.vidro.material.color.setHex(0xffffff); R.fora.material.map = null; R.fora.material.alphaTest = 0; R.fora.material.color.setHex(0xffffff); R.fora.material.needsUpdate = true; R.dentro.material.map = null; R.dentro.material.alphaTest = 0; R.dentro.material.color.setHex(0xffffff); R.dentro.material.needsUpdate = true; }
     await andar(J, [[-MID, -OUT + 0.25]], 1.2);
+    salvarRelogio();                                              // (5.2.0) a hora que passou aqui dentro vai junto para a cidade
     gravar('fim');
     await preto(true, 1400);
     // (cidade.js) lá fora é a CIDADEZINHA (arquivo separado). Se ela não carregar, fica o "Continua..." de antes.
@@ -1491,6 +1508,36 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
 
   // ------------------------------------------------------------------ o quadro
+  // ----- (5.2.0) O RELÓGIO NO CONDOMÍNIO: a hora mora na cidade (historia.cidade.hora). Aqui ela anda enquanto o personagem está LIVRE
+  //   (andando pelo quarto, escada...). Cenas como banho, vaso, pia, guarda-roupa, computador e conversas não contam. Grava a hora de
+  //   volta ao sair do prédio (e de 20 em 20 s). Passou das 2h acordado aqui dentro: apaga de sono e acorda às 5h na cama.
+  const H_POR_S_F2 = 24 / 900, H_ACORDA = 5;
+  function relogioTick(dt) {
+    const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) R.hora -= 24;
+    R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }
+    if (ant < 2 && R.hora >= 2 && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
+    mostrarRelogio();
+  }
+  function mostrarRelogio() {
+    if (!S.relogio) return;
+    if (!UI.relogio) { const el = document.createElement('div'); el.id = 'f2Relogio'; el.style.cssText = 'position:fixed;z-index:9;right:max(10px,env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));height:34px;box-sizing:border-box;display:flex;align-items:center;padding:0 10px;background:rgba(42,18,6,.86);border:3px solid #7fb4e0;color:#fff0c8;font:700 14px/1 var(--font-display);font-variant-numeric:tabular-nums;pointer-events:none;'; ($('raizJogo') || document.body).appendChild(el); UI.relogio = el; }
+    const m = Math.floor((S.relogio.hora * 60 + 0.001) / 10) * 10, t = String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+    if (UI.relogio.textContent !== t) UI.relogio.textContent = t;
+    UI.relogio.hidden = false;
+  }
+  function salvarRelogio() {
+    if (!S || !S.relogio) return;
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: S.relogio.hora, dia: S.relogio.dia })); } catch (e) { console.warn('[Fase 2] hora:', e); }
+  }
+  async function apagarDeSono() {
+    await dizer(['jog', T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
+    await preto(true, 900);
+    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = H_ACORDA;
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: H_ACORDA, dia: S.relogio.dia, avisouDormir: false, sono: { horas: 3, ok: false } })); } catch (e) { console.warn(e); }
+    aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
+    const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
+    await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
+  }
   function gancho(rdt) {
     if (!S || !S.ativo) return;
     const dt = Math.min(0.05, rdt || 0.016);
@@ -1503,6 +1550,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       for (const A of S.elenco) tickAtor(A, S.t, dt);
       if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
       fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
+      if (S.relogio && S.modo === 'livre' && !S.camEspecial && nPassos === 1) relogioTick(dt);   // (5.2.0) o tempo anda no prédio (menos no banho, banheiro, guarda-roupa, computador...)
     }
     if (nPassos > 1) S.camSnap = true;
     if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena');
@@ -1542,6 +1590,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     descartarGrupo(S.palco); if (S.quarto) descartarGrupo(S.quarto.g); if (S.banh) descartarGrupo(S.banh.g); if (S.esc) descartarGrupo(S.esc.g);
     restaurarMundo();
     document.body.classList.remove('f2Ativo');
+    if (UI.relogio) { UI.relogio.remove(); UI.relogio = null; }   // (5.2.0)
     UI.missao.hidden = true; UI.ctl.hidden = true; UI.pc.hidden = true; UI.roupa.hidden = true; UI.aviso.hidden = true; UI.toast.hidden = true; UI.leg.classList.remove('on'); UI.num.classList.remove('on');
     Dialogo.esconder(); Musica.parar();
     if (f1p) { f1p.hidden = false; f1p.classList.remove('claro'); }
@@ -1568,6 +1617,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     dados.ano = new Date().getFullYear() - ANOS_ATRAS + ANOS_FRENTE;
     S = { ativo: true, volta, modo: 'cena', lugar: 'quarto', elenco: [], t: 0, k: 1, dados, fem: PERSONAGEM.genero === 'F', escuro: false, face: { x: 0, z: -1 }, fumaca: [], camSnap: true, mapa: null,
       cam: { px: Q_CAM[0], py: Q_CAM[1], pz: Q_CAM[2], tx: Q_CAM[3], ty: Q_CAM[4], tz: Q_CAM[5] }, altura: () => 0 };
+    { const cd = API.historia.ler('cidade'); S.relogio = cd && typeof cd.hora === 'number' ? { hora: cd.hora, dia: cd.dia || 1 } : null; }   // (5.2.0)
     const f1p = document.getElementById('f1Preto');
     let paraCidade = false;
     document.body.classList.add('f2Ativo');

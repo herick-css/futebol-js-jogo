@@ -8,6 +8,7 @@
      As paredes só têm o lado de DENTRO (vistas de fora elas somem), então a câmera pode ficar "atrás" da parede e ver a sala.
    - Por enquanto: só o visual, onde dá para sentar e pessoas de enfeite (paradas, andando, sentadas, na esteira...).
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
+   - (5.2.0) Cafeteria maior (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
        pessoas:  [{ tipo: 'parado' | 'vaga' | 'senta' | 'esteira' | 'rosca', x, z, yaw, area, assento, fem }]
@@ -88,18 +89,49 @@
       R.pessoas.push({ tipo: 'parado', x: 2.5, z: -5.5, yaw: Math.PI, fem: false });                             // repositor
       for (let i = 0; i < 4; i++) R.pessoas.push({ tipo: 'vaga', area: { x0: -9.5, x1: 9, z0: -8, z1: 4 }, fem: rnd() < 0.5 });
     } else if (nome === 'cafeteria') {
-      sala(16, 12, 3.6, '#f2e6c8', '#8a5a2b', '#7a4f26', 0.6);
-      placa('CAFETERIA', '#5b3a22', '#f6e2b8', 5, 0.8, 0, 2.9, -5.96);
-      balcao(0, -4.6, 9, 1.0, '#6a4428', '#e8d8b8');
-      G.box(0.8, 0.6, 0.5, '#3a3a3e', -2.5, 1.06, -4.7); G.box(0.2, 0.3, 0.2, '#c9ced4', -2.5, 1.66, -4.6);              // máquina de café
-      G.box(2.4, 0.5, 0.7, '#e8f4f8', 2, 1.06, -4.6); for (let i = 0; i < 6; i++) G.box(0.3, 0.18, 0.3, pk(['#7a4a2a', '#f4a6c0', '#f2e6c8', '#c8352b']), 1.2 + i * 0.32, 1.1, -4.6);   // vitrine de bolos
-      R.pessoas.push({ tipo: 'parado', x: 0, z: -5.5, yaw: -Math.PI / 2, fem: true, marca: 'lucia' });    // (5.1.0) moça do caixa = Lúcia Alves (ver falarComLucia em cidade.js)
-      R.extras.push({ x: 0, z: -3.6, r: 1.6, txt: 'Falar com a Lúcia', acao: 'caixa' });
-      const ms = [[-5, -1], [-1.5, -0.5], [2.5, -0.8], [-4.5, 2.6], [0, 2.8], [4.5, 2.2]];
+      // (5.2.0) sala maior (20 x 14) para o expediente: 8 mesas de 2 com corredor no meio, o caixa da Lúcia no fundo e a
+      // BANCADA DE PREPARO na parede oeste (máquina de espresso, moedor, jarras de leite, xaropes, xícaras, sacas de café e o quadro de giz).
+      sala(20, 14, 3.6, '#f2e6c8', '#8a5a2b', '#7a4f26', 0.6);
+      placa('CAFETERIA', '#5b3a22', '#f6e2b8', 5, 0.8, 0, 2.9, -6.96);
+      balcao(0.4, -5.4, 9, 1.0, '#6a4428', '#e8d8b8');
+      G.box(0.8, 0.6, 0.5, '#3a3a3e', -2.4, 1.06, -5.5); G.box(0.2, 0.3, 0.2, '#c9ced4', -2.4, 1.66, -5.4);              // máquina de café do caixa
+      G.box(2.4, 0.5, 0.7, '#e8f4f8', 2.6, 1.06, -5.4); for (let i = 0; i < 6; i++) G.box(0.3, 0.18, 0.3, pk(['#7a4a2a', '#f4a6c0', '#f2e6c8', '#c8352b']), 1.8 + i * 0.32, 1.1, -5.4);   // vitrine de bolos
+      G.box(0.36, 0.3, 0.3, '#2b3a48', 0.4, 1.06, -5.5); G.box(0.3, 0.04, 0.2, '#8fe04a', 0.4, 1.3, -5.38);                // caixa registradora
+      R.pessoas.push({ tipo: 'parado', x: 0.4, z: -6.35, yaw: -Math.PI / 2, fem: true, marca: 'lucia' });    // (5.1.0) moça do caixa = Lúcia Alves (ver falarComLucia em cidade.js)
+      R.extras.push({ x: 0.4, z: -4.3, r: 1.6, txt: 'Falar com a Lúcia', acao: 'caixa' });
+      // --- a bancada de preparo (oeste)
+      { const bx = -9.35, bz = -1.2, L = 4.4;
+        G.box(1.1, 0.95, L, '#5b3a22', bx, 0, bz); G.box(1.2, 0.07, L + 0.1, '#d8c9a8', bx, 0.95, bz); bloq(bx, bz, 1.1, L);
+        for (let k = 0; k < 4; k++) G.box(0.02, 0.6, 0.9, '#4a2c14', bx + 0.56, 0.15, bz - 1.65 + k * 1.1);              // portinhas do armário
+        // máquina de espresso (cromada, com dois grupos e os portafiltros)
+        G.box(0.75, 0.62, 1.2, '#c9ced4', bx - 0.12, 1.02, bz - 1.2); G.box(0.7, 0.08, 1.16, '#8c9199', bx - 0.12, 1.64, bz - 1.2);
+        G.box(0.04, 0.3, 0.9, '#2a2d33', bx + 0.27, 1.22, bz - 1.2);
+        for (const dz of [-0.28, 0.28]) { G.box(0.14, 0.1, 0.14, '#3a3a3e', bx + 0.32, 1.22, bz - 1.2 + dz); G.box(0.26, 0.04, 0.05, '#1c1c1f', bx + 0.45, 1.2, bz - 1.2 + dz); G.box(0.1, 0.08, 0.1, '#f2f2ee', bx + 0.35, 1.02, bz - 1.2 + dz); }
+        for (let k = 0; k < 5; k++) G.box(0.12, 0.08, 0.12, pk(['#f2f2ee', '#7cb8e8', '#d4583a', '#5cc7a0']), bx - 0.3 + (k % 2) * 0.16, 1.72 + Math.floor(k / 2) * 0.08, bz - 1.5 + k * 0.14);   // xícaras em cima da máquina
+        // moedor (corpo preto e funil de vidro com grãos)
+        G.box(0.3, 0.45, 0.3, '#1c1c1f', bx - 0.15, 1.02, bz - 0.15); G.box(0.24, 0.26, 0.24, '#6b4a2c', bx - 0.15, 1.47, bz - 0.15); G.box(0.28, 0.04, 0.28, '#1c1c1f', bx - 0.15, 1.73, bz - 0.15);
+        // jarras de leite inox, xaropes coloridos e pilhas de xícaras
+        for (const dz of [0.35, 0.55]) G.box(0.14, 0.2, 0.14, '#d8dde2', bx + 0.25, 1.02, bz + dz);
+        for (let k = 0; k < 5; k++) { const c = ['#c8352b', '#f2c230', '#7a4a24', '#6cae3e', '#d95fa0'][k]; G.box(0.09, 0.32, 0.09, c, bx - 0.35, 1.02, bz + 0.4 + k * 0.14); G.box(0.05, 0.06, 0.05, '#1c1c1f', bx - 0.35, 1.34, bz + 0.4 + k * 0.14); }
+        for (let k = 0; k < 3; k++) for (let a = 0; a < 3 + k % 2; a++) G.box(0.14, 0.07, 0.14, '#f2f2ee', bx + 0.1, 1.02 + a * 0.075, bz + 1.35 + k * 0.22);
+        G.box(0.4, 0.03, 0.3, '#3a2a1a', bx + 0.2, 1.0, bz + 1.0);                                                       // tapetinho de borracha
+        // prateleira com sacas de café na parede e o quadro de giz com o cardápio
+        G.box(0.3, 0.05, 3.2, '#5b3a22', -9.84, 2.15, bz); for (let k = 0; k < 6; k++) G.box(0.22, 0.34, 0.3, pk(['#8a5a2a', '#c89a5a', '#6a4428', '#e8d8b8']), -9.82, 2.2, bz - 1.25 + k * 0.5);
+        const giz = guardar(texCanvas(64, 40, (g, w, h) => {
+          g.fillStyle = '#1f2a22'; g.fillRect(0, 0, w, h); g.fillStyle = '#6a4428'; g.fillRect(0, 0, w, 2); g.fillRect(0, h - 2, w, 2); g.fillRect(0, 0, 2, h); g.fillRect(w - 2, 0, 2, h);
+          g.fillStyle = '#f2efe6'; g.font = 'bold 7px monospace'; g.fillText('CAFES', 19, 10);
+          g.font = '5px monospace'; ['cafezinho', 'c/ leite', 'cremoso', 'cappuccino'].forEach((t, i) => { g.fillText(t, 5, 18 + i * 6); g.fillRect(50, 15 + i * 6, 8, 1); });
+          g.fillStyle = '#f2c230'; g.fillRect(52, 5, 6, 4); g.fillStyle = '#f2efe6'; g.fillRect(58, 6, 1, 2);
+        }));
+        const qd = new THREE.Mesh(guardar(new THREE.PlaneGeometry(1.7, 1.06)), guardar(new THREE.MeshLambertMaterial({ map: giz }))); qd.rotation.y = Math.PI / 2; qd.position.set(-9.97, 2.9, bz); grupo.add(qd);
+        // luminária pendente em cima da bancada
+        G.box(0.03, 0.7, 0.03, '#1c1c1f', -9.2, 2.9, bz); G.box(0.4, 0.18, 0.4, '#f0a020', -9.2, 2.72, bz);
+        R.extras.push({ x: bx + 1.15, z: bz, r: 1.7, txt: 'Bancada de preparo', acao: 'bancada' });
+      }
+      const ms = [[-6, -1.5], [-2.6, -1.5], [2.6, -1.5], [6, -1.5], [-6, 2.6], [-2.6, 2.6], [2.6, 2.6], [6, 2.6]];
       const lugares = []; for (const [x, z] of ms) lugares.push(...mesa(x, z, '#8a5a2b', 2, '#e8d8b8'));
       for (const i of [0, 3, 6, 9]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
-      R.pessoas.push({ tipo: 'parado', x: 3.6, z: -3.2, yaw: Math.PI / 2, fem: rnd() < 0.5 });
-      for (const [x, z] of [[-7.2, -5.2], [7.2, -5.2], [7.2, 4.8]]) { G.box(0.5, 0.5, 0.5, '#9a6a44', x, 0, z); G.box(0.7, 0.8, 0.7, '#3f8a3a', x, 0.5, z); bloq(x, z, 0.6, 0.6); }
+      for (const [x, z] of [[-9.2, -6.2], [9.2, -6.2], [9.2, 6.2], [-9.2, 6.2]]) { G.box(0.5, 0.5, 0.5, '#9a6a44', x, 0, z); G.box(0.7, 0.8, 0.7, '#3f8a3a', x, 0.5, z); bloq(x, z, 0.6, 0.6); }
     } else if (nome === 'pizzaria') {
       sala(18, 14, 3.8, '#f4efe2', '#c8b89a', '#b8a888', 0.7);
       placa('PIZZARIA', '#c8352b', '#f4f4ec', 5, 0.8, 0, 3.0, -6.96);
