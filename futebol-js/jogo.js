@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 5.4.0
+   FUTEBOL JS · jogo.js · versão 5.4.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.4.1 — pixel art dos 50 produtos do mercado refeita em 24 x 24 (mercado.js). O jogo.js só mudou o número.
+
+   Novidades da versão 5.4.1 — pixel art dos 50 produtos do mercado refeita em 24 x 24, com nomes de brincadeira (mercado.js).
+     O jogo.js só mudou o número.
+
    Novidades da versão 5.4.0 — o mercado de verdade (mercado.js) e ajustes na cidade (cidade.js). O jogo.js só mudou o número.
 
    Novidades da versão 5.3.1 — o trabalho no mercado (mercado.js, novo arquivo baixado pela cidade, como o interiores.js):
@@ -635,7 +640,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '5.4.0';
+const VERSAO_JOGO = '5.4.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {

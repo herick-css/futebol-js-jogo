@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   5.4.1 — pixel art dos produtos refeita em 24 x 24 (como os cafés): volume com luz e sombra, tampas, rótulos com a "marca" em letrinhas
+           3 x 5 (FONTE) e um ícone (FIGURAS: folha, gota, boi, peixe, vaca...), janelinha mostrando o produto nos pacotes e sacos, frutas
+           com casca e textura (a melancia com fatia, o mamão cortado, o abacaxi com coroa...). Nenhum nome de marca de verdade: só piadas
+           (Guaraná Deserto, Café Martelo, Repelente Carapanã Nunca Mais...), e os cartões são de bancos inventados.
    5.4.0 — o mercado de verdade
    - HORÁRIO: o mercado abre das 8h às 22h. O turno do jogador (quem escolheu o mercado na Fase 2) é das 14h às 22h, de segunda a
      sexta, a partir do 2º dia (TURNO_*).
@@ -12,11 +16,11 @@
      1º dia), às 15h ele libera a Rosa e fica no caixa até as 22h.
    - Os dois têm CASA na cidade (cidade.js: a do Cadu é pertinho do mercado, a da Rosa do outro lado da avenida) e andam pela rua no
      horário (api.criarRuaAgendada, igual à Lúcia). Lá dentro, a posição deles sai do relógio (estadoCadu/estadoRosa).
-   - 50 PRODUTOS em pixel art 16 x 16 (PRODUTOS + FORMAS), com marcas "de brincadeira" bem do Norte. Preços QUEBRADOS, em centavos:
+   - 50 PRODUTOS em pixel art (PRODUTOS + FORMAS), com nomes de brincadeira bem do Norte (nenhuma marca de verdade). Preços QUEBRADOS, em centavos:
      no CARTÃO paga o valor exato (digita na maquininha com os centavos); em DINHEIRO o total é arredondado para múltiplo de 5 centavos
      (não existe moeda de 1 centavo) e o troco usa notas (2, 5, 10, 20, 50) e MOEDAS (5, 10, 25 e 50 centavos e 1). Às vezes o cliente
      dá os centavos em moeda para facilitar o troco.
-   - CARTÃO: animação do cartão chegando perto da maquininha (ondinhas de aproximação). 5 cartões diferentes (CARTOES).
+   - CARTÃO: animação do cartão chegando perto da maquininha (ondinhas de aproximação). 5 cartões de bancos inventados (CARTOES).
    - Clientes: andam por uma GRADE de navegação da loja (caminho/andarM: não atravessam gôndola nem "teleportam"; quem fica preso
      atrás de alguém espera, contorna e, se precisar, passa por ele). Não entra cliente novo depois das 21h (H_ULTIMO_CLIENTE).
    - FALTA DE PRODUTO: cliente que quer algo de uma seção vazia = −3 fakes no fim do turno (FALTA). Troco errado continua −5.
@@ -152,113 +156,285 @@
   const NOME_SEC = { higiene: 'Higiênico', comida: 'Comida', bebida: 'Bebida', fruta: 'Fruta' };
   const ONDE_SEC = { higiene: 'na gôndola de higiênicos', comida: 'na gôndola de comida', bebida: 'no freezer de bebidas', fruta: 'na ilha de frutas' };
   const COR_SEC = { higiene: '#3a64b8', comida: '#e8742a', bebida: '#3fb7b0', fruta: '#6cae3e' };
-  // ------------------------------------------------------------------ (5.4.0) PIXEL ART DOS PRODUTOS (16 x 16, contorno automático)
-  //   Cada produto: [nome, preço em CENTAVOS, forma, cores { a: principal, b: rótulo/2ª cor, c: detalhe (tampa, folha...) }].
-  //   As formas desenham numa grade 16 x 16; depois o contorno escuro é posto em volta de tudo (contornar).
-  const ESCURO = '#2a1206';
-  function grade() { return { px: new Array(256).fill(null), r(x, y, w, h, cor) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (i >= 0 && i < 16 && j >= 0 && j < 16) this.px[j * 16 + i] = cor; }, p(x, y, cor) { this.r(x, y, 1, 1, cor); } }; }
+  // ------------------------------------------------------------------ (5.4.1) PIXEL ART DOS PRODUTOS — 24 x 24, no capricho (como os cafés)
+  //   Os nomes são PIADAS, sem usar marca de verdade (ex.: Guaraná Deserto, Repelente Carapanã Nunca Mais, Café Martelo).
+  //   Cada produto: [nome, preço em CENTAVOS, forma, cores]. cores = { a: principal, b: rótulo / 2ª cor, c: detalhe (tampa, folha...),
+  //   t: cor das letras do rótulo, l: 1 a 3 letras da "marca", i: ícone do rótulo (FIGURAS), ic: cor do ícone }.
+  //   As formas têm luz vindo do alto à esquerda (brilho à esquerda, sombra à direita), volume de cilindro/esfera e contorno escuro
+  //   automático (contornar). Letras: fonte 3 x 5 (FONTE). Tudo é desenhado uma vez e guardado (canvasProduto).
+  const N = 24, ESCURO = '#2a1206';
   const clarear = (hex, k) => { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255; r = Math.round(r + (255 - r) * k); g = Math.round(g + (255 - g) * k); b = Math.round(b + (255 - b) * k); return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1); };
   const escurecer = (hex, k) => { const n = parseInt(hex.slice(1), 16); const f = (v) => Math.round(v * (1 - k)); return '#' + ((1 << 24) | (f(n >> 16) << 16) | (f((n >> 8) & 255) << 8) | f(n & 255)).toString(16).slice(1); };
+  function grade() {
+    return {
+      px: new Array(N * N).fill(null),
+      p(x, y, cor) { x |= 0; y |= 0; if (x >= 0 && x < N && y >= 0 && y < N && cor) this.px[y * N + x] = cor; },
+      r(x, y, w, h, cor) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.p(i, j, cor); },
+      tem(x, y) { return x >= 0 && x < N && y >= 0 && y < N && !!this.px[y * N + x]; },
+      // cilindro em pé: brilho nas 1–2 colunas da esquerda, sombra nas da direita
+      cil(x, y, w, h, cor) { for (let i = 0; i < w; i++) { const u = (i + 0.5) / w; this.r(x + i, y, 1, h, u < 0.16 ? clarear(cor, 0.45) : u < 0.3 ? clarear(cor, 0.18) : u > 0.82 ? escurecer(cor, 0.32) : u > 0.68 ? escurecer(cor, 0.14) : cor); } },
+      // esfera/elipse com luz no alto à esquerda (3 tons + brilhinho)
+      bola(cx, cy, rx, ry, cor, so) {
+        for (let j = Math.floor(cy - ry); j <= Math.ceil(cy + ry); j++) for (let i = Math.floor(cx - rx); i <= Math.ceil(cx + rx); i++) {
+          const dx = (i + 0.5 - cx) / rx, dy = (j + 0.5 - cy) / ry, d = dx * dx + dy * dy; if (d > 1) continue;
+          if (so && !so(i, j)) continue;
+          const luz = -dx * 0.6 - dy * 0.7 + (1 - d) * 0.5;
+          this.p(i, j, luz > 0.75 ? clarear(cor, 0.55) : luz > 0.35 ? clarear(cor, 0.2) : luz < -0.45 ? escurecer(cor, 0.35) : luz < -0.1 ? escurecer(cor, 0.15) : cor);
+        }
+      },
+      texto(txt, x, y, cor) { let cx = x; for (const ch of String(txt).toUpperCase()) { const f = FONTE[ch]; if (f) f.forEach((lin, j) => { for (let i = 0; i < 3; i++) if (lin[i] === '1') this.p(cx + i, y + j, cor); }); cx += 4; } },
+      figura(nome, x, y, cor) { const f = FIGURAS[nome]; if (f) f.forEach((lin, j) => { for (let i = 0; i < lin.length; i++) if (lin[i] !== '.') this.p(x + i, y + j, lin[i] === 'o' ? cor : lin[i] === 'w' ? '#ffffff' : lin[i] === 'k' ? ESCURO : cor); }); },
+    };
+  }
+  const FONTE = {
+    A: ['010', '101', '111', '101', '101'], B: ['110', '101', '110', '101', '110'], C: ['011', '100', '100', '100', '011'], D: ['110', '101', '101', '101', '110'],
+    E: ['111', '100', '110', '100', '111'], F: ['111', '100', '110', '100', '100'], G: ['011', '100', '101', '101', '011'], H: ['101', '101', '111', '101', '101'],
+    I: ['111', '010', '010', '010', '111'], J: ['001', '001', '001', '101', '010'], K: ['101', '101', '110', '101', '101'], L: ['100', '100', '100', '100', '111'],
+    M: ['101', '111', '111', '101', '101'], N: ['110', '101', '101', '101', '101'], O: ['010', '101', '101', '101', '010'], P: ['110', '101', '110', '100', '100'],
+    Q: ['010', '101', '101', '110', '011'], R: ['110', '101', '110', '101', '101'], S: ['011', '100', '010', '001', '110'], T: ['111', '010', '010', '010', '010'],
+    U: ['101', '101', '101', '101', '111'], V: ['101', '101', '101', '101', '010'], X: ['101', '101', '010', '101', '101'], Y: ['101', '101', '010', '010', '010'],
+    Z: ['111', '001', '010', '100', '111'], 0: ['111', '101', '101', '101', '111'], 1: ['010', '110', '010', '010', '111'], 2: ['110', '001', '010', '100', '111'],
+    5: ['111', '100', '110', '001', '110'], '+': ['000', '010', '111', '010', '000'], '!': ['010', '010', '010', '000', '010'],
+  };
+  const FIGURAS = {                    // ícones 5 x 5 para o rótulo ('o' = cor do ícone, 'w' = branco, 'k' = contorno)
+    folha: ['..oo.', '.ooo.', 'oooo.', '.oo..', 'o....'], gota: ['..o..', '.ooo.', 'ooooo', 'ooooo', '.ooo.'], estrela: ['..o..', 'ooooo', '.ooo.', '.o.o.', 'o...o'],
+    coracao: ['oo.oo', 'ooooo', 'ooooo', '.ooo.', '..o..'], sol: ['o.o.o', '.ooo.', 'ooooo', '.ooo.', 'o.o.o'], boi: ['o...o', 'oooo.', '.ooo.', '.ooo.', '..o..'],
+    peixe: ['.....', 'o.oo.', 'oooow', 'o.oo.', '.....'], raio: ['..oo.', '.oo..', 'oooo.', '..oo.', '.oo..'], flor: ['.o.o.', 'ooooo', '.owo.', 'ooooo', '.o.o.'],
+    dente: ['ooooo', 'ooooo', 'ooooo', 'o.o.o', 'o...o'], bolha: ['.oo..', 'o..o.', 'o..o.', '.oo.o', '...o.'], grao: ['.oo..', 'oooo.', 'oooo.', '.ooo.', '..o..'],
+    onda: ['.....', 'oo..o', '..oo.', 'oo..o', '..oo.'], vaca: ['ow.wo', 'ooooo', 'okoko', 'ooooo', '.ooo.'], casa: ['..o..', '.ooo.', 'ooooo', 'o.o.o', 'o.ooo'],
+    bebe: ['.ooo.', 'owowo', 'ooooo', 'o.o.o', '.ooo.'], chama: ['..o..', '.oo..', '.ooo.', 'ooooo', '.ooo.'], cruz: ['.o.', 'ooo', '.o.'],
+  };
+  // o rótulo: faixa com sombra de cilindro, as letras da marca e o ícone
+  function rotulo(G, x, y, w, h, c, slot) {
+    G.cil(x, y, w, h, c.b);
+    G.r(x, y, w, 1, escurecer(c.b, 0.25)); G.r(x, y + h - 1, w, 1, escurecer(c.b, 0.25));
+    marcar(G, x, y, w, h, c, slot);
+  }
+  // as letras e o ícone da marca, centralizados, SEM passar da largura do rótulo: se não couber tudo, fica só a marca (até 3 letras)
+  //   ordem: ícone + marca inteira no rótulo → marca no rótulo e o ícone no "slot" da forma (outro lugar da embalagem) →
+  //   ícone + marca encurtada (2 letras) → só a marca encurtada
+  function marcar(G, x, y, w, h, c, slot) {
+    const livre = w - 2, larg = (n) => (n ? n * 4 - 1 : 0), cabe = (n, ic) => larg(n) + (ic ? (n ? 6 : 5) : 0) <= livre;
+    let letras = c.l || '', ico = !!c.i;
+    if (ico && !cabe(letras.length, true)) {
+      if (slot) { G.figura(c.i, slot[0], slot[1], c.ic || c.t || '#ffffff'); ico = false; }
+      else if (letras.length > 2 && cabe(2, true)) letras = letras.slice(0, 2);
+      else ico = false;
+    }
+    while (letras.length && larg(letras.length) > livre) letras = letras.slice(0, -1);
+    if (!letras && c.i && livre >= 5) ico = true;
+    const total = larg(letras.length) + (ico ? (letras ? 6 : 5) : 0);
+    let cx = x + Math.floor((w - total) / 2); const cy = y + Math.max(1, Math.floor((h - 5) / 2));
+    if (ico) { G.figura(c.i, cx, cy, c.ic || c.t || '#ffffff'); cx += letras ? 6 : 5; }
+    if (letras) G.texto(letras, cx, cy, c.t || '#ffffff');
+  }
   const FORMAS = {
-    garrafa(G, c) { G.r(6, 0, 4, 2, c.c); G.r(6, 2, 4, 3, c.a); G.r(5, 4, 6, 1, c.a); G.r(4, 5, 8, 10, c.a); G.r(4, 8, 8, 4, c.b); G.r(5, 6, 1, 8, clarear(c.a, 0.45)); G.r(10, 6, 1, 8, escurecer(c.a, 0.25)); G.r(6, 9, 4, 2, clarear(c.b, 0.5)); },
-    lata(G, c) { G.r(4, 1, 8, 1, '#c9ced4'); G.r(4, 2, 8, 12, c.a); G.r(4, 14, 8, 1, '#9aa0a6'); G.r(4, 6, 8, 4, c.b); G.r(5, 2, 1, 12, clarear(c.a, 0.45)); G.r(10, 2, 1, 12, escurecer(c.a, 0.3)); G.r(6, 7, 4, 2, c.c); },
-    caixa(G, c) { G.r(2, 3, 12, 11, c.a); G.r(2, 3, 12, 2, c.b); G.r(4, 7, 8, 4, c.b); G.r(5, 8, 6, 2, c.c); G.r(2, 13, 12, 1, escurecer(c.a, 0.3)); G.r(3, 5, 1, 8, clarear(c.a, 0.4)); },
-    caixinha(G, c) { G.r(5, 3, 6, 11, c.a); G.r(5, 3, 6, 2, c.b); G.r(5, 8, 6, 3, c.b); G.r(9, 0, 1, 4, '#f2f2ee'); G.r(10, 0, 1, 1, '#f2f2ee'); G.r(6, 9, 3, 1, c.c); G.r(5, 5, 1, 8, clarear(c.a, 0.4)); },
-    pacote(G, c) { G.r(4, 1, 8, 1, escurecer(c.a, 0.2)); for (let i = 4; i < 12; i += 2) G.p(i, 0, escurecer(c.a, 0.2)); G.r(3, 2, 10, 12, c.a); G.r(4, 14, 8, 1, c.a); G.r(3, 6, 10, 4, c.b); G.r(5, 7, 6, 2, c.c); G.r(4, 3, 1, 10, clarear(c.a, 0.4)); },
-    saco(G, c) { G.r(3, 2, 10, 1, escurecer(c.a, 0.2)); G.r(2, 3, 12, 11, c.a); G.r(3, 14, 10, 1, c.a); G.r(4, 5, 8, 6, c.b); for (let j = 6; j < 10; j++) for (let i = 5; i < 11; i++) if ((i + j) % 2) G.p(i, j, c.c); G.r(3, 4, 1, 9, clarear(c.a, 0.4)); },
-    pote(G, c) { G.r(3, 5, 10, 2, c.c); G.r(4, 4, 8, 1, c.c); G.r(3, 7, 10, 7, c.a); G.r(3, 9, 10, 3, c.b); G.r(4, 14, 8, 1, escurecer(c.a, 0.3)); G.r(4, 8, 1, 5, clarear(c.a, 0.4)); },
-    tubo(G, c) { G.r(1, 6, 2, 4, c.c); G.r(3, 5, 10, 6, c.a); G.r(13, 4, 2, 8, escurecer(c.a, 0.2)); G.r(5, 6, 6, 3, c.b); G.r(3, 5, 10, 1, clarear(c.a, 0.45)); },
-    barra(G, c) { G.r(2, 5, 12, 7, c.a); G.r(3, 4, 10, 1, c.a); G.r(3, 12, 10, 1, escurecer(c.a, 0.25)); G.r(4, 7, 8, 3, c.b); G.r(3, 5, 10, 1, clarear(c.a, 0.5)); },
-    rolos(G, c) { for (const [x, y] of [[2, 2], [8, 2], [2, 8], [8, 8]]) { G.r(x, y, 6, 6, c.a); G.r(x + 2, y + 2, 2, 2, c.c); G.p(x + 1, y + 1, clarear(c.a, 0.6)); } G.r(2, 6, 12, 1, c.b); },
-    frasco(G, c) { G.r(6, 0, 4, 3, c.c); G.r(7, 3, 2, 1, c.c); G.r(5, 4, 6, 11, c.a); G.r(5, 7, 6, 4, c.b); G.r(6, 5, 1, 9, clarear(c.a, 0.45)); },
-    spray(G, c) { G.r(6, 0, 4, 2, c.c); G.r(5, 2, 6, 1, '#c9ced4'); G.r(5, 3, 6, 12, c.a); G.r(5, 6, 6, 5, c.b); G.r(6, 4, 1, 10, clarear(c.a, 0.45)); G.r(9, 7, 1, 3, c.c); },
-    bandeja(G, c) { G.r(1, 6, 14, 7, c.a); for (const x of [2, 6, 10]) for (const y of [5, 8]) { G.r(x, y, 3, 3, c.b); G.p(x, y, clarear(c.b, 0.5)); } G.r(1, 12, 14, 1, escurecer(c.a, 0.3)); },
-    pao(G, c) { G.r(2, 4, 12, 10, c.b); G.r(3, 3, 10, 1, c.b); G.r(3, 5, 10, 7, c.a); G.r(4, 4, 8, 1, clarear(c.a, 0.3)); G.r(2, 10, 12, 2, c.c); },
-    redonda(G, c) { G.r(5, 3, 6, 1, c.a); G.r(3, 4, 10, 1, c.a); G.r(2, 5, 12, 6, c.a); G.r(3, 11, 10, 2, c.a); G.r(5, 13, 6, 1, c.a); G.r(7, 0, 1, 4, '#6a4428'); G.r(8, 1, 3, 2, c.c); G.r(4, 5, 2, 2, clarear(c.a, 0.5)); G.r(11, 9, 1, 2, escurecer(c.a, 0.3)); },
-    banana(G, c) { const cor = c.a; for (let i = 0; i < 3; i++) { const dy = i * 2; G.r(2, 9 - dy, 3, 2, cor); G.r(4, 10 - dy, 4, 2, cor); G.r(8, 9 - dy, 3, 2, cor); G.r(11, 7 - dy, 2, 2, cor); G.r(13, 5 - dy, 1, 2, cor); } G.r(12, 1, 2, 2, c.c); G.r(1, 9, 1, 2, '#3a2a12'); G.r(4, 10, 4, 1, clarear(cor, 0.4)); },
-    mamao(G, c) { G.r(5, 1, 6, 2, c.a); G.r(3, 3, 10, 9, c.a); G.r(4, 12, 8, 2, c.a); G.r(6, 14, 4, 1, c.a); G.r(5, 4, 6, 7, c.b); for (const [x, y] of [[7, 6], [8, 7], [7, 8], [8, 9]]) G.p(x, y, ESCURO); G.r(7, 0, 2, 1, c.c); },
-    oval(G, c) { G.r(5, 2, 6, 1, c.a); G.r(3, 3, 10, 10, c.a); G.r(5, 13, 6, 1, c.a); for (const [x, y] of [[5, 5], [9, 4], [7, 8], [11, 9], [4, 10], [9, 11]]) G.p(x, y, c.b); G.r(4, 4, 2, 2, clarear(c.a, 0.35)); G.r(7, 1, 2, 1, c.c); },
-    cacho(G, c) { for (const [x, y] of [[4, 4], [8, 4], [6, 7], [10, 7], [3, 8], [7, 10], [5, 12], [9, 11]]) { G.r(x, y, 3, 3, c.a); G.p(x, y, clarear(c.a, 0.5)); } G.r(7, 0, 1, 4, '#6a4428'); G.r(8, 1, 3, 2, c.c); },
-    abacaxi(G, c) { for (const [x, w] of [[6, 1], [8, 1], [5, 1], [9, 1], [7, 1]]) G.r(x, 0 + (x === 7 ? 0 : 1), w, 4, c.c); G.r(4, 4, 8, 1, c.a); G.r(3, 5, 10, 9, c.a); G.r(4, 14, 8, 1, c.a); for (let j = 6; j < 14; j += 2) for (let i = 4 + (j % 4 ? 1 : 0); i < 12; i += 2) G.p(i, j, c.b); },
-    melancia(G, c) { G.r(1, 4, 14, 1, c.c); G.r(1, 5, 14, 3, c.b); G.r(2, 8, 12, 2, c.b); G.r(4, 10, 8, 2, c.b); G.r(1, 3, 14, 1, '#1f6a2a'); G.r(1, 2, 14, 1, c.a); for (const x of [4, 7, 10, 12]) G.p(x, 6, ESCURO); for (const x of [5, 9]) G.p(x, 8, ESCURO); },
+    garrafa(G, c) {                                   // garrafa de vidro/plástico com tampinha de rosca
+      G.cil(9, 0, 6, 2, c.c); G.r(9, 1, 6, 1, escurecer(c.c, 0.25)); for (let i = 9; i < 15; i += 2) G.p(i, 0, clarear(c.c, 0.3));
+      G.cil(10, 2, 4, 3, c.a); G.cil(9, 5, 6, 1, c.a); G.cil(8, 6, 8, 1, c.a); G.cil(7, 7, 10, 16, c.a);
+      G.r(8, 23, 8, 1, escurecer(c.a, 0.4));
+      rotulo(G, 7, 13, 10, 7, c, [10, 7]);
+      G.r(8, 8, 1, 2, '#ffffff'); G.r(8, 21, 1, 1, clarear(c.a, 0.6));
+    },
+    pet(G, c) {                                       // garrafa PET de 2 litros (refri)
+      G.cil(10, 0, 4, 2, c.c); G.cil(10, 2, 4, 2, clarear(c.a, 0.2)); G.cil(9, 4, 6, 1, c.a); G.cil(7, 5, 10, 2, c.a); G.cil(6, 7, 12, 14, c.a);
+      for (const x of [7, 10, 13, 16]) G.r(x, 21, 2, 2, escurecer(c.a, 0.2)); G.r(6, 21, 1, 1, escurecer(c.a, 0.2));
+      rotulo(G, 6, 12, 12, 7, c, [10, 6]);
+      G.r(7, 7, 1, 3, '#ffffff'); G.r(7, 19, 1, 1, clarear(c.a, 0.5));
+    },
+    lata(G, c) {                                      // latinha com anel de abrir em cima
+      G.r(7, 2, 10, 1, '#9aa0a6'); G.cil(6, 3, 12, 2, '#c9ced4'); G.r(10, 2, 3, 1, '#e8ecef'); G.p(11, 1, '#e8ecef');
+      G.cil(6, 5, 12, 16, c.a); G.cil(6, 21, 12, 1, '#c9ced4'); G.r(7, 22, 10, 1, '#9aa0a6');
+      rotulo(G, 6, 6, 12, 7, c, [10, 14]);
+      G.r(7, 14, 1, 4, clarear(c.a, 0.5));
+    },
+    caixa(G, c) {                                     // caixa em 3/4: frente, lado escuro e tampa clara
+      G.r(3, 3, 15, 2, clarear(c.a, 0.35)); G.r(5, 1, 15, 2, clarear(c.a, 0.45));
+      G.r(3, 5, 15, 17, c.a); G.r(18, 3, 2, 17, escurecer(c.a, 0.35)); G.r(18, 1, 2, 2, escurecer(c.a, 0.15)); G.r(20, 1, 1, 19, escurecer(c.a, 0.45));
+      G.r(3, 5, 15, 2, c.b); rotulo(G, 3, 8, 15, 7, c, [8, 16]);
+      G.r(4, 6, 1, 15, clarear(c.a, 0.3)); G.r(3, 21, 15, 1, escurecer(c.a, 0.3));
+    },
+    caixinha(G, c) {                                  // caixinha de suco/leite (com canudinho) ou caixa alta de leite
+      G.r(14, 0, 1, 5, '#f2f2ee'); G.r(15, 0, 2, 1, '#f2f2ee'); G.p(14, 0, '#e8452f');
+      G.r(7, 3, 9, 2, clarear(c.a, 0.35)); G.r(6, 5, 10, 18, c.a); G.r(16, 4, 2, 18, escurecer(c.a, 0.35)); G.r(16, 3, 1, 1, escurecer(c.a, 0.2));
+      G.r(6, 5, 10, 2, c.b); rotulo(G, 6, 9, 10, 7, c, [8, 17]);
+      G.r(7, 6, 1, 16, clarear(c.a, 0.3)); G.r(6, 22, 10, 1, escurecer(c.a, 0.3));
+    },
+    pacote(G, c) {                                    // pacote de plástico: serrilha em cima e embaixo, janelinha com o produto
+      for (let i = 4; i < 20; i++) { G.p(i, 1, (i % 2) ? escurecer(c.a, 0.2) : null); G.p(i, 22, (i % 2) ? escurecer(c.a, 0.2) : null); }
+      G.r(4, 2, 16, 2, escurecer(c.a, 0.12)); G.r(4, 20, 16, 2, escurecer(c.a, 0.12));
+      G.cil(3, 4, 18, 16, c.a);
+      rotulo(G, 4, 6, 16, 7, c, [14, 14]);
+      G.r(5, 14, 8, 5, ESCURO); G.r(6, 15, 6, 3, c.c || '#f4e0b0'); for (let i = 6; i < 12; i += 2) G.p(i, 15, clarear(c.c || '#f4e0b0', 0.5));
+      G.r(4, 5, 1, 2, '#ffffff');
+    },
+    saco(G, c) {                                      // saco de 5 kg (arroz, feijão, farinha): dobra em cima, janela com os grãos
+      G.r(5, 1, 14, 2, escurecer(c.a, 0.18)); G.r(4, 3, 16, 1, escurecer(c.a, 0.1));
+      G.cil(3, 4, 18, 18, c.a); G.r(4, 22, 16, 1, escurecer(c.a, 0.3));
+      rotulo(G, 3, 5, 18, 7, c, [15, 14]);
+      G.r(5, 13, 9, 7, ESCURO); G.r(6, 14, 7, 5, c.c);
+      for (let j = 14; j < 19; j++) for (let i = 6; i < 13; i++) if ((i * 3 + j * 5) % 4 === 0) G.p(i, j, escurecer(c.c, 0.25)); else if ((i + j * 2) % 7 === 0) G.p(i, j, clarear(c.c, 0.5));
+    },
+    pote(G, c) {                                      // pote com tampa (margarina, iogurte)
+      G.r(5, 5, 14, 1, clarear(c.c, 0.4)); G.cil(4, 6, 16, 3, c.c); G.r(4, 8, 16, 1, escurecer(c.c, 0.3));
+      G.cil(5, 9, 14, 12, c.a); G.cil(6, 21, 12, 1, escurecer(c.a, 0.2));
+      rotulo(G, 5, 10, 14, 6, c, [10, 16]);
+    },
+    tubo(G, c) {                                      // creme dental: tubo deitado, tampa à esquerda e a ponta prensada à direita
+      G.cil(1, 9, 3, 6, c.c); G.r(1, 10, 3, 1, clarear(c.c, 0.4));
+      G.r(4, 8, 15, 8, c.a); G.r(4, 8, 15, 2, clarear(c.a, 0.4)); G.r(4, 14, 15, 2, escurecer(c.a, 0.3));
+      G.r(19, 7, 3, 10, escurecer(c.a, 0.15)); for (let j = 7; j < 17; j += 2) G.p(21, j, escurecer(c.a, 0.4));
+      G.r(5, 9, 14, 6, c.b); G.r(5, 9, 14, 1, clarear(c.b, 0.3)); marcar(G, 5, 9, 14, 6, c);
+    },
+    barra(G, c) {                                     // sabonete na embalagem
+      G.r(3, 7, 18, 2, clarear(c.a, 0.4)); G.r(2, 9, 20, 9, c.a); G.r(2, 16, 20, 2, escurecer(c.a, 0.25)); G.r(21, 8, 1, 9, escurecer(c.a, 0.35));
+      G.r(3, 10, 18, 6, c.b); G.r(3, 10, 18, 1, clarear(c.b, 0.3)); marcar(G, 3, 10, 18, 6, c);
+      G.r(3, 9, 2, 1, '#ffffff');
+    },
+    rolos(G, c) {                                     // fardo de papel higiênico (4 rolos no plástico, faixa da marca)
+      for (const [x, y] of [[2, 3], [12, 3], [2, 13], [12, 13]]) { G.bola(x + 5, y + 4.5, 5, 4.6, c.a); G.bola(x + 5, y + 4.5, 1.6, 1.4, c.c); G.p(x + 5, y + 4, escurecer(c.c, 0.4)); }
+            G.r(2, 9, 20, 6, c.b); G.r(2, 9, 20, 1, clarear(c.b, 0.3)); marcar(G, 2, 9, 20, 6, c);
+    },
+    frasco(G, c) {                                    // frasco de xampu/detergente com tampa de bico
+      G.cil(10, 0, 4, 2, c.c); G.cil(9, 2, 6, 2, c.c); G.r(9, 3, 6, 1, escurecer(c.c, 0.3));
+      G.cil(8, 4, 8, 1, c.a); G.cil(7, 5, 10, 17, c.a); G.r(8, 22, 8, 1, escurecer(c.a, 0.35));
+      rotulo(G, 7, 9, 10, 7, c, [10, 17]);
+      G.r(8, 6, 1, 2, '#ffffff');
+    },
+    spray(G, c) {                                     // desodorante/repelente aerossol: tampa, válvula e lata alta
+      G.cil(9, 0, 6, 1, escurecer(c.c, 0.1)); G.cil(8, 1, 8, 4, c.c); G.r(14, 2, 2, 1, '#c9ced4');
+      G.cil(8, 5, 8, 1, '#c9ced4'); G.cil(8, 6, 8, 16, c.a); G.cil(8, 22, 8, 1, '#9aa0a6');
+      rotulo(G, 8, 9, 8, 7, c, [10, 17]);
+      G.r(9, 7, 1, 2, '#ffffff');
+    },
+    bandeja(G, c) {                                   // bandeja de ovos (2 x 3) com tampa aberta
+      G.r(2, 3, 20, 5, clarear(c.a, 0.2)); G.r(2, 7, 20, 1, escurecer(c.a, 0.2)); if (c.l) G.texto(c.l, 8, 3, c.t || ESCURO);
+      G.r(1, 13, 22, 8, c.a); G.r(1, 20, 22, 1, escurecer(c.a, 0.35));
+      for (const x of [4, 11, 18]) for (const y of [11, 16]) G.bola(x, y, 3, 2.6, c.b);
+    },
+    pao(G, c) {                                       // pão de forma no saquinho (as fatias e o lacre)
+      G.r(9, 0, 6, 2, c.c); G.r(11, 2, 2, 2, c.c);
+      G.r(4, 4, 16, 18, clarear(c.b, 0.3)); G.r(3, 6, 18, 16, c.b);
+      for (let k = 0; k < 4; k++) { G.bola(7 + k * 3.4, 12, 3.2, 4, c.a); }
+      G.r(4, 16, 16, 5, clarear(c.a, 0.3)); for (let i = 5; i < 19; i += 3) G.r(i, 16, 1, 5, escurecer(c.a, 0.15));
+      rotulo(G, 3, 17, 18, 5, { b: c.c, t: '#ffffff', l: c.l, i: c.i, ic: c.ic });
+      G.r(4, 7, 1, 8, '#ffffff');
+    },
+    maca(G, c) { G.bola(12, 14, 8, 7.5, c.a); G.r(11, 3, 2, 5, '#6a4428'); G.r(13, 4, 4, 2, c.c); G.r(14, 3, 3, 1, clarear(c.c, 0.3)); G.p(12, 7, escurecer(c.a, 0.4)); },
+    laranja(G, c) { G.bola(12, 13, 9, 9, c.a); for (let j = 6; j < 21; j += 2) for (let i = 5; i < 20; i += 3) if (G.tem(i, j) && (i + j) % 4 === 0) G.p(i, j, escurecer(c.a, 0.12)); G.r(11, 3, 2, 2, '#6a4428'); G.r(13, 2, 4, 2, c.c); },
+    banana(G, c) {                                    // cacho com 3 bananas curvas
+      for (let k = 0; k < 3; k++) {
+        const oy = k * 3;
+        for (let i = 0; i < 18; i++) { const u = i / 17, y = 15 - oy + Math.round(-Math.sin(u * Math.PI) * 4 + u * -3); G.r(3 + i, y, 1, 3, c.a); G.p(3 + i, y, clarear(c.a, 0.4)); G.p(3 + i, y + 2, escurecer(c.a, 0.3)); }
+      }
+      G.r(19, 3, 3, 4, c.c); G.r(20, 2, 2, 1, escurecer(c.c, 0.3)); G.r(2, 13, 2, 2, '#3a2a12'); G.r(2, 10, 2, 2, '#3a2a12'); G.r(2, 7, 2, 2, '#3a2a12');
+      for (const [x, y] of [[8, 14], [13, 9], [10, 6]]) G.p(x, y, '#8a6a1a');
+    },
+    mamao(G, c) {                                     // um mamão inteiro atrás e a metade cortada na frente
+      G.bola(9, 9, 6, 8, c.c); G.bola(9, 9, 5, 7, c.a, (i, j) => j > 7);
+      G.bola(15, 15, 7, 7.5, c.a); G.bola(15, 15, 5.2, 5.8, c.b); G.bola(15, 15.5, 2.4, 3.2, '#3a2213');
+      for (const [x, y] of [[14, 14], [16, 15], [15, 17], [14, 16]]) G.p(x, y, '#1c1c1f'); G.p(14, 13, '#5a4a3a');
+    },
+    cupuacu(G, c) {                                   // cupuaçu: oval marrom, casca aveludada
+      G.bola(12, 13, 8, 9.5, c.a);
+      for (let j = 4; j < 23; j++) for (let i = 4; i < 21; i++) if (G.tem(i, j) && ((i * 7 + j * 13) % 9 === 0)) G.p(i, j, escurecer(c.a, 0.25)); else if (G.tem(i, j) && ((i * 5 + j * 3) % 11 === 0)) G.p(i, j, clarear(c.a, 0.25));
+      G.r(11, 1, 2, 3, '#4a3018'); G.r(13, 1, 4, 2, c.c);
+    },
+    tucuma(G, c) {                                    // tucumã: um cacho de frutinhas laranja
+      for (const [x, y] of [[8, 8], [14, 8], [5, 13], [11, 13], [17, 13], [8, 18], [14, 18]]) G.bola(x, y, 3.4, 3.2, c.a);
+      for (const [x, y] of [[8, 8], [14, 8], [5, 13], [11, 13], [17, 13], [8, 18], [14, 18]]) G.p(x + 1, y + 1, escurecer(c.a, 0.45));
+      G.r(11, 1, 2, 5, '#6a4428'); G.r(13, 2, 4, 2, c.c);
+    },
+    abacaxi(G, c) {                                   // coroa de folhas e casca em losangos
+      for (const [x, h] of [[8, 5], [10, 7], [12, 8], [14, 7], [16, 5]]) { G.r(x, 8 - h + 0, 1, h, c.c); G.r(x + 1, 8 - h + 1, 1, h - 1, escurecer(c.c, 0.25)); }
+      G.bola(12, 15.5, 7, 7.5, c.a);
+      for (let j = 9; j < 23; j++) for (let i = 5; i < 20; i++) if (G.tem(i, j) && j > 8 && ((i + j) % 4 === 0 || (i - j + 40) % 4 === 0)) G.p(i, j, c.b);
+    },
+    melancia(G, c) {                                  // uma melancia inteira atrás e uma fatia na frente
+      G.bola(8, 9, 7, 6, c.a); for (let i = 2; i < 15; i += 3) G.r(i, 4, 1, 10, escurecer(c.a, 0.3));
+      G.bola(8, 9, 7, 6, c.a, (i, j) => (i + j) % 3 !== 0 && false);
+      for (let j = 0; j < 10; j++) { const w = 22 - j * 2; const x = 2 + j; G.r(x, 12 + j, w, 1, j === 0 ? c.c : c.b); }
+      for (let j = 0; j < 10; j++) { const x = 2 + j, w = 22 - j * 2; G.p(x, 12 + j, c.a); G.p(x + w - 1, 12 + j, c.a); }
+      G.r(2, 11, 20, 1, c.a); G.r(3, 12, 18, 1, c.c);
+      for (const [x, y] of [[7, 14], [11, 14], [15, 14], [9, 16], [13, 16], [11, 18]]) G.p(x, y, ESCURO);
+    },
   };
   function contornar(G) {
     const v = G.px.slice();
-    for (let j = 0; j < 16; j++) for (let i = 0; i < 16; i++) {
-      if (v[j * 16 + i]) continue;
-      const viz = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const x = i + dx, y = j + dy; return x >= 0 && x < 16 && y >= 0 && y < 16 && v[y * 16 + x] && v[y * 16 + x] !== ESCURO; });
-      if (viz) G.px[j * 16 + i] = ESCURO;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      if (v[j * N + i]) continue;
+      if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => { const x = i + dx, y = j + dy; return x >= 0 && x < N && y >= 0 && y < N && v[y * N + x] && v[y * N + x] !== ESCURO; })) G.px[j * N + i] = ESCURO;
     }
   }
-  const PRODUTOS = {          // [nome, preço em centavos, forma, { a, b, c }]
+  const PRODUTOS = {          // [nome, preço em centavos, forma, { a, b, c, t, l, i, ic }]
     higiene: [
-      ['Sabonete Dovinho', 349, 'barra', { a: '#f2f2ee', b: '#3a64b8', c: '#f2c230' }],
-      ['Papel Higiênico Nevasca', 1290, 'rolos', { a: '#f6f6f2', b: '#3fa0d8', c: '#c9ced4' }],
-      ['Creme Dental Colgado', 487, 'tubo', { a: '#e8452f', b: '#f2f2ee', c: '#f2f2ee' }],
-      ['Xampu Sedosa', 1179, 'frasco', { a: '#d95fa0', b: '#f6d2e6', c: '#7a4fb0' }],
-      ['Desodorante Rexoninha', 1399, 'spray', { a: '#2a72d6', b: '#f2f2ee', c: '#1c1c1f' }],
-      ['Sabão em Pó Omô', 1689, 'caixa', { a: '#3a64b8', b: '#e8452f', c: '#f2f2ee' }],
-      ['Detergente Ypezinho', 259, 'frasco', { a: '#f2c230', b: '#2e8a4a', c: '#2e8a4a' }],
-      ['Esponja Bombrilha', 389, 'pacote', { a: '#c8352b', b: '#f2c230', c: '#8c9199' }],
-      ['Fralda Pampero', 3990, 'pacote', { a: '#7ab8d8', b: '#f2f2ee', c: '#f2c230' }],
-      ['Repelente Off-Igarapé', 1549, 'spray', { a: '#1f7a4d', b: '#f2c230', c: '#1c1c1f' }],
-      ['Água Sanitária Q-Boa Demais', 579, 'garrafa', { a: '#f2f2ee', b: '#3a64b8', c: '#3a64b8' }],
-      ['Cotonete Cotonetinho', 449, 'caixinha', { a: '#f2f2ee', b: '#7ab8d8', c: '#3a64b8' }],
+      ['Sabonete Pomba Branca', 349, 'barra', { a: '#f2f2ee', b: '#3a64b8', c: '#f2c230', t: '#ffffff', l: 'POM', i: 'gota', ic: '#f2c230' }],
+      ['Papel Higiênico Granizo', 1290, 'rolos', { a: '#f6f6f2', b: '#3fa0d8', c: '#c9ced4', t: '#ffffff', l: 'GRZ', i: 'estrela', ic: '#ffffff' }],
+      ['Creme Dental Sorrisão', 487, 'tubo', { a: '#e8452f', b: '#f2f2ee', c: '#f2f2ee', t: '#e8452f', l: 'SOR', i: 'dente', ic: '#3a64b8' }],
+      ['Xampu Algodão', 1179, 'frasco', { a: '#d95fa0', b: '#f6d2e6', c: '#7a4fb0', t: '#7a4fb0', l: 'ALG', i: 'flor', ic: '#f6d2e6' }],
+      ['Desodorante Sovaco Feliz', 1399, 'spray', { a: '#2a72d6', b: '#f2f2ee', c: '#1c1c1f', t: '#2a72d6', l: 'SF', i: 'onda', ic: '#f2f2ee' }],
+      ['Sabão em Pó Branquíssimo', 1689, 'caixa', { a: '#3a64b8', b: '#e8452f', c: '#f2c230', t: '#ffffff', l: 'BRQ', i: 'bolha', ic: '#ffffff' }],
+      ['Detergente Bolhinha', 259, 'frasco', { a: '#f2c230', b: '#2e8a4a', c: '#2e8a4a', t: '#ffffff', l: 'BOL', i: 'folha', ic: '#8fe04a' }],
+      ['Esponja Brilha-Brilha', 389, 'pacote', { a: '#c8352b', b: '#f2c230', c: '#a8b0b8', t: '#c8352b', l: 'BB', i: 'estrela', ic: '#c8352b' }],
+      ['Fralda Bumbum Sequinho', 3990, 'pacote', { a: '#7ab8d8', b: '#f2f2ee', c: '#f6e6c8', t: '#3a64b8', l: 'BS', i: 'bebe', ic: '#f2a080' }],
+      ['Repelente Carapanã Nunca Mais', 1549, 'spray', { a: '#1f7a4d', b: '#f2c230', c: '#1c1c1f', t: '#1f7a4d', l: 'CNM', i: 'folha', ic: '#f2c230' }],
+      ['Água Sanitária Cloro Forte', 579, 'garrafa', { a: '#f2f2ee', b: '#3a64b8', c: '#3a64b8', t: '#ffffff', l: 'CF', i: 'gota', ic: '#9ec7dd' }],
+      ['Hastes Flexíveis Ouvidinho', 449, 'caixinha', { a: '#f2f2ee', b: '#7ab8d8', c: '#3a64b8', t: '#3a64b8', l: 'OUV', i: 'cruz', ic: '#e8452f' }],
     ],
     comida: [
-      ['Arroz Tio João Grilo', 2490, 'saco', { a: '#f2f2ee', b: '#c8352b', c: '#f4e9c8' }],
-      ['Feijão Kicaldinho', 899, 'saco', { a: '#f2c230', b: '#5a3418', c: '#3a1f0e' }],
-      ['Macarrão Renatinha', 469, 'pacote', { a: '#3a64b8', b: '#f2c230', c: '#f4e0b0' }],
-      ['Biscoito Trakinhas', 329, 'pacote', { a: '#6a3b22', b: '#e8452f', c: '#f2f2ee' }],
-      ['Café Pilãozinho', 1890, 'pacote', { a: '#c8352b', b: '#f2c230', c: '#3a2213' }],
-      ['Miojo Nissim Senhor', 199, 'pacote', { a: '#e8742a', b: '#c8352b', c: '#f2c230' }],
-      ['Achocolatado Nescaú', 879, 'lata', { a: '#f2c230', b: '#5a3418', c: '#2e8a4a' }],
-      ['Leite em Pó Ninhu', 2199, 'lata', { a: '#f2f2ee', b: '#f2c230', c: '#3a64b8' }],
-      ["Farinha d'Uarini", 1250, 'saco', { a: '#f2f2ee', b: '#e8c85a', c: '#f2d27a' }],
-      ['Tucupi da Vovó', 990, 'garrafa', { a: '#f2c230', b: '#f2f2ee', c: '#c8352b' }],
-      ['Castanha do Amazonas', 1590, 'pacote', { a: '#8a5a2a', b: '#f2e6c8', c: '#5a3418' }],
-      ['Bombom Garotinho', 2290, 'caixa', { a: '#f2c230', b: '#c8352b', c: '#6a3b22' }],
-      ['Margarina Quali-Ali', 749, 'pote', { a: '#f2e6a8', b: '#2a72d6', c: '#f2c230' }],
-      ['Sardinha Coqueirinho', 619, 'lata', { a: '#3a64b8', b: '#f2f2ee', c: '#c9ced4' }],
-      ['Goma de Tapioca', 690, 'saco', { a: '#f2f2ee', b: '#8fd06a', c: '#ffffff' }],
-      ['Salsicha Sadinha', 1149, 'pacote', { a: '#c8352b', b: '#f2f2ee', c: '#e8946a' }],
-      ['Ovos da Granja do Seu Zé', 1499, 'bandeja', { a: '#9aa07a', b: '#f4e9d0', c: '#ffffff' }],
-      ['Pão de Forma Pullmano', 899, 'pao', { a: '#d89a5a', b: '#f2f2ee', c: '#3a64b8' }],
+      ['Arroz Sobrinho Zé', 2490, 'saco', { a: '#f2f2ee', b: '#c8352b', c: '#f4e9c8', t: '#ffffff', l: 'SZ', i: 'grao', ic: '#f2c230' }],
+      ['Feijão Caldo Grosso', 899, 'saco', { a: '#f2c230', b: '#5a3418', c: '#4a2410', t: '#f2c230', l: 'CG', i: 'chama', ic: '#e8742a' }],
+      ['Macarrão do Seu Beto', 469, 'pacote', { a: '#3a64b8', b: '#f2c230', c: '#f4e0b0', t: '#3a64b8', l: 'BET', i: 'estrela', ic: '#c8352b' }],
+      ['Biscoito Carinha', 329, 'pacote', { a: '#6a3b22', b: '#e8452f', c: '#f6e6c8', t: '#ffffff', l: 'CAR', i: 'coracao', ic: '#f2c230' }],
+      ['Café Martelo', 1890, 'pacote', { a: '#c8352b', b: '#f2c230', c: '#3a2213', t: '#c8352b', l: 'MAR', i: 'grao', ic: '#5a3418' }],
+      ['Lámen Pressinha', 199, 'pacote', { a: '#e8742a', b: '#c8352b', c: '#f2d27a', t: '#f2c230', l: 'PRE', i: 'chama', ic: '#f2c230' }],
+      ['Achocolatado Chocomotor', 879, 'lata', { a: '#f2c230', b: '#5a3418', c: '#2e8a4a', t: '#f2c230', l: 'CHM', i: 'raio', ic: '#2e8a4a' }],
+      ['Leite em Pó Passarinho', 2199, 'lata', { a: '#f2f2ee', b: '#f2c230', c: '#3a64b8', t: '#3a64b8', l: 'PAS', i: 'casa', ic: '#c8352b' }],
+      ["Farinha d'Uarini", 1250, 'saco', { a: '#f2f2ee', b: '#2e8a4a', c: '#e8c85a', t: '#f2c230', l: 'UAR', i: 'sol', ic: '#f2c230' }],
+      ['Tucupi da Vovó', 990, 'garrafa', { a: '#f2c230', b: '#f2f2ee', c: '#c8352b', t: '#c8352b', l: 'TUC', i: 'coracao', ic: '#c8352b' }],
+      ['Castanha do Amazonas', 1590, 'pacote', { a: '#8a5a2a', b: '#f2e6c8', c: '#c89a5a', t: '#5a3418', l: 'AM', i: 'folha', ic: '#2e8a4a' }],
+      ['Bombom Mocinho', 2290, 'caixa', { a: '#f2c230', b: '#c8352b', c: '#6a3b22', t: '#f2c230', l: 'MOC', i: 'coracao', ic: '#f2f2ee' }],
+      ['Margarina Cremosinha', 749, 'pote', { a: '#f2e6a8', b: '#2a72d6', c: '#f2c230', t: '#ffffff', l: 'CRE', i: 'sol', ic: '#f2c230' }],
+      ['Sardinha Palmeira', 619, 'lata', { a: '#3a64b8', b: '#f2f2ee', c: '#c9ced4', t: '#3a64b8', l: 'PAL', i: 'peixe', ic: '#3a64b8' }],
+      ['Goma de Tapioca', 690, 'saco', { a: '#f2f2ee', b: '#4f9a3f', c: '#fbfbf6', t: '#ffffff', l: 'GOM', i: 'folha', ic: '#c8f0a0' }],
+      ['Salsicha Gordinha', 1149, 'pacote', { a: '#c8352b', b: '#f2f2ee', c: '#e8946a', t: '#c8352b', l: 'GOR', i: 'estrela', ic: '#3a64b8' }],
+      ['Ovos da Granja do Seu Zé', 1499, 'bandeja', { a: '#a8ae88', b: '#f4e2c4', t: '#4a4a2a', l: 'ZE' }],
+      ['Pão de Forma Fofinho', 899, 'pao', { a: '#c8803a', b: '#f6f6f2', c: '#3a64b8', l: 'FOF', i: 'grao', ic: '#f2c230' }],
     ],
     bebida: [
-      ['Guaraná Barezinho', 699, 'garrafa', { a: '#2e8a4a', b: '#c8352b', c: '#c8352b' }],
-      ['Refri Cola-Coca', 899, 'garrafa', { a: '#3a1f0e', b: '#c8352b', c: '#c8352b' }],
-      ['Guaraná Antarticão', 449, 'lata', { a: '#2e8a4a', b: '#f2f2ee', c: '#c8352b' }],
-      ['Suco de Cupuaçu Polpinha', 1299, 'caixinha', { a: '#f2e6c8', b: '#8a5a2a', c: '#2e8a4a' }],
-      ['Água Mineral Igarapé', 249, 'garrafa', { a: '#9ec7dd', b: '#2a72d6', c: '#2a72d6' }],
-      ['Leite Itambézinho', 589, 'caixinha', { a: '#f2f2ee', b: '#2a72d6', c: '#c8352b' }],
-      ['Toddyinho', 329, 'caixinha', { a: '#f2c230', b: '#5a3418', c: '#c8352b' }],
-      ['Energético Red Boi', 1099, 'lata', { a: '#2a3f66', b: '#c9ced4', c: '#c8352b' }],
-      ['Chá Matte Leãozinho', 599, 'garrafa', { a: '#c8902a', b: '#c8352b', c: '#f2c230' }],
-      ['Suco Del Vale do Javari', 849, 'caixinha', { a: '#e8742a', b: '#2e8a4a', c: '#f2c230' }],
-      ['Açaí no Litro', 1500, 'garrafa', { a: '#4a1f4a', b: '#7a4fb0', c: '#2e8a4a' }],
-      ['Iogurte Danadinho', 699, 'pote', { a: '#f6d2e6', b: '#3a64b8', c: '#f2f2ee' }],
+      ['Guaraná Floresta', 699, 'pet', { a: '#2e8a4a', b: '#c8352b', c: '#c8352b', t: '#ffffff', l: 'FLO', i: 'folha', ic: '#8fe04a' }],
+      ['Refri Pretinho Gelado', 899, 'pet', { a: '#3a1f0e', b: '#c8352b', c: '#c8352b', t: '#ffffff', l: 'PG', i: 'onda', ic: '#ffffff' }],
+      ['Guaraná Deserto', 449, 'lata', { a: '#2e8a4a', b: '#f2f2ee', c: '#c8352b', t: '#2e8a4a', l: 'DES', i: 'estrela', ic: '#c8352b' }],
+      ['Suco de Cupuaçu Polpinha', 1299, 'caixinha', { a: '#f2e6c8', b: '#8a5a2a', c: '#2e8a4a', t: '#f2e6c8', l: 'CUP', i: 'folha', ic: '#8fe04a' }],
+      ['Água Mineral Igarapé', 249, 'garrafa', { a: '#9ec7dd', b: '#2a72d6', c: '#2a72d6', t: '#ffffff', l: 'IGA', i: 'onda', ic: '#bfe6f8' }],
+      ['Leite Vaquinha Malhada', 589, 'caixinha', { a: '#f2f2ee', b: '#2a72d6', c: '#c8352b', t: '#ffffff', l: 'VM', i: 'vaca', ic: '#f2f2ee' }],
+      ['Choquinho de Caixinha', 329, 'caixinha', { a: '#f2c230', b: '#5a3418', c: '#c8352b', t: '#f2c230', l: 'CHQ', i: 'estrela', ic: '#c8352b' }],
+      ['Energético Boi Acordado', 1099, 'lata', { a: '#2a3f66', b: '#c9ced4', c: '#c8352b', t: '#c8352b', l: 'BOI', i: 'boi', ic: '#c8352b' }],
+      ['Chá Gatinho Gelado', 599, 'garrafa', { a: '#c8902a', b: '#c8352b', c: '#f2c230', t: '#f2c230', l: 'GAT', i: 'sol', ic: '#f2c230' }],
+      ['Suco do Morro', 849, 'caixinha', { a: '#e8742a', b: '#2e8a4a', c: '#f2c230', t: '#f2c230', l: 'DM', i: 'folha', ic: '#8fe04a' }],
+      ['Açaí no Litro', 1500, 'garrafa', { a: '#4a1f4a', b: '#7a4fb0', c: '#2e8a4a', t: '#f2f2ee', l: 'ACA', i: 'folha', ic: '#8fe04a' }],
+      ['Iogurte Pequenininho', 699, 'pote', { a: '#f6d2e6', b: '#3a64b8', c: '#f2f2ee', t: '#ffffff', l: 'PQ', i: 'coracao', ic: '#f6a0c8' }],
     ],
     fruta: [
-      ['Banana-pacovã', 599, 'banana', { a: '#f2c230', b: '#f2c230', c: '#5f8a2a' }],
-      ['Maçã', 299, 'redonda', { a: '#c8352b', b: '#c8352b', c: '#4f9a3f' }],
-      ['Laranja', 189, 'redonda', { a: '#f0a020', b: '#f0a020', c: '#4f9a3f' }],
-      ['Mamão', 649, 'mamao', { a: '#e8a030', b: '#f07a3a', c: '#4f9a3f' }],
-      ['Cupuaçu', 1190, 'oval', { a: '#8a5a2a', b: '#6a4428', c: '#4f9a3f' }],
-      ['Tucumã', 899, 'cacho', { a: '#f07a1a', b: '#f07a1a', c: '#4f9a3f' }],
+      ['Banana-pacovã', 599, 'banana', { a: '#f2c230', c: '#5f8a2a' }],
+      ['Maçã', 299, 'maca', { a: '#c8352b', c: '#4f9a3f' }],
+      ['Laranja', 189, 'laranja', { a: '#f0a020', c: '#4f9a3f' }],
+      ['Mamão', 649, 'mamao', { a: '#f07a3a', b: '#f6a050', c: '#7aa83a' }],
+      ['Cupuaçu', 1190, 'cupuacu', { a: '#8a5a2a', c: '#4f9a3f' }],
+      ['Tucumã', 899, 'tucuma', { a: '#f07a1a', c: '#4f9a3f' }],
       ['Abacaxi', 799, 'abacaxi', { a: '#e0a020', b: '#a8761a', c: '#4f9a3f' }],
       ['Melancia', 1890, 'melancia', { a: '#2e8a4a', b: '#e8452f', c: '#f6f1e8' }],
     ],
   };
   const imgProd = new Map();
-  function canvasProduto(P) {                       // P = [nome, preço, forma, cores] → canvas 16 x 16 (guardado: desenha uma vez só)
+  function canvasProduto(P) {                       // P = [nome, preço, forma, cores] → canvas 24 x 24 (guardado: desenha uma vez só)
     if (imgProd.has(P[0])) return imgProd.get(P[0]);
     const G = grade(); (FORMAS[P[2]] || FORMAS.caixa)(G, P[3]); contornar(G);
-    const cv = document.createElement('canvas'); cv.width = cv.height = 16; const g = cv.getContext('2d');
-    G.px.forEach((cor, k) => { if (cor) { g.fillStyle = cor; g.fillRect(k % 16, (k / 16) | 0, 1, 1); } });
+    const cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d');
+    G.px.forEach((cor, k) => { if (cor) { g.fillStyle = cor; g.fillRect(k % N, (k / N) | 0, 1, 1); } });
     imgProd.set(P[0], cv); return cv;
   }
-  function iconeProduto(P, tam) { const src = canvasProduto(P), cv = document.createElement('canvas'); cv.width = cv.height = 16; cv.getContext('2d').drawImage(src, 0, 0); cv.style.cssText = 'width:' + tam + 'px;height:' + tam + 'px;image-rendering:pixelated;display:block;flex:0 0 auto;'; return cv; }
+  function iconeProduto(P, tam) { const src = canvasProduto(P), cv = document.createElement('canvas'); cv.width = cv.height = N; cv.getContext('2d').drawImage(src, 0, 0); cv.style.cssText = 'width:' + tam + 'px;height:' + tam + 'px;image-rendering:pixelated;display:block;flex:0 0 auto;'; return cv; }
 
   // ------------------------------------------------------------------ (5.4.0) DINHEIRO EM CENTAVOS: notas, moedas e cartões em pixel art
   const fmt = (c) => 'F$ ' + (Math.round(c) / 100).toFixed(2).replace('.', ',');
@@ -295,12 +471,12 @@
     return cv;
   }
   const desenharDinheiro = (v, larg) => (ehMoeda(v) ? desenharMoeda(v, Math.round((larg || 56) * 0.5)) : desenharNota(v, larg));
-  const CARTOES = [                                          // 5 cartões "de brincadeira" (cor do cartão, faixa, texto)
-    { nome: 'NUBANCO', a: '#7a2fb0', b: '#a85fe0', t: '#f2f2ee' },
-    { nome: 'ITAÚNA', a: '#ec7000', b: '#f6a040', t: '#1c2a6e' },
-    { nome: 'BRASESCO', a: '#cc092f', b: '#e8455f', t: '#f2f2ee' },
-    { nome: 'CAIXINHA', a: '#005ca9', b: '#f39200', t: '#f2f2ee' },
-    { nome: 'BANCO DO BRAZIU', a: '#f8d117', b: '#2a5ab8', t: '#1f3a8a' },
+  const CARTOES = [                                          // 5 cartões de bancos inventados (cor do cartão, faixa, texto) — nada de banco de verdade
+    { nome: 'ROXINHO', a: '#7a2fb0', b: '#a85fe0', t: '#f2f2ee' },
+    { nome: 'BANCO IGARAPE', a: '#ec7000', b: '#f6a040', t: '#1c2a6e' },
+    { nome: 'CAIXA DE SAPATO', a: '#cc092f', b: '#e8455f', t: '#f2f2ee' },
+    { nome: 'PEIXE-BOI BANK', a: '#005ca9', b: '#f39200', t: '#f2f2ee' },
+    { nome: 'BANCO DA FARINHA', a: '#f8d117', b: '#2a5ab8', t: '#1f3a8a' },
   ];
   function desenharCartao(i, larg) {
     const C = CARTOES[i % CARTOES.length], W = 96, H = 60, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
