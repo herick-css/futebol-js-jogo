@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.4.2
+     - No mercado, os clientes "de passeio" agora são do mercado.js (a cidade não monta mais o fluxo de lá quando o mercado.js carregou).
+
    NOVIDADES DA 5.4.0
      - O painel do turno (cafeteria e mercado) aparece uma vez e vira o ícone "!" vermelho no canto superior esquerdo (painelRecolhivel /
        recolherPainel / fimPainel; o botão .cdTurIco fica no #cdEsq). Tocar no ícone abre o painel de novo por uns segundos.
@@ -2348,8 +2351,10 @@
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
     const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
     const rnd = semente(P.nome.length * 31 + 7);
-    const comFluxo = !SEM_FLUXO[P.nome], areaCli = [];                   // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
+    const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
+    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs, areaCli = [];                   // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
+      if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // (5.2.0) a Lúcia só está lá das 7h50 às 20h
       const A = p.marca === 'lucia' ? criarLucia(S.f2) : criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;

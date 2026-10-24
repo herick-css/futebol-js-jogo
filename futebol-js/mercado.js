@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   5.4.2 — dá para trabalhar de novo: o Cadu vai para o 2º caixa às 13h40 (às 14h ele já está lá) e dá para falar com ele mesmo
+           andando; enquanto conversa ele para. Antes o "Falar com o Cadu" sumia com ele andando e, com o jogador perto, ele parava
+           para não esbarrar e nunca chegava no caixa.
+           CLIENTES DE PASSEIO (comprador.fake): andam pelas seções como se estivessem comprando e vão embora (sem fila, sem tirar
+           estoque). Aparecem das 8h às 13h40 e voltam às 15h; das 13h40 às 15h a loja esvazia (às 14h o jogador entra e não tem
+           ninguém). Durante o turno do jogador só existem os clientes de verdade.
    5.4.1 — pixel art dos produtos refeita em 24 x 24 (como os cafés): volume com luz e sombra, tampas, rótulos com a "marca" em letrinhas
            3 x 5 (FONTE) e um ícone (FIGURAS: folha, gota, boi, peixe, vaca...), janelinha mostrando o produto nos pacotes e sacos, frutas
            com casca e textura (a melancia com fatia, o mamão cortado, o abacaxi com coroa...). Nenhum nome de marca de verdade: só piadas
@@ -149,7 +155,8 @@
 
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 8, H_TURNO = 14, H_CHEIO_ATE = 14.5, H_FECHA = 22, H_ULTIMO_CLIENTE = 21;   // mercado 8h–22h · turno do jogador 14h–22h
-  const H_CADU_CHEGA = 7.75, H_ROSA_CHEGA = 7 + 50 / 60, H_CADU_CAIXA2 = 14, H_CADU_SAI = 15, H_CADU_VOLTA = 21 + 50 / 60;
+  const H_CADU_CHEGA = 7.75, H_ROSA_CHEGA = 7 + 50 / 60, H_CADU_CAIXA2 = 13 + 40 / 60, H_CADU_SAI = 15, H_CADU_VOLTA = 21 + 50 / 60;   // (5.4.2) às 13h40 ele já vai para o caixa
+  const H_SEM_PASSEIO = 13 + 40 / 60, H_VOLTA_PASSEIO = 15, H_FIM_PASSEIO = 21.5;   // (5.4.2) clientes de passeio: some às 13h40, volta às 15h
   const PAGA = 95, AUMENTO = 15, DESCONTO = 5, FALTA = 3;     // salário fixo · aumento do Cadu · troco errado · produto em falta
   const EST_MAX = 14, REPOR_EM = 5;                          // unidades por seção · abaixo disso o jogo pede para repor
   const SECOES = ['higiene', 'comida', 'bebida', 'fruta'];
@@ -645,6 +652,7 @@
         return;
       }
       A = colocar(chave, criarFn, nome, voz, e, instantaneo);
+      if (A.conversando) { A.andando = false; return; }                   // (5.4.2) parado enquanto conversa com o jogador
       if (A.estM !== e.id) {                                              // mudou de estado: anda até o novo lugar
         const ant = A.estM; A.estM = e.id; A.poseM = null; A.limpa = null;
         if (e.id === 'limpa') { const p = pk(LIMPEZA); A.limpa = { p, t: rnd(6, 10) }; A.rotaM = caminho(A.x, A.z, p.x, p.z); }
@@ -760,11 +768,11 @@
       const q = R[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt;
       if (d <= Math.max(v, 0.04)) { A.x = q.x; A.z = q.z; R.shift(); A.esperaM = 0; if (!R.length) { A.andando = false; return true; } return false; }
       const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; if (!livreEst(nx, nz)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
-      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0;
+      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0, paciencia = A === M.cadu || A === M.rosa ? 1.2 : 2.6;   // (5.4.2) quem trabalha não fica preso atrás do jogador
       let ok = tenta(ux, uz, false);
       if (!ok && esp > 0.7) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
-      if (!ok && esp > 2.6) ok = tenta(ux, uz, true);
-      if (!ok && esp > 2.6 && !livreEst(A.x + ux * v, A.z + uz * v)) { const fim = R[R.length - 1]; A.rotaM = caminho(A.x, A.z, fim.x, fim.z); A.esperaM = 0; }
+      if (!ok && esp > paciencia) ok = tenta(ux, uz, true);
+      if (!ok && esp > paciencia && !livreEst(A.x + ux * v, A.z + uz * v)) { const fim = R[R.length - 1]; A.rotaM = caminho(A.x, A.z, fim.x, fim.z); A.esperaM = 0; }
       A.andando = ok; A.correndo = false; A.esperaM = ok ? Math.max(0, esp - dt * 2) : esp + dt;
       return false;
     }
@@ -776,6 +784,7 @@
       M.avisos = []; M.tAviso = 0;
       tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, 0, true);
       tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, 0, true);
+      M.tPasseio = 3; if (passeioAgora()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }   // (5.4.2) já tem gente passeando
       for (const sec of SECOES) mostrarEstoque(sec);
       SOM.porta();
     }
@@ -797,7 +806,7 @@
     // ---------------------------------------------------------------- interação
     function alvos(v) {
       const s = S(), J = s.jog, U = s.turnoMercado, D = M.D; if (!D) return;
-      const C = M.cadu; if (C && C.estM !== 'sai' && !(C.rotaM && C.rotaM.length)) v.push({ x: C.x, z: C.z, r: 1.7, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });
+      const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 1.7, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });
       if (!U || U.fim) return;
       const cx = D.caixa.jog, prim = U.fila[0];
       if (prim && prim.cm.fase === 'esteira') v.push({ x: cx.x, z: cx.z, r: 1.5, txt: J.caixaM ? T('Largue a caixa antes de atender.') : T('Atender cliente'), fn: J.caixaM ? async () => {} : () => atender(prim), y: 2.3, pri: true });
@@ -835,8 +844,12 @@
 
     // ---- conversa com o Cadu (apresentação na primeira vez, depois a oferta do turno)
     async function falarComCadu() {
-      const s = S(), d = s.dados, dm = dadosM(), C = M.cadu, J = s.jog;
-      if (C) { C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); C.poseM = null; }
+      const s = S(), C = M.cadu, J = s.jog;
+      if (C) { C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); C.poseM = null; C.conversando = true; C.andando = false; }
+      try { await conversaCadu(); } finally { if (M.cadu) M.cadu.conversando = false; if (M.rosa) M.rosa.conversando = false; }
+    }
+    async function conversaCadu() {
+      const s = S(), d = s.dados, dm = dadosM();
       const h1 = api.historia().ler('fase1') || {}, cad = h1.cadu || null, salvou = !!(cad && cad.salvou);
       const fim = () => { Dialogo.esconder(); };
       if (!ehMeuEmprego()) {
@@ -876,10 +889,10 @@
       const R = M.rosa;
       if (R) {
         const C = M.cadu; if (C) C.yawAlvo = Math.atan2(-(R.z - C.z), R.x - C.x);
-        R.poseM = null; R.yawAlvo = C ? Math.atan2(-(C.z - R.z), C.x - R.x) : R.yawAlvo;
+        R.poseM = null; R.conversando = true; R.yawAlvo = C ? Math.atan2(-(C.z - R.z), C.x - R.x) : R.yawAlvo;
         await api.fala('cadu', T('Rosa, você tá liberada do expediente já.'));
         await api.fala('rosa', T('Beleza! Bom trabalho aí, viu?'));
-        Dialogo.esconder();
+        Dialogo.esconder(); R.conversando = false;
       }
       dadosM().rosaLib = { dia: S().dados.dia, h: hora() };              // a partir de agora ela vai para casa (na rua também)
       if (R) { for (let t = 0; t < 3.2 && M.rosa; t += 0.1) await api.esperar(100); }
@@ -893,6 +906,7 @@
       for (const A of s.npcs) if (A.cli && A.cli.fase === 'fica') A.cli.t = Math.min(A.cli.t, 2 + Math.random() * 8);
       await api.preto(true, 350);
       if (M.rosa) tirar('rosa');                                          // (se ela ainda estava saindo)
+      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); api.descartarPessoa(A); }   // (5.4.2) a loja começa vazia
       const J = s.jog, p = D.caixa.jog; J.x = p.x; J.z = p.z; J.yaw = J.yawAlvo = p.yaw; J.rota = null; s.cam.yaw = 2.55; s.cam.snap = true;   // câmera do lado nordeste: vê o caixa, a fila e o corredor
       await api.preto(false, 350);
       montarPainel(); atualizarPainel();
@@ -926,7 +940,7 @@
     }
     function proximaCompra(A) {
       const C = A.cm, D = M.D;
-      if (!C.secs.length) { entrarNaFila(A); return; }
+      if (!C.secs.length) { if (C.fake) sairCliente(A); else entrarNaFila(A); return; }   // quem só passeia vai embora
       const sec = C.secs.shift(), ar = D.secoes[sec].compra, p = pontoLivre(rnd(ar.x0, ar.x1), rnd(ar.z0, ar.z1));
       C.secAtual = sec; C.fase = 'compra'; C.chegou = false; C.t = 0; A.rotaM = caminho(A.x, A.z, p.x, p.z);
     }
@@ -967,7 +981,7 @@
       if (C.fase === 'compra') {
         if (!C.chegou) { if (andarM(A, dt)) { C.chegou = true; C.t = rnd(2.2, 4.2); const P = M.D.secoes[C.secAtual]; A.yawAlvo = Math.atan2(-(P.z - A.z), P.x - A.x) + rnd(-0.6, 0.6); } return; }
         A.andando = false; C.t -= dt;
-        if (C.t <= 0) { pegarProdutos(A); proximaCompra(A); }
+        if (C.t <= 0) { if (!C.fake) pegarProdutos(A); proximaCompra(A); }
       } else if (C.fase === 'fila' || C.fase === 'esteira') {
         const U = S().turnoMercado, i = U ? U.fila.indexOf(A) : -1;
         if (andarM(A, dt)) {
@@ -980,6 +994,24 @@
         C.tSai += dt; const sd = M.R.saida;
         if (andarM(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.9 || C.tSai > 30) { tirarSacola(A); api.descartarPessoa(A); }
       }
+    }
+    // (5.4.2) CLIENTES DE PASSEIO: fazem de conta que compram (andam pelas seções, param olhando as prateleiras) e vão embora
+    const passeioAgora = () => { const h = hora(); return aberto() && h < H_FIM_PASSEIO && !(h >= H_SEM_PASSEIO && h < H_VOLTA_PASSEIO) && !S().turnoMercado; };
+    function novoPasseio(dentro) {
+      const s = S(), e = dentro ? null : entradaLivre(); if (!dentro && !e) return;
+      const secs = SECOES.slice().sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
+      const A = api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
+      A.tipo = 'clienteMerc'; A.vel = 1.0 + Math.random() * 0.3; A.cm = { fase: 'compra', secs, itens: [], t: 0, fake: true };
+      if (dentro) { const ar = M.D.secoes[secs[0]].compra, p = pontoLivre(rnd(ar.x0, ar.x1), rnd(ar.z0, ar.z1)); A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = rnd(-3, 3); }
+      else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = Math.PI / 2; SOM.porta(); }
+      proximaCompra(A); s.npcs.push(A); api.poseAtor(A, 0.016);
+    }
+    function tickPasseio(dt) {
+      const s = S(), fakes = s.npcs.filter((A) => A.cm && A.cm.fake && A.cm.fase !== 'sai');
+      if (!passeioAgora()) { for (const A of fakes) { A.vel = 1.7; sairCliente(A); } return; }   // 13h40 (ou turno): todo mundo vai embora
+      M.tPasseio = (M.tPasseio == null ? 2 : M.tPasseio) - dt;
+      const alvo = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'][api.diaSemana()] === 'cheio' ? 5 : 3;
+      if (M.tPasseio <= 0) { M.tPasseio = rnd(4, 9); if (fakes.length < alvo) novoPasseio(false); }
     }
     // os produtos aparecem na esteira (com a pixel art de cada um), em fila, do começo dela até o leitor
     function texProduto(P) {
@@ -1242,7 +1274,7 @@
       if (dentro) {
         tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, dt, false);
         tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, dt, false);
-        posesTrabalho(); tickAvisos(dt);
+        posesTrabalho(); tickAvisos(dt); tickPasseio(dt);
         poseCaixa(s.jog);
         for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk) mk.position.y = 2.7 + Math.sin(s.t * 4) * 0.08; }
         if (!s.turnoMercado && !aberto() && s.modo === 'livre' && !M.fechando) { M.fechando = true; fecharMercado().finally(() => { M.fechando = false; }); }
