@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.2.1
+     - Vizinho fumando: a mão para na frente da boca (~12 cm do rosto) em vez de entrar na cara (poseFuma: ombro 1,4 + cotovelo 0,95 rad).
+
    NOVIDADES DA 5.2.0
      - O tempo anda no condomínio (relogioTick/S.relogio; a hora continua sendo a da cidade, historia.cidade.hora) enquanto o personagem
        está livre: banho, banheiro, pia, guarda-roupa, computador e conversas não contam. Relógio no canto (f2Relogio). Grava ao sair do
@@ -557,8 +560,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0.08, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, -0.05, e);
     const ciclo = (t * 0.28 + A.fase) % 1, puxa = ciclo > 0.55 && ciclo < 0.8, k = puxa ? 1 : 0; A.puxando = puxa;
     A.kf = lerp(A.kf || 0, k, Math.min(1, dt * 5));                 // 0 = braço relaxado com o cigarro na mão, 1 = mão na boca
-    const ombro = lerp(0.3, 1.75, A.kf), cot = lerp(0.35, 2.15, A.kf);
-    m.bracoD.rotation.z = ombro; m.bracoD.rotation.x = 0.9 * A.kf; usarCotovelo(m.bracoD, 0, cot);                   // (o braço também fecha para dentro, para a mão ficar na frente da boca)
+    // (5.2.1) antes (1,75 + 2,15 rad) o antebraço voltava para trás e a mão entrava no rosto. Agora a conta fecha com a mão ~14 cm na
+    // FRENTE da boca: ombro 1,45 rad (cotovelo à frente do peito) + cotovelo 1,26 (antebraço subindo até a altura da boca).
+    const ombro = lerp(0.3, 1.4, A.kf), cot = lerp(0.35, 0.95, A.kf);
+    m.bracoD.rotation.z = ombro; m.bracoD.rotation.x = 0.45 * A.kf; usarCotovelo(m.bracoD, 0, cot);                  // (fecha um pouco para dentro: a mão fica na frente da boca, não na bochecha)
     if (A.cigarro) A.cigarro.rotation.z = lerp(-0.8, -0.1, A.kf) - (ombro + cot);   // o ângulo do cigarro no mundo: apontando para a frente/baixo e a ponta acesa longe do rosto
     m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.15, e); m.bracoE.rotation.x = 0; usarCotovelo(m.bracoE, 0, 0);
     m.corpo.rotation.z = lerp(m.corpo.rotation.z, k ? -0.05 : 0.02, e);

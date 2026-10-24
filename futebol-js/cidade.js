@@ -1,6 +1,13 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.2.1
+     - A cafeteria começa vazia (montarFluxo não põe ninguém sentado ao entrar); os clientes chegam pela porta (ou do lado dela, se
+       o jogador estiver parado na frente, para não nascer "dentro" dele).
+     - Clientes TOMAM o café de verdade (darCopo + pose "bebe" no poseAtor): a xícara fica de pé na mão, ~19 cm na frente da boca, e
+       eles dão golinhos (vaivém leve do braço e da cabeça). Antes usavam a pose de comer lanche, com as mãos entrando no rosto.
+     - Gorjeta de 1 a 3 fakes (antes 1 a 5).
+
    NOVIDADES DA 5.2.0
      - EXPEDIENTE NOVO na cafeteria (iniciarTurno/tickTurno/encerrarTurno): os clientes entram, sentam e mostram num balão o café que
        querem ("!" = ainda não anotado). Anote na mesa, prepare na BANCADA DE PREPARO (abrirBancada: a grade do joguinho fica guardada o
@@ -1554,6 +1561,12 @@
         const mord = Math.max(0, Math.sin(A.t * 7)); usarCotovelo(m.bracoE, 0, 1.55 + mord * 0.25); usarCotovelo(m.bracoD, 0, 1.55 + mord * 0.25);
         usarCabeca(m, -0.05 + Math.sin(A.t * 9) * 0.12);
       }
+      if (A.bebe > 0) {                                              // (5.2.1) tomando o café: a mão para a uns 15 cm na frente da boca e só "bebe" (gole = leve vaivém)
+        const gole = Math.max(0, Math.sin(A.t * 2.4)), oz = 1.22 + gole * 0.08, cz = 1.2 + gole * 0.12;
+        m.bracoD.rotation.z = oz; usarCotovelo(m.bracoD, 0, cz);
+        usarCabeca(m, 0.07 * gole);                                    // inclina a cabeça um pouquinho para trás no gole
+        if (A.copoCli) A.copoCli.rotation.z = -(oz + cz);
+      }
     } else if (A.tipo === 'rosca' && !A.andando) {                   // (4.9.4) academia: rosca com halteres
       const c = Math.max(0, Math.sin(A.t * 2.4)); m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
       usarCotovelo(m.bracoE, 0, 0.2 + c * 1.9); usarCotovelo(m.bracoD, 0, 0.2 + c * 1.9); r.position.y = A.y;
@@ -1576,7 +1589,8 @@
     }
     if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // (4.9.6) puxando a persiana
     if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // (4.9.5) na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
-    m.bracoE.rotation.x = m.bracoD.rotation.x = 0;
+    m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // (5.2.1) bebendo: a mão fecha para a frente da boca
+    if (A.copoCli && A.sentado && A.bebe > 0) A.copoCli.rotation.x = -0.45;
     r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
     A.blob.position.set(A.x, A.y + 0.02, A.z);
   }
@@ -2024,6 +2038,7 @@
   function montarFluxo(nome, lugares, area, ent) {
     const f = FLUXO_SEM[diaSemana()], F = { nome, lugares, area, ent, alvo: alvoClientes(lugares.length), alvoVaga: area ? (f === 'vazio' ? 2 : f === 'medio' ? 4 : 7) : 0, prox: 3 + Math.random() * 4 };
     const livres = lugares.slice().sort(() => Math.random() - 0.5);
+    if (nome === 'cafeteria') return F;                                // (5.2.1) a cafeteria começa VAZIA: os clientes vão chegando pela porta
     for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70; }   // já tem gente quando ele entra, cada um num ponto da visita
     for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
     return F;
@@ -2075,6 +2090,7 @@
         if (C.pedido && !C.semPagar && !C.pagou) { C.fase = 'caixa'; C.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; C.tc = 0; }   // (5.2.0) vai pagar no caixa
         else { C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; }
       }
+      if (A.bebe > 0) { A.bebe -= dt; if (A.bebe <= 0) tirarCopo(A); }
     } else if (C.fase === 'caixa') {                                 // (5.2.0) no caixa: vira para a Lúcia, a registradora toca e ele vai embora
       if (seguir(A, C.rota, A.vel, dt)) { A.andando = false; A.yawAlvo = Math.PI / 2; C.tc += dt; if (C.tc > 0.6 && !C.pagou) { C.pagou = true; SomCafe.caixa(); } if (C.tc > 1.6) { const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; } }
     } else if (C.fase === 'sai') {                                   // sai pela porta (some perto dela; não espera o jogador sair da frente)
@@ -2399,8 +2415,10 @@
       const livres = S.fluxo.lugares.filter((a) => !a.ocupado);
       if (soma > 0 && livres.length) {
         let r = Math.random() * soma, tier = 0; for (let t = 0; t < ok.length; t++) { r -= ok[t]; if (r <= 0) { tier = t; break; } }
+        const e = S.fluxo.ent, pe = [[0, 0], [1.1, 0], [-1.1, 0], [0, -1.1]].map(([dx, dz]) => ({ x: e.x + dx, z: e.z + dz, yaw: e.yaw })).find((q) => Math.hypot(q.x - S.jog.x, q.z - S.jog.z) > 0.9) || e;
+        S.fluxo.entAgora = pe;                                               // (5.2.1) não nasce "dentro" do jogador parado na porta
         const A = novoCliente(livres[Math.floor(Math.random() * livres.length)], false);
-        A.cli.t = 1e9; A.cli.pedido = { tier, estado: 'chegando' }; SomCafe.sino();
+        A.cli.t = 1e9; A.cli.pedido = { tier, estado: 'chegando' }; A.oculto = false; S.meus.add(A.m); A.m.raiz.visible = true; SomCafe.sino();
       }
     }
     for (const A of S.npcs) if (A.cli && A.cli.pedido) atualizarBalao(A);
@@ -2448,6 +2466,15 @@
     const m = G.malha(MAT); m.rotation.z = -1.55; m.position.set(0.12, -0.27, 0);
     J.m.bracoD.cotovelo.add(m); J.copo = m;
   }
+  // (5.2.1) a xícara na mão de um cliente: um pivô na mão que fica sempre de pé (poseAtor desfaz o giro do braço)
+  function darCopo(A, tier) {
+    tirarCopo(A);
+    const louca = tier === 0 ? '#efe8da' : tier === 1 ? '#d4583a' : tier <= 4 ? '#7cb8e8' : '#5cc7a0', t = TIERS[tier] || TIERS[0], G = new Geo();
+    G.box(0.1, 0.09, 0.1, louca, 0, 0, 0); G.box(0.085, 0.012, 0.085, t.creme ? '#fff4e2' : t.cor, 0, 0.09, 0); G.box(0.025, 0.045, 0.02, louca, 0, 0.03, 0.06);
+    if (t.chantilly) G.box(0.06, 0.04, 0.06, '#fff7ea', 0, 0.1, 0);
+    const piv = new THREE.Group(); piv.position.set(0, -0.3, 0); piv.add(G.malha(MAT)); A.m.bracoD.cotovelo.add(piv); A.copoCli = piv;
+  }
+  function tirarCopo(A) { if (A.copoCli) { if (A.copoCli.parent) A.copoCli.parent.remove(A.copoCli); A.copoCli = null; } }
   function poseCopo(J) {                                                                    // braço direito dobrado para a frente segurando a xícara de pé
     if (!J.copo) return;
     const m = J.m; m.bracoD.rotation.z = 0.35; m.bracoD.rotation.x = 0; usarCotovelo(m.bracoD, 0, 1.2);
@@ -2476,11 +2503,11 @@
     S.jog.yawAlvo = Math.atan2(-(A.z - S.jog.z), A.x - S.jog.x);
     U.naMao = -1; copoNaMao(-1); SomCafe.entregar();
     P.estado = 'feliz'; atualizarBalao(A); U.anotados = U.anotados.filter((q) => q !== A);
-    const gorjeta = 1 + Math.floor(Math.random() * 5);                 // gorjeta aleatória de 1 a 5 fakes, na hora
+    const gorjeta = 1 + Math.floor(Math.random() * 3);                 // (5.2.1) gorjeta aleatória de 1 a 3 fakes, na hora
     U.atendidos++; U.gorjetas += gorjeta; d.fakes += gorjeta;
     await esperar(350); somDinheiro(); ganhoNaTela(gorjeta); mostrarDinheiro(true);
     aviso(Tf('Gorjeta: +{0} fakes!', gorjeta)); setTimeout(() => { if (S && UI) aviso(''); }, 1800);
-    A.comendo = 3.2; A.cli.t = 4.2;                                     // toma o café e depois vai pagar no caixa (tickCliente)
+    darCopo(A, P.tier); A.bebe = 4.6; A.cli.t = 5.4;                 // (5.2.1) toma o café (poseAtor: bebendo) e depois vai pagar no caixa (tickCliente)
     setTimeout(() => { if (A.cli && A.cli.pedido) A.cli.pedido.estado = 'feito'; if (A.balao) A.balao.visible = false; }, 1600);
     atualizarPainelTurno();
   }
