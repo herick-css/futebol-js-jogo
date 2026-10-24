@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.3.0
+     - Banho no chuveiro limpa o "precisa de banho" do futebol (historia.cidade.precisaBanho). Dormiu sem banho (cama, apagão das 2h ou
+       apagão na rua): -5 em Saudável (Espectros) e, ao acordar, "Dormi fedendo, estou me sentindo meio mal."
+
    NOVIDADES DA 5.2.1
      - Vizinho fumando: a mão para na frente da boca (~12 cm do rosto) em vez de entrar na cara (poseFuma: ombro 1,4 + cotovelo 0,95 rad).
 
@@ -870,6 +874,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Dormir': ['Sleep', 'Dormir', 'Dormi', 'Dormir'],
     'Ainda não estou com sono.': ["I'm not sleepy yet.", 'Todavía no tengo sueño.', 'Non ho ancora sonno.', "Je n'ai pas encore sommeil."],
     'Bom dia! Hora de começar o dia.': ['Good morning! Time to start the day.', '¡Buenos días! Hora de empezar el día.', 'Buongiorno! È ora di iniziare la giornata.', "Bonjour ! C'est l'heure de commencer la journée."],
+    'Dormi fedendo, estou me sentindo meio mal.': ['I slept stinky, I feel kind of sick.', 'Dormí apestando, me siento medio mal.', 'Ho dormito puzzolente, mi sento un po\' male.', "J'ai dormi en puant, je me sens un peu mal."],
     'Dormi pouco... acho que não vou render como deveria hoje.': ["I barely slept... I don't think I'll perform as well as I should today.", 'Dormí poco... creo que hoy no voy a rendir como debería.', 'Ho dormito poco... credo che oggi non renderò come dovrei.', "J'ai peu dormi... je crois que je ne serai pas aussi performant que je devrais aujourd'hui."],
     'Você': ['You', 'Tú', 'Tu', 'Toi'],
     'Modo história · Fase 2 · {0}': ['Story mode · Phase 2 · {0}', 'Modo historia · Fase 2 · {0}', 'Modalità storia · Fase 2 · {0}', 'Mode histoire · Phase 2 · {0}'],
@@ -1357,6 +1362,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       S.camEspecial = null; S.camSnap = true; S.banh.vidro.opacity = 0.28;
       for (const d of W.gotas.splice(0)) W.g.remove(d); for (const p of W.vapor.splice(0)) { W.g.remove(p); p.material.dispose(); }
       await esperar(160); await preto(false, 280);
+      try { const c = API.historia.ler('cidade'); if (c && c.precisaBanho) API.historia.gravar('cidade', Object.assign({}, c, { precisaBanho: false })); } catch (e) { console.warn('[Fase 2] banho:', e); }   // (5.3.0)
       await dizer(['jog', T('Ahh, agora sim! Banho tomado.')]);
     } finally {
       W.on = false; if (S.banh.vidro) S.banh.vidro.opacity = 0.28; if (J.tarja) tarja(J, false);
@@ -1448,7 +1454,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
     if (h >= H_ACORDA && h < 20) { await dizer(['jog', T('Ainda não estou com sono.')]); return; }   // (5.2.0) acorda às 5h
-    await preto(true, 900);
+    await preto(true, 900); const sujo = dormiuSujo();
     const horas = h >= H_ACORDA ? 24 - h + H_ACORDA : H_ACORDA - h;
     const novo = Object.assign({}, c, { hora: H_ACORDA, dia: (c.dia || 1) + (h >= H_ACORDA ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
     if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
@@ -1458,6 +1464,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(200);
     await dizer(['jog', T('Bom dia! Hora de começar o dia.')]);
     if (horas < 8) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
+    if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
   }
 
   // ----- a porta da rua
@@ -1534,7 +1541,16 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (!S || !S.relogio) return;
     try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: S.relogio.hora, dia: S.relogio.dia })); } catch (e) { console.warn('[Fase 2] hora:', e); }
   }
+  // (5.3.0) dormiu sem tomar banho depois do futebol: -5 de saúde (uma vez por noite; ele continua precisando do banho)
+  function dormiuSujo() {
+    try {
+      const c = API.historia.ler('cidade'); if (!c || !c.precisaBanho) return false;
+      if (typeof Espectros !== 'undefined' && Espectros.mover) Espectros.mover('saudavel', -5, 'dormiu sem tomar banho');
+      return true;
+    } catch (e) { console.warn('[Fase 2] sujo:', e); return false; }
+  }
   async function apagarDeSono() {
+    const sujo = dormiuSujo();
     await dizer(['jog', T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
     await preto(true, 900);
     mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = H_ACORDA;
@@ -1542,6 +1558,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
     const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
     await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
+    if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
   }
   function gancho(rdt) {
     if (!S || !S.ativo) return;
@@ -1651,7 +1668,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');
         mudarLugar('quarto', 0, 0, 0, 0); aparecerNaCama(); missao('');
         await preto(false, 900); await esperar(500);
+        const sujo = dormiuSujo();
         await dizer(['jog', T('Nem lembro de ter chegado em casa... apaguei de cansaço.')]);
+        if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
         S.jog.seguir = true; S.jog.pose = 'pe'; S.jog.x = -1.9; S.jog.z = -1.3; S.jog.yaw = S.jog.yawAlvo = 0; S.jog.ySnap = true;
         liberar();
       } else if (volta) {

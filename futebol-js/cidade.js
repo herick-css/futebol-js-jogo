@@ -1,6 +1,19 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.3.0
+     - Lugar do EMPREGO exclusivo: lá dentro só há clientes durante o turno do jogador (montarFluxo/tickFluxo/decidirDestino não mandam
+       ninguém de fora). Era isso que gerava os clientes "sem pedido" (e às vezes invisíveis) na cafeteria.
+     - Cafeteria fecha às 16h; a Lúcia fecha o caixa e sai às 17h (das 16h às 17h ela avisa que precisa fechar o caixa). A rota dela agora
+       termina no ponto da calçada mais perto da porta (antes passava da cafeteria e voltava); chegando antes das 7h50 ela entra mesmo assim.
+     - Sábado e domingo ninguém trabalha. Sem banho depois do futebol, a Lúcia não deixa começar o turno.
+     - FUTEBOL: turnos (cafeteria 8–16, mercado 14–22, pizzaria 15–23). Quem sai à tarde é chamado 2h depois do turno; quem entra à tarde,
+       4h antes. Primeira chamada: ligação do João depois do 1º dia de trabalho (celular pixelado no canto inferior direito, 10 s, o resto
+       do HUD some). Atendeu: cena do celular na orelha. Não atendeu: mensagem com a localização. Marca no mapa + missão.
+     - Racha no Society Doutor Bryan toda segunda e quarta (⚽ no relógio). 5 ou 3 minutos; sai 1h depois (hora do mundo). Cada partida
+       fica salva em cidade.partidas (dia, hora, horário, clima, placar, nota...). A cada 10 chutes no alvo: +0,25 em chute, efeito e força.
+       Depois do jogo o Caio comenta (bom: "gostei do seu jogo"; ruim: "vem aprender") e o personagem diz que precisa de um banho.
+
    NOVIDADES DA 5.2.1
      - A cafeteria começa vazia (montarFluxo não põe ninguém sentado ao entrar); os clientes chegam pela porta (ou do lado dela, se
        o jogador estiver parado na frente, para não nascer "dentro" dele).
@@ -214,6 +227,41 @@
     'Casa dos Alves': ['The Alves house', 'Casa de los Alves', 'Casa degli Alves', 'Maison des Alves'],
     // (5.1.0) emprego da cafeteria: a Lúcia Alves no caixa e o Merge Game do expediente
     'Lúcia Alves': ['Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves'],
+    // (5.3.0) futebol no sintético, celular, banho, Lúcia fecha o caixa
+    '3 minutos': ['3 minutes', '3 minutos', '3 minuti', '3 minutes'],
+    '5 minutos': ['5 minutes', '5 minutos', '5 minuti', '5 minutes'],
+    'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
+    'Bora jogar uma bola? A galera joga no campo sintético Doutor Bryan. Te espero lá {0}!': ["Wanna play some ball? The guys play at Doctor Bryan's turf field. See you there {0}!", '¿Jugamos un partido? Los chicos juegan en la cancha sintética Doctor Bryan. ¡Te espero allí {0}!', 'Facciamo una partita? I ragazzi giocano al campo sintetico Dottor Bryan. Ti aspetto lì {0}!', 'On joue un match ? La bande joue au terrain synthétique Docteur Bryan. Je t\'attends là-bas {0} !'],
+    'Bora! Tô dentro.': ["Let's go! I'm in.", '¡Vamos! Me apunto.', 'Andiamo! Ci sto.', 'Allez ! Je suis partant.'],
+    'E aí! Eu sou o Caio, eu organizo o racha aqui.': ["Hey! I'm Caio, I organize the pickup games here.", '¡Hola! Soy Caio, organizo los partidos aquí.', 'Ciao! Sono Caio, organizzo le partitelle qui.', 'Salut ! Moi c\'est Caio, j\'organise les matchs ici.'],
+    'Fala, {0}! É o João!': ["Hey, {0}! It's João!", '¡Hola, {0}! ¡Soy João!', 'Ehi, {0}! Sono João!', 'Salut, {0} ! C\'est João !'],
+    'Fechou! Te mandei a localização. Até lá!': ['Deal! I sent you the location. See you there!', '¡Listo! Te mandé la ubicación. ¡Nos vemos!', 'Affare fatto! Ti ho mandato la posizione. A dopo!', 'Marché conclu ! Je t\'ai envoyé la localisation. À tout à l\'heure !'],
+    'Galera do Bryan': ["Bryan's Crew", 'Los de Bryan', 'Banda di Bryan', 'La bande de Bryan'],
+    'Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!': ["Not your day today, huh? But we play here every Monday and Wednesday. Come by and learn: you learn football by playing!", 'Hoy no fue tu día, ¿eh? Pero jugamos aquí todos los lunes y miércoles. Ven a aprender: ¡al fútbol se aprende jugando!', 'Oggi non era la tua giornata, eh? Ma giochiamo qui ogni lunedì e mercoledì. Vieni a imparare: a calcio si impara giocando!', 'Ce n\'était pas ton jour, hein ? Mais on joue ici tous les lundis et mercredis. Viens apprendre : le foot, ça s\'apprend en jouant !'],
+    'Jogar bola no sintético': ['Play ball on the turf', 'Jugar en la cancha sintética', 'Giocare sul sintetico', 'Jouer sur le synthétique'],
+    'João chamando... toque para atender': ['João calling... tap to answer', 'João llamando... toca para contestar', 'João sta chiamando... tocca per rispondere', 'João appelle... touche pour répondre'],
+    'João': ['João', 'João', 'João', 'João'],
+    'Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!': ['You played great today! We play here every Monday and Wednesday. Come back, I liked your game!', '¡Jugaste muy bien hoy! Jugamos aquí todos los lunes y miércoles. ¡Vuelve, me gustó tu juego!', 'Hai giocato benissimo oggi! Giochiamo qui ogni lunedì e mercoledì. Torna, mi è piaciuto il tuo gioco!', 'Tu as super bien joué aujourd\'hui ! On joue ici tous les lundis et mercredis. Reviens, j\'ai aimé ton jeu !'],
+    'Missão: futebol no sintético Doutor Bryan às {0}.': ["Mission: football at Doctor Bryan's turf at {0}.", 'Misión: fútbol en la sintética Doctor Bryan a las {0}.', 'Missione: calcio al sintetico Dottor Bryan alle {0}.', 'Mission : foot au synthétique Docteur Bryan à {0}.'],
+    'Missão: futebol no sintético Doutor Bryan, {0}.': ["Mission: football at Doctor Bryan's turf, {0}.", 'Misión: fútbol en la sintética Doctor Bryan, {0}.', 'Missione: calcio al sintetico Dottor Bryan, {0}.', 'Mission : foot au synthétique Docteur Bryan, {0}.'],
+    'O jogo é às {0}': ['The game is at {0}', 'El partido es a las {0}', 'La partita è alle {0}', 'Le match est à {0}'],
+    'Opa, João! Acabei de sair do trabalho. E aí?': ["Hey, João! I just got off work. What's up?", '¡Hola, João! Acabo de salir del trabajo. ¿Qué tal?', 'Ehi, João! Sono appena uscito dal lavoro. Che si dice?', 'Salut, João ! Je viens de sortir du travail. Quoi de neuf ?'],
+    'Quanto tempo de jogo?': ['How long should the game be?', '¿Cuánto tiempo de juego?', 'Quanto dura la partita?', 'Combien de temps de jeu ?'],
+    'Racha do sintético': ['Turf pickup game', 'Partido en la sintética', 'Partitella sul sintetico', 'Match sur le synthétique'],
+    'Racha no sintético: 4 contra 4!': ['Pickup game on the turf: 4 vs 4!', 'Partido en la sintética: ¡4 contra 4!', 'Partitella sul sintetico: 4 contro 4!', 'Match sur le synthétique : 4 contre 4 !'],
+    'Sinto que meu chute está melhorando...': ['I feel like my shooting is getting better...', 'Siento que mi tiro está mejorando...', 'Sento che il mio tiro sta migliorando...', 'J\'ai l\'impression que ma frappe s\'améliore...'],
+    'Te mandei a localização.': ['I sent you the location.', 'Te mandé la ubicación.', 'Ti ho mandato la posizione.', 'Je t\'ai envoyé la localisation.'],
+    'Tentei te ligar e você não atendeu. Bora jogar bola! Lá no campo sintético Doutor Bryan. Te espero lá {0}.': ["I tried to call you and you didn't pick up. Let's play ball! At Doctor Bryan's turf field. See you there {0}.", 'Te llamé y no contestaste. ¡Vamos a jugar! En la cancha sintética Doctor Bryan. Te espero allí {0}.', 'Ti ho chiamato e non hai risposto. Andiamo a giocare! Al campo sintetico Dottor Bryan. Ti aspetto lì {0}.', 'J\'ai essayé de t\'appeler et tu n\'as pas répondu. On va jouer ! Au terrain synthétique Docteur Bryan. Je t\'attends là-bas {0}.'],
+    'Time do João': ["João's Team", 'Equipo de João', 'Squadra di João', 'Équipe de João'],
+    'Ufa... depois dessa eu preciso tomar um banho.': ['Phew... after that I need a shower.', 'Uf... después de esto necesito una ducha.', 'Uff... dopo questa mi serve una doccia.', 'Ouf... après ça, il me faut une douche.'],
+    'Você': ['You', 'Tú', 'Tu', 'Toi'],
+    'amanhã': ['tomorrow', 'mañana', 'domani', 'demain'],
+    'hoje': ['today', 'hoy', 'oggi', "aujourd'hui"],
+    'às {0}': ['at {0}', 'a las {0}', 'alle {0}', 'à {0}'],
+    'Já são 17h, vou fechar a cafeteria! Até amanhã!': ["It's already 5 PM, I'm closing the café! See you tomorrow!", '¡Ya son las 17h, voy a cerrar la cafetería! ¡Hasta mañana!', 'Sono già le 17, chiudo la caffetteria! A domani!', 'Il est déjà 17 h, je ferme le café ! À demain !'],
+    'Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!': ["Now I need to close out the register... I'll only leave later. See you tomorrow!", 'Ahora tengo que cerrar la caja... Salgo más tarde. ¡Hasta mañana!', 'Ora devo chiudere la cassa... Esco più tardi. A domani!', 'Là je dois faire la caisse... Je ne pars que plus tard. À demain !'],
+    'Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!': ["It's the weekend, you don't work today! Enjoy it and rest. See you Monday!", '¡Hoy es fin de semana, no trabajas! Aprovecha y descansa. ¡Hasta el lunes!', 'Oggi è fine settimana, non lavori! Approfittane e riposati. A lunedì!', 'C\'est le week-end, tu ne travailles pas ! Profites-en pour te reposer. À lundi !'],
+    'Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?': ["Wow... you smell like you just played football! Go home, take a shower and then come back, okay?", 'Uy... ¡hueles a que acabas de jugar al fútbol! Pasa por casa, dúchate y luego vuelve, ¿vale?', 'Accidenti... hai l\'odore di chi ha appena giocato a calcio! Passa da casa, fatti una doccia e poi torna, ok?', 'Oh là... tu sens comme quelqu\'un qui vient de jouer au foot ! Passe chez toi, prends une douche et reviens, d\'accord ?'],
     // (5.2.0) expediente com clientes, bancada, gorjeta e caixa; Lúcia com casa e horário; coxinha da fome
     "Clientes com \"!\" querem fazer um pedido. Anote na mesa e prepare na bancada (à esquerda).": ["Customers with \"!\" want to order. Take the order at the table and make it at the prep counter (on the left).", "Los clientes con \"!\" quieren pedir. Anota en la mesa y prepara en la barra (a la izquierda).", "I clienti con \"!\" vogliono ordinare. Prendi l'ordine al tavolo e preparalo al bancone (a sinistra).", "Les clients avec \"!\" veulent commander. Note la commande à table et prépare-la au comptoir (à gauche)."],
     "Anotar pedido": ["Take order", "Anotar pedido", "Prendi l'ordine", "Prendre la commande"],
@@ -1281,17 +1329,273 @@
     B.mesh.position.set(B.x, B.y, B.z); B.sombra.position.set(B.x, 0.1, B.z);
   }
 
+  // ================================================================== (5.3.0) EMPREGOS, FUTEBOL NO SINTÉTICO, CELULAR E BANHO
+  //   Turnos de cada emprego (só a cafeteria tem o expediente jogável por enquanto). Ninguém trabalha sábado e domingo.
+  //   O convite do futebol: quem trabalha de manhã/tarde é chamado 2h DEPOIS do turno; quem trabalha de tarde/noite, 4h ANTES.
+  //   O primeiro convite é uma LIGAÇÃO do João depois do primeiro dia de trabalho (celular pixelado no canto inferior direito, 10 s
+  //   para atender; sem atender vem a mensagem). Depois disso o racha do sintético Doutor Bryan é toda segunda e quarta (DIAS_FUTEBOL).
+  //   Toda partida no sintético: escolhe 5 ou 3 minutos, o horário e o clima do mundo vão para a partida e ficam salvos nos dados dela
+  //   (d.partidas), e o relógio do mundo anda 1h. A cada 10 chutes no alvo: +0,25 em chute, efeito e força (escala de 1 a 10).
+  //   Depois de toda partida ele diz que precisa de um banho (d.precisaBanho): dormir sem banho tira 5 de saúde (fase2.js) e a
+  //   Lúcia não deixa começar o turno sem banho.
+  const TURNOS = { cafeteria: [8, 16], mercado: [14, 22], pizzaria: [15, 23] };
+  const LUGAR_EMPREGO = { cafeteria: 'cafeteria', mercado: 'supermercado', pizzaria: 'pizzaria' };
+  const DIAS_FUTEBOL = [0, 2];                                           // diaSemana(): 0 = segunda, 2 = quarta
+  const lugarDoEmprego = () => LUGAR_EMPREGO[empregoEscolhido()] || null;
+  const fimDeSemana = () => diaSemana() >= 5;
+  function horaDoFutebol() { const t = TURNOS[empregoEscolhido()] || TURNOS.cafeteria; return t[0] < 12 ? t[1] + 2 : t[0] - 4; }
+  function fut() { const d = S.dados; return d.futebol || (d.futebol = { convidado: false, ligou: false, jogos: 0, conheceCaio: false, agenda: null }); }
+  function sintetico() { const F = S.societys && S.societys[1]; return F ? { x: F.gate.out.x, z: F.gate.out.z, dentro: F.gate.in, F } : null; }
+  const diaDeFutebol = () => fut().convidado && DIAS_FUTEBOL.includes(diaSemana());
+  // segunda e quarta (depois do convite): a agenda do dia já nasce marcada
+  function agendarHoje() {
+    const d = S.dados, f = fut();
+    if (diaDeFutebol() && !(f.agenda && f.agenda.dia === d.dia)) f.agenda = { dia: d.dia, hora: horaDoFutebol(), feito: false };
+    mostrarAgenda();
+  }
+  function mostrarAgenda() {
+    const d = S.dados, f = fut(), A = f.agenda;
+    if (!A || A.feito || A.dia !== d.dia || d.hora > A.hora + 1.5) return;
+    S.missao = Tf('Missão: futebol no sintético Doutor Bryan às {0}.', fmtHora(A.hora)); mostrarMissao();
+    const P = sintetico(); if (P && !S.dentro) definirMarca(P.x, P.z);
+  }
+  // ---- o celular (canto inferior direito). Tocando, o resto do HUD some; 10 s para atender.
+  function iconeCelular(t) {
+    const W = 18, Hh = 30, cv = document.createElement('canvas'); cv.width = W; cv.height = Hh; const g = cv.getContext('2d');
+    g.fillStyle = '#2a1206'; g.fillRect(1, 0, W - 2, Hh); g.fillRect(0, 1, W, Hh - 2);
+    g.fillStyle = '#3a3f4a'; g.fillRect(2, 1, W - 4, Hh - 2);
+    g.fillStyle = t % 2 ? '#8fe04a' : '#6cc8f0'; g.fillRect(3, 4, W - 6, 19);                        // tela acesa (pisca)
+    g.fillStyle = '#1c3a1c'; g.fillRect(6, 7, 6, 6); g.fillStyle = '#f2c98a'; g.fillRect(7, 8, 4, 4);  // a foto do João
+    g.fillStyle = '#2a1206'; g.fillRect(5, 15, 8, 1); g.fillRect(6, 17, 6, 1);                         // "João" / "chamando..."
+    g.fillStyle = '#5fd35a'; g.fillRect(4, 20, 4, 2); g.fillStyle = '#e0405a'; g.fillRect(10, 20, 4, 2);
+    g.fillStyle = '#8c9199'; g.fillRect(7, 25, 4, 2); g.fillStyle = '#1c1c1f'; g.fillRect(7, 2, 4, 1);
+    cv.style.cssText = 'width:100%;height:100%;image-rendering:pixelated;display:block;pointer-events:none;';
+    return cv;
+  }
+  function montarCelularUI() {
+    if (UI.cel) return;
+    const b = document.createElement('button'); b.type = 'button'; b.id = 'cdCelular'; b.hidden = true;
+    b.style.cssText = 'position:fixed;z-index:13;right:max(22px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:72px;height:120px;padding:0;background:none;border:0;cursor:pointer;filter:drop-shadow(0 4px 0 rgba(0,0,0,.45));';
+    const tag = document.createElement('div'); tag.style.cssText = 'position:fixed;z-index:13;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(142px + env(safe-area-inset-bottom,0px));padding:4px 8px;background:rgba(42,18,6,.92);border:3px solid #8fe04a;color:#fff0c8;font:700 11px/1.2 var(--font-display);white-space:nowrap;pointer-events:none;';
+    tag.hidden = true;
+    const css = document.createElement('style'); css.textContent = '@keyframes cdTrim{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}40%{transform:rotate(8deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(6deg)}} #cdCelular.toca{animation:cdTrim .5s linear infinite} #cdCelular[hidden]{display:none}';
+    document.head.appendChild(css);
+    ($('raizJogo') || document.body).append(b, tag);
+    UI.cel = b; UI.celTag = tag;
+    b.addEventListener('click', () => { if (S && S.ligando) atenderLigacao(); });
+  }
+  function somToque(A, t) {                                             // "trim-trim" (duas notinhas rápidas, duas vezes)
+    for (const [k, f] of [[0, 1318], [0.09, 1568], [0.18, 1318], [0.27, 1568], [0.55, 1318], [0.64, 1568], [0.73, 1318], [0.82, 1568]]) {
+      const o = A.ctx.createOscillator(), g = A.ctx.createGain(); o.type = 'square'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + k); g.gain.linearRampToValueAtTime(0.045, t + k + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + k + 0.085);
+      o.connect(g); g.connect(A.mestre); o.start(t + k); o.stop(t + k + 0.1);
+    }
+  }
+  function esconderHud(sim) {
+    for (const el of [UI.hud, UI.esq, UI.ctl, UI.seta, UI.turno]) if (el) { if (sim) { el.dataset.antes = el.hidden ? '1' : '0'; el.hidden = true; } else if (el.dataset.antes != null) { el.hidden = el.dataset.antes === '1'; delete el.dataset.antes; } }
+  }
+  function tocarCelular() {
+    montarCelularUI();
+    S.modo = 'cena'; aviso(''); esconderHud(true);
+    S.ligando = { t: 10, toque: 0, pisca: 0 };
+    UI.cel.hidden = false; UI.cel.classList.add('toca'); UI.cel.replaceChildren(iconeCelular(0));
+    UI.celTag.textContent = T('João chamando... toque para atender'); UI.celTag.hidden = false;
+  }
+  function tickCelular(dt) {
+    const L = S.ligando; if (!L) return;
+    const agora = performance.now(); if (L.t0 == null) L.t0 = agora; L.t = 10 - (agora - L.t0) / 1000;   // 10 s de verdade (não depende do FPS)
+    L.toque -= dt; L.pisca += dt;
+    if (L.toque <= 0) { L.toque = 1.6; const A = audioCafe(); if (A) try { somToque(A, A.ctx.currentTime + 0.01); } catch (e) { /* sem som */ } }
+    if (L.pisca > 0.35) { L.pisca = 0; L.n = (L.n | 0) + 1; UI.cel.replaceChildren(iconeCelular(L.n)); }
+    if (L.t <= 0) perdeuLigacao();
+  }
+  function pararCelular() { S.ligando = null; if (UI.cel) { UI.cel.hidden = true; UI.cel.classList.remove('toca'); UI.celTag.hidden = true; } }
+  function textoHorarioJogo(A) { return (A.dia === S.dados.dia ? T('hoje') : T('amanhã')) + ' ' + Tf('às {0}', fmtHora(A.hora)); }
+  function marcarConvite() {
+    const f = fut(), d = S.dados, h = horaDoFutebol();
+    f.ligou = true; f.convidado = true;
+    f.agenda = { dia: h > d.hora ? d.dia : d.dia + 1, hora: h, feito: false, primeiro: true };
+  }
+  function depoisDoConvite() {
+    const f = fut(), P = sintetico();
+    S.missao = Tf('Missão: futebol no sintético Doutor Bryan, {0}.', textoHorarioJogo(f.agenda)); mostrarMissao();
+    if (P && !S.dentro) definirMarca(P.x, P.z);
+    gravar('chegada');
+  }
+  async function perdeuLigacao() {
+    pararCelular(); marcarConvite();
+    const f = fut();
+    await mensagemCelular(T('João'), Tf('Tentei te ligar e você não atendeu. Bora jogar bola! Lá no campo sintético Doutor Bryan. Te espero lá {0}.', textoHorarioJogo(f.agenda)), T('Te mandei a localização.'));
+    esconderHud(false); depoisDoConvite(); if (S && S.ativo && S.modo === 'cena') liberar();
+  }
+  function mensagemCelular(de, txt, txt2) {                             // a mensagem chega como um balão de chat, no alto da tela
+    return new Promise((ok) => {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:fixed;z-index:14;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(460px,calc(100% - 32px));box-sizing:border-box;background:#f4f6f8;border:4px solid #2a1206;color:#1c2a36;padding:8px 10px;font:600 13px/1.35 var(--font-body);display:flex;flex-direction:column;gap:5px;cursor:pointer;';
+      el.innerHTML = '<div style="font:700 11px/1 var(--font-display);color:#1f7a4d;letter-spacing:.06em">✉ ' + de + '</div>';
+      for (const t of [txt, txt2]) { if (!t) continue; const p = document.createElement('div'); p.style.cssText = 'background:#dcf3d4;border:2px solid #9ccf8e;padding:5px 8px;align-self:flex-start;max-width:92%;'; p.textContent = t; el.appendChild(p); }
+      const fim = () => { clearTimeout(tm); el.remove(); ok(); };
+      el.addEventListener('click', fim); const tm = setTimeout(fim, 7000);
+      ($('raizJogo') || document.body).appendChild(el);
+      const A = audioCafe(); if (A) try { const t0 = A.ctx.currentTime + 0.01; for (const [k, f] of [[0, 1760], [0.12, 2349]]) { const o = A.ctx.createOscillator(), g = A.ctx.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0.06, t0 + k); g.gain.exponentialRampToValueAtTime(0.0001, t0 + k + 0.2); o.connect(g); g.connect(A.mestre); o.start(t0 + k); o.stop(t0 + k + 0.22); } } catch (e) { /* sem som */ }
+    });
+  }
+  // atender: ele tira o celular do bolso de trás, põe do lado do rosto e conversa com o João
+  async function atenderLigacao() {
+    pararCelular(); marcarConvite();
+    const J = S.jog, f = fut();
+    const camAntes = S.cam.dist; S.cam.dist = 4.6;                     // a câmera chega perto para ver o celular
+    J.andando = false; J.correndo = false; J.fone = { t: 0 }; foneNaMao(true);
+    await esperar(900);
+    await fala('joao', Tf('Fala, {0}! É o João!', nomeJog()));
+    await fala('jog', T('Opa, João! Acabei de sair do trabalho. E aí?'));
+    await fala('joao', Tf('Bora jogar uma bola? A galera joga no campo sintético Doutor Bryan. Te espero lá {0}!', textoHorarioJogo(f.agenda)));
+    await fala('jog', T('Bora! Tô dentro.'));
+    await fala('joao', T('Fechou! Te mandei a localização. Até lá!'));
+    Dialogo.esconder();
+    J.fone = { t: 0, guarda: true }; await esperar(700); foneNaMao(false); J.fone = null; S.cam.dist = camAntes;
+    esconderHud(false); depoisDoConvite(); if (S && S.ativo && S.modo === 'cena') liberar();
+  }
+  function foneNaMao(sim) {
+    const J = S.jog;
+    if (J.foneMesh) { if (J.foneMesh.parent) J.foneMesh.parent.remove(J.foneMesh); J.foneMesh = null; }
+    if (!sim) return;
+    const G = new Geo(); G.box(0.045, 0.16, 0.085, '#3a3f4a', 0, 0, 0); G.box(0.05, 0.13, 0.065, '#6cc8f0', 0.003, 0.005, 0);
+    const m = G.malha(MAT); m.position.set(0.02, -0.3, 0); J.m.bracoD.cotovelo.add(m); J.foneMesh = m;
+  }
+  function poseFone(J, dt) {                                             // 1) mão para trás (pega do bolso) 2) leva até a orelha
+    const F = J.fone; if (!F) return;
+    F.t += dt; const m = J.m;
+    const k = F.guarda ? Math.max(0, 1 - F.t / 0.6) : Math.min(1, Math.max(0, (F.t - 0.45) / 0.45));
+    if (!F.guarda && F.t < 0.45) { m.bracoD.rotation.z = -0.85 * Math.min(1, F.t / 0.25); usarCotovelo(m.bracoD, 0, 0.6); if (J.foneMesh) J.foneMesh.visible = F.t > 0.3; return; }
+    m.bracoD.rotation.z = lerp(0.1, 1.6, k); usarCotovelo(m.bracoD, 0, lerp(0.2, 1.9, k));
+    if (J.foneMesh) { J.foneMesh.visible = true; J.foneMesh.rotation.z = -(m.bracoD.rotation.z + lerp(0.2, 1.9, k)) + 1.4; }
+  }
+  // ---- o racha no sintético
+  function apFixa(seed, g) { return gerarAparencia(seed, g); }
+  const UNI_COLETE = { camisa: '#f2c230', listra: '#1c1c1f', gola: '#1c1c1f', calcao: '#1c1c1f', meia: '#1c1c1f', sola: '#111111', goleiro: '#2a72d6' };
+  const UNI_AZUL = { camisa: '#3a64b8', listra: '#f2f2ee', gola: '#1f3a73', calcao: '#f2f2ee', meia: '#3a64b8', sola: '#f2f2ee', goleiro: '#1f9e5c' };
+  const AP_CAIO = { pele: '#a8693f', cabelo: '#1c140f', estilo: 2, rosto: 0, labio: 3, barba: 1, corBarba: '#1c140f' };
+  function atributosJogador() {
+    const d = S.dados;
+    if (!d.atributos) d.atributos = Object.assign({}, (PERSONAGEM.atributos && Object.keys(PERSONAGEM.atributos).length ? PERSONAGEM.atributos : Atributos.iniciante()));
+    for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number' || d.atributos[n] < 5) d.atributos[n] = Math.max(5, d.atributos[n] || 5);   // (5.3.0) começa com tudo 5
+    return d.atributos;
+  }
+  function cfgSintetico(duracao, horario, clima) {
+    const g = (nome, seed, gen) => Object.assign({ nome }, apFixa(seed, gen));
+    const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
+    const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
+      emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
+      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), g('Carol', 5151, 'F')] };
+    const t1 = { id: 's_bryan', nome: T('Galera do Bryan'), sigla: 'BRY', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
+      emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'DB' }, tecnico: tec,
+      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F')] };
+    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
+    return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
+      dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
+  }
+  function sairParaPartida() {                                           // entrega a tela ao jogo de verdade (a cidade fica guardada, escondida)
+    Musica.parar(); MusicaCafe.parar();
+    GANCHO_RENDER = null; camera.clearViewOffset();
+    S.visCidade = scene.children.filter((c) => !c.isLight && c.visible);   // o que é da cidade e está à mostra (volta igual depois)
+    for (const c of S.visCidade) c.visible = false;
+    restaurarMundo(); esconderHud(true); UI.arrasto.hidden = true; aviso('');
+  }
+  function voltarDaPartida() {
+    const volta = S.visCidade || [];
+    prepararMundo();                                                     // céu, névoa e câmera da cidade (e esconde o campo da partida)
+    for (const c of volta) c.visible = true; S.visCidade = null;
+    GANCHO_RENDER = gancho; S.cam.snap = true;
+    const ps = document.getElementById('pauseScreen'), es = document.getElementById('endScreen'); if (ps) ps.hidden = true; if (es) es.hidden = true;
+    document.body.classList.add('criadorAberto');                       // esconde o placar, o radar e os botões da partida (como a fase 1)
+    esconderHud(false); UI.arrasto.hidden = false;
+  }
+  async function jogarSintetico() {
+    const d = S.dados, f = fut(), A = f.agenda, P = sintetico(); if (!A || !P) return;
+    const r0 = await Escolha.mostrar(T('Quanto tempo de jogo?'), [T('5 minutos'), T('3 minutos'), T('Agora não')], { centro: true });
+    Dialogo.esconder(); if (r0 === 2 || r0 < 0) return;
+    const duracao = r0 === 1 ? 180 : 300, h = d.hora;
+    const horario = h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite';
+    const clima = S.clima.estado === 'chuva' || S.clima.chuva > 0.35 ? 'chuva' : 'seco';
+    const cfg = cfgSintetico(duracao, horario, clima);
+    await preto(true, 800);
+    sairParaPartida();
+    let r = null;
+    try { r = await Historia.partida({ cfg, aviso: T('Racha no sintético: 4 contra 4!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    await preto(true, 900);
+    voltarDaPartida();
+    try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
+    // o que fica salvo da partida: o mundo na hora (dia, semana, horário, clima) e o resultado
+    const st = (r && r.estatisticas) || {};
+    d.partidas = (d.partidas || []).slice(-29);
+    d.partidas.push({ local: 'sintetico', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima, nublado: S.clima.nuv > 0.35, duracao,
+      placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
+    // evolução: a cada 10 chutes no alvo, +0,25 em chute, efeito e força (até 10)
+    const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
+    while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
+    PERSONAGEM.atributos = Object.assign({}, at);
+    A.feito = true; f.jogos = (f.jogos | 0) + 1; d.precisaBanho = true;
+    tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
+    S.missao = ''; recolherMissao(); definirMarca(null);
+    // a cena depois do jogo: o Caio vem falar com a gente na saída do campo
+    const J = S.jog, E = P.dentro; J.sentado = false; J.x = E.x; J.z = E.z; J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null;
+    const C = criarNPCFixo(AP_CAIO, false, 7, ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee']); C.x = E.x + 1.3; C.z = E.z - 0.4; C.yaw = C.yawAlvo = Math.PI; S.caio = C;
+    J.yawAlvo = Math.atan2(-(C.z - J.z), C.x - J.x); S.cam.snap = true;
+    Musica.tocar('jazz');
+    await preto(false, 900);
+    try {
+      if (!f.conheceCaio) { await fala('caio', T('E aí! Eu sou o Caio, eu organizo o racha aqui.')); f.conheceCaio = true; }
+      if (r && r.bom) await fala('caio', T('Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!'));
+      else await fala('caio', T('Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!'));
+      if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
+      await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
+      Dialogo.esconder();
+    } catch (e) { console.error(e); }
+    descartarPessoa(C); S.caio = null;
+    gravar('chegada');
+  }
+  function criarNPCFixo(ap, fem, roupa, cores) {
+    let m = null, opt = null;
+    try { if (S.f2 && S.f2.modeloPessoa) { const r = S.f2.modeloPessoa({ ap, fem, roupa, cores }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] NPC:', e); }
+    if (!m) { opt = Object.assign({ camisa: cores[0], listra: cores[2], gola: cores[2], calcao: cores[1], meia: '#f2f2ee', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
+    S.grupo.add(m.raiz); S.meus.add(m);
+    const A = { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1.2, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'parado' };
+    S.npcs.push(A); return A;
+  }
+  // os alvos do futebol (na porta do sintético Doutor Bryan)
+  function alvosFutebol(v) {
+    const f = fut(), A = f.agenda, P = sintetico(), d = S.dados; if (!A || A.feito || A.dia !== d.dia || !P) return;
+    if (d.hora < A.hora - 0.75) v.push({ x: P.x, z: P.z, r: 2.2, txt: Tf('O jogo é às {0}', fmtHora(A.hora)), fn: async () => {}, y: 2.6 });
+    else if (d.hora <= A.hora + 1.5) v.push({ x: P.x, z: P.z, r: 2.4, txt: T('Jogar bola no sintético'), fn: jogarSintetico, y: 2.6, pri: true });
+  }
+  // depois do 1º turno de trabalho, o João liga (alguns segundos depois, com o jogador livre)
+  function tickConvite(dt) {
+    const f = fut(); if (f.ligou || !S.dados.trabalhouAlgumDia) return;
+    if (S.modo !== 'livre' || S.ligando || S.turno) return;
+    S.ligarT = (S.ligarT == null ? 6 : S.ligarT) - dt;
+    if (S.ligarT <= 0) { S.ligarT = null; tocarCelular(); }
+  }
   // ------------------------------------------------------------------ (5.2.0) a cafeteria abre às 8h e fecha às 20h; a LÚCIA mora na casa dos Alves:
   //   sai de casa a tempo de chegar às 7h50, entra na cafeteria e às 20h volta para casa pelo mesmo caminho (pela rede de calçadas).
   //   A posição dela na rua sai direto da hora (sem estado): funciona também ao carregar e ao sair de dentro de um lugar.
-  const H_CAFE_ABRE = 8, H_CAFE_FECHA = 20, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;
+  const H_CAFE_ABRE = 8, H_CAFE_FECHA = 16, H_LUCIA_SAI = 17, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;   // (5.3.0) fecha às 16h; a Lúcia fecha o caixa e sai às 17h
   const cafeAberto = () => S.dados.hora >= H_CAFE_ABRE && S.dados.hora < H_CAFE_FECHA;
-  const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < H_CAFE_FECHA;
+  const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < H_LUCIA_SAI;
   function rotaLucia() {
     if (S.rotaLucia) return S.rotaLucia;
     const C = (S.casas || []).find((c) => c.especial === 'alves'), P = PORTAS.find((p) => p.nome === 'cafeteria');
     if (!C || !P || !S.rede) return null;
-    const pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6)), acc = [0];
+    let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6));
+    { // (5.3.0) antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
+      const fim = { x: P.x, z: P.z - 0.6 }; let melhor = null;
+      for (let i = 2; i < pts.length - 1; i++) {
+        const a = pts[i - 1], b = pts[i], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
+        const u = clamp(((fim.x - a.x) * vx + (fim.z - a.z) * vz) / L2, 0, 1), q = { x: a.x + vx * u, z: a.z + vz * u }, dd = Math.hypot(q.x - fim.x, q.z - fim.z);
+        if (!melhor || dd < melhor.dd - 1e-6) melhor = { i, q, dd };
+      }
+      if (melhor) pts = pts.slice(0, melhor.i).concat([melhor.q, fim]); }
+    const acc = [0];
     for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
     const L = acc[acc.length - 1];
     return (S.rotaLucia = { pts, acc, L, dur: L / VEL_LUCIA * H_POR_S });
@@ -1308,7 +1612,7 @@
     const R = rotaLucia(), h = S.dados.hora; if (!R) { if (!A.oculto) sumirV(A); return; }
     let k = -1, ida = true; const t0 = H_LUCIA_CHEGA - R.dur;
     if (h >= t0 && h < H_LUCIA_CHEGA) k = (h - t0) / R.dur;
-    else if (h >= H_CAFE_FECHA && h < H_CAFE_FECHA + R.dur) { k = 1 - (h - H_CAFE_FECHA) / R.dur; ida = false; }
+    else if (h >= H_LUCIA_SAI && h < H_LUCIA_SAI + R.dur) { k = 1 - (h - H_LUCIA_SAI) / R.dur; ida = false; }
     if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
     const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
     A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = VEL_LUCIA;
@@ -1322,7 +1626,7 @@
   // 20h com o jogador dentro da cafeteria: a Lúcia avisa e ele sai
   async function fecharCafe() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
-    try { await fala('lucia', T('Já são 20h, vamos fechar! Até amanhã!')); Dialogo.esconder(); if (S.jog.sentado) levantar(); await sairDoLugar(); } catch (e) { console.error(e); }
+    try { await fala('lucia', T('Já são 17h, vou fechar a cafeteria! Até amanhã!')); Dialogo.esconder(); if (S.jog.sentado) levantar(); await sairDoLugar(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
   // ------------------------------------------------------------------ (5.1.1) a LÚCIA ALVES adulta: a mesma da Fase 1 (fase1.js, S.luciaA), crescida
@@ -1835,7 +2139,7 @@
     const dy = ((J.yawAlvo - J.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; J.yaw += dy * Math.min(1, dt * 10);
     if (J.sentado) J.y = 0; else { const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18); }
     if (J.comendo > 0) J.comendo -= dt;
-    poseAtor(J, dt); poseCopo(J);
+    poseAtor(J, dt); poseCopo(J); poseFone(J, dt);
     J.anel.position.set(J.x, J.y + 0.03, J.z);
   }
   const andar = (A, pts, vel) => new Promise((ok) => { A.vel = vel || 2.2; A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.rotaRes = ok; });
@@ -2038,7 +2342,7 @@
   function montarFluxo(nome, lugares, area, ent) {
     const f = FLUXO_SEM[diaSemana()], F = { nome, lugares, area, ent, alvo: alvoClientes(lugares.length), alvoVaga: area ? (f === 'vazio' ? 2 : f === 'medio' ? 4 : 7) : 0, prox: 3 + Math.random() * 4 };
     const livres = lugares.slice().sort(() => Math.random() - 0.5);
-    if (nome === 'cafeteria') return F;                                // (5.2.1) a cafeteria começa VAZIA: os clientes vão chegando pela porta
+    if (nome === 'cafeteria' || nome === lugarDoEmprego()) return F;   // (5.2.1) a cafeteria começa VAZIA; (5.3.0) o lugar do emprego também
     for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70; }   // já tem gente quando ele entra, cada um num ponto da visita
     for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
     return F;
@@ -2064,7 +2368,7 @@
     A.m.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
   }
   function tickFluxo(dt) {
-    const F = S.fluxo; if (!F || S.turno) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno
+    const F = S.fluxo; if (!F || S.turno || F.nome === lugarDoEmprego()) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno; (5.3.0) no lugar do emprego só há clientes no turno
     F.prox -= dt;
     if (F.prox <= 0) {
       F.prox = 5 + Math.random() * 9; const e = F.ent;
@@ -2134,10 +2438,10 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) for (const P of PORTAS) {
+    } else if (S.interiores) { alvosFutebol(v); for (const P of PORTAS) {
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
-    }
+    } }
     return v;
   }
   function alvoAtual() {
@@ -2187,10 +2491,10 @@
   }
   async function fala(quem, texto) {
     // (5.1.0) quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
-    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : null;
+    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : quem === 'caio' ? S.caio : null;
     if (A) A.fala = true;
-    const nome = quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : '';
-    const voz = quem === 'val' ? 1 : quem === 'lucia' ? 0 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
+    const nome = quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : quem === 'joao' ? T('João') : quem === 'caio' ? 'Caio' : '';
+    const voz = quem === 'val' ? 1 : quem === 'lucia' ? 0 : quem === 'joao' ? 3 : quem === 'caio' ? 4 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
     await Dialogo.mostrar([texto], { nome, voz, manter: true });
     if (A) A.fala = false;
   }
@@ -2637,7 +2941,7 @@
     if (UI.turno) UI.turno.hidden = true;
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
     const paga = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos);
-    d.trabalhouHoje = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
+    d.trabalhouHoje = true; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
     gravar('chegada');
     const espera = S.modo !== 'livre'; if (!espera) { S.modo = 'cena'; UI.ctl.hidden = true; }
     try {
@@ -2794,9 +3098,12 @@
     }
     Dialogo.esconder();
     if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
+    if (d.hora >= H_CAFE_FECHA && d.hora < H_LUCIA_SAI) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }   // (5.3.0)
+    if (fimDeSemana() && empregoEscolhido() === 'cafeteria' && d.luciaApresentou) { await fala('lucia', T('Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!')); Dialogo.esconder(); return; }   // (5.3.0) sábado e domingo: sem turno
     if ((d.dia || 1) < 2) { await fala('lucia', T('Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!')); Dialogo.esconder(); return; }
     if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
     if (d.hora < H_TRAB_INI || d.hora >= H_TRAB_FIM) { await fala('lucia', T('O expediente é das 8h às 16h. Volta nesse horário!')); Dialogo.esconder(); return; }
+    if (d.precisaBanho) { await fala('lucia', T('Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?')); Dialogo.esconder(); return; }   // (5.3.0) sem banho, não trabalha
     const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')], { centro: true });
     Dialogo.esconder();
     if (r !== 0) return;
@@ -3202,7 +3509,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (ant < 2 && d.hora >= 2 && !S.madrugada) { S.madrugada = true; madrugada(); return; }     // (5.0.0) passou das 2h acordado
     if (!d.avisouDormir && d.hora >= 21 && d.hora < 24 && S.modo === 'livre' && !S.dentro) { d.avisouDormir = true; avisoDormir(); }
   }
-  function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
+  function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 3800); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
   // (5.0.0) 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
   async function madrugada() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
@@ -3229,7 +3536,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // (5.0.0) o dia 1 é uma segunda-feira
   const diaSemana = () => ((((S.dados.dia || 1) - 1) % 7) + 7) % 7;
   function atualizarRelogioUI() {
-    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }
+    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // (5.3.0) ⚽ = dia de futebol
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
     const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;   // (5.2.0) a coxinha fica até ele comer no dia
@@ -3464,13 +3771,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     A.cool = 20 + Math.random() * 30;
     if (!S.sacola.pop()) return;
     let nome = DESTINOS[Math.floor(Math.random() * DESTINOS.length)];
+    if (nome === lugarDoEmprego()) return;                               // (5.3.0) ninguém de fora entra onde o jogador trabalha
     if (nome === 'lanche') {
       const V = S.valdemar, vagas = S.assentos.filter((a) => a.lanche && !a.ocupado);
       if (V && !V.oculto && V.estado === 'balcao' && vagas.length) {
         const a = vagas[Math.floor(Math.random() * vagas.length)]; a.ocupado = A;
         A.dest = { tipo: 'lanche', a, fase: 'ir', rota: caminhoRede(A.x, A.z, a.x, a.z - 0.95), t: 0 }; return;
       }
-      nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))];
+      nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))]; if (nome === lugarDoEmprego()) return;
     }
     const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
     A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
@@ -3528,7 +3836,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.modo === 'livre') { mover(dt); tickHorario(dt); tickDescobertas(); }
         else if (S.trabalhando) tickHorario(dt);       // (5.1.1) o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);
-        if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !cafeAberto() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
+        tickCelular(dt); tickConvite(dt);                // (5.3.0)
+        if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
@@ -3602,6 +3911,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       S.missao = (dados.comidas | 0) > 0 || (dados.dia || 1) > 1 ? '' :      // (5.2.0) a missão de comer só aparece no 1º dia
         f2d.vizinho && f2d.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.');
       liberar(); if (S.missao) mostrarMissao();
+      agendarHoje();                                                   // (5.3.0) segunda/quarta: futebol no sintético
       if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
       if ((dados.dia || 1) === 1) { aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500); }   // (5.2.0) só no 1º dia
       await fim; paraFase2 = S.paraFase2 || false;
@@ -3615,5 +3925,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
 
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
+    _fns: { jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
 })();

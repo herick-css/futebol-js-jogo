@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 5.1.0
+   FUTEBOL JS · jogo.js · versão 5.3.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.3.0 — partidas da história fora da escola e atributos iniciais:
+   • Historia.partida({ cfg, aviso, aoPronto }): com cfg roda qualquer partida da história (o racha do sintético da cidade.js usa isso,
+     com campo, times, horário e clima do mundo); sem cfg continua sendo a partida da escola.
+   • Atributos.iniciante(): o personagem começa com os 15 atributos em 5 (antes 4, com velocidade 5). O fôlego curto do iniciante continua.
+
    Novidades da versão 5.1.0:
    • Emprego da cafeteria (cidade.js): a Lúcia Alves (da fase1.js) é a moça do caixa; reconhece o jogador de 3 jeitos
      diferentes conforme o que rolou na fase 1 (o easter egg da mariposa, uma conversa marcante, ou nunca ter conversado).
@@ -625,7 +630,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '5.1.0';
+const VERSAO_JOGO = '5.3.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -1153,7 +1158,7 @@ const Atributos = (() => {
   }
   return {
     NOMES, aplicar,
-    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(4), { velocidade: 5, _corridaSeg: 5, _recuperaCada: 1.5 }),   // (4.7.3) iniciante: tudo 4, mas corre um pouco mais (velocidade 5)
+    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(5), { _corridaSeg: 5, _recuperaCada: 1.5 }),   // (5.3.0) iniciante: TUDO 5 (antes 4, com velocidade 5); o fôlego curto do iniciante continua
     valor: (nome) => atual[nome],
     fator: (nome) => razao(nome),
     get atual() { return Object.assign({}, atual); },
@@ -13513,9 +13518,12 @@ const Historia = (() => {
     pendente = null;                        // (4.4.3) partida nova (ou refeita): começa sem nada pendente
     const r = await new Promise((res) => {
       fimResolve = res;
-      entrar(cfg(false)); bolaDoJoao(true); Espectros.aplicarNaPartida();   // (4.9.3) espectros e condições (ex.: refeição pesada) valem nesta partida
+      // (5.3.0) op.cfg: outra partida da história (ex.: o racha do sintético na cidade.js) com a configuração completa
+      //   (mesmo formato do cfg() da escola / FutebolJS.novaPartida). Sem op.cfg é a partida da escola, como sempre.
+      const outra = !!(op && op.cfg);
+      entrar(outra ? op.cfg : cfg(false)); bolaDoJoao(!outra); Espectros.aplicarNaPartida();   // (4.9.3) espectros e condições (ex.: refeição pesada) valem nesta partida
       if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // (4.4.0) a tela só clareia com a quadra pronta
-      setTimeout(() => showToast(T('Racha da escola: 4 contra 4!')), 900);
+      setTimeout(() => showToast(outra ? (op.aviso || '') : T('Racha da escola: 4 contra 4!')), 900);
     });
     modo = null; sair();
     return r;
