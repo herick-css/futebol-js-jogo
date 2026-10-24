@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.4.3
+     - Dá para DORMIR A QUALQUER HORA na cama (antes das 20h pergunta "Dormir mesmo assim?"): acorda no dia seguinte às 5h. Bom para testar
+       os dias (mercado, futebol de segunda e quarta...).
+
    NOVIDADES DA 5.3.0
      - Banho no chuveiro limpa o "precisa de banho" do futebol (historia.cidade.precisaBanho). Dormiu sem banho (cama, apagão das 2h ou
        apagão na rua): -5 em Saudável (Espectros) e, ao acordar, "Dormi fedendo, estou me sentindo meio mal."
@@ -872,6 +876,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // IDIOMAS: textos novos da Fase 2 (chave = português; ordem [en, es, it, fr]). Só entra o que ainda NÃO existe na tabela I18N do jogo.js.
   const TRAD_F2 = {
     'Dormir': ['Sleep', 'Dormir', 'Dormi', 'Dormir'],
+    'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at 5 AM?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las 5h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle 5?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à 5 h ?"],
+    'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
     'Ainda não estou com sono.': ["I'm not sleepy yet.", 'Todavía no tengo sueño.', 'Non ho ancora sonno.', "Je n'ai pas encore sommeil."],
     'Bom dia! Hora de começar o dia.': ['Good morning! Time to start the day.', '¡Buenos días! Hora de empezar el día.', 'Buongiorno! È ora di iniziare la giornata.', "Bonjour ! C'est l'heure de commencer la journée."],
     'Dormi fedendo, estou me sentindo meio mal.': ['I slept stinky, I feel kind of sick.', 'Dormí apestando, me siento medio mal.', 'Ho dormito puzzolente, mi sento un po\' male.', "J'ai dormi en puant, je me sens un peu mal."],
@@ -1453,7 +1459,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     salvarRelogio();
     const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
-    if (h >= H_ACORDA && h < 20) { await dizer(['jog', T('Ainda não estou com sono.')]); return; }   // (5.2.0) acorda às 5h
+    if (h >= H_ACORDA && h < 20) {                                     // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
+      const r = await Escolha.mostrar(T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?'), [T('Dormir'), T('Agora não')], { centro: true });
+      Dialogo.esconder(); if (r !== 0) return;
+    }
     await preto(true, 900); const sujo = dormiuSujo();
     const horas = h >= H_ACORDA ? 24 - h + H_ACORDA : H_ACORDA - h;
     const novo = Object.assign({}, c, { hora: H_ACORDA, dia: (c.dia || 1) + (h >= H_ACORDA ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });

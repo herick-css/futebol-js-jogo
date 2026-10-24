@@ -1,6 +1,16 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   5.4.3 — os clientes de passeio COMPRAM de verdade (pegam produtos, entram na FILA e a caixa — Rosa ou Cadu — vende: mexe as mãos,
+           bipa os produtos da esteira e toca a registradora; o cliente sai com a sacola). Não tiram estoque.
+           Ritmo da troca de turno: não entra ninguém depois do MEIO-DIA; quem já estava termina a compra e sai (às 13h50 quem ainda
+           está pelos corredores vai para a fila ou embora); às 14h a loja está vazia. Voltam às 15h se o jogador não trabalha.
+           PACIÊNCIA: no turno do jogador, o cliente espera até 1min30 desde que entrou na fila (aos 60 s aparece o "..."); passou disso,
+           vai embora irritado, sem comprar: −5 fakes.
+           22h: os clientes que sobraram continuam lá dentro, o Cadu fica até as 23h "atendendo" e o jogador sai do mercado.
+           Cadu: a vassoura fica na MÃO (presa no antebraço); arrumando, ele fica encostado e de frente para a gôndola/freezer/estoque.
+           Rosa: sai andando do mercado quando o Cadu libera. Para começar o turno: tocar no caixa (ou no 2º caixa) ou falar com o Cadu
+           de mais longe (do outro lado do balcão).
    5.4.2 — dá para trabalhar de novo: o Cadu vai para o 2º caixa às 13h40 (às 14h ele já está lá) e dá para falar com ele mesmo
            andando; enquanto conversa ele para. Antes o "Falar com o Cadu" sumia com ele andando e, com o jogador perto, ele parava
            para não esbarrar e nunca chegava no caixa.
@@ -149,6 +159,11 @@
     'Gaveta (toque nas notas e moedas)': ['Drawer (tap the bills and coins)', 'Cajón (toca billetes y monedas)', 'Cassetto (tocca banconote e monete)', 'Tiroir (touche les billets et les pièces)'],
     'Digite o valor com os centavos e aperte OK.': ['Type the amount with the cents and press OK.', 'Escribe el valor con los centavos y pulsa OK.', "Digita l'importo con i centesimi e premi OK.", 'Tape le montant avec les centimes et appuie sur OK.'],
     'Mercado fechado. Abre às 8h.': ['Market closed. Opens at 8 AM.', 'Mercado cerrado. Abre a las 8h.', 'Mercato chiuso. Apre alle 8.', 'Supérette fermée. Ouvre à 8 h.'],
+    // (5.4.3)
+    'Começar o turno': ['Start the shift', 'Empezar el turno', 'Inizia il turno', 'Commencer le service'],
+    'Um cliente cansou de esperar e foi embora irritado! (−{0} fakes)': ['A customer got tired of waiting and left angry! (−{0} fakes)', '¡Un cliente se cansó de esperar y se fue enojado! (−{0} fakes)', 'Un cliente si è stancato di aspettare ed è andato via arrabbiato! (−{0} fakes)', 'Un client en a eu marre d’attendre et est parti fâché ! (−{0} fakes)'],
+    'Irritados: {0}': ['Angry: {0}', 'Enojados: {0}', 'Arrabbiati: {0}', 'Fâchés : {0}'],
+    '{0} cliente(s) cansaram de esperar e foram embora: {1} fakes de desconto.': ['{0} customer(s) got tired of waiting and left: {1} fakes deducted.', '{0} cliente(s) se cansaron de esperar y se fueron: {1} fakes de descuento.', '{0} cliente/i si sono stancati di aspettare e se ne sono andati: {1} fakes di trattenuta.', '{0} client(s) en ont eu marre d’attendre et sont partis : {1} fakes retenus.'],
     'Abacaxi': ['Pineapple', 'Piña', 'Ananas', 'Ananas'], 'Melancia': ['Watermelon', 'Sandía', 'Anguria', 'Pastèque'],
   };
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
@@ -156,7 +171,8 @@
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 8, H_TURNO = 14, H_CHEIO_ATE = 14.5, H_FECHA = 22, H_ULTIMO_CLIENTE = 21;   // mercado 8h–22h · turno do jogador 14h–22h
   const H_CADU_CHEGA = 7.75, H_ROSA_CHEGA = 7 + 50 / 60, H_CADU_CAIXA2 = 13 + 40 / 60, H_CADU_SAI = 15, H_CADU_VOLTA = 21 + 50 / 60;   // (5.4.2) às 13h40 ele já vai para o caixa
-  const H_SEM_PASSEIO = 13 + 40 / 60, H_VOLTA_PASSEIO = 15, H_FIM_PASSEIO = 21.5;   // (5.4.2) clientes de passeio: some às 13h40, volta às 15h
+  const H_PARA_ENTRAR = 12, H_TODOS_FORA = 13 + 50 / 60, H_VOLTA_PASSEIO = 15, H_FIM_PASSEIO = 21, H_CADU_FICA = 23;   // (5.4.3) troca de turno sem ninguém
+  const PACIENCIA = 90, PACIENCIA_AVISO = 60, IRRITADO = 5;          // (5.4.3) segundos na fila · −5 fakes por cliente que vai embora irritado
   const PAGA = 95, AUMENTO = 15, DESCONTO = 5, FALTA = 3;     // salário fixo · aumento do Cadu · troco errado · produto em falta
   const EST_MAX = 14, REPOR_EM = 5;                          // unidades por seção · abaixo disso o jogo pede para repor
   const SECOES = ['higiene', 'comida', 'bebida', 'fruta'];
@@ -581,17 +597,19 @@
       Lg.caixa(d, e, 0.06 * kc, c, xf, yo + 0.03 * kc, 0);
       m.corpo.add(Lg.malha(MAT_CORES));
     }
+    const VASS_ANG = 0.5;                                                // inclinação do cabo da vassoura (rad a partir da vertical)
     function vassoura(A) {                                              // a vassoura do Cadu (aparece só quando ele varre)
       if (A.vassoura) return A.vassoura;
+      // (5.4.3) presa na MÃO direita (no antebraço, onde fica a mão): o cabo passa pela mão e desce até o chão na frente dele
       const g = new THREE.Group(), G = new api.Geo();
-      G.box(0.045, 1.3, 0.045, '#8a5a2a', 0, -1.3, 0); G.box(0.14, 0.1, 0.5, '#c8352b', 0, -1.4, 0); G.box(0.16, 0.12, 0.52, '#f2c230', 0, -1.52, 0);
-      g.add(G.malha(api.MAT)); g.position.set(0.42, 1.0, 0.08); A.m.corpo.add(g); A.vassoura = g; g.visible = false; return g;
+      G.box(0.045, 1.3, 0.045, '#8a5a2a', 0, -1.0, 0); G.box(0.12, 0.09, 0.44, '#c8352b', 0, -1.08, 0); G.box(0.14, 0.11, 0.46, '#f2c230', 0, -1.18, 0);
+      g.add(G.malha(api.MAT)); g.position.set(0.02, -0.3, 0); A.m.bracoD.cotovelo.add(g); A.vassoura = g; g.visible = false; return g;
     }
 
     // ---------------------------------------------------------------- (5.4.0) Cadu e Rosa na RUA (de casa até o mercado e de volta)
     function viagensCadu() {
-      if (!jogadorTrabalhaHoje()) return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_FECHA + 0.1 }];
-      return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_SAI }, { ida: true, chega: H_CADU_VOLTA }, { ida: false, sai: H_FECHA + 0.2 }];
+      if (!jogadorTrabalhaHoje()) return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_FICA }];
+      return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_SAI }, { ida: true, chega: H_CADU_VOLTA }, { ida: false, sai: H_CADU_FICA }];
     }
     function saidaRosa() { if (!jogadorTrabalhaHoje()) return H_CADU_SAI; const L = dadosM().rosaLib; return L && L.dia === S().dados.dia ? L.h : H_FECHA; }
     function viagensRosa() { return [{ ida: true, chega: H_ROSA_CHEGA }, { ida: false, sai: saidaRosa() }]; }
@@ -607,9 +625,9 @@
       if (h < H_CADU_CHEGA) return null;
       if (h < H_CADU_CAIXA2) return { id: 'limpa' };
       if (h < H_CADU_SAI) return { id: 'caixa2', x: D.cadu.x, z: D.cadu.z, yaw: D.cadu.yaw, pose: 'conta' };
-      if (!jogadorTrabalhaHoje()) return h < H_FECHA + 0.1 ? { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' } : null;
+      if (!jogadorTrabalhaHoje()) return h < H_CADU_FICA ? { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' } : null;
       if (h < H_CADU_VOLTA) return null;
-      return h < H_FECHA + 0.2 ? { id: 'libera', x: D.caixa.jog.x + 0.95, z: D.caixa.jog.z + 0.55, yaw: Math.PI * 0.8, pose: null } : null;
+      return h < H_CADU_FICA ? { id: 'libera', x: D.caixa.jog.x + 0.95, z: D.caixa.jog.z + 0.55, yaw: Math.PI * 0.8, pose: null } : null;
     }
     function estadoRosa(h) {
       const D = M.D; if (!D) return null;
@@ -618,9 +636,12 @@
       return { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' };
     }
     const LIMPEZA = [                                                    // onde o Cadu limpa/organiza (pose, para onde olha)
-      { x: -5.3, z: -4.5, yaw: Math.PI, pose: 'organiza' }, { x: -1.6, z: -1.5, yaw: Math.PI / 2, pose: 'varre' }, { x: 2.8, z: -8.2, yaw: Math.PI / 2, pose: 'organiza' },
-      { x: -7.6, z: 1.7, yaw: -Math.PI / 2, pose: 'organiza' }, { x: 6.5, z: -3.0, yaw: 0, pose: 'varre' }, { x: 2.4, z: 1.8, yaw: Math.PI, pose: 'varre' },
-      { x: 10.9, z: -4.6, yaw: 0, pose: 'organiza' }, { x: -2.2, z: -5.5, yaw: 0, pose: 'organiza' }, { x: 0.5, z: 6.0, yaw: Math.PI / 2, pose: 'varre' },
+      // (5.4.3) arrumando: encostado (0,35 m da prateleira) e de frente para ela
+      { x: -6.55, z: -4.5, yaw: Math.PI, pose: 'organiza' }, { x: -6.55, z: -0.8, yaw: Math.PI, pose: 'organiza' },   // gôndola de higiênicos
+      { x: -2.55, z: -2.2, yaw: Math.PI, pose: 'organiza' }, { x: -0.45, z: -5.2, yaw: 0, pose: 'organiza' },          // gôndolas de comida
+      { x: 2.6, z: -8.38, yaw: Math.PI / 2, pose: 'organiza' }, { x: -4.8, z: -8.38, yaw: Math.PI / 2, pose: 'organiza' },   // freezer de bebidas
+      { x: -7.9, z: 4.0, yaw: Math.PI, pose: 'organiza' }, { x: 11.1, z: -5.6, yaw: 0, pose: 'organiza' },                // frutas · estoque
+      { x: -5.3, z: -1.0, yaw: Math.PI / 2, pose: 'varre' }, { x: 6.5, z: -3.0, yaw: 0, pose: 'varre' }, { x: 2.4, z: 1.8, yaw: Math.PI, pose: 'varre' }, { x: 0.5, z: 6.0, yaw: Math.PI / 2, pose: 'varre' },
     ];
     // avisos curtos de quem trabalha ("Cadu: ..."), um depois do outro, sem parar o jogo
     function falaRapida(quem, txt) { M.avisos.push(quem + ': ' + txt); if (M.avisos.length === 1 && M.tAviso <= 0) proxAviso(); }
@@ -681,21 +702,21 @@
         if (!A.poseM || A.andando) continue;
         const m = A.m, t = s.t || 0;
         if (A.poseM === 'varre') {
-          vassoura(A).visible = true; const w = Math.sin(t * 3.6);
-          A.vassoura.rotation.x = w * 0.35; A.vassoura.rotation.z = 0.42;   // a ponta de baixo vai para a frente dele
-          m.bracoD.rotation.z = 0.75; m.bracoE.rotation.z = 0.55; m.bracoD.rotation.x = -0.15 + w * 0.2; m.bracoE.rotation.x = 0.35 + w * 0.2;
-          usarCotovelo(m.bracoD, 0, 0.55); usarCotovelo(m.bracoE, 0, 0.75);
+          const w = Math.sin(t * 3.2), ombro = 0.7, cot = 0.5;
+          m.bracoD.rotation.z = ombro; m.bracoD.rotation.x = w * 0.28; usarCotovelo(m.bracoD, 0, cot);
+          m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.2 + w * 0.28; usarCotovelo(m.bracoE, 0, 0.95);
+          const V = vassoura(A); V.visible = true; V.rotation.set(0, 0, VASS_ANG - (ombro + cot));   // o cabo fica a ~30° da vertical, para a frente
         } else if (A.poseM === 'organiza') {
-          const w = Math.sin(t * 2.2), w2 = Math.sin(t * 2.2 + 1.3);
-          m.bracoD.rotation.z = 1.65 + w * 0.25; usarCotovelo(m.bracoD, 0, 0.35 + Math.max(0, w2) * 0.4);
-          m.bracoE.rotation.z = 1.0 + w2 * 0.2; usarCotovelo(m.bracoE, 0, 0.8);
+          const w = Math.sin(t * 2.6), w2 = Math.sin(t * 2.6 + 1.6);       // as mãos vão até a prateleira na frente dele e arrumam
+          m.bracoD.rotation.z = 1.25 + w * 0.22; usarCotovelo(m.bracoD, 0, 0.25 + Math.max(0, w2) * 0.35);
+          m.bracoE.rotation.z = 1.05 + w2 * 0.18; usarCotovelo(m.bracoE, 0, 0.45);
         } else if (A.poseM === 'conta') {
           const w = Math.sin(t * 5);
           m.bracoD.rotation.z = m.bracoE.rotation.z = 0.95; m.bracoD.rotation.x = -0.15; m.bracoE.rotation.x = 0.15;
           usarCotovelo(m.bracoD, 0, 1.25 + w * 0.12); usarCotovelo(m.bracoE, 0, 1.25 - w * 0.12);
-        } else if (A.poseM === 'caixa') {
-          const w = Math.sin(t * 1.3);
-          m.bracoD.rotation.z = 0.85 + Math.max(0, w) * 0.25; m.bracoE.rotation.z = 0.7; usarCotovelo(m.bracoD, 0, 1.0); usarCotovelo(m.bracoE, 0, 1.1);
+        } else if (A.poseM === 'caixa') {                                   // (5.4.3) parada; vendendo, mexe as mãos (passa as compras)
+          if (A.atendendo) { const w = Math.sin(t * 9), w2 = Math.sin(t * 9 + 1.7); m.bracoD.rotation.z = 0.95 + w * 0.3; m.bracoE.rotation.z = 0.85 + w2 * 0.25; m.bracoD.rotation.x = -0.1 + w2 * 0.2; usarCotovelo(m.bracoD, 0, 1.0 + w * 0.2); usarCotovelo(m.bracoE, 0, 1.1); }
+          else { m.bracoD.rotation.z = m.bracoE.rotation.z = 0.35; usarCotovelo(m.bracoD, 0, 0.55); usarCotovelo(m.bracoE, 0, 0.55); }
         }
       }
     }
@@ -784,7 +805,8 @@
       M.avisos = []; M.tAviso = 0;
       tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, 0, true);
       tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, 0, true);
-      M.tPasseio = 3; if (passeioAgora()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }   // (5.4.2) já tem gente passeando
+      M.filaN = []; M.vende = null; M.tPasseio = 3;
+      if (entraPasseio()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }   // já tem gente comprando
       for (const sec of SECOES) mostrarEstoque(sec);
       SOM.porta();
     }
@@ -795,7 +817,8 @@
       for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk && mk.parent) mk.parent.remove(mk); } M.marcas = {};
       if (s.falantesExtra) { delete s.falantesExtra.cadu; delete s.falantesExtra.rosa; }
       if (M.tAviso > 0 || M.avisos.length) api.aviso('');               // o aviso "Cadu: ..." não vai junto para a rua
-      M.R = null; M.D = null; M.cadu = null; M.rosa = null; M.nav = null; M.avisos = []; M.tAviso = 0;
+      for (const A of s.npcs) tirarBalao(A);
+      M.R = null; M.D = null; M.cadu = null; M.rosa = null; M.nav = null; M.avisos = []; M.tAviso = 0; M.filaN = []; M.vende = null;
     }
     function mostrarEstoque(sec) {
       const R = M.R; if (!R || !R.estoque || !R.estoque[sec]) return;
@@ -806,7 +829,8 @@
     // ---------------------------------------------------------------- interação
     function alvos(v) {
       const s = S(), J = s.jog, U = s.turnoMercado, D = M.D; if (!D) return;
-      const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 1.7, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });
+      const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 2.6, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });   // (5.4.3) dá do outro lado do balcão
+      if ((!U || U.fim) && podeComecar()) for (const q of [{ x: D.caixa.x, z: D.caixa.z }, { x: D.cadu.x - 0.95, z: D.caixa.z }]) v.push({ x: q.x, z: q.z, r: 2.1, txt: T('Começar o turno'), fn: comecarTurno, y: 2.3, pri: true });
       if (!U || U.fim) return;
       const cx = D.caixa.jog, prim = U.fila[0];
       if (prim && prim.cm.fase === 'esteira') v.push({ x: cx.x, z: cx.z, r: 1.5, txt: J.caixaM ? T('Largue a caixa antes de atender.') : T('Atender cliente'), fn: J.caixaM ? async () => {} : () => atender(prim), y: 2.3, pri: true });
@@ -879,8 +903,20 @@
       if (d.precisaBanho) { await api.fala('cadu', T('Eita... você tá com cheiro de quem acabou de jogar bola! Vai em casa, toma um banho e depois volta, beleza?')); fim(); return; }
       if (hora() < H_TURNO - 0.25) { await api.fala('cadu', T('Seu turno começa às 14h. Chega um pouquinho antes que eu libero o caixa pra você!')); fim(); return; }
       if (hora() >= H_ULTIMO_CLIENTE) { await api.fala('cadu', T('Já tá quase na hora de fechar, hoje não dá mais. Amanhã às 14h, hein!')); fim(); return; }
+      await perguntarEComecar();
+    }
+    // (5.4.3) dá para começar tocando no caixa (ou no 2º caixa), sem precisar encostar no Cadu
+    function podeComecar() {
+      const s = S(), d = s.dados, h = hora();
+      return ehMeuEmprego() && !!dadosM().apresentou && !s.turnoMercado && (d.dia || 1) >= 2 && !fimDeSemana() && !d.trabalhouHoje && !d.precisaBanho && h >= H_TURNO - 0.25 && h < H_ULTIMO_CLIENTE && !!M.cadu;
+    }
+    async function comecarTurno() {
+      const C = M.cadu; if (C) { C.conversando = true; C.andando = false; C.poseM = null; const J = S().jog; C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); }
+      try { await perguntarEComecar(); } finally { if (M.cadu) M.cadu.conversando = false; if (M.rosa) M.rosa.conversando = false; }
+    }
+    async function perguntarEComecar() {
       const r = await Escolha.mostrar(T('Quer começar o seu turno no caixa agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')], { centro: true });
-      fim(); if (r !== 0) return;
+      Dialogo.esconder(); if (r !== 0) return;
       await liberarRosa();
       await iniciarTurno();
     }
@@ -895,18 +931,19 @@
         Dialogo.esconder(); R.conversando = false;
       }
       dadosM().rosaLib = { dia: S().dados.dia, h: hora() };              // a partir de agora ela vai para casa (na rua também)
-      if (R) { for (let t = 0; t < 3.2 && M.rosa; t += 0.1) await api.esperar(100); }
+      if (R) { R.vel = 1.6; for (let t = 0; t < 14 && M.rosa; t += 0.1) await api.esperar(100); }   // (5.4.3) ela sai andando até a porta
     }
 
     // ================================================================ O TURNO
     async function iniciarTurno() {
       const s = S(), D = M.D;
-      s.turnoMercado = { fila: [], atendidos: 0, erros: 0, faltas: 0, prox: 2, fim: false, repor: new Set(), inicio: s.dados.hora };
+      s.turnoMercado = { fila: [], atendidos: 0, erros: 0, faltas: 0, irritados: 0, prox: 2, fim: false, repor: new Set(), inicio: s.dados.hora };
       s.trabalhando = true;
       for (const A of s.npcs) if (A.cli && A.cli.fase === 'fica') A.cli.t = Math.min(A.cli.t, 2 + Math.random() * 8);
       await api.preto(true, 350);
       if (M.rosa) tirar('rosa');                                          // (se ela ainda estava saindo)
-      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); api.descartarPessoa(A); }   // (5.4.2) a loja começa vazia
+      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }   // (5.4.2) a loja começa vazia
+      pararVenda(); M.filaN = []; limparEsteira();
       const J = s.jog, p = D.caixa.jog; J.x = p.x; J.z = p.z; J.yaw = J.yawAlvo = p.yaw; J.rota = null; s.cam.yaw = 2.55; s.cam.snap = true;   // câmera do lado nordeste: vê o caixa, a fila e o corredor
       await api.preto(false, 350);
       montarPainel(); atualizarPainel();
@@ -940,11 +977,12 @@
     }
     function proximaCompra(A) {
       const C = A.cm, D = M.D;
-      if (!C.secs.length) { if (C.fake) sairCliente(A); else entrarNaFila(A); return; }   // quem só passeia vai embora
+      if (!C.secs.length) { entrarNaFila(A); return; }
       const sec = C.secs.shift(), ar = D.secoes[sec].compra, p = pontoLivre(rnd(ar.x0, ar.x1), rnd(ar.z0, ar.z1));
       C.secAtual = sec; C.fase = 'compra'; C.chegou = false; C.t = 0; A.rotaM = caminho(A.x, A.z, p.x, p.z);
     }
     function pegarProdutos(A) {
+      if (A.cm.fake) { const n = 1 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) { const P = pk(PRODUTOS[A.cm.secAtual]); A.cm.itens.push({ nome: P[0], preco: P[1], P, sec: A.cm.secAtual }); } return; }   // (5.4.3) não mexe no estoque
       const C = A.cm, sec = C.secAtual, est = dadosM().estoque, quer = 1 + Math.floor(Math.random() * 3), n = Math.min(est[sec], quer);
       for (let i = 0; i < n; i++) { const P = pk(PRODUTOS[sec]); C.itens.push({ nome: P[0], preco: P[1], P, sec }); }
       est[sec] -= n; mostrarEstoque(sec);
@@ -958,14 +996,15 @@
         if (n >= quer) { api.aviso(Tf('Repor {0} {1}!', T(NOME_SEC[sec]).toUpperCase(), T(ONDE_SEC[sec]))); setTimeout(() => { const ss = S(); if (ss && ss.turnoMercado && !M.avisos.length) api.aviso(''); }, 3200); }
       }
     }
+    // (5.4.3) a fila do caixa: a do jogador no turno; fora dele, a da caixa (Rosa/Cadu)
+    const filaAtiva = () => { const U = S().turnoMercado; return U && !U.fim ? U.fila : M.filaN; };
     function entrarNaFila(A) {
-      const U = S().turnoMercado;
-      if (!A.cm.itens.length || !U || U.fim) { sairCliente(A); return; }
-      U.fila.push(A); A.cm.fase = 'fila'; posicionarFila();
+      if (!A.cm.itens.length) { sairCliente(A); return; }
+      A.cm.tFila = 0; filaAtiva().push(A); A.cm.fase = 'fila'; posicionarFila();
     }
     function posicionarFila() {
-      const U = S().turnoMercado, F = M.D.fila; if (!U) return;
-      U.fila.forEach((A, i) => {
+      const F = M.D.fila;
+      filaAtiva().forEach((A, i) => {
         const p = i < F.length ? F[i] : (A.cm.extraFila && A.cm.extraFila.i === i ? A.cm.extraFila : (A.cm.extraFila = { i, x: F[F.length - 1].x, z: F[F.length - 1].z - 1.1 * (i - F.length + 1) }));   // fila maior: continua a linha
         if (A.cm.alvoFila !== p) { A.cm.alvoFila = p; A.rotaM = caminho(A.x, A.z, p.x, p.z); }
         if (A.cm.fase === 'esteira' && i > 0) A.cm.fase = 'fila';
@@ -981,9 +1020,14 @@
       if (C.fase === 'compra') {
         if (!C.chegou) { if (andarM(A, dt)) { C.chegou = true; C.t = rnd(2.2, 4.2); const P = M.D.secoes[C.secAtual]; A.yawAlvo = Math.atan2(-(P.z - A.z), P.x - A.x) + rnd(-0.6, 0.6); } return; }
         A.andando = false; C.t -= dt;
-        if (C.t <= 0) { if (!C.fake) pegarProdutos(A); proximaCompra(A); }
+        if (C.t <= 0) { pegarProdutos(A); proximaCompra(A); }
       } else if (C.fase === 'fila' || C.fase === 'esteira') {
-        const U = S().turnoMercado, i = U ? U.fila.indexOf(A) : -1;
+        const U = S().turnoMercado, i = filaAtiva().indexOf(A);
+        C.tFila = (C.tFila || 0) + dt;
+        if (U && !U.fim && !C.fake) {                                     // (5.4.3) paciência: 1min30 na fila
+          balao(A, C.tFila > PACIENCIA_AVISO ? 'espera' : null);
+          if (C.tFila > PACIENCIA) { irritado(A); return; }
+        } else if (C.tFila > 150) { filaSem(A); sairCliente(A); return; }   // (sem ninguém no caixa por muito tempo: desiste)
         if (andarM(A, dt)) {
           A.andando = false; A.yawAlvo = i === 0 ? 0 : -Math.PI / 2;
           if (i === 0 && C.fase === 'fila') { C.fase = 'esteira'; porNaEsteira(A); }
@@ -992,23 +1036,69 @@
         C.t -= dt; A.andando = false; if (C.t <= 0) sairCliente(A);
       } else if (C.fase === 'sai') {
         C.tSai += dt; const sd = M.R.saida;
-        if (andarM(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.9 || C.tSai > 30) { tirarSacola(A); api.descartarPessoa(A); }
+        if (A.balaoM) posBalao(A);
+        if (andarM(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.9 || C.tSai > 30) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }
       }
     }
+    function filaSem(A) { const F = filaAtiva(), i = F.indexOf(A); if (i >= 0) { F.splice(i, 1); if (i === 0) { limparEsteira(); if (M.vende && M.vende.A === A) pararVenda(); } posicionarFila(); } }
+    // (5.4.3) cansou de esperar: vai embora bravo, sem comprar (−5 fakes no fim do turno)
+    function irritado(A) {
+      const U = S().turnoMercado; filaSem(A); A.cm.itens = [];
+      U.irritados++; atualizarPainel(); SOM.erro(); balao(A, 'raiva'); A.vel = 1.6; sairCliente(A);
+      api.aviso(Tf('Um cliente cansou de esperar e foi embora irritado! (−{0} fakes)', IRRITADO)); setTimeout(() => { const ss = S(); if (ss && ss.turnoMercado && !M.avisos.length) api.aviso(''); }, 2800);
+    }
+    // balãozinho em cima da cabeça: "..." (impaciente) ou bravo
+    function texBalao(tipo) {
+      const k = 'balao:' + tipo; if (M.tex.has(k)) return M.tex.get(k);
+      const cv = document.createElement('canvas'); cv.width = cv.height = 16; const g = cv.getContext('2d');
+      const fundo = tipo === 'raiva' ? '#c8352b' : '#f2c230';
+      g.fillStyle = '#2a1206'; g.fillRect(1, 1, 14, 11); g.fillRect(6, 12, 4, 3); g.fillStyle = fundo; g.fillRect(2, 2, 12, 9); g.fillRect(7, 11, 2, 2);
+      g.fillStyle = '#2a1206';
+      if (tipo === 'raiva') { g.fillStyle = '#ffffff'; g.fillRect(5, 3, 2, 5); g.fillRect(9, 3, 2, 5); g.fillRect(5, 9, 2, 1); g.fillRect(9, 9, 2, 1); }
+      else { for (const x of [4, 7, 10]) g.fillRect(x, 6, 2, 2); }
+      const t = new THREE.CanvasTexture(cv); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; M.tex.set(k, t); return t;
+    }
+    function balao(A, tipo) {
+      if (!tipo) { tirarBalao(A); return; }
+      if (A.balaoTipo === tipo && A.balaoM) { posBalao(A); return; }
+      tirarBalao(A); const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: texBalao(tipo), transparent: true, depthTest: false })); sp.scale.set(0.42, 0.42, 1); sp.renderOrder = 20;
+      S().grupo.add(sp); A.balaoM = sp; A.balaoTipo = tipo; posBalao(A);
+    }
+    function posBalao(A) { const sp = A.balaoM; if (sp) sp.position.set(A.x, (A.y || 0) + 2.2 + Math.sin((S().t || 0) * 6) * 0.04, A.z); }
+    function tirarBalao(A) { if (A.balaoM) { if (A.balaoM.parent) A.balaoM.parent.remove(A.balaoM); A.balaoM.material.dispose(); } A.balaoM = null; A.balaoTipo = null; }
+    // (5.4.3) a CAIXA (Rosa ou Cadu) vende para quem chega na vez: mexe as mãos, bipa a esteira, registradora, o cliente sai com a sacola
+    function caixaNPC() { for (const A of [M.rosa, M.cadu]) if (A && A.estM === 'caixa1' && !(A.rotaM && A.rotaM.length) && !A.conversando) return A; return null; }
+    function pararVenda() { const V = M.vende; if (V && V.caixa) V.caixa.atendendo = 0; M.vende = null; }
+    function tickCaixaNPC(dt) {
+      if (S().turnoMercado) { if (M.vende) pararVenda(); return; }
+      const V = M.vende;
+      if (V) {
+        if (!V.A.cm || V.A.cm.fase !== 'esteira' || !S().npcs.includes(V.A) || !V.caixa.estM || V.caixa.estM !== 'caixa1') { pararVenda(); return; }
+        V.t += dt; V.caixa.atendendo = 1;
+        if (V.t >= V.prox && M.esteiraM.length) { V.prox += 0.8; const m = M.esteiraM.pop(); if (m.parent) m.parent.remove(m); if (m.material) m.material.dispose(); SOM.bip(); }
+        if (V.t >= V.fim) { api.somCaixa(); const A = V.A; darSacola(A); A.cm.fase = 'pago'; A.cm.t = 0.7; filaSem(A); pararVenda(); }
+        return;
+      }
+      const prim = M.filaN[0], cx = caixaNPC();
+      if (prim && prim.cm.fase === 'esteira' && cx) M.vende = { A: prim, caixa: cx, t: 0, prox: 0.9, fim: 1.3 + M.esteiraM.length * 0.8 + 1.2 };
+    }
     // (5.4.2) CLIENTES DE PASSEIO: fazem de conta que compram (andam pelas seções, param olhando as prateleiras) e vão embora
-    const passeioAgora = () => { const h = hora(); return aberto() && h < H_FIM_PASSEIO && !(h >= H_SEM_PASSEIO && h < H_VOLTA_PASSEIO) && !S().turnoMercado; };
+    // (5.4.3) entram até o meio-dia e de novo a partir das 15h (até as 21h); no turno do jogador só entram os clientes do turno
+    const entraPasseio = () => { const h = hora(); return aberto() && !S().turnoMercado && h < H_FIM_PASSEIO && (h < H_PARA_ENTRAR || h >= H_VOLTA_PASSEIO); };
     function novoPasseio(dentro) {
       const s = S(), e = dentro ? null : entradaLivre(); if (!dentro && !e) return;
       const secs = SECOES.slice().sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
       const A = api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
-      A.tipo = 'clienteMerc'; A.vel = 1.0 + Math.random() * 0.3; A.cm = { fase: 'compra', secs, itens: [], t: 0, fake: true };
+      A.tipo = 'clienteMerc'; A.vel = 1.05 + Math.random() * 0.3; A.cm = { fase: 'compra', secs, itens: [], t: 0, fake: true };
       if (dentro) { const ar = M.D.secoes[secs[0]].compra, p = pontoLivre(rnd(ar.x0, ar.x1), rnd(ar.z0, ar.z1)); A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = rnd(-3, 3); }
       else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = Math.PI / 2; SOM.porta(); }
       proximaCompra(A); s.npcs.push(A); api.poseAtor(A, 0.016);
     }
     function tickPasseio(dt) {
-      const s = S(), fakes = s.npcs.filter((A) => A.cm && A.cm.fake && A.cm.fase !== 'sai');
-      if (!passeioAgora()) { for (const A of fakes) { A.vel = 1.7; sairCliente(A); } return; }   // 13h40 (ou turno): todo mundo vai embora
+      const s = S(), fakes = s.npcs.filter((A) => A.cm && A.cm.fake && A.cm.fase !== 'sai'), h = hora();
+      if (s.turnoMercado) return;
+      if (h >= H_TODOS_FORA && h < H_VOLTA_PASSEIO) for (const A of fakes) if (A.cm.fase === 'compra') { A.cm.secs = []; if (A.cm.itens.length) entrarNaFila(A); else sairCliente(A); }   // 13h50: quem ainda compra vai para o caixa
+      if (!entraPasseio()) return;
       M.tPasseio = (M.tPasseio == null ? 2 : M.tPasseio) - dt;
       const alvo = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'][api.diaSemana()] === 'cheio' ? 5 : 3;
       if (M.tPasseio <= 0) { M.tPasseio = rnd(4, 9); if (fakes.length < alvo) novoPasseio(false); }
@@ -1220,7 +1310,7 @@
     }
     function atualizarPainel() {
       const s = S(), U = s && s.turnoMercado; if (!U || !M.painel) return;
-      const txt = api.fmtHora(s.dados.hora) + ' → ' + api.fmtHora(H_FECHA) + ' · ' + Tf('Atendidos: {0}', U.atendidos) + ' · ' + Tf('Erros: {0}', U.erros) + (U.faltas ? ' · ' + Tf('Faltas: {0}', U.faltas) : '') + (U.repor.size ? ' · ' + T('Repor:') : '');
+      const txt = api.fmtHora(s.dados.hora) + ' → ' + api.fmtHora(H_FECHA) + ' · ' + Tf('Atendidos: {0}', U.atendidos) + ' · ' + Tf('Erros: {0}', U.erros) + (U.faltas ? ' · ' + Tf('Faltas: {0}', U.faltas) : '') + (U.irritados ? ' · ' + Tf('Irritados: {0}', U.irritados) : '') + (U.repor.size ? ' · ' + T('Repor:') : '');
       if (M.pTxt.textContent !== txt) M.pTxt.textContent = txt;
       const k = [...U.repor].join(','); if (M.pRep.dataset.k !== k) { M.pRep.dataset.k = k; M.pRep.innerHTML = ''; for (const sec of U.repor) { const q = document.createElement('div'); q.style.cssText = 'width:14px;height:14px;background:' + COR_SEC[sec] + ';border:2px solid #2a1206;'; q.title = T(NOME_SEC[sec]); M.pRep.appendChild(q); } }
     }
@@ -1232,18 +1322,19 @@
     async function sairNoTurno() {
       const r = await Escolha.mostrar(T('Sair agora encerra o seu turno: você recebe só pelas horas trabalhadas.'), [T('Sair mesmo assim'), T('Continuar trabalhando')], { centro: true });
       Dialogo.esconder(); const s = S(); if (r !== 0 || !s.turnoMercado) return;
-      await encerrar(true, s.dados.hora); await api.sairDoLugar();
+      await encerrar(true, s.dados.hora, false); await api.sairDoLugar();
     }
     // ---- fim do turno: paga (proporcional se começou tarde ou parou antes), desconta erros e faltas; o Cadu libera o jogador
-    async function encerrar(antes, hParou) {
+    async function encerrar(antes, hParou, sair) {
+      if (sair === undefined) sair = true;                                // (5.4.3) no fim do turno o jogador sai do mercado
       const s = S(), U = s.turnoMercado, d = s.dados; if (!U || U.fim) return; U.fim = true;
       const restavam = U.fila.length + s.npcs.filter((A) => A.cm && A.cm.fase !== 'sai' && A.cm.fase !== 'pago').length > 0;
       s.trabalhando = false; fecharUI(); tirarCaixaDaMao(); limparEsteira();
-      for (const A of s.npcs.slice()) if (A.cm && A.cm.fase !== 'sai') { tirarSacola(A); sairCliente(A); }
+      for (const A of s.npcs) tirarBalao(A);                              // (5.4.3) quem sobrou continua lá dentro: o Cadu "atende" até as 23h
       U.fila = []; atualizarMarcas();
       const ini = Math.max(H_TURNO, U.inicio <= H_CHEIO_ATE ? H_TURNO : U.inicio), fimH = antes ? clampN(hParou, ini, H_FECHA) : H_FECHA;
-      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA, paga = Math.max(0, bruto - desc);
-      d.trabalhouHoje = true; d.trabalhouAlgumDia = true; d.fakes += paga; api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);   // trabalhouAlgumDia: libera a ligação do João
+      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA + U.irritados * IRRITADO, paga = Math.max(0, bruto - desc);
+      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);   // trabalhouAlgumDia: libera a ligação do João
       api.gravar('chegada');
       const espera = s.modo !== 'livre'; if (!espera) { s.modo = 'cena'; api.UI().ctl.hidden = true; }
       M.avisos = []; M.tAviso = 0; api.aviso('');
@@ -1253,10 +1344,12 @@
           await api.fala('cadu', Tf('Fechou o caixa por hoje! Você atendeu {0} clientes. Toma: {1} fakes.', U.atendidos, paga));
           if (U.erros) await api.fala('cadu', Tf('Teve {0} troco(s) errado(s): {1} fakes de desconto.', U.erros, U.erros * DESCONTO));
           if (U.faltas) await api.fala('cadu', Tf('Faltou produto na prateleira {0} vez(es): {1} fakes de desconto.', U.faltas, U.faltas * FALTA));
+          if (U.irritados) await api.fala('cadu', Tf('{0} cliente(s) cansaram de esperar e foram embora: {1} fakes de desconto.', U.irritados, U.irritados * IRRITADO));
           Dialogo.esconder();
         }
       } catch (e) { console.error(e); }
       s.turnoMercado = null;
+      if (sair && s.ativo && s.dentro) { try { await api.sairDoLugar(); } catch (e) { console.error(e); } }   // (5.4.3) o jogador vai embora; o Cadu fecha
       if (!espera && s.ativo && s.modo === 'cena') api.liberar();
     }
     // 22h com o jogador lá dentro (sem turno): quem estiver avisa e ele sai
@@ -1274,7 +1367,7 @@
       if (dentro) {
         tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, dt, false);
         tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, dt, false);
-        posesTrabalho(); tickAvisos(dt); tickPasseio(dt);
+        tickCaixaNPC(dt); posesTrabalho(); tickAvisos(dt); tickPasseio(dt);
         poseCaixa(s.jog);
         for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk) mk.position.y = 2.7 + Math.sin(s.t * 4) * 0.08; }
         if (!s.turnoMercado && !aberto() && s.modo === 'livre' && !M.fechando) { M.fechando = true; fecharMercado().finally(() => { M.fechando = false; }); }
@@ -1282,7 +1375,7 @@
     }
     function limpar() { fecharUI(); if (M.painel) { M.painel.remove(); M.painel = null; } for (const t of M.tex.values()) t.dispose(); M.tex.clear(); }
 
-    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { caminho, estadoCadu, estadoRosa, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
+    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
   }
 
   window.FutebolJS.registrarFase({ id: 'mercado', nome: 'Mercado', nucleoMinimo: '5.0.0', iniciar: async () => {}, criar, PRODUTOS });

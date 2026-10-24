@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.4.3
+     - prepararDia só zera o trabalhouHoje num DIA NOVO (d.trabalhouDia): antes, voltar do prédio para a cidade liberava trabalhar de novo.
+
    NOVIDADES DA 5.4.2
      - No mercado, os clientes "de passeio" agora são do mercado.js (a cidade não monta mais o fluxo de lá quando o mercado.js carregou).
 
@@ -2562,7 +2565,7 @@
     d.dia = d.dia || 1; d.mes = d.mes || 1;
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
-    d.trabalhouHoje = false;   // (5.1.0) libera o expediente de novo a cada dia (ver falarComLucia/turnoTrabalho)
+    if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // (5.1.0) libera o expediente de novo a cada dia; (5.4.3) só num dia NOVO (antes voltar do prédio liberava trabalhar de novo)
   }
   const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // (5.0.0) cliente fiel: −20% em tudo
   async function atendimento() {
@@ -3005,7 +3008,7 @@
     if (UI.turno) fimPainel(UI.turno);                                  // (5.4.0)
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
     const paga = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos);
-    d.trabalhouHoje = true; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
+    d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
     gravar('chegada');
     const espera = S.modo !== 'livre'; if (!espera) { S.modo = 'cena'; UI.ctl.hidden = true; }
     try {
