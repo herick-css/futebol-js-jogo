@@ -1,6 +1,14 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.3.1
+     - TRABALHO NO MERCADO em arquivo separado (mercado.js, feito por um amigo; ver o cabeçalho dele). Aqui só ficaram os GANCHOS, marcados
+       "(5.3.1)": carregar o mercado.js junto do interiores.js · apiMercado()/atorDe() · fala() aceita S.falantesExtra (o Cadu) · entrarEm/
+       sairDoLugar chamam S.mercado.entrou/saiu · alvos() (porta fechada fora das 14h–22h, Sair no turno, alvos do mercado) · o gancho chama
+       S.mercado.tick depois do tickJogador · tickPessoas despacha 'clienteMerc' · tickFluxo para no S.turnoMercado · pedestres não entram no
+       mercado fechado · limpar() chama S.mercado.limpar(). A api também leva fimDeSemana e fut, para o mercado seguir as regras da 5.3.0
+       (sem trabalho no sábado/domingo, sem banho o Cadu manda tomar banho, trabalhouAlgumDia para a ligação do João).
+
    NOVIDADES DA 5.3.0
      - Lugar do EMPREGO exclusivo: lá dentro só há clientes durante o turno do jogador (montarFluxo/tickFluxo/decidirDestino não mandam
        ninguém de fora). Era isso que gerava os clientes "sem pedido" (e às vezes invisíveis) na cafeteria.
@@ -1572,7 +1580,7 @@
   // depois do 1º turno de trabalho, o João liga (alguns segundos depois, com o jogador livre)
   function tickConvite(dt) {
     const f = fut(); if (f.ligou || !S.dados.trabalhouAlgumDia) return;
-    if (S.modo !== 'livre' || S.ligando || S.turno) return;
+    if (S.modo !== 'livre' || S.ligando || S.turno || S.turnoMercado) return;
     S.ligarT = (S.ligarT == null ? 6 : S.ligarT) - dt;
     if (S.ligarT <= 0) { S.ligarT = null; tocarCelular(); }
   }
@@ -2039,6 +2047,7 @@
       if (A.tipo === 'anda') passoNPC(A, dt);
       else if (A.tipo === 'vaga') vagar(A, dt);
       else if (A.tipo === 'cliente') tickCliente(A, dt);
+      else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // (5.3.1) clientes do mercado.js
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       if (A === S.valdemar && S.loja) tickLoja(dt);
@@ -2323,6 +2332,7 @@
       S.npcs.push(A);
     }
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
+    if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
     S.cam.yaw = 0; S.cam.dist = R.cam.dist; S.cam.pitch = R.cam.pitch; S.cam.snap = true;
@@ -2368,7 +2378,7 @@
     A.m.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
   }
   function tickFluxo(dt) {
-    const F = S.fluxo; if (!F || S.turno || F.nome === lugarDoEmprego()) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno; (5.3.0) no lugar do emprego só há clientes no turno
+    const F = S.fluxo; if (!F || S.turno || S.turnoMercado || F.nome === lugarDoEmprego()) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno; (5.3.0) no lugar do emprego só há clientes no turno
     F.prox -= dt;
     if (F.prox <= 0) {
       F.prox = 5 + Math.random() * 9; const e = F.ent;
@@ -2405,6 +2415,7 @@
   async function sairDoLugar() {
     const F = S.fora, J = S.jog; if (!F) return;
     await preto(true, 380);
+    if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
     if (J.sentado) levantar();
     for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
@@ -2425,13 +2436,14 @@
       if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // (4.9.5) sentado no balcão: "Valdemar" ou "Sair"
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
-    if (!S.turno) for (const a of S.assentos) if (!a.ocupado) {      // (5.2.0) no turno ele trabalha: nada de sentar
+    if (!S.turno && !S.turnoMercado) for (const a of S.assentos) if (!a.ocupado) {      // (5.2.0) no turno ele trabalha: nada de sentar
       if (a.lanche && !lojaAberta()) { v.push({ x: a.x, z: a.z, r: 1.15, txt: T('Lanche fechado. Abre às 8h.'), fn: async () => {}, y: a.h + 1.3 }); continue; }
       v.push({ x: a.x, z: a.z, r: 1.15, txt: a.lanche ? T('Sentar no balcão') : T('Sentar'), fn: () => sentar(a), y: a.h + 1.3 });
     }
     if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: T('Entrar no prédio'), fn: entrarNoPredio, y: 2.7 });       // (4.9.5) dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
-      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : sairDoLugar, y: 2.6 });
+      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
+      if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);    // (5.3.1)
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
@@ -2439,6 +2451,7 @@
       }
       alvosTurno(v);
     } else if (S.interiores) { alvosFutebol(v); for (const P of PORTAS) {
+      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 14h.'), fn: async () => {}, y: 3 }); continue; }   // (5.3.1) o mercado abre das 14h às 22h
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     } }
@@ -2491,10 +2504,11 @@
   }
   async function fala(quem, texto) {
     // (5.1.0) quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
-    const A = quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : quem === 'caio' ? S.caio : null;
+    const X = S.falantesExtra && S.falantesExtra[quem];                // (5.3.1) falantes de outros arquivos (ex.: o Cadu do mercado.js)
+    const A = X ? X.A : quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : quem === 'caio' ? S.caio : null;
     if (A) A.fala = true;
-    const nome = quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : quem === 'joao' ? T('João') : quem === 'caio' ? 'Caio' : '';
-    const voz = quem === 'val' ? 1 : quem === 'lucia' ? 0 : quem === 'joao' ? 3 : quem === 'caio' ? 4 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
+    const nome = X ? X.nome : quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : quem === 'joao' ? T('João') : quem === 'caio' ? 'Caio' : '';
+    const voz = X ? X.voz : quem === 'val' ? 1 : quem === 'lucia' ? 0 : quem === 'joao' ? 3 : quem === 'caio' ? 4 : (typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
     await Dialogo.mostrar([texto], { nome, voz, manter: true });
     if (A) A.fala = false;
   }
@@ -2591,6 +2605,16 @@
   //   deixou salvo (historia.fase2.emprego) para só liberar o turno quem escolheu trabalhar na cafeteria. O "dia" e a "hora" do
   //   expediente (8h–16h) são só para liberar a conversa: o turno em si é o próprio Merge Game, e ao sair dele a hora pula pra
   //   16h e paga 50 fakes (um valor fixo por dia, não por pedido — ver turnoTrabalho).
+  // (5.3.1) o que o mercado.js (trabalho no mercado) usa daqui. Tudo por função: assim ele sempre vê o S atual.
+  function atorDe(m, opt, tipo) { S.grupo.add(m.raiz); S.meus.add(m); return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: tipo || 'parado' }; }
+  function apiMercado() {
+    return {
+      S: () => S, UI: () => UI, historia: () => API.historia, fala, aviso, esperar, preto, liberar, gravar, som,
+      somDinheiro, ganhoNaTela, mostrarDinheiro, somCaixa: () => SomCafe.caixa(), criarPessoa, atorDe, poseAtor, seguir, livreNPC, descartarPessoa,
+      guardar, Geo, MAT, texCanvas, fmtHora, H_POR_S, sairDoLugar, diaSemana, nomeJog, empregoEscolhido, levantar,
+      fimDeSemana, fut,                                                  // (5.3.1) regras da 5.3.0: sem trabalho no fim de semana; futebol
+    };
+  }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};
     return { mariposa: !!h1.mariposa, falou: !!h1.lucia };
@@ -3781,6 +3805,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))]; if (nome === lugarDoEmprego()) return;
     }
     const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
+    if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;   // (5.3.1)
     A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
   }
   function fimDest(A) { A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.espera = 0; A.bloq = 0; if (S.clima.molhado && !A.chuva) correrNaChuva(A); }
@@ -3840,6 +3865,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
+        if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
@@ -3857,6 +3883,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function limpar() {
     if (!S) return;
     S.ativo = false; GANCHO_RENDER = null; clearTimeout(tMissao); SomChuva.nivel(0);
+    if (S.mercado) try { S.mercado.limpar(); } catch (e) { console.warn('[Cidade] mercado:', e); }
     for (const m of S.meus) ATLETAS.delete(m);
     if (S.dentro && S.grupo && S.grupo !== S.grupoCidade) { scene.remove(S.grupo); S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); }); S.grupo = S.grupoCidade; }
     if (S.grupo) {
@@ -3889,6 +3916,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
+      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) S.mercado = m.criar(apiMercado()); }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });

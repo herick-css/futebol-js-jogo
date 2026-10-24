@@ -8,6 +8,7 @@
      As paredes só têm o lado de DENTRO (vistas de fora elas somem), então a câmera pode ficar "atrás" da parede e ver a sala.
    - Por enquanto: só o visual, onde dá para sentar e pessoas de enfeite (paradas, andando, sentadas, na esteira...).
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
+   - (5.3.0) Supermercado reorganizado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - (5.2.0) Cafeteria maior (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
@@ -70,24 +71,68 @@
     const PROD = ['#c8352b', '#f2c230', '#3a64b8', '#1f7a4d', '#e8742a', '#f2f2ee', '#7a4fb0', '#d95fa0', '#8c5a2b', '#3fb7b0'];
 
     if (nome === 'supermercado') {
+      // (5.3.0) MERCADINHO BOM PREÇO reorganizado para o trabalho de caixa (ver mercado.js):
+      //   frente (sul): o CAIXA ativo (esteira ao longo de z; o jogador fica do lado leste, a fila do lado oeste) e um 2º caixa fechado;
+      //   gôndolas de HIGIÊNICO (oeste) e COMIDA (duas, no meio); BEBIDAS nos freezers da parede norte; ILHA DE FRUTAS na frente, a oeste;
+      //   ESTOQUE no canto nordeste: quatro pilhas de caixas com placas (higiênico, comida, bebida, fruta).
+      //   Os produtos de cada seção ficam em 5 "fatias" (R.estoque[seção]) para o mercado.js mostrar a seção esvaziando.
       sala(26, 20, 4.2, '#f4efe2', '#e8e4dc', '#d8d4cc', 0.8);
-      placa('SUPERMERCADO', '#c8352b', '#fff6e0', 8, 1.0, 0, 3.4, -9.96);
-      // gôndolas (prateleiras dos dois lados, cheias de produtos coloridos)
-      for (const gx of [-7.5, -3.5, 0.5, 4.5]) {
-        const L = 10, gz = -2.5; G.box(1.0, 0.12, L, '#9aa0a6', gx, 0, gz); G.box(0.08, 1.9, L, '#c9ced4', gx, 0.12, gz);
-        for (const y of [0.35, 0.8, 1.25, 1.7]) { G.box(1.0, 0.04, L, '#c9ced4', gx, y, gz); for (const s of [-1, 1]) for (let i = 0; i < 32; i++) { const h = 0.2 + rnd() * 0.15; G.box(0.32, h, 0.24, pk(PROD), gx + s * 0.27, y + 0.04, gz - L / 2 + 0.2 + i * 0.31); } }
+      placa('MERCADINHO BOM PREÇO', '#c8352b', '#fff6e0', 9, 1.0, 0, 3.4, -9.96);
+      const fatias = (n) => Array.from({ length: n }, () => new Geo()), F = { higiene: fatias(5), comida: fatias(5), bebida: fatias(5), fruta: fatias(5) };
+      let kf = 0; const poe = (sec, w, h, d, cor, x, y, z) => { F[sec][(kf++) % 5].box(w, h, d, cor, x, y, z); };
+      const CORES = { higiene: ['#9ec7e8', '#f2f2ee', '#7ab8d8', '#d95fa0', '#c8e8f4'], comida: ['#e8742a', '#f2c230', '#c8352b', '#8c5a2b', '#f4e0b0'], bebida: ['#c8352b', '#3fb7b0', '#1f7a4d', '#f2f2ee', '#e8742a'], fruta: ['#f2c230', '#c8352b', '#6cae3e', '#e8742a', '#7a4fb0'] };
+      const placaSecao = (txt, fundo, x, y, z, ry, w) => { const tex = guardar(texLetreiro(txt, fundo, '#fff6e0', w || 2.2, 0.45)), m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w || 2.2, 0.45)), guardar(new THREE.MeshLambertMaterial({ map: tex, side: THREE.DoubleSide }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); };
+      // gôndolas: higiênico (x = −7,5) e comida (x = −3,5 e 0,5), de z = −7 a 1
+      for (const [gx, sec] of [[-7.5, 'higiene'], [-3.5, 'comida'], [0.5, 'comida']]) {
+        const L = 8, gz = -3; G.box(1.0, 0.12, L, '#9aa0a6', gx, 0, gz); G.box(0.08, 1.9, L, '#c9ced4', gx, 0.12, gz);
+        for (const y of [0.35, 0.8, 1.25, 1.7]) { G.box(1.0, 0.04, L, '#c9ced4', gx, y, gz); for (const sd of [-1, 1]) for (let i = 0; i < 25; i++) { const h = 0.2 + rnd() * 0.15; poe(sec, 0.32, h, 0.24, pk(CORES[sec]), gx + sd * 0.27, y + 0.04, gz - L / 2 + 0.2 + i * 0.31); } }
         bloq(gx, gz, 1.1, L);
+        G.box(0.06, 0.5, 1.2, '#c9ced4', gx, 2.05, gz - L / 2 + 0.2); placaSecao(sec === 'higiene' ? 'HIGIÊNICO' : 'COMIDA', sec === 'higiene' ? '#3a64b8' : '#e8742a', gx, 2.35, gz - L / 2 + 0.2, Math.PI / 2, 1.2);
       }
-      // freezers no fundo e frutas no canto
+      // freezers de bebidas (parede norte)
       G.box(16, 0.9, 1.1, '#f4f4f0', 0, 0, -9.3); G.box(15.8, 0.05, 1.0, '#9ec7dd', 0, 0.9, -9.3); bloq(0, -9.3, 16, 1.1);
-      for (let i = 0; i < 3; i++) { const fz = -6 + i * 3; G.box(1.6, 0.6, 2.2, '#8a5a2b', -11.5, 0, fz); for (let j = 0; j < 20; j++) G.box(0.18, 0.16, 0.18, pk(['#c8352b', '#f2c230', '#6cae3e', '#e8742a']), -11.5 - 0.6 + (j % 5) * 0.3, 0.6, fz - 0.9 + Math.floor(j / 5) * 0.55); bloq(-11.5, fz, 1.6, 2.2); }
-      // caixas (perto da entrada)
-      for (const cx of [5.5, 9.5]) { G.box(2.6, 0.9, 0.9, '#3a3a3e', cx, 0, 6.2); G.box(2.2, 0.03, 0.6, '#1c1c1f', cx, 0.9, 6.2); G.box(0.4, 0.35, 0.3, '#2b3a48', cx + 0.9, 0.9, 6.0); bloq(cx, 6.2, 2.6, 0.9);
-        R.pessoas.push({ tipo: 'parado', x: cx - 0.6, z: 5.3, yaw: -Math.PI / 2, fem: rnd() < 0.6 }); }
+      G.box(16, 1.5, 0.5, '#e8eef2', 0, 0.95, -9.65); for (let i = 0; i < 8; i++) G.box(0.04, 1.4, 0.06, '#8c9199', -8 + i * 2.28, 1.0, -9.38);
+      for (let i = 0; i < 44; i++) poe('bebida', 0.2, 0.34, 0.2, pk(CORES.bebida), -7.6 + (i % 22) * 0.72, i < 22 ? 0.92 : 1.42, -9.6 + (i < 22 ? 0.2 : 0));
+      placaSecao('BEBIDAS', '#3fb7b0', 0, 2.7, -9.85, 0, 2.2);
+      // ilha de frutas (frente, oeste)
+      G.box(2.4, 0.75, 3.4, '#8a5a2b', -9.5, 0, 4.0); G.box(2.5, 0.06, 3.5, '#a8763f', -9.5, 0.75, 4.0); bloq(-9.5, 4.0, 2.4, 3.4);
+      for (let j = 0; j < 48; j++) poe('fruta', 0.2, 0.18, 0.2, pk(CORES.fruta), -10.45 + (j % 6) * 0.38, 0.81, 2.6 + Math.floor(j / 6) * 0.38);
+      G.box(0.06, 1.6, 0.06, '#8c9199', -9.5, 0.8, 4.0); placaSecao('FRUTAS', '#6cae3e', -9.5, 2.6, 4.0, Math.PI / 2, 1.4);
+      // o ESTOQUE (canto nordeste): pilhas de caixas de papelão com placa
+      const EST = [['higiene', 'HIGIÊNICO', '#3a64b8', -7.6], ['comida', 'COMIDA', '#e8742a', -5.6], ['bebida', 'BEBIDA', '#3fb7b0', -3.6], ['fruta', 'FRUTA', '#6cae3e', -1.6]];
+      G.box(0.08, 3.0, 8.2, '#d8cfb8', 12.9, 0, -4.6);                                                   // parede do estoque (um pouco mais escura)
+      R.mercadoEstoque = [];
+      for (const [sec, txt, cor, z] of EST) {
+        for (let a = 0; a < 3; a++) G.box(0.9, 0.55, 1.2, a % 2 ? '#b88a5a' : '#c89a64', 12.0, a * 0.56, z, '#d8b080');
+        G.box(0.92, 0.08, 1.22, cor, 12.0, 0.42, z); bloq(12.0, z, 1.0, 1.3);
+        placaSecao(txt, cor, 12.85, 2.2, z, -Math.PI / 2, 1.5);
+        R.mercadoEstoque.push({ sec, x: 10.9, z });
+      }
+      // o CAIXA ativo (esteira de norte para sul: o cliente põe os produtos no norte, o scanner fica no sul) e um 2º caixa fechado
+      const caixaGeo = (cx, cz, ativo) => {
+        G.box(0.9, 0.9, 3.0, '#3a3a3e', cx, 0, cz); G.box(0.7, 0.03, 2.2, '#1c1c1f', cx, 0.9, cz - 0.3);
+        G.box(0.5, 0.05, 0.4, ativo ? '#c0392b' : '#555a60', cx, 0.92, cz + 0.55); G.box(0.42, 0.02, 0.32, '#4a9ac8', cx, 0.97, cz + 0.55);   // scanner (vidro)
+        G.box(0.36, 0.3, 0.3, '#2b3a48', cx + 0.35, 0.9, cz + 1.1); G.box(0.04, 0.22, 0.26, '#8fe04a', cx + 0.17, 1.0, cz + 1.1);            // registradora (visor para o cliente)
+        G.box(0.06, 1.4, 0.06, '#8c9199', cx + 0.4, 0.9, cz - 1.4); G.box(0.36, 0.3, 0.06, ativo ? '#8fe04a' : '#c0392b', cx + 0.4, 2.3, cz - 1.4);   // luz do caixa (verde = aberto)
+        bloq(cx, cz, 0.95, 3.0);
+      };
+      caixaGeo(4.6, 5.2, true); caixaGeo(8.2, 5.2, false);
+      R.mercado = {
+        caixa: { x: 4.6, z: 5.2, jog: { x: 5.55, z: 5.7, yaw: Math.PI }, esteira: { x: 4.6, y: 0.93, z0: 3.9, z1: 5.2 }, saco: { x: 4.6, y: 0.93, z: 6.3 } },
+        fila: [{ x: 3.6, z: 4.6 }, { x: 3.6, z: 3.5 }, { x: 3.6, z: 2.4 }, { x: 3.6, z: 1.3 }, { x: 3.6, z: 0.2 }],
+        depois: { x: 3.6, z: 7.4 },
+        secoes: {
+          higiene: { x: -6.7, z: -3.0, compra: { x0: -6.7, x1: -6.7, z0: -6.5, z1: 0.5 } },
+          comida: { x: -2.7, z: -3.0, compra: { x0: -2.7, x1: -0.3, z0: -6.5, z1: 0.5 } },
+          bebida: { x: 0.0, z: -8.35, compra: { x0: -6.5, x1: 6.5, z0: -8.35, z1: -8.35 } },
+          fruta: { x: -7.9, z: 4.0, compra: { x0: -7.9, x1: -7.9, z0: 2.8, z1: 5.2 } },
+        },
+        cadu: { x: 9.15, z: 5.7, yaw: Math.PI }, caixaNPC: { x: 5.55, z: 5.7, yaw: Math.PI },
+      };
+      R.estoque = {}; for (const sec of Object.keys(F)) R.estoque[sec] = F[sec].map((g) => { const m = g.malha(MAT); grupo.add(m); return m; });
       for (let i = 0; i < 6; i++) { const x = -9 + i * 0.75; G.box(0.6, 0.55, 0.9, '#8c9199', x, 0.3, 7.6); }   // carrinhos
       bloq(-7.1, 7.6, 4.6, 0.95);
-      R.pessoas.push({ tipo: 'parado', x: 2.5, z: -5.5, yaw: Math.PI, fem: false });                             // repositor
-      for (let i = 0; i < 4; i++) R.pessoas.push({ tipo: 'vaga', area: { x0: -9.5, x1: 9, z0: -8, z1: 4 }, fem: rnd() < 0.5 });
+      for (let i = 0; i < 4; i++) R.pessoas.push({ tipo: 'vaga', area: { x0: -7, x1: 9, z0: -7.5, z1: 1.5 }, fem: rnd() < 0.5 });
     } else if (nome === 'cafeteria') {
       // (5.2.0) sala maior (20 x 14) para o expediente: 8 mesas de 2 com corredor no meio, o caixa da Lúcia no fundo e a
       // BANCADA DE PREPARO na parede oeste (máquina de espresso, moedor, jarras de leite, xaropes, xícaras, sacas de café e o quadro de giz).

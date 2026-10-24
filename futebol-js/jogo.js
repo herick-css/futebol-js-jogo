@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 5.3.0
+   FUTEBOL JS · jogo.js · versão 5.3.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,9 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.3.1 — o trabalho no mercado (mercado.js, novo arquivo baixado pela cidade, como o interiores.js):
+     caixa com troco e maquininha, reposição das seções e o Cadu. O jogo.js só mudou o número da versão.
+
    Novidades da versão 5.3.0 — partidas da história fora da escola e atributos iniciais:
    • Historia.partida({ cfg, aviso, aoPronto }): com cfg roda qualquer partida da história (o racha do sintético da cidade.js usa isso,
      com campo, times, horário e clima do mundo); sem cfg continua sendo a partida da escola.
@@ -630,7 +633,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '5.3.0';
+const VERSAO_JOGO = '5.3.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
