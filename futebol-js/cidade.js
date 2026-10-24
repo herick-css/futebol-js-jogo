@@ -1,7 +1,14 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
-   NOVIDADES DA 5.3.1
+   NOVIDADES DA 5.4.0
+     - O painel do turno (cafeteria e mercado) aparece uma vez e vira o ícone "!" vermelho no canto superior esquerdo (painelRecolhivel /
+       recolherPainel / fimPainel; o botão .cdTurIco fica no #cdEsq). Tocar no ícone abre o painel de novo por uns segundos.
+     - Saiu a missão "encontre um lugar para comer" (aparecia todo dia).
+     - Casas do CADU (pertinho do mercado, a [824,150] da planta) e da ROSA ([544,656]): casa(..., dono) marca sem mudar o sorteio das
+       outras casas. GENTE COM HORÁRIO NA RUA: criarRuaAgendada/tickRua (tipo 'rua') + rotaCasaPorta (a rota da Lúcia virou um caso dela).
+       O mercado.js cria os dois em montarRua() (montarRuaMercado: só com o jogador na rua). O mercado agora abre às 8h.
+
      - TRABALHO NO MERCADO em arquivo separado (mercado.js, feito por um amigo; ver o cabeçalho dele). Aqui só ficaram os GANCHOS, marcados
        "(5.3.1)": carregar o mercado.js junto do interiores.js · apiMercado()/atorDe() · fala() aceita S.falantesExtra (o Cadu) · entrarEm/
        sairDoLugar chamam S.mercado.entrou/saiu · alvos() (porta fechada fora das 14h–22h, Sair no turno, alvos do mercado) · o gancho chama
@@ -753,10 +760,10 @@
     return mesh;
   }
 
-  function casa(r, frente, cor, rnd, especial, marca) {
+  function casa(r, frente, cor, rnd, especial, marca, dono) {     // (5.4.0) dono: 'cadu' | 'rosa' (não muda o sorteio das casas)
     const w = r.x1 - r.x0, d = r.z1 - r.z0, laje = !especial && rnd() < 0.3, lado = rnd() < 0.5 ? -1 : 1;
     const sg = frente < 0 ? -1 : 1, uP = lado * w * 0.27, cxc = (r.x0 + r.x1) / 2, czc = (r.z0 + r.z1) / 2;   // (4.9.5) onde fica a porta no mundo e onde a pessoa para na frente dela
-    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null, especial: typeof especial === 'string' ? especial : null };   // (5.2.0) especial: 'joao' | 'alves' (a Lúcia mora na dos Alves)
+    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null, especial: typeof especial === 'string' ? especial : (dono || null) };   // (5.2.0) especial: 'joao' | 'alves' (a Lúcia mora na dos Alves)
     (S.casas || (S.casas = [])).push(pt); if (marca === 'valdemar') S.casaValdemar = pt;
     edificio({ r, frente, h: 2.9, cor, andares: 1, fundos: false, equipamentos: false,
       letreiro: marca === 'valdemar' ? { txt: 'VALDEMAR', fundo: '#5b3a22', cor: '#f6e2b8', w: 1.9, h: 0.42, y: 2.5, u: uP, fora: 0.12 } : null,
@@ -932,7 +939,8 @@
         [440, 600, -1], [492, 600, -1], [544, 600, -1], [648, 600, -1], [700, 600, -1], [752, 600, -1], [804, 600, -1],
         [440, 656, 1], [492, 656, 1], [544, 656, 1], [648, 656, 1], [700, 656, 1], [752, 656, 1],
         [170, 510, 1], [222, 510, 1], [30, 510, 1]];
-      for (const [l, t, f] of lista) casa(R(l, t, 34, 26), f, cores[Math.floor(rnd() * cores.length)], rnd, false, l === 804 && t === 600 ? 'valdemar' : null);   // (4.9.5) a casa do seu Valdemar é a [804, 600]
+      const DONOS = { '824,150': 'cadu', '544,656': 'rosa' };          // (5.4.0) o Cadu mora pertinho do mercado; a Rosa, do outro lado da avenida
+      for (const [l, t, f] of lista) casa(R(l, t, 34, 26), f, cores[Math.floor(rnd() * cores.length)], rnd, false, l === 804 && t === 600 ? 'valdemar' : null, DONOS[l + ',' + t]);   // (4.9.5) a casa do seu Valdemar é a [804, 600]
       casa(R(82, 148, 36, 28), 1, '#f6e7c8', rnd, 'joao');              // casa do João
       casa(R(596, 598, 36, 28), -1, '#cfe3f2', rnd, 'alves');          // casa dos Alves
     }
@@ -1590,9 +1598,10 @@
   const H_CAFE_ABRE = 8, H_CAFE_FECHA = 16, H_LUCIA_SAI = 17, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;   // (5.3.0) fecha às 16h; a Lúcia fecha o caixa e sai às 17h
   const cafeAberto = () => S.dados.hora >= H_CAFE_ABRE && S.dados.hora < H_CAFE_FECHA;
   const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < H_LUCIA_SAI;
-  function rotaLucia() {
-    if (S.rotaLucia) return S.rotaLucia;
-    const C = (S.casas || []).find((c) => c.especial === 'alves'), P = PORTAS.find((p) => p.nome === 'cafeteria');
+  function rotaLucia() { return S.rotaLucia || (S.rotaLucia = rotaCasaPorta('alves', 'cafeteria', VEL_LUCIA)); }
+  // (5.4.0) caminho de uma casa (casa.especial) até a porta de um lugar, pela rede de calçadas. dur = horas de jogo andando a vel m/s.
+  function rotaCasaPorta(especial, lugar, vel) {
+    const C = (S.casas || []).find((c) => c.especial === especial), P = PORTAS.find((p) => p.nome === lugar);
     if (!C || !P || !S.rede) return null;
     let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6));
     { // (5.3.0) antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
@@ -1606,7 +1615,25 @@
     const acc = [0];
     for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
     const L = acc[acc.length - 1];
-    return (S.rotaLucia = { pts, acc, L, dur: L / VEL_LUCIA * H_POR_S });
+    return { pts, acc, L, dur: L / vel * H_POR_S };
+  }
+  // (5.4.0) GENTE COM HORÁRIO NA RUA (o Cadu e a Rosa do mercado; ver mercado.js): como a Lúcia, a posição sai direto da hora.
+  //   viagens() devolve [{ ida: true, chega: h }] (de casa até a porta, chegando às h) e [{ ida: false, sai: h }] (da porta para casa).
+  function criarRuaAgendada(A, especial, lugar, viagens, vel) {
+    A.tipo = 'rua'; A.rua = { especial, lugar, viagens, vel: vel || 2, R: null };
+    (S.dentro && S.fora ? S.fora.npcs : S.npcs).push(A); sumirV(A); return A;
+  }
+  function tickRua(A) {
+    const U = A.rua, R = U.R || (U.R = rotaCasaPorta(U.especial, U.lugar, U.vel)), h = S.dados.hora;
+    if (!R) { if (!A.oculto) sumirV(A); return; }
+    let k = -1, ida = true;
+    for (const v of U.viagens() || []) {
+      if (v.ida && h >= v.chega - R.dur && h < v.chega) { k = (h - (v.chega - R.dur)) / R.dur; break; }
+      if (!v.ida && h >= v.sai && h < v.sai + R.dur) { k = 1 - (h - v.sai) / R.dur; ida = false; break; }
+    }
+    if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
+    const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
+    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = U.vel;
   }
   function pontoNaRota(R, k) {
     const alvo = clamp(k, 0, 1) * R.L; let i = 1; while (i < R.acc.length - 1 && R.acc[i] < alvo) i++;
@@ -2042,6 +2069,7 @@
     if (!S.dentro) { tickMoradores(dt); separarPessoas(); } else tickFluxo(dt);
     for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
       if (A.tipo === 'luciaRua') tickLuciaRua(A);
+      else if (A.tipo === 'rua') tickRua(A);                          // (5.4.0) Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
@@ -2428,6 +2456,7 @@
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // (4.9.5) passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
+    montarRuaMercado();                                                // (5.4.0) se o mercado.js chegou com o jogador lá dentro
     await preto(false, 380);
   }
   function alvos() {
@@ -2451,7 +2480,7 @@
       }
       alvosTurno(v);
     } else if (S.interiores) { alvosFutebol(v); for (const P of PORTAS) {
-      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 14h.'), fn: async () => {}, y: 3 }); continue; }   // (5.3.1) o mercado abre das 14h às 22h
+      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     } }
@@ -2606,6 +2635,10 @@
   //   expediente (8h–16h) são só para liberar a conversa: o turno em si é o próprio Merge Game, e ao sair dele a hora pula pra
   //   16h e paga 50 fakes (um valor fixo por dia, não por pedido — ver turnoTrabalho).
   // (5.3.1) o que o mercado.js (trabalho no mercado) usa daqui. Tudo por função: assim ele sempre vê o S atual.
+  function montarRuaMercado() {                                       // (5.4.0) Cadu e Rosa andando entre a casa e o mercado (precisa estar na rua: o grupo é o da cidade)
+    if (!S || !S.mercado || !S.mercado.montarRua || S.ruaMercadoOk || S.dentro) return;
+    S.ruaMercadoOk = true; try { S.mercado.montarRua(); } catch (e) { console.warn('[Cidade] rua do mercado:', e); }
+  }
   function atorDe(m, opt, tipo) { S.grupo.add(m.raiz); S.meus.add(m); return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: tipo || 'parado' }; }
   function apiMercado() {
     return {
@@ -2613,6 +2646,7 @@
       somDinheiro, ganhoNaTela, mostrarDinheiro, somCaixa: () => SomCafe.caixa(), criarPessoa, atorDe, poseAtor, seguir, livreNPC, descartarPessoa,
       guardar, Geo, MAT, texCanvas, fmtHora, H_POR_S, sairDoLugar, diaSemana, nomeJog, empregoEscolhido, levantar,
       fimDeSemana, fut,                                                  // (5.3.1) regras da 5.3.0: sem trabalho no fim de semana; futebol
+      painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV,    // (5.4.0) painel que vira ícone; Cadu e Rosa na rua
     };
   }
   function fase1Lucia() {
@@ -2936,7 +2970,7 @@
   }
   // ---- o painel do turno (no alto, no meio): relógio, atendidos, gorjetas, o que está na mão e "Acelerar final do turno"
   function montarPainelTurno() {
-    if (UI.turno) { UI.turno.hidden = false; return; }
+    if (UI.turno) { painelRecolhivel(UI.turno); return; }
     const p = document.createElement('div'); p.id = 'cdTurno';
     p.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(48px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.9);border:3px solid #8a5a2a;color:#fff0c8;padding:3px 6px 3px 8px;font:700 11px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);';
     p.innerHTML = '<span class="tTxt"></span><span class="tMao" style="display:inline-block;width:26px;height:26px"></span><button type="button" class="pxBtn tAcel" style="--p:var(--p2,2px);min-height:26px;font-size:9px;padding:0 6px"></button>';
@@ -2944,6 +2978,7 @@
     UI.turno = p; UI.turnoTxt = p.querySelector('.tTxt'); UI.turnoMao = p.querySelector('.tMao'); UI.turnoAcel = p.querySelector('.tAcel');
     UI.turnoAcel.textContent = T('Acelerar final do turno');
     UI.turnoAcel.onclick = () => { if (S && S.modo === 'livre' && S.turno && !S.turno.fim) { som(); S.modo = 'cena'; UI.ctl.hidden = true; acelerarTurno().finally(() => { if (S && S.ativo && S.modo === 'cena') liberar(); }); } };
+    painelRecolhivel(p);                                               // (5.4.0) aparece uma vez e vira o ícone "!"
   }
   function atualizarPainelTurno() {
     const U = S.turno; if (!U || !UI.turno) return;
@@ -2962,7 +2997,7 @@
     const U = S.turno, d = S.dados; if (!U || U.fim) return; U.fim = true;
     S.trabalhando = false; MusicaCafe.parar(); copoNaMao(-1);
     for (const A of S.npcs) if (A.cli && A.cli.pedido) { if (A.balao) A.balao.visible = false; if (A.cli.pedido.estado !== 'feliz' && A.cli.pedido.estado !== 'feito') { A.cli.pedido.estado = 'feito'; A.cli.semPagar = true; A.cli.t = Math.min(A.cli.t, 1 + Math.random() * 4); } }
-    if (UI.turno) UI.turno.hidden = true;
+    if (UI.turno) fimPainel(UI.turno);                                  // (5.4.0)
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
     const paga = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos);
     d.trabalhouHoje = true; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
@@ -3273,6 +3308,8 @@
 #cdEsq .cdMissao { box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px; border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
   font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206; cursor: pointer; pointer-events: auto; max-width: min(46vw, 420px); }
 #cdEsq .cdMisIco { color: #f2c230; font-size: 18px; }
+#cdEsq .cdTurIco { color: #fff0c8; background: #a8202a; border-color: #ffcf5a; font-size: 18px; }   /* (5.4.0) o painel do turno recolhido */
+#cdEsq .cdTurIco[hidden] { display: none; }
 #cdAviso { position: fixed; z-index: 10; left: 50%; bottom: calc(24% + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 6px 14px; font: 700 14px/1.2 var(--font-display); letter-spacing: 0.06em; color: #fff0c8;
   background: rgba(42, 18, 6, 0.86); border: 3px solid #f0a020; pointer-events: none; text-align: center; max-width: 80vw; }
 #cdSeta { position: fixed; z-index: 9; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; pointer-events: none; }
@@ -3300,14 +3337,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
     const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
     const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome" hidden></button><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
-    const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
+    const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
     const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdMenu"></button></div></div>');
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
-      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
+      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
     // joystick
@@ -3370,6 +3407,17 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.missao.textContent = S.missao; UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
     clearTimeout(tMissao); tMissao = setTimeout(recolherMissao, 5000);
   }
+  // (5.4.0) o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
+  //   esquerdo; tocar no ícone abre o painel de novo (e ele recolhe sozinho depois de uns segundos).
+  let tPainel = 0;
+  function painelRecolhivel(p) {
+    if (!p || !UI) return;
+    p.hidden = false; UI.turIco.hidden = true; UI.esq.hidden = false;
+    UI.turIco.onclick = () => { som(); if (p.hidden) painelRecolhivel(p); else recolherPainel(p); };
+    clearTimeout(tPainel); tPainel = setTimeout(() => recolherPainel(p), 6000);
+  }
+  function recolherPainel(p) { clearTimeout(tPainel); if (!UI || !p || !p.isConnected) return; p.hidden = true; UI.turIco.hidden = false; }
+  function fimPainel(p) { clearTimeout(tPainel); if (p) p.hidden = true; if (UI) { UI.turIco.hidden = true; UI.turIco.onclick = null; } }
   function recolherMissao() { clearTimeout(tMissao); if (!UI) return; UI.missao.hidden = true; UI.misIco.hidden = !(S && S.missao); }
   const preto = async (ligado, ms) => {
     UI.preto.hidden = false; UI.preto.style.transitionDuration = pulando() ? '0s' : ((ms == null ? 900 : ms) / 1000) + 's'; await esperar(30);
@@ -3916,7 +3964,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
-      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) S.mercado = m.criar(apiMercado()); }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
+      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
@@ -3935,9 +3983,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       S.intro = false;
       S.portao.alvo = 0; somPortao();                                  // o portão fecha depois que ele sai
       mostrarDinheiro(primeira);
-      const f2d = H.fase2 || {};
-      S.missao = (dados.comidas | 0) > 0 || (dados.dia || 1) > 1 ? '' :      // (5.2.0) a missão de comer só aparece no 1º dia
-        f2d.vizinho && f2d.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.');
+      // (5.4.0) a missão "encontre um lugar para comer" saiu (a coxinha no canto já avisa quando ele não comeu)
       liberar(); if (S.missao) mostrarMissao();
       agendarHoje();                                                   // (5.3.0) segunda/quarta: futebol no sintético
       if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
