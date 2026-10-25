@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.0.0
+   FUTEBOL JS · jogo.js · versão 6.0.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 6.0.1 — JEITOS DE CORRER mais pé no chão: velocista e gingado suavizados (a passada longa ficou igual) com o de sempre como base
+     (menos joelho/cotovelo dobrando, sem o corpo tombando de lado no gingado); o de sempre volta a ser sorteado (2 em 5);
+     correndo de lado ou de costas o estilo some e o passo fica mais curto, sem inclinar o tronco para a frente (syncMeshes: frenteK)
+
    Novidades da versão 6.0.0 — a PARTIDA de novo (IA, goleiro, traves e animações):
      - futsal fora da escola: quadra maior (50 x 30) e 5 x 5; society também 5 x 5. A quadra da escola (Fase 1) continua 4 x 4
        (CAMPOS.futsalEscola, escondido do menu)
@@ -663,7 +667,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.0.0';
+const VERSAO_JOGO = '6.0.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -9919,16 +9923,20 @@ let CORPOS = players.concat(officials);      // jogadores + arbitragem (mesma an
 // ---------------------------------------------------------------------
 // (6.0.0) ESTILOS DE CORRIDA. Cada jogador (você e a IA) tem um jeito de correr (estiloCorrida, sorteado pelo nome):
 //   0 ... o de sempre
-//   1 ... PASSADA LONGA: pernas mais abertas, tronco bem inclinado, a canela de trás dobra alto, braços curtos e dobrados
-//   2 ... VELOCISTA: braços "bombeando" com o cotovelo a 90°, joelho da frente sobe (joelho alto), tronco mais reto, quica mais
-//   3 ... GINGADO: o tronco balança de um lado para o outro, braços mais soltos e abertos, passada mais curta
-// Andando o estilo aparece bem menos (40%). As poses especiais (chute, bote, disputa, comemoração...) mandam por cima.
+//   1 ... PASSADA LONGA: pernas mais abertas, tronco bem inclinado, a canela de trás dobra alto, braços curtos e dobrados (6.0.1: sem mudança)
+//   2 ... VELOCISTA: braços balançando mais com o cotovelo dobrado, joelho da frente sobe um pouco, tronco mais reto
+//   3 ... GINGADO: o tronco balança de leve, braços um pouco abertos, passada mais curta
+// (6.0.1) O 2 e o 3 foram suavizados usando o "de sempre" como base (antes eram exagerados: canela/joelho dobrando demais,
+// braços bombeando, o corpo todo balançando de lado). O de sempre (0) continua sendo um dos sorteados — e o mais comum (2 em 5).
+// Andando o estilo aparece bem menos (40%). Correndo de lado ou de costas o estilo some (fica o passo de sempre, mais curto):
+// o fator vem do alinhamento entre a velocidade e a frente do corpo (frenteK em syncMeshes).
+// As poses especiais (chute, bote, disputa, comemoração...) mandam por cima.
 // ---------------------------------------------------------------------
 const ESTILOS_CORRIDA = [
   null,
-  { perna: 1.18, braco: 0.72, cot: 0.95, jTras: 1.15, jFrente: 0.25, incl: -0.26, sobe: 0.85, abre: 0, ginga: 0 },
-  { perna: 1.05, braco: 1.45, cot: 1.5, jTras: 0.7, jFrente: 1.25, incl: -0.09, sobe: 1.45, abre: 0.05, ginga: 0 },
-  { perna: 0.92, braco: 0.62, cot: 0.45, jTras: 0.65, jFrente: 0.3, incl: -0.12, sobe: 0.8, abre: 0.22, ginga: 0.13 },
+  { perna: 1.18, braco: 0.72, cot: 0.95, jTras: 1.15, jFrente: 0.25, incl: -0.26, sobe: 0.85, abre: 0, ginga: 0 },   // (6.0.1) mantido como estava (aprovado)
+  { perna: 1.03, braco: 1.12, cot: 0.8, jTras: 0.4, jFrente: 0.4, incl: -0.13, sobe: 1.08, abre: 0.02, ginga: 0 },
+  { perna: 0.96, braco: 0.9, cot: 0.3, jTras: 0.35, jFrente: 0.12, incl: -0.15, sobe: 0.95, abre: 0.05, ginga: 0.035 },
 ];
 function estiloDeCorrida(p, sp) {
   const e = p.estiloCorrida | 0;
@@ -9942,7 +9950,7 @@ function aplicarEstiloCorrida(p, m, EC, ecK) {
   const pe = (a) => -(Math.max(0, -a) * EC.jTras + Math.max(0, a) * EC.jFrente * 0.8 + 0.1) * ecK;
   usarJoelhos(m, pe(m.pernaE.rotation.z), pe(m.pernaD.rotation.z));
   usarCotovelo(m.bracoE, 0, EC.cot * ecK); usarCotovelo(m.bracoD, 0, EC.cot * ecK);
-  if (EC.ginga) { m.corpo.rotation.x += Math.sin(p.anim) * EC.ginga * ecK; if (!m.raiz.rotation.x) m.raiz.rotation.x = Math.sin(p.anim) * 0.045 * ecK; }
+  if (EC.ginga) m.corpo.rotation.x += Math.sin(p.anim) * EC.ginga * ecK;   // (6.0.1) só o tronco, de leve (o corpo inteiro não tomba mais)
 }
 
 // (6.0.0) POSES NOVAS DO GOLEIRO (por cima de tudo no syncMeshes):
@@ -10085,9 +10093,15 @@ function syncMeshes(dt) {
       const passo = Math.floor(p.anim / Math.PI);
       if (passo !== p.ultimoPasso) { p.ultimoPasso = passo; if (correndo && p.fall === 0 && (G.state === 'play' || G.state === 'celebrate')) Som.passo(); }
     }
-    const amp = sp < 0.3 ? 0 : (correndo ? 0.95 : 0.55 + Math.min(0.15, sp * 0.04));
+    // (6.0.1) Para onde ele anda em relação à frente do corpo: 1 = para a frente, 0 = de lado, -1 = de costas.
+    // De lado (ou de costas) o passo fica mais curto e baixo — antes as pernas varriam para a frente e para trás inteiras
+    // enquanto o corpo ia de lado, e com os estilos novos isso ficava bizarro.
+    const frenteK = sp > 0.3 ? clamp((p.vx * Math.cos(p.angle) + p.vz * Math.sin(p.angle)) / sp, -1, 1) : 1;
+    const ladoK = Math.sqrt(Math.max(0, 1 - frenteK * frenteK)), costasK = Math.max(0, -frenteK);
+    const passoK = 1 - 0.4 * ladoK - 0.3 * costasK;
+    const amp = sp < 0.3 ? 0 : (correndo ? 0.95 : 0.55 + Math.min(0.15, sp * 0.04)) * passoK;
     const bal = Math.sin(p.anim) * amp;
-    const EC = estiloDeCorrida(p, sp), ecK = EC ? (correndo ? 1 : 0.4) : 0;   // (6.0.0) jeito de correr de cada um
+    const EC = estiloDeCorrida(p, sp), ecK = EC ? (correndo ? 1 : 0.4) * smooth(clamp((frenteK - 0.35) / 0.5, 0, 1)) : 0;   // (6.0.0) jeito de correr de cada um (6.0.1: só correndo para a frente)
     const ecPerna = EC ? lerp(1, EC.perna, ecK) : 1, ecBraco = EC ? lerp(1, EC.braco, ecK) : 1;
     // Pernas (com chute: a direita vai atrás e depois para a frente com força).
     let legR = -bal * ecPerna, legL = bal * ecPerna;
@@ -10170,12 +10184,12 @@ function syncMeshes(dt) {
     m.bracoE.rotation.x += (aXL - m.bracoE.rotation.x) * k;
     m.bracoD.rotation.x += (aXR - m.bracoD.rotation.x) * k;
     // Corpo: passo, inclinação na corrida, agachado na marcação, cabisbaixo depois de levar gol.
-    const sobe = (sp > 0.3 ? Math.abs(Math.sin(p.anim)) * (correndo ? 0.08 : 0.05) : Math.sin(agora / 600 + p.id) * 0.008) * (EC ? lerp(1, EC.sobe, ecK) : 1);
+    const sobe = (sp > 0.3 ? Math.abs(Math.sin(p.anim)) * (correndo ? 0.08 : 0.05) * (1 - 0.35 * ladoK) : Math.sin(agora / 600 + p.id) * 0.008) * (EC ? lerp(1, EC.sobe, ecK) : 1);
     // Segurando a bola nas mãos: tronco reto (sem agachar), senão as mãos descem e a bola
     // fica "dentro" do goleiro. Com o tronco reto as mãos fecham nos lados da bola (conferido).
     const segurando = pose === 'hold';
     m.corpo.position.y = caiFrente ? 0 : segurando ? 0 : sobe - p.guard * 0.12;
-    let incl = correndo ? (EC ? lerp(-0.16, EC.incl, ecK) : -0.16) : (sp > 0.3 ? -0.05 : 0);
+    let incl = correndo ? (EC ? lerp(-0.16, EC.incl, ecK) : -0.16) * Math.max(0.25, frenteK) : (sp > 0.3 ? -0.05 * Math.max(0.3, frenteK) : 0);   // (6.0.1) de lado/de costas quase reto
     if (p.ckVis > 0) incl = lerp(incl, -0.17, p.ckVis);                 // colado: tronco para a frente, em cima dele
     incl -= 0.18 * p.guard + 0.35 * p.tackle;
     if (prep > 0) incl = lerp(incl, 0.14, prep);
@@ -11303,7 +11317,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     commitT: rand(0.5, 2), committing: 0, folego: 1,
     stamina: 1, exhausted: false, regenWait: 0, dribbleCd: 0, staminaMax: 1,
     isUser, mesh,
-    estiloCorrida: Math.abs(sementeDe('corre|' + (nome || '') + '|' + num)) % 4,   // (6.0.0) jeito de correr (ESTILOS_CORRIDA)
+    estiloCorrida: [0, 0, 1, 2, 3][Math.abs(sementeDe('corre|' + (nome || '') + '|' + num)) % 5],   // (6.0.0) jeito de correr (ESTILOS_CORRIDA); (6.0.1) o de sempre em 2 de 5
     escCorpo: P.criancas && P.criancas.escala ? P.criancas.escala : 1,   // (4.4.0) tamanho do corpo: as alturas de "bola alta" da IA (cabeceio, peito) valem para o corpo de adulto, então são multiplicadas por isto
   };
 }
