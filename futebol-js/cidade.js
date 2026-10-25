@@ -1,6 +1,17 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.4
+     - SEU VALDEMAR andando "no nada": quando a hora mudava enquanto você estava dentro de um lugar, o jogo o colocava onde ele deveria estar
+       (snapValdemar), mas o plano interrompido deixava para trás o "andando" e a rota (rotaV). Resultado: ele ficava andando no lugar para
+       sempre atrás do balcão, ou, no próximo plano, seguia os pontos velhos. Agora o snap zera tudo e, sem plano, ele nunca anda.
+     - Comendo o lanche do Valdemar: a mesma pixel art do cardápio (iconePx) aparece num sprite ENTRE as duas mãos, na frente da boca
+       (darLanche/tirarLanche; some junto com a pose de comer, ou ao levantar).
+     - Golaço Esportes (interiores.js): sala retangular de verdade, com raias retangulares.
+     - NPCs TRAVADOS (sem o "pulo para o lado" de antes eles só paravam): parado há ~0,6 s, a pessoa contorna o obstáculo naturalmente: escolhe
+       o MENOR desvio lateral (1 m, 2 m, 3,5 m, 5 m; sobe um degrau se travar de novo em 8 s) com a frente livre, no lado MENOS cheio de gente,
+       anda até lá e 2,4 m adiante e retoma a rota (iniciarDesvio/andarDesvio; vale para pedestres, moradores e clientes que usam seguir()).
+       Se nada serve, volta para o nó anterior (outro trajeto) e, como último recurso, desiste do ponto.
    NOVIDADES DA 6.0.3
      - Dá para PASSAR POR DENTRO de quem está cambaleando (esbarrão): o "corpo" da pessoa cai para 10% (raioNPC) e o jogador vai
        sendo empurrado de leve para o lado enquanto atravessa, como se raspasse nela. Ela continua cambaleando enquanto ele passa.
@@ -1871,6 +1882,9 @@
   function snapValdemar() {
     const V = S.valdemar, L = S.loja, B = S.balcao, h = S.dados.hora; if (!V || !L) return;
     V.plano = null; V.avisando = false;
+    // (6.0.4) zera TUDO o que o plano interrompido deixou: antes só o plano era descartado, então a rota antiga (rotaV) e o "andando" ficavam
+    // para trás — ele andava no lugar para sempre no balcão ou, no próximo plano, seguia os pontos velhos (andando "no nada")
+    V.rotaV = null; V.andando = false; V.correndo = false; V.fala = false; V.timer = 0; V.passo = 0;
     V.puxa = false; L.k2 = L.alvo2 = 0;
     if (h >= H_ABRE && h < H_FECHA) { L.pk = L.palvo = 0; L.k = L.alvo = 0; surgirV(V, B.x, B.z, Math.PI / 2); V.estado = 'balcao'; }
     else { L.pk = L.palvo = 1; L.k = L.alvo = 0; sumirV(V); V.estado = h >= H_ACORDA_V && h < H_FECHA ? 'espera' : 'casa'; if (V.estado === 'espera') V.plano = planoAbrirLoja(); }
@@ -1886,6 +1900,7 @@
   function tickValdemar(V, dt) {
     const L = S.loja; if (!L) return;
     if (!V.plano) {
+      if (V.andando || V.rotaV) { V.andando = false; V.rotaV = null; }   // (6.0.4) sem plano ele não anda (rede de segurança contra "andar no nada")
       if (V.estado === 'balcao' && !lojaAberta()) {
         const J = S.jog;
         if (J.sentado && S.sentadoEm && S.sentadoEm.lanche) { if (S.modo === 'livre' && !V.avisando) { V.avisando = true; avisoFechar().then(() => { V.avisando = false; }); } return; }
@@ -2196,12 +2211,71 @@
     }
     return true;
   }
+  // (6.0.4) CONTORNAR O QUE TRAVA: sem o "pulo para o lado" (que parecia teleporte) quem travava só ficava parado. Agora, parado há ~0,6 s
+  // (e sem os ângulos de desvio resolverem), a pessoa escolhe um PONTO DE DESVIO ao lado do caminho e anda até ele, depois retoma a rota:
+  //   - tenta 1 m para o lado, depois 2 m, 3,5 m e 5 m (cada nova tentativa em menos de 8 s sobe um degrau);
+  //   - escolhe o lado MENOS ABARROTADO (quanto menos gente perto do ponto, melhor) e dá preferência a um ponto levemente adiante;
+  //   - só vale ponto livre e com o caminho até ele livre (parede, mesa, poste, carro, lago);
+  //   - esgotou os 4 degraus: iniciarDesvio devolve false e quem chamou busca OUTRO TRAJETO (volta para o nó anterior / pula o ponto).
+  const DESVIOS = [1, 2, 3.5, 5];
+  function caminhoLivre(A, x1, z1) {
+    const dx = x1 - A.x, dz = z1 - A.z, n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / 0.3));
+    for (let i = 1; i <= n; i++) if (!livreNPC(A.x + dx * i / n, A.z + dz * i / n, A, true, true)) return false;
+    return true;
+  }
+  function aglomeracao(x, z, A) {
+    let c = Math.hypot(x - S.jog.x, z - S.jog.z) < 1.6 ? 1 : 0;
+    for (const B of S.npcs) { if (B === A || B.oculto) continue; const d = Math.hypot(x - B.x, z - B.z); if (d < 1.6) c += 1.6 - d; }
+    return c;
+  }
+  // o trecho (x,z) → (x + fx*len, z + fz*len) está livre (ignorando gente, que sai do lugar sozinha)?
+  function frenteLivre(A, x, z, fx, fz, len) {
+    for (let t = 0.3; t <= len + 1e-6; t += 0.3) if (!livreNPC(x + fx * t, z + fz * t, A, true, true)) return false;
+    return true;
+  }
+  function iniciarDesvio(A, dx, dz, d) {
+    A.desvioN = A.t - (A.desvioUlt == null ? -99 : A.desvioUlt) < 8 ? (A.desvioN || 0) + 1 : 0; A.desvioUlt = A.t;
+    if (A.desvioN >= DESVIOS.length) { A.desvioN = 0; return false; }
+    const fx = dx / d, fz = dz / d, px = -fz, pz = fx;
+    // (6.0.4) 1.º: o MENOR desvio lateral cujo ponto fica livre E com a frente livre (passa ao lado do obstáculo, não só "um pouquinho" de lado
+    // e trava de novo); o alvo vira um ponto 2,4 m adiante dele (dois pontos: lado → adiante). 2.º (se nenhum serve): o ponto livre mais
+    // próximo, como antes.
+    for (const exigeFrente of [true, false]) for (let i = A.desvioN; i < DESVIOS.length; i++) {
+      const sd = DESVIOS[i]; let melhor = null;
+      for (const lado of [1, -1]) for (const adiante of exigeFrente ? [0] : [0.7, 0]) {
+        const x = A.x + px * sd * lado + fx * sd * adiante, z = A.z + pz * sd * lado + fz * sd * adiante;
+        if (!livreNPC(x, z, A, true) || !caminhoLivre(A, x, z)) continue;
+        if (exigeFrente && !frenteLivre(A, x, z, fx, fz, 2.4)) continue;
+        const sc = aglomeracao(x, z, A) + (adiante ? 0 : 0.35);
+        if (!melhor || sc < melhor.sc) melhor = { x, z, sc };
+      }
+      if (melhor) {
+        A.desvioN = i;
+        A.desvio = { x: melhor.x, z: melhor.z, t: 0, parado: 0, fila: exigeFrente ? [{ x: melhor.x + fx * 2.4, z: melhor.z + fz * 2.4 }] : [] };
+        return true;
+      }
+    }
+    A.desvioN = 0; return false;
+  }
+  // anda até o ponto de desvio (e o ponto seguinte, se houver); devolve true enquanto estiver desviando (o passo do frame já foi usado)
+  function andarDesvio(A, dt) {
+    const q = A.desvio, dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt; q.t += dt;
+    if (d < 0.3) { if (q.fila && q.fila.length) { const n = q.fila.shift(); q.x = n.x; q.z = n.z; q.parado = 0; return true; } A.desvio = null; A.bloq = 0; return false; }
+    if (q.t > 7) { A.desvio = null; A.bloq = 0; return false; }
+    for (const ang of [0, 0.45, -0.45, 0.9, -0.9]) {
+      const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
+      if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); A.andando = true; q.parado = 0; return true; }
+    }
+    A.andando = false; q.parado += dt; if (q.parado > 0.7) { A.desvio = null; A.bloq = 0.4; return false; }   // o desvio também travou: desiste (o próximo degrau é mais largo)
+    return true;
+  }
   const carroVindo = () => S.carros.some((c) => { if (!c.ativo || c.v < 1) return false; const fr = (PRACA_C.x - c.x) * c.dir; return fr > -3 && fr < 28; });
   function passoNPC(A, dt) {
     if (A.dest) { tickDestino(A, dt); return; }
     A.cool = (A.cool == null ? 5 + Math.random() * 25 : A.cool) - dt;
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
     if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return; }      // (5.5.0) esbarrou: espera o outro passar
+    if (A.desvio && andarDesvio(A, dt)) return;                          // (6.0.4) contornando o que travou
     const N = S.rede[A.alvo], dx = N.x - A.x, dz = N.z - A.z, d = Math.hypot(dx, dz);
     if (d < 0.6) {                                                   // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
       if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // (4.9.6) de cada 10 pedestres que decidem, 5 entram num lugar
@@ -2232,7 +2306,8 @@
       if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); moveu = true; break; }
     }
     A.andando = moveu;
-    if (!moveu) { A.bloq += dt; if (A.bloq > 1.6) { const t = A.alvo; A.alvo = A.ant != null ? A.ant : t; A.ant = t; A.bloq = 0; A.espera = 0.4 + Math.random(); } }
+    if (!moveu) { A.bloq = (A.bloq || 0) + dt; if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // (6.0.4) 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio
+      if (A.bloq > 1.6) { A.desvio = null; const t = A.alvo; A.alvo = A.ant != null ? A.ant : t; A.ant = t; A.bloq = 0; A.espera = 0.4 + Math.random(); } }
     else A.bloq = Math.max(0, A.bloq - dt * 0.5);
   }
   function criarPessoas(f2) {
@@ -2813,7 +2888,7 @@
   function levantar() {
     const J = S.jog, a = S.sentadoEm; if (!J.sentado) return;
     const p = a ? pontoDeLevantar(a) : { x: J.x, z: J.z };
-    J.sentado = false; J.x = p.x; J.z = p.z; if (a) a.ocupado = null; S.sentadoEm = null;
+    J.sentado = false; J.x = p.x; J.z = p.z; if (a) a.ocupado = null; S.sentadoEm = null; tirarLanche(J);
   }
   async function fala(quem, texto) {
     // (5.1.0) quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
@@ -2860,7 +2935,10 @@
     d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
     await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder();
     await esperar(1400);
+    darLanche(J, c.id);                                              // (6.0.4) o lanche aparece entre as mãos
     J.comendo = 3.6; await esperar(3700);
+    for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);   // (6.0.4) o relógio do jogo pode andar mais devagar que o de parede: o lanche some junto com a pose de comer
+    tirarLanche(J);
     d.fome = Math.max(0, (d.fome || 0) - c.enche);
     d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // (5.2.0) some o ícone da coxinha
     Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // (5.0.0) cada lanche: 2 de "não saudável"
@@ -3123,6 +3201,21 @@
     sp.scale.set(0.36, 0.36, 1); sp.position.set(0.02, 0.09, 0);
     const piv = new THREE.Group(); piv.position.set(0.03, -0.3, 0); piv.add(sp); A.m.bracoD.cotovelo.add(piv); A.copoCli = piv; A.copoSprite = sp;
   }
+  // (6.0.4) o LANCHE na mão: a mesma pixel art do cardápio (iconePx), num sprite que olha para a câmera, preso ao tronco ENTRE as duas mãos
+  // (elas sobem juntas até a boca na pose "comendo" do poseAtor). Sai quando termina de comer.
+  function darLanche(A, id) {
+    tirarLanche(A);
+    const tex = new THREE.CanvasTexture(iconePx(id));
+    tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 }));
+    sp.scale.set(0.3, 0.3, 1); sp.position.set(LANCHE_MAO.x, LANCHE_MAO.y, LANCHE_MAO.z);
+    A.m.corpo.add(sp); A.lancheSp = sp;
+  }
+  function tirarLanche(A) {
+    const sp = A.lancheSp; if (!sp) return;
+    if (sp.parent) sp.parent.remove(sp); const M = sp.material; if (M.map) M.map.dispose(); M.dispose(); A.lancheSp = null;
+  }
+  const LANCHE_MAO = { x: 0.46, y: 1.33, z: 0 };
   function tirarCopo(A) {
     if (A.copoCli) { if (A.copoCli.parent) A.copoCli.parent.remove(A.copoCli); A.copoCli = null; }
     if (A.copoSprite) { const M = A.copoSprite.material; if (M.map) M.map.dispose(); M.dispose(); A.copoSprite = null; }
@@ -4071,6 +4164,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function seguir(A, rota, vel, dt) {
     if (!rota.length) return true;
     if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return false; }   // (5.5.0) esbarrou: espera um instante
+    if (A.desvio && andarDesvio(A, dt)) return false;                        // (6.0.4) contornando o que travou
     const q = rota[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = vel * dt;
     A.vel = vel; A.correndo = vel > 2.5 || !!A.chuva;
     if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
@@ -4084,6 +4178,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     A.andando = moveu;
     if (!moveu) {
       A.bloq = (A.bloq || 0) + dt;                                     // (5.5.0) sem o "pulo para o lado" (parecia teleporte)
+      if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // (6.0.4) contorna: 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio (esgotou: os fallbacks abaixo)
       if (A.bloq > 2.5 && livreNPC(A.x + dx / d * v, A.z + dz / d * v, A, true, true)) { A.fantasma = 0.8; A.bloq = 0.5; }   // preso atrás de alguém: passa por ele
       if (A.bloq > 5) { A.bloq = 0; rota.shift(); if (!rota.length) { A.andando = false; return true; } }       // (4.9.6) não consegue passar: desiste desse ponto (nada de empurrar para dentro de outra pessoa)
     } else A.bloq = Math.max(0, (A.bloq || 0) - dt * 0.5);
