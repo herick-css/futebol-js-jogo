@@ -853,7 +853,7 @@ const Fase1 = (() => {
 
   // ------------------------------------------------------------------ pátio e quadra (4.3.6)
   // (4.4.0) A quadra do pátio é a MESMA do jogo (construirQuadraFutsal): as medidas vêm do campo 'futsal'.
-  const QX = CAMPOS.futsal.comprimento / 2, QH = CAMPOS.futsal.largura / 2, QB = CAMPOS.futsal.folga, QZ = -30, PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
+  const QF = CAMPOS.futsalEscola || CAMPOS.futsal, QX = QF.comprimento / 2, QH = QF.largura / 2, QB = QF.folga, QZ = -30, PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
   const Z_PORTAO = QZ + QH + QB;                                        // z da grade do lado da escola (onde fica o portão)
   const PAT_Z0 = 8.2;                                                   // parede da escola (fachada)
   const ARV_PROF = { x: -8.5, z: -9.0 };                                // a árvore onde o Professor Roberto vigia a turma

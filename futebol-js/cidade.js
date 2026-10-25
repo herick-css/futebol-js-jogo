@@ -1,6 +1,8 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.0
+     - Racha do sintético agora é 5 x 5 (o society do jogo.js virou 5 x 5): entram o Tiago (Time do João) e o Vitinho (Galera do Bryan).
    NOVIDADES DA 5.5.0
      - ESBARRÃO: ninguém empurra ninguém. Andar contra um NPC não o tira do lugar: ele cambaleia (a mesma animação do técnico na
        partida: A.esbarrao, no poseAtor). NPC com ROTINA (moradores, seu Valdemar, Lúcia, Cadu, Rosa) passa por dentro do jogador e
@@ -1526,10 +1528,10 @@
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
     const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
-      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), g('Carol', 5151, 'F')] };
+      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), g('Carol', 5151, 'F'), g('Tiago', 4141, 'M')] };   // (6.0.0) 5 x 5: + Tiago
     const t1 = { id: 's_bryan', nome: T('Galera do Bryan'), sigla: 'BRY', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
       emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'DB' }, tecnico: tec,
-      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F')] };
+      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // (6.0.0) 5 x 5: + Vitinho
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
     return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
