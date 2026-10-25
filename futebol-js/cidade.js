@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.3
+     - Dá para PASSAR POR DENTRO de quem está cambaleando (esbarrão): o "corpo" da pessoa cai para 10% (raioNPC) e o jogador vai
+       sendo empurrado de leve para o lado enquanto atravessa, como se raspasse nela. Ela continua cambaleando enquanto ele passa.
    NOVIDADES DA 6.0.0 (junto com a 5.6.0 abaixo)
      - Racha do sintético agora é 5 x 5 (o society do jogo.js virou 5 x 5): entram o Tiago (Time do João) e o Vitinho (Galera do Bryan).
      - Cafeteria: os clientes que entravam pela porta "do lado" (entAgora) ficavam com o ângulo NaN e INVISÍVEIS até sentar. Corrigido.
@@ -2370,14 +2373,16 @@
     else if (x < LIM.x0 + 1.5 || x > LIM.x1 - 1.5 || z < LIM.z0 + 1.5 || z > LIM.z1 - 1.5) return false;
     for (const b of S.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     for (const c of S.circ) if (Math.hypot(x - c.x, z - c.z) < c.r + RJ) return false;
-    if (S.dentro) { for (const A of S.npcs) if (!A.oculto) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < 0.58 && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; } return true; }
+    if (S.dentro) { for (const A of S.npcs) if (!A.oculto) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; } return true; }
     if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     const naPier = x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15;
     if (!naPier && dentroLago(x, z, 0.45)) return false;   // (4.9.5) fora da água: os pés não entram mais
     for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + RJ && Math.abs(z - c.z) < 0.95 + RJ) return false;
-    for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < 0.58 && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // (5.5.0) dá para se afastar de quem está encostado
+    for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // (5.5.0) dá para se afastar de quem está encostado
     return true;
   }
+  // (6.0.3) Cambaleando (esbarrão), a pessoa fica com 10% do "corpo" para o jogador: dá para passar por dentro dela (ver mover).
+  const raioNPC = (A) => (A.esbarrao > 0.05 ? 0.058 : 0.58);
   // esbarrar em alguém empurra a pessoa um pouquinho (se ela tiver para onde ir)
   function empurrar(px, pz) {
     for (const A of S.npcs) {
@@ -2408,6 +2413,17 @@
     if (livre(J.x, nz)) { J.z = nz; moveu = true; }
     { const B = S.npcs.find((A) => !A.oculto && !A.sentado && !A.deitado && Math.hypot(nx - A.x, nz - A.z) < 0.6 && Math.hypot(nx - A.x, nz - A.z) < Math.hypot(J.x - A.x, J.z - A.z) + 0.02);
       if (B && !(B.esbarrao > 0.05)) { B.esbarrao = 0.6; if (!temRotina(B)) B.travaE = Math.max(B.travaE || 0, 0.6); } }   // (5.5.0) não empurra: a pessoa cambaleia
+    // (6.0.3) PASSANDO POR DENTRO de quem cambaleia: o jogador é empurrado de leve para o lado (como se raspasse no ombro dela)
+    // e a pessoa continua cambaleando enquanto ele está "dentro" (senão ela voltaria a ter o corpo inteiro com ele no meio).
+    if (moveu) for (const A of S.npcs) {
+      if (A.oculto || A.sentado || A.deitado || !(A.esbarrao > 0.05)) continue;
+      const ax = J.x - A.x, az = J.z - A.z, d = Math.hypot(ax, az);
+      if (d >= 0.58) continue;
+      A.esbarrao = Math.max(A.esbarrao, 0.3); if (!temRotina(A)) A.travaE = Math.max(A.travaE || 0, 0.3);
+      const sx = -dz / dl, sz = dx / dl, lado = Math.sign(ax * sx + az * sz) || 1, f = (1 - d / 0.58) * 2.4 * dt;
+      const px = J.x + sx * lado * f, pz = J.z + sz * lado * f;
+      if (livre(px, pz)) { J.x = px; J.z = pz; }
+    }
     if (!S.dentro && (J.z < AV.z0 - 0.4 || J.z > AV.z1 + 0.4)) J.seguro = { x: J.x, z: J.z };   // (5.5.0) a última calçada (para o susto do carro)
     J.andando = moveu; J.correndo = moveu && corre; J.vel = vel; J.yawAlvo = Math.atan2(-dz, dx);
   }
