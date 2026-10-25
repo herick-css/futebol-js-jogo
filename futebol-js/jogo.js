@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 5.4.3
+   FUTEBOL JS · jogo.js · versão 5.5.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,9 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 5.5.0 — "Pular cena" só em cena com fala (Cena.ativa: fala aberta ou fala nos últimos 2,5 s); o resto é da
+     cidade (esbarrões, pedestres, carros, faixa), do mercado (vassoura) e da fase 2 (parado depois do pulo).
+
    Novidades da versão 5.4.3 — mercado (fila e caixa dos NPCs, paciência, 22h, animações), dormir a qualquer hora (fase2.js) e
      o expediente só libera de novo num dia novo (cidade.js). O jogo.js só mudou o número.
 
@@ -644,7 +647,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '5.4.3';
+const VERSAO_JOGO = '5.5.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -12448,7 +12451,11 @@ const Cena = (() => {
     if (on === congelado) return; congelado = on; const agora = performance.now();
     for (const t of pend) { if (on) { if (t.id != null) { clearTimeout(t.id); t.id = null; t.ms = Math.max(0, t.ms - (agora - t.t0)); } } else armar(t); }
   }
-  const ativa = () => manual > 0 || performance.now() - marca < 250 || (typeof Dialogo !== 'undefined' && Dialogo.aberto());
+  // (5.5.0) o botão só vale em cena COM FALA: a fala aberta, ou a fase marcando cena com uma fala nos últimos 2,5 s (ou já pulando).
+  //   Portas, dormir, banho, pia, banheiro... (cenas sem fala) não mostram mais o "Pular cena".
+  let ultFala = -1e9;
+  const falando = () => typeof Dialogo !== 'undefined' && Dialogo.aberto();
+  const ativa = () => manual > 0 || falando() || (performance.now() - marca < 250 && (pulando || performance.now() - ultFala < 2500));
   function pular() {
     if (pulando || !ativa()) return;
     pulando = true; semCena = 0;
@@ -12463,6 +12470,7 @@ const Cena = (() => {
   const sair = () => { manual = Math.max(0, manual - 1); };
   async function rodar(fn) { entrar(); try { return await fn(); } finally { sair(); } }
   function tick() {                                   // (main loop) mostra/esconde o botão e encerra o pulo quando a cena acaba
+    if (falando()) ultFala = performance.now();
     const a = ativa();
     if (!a) { if (++semCena > 3) pulando = false; } else semCena = 0;
     if (pulando && typeof Dialogo !== 'undefined' && Dialogo.aberto()) Dialogo.pularTudo();

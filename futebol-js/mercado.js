@@ -1,6 +1,8 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   5.5.0 — a vassoura do Cadu com as DUAS MÃOS (presa no corpo, passando pela mão direita no peito e pela esquerda mais embaixo) e
+           varrendo para a frente e para trás, com a escova atravessada (antes deslizava de lado, no comprimento da escova).
    5.4.3 — os clientes de passeio COMPRAM de verdade (pegam produtos, entram na FILA e a caixa — Rosa ou Cadu — vende: mexe as mãos,
            bipa os produtos da esteira e toca a registradora; o cliente sai com a sacola). Não tiram estoque.
            Ritmo da troca de turno: não entra ninguém depois do MEIO-DIA; quem já estava termina a compra e sai (às 13h50 quem ainda
@@ -597,13 +599,17 @@
       Lg.caixa(d, e, 0.06 * kc, c, xf, yo + 0.03 * kc, 0);
       m.corpo.add(Lg.malha(MAT_CORES));
     }
-    const VASS_ANG = 0.5;                                                // inclinação do cabo da vassoura (rad a partir da vertical)
-    function vassoura(A) {                                              // a vassoura do Cadu (aparece só quando ele varre)
+    // (5.5.0) VASSOURA COM AS DUAS MÃOS: presa no corpo, passando pela mão direita (em cima, perto do peito) e pela esquerda (mais
+    //   embaixo e na frente); a ponta encosta no chão uns 85 cm na frente dele. Varre para a FRENTE e para TRÁS (a escova fica
+    //   atravessada, de lado a lado), como gente de verdade — antes ela deslizava de lado, no comprimento da escova.
+    const VASS_ANG = 0.48, VASS_TOPO = { x: 0.3, y: 1.05, z: 0.04 };   // cabo a ~27° da vertical, a mão direita no topo
+    function vassoura(A) {
       if (A.vassoura) return A.vassoura;
-      // (5.4.3) presa na MÃO direita (no antebraço, onde fica a mão): o cabo passa pela mão e desce até o chão na frente dele
-      const g = new THREE.Group(), G = new api.Geo();
-      G.box(0.045, 1.3, 0.045, '#8a5a2a', 0, -1.0, 0); G.box(0.12, 0.09, 0.44, '#c8352b', 0, -1.08, 0); G.box(0.14, 0.11, 0.46, '#f2c230', 0, -1.18, 0);
-      g.add(G.malha(api.MAT)); g.position.set(0.02, -0.3, 0); A.m.bracoD.cotovelo.add(g); A.vassoura = g; g.visible = false; return g;
+      const g = new THREE.Group(), cabo = new THREE.Group(), G = new api.Geo(), H = new api.Geo(), L = VASS_TOPO.y / Math.cos(VASS_ANG);
+      G.box(0.045, L + 0.12, 0.045, '#8a5a2a', 0, -L, 0); cabo.add(G.malha(api.MAT)); cabo.rotation.z = VASS_ANG; g.add(cabo);
+      const esc = new THREE.Group(); H.box(0.13, 0.08, 0.46, '#c8352b', 0, 0.06, 0); H.box(0.15, 0.07, 0.48, '#f2c230', 0, 0, 0); for (let k = -3; k <= 3; k++) H.box(0.02, 0.05, 0.02, '#d8a020', 0.07, 0, k * 0.065);
+      esc.add(H.malha(api.MAT)); esc.position.set(L * Math.sin(VASS_ANG), -VASS_TOPO.y, 0); g.add(esc);
+      g.position.set(VASS_TOPO.x, VASS_TOPO.y, VASS_TOPO.z); A.m.corpo.add(g); A.vassoura = g; g.visible = false; return g;
     }
 
     // ---------------------------------------------------------------- (5.4.0) Cadu e Rosa na RUA (de casa até o mercado e de volta)
@@ -702,10 +708,11 @@
         if (!A.poseM || A.andando) continue;
         const m = A.m, t = s.t || 0;
         if (A.poseM === 'varre') {
-          const w = Math.sin(t * 3.2), ombro = 0.7, cot = 0.5;
-          m.bracoD.rotation.z = ombro; m.bracoD.rotation.x = w * 0.28; usarCotovelo(m.bracoD, 0, cot);
-          m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.2 + w * 0.28; usarCotovelo(m.bracoE, 0, 0.95);
-          const V = vassoura(A); V.visible = true; V.rotation.set(0, 0, VASS_ANG - (ombro + cot));   // o cabo fica a ~30° da vertical, para a frente
+          // vai e volta (empurra e puxa) uns 12 cm; as mãos acompanham o cabo
+          const w = Math.sin(t * 3.4), dx = w * 0.12, V = vassoura(A); V.visible = true; V.position.x = VASS_TOPO.x + dx;
+          m.bracoD.rotation.z = 0.14 + dx * 0.9; m.bracoD.rotation.x = 0.3; usarCotovelo(m.bracoD, 0, 1.72);   // mão direita no topo, perto do peito
+          m.bracoE.rotation.z = 0.78 + dx * 1.3; m.bracoE.rotation.x = -0.3; usarCotovelo(m.bracoE, 0, 0.05);  // mão esquerda mais embaixo, braço esticado
+          m.corpo.rotation.z = 0;
         } else if (A.poseM === 'organiza') {
           const w = Math.sin(t * 2.6), w2 = Math.sin(t * 2.6 + 1.6);       // as mãos vão até a prateleira na frente dele e arrumam
           m.bracoD.rotation.z = 1.25 + w * 0.22; usarCotovelo(m.bracoD, 0, 0.25 + Math.max(0, w2) * 0.35);

@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 5.5.0
+     - Depois de "Pular cena" o personagem fica parado mais 0,5 s (travaPulo): antes dava para andar 25x mais rápido no fim do pulo.
+       O botão só aparece em cena com fala (jogo.js): portas, dormir, banho, pia e banheiro não mostram mais.
+
    NOVIDADES DA 5.4.3
      - Dá para DORMIR A QUALQUER HORA na cama (antes das 20h pergunta "Dormir mesmo assim?"): acorda no dia seguinte às 5h. Bom para testar
        os dias (mercado, futebol de segunda e quarta...).
@@ -1575,9 +1579,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     esconderBola();
     // (4.8.2) "Pular cena": enquanto pula, a cena roda 25 passos por quadro (andar, portas, fumaça...) até o fim, com corte seco de câmera
     const nPassos = typeof Cena !== 'undefined' ? Cena.passos() : 1;
+    if (nPassos > 1) S.travaPulo = 0.5; else if (S.travaPulo > 0) S.travaPulo = Math.max(0, S.travaPulo - dt);   // (5.5.0) parado durante o pulo e 0,5 s depois
     for (let i = 0; i < nPassos; i++) {
       S.t += dt;
-      if (S.modo === 'livre') mover(dt);
+      if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.livreAndando = false; S.jog.correndo = false; } else mover(dt); }
       for (const A of S.elenco) tickAtor(A, S.t, dt);
       if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
       fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
