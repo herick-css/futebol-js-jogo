@@ -1,8 +1,27 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
-   NOVIDADES DA 6.0.0
+   NOVIDADES DA 6.0.0 (junto com a 5.6.0 abaixo)
      - Racha do sintético agora é 5 x 5 (o society do jogo.js virou 5 x 5): entram o Tiago (Time do João) e o Vitinho (Galera do Bryan).
+     - Cafeteria: os clientes que entravam pela porta "do lado" (entAgora) ficavam com o ângulo NaN e INVISÍVEIS até sentar. Corrigido.
+       Fora do seu expediente ela já tem gente quando você entra (sentados, com o café na mão), em vez de começar sempre vazia.
+     - O café na mão dos clientes agora é a PIXEL ART do próprio café (iconeCafezinho num sprite), colada na frente da boca no gole.
+     - FAIXA DE PEDESTRE: carro chegando nos próximos 5 s → o pedestre para na beira com a mão esticada PARA A FRENTE e só atravessa,
+       CORRENDO, quando os carros param (carroChegando). Sem carro vindo: atravessa andando, com a mão para baixo. Carro parado não
+       conta mais como perigo (antes podia travar: carro esperando o pedestre e o pedestre esperando o carro).
+   NOVIDADES DA 5.6.0 (feita junto com a 6.0.0: os trechos novos estão marcados "(5.6.0)" para facilitar juntar)
+     - GOLAÇO ESPORTES: loja de artigos esportivos ao lado do bar (fachada verde/amarela/azul, vitrines com camisas e chuteiras, a porta
+       numa trave de gol, toldos listrados, bandeirinhas e uma bola gigante girando no telhado). Por dentro (interiores.js, 'esportiva'):
+       sala em formato de estádio e piso de pista de corrida. Vazia por enquanto (SEM_FLUXO).
+     - Lago do Sapo Cururu com borda irregular (formaLago/bordaLago/dentroLago): água, areia, colisão, cercas, taboas e mapa seguem a forma;
+       perto do píer a borda continua a elipse de antes.
+     - Mapa: os nomes ficam numa caixinha com fonte menor, centralizada no lugar (quebra em 2 linhas e não sai do mapa).
+     - Chuva: debaixo da árvore os NPCs ficam em pé ou sentados (ninguém mais deita).
+     - CAFÉS À VENDA com a Lúcia (CAFES_VENDA): cada café deixa o personagem mais rápido NA CIDADE por um tempo (1,25x/1,5x/2x por 4h a o dia
+       todo, de 150 a 600 fakes). Ícone do café no HUD enquanto vale (toque: até quando). Comprar outro troca o efeito (pergunta antes).
+     - Conversas com a Lúcia e com o Cadu (mercado.js) também para quem NÃO trabalha lá: eles reconhecem o jogador pela Fase 1 e depois
+       puxam assunto (PAPOS_LUCIA / PAPOS_CADU, um por conversa). A Lúcia agora tem menu: comprar café, (sobre o trabalho), conversar.
+
    NOVIDADES DA 5.5.0
      - ESBARRÃO: ninguém empurra ninguém. Andar contra um NPC não o tira do lugar: ele cambaleia (a mesma animação do técnico na
        partida: A.esbarrao, no poseAtor). NPC com ROTINA (moradores, seu Valdemar, Lúcia, Cadu, Rosa) passa por dentro do jogador e
@@ -201,6 +220,7 @@
     'Entrar': ['Enter', 'Entrar', 'Entra', 'Entrer'], 'Sair': ['Leave', 'Salir', 'Esci', 'Sortir'],
     'Supermercado': ['Supermarket', 'Supermercado', 'Supermercato', 'Supermarché'], 'Cafeteria': ['Café', 'Cafetería', 'Caffetteria', 'Café'],
     'Pizzaria': ['Pizzeria', 'Pizzería', 'Pizzeria', 'Pizzeria'], 'Restaurante': ['Restaurant', 'Restaurante', 'Ristorante', 'Restaurant'],
+    'Golaço Esportes': ['Golaço Sports', 'Golaço Deportes', 'Golaço Sport', 'Golaço Sports'],
     'Academia': ['Gym', 'Gimnasio', 'Palestra', 'Salle de sport'], 'Bar': ['Bar', 'Bar', 'Bar', 'Bar'], 'Cinema': ['Movie theater', 'Cine', 'Cinema', 'Cinéma'],
     'Hospital': ['Hospital', 'Hospital', 'Ospedale', 'Hôpital'], 'Lanche do seu Valdemar': ["Mr. Valdemar's snack bar", 'Lonchería de don Valdemar', 'Chiosco del signor Valdemar', 'Snack de monsieur Valdemar'],
     'Falar com a enfermeira': ['Talk to the nurse', 'Hablar con la enfermera', "Parla con l'infermiera", "Parler à l'infirmière"],
@@ -389,6 +409,49 @@
     'Cappuccino com borda de chocolate': ['Cappuccino with chocolate rim', 'Capuchino con borde de chocolate', 'Cappuccino con bordo di cioccolato', 'Cappuccino avec bord de chocolat'],
     'Cappuccino com chantilly e borda de chocolate': ['Cappuccino with whipped cream and chocolate rim', 'Capuchino con chantillí y borde de chocolate', 'Cappuccino con panna e bordo di cioccolato', 'Cappuccino avec chantilly et bord de chocolat'],
   });
+  Object.assign(TRAD_CD, {
+    // (5.6.0) cafés à venda, conversas da Lúcia (também para quem não trabalha na cafeteria)
+    'Oi! O que vai ser hoje?': ['Hi! What will it be today?', '¡Hola! ¿Qué va a ser hoy?', 'Ciao! Cosa prendi oggi?', 'Salut ! Ce sera quoi aujourd’hui ?'],
+    'Comprar um café': ['Buy a coffee', 'Comprar un café', 'Compra un caffè', 'Acheter un café'],
+    'Sobre o trabalho': ['About the job', 'Sobre el trabajo', 'Sul lavoro', 'À propos du travail'],
+    'Conversar': ['Chat', 'Charlar', 'Chiacchierare', 'Discuter'], 'Tchau': ['Bye', 'Chau', 'Ciao', 'Salut'],
+    'Cafés da casa': ['House coffees', 'Cafés de la casa', 'Caffè della casa', 'Cafés de la maison'],
+    'Velocidade {0}x · {1}': ['Speed {0}x · {1}', 'Velocidad {0}x · {1}', 'Velocità {0}x · {1}', 'Vitesse {0}x · {1}'],
+    '{0}h': ['{0}h', '{0}h', '{0}h', '{0}h'], 'o dia todo': ['all day', 'todo el día', 'tutto il giorno', 'toute la journée'],
+    'Deixa pra depois': ['Maybe later', 'Lo dejo para después', 'Magari dopo', 'Plus tard'],
+    'Saindo um {0}!': ['One {0} coming up!', '¡Sale un {0}!', 'Ecco un {0}!', 'Un {0}, ça arrive !'],
+    'Ih... tá faltando dinheiro aí, hein?': ["Oops... you're a bit short, huh?", 'Uy... te falta dinero, ¿eh?', 'Ehi... ti mancano dei soldi, eh?', 'Oups... il te manque des sous, hein ?'],
+    'Você já está no efeito de um café. Tomar este no lugar?': ['You are already under a coffee effect. Drink this one instead?', 'Ya tienes el efecto de un café. ¿Tomar este en su lugar?', "Hai già l'effetto di un caffè. Bere questo al suo posto?", "Tu es déjà sous l’effet d’un café. Boire celui-ci à la place ?"],
+    'Tomar este': ['Drink this one', 'Tomar este', 'Bevi questo', 'Boire celui-ci'], 'Deixa como está': ['Keep the current one', 'Dejarlo así', 'Lascia così', 'Garder l’actuel'],
+    'Café: velocidade {0}x até {1}!': ['Coffee: speed {0}x until {1}!', 'Café: velocidad {0}x hasta las {1}!', 'Caffè: velocità {0}x fino alle {1}!', 'Café : vitesse {0}x jusqu’à {1} !'],
+    'Café: velocidade {0}x até o fim do dia!': ['Coffee: speed {0}x until the end of the day!', 'Café: ¡velocidad {0}x hasta el final del día!', 'Caffè: velocità {0}x fino a fine giornata!', 'Café : vitesse {0}x jusqu’à la fin de la journée !'],
+    'O efeito do café passou.': ['The coffee wore off.', 'El efecto del café se pasó.', "L'effetto del caffè è finito.", "L'effet du café est passé."],
+    'A cafeteria está fechada agora.': ['The coffee shop is closed now.', 'La cafetería está cerrada ahora.', 'La caffetteria è chiusa adesso.', 'Le café est fermé maintenant.'],
+    'Que bom te ver por aqui! Vem tomar um cafezinho sempre que quiser.': ['So good to see you here! Come for a coffee anytime.', '¡Qué bueno verte por aquí! Ven a tomar un cafecito cuando quieras.', 'Che bello vederti qui! Vieni a prendere un caffè quando vuoi.', 'Ça fait plaisir de te voir ici ! Viens prendre un café quand tu veux.'],
+    'Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!': ['Great! Now you have a place to get coffee, right? Come visit me anytime!', '¡Qué bien! Ahora ya tienes dónde tomar un café, ¿no? ¡Ven a visitarme siempre!', 'Che bello! Ora hai un posto dove prendere un caffè, no? Vieni a trovarmi!', 'Super ! Maintenant tu as un endroit pour prendre un café, hein ? Viens me voir souvent !'],
+    'Você trabalha aqui faz tempo?': ['Have you worked here long?', '¿Trabajas aquí hace mucho?', 'Lavori qui da tanto?', 'Tu travailles ici depuis longtemps ?'],
+    'A-ah... é... eu também, viu?': ['O-oh... yeah... me too, you know?', 'A-ah... sí... yo también, ¿eh?', 'A-ah... sì... anch’io, sai?', 'A-ah... oui... moi aussi, tu sais ?'],
+    'Faz uns dois anos. O cheiro de café nem sai mais de mim, haha.': ["About two years. The smell of coffee doesn't even leave me anymore, haha.", 'Unos dos años. El olor a café ya ni se me quita, jaja.', "Circa due anni. L'odore di caffè non mi va più via, haha.", "Environ deux ans. L'odeur du café ne me quitte plus, haha."],
+    'Que bom te ver de novo!': ['So good to see you again!', '¡Qué bueno verte de nuevo!', 'Che bello rivederti!', 'Ça fait plaisir de te revoir !'],
+    'Ah... tudo bem, faz tempo mesmo.': ["Ah... that's okay, it's been a long time.", 'Ah... está bien, hace mucho tiempo.', 'Ah... va bene, è passato tanto tempo.', 'Ah... pas grave, ça fait longtemps.'],
+    'Você me parece familiar, mas não sei de onde...': ['You look familiar, but I don’t know from where...', 'Me resultas familiar, pero no sé de dónde...', 'Mi sembri familiare, ma non so da dove...', 'Tu me dis quelque chose, mais je ne sais pas d’où...'],
+    'E aí, tá gostando da cidade?': ['So, are you enjoying the town?', 'Y bueno, ¿te gusta la ciudad?', 'Allora, ti piace la città?', 'Alors, la ville te plaît ?'],
+    'Tô gostando muito!': ['I love it!', '¡Me gusta mucho!', 'Mi piace molto!', 'J’adore !'], 'Ainda tô me acostumando.': ['Still getting used to it.', 'Todavía me estoy acostumbrando.', 'Mi sto ancora abituando.', 'Je m’habitue encore.'],
+    'Que bom! Aqui é calmo, mas tem o seu charme.': ['Good! It’s quiet here, but it has its charm.', '¡Qué bien! Aquí es tranquilo, pero tiene su encanto.', 'Bene! Qui è tranquillo, ma ha il suo fascino.', 'Tant mieux ! C’est calme ici, mais ça a son charme.'],
+    'Normal! Logo você acha os seus cantinhos preferidos.': ['That’s normal! Soon you’ll find your favorite spots.', '¡Normal! Pronto encontrarás tus rincones favoritos.', 'Normale! Presto troverai i tuoi angoli preferiti.', 'Normal ! Tu trouveras vite tes coins préférés.'],
+    'Você ainda joga bola?': ['Do you still play football?', '¿Todavía juegas al fútbol?', 'Giochi ancora a calcio?', 'Tu joues encore au foot ?'],
+    'Jogo sim, sempre que dá!': ['I do, whenever I can!', '¡Sí, siempre que puedo!', 'Sì, appena posso!', 'Oui, dès que je peux !'], 'Tô meio parado...': ['I’ve kind of stopped...', 'Estoy medio parado...', 'Mi sono un po’ fermato...', 'J’ai un peu arrêté...'],
+    'Eu sabia! Você vivia com a bola lá na escola.': ['I knew it! You were always with a ball back at school.', '¡Lo sabía! Siempre andabas con la pelota en la escuela.', 'Lo sapevo! A scuola eri sempre col pallone.', 'Je le savais ! À l’école tu avais toujours un ballon.'],
+    'Volta! Tem racha no society toda segunda e quarta.': ['Get back to it! There’s a pickup game at the society field every Monday and Wednesday.', '¡Vuelve! Hay partidito en el society cada lunes y miércoles.', 'Torna! C’è una partitella al campo ogni lunedì e mercoledì.', 'Reprends ! Il y a un match au terrain chaque lundi et mercredi.'],
+    'Lembra da Dona Graça, a professora? Ela ainda dá aula lá na escola.': ['Remember Mrs. Graça, the teacher? She still teaches at the school.', '¿Te acuerdas de doña Graça, la profesora? Todavía da clases en la escuela.', 'Ti ricordi la signora Graça, la professoressa? Insegna ancora a scuola.', 'Tu te souviens de Mme Graça, la prof ? Elle enseigne toujours à l’école.'],
+    'Sério? Que saudade!': ['Really? I miss those days!', '¿En serio? ¡Qué nostalgia!', 'Davvero? Che nostalgia!', 'Sérieux ? Ça me manque !'], 'Nossa, ela ainda tá lá?': ['Wow, she’s still there?', '¿En serio, sigue allí?', 'Caspita, è ancora lì?', 'Ouah, elle est encore là ?'],
+    'Ela pergunta de todo mundo da nossa turma.': ['She asks about everyone from our class.', 'Pregunta por todos de nuestro grupo.', 'Chiede di tutti della nostra classe.', 'Elle demande des nouvelles de toute notre classe.'],
+    'Tá! E continua brava do mesmo jeito, haha.': ['Yep! And just as strict as ever, haha.', '¡Sí! Y sigue igual de brava, jaja.', 'Sì! Ed è severa come sempre, haha.', 'Oui ! Et toujours aussi sévère, haha.'],
+    'Já provou o cappuccino com chantilly daqui? É o meu favorito.': ['Have you tried our cappuccino with whipped cream? It’s my favorite.', '¿Ya probaste el capuchino con chantillí de aquí? Es mi favorito.', 'Hai già provato il cappuccino con panna? È il mio preferito.', 'Tu as goûté notre cappuccino chantilly ? C’est mon préféré.'],
+    'Ainda não, vou provar!': ['Not yet, I’ll try it!', 'Todavía no, ¡lo voy a probar!', 'Non ancora, lo proverò!', 'Pas encore, je vais goûter !'], 'Prefiro um cafezinho preto.': ['I prefer a plain black coffee.', 'Prefiero un cafecito solo.', 'Preferisco un caffè nero.', 'Je préfère un petit noir.'],
+    'Prova sim! Ele deixa qualquer um ligadão o dia inteiro.': ['Do try it! It keeps anyone wired all day.', '¡Pruébalo! Deja a cualquiera a mil todo el día.', 'Provalo! Tiene chiunque carico tutto il giorno.', 'Goûte-le ! Il garde n’importe qui à fond toute la journée.'],
+    'Clássico! Também é muito bom.': ['A classic! It’s really good too.', '¡Clásico! También es muy bueno.', 'Classico! Anche quello è buonissimo.', 'Un classique ! C’est très bon aussi.'],
+  });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
 
@@ -413,6 +476,20 @@
   const SOCIETY = R(925, 535, 260, 175), SOCIETY_L = R(945, 553, 220, 140);
   const FUTSAL = R(335, 438, 140, 92), FUTSAL_L = R(346, 449, 118, 70);
   const LAGO = { cx: PX(260), cz: PZ(670), rx: 30, rz: 14 };
+  // (5.6.0) o lago não é mais uma elipse perfeita: a borda tem "lóbulos" (soma de senoides no ângulo). Perto do píer (leste, ângulo ~0)
+  //   ela volta a ser a elipse, para o píer continuar encostando na água. a = ângulo no espaço normalizado (x/rx, z/rz).
+  const FORMA_FASES = [0.771, 2.912, 3.708, 1.482], FORMA_MAX = 1.3;
+  function formaLago(a) {
+    const F = FORMA_FASES, n = 0.13 * Math.sin(2 * a + F[0]) + 0.09 * Math.sin(3 * a + F[1]) + 0.06 * Math.sin(5 * a + F[2]) + 0.035 * Math.sin(7 * a + F[3]);
+    const b = Math.abs(((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI), t = Math.min(1, Math.max(0, (b - 0.25) / 0.5));
+    return 1 + n * t * t * (3 - 2 * t);
+  }
+  const bordaLago = (a, m) => { const f = formaLago(a); return [LAGO.cx + Math.cos(a) * (LAGO.rx * f + (m || 0)), LAGO.cz + Math.sin(a) * (LAGO.rz * f + (m || 0))]; };
+  function dentroLago(x, z, m) {                                       // m = margem em metros (positiva: um pouco além da borda)
+    const nx = (x - LAGO.cx) / LAGO.rx, nz = (z - LAGO.cz) / LAGO.rz, f = formaLago(Math.atan2(nz, nx));
+    const ex = (x - LAGO.cx) / (LAGO.rx * f + (m || 0)), ez = (z - LAGO.cz) / (LAGO.rz * f + (m || 0));
+    return ex * ex + ez * ez < 1;
+  }
   const LANCHE = R(788, 432, 74, 48);                                 // (4.9.5) o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
   const PIER = { x0: -54, x1: -37, z0: 54.4, z1: 56.2 };
   const SPAWN = { x: -78.8, z: -4.65 };                             // na porta do prédio (calçada norte)
@@ -534,7 +611,8 @@
       // ruas de TERRA: quadradinhos de terra de vários tons, borda torta (anda aos poucos para dentro e para fora) e tufos verdes no meio
       for (const r of RUAS_TERRA) ruaDeTerra(g, r, gx, gz, sx, sz);
       // areia em volta do lago (a água é um volume à parte, 5 cm acima)
-      elip(LAGO.cx, LAGO.cz, LAGO.rx + 2.2, LAGO.rz + 2.2, '#d7c28a'); elip(LAGO.cx, LAGO.cz, LAGO.rx + 0.3, LAGO.rz + 0.3, '#6c7b56');
+      const formaChao = (m, cor) => { g.fillStyle = cor; g.beginPath(); for (let i = 0; i <= 120; i++) { const [x, z] = bordaLago(i / 120 * Math.PI * 2, m); if (i) g.lineTo(gx(x), gz(z)); else g.moveTo(gx(x), gz(z)); } g.closePath(); g.fill(); };
+      formaChao(2.2, '#d7c28a'); formaChao(0.3, '#6c7b56');            // (5.6.0) a areia e a beirada seguem o formato do lago
       // várzea: terra batida, carecas e linhas de cal gastas
       ret(VARZEA, '#b98a52');
       for (let i = 0; i < 70; i++) { g.globalAlpha = 0.4; elip(VARZEA.x0 + 3 + rnd() * 51, VARZEA.z0 + 3 + rnd() * 32, 0.8 + rnd() * 3, 0.6 + rnd() * 2, rnd() < 0.5 ? '#a57643' : '#cfa46c'); }
@@ -607,7 +685,7 @@
   const texAgua = () => texCanvas(128, 60, (g, w, h) => {
     const rnd = semente(66);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const nx = ((x + 0.5) / w) * 2 - 1, ny = ((y + 0.5) / h) * 2 - 1, r = Math.hypot(nx, ny);
+      const nx = (((x + 0.5) / w) * 2 - 1) * FORMA_MAX, ny = (1 - ((y + 0.5) / h) * 2) * FORMA_MAX, r = Math.hypot(nx, ny) / formaLago(-Math.atan2(ny, nx));   // (5.6.0) fundo relativo à borda irregular
       let i = Math.min(5, Math.floor(r * 6.2)); if (rnd() < 0.16) i = Math.max(0, Math.min(5, i + (rnd() < 0.5 ? -1 : 1)));
       g.fillStyle = AGUA_TONS[i]; g.fillRect(x, y, 1, 1);
       if (r > 0.9 && r < 1 && rnd() < 0.3) { g.fillStyle = '#d6eef7'; g.fillRect(x, y, 1, 1); }
@@ -882,6 +960,38 @@
         for (let i = 0; i < 5; i++) if (i !== 2) janela(G, w, d, 'f', -8.4 + i * 4.2, 4.5, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
         G.box(1.6, 0.5, 0.2, '#c8352b', 0, 5.75, d / 2 + 0.1); G.box(0.5, 1.6, 0.2, '#c8352b', 0, 5.2, d / 2 + 0.12);   // cruz vermelha
       }, obst: [[-2.3, 1.45, 0.3, 0.3], [2.3, 1.45, 0.3, 0.3]] });
+    // (5.6.0) GOLAÇO ESPORTES — loja de artigos esportivos ao lado do bar (vazia por enquanto: depois vende comemorações, roupas...).
+    //   Fachada verde e amarela com faixa azul, duas vitrines grandes com camisas e chuteiras, a porta emoldurada por uma TRAVE de gol,
+    //   toldo listrado, bandeirinhas na platibanda e uma BOLA gigante girando em cima da loja.
+    { const L = { x0: -87.5, x1: -63.5, z0: 10.4, z1: 22 };
+      const mLoja = edificio({ r: L, frente: -1, h: 6.0, andares: 1, cor: '#1b7a3e', barrado: '#0e4a24', platibanda: '#f2c230', mapa: '#1b7a3e',
+        letreiro: { txt: 'GOLAÇO ESPORTES', fundo: '#1c3aa0', cor: '#f2c230', w: 13.5, h: 1.4, y: 4.55 },
+        montar: (G, w, d) => {
+          for (const s of [-1, 1]) {                                                       // as duas vitrines
+            const u = s * 6.4;
+            naFace(G, w, d, 'f', u, 0.45, 0, 8.2, 3.1, 0.12, '#f4f4f0'); naFace(G, w, d, 'f', u, 0.55, 0.01, 7.9, 2.9, 0.15, '#7ab8d8');
+            for (let i = 0; i < 4; i++) {                                                  // camisas penduradas (com número e listra) e chuteiras embaixo
+              const cu = u - 2.85 + i * 1.9, cores = [['#f2c230', '#1c3aa0'], ['#c8352b', '#f4f4f0'], ['#f4f4f0', '#1b7a3e'], ['#1c3aa0', '#f2c230']][(i + (s > 0 ? 2 : 0)) % 4];
+              naFace(G, w, d, 'f', cu, 1.6, 0.02, 1.0, 1.05, 0.18, cores[0]); naFace(G, w, d, 'f', cu - 0.62, 2.25, 0.02, 0.32, 0.36, 0.18, cores[0]); naFace(G, w, d, 'f', cu + 0.62, 2.25, 0.02, 0.32, 0.36, 0.18, cores[0]);   // corpo e mangas
+              naFace(G, w, d, 'f', cu, 1.95, 0.025, 0.36, 0.42, 0.19, cores[1]); naFace(G, w, d, 'f', cu, 2.55, 0.025, 0.28, 0.06, 0.19, '#6a6a70');   // número e cabide
+              naFace(G, w, d, 'f', cu - 0.2, 0.62, 0.02, 0.44, 0.22, 0.2, cores[1]); naFace(G, w, d, 'f', cu + 0.28, 0.62, 0.02, 0.44, 0.22, 0.2, cores[0]);   // chuteiras
+            }
+          }
+          naFace(G, w, d, 'f', 0, 0, 0, 2.7, 3.0, 0.12, '#f4f4f0'); naFace(G, w, d, 'f', 0, 0, 0.01, 2.4, 2.85, 0.15, '#5d9fc4'); naFace(G, w, d, 'f', 0, 0, 0.02, 0.06, 2.85, 0.17, '#f4f4f0');   // porta de vidro dupla
+          for (const s of [-1, 1]) naFace(G, w, d, 'f', s * 1.75, 0, 0.42, 0.2, 3.5, 0.3, '#f8f8f4');   // a TRAVE em volta da porta (traves e travessão)
+          naFace(G, w, d, 'f', 0, 3.3, 0.42, 3.7, 0.2, 0.3, '#f8f8f4');
+          toldo(G, w, d, -6.4, 8.4, 4.1, 1.2, ['#1b7a3e', '#f4f4f0', '#f2c230']); toldo(G, w, d, 6.4, 8.4, 4.1, 1.2, ['#1b7a3e', '#f4f4f0', '#f2c230']);
+          G.box(w + 0.1, 0.35, 0.08, '#1c3aa0', 0, 3.62, d / 2 + 0.06);                    // faixa azul
+          const pal = ['#f2c230', '#1b7a3e', '#1c3aa0', '#c8352b', '#f4f4f0'];               // bandeirinhas
+          for (let i = 0; i < 22; i++) { const x = -w / 2 + 0.6 + i * (w - 1.2) / 21; G.tri([x - 0.26, 6.42, d / 2 + 0.12], [x + 0.26, 6.42, d / 2 + 0.12], [x, 5.98, d / 2 + 0.12], pal[i % pal.length], [0, 0, 1]); }
+          G.box(w - 1, 0.03, 0.03, '#2a2a2e', 0, 6.42, d / 2 + 0.12);
+          G.box(1.6, 0.5, 1.6, '#1c3aa0', 0, 6.05, 0); G.box(1.2, 0.25, 1.2, '#f2c230', 0, 6.55, 0);   // pedestal da bola no telhado
+        },
+        obst: [[-1.75, 0.42, 0.25, 0.35], [1.75, 0.42, 0.25, 0.35]] });
+      if (mLoja && typeof BALL_GEO !== 'undefined') {                                    // a bola gigante (a mesma malha da bola do jogo)
+        const bola = new THREE.Mesh(guardar(BALL_GEO.clone()), BALL_MAT); bola.scale.setScalar(7); bola.position.set(0, 6.8 + 0.22 * 7, 0); mLoja.add(bola); S.bolaLoja = bola;
+      }
+    }
     edificio({ r: R(55, 432, 88, 58), frente: -1, h: 3.6, andares: 1, cor: '#d9c27a', barrado: '#8a6b3a', platibanda: '#c9ae62',
       letreiro: { txt: 'BAR', fundo: '#1f7a4d', cor: '#f2e6c8', w: 4, h: 1.0, y: 3.65 },
       montar: (G, w, d) => { for (const u of [-5, 0, 5]) { naFace(G, w, d, 'f', u, 0, 0, 3.6, 2.7, 0.14, '#24262b'); naFace(G, w, d, 'f', u, 2.35, 0.01, 3.7, 0.4, 0.16, '#8c9199'); } } });
@@ -1046,7 +1156,9 @@
 
     // --- lago (água 5 cm acima do chão pintado), píer de madeira e taboas
     { const ta = guardar(texAgua()); S.aguaImg = ta.image;
-      const geoA = guardar(new THREE.CircleGeometry(1, 48));
+      const geoA = guardar(new THREE.CircleGeometry(1, 120));            // (5.6.0) o círculo vira a forma do lago (cada ponto da borda vai até formaLago)
+      { const P = geoA.attributes.position, U = geoA.attributes.uv; for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i), r = Math.hypot(px, py); if (r > 1e-6) { const f = formaLago(-Math.atan2(py, px)); P.setXY(i, px * f, py * f); } U.setXY(i, P.getX(i) / FORMA_MAX * 0.5 + 0.5, P.getY(i) / FORMA_MAX * 0.5 + 0.5); }
+        P.needsUpdate = true; U.needsUpdate = true; geoA.computeBoundingSphere(); }
       const agua = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: ta, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
       agua.rotation.x = -Math.PI / 2; agua.scale.set(LAGO.rx, LAGO.rz, 1); agua.position.set(LAGO.cx, 0.05, LAGO.cz); g.add(agua); S.agua = agua;
       S.ondas = [];                                                            // duas camadas de ondinhas por cima, andando devagar em sentidos diferentes (pixels quadrados: 64 px = 15 m)
@@ -1156,7 +1268,7 @@
     // trechos (ângulo inicial e final na elipse, em graus): longe do píer (leste, ~0°) e do caminho do lago (nordeste)
     for (const [a0, a1] of [[150, 185], [205, 230], [250, 275], [100, 122]]) {
       const pts = [];
-      for (let a = a0; a <= a1 + 0.01; a += 6) { const t = a * Math.PI / 180; pts.push([LAGO.cx + Math.cos(t) * (LAGO.rx + 1.3), LAGO.cz + Math.sin(t) * (LAGO.rz + 1.3)]); }
+      for (let a = a0; a <= a1 + 0.01; a += 6) { const t = a * Math.PI / 180; pts.push(bordaLago(t, 1.3)); }
       for (let i = 0; i < pts.length; i++) {
         const [x, z] = pts[i], torto = (rnd() - 0.5) * 0.25;
         if (rnd() < 0.12) continue;                                       // mourão que caiu
@@ -1194,7 +1306,7 @@
     for (const r of RUAS_TERRA) if (x > r.x0 - 1 && x < r.x1 + 1 && z > r.z0 - 1 && z < r.z1 + 1) return false;
     for (const r of [PRACA, VARZEA, SOCIETY, FUTSAL]) if (x > r.x0 - 1 && x < r.x1 + 1 && z > r.z0 - 1 && z < r.z1 + 1) return false;
     for (const b of S.col) if (x > b.x0 - 0.8 && x < b.x1 + 0.8 && z > b.z0 - 0.8 && z < b.z1 + 0.8) return false;
-    const ex = (x - LAGO.cx) / (LAGO.rx + 3), ez = (z - LAGO.cz) / (LAGO.rz + 3); if (ex * ex + ez * ez < 1) return false;
+    if (dentroLago(x, z, 3)) return false;
     return true;
   }
   function criarPlantas() {
@@ -1206,7 +1318,7 @@
     }
     // taboas: poucas moitas na beira do lago (antes era uma cerca de taboas em volta inteira)
     for (let i = 0; i < 26; i++) {
-      const a = rnd() * Math.PI * 2, x = LAGO.cx + Math.cos(a) * (LAGO.rx + 0.2), z = LAGO.cz + Math.sin(a) * (LAGO.rz + 0.2);
+      const a = rnd() * Math.PI * 2, [x, z] = bordaLago(a, 0.2);
       if (x > PIER.x0 - 3 && z > PIER.z0 - 4 && z < PIER.z1 + 4) continue;
       if (Math.abs(x + 41) < 3 && z < LAGO.cz) continue;                  // o caminho que chega no lago
       for (let j = 0; j < 3 + Math.floor(rnd() * 2); j++) lista.push({ x: x + (rnd() - 0.5) * 0.9, z: z + (rnd() - 0.5) * 0.9, k: 0.85 + rnd() * 0.5, tipo: 1, yaw: rnd() * 6.28, t: 0.85 + rnd() * 0.3 });
@@ -1845,7 +1957,10 @@
   function ativarCarro(c, p, x) { c.ativo = true; c.dir = p.dir; c.z = p.z; c.x = x; c.vmax = 9 + Math.random() * 4; c.v = c.vmax; c.parado = 0; c.buzinou = false; c.m.visible = true; c.m.rotation.y = p.dir > 0 ? 0 : Math.PI; }
   // (5.5.0) a faixa de pedestre: x de 7,7 a 11,9. linhaFaixa = quanto o carro ainda anda até parar antes dela (a frente tem 2,1 m)
   const linhaFaixa = (c) => (c.dir > 0 ? (7.2 - c.x) - 2.1 : (c.x - 12.4) - 2.1);
-  const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo) return false; const dl = linhaFaixa(c); return (dl > -6.8 && dl < 0) || (c.v > 1.5 && dl >= 0 && dl < (c.v * c.v) / (2 * 5.5) + 0.6); });
+  // (6.0.0) algum carro andando chega na faixa em menos de 'seg' segundos (ou está passando nela)?
+  const carroChegando = (seg) => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c); return dl > -6.8 && (dl < 0 || dl / c.v < seg); });
+  const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c);   // (6.0.0) carro PARADO não é perigo (antes travava: carro parado na linha esperando o pedestre e o pedestre esperando o carro)
+    return (dl > -6.8 && dl < 0) || (c.v > 1.5 && dl >= 0 && dl < (c.v * c.v) / (2 * 5.5) + 0.6); });
   // (5.5.0) 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
   function assustar(c, P) {
     for (let k = 1; k < 4; k++) setTimeout(() => { if (S && S.ativo && !S.dentro) buzina(c); }, k * 380);
@@ -1987,7 +2102,7 @@
     if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // (4.9.6) puxando a persiana
     if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // (4.9.5) na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
     m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // (5.2.1) bebendo: a mão fecha para a frente da boca
-    if ((A.pedeFaixa || A.atravessa) && !A.sentado && !A.recua) { m.bracoD.rotation.z = 0.25; m.bracoD.rotation.x = -1.45; usarCotovelo(m.bracoD, 0, 0.15); }   // (5.5.0) mão estendida para os carros
+    if (A.pedeFaixa && !A.sentado && !A.recua) { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = -0.12; usarCotovelo(m.bracoD, 0, 0.12); }   // (6.0.0) parado na beira: mão esticada PARA A FRENTE (pare!)
     if (A.esbarrao > 0) { A.esbarrao = Math.max(0, A.esbarrao - dt); m.corpo.rotation.z = -Math.sin(A.esbarrao * 20) * A.esbarrao * 0.5; }   // (5.5.0) esbarrão: cambaleia (como o técnico)
     if (A.copoCli && A.sentado && A.bebe > 0) A.copoCli.rotation.x = -0.45;
     r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
@@ -2065,7 +2180,7 @@
     const rr = 0.28;
     for (const b of S.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     for (const c of S.circ) if (Math.hypot(x - c.x, z - c.z) < c.r + rr) return false;
-    if (!S.dentro) { const ex = (x - LAGO.cx) / (LAGO.rx + 0.5), ez = (z - LAGO.cz) / (LAGO.rz + 0.5); if (ex * ex + ez * ez < 1) return false; }
+    if (!S.dentro && dentroLago(x, z, 0.5)) return false;
     if (!S.dentro && S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     if (!S.dentro) for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
     if (ignorarGente) return true;
@@ -2089,11 +2204,19 @@
       if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // (4.9.6) de cada 10 pedestres que decidem, 5 entram num lugar
       const op = N.viz.filter((i) => i !== A.ant), prox = op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;
       if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // (5.5.0) saiu pela ponta do mapa
-      if (N.faixa && S.rede[prox].faixa) {                           // (5.5.0) vai atravessar: estende a mão; os carros que dá param
-        A.pedeFaixa = true;
-        if (carroNaoPara()) { A.espera = 0.3; A.andando = false; return; }
-        A.atravessa = true; A.pedeFaixa = false;
-      } else if (N.faixa) { A.atravessa = false; A.pedeFaixa = false; }   // chegou do outro lado
+      if (N.faixa && S.rede[prox].faixa) {                           // (5.5.0) vai atravessar
+        // (6.0.0) Carro chegando nos próximos 5 s: para na beira com a mão esticada para a frente e espera os carros pararem;
+        // aí atravessa CORRENDO (com a mão baixa). Sem carro vindo: atravessa andando, como sempre, com a mão para baixo.
+        if (A.pedeFaixa || carroChegando(5)) {
+          A.pedeFaixa = true;
+          if (carroNaoPara() || carroChegando(5)) { A.espera = 0.25; A.andando = false; A.yawAlvo = Math.atan2(-(S.rede[prox].z - A.z), S.rede[prox].x - A.x); return; }
+          A.pedeFaixa = false; A.atravessa = true;
+          if (!A.correFaixa) { A.correFaixa = true; A.velFaixa = A.vel; A.vel = Math.max(3.3, A.vel * 1.9); A.correndo = true; }
+        } else A.atravessa = true;
+      } else if (N.faixa) {                                          // chegou do outro lado
+        A.atravessa = false; A.pedeFaixa = false;
+        if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; A.correndo = !!A.chuva; }
+      }
       A.ant = A.alvo; A.alvo = prox; if (Math.random() < 0.05) A.espera = 2 + Math.random() * 4;
       return;
     }
@@ -2158,7 +2281,7 @@
       if (!S.dentro && !A.oculto && (A.tipo === 'anda' || A.tipo === 'morador') && (A.z < AV.z0 - 0.4 || A.z > AV.z1 + 0.4)) A.seguro = { x: A.x, z: A.z };   // a última calçada
       if (A.recua) {                                                    // (5.5.0) levou um susto do carro: volta correndo para a calçada
         const q = A.recua, dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = 3.3 * dt;
-        if (d <= v) { A.x = q.x; A.z = q.z; A.recua = null; A.andando = false; A.correndo = false; A.atravessa = A.pedeFaixa = false; if (A.tipo === 'anda') { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.travaE = 1.5; } }
+        if (d <= v) { A.x = q.x; A.z = q.z; A.recua = null; A.andando = false; A.correndo = false; A.atravessa = A.pedeFaixa = false; if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; } if (A.tipo === 'anda') { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.travaE = 1.5; } }
         else { A.x += dx / d * v; A.z += dz / d * v; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.correndo = true; A.vel = 3.3; }
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
@@ -2250,7 +2373,7 @@
     if (S.dentro) { for (const A of S.npcs) if (!A.oculto) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < 0.58 && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; } return true; }
     if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     const naPier = x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15;
-    if (!naPier) { const ex = (x - LAGO.cx) / (LAGO.rx + 0.45), ez = (z - LAGO.cz) / (LAGO.rz + 0.45); if (ex * ex + ez * ez < 1) return false; }   // (4.9.5) fora da água: os pés não entram mais
+    if (!naPier && dentroLago(x, z, 0.45)) return false;   // (4.9.5) fora da água: os pés não entram mais
     for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + RJ && Math.abs(z - c.z) < 0.95 + RJ) return false;
     for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < 0.58 && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // (5.5.0) dá para se afastar de quem está encostado
     return true;
@@ -2278,7 +2401,7 @@
     const sy = Math.sin(S.cam.yaw), cy = Math.cos(S.cam.yaw);
     const fx = -sy, fz = -cy, rx = cy, rz = -sy;                     // frente (da câmera para o jogador) e direita
     const dx = rx * e.ix - fx * e.iy, dz = rz * e.ix - fz * e.iy, dl = Math.hypot(dx, dz) || 1;
-    const vel = (corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel(), sp = vel * dt;
+    const vel = (corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // (5.6.0) café: mais rápido
     const nx = J.x + dx / dl * sp, nz = J.z + dz / dl * sp;
     let moveu = false;
     if (livre(nx, J.z)) { J.x = nx; moveu = true; }
@@ -2422,13 +2545,22 @@
     const c = UI.mapaCv, g = c.getContext('2d'), W = c.width, H = c.height, kx = W / 240, kz = H / 152;
     const X = (x) => (x + 120) * kx, Z = (z) => (z + 76) * kz;
     g.imageSmoothingEnabled = false; g.drawImage(S.chaoImg, 0, 0, W, H);
-    g.save(); g.beginPath(); g.ellipse(X(LAGO.cx), Z(LAGO.cz), LAGO.rx * kx, LAGO.rz * kz, 0, 0, Math.PI * 2); g.clip();
-    if (S.aguaImg) g.drawImage(S.aguaImg, X(LAGO.cx - LAGO.rx), Z(LAGO.cz - LAGO.rz), LAGO.rx * 2 * kx, LAGO.rz * 2 * kz); else { g.fillStyle = '#4f9fd0'; g.fill(); }
+    g.save(); g.beginPath(); for (let i = 0; i <= 120; i++) { const [x, z] = bordaLago(i / 120 * Math.PI * 2, 0); if (i) g.lineTo(X(x), Z(z)); else g.moveTo(X(x), Z(z)); } g.closePath(); g.clip();
+    if (S.aguaImg) g.drawImage(S.aguaImg, X(LAGO.cx - LAGO.rx * FORMA_MAX), Z(LAGO.cz - LAGO.rz * FORMA_MAX), LAGO.rx * 2 * FORMA_MAX * kx, LAGO.rz * 2 * FORMA_MAX * kz); else { g.fillStyle = '#4f9fd0'; g.fill(); }
     g.restore();
     for (const p of S.planta) { g.fillStyle = p.cor; g.fillRect(X(p.r.x0), Z(p.r.z0), (p.r.x1 - p.r.x0) * kx, (p.r.z1 - p.r.z0) * kz); if (!p.chao) { g.strokeStyle = 'rgba(42,18,6,0.85)'; g.lineWidth = 1; g.strokeRect(X(p.r.x0) + 0.5, Z(p.r.z0) + 0.5, (p.r.x1 - p.r.x0) * kx - 1, (p.r.z1 - p.r.z0) * kz - 1); } }
     // (5.1.0) nomes descobertos (lago, societys, várzea) e casas de NPCs já reveladas
-    g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = "bold 9px Silkscreen, 'Courier New', monospace";
-    const rotulo = (x, z, txt) => { const mx = X(x), mz = Z(z); g.fillStyle = 'rgba(20,10,4,0.75)'; g.fillText(txt, mx + 1, mz + 1); g.fillStyle = '#fff0c8'; g.fillText(txt, mx, mz); };
+    // (5.6.0) o nome fica numa CAIXINHA centralizada no lugar (fonte menor; quebra em até 2 linhas e nunca sai do mapa)
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = "bold 7px Silkscreen, 'Courier New', monospace";
+    const rotulo = (x, z, txt) => {
+      const pal = String(txt).split(' '), linhas = []; let at = '';
+      for (const p of pal) { const t = at ? at + ' ' + p : p; if (at && g.measureText(t).width > 84) { linhas.push(at); at = p; } else at = t; }
+      if (at) linhas.push(at);
+      const L = linhas.slice(0, 2), lw = Math.max(...L.map((l) => g.measureText(l).width)), bw = Math.round(lw + 8), bh = L.length * 9 + 4;
+      const bx = Math.round(Math.max(1, Math.min(W - bw - 1, X(x) - bw / 2))), by = Math.round(Math.max(1, Math.min(H - bh - 1, Z(z) - bh / 2)));
+      g.fillStyle = 'rgba(42,18,6,0.86)'; g.fillRect(bx, by, bw, bh); g.strokeStyle = '#f0a020'; g.lineWidth = 1; g.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+      g.fillStyle = '#fff0c8'; L.forEach((l, i) => g.fillText(l, bx + bw / 2, by + 6.5 + i * 9));
+    };
     for (const m of marcos()) if (S.dados.descobertos[m.id]) rotulo(m.x, m.z, m.nome);
     for (const cs of S.casas || []) {
       if (!cs.marca) continue;
@@ -2454,8 +2586,9 @@
     { nome: 'cinema', x: -43.8, z: -4.4, sai: -Math.PI / 2 }, { nome: 'cafeteria', x: -24.7, z: -4.4, sai: -Math.PI / 2 }, { nome: 'supermercado', x: 45.0, z: -4.4, sai: -Math.PI / 2 },
     { nome: 'hospital', x: -104, z: -4.4, sai: -Math.PI / 2 }, { nome: 'bar', x: -100.2, z: 8.6, sai: Math.PI / 2 }, { nome: 'pizzaria', x: 1.2, z: 8.6, sai: Math.PI / 2 },
     { nome: 'restaurante', x: 23.6, z: 8.6, sai: Math.PI / 2 }, { nome: 'academia', x: 76.4, z: 8.6, sai: Math.PI / 2 },
+    { nome: 'esportiva', x: -75.5, z: 8.6, sai: Math.PI / 2 },                       // (5.6.0) Golaço Esportes
   ];
-  const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia' };
+  const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', esportiva: 'Golaço Esportes' };
   // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
   async function entrarEm(P) {
     const I = S.interiores, J = S.jog; if (!I) return;
@@ -2495,7 +2628,7 @@
   // (5.0.0) FLUXO DE CLIENTES: a cidade lá fora fica parada, mas aqui dentro gente sai e, quando tem lugar vazio, entra outra.
   // Segunda a quarta: vazio (pouca gente) · quinta: médio · sexta a domingo: cheio (só 2 a 4 lugares vazios). NUNCA lota (sempre 2+ vazios).
   const FLUXO_SEM = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'];
-  const SEM_FLUXO = { hospital: 1, academia: 1 };
+  const SEM_FLUXO = { hospital: 1, academia: 1, esportiva: 1 };           // (5.6.0) a loja esportiva fica vazia por enquanto
   function alvoClientes(n) {
     if (n <= 2) return 0;
     const f = FLUXO_SEM[diaSemana()], v = f === 'vazio' ? Math.round(n * 0.15) + 1 : f === 'medio' ? Math.round(n * 0.45) : n - (2 + Math.floor(Math.random() * 3));
@@ -2504,13 +2637,16 @@
   function montarFluxo(nome, lugares, area, ent) {
     const f = FLUXO_SEM[diaSemana()], F = { nome, lugares, area, ent, alvo: alvoClientes(lugares.length), alvoVaga: area ? (f === 'vazio' ? 2 : f === 'medio' ? 4 : 7) : 0, prox: 3 + Math.random() * 4 };
     const livres = lugares.slice().sort(() => Math.random() - 0.5);
-    if (nome === 'cafeteria' || nome === lugarDoEmprego()) return F;   // (5.2.1) a cafeteria começa VAZIA; (5.3.0) o lugar do emprego também
-    for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70; }   // já tem gente quando ele entra, cada um num ponto da visita
+    if (nome === lugarDoEmprego() || (nome === 'cafeteria' && !S.lucia)) return F;   // (5.3.0) o lugar do emprego começa vazio; (6.0.0) a cafeteria só se estiver fechada
+    const cafe = nome === 'cafeteria';
+    for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70;   // já tem gente quando ele entra, cada um num ponto da visita
+      if (cafe) { darCopo(A, Math.floor(Math.random() * 4)); A.cli.pagou = true; A.bebe = A.cli.t; } }   // (6.0.0) na cafeteria: já com o café na mão
     for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
     return F;
   }
   function novoCliente(a, jaDentro) {
-    const e = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = criarPessoa(S.f2, Math.random, Math.random() < 0.5);
+    const e0 = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = criarPessoa(S.f2, Math.random, Math.random() < 0.5);
+    const e = { x: e0.x, z: e0.z, yaw: e0.yaw != null ? e0.yaw : ((S.dentro && S.dentro.entrada && S.dentro.entrada.yaw) || Math.PI / 2) };   // (6.0.0) a porta "do lado" não tinha yaw: o ângulo virava NaN e o cliente ficava INVISÍVEL até sentar
     A.tipo = 'cliente'; A.cli = { a, fase: 'ir', t: 40 + Math.random() * 70, rota: null }; A.vel = 1.1 + Math.random() * 0.3;
     if (a) {
       a.ocupado = A;
@@ -2961,14 +3097,20 @@
     J.m.bracoD.cotovelo.add(m); J.copo = m;
   }
   // (5.2.1) a xícara na mão de um cliente: um pivô na mão que fica sempre de pé (poseAtor desfaz o giro do braço)
+  // (6.0.0) a bebida agora é a PIXEL ART do próprio café (iconeCafezinho, a mesma do balcão), num sprite que sempre olha para a câmera.
+  //   No gole ela fica colada na frente da boca (como o cigarro do vizinho), sem entrar no rosto.
   function darCopo(A, tier) {
     tirarCopo(A);
-    const louca = tier === 0 ? '#efe8da' : tier === 1 ? '#d4583a' : tier <= 4 ? '#7cb8e8' : '#5cc7a0', t = TIERS[tier] || TIERS[0], G = new Geo();
-    G.box(0.1, 0.09, 0.1, louca, 0, 0, 0); G.box(0.085, 0.012, 0.085, t.creme ? '#fff4e2' : t.cor, 0, 0.09, 0); G.box(0.025, 0.045, 0.02, louca, 0, 0.03, 0.06);
-    if (t.chantilly) G.box(0.06, 0.04, 0.06, '#fff7ea', 0, 0.1, 0);
-    const piv = new THREE.Group(); piv.position.set(0, -0.3, 0); piv.add(G.malha(MAT)); A.m.bracoD.cotovelo.add(piv); A.copoCli = piv;
+    const tex = new THREE.CanvasTexture(iconeCafezinho(tier));
+    tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 }));
+    sp.scale.set(0.36, 0.36, 1); sp.position.set(0.02, 0.09, 0);
+    const piv = new THREE.Group(); piv.position.set(0.03, -0.3, 0); piv.add(sp); A.m.bracoD.cotovelo.add(piv); A.copoCli = piv; A.copoSprite = sp;
   }
-  function tirarCopo(A) { if (A.copoCli) { if (A.copoCli.parent) A.copoCli.parent.remove(A.copoCli); A.copoCli = null; } }
+  function tirarCopo(A) {
+    if (A.copoCli) { if (A.copoCli.parent) A.copoCli.parent.remove(A.copoCli); A.copoCli = null; }
+    if (A.copoSprite) { const M = A.copoSprite.material; if (M.map) M.map.dispose(); M.dispose(); A.copoSprite = null; }
+  }
   function poseCopo(J) {                                                                    // braço direito dobrado para a frente segurando a xícara de pé
     if (!J.copo) return;
     const m = J.m; m.bracoD.rotation.z = 0.35; m.bracoD.rotation.x = 0; usarCotovelo(m.bracoD, 0, 1.2);
@@ -3266,30 +3408,44 @@
   async function falarComLucia() {
     const d = S.dados, L = S.lucia, J = S.jog;
     if (L) L.yawAlvo = Math.atan2(-(J.z - L.z), J.x - L.x);
-    if (empregoEscolhido() !== 'cafeteria') { await fala('lucia', T('Oi! Seja bem-vindo à cafeteria. Posso te ajudar com alguma coisa?')); Dialogo.esconder(); return; }
-    if (!d.luciaApresentou) {
-      const { mariposa, falou } = fase1Lucia();
-      if (mariposa) {
-        await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
-        await fala('lucia', T('A quanto tempo você mora aqui?'));
-        await fala('jog', T('Acabei de me mudar para a cidade.'));
-        await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
-        const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')], { centro: true });   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
-        if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); }
-        else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
-      } else if (falou) {
-        const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
-        await fala('lucia', r0 === 0 ? T('Que bom te ver de novo! Deixa eu te explicar como funciona o trabalho aqui.') : T('Ah... tudo bem, faz tempo mesmo. Deixa eu te explicar como funciona o trabalho aqui.'));
-      } else {
-        await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
+    const funcionario = empregoEscolhido() === 'cafeteria';
+    if (funcionario) {
+      if (!d.luciaApresentou) {
+        const { mariposa, falou } = fase1Lucia();
+        if (mariposa) {
+          await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
+          await fala('lucia', T('A quanto tempo você mora aqui?'));
+          await fala('jog', T('Acabei de me mudar para a cidade.'));
+          await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
+          const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')], { centro: true });   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
+          if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); }
+          else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
+        } else if (falou) {
+          const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
+          await fala('lucia', r0 === 0 ? T('Que bom te ver de novo! Deixa eu te explicar como funciona o trabalho aqui.') : T('Ah... tudo bem, faz tempo mesmo. Deixa eu te explicar como funciona o trabalho aqui.'));
+        } else {
+          await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
+        }
+        await fala('lucia', T('O expediente é das 8h às 16h. Os clientes sentam e mostram o que querem: vá até a mesa, anote o pedido e prepare na bancada, juntando dois cafés iguais para subir de nível. Depois é só levar até o cliente!'));
+        await fala('lucia', Tf('Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.', PAGA_BASE, PAGA_PEDIDO));   // (5.1.1)
+        d.luciaApresentou = true; gravar('chegada');
       }
-      await fala('lucia', T('O expediente é das 8h às 16h. Os clientes sentam e mostram o que querem: vá até a mesa, anote o pedido e prepare na bancada, juntando dois cafés iguais para subir de nível. Depois é só levar até o cliente!'));
-      await fala('lucia', Tf('Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.', PAGA_BASE, PAGA_PEDIDO));   // (5.1.1)
-      d.luciaApresentou = true; gravar('chegada');
-    }
+      if (d.luciaApresentou) d.luciaConheceu = true;
+    } else if (!d.luciaConheceu) await apresentacaoLuciaVisitante();      // (5.6.0) quem não trabalha lá também é reconhecido (sem falar de trabalho)
     Dialogo.esconder();
     if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
-    if (d.hora >= H_CAFE_FECHA && d.hora < H_LUCIA_SAI) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }   // (5.3.0)
+    if (d.hora >= H_CAFE_FECHA && d.hora < H_LUCIA_SAI) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
+    // (5.6.0) o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar
+    const ops = [['cafe', T('Comprar um café')]]; if (funcionario) ops.push(['trab', T('Sobre o trabalho')]); ops.push(['papo', T('Conversar')], ['tchau', T('Tchau')]);
+    const r = await Escolha.mostrar(T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]), { centro: true });
+    Dialogo.esconder();
+    const op = (ops[r] || [])[0];
+    if (op === 'cafe') await comprarCafe();
+    else if (op === 'trab') await trabalhoComLucia();
+    else if (op === 'papo') await conversaLucia();
+  }
+  async function trabalhoComLucia() {
+    const d = S.dados;
     if (fimDeSemana() && empregoEscolhido() === 'cafeteria' && d.luciaApresentou) { await fala('lucia', T('Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!')); Dialogo.esconder(); return; }   // (5.3.0) sábado e domingo: sem turno
     if ((d.dia || 1) < 2) { await fala('lucia', T('Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!')); Dialogo.esconder(); return; }
     if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
@@ -3300,6 +3456,93 @@
     if (r !== 0) return;
     await fala('lucia', T('Boa! Vou abrir as portas. Os clientes já vão chegar.')); Dialogo.esconder();
     iniciarTurno();
+  }
+  // (5.6.0) a Lúcia reconhece quem NÃO trabalha na cafeteria (os mesmos 3 jeitos da Fase 1), sem falar de trabalho
+  async function apresentacaoLuciaVisitante() {
+    const d = S.dados, { mariposa, falou } = fase1Lucia();
+    if (mariposa) {
+      await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
+      await fala('lucia', T('A quanto tempo você mora aqui?'));
+      await fala('jog', T('Acabei de me mudar para a cidade.'));
+      const r = await Escolha.mostrar(T('Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!'), [T('Eu também fico feliz de ver você'), T('Você trabalha aqui faz tempo?')], { centro: true });
+      await fala('lucia', r === 0 ? T('A-ah... é... eu também, viu?') : T('Faz uns dois anos. O cheiro de café nem sai mais de mim, haha.'));
+    } else if (falou) {
+      const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
+      await fala('lucia', r0 === 0 ? T('Que bom te ver de novo!') : T('Ah... tudo bem, faz tempo mesmo.'));
+      await fala('lucia', T('Que bom te ver por aqui! Vem tomar um cafezinho sempre que quiser.'));
+    } else {
+      await fala('lucia', T('Você me parece familiar, mas não sei de onde...'));
+      await fala('lucia', T('Que bom te ver por aqui! Vem tomar um cafezinho sempre que quiser.'));
+    }
+    d.luciaConheceu = true; gravar(d.ponto || 'chegada');
+  }
+  // (5.6.0) papo com a Lúcia: um assunto por vez (ela pergunta, você escolhe a resposta)
+  const PAPOS_LUCIA = [
+    ['E aí, tá gostando da cidade?', ['Tô gostando muito!', 'Que bom! Aqui é calmo, mas tem o seu charme.'], ['Ainda tô me acostumando.', 'Normal! Logo você acha os seus cantinhos preferidos.']],
+    ['Você ainda joga bola?', ['Jogo sim, sempre que dá!', 'Eu sabia! Você vivia com a bola lá na escola.'], ['Tô meio parado...', 'Volta! Tem racha no society toda segunda e quarta.']],
+    ['Lembra da Dona Graça, a professora? Ela ainda dá aula lá na escola.', ['Sério? Que saudade!', 'Ela pergunta de todo mundo da nossa turma.'], ['Nossa, ela ainda tá lá?', 'Tá! E continua brava do mesmo jeito, haha.']],
+    ['Já provou o cappuccino com chantilly daqui? É o meu favorito.', ['Ainda não, vou provar!', 'Prova sim! Ele deixa qualquer um ligadão o dia inteiro.'], ['Prefiro um cafezinho preto.', 'Clássico! Também é muito bom.']],
+  ];
+  async function conversaLucia() {
+    const d = S.dados, P = PAPOS_LUCIA[(d.luciaPapo | 0) % PAPOS_LUCIA.length]; d.luciaPapo = (d.luciaPapo | 0) + 1;
+    await fala('lucia', T(P[0]));
+    const r = await Escolha.mostrar(T(P[0]), [T(P[1][0]), T(P[2][0])], { centro: true });
+    await fala('jog', T(P[r === 1 ? 2 : 1][0])); await fala('lucia', T(P[r === 1 ? 2 : 1][1])); Dialogo.esconder();
+  }
+  // ================================================================== (5.6.0) CAFÉS À VENDA: deixam o personagem mais rápido NA CIDADE por um tempo
+  //   tier (o café do joguinho) · mult (velocidade) · horas (de jogo; 0 = o dia inteiro, até ele dormir/o dia virar) · preço
+  const CAFES_VENDA = [
+    { tier: 0, mult: 1.25, horas: 4, preco: 150 }, { tier: 1, mult: 1.25, horas: 8, preco: 200 }, { tier: 2, mult: 1.5, horas: 4, preco: 300 },
+    { tier: 3, mult: 1.5, horas: 8, preco: 350 }, { tier: 4, mult: 1.5, horas: 12, preco: 400 }, { tier: 5, mult: 2, horas: 8, preco: 450 },
+    { tier: 6, mult: 2, horas: 12, preco: 500 }, { tier: 7, mult: 2, horas: 0, preco: 600 },
+  ];
+  const tempoAbs = () => { const d = S.dados; return (d.dia || 1) * 24 + (d.hora < H_ACORDAR ? d.hora + 24 : d.hora); };   // relógio contínuo (a madrugada ainda é "hoje")
+  function cafeEfeito() {
+    const d = S.dados, c = d.cafe; if (!c) return null;
+    const ok = c.horas ? tempoAbs() < c.ate : c.dia === (d.dia || 1);
+    if (!ok) { d.cafe = null; if (S.modo === 'livre') { aviso(T('O efeito do café passou.')); setTimeout(() => { if (S && UI) aviso(''); }, 2400); } return null; }
+    return c;
+  }
+  const cafeMult = () => { const c = cafeEfeito(); return c ? c.mult : 1; };
+  function textoCafe(c) {
+    if (!c.horas) return Tf('Café: velocidade {0}x até o fim do dia!', String(c.mult).replace('.', ','));
+    const h = c.ate % 24; return Tf('Café: velocidade {0}x até {1}!', String(c.mult).replace('.', ','), fmtHora(h));
+  }
+  function comprarCafe() {
+    const d = S.dados;
+    if (!cafeAberto()) { aviso(T('A cafeteria está fechada agora.')); setTimeout(() => aviso(''), 2200); return Promise.resolve(); }
+    return new Promise((res) => {
+      const el = document.createElement('div'); el.id = 'cdCafes';
+      el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
+      const card = document.createElement('div');
+      card.style.cssText = 'width:min(620px,100%);max-height:96%;overflow:auto;background:#2a1206;border:4px solid #8a5a2a;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
+      const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:#f0a020;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;';
+      const h1 = document.createElement('span'); h1.textContent = T('Cafés da casa'); const h2 = document.createElement('span'); h2.style.color = '#fff0c8'; h2.textContent = d.fakes + ' ' + T('fakes'); h.append(h1, h2);
+      const grade = document.createElement('div');
+      grade.style.cssText = 'display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding-bottom:6px;';
+      const fim = (c) => { el.remove(); res(c); };
+      CAFES_VENDA.forEach((c) => {
+        const b = document.createElement('button'); b.type = 'button';
+        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < c.preco ? 'opacity:.55;' : '');
+        b.appendChild(iconeCafezinho(c.tier, '56px'));
+        const n = document.createElement('span'); n.textContent = T(TIERS[c.tier].nome);
+        const ef = document.createElement('span'); ef.style.cssText = 'color:#8fe04a;font-size:10px;'; ef.textContent = Tf('Velocidade {0}x · {1}', String(c.mult).replace('.', ','), c.horas ? Tf('{0}h', c.horas) : T('o dia todo'));
+        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = c.preco + ' ' + T('fakes');
+        b.append(n, ef, p); b.onclick = () => fim(c); grade.appendChild(b);
+      });
+      const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Deixa pra depois'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(null);
+      card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);
+    }).then(async (c) => {
+      if (!c) return;
+      if (d.fakes < c.preco) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      if (cafeEfeito()) { const r = await Escolha.mostrar(T('Você já está no efeito de um café. Tomar este no lugar?'), [T('Tomar este'), T('Deixa como está')], { centro: true }); Dialogo.esconder(); if (r !== 0) return; }
+      d.fakes -= c.preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(c.preco);
+      await fala('lucia', Tf('Saindo um {0}!', T(TIERS[c.tier].nome))); Dialogo.esconder();
+      copoNaMao(c.tier); await esperar(2600); copoNaMao(-1);
+      d.cafe = { tier: c.tier, mult: c.mult, horas: c.horas, ate: tempoAbs() + c.horas, dia: d.dia || 1 };
+      gravar(d.ponto || 'chegada');
+      aviso(textoCafe(d.cafe)); setTimeout(() => { if (S && UI) aviso(''); }, 3200);
+    });
   }
   // (4.9.5) ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
   function iconePx(id) {
@@ -3468,7 +3711,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const preto = div('cdPreto'), arrasto = div('cdArrasto'), aviso = div('cdAviso');
     const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
     const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
-    const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome" hidden></button><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
+    const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome" hidden></button><button type="button" class="cdQuad cdCafe" hidden></button><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
@@ -3476,7 +3719,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
-      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
+      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
     // joystick
@@ -3525,6 +3768,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     });
     UI.btnPausa.addEventListener('click', () => { if (S && S.modo === 'livre') alternarPausa(); });
     UI.fome.appendChild(iconeCoxinha()); UI.fome.setAttribute('aria-label', T('Fome'));
+    UI.cafe.addEventListener('click', () => { if (!S) return; som(); const c = cafeEfeito(); if (!c) return; aviso(textoCafe(c)); clearTimeout(UI.cafeT); UI.cafeT = setTimeout(() => { if (S && UI) aviso(''); }, 2800); });   // (5.6.0)
     UI.fome.addEventListener('click', () => { if (!S) return; som(); UI.aviso.textContent = T('Seu personagem ainda não comeu hoje.'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
     UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
@@ -3743,7 +3987,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // (5.3.0) ⚽ = dia de futebol
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
-    const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;   // (5.2.0) a coxinha fica até ele comer no dia
+    const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;
+    { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // (5.6.0) o café que está fazendo efeito   // (5.2.0) a coxinha fica até ele comer no dia
   }
   // (5.2.0) coxinha de frango em pixel art 16x16 (o ícone de "ainda não comeu hoje")
   function iconeCoxinha() {
@@ -3908,7 +4153,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return best;
   }
   function poseNaArvore(r) {
-    const A = r.A, sl = r.slot, k = ['pe', 'chao', 'deitado'][Math.floor(Math.random() * 3)], fora = yawPara(sl.x - sl.t.x, sl.z - sl.t.z);
+    const A = r.A, sl = r.slot, k = Math.random() < 0.5 ? 'pe' : 'chao', fora = yawPara(sl.x - sl.t.x, sl.z - sl.t.z);
     A.andando = false; A.correndo = false; A.chuva = null; removerProp(A); A.vel = 1.2;
     if (k === 'deitado') { A.deitado = true; A.yaw = A.yawAlvo = fora; }                    // a cabeça fica do lado do tronco
     else if (k === 'chao') { A.sentado = true; A.chao = true; A.assento = 0.17; A.yaw = A.yawAlvo = fora + (Math.random() - 0.5) * 1.2; }
@@ -4055,6 +4300,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       }
       if (n > 1) S.cam.snap = true;
       if (S.bandeira && !S.dentro) { S.bandeira.rotation.y = Math.sin(S.t * 1.3) * 0.25; S.bandeira.position.x = PRACA_C.x + 1.3 * Math.cos(S.bandeira.rotation.y); S.bandeira.position.z = PRACA_C.z - 1.3 * Math.sin(S.bandeira.rotation.y); }
+      if (S.bolaLoja && !S.dentro) S.bolaLoja.rotation.y += dt * 0.6;     // (5.6.0) a bola em cima da loja esportiva
       if (S.ondas && !S.dentro) for (const o of S.ondas) { o.tx.offset.x = (o.tx.offset.x + o.vx * dt) % 1; o.tx.offset.y = (o.tx.offset.y + o.vz * dt) % 1; }
       if (!S.dentro) { atualizarMarca(); atualizarTelas(dt); }
       atualizarAlvo();

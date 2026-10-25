@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.0
+     - A missão "encontre um lugar para comer" (e o aviso dos degraus) só aparece no 1º dia, enquanto ele ainda não comeu
+       (precisaMissaoComer). Antes aparecia toda vez que saía do apartamento.
+
    NOVIDADES DA 5.5.0
      - Depois de "Pular cena" o personagem fica parado mais 0,5 s (travaPulo): antes dava para andar 25x mais rápido no fim do pulo.
        O botão só aparece em cena com fala (jogo.js): portas, dormir, banho, pia e banheiro não mostram mais.
@@ -1389,12 +1393,19 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (!D.emprego) { await dizer(['jog', T('Antes de sair, eu preciso ver as candidaturas no computador.')]); return; }
     if (!D.roupa || D.roupa.id < 0) { await dizer(['jog', T('Eu não vou sair de pijama... Preciso me trocar.')]); return; }
     gravar('escada');
-    missao(T('Missão: encontre um lugar para comer.'));
+    const comer = precisaMissaoComer();                               // (6.0.0) só no 1º dia (e enquanto ele ainda não comeu)
+    missao(comer ? T('Missão: encontre um lugar para comer.') : '');
     somPorta(false);
     await preto(true, 600); S.noTerreo = false; mudarLugar('escada', -OUT + 0.55, -MID, 0, 5.6);
     S.esc.portas.minha.abrir(1.35); S.camSnap = true; await esperar(200); await preto(false, 700);
     await andar(J, [[-4.1, -MID]], 1.6); S.esc.portas.minha.abrir(0); somPorta(true); await esperar(250);
-    aviso(T('Procure um lugar para comer. Cuidado com os degraus!')); setTimeout(() => aviso(''), 3500);
+    if (comer) { aviso(T('Procure um lugar para comer. Cuidado com os degraus!')); setTimeout(() => aviso(''), 3500); }
+  }
+  // (6.0.0) A missão "encontre um lugar para comer" é só do PRIMEIRO dia, e só enquanto ele não comeu (antes aparecia toda vez que saía).
+  function precisaMissaoComer() {
+    let c = null; try { c = API.historia.ler('cidade'); } catch (e) { c = null; }
+    if (!c) return true;
+    return (c.dia || 1) <= 1 && !c.comeuDia;
   }
   async function voltarAoQuarto() {
     const J = S.jog; await andar(J, [[-OUT + 0.6, -MID]], 1.7); S.esc.portas.minha.abrir(1.35); somPorta(false); await esperar(250);
@@ -1715,7 +1726,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         S.paraCidade = true; S.fimRes();                               // (cidade.js) o save da porta da rua abre a cidadezinha
       } else {
         dados.luz = true; S.noTerreo = false; mudarLugar('escada', -4.1, -MID, 0, 5.6); Musica.tocar('jazz');
-        missao(dados.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.')); await preto(false, 900); liberar();
+        missao(!precisaMissaoComer() ? '' : dados.vizinho.sabeValdemar ? T('Missão: vá até a lanchonete do seu Valdemar.') : T('Missão: encontre um lugar para comer.')); await preto(false, 900); liberar();
       }
       await fim;
       paraCidade = !!S.paraCidade;

@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.0.1
+   FUTEBOL JS · jogo.js · versão 6.0.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,9 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
-   Novidades da versão 6.0.1 — JEITOS DE CORRER mais pé no chão: velocista e gingado suavizados (a passada longa ficou igual) com o de sempre como base
+   Novidades da versão 6.0.2 — JEITOS DE CORRER mais pé no chão: velocista e gingado suavizados (a passada longa ficou igual) com o de sempre como base
      (menos joelho/cotovelo dobrando, sem o corpo tombando de lado no gingado); o de sempre volta a ser sorteado (2 em 5);
      correndo de lado ou de costas o estilo some e o passo fica mais curto, sem inclinar o tronco para a frente (syncMeshes: frenteK)
+     goleiro deslizando com o pé: o braço de cima levantado e o de baixo esticado rente ao chão, para o lado da cabeça
 
    Novidades da versão 6.0.0 — a PARTIDA de novo (IA, goleiro, traves e animações):
      - futsal fora da escola: quadra maior (50 x 30) e 5 x 5; society também 5 x 5. A quadra da escola (Fase 1) continua 4 x 4
@@ -667,7 +668,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.0.1';
+const VERSAO_JOGO = '6.0.2';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -9982,9 +9983,10 @@ function aplicarPosesGoleiro(p, m, dt) {
     tras.rotation.z = 0.65 * a; tras.rotation.x = l * 0.3 * a;               // a outra dobrada por baixo
     usarJoelhos(m, l > 0 ? -1.35 * a : -0.05 * a, l > 0 ? -0.05 * a : -1.35 * a);
     const apoio = l > 0 ? m.bracoE : m.bracoD, cima = l > 0 ? m.bracoD : m.bracoE, sg = l > 0 ? 1 : -1;
-    apoio.rotation.z = 0.35 * a; apoio.rotation.x = sg * 0.55 * a;           // mão de baixo apoiando no chão
-    cima.rotation.z = 1.5 * a; cima.rotation.x = -sg * 1.0 * a;              // o outro braço sobe para equilibrar
-    usarCotovelo(apoio, 0, 0.5 * a); usarCotovelo(cima, 0, 0.2 * a + 0.0001);
+    // (6.0.0) o braço de baixo esticado rente ao chão (sem entrar nele); o de cima sobe para equilibrar
+    apoio.rotation.z = 0.15 * a; apoio.rotation.x = sg * 2.6 * a;             // o braço de baixo esticado no chão, para o lado da cabeça
+    cima.rotation.z = 1.5 * a; cima.rotation.x = -sg * 1.0 * a;              // o de cima levantado (como estava)
+    usarCotovelo(apoio, 0, 0); usarCotovelo(cima, 0, 0.2 * a + 0.0001);
     if (m.cabecaLigada) m.cabeca.rotation.y = 0;
     usarCabeca(m, (0.25 * a) || 0.0001); m.cabeca.rotation.x = l * 0.5 * a;    // a cabeça fica de pé, olhando a bola
     return;

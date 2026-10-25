@@ -8,6 +8,7 @@
      As paredes só têm o lado de DENTRO (vistas de fora elas somem), então a câmera pode ficar "atrás" da parede e ver a sala.
    - Por enquanto: só o visual, onde dá para sentar e pessoas de enfeite (paradas, andando, sentadas, na esteira...).
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
+   - (5.6.0) Golaço Esportes (nome 'esportiva'): sala em formato de estádio e piso de pista de corrida. Vazia por enquanto.
    - (5.3.0) Supermercado reorganizado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - (5.2.0) Cafeteria maior (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
@@ -18,7 +19,7 @@
 (function () {
   'use strict';
 
-  const LUGARES = ['supermercado', 'cafeteria', 'pizzaria', 'restaurante', 'academia', 'bar', 'cinema', 'hospital', 'lanche'];
+  const LUGARES = ['supermercado', 'cafeteria', 'pizzaria', 'restaurante', 'academia', 'bar', 'cinema', 'hospital', 'lanche', 'esportiva'];
 
   function construir(nome, api) {
     const { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro } = api;
@@ -263,6 +264,59 @@
       const lugares = []; for (const [x, z] of [[-3, -0.5], [1, -0.5], [-3, 2.3], [1, 2.3]]) lugares.push(...mesa(x, z, '#c8352b', 2, '#f2e6c8'));
       R.pessoas.push({ tipo: 'senta', assento: lugares[1], fem: false }, { tipo: 'senta', assento: lugares[4], fem: true });
       G.box(1.2, 2.2, 0.08, '#5b3a22', 4, 0, -4.45);                                                           // porta da cozinha
+    } else if (nome === 'esportiva') {
+      // (5.6.0) GOLAÇO ESPORTES: a sala tem formato de ESTÁDIO (dois lados retos e as pontas redondas) e o piso é uma PISTA DE CORRIDA
+      //   (raias vermelhas com linhas brancas, linha de largada com os números na frente da porta, gramado no meio com o pódio).
+      //   Vazia por enquanto: só o balcão do caixa, o pódio, uma trave e as faixas. Depois: comemorações, roupas, chuteiras...
+      const L = 28, D = 16, Rr = D / 2, A = L / 2 - Rr, H = 4.4, PPM = 12, AZUL = '#1c3aa0', AMAR = '#f2c230';
+      R.fundo = 0x0b1430; R.cam = { dist: 9, pitch: 0.85 };
+      R.lim = { x0: -L / 2 + 0.35, x1: L / 2 - 0.35, z0: -Rr + 0.35, z1: Rr - 0.35 };
+      const PX_ = (x) => (x + L / 2) * PPM, PY_ = (z) => (z + Rr) * PPM;
+      const estadio = (g, e) => { const r = (Rr - e) * PPM; g.beginPath(); g.moveTo(PX_(-A), PY_(-Rr + e)); g.lineTo(PX_(A), PY_(-Rr + e)); g.arc(PX_(A), PY_(0), r, -Math.PI / 2, Math.PI / 2); g.lineTo(PX_(-A), PY_(Rr - e)); g.arc(PX_(-A), PY_(0), r, Math.PI / 2, Math.PI * 1.5); g.closePath(); };
+      const tex = guardar(texCanvas(L * PPM, D * PPM, (g, w, h) => {
+        g.fillStyle = '#0b1430'; g.fillRect(0, 0, w, h);
+        g.fillStyle = '#b5482e'; estadio(g, 0); g.fill();                                   // a pista
+        g.strokeStyle = '#f4f0e6'; g.lineWidth = 1.5; for (let k = 0; k < 5; k++) { estadio(g, 0.3 + k * 0.95); g.stroke(); }
+        g.save(); estadio(g, 4.4); g.clip();                                                // o gramado com faixas de corte
+        for (let i = 0; i * 1.2 < L; i++) { g.fillStyle = i % 2 ? '#3f8f3a' : '#4a9a42'; g.fillRect(i * 1.2 * PPM, 0, 1.2 * PPM + 1, h); }
+        g.restore();
+        g.strokeStyle = '#f4f0e6'; g.lineWidth = 2; estadio(g, 4.4); g.stroke();
+        g.beginPath(); g.arc(PX_(0), PY_(0), 1.8 * PPM, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(PX_(0), PY_(-Rr + 4.4)); g.lineTo(PX_(0), PY_(Rr - 4.4)); g.stroke();
+        g.fillStyle = '#f4f0e6'; g.fillRect(PX_(3.2), PY_(Rr - 4.3), 0.25 * PPM, 4.0 * PPM);          // linha de largada (raias de baixo, na frente da porta)
+        g.font = 'bold 9px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (let k = 0; k < 4; k++) g.fillText(String(k + 1), PX_(4.3), PY_(Rr - 0.78 - k * 0.95));
+        granular(g, w, h, 0.07, rnd);
+      }, false));
+      const chao = new THREE.Mesh(guardar(new THREE.PlaneGeometry(L, D)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); chao.rotation.x = -Math.PI / 2; grupo.add(chao);
+      // paredes (só o lado de dentro): reta norte, reta sul (com a porta) e as duas pontas redondas em gomos; faixa amarela e rodapé
+      const parede = (x0, z0, x1, z1, cor, ya, yb, dentro) => { const nx = dentro[0], nz = dentro[1]; G.quad([x0, ya, z0], [x1, ya, z1], [x1, yb, z1], [x0, yb, z0], cor, [nx, 0, nz]); };
+      const segs = [[-A, -Rr, A, -Rr], [A, Rr, -A, Rr]], N = 14;
+      for (const sx of [1, -1]) for (let i = 0; i < N; i++) {
+        const a0 = -Math.PI / 2 + i * Math.PI / N, a1 = a0 + Math.PI / N, c0 = Math.cos(a0) * sx, c1 = Math.cos(a1) * sx;
+        segs.push([sx * A + c0 * Rr, Math.sin(a0) * Rr * sx, sx * A + c1 * Rr, Math.sin(a1) * Rr * sx]);
+      }
+      for (const [x0, z0, x1, z1] of segs) {
+        const mx = (x0 + x1) / 2, mz = (z0 + z1) / 2, cx = Math.abs(mx) > A ? Math.sign(mx) * A : mx, dx = cx - mx, dz = -mz, l = Math.hypot(dx, dz) || 1, n = [dx / l, dz / l];
+        parede(x0, z0, x1, z1, AZUL, 0, H, n);
+        const k = 0.03; parede(x0 + n[0] * k, z0 + n[1] * k, x1 + n[0] * k, z1 + n[1] * k, AMAR, 1.15, 1.55, n);
+        const k2 = 0.05; parede(x0 + n[0] * k2, z0 + n[1] * k2, x1 + n[0] * k2, z1 + n[1] * k2, '#0e1a40', 0, 0.16, n);
+      }
+      // os cantos de fora das pontas redondas: colisão em degraus (ninguém anda "atrás" da parede curva)
+      for (const sx of [1, -1]) for (let z = -Rr; z < Rr; z += 0.5) { const zc = Math.min(Math.abs(z), Math.abs(z + 0.5)), xb = A + Math.sqrt(Math.max(0, Rr * Rr - zc * zc)) - 0.3; R.col.push(sx > 0 ? { x0: xb, x1: L / 2, z0: z, z1: z + 0.5 } : { x0: -L / 2, x1: -xb, z0: z, z1: z + 0.5 }); }
+      // a porta (parede sul, no meio) e o capacho
+      const pz = Rr - 0.03;
+      G.quad([0.75, 0, pz], [-0.75, 0, pz], [-0.75, 2.35, pz], [0.75, 2.35, pz], '#e8e2d2', [0, 0, -1]);
+      G.quad([0.62, 0, pz - 0.01], [-0.62, 0, pz - 0.01], [-0.62, 2.25, pz - 0.01], [0.62, 2.25, pz - 0.01], '#5d9fc4', [0, 0, -1]);
+      G.box(1.6, 0.02, 0.9, '#1b7a3e', 0, 0, Rr - 0.6);
+      R.entrada = { x: 0, z: Rr - 1.4, yaw: Math.PI / 2 }; R.saida = { x: 0, z: Rr - 0.9 };
+      // o que tem por enquanto: letreiro, o balcão do caixa (vazio), o pódio no gramado, uma trave na ponta oeste e flâmulas
+      placa('GOLAÇO ESPORTES', AZUL, AMAR, 7, 1.0, 0, 3.4, -Rr + 0.04);
+      balcao(0, -Rr + 1.3, 5, 0.9, AZUL, AMAR); G.box(0.36, 0.3, 0.3, '#2b3a48', 1.6, 1.06, -Rr + 1.3);
+      for (const [x, h, c] of [[-1.1, 0.55, '#c9ced4'], [0, 0.85, AMAR], [1.1, 0.4, '#c8823a']]) { G.box(1.05, h, 1.0, c, x, 0, 0, '#f4f4f0'); }
+      bloq(0, 0, 3.3, 1.0);
+      { const gx = -A - 4.6; for (const s of [-1, 1]) G.box(0.12, 2.0, 0.12, '#f8f8f4', gx, 0, s * 1.6); G.box(0.12, 0.12, 3.32, '#f8f8f4', gx, 2.0, 0); G.box(0.06, 0.06, 3.2, '#d8d8d0', gx - 0.9, 0, 0); bloq(gx - 0.45, 0, 1.0, 3.4); }
+      const fl = ['#f2c230', '#1b7a3e', '#c8352b', '#f4f4f0'];
+      for (let i = 0; i < 9; i++) { const x = -A + i * (2 * A / 8); G.box(0.7, 0.9, 0.04, fl[i % 4], x, 2.4, -Rr + 0.08); }   // só na parede norte (a sul fica sem desenhar, do lado da câmera)
     } else return null;
 
     const malha = G.malha(MAT); grupo.add(malha);

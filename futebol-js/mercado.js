@@ -1,6 +1,8 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   5.6.0 — quem não trabalha no mercado também conversa com o Cadu: na primeira vez ele reconhece (ou não) o jogador pela Fase 1,
+           depois puxa um assunto por conversa (PAPOS_CADU).
    5.5.0 — a vassoura do Cadu com as DUAS MÃOS (presa no corpo, passando pela mão direita no peito e pela esquerda mais embaixo) e
            varrendo para a frente e para trás, com a escova atravessada (antes deslizava de lado, no comprimento da escova).
    5.4.3 — os clientes de passeio COMPRAM de verdade (pegam produtos, entram na FILA e a caixa — Rosa ou Cadu — vende: mexe as mãos,
@@ -879,12 +881,56 @@
       if (C) { C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); C.poseM = null; C.conversando = true; C.andando = false; }
       try { await conversaCadu(); } finally { if (M.cadu) M.cadu.conversando = false; if (M.rosa) M.rosa.conversando = false; }
     }
+    // (5.6.0) papo do Cadu (para quem não trabalha no mercado): ele pergunta, você responde
+    const PAPOS_CADU = [
+      { p: 'E aí, ainda joga bola?', a: ['Sempre que dá!', 'Eu continuo péssimo no gol, haha. Mas adoro assistir.'], b: ['Tô meio parado.', 'Volta! Tem racha no society toda segunda e quarta.'] },
+      { p: 'Sabia que eu guardei os óculos daquela época? De lembrança.', salvou: true, a: ['Sério? Que demais!', 'Sério! Eles me lembram que tem gente boa por aí.'], b: ['Ainda servem?', 'Nem a pau, haha. Mas ficam na gaveta.'] },
+      { p: 'O que você tá achando da cidade?', a: ['Muito boa!', 'Né? Aqui todo mundo se conhece.'], b: ['Diferente...', 'Logo você se acostuma. E qualquer coisa, tô aqui.'] },
+      { p: 'Meu pai quer abrir uma filial na cidade grande um dia. Já pensou?', a: ['Que demais!', 'Né? Mas por enquanto é só sonho, haha.'], b: ['Dá muito trabalho, hein.', 'Nem me fala. Só de pensar já cansa.'] },
+      { p: 'Se precisar de alguma coisa do mercado, me chama que eu separo pra você.', a: ['Valeu, Cadu!', 'Tamo junto!'], b: ['Tem desconto pra amigo?', 'Hmm... vou ver com o meu pai, haha.'] },
+    ];
+    for (const [k, v] of Object.entries({
+      'Passa aqui sempre que precisar de alguma coisa!': ['Come by whenever you need anything!', '¡Pasa por aquí cuando necesites algo!', 'Passa di qui quando ti serve qualcosa!', 'Passe ici quand tu as besoin de quelque chose !'],
+      'E aí, ainda joga bola?': ['So, still playing football?', 'Y bueno, ¿todavía juegas al fútbol?', 'Allora, giochi ancora a calcio?', 'Alors, tu joues encore au foot ?'],
+      'Sempre que dá!': ['Whenever I can!', '¡Siempre que puedo!', 'Appena posso!', 'Dès que je peux !'], 'Tô meio parado.': ['I’ve kind of stopped.', 'Estoy medio parado.', 'Mi sono un po’ fermato.', 'J’ai un peu arrêté.'],
+      'Eu continuo péssimo no gol, haha. Mas adoro assistir.': ['I’m still terrible in goal, haha. But I love watching.', 'Sigo siendo pésimo en el arco, jaja. Pero me encanta mirar.', 'In porta sono ancora un disastro, haha. Ma adoro guardare.', 'Je suis toujours nul dans les buts, haha. Mais j’adore regarder.'],
+      'Volta! Tem racha no society toda segunda e quarta.': ['Get back to it! There’s a pickup game at the society field every Monday and Wednesday.', '¡Vuelve! Hay partidito en el society cada lunes y miércoles.', 'Torna! C’è una partitella al campo ogni lunedì e mercoledì.', 'Reprends ! Il y a un match au terrain chaque lundi et mercredi.'],
+      'Sabia que eu guardei os óculos daquela época? De lembrança.': ['Did you know I kept my glasses from back then? As a keepsake.', '¿Sabías que guardé los lentes de esa época? De recuerdo.', 'Sai che ho tenuto gli occhiali di quel periodo? Per ricordo.', 'Tu savais que j’ai gardé mes lunettes de l’époque ? En souvenir.'],
+      'Sério? Que demais!': ['Really? That’s awesome!', '¿En serio? ¡Qué genial!', 'Davvero? Fantastico!', 'Sérieux ? Trop bien !'], 'Ainda servem?': ['Do they still fit?', '¿Todavía te sirven?', 'Ti vanno ancora?', 'Elles te vont encore ?'],
+      'Sério! Eles me lembram que tem gente boa por aí.': ['Really! They remind me there are good people out there.', '¡En serio! Me recuerdan que hay gente buena por ahí.', 'Davvero! Mi ricordano che c’è gente buona in giro.', 'Sérieux ! Elles me rappellent qu’il y a des gens bien.'],
+      'Nem a pau, haha. Mas ficam na gaveta.': ['No way, haha. But they stay in the drawer.', 'Ni de broma, jaja. Pero quedan en el cajón.', 'Neanche per sogno, haha. Ma restano nel cassetto.', 'Pas du tout, haha. Mais elles restent dans le tiroir.'],
+      'O que você tá achando da cidade?': ['What do you think of the town?', '¿Qué te parece la ciudad?', 'Che ne pensi della città?', 'Tu trouves comment la ville ?'],
+      'Muito boa!': ['Really nice!', '¡Muy buena!', 'Molto bella!', 'Très sympa !'], 'Diferente...': ['Different...', 'Distinta...', 'Diversa...', 'Différente...'],
+      'Né? Aqui todo mundo se conhece.': ['Right? Everyone knows each other here.', '¿Verdad? Aquí todos se conocen.', 'Vero? Qui si conoscono tutti.', 'Hein ? Ici tout le monde se connaît.'],
+      'Logo você se acostuma. E qualquer coisa, tô aqui.': ['You’ll get used to it. And if you need anything, I’m here.', 'Pronto te acostumbras. Y cualquier cosa, aquí estoy.', 'Ti abituerai presto. E per qualsiasi cosa, sono qui.', 'Tu vas t’habituer. Et au besoin, je suis là.'],
+      'Meu pai quer abrir uma filial na cidade grande um dia. Já pensou?': ['My dad wants to open a branch in the big city someday. Can you imagine?', 'Mi papá quiere abrir una sucursal en la ciudad grande algún día. ¿Te imaginas?', 'Mio padre vuole aprire una filiale in città un giorno. Ti immagini?', 'Mon père veut ouvrir une succursale en ville un jour. Tu imagines ?'],
+      'Que demais!': ['Awesome!', '¡Qué genial!', 'Fantastico!', 'Trop bien !'], 'Dá muito trabalho, hein.': ['That’s a lot of work, huh.', 'Da mucho trabajo, ¿eh?', 'È un sacco di lavoro, eh.', 'C’est beaucoup de travail, hein.'],
+      'Né? Mas por enquanto é só sonho, haha.': ['Right? But for now it’s just a dream, haha.', '¿Verdad? Pero por ahora es solo un sueño, jaja.', 'Vero? Ma per ora è solo un sogno, haha.', 'Hein ? Mais pour l’instant c’est un rêve, haha.'],
+      'Nem me fala. Só de pensar já cansa.': ['Tell me about it. Just thinking about it is tiring.', 'Ni me digas. Solo de pensarlo me canso.', 'Non me ne parlare. Solo a pensarci mi stanco.', 'M’en parle pas. Rien que d’y penser, ça fatigue.'],
+      'Se precisar de alguma coisa do mercado, me chama que eu separo pra você.': ['If you need anything from the market, tell me and I’ll set it aside for you.', 'Si necesitas algo del mercado, me avisas y te lo separo.', 'Se ti serve qualcosa dal mercato, dimmelo e te lo metto da parte.', 'Si tu as besoin de quelque chose, dis-le-moi et je te le mets de côté.'],
+      'Valeu, Cadu!': ['Thanks, Cadu!', '¡Gracias, Cadu!', 'Grazie, Cadu!', 'Merci, Cadu !'], 'Tem desconto pra amigo?': ['Any discount for a friend?', '¿Hay descuento para amigos?', 'C’è lo sconto per gli amici?', 'Il y a une réduction pour les amis ?'],
+      'Tamo junto!': ['We’re in this together!', '¡Estamos juntos!', 'Siamo insieme!', 'On est ensemble !'], 'Hmm... vou ver com o meu pai, haha.': ['Hmm... I’ll check with my dad, haha.', 'Mmm... lo veo con mi papá, jaja.', 'Mmm... chiedo a mio padre, haha.', 'Hmm... je vais voir avec mon père, haha.'],
+    })) if (!I18N[k]) I18N[k] = v;
     async function conversaCadu() {
       const s = S(), d = s.dados, dm = dadosM();
       const h1 = api.historia().ler('fase1') || {}, cad = h1.cadu || null, salvou = !!(cad && cad.salvou);
       const fim = () => { Dialogo.esconder(); };
-      if (!ehMeuEmprego()) {
-        await api.fala('cadu', salvou ? T('Ei... você não é aquele que me tirou do armário lá na escola? Valeu de novo, viu!') : T('Oi! Bem-vindo ao Mercadinho Bom Preço! Qualquer coisa, é só chamar.'));
+      if (!ehMeuEmprego()) {                                          // (5.6.0) quem não trabalha no mercado: o Cadu reconhece (ou não) e depois puxa papo
+        if (!dm.conheceu) {
+          if (salvou) {
+            await api.fala('cadu', Tf('Espera aí... {0}?! É você mesmo?!', api.nomeJog()));
+            await api.fala('cadu', T('Você me tirou daquele armário na escola, lembra? Eu nunca esqueci isso.'));
+            if (cad.conversou) await api.fala('cadu', T('E ainda veio conversar comigo depois. Pouca gente fazia isso.'));
+            await api.fala('jog', T('Cadu?! Quanto tempo!'));
+          } else await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
+          await api.fala('cadu', T('Esse mercado é do meu pai. Eu tô ajudando ele em algumas coisas por aqui.'));
+          await api.fala('cadu', T('Passa aqui sempre que precisar de alguma coisa!'));
+          dm.conheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return;
+        }
+        const P = PAPOS_CADU.filter((q) => !q.salvou || salvou), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
+        await api.fala('cadu', T(Q.p));
+        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])], { centro: true });
+        const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('cadu', T(R[1]));
         fim(); return;
       }
       if (!dm.apresentou) {
