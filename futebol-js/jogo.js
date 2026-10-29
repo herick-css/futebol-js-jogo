@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.1.1
+   FUTEBOL JS · jogo.js · versão 6.1.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -57,7 +57,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.1.1';
+const VERSAO_JOGO = '6.1.2';
+// 6.1.2: tradução (EN/ES/IT/FR) da partida livre: HUD, banners, minigames, pausa, fim de jogo, opções, tutorial e resultados.
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -5977,8 +5978,8 @@ function startRestart(kind, team, spot, motivo) {
   hideKickUI();
   setLetterbox(true);                              // câmera de cinema enquanto o cobrador busca a bola
   $('skipBtn').hidden = false;
-  const rotulo = kind === 'falta' && S.motivo === 'impedimento' ? 'Tiro livre (impedimento)' : SP_LABEL[kind];
-  $('cineLabel').textContent = rotulo.toUpperCase() + (S.taker.isUser ? ' · SUA COBRANÇA' : ' · ' + (team === 0 ? 'AZUL' : 'VERMELHO'));
+  const rotulo = T(kind === 'falta' && S.motivo === 'impedimento' ? 'Tiro livre (impedimento)' : SP_LABEL[kind]);
+  $('cineLabel').textContent = rotulo.toUpperCase() + (S.taker.isUser ? ' · ' + T('SUA COBRANÇA') : ' · ' + T(team === 0 ? 'AZUL' : 'VERMELHO'));
   if (kind !== 'falta') showToast(SP_LABEL[kind] + (S.taker.isUser ? ': sua cobrança' : team === 0 ? ' para o azul' : ' para o vermelho'));
   else if (S.wall.length) showToast('Barreira com ' + S.wall.length + (S.taker.isUser ? ' · sua cobrança' : ''));
 }
@@ -6386,7 +6387,7 @@ function iniciarParalisacao(F) {
   G.state = 'foul'; G.targetScale = 0.6;
   hideKickUI();
   setLetterbox(true);
-  $('cineLabel').textContent = F.reason === 'impedimento' ? 'IMPEDIMENTO' : F.reason === 'lesao' ? 'ATENDIMENTO' : F.penalti ? 'PÊNALTI' : 'FALTA';
+  $('cineLabel').textContent = T(F.reason === 'impedimento' ? 'IMPEDIMENTO' : F.reason === 'lesao' ? 'ATENDIMENTO' : F.penalti ? 'PÊNALTI' : 'FALTA');
   if (F.penalti) showBanner('PÊNALTI!', F.team);
   $('skipBtn').hidden = false;
 }
@@ -6666,9 +6667,9 @@ function mirandoNoGol(dx, dz) {
   return Math.abs(HALF_L - O.x) > 1 && ang >= Math.min(a1, a2) && ang <= Math.max(a1, a2);
 }
 function rotuloDoToque(k) {
-  if (k.kind === 'shot') return k.cruzar ? 'CRUZAMENTO' : (user.setPiece === 'penalti' ? 'PÊNALTI' : 'CHUTE');
-  if (k.throwIn) return 'LATERAL';
-  return k.alto ? 'CRUZAMENTO' : 'PASSE';
+  if (k.kind === 'shot') return T(k.cruzar ? 'CRUZAMENTO' : (user.setPiece === 'penalti' ? 'PÊNALTI' : 'CHUTE'));
+  if (k.throwIn) return T('LATERAL');
+  return T(k.alto ? 'CRUZAMENTO' : 'PASSE');
 }
 function setAimDir(dirX, dirZ) {
   const k = G.kick;
@@ -6761,7 +6762,7 @@ function releasePower() {
   if (k.kind === 'pass') { executeUserKick(); return; }   // passe: só 2 etapas
   G.state = 'spin'; k.spinT = 0; k.spinChosen = false;
   $('spinDot').hidden = true;
-  $('spinInfo').textContent = 'Toque na bola';
+  $('spinInfo').textContent = T('Toque na bola');
   showStage('spin');
 }
 
@@ -6779,7 +6780,7 @@ function describeSpin(ox, oy) {
   const parts = [];
   if (oy > 0.3) parts.push('sobe'); else if (oy < -0.3) parts.push('sai baixa e cai rápido');
   if (ox > 0.25) parts.push('curva para a esquerda'); else if (ox < -0.25) parts.push('curva para a direita');
-  return parts.length ? 'A bola ' + parts.join(' e ') : 'Batida reta, sem efeito';
+  return parts.length === 2 ? Tf('A bola {0} e {1}', T(parts[0]), T(parts[1])) : parts.length ? Tf('A bola {0}', T(parts[0])) : T('Batida reta, sem efeito');
 }
 
 // PASSE SEM ALVO: depois do toque, quem do time chega PRIMEIRO na bola (com a física de verdade, ver pontoDeEncontro)
@@ -7223,7 +7224,7 @@ function startReceive(pr) {
   const titulos = { pe: 'DOMÍNIO', peito: 'PEITO', peitoPulo: 'PULO + PEITO', alto: 'BOLA ALTA' };
   const kEl = $('recvKind');
   const rotuloDificil = dificil || risco >= 0.5;
-  kEl.textContent = titulos[kind] + (rotuloDificil ? ' · DIFÍCIL' : '');
+  kEl.textContent = T(titulos[kind]) + (rotuloDificil ? ' · ' + T('DIFÍCIL') : '');
   kEl.className = rotuloDificil ? 'dificil' : '';
   const zonaEl = $('hamZone');
   zonaEl.style.left = (R.zona.ini * 100) + '%'; zonaEl.style.width = (tam * 100) + '%';
@@ -7235,7 +7236,7 @@ function startReceive(pr) {
   const botao = (txt, acao, slot, principal) => {
     const b = document.createElement('button');
     b.className = 'act ' + slot + (principal ? ' primary' : '');
-    b.textContent = txt;
+    b.textContent = T(txt);
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(acao); });
     B.appendChild(b);
   };
@@ -7244,8 +7245,8 @@ function startReceive(pr) {
     if (R.fin) botao(NOME_FIN[R.fin].replace(' AO GOL', ''), 'finalizar', 's1', true);
   }
   else botao('DOMINAR', 'dominar', 's1', true);
-  $('recvInfo').textContent = kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
-    : dificil ? 'Passe difícil: acerte o ponto AZUL' : 'Bata quando o marcador estiver na faixa verde';
+  $('recvInfo').textContent = T(kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
+    : dificil ? 'Passe difícil: acerte o ponto AZUL' : 'Bata quando o marcador estiver na faixa verde');
   $('recvInfo').className = '';
   G.recvHideT = 0;
   $('recvLayer').hidden = false;
@@ -7314,17 +7315,17 @@ function martelar(acao) {
   if (R.dificil) {
     const noAzul = R.pos >= R.azul.ini && R.pos <= R.azul.fim;   // sem folga: é para ser difícil
     Som.clique(noAzul ? 'perfeito' : 'erro');
-    if (noAzul) { info.textContent = 'PERFEITO!'; info.className = 'ok'; $('hamAzul').style.background = '#9cc4ff'; }
-    else { info.textContent = 'Errou o ponto azul!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }       // só o azul vale: fora dele a bola escapa
+    if (noAzul) { info.textContent = T('PERFEITO!'); info.className = 'ok'; $('hamAzul').style.background = '#9cc4ff'; }
+    else { info.textContent = T('Errou o ponto azul!'); info.className = 'bad'; $('hamTrack').classList.add('erro'); }       // só o azul vale: fora dele a bola escapa
     R.perfeito = noAzul; R.culpaDoPasse = false;
     resolveReceive(acao, noAzul, noAzul);
     return;
   }
   const ok = naFaixa && !R.forcedMiss;
   Som.clique(naFaixa ? 'ok' : 'erro');
-  if (ok) { info.textContent = 'Na medida!'; info.className = 'ok'; $('hamZone').classList.add('flash'); }
-  else if (naFaixa) { info.textContent = 'Acertou o tempo, mas a bola ' + (R.motivo || 'veio difícil') + '!'; info.className = 'bad'; }
-  else { info.textContent = 'Fora da faixa!'; info.className = 'bad'; $('hamTrack').classList.add('erro'); }
+  if (ok) { info.textContent = T('Na medida!'); info.className = 'ok'; $('hamZone').classList.add('flash'); }
+  else if (naFaixa) { info.textContent = Tf('Acertou o tempo, mas a bola {0}!', T(R.motivo || 'veio difícil')); info.className = 'bad'; }
+  else { info.textContent = T('Fora da faixa!'); info.className = 'bad'; $('hamTrack').classList.add('erro'); }
   resolveReceive(acao, ok, naFaixa);
 }
 
@@ -8161,7 +8162,7 @@ function startTiming(opts) {
     targets.push({ x: pos.x, y: pos.y, el, ring: el.querySelector('.ring'), fb: el.querySelector('.fb'), appear, hitAt: appear + opts.approach, judged: false });
   }
   G.timing = Object.assign({}, opts, { t: 0, targets, hits: 0, perfect: 0, done: false, lastInfo: '' });
-  $('timingTitle').textContent = opts.title;
+  $('timingTitle').textContent = T(opts.title);
   updateTimingHead();
 }
 
@@ -8186,7 +8187,7 @@ function updateTimingHead() {
   const T = G.timing;
   if (!T) return;
   const left = Math.max(0, T.duration - T.t);
-  const info = left.toFixed(1) + ' s · acertos ' + T.hits + '/' + T.need;
+  const info = Tf('{0} s · acertos {1}/{2}', left.toFixed(1), T.hits, T.need);
   if (info !== T.lastInfo) { $('timingInfo').textContent = info; T.lastInfo = info; }
   $('timingProg').style.transform = 'scaleX(' + (left / T.duration).toFixed(3) + ')';
 }
@@ -8211,7 +8212,7 @@ function judgeTarget(tg, res) {
   if (res !== 'miss') T.hits++;
   if (res === 'perfect') T.perfect++;
   tg.el.classList.add(res);
-  tg.fb.textContent = res === 'perfect' ? 'PERFEITO' : res === 'good' ? 'BOM' : 'ERROU';
+  tg.fb.textContent = Tf(res === 'perfect' ? 'PERFEITO' : res === 'good' ? 'BOM' : 'ERROU');
   tg.ring.style.opacity = '0';
   setTimeout(() => tg.el.classList.add('gone'), 380);
 }
@@ -8335,7 +8336,7 @@ $('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stop
 
 function toggleCamera() {
   cam.mode = cam.mode === 'bola' ? 'frente' : 'bola';
-  $('camBtn').textContent = cam.mode === 'bola' ? 'CÂM: BOLA' : 'CÂM: FRENTE';
+  $('camBtn').textContent = T(cam.mode === 'bola' ? 'CÂM: BOLA' : 'CÂM: FRENTE');
 }
 $('camBtn').addEventListener('click', toggleCamera);
 
@@ -8424,7 +8425,7 @@ function showToast(text, tone = '') {
 }
 function showBanner(text, team, dur = 2.6, pequeno = false) {
   const b = $('banner');
-  b.textContent = text;
+  b.textContent = T(text);
   b.className = '';
   void b.offsetWidth;
   b.className = 'show' + (team === 1 ? ' b' : '') + (pequeno ? ' pequeno' : '');
@@ -8451,7 +8452,7 @@ function showStage(stage) {
     el.classList.toggle('on', i === cur);
     el.classList.toggle('done', i < cur);
   });
-  $('stageHint').textContent = STAGE_HINTS[stage];
+  $('stageHint').textContent = T(STAGE_HINTS[stage]);
   $('powerUI').hidden = stage !== 'power';
   $('spinUI').hidden = stage !== 'spin';
 }
@@ -8480,7 +8481,7 @@ function renderButtons(mode) {
   const mk = (label, slot, fn, cls = '', id = '') => {
     const b = document.createElement('button');
     b.className = 'act ' + slot + ' ' + cls;
-    b.textContent = label;
+    b.textContent = T(label);
     if (id) b.id = id;
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
     A.appendChild(b);
@@ -8526,7 +8527,7 @@ function updateHUD() {
   const mode = computeMode();
   if (mode !== G.mode) { G.mode = mode; renderButtons(mode); }
   const req = $('reqBtn');
-  if (req) { setClass(req, 'waiting', G.userRequest > 0); setText('reqBtn', G.userRequest > 0 ? 'PEDINDO...' : 'PEDIR BOLA'); }
+  if (req) { setClass(req, 'waiting', G.userRequest > 0); setText('reqBtn', T(G.userRequest > 0 ? 'PEDINDO...' : 'PEDIR BOLA')); }
   const tk = $('tackleBtn');
   if (tk && G.possession) setClass(tk, 'far', dist2D(user, G.possession) > 2.4);
   const db = $('dribBtn');
@@ -8538,7 +8539,7 @@ function updateHUD() {
   setClass(j, 'run', user.running);
   setClass(j, 'tired', tired && !user.running);
   setClass(j, 'aim', aimingOnJoy);
-  setText('joyLabel', user.running ? 'CORRENDO' : tired ? 'CANSADO' : aimingOnJoy ? 'MIRA' : '');
+  setText('joyLabel', user.running ? T('CORRENDO') : tired ? T('CANSADO') : aimingOnJoy ? T('MIRA') : '');
   // Barra de estamina: só mexe no DOM quando muda 1% ou mais.
   const pct = Math.round(user.stamina * 100);
   if (pct !== lastStaminaPct) {
@@ -8548,12 +8549,12 @@ function updateHUD() {
     setClass(f, 'low', user.exhausted || pct < 25);
   }
   // sem a contagem de faltas na tela: só o cartão (amarelo/vermelho)
-  const chip = user.red ? '<i class="vm"></i> ' + Tg('EXPULSO') : user.yellow ? '<i class="am"></i> AMARELO' : '';
+  const chip = user.red ? '<i class="vm"></i> ' + Tg('EXPULSO') : user.yellow ? '<i class="am"></i> ' + T('AMARELO') : '';
   if (hudCache.chip !== chip) { hudCache.chip = chip; $('cardChip').innerHTML = chip; $('cardChip').hidden = !chip; }
   let hint = '';
-  if (mode === 'celebrate') hint = 'Comemore! ' + Math.max(0, Math.ceil(G.celebT)) + ' s';
-  else if (mode === 'loose') hint = 'Bola livre: corra até ela';
-  else if (mode === 'defend' && G.possession && dist2D(user, G.possession) > 2.4) hint = 'Chegue perto para desarmar';
+  if (mode === 'celebrate') hint = Tf('Comemore! {0} s', Math.max(0, Math.ceil(G.celebT)));
+  else if (mode === 'loose') hint = T('Bola livre: corra até ela');
+  else if (mode === 'defend' && G.possession && dist2D(user, G.possession) > 2.4) hint = T('Chegue perto para desarmar');
   setText('hint', hint);
 }
 
@@ -8589,9 +8590,9 @@ function statsHTML() {
     ['Passes certos', s.passesOk + '/' + s.passes], ['Dribles', s.driblesOk + '/' + s.dribles],
     ['Domínios', s.dominiosOk + '/' + s.dominios], ['Desarmes', s.desarmes], ['Bolas perdidas', s.perdas],
     ['Faltas cometidas', s.faltas], ['Faltas sofridas', s.faltasSofridas], ['Impedimentos', s.impedimentos],
-    ['Cartões', s.cartoes ? s.cartoes.replace(/A/g, 'amarelo ').replace(/V/g, 'vermelho ').trim() : 'nenhum'],
+    ['Cartões', s.cartoes ? s.cartoes.split('').map((c) => T(c === 'A' ? 'amarelo' : 'vermelho')).join(' ') : T('nenhum')],
   ];
-  return rows.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('');
+  return rows.map(([k, v]) => '<div><dt>' + T(k) + '</dt><dd>' + v + '</dd></div>').join('');
 }
 
 // A NOTA agora depende da POSIÇÃO em que você jogou:
@@ -8619,7 +8620,7 @@ function resetMatch() {
   montarTimes(PARTIDA);                            // escalação nova (tira suspensos/lesionados, banco cheio)
   limparReplay();
   Object.assign(G, { subsFila: [], trocas: [], lesoes: [], espectador: false, pulando: false, subst: null, substToque: null, pen: null, penaltisPlacar: null, resultado: null });
-  $('skipBtn').textContent = 'Pular ▶'; painelPenaltis();
+  $('skipBtn').textContent = T('Pular ▶'); painelPenaltis();
   if (PARTIDA.usuarioIndisponivel) setTimeout(() => showToast('Atenção: você está ' + PARTIDA.usuarioIndisponivel + ' (no teste, joga assim mesmo)', 'bad'), 400);
   G.fimFesta = null; G.ovoBola = false; G.ovoFeito = false; G.camOvo = null;
   G.score = [0, 0]; G.clock = CONFIG.MATCH_SECONDS; G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
@@ -8827,7 +8828,7 @@ function endMatch(motivo) {
   G.fimFesta = null;
   if (PARTIDA && PARTIDA.campo.semTorcida && motivo !== 'expulso') { const a = G.score[0], b = G.score[1]; G.fimFesta = { times: a > b ? [0] : b > a ? [1] : [0, 1] }; }
   if (typeof Historia !== 'undefined' && Historia.emPartida()) { esconderRecepcao(); hideKickUI(); $('timingLayer').hidden = true; Historia.fimDaPartida(res); return; }   // a história cuida do fim
-  $('endTitle').textContent = motivo === 'expulso' ? Tg('VOCÊ FOI EXPULSO') : 'FIM DE JOGO';
+  $('endTitle').textContent = motivo === 'expulso' ? Tg('VOCÊ FOI EXPULSO') : T('FIM DE JOGO');
   esconderRecepcao();
   hideKickUI();
   $('timingLayer').hidden = true;
@@ -8860,7 +8861,7 @@ function resumeGame() {
 
 const SETTINGS = [
   { id: 'Res', get: () => CONFIG.RENDER_H, set: (v) => { CONFIG.RENDER_H = v; resize(); }, fmt: (v) => v + 'p' },
-  { id: 'Shake', get: () => Math.round(CONFIG.RUN_SHAKE * 100), set: (v) => { CONFIG.RUN_SHAKE = v / 100; }, fmt: (v) => v === 0 ? 'desligada' : String(v) },
+  { id: 'Shake', get: () => Math.round(CONFIG.RUN_SHAKE * 100), set: (v) => { CONFIG.RUN_SHAKE = v / 100; }, fmt: (v) => v === 0 ? T('desligada') : String(v) },
 ];
 function syncSettings() {
   for (const s of SETTINGS) { const v = s.get(); $('set' + s.id).value = v; $('out' + s.id).textContent = s.fmt(v); }
@@ -9090,10 +9091,10 @@ $('pauseBtn').addEventListener('click', pauseGame);
 // Botão de som (ao lado do radar). Lembra a escolha entre as partidas.
 (function () {
   const b = document.createElement('button');
-  b.id = 'somBtn'; b.className = 'hudBtn'; b.setAttribute('aria-label', 'Som');
+  b.id = 'somBtn'; b.className = 'hudBtn'; b.setAttribute('aria-label', Tseguro('Som'));
   b.style.cssText = 'right:calc(84px + env(safe-area-inset-right, 0px));width:44px;padding:0;font-size:10px;';
-  const pinta = () => { b.textContent = Som.mudo ? 'MUDO' : 'SOM'; b.style.opacity = Som.mudo ? '0.6' : '1'; };
-  pinta();
+  const pinta = () => { b.textContent = Tseguro(Som.mudo ? 'MUDO' : 'SOM'); b.setAttribute('aria-label', Tseguro('Som')); b.style.opacity = Som.mudo ? '0.6' : '1'; };
+  pinta(); (window.__aoIdiomaPartida = window.__aoIdiomaPartida || []).push(pinta);
   b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); Som.ligar(); Som.alternarMudo(); pinta(); });
   $('pauseBtn').parentNode.appendChild(b);
 })();
@@ -9133,10 +9134,13 @@ $('againBtn').addEventListener('click', resetMatch);
 // O carregador do Canva compara o versao.txt de agora com window.__FUTEBOL_VERSAO para avisar
 // que tem atualização; antes ele comparava com o número escrito aqui dentro do código, e se os
 // dois fossem diferentes o aviso aparecia para sempre (mesmo depois de atualizar).
+let __versaoMostrada = null;
 function mostrarVersao(v) {
-  $('versaoInfo').textContent = 'versão ' + v + (window.__FUTEBOL_CARREGADOR ? ' · carregador ' + window.__FUTEBOL_CARREGADOR + ' · ' + (window.__FUTEBOL_ORIGEM || '') : '');
+  __versaoMostrada = v;
+  $('versaoInfo').textContent = Tseguro('versão {0}').replace('{0}', v) + (window.__FUTEBOL_CARREGADOR ? ' · carregador ' + window.__FUTEBOL_CARREGADOR + ' · ' + (window.__FUTEBOL_ORIGEM || '') : '');
 }
 mostrarVersao(VERSAO_JOGO);
+(window.__aoIdiomaPartida = window.__aoIdiomaPartida || []).push(() => { if (__versaoMostrada != null) mostrarVersao(__versaoMostrada); });
 (function lerVersaoTxt() {
   const base = window.__FUTEBOL_ORIGEM === 'github' ? 'https://raw.githubusercontent.com/herick-css/futebol-js-jogo/main/futebol-js/'
     : window.__FUTEBOL_ORIGEM === 'jsdelivr' ? 'https://cdn.jsdelivr.net/gh/herick-css/futebol-js-jogo@main/futebol-js/' : '';
@@ -9871,14 +9875,14 @@ function iniciarReplay(R) {
   R.estadoAntes = G.state;
   G.replay = R; G.state = 'replay';
   setLetterbox(true);
-  $('skipBtn').hidden = false; $('skipBtn').textContent = 'Pular replay ▶';
+  $('skipBtn').hidden = false; $('skipBtn').textContent = T('Pular replay ▶');
   hideKickUI(); esconderRecepcao();
   rotuloReplay();
 }
 function rotuloReplay() {
   const R = G.replay;
-  const nomes = ['TV', 'ATRÁS DO GOL', 'PERTO DO LANCE'];
-  $('cineLabel').textContent = R.tipo === 'gol' ? 'REPLAY · ' + nomes[R.cam] + ' (' + (R.cam + 1) + '/3) · toque para trocar de câmera' : (R.congelado ? 'IMPEDIMENTO · amarela: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
+  const nomes = [T('TV'), T('ATRÁS DO GOL'), T('PERTO DO LANCE')];
+  $('cineLabel').textContent = R.tipo === 'gol' ? Tf('REPLAY · {0} ({1}/3) · toque para trocar de câmera', nomes[R.cam], R.cam + 1) : T(R.congelado ? 'IMPEDIMENTO · amarela: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
 }
 function terminarReplay() {
   const R = G.replay;
@@ -9887,7 +9891,7 @@ function terminarReplay() {
   for (const s of [-1, 1]) { if (FUNDO_GRADE[s].tela) FUNDO_GRADE[s].tela.visible = true; if (FUNDO_GRADE[s].postes) FUNDO_GRADE[s].postes.visible = true; }
   linhasImped.g.visible = false;
   setLetterbox(false);
-  $('skipBtn').hidden = true; $('skipBtn').textContent = 'Pular ▶';
+  $('skipBtn').hidden = true; $('skipBtn').textContent = T('Pular ▶');
   $('cineLabel').textContent = '';
   for (const p of CORPOS) p.mesh.raiz.visible = p.role === 'AR' ? PARTIDA.regras.impedimento : (!p.out || p.saida !== null);
   G.state = R.estadoAntes;
@@ -10625,8 +10629,8 @@ function atualizarAgregado() {}              // a caixinha de texto embaixo do p
 function atualizarInfoTatica() {
   const el = $('taticaInfo');
   if (!el || !PARTIDA) return;
-  el.textContent = PARTIDA.timesObj[0].nome + ': ' + TATICAS[PARTIDA.taticas[0]].nome + ' (' + PARTIDA.formacoes[0] + ') · ' +
-    PARTIDA.timesObj[1].nome + ': ' + TATICAS[PARTIDA.taticas[1]].nome + ' (' + PARTIDA.formacoes[1] + ')';
+  el.textContent = Tf('{0}: {1} ({2}) · {3}: {4} ({5})', PARTIDA.timesObj[0].nome, T(TATICAS[PARTIDA.taticas[0]].nome), PARTIDA.formacoes[0],
+    PARTIDA.timesObj[1].nome, T(TATICAS[PARTIDA.taticas[1]].nome), PARTIDA.formacoes[1]);
 }
 
 // ---------------------------------------------------------------------
@@ -11076,7 +11080,7 @@ function iniciarSubstituicao(item) {
   G.state = 'subst'; G.targetScale = 1;
   setLetterbox(true);
   $('skipBtn').hidden = false;
-  $('cineLabel').textContent = 'SUBSTITUIÇÃO · ' + PARTIDA.timesObj[team].sigla + ' · sai ' + (sai.isUser ? 'você' : sai.name) + ' (' + sai.numero + '), entra ' + entra.name + ' (' + entra.numero + ')' + (item.motivo === 'lesão' ? ' · lesão' : '');
+  $('cineLabel').textContent = Tf('SUBSTITUIÇÃO · {0} · sai {1} ({2}), entra {3} ({4})', PARTIDA.timesObj[team].sigla, sai.isUser ? T('você') : sai.name, sai.numero, entra.name, entra.numero) + (item.motivo === 'lesão' ? T(' · lesão') : '');
   Som.apito(0.25);
 }
 // Cena da troca, em fases — cada uma só acaba quando a anterior aconteceu DE VERDADE:
@@ -11163,7 +11167,7 @@ function virarEspectador() {
 }
 function mostrarAvisoEspectador() {
   showBanner('VOCÊ SAIU', 0, 2.2);
-  $('skipBtn').hidden = false; $('skipBtn').textContent = 'Pular para o resultado ▶';
+  $('skipBtn').hidden = false; $('skipBtn').textContent = T('Pular para o resultado ▶');
 }
 function pularParaResultado() {
   G.pulando = true;
@@ -11309,7 +11313,7 @@ function encerrarPenaltis() {
   G.penaltisPlacar = [ga, gb];
   for (const p of players) p.scripted = false;
   G.pen = null; G.sp = null;
-  showBanner(PARTIDA.timesObj[ga > gb ? 0 : 1].sigla + ' VENCE NOS PÊNALTIS', ga > gb ? 0 : 1, 2.6);
+  showBanner(Tf('{0} VENCE NOS PÊNALTIS', PARTIDA.timesObj[ga > gb ? 0 : 1].sigla), ga > gb ? 0 : 1, 2.6);
   G.state = 'fimPen';
   setTimeout(() => { painelPenaltis(); endMatch(); }, G.pulando ? 0 : 2600);
 }
@@ -11376,10 +11380,10 @@ function registrarResultado(motivo) {
 function textoFichas(res) {
   const partes = [];
   const meus = (lst) => lst.filter((x) => x.team === 0);
-  if (G.penaltisPlacar) partes.push('Pênaltis ' + G.penaltisPlacar[0] + 'x' + G.penaltisPlacar[1] + '.');
-  for (const s of meus(res.suspensos)) partes.push(s.nome + ': suspenso no próximo jogo (' + s.motivo + ').');
-  for (const l of meus(res.lesoes)) partes.push(l.nome + ': lesão ' + l.tipo + (l.jogos ? ' (' + l.jogos + ' jogo' + (l.jogos > 1 ? 's' : '') + ' fora)' : ' (joga sentindo)') + '.');
-  if (res.trocas.length) partes.push('Substituições: ' + res.trocas.filter((t) => t.team === 0).map((t) => t.sai + ' → ' + t.entra).join(', ') + '.');
+  if (G.penaltisPlacar) partes.push(Tf('Pênaltis {0}x{1}.', G.penaltisPlacar[0], G.penaltisPlacar[1]));
+  for (const s of meus(res.suspensos)) partes.push(Tf('{0}: suspenso no próximo jogo ({1}).', s.nome, T(s.motivo)));
+  for (const l of meus(res.lesoes)) partes.push(l.jogos ? Tf(l.jogos > 1 ? '{0}: lesão {1} ({2} jogos fora).' : '{0}: lesão {1} ({2} jogo fora).', l.nome, T(l.tipo), l.jogos) : Tf('{0}: lesão {1} (joga sentindo).', l.nome, T(l.tipo)));
+  if (res.trocas.length) partes.push(Tf('Substituições: {0}.', res.trocas.filter((t) => t.team === 0).map((t) => t.sai + ' → ' + t.entra).join(', ')));
   return partes.join(' ');
 }
 
@@ -11399,8 +11403,8 @@ function montarTelaDeConfig() {
   const box = document.createElement('details');
   box.id = 'cfgPartida';
   box.style.cssText = 'margin:4px 0 8px;font-size:12px';
-  const opc = (obj, nome) => Object.entries(obj).filter(([, v]) => !v.oculto).map(([k, v]) => '<option value="' + k + '">' + (nome ? nome(v, k) : v.nome) + '</option>').join('');
-  const lista = (pares) => pares.map(([k, n]) => '<option value="' + k + '">' + n + '</option>').join('');
+  const opc = (obj, nome) => Object.entries(obj).filter(([, v]) => !v.oculto).map(([k, v]) => '<option value="' + k + '" data-pt="' + (nome ? nome(v, k) : v.nome) + '">' + T(nome ? nome(v, k) : v.nome) + '</option>').join('');   // (6.1.2) data-pt: o texto original, para trocar de idioma
+  const lista = (pares) => pares.map(([k, n]) => '<option value="' + k + '" data-pt="' + n + '">' + T(n) + '</option>').join('');
   const campo = (id, rot, html) => '<label style="display:flex;flex-direction:column;gap:2px;font-size:10px;letter-spacing:.04em;color:var(--muted)">' + rot +
     '<select id="' + id + '" style="font:600 12px var(--font-body);background:var(--panel-solid);color:var(--chalk);border:1px solid var(--line);padding:4px">' + html + '</select></label>';
   box.innerHTML = '<summary style="cursor:pointer;font-weight:700;letter-spacing:.06em">CONFIGURAR PARTIDA</summary>' +
@@ -11412,14 +11416,14 @@ function montarTelaDeConfig() {
     campo('cfgHora', 'HORÁRIO', lista([['dia', 'Dia'], ['tarde', 'Tarde'], ['noite', 'Noite']])) +
     campo('cfgPos', 'SUA POSIÇÃO', lista([['FWD', 'Atacante'], ['MID', 'Meia'], ['DEF', 'Zagueiro']])) +
     campo('cfgDur', 'DURAÇÃO', lista([['300', '5 min (padrão)'], ['180', '3 min (rápida)']])) +
-    campo('cfgForm', 'FORMAÇÃO (SEU TIME)', '<option value="">Preferida do time</option>' + opc(FORMACOES)) +
-    campo('cfgTat', 'TÁTICA (SEU TIME)', '<option value="">Preferida do time</option>' + opc(TATICAS)) +
+    campo('cfgForm', 'FORMAÇÃO (SEU TIME)', '<option value="" data-pt="Preferida do time">' + T('Preferida do time') + '</option>' + opc(FORMACOES)) +
+    campo('cfgTat', 'TÁTICA (SEU TIME)', '<option value="" data-pt="Preferida do time">' + T('Preferida do time') + '</option>' + opc(TATICAS)) +
     campo('cfgGenero', 'JOGADORES', lista([['M', 'Masculino'], ['F', 'Feminino'], ['X', 'Misto']])) +
-    campo('cfgPersonagem', 'PERSONAGEM', '<option value="">Nenhum (você)</option>') +
+    campo('cfgPersonagem', 'PERSONAGEM', '<option value="" data-pt="Nenhum (você)">' + T('Nenhum (você)') + '</option>') +
     '</div>';
   side.insertBefore(box, $('startBtn'));
   const intro = side.querySelector('p:not(.eyebrow)');
-  if (intro) intro.textContent = 'Você controla só o seu jogador (etiqueta laranja). Toque em OPÇÕES DA PARTIDA para ver e escolher tudo o que já dá para mudar (times, campo, clima, competição, tempo...).';
+  if (intro) { intro.id = 'cfgIntro'; intro.dataset.pt = 'Você controla só o seu jogador (etiqueta laranja). Toque em OPÇÕES DA PARTIDA para ver e escolher tudo o que já dá para mudar (times, campo, clima, competição, tempo...).'; intro.textContent = T(intro.dataset.pt); }
   const ult = salvo.ler('futebolJs.ultimaPartida.v1', null);
   const val = (id, v) => { if (v !== undefined && v !== null && $(id) && $(id).querySelector('option[value="' + v + '"]')) $(id).value = v; };
   val('cfgTime0', 'azulao'); val('cfgTime1', 'ataliba'); val('cfgCampo', 'estadio'); val('cfgDif', 'normal'); val('cfgHora', 'noite');
@@ -11449,19 +11453,19 @@ const SELECAO_EM_BREVE = [
   ['Modo história', ['Carreira', 'Tabela da liga', 'Chave da copa']],
 ];
 function infoSelecao(id, v) {
-  if (id === 'cfgTime0' || id === 'cfgTime1') { const T = TIMES[v]; return T ? 'Força ' + T.forca + ' · torcida ' + Math.round(T.popularidade * 100) + '% · ' + T.formacao + ' · ' + TATICAS[T.tatica].nome + ' · técnico ' + T.tecnico.nome : ''; }
+  if (id === 'cfgTime0' || id === 'cfgTime1') { const tm = TIMES[v]; return tm ? Tf('Força {0} · torcida {1}% · {2} · {3} · técnico {4}', tm.forca, Math.round(tm.popularidade * 100), tm.formacao, T(TATICAS[tm.tatica].nome), tm.tecnico.nome) : ''; }
   if (id === 'cfgCampo') {
     const C = CAMPOS[v]; if (!C) return '';
     const R = Object.assign({}, REGRAS_PADRAO, C.regras || {});
-    return C.comprimento + ' x ' + C.largura + ' m · ' + C.jogadores + ' por time · ' + (R.impedimento ? 'com impedimento' : 'sem impedimento') + ' · ' + (R.substituicoes >= 99 ? 'trocas livres' : R.substituicoes + ' trocas');
+    return Tf('{0} x {1} m · {2} por time · {3} · {4}', C.comprimento, C.largura, C.jogadores, T(R.impedimento ? 'com impedimento' : 'sem impedimento'), R.substituicoes >= 99 ? T('trocas livres') : Tf('{0} trocas', R.substituicoes));
   }
-  if (id === 'cfgClima') return v === 'chuva' ? 'Bola corre mais e quica menos' : v === 'neve' ? 'Bola segura no gramado' : 'Normal';
-  if (id === 'cfgGrama') return v === 'alto' ? 'Bola rola mais devagar' : 'Bola rola rápido';
-  if (id === 'cfgDif') { const f = FAIXA_NIVEL[v]; return 'Habilidades do adversário ' + (f ? f[0] + ' a ' + f[1] : '') + ' (de 10). Seus companheiros: 5 a 6. Você nunca piora.'; }
-  if (id === 'cfgGenero') return v === 'F' ? 'Só jogadoras' : v === 'X' ? 'Homens e mulheres nos dois times' : 'Só jogadores';
-  if (id === 'cfgPersonagem') return v ? 'Você joga com a aparência, o nome e o número desse personagem' : (personagensSalvos().length ? '' : 'Nenhum personagem salvo ainda (crie um no modo história)');
-  if (id === 'cfgTat') return v && TATICAS[v] ? '' : 'Usa a tática preferida do seu time';
-  if (id === 'cfgForm') return v ? '' : 'Usa a formação preferida do seu time';
+  if (id === 'cfgClima') return T(v === 'chuva' ? 'Bola corre mais e quica menos' : v === 'neve' ? 'Bola segura no gramado' : 'Normal');
+  if (id === 'cfgGrama') return T(v === 'alto' ? 'Bola rola mais devagar' : 'Bola rola rápido');
+  if (id === 'cfgDif') { const f = FAIXA_NIVEL[v]; return Tf('Habilidades do adversário {0} (de 10). Seus companheiros: 5 a 6. Você nunca piora.', f ? Tf('{0} a {1}', f[0], f[1]) : ''); }
+  if (id === 'cfgGenero') return T(v === 'F' ? 'Só jogadoras' : v === 'X' ? 'Homens e mulheres nos dois times' : 'Só jogadores');
+  if (id === 'cfgPersonagem') return v ? T('Você joga com a aparência, o nome e o número desse personagem') : (personagensSalvos().length ? '' : T('Nenhum personagem salvo ainda (crie um no modo história)'));
+  if (id === 'cfgTat') return v && TATICAS[v] ? '' : T('Usa a tática preferida do seu time');
+  if (id === 'cfgForm') return v ? '' : T('Usa a formação preferida do seu time');
   return '';
 }
 function montarTelaDeSelecao(box) {
@@ -11495,13 +11499,14 @@ function montarTelaDeSelecao(box) {
   const corDe = (id, v) => (id === 'cfgTime0' || id === 'cfgTime1') && TIMES[v] ? TIMES[v].uniforme.camisa : null;
   const desenhar = () => {
     opcoesDePersonagem();                                          // os saves podem ter mudado
-    let h = '<div class="selTopo"><span class="selTit">CONFIGURAÇÕES</span>' +
-      '<button class="pxBtn pxPeq" data-acao="voltar">Voltar</button><button class="pxBtn pxPeq pxPrim" data-acao="jogar">Jogar</button></div><div class="selGrade">';
+    traduzirOpcoesConfig();                                        // (6.1.2) textos das opções no idioma atual
+    let h = '<div class="selTopo"><span class="selTit">' + T('CONFIGURAÇÕES') + '</span>' +
+      '<button class="pxBtn pxPeq" data-acao="voltar">' + T('Voltar') + '</button><button class="pxBtn pxPeq pxPrim" data-acao="jogar">' + T('Jogar') + '</button></div><div class="selGrade">';
     for (const G0 of SELECAO_GRUPOS) {
-      h += '<div class="selGrupo"><h3>' + G0.titulo + '</h3>';
+      h += '<div class="selGrupo"><h3>' + T(G0.titulo) + '</h3>';
       for (const [id, rot] of G0.itens) {
         const sel = $(id); if (!sel) continue;
-        h += '<div class="selItem"><span>' + rot.toUpperCase() + '</span><div class="chips">';
+        h += '<div class="selItem"><span>' + T(rot).toUpperCase() + '</span><div class="chips">';
         for (const o of sel.options) {
           const cor = corDe(id, o.value);
           h += '<button class="chip' + (o.value === sel.value ? ' on' : '') + '" data-id="' + id + '" data-v="' + o.value + '">' + (cor ? '<i style="background:' + cor + '"></i>' : '') + o.textContent + '</button>';
@@ -11510,14 +11515,14 @@ function montarTelaDeSelecao(box) {
       }
       h += '</div>';
     }
-    h += '<div class="selGrupo breve"><h3>AINDA NÃO FEITO <span class="tagBreve">EM BREVE</span></h3>';
+    h += '<div class="selGrupo breve"><h3>' + T('AINDA NÃO FEITO') + ' <span class="tagBreve">' + T('EM BREVE') + '</span></h3>';
     for (const [rot, ops] of SELECAO_EM_BREVE) {
-      h += '<div class="selItem"><span>' + rot.toUpperCase() + '</span><div class="chips">' + ops.map((o) => '<button class="chip" disabled>' + o + '</button>').join('') + '</div></div>';
+      h += '<div class="selItem"><span>' + T(rot).toUpperCase() + '</span><div class="chips">' + ops.map((o) => '<button class="chip" disabled>' + T(o) + '</button>').join('') + '</div></div>';
     }
     h += '</div>';
     const como = document.querySelector('#startScreen .howto');   // os controles saíram da tela inicial: ficam aqui
-    if (como) h += '<div class="selGrupo comoJogar"><h3>COMO JOGAR</h3>' + como.outerHTML + '</div>';
-    h += '<div class="selGrupo versaoCfg"><h3>VERSÃO</h3><div class="selItem" id="cfgVersao"></div></div>';   // a versão fica aqui, não no menu
+    if (como) h += '<div class="selGrupo comoJogar"><h3>' + T('COMO JOGAR') + '</h3>' + como.outerHTML + '</div>';
+    h += '<div class="selGrupo versaoCfg"><h3>' + T('VERSÃO') + '</h3><div class="selItem" id="cfgVersao"></div></div>';   // a versão fica aqui, não no menu
     h += '</div>';
     const rolagem = tela.scrollTop;
     const vInfo = $('versaoInfo'), guarda = $('versaoGuarda');
@@ -11527,7 +11532,7 @@ function montarTelaDeSelecao(box) {
     tela.scrollTop = rolagem;
     if ($('cfgTime0').value === $('cfgTime1').value) {
       const info = tela.querySelector('[data-id="cfgTime1"]').closest('.selItem').querySelector('.selInfo');
-      info.textContent = 'Mesmo time dos dois lados: o jogo escolhe outro adversário.'; info.style.color = 'var(--bad)';
+      info.textContent = T('Mesmo time dos dois lados: o jogo escolhe outro adversário.'); info.style.color = 'var(--bad)';
     }
   };
   tela.addEventListener('click', (e) => {
@@ -11538,12 +11543,12 @@ function montarTelaDeSelecao(box) {
   });
   // Botão na tela inicial + resumo do que está escolhido. O painel antigo fica como "avançado".
   const abrir = document.createElement('button');
-  abrir.className = 'ghost'; abrir.id = 'selBtn'; abrir.style.borderColor = 'var(--flood)'; abrir.textContent = 'Opções da partida ⚙';
+  abrir.className = 'ghost'; abrir.id = 'selBtn'; abrir.style.borderColor = 'var(--flood)'; abrir.dataset.pt = 'Opções da partida ⚙'; abrir.textContent = T('Opções da partida ⚙');
   abrir.addEventListener('click', () => { desenhar(); tela.hidden = false; tela.scrollTop = 0; });
   const resumo = document.createElement('p'); resumo.id = 'cfgResumo';
   box.parentNode.insertBefore(resumo, box);
   box.parentNode.insertBefore(abrir, box);
-  box.querySelector('summary').textContent = 'AVANÇADO (LISTAS)';
+  box.querySelector('summary').textContent = T('AVANÇADO (LISTAS)'); box.querySelector('summary').dataset.pt = 'AVANÇADO (LISTAS)';
   box.addEventListener('change', atualizarResumoConfig);
   atualizarResumoConfig();
 }
@@ -11564,7 +11569,7 @@ function personagensSalvos() {
 function opcoesDePersonagem() {
   const sel = $('cfgPersonagem'); if (!sel) return;
   const atual = sel.value;
-  sel.innerHTML = '<option value="">Nenhum (você)</option>' + personagensSalvos().map((x) => '<option value="' + x.slot + '">' + x.nome.replace(/[<>&"]/g, '') + ' (save ' + x.slot + ')</option>').join('');
+  sel.innerHTML = '<option value="" data-pt="Nenhum (você)">' + T('Nenhum (você)') + '</option>' + personagensSalvos().map((x) => '<option value="' + x.slot + '">' + x.nome.replace(/[<>&"]/g, '') + Tf(' (save {0})', x.slot) + '</option>').join('');
   if (sel.querySelector('option[value="' + atual + '"]')) sel.value = atual;
 }
 function lerTelaDeConfig() {
@@ -11595,12 +11600,12 @@ function montarTelaDeTatica() {
 }
 function atualizarTelaDeTatica() {
   if (!PARTIDA || !$('taticaBtns')) return;
-  $('tecnicoInfo').textContent = 'Técnico: ' + PARTIDA.tecnicos[0].nome + ' · Formação ' + PARTIDA.formacoes[0];
+  $('tecnicoInfo').textContent = Tf('Técnico: {0} · Formação {1}', PARTIDA.tecnicos[0].nome, PARTIDA.formacoes[0]);
   const B = $('taticaBtns');
   B.innerHTML = '';
   for (const [k, T] of Object.entries(TATICAS)) {
     const b = document.createElement('button');
-    b.textContent = T.nome; b.className = PARTIDA.taticas[0] === k ? 'big' : 'ghost';
+    b.textContent = Tf(T.nome); b.className = PARTIDA.taticas[0] === k ? 'big' : 'ghost';
     b.style.cssText = 'font-size:11px;padding:6px 8px;min-height:0';
     b.addEventListener('click', () => { G.taticaManual = true; trocarTatica(0, k); atualizarTelaDeTatica(); });
     B.appendChild(b);
@@ -11612,14 +11617,15 @@ function atualizarTelaDeTatica() {
 function resultadoCompeticao() {
   const P = PARTIDA, C = P.competicao, [a, b] = G.score, nos = P.timesObj[0].nome, eles = P.timesObj[1].nome;
   if (!C || C.tipo === 'amistoso') return '';
-  if (C.tipo === 'liga') return (C.nome || 'Liga') + ': ' + (a > b ? '+3 pontos' : a === b ? '+1 ponto' : '0 ponto') + (C.rodada ? ' na rodada ' + C.rodada : '');
+  if (C.tipo === 'liga') return T(C.nome || 'Liga') + ': ' + T(a > b ? '+3 pontos' : a === b ? '+1 ponto' : '0 ponto') + (C.rodada ? ' ' + Tf('na rodada {0}', C.rodada) : '');
   if (!C.mataMata) return '';
-  if (C.jogo === 'ida') return 'Jogo de ida: ' + a + 'x' + b + '. A decisão fica para a volta.';
+  if (C.jogo === 'ida') return Tf('Jogo de ida: {0}x{1}. A decisão fica para a volta.', a, b);
   const ag = agregado() || [a, b];
   let quem = ag[0] > ag[1] ? nos : ag[1] > ag[0] ? eles : null;
   if (!quem && G.penaltisPlacar) quem = G.penaltisPlacar[0] > G.penaltisPlacar[1] ? nos : eles;
-  const txt = C.jogo === 'volta' ? 'Agregado ' + ag[0] + 'x' + ag[1] + '. ' : '';
-  return txt + (quem ? quem + (G.penaltisPlacar ? ' vence nos pênaltis e' : '') + ' passa de fase' + (C.fase === 'Final' ? ' — é campeão!' : '!') : 'Empate.');
+  const txt = C.jogo === 'volta' ? Tf('Agregado {0}x{1}.', ag[0], ag[1]) + ' ' : '';
+  const campeao = C.fase === 'Final';
+  return txt + (quem ? Tf(G.penaltisPlacar ? (campeao ? '{0} vence nos pênaltis e passa de fase — é campeão!' : '{0} vence nos pênaltis e passa de fase!') : (campeao ? '{0} passa de fase — é campeão!' : '{0} passa de fase!'), quem) : T('Empate.'));
 }
 
 // ---------------------------------------------------------------------
@@ -11920,6 +11926,325 @@ const Idioma = {
     for (const f of this.aoMudar) { try { f(id); } catch (e) { console.error(e); } }
   },
 };
+// (6.1.2) TRADUÇÕES DA PARTIDA LIVRE: só entra o que ainda não existe na tabela (o que já estava traduzido não é trocado).
+(function () {
+  const NOVAS = {
+  'PROTÓTIPO · SISTEMA DE PARTIDA': ['PROTOTYPE · MATCH SYSTEM', 'PROTOTIPO · SISTEMA DE PARTIDO', 'PROTOTIPO · SISTEMA DI PARTITA', 'PROTOTYPE · SYSTÈME DE MATCH'],
+  'Começar partida': ['Start match', 'Empezar partido', 'Inizia la partita', 'Commencer le match'],
+  'AVANÇADO (LISTAS)': ['ADVANCED (LISTS)', 'AVANZADO (LISTAS)', 'AVANZATO (ELENCHI)', 'AVANCÉ (LISTES)'],
+  'versão {0}': ['version {0}', 'versión {0}', 'versione {0}', 'version {0}'],
+  'Pausar': ['Pause', 'Pausar', 'Pausa', 'Pause'],
+  'CÂM: BOLA': ['CAM: BALL', 'CÁM: BALÓN', 'CAM: PALLONE', 'CAM : BALLON'],
+  'CÂM: FRENTE': ['CAM: FRONT', 'CÁM: FRENTE', 'CAM: AVANTI', 'CAM : AVANT'],
+  'Mapa do campo': ['Pitch map', 'Mapa del campo', 'Mappa del campo', 'Carte du terrain'],
+  'Estamina': ['Stamina', 'Resistencia', 'Resistenza', 'Endurance'],
+  'Pular ▶': ['Skip ▶', 'Saltar ▶', 'Salta ▶', 'Passer ▶'],
+  'Pular replay ▶': ['Skip replay ▶', 'Saltar repetición ▶', 'Salta replay ▶', 'Passer le replay ▶'],
+  'Pular para o resultado ▶': ['Skip to the result ▶', 'Saltar al resultado ▶', 'Salta al risultato ▶', 'Passer au résultat ▶'],
+  'CHUTE': ['SHOT', 'TIRO', 'TIRO', 'TIR'],
+  '1 Mira': ['1 Aim', '1 Puntería', '1 Mira', '1 Visée'],
+  '2 Força': ['2 Power', '2 Fuerza', '2 Forza', '2 Force'],
+  '3 Efeito': ['3 Spin', '3 Efecto', '3 Effetto', '3 Effet'],
+  'Cancelar': ['Cancel', 'Cancelar', 'Annulla', 'Annuler'],
+  'MÁX': ['MAX', 'MÁX', 'MAX', 'MAX'],
+  'FORÇA': ['POWER', 'FUERZA', 'FORZA', 'FORCE'],
+  'CIMA': ['UP', 'ARRIBA', 'SU', 'HAUT'],
+  'BAIXO': ['DOWN', 'ABAJO', 'GIÙ', 'BAS'],
+  'ESQ': ['LEFT', 'IZQ', 'SIN', 'GAU'],
+  'DIR': ['RIGHT', 'DER', 'DES', 'DRO'],
+  'PAUSADO': ['PAUSED', 'PAUSADO', 'IN PAUSA', 'EN PAUSE'],
+  'Seu desempenho': ['Your performance', 'Tu rendimiento', 'La tua prestazione', 'Ta performance'],
+  'Continuar': ['Resume', 'Continuar', 'Continua', 'Continuer'],
+  'Reiniciar': ['Restart', 'Reiniciar', 'Ricomincia', 'Recommencer'],
+  'AJUSTES DE TESTE': ['TEST SETTINGS', 'AJUSTES DE PRUEBA', 'IMPOSTAZIONI DI PROVA', 'RÉGLAGES DE TEST'],
+  'Chance do passe vir quebrado quando você pede': ['Chance of a bad pass when you call for the ball', 'Probabilidad de pase malo cuando pides el balón', 'Probabilità di passaggio sbagliato quando chiedi la palla', 'Probabilité d’une mauvaise passe quand tu demandes le ballon'],
+  'Força da marcação da IA em você': ['Strength of the AI marking on you', 'Fuerza de la marca de la IA sobre ti', 'Forza della marcatura dell’IA su di te', 'Force du marquage de l’IA sur toi'],
+  'Resolução interna (menor = mais pixelado e mais leve)': ['Internal resolution (lower = more pixelated and lighter)', 'Resolución interna (menor = más pixelado y más ligero)', 'Risoluzione interna (più bassa = più pixelata e più leggera)', 'Résolution interne (plus basse = plus pixelisée et plus légère)'],
+  'Tremida da câmera na corrida': ['Camera shake while running', 'Temblor de la cámara al correr', 'Tremolio della camera quando corri', 'Tremblement de la caméra en courant'],
+  'Mostrar FPS e chamadas de desenho': ['Show FPS and draw calls', 'Mostrar FPS y llamadas de dibujo', 'Mostra FPS e chiamate di disegno', 'Afficher les FPS et les appels de dessin'],
+  'desligada': ['off', 'desactivada', 'disattivata', 'désactivé'],
+  'FIM DE JOGO': ['FULL TIME', 'FIN DEL PARTIDO', 'FINE PARTITA', 'FIN DU MATCH'],
+  'Sua nota na partida. No modo história ela vai pesar nas propostas dos clubes.': ['Your match rating. In story mode it will weigh on the clubs’ offers.', 'Tu nota en el partido. En el modo historia influirá en las ofertas de los clubes.', 'Il tuo voto nella partita. Nella modalità storia peserà sulle offerte dei club.', 'Ta note du match. En mode histoire, elle pèsera sur les offres des clubs.'],
+  'Jogar de novo': ['Play again', 'Jugar otra vez', 'Gioca ancora', 'Rejouer'],
+  'SOM': ['SOUND', 'SONIDO', 'SUONO', 'SON'],
+  'MUDO': ['MUTE', 'MUDO', 'MUTO', 'MUET'],
+  'Som': ['Sound', 'Sonido', 'Suono', 'Son'],
+  'CHUTAR / CRUZAR': ['SHOOT / CROSS', 'TIRAR / CENTRAR', 'TIRA / CROSS', 'TIRER / CENTRER'],
+  'PASSAR': ['PASS', 'PASAR', 'PASSA', 'PASSER'],
+  'DRIBLAR': ['DRIBBLE', 'REGATEAR', 'DRIBBLA', 'DRIBBLER'],
+  'CELEBRAÇÃO 1': ['CELEBRATION 1', 'CELEBRACIÓN 1', 'ESULTANZA 1', 'CÉLÉBRATION 1'],
+  'CELEBRAÇÃO 2': ['CELEBRATION 2', 'CELEBRACIÓN 2', 'ESULTANZA 2', 'CÉLÉBRATION 2'],
+  'PULAR': ['SKIP', 'SALTAR', 'SALTA', 'PASSER'],
+  'CRUZAR': ['CROSS', 'CENTRAR', 'CROSS', 'CENTRER'],
+  'LANÇAR': ['THROW', 'LANZAR', 'LANCIA', 'LANCER'],
+  'PEDIR BOLA': ['CALL FOR BALL', 'PEDIR BALÓN', 'CHIEDI PALLA', 'DEMANDER LE BALLON'],
+  'PEDINDO...': ['CALLING...', 'PIDIENDO...', 'CHIEDENDO...', 'JE DEMANDE...'],
+  'DESARMAR': ['TACKLE', 'QUITAR', 'CONTRASTA', 'TACLER'],
+  'CARRINHO': ['SLIDE', 'ENTRADA', 'SCIVOLATA', 'TACLE GLISSÉ'],
+  'CORRENDO': ['RUNNING', 'CORRIENDO', 'IN CORSA', 'COURSE'],
+  'CANSADO': ['TIRED', 'CANSADO', 'STANCO', 'FATIGUÉ'],
+  'MIRA': ['AIM', 'PUNTERÍA', 'MIRA', 'VISÉE'],
+  'AMARELO': ['YELLOW', 'AMARILLA', 'GIALLO', 'JAUNE'],
+  'Comemore! {0} s': ['Celebrate! {0} s', '¡Celebra! {0} s', 'Esulta! {0} s', 'Célèbre ! {0} s'],
+  'Bola livre: corra até ela': ['Loose ball: run to it', 'Balón suelto: corre hacia él', 'Palla libera: corri verso di essa', 'Ballon libre : cours vers lui'],
+  'Chegue perto para desarmar': ['Get close to tackle', 'Acércate para quitarle el balón', 'Avvicinati per contrastare', 'Approche-toi pour tacler'],
+  'CRUZAMENTO': ['CROSS', 'CENTRO', 'CROSS', 'CENTRE'],
+  'PÊNALTI': ['PENALTY', 'PENAL', 'RIGORE', 'PENALTY'],
+  'LATERAL': ['THROW-IN', 'SAQUE DE BANDA', 'RIMESSA LATERALE', 'TOUCHE'],
+  'PASSE': ['PASS', 'PASE', 'PASSAGGIO', 'PASSE'],
+  'Arraste para mirar: a seta segue o seu dedo. Solte para confirmar.': ['Drag to aim: the arrow follows your finger. Release to confirm.', 'Arrastra para apuntar: la flecha sigue tu dedo. Suelta para confirmar.', 'Trascina per mirare: la freccia segue il dito. Rilascia per confermare.', 'Glisse pour viser : la flèche suit ton doigt. Relâche pour confirmer.'],
+  'Segure e solte: quanto mais tempo, mais forte. Verde é o chute bom; azul é o toque fraco (cavadinha, passe curto); vermelho é fraco demais ou forte demais.': ['Hold and release: the longer, the harder. Green is a good shot; blue is a soft touch (chip, short pass); red is too weak or too strong.', 'Mantén y suelta: cuanto más tiempo, más fuerte. Verde es el buen tiro; azul es el toque suave (vaselina, pase corto); rojo es demasiado flojo o demasiado fuerte.', 'Tieni premuto e rilascia: più a lungo, più forte. Verde è il tiro buono; blu è il tocco leggero (cucchiaio, passaggio corto); rosso è troppo debole o troppo forte.', 'Maintiens et relâche : plus longtemps, plus fort. Vert = bon tir ; bleu = toucher léger (lob, passe courte) ; rouge = trop faible ou trop fort.'],
+  'Toque no ponto da bola onde o pé vai bater. Cancelar agora é uma finta!': ['Tap the spot on the ball where the foot will hit. Cancelling now is a feint!', 'Toca el punto del balón donde pegará el pie. ¡Cancelar ahora es una finta!', 'Tocca il punto del pallone dove colpirà il piede. Annullare ora è una finta!', 'Touche le point du ballon où le pied va frapper. Annuler maintenant, c’est une feinte !'],
+  'Toque na bola': ['Tap the ball', 'Toca el balón', 'Tocca il pallone', 'Touche le ballon'],
+  'sobe': ['rises', 'sube', 'sale', 'monte'],
+  'sai baixa e cai rápido': ['stays low and drops fast', 'sale baja y cae rápido', 'esce bassa e scende veloce', 'part bas et retombe vite'],
+  'curva para a esquerda': ['curves to the left', 'curva a la izquierda', 'curva a sinistra', 'tourne à gauche'],
+  'curva para a direita': ['curves to the right', 'curva a la derecha', 'curva a destra', 'tourne à droite'],
+  'A bola {0} e {1}': ['The ball {0} and {1}', 'El balón {0} y {1}', 'Il pallone {0} e {1}', 'Le ballon {0} et {1}'],
+  'A bola {0}': ['The ball {0}', 'El balón {0}', 'Il pallone {0}', 'Le ballon {0}'],
+  'Batida reta, sem efeito': ['Straight strike, no spin', 'Golpeo recto, sin efecto', 'Colpo dritto, senza effetto', 'Frappe droite, sans effet'],
+  'DOMÍNIO': ['CONTROL', 'CONTROL', 'CONTROLLO', 'CONTRÔLE'],
+  'PEITO': ['CHEST', 'PECHO', 'PETTO', 'POITRINE'],
+  'PULO + PEITO': ['JUMP + CHEST', 'SALTO + PECHO', 'SALTO + PETTO', 'SAUT + POITRINE'],
+  'BOLA ALTA': ['HIGH BALL', 'BALÓN ALTO', 'PALLA ALTA', 'BALLON HAUT'],
+  'DIFÍCIL': ['HARD', 'DIFÍCIL', 'DIFFICILE', 'DIFFICILE'],
+  'CABECEAR': ['HEADER', 'CABECEAR', 'DI TESTA', 'TÊTE'],
+  'CABEÇADA': ['HEADER', 'CABEZAZO', 'COLPO DI TESTA', 'TÊTE'],
+  'VOLEIO': ['VOLLEY', 'VOLEA', 'VOLEA', 'VOLÉE'],
+  'BICICLETA': ['BICYCLE KICK', 'CHILENA', 'ROVESCIATA', 'CISEAUX'],
+  'DOMINAR': ['CONTROL', 'CONTROLAR', 'CONTROLLA', 'CONTRÔLER'],
+  'Bata na faixa verde. Cabecear toca no companheiro mais perto.': ['Hit the green band. A header goes to the nearest teammate.', 'Pulsa en la franja verde. El cabezazo va al compañero más cercano.', 'Premi nella fascia verde. Il colpo di testa va al compagno più vicino.', 'Tape dans la zone verte. La tête va au coéquipier le plus proche.'],
+  'Passe difícil: acerte o ponto AZUL': ['Hard pass: hit the BLUE spot', 'Pase difícil: acierta el punto AZUL', 'Passaggio difficile: colpisci il punto BLU', 'Passe difficile : touche le point BLEU'],
+  'Bata quando o marcador estiver na faixa verde': ['Hit when the marker is in the green band', 'Pulsa cuando el marcador esté en la franja verde', 'Premi quando il segnalino è nella fascia verde', 'Tape quand le curseur est dans la zone verte'],
+  'PERFEITO!': ['PERFECT!', '¡PERFECTO!', 'PERFETTO!', 'PARFAIT !'],
+  'Errou o ponto azul!': ['You missed the blue spot!', '¡Fallaste el punto azul!', 'Hai sbagliato il punto blu!', 'Tu as raté le point bleu !'],
+  'Na medida!': ['Spot on!', '¡Justo!', 'Giusto!', 'Pile ce qu’il faut !'],
+  'Acertou o tempo, mas a bola {0}!': ['Good timing, but the ball {0}!', 'Acertaste el tiempo, pero el balón {0}.', 'Tempo giusto, ma la palla {0}!', 'Bon timing, mais le ballon {0} !'],
+  'veio difícil': ['came in hard', 'llegó difícil', 'è arrivata difficile', 'est arrivé difficile'],
+  'veio rápida demais': ['came in too fast', 'llegó demasiado rápido', 'è arrivata troppo veloce', 'est arrivé trop vite'],
+  'Fora da faixa!': ['Outside the band!', '¡Fuera de la franja!', 'Fuori dalla fascia!', 'Hors de la zone !'],
+  'PERFEITO': ['PERFECT', 'PERFECTO', 'PERFETTO', 'PARFAIT'],
+  'BOM': ['GOOD', 'BUENO', 'BUONO', 'BIEN'],
+  'ERROU': ['MISS', 'FALLO', 'SBAGLIATO', 'RATÉ'],
+  '{0} s · acertos {1}/{2}': ['{0} s · hits {1}/{2}', '{0} s · aciertos {1}/{2}', '{0} s · colpi {1}/{2}', '{0} s · réussites {1}/{2}'],
+  'GOL SEU!': ['YOUR GOAL!', '¡GOL TUYO!', 'GOL TUO!', 'BUT POUR TOI !'],
+  'GOL!': ['GOAL!', '¡GOL!', 'GOL!', 'BUT !'],
+  'GOL DELES': ['THEIR GOAL', 'GOL DE ELLOS', 'GOL LORO', 'BUT ADVERSE'],
+  'PÊNALTI!': ['PENALTY!', '¡PENAL!', 'RIGORE!', 'PENALTY !'],
+  'ENGANOU O GOLEIRO!': ['FOOLED THE KEEPER!', '¡ENGAÑÓ AL PORTERO!', 'HA INGANNATO IL PORTIERE!', 'IL A TROMPÉ LE GARDIEN !'],
+  'DOMÍNIO PERFEITO': ['PERFECT CONTROL', 'CONTROL PERFECTO', 'CONTROLLO PERFETTO', 'CONTRÔLE PARFAIT'],
+  'VOCÊ SAIU': ['YOU WENT OFF', 'SALISTE', 'SEI USCITO', 'TU ES SORTI'],
+  'PÊNALTIS': ['PENALTIES', 'PENALES', 'RIGORI', 'TIRS AU BUT'],
+  '{0} VENCE NOS PÊNALTIS': ['{0} WIN ON PENALTIES', '{0} GANA EN LOS PENALES', '{0} VINCE AI RIGORI', '{0} GAGNE AUX TIRS AU BUT'],
+  'IMPEDIMENTO': ['OFFSIDE', 'FUERA DE JUEGO', 'FUORIGIOCO', 'HORS-JEU'],
+  'ATENDIMENTO': ['TREATMENT', 'ATENCIÓN MÉDICA', 'ASSISTENZA', 'SOINS'],
+  'FALTA': ['FOUL', 'FALTA', 'FALLO', 'FAUTE'],
+  'Lateral': ['Throw-in', 'Saque de banda', 'Rimessa laterale', 'Touche'],
+  'Escanteio': ['Corner', 'Córner', 'Calcio d’angolo', 'Corner'],
+  'Tiro de meta': ['Goal kick', 'Saque de puerta', 'Rinvio dal fondo', 'Six mètres'],
+  'Falta': ['Free kick', 'Falta', 'Punizione', 'Coup franc'],
+  'Pênalti': ['Penalty', 'Penal', 'Rigore', 'Penalty'],
+  'Tiro livre (impedimento)': ['Free kick (offside)', 'Tiro libre (fuera de juego)', 'Punizione (fuorigioco)', 'Coup franc (hors-jeu)'],
+  'SUA COBRANÇA': ['YOUR KICK', 'TU COBRO', 'TOCCA A TE', 'À TOI DE TIRER'],
+  'AZUL': ['BLUE', 'AZUL', 'BLU', 'BLEU'],
+  'VERMELHO': ['RED', 'ROJO', 'ROSSO', 'ROUGE'],
+  'SUBSTITUIÇÃO · {0} · sai {1} ({2}), entra {3} ({4})': ['SUBSTITUTION · {0} · {1} off ({2}), {3} on ({4})', 'SUSTITUCIÓN · {0} · sale {1} ({2}), entra {3} ({4})', 'SOSTITUZIONE · {0} · esce {1} ({2}), entra {3} ({4})', 'REMPLACEMENT · {0} · sort {1} ({2}), entre {3} ({4})'],
+  ' · lesão': [' · injury', ' · lesión', ' · infortunio', ' · blessure'],
+  'você': ['you', 'tú', 'tu', 'toi'],
+  'Você': ['You', 'Tú', 'Tu', 'Toi'],
+  'REPLAY · {0} ({1}/3) · toque para trocar de câmera': ['REPLAY · {0} ({1}/3) · tap to change camera', 'REPETICIÓN · {0} ({1}/3) · toca para cambiar de cámara', 'REPLAY · {0} ({1}/3) · tocca per cambiare camera', 'REPLAY · {0} ({1}/3) · touche pour changer de caméra'],
+  'TV': ['TV', 'TV', 'TV', 'TV'],
+  'ATRÁS DO GOL': ['BEHIND THE GOAL', 'DETRÁS DE LA PORTERÍA', 'DIETRO LA PORTA', 'DERRIÈRE LE BUT'],
+  'PERTO DO LANCE': ['CLOSE TO THE PLAY', 'CERCA DE LA JUGADA', 'VICINO ALL’AZIONE', 'PRÈS DE L’ACTION'],
+  'IMPEDIMENTO · amarela: penúltimo defensor · vermelha: atacante': ['OFFSIDE · yellow: second-last defender · red: attacker', 'FUERA DE JUEGO · amarilla: penúltimo defensor · roja: atacante', 'FUORIGIOCO · gialla: penultimo difensore · rossa: attaccante', 'HORS-JEU · jaune : avant-dernier défenseur · rouge : attaquant'],
+  'REPLAY DO IMPEDIMENTO': ['OFFSIDE REPLAY', 'REPETICIÓN DEL FUERA DE JUEGO', 'REPLAY DEL FUORIGIOCO', 'REPLAY DU HORS-JEU'],
+  'veio pingando': ['came in bouncing', 'llegó botando', 'è arrivata rimbalzando', 'est arrivé en rebondissant'],
+  'veio alta demais': ['came in too high', 'llegó demasiado alto', 'è arrivata troppo alta', 'est arrivé trop haut'],
+  'veio forte e torta': ['came in hard and crooked', 'llegó fuerte y torcido', 'è arrivata forte e storta', 'est arrivé fort et de travers'],
+  'DRIBLE NO GOLEIRO': ['DRIBBLE THE KEEPER', 'REGATE AL PORTERO', 'DRIBBLING AL PORTIERE', 'DRIBBLE SUR LE GARDIEN'],
+  'ARRANCADA': ['BURST', 'ARRANCADA', 'SCATTO', 'ACCÉLÉRATION'],
+  'PROTEJA A BOLA': ['SHIELD THE BALL', 'PROTEGE EL BALÓN', 'PROTEGGI LA PALLA', 'PROTÈGE LE BALLON'],
+  'DRIBLE DE CORPO': ['BODY FEINT', 'REGATE DE CUERPO', 'FINTA DI CORPO', 'FEINTE DE CORPS'],
+  'PEDALADA': ['STEPOVER', 'PEDALADA', 'DOPPIO PASSO', 'PASSEMENT DE JAMBES'],
+  'DRIBLE': ['DRIBBLE', 'REGATE', 'DRIBBLING', 'DRIBBLE'],
+  'Gols': ['Goals', 'Goles', 'Gol', 'Buts'],
+  'Chutes': ['Shots', 'Tiros', 'Tiri', 'Tirs'],
+  'No alvo': ['On target', 'A puerta', 'In porta', 'Cadrés'],
+  'Passes certos': ['Passes completed', 'Pases acertados', 'Passaggi riusciti', 'Passes réussies'],
+  'Dribles': ['Dribbles', 'Regates', 'Dribbling', 'Dribbles'],
+  'Domínios': ['Controls', 'Controles', 'Controlli', 'Contrôles'],
+  'Desarmes': ['Tackles', 'Quites', 'Contrasti', 'Tacles'],
+  'Bolas perdidas': ['Balls lost', 'Balones perdidos', 'Palle perse', 'Ballons perdus'],
+  'Faltas cometidas': ['Fouls committed', 'Faltas cometidas', 'Falli commessi', 'Fautes commises'],
+  'Faltas sofridas': ['Fouls suffered', 'Faltas recibidas', 'Falli subiti', 'Fautes subies'],
+  'Impedimentos': ['Offsides', 'Fueras de juego', 'Fuorigioco', 'Hors-jeux'],
+  'Cartões': ['Cards', 'Tarjetas', 'Cartellini', 'Cartons'],
+  'amarelo': ['yellow', 'amarilla', 'giallo', 'jaune'],
+  'vermelho': ['red', 'roja', 'rosso', 'rouge'],
+  'nenhum': ['none', 'ninguna', 'nessuno', 'aucun'],
+  'ANDAR E CORRER': ['WALK AND RUN', 'ANDAR Y CORRER', 'CAMMINARE E CORRERE', 'MARCHER ET COURIR'],
+  'Joystick no canto esquerdo. Empurre até o fim para correr. A corrida gasta a barra verde (10 s de corrida) e ela volta devagar.': ['Joystick in the left corner. Push it all the way to run. Running uses the green bar (10 s of running) and it refills slowly.', 'Joystick en la esquina izquierda. Empújalo hasta el final para correr. Correr gasta la barra verde (10 s de carrera) y se recupera despacio.', 'Joystick nell’angolo sinistro. Spingilo fino in fondo per correre. Correre consuma la barra verde (10 s di corsa) che si ricarica piano.', 'Joystick dans le coin gauche. Pousse-le à fond pour courir. La course use la barre verte (10 s de course) qui se recharge lentement.'],
+  'CÂMERA': ['CAMERA', 'CÁMARA', 'CAMERA', 'CAMÉRA'],
+  'Por padrão ela fica atrás de você virada para a bola. O botão CÂM troca para a câmera fixa para frente.': ['By default it stays behind you, facing the ball. The CAM button switches to the fixed forward camera.', 'Por defecto se queda detrás de ti mirando al balón. El botón CÁM cambia a la cámara fija hacia delante.', 'Di default resta dietro di te, rivolta verso il pallone. Il pulsante CAM passa alla camera fissa in avanti.', 'Par défaut elle reste derrière toi, tournée vers le ballon. Le bouton CAM passe à la caméra fixe vers l’avant.'],
+  'Mire no gol para chutar. Mire num companheiro para cruzar: ele cabeceia, bate de primeira ou domina.': ['Aim at the goal to shoot. Aim at a teammate to cross: he heads it, hits it first time or controls it.', 'Apunta a la portería para tirar. Apunta a un compañero para centrar: él cabecea, remata de primera o controla.', 'Mira alla porta per tirare. Mira un compagno per crossare: lui colpisce di testa, tira al volo o controlla.', 'Vise le but pour tirer. Vise un coéquipier pour centrer : il frappe de la tête, du premier temps ou contrôle.'],
+  '1. Arraste para mirar (a seta segue o dedo). 2. Segure e solte na faixa verde. 3. Toque no ponto da bola para o efeito.': ['1. Drag to aim (the arrow follows your finger). 2. Hold and release in the green band. 3. Tap the spot on the ball for spin.', '1. Arrastra para apuntar (la flecha sigue el dedo). 2. Mantén y suelta en la franja verde. 3. Toca el punto del balón para el efecto.', '1. Trascina per mirare (la freccia segue il dito). 2. Tieni premuto e rilascia nella fascia verde. 3. Tocca il punto del pallone per l’effetto.', '1. Glisse pour viser (la flèche suit ton doigt). 2. Maintiens et relâche dans la zone verte. 3. Touche le point du ballon pour l’effet.'],
+  'Só direção e força.': ['Just direction and power.', 'Solo dirección y fuerza.', 'Solo direzione e forza.', 'Seulement direction et force.'],
+  'O botão DRIBLAR aparece quando um marcador vem para cima de você. Câmera de lado, câmera lenta e 2 toques em 2,2 s (no goleiro: 3 toques em 1,3 s). Depois precisa recarregar.': ['The DRIBBLE button appears when a defender comes at you. Side camera, slow motion and 2 taps in 2.2 s (on the keeper: 3 taps in 1.3 s). Then it needs to recharge.', 'El botón REGATEAR aparece cuando un marcador se te echa encima. Cámara lateral, cámara lenta y 2 toques en 2,2 s (contra el portero: 3 toques en 1,3 s). Después hay que recargar.', 'Il pulsante DRIBBLA appare quando un marcatore ti viene addosso. Camera laterale, rallentatore e 2 tocchi in 2,2 s (sul portiere: 3 tocchi in 1,3 s). Poi deve ricaricarsi.', 'Le bouton DRIBBLER apparaît quand un défenseur arrive sur toi. Caméra de côté, ralenti et 2 touches en 2,2 s (sur le gardien : 3 touches en 1,3 s). Ensuite il faut recharger.'],
+  'TEMPO PARA CHUTAR': ['TIME TO SHOOT', 'TIEMPO PARA TIRAR', 'TEMPO PER TIRARE', 'TEMPS POUR TIRER'],
+  'Do clique até o chute você tem 6 s, ou o jogador fura. O marcador pode roubar a bola nesse tempo.': ['From the tap to the shot you have 6 s, or the player misses. The defender can steal the ball in that time.', 'Desde el toque hasta el tiro tienes 6 s, o el jugador falla. El marcador puede robar el balón en ese tiempo.', 'Dal tocco al tiro hai 6 s, altrimenti il giocatore sbaglia. Il marcatore può rubare la palla in quel tempo.', 'Du toucher au tir tu as 6 s, sinon le joueur rate. Le défenseur peut voler le ballon pendant ce temps.'],
+  'GOL SEU': ['YOUR GOAL', 'GOL TUYO', 'GOL TUO', 'BUT POUR TOI'],
+  'Até 10 s para correr à vontade e escolher a CELEBRAÇÃO 1 (aviãozinho, você guia com o joystick) ou 2 (joelhada). Corra até a bandeirinha de escanteio, até as placas (no society: a grade) ou vá buscar a bola no gol para comemorações especiais. Gol de outro jogador: a câmera mostra a comemoração dele.': ['Up to 10 s to run freely and choose CELEBRATION 1 (little plane, you steer with the joystick) or 2 (knee slide). Run to the corner flag, to the boards (in society: the fence) or fetch the ball from the goal for special celebrations. Another player’s goal: the camera shows his celebration.', 'Hasta 10 s para correr libremente y elegir la CELEBRACIÓN 1 (avioncito, lo guías con el joystick) o la 2 (de rodillas). Corre hasta el banderín de córner, hasta las vallas (en el society: la reja) o ve a buscar el balón a la portería para celebraciones especiales. Gol de otro jugador: la cámara muestra su celebración.', 'Fino a 10 s per correre liberamente e scegliere l’ESULTANZA 1 (aeroplanino, lo guidi con il joystick) o la 2 (scivolata in ginocchio). Corri fino alla bandierina del corner, ai cartelloni (nel society: la rete) o vai a prendere il pallone in porta per esultanze speciali. Gol di un altro giocatore: la camera mostra la sua esultanza.', 'Jusqu’à 10 s pour courir librement et choisir la CÉLÉBRATION 1 (petit avion, tu le diriges au joystick) ou 2 (glissade sur les genoux). Cours jusqu’au poteau de corner, jusqu’aux panneaux (au society : le grillage) ou va chercher le ballon dans le but pour des célébrations spéciales. But d’un autre joueur : la caméra montre sa célébration.'],
+  'RECEBER A BOLA': ['RECEIVING THE BALL', 'RECIBIR EL BALÓN', 'RICEVERE LA PALLA', 'RECEVOIR LE BALLON'],
+  'Martele quando o marcador estiver na faixa verde (2 s). Bola baixa: domínio; na altura do peito: domínio no peito (com pulo se for alta); por cima da cabeça: CABECEAR (toca para o mais perto) ou FINALIZAR (cabeçada, voleio ou bicicleta).': ['Tap when the marker is in the green band (2 s). Low ball: control; chest height: chest control (with a jump if high); above the head: HEADER (passes to the nearest) or FINISH (header, volley or bicycle kick).', 'Pulsa cuando el marcador esté en la franja verde (2 s). Balón bajo: control; a la altura del pecho: control de pecho (con salto si es alto); por encima de la cabeza: CABECEAR (toca al más cercano) o REMATAR (cabezazo, volea o chilena).', 'Premi quando il segnalino è nella fascia verde (2 s). Palla bassa: controllo; all’altezza del petto: controllo di petto (con salto se è alta); sopra la testa: DI TESTA (tocca al più vicino) o CONCLUDI (colpo di testa, volée o rovesciata).', 'Tape quand le curseur est dans la zone verte (2 s). Ballon bas : contrôle ; à hauteur de poitrine : contrôle de la poitrine (avec saut s’il est haut) ; au-dessus de la tête : TÊTE (passe au plus proche) ou FINIR (tête, volée ou ciseaux).'],
+  'DEFESA': ['DEFENDING', 'DEFENSA', 'DIFESA', 'DÉFENSE'],
+  'DESARMAR ou CARRINHO. Por trás é falta. 3 faltas = amarelo, mais 2 = vermelho. Carrinho por trás sem pegar a bola = vermelho direto.': ['TACKLE or SLIDE. From behind is a foul. 3 fouls = yellow, 2 more = red. A slide from behind without touching the ball = straight red.', 'QUITAR o ENTRADA. Por detrás es falta. 3 faltas = amarilla, 2 más = roja. Entrada por detrás sin tocar el balón = roja directa.', 'CONTRASTA o SCIVOLATA. Da dietro è fallo. 3 falli = giallo, altri 2 = rosso. Scivolata da dietro senza prendere la palla = rosso diretto.', 'TACLER ou TACLE GLISSÉ. Par derrière, c’est faute. 3 fautes = jaune, 2 de plus = rouge. Tacle glissé par derrière sans toucher le ballon = rouge direct.'],
+  'NO COMPUTADOR': ['ON COMPUTER', 'EN EL ORDENADOR', 'SUL COMPUTER', 'SUR ORDINATEUR'],
+  'WASD ou setas, Shift corre. J chuta, K passa, L dribla, E pede a bola ou desarma, Q carrinho, C troca a câmera. Na recepção: Espaço martela (J finaliza, K cabeceia).': ['WASD or arrows, Shift runs. J shoots, K passes, L dribbles, E calls for the ball or tackles, Q slide, C switches camera. When receiving: Space taps (J finishes, K heads).', 'WASD o flechas, Shift corre. J tira, K pasa, L regatea, E pide el balón o quita, Q entrada, C cambia la cámara. En la recepción: Espacio pulsa (J remata, K cabecea).', 'WASD o frecce, Shift corre. J tira, K passa, L dribbla, E chiede palla o contrasta, Q scivolata, C cambia camera. Nella ricezione: Spazio preme (J conclude, K di testa).', 'WASD ou flèches, Maj court. J tire, K passe, L dribble, E demande le ballon ou tacle, Q tacle glissé, C change de caméra. À la réception : Espace tape (J finit, K de la tête).'],
+  'CONFIGURAÇÕES': ['SETTINGS', 'AJUSTES', 'IMPOSTAZIONI', 'RÉGLAGES'],
+  'Opções da partida ⚙': ['Match options ⚙', 'Opciones del partido ⚙', 'Opzioni della partita ⚙', 'Options du match ⚙'],
+  'TIMES': ['TEAMS', 'EQUIPOS', 'SQUADRE', 'ÉQUIPES'],
+  'CAMPO E AMBIENTE': ['PITCH AND SURROUNDINGS', 'CAMPO Y AMBIENTE', 'CAMPO E AMBIENTE', 'TERRAIN ET AMBIANCE'],
+  'JOGO': ['GAME', 'JUEGO', 'GIOCO', 'JEU'],
+  'VOCÊ E O TÉCNICO': ['YOU AND THE COACH', 'TÚ Y EL ENTRENADOR', 'TU E L’ALLENATORE', 'TOI ET L’ENTRAÎNEUR'],
+  'Seu time': ['Your team', 'Tu equipo', 'La tua squadra', 'Ton équipe'],
+  'Adversário': ['Opponent', 'Rival', 'Avversario', 'Adversaire'],
+  'Mandante (torcida e uniforme)': ['Home team (crowd and kit)', 'Local (afición y equipación)', 'Squadra di casa (tifosi e divisa)', 'Équipe à domicile (supporters et maillot)'],
+  'Campo': ['Pitch', 'Campo', 'Campo', 'Terrain'],
+  'Clima': ['Weather', 'Clima', 'Meteo', 'Météo'],
+  'Horário': ['Time of day', 'Horario', 'Orario', 'Heure'],
+  'Gramado': ['Grass', 'Césped', 'Erba', 'Pelouse'],
+  'Competição': ['Competition', 'Competición', 'Competizione', 'Compétition'],
+  'Tempo de jogo': ['Match length', 'Duración del partido', 'Durata della partita', 'Durée du match'],
+  'Dificuldade': ['Difficulty', 'Dificultad', 'Difficoltà', 'Difficulté'],
+  'Jogadores': ['Players', 'Jugadores', 'Giocatori', 'Joueurs'],
+  'Usar personagem do modo história': ['Use the story mode character', 'Usar personaje del modo historia', 'Usa il personaggio della modalità storia', 'Utiliser le personnage du mode histoire'],
+  'Sua posição': ['Your position', 'Tu posición', 'La tua posizione', 'Ton poste'],
+  'Formação': ['Formation', 'Formación', 'Formazione', 'Formation'],
+  'Tática (muda no pause também)': ['Tactic (can also be changed in pause)', 'Táctica (también se cambia en pausa)', 'Tattica (si cambia anche in pausa)', 'Tactique (modifiable aussi en pause)'],
+  'AINDA NÃO FEITO': ['NOT DONE YET', 'AÚN NO HECHO', 'NON ANCORA FATTO', 'PAS ENCORE FAIT'],
+  'EM BREVE': ['SOON', 'PRÓXIMAMENTE', 'PRESTO', 'BIENTÔT'],
+  'COMO JOGAR': ['HOW TO PLAY', 'CÓMO JUGAR', 'COME GIOCARE', 'COMMENT JOUER'],
+  'VERSÃO': ['VERSION', 'VERSIÓN', 'VERSIONE', 'VERSION'],
+  'Bola': ['Ball', 'Balón', 'Pallone', 'Ballon'],
+  'Clássica': ['Classic', 'Clásica', 'Classica', 'Classique'],
+  'Várzea gasta': ['Worn pickup ball', 'Balón de barrio gastado', 'Pallone da campetto consumato', 'Ballon usé de quartier'],
+  'Noturna': ['Night', 'Nocturna', 'Notturna', 'Nocturne'],
+  'Uniforme': ['Kit', 'Equipación', 'Divisa', 'Maillot'],
+  'Automático ✓': ['Automatic ✓', 'Automático ✓', 'Automatico ✓', 'Automatique ✓'],
+  'Titular': ['Home', 'Titular', 'Titolare', 'Domicile'],
+  'Reserva': ['Away', 'Suplente', 'Riserva', 'Extérieur'],
+  'Árbitro': ['Referee', 'Árbitro', 'Arbitro', 'Arbitre'],
+  'Normal ✓': ['Normal ✓', 'Normal ✓', 'Normale ✓', 'Normal ✓'],
+  'Rigoroso': ['Strict', 'Riguroso', 'Severo', 'Sévère'],
+  'Deixa jogar': ['Lets play flow', 'Deja jugar', 'Lascia correre', 'Laisse jouer'],
+  'Torcida': ['Crowd', 'Afición', 'Tifosi', 'Supporters'],
+  'Pela popularidade ✓': ['By popularity ✓', 'Por popularidad ✓', 'In base alla popolarità ✓', 'Selon la popularité ✓'],
+  'Vazio': ['Empty', 'Vacío', 'Vuoto', 'Vide'],
+  'Lotado': ['Packed', 'Lleno', 'Pieno', 'Plein'],
+  'Prorrogação': ['Extra time', 'Prórroga', 'Tempi supplementari', 'Prolongations'],
+  'Direto aos pênaltis ✓': ['Straight to penalties ✓', 'Directo a los penales ✓', 'Subito ai rigori ✓', 'Direct aux tirs au but ✓'],
+  '2 x 1 min': ['2 x 1 min', '2 x 1 min', '2 x 1 min', '2 x 1 min'],
+  'Carreira': ['Career', 'Carrera', 'Carriera', 'Carrière'],
+  'Tabela da liga': ['League table', 'Tabla de la liga', 'Classifica del campionato', 'Classement du championnat'],
+  'Chave da copa': ['Cup bracket', 'Cuadro de la copa', 'Tabellone della coppa', 'Tableau de la coupe'],
+  'Mesmo time dos dois lados: o jogo escolhe outro adversário.': ['Same team on both sides: the game picks another opponent.', 'El mismo equipo en los dos lados: el juego elige otro rival.', 'Stessa squadra su entrambi i lati: il gioco sceglie un altro avversario.', 'Même équipe des deux côtés : le jeu choisit un autre adversaire.'],
+  'Força {0} · torcida {1}% · {2} · {3} · técnico {4}': ['Strength {0} · crowd {1}% · {2} · {3} · coach {4}', 'Fuerza {0} · afición {1}% · {2} · {3} · entrenador {4}', 'Forza {0} · tifosi {1}% · {2} · {3} · allenatore {4}', 'Force {0} · supporters {1}% · {2} · {3} · entraîneur {4}'],
+  '{0} x {1} m · {2} por time · {3} · {4}': ['{0} x {1} m · {2} per team · {3} · {4}', '{0} x {1} m · {2} por equipo · {3} · {4}', '{0} x {1} m · {2} per squadra · {3} · {4}', '{0} x {1} m · {2} par équipe · {3} · {4}'],
+  'com impedimento': ['with offside', 'con fuera de juego', 'con fuorigioco', 'avec hors-jeu'],
+  'sem impedimento': ['no offside', 'sin fuera de juego', 'senza fuorigioco', 'sans hors-jeu'],
+  'trocas livres': ['unlimited subs', 'cambios libres', 'cambi liberi', 'remplacements illimités'],
+  '{0} trocas': ['{0} subs', '{0} cambios', '{0} cambi', '{0} remplacements'],
+  'Bola corre mais e quica menos': ['The ball runs faster and bounces less', 'El balón corre más y bota menos', 'La palla corre di più e rimbalza meno', 'Le ballon roule plus et rebondit moins'],
+  'Bola segura no gramado': ['The ball sticks to the grass', 'El balón se pega al césped', 'La palla resta ferma sull’erba', 'Le ballon reste collé à la pelouse'],
+  'Normal': ['Normal', 'Normal', 'Normale', 'Normal'],
+  'Bola rola mais devagar': ['The ball rolls slower', 'El balón rueda más despacio', 'La palla rotola più lenta', 'Le ballon roule plus lentement'],
+  'Bola rola rápido': ['The ball rolls fast', 'El balón rueda rápido', 'La palla rotola veloce', 'Le ballon roule vite'],
+  'Habilidades do adversário {0} (de 10). Seus companheiros: 5 a 6. Você nunca piora.': ['Opponent skills {0} (out of 10). Your teammates: 5 to 6. You never get worse.', 'Habilidades del rival {0} (de 10). Tus compañeros: 5 a 6. Tú nunca empeoras.', 'Abilità dell’avversario {0} (su 10). I tuoi compagni: da 5 a 6. Tu non peggiori mai.', 'Compétences de l’adversaire {0} (sur 10). Tes coéquipiers : 5 à 6. Tu ne baisses jamais.'],
+  '{0} a {1}': ['{0} to {1}', '{0} a {1}', '{0} a {1}', '{0} à {1}'],
+  'Só jogadoras': ['Women only', 'Solo jugadoras', 'Solo giocatrici', 'Joueuses seulement'],
+  'Homens e mulheres nos dois times': ['Men and women on both teams', 'Hombres y mujeres en los dos equipos', 'Uomini e donne in entrambe le squadre', 'Hommes et femmes dans les deux équipes'],
+  'Só jogadores': ['Men only', 'Solo jugadores', 'Solo giocatori', 'Joueurs seulement'],
+  'Você joga com a aparência, o nome e o número desse personagem': ['You play with this character’s look, name and number', 'Juegas con la apariencia, el nombre y el número de este personaje', 'Giochi con l’aspetto, il nome e il numero di questo personaggio', 'Tu joues avec l’apparence, le nom et le numéro de ce personnage'],
+  'Nenhum personagem salvo ainda (crie um no modo história)': ['No saved character yet (create one in story mode)', 'Aún no hay personaje guardado (crea uno en el modo historia)', 'Nessun personaggio salvato (creane uno nella modalità storia)', 'Aucun personnage sauvegardé (crée-en un en mode histoire)'],
+  'Usa a tática preferida do seu time': ['Uses your team’s preferred tactic', 'Usa la táctica preferida de tu equipo', 'Usa la tattica preferita della tua squadra', 'Utilise la tactique préférée de ton équipe'],
+  'Usa a formação preferida do seu time': ['Uses your team’s preferred formation', 'Usa la formación preferida de tu equipo', 'Usa la formazione preferita della tua squadra', 'Utilise la formation préférée de ton équipe'],
+  'Você controla só o seu jogador (etiqueta laranja). Toque em OPÇÕES DA PARTIDA para ver e escolher tudo o que já dá para mudar (times, campo, clima, competição, tempo...).': ['You control only your own player (orange tag). Tap MATCH OPTIONS to see and choose everything you can already change (teams, pitch, weather, competition, length...).', 'Controlas solo a tu jugador (etiqueta naranja). Toca OPCIONES DEL PARTIDO para ver y elegir todo lo que ya se puede cambiar (equipos, campo, clima, competición, duración...).', 'Controlli solo il tuo giocatore (etichetta arancione). Tocca OPZIONI DELLA PARTITA per vedere e scegliere tutto ciò che si può già cambiare (squadre, campo, meteo, competizione, durata...).', 'Tu contrôles seulement ton joueur (étiquette orange). Touche OPTIONS DU MATCH pour voir et choisir tout ce qui peut déjà changer (équipes, terrain, météo, compétition, durée...).'],
+  'Estádio (7 x 7)': ['Stadium (7 v 7)', 'Estadio (7 x 7)', 'Stadio (7 x 7)', 'Stade (7 x 7)'],
+  'Várzea (7 x 7)': ['Pickup pitch (7 v 7)', 'Campo de barrio (7 x 7)', 'Campetto (7 x 7)', 'Terrain de quartier (7 x 7)'],
+  'Society (5 x 5)': ['Society (5 v 5)', 'Society (5 x 5)', 'Calcetto (5 x 5)', 'Society (5 x 5)'],
+  'Quadra de futsal (5 x 5)': ['Futsal court (5 v 5)', 'Cancha de futsal (5 x 5)', 'Campo da futsal (5 x 5)', 'Terrain de futsal (5 x 5)'],
+  'Quadra da escola (4 x 4)': ['School court (4 v 4)', 'Cancha de la escuela (4 x 4)', 'Campo della scuola (4 x 4)', 'Terrain de l’école (4 x 4)'],
+  'Oficial (11 x 11)': ['Official (11 v 11)', 'Oficial (11 x 11)', 'Ufficiale (11 x 11)', 'Officiel (11 x 11)'],
+  '4-4-2 (clássica)': ['4-4-2 (classic)', '4-4-2 (clásica)', '4-4-2 (classica)', '4-4-2 (classique)'],
+  '4-3-3 (ofensiva)': ['4-3-3 (attacking)', '4-3-3 (ofensiva)', '4-3-3 (offensiva)', '4-3-3 (offensive)'],
+  '5-3-2 (defensiva)': ['5-3-2 (defensive)', '5-3-2 (defensiva)', '5-3-2 (difensiva)', '5-3-2 (défensive)'],
+  '3-5-2 (meio forte)': ['3-5-2 (strong midfield)', '3-5-2 (medio fuerte)', '3-5-2 (centrocampo forte)', '3-5-2 (milieu fort)'],
+  '4-2-3-1 (compacta)': ['4-2-3-1 (compact)', '4-2-3-1 (compacta)', '4-2-3-1 (compatta)', '4-2-3-1 (compacte)'],
+  'Tiki-taka': ['Tiki-taka', 'Tiki-taka', 'Tiki-taka', 'Tiki-taka'],
+  'Falso 9': ['False 9', 'Falso 9', 'Falso 9', 'Faux 9'],
+  'Retranca': ['Park the bus', 'Cerrojo', 'Catenaccio', 'Verrou'],
+  'Contra-ataque': ['Counter-attack', 'Contraataque', 'Contropiede', 'Contre-attaque'],
+  'Bola aérea': ['Aerial ball', 'Balón aéreo', 'Palla alta', 'Jeu aérien'],
+  'Muito fácil': ['Very easy', 'Muy fácil', 'Molto facile', 'Très facile'],
+  'Fácil': ['Easy', 'Fácil', 'Facile', 'Facile'],
+  'Difícil': ['Hard', 'Difícil', 'Difficile', 'Difficile'],
+  'Muito difícil': ['Very hard', 'Muy difícil', 'Molto difficile', 'Très difficile'],
+  'Seco': ['Dry', 'Seco', 'Asciutto', 'Sec'],
+  'Chuva': ['Rain', 'Lluvia', 'Pioggia', 'Pluie'],
+  'Neve': ['Snow', 'Nieve', 'Neve', 'Neige'],
+  'Amistoso': ['Friendly', 'Amistoso', 'Amichevole', 'Amical'],
+  'Liga · rodada 5': ['League · round 5', 'Liga · jornada 5', 'Campionato · giornata 5', 'Championnat · journée 5'],
+  'Copa · semi (ida)': ['Cup · semi-final (1st leg)', 'Copa · semifinal (ida)', 'Coppa · semifinale (andata)', 'Coupe · demi-finale (aller)'],
+  'Copa · semi (volta, ida 1x2)': ['Cup · semi-final (2nd leg, 1st leg 1-2)', 'Copa · semifinal (vuelta, ida 1-2)', 'Coppa · semifinale (ritorno, andata 1-2)', 'Coupe · demi-finale (retour, aller 1-2)'],
+  'Copa · final': ['Cup · final', 'Copa · final', 'Coppa · finale', 'Coupe · finale'],
+  'Dia': ['Day', 'Día', 'Giorno', 'Jour'],
+  'Tarde': ['Afternoon', 'Tarde', 'Pomeriggio', 'Après-midi'],
+  'Noite': ['Night', 'Noche', 'Notte', 'Nuit'],
+  'Baixo': ['Short', 'Corto', 'Basso', 'Court'],
+  'Alto': ['Tall', 'Alto', 'Alto', 'Haut'],
+  'Atacante': ['Forward', 'Delantero', 'Attaccante', 'Attaquant'],
+  'Meia': ['Midfielder', 'Centrocampista', 'Centrocampista', 'Milieu'],
+  'Zagueiro': ['Defender', 'Defensa', 'Difensore', 'Défenseur'],
+  '5 min (padrão)': ['5 min (standard)', '5 min (estándar)', '5 min (standard)', '5 min (standard)'],
+  '3 min (rápida)': ['3 min (quick)', '3 min (rápida)', '3 min (veloce)', '3 min (rapide)'],
+  'Masculino': ['Male', 'Masculino', 'Maschile', 'Masculin'],
+  'Feminino': ['Female', 'Femenino', 'Femminile', 'Féminin'],
+  'Misto': ['Mixed', 'Mixto', 'Misto', 'Mixte'],
+  'Preferida do time': ['Team’s preferred', 'La preferida del equipo', 'Preferita della squadra', 'Préférée de l’équipe'],
+  'Nenhum (você)': ['None (you)', 'Ninguno (tú)', 'Nessuno (tu)', 'Aucun (toi)'],
+  ' (save {0})': [' (save {0})', ' (guardado {0})', ' (salvataggio {0})', ' (sauvegarde {0})'],
+  'TÉCNICO E TÁTICA': ['COACH AND TACTICS', 'ENTRENADOR Y TÁCTICA', 'ALLENATORE E TATTICA', 'ENTRAÎNEUR ET TACTIQUE'],
+  'Técnico: {0} · Formação {1}': ['Coach: {0} · Formation {1}', 'Entrenador: {0} · Formación {1}', 'Allenatore: {0} · Formazione {1}', 'Entraîneur : {0} · Formation {1}'],
+  '{0}: {1} ({2}) · {3}: {4} ({5})': ['{0}: {1} ({2}) · {3}: {4} ({5})', '{0}: {1} ({2}) · {3}: {4} ({5})', '{0}: {1} ({2}) · {3}: {4} ({5})', '{0} : {1} ({2}) · {3} : {4} ({5})'],
+  'Liga': ['League', 'Liga', 'Campionato', 'Championnat'],
+  'Copa da Vila': ['Village Cup', 'Copa del Pueblo', 'Coppa del Villaggio', 'Coupe du Village'],
+  'Semifinal': ['Semi-final', 'Semifinal', 'Semifinale', 'Demi-finale'],
+  'Final': ['Final', 'Final', 'Finale', 'Finale'],
+  '+3 pontos': ['+3 points', '+3 puntos', '+3 punti', '+3 points'],
+  '+1 ponto': ['+1 point', '+1 punto', '+1 punto', '+1 point'],
+  '0 ponto': ['0 points', '0 puntos', '0 punti', '0 point'],
+  'na rodada {0}': ['in round {0}', 'en la jornada {0}', 'alla giornata {0}', 'à la journée {0}'],
+  'Jogo de ida: {0}x{1}. A decisão fica para a volta.': ['First leg: {0}-{1}. The decision is left for the second leg.', 'Partido de ida: {0}-{1}. La decisión queda para la vuelta.', 'Andata: {0}-{1}. La decisione è rimandata al ritorno.', 'Match aller : {0}-{1}. La décision se jouera au retour.'],
+  'Agregado {0}x{1}.': ['Aggregate {0}-{1}.', 'Global {0}-{1}.', 'Aggregato {0}-{1}.', 'Cumulé {0}-{1}.'],
+  '{0} passa de fase!': ['{0} go through!', '¡{0} pasa de ronda!', '{0} passa il turno!', '{0} se qualifie !'],
+  '{0} passa de fase — é campeão!': ['{0} go through — champions!', '¡{0} pasa de ronda — es campeón!', '{0} passa il turno — è campione!', '{0} se qualifie — champion !'],
+  '{0} vence nos pênaltis e passa de fase!': ['{0} win on penalties and go through!', '¡{0} gana en los penales y pasa de ronda!', '{0} vince ai rigori e passa il turno!', '{0} gagne aux tirs au but et se qualifie !'],
+  '{0} vence nos pênaltis e passa de fase — é campeão!': ['{0} win on penalties — champions!', '¡{0} gana en los penales — es campeón!', '{0} vince ai rigori — è campione!', '{0} gagne aux tirs au but — champion !'],
+  'Empate.': ['Draw.', 'Empate.', 'Pareggio.', 'Match nul.'],
+  'Pênaltis {0}x{1}.': ['Penalties {0}-{1}.', 'Penales {0}-{1}.', 'Rigori {0}-{1}.', 'Tirs au but {0}-{1}.'],
+  '{0}: suspenso no próximo jogo ({1}).': ['{0}: suspended for the next match ({1}).', '{0}: suspendido el próximo partido ({1}).', '{0}: squalificato per la prossima partita ({1}).', '{0} : suspendu pour le prochain match ({1}).'],
+  '3 amarelos': ['3 yellows', '3 amarillas', '3 gialli', '3 jaunes'],
+  '{0}: lesão {1} ({2} jogo fora).': ['{0}: {1} injury ({2} match out).', '{0}: lesión {1} ({2} partido de baja).', '{0}: infortunio {1} ({2} partita fuori).', '{0} : blessure {1} ({2} match d’absence).'],
+  '{0}: lesão {1} ({2} jogos fora).': ['{0}: {1} injury ({2} matches out).', '{0}: lesión {1} ({2} partidos de baja).', '{0}: infortunio {1} ({2} partite fuori).', '{0} : blessure {1} ({2} matchs d’absence).'],
+  '{0}: lesão {1} (joga sentindo).': ['{0}: {1} injury (plays through it).', '{0}: lesión {1} (juega con molestias).', '{0}: infortunio {1} (gioca con fastidio).', '{0} : blessure {1} (joue avec la douleur).'],
+  'leve': ['minor', 'leve', 'lieve', 'légère'],
+  'média': ['moderate', 'media', 'media', 'moyenne'],
+  'grave': ['serious', 'grave', 'grave', 'grave'],
+  'Substituições: {0}.': ['Substitutions: {0}.', 'Sustituciones: {0}.', 'Sostituzioni: {0}.', 'Remplacements : {0}.'],
+  };
+  for (const k of Object.keys(NOVAS)) if (!(k in I18N)) I18N[k] = NOVAS[k];
+})();
+function Tseguro(k) { try { return T(k); } catch (e) { return k; } }   // (6.1.2) para código que roda antes de o Idioma existir
 function T(chave) {
   if (Idioma.atual === 'pt') return chave;
   const v = I18N[chave];
@@ -14368,6 +14693,62 @@ function montarMenuInicial() {
 montarTelaDeConfig();
 montarTelaDeTatica();
 montarMenuInicial();
+
+// ---------------------------------------------------------------------
+// (6.1.2) IDIOMA NA PARTIDA LIVRE: os textos fixos do HTML do jogo (HUD, pause, fim de jogo, tutorial, etc.)
+// e as opções dos <select> são trocados aqui quando o idioma muda. O texto original (em português) fica guardado
+// em cada nó, então dá para voltar ao português ou ir para outro idioma sem perder nada.
+const __ptTexto = new WeakMap();      // nó de texto → { pt, mostrado }
+const __ptAttr = new WeakMap();       // elemento → { atributo: { pt, mostrado } }
+function traduzirOpcoesConfig() {
+  for (const sel of document.querySelectorAll('select[id^="cfg"]')) {
+    for (const o of sel.options) { if (o.dataset.pt != null) o.textContent = T(o.dataset.pt); }
+  }
+}
+function traduzirDOM(raiz) {
+  if (!raiz) return;
+  const w = document.createTreeWalker(raiz, NodeFilter.SHOW_TEXT, {
+    acceptNode(n) {
+      const pai = n.parentNode;
+      if (!pai || /^(SCRIPT|STYLE|CANVAS|TEXTAREA)$/.test(pai.nodeName)) return NodeFilter.FILTER_REJECT;
+      if (pai.nodeName === 'OPTION' && pai.dataset.pt != null) return NodeFilter.FILTER_REJECT;   // as opções têm tratamento próprio
+      return NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const nos = []; for (let n = w.nextNode(); n; n = w.nextNode()) nos.push(n);
+  for (const n of nos) {
+    let reg = __ptTexto.get(n);
+    if (reg && n.nodeValue !== reg.mostrado) reg = null;           // o jogo mudou o texto por conta própria: vale o novo
+    const atual = reg ? reg.pt : n.nodeValue;
+    const miolo = atual.trim();
+    if (!miolo) continue;
+    const t = T(miolo);
+    if (t === miolo && !reg) continue;
+    const novo = atual.replace(miolo, t === miolo ? miolo : t);
+    n.nodeValue = novo; __ptTexto.set(n, { pt: atual, mostrado: novo });
+  }
+  for (const el of raiz.querySelectorAll('[title],[aria-label],[placeholder]')) {
+    for (const at of ['title', 'aria-label', 'placeholder']) {
+      if (!el.hasAttribute(at)) continue;
+      const m = __ptAttr.get(el) || {}; let reg = m[at];
+      const v = el.getAttribute(at);
+      if (reg && v !== reg.mostrado) reg = null;
+      const pt = reg ? reg.pt : v; const t = T(pt);
+      if (t === pt && !reg) continue;
+      el.setAttribute(at, t); m[at] = { pt, mostrado: t }; __ptAttr.set(el, m);
+    }
+  }
+}
+function aplicarIdiomaPartida() {
+  traduzirDOM($('raizJogo'));
+  traduzirOpcoesConfig();
+  const intro = $('cfgIntro'); if (intro && intro.dataset.pt) intro.textContent = T(intro.dataset.pt);
+  const abrir = $('selBtn'); if (abrir && abrir.dataset.pt) abrir.textContent = T(abrir.dataset.pt);
+  try { atualizarResumoConfig(); } catch (e) { /* ok */ }
+  try { atualizarTelaDeTatica(); } catch (e) { /* ok */ }
+  for (const f of (window.__aoIdiomaPartida || [])) { try { f(); } catch (e) { /* ok */ } }
+}
+Idioma.aoMudar.push(aplicarIdiomaPartida); aplicarIdiomaPartida();
 
 // ---------------------------------------------------------------------
 // TELAS NO ESTILO DO MENU: carregando, "gire o celular", pause e fim de jogo usam os mesmos
