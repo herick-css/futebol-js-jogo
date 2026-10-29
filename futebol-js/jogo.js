@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.1.0
+   FUTEBOL JS · jogo.js · versão 6.1.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,9 @@
 /* =====================================================================
    FUTEBOL JS · O SISTEMA DE PARTIDA e o núcleo do jogo
    ---------------------------------------------------------------------
+   Novidades da versão 6.1.1 — LÚCIA: abraço e beijo sem os corpos se atravessarem (só os rostos encostam); no encontro ela usa um MACACÃO (roupa nova
+     'Macacão' também no guarda-roupa feminino; o vestido bugava ao sentar); se você não for ao encontro até 1h depois da hora marcada (20h), ela manda
+     uma mensagem, você perde 25 de amizade. Quadro de missões: o ícone não some mais no 2º dia. Tocar num save não mostra mais o campo por trás.
    Novidades da versão 6.1.0 — o TRABALHO NA PIZZARIA (pizzaria.js, arquivo novo baixado pela cidade, como o mercado.js): a Forno a Lenha
      com o Mário (caixa) e a Carla (pizzaiola), clientes que pedem, comem e pagam, 8 sabores em pixel art e as ENTREGAS DE BICICLETA
      (quinta a domingo, 17h à meia-noite). Sono: cada noite mal dormida tira 5 de Saudável (Sono.NIVEIS); nas noites de trabalho o
@@ -54,7 +57,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.1.0';
+const VERSAO_JOGO = '6.1.1';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -14048,6 +14051,11 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       for (const f of Object.keys(sv.historia || {})) { try { HistoriaSave.gravar(f, sv.historia[f]); } catch (err) { console.warn(err); } }
       if (Som.ligar) Som.ligar();
       telaCheiaNoCelular();
+      // (6.1.1) enquanto a fase baixa e monta a cena, a tela "Carregando" cobre o campo de futebol que ficava aparecendo por trás
+      const capa = telaCarregando(); capa.hidden = false;
+      const soltaCapa = () => { clearInterval(vigia); clearTimeout(limite); setTimeout(() => { capa.hidden = true; }, 250); };
+      const vigia = setInterval(() => { if (document.querySelector('#f1Preto:not([hidden]), #f2Preto:not([hidden]), #cdPreto:not([hidden])')) soltaCapa(); }, 80);
+      const limite = setTimeout(soltaCapa, 25000);
       tela.hidden = true; el.hidden = true;
       document.body.classList.add('criadorAberto');
       const rf = await Fases.executar(sv.fase, { retomar: sv.ponto || 'inicio' });

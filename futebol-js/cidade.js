@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.1.1
+     - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
+       (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
    NOVIDADES DA 6.1.0
      - PIZZARIA (pizzaria.js, arquivo novo baixado junto do mercado.js): ganchos marcados "(6.1.0)": carregar o pizzaria.js · apiPizzaria() ·
        entrarEm/sairDoLugar chamam S.pizzaria.entrou/saiu (lá dentro quem cuida de tudo é ele) · alvos (porta fechada fora das 17h–00h,
@@ -478,6 +481,9 @@
     'Missão: jantar com a Lúcia às 19h no restaurante.': ['Mission: dinner with Lúcia at 7 PM at the restaurant.', 'Misión: cenar con Lúcia a las 19h en el restaurante.', 'Missione: cena con Lúcia alle 19 al ristorante.', 'Mission : dîner avec Lúcia à 19 h au restaurant.'],
     'Missão: jantar com a Lúcia às 19h na pizzaria.': ['Mission: dinner with Lúcia at 7 PM at the pizzeria.', 'Misión: cenar con Lúcia a las 19h en la pizzería.', 'Missione: cena con Lúcia alle 19 in pizzeria.', 'Mission : dîner avec Lúcia à 19 h à la pizzeria.'],
     'Missão: a Lúcia vai te esperar às 19h na frente do seu prédio.': ['Mission: Lúcia will wait for you at 7 PM in front of your building.', 'Misión: Lúcia te esperará a las 19h frente a tu edificio.', 'Missione: Lúcia ti aspetterà alle 19 davanti al tuo palazzo.', 'Mission : Lúcia t’attendra à 19 h devant ton immeuble.'],
+    'Eu esperei por você... Estou me sentindo uma idiota.': ['I waited for you... I feel like such an idiot.', 'Te esperé... Me siento una idiota.', 'Ti ho aspettato... Mi sento un’idiota.', 'Je t’ai attendu... Je me sens idiote.'],
+    'Não quero ver a sua cara mais.': ['I don’t want to see your face anymore.', 'No quiero volver a ver tu cara.', 'Non voglio più vedere la tua faccia.', 'Je ne veux plus voir ton visage.'],
+    'Nenhuma missão por enquanto.': ['No missions for now.', 'Ninguna misión por ahora.', 'Nessuna missione per ora.', 'Aucune mission pour l’instant.'],
     'Encontrar a Lúcia': ['Meet Lúcia', 'Encontrarse con Lúcia', 'Incontrare Lúcia', 'Retrouver Lúcia'],
     'Haha, tá tímida, é? Eu também tô um pouco.': ['Haha, feeling shy? I am a little too.', 'Jaja, ¿estás tímida? Yo también un poco.', 'Haha, sei timida? Anch’io un po’.', 'Haha, tu es timide ? Moi aussi un peu.'],
     'E ainda ganhei uma funcionária nova!': ['And I even got a new employee!', '¡Y encima gané una empleada nueva!', 'E ho anche una nuova dipendente!', 'Et en plus j’ai une nouvelle employée !'],
@@ -2337,8 +2343,8 @@
   function gestoAtor(A) {
     const m = A.m, t = A.t || 0, g = A.gesto;
     if (g === 'acena') { m.bracoD.rotation.z = 2.7; m.bracoD.rotation.x = -0.35 + Math.sin(t * 11) * 0.32; usarCotovelo(m.bracoD, 0, 0.3); }
-    else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.08; }
-    else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.16; if (m.cabecaLigada) usarCabeca(m, -0.12); }
+    else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.03; }
+    else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.05; if (m.cabecaLigada) usarCabeca(m, -0.06); }
     else if (g === 'garfo') {
       const k = Math.max(0, Math.sin(t * 3.2));
       m.bracoD.rotation.z = 1.05 + k * 0.25; m.bracoD.rotation.x = 0.25 * k; usarCotovelo(m.bracoD, 0, 0.7 + k * 0.95);
@@ -3946,7 +3952,21 @@
     Dialogo.esconder(); gravar(d.ponto || 'chegada');
   }
   // ---- chamar para sair (50 de amizade): restaurante, pizzaria ou a casa do jogador, no domingo à noite
-  function encontroMarcado() { const d = S.dados, E = d.encontroLucia; if (E && E.dia < (d.dia || 1)) d.encontroLucia = null; return d.encontroLucia || null; }
+  function encontroMarcado() { const d = S.dados, E = d.encontroLucia; if (E && E.dia < (d.dia || 1)) { if (!E.feito) d.encontroFaltou = true; d.encontroLucia = null; } return d.encontroLucia || null; }   // (6.1.1) passou o dia sem ir: ela fica magoada
+  // (6.1.1) 1h depois da hora marcada (20h) sem aparecer: mensagem de texto da Lúcia e -25 de amizade
+  const ENC_ATRASO = 1;
+  function checarFaltaEncontro() {
+    const d = S.dados; if (!d || S.encontroRodando) return;
+    const E = encontroMarcado();
+    if (E && !E.feito && E.dia === (d.dia || 1) && d.hora >= E.hora + ENC_ATRASO) { d.encontroLucia = null; d.encontroFaltou = true; }
+    if (d.encontroFaltou && S.modo === 'livre' && !S.faltouMsg) {
+      S.faltouMsg = true; d.encontroFaltou = false;
+      S.missao = ''; recolherMissao(); definirMarca(null);
+      Amizade.somar('lucia', -25);
+      mensagemCelular(T('Lúcia Alves'), T('Eu esperei por você... Estou me sentindo uma idiota.'), T('Não quero ver a sua cara mais.')).finally(() => { if (S) S.faltouMsg = false; });
+      gravar(d.ponto || 'chegada');
+    }
+  }
   async function chamarLuciaSair() {
     const d = S.dados;
     const LUG = [['restaurante', T('Restaurante'), T('o restaurante')], ['pizzaria', T('Pizzaria'), T('a pizzaria')], ['casa', T('Minha casa'), T('a minha casa')]];
@@ -3965,9 +3985,10 @@
   //   Minha casa: ela espera na frente do prédio; a conversa é no quarto (fase2.js) e a despedida volta para a casa dela (aqui).
   //   A conversa (roteiroEncontro) é a mesma nos três lugares; a fase2.js usa a mesma função (Fases.carregar('cidade').encontro).
   const ENC_INI = 18.75, ENC_FIM = 21;
-  const ROUPA_ENC = [5, ['#b8325a', '#f2f2ee', '#f2f2ee', '#f2f2ee']];          // o vestido com barra, vinho
+  const ROUPA_ENC = [21, ['#8a1f3d', '#f2c230', '#f2f2ee', '#f2f2ee']];          // (6.1.1) o macacão vinho com cinto dourado (o vestido bugava ao sentar)
   const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 5.0, z: 3.4 } };   // (6.1.0) a pizzaria foi redecorada: a mesa do canto sudeste
   const BEIJO_MIN = 60;
+  const ABRACO_D = 0.56, BEIJO_D = 0.66;      // (6.1.1) distância entre os dois (corpos de ~0,33 m de espessura): se encostam, não entram um no outro
   function encontroAgora(lugar) {
     const d = S.dados, E = encontroMarcado();
     return !!E && !E.feito && E.dia === (d.dia || 1) && (!lugar || E.lugar === lugar) && d.hora >= ENC_INI && d.hora < ENC_FIM;
@@ -4154,11 +4175,11 @@
       const r = await Escolha.mostrar(T('Como você se despede?'), [T('Abraçar'), T('Beijar')]);
       Dialogo.esconder();
       if (r === 0) {
-        L.x = fx - 0.24; J.x = fx + 0.24; L.gesto = J.gesto = 'abraco'; await esperar(2300); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42;
+        L.x = fx - ABRACO_D / 2; J.x = fx + ABRACO_D / 2; L.z = fz + 0.13; J.z = fz + sg * 0.05 - 0.13; L.gesto = J.gesto = 'abraco'; await esperar(2300); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42; L.z = fz; J.z = fz + sg * 0.05;   // abraço: as cabeças passam uma ao lado da outra (rosto com rosto, sem atravessar)
         await fala('lucia', Tf('Boa noite, {0}!', nomeJog()));
         await fala('jog', T('Boa noite, Lúcia!'));
       } else if (Amizade.valor('lucia') >= BEIJO_MIN) {
-        L.x = fx - 0.2; J.x = fx + 0.2; L.gesto = J.gesto = 'beijo'; coracoes(fx, 1.75, fz); await esperar(2600); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42;
+        L.x = fx - BEIJO_D / 2; J.x = fx + BEIJO_D / 2; L.z = fz; J.z = fz; L.gesto = J.gesto = 'beijo'; coracoes(fx, 1.75, fz); await esperar(2600); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42; J.z = fz + sg * 0.05;
         await fala('lucia', Tf('Boa noite, {0}.', nomeJog()));
       } else {
         await fala('lucia', T('Eu quero... mas ainda não.'));
@@ -4471,6 +4492,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     });
     window.addEventListener('keyup', (e) => { UI.teclas[e.code] = false; });
     // missão: aparece inteira por 5 s e recolhe num quadradinho; tocar no quadradinho mostra de novo
+    UI.missao.hidden = true; UI.misIco.hidden = false;                 // (6.1.1) começa recolhido (a caixa vazia aparecia e, ao tocar, o ícone não voltava)
     UI.missao.addEventListener('click', () => recolherMissao());
     UI.misIco.addEventListener('click', () => { som(); mostrarMissao(); });
     UI.btnMapa.addEventListener('click', abrirMapa);
@@ -4494,8 +4516,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; }
   let tMissao = null;
   function mostrarMissao() {
-    if (!S || !S.missao) return;
-    UI.missao.textContent = S.missao; UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
+    if (!S) return;
+    UI.missao.textContent = S.missao || T('Nenhuma missão por enquanto.'); UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
     clearTimeout(tMissao); tMissao = setTimeout(recolherMissao, 5000);
   }
   // o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
@@ -4509,7 +4531,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   function recolherPainel(p) { clearTimeout(tPainel); if (!UI || !p || !p.isConnected) return; p.hidden = true; UI.turIco.hidden = false; }
   function fimPainel(p) { clearTimeout(tPainel); if (p) p.hidden = true; if (UI) { UI.turIco.hidden = true; UI.turIco.onclick = null; } }
-  function recolherMissao() { clearTimeout(tMissao); if (!UI) return; UI.missao.hidden = true; UI.misIco.hidden = !(S && S.missao); }
+  function recolherMissao() { clearTimeout(tMissao); if (!UI) return; UI.missao.hidden = true; UI.misIco.hidden = false; }   // (6.1.1) o ícone fica sempre: sem missão, ele mostra "nenhuma missão" (antes sumia de vez no 2º dia)
   const preto = async (ligado, ms) => {
     UI.preto.hidden = false; UI.preto.style.transitionDuration = pulando() ? '0s' : ((ms == null ? 900 : ms) / 1000) + 's'; await esperar(30);
     UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true;
@@ -5015,6 +5037,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.andando = false; S.jog.correndo = false; } else mover(dt); tickHorario(dt); tickDescobertas(); }
         else if (S.trabalhando) tickHorario(dt);       // o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);
+        checarFaltaEncontro();
         tickCelular(dt); tickConvite(dt); tickBiel();    // ; o Biel na quadra de futsal
         if (!S.dentro || S.luciaPredio) tickEncontroPredio();
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));

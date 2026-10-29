@@ -26,7 +26,7 @@
      2. A tela de anos avança 10 anos (a mesma tela de "12 anos atrás": de {ano-12} até {ano-2}) e o personagem diz "Quando eu tinha 16...".
      3. O QUARTO do personagem (às escuras: ele acorda, liga a luz, usa o computador/guarda-roupa/banheiro) com cores e objetos
         de quarto masculino ou feminino (PERSONAGEM.genero). Dois pôsteres (imagens minúsculas embutidas em POSTER_A / POSTER_B).
-     4. O guarda-roupa: 18 roupas masculinas e 21 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
+     4. O guarda-roupa: 18 roupas masculinas e 22 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
      5. O computador: navegador → site "LoggedOn" → 3 notificações de vaga → escolher UM emprego (Mercado, Cafeteria ou Pizzaria).
         Qualquer um dá pontos em "Tranquilo" (espectro Tranquilo ↔ Problemático). A escolha fica salva.
      6. A escada do prédio (4 lances, câmeras fixas que mudam) com o vizinho que fuma, até a porta da rua.
@@ -103,6 +103,7 @@
       { n: 'Top e short', t: 'short', top: 1, c: ['#e8742a', '#2a3f66', '#f2f2ee'] },
       { n: 'Top e calça jeans', t: 'calca', top: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
       { n: 'Top e saia', t: 'saia', top: 1, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Macacão', t: 'macacao', c: ['#8a1f3d', '#f2c230', '#f2f2ee'] },       // (6.1.1) peça única, sem saia: dobra certo ao sentar (a Lúcia usa no encontro)
     ],
   };
   const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
@@ -121,6 +122,7 @@
     else if (R.t === 'saia') { o.meiao = 0; o.meia = '#f2f2ee'; }
     else if (R.t === 'vestido') { o.camisa = c[0]; o.calcao = c[0]; o.listra = c[1]; o.gola = c[2]; o.meiao = 0; }
     else if (R.t === 'jardineira') { o.meia = c[1]; o.meiao = 1; o.gola = c[0]; }
+    else if (R.t === 'macacao') { o.camisa = c[0]; o.calcao = c[0]; o.meia = c[0]; o.meiao = 1; o.listra = c[1]; o.gola = c[2]; }
     if (R.nu) { o.camisa = o.calcao = o.listra = o.gola = o.meia = o.sola = pele; o.meiao = 0; o.manga = 0; }          // banho: o corpo todo é só pele
     if (R.time) {
       o.meiao = 2; o.meia = c[2]; o.numero = '10'; o.nomeCamisa = (PERSONAGEM.nomeCamisa || '').toUpperCase();
@@ -189,6 +191,7 @@
     if (R.top) F(0.327, 0.27, 0.587, pele, 0, 0.875, 0);                           // top curto: a barriga aparece
     if (R.capuz) { F(0.2, 0.3, 0.5, sombra(c[0], 0.85), -0.2, 1.42, 0); F(0.04, 0.16, 0.42, sombra(c[0], 0.82), 0.17, 0.86, 0); }
     if (R.jaqueta) { F(0.06, 0.12, 0.5, c[2], 0.165, 1.32, 0); F(0.03, 0.56, 0.04, c[2], 0.168, 1.03, 0); }
+    if (R.t === 'macacao') { F(0.345, 0.06, 0.6, c[1], 0, 0.8, 0); F(0.02, 0.05, 0.07, c[1], 0.172, 0.8, 0); }   // cinto dourado na cintura
     if (R.t === 'jardineira') { F(0.04, 0.36, 0.44, c[1], 0.17, 1.0, 0); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, 0.15); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, -0.15); }
     if (tem) m.corpo.add(L.malha(MAT_CORES));
   }
@@ -441,6 +444,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
+    if (R.t === 'macacao') pintarCoxas(m, c[0]);
     if (R.nu) pintarPernasTodas(m, base.pele);
     if (R.regata || R.top) pintarBracos(m, base.pele);
     extrasRoupa(m, R, c, base.pele);
@@ -456,6 +460,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const opt = Object.assign({ corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', barba: 0, manga: 0, meiao: 1, labio: 3, cabecao: 1.08, escala: 0.9 }, base, roupaOpts(R, c, base.pele)), m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
+    if (R.t === 'macacao') pintarCoxas(m, c[0]);
     if (R.regata || R.top) pintarBracos(m, base.pele);
     extrasRoupa(m, R, c, base.pele); pintarEmblema(m, R, c);
     return { m, opt };
@@ -937,6 +942,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Camisa social e saia': ['Dress shirt and skirt', 'Camisa de vestir y falda', 'Camicia elegante e gonna', 'Chemise et jupe'],
     'Polo e short': ['Polo and shorts', 'Polo y short', 'Polo e pantaloncini', 'Polo et short'],
     'Jardineira': ['Overalls', 'Overol', 'Salopette', 'Salopette'],
+    'Macacão': ['Jumpsuit', 'Mono', 'Tuta', 'Combinaison'],
     'Vestido de manga longa': ['Long-sleeve dress', 'Vestido de manga larga', 'Vestito a maniche lunghe', 'Robe à manches longues'],
     'Blusa e saia longa': ['Top and long skirt', 'Blusa y falda larga', 'Top e gonna lunga', 'Haut et jupe longue'],
     // computador / LoggedOn
