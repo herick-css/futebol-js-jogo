@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.6
+     - O BIEL (fsal/criarBiel/conversarBiel/jogarFutsal): a partir da 3ª semana, toda terça ele espera os amigos na frente da quadra
+       de futsal coberta, com uma exclamação em cima da cabeça, no horário do futebol (horaDoFutebol). Conversa: "Eu também jogo bola!"
+       (→ "Cola aí com nós, tem uma hora livre?" → futsal 5 x 5) ou "Tranquilo, bom jogo!". Depois do 1º jogo ele convida para toda
+       terça e quinta (missão + marcador nesses dias); nas outras conversas chama pelo nome (BIEL_PAPOS, 5 falas).
+     - O aviso do racha do sintético agora diz 5 contra 5.
    NOVIDADES DA 6.0.5
      - FAIXA DE PEDESTRE: carro chegando nos próximos 8 s (era 5) → o pedestre para na beira com a mão esticada (pelo menos ~1,2 s) e
        atravessa CORRENDO quando os carros que vêm param (ou já estão freando longe da faixa: carroPerigo). Antes ele esperava cada carro
@@ -429,6 +435,43 @@
     'Cappuccino': ['Cappuccino', 'Capuchino', 'Cappuccino', 'Cappuccino'],
     'Cappuccino com borda de chocolate': ['Cappuccino with chocolate rim', 'Capuchino con borde de chocolate', 'Cappuccino con bordo di cioccolato', 'Cappuccino avec bord de chocolat'],
     'Cappuccino com chantilly e borda de chocolate': ['Cappuccino with whipped cream and chocolate rim', 'Capuchino con chantillí y borde de chocolate', 'Cappuccino con panna e bordo di cioccolato', 'Cappuccino avec chantilly et bord de chocolat'],
+  });
+  Object.assign(TRAD_CD, {
+    // (6.0.6) o Biel e o futsal da quadra coberta
+    'Falar com o Biel': ['Talk to Biel', 'Hablar con Biel', 'Parla con Biel', 'Parler à Biel'],
+    'Valeu pelo jogo, {0}! Até a próxima.': ['Thanks for the game, {0}! See you next time.', '¡Gracias por el partido, {0}! Hasta la próxima.', 'Grazie per la partita, {0}! Alla prossima.', 'Merci pour le match, {0} ! À la prochaine.'],
+    'E aí! Tô esperando uns amigos chegarem pra jogar um futsal ali na quadra.': ["Hey! I'm waiting for some friends to show up to play futsal on the court.", '¡Ey! Estoy esperando a unos amigos para jugar un futsal ahí en la cancha.', 'Ehi! Sto aspettando degli amici per giocare a calcetto lì nel campo.', 'Salut ! J’attends des potes pour jouer un futsal sur le terrain là.'],
+    'Eu também jogo bola!': ['I play football too!', '¡Yo también juego al fútbol!', 'Anch’io gioco a calcio!', 'Moi aussi je joue au foot !'],
+    'Tranquilo, bom jogo!': ['Cool, have a good game!', 'Tranqui, ¡buen partido!', 'Tranquillo, buona partita!', 'Tranquille, bon match !'],
+    'Sério? Cola aí com nós então! Tem uma hora livre?': ['Really? Come play with us then! Got an hour free?', '¿En serio? ¡Vente con nosotros entonces! ¿Tienes una hora libre?', 'Davvero? Allora vieni con noi! Hai un’ora libera?', 'Sérieux ? Viens jouer avec nous alors ! Tu as une heure de libre ?'],
+    'Tenho sim, bora!': ['Sure do, let’s go!', '¡Sí, vamos!', 'Sì, andiamo!', 'Oui, allons-y !'],
+    'Agora não, deixa pra outro dia.': ['Not now, maybe another day.', 'Ahora no, otro día.', 'Adesso no, un’altra volta.', 'Pas maintenant, un autre jour.'],
+    'Fechou! Eu sou o Biel, e você?': ['Deal! I’m Biel, and you?', '¡Hecho! Soy Biel, ¿y tú?', 'Affare fatto! Io sono Biel, e tu?', 'Ça marche ! Moi c’est Biel, et toi ?'],
+    'Beleza! Eu sou o Biel, por sinal. E você?': ['Alright! I’m Biel, by the way. And you?', '¡Vale! Soy Biel, por cierto. ¿Y tú?', 'Va bene! Io sono Biel, comunque. E tu?', 'D’accord ! Moi c’est Biel, au fait. Et toi ?'],
+    'Sou {0}.': ['I’m {0}.', 'Soy {0}.', 'Sono {0}.', 'Moi c’est {0}.'],
+    'Bora, {0}! A galera já tá chegando.': ['Let’s go, {0}! The guys are coming.', '¡Vamos, {0}! La banda ya está llegando.', 'Andiamo, {0}! Gli altri stanno arrivando.', 'Allez, {0} ! Les autres arrivent.'],
+    'Valeu, {0}! Quando quiser, é só colar.': ['Thanks, {0}! Whenever you want, just show up.', '¡Gracias, {0}! Cuando quieras, ven.', 'Grazie, {0}! Quando vuoi, passa pure.', 'Merci, {0} ! Quand tu veux, passe.'],
+    'Valeu! Eu sou o Biel, por sinal. E você?': ['Thanks! I’m Biel, by the way. And you?', '¡Gracias! Soy Biel, por cierto. ¿Y tú?', 'Grazie! Io sono Biel, comunque. E tu?', 'Merci ! Moi c’est Biel, au fait. Et toi ?'],
+    'Até mais, {0}!': ['See you, {0}!', '¡Hasta luego, {0}!', 'A dopo, {0}!', 'À plus, {0} !'],
+    'Fala, {0}! Vai jogar com a gente hoje?': ['Hey, {0}! Playing with us today?', '¡Qué tal, {0}! ¿Juegas con nosotros hoy?', 'Ehi, {0}! Giochi con noi oggi?', 'Salut, {0} ! Tu joues avec nous aujourd’hui ?'],
+    'Olha quem apareceu! {0}, bora um futsal hoje?': ['Look who showed up! {0}, futsal today?', '¡Mira quién apareció! {0}, ¿un futsal hoy?', 'Guarda chi si vede! {0}, calcetto oggi?', 'Regarde qui voilà ! {0}, un futsal aujourd’hui ?'],
+    'E aí, {0}! A galera já tá chegando. Vai encarar?': ['Hey, {0}! The guys are arriving. You in?', '¡Ey, {0}! La banda ya está llegando. ¿Te animas?', 'Ehi, {0}! Gli altri stanno arrivando. Ci stai?', 'Salut, {0} ! Les autres arrivent. Tu tentes ?'],
+    '{0}! Tava torcendo pra você aparecer. Joga hoje?': ['{0}! I was hoping you’d show up. Playing today?', '¡{0}! Esperaba que aparecieras. ¿Juegas hoy?', '{0}! Speravo che venissi. Giochi oggi?', '{0} ! J’espérais que tu viennes. Tu joues aujourd’hui ?'],
+    'Opa, {0}! Tá faltando um pra fechar o time. Tá dentro?': ['Hey, {0}! We’re one short for the team. You in?', '¡Ey, {0}! Nos falta uno para completar el equipo. ¿Te sumas?', 'Ehi, {0}! Ci manca uno per completare la squadra. Ci sei?', 'Hé, {0} ! Il nous manque un joueur. Tu es partant ?'],
+    'Bora jogar!': ['Let’s play!', '¡A jugar!', 'Giochiamo!', 'On joue !'],
+    'Hoje não, valeu!': ['Not today, thanks!', 'Hoy no, ¡gracias!', 'Oggi no, grazie!', 'Pas aujourd’hui, merci !'],
+    'Isso! Vamos lá.': ['Yes! Let’s go.', '¡Eso! Vamos.', 'Grande! Andiamo.', 'Super ! On y va.'],
+    'Beleza! Terça e quinta a gente tá aqui.': ['Alright! We’re here every Tuesday and Thursday.', '¡Vale! Martes y jueves estamos aquí.', 'Va bene! Martedì e giovedì siamo qui.', 'D’accord ! On est là le mardi et le jeudi.'],
+    'Beleza, fica pra próxima!': ['Alright, next time then!', '¡Vale, para la próxima!', 'Va bene, alla prossima!', 'D’accord, la prochaine fois !'],
+    'Time do Biel': ['Biel’s Team', 'Equipo de Biel', 'Squadra di Biel', 'Équipe de Biel'], 'Galera da Quadra': ['Court Crew', 'Banda de la Cancha', 'Quelli del Campo', 'La Bande du Terrain'],
+    'Futsal na quadra coberta': ['Futsal at the covered court', 'Futsal en la cancha techada', 'Calcetto nel campo coperto', 'Futsal au terrain couvert'],
+    'Futsal na quadra: 5 contra 5!': ['Futsal on the court: 5 vs 5!', 'Futsal en la cancha: ¡5 contra 5!', 'Calcetto al campo: 5 contro 5!', 'Futsal sur le terrain : 5 contre 5 !'],
+    'Racha no sintético: 5 contra 5!': ['Pickup game on the turf: 5 vs 5!', 'Partido en la sintética: ¡5 contra 5!', 'Partitella sul sintetico: 5 contro 5!', 'Match sur le synthétique : 5 contre 5 !'],
+    'Que jogão, {0}! Você manda bem demais na quadra.': ['What a game, {0}! You’re great on the court.', '¡Qué partidazo, {0}! Juegas muy bien en la cancha.', 'Che partita, {0}! Sei bravissimo in campo.', 'Quel match, {0} ! Tu es super fort sur le terrain.'],
+    'Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.': ['Thanks, {0}! It didn’t click much today, but that’s futsal.', '¡Gracias, {0}! Hoy no salió mucho, pero el futsal es así.', 'Grazie, {0}! Oggi non è andata benissimo, ma il calcetto è così.', 'Merci, {0} ! Ça n’a pas trop marché aujourd’hui, mais le futsal c’est comme ça.'],
+    'A gente joga aqui toda terça e quinta. Cola com a gente sempre que quiser!': ['We play here every Tuesday and Thursday. Join us whenever you want!', 'Jugamos aquí todos los martes y jueves. ¡Ven cuando quieras!', 'Giochiamo qui ogni martedì e giovedì. Vieni quando vuoi!', 'On joue ici tous les mardis et jeudis. Viens quand tu veux !'],
+    'Terça e quinta tem mais, hein? Te espero!': ['More on Tuesday and Thursday, okay? See you!', 'Martes y jueves hay más, ¿eh? ¡Te espero!', 'Martedì e giovedì si rigioca, eh? Ti aspetto!', 'Mardi et jeudi on remet ça, hein ? Je t’attends !'],
+    'Missão: futsal com o Biel na quadra coberta às {0}.': ['Mission: futsal with Biel at the covered court at {0}.', 'Misión: futsal con Biel en la cancha techada a las {0}.', 'Missione: calcetto con Biel al campo coperto alle {0}.', 'Mission : futsal avec Biel au terrain couvert à {0}.'],
   });
   Object.assign(TRAD_CD, {
     // (5.6.0) cafés à venda, conversas da Lúcia (também para quem não trabalha na cafeteria)
@@ -1525,7 +1568,7 @@
   function agendarHoje() {
     const d = S.dados, f = fut();
     if (diaDeFutebol() && !(f.agenda && f.agenda.dia === d.dia)) f.agenda = { dia: d.dia, hora: horaDoFutebol(), feito: false };
-    mostrarAgenda();
+    mostrarAgenda(); mostrarAgendaFutsal();   // (6.0.6) terça e quinta: o futsal do Biel
   }
   function mostrarAgenda() {
     const d = S.dados, f = fut(), A = f.agenda;
@@ -1696,7 +1739,7 @@
     await preto(true, 800);
     sairParaPartida();
     let r = null;
-    try { r = await Historia.partida({ cfg, aviso: T('Racha no sintético: 4 contra 4!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    try { r = await Historia.partida({ cfg, aviso: T('Racha no sintético: 5 contra 5!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
     await preto(true, 900);
     voltarDaPartida();
     try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
@@ -1742,6 +1785,166 @@
     const f = fut(), A = f.agenda, P = sintetico(), d = S.dados; if (!A || A.feito || A.dia !== d.dia || !P) return;
     if (d.hora < A.hora - 0.75) v.push({ x: P.x, z: P.z, r: 2.2, txt: Tf('O jogo é às {0}', fmtHora(A.hora)), fn: async () => {}, y: 2.6 });
     else if (d.hora <= A.hora + 1.5) v.push({ x: P.x, z: P.z, r: 2.4, txt: T('Jogar bola no sintético'), fn: jogarSintetico, y: 2.6, pri: true });
+  }
+  // ================================================================== (6.0.6) O BIEL E O FUTSAL DA QUADRA COBERTA
+  //   A partir da 3ª semana (dia 15+), toda TERÇA, o Biel espera os amigos na frente da quadra de futsal coberta (do lado do portão), com
+  //   uma exclamação em cima da cabeça. O horário é o mesmo do futebol (horaDoFutebol: 2h depois do turno de quem trabalha de dia, 4h antes
+  //   de quem trabalha de tarde/noite); ele fica lá de 45 min antes até 1h30 depois.
+  //   1ª conversa: ele conta que espera os amigos para um futsal → "Eu também jogo bola!" (ele chama: "Cola aí com nós, tem uma hora
+  //   livre?" → sim = futsal 5 x 5 / agora não) ou "Tranquilo, bom jogo!". Ele se apresenta e fica sabendo o seu nome.
+  //   Depois do primeiro jogo ele avisa que jogam lá toda TERÇA e QUINTA e convida: daí ele aparece nesses dois dias (com a missão e o
+  //   marcador no mapa). Nas outras conversas ele já chama pelo nome (BIEL_PAPOS, 5 jeitos).
+  //   Salvo em historia.cidade.futsal = { conheceu, convidado, jogos, papo, jogouDia }.
+  const BIEL = { x: -36.1, z: 10.85 }, DIAS_FUTSAL = [1, 3];              // terça e quinta (diaSemana: 0 = segunda)
+  const AP_BIEL = () => apFixa(2727, 'M');
+  const BIEL_PAPOS = [
+    'Fala, {0}! Vai jogar com a gente hoje?',
+    'Olha quem apareceu! {0}, bora um futsal hoje?',
+    'E aí, {0}! A galera já tá chegando. Vai encarar?',
+    '{0}! Tava torcendo pra você aparecer. Joga hoje?',
+    'Opa, {0}! Tá faltando um pra fechar o time. Tá dentro?',
+  ];
+  function fsal() { const d = S.dados; return d.futsal || (d.futsal = { conheceu: false, convidado: false, jogos: 0, papo: 0, jogouDia: 0 }); }
+  // a hora do futsal hoje (ou null se o Biel não aparece hoje)
+  function horaFutsalHoje() {
+    const d = S.dados, F = fsal(), ds = diaSemana();
+    if (F.convidado ? !DIAS_FUTSAL.includes(ds) : !(ds === 1 && (d.dia || 1) >= 15)) return null;
+    return horaDoFutebol();
+  }
+  function bielNaHora() { const h = horaFutsalHoje(), H = S.dados.hora; return h != null && H >= h - 0.75 && H <= h + 1.5; }
+  function spriteExclamacao() {                                         // "!" amarelo em pixel art, sempre de frente para a câmera
+    const cv = document.createElement('canvas'); cv.width = 8; cv.height = 15; const g = cv.getContext('2d');
+    const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
+    px(2, 0, 4, 10, '#2a1206'); px(2, 11, 4, 4, '#2a1206'); px(3, 1, 2, 8, '#f2c230'); px(3, 12, 2, 2, '#f2c230'); px(3, 1, 1, 7, '#fff3a8');
+    const t = new THREE.CanvasTexture(cv); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, alphaTest: 0.1 })); s.scale.set(0.3, 0.56, 1);
+    return s;
+  }
+  function criarBiel() {
+    const A = criarNPCFixo(AP_BIEL(), false, 7, ['#1f7a4d', '#1c1c1f', '#f2f2ee', '#f2f2ee']);
+    A.x = BIEL.x; A.z = BIEL.z; A.y = altura(A.x, A.z); A.yaw = A.yawAlvo = Math.PI / 2; A.marca = 'biel';
+    const ex = spriteExclamacao(); ex.position.set(0, 2.5, 0); A.m.raiz.add(ex); A.excl = ex;
+    S.biel = A; S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.biel = { A, nome: 'Biel', voz: 2 };
+  }
+  function removerBiel() { const A = S.biel; if (!A) return; descartarPessoa(A); S.biel = null; if (S.falantesExtra) delete S.falantesExtra.biel; }
+  function tickBiel() {
+    if (S.dentro) return;
+    const F = fsal(), d = S.dados, jogou = F.jogouDia === d.dia, B = S.biel;
+    // depois do jogo ele ainda fica um pouco por ali (some quando o jogador se afasta ou a janela acaba)
+    const quer = bielNaHora() && (!jogou || (B && Math.hypot(B.x - S.jog.x, B.z - S.jog.z) < 30));
+    if (quer && !B && S.modo === 'livre') criarBiel();
+    else if (!quer && B && S.modo === 'livre') removerBiel();
+    const A = S.biel; if (!A || !A.excl) return;
+    A.excl.visible = !jogou && !A.fala && S.modo === 'livre';
+    A.excl.position.y = 2.5 + Math.sin(S.t * 4) * 0.06;
+    if (S.modo === 'livre' && !A.fala) A.yawAlvo = Math.hypot(S.jog.x - A.x, S.jog.z - A.z) < 4 ? Math.atan2(-(S.jog.z - A.z), S.jog.x - A.x) : Math.PI / 2;   // olha para quem chega perto
+  }
+  function alvosBiel(v) {
+    const B = S.biel; if (!B || S.dentro) return;
+    v.push({ x: B.x, z: B.z, r: 2.1, txt: fsal().conheceu ? T('Falar com o Biel') : T('Conversar'), fn: conversarBiel, y: 2.9, pri: true });
+  }
+  async function conversarBiel() {
+    const B = S.biel, J = S.jog, F = fsal(), d = S.dados; if (!B) return;
+    B.yawAlvo = Math.atan2(-(J.z - B.z), J.x - B.x); J.yawAlvo = Math.atan2(-(B.z - J.z), B.x - J.x);
+    const nome = nomeJog(); let joga = false;
+    if (F.jogouDia === d.dia) { await fala('biel', Tf('Valeu pelo jogo, {0}! Até a próxima.', nome)); Dialogo.esconder(); return; }
+    if (!F.conheceu) {
+      const p0 = T('E aí! Tô esperando uns amigos chegarem pra jogar um futsal ali na quadra.');
+      await fala('biel', p0);
+      const r = await Escolha.mostrar(p0, [T('Eu também jogo bola!'), T('Tranquilo, bom jogo!')]);
+      if (r === 0) {
+        await fala('jog', T('Eu também jogo bola!'));
+        const p1 = T('Sério? Cola aí com nós então! Tem uma hora livre?');
+        await fala('biel', p1);
+        const r2 = await Escolha.mostrar(p1, [T('Tenho sim, bora!'), T('Agora não, deixa pra outro dia.')]);
+        await fala('jog', r2 === 0 ? T('Tenho sim, bora!') : T('Agora não, deixa pra outro dia.'));
+        await fala('biel', r2 === 0 ? T('Fechou! Eu sou o Biel, e você?') : T('Beleza! Eu sou o Biel, por sinal. E você?'));
+        await fala('jog', Tf('Sou {0}.', nome));
+        await fala('biel', r2 === 0 ? Tf('Bora, {0}! A galera já tá chegando.', nome) : Tf('Valeu, {0}! Quando quiser, é só colar.', nome));
+        joga = r2 === 0;
+      } else {
+        await fala('jog', T('Tranquilo, bom jogo!'));
+        await fala('biel', T('Valeu! Eu sou o Biel, por sinal. E você?'));
+        await fala('jog', Tf('Sou {0}.', nome));
+        await fala('biel', Tf('Até mais, {0}!', nome));
+      }
+      F.conheceu = true; gravar(d.ponto || 'chegada');
+    } else {
+      const p = Tf(BIEL_PAPOS[(F.papo | 0) % BIEL_PAPOS.length], nome); F.papo = (F.papo | 0) + 1;
+      await fala('biel', p);
+      const r = await Escolha.mostrar(p, [T('Bora jogar!'), T('Hoje não, valeu!')]);
+      await fala('jog', r === 0 ? T('Bora jogar!') : T('Hoje não, valeu!'));
+      if (r === 0) { await fala('biel', T('Isso! Vamos lá.')); joga = true; }
+      else await fala('biel', F.convidado ? T('Beleza! Terça e quinta a gente tá aqui.') : T('Beleza, fica pra próxima!'));
+    }
+    Dialogo.esconder();
+    if (joga) await jogarFutsal();
+  }
+  const UNI_VERDE = { camisa: '#1f7a4d', listra: '#f2f2ee', gola: '#f2f2ee', calcao: '#1c1c1f', meia: '#1f7a4d', sola: '#111111', goleiro: '#f2c230' };
+  const UNI_BRANCO = { camisa: '#f2f2ee', listra: '#c8352b', gola: '#c8352b', calcao: '#c8352b', meia: '#f2f2ee', sola: '#111111', goleiro: '#2a72d6' };
+  function cfgFutsal(duracao, horario, clima) {
+    const g = (nome, seed, gen) => Object.assign({ nome }, apFixa(seed, gen)), ap = AP_BIEL();
+    const tec = { nome: 'Biel', aparencia: { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, roupa: '#222222' } };
+    const t0 = { id: 'q_biel', nome: T('Time do Biel'), sigla: 'BIE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_VERDE, uniforme2: UNI_BRANCO,
+      emblema: { forma: 'escudo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'BI' }, tecnico: tec,
+      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), g('Bruna', 2323, 'F')] };   // você completa os 5 (o Duda vai no gol)
+    const t1 = { id: 'q_quadra', nome: T('Galera da Quadra'), sigla: 'QDR', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_BRANCO, uniforme2: UNI_VERDE,
+      emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'QC' }, tecnico: tec,
+      elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M')] };
+    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
+    return { campo: 'futsal', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Futsal na quadra coberta'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
+      dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };   // (quadra coberta: sem chuva)
+  }
+  async function jogarFutsal() {
+    const d = S.dados, F = fsal();
+    const r0 = await Escolha.mostrar(T('Quanto tempo de jogo?'), [T('5 minutos'), T('3 minutos'), T('Agora não')], { centro: true });
+    Dialogo.esconder(); if (r0 === 2 || r0 < 0) { await fala('biel', T('Beleza, fica pra próxima!')); Dialogo.esconder(); return; }
+    const duracao = r0 === 1 ? 180 : 300, h = d.hora;
+    const horario = h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite';
+    const cfg = cfgFutsal(duracao, horario, 'seco');
+    await preto(true, 800);
+    if (S.biel) S.biel.m.raiz.visible = false;
+    sairParaPartida();
+    let r = null;
+    try { r = await Historia.partida({ cfg, aviso: T('Futsal na quadra: 5 contra 5!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    await preto(true, 900);
+    voltarDaPartida();
+    try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
+    const st = (r && r.estatisticas) || {};
+    d.partidas = (d.partidas || []).slice(-29);
+    d.partidas.push({ local: 'futsal', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima: 'seco', nublado: S.clima.nuv > 0.35, duracao,
+      placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
+    const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
+    while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
+    PERSONAGEM.atributos = Object.assign({}, at);
+    const primeiro = !F.convidado;
+    F.jogos = (F.jogos | 0) + 1; F.jogouDia = d.dia; F.convidado = true; d.precisaBanho = true;
+    tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
+    if (/futsal/i.test(S.missao || '')) { S.missao = ''; recolherMissao(); definirMarca(null); }
+    // a cena depois do jogo: na frente do portão da quadra, com o Biel
+    const J = S.jog; J.sentado = false; J.x = BIEL.x - 1.4; J.z = BIEL.z - 0.2; J.y = altura(J.x, J.z); J.rota = null;
+    if (!S.biel) criarBiel();
+    const B = S.biel; B.m.raiz.visible = true; B.x = BIEL.x; B.z = BIEL.z; B.yaw = B.yawAlvo = Math.atan2(-(J.z - B.z), J.x - B.x);
+    J.yaw = J.yawAlvo = Math.atan2(-(B.z - J.z), B.x - J.x); S.cam.snap = true;
+    Musica.tocar('jazz');
+    await preto(false, 900);
+    try {
+      const nome = nomeJog();
+      await fala('biel', r && r.bom ? Tf('Que jogão, {0}! Você manda bem demais na quadra.', nome) : Tf('Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.', nome));
+      if (primeiro) await fala('biel', T('A gente joga aqui toda terça e quinta. Cola com a gente sempre que quiser!'));
+      else await fala('biel', T('Terça e quinta tem mais, hein? Te espero!'));
+      if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
+      await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
+      Dialogo.esconder();
+    } catch (e) { console.error(e); }
+    gravar('chegada');
+  }
+  // (6.0.6) terça/quinta com o convite do Biel: missão e marcador (os dias não batem com o sintético, que é segunda e quarta)
+  function mostrarAgendaFutsal() {
+    const F = fsal(), d = S.dados, h = horaFutsalHoje();
+    if (!F.convidado || h == null || F.jogouDia === d.dia || d.hora > h + 1.5) return;
+    S.missao = Tf('Missão: futsal com o Biel na quadra coberta às {0}.', fmtHora(h)); mostrarMissao();
+    if (!S.dentro) definirMarca(BIEL.x, BIEL.z);
   }
   // depois do 1º turno de trabalho, o João liga (alguns segundos depois, com o jogador livre)
   function tickConvite(dt) {
@@ -2857,7 +3060,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); for (const P of PORTAS) {
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); for (const P of PORTAS) {
       if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
@@ -4421,7 +4624,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.andando = false; S.jog.correndo = false; } else mover(dt); tickHorario(dt); tickDescobertas(); }
         else if (S.trabalhando) tickHorario(dt);       // (5.1.1) o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);
-        tickCelular(dt); tickConvite(dt);                // (5.3.0)
+        tickCelular(dt); tickConvite(dt); tickBiel();    // (5.3.0); (6.0.6) o Biel na quadra de futsal
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);

@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.0.5
+   FUTEBOL JS · jogo.js · versão 6.0.6
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,8 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 6.0.6 — cidade: o Biel e o futsal da quadra coberta (cidade.js). O jogo.js só mudou o número.
+
    Novidades da versão 6.0.5 — CONVERSAS: a escolha (Escolha) agora é UMA caixa só, embaixo: a pergunta vira o título e a fala
      some; uma escolha de cada vez (fila): uma segunda escolha que chegava no meio de outra trocava os botões e a primeira nunca
      terminava (o jogo travava na cena). Uma fala nova no lugar de outra ainda pendente termina a antiga (Dialogo).
@@ -677,7 +679,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.0.5';
+const VERSAO_JOGO = '6.0.6';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
