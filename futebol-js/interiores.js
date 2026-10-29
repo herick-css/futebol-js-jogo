@@ -8,6 +8,8 @@
      As paredes só têm o lado de DENTRO (vistas de fora elas somem), então a câmera pode ficar "atrás" da parede e ver a sala.
    - Por enquanto: só o visual, onde dá para sentar e pessoas de enfeite (paradas, andando, sentadas, na esteira...).
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
+   - (6.1.0) Pizzaria Forno a Lenha redecorada para o trabalho de entregador e os clientes (R.pizzaria: forno, bancada, caixa, retirada,
+     mesas...; ver pizzaria.js).
    - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
@@ -179,18 +181,93 @@
       for (const i of [0, 3, 6, 9]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
       for (const [x, z] of [[-9.2, -6.2], [9.2, -6.2], [9.2, 6.2], [-9.2, 6.2]]) { G.box(0.5, 0.5, 0.5, '#9a6a44', x, 0, z); G.box(0.7, 0.8, 0.7, '#3f8a3a', x, 0.5, z); bloq(x, z, 0.6, 0.6); }
     } else if (nome === 'pizzaria') {
-      sala(18, 14, 3.8, '#f4efe2', '#c8b89a', '#b8a888', 0.7);
-      placa('PIZZARIA', '#c8352b', '#f4f4ec', 5, 0.8, 0, 3.0, -6.96);
-      // forno a lenha (domo de tijolinho em degraus) e o balcão
-      for (let i = 0; i < 5; i++) G.box(3.0 - i * 0.5, 0.35, 2.2 - i * 0.35, i % 2 ? '#a8442a' : '#b8552e', -5.5, 0.9 + i * 0.35, -5.5);
-      G.box(3.2, 0.9, 2.4, '#8a6a4a', -5.5, 0, -5.5); G.box(0.9, 0.6, 0.06, '#1c1c1f', -5.5, 1.05, -4.28); G.box(0.6, 0.35, 0.05, '#f0a020', -5.5, 1.08, -4.27);
-      bloq(-5.5, -5.5, 3.2, 2.4);
-      balcao(2.5, -5.2, 7, 1.0, '#1f7a4d', '#f4f4ec');
-      R.pessoas.push({ tipo: 'parado', x: -5.5, z: -3.9, yaw: Math.PI / 2, fem: false });                     // pizzaiolo
-      R.pessoas.push({ tipo: 'parado', x: 2.5, z: -6.1, yaw: -Math.PI / 2, fem: rnd() < 0.5 });
-      const lugares = []; for (const [x, z] of [[-5, -0.5], [-1.5, -0.5], [2, -0.5], [5.5, -0.5], [-5, 3], [-1.5, 3], [2, 3], [5.5, 3]]) lugares.push(...mesa(x, z, '#c8352b', 2, '#f4f4ec'));
+      // (6.1.0) PIZZARIA FORNO A LENHA, montada para o trabalho (pizzaria.js): piso xadrez, meia-parede de azulejo, o FORNO A LENHA no canto
+      //   noroeste (boca acesa: R.pizzaria.fogo pisca), a BANCADA da Carla do lado, o BALCÃO com o caixa do Mário no nordeste e, na ponta dele,
+      //   a RETIRADA das entregas (pilha de caixas e a placa da bicicleta). 8 mesas de 2 com toalha xadrez, luminárias, bandeirinhas da Itália,
+      //   quadros, plantas, prateleira de vinhos e azeites e sacos de farinha. O quadro do cardápio (com a pixel art dos 8 sabores) e as pizzas
+      //   nas mesas são do pizzaria.js. Sem o pizzaria.js, a sala continua com o povo de enfeite (pessoas abaixo).
+      sala(20, 14, 3.8, '#f2dcb8', '#f2efe6', '#2a2a2e', 0.6);
+      R.cam = { dist: 9.5, pitch: 0.85 };
+      const W2 = 10, D2 = 7, TIJ = ['#b8552e', '#a8442a', '#c8653a'];
+      // meia-parede de azulejo verde e a faixa vermelha (norte, leste e oeste)
+      G.box(2 * W2 - 0.1, 1.1, 0.04, '#2f7a4f', 0, 0, -D2 + 0.06); G.box(2 * W2 - 0.1, 0.08, 0.06, '#c8352b', 0, 1.1, -D2 + 0.07);
+      for (const sx of [-1, 1]) { G.box(0.04, 1.1, 2 * D2 - 0.1, '#2f7a4f', sx * (W2 - 0.06), 0, 0); G.box(0.06, 0.08, 2 * D2 - 0.1, '#c8352b', sx * (W2 - 0.07), 1.1, 0); }
+      for (let i = 0; i < 33; i++) G.box(0.02, 1.1, 0.05, '#256a42', -W2 + 0.3 + i * 0.6, 0, -D2 + 0.07);   // rejunte
+      placa('PIZZARIA FORNO A LENHA', '#c8352b', '#fff6e0', 7.4, 0.75, 3.0, 3.2, -D2 + 0.04);
+      // --- o FORNO A LENHA (domo de tijolinho em degraus, boca virada para o salão) com a chaminé e a lenha
+      const fx = -6.6, fz = -5.4;
+      G.box(3.0, 1.0, 2.4, '#8a6a4a', fx, 0, fz, '#a8886a');
+      for (let i = 0; i < 6; i++) G.box(2.9 - i * 0.42, 0.3, 2.3 - i * 0.34, TIJ[i % 3], fx, 1.0 + i * 0.3, fz);
+      G.box(0.5, 1.2, 0.5, '#8c8c90', fx, 2.8, fz - 0.4); G.box(0.6, 0.08, 0.6, '#5a5a5e', fx, 2.75, fz - 0.4);
+      G.box(1.25, 0.85, 0.1, '#5a2a14', fx, 1.0, fz + 1.17);                                    // arco da boca
+      G.box(0.95, 0.62, 0.04, '#1c0c06', fx, 1.08, fz + 1.2);
+      { const fogo = new THREE.Mesh(guardar(new THREE.PlaneGeometry(0.82, 0.42)), guardar(new THREE.MeshBasicMaterial({ color: 0xff8a2a, transparent: true, opacity: 0.9 })));
+        fogo.position.set(fx, 1.25, fz + 1.23); grupo.add(fogo);
+        const brilho = new THREE.Mesh(guardar(new THREE.PlaneGeometry(1.6, 1.0)), guardar(new THREE.MeshBasicMaterial({ color: 0xffb050, transparent: true, opacity: 0.18, depthWrite: false })));
+        brilho.rotation.x = -Math.PI / 2; brilho.position.set(fx, 0.02, fz + 1.75); grupo.add(brilho);
+        R.pizzaria = { fogo, brilho }; }
+      for (let i = 0; i < 4; i++) for (let k = 0; k < 3 - (i % 2); k++) G.box(0.62, 0.14, 0.14, i % 2 ? '#7a4a24' : '#8a5a2a', -9.1, i * 0.15, -3.6 + k * 0.17);   // lenha empilhada
+      bloq(fx, fz, 3.0, 2.4); bloq(-9.1, -3.45, 0.7, 0.6);
+      // pá de pizza encostada e sacos de farinha
+      G.box(0.05, 1.7, 0.05, '#8a5a2a', -8.6, 0, -6.6); G.box(0.36, 0.03, 0.42, '#c8a070', -8.6, 1.66, -6.6);
+      for (const [x, z] of [[-4.6, -6.55], [-4.1, -6.55]]) { G.box(0.42, 0.55, 0.32, '#efe8d8', x, 0, z); G.box(0.3, 0.12, 0.02, '#c8352b', x, 0.3, z + 0.17); }
+      // --- a BANCADA da Carla (tampo de mármore): bolinhas de massa, molho, queijo, tábua e o cortador
+      const bx = -2.7, bz = -6.05;
+      G.box(2.8, 0.92, 0.9, '#6a4428', bx, 0, bz); G.box(2.9, 0.06, 1.0, '#e8e4dc', bx, 0.92, bz); bloq(bx, bz, 2.8, 0.9);
+      for (let k = 0; k < 5; k++) G.box(0.16, 0.1, 0.16, '#f2e6c8', bx - 1.15 + k * 0.2, 0.98, bz - 0.25);
+      G.box(0.32, 0.12, 0.32, '#c8352b', bx - 0.3, 0.98, bz + 0.05); G.box(0.26, 0.02, 0.26, '#a8201a', bx - 0.3, 1.1, bz + 0.05);   // molho
+      G.box(0.3, 0.1, 0.3, '#f2d26a', bx + 0.15, 0.98, bz + 0.05);                                                                  // queijo ralado
+      G.box(0.62, 0.03, 0.62, '#c8a070', bx + 0.85, 0.98, bz + 0.05); G.box(0.5, 0.012, 0.5, '#f2e6c8', bx + 0.85, 1.01, bz + 0.05);   // massa aberta na tábua
+      G.box(0.04, 0.6, 1.6, '#4a2c14', bx, 1.5, -D2 + 0.1);                                        // prateleira de temperos
+      for (let k = 0; k < 6; k++) G.box(0.12, 0.2, 0.12, ['#6cae3e', '#c8352b', '#f2c230', '#8a5a2a', '#f2f2ee', '#3a6a2a'][k], bx - 0.6 + k * 0.24, 1.82, -D2 + 0.2);
+      G.box(1.6, 0.04, 0.24, '#4a2c14', bx, 1.8, -D2 + 0.18);
+      // --- o BALCÃO: caixa do Mário (registradora) e, na ponta oeste, a RETIRADA das entregas
+      const cx = 4.4, cz = -4.9;
+      G.box(5.6, 1.0, 1.0, '#1f7a4d', cx, 0, cz, '#f4f4ec'); G.box(5.7, 0.06, 1.1, '#e8e2d2', cx, 1.0, cz); bloq(cx, cz, 5.6, 1.0);
+      for (let i = 0; i < 7; i++) G.box(0.8, 0.6, 0.02, i % 2 ? '#f4f4ec' : '#c8352b', cx - 2.4 + i * 0.8, 0.2, cz + 0.51);   // frente listrada
+      G.box(0.42, 0.32, 0.34, '#2b3a48', 6.2, 1.06, cz - 0.05); G.box(0.32, 0.05, 0.22, '#8fe04a', 6.2, 1.38, cz + 0.08); G.box(0.3, 0.06, 0.24, '#c9ced4', 6.2, 1.06, cz + 0.3);   // registradora
+      G.box(0.24, 0.3, 0.24, '#e8e2d2', 5.3, 1.06, cz - 0.1); G.box(0.2, 0.06, 0.2, '#c8352b', 5.3, 1.36, cz - 0.1);   // pote de balinhas
+      // retirada: placa "ENTREGAS" com a bicicleta desenhada e a pilha de caixas vazias no chão
+      { const tex = guardar(texCanvas(48, 24, (g) => {
+          g.fillStyle = '#f2c230'; g.fillRect(0, 0, 48, 24); g.fillStyle = '#2a1206'; g.fillRect(0, 0, 48, 1); g.fillRect(0, 23, 48, 1); g.fillRect(0, 0, 1, 24); g.fillRect(47, 0, 1, 24);
+          g.font = 'bold 7px monospace'; g.textAlign = 'center'; g.fillText('ENTREGAS', 24, 8);
+          g.fillStyle = '#c8352b'; for (const x0 of [13, 31]) { g.fillRect(x0 - 3, 14, 7, 1); g.fillRect(x0 - 3, 20, 7, 1); g.fillRect(x0 - 4, 15, 1, 5); g.fillRect(x0 + 4, 15, 1, 5); }
+          g.fillRect(14, 14, 18, 1); g.fillRect(22, 11, 1, 4); g.fillRect(28, 11, 4, 1); g.fillRect(16, 12, 5, 1);
+        }, true));
+        const pl = new THREE.Mesh(guardar(new THREE.PlaneGeometry(1.4, 0.7)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); pl.position.set(1.0, 2.2, -D2 + 0.05); grupo.add(pl); }
+      for (let i = 0; i < 6; i++) G.box(0.5, 0.07, 0.5, i % 2 ? '#e8e2d2' : '#c8352b', 0.9, i * 0.075, -6.4);   // caixas de pizza dobradas
+      R.pizzaria.carla = { x: bx, z: bz + 0.95, yaw: Math.PI / 2 };                  // de frente para a bancada
+      R.pizzaria.forno = { x: fx + 0.2, z: fz + 1.95, yaw: Math.PI / 2 };            // de frente para a boca do forno
+      R.pizzaria.mario = { x: 5.5, z: cz - 0.85, yaw: -Math.PI / 2 };               // atrás do caixa, olhando o salão
+      R.pizzaria.pagar = { x: 5.6, z: cz + 1.0, yaw: Math.PI / 2 };                 // o cliente paga aqui (olhando o Mário)
+      R.pizzaria.retirada = { x: 2.3, z: cz + 1.05 };                               // o jogador pega o pedido da entrega aqui
+      R.pizzaria.balcaoEntrega = { x: 2.3, y: 1.04, z: cz };                         // onde aparece a caixa pronta (pizzaria.js)
+      R.pizzaria.cardapio = { x: -3.3, y: 2.78, z: -D2 + 0.05 };                      // quadro do cardápio (pizzaria.js desenha)
+      R.pizzaria.corredor = -2.6;                                                    // corredor entre o balcão e as mesas
+      // --- as MESAS (2 lugares) com toalha xadrez vermelha e branca e luminária em cima
+      const toalha = (x, z) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) G.box(0.235, 0.01, 0.235, (i + j) % 2 ? '#f4f4ec' : '#c8352b', x - 0.3525 + i * 0.235, 0.79, z - 0.3525 + j * 0.235); G.box(0.98, 0.18, 0.02, '#c8352b', x, 0.62, z + 0.48); G.box(0.98, 0.18, 0.02, '#c8352b', x, 0.62, z - 0.48); };
+      R.pizzaria.mesas = [];
+      for (const [x, z] of [[-6.4, -0.6], [-2.6, -0.6], [1.2, -0.6], [5.0, -0.6], [-6.4, 3.4], [-2.6, 3.4], [1.2, 3.4], [5.0, 3.4]]) {
+        const sl = mesa(x, z, '#7a4a2a', 2, '#f4f4ec'); toalha(x, z);
+        G.box(0.02, 0.85, 0.02, '#1c1c1f', x, 2.95, z); G.box(0.34, 0.16, 0.34, '#c8352b', x, 2.8, z); G.box(0.24, 0.03, 0.24, '#fff2b0', x, 2.78, z);   // luminária (alta, para não tapar a câmera)
+        G.box(0.06, 0.16, 0.06, '#f2f2ee', x + 0.3, 0.8, z - 0.32); G.box(0.06, 0.16, 0.06, '#8a5a2a', x + 0.38, 0.8, z - 0.32);   // sal e orégano
+        R.pizzaria.mesas.push({ x, z, assentos: sl });
+      }
+      // --- bandeirinhas da Itália nas paredes leste e oeste e no fundo
+      const band = (x0, z0, x1, z1, n) => { for (let i = 0; i < n; i++) { const t = (i + 0.5) / n, x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t, c = ['#1f8a4a', '#f4f4ec', '#c8352b'][i % 3];
+        const dx = (x1 - x0) / n * 0.42, dz = (z1 - z0) / n * 0.42, y = 3.2 - Math.sin(t * Math.PI) * 0.25; G.tri([x - dx, y, z - dz], [x + dx, y, z + dz], [x, y - 0.32, z], c); } };
+      band(-9.9, -6.5, -9.9, 6.0, 16); band(9.9, -6.5, 9.9, 6.0, 16); band(-9.5, -6.9, -4.6, -6.9, 7);
+      // quadros (Itália, uma pizza, uma bicicleta) e plantas nos cantos
+      for (const [z, c1, c2] of [[-3.0, '#1f8a4a', '#c8352b'], [1.4, '#f2c230', '#c8352b'], [4.8, '#3a64b8', '#f4f4ec']]) { G.box(0.05, 0.8, 1.0, '#5b3a22', 9.95, 1.7, z); G.box(0.05, 0.62, 0.82, c1, 9.92, 1.79, z); G.box(0.05, 0.3, 0.4, c2, 9.9, 1.95, z + 0.1); }
+      for (const [x, z] of [[-9.3, 6.3], [9.3, 6.3], [9.3, -6.3]]) { G.box(0.5, 0.5, 0.5, '#9a6a44', x, 0, z); G.box(0.7, 0.9, 0.7, '#3f8a3a', x, 0.5, z); G.box(0.4, 0.4, 0.4, '#4fa04a', x, 1.4, z); bloq(x, z, 0.6, 0.6); }
+      // prateleira de vinhos e azeites (parede leste)
+      G.box(0.3, 0.05, 2.6, '#5b3a22', 9.82, 2.2, -0.2); G.box(0.3, 0.05, 2.6, '#5b3a22', 9.82, 1.7, -0.2);
+      for (let k = 0; k < 9; k++) { const z = -1.3 + k * 0.28; G.box(0.1, 0.34, 0.1, k % 3 === 2 ? '#c8a020' : '#3a1a2a', 9.82, 2.25, z); G.box(0.04, 0.08, 0.04, '#1c1c1f', 9.82, 2.59, z); G.box(0.1, 0.3, 0.1, k % 2 ? '#2f6a2a' : '#6a1a1a', 9.82, 1.75, z + 0.1); }
+      // pessoas de ENFEITE (só sem o pizzaria.js: com ele, quem cuida da pizzaria é ele)
+      R.pessoas.push({ tipo: 'parado', x: fx + 0.2, z: fz + 1.95, yaw: Math.PI / 2, fem: true });                     // pizzaiola
+      R.pessoas.push({ tipo: 'parado', x: 5.5, z: cz - 0.85, yaw: -Math.PI / 2, fem: false });
+      const lugares = []; for (const M of R.pizzaria.mesas) lugares.push(...M.assentos);
       for (const i of [0, 1, 6, 11]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
-      R.pessoas.push({ tipo: 'vaga', area: { x0: -7, x1: 7, z0: 1, z1: 5 }, fem: true });                   // garçom
     } else if (nome === 'restaurante') {
       sala(20, 16, 3.8, '#e8f2dc', '#d8d4cc', '#c8c4bc', 0.8);
       placa('RESTAURANTE', '#f4f4ec', '#1f7a4d', 6, 0.8, 0, 3.0, -7.96);

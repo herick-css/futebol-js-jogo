@@ -1,6 +1,14 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.1.0
+     - PIZZARIA (pizzaria.js, arquivo novo baixado junto do mercado.js): ganchos marcados "(6.1.0)": carregar o pizzaria.js · apiPizzaria() ·
+       entrarEm/sairDoLugar chamam S.pizzaria.entrou/saiu (lá dentro quem cuida de tudo é ele) · alvos (porta fechada fora das 17h–00h,
+       pedir pizza sentado, na rua: bicicleta/caixa/cliente; montado só descer/entregar; "Entrar no prédio" no turno pergunta se encerra) ·
+       tickPessoas despacha 'clientePz' · mover(): S.veiculo (bicicleta 1,5x; bater de frente em algo derruba) e J.esperaPedido (não levanta
+       esperando a pizza) · o convite do João não toca no meio das entregas. TURNOS.pizzaria = 17h à meia-noite.
+     - NOITE DE TRABALHO (pizzaria, quinta a domingo): sem o aviso das 21h; à 1h "tenho que dormir até as 2h para descansar bem"; às 4h ele
+       vai sozinho para casa e acorda às 9h (noiteDeTrabalho / madrugada(nt) / avisoDormir(nt)).
    Como funciona
      - É uma "fase" registrada com FutebolJS.registrarFase({ id: 'cidade' }). O fase2.js chama Fases.executar('cidade') quando o
        personagem sai do prédio (no lugar do antigo "Continua..."). Também abre por um save (tela CARREGAR) com { fase: 'cidade' }.
@@ -103,6 +111,8 @@
   };
   Object.assign(TRAD_CD, {
     'Amanheceu: dia {0}.': ['Dawn: day {0}.', 'Amaneció: día {0}.', 'Alba: giorno {0}.', 'Le jour se lève : jour {0}.'],
+    'É melhor eu voltar para casa, tenho que dormir até as 2h para descansar bem, ou isso pode afetar meu desempenho.': ["I'd better head home. I have to be asleep by 2 AM to rest well, or it could affect my performance.", 'Mejor vuelvo a casa, tengo que dormir antes de las 2h para descansar bien, o eso puede afectar mi rendimiento.', 'Meglio tornare a casa, devo dormire entro le 2 per riposare bene, o potrebbe influire sulle mie prestazioni.', "Je ferais mieux de rentrer, je dois dormir avant 2 h pour bien me reposer, sinon ça peut affecter mes performances."],
+    'Já são 4h?! Chega por hoje, vou pra casa dormir.': ["It's already 4 AM?! That's enough for today, I'm going home to sleep.", '¡¿Ya son las 4?! Basta por hoy, me voy a casa a dormir.', 'Sono già le 4?! Basta per oggi, vado a casa a dormire.', "Il est déjà 4 h ?! Ça suffit pour aujourd'hui, je rentre dormir."],
     'É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.': ["I'd better head home. I have to sleep by 10 PM to get my 8 hours of sleep, or it could hurt my performance.", 'Mejor vuelvo a casa. Tengo que dormir a las 22h para tener mis 8 horas de sueño, o puede afectar mi rendimiento.', 'Meglio tornare a casa. Devo dormire alle 22 per fare le mie 8 ore di sonno, altrimenti può influire sulle mie prestazioni.', "Je ferais mieux de rentrer. Je dois dormir à 22 h pour avoir mes 8 heures de sommeil, sinon ça peut affecter mes performances."],
     'Entrar no prédio': ['Enter the building', 'Entrar al edificio', 'Entra nel palazzo', "Entrer dans l'immeuble"],
     'Cardápio do seu Valdemar': ["Mr. Valdemar's menu", 'Menú de don Valdemar', 'Menù del signor Valdemar', 'Menu de monsieur Valdemar'],
@@ -1513,7 +1523,7 @@
   //   (d.partidas), e o relógio do mundo anda 1h. A cada 10 chutes no alvo: +0,25 em chute, efeito e força (escala de 1 a 10).
   //   Depois de toda partida ele diz que precisa de um banho (d.precisaBanho): dormir sem banho tira 5 de saúde (fase2.js) e a
   //   Lúcia não deixa começar o turno sem banho.
-  const TURNOS = { cafeteria: [8, 16], mercado: [14, 22], pizzaria: [15, 23] };
+  const TURNOS = { cafeteria: [8, 16], mercado: [14, 22], pizzaria: [17, 24] };   // (6.1.0) a pizzaria: 17h à meia-noite
   const LUGAR_EMPREGO = { cafeteria: 'cafeteria', mercado: 'supermercado', pizzaria: 'pizzaria' };
   const DIAS_FUTEBOL = [0, 2];                                           // diaSemana(): 0 = segunda, 2 = quarta
   const lugarDoEmprego = () => LUGAR_EMPREGO[empregoEscolhido()] || null;
@@ -1918,7 +1928,7 @@
   // depois do 1º turno de trabalho, o João liga (alguns segundos depois, com o jogador livre)
   function tickConvite(dt) {
     const f = fut(); if (f.ligou || !S.dados.trabalhouAlgumDia) return;
-    if (S.modo !== 'livre' || S.ligando || S.turno || S.turnoMercado) return;
+    if (S.modo !== 'livre' || S.ligando || S.turno || S.turnoMercado || S.turnoPizza) return;
     S.ligarT = (S.ligarT == null ? 6 : S.ligarT) - dt;
     if (S.ligarT <= 0) { S.ligarT = null; tocarCelular(); }
   }
@@ -2583,7 +2593,8 @@
       if (A.tipo === 'anda') passoNPC(A, dt);
       else if (A.tipo === 'vaga') vagar(A, dt);
       else if (A.tipo === 'cliente') tickCliente(A, dt);
-      else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // clientes do mercado.js
+      else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // (5.3.1) clientes do mercado.js
+      else if (A.tipo === 'clientePz') { if (S.pizzaria) S.pizzaria.tickCliente(A, dt); }   // (6.1.0) clientes da pizzaria.js
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       else if (A.tipo === 'cena') passoCena(A, dt);
@@ -2688,19 +2699,20 @@
     if (T_.KeyQ) S.cam.yaw += dt * 1.8; if (T_.KeyE) S.cam.yaw -= dt * 1.8;
     const corre = e.m > 0.12 && (T_.ShiftLeft || T_.ShiftRight || (UI.joy.id != null && e.m >= LIMIAR_CORRER));
     UI.pad.classList.toggle('corre', !!corre);
-    if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0)) levantar(); return; }      // sentado: empurrar o direcional levanta
-    if (e.m < 0.12) { J.andando = false; J.correndo = false; return; }
+    if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0) && !J.esperaPedido) levantar(); return; }      // (4.9.3) sentado: empurrar o direcional levanta; (6.1.0) esperando a pizza, não
+    const V = S.veiculo;                                                // (6.1.0) na bicicleta (pizzaria.js): mais rápido e, se bater, cai
+    if (e.m < 0.12) { J.andando = false; J.correndo = false; if (V) V.bloq = 0; return; }
     const sy = Math.sin(S.cam.yaw), cy = Math.cos(S.cam.yaw);
     const fx = -sy, fz = -cy, rx = cy, rz = -sy;                     // frente (da câmera para o jogador) e direita
     const dx = rx * e.ix - fx * e.iy, dz = rz * e.ix - fz * e.iy, dl = Math.hypot(dx, dz) || 1;
-    const vel = (corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // café: mais rápido
-    const nx = J.x + dx / dl * sp, nz = J.z + dz / dl * sp;
+    const vel = (V ? CORRER * V.mult * Math.min(1, e.m / 0.85) : corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // (5.6.0) café: mais rápido
+    const nx = J.x + dx / dl * sp, nz = J.z + dz / dl * sp, x0 = J.x, z0 = J.z;
     let moveu = false;
     if (livre(nx, J.z)) { J.x = nx; moveu = true; }
     if (livre(J.x, nz)) { J.z = nz; moveu = true; }
     { const B = S.npcs.find((A) => !A.oculto && !A.sentado && !A.deitado && Math.hypot(nx - A.x, nz - A.z) < 0.6 && Math.hypot(nx - A.x, nz - A.z) < Math.hypot(J.x - A.x, J.z - A.z) + 0.02);
-      if (B && !(B.esbarrao > 0.05)) { B.esbarrao = 0.6; if (!temRotina(B)) B.travaE = Math.max(B.travaE || 0, 0.6); } }   // não empurra: a pessoa cambaleia
-    // PASSANDO POR DENTRO de quem cambaleia: o jogador é empurrado de leve para o lado (como se raspasse no ombro dela)
+      if (B && !(B.esbarrao > 0.05)) { B.esbarrao = 0.6; if (!temRotina(B)) B.travaE = Math.max(B.travaE || 0, 0.6); if (V && V.bater) { V.bater(); return; } } }   // (5.5.0) não empurra: a pessoa cambaleia; (6.1.0) de bicicleta: cai
+    // (6.0.3) PASSANDO POR DENTRO de quem cambaleia: o jogador é empurrado de leve para o lado (como se raspasse no ombro dela)
     // e a pessoa continua cambaleando enquanto ele está "dentro" (senão ela voltaria a ter o corpo inteiro com ele no meio).
     if (moveu) for (const A of S.npcs) {
       if (A.oculto || A.sentado || A.deitado || !(A.esbarrao > 0.05)) continue;
@@ -2711,8 +2723,10 @@
       const px = J.x + sx * lado * f, pz = J.z + sz * lado * f;
       if (livre(px, pz)) { J.x = px; J.z = pz; }
     }
-    if (!S.dentro && (J.z < AV.z0 - 0.4 || J.z > AV.z1 + 0.4)) J.seguro = { x: J.x, z: J.z };   // a última calçada (para o susto do carro)
-    J.andando = moveu; J.correndo = moveu && corre; J.vel = vel; J.yawAlvo = Math.atan2(-dz, dx);
+    if (!S.dentro && (J.z < AV.z0 - 0.4 || J.z > AV.z1 + 0.4)) J.seguro = { x: J.x, z: J.z };   // (5.5.0) a última calçada (para o susto do carro)
+    J.andando = moveu; J.correndo = moveu && corre && !V; J.vel = vel; J.yawAlvo = Math.atan2(-dz, dx);
+    // (6.1.0) de bicicleta: andou bem menos do que devia (bateu de frente em parede, poste, carro...) → cai
+    if (V) { const real = Math.hypot(J.x - x0, J.z - z0); if (e.m > 0.45 && real < sp * 0.5) V.bloq = (V.bloq || 0) + dt; else V.bloq = 0; if (V.bloq > 0.06 && V.bater) V.bater(); }
   }
   function tickJogador(dt) {
     const J = S.jog; J.t += dt;
@@ -2913,9 +2927,11 @@
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
     const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
     const rnd = semente(P.nome.length * 31 + 7);
-    const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // no mercado quem cuida dos clientes é o mercado.js
-    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs, areaCli = [];                   // os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
+    const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
+    const pizzaJs = P.nome === 'pizzaria' && !!S.pizzaria;               // (6.1.0) na pizzaria quem cuida de tudo (Mário, Carla, clientes) é o pizzaria.js
+    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
+      if (pizzaJs) continue;
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
@@ -2928,7 +2944,8 @@
     }
     const enc = encontroAgora(P.nome) ? reservarMesaEncontro(P.nome) : null;   // encontro com a Lúcia: a mesa dela fica reservada
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
-    if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // Cadu, caixa, estoque (mercado.js)
+    if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
+    if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     if (enc) { enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL); }
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
@@ -2944,6 +2961,7 @@
     await preto(true, 600);
     const M = MESA_ENC[S.dentro.nome];
     for (const A of S.npcs.slice()) if (A.cli && A.cli.a && Math.abs(A.cli.a.x - M.x) < 1 && Math.abs(A.cli.a.z - M.z) < 1) { A.cli.a.ocupado = null; descartarPessoa(A); }
+    if (S.dentro.nome === 'pizzaria' && S.pizzaria) S.pizzaria.liberarMesa(M.x, M.z);   // (6.1.0) os clientes da pizzaria.js nessa mesa vão embora
     const enc = reservarMesaEncontro(S.dentro.nome); if (!enc) { S.encontroRodando = false; await preto(false, 400); liberar(); return; }
     enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL);
     if (S.jog.sentado) levantar();
@@ -3037,7 +3055,8 @@
   async function sairDoLugar(semClarear) {
     const F = S.fora, J = S.jog; if (!F) return;
     await preto(true, 380);
-    if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();
+    if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
+    if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
     if (J.sentado) levantar();
     for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
@@ -3055,28 +3074,32 @@
   }
   function alvos() {
     const J = S.jog, v = [];
+    if (S.pizzaria && S.pizzaria.montado()) return S.pizzaria.alvosMontado();   // (6.1.0) na bicicleta: só descer (e entregar)
     if (J.sentado) {
       if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // sentado no balcão: "Valdemar" ou "Sair"
+      if (S.dentro && S.dentro.nome === 'pizzaria' && S.pizzaria) { const vp = S.pizzaria.alvosSentado(); if (vp) return vp; }   // (6.1.0) pedir pizza
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
-    if (!S.turno && !S.turnoMercado) for (const a of S.assentos) if (!a.ocupado) {      // no turno ele trabalha: nada de sentar
+    if (!S.turno && !S.turnoMercado && !S.turnoPizza) for (const a of S.assentos) if (!a.ocupado) {      // no turno ele trabalha: nada de sentar
       if (a.lanche && !lojaAberta()) { v.push({ x: a.x, z: a.z, r: 1.15, txt: T('Lanche fechado. Abre às 8h.'), fn: async () => {}, y: a.h + 1.3 }); continue; }
       v.push({ x: a.x, z: a.z, r: 1.15, txt: a.lanche ? T('Sentar no balcão') : T('Sentar'), fn: () => sentar(a), y: a.h + 1.3 });
     }
-    if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: S.luciaPredio ? T('Encontrar a Lúcia') : T('Entrar no prédio'), fn: S.luciaPredio ? cenaEncontroPredio : entrarNoPredio, y: 2.7 });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
+    if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: S.luciaPredio ? T('Encontrar a Lúcia') : T('Entrar no prédio'), fn: S.luciaPredio ? cenaEncontroPredio : S.turnoPizza && S.pizzaria ? async () => { if (await S.pizzaria.encerrarAntes()) await entrarNoPredio(); } : entrarNoPredio, y: 2.7 });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (!S.dentro && S.luciaPredio) v.push({ x: S.luciaPredio.x, z: S.luciaPredio.z, r: 2.2, txt: T('Encontrar a Lúcia'), fn: cenaEncontroPredio, y: 2.6, pri: true });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
       const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
+      if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); for (const P of PORTAS) {
-      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
-      if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // a cafeteria abre às 8h
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); if (S.pizzaria) S.pizzaria.alvosRua(v); for (const P of PORTAS) {
+      if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
+      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
+      if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     } }
     return v;
@@ -3246,6 +3269,12 @@
       fimDeSemana, fut,                                                  // regras: sem trabalho no fim de semana; futebol
       painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
     };
+  }
+  // (6.1.0) o que o pizzaria.js (Forno a Lenha + entregas de bicicleta) usa daqui: o mesmo do mercado e mais o mapa/missão e a física da rua
+  function apiPizzaria() {
+    return Object.assign(apiMercado(), {
+      definirMarca, mostrarMissao, recolherMissao, altura, livre, gastoNaTela, caminhoRede, PORTAS, entrarNoPredio,
+    });
   }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};
@@ -3937,7 +3966,7 @@
   //   A conversa (roteiroEncontro) é a mesma nos três lugares; a fase2.js usa a mesma função (Fases.carregar('cidade').encontro).
   const ENC_INI = 18.75, ENC_FIM = 21;
   const ROUPA_ENC = [5, ['#b8325a', '#f2f2ee', '#f2f2ee', '#f2f2ee']];          // o vestido com barra, vinho
-  const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 5.5, z: 3 } };
+  const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 5.0, z: 3.4 } };   // (6.1.0) a pizzaria foi redecorada: a mesa do canto sudeste
   const BEIJO_MIN = 60;
   function encontroAgora(lugar) {
     const d = S.dados, E = encontroMarcado();
@@ -4034,11 +4063,14 @@
     for (const s of [-1, 1]) {
       const x = M.x + s * 0.24;
       L.box(0.3, 0.02, 0.3, '#f4f4ec', x, 0.79, M.z);
-      if (pizza) { L.box(0.2, 0.025, 0.1, '#e8a640', x, 0.81, M.z - 0.03); L.box(0.12, 0.026, 0.06, '#c8352b', x, 0.812, M.z + 0.03); L.box(0.04, 0.03, 0.04, '#f2e6a8', x - 0.05, 0.815, M.z); }
+      if (pizza && S.pizzaria) { /* (6.1.0) a pizza inteira (pixel art) fica no meio da mesa: abaixo */ }
+      else if (pizza) { L.box(0.2, 0.025, 0.1, '#e8a640', x, 0.81, M.z - 0.03); L.box(0.12, 0.026, 0.06, '#c8352b', x, 0.812, M.z + 0.03); L.box(0.04, 0.03, 0.04, '#f2e6a8', x - 0.05, 0.815, M.z); }
       else { L.box(0.14, 0.04, 0.12, '#f2f2ee', x - 0.04, 0.81, M.z - 0.03); L.box(0.1, 0.04, 0.1, '#7a4a2a', x + 0.05, 0.81, M.z + 0.04); L.box(0.08, 0.03, 0.08, '#6cae3e', x - 0.05, 0.81, M.z + 0.06); }
       L.box(0.05, 0.12, 0.05, '#d8eef5', x + s * 0.2, 0.79, M.z - 0.16);          // copo
     }
-    const mesh = L.malha(MAT); S.grupo.add(mesh); return mesh;
+    const mesh = L.malha(MAT); S.grupo.add(mesh);
+    if (pizza && S.pizzaria) { const pz = S.pizzaria.meshPizza('margherita'); pz.position.set(M.x, 0.814, M.z); mesh.add(pz); }   // (6.1.0) uma Margherita em pixel art
+    return mesh;
   }
   // ---- restaurante / pizzaria: ela acena sentada, você vai até a mesa e senta; a conversa; comer (zoom); a casa dela
   async function cenaEncontroMesa(E) {
@@ -4637,30 +4669,36 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const d = S.dados, ant = d.hora;
     d.hora += dt * H_POR_S; if (d.hora >= 24) d.hora -= 24;
     if (ant < H_ACORDAR && d.hora >= H_ACORDAR) novoDia();
-    if (ant < 2 && d.hora >= 2 && !S.madrugada) { S.madrugada = true; madrugada(); return; }     // passou das 2h acordado
-    if (!d.avisouDormir && d.hora >= 21 && d.hora < 24 && S.modo === 'livre' && !S.dentro) { d.avisouDormir = true; avisoDormir(); }
+    // (6.1.0) NOITE DE TRABALHO (pizzaria, quinta a domingo): sem o aviso das 21h (dormir às 22h); o aviso vem à 1h (dormir até as 2h)
+    //   e às 4h ele vai sozinho para casa (acorda às 9h). Nas outras noites: aviso às 21h e cutscene às 2h, como antes.
+    const nt = noiteDeTrabalho(), hMad = nt ? 4 : 2;
+    if (ant < hMad && d.hora >= hMad && !S.madrugada) { S.madrugada = true; madrugada(nt); return; }     // (5.0.0) passou das 2h acordado
+    const hAviso = nt ? d.hora >= 1 && d.hora < 4 : d.hora >= 21 && d.hora < 24;
+    if (!d.avisouDormir && hAviso && S.modo === 'livre' && !S.dentro && !S.turnoPizza) { d.avisouDormir = true; avisoDormir(nt); }
   }
+  const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemana());   // quinta a domingo
   function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 3800); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
   // 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
-  async function madrugada() {
+  async function madrugada(nt) {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
     J.andando = false; J.correndo = false;             // a cutscene das 2h cortava mesmo se ele estivesse correndo na hora
     if (J.sentado) levantar();
-    try { await fala('jog', T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
+    if (S.pizzaria && S.pizzaria.montado()) try { S.pizzaria._f.descer(true); } catch (e) { /* já desceu */ }
+    try { await fala('jog', nt ? T('Já são 4h?! Chega por hoje, vou pra casa dormir.') : T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (!S.dentro) {
       S.camParada = true;
       const pts = caminhoRede(J.x, J.z, SPAWN.x, -4.2).map((q) => [q.x, q.z]); pts.push([SPAWN.x, -5.5]);
       await Promise.race([andar(J, pts, 5.2), esperar(2600)]);
     }
     await preto(true, 900);
-    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = H_ACORDAR; d.avisouDormir = false; prepararDia(d);
-    try { Sono.registrar(3, 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
+    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = nt ? 9 : H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // (6.1.0) noite de trabalho: acorda às 9h
+    try { Sono.registrar(3, nt ? 'acordado até as 4h' : 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
     gravar('predio'); S.paraFase2 = 'acordar';
     if (S.fimRes) S.fimRes();
   }
-  async function avisoDormir() {
+  async function avisoDormir(nt) {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.jog.andando = false; S.jog.correndo = false;
-    try { await fala('jog', T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
+    try { await fala('jog', nt ? T('É melhor eu voltar para casa, tenho que dormir até as 2h para descansar bem, ou isso pode afetar meu desempenho.') : T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
   let relUlt = '', relIco = '';
@@ -4918,7 +4956,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))]; if (nome === lugarDoEmprego()) return;
     }
     const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
-    if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;
+    if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;   // (5.3.1)
+    if (nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) return;    // (6.1.0)
     A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
   }
   function fimDest(A) { A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.espera = 0; A.bloq = 0; if (S.clima.molhado && !A.chuva) correrNaChuva(A); }
@@ -4982,7 +5021,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
-        if (S.mercado) S.mercado.tick(dt);                              // depois do tickJogador: a pose de carregar caixa vale
+        if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
+        if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
@@ -5002,6 +5042,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!S) return;
     S.ativo = false; GANCHO_RENDER = null; clearTimeout(tMissao); SomChuva.nivel(0);
     if (S.mercado) try { S.mercado.limpar(); } catch (e) { console.warn('[Cidade] mercado:', e); }
+    if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
     for (const m of S.meus) ATLETAS.delete(m);
     if (S.dentro && S.grupo && S.grupo !== S.grupoCidade) { scene.remove(S.grupo); S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); }); S.grupo = S.grupoCidade; }
     if (S.grupo) {
@@ -5034,7 +5075,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
-      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // trabalho no mercado
+      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
+      Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });

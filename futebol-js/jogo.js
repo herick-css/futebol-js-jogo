@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.0.7
+   FUTEBOL JS · jogo.js · versão 6.1.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,11 @@
 /* =====================================================================
    FUTEBOL JS · O SISTEMA DE PARTIDA e o núcleo do jogo
    ---------------------------------------------------------------------
+   Novidades da versão 6.1.0 — o TRABALHO NA PIZZARIA (pizzaria.js, arquivo novo baixado pela cidade, como o mercado.js): a Forno a Lenha
+     com o Mário (caixa) e a Carla (pizzaiola), clientes que pedem, comem e pagam, 8 sabores em pixel art e as ENTREGAS DE BICICLETA
+     (quinta a domingo, 17h à meia-noite). Sono: cada noite mal dormida tira 5 de Saudável (Sono.NIVEIS); nas noites de trabalho o
+     horário de dormir muda (fase2.js / cidade.js).
+
    Como o código está organizado (procure pelos números):
      1. CONFIGURAÇÕES ........ números que dá para ajustar sem medo
      2. UTILITÁRIOS .......... funções pequenas de matemática
@@ -49,7 +54,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.0.7';
+const VERSAO_JOGO = '6.1.0';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -13046,7 +13051,8 @@ const Espectros = (() => {
 // SONO — a hora em que o personagem dormiu vira um nível (0 bem dormido · 1 depois das 22h · 2 depois de 00h · 3 pego às 2h)
 // que vale até a próxima noite: faixa do domínio menor e tracinho mais rápido. Cada noite ruim soma em "não saudável".
 const Sono = (() => {
-  const NIVEIS = [{ zona: 1, vel: 1, saude: 0 }, { zona: 0.9, vel: 1.25, saude: -5 }, { zona: 0.75, vel: 1.5, saude: -7 }, { zona: 0.5, vel: 2, saude: -10 }];
+  // (6.1.0) cada noite mal dormida tira 5 de Saudável, qualquer que seja o nível (soma noite após noite); o nível continua mudando o debuff
+  const NIVEIS = [{ zona: 1, vel: 1, saude: 0 }, { zona: 0.9, vel: 1.25, saude: -5 }, { zona: 0.75, vel: 1.5, saude: -5 }, { zona: 0.5, vel: 2, saude: -5 }];
   const nivelPelaHora = (h) => (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
   function registrar(nivel, motivo) {
     const e = Espectros._ler(); e.cond.sono = nivel | 0; Espectros._gravar(e);

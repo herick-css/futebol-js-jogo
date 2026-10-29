@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   6.1.0 — SONO: dormir sempre leva para o dia seguinte (antes, quem dormia depois da meia-noite acordava no mesmo dia). Dormiu mal
+     (depois das 22h; na noite de trabalho da pizzaria, depois das 2h) ou apagou de sono: −5 de Saudável (Sono.registrar, soma toda noite)
+     e reclama ao acordar; dormiu bem não reclama. Noite de trabalho (pizzaria, quinta a domingo): acorda às 9h e apaga às 4h.
    Como funciona
      - O jogo.js NÃO traz este arquivo junto. Quando a Fase 1 termina, o jogo baixa o fase2.js do mesmo lugar de onde veio
        (GitHub → jsDelivr, ou a pasta local), roda e chama iniciar(ctx).
@@ -843,6 +846,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at 5 AM?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las 5h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle 5?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à 5 h ?"],
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
     'Ainda não estou com sono.': ["I'm not sleepy yet.", 'Todavía no tengo sueño.', 'Non ho ancora sonno.', "Je n'ai pas encore sommeil."],
+    'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at {0}?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las {0}h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle {0}?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à {0} h ?"],
+    'Nossa, já são 4h da manhã... não aguento mais de sono.': ["Wow, it's already 4 AM... I can't stay awake any longer.", 'Uf, ya son las 4 de la mañana... no aguanto más el sueño.', 'Accidenti, sono già le 4 del mattino... non reggo più il sonno.', "Ouah, il est déjà 4 h du matin... je tombe de sommeil."],
     'Bom dia! Hora de começar o dia.': ['Good morning! Time to start the day.', '¡Buenos días! Hora de empezar el día.', 'Buongiorno! È ora di iniziare la giornata.', "Bonjour ! C'est l'heure de commencer la journée."],
     'Dormi fedendo, estou me sentindo meio mal.': ['I slept stinky, I feel kind of sick.', 'Dormí apestando, me siento medio mal.', 'Ho dormito puzzolente, mi sento un po\' male.', "J'ai dormi en puant, je me sens un peu mal."],
     'Dormi pouco... acho que não vou render como deveria hoje.': ["I barely slept... I don't think I'll perform as well as I should today.", 'Dormí poco... creo que hoy no voy a rendir como debería.', 'Ho dormito poco... credo che oggi non renderò come dovrei.', "J'ai peu dormi... je crois que je ne serai pas aussi performant que je devrais aujourd'hui."],
@@ -1578,26 +1583,43 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       await dizer(['jog', T('Hoje começa o trabalho novo na cafeteria!')]);
     }
   }
-  // ----- dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 6h do dia seguinte
+  // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 5h do dia seguinte
+  // (6.1.0) NOITE DE TRABALHO (quem trabalha na pizzaria, de quinta a domingo): acorda às 9h; dormir até as 2h é dormir bem; às 4h ele
+  //   apaga de sono (aqui) ou vai sozinho para casa (na cidade). Numa noite normal: dormir até as 22h é dormir bem; às 2h apaga.
+  //   Dormiu MAL (nível do Sono > 0): reclama ao acordar e perde 5 de Saudável (Sono.registrar; vale toda noite, soma dia após dia).
+  //   Dormir sempre leva para o DIA SEGUINTE (antes, quem dormia depois da meia-noite acordava no mesmo dia).
+  const diaSem = (dia) => ((((dia || 1) - 1) % 7) + 7) % 7;
+  const noiteDeTrabalho = (dia) => !!(S && S.dados && S.dados.emprego === 'pizzaria' && [3, 4, 5, 6].includes(diaSem(dia)));
+  const horaAcordar = (dia) => (noiteDeTrabalho(dia) ? 9 : H_ACORDA);
+  const horaApagar = (dia) => (noiteDeTrabalho(dia) ? 4 : 2);
+  function nivelDoSono(h, dia) {
+    if (h >= horaAcordar(dia) && h < 20) return 0;                       // cochilo de dia: não conta como noite mal dormida
+    if (noiteDeTrabalho(dia)) return h >= 20 || h < 2 ? 0 : h < 4 ? 2 : 3;
+    return typeof Sono !== 'undefined' ? Sono.nivelPelaHora(h) : (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
+  }
+  function registrarSono(nivel, motivo) { try { if (typeof Sono !== 'undefined') Sono.registrar(nivel, motivo); } catch (e) { console.warn('[Fase 2] sono:', e); } }
   async function dormir() {
     salvarRelogio();
-    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
+    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5, acorda = horaAcordar(c.dia);
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
-    if (h >= H_ACORDA && h < 20) {                                     // dá para dormir a qualquer hora (pula o resto do dia)
-      const r = await Escolha.mostrar(T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?'), [T('Dormir'), T('Agora não')], { centro: true });
+    if (h >= acorda && h < 20) {                                       // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
+      const txt = acorda === H_ACORDA ? T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?') : Tf('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?', acorda);
+      const r = await Escolha.mostrar(txt, [T('Dormir'), T('Agora não')], { centro: true });
       Dialogo.esconder(); if (r !== 0) return;
     }
     await preto(true, 900); const sujo = dormiuSujo();
-    const horas = h >= H_ACORDA ? 24 - h + H_ACORDA : H_ACORDA - h;
-    const novo = Object.assign({}, c, { hora: H_ACORDA, dia: (c.dia || 1) + (h >= H_ACORDA ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
+    const nivel = nivelDoSono(h, c.dia), horas = h >= acorda ? 24 - h + acorda : acorda - h;
+    registrarSono(nivel, nivel ? 'dormiu tarde' : 'dormiu bem');
+    const novo = Object.assign({}, c, { hora: acorda, dia: (c.dia || 1) + 1, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0 } });
     if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
     try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
     gravar('fim');
     aparecerNaCama(); await esperar(1600); await preto(false, 1400); await esperar(900);
     J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(200);
     await dizer(['jog', T('Bom dia! Hora de começar o dia.')]);
-    if (horas < 8) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
+    if (nivel > 0) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);   // (6.1.0) só reclama se dormiu mal
     if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
+    if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
   }
 
   // ----- a porta da rua
@@ -1660,7 +1682,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function relogioTick(dt) {
     const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) R.hora -= 24;
     R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }
-    if (ant < 2 && R.hora >= 2 && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
+    const hAp = horaApagar(R.dia);                                     // (6.1.0) noite de trabalho: 4h
+    if (ant < hAp && R.hora >= hAp && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
     mostrarRelogio();
   }
   function mostrarRelogio() {
@@ -1683,15 +1706,17 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     } catch (e) { console.warn('[Fase 2] sujo:', e); return false; }
   }
   async function apagarDeSono() {
-    const sujo = dormiuSujo();
-    await dizer(['jog', T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
+    const sujo = dormiuSujo(), nt = noiteDeTrabalho(S.relogio.dia), acorda = horaAcordar(S.relogio.dia);
+    await dizer(['jog', nt ? T('Nossa, já são 4h da manhã... não aguento mais de sono.') : T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
     await preto(true, 900);
-    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = H_ACORDA;
-    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: H_ACORDA, dia: S.relogio.dia, avisouDormir: false, sono: { horas: 3, ok: false } })); } catch (e) { console.warn(e); }
+    registrarSono(3, nt ? 'acordado até as 4h' : 'acordado até as 2h');   // (6.1.0) apagar de sono também é noite mal dormida
+    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = acorda;
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? 4 : 2), ok: false } })); } catch (e) { console.warn(e); }
     aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
     const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
     await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
     if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
+    if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
   }
   function gancho(rdt) {
     if (!S || !S.ativo) return;
@@ -1812,7 +1837,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         await preto(false, 900); await esperar(500);
         const sujo = dormiuSujo();
         await dizer(['jog', T('Nem lembro de ter chegado em casa... apaguei de cansaço.')]);
+        await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);          // (6.1.0) ficou acordado até as 2h (4h na noite de trabalho): dormiu mal
         if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
+        if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
         S.jog.seguir = true; S.jog.pose = 'pe'; S.jog.x = -1.9; S.jog.z = -1.3; S.jog.yaw = S.jog.yawAlvo = 0; S.jog.ySnap = true;
         liberar();
       } else if (volta) {
@@ -1854,5 +1881,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', paraCidade); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa } });   // (_estado/_fns: para testes)
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir } });   // (_estado/_fns: para testes)
 })();
