@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.0.4
+   FUTEBOL JS · jogo.js · versão 6.0.5
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · PROTÓTIPO DO SISTEMA DE PARTIDA (histórico; até a 14 a numeração era antiga)
    ---------------------------------------------------------------------
+   Novidades da versão 6.0.5 — CONVERSAS: a escolha (Escolha) agora é UMA caixa só, embaixo: a pergunta vira o título e a fala
+     some; uma escolha de cada vez (fila): uma segunda escolha que chegava no meio de outra trocava os botões e a primeira nunca
+     terminava (o jogo travava na cena). Uma fala nova no lugar de outra ainda pendente termina a antiga (Dialogo).
+
    Novidades da versão 6.0.4 — cidade e interiores: seu Valdemar não anda mais "no nada" (cidade.js), lanche 2D entre as mãos ao comer
      e a loja Golaço Esportes com a sala retangular (interiores.js). O jogo.js só mudou o número.
 
@@ -673,7 +677,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.0.4';
+const VERSAO_JOGO = '6.0.5';
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
 const CONFIG = {
@@ -12741,6 +12745,7 @@ const Dialogo = (() => {
   function mostrar(ls, op) {
     montar(); op = op || {};
     if (typeof Cena !== 'undefined' && Cena.pulando) { if (!op.manter) el.hidden = true; return Promise.resolve(); }   // (4.8.2) pulando a cena: a fala passa direto
+    if (resolver) { const r0 = resolver; resolver = null; if (fala && digitando) { try { fala.pular(); } catch (e) { /* ok */ } } digitando = false; r0(); }   // (6.0.5) uma fala nova no lugar de outra pendente: a antiga termina (antes ficava esperando para sempre)
     linhas = ls.slice(); idx = 0; voz = op.voz == null ? 2 : op.voz; cps = op.cps || 24; aoLinha = op.aoLinha || null; manter = !!op.manter;
     nomeEl.textContent = op.nome || ''; nomeEl.hidden = !op.nome;
     el.hidden = false;
@@ -13152,6 +13157,9 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
 #escolha[hidden] { display: none; }
 /* (5.1.0) algumas escolhas (ex.: o balcão do seu Valdemar) pedem o meio da tela, não embaixo */
 #escolha.centro { top: 0; align-items: center; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+/* (6.0.5) escolha SEM título com uma fala aberta (a pergunta já está na fala): os botões ficam em cima, sem cobrir a caixa da fala */
+#escolha.sobreFala { top: 0; align-items: flex-start; padding-top: calc(10px + env(safe-area-inset-top, 0px)); }
+#escolha .escTit[hidden] { display: none; }
 #escolha .escCaixa { --p: var(--p3, 3px); box-sizing: border-box; width: min(720px, 100%); padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 8px;
   border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
 #escolha .escTit { margin: 0; font: 600 clamp(14px, 3.8vh, 19px)/1.3 var(--font-body); }
@@ -13160,12 +13168,22 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
     el = document.createElement('div'); el.id = 'escolha'; el.hidden = true;
     ($('raizJogo') || document.body).appendChild(el);
   }
+  // (6.0.5) UMA escolha de cada vez: se outra pedir para abrir com uma aberta (ex.: o celular tocando no meio de uma conversa), ela
+  // espera a de agora fechar. Antes a nova trocava os botões e a promessa da primeira NUNCA resolvia — o jogo ficava travado na cena.
+  let fila = Promise.resolve();
   function mostrar(titulo, ops, opcoes) {
+    const p = fila.then(() => abrir(titulo, ops, opcoes));
+    fila = p.catch(() => {});
+    return p;
+  }
+  function abrir(titulo, ops, opcoes) {
     if (typeof Cena !== 'undefined') Cena.interativo();      // (4.8.2) decisão do jogador: o "Pular cena" para aqui
     montar();
     el.classList.toggle('centro', !!(opcoes && opcoes.centro));   // (5.1.0) ex.: Escolha.mostrar(titulo, ops, { centro: true })
     el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p>' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div>';
-    el.querySelector('.escTit').textContent = titulo || '';
+    el.querySelector('.escTit').textContent = titulo || ''; el.querySelector('.escTit').hidden = !titulo;
+    if (titulo && Dialogo.aberto()) Dialogo.esconder();      // (6.0.5) UMA caixa só: a pergunta vira o título da escolha (a fala some)
+    el.classList.toggle('sobreFala', !titulo && Dialogo.aberto());
     el.querySelectorAll('button').forEach((b, i) => { b.textContent = ops[i]; });
     el.hidden = false;
     return new Promise((res) => {
@@ -13177,7 +13195,7 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
       };
     });
   }
-  return { mostrar };
+  return { mostrar, aberta: () => !!(el && !el.hidden) };
 })();
 
 // (4.4.0) textos novos da Fase 1: tutorial com bolas paradas (falta, lateral, escanteio), cena do "nem vi você passando" e o Professor Roberto no pátio

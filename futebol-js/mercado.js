@@ -929,7 +929,7 @@
         }
         const P = PAPOS_CADU.filter((q) => !q.salvou || salvou), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
         await api.fala('cadu', T(Q.p));
-        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])], { centro: true });
+        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])]);   // (6.0.5) uma caixa só, embaixo: a pergunta com as respostas
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('cadu', T(R[1]));
         fim(); return;
       }

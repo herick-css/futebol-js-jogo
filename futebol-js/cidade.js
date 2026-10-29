@@ -1,6 +1,13 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.0.5
+     - FAIXA DE PEDESTRE: carro chegando nos próximos 8 s (era 5) → o pedestre para na beira com a mão esticada (pelo menos ~1,2 s) e
+       atravessa CORRENDO quando os carros que vêm param (ou já estão freando longe da faixa: carroPerigo). Antes ele esperava cada carro
+       novo que aparecia, e às vezes nem chegava a levantar a mão.
+     - Carro só para por quem está NA FRENTE dele (na largura do carro). Gente do lado não trava mais o carro no meio da faixa.
+     - Conversas com a Lúcia (e com o Cadu, no mercado.js): uma caixa só, embaixo, com a pergunta e as respostas (antes a pergunta
+       aparecia duas vezes, na fala e na escolha).
    NOVIDADES DA 6.0.4
      - SEU VALDEMAR andando "no nada": quando a hora mudava enquanto você estava dentro de um lugar, o jogo o colocava onde ele deveria estar
        (snapValdemar), mas o plano interrompido deixava para trás o "andando" e a rota (rotaV). Resultado: ele ficava andando no lugar para
@@ -1977,6 +1984,15 @@
   const linhaFaixa = (c) => (c.dir > 0 ? (7.2 - c.x) - 2.1 : (c.x - 12.4) - 2.1);
   // (6.0.0) algum carro andando chega na faixa em menos de 'seg' segundos (ou está passando nela)?
   const carroChegando = (seg) => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c); return dl > -6.8 && (dl < 0 || dl / c.v < seg); });
+  // (6.0.5) quem ainda é PERIGO para atravessar: carro andando que chega em menos de 'seg' segundos e que NÃO vai parar antes da faixa
+  // (parado já, ou freando para parar e ainda longe). Antes o pedestre esperava TODOS os carros dos próximos segundos pararem de vez,
+  // e cada carro novo que vinha atrás (que também ia parar) fazia ele esperar de novo.
+  const carroPerigo = (seg) => S.carros.some((c) => {
+    if (!c.ativo || c.v < 0.5) return false;
+    const dl = linhaFaixa(c); if (!(dl > -6.8 && (dl < 0 || dl / c.v < seg))) return false;
+    if (dl < 0) return true;                                         // em cima da faixa
+    return !(c.paraFaixa && (c.v < 1 || dl > 10));
+  });
   const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c);   // (6.0.0) carro PARADO não é perigo (antes travava: carro parado na linha esperando o pedestre e o pedestre esperando o carro)
     return (dl > -6.8 && dl < 0) || (c.v > 1.5 && dl >= 0 && dl < (c.v * c.v) / (2 * 5.5) + 0.6); });
   // (5.5.0) 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
@@ -2015,8 +2031,10 @@
       // espaço livre à frente: o jogador (se estiver na frente, na faixa do carro) e o carro da frente
       let folga = 1e9, bloq = null;
       for (const P of obst) {                                        // o jogador e as pessoas andando (atravessando na faixa, por exemplo)
-        if (!P || Math.abs(P.z - c.z) >= 1.75) continue; const fr = (P.x - c.x) * c.dir;
-        if (fr > -1.2) { const f = fr - 2.1 - 0.3 - 1.6; if (f < folga) { folga = f; bloq = P; } }
+        // (6.0.5) só quem está NA FRENTE do carro (na largura dele) o faz parar. Gente DO LADO (passando junto da porta, na calçada,
+        // atravessando atrás) não conta mais: antes o carro travava no meio da faixa com alguém ao lado e fazia fila.
+        if (!P || Math.abs(P.z - c.z) >= 1.25) continue; const fr = (P.x - c.x) * c.dir;
+        if (fr > 1.9) { const f = fr - 2.1 - 0.3 - 1.6; if (f < folga) { folga = f; bloq = P; } }
       }
       for (const o of S.carros) { if (o === c || !o.ativo || o.z !== c.z) continue; const fr = (o.x - c.x) * c.dir; if (fr > 0) { const f = fr - 4.2 - 2.2; if (f < folga) { folga = f; bloq = null; } } }
       if (faixa) {                                                   // (5.5.0) para antes da faixa (se ainda dá para frear; depois de decidir, para mesmo)
@@ -2284,9 +2302,10 @@
       if (N.faixa && S.rede[prox].faixa) {                           // (5.5.0) vai atravessar
         // (6.0.0) Carro chegando nos próximos 5 s: para na beira com a mão esticada para a frente e espera os carros pararem;
         // aí atravessa CORRENDO (com a mão baixa). Sem carro vindo: atravessa andando, como sempre, com a mão para baixo.
-        if (A.pedeFaixa || carroChegando(5)) {
-          A.pedeFaixa = true;
-          if (carroNaoPara() || carroChegando(5)) { A.espera = 0.25; A.andando = false; A.yawAlvo = Math.atan2(-(S.rede[prox].z - A.z), S.rede[prox].x - A.x); return; }
+        if (A.pedeFaixa || carroChegando(8)) {                      // (6.0.5) 8 s (era 5)
+          if (!A.pedeFaixa) { A.pedeFaixa = true; A.maoT = 0; }
+          A.maoT = (A.maoT || 0) + 0.25;                             // (6.0.5) a mão fica pelo menos ~1,2 s esticada (dá para ver o gesto)
+          if (carroNaoPara() || carroPerigo(8) || A.maoT < 1.25) { A.espera = 0.25; A.andando = false; A.yawAlvo = Math.atan2(-(S.rede[prox].z - A.z), S.rede[prox].x - A.x); return; }
           A.pedeFaixa = false; A.atravessa = true;
           if (!A.correFaixa) { A.correFaixa = true; A.velFaixa = A.vel; A.vel = Math.max(3.3, A.vel * 1.9); A.correndo = true; }
         } else A.atravessa = true;
@@ -3526,11 +3545,11 @@
           await fala('lucia', T('A quanto tempo você mora aqui?'));
           await fala('jog', T('Acabei de me mudar para a cidade.'));
           await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
-          const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')], { centro: true });   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
+          const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')]);   // (6.0.5) uma caixa só, embaixo   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
           if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); }
           else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
         } else if (falou) {
-          const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
+          const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')]);
           await fala('lucia', r0 === 0 ? T('Que bom te ver de novo! Deixa eu te explicar como funciona o trabalho aqui.') : T('Ah... tudo bem, faz tempo mesmo. Deixa eu te explicar como funciona o trabalho aqui.'));
         } else {
           await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
@@ -3546,7 +3565,7 @@
     if (d.hora >= H_CAFE_FECHA && d.hora < H_LUCIA_SAI) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
     // (5.6.0) o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar
     const ops = [['cafe', T('Comprar um café')]]; if (funcionario) ops.push(['trab', T('Sobre o trabalho')]); ops.push(['papo', T('Conversar')], ['tchau', T('Tchau')]);
-    const r = await Escolha.mostrar(T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]), { centro: true });
+    const r = await Escolha.mostrar(T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]));
     Dialogo.esconder();
     const op = (ops[r] || [])[0];
     if (op === 'cafe') await comprarCafe();
@@ -3560,7 +3579,7 @@
     if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
     if (d.hora < H_TRAB_INI || d.hora >= H_TRAB_FIM) { await fala('lucia', T('O expediente é das 8h às 16h. Volta nesse horário!')); Dialogo.esconder(); return; }
     if (d.precisaBanho) { await fala('lucia', T('Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?')); Dialogo.esconder(); return; }   // (5.3.0) sem banho, não trabalha
-    const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')], { centro: true });
+    const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')]);
     Dialogo.esconder();
     if (r !== 0) return;
     await fala('lucia', T('Boa! Vou abrir as portas. Os clientes já vão chegar.')); Dialogo.esconder();
@@ -3573,10 +3592,10 @@
       await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
       await fala('lucia', T('A quanto tempo você mora aqui?'));
       await fala('jog', T('Acabei de me mudar para a cidade.'));
-      const r = await Escolha.mostrar(T('Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!'), [T('Eu também fico feliz de ver você'), T('Você trabalha aqui faz tempo?')], { centro: true });
+      const r = await Escolha.mostrar(T('Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!'), [T('Eu também fico feliz de ver você'), T('Você trabalha aqui faz tempo?')]);
       await fala('lucia', r === 0 ? T('A-ah... é... eu também, viu?') : T('Faz uns dois anos. O cheiro de café nem sai mais de mim, haha.'));
     } else if (falou) {
-      const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')], { centro: true });
+      const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')]);
       await fala('lucia', r0 === 0 ? T('Que bom te ver de novo!') : T('Ah... tudo bem, faz tempo mesmo.'));
       await fala('lucia', T('Que bom te ver por aqui! Vem tomar um cafezinho sempre que quiser.'));
     } else {
@@ -3595,7 +3614,7 @@
   async function conversaLucia() {
     const d = S.dados, P = PAPOS_LUCIA[(d.luciaPapo | 0) % PAPOS_LUCIA.length]; d.luciaPapo = (d.luciaPapo | 0) + 1;
     await fala('lucia', T(P[0]));
-    const r = await Escolha.mostrar(T(P[0]), [T(P[1][0]), T(P[2][0])], { centro: true });
+    const r = await Escolha.mostrar(T(P[0]), [T(P[1][0]), T(P[2][0])]);   // (6.0.5) uma caixa só, embaixo: a pergunta com as respostas (a fala some)
     await fala('jog', T(P[r === 1 ? 2 : 1][0])); await fala('lucia', T(P[r === 1 ? 2 : 1][1])); Dialogo.esconder();
   }
   // ================================================================== (5.6.0) CAFÉS À VENDA: deixam o personagem mais rápido NA CIDADE por um tempo
