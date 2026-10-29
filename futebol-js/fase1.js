@@ -17,7 +17,7 @@
    ===================================================================== */
 'use strict';
 
-// 14c. FASE 1 · ESCOLA (4.3.2) — "Escola Santa Maria". Sala de aula 3D com a professora, 9 cadeiras (7 ocupadas), conversas,
+// 14c. FASE 1 · ESCOLA — "Escola Santa Maria". Sala de aula 3D com a professora, 9 cadeiras (7 ocupadas), conversas,
 // atividade de álgebra (3 questões) e cutscenes. Usa o mesmo palco do jogo (main scene/câmera, via GANCHO_RENDER): a sala é
 // montada longe do campo e os atletas da partida ficam escondidos. Personagens "bebê" (corpo pequeno, cabeção) com
 // o rosto/cabelo/pele que o jogador criou (sem barba).
@@ -25,13 +25,13 @@
 const Fase1 = (() => {
   const SX = 6, SZ = 5, ALT = 2.8, OX = 600;                         // sala (meia largura/profundidade/altura) e onde ela fica no mundo
   const PORTA = { x: 4.7, z: SZ };
-  const CX = 3.8, CL = 13;                                             // corredor (4.3.7: bem mais largo): meia largura e meio comprimento
+  const CX = 3.8, CL = 13;                                             // corredor (bem mais largo): meia largura e meio comprimento
   const LINHAS = [-1.6, 0.6, 2.8], COLS = [-3.2, 0, 3.2];            // 9 mesas (3 colunas × 3 fileiras)
   const ESC = 0.68, CAB = 1.55, ASSENTO_Y = -0.15;                     // personagem bebê: corpo 68%, cabeça 155%
   const PROF = { x: -2.4, z: -3.9 }, MESA_PROF = { x: -4.5, z: -4.2 };
   const SPOT = { joao: [1.9, LINHAS[1] + 0.62], lucia: [-1.9, LINHAS[1] + 0.62], prof: [PROF.x + 1.25, PROF.z] };   // pontos fixos (afastados) de conversa
   const NOMES = { prof: 'Dona Graça', joao: 'João Pinha', lucia: 'Lúcia Alves', valentao: '??', oculos: 'Menino de óculos', rob: 'Professor Roberto' };       // (a tabela I18N traz os nomes de cada idioma)
-  const esperar = (ms) => (typeof Cena !== 'undefined' ? Cena.esperar(ms) : new Promise((r) => setTimeout(r, ms)));   // (4.8.2) pulável (botão "Pular cena")
+  const esperar = (ms) => (typeof Cena !== 'undefined' ? Cena.esperar(ms) : new Promise((r) => setTimeout(r, ms)));   // pulável (botão "Pular cena")
   const pulando = () => typeof Cena !== 'undefined' && Cena.pulando;
   const rad = Math.PI / 180;
   let UI = null, S = null;
@@ -109,7 +109,7 @@ const Fase1 = (() => {
   }
   const preto = async (ligado, ms) => { UI.preto.hidden = false; UI.preto.style.transitionDuration = pulando() ? '0s' : ((ms || 900) / 1000) + 's'; await esperar(30); UI.preto.classList.toggle('claro', !ligado); await esperar(ms == null ? 900 : ms); if (!ligado) UI.preto.hidden = true; };
   const legenda = async (txt, ms) => { UI.leg.textContent = txt; UI.leg.classList.add('on'); await esperar(ms || 2600); UI.leg.classList.remove('on'); await esperar(850); };
-  const nm = (k) => T(k === 'oculos' && S && S.caduNome ? 'Cadu' : NOMES[k]);                    // (4.5.1) depois de se apresentar, o menino de óculos é o Cadu
+  const nm = (k) => T(k === 'oculos' && S && S.caduNome ? 'Cadu' : NOMES[k]);                    // depois de se apresentar, o menino de óculos é o Cadu
 
   // ------------------------------------------------------------------ sala 3D
   function texParede() { return drawTexture(40, 48, (g, w, h) => { g.fillStyle = '#efe0b4'; g.fillRect(0, 0, w, h); g.fillStyle = '#e4d2a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 37) % w, (i * 53) % 30, 2, 1);
@@ -120,7 +120,7 @@ const Fase1 = (() => {
     g.fillStyle = '#cfcfc0'; g.fillRect(2, h - 3, 18, 2); }); }
   function texPisoCor() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#d3d6d4'; g.fillRect(0, 0, w, h); g.fillStyle = '#bcc1c0'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#dde0de'; for (let i = 0; i < 18; i++) g.fillRect((i * 13) % w, (i * 7) % h, 2, 1); }); }
   function texParedeCor() { return drawTexture(64, 64, (g, w, h) => { g.fillStyle = '#efe3b5'; g.fillRect(0, 0, w, h); g.fillStyle = '#e2d3a0'; for (let i = 0; i < 40; i++) g.fillRect((i * 29) % w, (i * 11) % 60, 2, 1);
-    g.fillStyle = '#5a3d22'; g.fillRect(6, 3, 52, 15); g.fillStyle = '#bfe4f5'; g.fillRect(8, 5, 23, 11); g.fillRect(33, 5, 23, 11); g.fillStyle = '#e8f6fc'; g.fillRect(10, 6, 6, 2); g.fillRect(35, 6, 6, 2);   // (4.3.7) janelas altas, acima dos armários
+    g.fillStyle = '#5a3d22'; g.fillRect(6, 3, 52, 15); g.fillStyle = '#bfe4f5'; g.fillRect(8, 5, 23, 11); g.fillRect(33, 5, 23, 11); g.fillStyle = '#e8f6fc'; g.fillRect(10, 6, 6, 2); g.fillRect(35, 6, 6, 2);   // janelas altas, acima dos armários
     g.fillStyle = '#9a9a8c'; g.fillRect(0, 54, w, 10); }); }
   function texMariposa() {
     const half = ['......a..', '.......a.', 'kk.....eo', 'kkkk..bbo', 'kbbkkkbwo', 'kbbbbkwkw', 'kkbbbkwwo', 'ykkbbkowo', 'yyykkkoyo', '.yyykkooy', '.yyyk.ooo', '..yy...oy'];
@@ -148,11 +148,11 @@ const Fase1 = (() => {
     parede(PORTA.x, 2.1 + (ALT - 2.1) / 2, 1, ALT - 2.1, Math.PI, PORTA.x, SZ);
     const pp = texPiso(); pp.wrapS = pp.wrapT = THREE.RepeatWrapping; pp.repeat.set(SX * 2 / 1.5, SZ * 2 / 1.5);
     const piso = new THREE.Mesh(new THREE.PlaneGeometry(SX * 2, SZ * 2), basic({ map: pp })); piso.rotation.x = -Math.PI / 2; g.add(piso);
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), basic({ color: 0x000000 })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);  // (4.3.5) lá fora é preto sólido
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), basic({ color: 0x000000 })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);  // lá fora é preto sólido
     const quadro = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 1.75), basic({ map: texQuadro() })); quadro.position.set(0, 1.5, -SZ + 0.02); g.add(quadro);
     // moldura, relógio, janelas, bandeira, mural (cada peça colada na parede, sem atravessar)
     const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
-    // (4.4.2) a moldura do quadro é uma malha separada: some quando a câmera passa para trás do quadro (antes a borda ficava visível no ar)
+    // a moldura do quadro é uma malha separada: some quando a câmera passa para trás do quadro
     const LM = new Lote(); LM.caixa(4.12, 0.06, 0.05, 0x7a5430, 0, 2.4, -SZ + 0.03); LM.caixa(4.12, 0.06, 0.05, 0x7a5430, 0, 0.6, -SZ + 0.03); LM.caixa(0.06, 1.86, 0.05, 0x7a5430, -2.03, 1.5, -SZ + 0.03); LM.caixa(0.06, 1.86, 0.05, 0x7a5430, 2.03, 1.5, -SZ + 0.03);
     const moldura = LM.malha(MAT_CORES); g.add(moldura);
     F(0.04, 0.5, 0.5, 0xf2f2ee, SX - 0.03, 2.3, -4.3); F(0.05, 0.2, 0.04, 0x2a1206, SX - 0.04, 2.38, -4.3); F(0.05, 0.04, 0.16, 0x2a1206, SX - 0.04, 2.3, -4.38);              // relógio (parede direita)
@@ -195,7 +195,7 @@ const Fase1 = (() => {
   // ------------------------------------------------------------------ corredor 3D (depois da sala)
   const ZK = -7.4;                                   // z do armário (de altura dupla) onde o menino de óculos é trancado (parede esquerda)
   const FX = -CX + 0.5;                              // face dos armários da esquerda (voltada para o corredor)
-  const PROF_V = 0.4;                                // (4.3.7) profundidade do vão das portas (buraco na parede)
+  const PROF_V = 0.4;                                // profundidade do vão das portas (buraco na parede)
   function montarCorredor() {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const basic = (m) => new THREE.MeshBasicMaterial(m);
@@ -265,7 +265,7 @@ const Fase1 = (() => {
       F(0.5, 2.0, 0.03, preto, xi, 1.0, ZK - kw / 2 + 0.03); F(0.5, 2.0, 0.03, preto, xi, 1.0, ZK + kw / 2 - 0.03);
       F(0.03, 2.0, 0.04, vermelho, FX - 0.015, 1.0, ZK - kw / 2 + 0.02); F(0.03, 2.0, 0.04, vermelho, FX - 0.015, 1.0, ZK + kw / 2 - 0.02);
       F(0.03, 0.04, kw, vermelho, FX - 0.015, 1.99, ZK); F(0.03, 0.04, kw, vermelho, FX - 0.015, 0.02, ZK);
-      F(0.5, 0.04, kw, vermelho, xi, 2.0, ZK); }   // (4.4.2) tampa vermelha por cima (antes só havia a placa preta: parecia sem teto)
+      F(0.5, 0.04, kw, vermelho, xi, 2.0, ZK); }   // tampa vermelha por cima
     // portas das salas e batentes na frente do buraco (a folha fica lá no fundo do vão)
     const marrom = 0x7a4a2a, batente = 0x4a2c16, xFolha = (sd) => sd * (CX + PROF_V - 0.06);
     for (const [sd, z] of portas) {
@@ -316,7 +316,7 @@ const Fase1 = (() => {
     S.elenco.push(A);
     return A;
   }
-  function oculos(A) {                                  // (4.3.7) óculos de armação preta: dois aros em volta dos olhos + ponte + hastes nas laterais da cabeça
+  function oculos(A) {                                  // óculos de armação preta: dois aros em volta dos olhos + ponte + hastes nas laterais da cabeça
     const kc = A.kc, Lg = new Lote(), c = 0x111118;
     const xf = 0.258 * kc, yo = 1.36 + 0.245 * kc, zo = 0.0975 * kc;   // olhos do rosto 16x16: altura ≈ 0,245·kc, a ±0,0975·kc do centro
     const gw = 0.17 * kc, gh = 0.15 * kc, e = 0.03 * kc, d = 0.04 * kc;
@@ -337,13 +337,13 @@ const Fase1 = (() => {
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
     if (A.escreve) m.cabeca.rotation.z = 0;
   };
-  const poseChao = (A, t, dt) => {                                       // (4.4.2) sentado no chão, pernas esticadas, mãos apoiadas atrás
+  const poseChao = (A, t, dt) => {                                       // sentado no chão, pernas esticadas, mãos apoiadas atrás
     const m = A.m, e = Math.min(1, dt * 12);
     m.raiz.position.y = -0.44 * (A.opt.escala || 1) / 0.68; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, 0, 0);
     m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, 0.55, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, 0.55, e);
     m.bracoE.rotation.x = -0.35; m.bracoD.rotation.x = 0.35; m.corpo.rotation.z = 0;
   };
-  const poseAquece = (A, t, dt) => {                                     // (4.4.2) aquecendo: pulinhos e braços girando (o mesmo do reserva no banco)
+  const poseAquece = (A, t, dt) => {                                     // aquecendo: pulinhos e braços girando (o mesmo do reserva no banco)
     const m = A.m, f = t * 2.2 + A.fase, pul = Math.max(0, Math.sin(f * 3));
     usarJoelhos(m, 0, 0); m.raiz.position.y = pul * 0.12;
     m.bracoE.rotation.z = Math.sin(f * 2) * 1.6 + 1.2; m.bracoD.rotation.z = Math.sin(f * 2 + Math.PI) * 1.6 + 1.2;
@@ -364,9 +364,9 @@ const Fase1 = (() => {
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? Math.sin(t * 5 + (A.conv || 0)) * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? Math.sin(t * 5 + 2) * 0.35 + 0.4 : 0, e);
     }
     m.bracoE.rotation.x = m.bracoD.rotation.x = 0; m.corpo.rotation.z = 0;
-    // (4.4.0) segurando a bola com as DUAS mãos: os braços vão para a posição de segurar (th = quanto sobe: 1,15 na frente, 2,85 acima da cabeça;
+    // segurando a bola com as DUAS mãos: os braços vão para a posição de segurar (th = quanto sobe: 1,15 na frente, 2,85 acima da cabeça;
     // ph = quanto as mãos se fecham uma contra a outra). Vale parado ou andando; a bola acompanha as mãos (ver atualizar).
-    // (4.5.1) Quanto mais alto, mais os braços se ABREM para os lados da cabeça (o mesmo desenho da comemoração de gol: x = ∓0,2); antes eles se
+    // Quanto mais alto, mais os braços se ABREM para os lados da cabeça (o mesmo desenho da comemoração de gol: x = ∓0,2); antes eles se
     // fechavam um contra o outro e atravessavam o cabeção.
     if (A.segura) {
       const w0 = Math.max(0, Math.min(1, (A.segura.th - 1.5) / (2.85 - 1.5))), w = w0 * w0 * (3 - 2 * w0), ph = A.segura.ph * (1 - w) - 0.3 * w;
@@ -377,7 +377,7 @@ const Fase1 = (() => {
     A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.vel = vel || 1.9;
     return new Promise((r) => { A.rotaRes = r; });
   }
-  // (4.4.0) Como andar(), mas dá para desistir no meio: 'parar' é checada a cada instante e, se for verdadeira, o ator para e a função devolve false.
+  // Como andar(), mas dá para desistir no meio: 'parar' é checada a cada instante e, se for verdadeira, o ator para e a função devolve false.
   async function andarAte(A, pt, vel, parar) {
     A.rota = [{ x: pt[0], z: pt[1] }]; A.vel = vel || 1.9;
     let fim = false; A.rotaRes = () => { fim = true; };
@@ -395,7 +395,7 @@ const Fase1 = (() => {
     let px = -dz / l, pz = dx / l;
     if (Math.abs(pz) < 0.4) { if (px < 0) { px = -px; pz = -pz; } } else if (pz > 0) { px = -px; pz = -pz; }     // lado do quadro (z menor) ou, se estão alinhados em z, o lado +x
     const cor = S && S.lugar === 'corredor';
-    const d = Math.max(cor ? 2.3 : dist, l * 1.9);                      // (4.3.7) corredor: câmera bem mais perto
+    const d = Math.max(cor ? 2.3 : dist, l * 1.9);                      // corredor: câmera bem mais perto
     let cx = mx + px * d, cz = mz + pz * d;
     if (cor) { cx = Math.max(-CX + 0.8, Math.min(CX - 0.8, cx)); cz = Math.max(-CL + 0.7, Math.min(CL - 0.7, cz)); }
     return [cx, cor ? 1.55 : alt, cz, mx, 0.85, mz];
@@ -407,7 +407,7 @@ const Fase1 = (() => {
     dupla: () => dupla(S.parA, S.parB, 2.7, 1.7), entrega: () => dupla(S.jog, S.prof, 2.8, 1.7),
     geral: [5.6, 3.7, 4.8, -1.0, 0.9, -1.5],
     aula: () => (S && S.lugar === 'patio') ? (() => { const J = S.jog, fx = J.x * 0.6; return [fx, 5.2, J.z + 5.6, fx, 0.3, J.z - 1.6]; })()
-      : (S && S.lugar === 'corredor') ? (() => { const J = S.jog, fx = J.x * 0.4; return [fx, 5.0, J.z + 4.4, fx, 0.3, J.z - 1.2]; })() : [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],   // (4.4.0) no pátio também acompanha o jogador   // (4.3.7) no corredor a câmera 'aula' acompanha o jogador (antes ficava na sala, a 16 m do João)
+      : (S && S.lugar === 'corredor') ? (() => { const J = S.jog, fx = J.x * 0.4; return [fx, 5.0, J.z + 4.4, fx, 0.3, J.z - 1.2]; })() : [5.6, 3.4, 4.7, -0.8, 0.9, -1.4],   // no pátio também acompanha o jogador   // no corredor a câmera 'aula' acompanha o jogador
     mesa: () => seg(S.jog, 0.5, 1.35, 1.7, 0.85),
     saida: [4.0, 1.6, 1.5, 4.7, 1.1, 5.4],
     cor_ini: [1.0, 2.3, 12.6, -2.8, 1.0, 10.5], cor_buli: [0.4, 1.7, -4.1, -2.4, 1.0, -7.4], cor_fim: [0.0, 1.7, -8.4, 0, 1.0, -12.4],
@@ -424,11 +424,11 @@ const Fase1 = (() => {
     if (S && S.lugar === 'patio') {                                    // pátio, portão da quadra e a quadra
       if (z > PAT_Z0 - 0.9) return false;
       if (z > Z_PORTAO - 0.2) {                                         // pátio (menos o tronco da árvore do professor)
-        for (const [tx, tz] of ARVORES_PATIO) if (Math.hypot(x - tx, z - tz) < 0.62) return false;          // (4.4.2) troncos
-        // (4.5.1) bancos (assento e encosto) e o mastro da bandeira também são sólidos (antes dava para atravessar)
+        for (const [tx, tz] of ARVORES_PATIO) if (Math.hypot(x - tx, z - tz) < 0.62) return false;          // troncos
+        // bancos (assento e encosto) e o mastro da bandeira também são sólidos
         for (const [x0, x1, z0, z1] of BANCOS_PATIO) if (x > x0 - R && x < x1 + R && z > z0 - R && z < z1 + R) return false;
         if (Math.hypot(x - MASTRO_PATIO[0], z - MASTRO_PATIO[1]) < 0.3 + R) return false;
-        for (const A of S.gente || []) if (!A.oculto && Math.hypot(x - A.x, z - A.z) < 0.42 + (R ? R - 0.22 : 0)) return false;   // (4.4.2) pessoas também são sólidas
+        for (const A of S.gente || []) if (!A.oculto && Math.hypot(x - A.x, z - A.z) < 0.42 + (R ? R - 0.22 : 0)) return false;   // pessoas também são sólidas
         if (S.joaoA && !S.joaoA.oculto && S.joaoA.bloq && Math.hypot(x - S.joaoA.x, z - S.joaoA.z) < 0.42) return false;
         return Math.abs(x) < 20;
       }
@@ -475,7 +475,7 @@ const Fase1 = (() => {
     return out;
   }
   function irPara(A, x1, z1, vel) {                                     // anda até lá desviando dos móveis (se estiver sentado, puxa a cadeira para trás primeiro)
-    if (S && S.lugar !== 'sala') return andar(A, [[x1, z1]], vel);       // (4.3.7) fora da sala não há mesas: vai direto (o BFS é só da sala e puxava o jogador para longe do João)
+    if (S && S.lugar !== 'sala') return andar(A, [[x1, z1]], vel);       // fora da sala não há mesas: vai direto (o BFS é só da sala e puxava o jogador para longe do João)
     const pts = []; let x0 = A.x, z0 = A.z;
     if (A.sentado) { A.sentado = false; z0 = A.z + 0.5; pts.push([x0, z0]); }
     for (const p of caminho(x0, z0, x1, z1)) pts.push(p);
@@ -484,7 +484,7 @@ const Fase1 = (() => {
   const alvos = () => {
     if (!S || S.modo !== 'livre') return [];
     const l = [];
-    if (S.lugar === 'patio') {                                          // (4.4.0) o Professor Roberto vigiando a turma
+    if (S.lugar === 'patio') {                                          // o Professor Roberto vigiando a turma
       const R = S.falantes && S.falantes.rob && S.falantes.rob.A;
       if (R && !S.convite) l.push({ id: 'rob', x: R.x, z: R.z, r: 2.1, txt: Tf('Falar com {0}', nm('rob')) });
       return l;
@@ -492,7 +492,7 @@ const Fase1 = (() => {
     if (S.lugar === 'corredor') {
       l.push({ id: 'lucia2', x: S.luciaA.x, z: S.luciaA.z, r: 1.7, txt: Tf('Falar com {0}', nm('lucia')) });
       if (S.trancado) l.push({ id: 'armario', x: FX + 0.6, z: ZK, r: 1.7, txt: T('Abrir o armário') });
-      if (S.salvouOculos && S.oculosA && !S.oculosA.oculto) l.push({ id: 'cadu', x: S.oculosA.x, z: S.oculosA.z, r: 1.7, txt: Tf('Falar com {0}', nm('oculos')) });   // (4.5.1) ele fica sentado no corredor
+      if (S.salvouOculos && S.oculosA && !S.oculosA.oculto) l.push({ id: 'cadu', x: S.oculosA.x, z: S.oculosA.z, r: 1.7, txt: Tf('Falar com {0}', nm('oculos')) });   // ele fica sentado no corredor
       if (!S.joaoSaiu) l.push({ id: 'joao2', x: S.joaoA.x, z: S.joaoA.z, r: 1.8, txt: Tf('Falar com {0}', nm('joao')) });
       else l.push({ id: 'rua', x: 0, z: -CL + 1.0, r: 1.8, txt: T('Sair da escola') });
       return l;
@@ -654,7 +654,7 @@ const Fase1 = (() => {
   }
 
   async function prova() {
-    if (typeof Cena !== 'undefined') Cena.interativo();             // (4.8.2) a prova é do jogador: o "Pular cena" para aqui
+    if (typeof Cena !== 'undefined') Cena.interativo();             // a prova é do jogador: o "Pular cena" para aqui
     const resp = [];
     UI.prova.hidden = false; UI.missao.hidden = true;
     for (let i = 0; i < S.quiz.length; i++) {
@@ -680,7 +680,7 @@ const Fase1 = (() => {
   }
   const esc1 = (t) => String(t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   function salvarHistoria() {
-    HistoriaSave.gravar('fase1', { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, partida: S.partida1 || null, cadu: S.cadu || null, atributos: PERSONAGEM.atributos || null });            // (4.5.0) mescla com o que as outras fases já guardaram
+    HistoriaSave.gravar('fase1', { perfil: ['bom', 'ruim', 'nao'][S.perfil], acertos: S.acertos, joao: S.joao || null, lucia: S.lucia || null, mariposa: !!S.mariposa, traco: S.traco || null, partida: S.partida1 || null, cadu: S.cadu || null, atributos: PERSONAGEM.atributos || null });            // mescla com o que as outras fases já guardaram
   }
   function sino() {
     const A = typeof Som !== 'undefined' && Som.audio;
@@ -730,7 +730,7 @@ const Fase1 = (() => {
     S.trancado = false; S.joaoSaiu = false; S.cenaFeita = false; S.luciaFalou = false;
     const lk = looksAlunos();
     const npc = (look, x, z, yaw, extra) => { const A = criar(cor, look); A.x = x; A.z = z; A.yaw = A.yawAlvo = yaw; A.bloq = true; return Object.assign(A, extra || {}); };
-    npc(lk[0], -2.65, 8.2, 0, { conv: 0 }); npc(lk[2], -1.45, 8.2, Math.PI, { conv: 2.2 });          // (4.3.7) duplas conversando, afastadas 1,2 m (antes se misturavam)
+    npc(lk[0], -2.65, 8.2, 0, { conv: 0 }); npc(lk[2], -1.45, 8.2, Math.PI, { conv: 2.2 });          // duplas conversando, afastadas 1,2 m
     npc(lk[4], 2.65, 0.5, Math.PI, { conv: 1 }); npc(lk[5], 1.45, 0.5, 0, { conv: 3.4 });
     npc(lk[1], -2.65, -2.3, 0, { conv: 0.6 }); npc(lk[6], -1.45, -2.3, Math.PI, { conv: 2.9 });
     S.luciaA = npc({ pele: pele(1), cabelo: corCab(4), estilo: ci('Rabo de cavalo'), rosto: ri('Padrão'), labio: 2 }, 1.9, 4.6, -Math.PI / 2);
@@ -738,7 +738,7 @@ const Fase1 = (() => {
     S.oculosA = npc({ pele: pele(3), cabelo: corCab(1), estilo: ci('Franja'), rosto: ri('Padrão'), camisa: '#e8d070', listra: '#e8d070' }, FX + 0.55, ZK, Math.PI, { conv: 1.7 }); oculos(S.oculosA);
     S.valentaoA = npc({ pele: pele(2), cabelo: corCab(0), estilo: ci('Moicano'), rosto: ri('Sério'), camisa: '#2a2a30', listra: '#2a2a30', gola: '#c8202a', cabecao: 1.15, escala: 0.92 }, CX + 0.25, -9.4, Math.PI, { oculto: true, bloq: false });
     // saindo da sala (porta da esquerda)
-    J.oculto = true; J.sentado = false; J.x = -CX - 0.75; J.z = 11.0; J.yaw = J.yawAlvo = 0; J.rota = null;   // (4.4.2) começa ATRÁS da porta (dentro da sala), escondido: só aparece depois que ela abre
+    J.oculto = true; J.sentado = false; J.x = -CX - 0.75; J.z = 11.0; J.yaw = J.yawAlvo = 0; J.rota = null;   // começa ATRÁS da porta (dentro da sala), escondido: só aparece depois que ela abre
     S.seta = { x: 0, y: 2.5, z: -11.6 };
     camPara('cor_ini', true);
     await preto(false, 1000);
@@ -780,10 +780,10 @@ const Fase1 = (() => {
     await fala('oculos', T('Muito obrigado por me tirar daí!'), 'dupla');
     await fala('jog', T('Por nada.'), 'dupla'); Dialogo.esconder();
     S.trancado = false; S.salvouOculos = true; S.cadu = S.cadu || { salvou: true, conversou: false, pergunta: null }; salvarHistoria();
-    await mariposa();                                                   // (4.5.1) soltar o menino do armário: a mariposa aparece (alguém vai se lembrar disso)
+    await mariposa();                                                   // soltar o menino do armário: a mariposa aparece (alguém vai se lembrar disso)
     S.kAlvo = 0;
     camPara('aula');
-    // (4.5.1) ele não some mais: vai se sentar no chão, encostado na parede da direita (no vão sem armários), e dá para falar com ele
+    // ele não some mais: vai se sentar no chão, encostado na parede da direita (no vão sem armários), e dá para falar com ele
     await andar(K, [[FX + 1.8, ZK + 1.2], [CX - 0.8, -5.1]], 1.8);
     olhar(K, 0, K.z); K.chao = true; K.bloq = true; K.conv = null;
   }
@@ -823,7 +823,7 @@ const Fase1 = (() => {
   }
   async function mariposa() {                                          // a mariposa pixelada: "alguém vai se lembrar de algo"
     Dialogo.esconder();
-    // (4.4.2) o texto explicativo só aparece na PRIMEIRA vez que a mariposa surge; nas outras vezes só a mariposa
+    // o texto explicativo só aparece na PRIMEIRA vez que a mariposa surge; nas outras vezes só a mariposa
     const primeira = !PERSONAGEM.mothTexto; PERSONAGEM.mothTexto = true;
     const pTxt = UI.moth.querySelector('p');
     pTxt.textContent = primeira ? T('Quando a mariposa aparece, é porque aquilo que acabou de acontecer vai afetar a história...') : '';
@@ -851,15 +851,15 @@ const Fase1 = (() => {
     S.fim();
   }
 
-  // ------------------------------------------------------------------ pátio e quadra (4.3.6)
-  // (4.4.0) A quadra do pátio é a MESMA do jogo (construirQuadraFutsal): as medidas vêm do campo 'futsal'.
+  // ------------------------------------------------------------------ pátio e quadra
+  // A quadra do pátio é a MESMA do jogo (construirQuadraFutsal): as medidas vêm do campo 'futsal'.
   const QF = CAMPOS.futsalEscola || CAMPOS.futsal, QX = QF.comprimento / 2, QH = QF.largura / 2, QB = QF.folga, QZ = -30, PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
   const Z_PORTAO = QZ + QH + QB;                                        // z da grade do lado da escola (onde fica o portão)
   const PAT_Z0 = 8.2;                                                   // parede da escola (fachada)
   const ARV_PROF = { x: -8.5, z: -9.0 };                                // a árvore onde o Professor Roberto vigia a turma
-  const ARVORES_PATIO = [[-15, 2], [15, -5], [-17, -10], [17, 4], [ARV_PROF.x, ARV_PROF.z]];   // (4.4.2) todas as árvores têm tronco sólido
-  const BANCOS_PATIO = [-9, 9].map((x) => [x - 1.1, x + 1.1, 5.3, 6.0]);                  // (4.5.1) os dois bancos do pátio [x0, x1, z0, z1] (mesmas medidas do desenho em montarPatio)
-  const MASTRO_PATIO = [8, 3.0];                                         // (4.5.1) mastro da bandeira
+  const ARVORES_PATIO = [[-15, 2], [15, -5], [-17, -10], [17, 4], [ARV_PROF.x, ARV_PROF.z]];   // todas as árvores têm tronco sólido
+  const BANCOS_PATIO = [-9, 9].map((x) => [x - 1.1, x + 1.1, 5.3, 6.0]);                  // os dois bancos do pátio [x0, x1, z0, z1] (mesmas medidas do desenho em montarPatio)
+  const MASTRO_PATIO = [8, 3.0];                                         // mastro da bandeira
   function texConcreto() { return drawTexture(32, 32, (g, w, h) => { g.fillStyle = '#b9b6ae'; g.fillRect(0, 0, w, h); g.fillStyle = '#a8a59d'; g.fillRect(0, 0, w, 1); g.fillRect(0, 0, 1, h); g.fillStyle = '#c4c1b9'; g.fillRect(5, 7, 3, 2); g.fillRect(21, 19, 4, 2); }); }
   function texPlaca() { return drawTexture(256, 32, (g, w, h) => { g.fillStyle = '#1f4f8f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c230'; g.fillRect(0, 0, w, 3); g.fillRect(0, h - 3, w, 3); g.fillStyle = '#fff0c8'; g.font = 'bold 16px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('ESCOLA SANTA MARIA', w / 2, h / 2 + 1); }); }
   function texBola() {
@@ -874,11 +874,11 @@ const Fase1 = (() => {
   function montarPatio() {
     const g = new THREE.Group(); g.position.set(OX, 0, 0);
     const basic = (m) => new THREE.MeshBasicMaterial(m);
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), basic({ color: 0xa6a39b })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);   // (4.4.2) fora do pátio o chão tem a cor do concreto (antes era preto)
+    const chao = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), basic({ color: 0xa6a39b })); chao.rotation.x = -Math.PI / 2; chao.position.y = -0.04; g.add(chao);   // fora do pátio o chão tem a cor do concreto
     const tc = texConcreto(); tc.wrapS = tc.wrapT = THREE.RepeatWrapping; tc.repeat.set(48 / 1.6, 26 / 1.6);
     const pat = new THREE.Mesh(new THREE.PlaneGeometry(48, 26), basic({ map: tc })); pat.rotation.x = -Math.PI / 2; pat.position.set(0, 0, -4.8); g.add(pat);
     const L = new Lote(), F = (w, h, d, c, x, y, z) => L.caixa(w, h, d, c, x, y, z);
-    const ocl = [];                                                    // (4.4.2) peças que ficam translúcidas quando tapam a câmera: { box, mats }
+    const ocl = [];                                                    // peças que ficam translúcidas quando tapam a câmera: { box, mats }
     const LF = new Lote(), FF = (w, h, d, c, x, y, z) => LF.caixa(w, h, d, c, x, y, z);
     // fachada da escola
     FF(48, 5.2, 0.4, 0xefe3b5, 0, 2.6, PAT_Z0); FF(48, 0.5, 1.2, 0xb3262e, 0, 5.3, PAT_Z0 - 0.3); FF(48, 0.5, 0.2, 0x8a7a50, 0, 0.25, PAT_Z0 - 0.25);
@@ -904,7 +904,7 @@ const Fase1 = (() => {
     return { g, pivo: new THREE.Group(), pivoK: null, seta, bola, ocl };
   }
 
-  // ------------------------------------------------------------------ cenas da quadra (4.3.6)
+  // ------------------------------------------------------------------ cenas da quadra
   function vestir(A, uni) {                                              // troca a roupa do boneco (refaz o modelo com o uniforme)
     const velho = A.m, pai = velho.raiz.parent;
     const m = makeAthlete(Object.assign({}, A.opt, { camisa: uni.camisa, listra: uni.listra, gola: uni.gola, calcao: uni.calcao, meia: uni.meia, sola: uni.sola }));
@@ -940,7 +940,7 @@ const Fase1 = (() => {
     try { if (GANCHO_RENDER !== gancho) voltarDaPartida(); } catch (e) { console.error(e); }
     UI.preto.hidden = false; UI.preto.classList.remove('claro');
   }
-  // ---- gente no pátio (4.4.0): alunos conversando e, debaixo da árvore, o Professor Roberto com a turma que vai jogar depois
+  // ---- gente no pátio: alunos conversando e, debaixo da árvore, o Professor Roberto com a turma que vai jogar depois
   const GRUPOS_PATIO = [                                                 // [figurante, x, z] — quem está no mesmo grupo olha para o meio dele
     [[0, -6.4, 2.4], [1, -5.0, 2.9]],
     [[2, 6.0, -1.0], [3, 7.4, -0.4], [4, 6.7, -2.3]],
@@ -957,7 +957,7 @@ const Fase1 = (() => {
       }
     }
     // a turma debaixo da árvore: em volta do tronco, conversando (as mesmas crianças da partida; trocam a roupa na hora de jogar)
-    // (4.4.2) a turma do Roberto: dois sentados no chão (de costas para o tronco), dois conversando e dois aquecendo (pulinhos e braços girando)
+    // a turma do Roberto: dois sentados no chão (de costas para o tronco), dois conversando e dois aquecendo (pulinhos e braços girando)
     const volta = [['tadeu', -1.1, 0.9, 'chao'], ['duda', 0.7, 1.2, 'chao'], ['cadu', -2.2, -0.2, 'conv'], ['bia', -1.5, -1.2, 'conv'], ['nando', 1.3, -1.6, 'aquece'], ['leo', 2.5, -2.3, 'aquece']];
     for (const [id, dx, dz, modo] of volta) {
       const A = criar(pat, cor(HIST[id])); A.x = ARV_PROF.x + dx; A.z = ARV_PROF.z + dz; A.bloq = true; A.conv = n++; S.gente.push(A);
@@ -999,11 +999,11 @@ const Fase1 = (() => {
     tirarElenco([J]);
     descartar(S.sala.g);
     const pat = montarPatio(); S.sala = pat; pat.g.add(J.m.raiz);
-    scene.background = new THREE.Color(0x8cc4ee);                        // (4.4.0) lá fora o céu é azul (dentro da escola o fundo é preto)
+    scene.background = new THREE.Color(0x8cc4ee);                        // lá fora o céu é azul (dentro da escola o fundo é preto)
     S.lugar = 'patio'; S.fase = 'patio'; S.cirs = []; S.portaAng = 0; S.portaAlvo = 0; S.modo = 'cena'; S.convite = false;
     S.bolaDono = null; S.bolaAlt = 0.75; S.falantes = {};
     const Jo = criar(pat, Object.assign({}, HIST.joao)); Jo.x = 1.2; Jo.z = -3.4; Jo.yaw = Jo.yawAlvo = -Math.PI / 2; Jo.bloq = true; S.joaoA = Jo;
-    Jo.segura = { th: 1.15, ph: 0.16, alvoTh: 1.15 };                     // (4.4.0) segura a bola com as duas mãos, na frente do corpo
+    Jo.segura = { th: 1.15, ph: 0.16, alvoTh: 1.15 };                     // segura a bola com as duas mãos, na frente do corpo
     criarGentePatio();
     J.x = 0; J.z = PAT_Z0 - 0.6; J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null; J.oculto = false; J.sentado = false;
     camPara('pat_porta', true);
@@ -1014,7 +1014,7 @@ const Fase1 = (() => {
     await andar(J, [[0, 0.2]], 1.9); olhar(J, Jo.x, Jo.z); olhar(Jo, J.x, J.z);
     await fala('joao', Tf('{0}! Era isso que eu queria te mostrar!', nomeJog()), 'dupla');
     S.bolaDono = Jo; pat.bola.visible = true; Musica.porta(false);
-    Jo.segura.alvoTh = 2.85;                                              // (4.4.0) levanta a bola acima da cabeça (ela fica nas mãos)...
+    Jo.segura.alvoTh = 2.85;                                              // levanta a bola acima da cabeça (ela fica nas mãos)...
     await fala('joao', T('Olha só: uma bola de futsal! Novinha em folha!'), 'pat_bola');
     Jo.segura.alvoTh = 1.15;                                              // ...e depois abaixa
     await fala('joao', T('Vem, vamos para a quadra!'), 'dupla');
@@ -1050,7 +1050,7 @@ const Fase1 = (() => {
     voltarDaPartida();
     await parteConvite();
   }
-  // (4.7.1) Carregamento SECRETO da Fase 2: ~40 s depois de a primeira partida começar (no meio dela) o arquivo fase2.js é baixado e
+  // Carregamento SECRETO da Fase 2: ~40 s depois de a primeira partida começar (no meio dela) o arquivo fase2.js é baixado e
   // registrado, sem tela nem aviso. Se falhar, tenta de novo (até 3 vezes); se mesmo assim não vier, Fases.executar tenta no fim.
   let pre2T = null, pre2Feito = false;
   function preCarregarFase2() {
@@ -1066,7 +1066,7 @@ const Fase1 = (() => {
     vestir(J, HIST.uni0); vestir(Jo, HIST.uni0);
     J.x = -3.0; J.z = -27.5; Jo.x = -1.2; Jo.z = -27.0; J.yaw = J.yawAlvo = Jo.yaw = Jo.yawAlvo = -Math.PI / 2; J.rota = Jo.rota = null; Jo.bloq = true;
     S.bolaAlt = 0.75;
-    // (4.4.0) as crianças (e o professor) já estavam no pátio, debaixo da árvore: agora vestem os uniformes e vêm para a quadra pelo portão
+    // as crianças (e o professor) já estavam no pátio, debaixo da árvore: agora vestem os uniformes e vêm para a quadra pelo portão
     const unis = { cadu: HIST.uni0, bia: HIST.uni0, tadeu: HIST.uni1, duda: HIST.uni1, nando: HIST.uni1, leo: HIST.uni1 };
     const ids = ['cadu', 'bia', 'tadeu', 'duda', 'nando', 'leo'];
     for (const id of ids) vestir(S.falantes[id].A, unis[id]);
@@ -1090,7 +1090,7 @@ const Fase1 = (() => {
     await fala('jog', T('João... eu nunca joguei uma partida de verdade.'), 'dupla');
     await fala('joao', T('Eu sei. Mas eu confio em você!'), 'dupla');
     await fala('rob', T('Eu apito o jogo! Quero jogo limpo, pessoal!'), 'qd_geral');
-    // (4.4.2) antes de jogar: em que posição você quer atuar? (a mariposa aparece quando você escolhe)
+    // antes de jogar: em que posição você quer atuar? (a mariposa aparece quando você escolhe)
     olhar(Jo, J.x, J.z); olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
     await fala('joao', T('Antes de começar: em qual posição você quer jogar?'), 'dupla');
     const posR = await escolher(T('Em qual posição você quer jogar?'), [Tg('Zagueiro: defender o nosso gol'), T('Meia: armar o jogo'), T('Atacante: fazer gols')]);
@@ -1101,8 +1101,8 @@ const Fase1 = (() => {
     Dialogo.esconder();
     await preto(true, 900);
     sairParaPartida();
-    preCarregarFase2();                                                // (4.7.1) a Fase 2 é baixada em segredo, no meio da partida
-    // (4.4.3) Resultado ruim (derrota/empate sem jogar bem, ou expulsão): antes do João, oferece refazer a partida assistindo a um anúncio.
+    preCarregarFase2();                                                // a Fase 2 é baixada em segredo, no meio da partida
+    // Resultado ruim (derrota/empate sem jogar bem, ou expulsão): antes do João, oferece refazer a partida assistindo a um anúncio.
     //   A partida descartada NÃO deixa nada registrado (Historia.descartarResultado) e só a que valer é confirmada (confirmarResultado).
     let r, tentativas = 0;
     for (;;) {
@@ -1119,7 +1119,7 @@ const Fase1 = (() => {
       sairParaPartida();
     }
     Historia.confirmarResultado();
-    S.partida1 = { placar: r.placar, venceu: r.venceu, empate: r.empate, expulso: !!r.expulso, gols: r.gols, posicao: r.posicao || PERSONAGEM.posicaoHist || 'FWD', tentativas };   // (4.6.1) posicao: onde jogou
+    S.partida1 = { placar: r.placar, venceu: r.venceu, empate: r.empate, expulso: !!r.expulso, gols: r.gols, posicao: r.posicao || PERSONAGEM.posicaoHist || 'FWD', tentativas };   // posicao: onde jogou
     await cenaFinal(r);
   }
   const resultadoRuim = (r) => !!r.expulso || (!r.venceu && !r.bom);       // derrota ou empate sem jogar bem, ou vermelho
@@ -1136,7 +1136,7 @@ const Fase1 = (() => {
     camPara('dupla', true);
     await preto(false, 1000);
     await esperar(400);
-    if (r.expulso) {                                                  // (4.4.3) levou o vermelho: o João fica desapontado
+    if (r.expulso) {                                                  // levou o vermelho: o João fica desapontado
       await fala('joao', Tg('Você foi expulso?! Logo na primeira partida...'), 'dupla');
       await fala('joao', T('Se não sabe jogar, podia ao menos não bater nos outros!'), 'dupla');
       await fala('jog', T('Desculpa, João... eu não queria machucar ninguém.'), 'dupla');
@@ -1144,10 +1144,10 @@ const Fase1 = (() => {
     } else if (r.bom && r.venceu) {
       await fala('joao', Tf('{0}! Você disse que nunca tinha jogado?! Que jogo foi esse? Eu fiquei impressionado!', nomeJog()), 'dupla');
       await fala('joao', T('Ganhamos, e muito por sua causa!'), 'dupla');
-      await fala('jog', T('Sério? Eu nem sei como aconteceu... mas foi muito legal jogar com você, João!'), 'dupla');   // (4.4.3) resposta ao João (não é mais fala do futuro)
+      await fala('jog', T('Sério? Eu nem sei como aconteceu... mas foi muito legal jogar com você, João!'), 'dupla');   // resposta ao João (não é mais fala do futuro)
     } else if (r.bom) {
       await fala('joao', r.empate ? T('Empatamos... mas olha só como você jogou! Fiquei impressionado!') : T('Poxa, a gente perdeu... fiquei triste. Mas olha só como você jogou! Fiquei impressionado!'), 'dupla');
-      if (r.empate) {                                                 // (4.5.1) empate: o personagem não diz mais que perdeu
+      if (r.empate) {                                                 // empate: o personagem não diz mais que perdeu
         await fala('jog', Tg('Obrigado, João... pelo menos a gente não perdeu.'), 'dupla');
         await fala('joao', T('Isso mesmo! Empate também vale. Na próxima a gente ganha!'), 'dupla');
       } else await fala('jog', Tg('Obrigado, João... Perdemos, mesmo assim.'), 'dupla');
@@ -1157,14 +1157,14 @@ const Fase1 = (() => {
       await fala('joao', Tg('Relaxa! Vai ser só treinar mais um pouco.'), 'dupla');
     } else {
       await fala('joao', r.empate ? T('Empatamos... eu esperava um pouco mais de você.') : T('A gente perdeu... e eu esperava mais de você. Fiquei meio decepcionado.'), 'dupla');
-      await fala('jog', r.empate ? T('Eu falei que nunca tinha jogado... mas pelo menos não perdemos, né?') : T('Eu falei que nunca tinha jogado...'), 'dupla');   // (4.5.1) empate: "pelo menos não perdemos"
+      await fala('jog', r.empate ? T('Eu falei que nunca tinha jogado... mas pelo menos não perdemos, né?') : T('Eu falei que nunca tinha jogado...'), 'dupla');   // empate: "pelo menos não perdemos"
       await fala('joao', T('Tudo bem. Eu te ajudo a treinar!'), 'dupla');
     }
     Dialogo.esconder();
     await esperar(300);
     // o traço da história
     await tracoBanner(traco);
-    // (4.4.3) a mariposa (alguém vai se lembrar de algo), um fade para o preto e a voz do personagem lembrando do primeiro contato
+    // a mariposa (alguém vai se lembrar de algo), um fade para o preto e a voz do personagem lembrando do primeiro contato
     await mariposa();
     await preto(true, 1400);
     const dlg = $('dialogo'); if (dlg) dlg.style.zIndex = '21';          // a caixa de fala fica POR CIMA da tela preta
@@ -1187,7 +1187,7 @@ const Fase1 = (() => {
     // porta da sala (ou da sala de onde saímos) e porta do armário
     S.portaAng += (S.portaAlvo - S.portaAng) * Math.min(1, dt * 4); S.sala.pivo.rotation.y = S.portaAng;
     if (S.sala.pivoK) { S.kAng += (S.kAlvo - S.kAng) * Math.min(1, dt * 5); S.sala.pivoK.rotation.y = S.kAng; }
-    if (S.sala.pivoV) { S.vAng += (S.vAlvo - S.vAng) * Math.min(1, dt * 5); S.sala.pivoV.rotation.y = S.vAng; }                       // (4.3.7) porta do valentão
+    if (S.sala.pivoV) { S.vAng += (S.vAlvo - S.vAng) * Math.min(1, dt * 5); S.sala.pivoV.rotation.y = S.vAng; }                       // porta do valentão
     if (S.sala.pivoFE) { S.fAng += (S.fAlvo - S.fAng) * Math.min(1, dt * 3.5); S.sala.pivoFE.rotation.y = -S.fAng; S.sala.pivoFD.rotation.y = S.fAng; }   // porta da rua
     // jogador livre
     const J = S.jog;
@@ -1219,14 +1219,14 @@ const Fase1 = (() => {
       const r = A.m.raiz; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
       if (!A.sentado) r.position.y = r.position.y || 0;
     }
-    // bola de futsal nas mãos do João (pátio / quadra). (4.4.0) A posição sai da conta dos braços (onde as mãos ficam de verdade) e a bola
+    // bola de futsal nas mãos do João (pátio / quadra). A posição sai da conta dos braços (onde as mãos ficam de verdade) e a bola
     // não gira mais: antes ela ficava no ar, rodando, a uma altura fixa.
     if (S.sala.bola) {
       const D = S.bolaDono, B = S.sala.bola; B.visible = !!D && !D.oculto;
       if (D && D.segura) {
         const sg = D.segura, ec = D.opt.escala || 1, dh = 0.62, cph = Math.cos(sg.ph);
         const lx = dh * cph * Math.sin(sg.th), ly = 1.27 - dh * cph * Math.cos(sg.th) + 0.05;       // meio entre as duas mãos (no referencial do boneco)
-        // (4.4.0) levantada: a bola vai para CIMA da cabeça (estilizado: a mão não chega, mas a bola não atravessa o cabeção). w: 0 = nas mãos, 1 = no topo
+        // levantada: a bola vai para CIMA da cabeça (estilizado: a mão não chega, mas a bola não atravessa o cabeção). w: 0 = nas mãos, 1 = no topo
         const kc = D.opt.cabecao || 1, w0 = Math.max(0, Math.min(1, (sg.th - 1.5) / (2.85 - 1.5))), w = w0 * w0 * (3 - 2 * w0);
         const topoY = ((1.36 + 0.52 * kc + 0.15 * kc) * ec + 0.17 + 0.03) / ec;                // altura (no referencial do boneco) da bola apoiada no alto do cabelo
         const lx2 = lx * (1 - w) + 0.02 * w, ly2 = ly * (1 - w) + Math.max(ly, topoY) * w;
@@ -1237,11 +1237,11 @@ const Fase1 = (() => {
     // seta
     S.sala.seta.position.set(S.seta.x, S.seta.y + Math.sin(t * 4) * 0.08, S.seta.z);
   }
-  // (4.4.2) Câmera tapada: o que estiver entre a câmera e o jogador (ou a dupla que conversa) fica translúcido — árvores, a escola, pessoas.
+  // Câmera tapada: o que estiver entre a câmera e o jogador (ou a dupla que conversa) fica translúcido — árvores, a escola, pessoas.
   const _ray = new THREE.Ray(), _o = new THREE.Vector3(), _d = new THREE.Vector3(), _hit = new THREE.Vector3(), _box = new THREE.Box3(), _p1 = new THREE.Vector3(), _p2 = new THREE.Vector3();
   const ALFA_TAPA = 0.2;                                               // árvores e escola
-  const ALFA_PESSOA = 0.5;                                             // (4.6.1) pessoas: mais opacas (antes 0,2) e SEM ver os cubos por dentro (veja prePessoa)
-  // (4.6.1) Boneco translúcido LIMPO. Antes cada cubo (cabeça, tronco, braços, pernas) era desenhado com transparência e dava para ver um por dentro do
+  const ALFA_PESSOA = 0.5;                                             // pessoas: mais opacas e SEM ver os cubos por dentro (veja prePessoa)
+  // Boneco translúcido LIMPO. Antes cada cubo (cabeça, tronco, braços, pernas) era desenhado com transparência e dava para ver um por dentro do
   // outro. Agora, enquanto o boneco está translúcido, cada peça ganha uma cópia que só escreve PROFUNDIDADE (sem cor, desenhada depois do cenário e
   // antes das peças transparentes): só a superfície da frente de cada pixel passa no teste e o boneco inteiro fica uma silhueta única, igualmente translúcida.
   const MAT_PRE = new THREE.MeshBasicMaterial({ colorWrite: false });
@@ -1286,13 +1286,13 @@ const Fase1 = (() => {
       const alvo = tapa(_box) ? ALFA_PESSOA : 1;
       if (!A.mats) { A.mats = []; A.m.raiz.traverse((o) => { if (o.isMesh && o.geometry !== SHADOW_GEO && o.material && !A.mats.includes(o.material)) A.mats.push(o.material); }); }
       A.alfa = (A.alfa == null ? 1 : A.alfa); A.alfa += (alvo - A.alfa) * k; setAlfa(A.mats, A.alfa);
-      if (A.alfa < 0.985) { prePessoa(A); syncPre(A, true); } else if (A.pre) syncPre(A, false);   // (4.6.1) profundidade só enquanto translúcido
+      if (A.alfa < 0.985) { prePessoa(A); syncPre(A, true); } else if (A.pre) syncPre(A, false);   // profundidade só enquanto translúcido
     }
   }
   function gancho(rdt) {
     if (!S || !S.ativo) return;
     const dt = Math.min(0.05, rdt || 0.016);
-    // (4.8.2) "Pular cena": enquanto pula, a cena roda 25 passos por quadro (todo mundo anda/vira/abre porta até o fim) e a câmera corta seco
+    // "Pular cena": enquanto pula, a cena roda 25 passos por quadro (todo mundo anda/vira/abre porta até o fim) e a câmera corta seco
     const nPassos = typeof Cena !== 'undefined' ? Cena.passos() : 1;
     for (let i = 0; i < nPassos; i++) atualizar(dt);
     if (nPassos > 1) S.camSnap = true;
@@ -1323,7 +1323,7 @@ const Fase1 = (() => {
   // lá fora é preto sólido (como nos jogos antigos): esconde o campo e o resto do mundo enquanto a fase roda
   function escurecerMundo() {
     S.mundo = { bg: scene.background, fogN: scene.fog ? scene.fog.near : 0, fogF: scene.fog ? scene.fog.far : 0, vis: [] };
-    scene.background = new THREE.Color(S.lugar === 'patio' ? 0x8cc4ee : 0x000000);   // (4.7.2) lá fora o céu continua azul quando a cena volta da partida (estava preto)
+    scene.background = new THREE.Color(S.lugar === 'patio' ? 0x8cc4ee : 0x000000);   // lá fora o céu continua azul quando a cena volta da partida (estava preto)
     if (scene.fog) { scene.fog.near = 1e5; scene.fog.far = 2e5; }
     for (const c of scene.children) if (!c.isLight && c !== S.sala.g) { S.mundo.vis.push([c, c.visible]); c.visible = false; }
   }
@@ -1338,7 +1338,7 @@ const Fase1 = (() => {
   async function iniciar(op) {
     montarUI();
     op = op || {};
-    if (!op.direto) HistoriaSave.limpar();                 // (4.5.0) história nova: não herda nada de uma anterior (atalhos de teste mantêm)
+    if (!op.direto) HistoriaSave.limpar();                 // história nova: não herda nada de uma anterior (atalhos de teste mantêm)
     Musica.tocar('jazz');
     const ap = PERSONAGEM.aparencia || {};
     S = { ativo: true, modo: 'cena', fase: 'antes', lugar: 'sala', cirs: [], elenco: [], nome: op.nome || 'Você', voz: op.voz == null ? 2 : op.voz, cam: { px: 4.0, py: 1.6, pz: 1.5, tx: 4.7, ty: 1.1, tz: 5.0 }, camNome: 'porta', camSnap: true,
@@ -1396,14 +1396,14 @@ const Fase1 = (() => {
       await corredor();
       await new Promise((res) => { S.fim = res; });
     }
-    // 4.3.6: o pátio, a quadra, o treino e a primeira partida
+    // o pátio, a quadra, o treino e a primeira partida
     try { await parteQuadra(); } catch (e) { console.error(e); sairDaPartidaSeguro(); }
-    // (4.5.0) fim da Fase 1: passa o bastão para a Fase 2 (fase2.js, arquivo separado, baixado agora). Se não der, fica o aviso de antes.
+    // fim da Fase 1: passa o bastão para a Fase 2 (fase2.js, arquivo separado, baixado agora). Se não der, fica o aviso de antes.
     UI.missao.hidden = true; UI.ctl.hidden = true;
     UI.leg.classList.remove('on');
     UI.preto.hidden = false; UI.preto.classList.remove('claro');
     if (pre2T) { clearTimeout(pre2T); pre2T = null; }
-    const rf = await Fases.executar('fase2');                        // (4.7.1) já está carregada (sem texto de "carregando"); se não estiver, baixa aqui no escuro
+    const rf = await Fases.executar('fase2');                        // já está carregada (sem texto de "carregando"); se não estiver, baixa aqui no escuro
     if (!rf.ok) {
       console.warn('[Fase 2] não rodou:', rf);
       UI.leg.innerHTML = esc1(T('Em desenvolvimento...')) + '<br><br><button type="button" class="pxBtn pxPrim" id="f1Voltar">' + esc1(T('Voltar ao menu')) + '</button>';
@@ -1419,7 +1419,7 @@ const Fase1 = (() => {
     Musica.parar();
     S = null;
   }
-  // (4.5.0) Se a fase quebrar no meio (erro inesperado), o jogo chama isto para desfazer a sala e voltar o mundo ao normal.
+  // Se a fase quebrar no meio (erro inesperado), o jogo chama isto para desfazer a sala e voltar o mundo ao normal.
   function emergencia() {
     if (!S) return;
     try {

@@ -1,31 +1,6 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
-   5.6.0 — quem não trabalha no mercado também conversa com o Cadu: na primeira vez ele reconhece (ou não) o jogador pela Fase 1,
-           depois puxa um assunto por conversa (PAPOS_CADU).
-   5.5.0 — a vassoura do Cadu com as DUAS MÃOS (presa no corpo, passando pela mão direita no peito e pela esquerda mais embaixo) e
-           varrendo para a frente e para trás, com a escova atravessada (antes deslizava de lado, no comprimento da escova).
-   5.4.3 — os clientes de passeio COMPRAM de verdade (pegam produtos, entram na FILA e a caixa — Rosa ou Cadu — vende: mexe as mãos,
-           bipa os produtos da esteira e toca a registradora; o cliente sai com a sacola). Não tiram estoque.
-           Ritmo da troca de turno: não entra ninguém depois do MEIO-DIA; quem já estava termina a compra e sai (às 13h50 quem ainda
-           está pelos corredores vai para a fila ou embora); às 14h a loja está vazia. Voltam às 15h se o jogador não trabalha.
-           PACIÊNCIA: no turno do jogador, o cliente espera até 1min30 desde que entrou na fila (aos 60 s aparece o "..."); passou disso,
-           vai embora irritado, sem comprar: −5 fakes.
-           22h: os clientes que sobraram continuam lá dentro, o Cadu fica até as 23h "atendendo" e o jogador sai do mercado.
-           Cadu: a vassoura fica na MÃO (presa no antebraço); arrumando, ele fica encostado e de frente para a gôndola/freezer/estoque.
-           Rosa: sai andando do mercado quando o Cadu libera. Para começar o turno: tocar no caixa (ou no 2º caixa) ou falar com o Cadu
-           de mais longe (do outro lado do balcão).
-   5.4.2 — dá para trabalhar de novo: o Cadu vai para o 2º caixa às 13h40 (às 14h ele já está lá) e dá para falar com ele mesmo
-           andando; enquanto conversa ele para. Antes o "Falar com o Cadu" sumia com ele andando e, com o jogador perto, ele parava
-           para não esbarrar e nunca chegava no caixa.
-           CLIENTES DE PASSEIO (comprador.fake): andam pelas seções como se estivessem comprando e vão embora (sem fila, sem tirar
-           estoque). Aparecem das 8h às 13h40 e voltam às 15h; das 13h40 às 15h a loja esvazia (às 14h o jogador entra e não tem
-           ninguém). Durante o turno do jogador só existem os clientes de verdade.
-   5.4.1 — pixel art dos produtos refeita em 24 x 24 (como os cafés): volume com luz e sombra, tampas, rótulos com a "marca" em letrinhas
-           3 x 5 (FONTE) e um ícone (FIGURAS: folha, gota, boi, peixe, vaca...), janelinha mostrando o produto nos pacotes e sacos, frutas
-           com casca e textura (a melancia com fatia, o mamão cortado, o abacaxi com coroa...). Nenhum nome de marca de verdade: só piadas
-           (Guaraná Deserto, Café Martelo, Repelente Carapanã Nunca Mais...), e os cartões são de bancos inventados.
-   5.4.0 — o mercado de verdade
    - HORÁRIO: o mercado abre das 8h às 22h. O turno do jogador (quem escolheu o mercado na Fase 2) é das 14h às 22h, de segunda a
      sexta, a partir do 2º dia (TURNO_*).
    - A ROSA (outra caixa) fica no caixa das 7h50 até o jogador começar. Ao começar, o Cadu libera a Rosa ("Rosa, você tá liberada do
@@ -45,9 +20,6 @@
      atrás de alguém espera, contorna e, se precisar, passa por ele). Não entra cliente novo depois das 21h (H_ULTIMO_CLIENTE).
    - FALTA DE PRODUTO: cliente que quer algo de uma seção vazia = −3 fakes no fim do turno (FALTA). Troco errado continua −5.
    - O painel do turno aparece uma vez e vira o ícone "!" no canto superior esquerdo (api.painelRecolhivel, da cidade.js).
-   5.3.1 — encaixe na 5.3.0 (cidade.js): sábado e domingo não tem turno; sem banho depois do futebol o Cadu não deixa começar;
-           o fim do turno marca trabalhouAlgumDia (é o que libera a 1ª ligação do João para o futebol).
-   5.3.0 — primeira versão (feita por um amigo do Herick): caixa, troco, reposição, o Cadu da Fase 1.
    - Registrado com FutebolJS.registrarFase({ id: 'mercado' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do interiores.js e chama criar(api): a api é um pacote de funções
      da cidade (fala, aviso, criarPessoa, seguir...). Suba junto do cidade.js / interiores.js (mesma pasta futebol-js/).
@@ -134,7 +106,6 @@
     'Teve {0} troco(s) errado(s): {1} fakes de desconto.': ['There were {0} wrong change(s): {1} fakes deducted.', 'Hubo {0} cambio(s) equivocado(s): {1} fakes de descuento.', 'Ci sono stati {0} resti sbagliati: {1} fakes di trattenuta.', 'Il y a eu {0} erreur(s) de monnaie : {1} fakes retenus.'],
     'Vamos fechar! Até amanhã!': ["We're closing! See you tomorrow!", '¡Vamos a cerrar! ¡Hasta mañana!', 'Stiamo chiudendo! A domani!', 'On ferme ! À demain !'],
     'Produtos': ['Items', 'Productos', 'Prodotti', 'Articles'],
-    // (5.3.1)
     'Hoje é fim de semana, o mercado fica com o meu pai. Descansa e volta segunda!': ["It's the weekend, my dad takes care of the market. Rest and come back Monday!", 'Hoy es fin de semana, el mercado se queda con mi papá. ¡Descansa y vuelve el lunes!', 'Oggi è fine settimana, il mercato lo gestisce mio padre. Riposati e torna lunedì!', "C'est le week-end, c'est mon père qui tient la supérette. Repose-toi et reviens lundi !"],
     'Eita... você tá com cheiro de quem acabou de jogar bola! Vai em casa, toma um banho e depois volta, beleza?': ["Whoa... you smell like you just played football! Go home, take a shower and come back, okay?", 'Uy... ¡hueles a que acabas de jugar al fútbol! Ve a casa, dúchate y luego vuelve, ¿vale?', "Ehi... hai l'odore di chi ha appena giocato a calcio! Vai a casa, fatti una doccia e poi torna, ok?", "Oh là... tu sens le foot ! Rentre chez toi, prends une douche et reviens, d'accord ?"],
     // produtos
@@ -142,7 +113,6 @@
     'Arroz': ['Rice', 'Arroz', 'Riso', 'Riz'], 'Feijão': ['Beans', 'Frijoles', 'Fagioli', 'Haricots'], 'Macarrão': ['Pasta', 'Fideos', 'Pasta', 'Pâtes'], 'Biscoito': ['Cookies', 'Galletas', 'Biscotti', 'Biscuits'], 'Café em pó': ['Ground coffee', 'Café molido', 'Caffè macinato', 'Café moulu'],
     'Refrigerante': ['Soda', 'Refresco', 'Bibita', 'Soda'], 'Suco': ['Juice', 'Jugo', 'Succo', 'Jus'], 'Água': ['Water', 'Agua', 'Acqua', 'Eau'], 'Leite': ['Milk', 'Leche', 'Latte', 'Lait'],
     'Banana': ['Banana', 'Plátano', 'Banana', 'Banane'], 'Maçã': ['Apple', 'Manzana', 'Mela', 'Pomme'], 'Laranja': ['Orange', 'Naranja', 'Arancia', 'Orange'], 'Mamão': ['Papaya', 'Papaya', 'Papaya', 'Papaye'],
-    // (5.4.0)
     'Rosa': ['Rosa', 'Rosa', 'Rosa', 'Rosa'],
     'Rosa, você tá liberada do expediente já.': ["Rosa, you're free to go now.", 'Rosa, ya puedes irte, terminó tu turno.', 'Rosa, sei libera, il tuo turno è finito.', "Rosa, tu peux y aller, ton service est fini."],
     'Beleza! Bom trabalho aí, viu?': ['Great! Have a good shift, okay?', '¡Genial! Buen trabajo, ¿eh?', 'Perfetto! Buon lavoro, eh?', "Super ! Bon courage, hein ?"],
@@ -163,7 +133,6 @@
     'Gaveta (toque nas notas e moedas)': ['Drawer (tap the bills and coins)', 'Cajón (toca billetes y monedas)', 'Cassetto (tocca banconote e monete)', 'Tiroir (touche les billets et les pièces)'],
     'Digite o valor com os centavos e aperte OK.': ['Type the amount with the cents and press OK.', 'Escribe el valor con los centavos y pulsa OK.', "Digita l'importo con i centesimi e premi OK.", 'Tape le montant avec les centimes et appuie sur OK.'],
     'Mercado fechado. Abre às 8h.': ['Market closed. Opens at 8 AM.', 'Mercado cerrado. Abre a las 8h.', 'Mercato chiuso. Apre alle 8.', 'Supérette fermée. Ouvre à 8 h.'],
-    // (5.4.3)
     'Começar o turno': ['Start the shift', 'Empezar el turno', 'Inizia il turno', 'Commencer le service'],
     'Um cliente cansou de esperar e foi embora irritado! (−{0} fakes)': ['A customer got tired of waiting and left angry! (−{0} fakes)', '¡Un cliente se cansó de esperar y se fue enojado! (−{0} fakes)', 'Un cliente si è stancato di aspettare ed è andato via arrabbiato! (−{0} fakes)', 'Un client en a eu marre d’attendre et est parti fâché ! (−{0} fakes)'],
     'Irritados: {0}': ['Angry: {0}', 'Enojados: {0}', 'Arrabbiati: {0}', 'Fâchés : {0}'],
@@ -174,16 +143,16 @@
 
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 8, H_TURNO = 14, H_CHEIO_ATE = 14.5, H_FECHA = 22, H_ULTIMO_CLIENTE = 21;   // mercado 8h–22h · turno do jogador 14h–22h
-  const H_CADU_CHEGA = 7.75, H_ROSA_CHEGA = 7 + 50 / 60, H_CADU_CAIXA2 = 13 + 40 / 60, H_CADU_SAI = 15, H_CADU_VOLTA = 21 + 50 / 60;   // (5.4.2) às 13h40 ele já vai para o caixa
-  const H_PARA_ENTRAR = 12, H_TODOS_FORA = 13 + 50 / 60, H_VOLTA_PASSEIO = 15, H_FIM_PASSEIO = 21, H_CADU_FICA = 23;   // (5.4.3) troca de turno sem ninguém
-  const PACIENCIA = 90, PACIENCIA_AVISO = 60, IRRITADO = 5;          // (5.4.3) segundos na fila · −5 fakes por cliente que vai embora irritado
+  const H_CADU_CHEGA = 7.75, H_ROSA_CHEGA = 7 + 50 / 60, H_CADU_CAIXA2 = 13 + 40 / 60, H_CADU_SAI = 15, H_CADU_VOLTA = 21 + 50 / 60;   // às 13h40 ele já vai para o caixa
+  const H_PARA_ENTRAR = 12, H_TODOS_FORA = 13 + 50 / 60, H_VOLTA_PASSEIO = 15, H_FIM_PASSEIO = 21, H_CADU_FICA = 23;   // troca de turno sem ninguém
+  const PACIENCIA = 90, PACIENCIA_AVISO = 60, IRRITADO = 5;          // segundos na fila · −5 fakes por cliente que vai embora irritado
   const PAGA = 95, AUMENTO = 15, DESCONTO = 5, FALTA = 3;     // salário fixo · aumento do Cadu · troco errado · produto em falta
   const EST_MAX = 14, REPOR_EM = 5;                          // unidades por seção · abaixo disso o jogo pede para repor
   const SECOES = ['higiene', 'comida', 'bebida', 'fruta'];
   const NOME_SEC = { higiene: 'Higiênico', comida: 'Comida', bebida: 'Bebida', fruta: 'Fruta' };
   const ONDE_SEC = { higiene: 'na gôndola de higiênicos', comida: 'na gôndola de comida', bebida: 'no freezer de bebidas', fruta: 'na ilha de frutas' };
   const COR_SEC = { higiene: '#3a64b8', comida: '#e8742a', bebida: '#3fb7b0', fruta: '#6cae3e' };
-  // ------------------------------------------------------------------ (5.4.1) PIXEL ART DOS PRODUTOS — 24 x 24, no capricho (como os cafés)
+  // ------------------------------------------------------------------ PIXEL ART DOS PRODUTOS — 24 x 24, no capricho (como os cafés)
   //   Os nomes são PIADAS, sem usar marca de verdade (ex.: Guaraná Deserto, Repelente Carapanã Nunca Mais, Café Martelo).
   //   Cada produto: [nome, preço em CENTAVOS, forma, cores]. cores = { a: principal, b: rótulo / 2ª cor, c: detalhe (tampa, folha...),
   //   t: cor das letras do rótulo, l: 1 a 3 letras da "marca", i: ícone do rótulo (FIGURAS), ic: cor do ícone }.
@@ -463,7 +432,7 @@
   }
   function iconeProduto(P, tam) { const src = canvasProduto(P), cv = document.createElement('canvas'); cv.width = cv.height = N; cv.getContext('2d').drawImage(src, 0, 0); cv.style.cssText = 'width:' + tam + 'px;height:' + tam + 'px;image-rendering:pixelated;display:block;flex:0 0 auto;'; return cv; }
 
-  // ------------------------------------------------------------------ (5.4.0) DINHEIRO EM CENTAVOS: notas, moedas e cartões em pixel art
+  // ------------------------------------------------------------------ DINHEIRO EM CENTAVOS: notas, moedas e cartões em pixel art
   const fmt = (c) => 'F$ ' + (Math.round(c) / 100).toFixed(2).replace('.', ',');
   const NOTAS = [                                            // valor em centavos (as cores das notas do real)
     { v: 200, cor: '#7fa7c9', esc: '#41698c' }, { v: 500, cor: '#b49ad0', esc: '#6e548f' }, { v: 1000, cor: '#d9785a', esc: '#9a4426' },
@@ -536,10 +505,10 @@
   const SOM = {
     bip: com((A, t) => tom(A, 1850, t, 0.09, 0.06, 'square')),                                           // leitor de código de barras
     nota: com((A, t) => { chiado(A, t, 0.07, 0.1, 3500); chiado(A, t + 0.05, 0.05, 0.06, 5000); }),       // nota de papel
-    moeda: com((A, t) => { tom(A, 3100, t, 0.05, 0.03, 'triangle'); tom(A, 4200, t + 0.03, 0.08, 0.025, 'triangle'); }),   // (5.4.0) moedinha
+    moeda: com((A, t) => { tom(A, 3100, t, 0.05, 0.03, 'triangle'); tom(A, 4200, t + 0.03, 0.08, 0.025, 'triangle'); }),   // moedinha
     tecla: com((A, t) => tom(A, 1200, t, 0.04, 0.04, 'square')),
     erro: com((A, t) => tom(A, 220, t, 0.25, 0.07, 'square', 110)),
-    aprox: com((A, t) => { for (let i = 0; i < 3; i++) tom(A, 2400, t + i * 0.12, 0.05, 0.025, 'sine'); }),   // (5.4.0) cartão chegando perto
+    aprox: com((A, t) => { for (let i = 0; i < 3; i++) tom(A, 2400, t + i * 0.12, 0.05, 0.025, 'sine'); }),   // cartão chegando perto
     aprovado: com((A, t) => { tom(A, 1568, t, 0.12, 0.05, 'square'); tom(A, 2093, t + 0.13, 0.18, 0.05, 'square'); }),
     certo: com((A, t) => { for (const [i, f] of [[0, 660], [1, 880], [2, 1320]]) tom(A, f, t + i * 0.08, 0.14, 0.05, 'triangle'); }),
     caixa: com((A, t) => { chiado(A, t, 0.12, 0.12, 900); tom(A, 140, t + 0.02, 0.15, 0.08, 'sine', 70); }),   // caixa de papelão no chão
@@ -601,7 +570,7 @@
       Lg.caixa(d, e, 0.06 * kc, c, xf, yo + 0.03 * kc, 0);
       m.corpo.add(Lg.malha(MAT_CORES));
     }
-    // (5.5.0) VASSOURA COM AS DUAS MÃOS: presa no corpo, passando pela mão direita (em cima, perto do peito) e pela esquerda (mais
+    // VASSOURA COM AS DUAS MÃOS: presa no corpo, passando pela mão direita (em cima, perto do peito) e pela esquerda (mais
     //   embaixo e na frente); a ponta encosta no chão uns 85 cm na frente dele. Varre para a FRENTE e para TRÁS (a escova fica
     //   atravessada, de lado a lado), como gente de verdade — antes ela deslizava de lado, no comprimento da escova.
     const VASS_ANG = 0.48, VASS_TOPO = { x: 0.3, y: 1.05, z: 0.04 };   // cabo a ~27° da vertical, a mão direita no topo
@@ -614,7 +583,7 @@
       g.position.set(VASS_TOPO.x, VASS_TOPO.y, VASS_TOPO.z); A.m.corpo.add(g); A.vassoura = g; g.visible = false; return g;
     }
 
-    // ---------------------------------------------------------------- (5.4.0) Cadu e Rosa na RUA (de casa até o mercado e de volta)
+    // ---------------------------------------------------------------- Cadu e Rosa na RUA (de casa até o mercado e de volta)
     function viagensCadu() {
       if (!jogadorTrabalhaHoje()) return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_FICA }];
       return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_SAI }, { ida: true, chega: H_CADU_VOLTA }, { ida: false, sai: H_CADU_FICA }];
@@ -626,7 +595,7 @@
       api.criarRuaAgendada(criarRosa(), 'rosa', 'supermercado', viagensRosa, 1.5);
     }
 
-    // ---------------------------------------------------------------- (5.4.0) dentro da loja: onde cada um deve estar a cada hora
+    // ---------------------------------------------------------------- dentro da loja: onde cada um deve estar a cada hora
     //   cada estado: { id, x, z, yaw, pose } | { id: 'limpa' } (anda entre os pontos de limpeza) | null (não está na loja)
     function estadoCadu(h) {
       const D = M.D; if (!D) return null;
@@ -644,7 +613,7 @@
       return { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' };
     }
     const LIMPEZA = [                                                    // onde o Cadu limpa/organiza (pose, para onde olha)
-      // (5.4.3) arrumando: encostado (0,35 m da prateleira) e de frente para ela
+      // arrumando: encostado (0,35 m da prateleira) e de frente para ela
       { x: -6.55, z: -4.5, yaw: Math.PI, pose: 'organiza' }, { x: -6.55, z: -0.8, yaw: Math.PI, pose: 'organiza' },   // gôndola de higiênicos
       { x: -2.55, z: -2.2, yaw: Math.PI, pose: 'organiza' }, { x: -0.45, z: -5.2, yaw: 0, pose: 'organiza' },          // gôndolas de comida
       { x: 2.6, z: -8.38, yaw: Math.PI / 2, pose: 'organiza' }, { x: -4.8, z: -8.38, yaw: Math.PI / 2, pose: 'organiza' },   // freezer de bebidas
@@ -681,7 +650,7 @@
         return;
       }
       A = colocar(chave, criarFn, nome, voz, e, instantaneo);
-      if (A.conversando) { A.andando = false; return; }                   // (5.4.2) parado enquanto conversa com o jogador
+      if (A.conversando) { A.andando = false; return; }                   // parado enquanto conversa com o jogador
       if (A.estM !== e.id) {                                              // mudou de estado: anda até o novo lugar
         const ant = A.estM; A.estM = e.id; A.poseM = null; A.limpa = null;
         if (e.id === 'limpa') { const p = pk(LIMPEZA); A.limpa = { p, t: rnd(6, 10) }; A.rotaM = caminho(A.x, A.z, p.x, p.z); }
@@ -723,14 +692,14 @@
           const w = Math.sin(t * 5);
           m.bracoD.rotation.z = m.bracoE.rotation.z = 0.95; m.bracoD.rotation.x = -0.15; m.bracoE.rotation.x = 0.15;
           usarCotovelo(m.bracoD, 0, 1.25 + w * 0.12); usarCotovelo(m.bracoE, 0, 1.25 - w * 0.12);
-        } else if (A.poseM === 'caixa') {                                   // (5.4.3) parada; vendendo, mexe as mãos (passa as compras)
+        } else if (A.poseM === 'caixa') {                                   // parada; vendendo, mexe as mãos (passa as compras)
           if (A.atendendo) { const w = Math.sin(t * 9), w2 = Math.sin(t * 9 + 1.7); m.bracoD.rotation.z = 0.95 + w * 0.3; m.bracoE.rotation.z = 0.85 + w2 * 0.25; m.bracoD.rotation.x = -0.1 + w2 * 0.2; usarCotovelo(m.bracoD, 0, 1.0 + w * 0.2); usarCotovelo(m.bracoE, 0, 1.1); }
           else { m.bracoD.rotation.z = m.bracoE.rotation.z = 0.35; usarCotovelo(m.bracoD, 0, 0.55); usarCotovelo(m.bracoE, 0, 0.55); }
         }
       }
     }
 
-    // ---------------------------------------------------------------- (5.4.0) NAVEGAÇÃO NA LOJA: grade de 0,35 m e A*
+    // ---------------------------------------------------------------- NAVEGAÇÃO NA LOJA: grade de 0,35 m e A*
     const CEL = 0.35, RR = 0.33;
     function livreEst(x, z) {                                             // só paredes e móveis (gente fica de fora)
       const L = M.R.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false;
@@ -798,7 +767,7 @@
       const q = R[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt;
       if (d <= Math.max(v, 0.04)) { A.x = q.x; A.z = q.z; R.shift(); A.esperaM = 0; if (!R.length) { A.andando = false; return true; } return false; }
       const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; if (!livreEst(nx, nz)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
-      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0, paciencia = A === M.cadu || A === M.rosa ? 1.2 : 2.6;   // (5.4.2) quem trabalha não fica preso atrás do jogador
+      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0, paciencia = A === M.cadu || A === M.rosa ? 1.2 : 2.6;   // quem trabalha não fica preso atrás do jogador
       let ok = tenta(ux, uz, false);
       if (!ok && esp > 0.7) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
       if (!ok && esp > paciencia) ok = tenta(ux, uz, true);
@@ -838,7 +807,7 @@
     // ---------------------------------------------------------------- interação
     function alvos(v) {
       const s = S(), J = s.jog, U = s.turnoMercado, D = M.D; if (!D) return;
-      const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 2.6, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });   // (5.4.3) dá do outro lado do balcão
+      const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 2.6, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });   // dá do outro lado do balcão
       if ((!U || U.fim) && podeComecar()) for (const q of [{ x: D.caixa.x, z: D.caixa.z }, { x: D.cadu.x - 0.95, z: D.caixa.z }]) v.push({ x: q.x, z: q.z, r: 2.1, txt: T('Começar o turno'), fn: comecarTurno, y: 2.3, pri: true });
       if (!U || U.fim) return;
       const cx = D.caixa.jog, prim = U.fila[0];
@@ -881,7 +850,7 @@
       if (C) { C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); C.poseM = null; C.conversando = true; C.andando = false; }
       try { await conversaCadu(); } finally { if (M.cadu) M.cadu.conversando = false; if (M.rosa) M.rosa.conversando = false; }
     }
-    // (5.6.0) papo do Cadu (para quem não trabalha no mercado): ele pergunta, você responde
+    // papo do Cadu (para quem não trabalha no mercado): ele pergunta, você responde
     const PAPOS_CADU = [
       { p: 'E aí, ainda joga bola?', a: ['Sempre que dá!', 'Eu continuo péssimo no gol, haha. Mas adoro assistir.'], b: ['Tô meio parado.', 'Volta! Tem racha no society toda segunda e quarta.'] },
       { p: 'Sabia que eu guardei os óculos daquela época? De lembrança.', salvou: true, a: ['Sério? Que demais!', 'Sério! Eles me lembram que tem gente boa por aí.'], b: ['Ainda servem?', 'Nem a pau, haha. Mas ficam na gaveta.'] },
@@ -915,7 +884,7 @@
       const s = S(), d = s.dados, dm = dadosM();
       const h1 = api.historia().ler('fase1') || {}, cad = h1.cadu || null, salvou = !!(cad && cad.salvou);
       const fim = () => { Dialogo.esconder(); };
-      if (!ehMeuEmprego()) {                                          // (5.6.0) quem não trabalha no mercado: o Cadu reconhece (ou não) e depois puxa papo
+      if (!ehMeuEmprego()) {                                          // quem não trabalha no mercado: o Cadu reconhece (ou não) e depois puxa papo
         if (!dm.conheceu) {
           if (salvou) {
             await api.fala('cadu', Tf('Espera aí... {0}?! É você mesmo?!', api.nomeJog()));
@@ -929,7 +898,7 @@
         }
         const P = PAPOS_CADU.filter((q) => !q.salvou || salvou), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
         await api.fala('cadu', T(Q.p));
-        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])]);   // (6.0.5) uma caixa só, embaixo: a pergunta com as respostas
+        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])]);   // uma caixa só, embaixo: a pergunta com as respostas
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('cadu', T(R[1]));
         fim(); return;
       }
@@ -958,7 +927,7 @@
       if (hora() >= H_ULTIMO_CLIENTE) { await api.fala('cadu', T('Já tá quase na hora de fechar, hoje não dá mais. Amanhã às 14h, hein!')); fim(); return; }
       await perguntarEComecar();
     }
-    // (5.4.3) dá para começar tocando no caixa (ou no 2º caixa), sem precisar encostar no Cadu
+    // dá para começar tocando no caixa (ou no 2º caixa), sem precisar encostar no Cadu
     function podeComecar() {
       const s = S(), d = s.dados, h = hora();
       return ehMeuEmprego() && !!dadosM().apresentou && !s.turnoMercado && (d.dia || 1) >= 2 && !fimDeSemana() && !d.trabalhouHoje && !d.precisaBanho && h >= H_TURNO - 0.25 && h < H_ULTIMO_CLIENTE && !!M.cadu;
@@ -973,7 +942,7 @@
       await liberarRosa();
       await iniciarTurno();
     }
-    // (5.4.0) o Cadu libera a Rosa: ela se despede e sai; a tela corta para o expediente
+    // o Cadu libera a Rosa: ela se despede e sai; a tela corta para o expediente
     async function liberarRosa() {
       const R = M.rosa;
       if (R) {
@@ -984,7 +953,7 @@
         Dialogo.esconder(); R.conversando = false;
       }
       dadosM().rosaLib = { dia: S().dados.dia, h: hora() };              // a partir de agora ela vai para casa (na rua também)
-      if (R) { R.vel = 1.6; for (let t = 0; t < 14 && M.rosa; t += 0.1) await api.esperar(100); }   // (5.4.3) ela sai andando até a porta
+      if (R) { R.vel = 1.6; for (let t = 0; t < 14 && M.rosa; t += 0.1) await api.esperar(100); }   // ela sai andando até a porta
     }
 
     // ================================================================ O TURNO
@@ -995,7 +964,7 @@
       for (const A of s.npcs) if (A.cli && A.cli.fase === 'fica') A.cli.t = Math.min(A.cli.t, 2 + Math.random() * 8);
       await api.preto(true, 350);
       if (M.rosa) tirar('rosa');                                          // (se ela ainda estava saindo)
-      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }   // (5.4.2) a loja começa vazia
+      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }   // a loja começa vazia
       pararVenda(); M.filaN = []; limparEsteira();
       const J = s.jog, p = D.caixa.jog; J.x = p.x; J.z = p.z; J.yaw = J.yawAlvo = p.yaw; J.rota = null; s.cam.yaw = 2.55; s.cam.snap = true;   // câmera do lado nordeste: vê o caixa, a fila e o corredor
       await api.preto(false, 350);
@@ -1012,7 +981,7 @@
       const ativos = s.npcs.filter((A) => A.cm && A.cm.fase !== 'sai').length;
       if (U.prox <= 0) {
         const [a, b] = ritmo(); U.prox = rnd(a, b);
-        if (ativos < 6 && U.fila.length < 4 && s.dados.hora < H_ULTIMO_CLIENTE) novoCliente();   // (5.4.0) depois das 21h não entra mais ninguém
+        if (ativos < 6 && U.fila.length < 4 && s.dados.hora < H_ULTIMO_CLIENTE) novoCliente();   // depois das 21h não entra mais ninguém
       }
       atualizarPainel();
     }
@@ -1035,12 +1004,12 @@
       C.secAtual = sec; C.fase = 'compra'; C.chegou = false; C.t = 0; A.rotaM = caminho(A.x, A.z, p.x, p.z);
     }
     function pegarProdutos(A) {
-      if (A.cm.fake) { const n = 1 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) { const P = pk(PRODUTOS[A.cm.secAtual]); A.cm.itens.push({ nome: P[0], preco: P[1], P, sec: A.cm.secAtual }); } return; }   // (5.4.3) não mexe no estoque
+      if (A.cm.fake) { const n = 1 + Math.floor(Math.random() * 2); for (let i = 0; i < n; i++) { const P = pk(PRODUTOS[A.cm.secAtual]); A.cm.itens.push({ nome: P[0], preco: P[1], P, sec: A.cm.secAtual }); } return; }   // não mexe no estoque
       const C = A.cm, sec = C.secAtual, est = dadosM().estoque, quer = 1 + Math.floor(Math.random() * 3), n = Math.min(est[sec], quer);
       for (let i = 0; i < n; i++) { const P = pk(PRODUTOS[sec]); C.itens.push({ nome: P[0], preco: P[1], P, sec }); }
       est[sec] -= n; mostrarEstoque(sec);
       const U = S().turnoMercado;
-      if (U && n < quer) {                                               // (5.4.0) queria e não tinha na prateleira: −3 fakes
+      if (U && n < quer) {                                               // queria e não tinha na prateleira: −3 fakes
         U.faltas++; atualizarPainel(); SOM.erro();
         api.aviso(Tf('Faltou {0} na prateleira! (−{1} fakes)', T(NOME_SEC[sec]).toLowerCase(), FALTA)); setTimeout(() => { const ss = S(); if (ss && ss.turnoMercado && !M.avisos.length) api.aviso(''); }, 2600);
       }
@@ -1049,7 +1018,7 @@
         if (n >= quer) { api.aviso(Tf('Repor {0} {1}!', T(NOME_SEC[sec]).toUpperCase(), T(ONDE_SEC[sec]))); setTimeout(() => { const ss = S(); if (ss && ss.turnoMercado && !M.avisos.length) api.aviso(''); }, 3200); }
       }
     }
-    // (5.4.3) a fila do caixa: a do jogador no turno; fora dele, a da caixa (Rosa/Cadu)
+    // a fila do caixa: a do jogador no turno; fora dele, a da caixa (Rosa/Cadu)
     const filaAtiva = () => { const U = S().turnoMercado; return U && !U.fim ? U.fila : M.filaN; };
     function entrarNaFila(A) {
       if (!A.cm.itens.length) { sairCliente(A); return; }
@@ -1077,7 +1046,7 @@
       } else if (C.fase === 'fila' || C.fase === 'esteira') {
         const U = S().turnoMercado, i = filaAtiva().indexOf(A);
         C.tFila = (C.tFila || 0) + dt;
-        if (U && !U.fim && !C.fake) {                                     // (5.4.3) paciência: 1min30 na fila
+        if (U && !U.fim && !C.fake) {                                     // paciência: 1min30 na fila
           balao(A, C.tFila > PACIENCIA_AVISO ? 'espera' : null);
           if (C.tFila > PACIENCIA) { irritado(A); return; }
         } else if (C.tFila > 150) { filaSem(A); sairCliente(A); return; }   // (sem ninguém no caixa por muito tempo: desiste)
@@ -1094,7 +1063,7 @@
       }
     }
     function filaSem(A) { const F = filaAtiva(), i = F.indexOf(A); if (i >= 0) { F.splice(i, 1); if (i === 0) { limparEsteira(); if (M.vende && M.vende.A === A) pararVenda(); } posicionarFila(); } }
-    // (5.4.3) cansou de esperar: vai embora bravo, sem comprar (−5 fakes no fim do turno)
+    // cansou de esperar: vai embora bravo, sem comprar (−5 fakes no fim do turno)
     function irritado(A) {
       const U = S().turnoMercado; filaSem(A); A.cm.itens = [];
       U.irritados++; atualizarPainel(); SOM.erro(); balao(A, 'raiva'); A.vel = 1.6; sairCliente(A);
@@ -1119,7 +1088,7 @@
     }
     function posBalao(A) { const sp = A.balaoM; if (sp) sp.position.set(A.x, (A.y || 0) + 2.2 + Math.sin((S().t || 0) * 6) * 0.04, A.z); }
     function tirarBalao(A) { if (A.balaoM) { if (A.balaoM.parent) A.balaoM.parent.remove(A.balaoM); A.balaoM.material.dispose(); } A.balaoM = null; A.balaoTipo = null; }
-    // (5.4.3) a CAIXA (Rosa ou Cadu) vende para quem chega na vez: mexe as mãos, bipa a esteira, registradora, o cliente sai com a sacola
+    // a CAIXA (Rosa ou Cadu) vende para quem chega na vez: mexe as mãos, bipa a esteira, registradora, o cliente sai com a sacola
     function caixaNPC() { for (const A of [M.rosa, M.cadu]) if (A && A.estM === 'caixa1' && !(A.rotaM && A.rotaM.length) && !A.conversando) return A; return null; }
     function pararVenda() { const V = M.vende; if (V && V.caixa) V.caixa.atendendo = 0; M.vende = null; }
     function tickCaixaNPC(dt) {
@@ -1135,8 +1104,8 @@
       const prim = M.filaN[0], cx = caixaNPC();
       if (prim && prim.cm.fase === 'esteira' && cx) M.vende = { A: prim, caixa: cx, t: 0, prox: 0.9, fim: 1.3 + M.esteiraM.length * 0.8 + 1.2 };
     }
-    // (5.4.2) CLIENTES DE PASSEIO: fazem de conta que compram (andam pelas seções, param olhando as prateleiras) e vão embora
-    // (5.4.3) entram até o meio-dia e de novo a partir das 15h (até as 21h); no turno do jogador só entram os clientes do turno
+    // CLIENTES DE PASSEIO: fazem de conta que compram (andam pelas seções, param olhando as prateleiras) e vão embora
+    // entram até o meio-dia e de novo a partir das 15h (até as 21h); no turno do jogador só entram os clientes do turno
     const entraPasseio = () => { const h = hora(); return aberto() && !S().turnoMercado && h < H_FIM_PASSEIO && (h < H_PARA_ENTRAR || h >= H_VOLTA_PASSEIO); };
     function novoPasseio(dentro) {
       const s = S(), e = dentro ? null : entradaLivre(); if (!dentro && !e) return;
@@ -1201,7 +1170,7 @@
       else { A.cm.fase = 'esteira'; U.fila.unshift(A); posicionarFila(); porNaEsteira(A); }   // fechou no meio: o cliente continua esperando
       atualizarPainel();
     }
-    // (5.4.0) como o cliente paga (tudo em centavos): cartão = valor exato; dinheiro = total arredondado para múltiplo de 5 centavos,
+    // como o cliente paga (tudo em centavos): cartão = valor exato; dinheiro = total arredondado para múltiplo de 5 centavos,
     //   com notas que cubram o valor e, às vezes, os centavos em moeda (para facilitar o troco)
     function pagamentoDe(total) {
       if (M.forcarPag !== 'dinheiro' && (M.forcarPag === 'cartao' || Math.random() < 0.42)) return { tipo: 'cartao', total, cartao: Math.floor(Math.random() * CARTOES.length) };
@@ -1379,11 +1348,11 @@
     }
     // ---- fim do turno: paga (proporcional se começou tarde ou parou antes), desconta erros e faltas; o Cadu libera o jogador
     async function encerrar(antes, hParou, sair) {
-      if (sair === undefined) sair = true;                                // (5.4.3) no fim do turno o jogador sai do mercado
+      if (sair === undefined) sair = true;                                // no fim do turno o jogador sai do mercado
       const s = S(), U = s.turnoMercado, d = s.dados; if (!U || U.fim) return; U.fim = true;
       const restavam = U.fila.length + s.npcs.filter((A) => A.cm && A.cm.fase !== 'sai' && A.cm.fase !== 'pago').length > 0;
       s.trabalhando = false; fecharUI(); tirarCaixaDaMao(); limparEsteira();
-      for (const A of s.npcs) tirarBalao(A);                              // (5.4.3) quem sobrou continua lá dentro: o Cadu "atende" até as 23h
+      for (const A of s.npcs) tirarBalao(A);                              // quem sobrou continua lá dentro: o Cadu "atende" até as 23h
       U.fila = []; atualizarMarcas();
       const ini = Math.max(H_TURNO, U.inicio <= H_CHEIO_ATE ? H_TURNO : U.inicio), fimH = antes ? clampN(hParou, ini, H_FECHA) : H_FECHA;
       const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA + U.irritados * IRRITADO, paga = Math.max(0, bruto - desc);
@@ -1402,7 +1371,7 @@
         }
       } catch (e) { console.error(e); }
       s.turnoMercado = null;
-      if (sair && s.ativo && s.dentro) { try { await api.sairDoLugar(); } catch (e) { console.error(e); } }   // (5.4.3) o jogador vai embora; o Cadu fecha
+      if (sair && s.ativo && s.dentro) { try { await api.sairDoLugar(); } catch (e) { console.error(e); } }   // o jogador vai embora; o Cadu fecha
       if (!espera && s.ativo && s.modo === 'cena') api.liberar();
     }
     // 22h com o jogador lá dentro (sem turno): quem estiver avisa e ele sai

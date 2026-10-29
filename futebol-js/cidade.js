@@ -1,185 +1,6 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
-   NOVIDADES DA 6.0.6
-     - O BIEL (fsal/criarBiel/conversarBiel/jogarFutsal): a partir da 3ª semana, toda terça ele espera os amigos na frente da quadra
-       de futsal coberta, com uma exclamação em cima da cabeça, no horário do futebol (horaDoFutebol). Conversa: "Eu também jogo bola!"
-       (→ "Cola aí com nós, tem uma hora livre?" → futsal 5 x 5) ou "Tranquilo, bom jogo!". Depois do 1º jogo ele convida para toda
-       terça e quinta (missão + marcador nesses dias); nas outras conversas chama pelo nome (BIEL_PAPOS, 5 falas).
-     - O aviso do racha do sintético agora diz 5 contra 5.
-   NOVIDADES DA 6.0.5
-     - FAIXA DE PEDESTRE: carro chegando nos próximos 8 s (era 5) → o pedestre para na beira com a mão esticada (pelo menos ~1,2 s) e
-       atravessa CORRENDO quando os carros que vêm param (ou já estão freando longe da faixa: carroPerigo). Antes ele esperava cada carro
-       novo que aparecia, e às vezes nem chegava a levantar a mão.
-     - Carro só para por quem está NA FRENTE dele (na largura do carro). Gente do lado não trava mais o carro no meio da faixa.
-     - Conversas com a Lúcia (e com o Cadu, no mercado.js): uma caixa só, embaixo, com a pergunta e as respostas (antes a pergunta
-       aparecia duas vezes, na fala e na escolha).
-   NOVIDADES DA 6.0.4
-     - SEU VALDEMAR andando "no nada": quando a hora mudava enquanto você estava dentro de um lugar, o jogo o colocava onde ele deveria estar
-       (snapValdemar), mas o plano interrompido deixava para trás o "andando" e a rota (rotaV). Resultado: ele ficava andando no lugar para
-       sempre atrás do balcão, ou, no próximo plano, seguia os pontos velhos. Agora o snap zera tudo e, sem plano, ele nunca anda.
-     - Comendo o lanche do Valdemar: a mesma pixel art do cardápio (iconePx) aparece num sprite ENTRE as duas mãos, na frente da boca
-       (darLanche/tirarLanche; some junto com a pose de comer, ou ao levantar).
-     - Golaço Esportes (interiores.js): sala retangular de verdade, com raias retangulares.
-     - NPCs TRAVADOS (sem o "pulo para o lado" de antes eles só paravam): parado há ~0,6 s, a pessoa contorna o obstáculo naturalmente: escolhe
-       o MENOR desvio lateral (1 m, 2 m, 3,5 m, 5 m; sobe um degrau se travar de novo em 8 s) com a frente livre, no lado MENOS cheio de gente,
-       anda até lá e 2,4 m adiante e retoma a rota (iniciarDesvio/andarDesvio; vale para pedestres, moradores e clientes que usam seguir()).
-       Se nada serve, volta para o nó anterior (outro trajeto) e, como último recurso, desiste do ponto.
-   NOVIDADES DA 6.0.3
-     - Dá para PASSAR POR DENTRO de quem está cambaleando (esbarrão): o "corpo" da pessoa cai para 10% (raioNPC) e o jogador vai
-       sendo empurrado de leve para o lado enquanto atravessa, como se raspasse nela. Ela continua cambaleando enquanto ele passa.
-   NOVIDADES DA 6.0.0 (junto com a 5.6.0 abaixo)
-     - Racha do sintético agora é 5 x 5 (o society do jogo.js virou 5 x 5): entram o Tiago (Time do João) e o Vitinho (Galera do Bryan).
-     - Cafeteria: os clientes que entravam pela porta "do lado" (entAgora) ficavam com o ângulo NaN e INVISÍVEIS até sentar. Corrigido.
-       Fora do seu expediente ela já tem gente quando você entra (sentados, com o café na mão), em vez de começar sempre vazia.
-     - O café na mão dos clientes agora é a PIXEL ART do próprio café (iconeCafezinho num sprite), colada na frente da boca no gole.
-     - FAIXA DE PEDESTRE: carro chegando nos próximos 5 s → o pedestre para na beira com a mão esticada PARA A FRENTE e só atravessa,
-       CORRENDO, quando os carros param (carroChegando). Sem carro vindo: atravessa andando, com a mão para baixo. Carro parado não
-       conta mais como perigo (antes podia travar: carro esperando o pedestre e o pedestre esperando o carro).
-   NOVIDADES DA 5.6.0 (feita junto com a 6.0.0: os trechos novos estão marcados "(5.6.0)" para facilitar juntar)
-     - GOLAÇO ESPORTES: loja de artigos esportivos ao lado do bar (fachada verde/amarela/azul, vitrines com camisas e chuteiras, a porta
-       numa trave de gol, toldos listrados, bandeirinhas e uma bola gigante girando no telhado). Por dentro (interiores.js, 'esportiva'):
-       sala em formato de estádio e piso de pista de corrida. Vazia por enquanto (SEM_FLUXO).
-     - Lago do Sapo Cururu com borda irregular (formaLago/bordaLago/dentroLago): água, areia, colisão, cercas, taboas e mapa seguem a forma;
-       perto do píer a borda continua a elipse de antes.
-     - Mapa: os nomes ficam numa caixinha com fonte menor, centralizada no lugar (quebra em 2 linhas e não sai do mapa).
-     - Chuva: debaixo da árvore os NPCs ficam em pé ou sentados (ninguém mais deita).
-     - CAFÉS À VENDA com a Lúcia (CAFES_VENDA): cada café deixa o personagem mais rápido NA CIDADE por um tempo (1,25x/1,5x/2x por 4h a o dia
-       todo, de 150 a 600 fakes). Ícone do café no HUD enquanto vale (toque: até quando). Comprar outro troca o efeito (pergunta antes).
-     - Conversas com a Lúcia e com o Cadu (mercado.js) também para quem NÃO trabalha lá: eles reconhecem o jogador pela Fase 1 e depois
-       puxam assunto (PAPOS_LUCIA / PAPOS_CADU, um por conversa). A Lúcia agora tem menu: comprar café, (sobre o trabalho), conversar.
-
-   NOVIDADES DA 5.5.0
-     - ESBARRÃO: ninguém empurra ninguém. Andar contra um NPC não o tira do lugar: ele cambaleia (a mesma animação do técnico na
-       partida: A.esbarrao, no poseAtor). NPC com ROTINA (moradores, seu Valdemar, Lúcia, Cadu, Rosa) passa por dentro do jogador e
-       quem cambaleia é o jogador. Dois NPCs no mesmo caminho: um cambaleia e espera um instante (travaE), o outro segue (fantasma).
-       Saiu o "pulo para o lado" de quem ficava preso (era o teleporte).
-     - PEDESTRES como os carros: a mais de 100 m do jogador ficam parados e invisíveis; quem passa de 100 m (ou chega numa ponta do
-       mapa a mais de 80 m) é RECICLADO: some e uma pessoa NOVA aparece num ponto da rede entre 45 e 90 m, fora da visão da câmera
-       (gerenciarPedestres). Os do começo do dia também são sorteados (não são mais sempre os mesmos).
-     - CARRO TRAVADO por mais de 10 s (pelo jogador ou por um NPC): buzina várias vezes e quem estava na frente leva um susto
-       (cambaleia) e volta correndo para a calçada de onde veio (sustoJogador / A.recua).
-     - FAIXA DE PEDESTRE: o NPC estende a mão antes de atravessar (pedeFaixa) e continua com ela estendida (atravessa); os carros
-       que ainda conseguem frear param antes da faixa até ele chegar do outro lado (linhaFaixa no tickCarros).
-     - "Pular cena" só aparece em cena com fala (Cena, no jogo.js). Depois de pular, o jogador fica parado mais 0,5 s (travaPulo):
-       antes dava para andar 25x mais rápido no fim do pulo.
-     - Cafeteria (sem o jogador no turno): o cliente vai ao caixa, pede para a Lúcia, recebe o café na mão, senta, toma e vai embora.
-
-   NOVIDADES DA 5.4.3
-     - prepararDia só zera o trabalhouHoje num DIA NOVO (d.trabalhouDia): antes, voltar do prédio para a cidade liberava trabalhar de novo.
-
-   NOVIDADES DA 5.4.2
-     - No mercado, os clientes "de passeio" agora são do mercado.js (a cidade não monta mais o fluxo de lá quando o mercado.js carregou).
-
-   NOVIDADES DA 5.4.0
-     - O painel do turno (cafeteria e mercado) aparece uma vez e vira o ícone "!" vermelho no canto superior esquerdo (painelRecolhivel /
-       recolherPainel / fimPainel; o botão .cdTurIco fica no #cdEsq). Tocar no ícone abre o painel de novo por uns segundos.
-     - Saiu a missão "encontre um lugar para comer" (aparecia todo dia).
-     - Casas do CADU (pertinho do mercado, a [824,150] da planta) e da ROSA ([544,656]): casa(..., dono) marca sem mudar o sorteio das
-       outras casas. GENTE COM HORÁRIO NA RUA: criarRuaAgendada/tickRua (tipo 'rua') + rotaCasaPorta (a rota da Lúcia virou um caso dela).
-       O mercado.js cria os dois em montarRua() (montarRuaMercado: só com o jogador na rua). O mercado agora abre às 8h.
-
-     - TRABALHO NO MERCADO em arquivo separado (mercado.js, feito por um amigo; ver o cabeçalho dele). Aqui só ficaram os GANCHOS, marcados
-       "(5.3.1)": carregar o mercado.js junto do interiores.js · apiMercado()/atorDe() · fala() aceita S.falantesExtra (o Cadu) · entrarEm/
-       sairDoLugar chamam S.mercado.entrou/saiu · alvos() (porta fechada fora das 14h–22h, Sair no turno, alvos do mercado) · o gancho chama
-       S.mercado.tick depois do tickJogador · tickPessoas despacha 'clienteMerc' · tickFluxo para no S.turnoMercado · pedestres não entram no
-       mercado fechado · limpar() chama S.mercado.limpar(). A api também leva fimDeSemana e fut, para o mercado seguir as regras da 5.3.0
-       (sem trabalho no sábado/domingo, sem banho o Cadu manda tomar banho, trabalhouAlgumDia para a ligação do João).
-
-   NOVIDADES DA 5.3.0
-     - Lugar do EMPREGO exclusivo: lá dentro só há clientes durante o turno do jogador (montarFluxo/tickFluxo/decidirDestino não mandam
-       ninguém de fora). Era isso que gerava os clientes "sem pedido" (e às vezes invisíveis) na cafeteria.
-     - Cafeteria fecha às 16h; a Lúcia fecha o caixa e sai às 17h (das 16h às 17h ela avisa que precisa fechar o caixa). A rota dela agora
-       termina no ponto da calçada mais perto da porta (antes passava da cafeteria e voltava); chegando antes das 7h50 ela entra mesmo assim.
-     - Sábado e domingo ninguém trabalha. Sem banho depois do futebol, a Lúcia não deixa começar o turno.
-     - FUTEBOL: turnos (cafeteria 8–16, mercado 14–22, pizzaria 15–23). Quem sai à tarde é chamado 2h depois do turno; quem entra à tarde,
-       4h antes. Primeira chamada: ligação do João depois do 1º dia de trabalho (celular pixelado no canto inferior direito, 10 s, o resto
-       do HUD some). Atendeu: cena do celular na orelha. Não atendeu: mensagem com a localização. Marca no mapa + missão.
-     - Racha no Society Doutor Bryan toda segunda e quarta (⚽ no relógio). 5 ou 3 minutos; sai 1h depois (hora do mundo). Cada partida
-       fica salva em cidade.partidas (dia, hora, horário, clima, placar, nota...). A cada 10 chutes no alvo: +0,25 em chute, efeito e força.
-       Depois do jogo o Caio comenta (bom: "gostei do seu jogo"; ruim: "vem aprender") e o personagem diz que precisa de um banho.
-
-   NOVIDADES DA 5.2.1
-     - A cafeteria começa vazia (montarFluxo não põe ninguém sentado ao entrar); os clientes chegam pela porta (ou do lado dela, se
-       o jogador estiver parado na frente, para não nascer "dentro" dele).
-     - Clientes TOMAM o café de verdade (darCopo + pose "bebe" no poseAtor): a xícara fica de pé na mão, ~19 cm na frente da boca, e
-       eles dão golinhos (vaivém leve do braço e da cabeça). Antes usavam a pose de comer lanche, com as mãos entrando no rosto.
-     - Gorjeta de 1 a 3 fakes (antes 1 a 5).
-
-   NOVIDADES DA 5.2.0
-     - EXPEDIENTE NOVO na cafeteria (iniciarTurno/tickTurno/encerrarTurno): os clientes entram, sentam e mostram num balão o café que
-       querem ("!" = ainda não anotado). Anote na mesa, prepare na BANCADA DE PREPARO (abrirBancada: a grade do joguinho fica guardada o
-       turno todo) e o café pronto vai para a MÃO do personagem (copoNaMao). Entregou: gorjeta de 1 a 5 fakes na hora, o cliente toma,
-       paga no caixa (som de registradora) e vai embora. Carga controlada (MAX_ESPERANDO, custoTier) para dar tempo de atender todos.
-       Fim às 16h: 20 do dia + 5 por pedido. "Acelerar final do turno" (e sair no meio do turno) paga só os 20 do dia.
-     - Cafeteria abre às 8h e fecha às 20h. A Lúcia mora na casa dos Alves: sai de casa a tempo de chegar às 7h50 (rotaLucia pela rede
-       de calçadas, posição tirada direto da hora) e volta às 20h. Às 20h ela fecha a cafeteria (quem estiver dentro sai).
-     - Sala da cafeteria maior (20 x 14) com a bancada decorada (espresso, moedor, xaropes, xícaras, sacas de café, quadro de giz).
-     - Música tema da cafeteria (MusicaCafe: bossa animada) e efeitos (SomCafe: gerar, juntar por nível, anotar, pronto, entregar,
-       registradora, sininho da porta, fim do turno). Corrigido: os sons antigos da cidade (dinheiro, portão, chuva...) usavam o
-       Som.audio como se fosse o AudioContext e não tocavam.
-     - Acorda às 5h (H_ACORDAR). A missão "procure um lugar para comer" e a dica de controles só aparecem no 1º dia. Ícone da COXINHA
-       no canto superior direito enquanto ele não comeu no dia (toque: "Seu personagem ainda não comeu hoje.").
-
-   NOVIDADES DA 5.1.1
-     - Merge Game da cafeteria: xícaras novas em pixel art 24x24 (cada família com sua louça: cafezinho branco, caneca terracota,
-       xícara azul do cremoso, xícara larga verde-água do cappuccino; espuma, coração no leite, pingos de chocolate, torre de chantilly,
-       vapor e brilho no último nível) e o número do nível no canto. Tocar num café mostra o NOME dele e no que ele vira juntando.
-     - A janela do expediente e o cardápio do Valdemar agora ficam dentro do #raizJogo (antes iam para o <body> e parte ficava fora
-       da área visível do Canva); o expediente se arruma na horizontal (informações à esquerda, grade quadrada do tamanho da altura).
-     - O relógio continua andando no expediente (S.trabalhando) e o turno só acaba às 16h. Salário: PAGA_BASE (20) pelo dia +
-       PAGA_PEDIDO (5) por pedido atendido. "Sair mais cedo" pede confirmação e perde os 20 do dia.
-     - A Lúcia Alves adulta (criarLucia) tem a aparência da Lúcia da Fase 1: pele, cabelo castanho em rabo de cavalo, rosto e lábio
-       iguais, agora de avental da cafeteria.
-
-   NOVIDADES DA 5.1.0
-     - Emprego da cafeteria: a Lúcia Alves (colega da fase1.js) é a moça do caixa (ver falarComLucia). Ela reconhece o jogador de
-       3 jeitos diferentes conforme o que rolou na fase 1 (o easter egg da mariposa, uma conversa marcante na sala, ou nunca ter
-       conversado). Expediente das 8h às 16h (H_TRAB_INI/H_TRAB_FIM): ao chegar um cliente, joguinho de combinar cafés na bancada
-       (turnoTrabalho/TIERS, 8 níveis até Cappuccino com chantilly e borda de chocolate), sempre com a mesma xícara genérica na mão.
-       Cada dia de trabalho rende fakes ao sair do expediente, a partir do 2º dia na cidade (na 5.1.1: 20 + 5 por pedido).
-     - Correções: menu do balcão do Valdemar centralizado na tela (opcoes.centro do Escolha.mostrar) em vez de preso embaixo e
-       grudando no personagem ao girar a câmera; caixa de colisão faltando no balcão do Valdemar; casas de NPCs com nome só revelam
-       o nome depois de o jogador flagrar alguém entrando (antes ficavam reveladas de cara); nomes dos marcos do mapa (tickDescobertas)
-       aparecem corretamente ao serem descobertos; avisoDormir()/madrugada() agora zeram andando/correndo do jogador, então a
-       animação de corrida não fica mais presa numa cutscene seguinte; a gota do vômito (gotaVomito) agora nasce na boca, seguindo a
-       curvatura do tronco, e não mais flutuando na altura da barriga.
-
-   NOVIDADES DA 5.0.1
-     - Janelas acendem à noite (~55% delas, luz amarelada; vidros numa peça própria com material de brilho). Carros com faróis e lanternas
-       que acendem à noite (e na chuva) e um facho no chão à frente.
-     - Otimização: NPC a mais de ~32 m vira um boneco de 1 peça (sem calcular pose); brilhos dos postes não são desenhados de dia;
-       alambrados e redes dos campos só aparecem com o jogador a até ~42 m.
-
-   NOVIDADES DA 5.0.0
-     - Luz do dia mais baixa (antes estourava: água branca, mato marrom à tarde, interiores "de vidro").
-     - Dia da semana no relógio (dia 1 = segunda). Dentro dos lugares tem FLUXO de clientes: quem está sai e, com lugar vazio, entra outro.
-       Seg–qua vazio, qui médio, sex–dom cheio (2 a 4 lugares vazios). Nunca lota. Hospital e academia continuam como eram.
-     - Morador que acha o lugar dele ocupado (pelo jogador) vai para o banco vazio mais perto. Clientes do lanche: sentam, esperam, comem e vão embora.
-     - 2h da manhã acordado: cutscene, ele corre para o prédio e acorda no dia seguinte (sono nível 3, ver Sono no jogo.js).
-     - Lanche: 2 de "não saudável" cada; comer satisfeito soma mais 4, ele diz que exagerou e 20 s depois vomita. 10 dias comprando no
-       Valdemar = cliente fiel (−20% em tudo). Cardápio numa linha só, deslizando na horizontal. Aviso de hábitos não saudáveis em −50.
-
-   NOVIDADES DA 4.9.6
-     - NPCs: acabou a sobreposição (quem ficava preso um dentro do outro agora se afasta) e o "entra e sai de casa" sem fim. Os moradores (sentados, os que
-       conversam e os três do treino) moram em casas, vários por casa: saem de manhã (6h–7h30), vão para o seu lugar e voltam às 18h, 19h ou 20h.
-     - Chuva: cada morador escolhe entre uma árvore (3 pontos fixos por árvore; se estiver ocupado, vai para o próximo; em pé, sentado no chão ou deitado)
-       e a casa. Quem vai para casa só volta no dia seguinte; quem se abrigou volta ao lugar quando a chuva para. O treino pausa quando falta alguém.
-     - Pedestres: de cada 10 que decidem, 5 entram num lugar (cinema, cafeteria, mercado, bar, pizzaria, restaurante, academia ou sentam no lanche; hospital não).
-     - Lanche do Valdemar: porta de DENTRO (na lateral do vão do balcão) além da de serviço; ele puxa a persiana (animação) e sai por uma porta e depois pela outra.
-     - Árvores perto da cidade ficam translúcidas na frente da câmera; calçada com lajotas cinza pixeladas (antes estourava de branco).
-     - Tempo: dia de 15 min, 2% de chance de chuva por minuto, relógio mostra de 10 em 10 minutos.
-
-   NOVIDADES DA 4.9.5
-     - Hora e clima: o dia dura 10 min (6h acorda · 22h hora de dormir; aviso às 21h). Dia claro, tarde amarelada, noite escura com os
-       postes acesos. Chuva pode começar do nada (5% a cada 1 min; dura de 2 a 10 min, sorteado uma vez). Quando chove, uns NPCs se
-       abrigam sob as árvores e outros correm para casa; pedestres correm com a mão na cabeça, jornal ou guarda-chuva.
-     - Lanche do Valdemar: só o balcão de atendimento (sem o quadrado vermelho), cardápio com ícone pixel-art por produto. Ele abre às 8h,
-       fecha às 20h e vai para casa pela porta de serviço. Sentado comendo não precisa sentar de novo: Interagir mostra "Valdemar" ou "Sair".
-     - Cenário: poste da avenida movido (fora do cinema), calçadas quadriculadas, rio pixelado (mais escuro no meio, ondas suaves, o
-       personagem não entra na água), píer de tábuas com os postes laterais saindo mais que a tábua.
-     - Entrada do prédio: "Entrar no prédio" leva de volta ao apartamento a qualquer hora (fase2 com { volta: true }); lá a cama dorme.
-   ---------------------------------------------------------------------
    Como funciona
      - É uma "fase" registrada com FutebolJS.registrarFase({ id: 'cidade' }). O fase2.js chama Fases.executar('cidade') quando o
        personagem sai do prédio (no lugar do antigo "Continua..."). Também abre por um save (tela CARREGAR) com { fase: 'cidade' }.
@@ -187,7 +8,7 @@
      - Usa as variáveis internas do jogo.js (makeAthlete, scene, camera, GANCHO_RENDER, Fases, Cena, Musica, Som, T/Tf, I18N, HistoriaSave...)
        e, do fase2.js, só o modeloJogador() (o personagem com a roupa escolhida no guarda-roupa).
 
-   O QUE TEM POR ENQUANTO (só o visual de fora; nada para entrar ou interagir ainda)
+   O QUE TEM NA CIDADE
      - A planta combinada (prancha "Planta da cidadezinha"): 240 × 152 m, 1 unidade = 1 metro (o personagem tem ~1,65 m).
        Avenida asfaltada (a única), ruas de terra, praça com mastro, igrejinha, prédio do jogador, supermercado, cafeteria, cinema,
        bar, pizzaria, restaurante, lanche do seu Valdemar, academia, quadra de futsal coberta, society, várzea, lago com píer,
@@ -197,21 +18,21 @@
      - Dinheiro: o ícone aparece ao sair de casa, com 150 fakes (salvo em historia.cidade.fakes).
      - Câmera em terceira pessoa: arraste a tela (ou Q/E) para girar, roda do mouse para aproximar; ela chega mais perto quando
        um prédio fica entre ela e o jogador.
-     - (4.9.x) Correr: direcional na borda (ou Shift) corre a 5,76 m/s (velocidade 7 na cidade: VEL_CIDADE) e o fôlego nunca acaba aqui.
-     - (4.9.x) Missão aparece 5 s e recolhe num quadradinho "!"; do lado, o MAPA: toque num ponto para marcar (com a cor escolhida), o anel
+     - Correr: direcional na borda (ou Shift) corre a 5,76 m/s (velocidade 7 na cidade: VEL_CIDADE) e o fôlego nunca acaba aqui.
+     - Missão aparece 5 s e recolhe num quadradinho "!"; do lado, o MAPA: toque num ponto para marcar (com a cor escolhida), o anel
        daquela cor aparece embaixo do jogador e uma setinha no centro de baixo da tela aponta para lá (some ao chegar).
-     - (4.9.x) Botão pequeno de pausa (Continuar / Voltar ao menu). Esc/P pausa, M abre o mapa.
-     - (4.9.x) Prédio entre a câmera e o jogador fica translúcido como UMA peça só (grava a profundidade antes de pintar).
-     - (4.9.x) Pessoas: 8 andando por uma rede de caminhos (desviam, esperam o carro na faixa, levam esbarrão), 4 sentadas em bancos
+     - Botão pequeno de pausa (Continuar / Voltar ao menu). Esc/P pausa, M abre o mapa.
+     - Prédio entre a câmera e o jogador fica translúcido como UMA peça só (grava a profundidade antes de pintar).
+     - Pessoas: 8 andando por uma rede de caminhos (desviam, esperam o carro na faixa, levam esbarrão), 4 sentadas em bancos
        da praça e 2 duplas em pé conversando. Os carros param para elas também.
-     - (4.9.x) O portão do prédio fecha depois que o jogador sai; quadra de futsal com grade e uma entrada só.
-     - (4.9.3) Cinema trocou de lugar com o supermercado (fica perto do prédio do jogador); HOSPITAL ao lado do prédio (a ficha médica
+     - O portão do prédio fecha depois que o jogador sai; quadra de futsal com grade e uma entrada só.
+     - Cinema trocou de lugar com o supermercado (fica perto do prédio do jogador); HOSPITAL ao lado do prédio (a ficha médica
        mostra a saúde: só lá). Dois societys do tamanho certo (um com 2 batedores e um goleiro treinando pênalti). Quadra de futsal com
        4 colunas por fora e uma BOLA com física: levou até o gol = comemoração de 5 s, sem corte. Graminhas e taboas com física (vergam
        quando alguém passa), cerquinhas velhas de madeira no lago. INTERAGIR: sentar em bancos, cadeiras e banquetas; no balcão do lanche
        o seu Valdemar atende (cardápio, dinheiro, comer). Fome: 2 por dia livre; cada lanche enche um tanto e é NÃO saudável
        (Espectros 'saudavel' e a condição 'refeicaoPesada' = −15% de corrida e recuperação no próximo jogo).
-     - (4.9.4) INTERIORES (arquivo interiores.js, baixado em segundo plano): supermercado, cafeteria, pizzaria, restaurante, academia, bar,
+     - INTERIORES (arquivo interiores.js, baixado em segundo plano): supermercado, cafeteria, pizzaria, restaurante, academia, bar,
        cinema, hospital e o salão do lanche. "Entrar" na porta de cada um; a cidade fica escondida e parada, a sala aparece no mesmo lugar,
        com pessoas de enfeite (paradas, andando, sentadas, na esteira, fazendo rosca) e lugares para sentar. A ficha médica agora é com a
        enfermeira da recepção do hospital. Sem compra/trabalho ainda. Mesas do bar foram para entre as portas.
@@ -294,7 +115,6 @@
     'Cachorro-quente especial': ['Special hot dog', 'Perrito especial', 'Hot dog speciale', 'Hot-dog spécial'],
     'X-quase-tudo': ['Almost-everything burger', 'X-casi-todo', 'X-quasi-tutto', 'X-presque-tout'],
     'X-sem-salada com refri': ['No-salad burger with soda', 'X-sin-ensalada con refresco', 'X-senza-insalata con bibita', 'X-sans-salade avec soda'],
-    // (5.0.0)
     'Seg': ['Mon', 'Lun', 'Lun', 'Lun'], 'Ter': ['Tue', 'Mar', 'Mar', 'Mar'], 'Qua': ['Wed', 'Mié', 'Mer', 'Mer'], 'Qui': ['Thu', 'Jue', 'Gio', 'Jeu'],
     'Sex': ['Fri', 'Vie', 'Ven', 'Ven'], 'Sáb': ['Sat', 'Sáb', 'Sab', 'Sam'], 'Dom': ['Sun', 'Dom', 'Dom', 'Dim'],
     'Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??': ["Oh my God, it's 2 AM?! What am I still doing awake??", 'Dios mío, ¿son las 2?! ¿¿Qué hago todavía despierto??', 'Mio Dio, sono le 2?! Cosa ci faccio ancora sveglio??', "Mon Dieu, il est 2 h ?! Qu'est-ce que je fais encore debout ??"],
@@ -302,7 +122,6 @@
     'Acho que eu exagerei...': ['I think I overdid it...', 'Creo que me pasé...', 'Credo di aver esagerato...', "Je crois que j'ai exagéré..."],
     'Rapaz, já são 10 dias vindo aqui! Agora você é cliente fiel: de hoje em diante, 20% de desconto em tudo!': ["Kid, that's 10 days coming here! You're a loyal customer now: from today on, 20% off everything!", '¡Muchacho, ya son 10 días viniendo aquí! Ahora eres cliente fiel: desde hoy, 20% de descuento en todo.', 'Ragazzo, sono già 10 giorni che vieni qui! Ora sei un cliente fedele: da oggi, 20% di sconto su tutto!', "Mon garçon, ça fait 10 jours que tu viens ici ! Tu es un client fidèle : à partir d'aujourd'hui, 20 % de réduction sur tout !"],
     'Cliente fiel: −20%': ['Loyal customer: −20%', 'Cliente fiel: −20%', 'Cliente fedele: −20%', 'Client fidèle : −20 %'],
-    // (5.1.0)
     'Nem lembro de ter chegado em casa... apaguei de cansaço.': ["I don't even remember getting home... I passed out from exhaustion.", 'Ni me acuerdo de haber llegado a casa... me apagué de cansancio.', 'Non mi ricordo nemmeno di essere arrivato a casa... sono crollato dalla stanchezza.', "Je ne me souviens même pas d'être rentré... je me suis endormi d'épuisement."],
     'Você descobriu: {0}': ['You discovered: {0}', 'Descubriste: {0}', 'Hai scoperto: {0}', 'Tu as découvert : {0}'],
     'Lago do Sapo Cururu': ['Cururu Toad Lake', 'Lago del Sapo Cururu', 'Lago del Rospo Cururu', 'Lac du Crapaud Cururu'],
@@ -311,10 +130,10 @@
     'Society Doutor Bryan': ['Doctor Bryan Society', 'Society del Doctor Bryan', 'Society del Dottor Bryan', 'Society du Docteur Bryan'],
     'Casa do João': ["João's house", 'Casa de João', 'Casa di João', 'Maison de João'],
     'Casa dos Alves': ['The Alves house', 'Casa de los Alves', 'Casa degli Alves', 'Maison des Alves'],
-    // (5.1.0) emprego da cafeteria: a Lúcia Alves no caixa e o Merge Game do expediente
+    // emprego da cafeteria: a Lúcia Alves no caixa e o Merge Game do expediente
     'Lúcia Alves': ['Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves', 'Lúcia Alves'],
-    'Eita! Foi mal!': ['Whoa! My bad!', '¡Uy! ¡Perdón!', 'Ops! Scusa!', 'Oups ! Désolé !'],   // (5.5.0) susto do carro
-    // (5.3.0) futebol no sintético, celular, banho, Lúcia fecha o caixa
+    'Eita! Foi mal!': ['Whoa! My bad!', '¡Uy! ¡Perdón!', 'Ops! Scusa!', 'Oups ! Désolé !'],   // susto do carro
+    // futebol no sintético, celular, banho, Lúcia fecha o caixa
     '3 minutos': ['3 minutes', '3 minutos', '3 minuti', '3 minutes'],
     '5 minutos': ['5 minutes', '5 minutos', '5 minuti', '5 minutes'],
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
@@ -349,7 +168,7 @@
     'Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!': ["Now I need to close out the register... I'll only leave later. See you tomorrow!", 'Ahora tengo que cerrar la caja... Salgo más tarde. ¡Hasta mañana!', 'Ora devo chiudere la cassa... Esco più tardi. A domani!', 'Là je dois faire la caisse... Je ne pars que plus tard. À demain !'],
     'Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!': ["It's the weekend, you don't work today! Enjoy it and rest. See you Monday!", '¡Hoy es fin de semana, no trabajas! Aprovecha y descansa. ¡Hasta el lunes!', 'Oggi è fine settimana, non lavori! Approfittane e riposati. A lunedì!', 'C\'est le week-end, tu ne travailles pas ! Profites-en pour te reposer. À lundi !'],
     'Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?': ["Wow... you smell like you just played football! Go home, take a shower and then come back, okay?", 'Uy... ¡hueles a que acabas de jugar al fútbol! Pasa por casa, dúchate y luego vuelve, ¿vale?', 'Accidenti... hai l\'odore di chi ha appena giocato a calcio! Passa da casa, fatti una doccia e poi torna, ok?', 'Oh là... tu sens comme quelqu\'un qui vient de jouer au foot ! Passe chez toi, prends une douche et reviens, d\'accord ?'],
-    // (5.2.0) expediente com clientes, bancada, gorjeta e caixa; Lúcia com casa e horário; coxinha da fome
+    // expediente com clientes, bancada, gorjeta e caixa; Lúcia com casa e horário; coxinha da fome
     "Clientes com \"!\" querem fazer um pedido. Anote na mesa e prepare na bancada (à esquerda).": ["Customers with \"!\" want to order. Take the order at the table and make it at the prep counter (on the left).", "Los clientes con \"!\" quieren pedir. Anota en la mesa y prepara en la barra (a la izquierda).", "I clienti con \"!\" vogliono ordinare. Prendi l'ordine al tavolo e preparalo al bancone (a sinistra).", "Les clients avec \"!\" veulent commander. Note la commande à table et prépare-la au comptoir (à gauche)."],
     "Anotar pedido": ["Take order", "Anotar pedido", "Prendi l'ordine", "Prendre la commande"],
     "Entregar: {0}": ["Deliver: {0}", "Entregar: {0}", "Consegna: {0}", "Servir : {0}"],
@@ -383,7 +202,7 @@
     "Já são 20h, vamos fechar! Até amanhã!": ["It's already 8 PM, we're closing! See you tomorrow!", "¡Ya son las 20h, vamos a cerrar! ¡Hasta mañana!", "Sono già le 20, chiudiamo! A domani!", "Il est déjà 20 h, on ferme ! À demain !"],
     "Seu personagem ainda não comeu hoje.": ["Your character hasn't eaten today yet.", "Tu personaje todavía no comió hoy.", "Il tuo personaggio non ha ancora mangiato oggi.", "Ton personnage n'a pas encore mangé aujourd'hui."],
     "Fome": ["Hunger", "Hambre", "Fame", "Faim"],
-    // (5.1.1) expediente com relógio, nome do café tocado e salário 20 + 5 por pedido
+    // expediente com relógio, nome do café tocado e salário 20 + 5 por pedido
     'Sair mais cedo': ['Leave early', 'Salir antes', 'Esci prima', 'Partir plus tôt'],
     'Sair? Perde os 20 do dia': ['Leave? You lose the 20 for the day', '¿Salir? Pierdes los 20 del día', 'Uscire? Perdi i 20 del giorno', 'Partir ? Tu perds les 20 du jour'],
     'Pedido': ['Order', 'Pedido', 'Ordine', 'Commande'],
@@ -437,7 +256,86 @@
     'Cappuccino com chantilly e borda de chocolate': ['Cappuccino with whipped cream and chocolate rim', 'Capuchino con chantillí y borde de chocolate', 'Cappuccino con panna e bordo di cioccolato', 'Cappuccino avec chantilly et bord de chocolat'],
   });
   Object.assign(TRAD_CD, {
-    // (6.0.6) o Biel e o futsal da quadra coberta
+    // amizade e conversas com a Lúcia
+    'Convidar para jogar': ['Invite to play', 'Invitar a jugar', 'Invita a giocare', 'Inviter à jouer'],
+    'Chamar para sair': ['Ask her out', 'Invitarla a salir', 'Chiedile di uscire', 'L’inviter à sortir'],
+    'Foi muito bom conversar com você! Mas agora eu preciso trabalhar.': ['It was really nice talking to you! But now I need to work.', '¡Fue muy lindo hablar contigo! Pero ahora tengo que trabajar.', 'È stato bellissimo parlare con te! Ma ora devo lavorare.', 'C’était super de parler avec toi ! Mais maintenant je dois travailler.'],
+    'Você acredita que hoje um cliente pediu café com sal? Disse que é costume da família.': ['Can you believe a customer ordered coffee with salt today? Said it’s a family tradition.', '¿Puedes creer que hoy un cliente pidió café con sal? Dijo que es costumbre de familia.', 'Ci credi che oggi un cliente ha chiesto il caffè con il sale? Ha detto che è un’abitudine di famiglia.', 'Tu crois qu’aujourd’hui un client a demandé un café salé ? Il a dit que c’est une tradition familiale.'],
+    'Que estranho!': ['That’s weird!', '¡Qué raro!', 'Che strano!', 'C’est bizarre !'],
+    'Né? Mas cliente é cliente... fiz com todo carinho, haha.': ['Right? But a customer is a customer... I made it with love, haha.', '¿Verdad? Pero el cliente es el cliente... lo hice con cariño, jaja.', 'Vero? Ma il cliente è il cliente... l’ho fatto con amore, haha.', 'Hein ? Mais le client est roi... je l’ai fait avec amour, haha.'],
+    'Até que pode ser bom...': ['It might actually be good...', 'Hasta podría estar bueno...', 'Potrebbe anche essere buono...', 'Ça pourrait être bon...'],
+    'Sério?! Então da próxima vez eu faço um pra você provar!': ['Really?! Then next time I’ll make you one to try!', '¿En serio?! ¡Entonces la próxima te preparo uno para que lo pruebes!', 'Davvero?! Allora la prossima volta te ne faccio uno da assaggiare!', 'Sérieux ?! Alors la prochaine fois je t’en fais un à goûter !'],
+    'Tô pensando em fazer um curso de confeitaria. Acha que eu levo jeito?': ['I’m thinking of taking a pastry course. Think I’d be good at it?', 'Estoy pensando en hacer un curso de repostería. ¿Crees que tengo talento?', 'Sto pensando di fare un corso di pasticceria. Pensi che sia portata?', 'Je pense suivre un cours de pâtisserie. Tu crois que j’ai le talent ?'],
+    'Com certeza!': ['Definitely!', '¡Seguro!', 'Sicuramente!', 'Carrément !'],
+    'Ai, obrigada! Vou procurar umas aulas então.': ['Aw, thanks! I’ll look for some classes then.', '¡Ay, gracias! Voy a buscar unas clases entonces.', 'Oh, grazie! Allora cerco qualche lezione.', 'Oh, merci ! Je vais chercher des cours alors.'],
+    'Você leva jeito pra tudo.': ['You’re good at everything.', 'Tienes talento para todo.', 'Sei portata per tutto.', 'Tu es douée pour tout.'],
+    'Para, assim eu fico sem graça...': ['Stop it, you’re making me blush...', 'Para, que me da vergüenza...', 'Smettila, così mi fai arrossire...', 'Arrête, tu me fais rougir...'],
+    'Choveu tanto essa semana que o café ficou cheio de gente fugindo da chuva.': ['It rained so much this week that the café was full of people escaping the rain.', 'Llovió tanto esta semana que el café se llenó de gente huyendo de la lluvia.', 'Ha piovuto così tanto questa settimana che il bar era pieno di gente in fuga dalla pioggia.', 'Il a tellement plu cette semaine que le café était plein de gens qui fuyaient la pluie.'],
+    'Bom pro movimento!': ['Good for business!', '¡Bueno para el negocio!', 'Bene per gli affari!', 'Bon pour les affaires !'],
+    'Pois é! Vendi café que nem água, haha.': ['Exactly! I sold coffee like water, haha.', '¡Así es! Vendí café como agua, jaja.', 'Già! Ho venduto caffè come acqua, haha.', 'Eh oui ! J’ai vendu du café comme de l’eau, haha.'],
+    'Eu adoro dia de chuva.': ['I love rainy days.', 'Me encantan los días de lluvia.', 'Adoro i giorni di pioggia.', 'J’adore les jours de pluie.'],
+    'Eu também! Dá vontade de ficar em casa com um chocolate quente.': ['Me too! It makes me want to stay home with a hot chocolate.', '¡Yo también! Dan ganas de quedarse en casa con un chocolate caliente.', 'Anch’io! Viene voglia di restare a casa con una cioccolata calda.', 'Moi aussi ! Ça donne envie de rester à la maison avec un chocolat chaud.'],
+    'Qual é a sua comida favorita?': ['What’s your favorite food?', '¿Cuál es tu comida favorita?', 'Qual è il tuo cibo preferito?', 'C’est quoi ton plat préféré ?'],
+    'Pastel de feira!': ['Street-market pastel!', '¡Empanada de feria!', 'Il pastel del mercato!', 'Le pastel du marché !'],
+    'Ai, de queijo! Tem feira na praça no domingo, sabia?': ['Ooh, cheese ones! There’s a market in the square on Sunday, you know?', '¡Ay, de queso! El domingo hay feria en la plaza, ¿sabías?', 'Oh, al formaggio! Domenica c’è il mercato in piazza, lo sapevi?', 'Oh, au fromage ! Il y a un marché sur la place dimanche, tu savais ?'],
+    'O lanche do seu Valdemar.': ['Mr. Valdemar’s snacks.', 'El lonche de don Valdemar.', 'Il panino del signor Valdemar.', 'Le snack de monsieur Valdemar.'],
+    'O podrão dele é perigoso... mas é bom demais, haha.': ['His greasy burger is dangerous... but so good, haha.', 'Su hamburguesa grasienta es peligrosa... pero buenísima, jaja.', 'Il suo panino unto è pericoloso... ma buonissimo, haha.', 'Son burger gras est dangereux... mais trop bon, haha.'],
+    'Às vezes eu sinto saudade da escola. Era tudo mais simples, né?': ['Sometimes I miss school. Everything was simpler, right?', 'A veces extraño la escuela. Todo era más simple, ¿no?', 'A volte mi manca la scuola. Era tutto più semplice, vero?', 'Parfois l’école me manque. Tout était plus simple, hein ?'],
+    'Também sinto falta.': ['I miss it too.', 'Yo también la extraño.', 'Manca anche a me.', 'Moi aussi, ça me manque.'],
+    'A gente nem sabia quanta coisa vinha pela frente...': ['We had no idea how much was coming our way...', 'Ni sabíamos cuántas cosas venían por delante...', 'Non sapevamo quante cose ci aspettavano...', 'On ne savait pas tout ce qui nous attendait...'],
+    'Prefiro agora.': ['I prefer now.', 'Prefiero ahora.', 'Preferisco adesso.', 'Je préfère maintenant.'],
+    'É... pelo menos ninguém manda a gente fazer prova, haha.': ['Yeah... at least nobody makes us take tests, haha.', 'Sí... al menos nadie nos hace dar exámenes, jaja.', 'Già... almeno nessuno ci fa fare compiti in classe, haha.', 'Ouais... au moins personne ne nous fait passer d’examens, haha.'],
+    'Sabia que eu tenho um gatinho? O nome dele é Grão.': ['Did you know I have a kitten? His name is Bean.', '¿Sabías que tengo un gatito? Se llama Grano.', 'Lo sapevi che ho un gattino? Si chiama Chicco.', 'Tu savais que j’ai un chaton ? Il s’appelle Grain.'],
+    'Que nome perfeito!': ['What a perfect name!', '¡Qué nombre perfecto!', 'Che nome perfetto!', 'Quel nom parfait !'],
+    'Né?! Combina com uma barista, haha.': ['Right?! Fits a barista, haha.', '¿Verdad?! Le queda a una barista, jaja.', 'Vero?! Perfetto per una barista, haha.', 'Hein ?! Ça va bien avec une barista, haha.'],
+    'Prefiro cachorro.': ['I prefer dogs.', 'Prefiero los perros.', 'Preferisco i cani.', 'Je préfère les chiens.'],
+    'Ah, mas o Grão é quase um cachorro: me espera na porta todo dia!': ['Ah, but Bean is almost a dog: he waits for me at the door every day!', '¡Ah, pero Grano casi es un perro: me espera en la puerta todos los días!', 'Ah, ma Chicco è quasi un cane: mi aspetta alla porta ogni giorno!', 'Ah, mais Grain est presque un chien : il m’attend à la porte tous les jours !'],
+    'Ontem eu fiquei até tarde vendo filme. Tô morrendo de sono hoje...': ['I stayed up late watching a movie yesterday. I’m dying of sleep today...', 'Ayer me quedé hasta tarde viendo una película. Hoy me muero de sueño...', 'Ieri sono rimasta sveglia fino a tardi a vedere un film. Oggi muoio di sonno...', 'Hier je suis restée tard devant un film. Je meurs de sommeil aujourd’hui...'],
+    'Toma um café, ué!': ['Have a coffee, then!', '¡Tómate un café, pues!', 'Prenditi un caffè, no?', 'Prends un café, voyons !'],
+    'Já tô no terceiro! Se eu tomar mais um, eu saio voando.': ['I’m on my third! One more and I’ll take off flying.', '¡Ya voy por el tercero! Si tomo otro, salgo volando.', 'Sono già al terzo! Se ne bevo un altro, prendo il volo.', 'J’en suis au troisième ! Un de plus et je m’envole.'],
+    'Que filme?': ['What movie?', '¿Qué película?', 'Che film?', 'Quel film ?'],
+    'Um de terror... e agora eu tô com medo do escuro, haha.': ['A horror one... and now I’m scared of the dark, haha.', 'Una de terror... y ahora le tengo miedo a la oscuridad, jaja.', 'Un horror... e ora ho paura del buio, haha.', 'Un film d’horreur... et maintenant j’ai peur du noir, haha.'],
+    'Você já reparou na bola gigante em cima da loja de esportes?': ['Have you noticed the giant ball on top of the sports store?', '¿Ya viste la pelota gigante encima de la tienda de deportes?', 'Hai notato il pallone gigante sopra il negozio di sport?', 'Tu as remarqué le ballon géant sur le magasin de sport ?'],
+    'Aquela bola é demais!': ['That ball is awesome!', '¡Esa pelota es lo máximo!', 'Quel pallone è fantastico!', 'Ce ballon est génial !'],
+    'Um dia eu subo lá só pra ver se ela gira de verdade.': ['Someday I’ll climb up there just to see if it really spins.', 'Un día subo solo para ver si gira de verdad.', 'Un giorno salgo lassù solo per vedere se gira davvero.', 'Un jour je monte juste pour voir si il tourne vraiment.'],
+    'Acho meio exagerada.': ['I think it’s a bit much.', 'Me parece un poco exagerada.', 'Mi sembra un po’ esagerato.', 'Je le trouve un peu exagéré.'],
+    'Exagerada, mas todo mundo olha, né? Haha.': ['A bit much, but everyone looks at it, right? Haha.', 'Exagerada, pero todo el mundo la mira, ¿no? Jaja.', 'Esagerato, ma tutti lo guardano, no? Haha.', 'Exagéré, mais tout le monde le regarde, hein ? Haha.'],
+    'Se você pudesse morar em qualquer lugar do mundo, onde seria?': ['If you could live anywhere in the world, where would it be?', 'Si pudieras vivir en cualquier lugar del mundo, ¿dónde sería?', 'Se potessi vivere ovunque nel mondo, dove sarebbe?', 'Si tu pouvais vivre n’importe où dans le monde, ce serait où ?'],
+    'Perto da praia.': ['Near the beach.', 'Cerca de la playa.', 'Vicino al mare.', 'Près de la plage.'],
+    'Ai, praia... eu ia abrir um quiosque de café gelado.': ['Ah, the beach... I’d open an iced coffee kiosk.', 'Ay, la playa... abriría un quiosco de café helado.', 'Ah, il mare... aprirei un chiosco di caffè freddo.', 'Ah, la plage... j’ouvrirais un kiosque de café glacé.'],
+    'Aqui mesmo.': ['Right here.', 'Aquí mismo.', 'Proprio qui.', 'Ici même.'],
+    'Sério? Que fofo... eu também gosto daqui.': ['Really? That’s sweet... I like it here too.', '¿En serio? Qué tierno... a mí también me gusta aquí.', 'Davvero? Che carino... anche a me piace qui.', 'Sérieux ? C’est mignon... moi aussi j’aime bien ici.'],
+    'Hoje de manhã eu vi um passarinho tomando banho na fonte da praça.': ['This morning I saw a little bird bathing in the fountain in the square.', 'Esta mañana vi un pajarito bañándose en la fuente de la plaza.', 'Stamattina ho visto un uccellino fare il bagno nella fontana della piazza.', 'Ce matin j’ai vu un petit oiseau prendre un bain dans la fontaine de la place.'],
+    'Que cena bonita!': ['What a lovely sight!', '¡Qué escena tan bonita!', 'Che bella scena!', 'Quelle jolie scène !'],
+    'Fiquei uns cinco minutos olhando. Quase cheguei atrasada!': ['I watched for like five minutes. I was almost late!', 'Me quedé como cinco minutos mirando. ¡Casi llego tarde!', 'Sono rimasta a guardarlo cinque minuti. Per poco arrivavo in ritardo!', 'Je l’ai regardé cinq minutes. J’ai failli être en retard !'],
+    'Você presta atenção em tudo.': ['You notice everything.', 'Te fijas en todo.', 'Noti proprio tutto.', 'Tu remarques tout.'],
+    'Haha, é que eu chego cedo... a cidade fica tão calma.': ['Haha, I get here early... the town is so calm then.', 'Jaja, es que llego temprano... la ciudad está tan tranquila.', 'Haha, è che arrivo presto... la città è così tranquilla.', 'Haha, c’est que j’arrive tôt... la ville est si calme.'],
+    'Que bom ver você hoje!': ['So good to see you today!', '¡Qué bueno verte hoy!', 'Che bello vederti oggi!', 'Ça fait plaisir de te voir aujourd’hui !'],
+    'Achei que você não ia vir falar comigo hoje...': ['I thought you weren’t going to come talk to me today...', 'Pensé que no ibas a venir a hablar conmigo hoy...', 'Pensavo che oggi non saresti venuto a parlarmi...', 'Je pensais que tu ne viendrais pas me parler aujourd’hui...'],
+    'Já estava com saudades!': ['I was already missing you!', '¡Ya te extrañaba!', 'Mi mancavi già!', 'Tu me manquais déjà !'],
+    'Oiii, {0}! É tão bom te ver!': ['Hiii, {0}! It’s so good to see you!', '¡Holaaa, {0}! ¡Qué lindo verte!', 'Ciaooo, {0}! È così bello vederti!', 'Coucouuu, {0} ! Ça fait tellement plaisir de te voir !'],
+    'o racha do sintético': ['the pickup game on the turf', 'el partido en la sintética', 'la partitella sul sintetico', 'le match sur le synthétique'],
+    'o futsal da quadra': ['futsal at the court', 'el futsal de la cancha', 'il calcetto al campo', 'le futsal au terrain'],
+    'Futebol no sintético (segunda e quarta)': ['Football on the turf (Monday and Wednesday)', 'Fútbol en la sintética (lunes y miércoles)', 'Calcio sul sintetico (lunedì e mercoledì)', 'Foot sur le synthétique (lundi et mercredi)'],
+    'Futsal na quadra (terça e quinta)': ['Futsal at the court (Tuesday and Thursday)', 'Futsal en la cancha (martes y jueves)', 'Calcetto al campo (martedì e giovedì)', 'Futsal au terrain (mardi et jeudi)'],
+    'Já tá combinado, lembra? Eu vou no dia {0}!': ['It’s already set, remember? I’m going on {0}!', 'Ya está acordado, ¿te acuerdas? ¡Voy el {0}!', 'È già deciso, ricordi? Vengo {0}!', 'C’est déjà prévu, tu te souviens ? Je viens {0} !'],
+    'Qual jogo?': ['Which game?', '¿Qué partido?', 'Quale partita?', 'Quel match ?'],
+    'Ei, você não quer jogar {0} com a gente?': ['Hey, don’t you want to join {0} with us?', 'Oye, ¿no quieres jugar {0} con nosotros?', 'Ehi, non vuoi giocare {0} con noi?', 'Hé, tu ne veux pas jouer {0} avec nous ?'],
+    'Ah... obrigada pelo convite, mas acho que não vai dar. Fica pra uma próxima, tá?': ['Ah... thanks for the invite, but I don’t think I can. Maybe next time, okay?', 'Ah... gracias por la invitación, pero creo que no voy a poder. Para la próxima, ¿sí?', 'Ah... grazie dell’invito, ma credo di non poter venire. Alla prossima, va bene?', 'Ah... merci pour l’invitation, mais je crois que je ne pourrai pas. Une prochaine fois, d’accord ?'],
+    'Haha, achei que você ia me chamar para um encontro... mas isso também serve!': ['Haha, I thought you were going to ask me on a date... but this works too!', 'Jaja, pensé que me ibas a invitar a una cita... ¡pero esto también sirve!', 'Haha, pensavo che mi avresti chiesto un appuntamento... ma va bene anche così!', 'Haha, je pensais que tu allais m’inviter à un rendez-vous... mais ça me va aussi !'],
+    'Sério? Eu topo! Faz tempo que eu não jogo.': ['Really? I’m in! I haven’t played in a while.', '¿En serio? ¡Me apunto! Hace tiempo que no juego.', 'Davvero? Ci sto! È da tanto che non gioco.', 'Sérieux ? Je suis partante ! Ça fait longtemps que je n’ai pas joué.'],
+    'Pode deixar: no dia eu fecho o café no horário e vou direto pra lá!': ['Count on me: on the day I’ll close the café on time and go straight there!', '¡Cuenta conmigo: ese día cierro el café a tiempo y voy directo!', 'Contaci: quel giorno chiudo il bar in tempo e vengo dritta lì!', 'Compte sur moi : ce jour-là je ferme le café à l’heure et j’y vais direct !'],
+    'Minha casa': ['My place', 'Mi casa', 'Casa mia', 'Chez moi'],
+    'o restaurante': ['the restaurant', 'el restaurante', 'il ristorante', 'le restaurant'], 'a pizzaria': ['the pizzeria', 'la pizzería', 'la pizzeria', 'la pizzeria'], 'a minha casa': ['my place', 'mi casa', 'casa mia', 'chez moi'],
+    'Para onde você quer chamar a Lúcia?': ['Where do you want to invite Lúcia?', '¿A dónde quieres invitar a Lúcia?', 'Dove vuoi invitare Lúcia?', 'Où veux-tu inviter Lúcia ?'],
+    'Eu estava pensando...': ['I was thinking...', 'Estaba pensando...', 'Stavo pensando...', 'Je me disais...'],
+    'Você não quer sair comigo? Ir para {0} domingo de noite?': ['Would you like to go out with me? To {0} on Sunday night?', '¿No quieres salir conmigo? ¿Ir a {0} el domingo en la noche?', 'Ti andrebbe di uscire con me? Andare {0} domenica sera?', 'Tu ne voudrais pas sortir avec moi ? Aller {0} dimanche soir ?'],
+    'S-sério?! Eu... eu adoraria!': ['R-really?! I... I’d love to!', '¿E-en serio?! ¡Yo... me encantaría!', 'D-davvero?! Io... mi piacerebbe tantissimo!', 'S-sérieux ?! Je... j’adorerais !'],
+    'Domingo de noite, então. Combinado!': ['Sunday night, then. It’s a date!', 'El domingo en la noche, entonces. ¡Trato hecho!', 'Domenica sera, allora. D’accordo!', 'Dimanche soir, alors. C’est noté !'],
+    'Foi muito divertido, {0}! Obrigada por me chamar.': ['That was so much fun, {0}! Thanks for inviting me.', '¡Fue muy divertido, {0}! Gracias por invitarme.', 'È stato divertentissimo, {0}! Grazie per avermi invitata.', 'C’était trop drôle, {0} ! Merci de m’avoir invitée.'],
+  });
+  Object.assign(TRAD_CD, {
+    // o Biel e o futsal da quadra coberta
     'Falar com o Biel': ['Talk to Biel', 'Hablar con Biel', 'Parla con Biel', 'Parler à Biel'],
     'Valeu pelo jogo, {0}! Até a próxima.': ['Thanks for the game, {0}! See you next time.', '¡Gracias por el partido, {0}! Hasta la próxima.', 'Grazie per la partita, {0}! Alla prossima.', 'Merci pour le match, {0} ! À la prochaine.'],
     'E aí! Tô esperando uns amigos chegarem pra jogar um futsal ali na quadra.': ["Hey! I'm waiting for some friends to show up to play futsal on the court.", '¡Ey! Estoy esperando a unos amigos para jugar un futsal ahí en la cancha.', 'Ehi! Sto aspettando degli amici per giocare a calcetto lì nel campo.', 'Salut ! J’attends des potes pour jouer un futsal sur le terrain là.'],
@@ -474,7 +372,7 @@
     'Missão: futsal com o Biel na quadra coberta às {0}.': ['Mission: futsal with Biel at the covered court at {0}.', 'Misión: futsal con Biel en la cancha techada a las {0}.', 'Missione: calcetto con Biel al campo coperto alle {0}.', 'Mission : futsal avec Biel au terrain couvert à {0}.'],
   });
   Object.assign(TRAD_CD, {
-    // (5.6.0) cafés à venda, conversas da Lúcia (também para quem não trabalha na cafeteria)
+    // cafés à venda, conversas da Lúcia (também para quem não trabalha na cafeteria)
     'Oi! O que vai ser hoje?': ['Hi! What will it be today?', '¡Hola! ¿Qué va a ser hoy?', 'Ciao! Cosa prendi oggi?', 'Salut ! Ce sera quoi aujourd’hui ?'],
     'Comprar um café': ['Buy a coffee', 'Comprar un café', 'Compra un caffè', 'Acheter un café'],
     'Sobre o trabalho': ['About the job', 'Sobre el trabajo', 'Sul lavoro', 'À propos du travail'],
@@ -516,6 +414,66 @@
     'Prova sim! Ele deixa qualquer um ligadão o dia inteiro.': ['Do try it! It keeps anyone wired all day.', '¡Pruébalo! Deja a cualquiera a mil todo el día.', 'Provalo! Tiene chiunque carico tutto il giorno.', 'Goûte-le ! Il garde n’importe qui à fond toute la journée.'],
     'Clássico! Também é muito bom.': ['A classic! It’s really good too.', '¡Clásico! También es muy bueno.', 'Classico! Anche quello è buonissimo.', 'Un classique ! C’est très bon aussi.'],
   });
+  Object.assign(TRAD_CD, {
+    // o encontro com a Lúcia
+    'Oi, {0}! Que bom que você veio!': ['Hi, {0}! I’m so glad you came!', '¡Hola, {0}! ¡Qué bueno que viniste!', 'Ciao, {0}! Che bello che sei venuto!', 'Salut, {0} ! Je suis contente que tu sois venu !'],
+    'Você está linda hoje.': ['You look beautiful tonight.', 'Estás preciosa hoy.', 'Sei bellissima stasera.', 'Tu es magnifique ce soir.'],
+    'Como você está?': ['How are you?', '¿Cómo estás?', 'Come stai?', 'Comment ça va ?'],
+    '(Não dizer nada)': ['(Say nothing)', '(No decir nada)', '(Non dire niente)', '(Ne rien dire)'],
+    'A-ah... obrigada! Você também está muito bem.': ['O-oh... thank you! You look really good too.', '¡A-ay... gracias! Tú también te ves muy bien.', 'O-oh... grazie! Anche tu stai benissimo.', 'O-oh... merci ! Toi aussi tu es très bien.'],
+    'Tô bem! Um pouquinho nervosa, pra falar a verdade... mas feliz de estar aqui com você.': ['I’m good! A little nervous, to be honest... but happy to be here with you.', '¡Estoy bien! Un poquito nerviosa, la verdad... pero feliz de estar aquí contigo.', 'Sto bene! Un pochino nervosa, a dire il vero... ma felice di essere qui con te.', 'Ça va ! Un peu nerveuse, pour être honnête... mais contente d’être ici avec toi.'],
+    'Haha, tá tímido, é? Eu também tô um pouco.': ['Haha, feeling shy? I am a little too.', 'Jaja, ¿estás tímido? Yo también un poco.', 'Haha, sei timido? Anch’io un po’.', 'Haha, tu es timide ? Moi aussi un peu.'],
+    'Como está indo o café?': ['How’s the café going?', '¿Cómo va el café?', 'Come va il bar?', 'Comment va le café ?'],
+    'Você sentiu minha falta?': ['Did you miss me?', '¿Me extrañaste?', 'Ti sono mancato?', 'Je t’ai manqué ?'],
+    'O que você acha da cidade?': ['What do you think of the town?', '¿Qué piensas de la ciudad?', 'Cosa pensi della città?', 'Tu penses quoi de la ville ?'],
+    'Adiantar': ['Skip ahead', 'Adelantar', 'Vai avanti', 'Passer'],
+    'Sobre o que vocês conversam?': ['What do you talk about?', '¿De qué hablan?', 'Di cosa parlate?', 'De quoi vous parlez ?'],
+    'Ficou muito melhor depois que você chegou lá! Sério, eu nem sei como daria conta sem você.': ['It got so much better after you started there! Seriously, I don’t know how I’d manage without you.', '¡Mejoró muchísimo desde que llegaste! En serio, no sé cómo me las arreglaría sin ti.', 'È andato tutto molto meglio da quando sei arrivato! Davvero, non so come farei senza di te.', 'Ça va beaucoup mieux depuis que tu es là ! Sérieux, je ne sais pas comment je ferais sans toi.'],
+    'Vai indo bem! Mas às vezes eu fico bem cansada... é muita coisa pra uma pessoa só.': ['It’s going well! But sometimes I get really tired... it’s a lot for one person.', '¡Va bien! Pero a veces me canso mucho... es demasiado para una sola persona.', 'Va bene! Ma a volte sono stanchissima... è tanto per una persona sola.', 'Ça va bien ! Mais parfois je suis très fatiguée... c’est beaucoup pour une seule personne.'],
+    'Você não pensa em contratar alguém?': ['Have you thought about hiring someone?', '¿No piensas contratar a alguien?', 'Non pensi di assumere qualcuno?', 'Tu ne penses pas à embaucher quelqu’un ?'],
+    'Eu até postei na internet que tô procurando alguém... mas ninguém quis ainda.': ['I even posted online that I’m looking for someone... but nobody’s wanted it yet.', 'Hasta publiqué en internet que busco a alguien... pero nadie quiso todavía.', 'Ho persino scritto su internet che cerco qualcuno... ma ancora nessuno ha voluto.', 'J’ai même publié en ligne que je cherche quelqu’un... mais personne n’a voulu pour l’instant.'],
+    'Senti, sim... Quer saber? Na escola eu até tinha uma quedinha por você.': ['I did... Want to know something? Back in school I even had a little crush on you.', 'Sí... ¿Sabes qué? En la escuela hasta me gustabas un poquito.', 'Sì... Vuoi sapere una cosa? A scuola avevo anche una cotta per te.', 'Oui... Tu veux savoir ? À l’école, j’avais même un petit faible pour toi.'],
+    'Eu também tinha por você.': ['I had one on you too.', 'Tú también me gustabas.', 'Anch’io avevo una cotta per te.', 'Moi aussi, j’en avais un pour toi.'],
+    'Sério? Eu nem percebi!': ['Really? I never noticed!', '¿En serio? ¡Ni me di cuenta!', 'Davvero? Non me ne sono mai accorto!', 'Sérieux ? Je ne l’ai jamais remarqué !'],
+    'S-sério?! Ai, que vergonha... mas eu fico muito feliz em saber disso.': ['R-really?! Oh, how embarrassing... but I’m really happy to hear that.', '¿E-en serio?! Ay, qué vergüenza... pero me alegra mucho saberlo.', 'D-davvero?! Che imbarazzo... ma sono felicissima di saperlo.', 'S-sérieux ?! Oh, la honte... mais je suis très contente de le savoir.'],
+    'Haha, ainda bem! Eu disfarçava muito bem.': ['Haha, good! I hid it really well.', '¡Jaja, menos mal! Lo disimulaba muy bien.', 'Haha, meno male! Lo nascondevo benissimo.', 'Haha, tant mieux ! Je le cachais très bien.'],
+    'Eu gosto daqui, mas acho pequena demais. Penso em abrir uma cafeteria numa cidade maior algum dia... se for possível. Mas acho que não é.': ['I like it here, but it’s too small. I think about opening a café in a bigger city someday... if it’s possible. But I don’t think it is.', 'Me gusta, pero es demasiado pequeña. Pienso abrir una cafetería en una ciudad más grande algún día... si se puede. Pero creo que no.', 'Mi piace qui, ma è troppo piccola. Penso di aprire un bar in una città più grande un giorno... se sarà possibile. Ma credo di no.', 'J’aime bien ici, mais c’est trop petit. Je pense ouvrir un café dans une plus grande ville un jour... si c’est possible. Mais je ne crois pas.'],
+    'Eu entendo.': ['I understand.', 'Te entiendo.', 'Capisco.', 'Je comprends.'],
+    'Eu não ganho o bastante nem pra isso... mesmo com a cafeteria tendo melhorado depois que você chegou.': ['I don’t even earn enough for that... even with the café doing better since you arrived.', 'No gano lo suficiente ni para eso... aunque la cafetería mejoró desde que llegaste.', 'Non guadagno abbastanza nemmeno per quello... anche se il bar è migliorato da quando sei arrivato.', 'Je ne gagne même pas assez pour ça... même si le café va mieux depuis que tu es là.'],
+    'Eu não ganho o bastante nem pra isso. As coisas estão decentes, mas poderiam estar melhores com mais alguém lá.': ['I don’t even earn enough for that. Things are decent, but they could be better with someone else there.', 'No gano lo suficiente ni para eso. Las cosas van decentes, pero podrían estar mejor con alguien más allí.', 'Non guadagno abbastanza nemmeno per quello. Le cose vanno discretamente, ma potrebbero andare meglio con qualcun altro lì.', 'Je ne gagne même pas assez pour ça. Ça va à peu près, mais ça irait mieux avec quelqu’un d’autre là-bas.'],
+    'É... quem sabe um dia, né?': ['Yeah... maybe someday, right?', 'Sí... quién sabe algún día, ¿no?', 'Già... magari un giorno, no?', 'Ouais... peut-être un jour, hein ?'],
+    'Enfim... vamos comer?': ['Anyway... shall we eat?', 'En fin... ¿comemos?', 'Comunque... mangiamo?', 'Bref... on mange ?'],
+    'O que você diz?': ['What do you say?', '¿Qué dices?', 'Cosa dici?', 'Tu dis quoi ?'],
+    'Eu vou trabalhar com você!': ['I’m going to work with you!', '¡Voy a trabajar contigo!', 'Verrò a lavorare con te!', 'Je vais travailler avec toi !'],
+    'Sabe de uma coisa? Eu vou trabalhar com você!': ['You know what? I’m going to work with you!', '¿Sabes qué? ¡Voy a trabajar contigo!', 'Sai una cosa? Verrò a lavorare con te!', 'Tu sais quoi ? Je vais travailler avec toi !'],
+    'Para! Você não tá falando sério... você tem um emprego {0}!': ['Stop! You can’t be serious... you have a job {0}!', '¡Para! No hablas en serio... ¡tienes un trabajo {0}!', 'Smettila! Non dici sul serio... hai un lavoro {0}!', 'Arrête ! Tu n’es pas sérieux... tu as un travail {0} !'],
+    'no Mercadinho Bom Preço': ['at the Bom Preço Mini Market', 'en el Minimercado Bom Preço', 'al Minimarket Bom Preço', 'à la supérette Bom Preço'],
+    'na pizzaria': ['at the pizzeria', 'en la pizzería', 'in pizzeria', 'à la pizzeria'],
+    'É muito sério! Eu vou pedir demissão e começo amanhã mesmo!': ['I’m dead serious! I’ll quit and start tomorrow!', '¡Hablo muy en serio! ¡Voy a renunciar y empiezo mañana mismo!', 'Sono serissimo! Mi licenzio e comincio già domani!', 'Je suis très sérieux ! Je démissionne et je commence dès demain !'],
+    'Ai, meu Deus! Eu tô muito feliz!': ['Oh my God! I’m so happy!', '¡Ay, Dios mío! ¡Estoy muy feliz!', 'Oddio! Sono felicissima!', 'Oh mon Dieu ! Je suis trop contente !'],
+    'Vamos!': ['Let’s go!', '¡Vamos!', 'Andiamo!', 'Allons-y !'],
+    '{0}! Aqui!': ['{0}! Over here!', '¡{0}! ¡Aquí!', '{0}! Qui!', '{0} ! Ici !'],
+    'Oi! Cheguei na hora certa?': ['Hi! Am I right on time?', '¡Hola! ¿Llegué a tiempo?', 'Ciao! Sono puntuale?', 'Salut ! Je suis à l’heure ?'],
+    'Na hora certinha! Vamos subir?': ['Right on time! Shall we go up?', '¡Justo a tiempo! ¿Subimos?', 'Puntualissima! Saliamo?', 'Pile à l’heure ! On monte ?'],
+    'Eu me diverti muito essa noite!': ['I had so much fun tonight!', '¡Me divertí mucho esta noche!', 'Mi sono divertita tantissimo stasera!', 'Je me suis trop amusée ce soir !'],
+    'E ainda ganhei um funcionário novo!': ['And I even got a new employee!', '¡Y encima gané un empleado nuevo!', 'E ho anche un nuovo dipendente!', 'Et en plus j’ai un nouvel employé !'],
+    'Como você se despede?': ['How do you say goodbye?', '¿Cómo te despides?', 'Come la saluti?', 'Comment tu lui dis au revoir ?'],
+    'Abraçar': ['Hug', 'Abrazar', 'Abbracciare', 'Faire un câlin'],
+    'Beijar': ['Kiss', 'Besar', 'Baciare', 'Embrasser'],
+    'Boa noite, {0}!': ['Good night, {0}!', '¡Buenas noches, {0}!', 'Buonanotte, {0}!', 'Bonne nuit, {0} !'],
+    'Boa noite, {0}.': ['Good night, {0}.', 'Buenas noches, {0}.', 'Buonanotte, {0}.', 'Bonne nuit, {0}.'],
+    'Boa noite, Lúcia!': ['Good night, Lúcia!', '¡Buenas noches, Lúcia!', 'Buonanotte, Lúcia!', 'Bonne nuit, Lúcia !'],
+    'Eu quero... mas ainda não.': ['I want to... but not yet.', 'Quiero... pero todavía no.', 'Lo vorrei... ma non ancora.', 'J’ai envie... mais pas encore.'],
+    'É melhor eu ir também.': ['I’d better get going too.', 'Mejor me voy yo también.', 'Meglio che vada anch’io.', 'Je ferais mieux d’y aller aussi.'],
+    'Missão: jantar com a Lúcia às 19h no restaurante.': ['Mission: dinner with Lúcia at 7 PM at the restaurant.', 'Misión: cenar con Lúcia a las 19h en el restaurante.', 'Missione: cena con Lúcia alle 19 al ristorante.', 'Mission : dîner avec Lúcia à 19 h au restaurant.'],
+    'Missão: jantar com a Lúcia às 19h na pizzaria.': ['Mission: dinner with Lúcia at 7 PM at the pizzeria.', 'Misión: cenar con Lúcia a las 19h en la pizzería.', 'Missione: cena con Lúcia alle 19 in pizzeria.', 'Mission : dîner avec Lúcia à 19 h à la pizzeria.'],
+    'Missão: a Lúcia vai te esperar às 19h na frente do seu prédio.': ['Mission: Lúcia will wait for you at 7 PM in front of your building.', 'Misión: Lúcia te esperará a las 19h frente a tu edificio.', 'Missione: Lúcia ti aspetterà alle 19 davanti al tuo palazzo.', 'Mission : Lúcia t’attendra à 19 h devant ton immeuble.'],
+    'Encontrar a Lúcia': ['Meet Lúcia', 'Encontrarse con Lúcia', 'Incontrare Lúcia', 'Retrouver Lúcia'],
+    'Haha, tá tímida, é? Eu também tô um pouco.': ['Haha, feeling shy? I am a little too.', 'Jaja, ¿estás tímida? Yo también un poco.', 'Haha, sei timida? Anch’io un po’.', 'Haha, tu es timide ? Moi aussi un peu.'],
+    'E ainda ganhei uma funcionária nova!': ['And I even got a new employee!', '¡Y encima gané una empleada nueva!', 'E ho anche una nuova dipendente!', 'Et en plus j’ai une nouvelle employée !'],
+    'Bom dia, {0}! Minha funcionária nova chegou!': ['Good morning, {0}! My new employee is here!', '¡Buenos días, {0}! ¡Llegó mi empleada nueva!', 'Buongiorno, {0}! È arrivata la mia nuova dipendente!', 'Bonjour, {0} ! Ma nouvelle employée est arrivée !'],
+    'Bom dia, {0}! Meu funcionário novo chegou!': ['Good morning, {0}! My new employee is here!', '¡Buenos días, {0}! ¡Llegó mi empleado nuevo!', 'Buongiorno, {0}! È arrivato il mio nuovo dipendente!', 'Bonjour, {0} ! Mon nouvel employé est arrivé !'],
+  });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
 
@@ -540,7 +498,7 @@
   const SOCIETY = R(925, 535, 260, 175), SOCIETY_L = R(945, 553, 220, 140);
   const FUTSAL = R(335, 438, 140, 92), FUTSAL_L = R(346, 449, 118, 70);
   const LAGO = { cx: PX(260), cz: PZ(670), rx: 30, rz: 14 };
-  // (5.6.0) o lago não é mais uma elipse perfeita: a borda tem "lóbulos" (soma de senoides no ângulo). Perto do píer (leste, ângulo ~0)
+  // o lago não é mais uma elipse perfeita: a borda tem "lóbulos" (soma de senoides no ângulo). Perto do píer (leste, ângulo ~0)
   //   ela volta a ser a elipse, para o píer continuar encostando na água. a = ângulo no espaço normalizado (x/rx, z/rz).
   const FORMA_FASES = [0.771, 2.912, 3.708, 1.482], FORMA_MAX = 1.3;
   function formaLago(a) {
@@ -554,7 +512,7 @@
     const ex = (x - LAGO.cx) / (LAGO.rx * f + (m || 0)), ez = (z - LAGO.cz) / (LAGO.rz * f + (m || 0));
     return ex * ex + ez * ez < 1;
   }
-  const LANCHE = R(788, 432, 74, 48);                                 // (4.9.5) o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
+  const LANCHE = R(788, 432, 74, 48);                                 // o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
   const PIER = { x0: -54, x1: -37, z0: 54.4, z1: 56.2 };
   const SPAWN = { x: -78.8, z: -4.65 };                             // na porta do prédio (calçada norte)
 
@@ -676,7 +634,7 @@
       for (const r of RUAS_TERRA) ruaDeTerra(g, r, gx, gz, sx, sz);
       // areia em volta do lago (a água é um volume à parte, 5 cm acima)
       const formaChao = (m, cor) => { g.fillStyle = cor; g.beginPath(); for (let i = 0; i <= 120; i++) { const [x, z] = bordaLago(i / 120 * Math.PI * 2, m); if (i) g.lineTo(gx(x), gz(z)); else g.moveTo(gx(x), gz(z)); } g.closePath(); g.fill(); };
-      formaChao(2.2, '#d7c28a'); formaChao(0.3, '#6c7b56');            // (5.6.0) a areia e a beirada seguem o formato do lago
+      formaChao(2.2, '#d7c28a'); formaChao(0.3, '#6c7b56');            // a areia e a beirada seguem o formato do lago
       // várzea: terra batida, carecas e linhas de cal gastas
       ret(VARZEA, '#b98a52');
       for (let i = 0; i < 70; i++) { g.globalAlpha = 0.4; elip(VARZEA.x0 + 3 + rnd() * 51, VARZEA.z0 + 3 + rnd() * 32, 0.8 + rnd() * 3, 0.6 + rnd() * 2, rnd() < 0.5 ? '#a57643' : '#cfa46c'); }
@@ -722,9 +680,9 @@
   }, true); t.wrapS = THREE.RepeatWrapping; return t; };
   // alambrado (losangos de arame) e rede do gol: transparentes no vão (alphaTest: sem ordem de transparência, sem piscar)
   const texTela = (cor, passo) => { const t = texCanvas(16, 16, (g, w, h) => { g.clearRect(0, 0, w, h); g.fillStyle = cor; for (let i = 0; i < 16; i++) { g.fillRect(i, i, 1, 1); g.fillRect(15 - i, i, 1, 1); } if (passo) { g.fillRect(0, 0, 16, 1); } }, false); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  // (4.9.5) calçada: lajotas quadradas (0,75 m), cada uma com um tom, rejunte escuro e pontinhos de sujeira
+  // calçada: lajotas quadradas (0,75 m), cada uma com um tom, rejunte escuro e pontinhos de sujeira
   const texCalcada = () => { const t = texCanvas(64, 64, (g, w, h) => {
-    const rnd = semente(88), tons = ['#7c7f85', '#72757b', '#85888e', '#696c72', '#797c83', '#80838a'];     // (4.9.6) tons de cinza escuros o bastante para a luz do dia não estourar
+    const rnd = semente(88), tons = ['#7c7f85', '#72757b', '#85888e', '#696c72', '#797c83', '#80838a'];     // tons de cinza escuros o bastante para a luz do dia não estourar
     g.fillStyle = '#4d5056'; g.fillRect(0, 0, w, h);
     for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) {
       g.fillStyle = tons[Math.floor(rnd() * tons.length)]; g.fillRect(i * 16 + 1, j * 16 + 1, 15, 15);
@@ -734,7 +692,7 @@
     }
     granular(g, w, h, 0.06, rnd);
   }, true); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  // (4.9.5) píer: tábuas juntas (4 por metro e vinte), frestinha, veios e pregos nas pontas
+  // píer: tábuas juntas (4 por metro e vinte), frestinha, veios e pregos nas pontas
   const texTabuas = () => { const t = texCanvas(64, 32, (g, w, h) => {
     const rnd = semente(55), tons = ['#a8763f', '#9a6a3a', '#b0804a', '#8f6234', '#a06e3c'];
     for (let i = 0; i < 4; i++) {
@@ -744,12 +702,12 @@
       g.fillStyle = '#4a3320'; for (const px of [3, 11]) for (const py of [2, h - 4]) g.fillRect(i * 16 + px, py, 2, 2);
     }
   }, true); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  // (4.9.5) a água do lago: pixels quadrados, mais azul-escuro quanto mais para o meio (mais fundo), 6 degraus de profundidade e espuma na beira
+  // a água do lago: pixels quadrados, mais azul-escuro quanto mais para o meio (mais fundo), 6 degraus de profundidade e espuma na beira
   const AGUA_TONS = ['#17467f', '#1f5a9a', '#2a70b4', '#3a88c8', '#52a0d6', '#74b9e2'];
   const texAgua = () => texCanvas(128, 60, (g, w, h) => {
     const rnd = semente(66);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      const nx = (((x + 0.5) / w) * 2 - 1) * FORMA_MAX, ny = (1 - ((y + 0.5) / h) * 2) * FORMA_MAX, r = Math.hypot(nx, ny) / formaLago(-Math.atan2(ny, nx));   // (5.6.0) fundo relativo à borda irregular
+      const nx = (((x + 0.5) / w) * 2 - 1) * FORMA_MAX, ny = (1 - ((y + 0.5) / h) * 2) * FORMA_MAX, r = Math.hypot(nx, ny) / formaLago(-Math.atan2(ny, nx));   // fundo relativo à borda irregular
       let i = Math.min(5, Math.floor(r * 6.2)); if (rnd() < 0.16) i = Math.max(0, Math.min(5, i + (rnd() < 0.5 ? -1 : 1)));
       g.fillStyle = AGUA_TONS[i]; g.fillRect(x, y, 1, 1);
       if (r > 0.9 && r < 1 && rnd() < 0.3) { g.fillStyle = '#d6eef7'; g.fillRect(x, y, 1, 1); }
@@ -781,7 +739,7 @@
     }, true);
   }
   // pisos das quadras (a quadra inteira numa textura: as linhas não ficam "por cima")
-  const texSociety = () => texCanvas(256, 512, (g, w, h) => {           // (4.9.3) 25 × 35 m, campo de 18 × 30 (comprido em z)
+  const texSociety = () => texCanvas(256, 512, (g, w, h) => {           // 25 × 35 m, campo de 18 × 30 (comprido em z)
     const rnd = semente(31), sx = w / 25, sz = h / 35;
     for (let i = 0; i < 9; i++) { g.fillStyle = i % 2 ? '#4f9a3f' : '#5aa848'; g.fillRect(0, i * 4 * sz, w, 4 * sz + 1); }
     g.strokeStyle = '#f4f4ec'; g.lineWidth = 2; const X = (m) => (m + 3.5) * sx, Z = (m) => (m + 2.5) * sz;
@@ -821,7 +779,7 @@
   // janela: moldura (frente a +5 cm), vidro (+7 cm) e peitoril (+15 cm) — nenhuma face no plano da parede
   function janela(G, w, d, face, u, y, jw, jh, moldura, vidro) {
     naFace(G, w, d, face, u, y - 0.1, 0, jw + 0.2, jh + 0.2, 0.1, moldura || '#f4f2ea');
-    const h = Math.sin(u * 12.9898 + y * 78.233 + w * 3.71 + d * 1.37 + face.charCodeAt(0) * 0.7) * 43758.5453, acesa = G.vid && h - Math.floor(h) < 0.55;   // (5.0.1) ~55% das janelas acendem à noite
+    const h = Math.sin(u * 12.9898 + y * 78.233 + w * 3.71 + d * 1.37 + face.charCodeAt(0) * 0.7) * 43758.5453, acesa = G.vid && h - Math.floor(h) < 0.55;   // ~55% das janelas acendem à noite
     naFace(acesa ? G.vid : G, w, d, face, u, y, 0, jw, jh, 0.14, vidro || '#4f6f86');
     if (jw > 0.7) naFace(G, w, d, face, u, y + jh * 0.48, 0, 0.07, jh * 0.04 + 0.03, 0.16, moldura || '#f4f2ea');
     naFace(G, w, d, face, u, y - 0.16, 0.04, jw + 0.34, 0.08, 0.22, moldura || '#f4f2ea');
@@ -879,21 +837,21 @@
   function edificio(o) {
     const r = o.r, w = r.x1 - r.x0, d = r.z1 - r.z0, cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, G = new Geo();
     const h = o.h, cor = o.cor;
-    if (o.nicho) {                                                    // (4.9.3) vão de verdade na frente (o balcão do lanche): o corpo é montado em pedaços em volta dele
+    if (o.nicho) {                                                    // vão de verdade na frente (o balcão do lanche): o corpo é montado em pedaços em volta dele
       const N = o.nicho, zf = d / 2 - N.prof / 2, xl = N.u - N.larg / 2, xr = N.u + N.larg / 2;
       G.box(w, h, d - N.prof, cor, 0, 0, -N.prof / 2, '#9a968c');
       if (xl > -w / 2 + 0.01) G.box(xl + w / 2, h, N.prof, cor, (-w / 2 + xl) / 2, 0, zf, '#9a968c');
       if (xr < w / 2 - 0.01) G.box(w / 2 - xr, h, N.prof, cor, (xr + w / 2) / 2, 0, zf, '#9a968c');
       G.box(N.larg, h - N.alt, N.prof, cor, N.u, N.alt, zf, '#9a968c');
     } else G.box(w, h, d, cor, 0, 0, 0, '#9a968c');
-    { const bc = o.barrado || escurece(cor, 0.72);                      // (4.9.5) com vão (o balcão) o barrado também é em pedaços: antes uma caixa inteira cobria o vão e escondia as pernas do seu Valdemar
+    { const bc = o.barrado || escurece(cor, 0.72);                      // com vão (o balcão) o barrado também é em pedaços: antes uma caixa inteira cobria o vão e escondia as pernas do seu Valdemar
       if (o.nicho) { const N = o.nicho, zf = d / 2 - N.prof / 2, xl = N.u - N.larg / 2, xr = N.u + N.larg / 2;
         G.box(w + 0.08, 0.9, d - N.prof + 0.08, bc, 0, 0, -N.prof / 2);
         if (xl > -w / 2 + 0.01) G.box(xl + w / 2 + 0.08, 0.9, N.prof + 0.04, bc, (xl - w / 2) / 2, 0, zf + 0.02);
         if (xr < w / 2 - 0.01) G.box(w / 2 - xr + 0.08, 0.9, N.prof + 0.04, bc, (xr + w / 2) / 2, 0, zf + 0.02);
       } else G.box(w + 0.08, 0.9, d + 0.08, bc, 0, 0, 0); }
     if (o.andares > 1) for (let a = 1; a < o.andares; a++) G.box(w + 0.06, 0.2, d + 0.06, o.faixa || escurece(cor, 0.85), 0, a * (h / o.andares) - 0.1, 0);
-    G.vid = new Geo();                                                // (5.0.1) os vidros que acendem à noite ficam numa peça à parte (material com brilho)
+    G.vid = new Geo();                                                // os vidros que acendem à noite ficam numa peça à parte (material com brilho)
     if (o.montar) o.montar(G, w, d, h);
     if (o.fundos !== false) {                                         // janelas nos fundos e nos lados (prédios comerciais: ninguém fica "cego" de costas)
       for (const f of ['b', 'l', 'r']) { const L = f === 'b' ? w : d, n = Math.floor((L - 2) / 4); if (n < 1) continue;
@@ -927,10 +885,10 @@
     return mesh;
   }
 
-  function casa(r, frente, cor, rnd, especial, marca, dono) {     // (5.4.0) dono: 'cadu' | 'rosa' (não muda o sorteio das casas)
+  function casa(r, frente, cor, rnd, especial, marca, dono) {     // dono: 'cadu' | 'rosa' (não muda o sorteio das casas)
     const w = r.x1 - r.x0, d = r.z1 - r.z0, laje = !especial && rnd() < 0.3, lado = rnd() < 0.5 ? -1 : 1;
-    const sg = frente < 0 ? -1 : 1, uP = lado * w * 0.27, cxc = (r.x0 + r.x1) / 2, czc = (r.z0 + r.z1) / 2;   // (4.9.5) onde fica a porta no mundo e onde a pessoa para na frente dela
-    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null, especial: typeof especial === 'string' ? especial : (dono || null) };   // (5.2.0) especial: 'joao' | 'alves' (a Lúcia mora na dos Alves)
+    const sg = frente < 0 ? -1 : 1, uP = lado * w * 0.27, cxc = (r.x0 + r.x1) / 2, czc = (r.z0 + r.z1) / 2;   // onde fica a porta no mundo e onde a pessoa para na frente dela
+    const pt = { x: cxc + sg * uP, z: czc + sg * d / 2, sx: cxc + sg * uP, sz: czc + sg * (d / 2 + 0.9), marca: marca || null, especial: typeof especial === 'string' ? especial : (dono || null) };   // especial: 'joao' | 'alves' (a Lúcia mora na dos Alves)
     (S.casas || (S.casas = [])).push(pt); if (marca === 'valdemar') S.casaValdemar = pt;
     edificio({ r, frente, h: 2.9, cor, andares: 1, fundos: false, equipamentos: false,
       letreiro: marca === 'valdemar' ? { txt: 'VALDEMAR', fundo: '#5b3a22', cor: '#f6e2b8', w: 1.9, h: 0.42, y: 2.5, u: uP, fora: 0.12 } : null,
@@ -969,7 +927,7 @@
     for (const s of [-1, 1]) for (let i = 0; i < 4; i++) { const z = (i < 2 ? -1 : 1) * (40 + rnd() * 60); morro(s * (175 + rnd() * 50), z, 24 + rnd() * 14, 8 + rnd() * 10, 22 + rnd() * 12); }
 
     // --- calçadas elevadas (12 cm) com meio-fio mais escuro
-    { const tc = guardar(texCalcada()), mTop = guardar(new THREE.MeshLambertMaterial({ map: tc })), mLado = guardar(new THREE.MeshLambertMaterial({ color: 0x6f7278 }));   // (4.9.5) lajotas quadradas no topo (4.9.6: cinza)
+    { const tc = guardar(texCalcada()), mTop = guardar(new THREE.MeshLambertMaterial({ map: tc })), mLado = guardar(new THREE.MeshLambertMaterial({ color: 0x6f7278 }));   // lajotas quadradas no topo (cinza)
       for (const c of CALCADAS) {
         const w = c.x1 - c.x0, d = c.z1 - c.z0, geo = guardar(new THREE.BoxGeometry(w, 0.12, d)), uv = geo.attributes.uv;
         for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 3 + c.x0 / 3, uv.getY(i) * d / 3);
@@ -1014,7 +972,7 @@
       letreiro: { txt: 'SUPERMERCADO', fundo: '#c8352b', cor: '#fff6e0', w: 11, h: 1.3, y: 4.15 },
       montar: (G, w, d) => { naFace(G, w, d, 'f', -3, 0, 0, 7.5, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 5.2, 0, 0, 4.6, 2.8, 0.14, '#5d7f96'); naFace(G, w, d, 'f', 1.6, 0, 0, 2.4, 2.6, 0.18, '#2e3a44');
         for (let i = -2; i <= 2; i++) naFace(G, w, d, 'f', -3 + i * 1.5, 0, 0, 0.08, 2.8, 0.18, '#d8d8d0'); toldo(G, w, d, 0, w - 1, 3.2, 1.3, ['#c8352b', '#f4efe2']); } });
-    // (4.9.3) HOSPITAL (perto do prédio do jogador): a saúde do personagem só aparece aqui dentro (ficha médica)
+    // HOSPITAL (perto do prédio do jogador): a saúde do personagem só aparece aqui dentro (ficha médica)
     S.hospital = edificio({ r: { x0: -115, x1: -93, z0: -21, z1: -5 }, frente: 1, h: 7.0, andares: 2, cor: '#f4f6f8', barrado: '#2f6f9a', faixa: '#3a8ac8', mapa: '#e8eef4',
       letreiro: { txt: 'HOSPITAL', fundo: '#f4f6f8', cor: '#c8352b', w: 8, h: 1.2, y: 7.55 },
       montar: (G, w, d) => {
@@ -1024,7 +982,7 @@
         for (let i = 0; i < 5; i++) if (i !== 2) janela(G, w, d, 'f', -8.4 + i * 4.2, 4.5, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
         G.box(1.6, 0.5, 0.2, '#c8352b', 0, 5.75, d / 2 + 0.1); G.box(0.5, 1.6, 0.2, '#c8352b', 0, 5.2, d / 2 + 0.12);   // cruz vermelha
       }, obst: [[-2.3, 1.45, 0.3, 0.3], [2.3, 1.45, 0.3, 0.3]] });
-    // (5.6.0) GOLAÇO ESPORTES — loja de artigos esportivos ao lado do bar (vazia por enquanto: depois vende comemorações, roupas...).
+    // GOLAÇO ESPORTES — loja de artigos esportivos ao lado do bar (vazia por enquanto: depois vende comemorações, roupas...).
     //   Fachada verde e amarela com faixa azul, duas vitrines grandes com camisas e chuteiras, a porta emoldurada por uma TRAVE de gol,
     //   toldo listrado, bandeirinhas na platibanda e uma BOLA gigante girando em cima da loja.
     { const L = { x0: -87.5, x1: -63.5, z0: 10.4, z1: 22 };
@@ -1071,14 +1029,14 @@
       obst: [[-2.2, 0.75, 0.8, 0.8], [2.2, 0.75, 0.8, 0.8]] });                                                 // os vasos de planta têm corpo
     const mLanche = edificio({ r: LANCHE, frente: -1, h: 3.4, andares: 1, cor: '#f2b33a', barrado: '#a8442a', platibanda: '#e09a2a',
       letreiro: { txt: 'LANCHE DO SEU VALDEMAR', fundo: '#a8202a', cor: '#ffe9a8', w: 12.5, h: 1.0, y: 3.45 },
-      nicho: { u: -2, larg: 7, prof: 2.0, alt: 2.6 },                  // (4.9.3) o balcão é um vão de verdade: o seu Valdemar fica lá dentro
+      nicho: { u: -2, larg: 7, prof: 2.0, alt: 2.6 },                  // o balcão é um vão de verdade: o seu Valdemar fica lá dentro
       montar: (G, w, d) => {
-        // (4.9.5) balcão de verdade (corpo de madeira + tampo claro), piso de ladrilho no vão e uma bancada atrás com a chapa e a estufa;
+        // balcão de verdade (corpo de madeira + tampo claro), piso de ladrilho no vão e uma bancada atrás com a chapa e a estufa;
         // a porta de serviço (4,6 m do lado) é só o batente e o vão escuro: a folha é uma peça à parte que gira (ver abaixo)
         G.box(7.2, 0.95, 0.5, '#8a5a2b', -2, 0, d / 2 + 0.2, '#8a5a2b'); G.box(7.4, 0.12, 0.7, '#d6c6a6', -2, 0.95, d / 2 + 0.3);
         G.box(6.9, 0.04, 2.0, '#bdb4a0', -2, 0, d / 2 - 1.0);
         naFace(G, w, d, 'f', 4.6, 0, 0, 1.2, 2.3, 0.1, '#f4f2ea'); naFace(G, w, d, 'f', 4.6, 0.12, 0, 1.0, 2.1, 0.12, '#17110c');
-        G.box(0.06, 2.2, 1.1, '#f4f2ea', 1.5 - 0.03, 0, d / 2 - 1.0); G.box(0.07, 2.05, 0.92, '#17110c', 1.5 - 0.035, 0, d / 2 - 1.0);   // (4.9.6) a porta de DENTRO (é por ela que o seu Valdemar entra e sai do balcão)
+        G.box(0.06, 2.2, 1.1, '#f4f2ea', 1.5 - 0.03, 0, d / 2 - 1.0); G.box(0.07, 2.05, 0.92, '#17110c', 1.5 - 0.035, 0, d / 2 - 1.0);   // a porta de DENTRO (é por ela que o seu Valdemar entra e sai do balcão)
         const zb = d / 2 - 2.0;                                              // parede do fundo do vão
         G.box(6.6, 0.92, 0.7, '#6a4428', -2, 0, zb + 0.4);
         G.box(6.6, 0.1, 0.45, '#6a4428', -2, 1.55, zb + 0.23); G.box(6.6, 0.1, 0.45, '#6a4428', -2, 2.05, zb + 0.23);   // prateleiras
@@ -1087,7 +1045,7 @@
         G.box(0.5, 0.6, 0.35, '#e8e8e0', 0.6, 0.92, zb + 0.35);             // estufa
         for (let i = 0; i < 4; i++) { G.box(0.12, 0.7, 0.12, '#6c6c70', -4.6 + i * 1.7, 0, d / 2 + 1.1); G.box(0.45, 0.1, 0.45, '#c8352b', -4.6 + i * 1.7, 0.7, d / 2 + 1.1); } } });
     { const L = LANCHE, cx = (L.x0 + L.x1) / 2, cz = (L.z0 + L.z1) / 2, d = L.z1 - L.z0;     // as banquetas do balcão (frente virada para o norte: x e z invertem)
-      // (4.9.5) porta de serviço com folha que gira + persiana de enrolar do balcão (fecha às 20h; o seu Valdemar sai pela porta)
+      // porta de serviço com folha que gira + persiana de enrolar do balcão (fecha às 20h; o seu Valdemar sai pela porta)
       { const Gd = new Geo(); Gd.box(1.0, 2.1, 0.07, '#5b3a22', 0.5, 0.12, 0); Gd.box(0.62, 0.9, 0.09, '#6a4a2a', 0.5, 1.15, 0); Gd.box(0.07, 0.07, 0.13, '#d8c070', 0.86, 1.1, 0);
         const piv = new THREE.Group(); piv.position.set(4.1, 0, d / 2 + 0.1); piv.add(Gd.malha(MAT)); mLanche.add(piv);
         const texP = guardar(texPersiana()), geoP = guardar(new THREE.BoxGeometry(6.9, 1, 0.08)); geoP.translate(0, -0.5, 0);
@@ -1096,7 +1054,7 @@
         const piv2 = new THREE.Group(); piv2.position.set(1.5 - 0.08, 0, d / 2 - 1.0 + 0.45); piv2.add(Gi.malha(MAT)); mLanche.add(piv2);
         S.loja = { porta: piv, k: 0, alvo: 0, porta2: piv2, k2: 0, alvo2: 0, per, tex: texP, pk: 0, palvo: 0, portaX: cx - 4.6, portaZ: L.z0 }; }
       for (let i = 0; i < 4; i++) { const a = assento(cx - (-4.6 + i * 1.7), cz - (d / 2 + 1.1), 0, 1, 0.8, 'banqueta'); a.lanche = true; S.col.push({ x0: a.x - 0.2, x1: a.x + 0.2, z0: a.z - 0.2, z1: a.z + 0.2 }); }
-      // (5.1.0) o próprio balcão (o corpo de madeira + o tampo, montados lá em cima) não tinha colisão: só as banquetas.
+      // o próprio balcão (o corpo de madeira + o tampo, montados lá em cima) não tinha colisão: só as banquetas.
       // O tampo é um pouco mais largo que o corpo e sai mais para fora (ver "montar" do mLanche), por isso a caixa é generosa.
       S.col.push({ x0: cx - 1.7, x1: cx + 5.7, z0: cz - d / 2 - 0.7, z1: cz - d / 2 + 0.1 });
       S.balcao = { x: cx + 2.5, z: cz - (d / 2 - 0.9) }; }
@@ -1138,8 +1096,8 @@
         [440, 600, -1], [492, 600, -1], [544, 600, -1], [648, 600, -1], [700, 600, -1], [752, 600, -1], [804, 600, -1],
         [440, 656, 1], [492, 656, 1], [544, 656, 1], [648, 656, 1], [700, 656, 1], [752, 656, 1],
         [170, 510, 1], [222, 510, 1], [30, 510, 1]];
-      const DONOS = { '824,150': 'cadu', '544,656': 'rosa' };          // (5.4.0) o Cadu mora pertinho do mercado; a Rosa, do outro lado da avenida
-      for (const [l, t, f] of lista) casa(R(l, t, 34, 26), f, cores[Math.floor(rnd() * cores.length)], rnd, false, l === 804 && t === 600 ? 'valdemar' : null, DONOS[l + ',' + t]);   // (4.9.5) a casa do seu Valdemar é a [804, 600]
+      const DONOS = { '824,150': 'cadu', '544,656': 'rosa' };          // o Cadu mora pertinho do mercado; a Rosa, do outro lado da avenida
+      for (const [l, t, f] of lista) casa(R(l, t, 34, 26), f, cores[Math.floor(rnd() * cores.length)], rnd, false, l === 804 && t === 600 ? 'valdemar' : null, DONOS[l + ',' + t]);   // a casa do seu Valdemar é a [804, 600]
       casa(R(82, 148, 36, 28), 1, '#f6e7c8', rnd, 'joao');              // casa do João
       casa(R(596, 598, 36, 28), -1, '#cfe3f2', rnd, 'alves');          // casa dos Alves
     }
@@ -1152,7 +1110,7 @@
       G.box(0.16, 10, 0.16, '#d8d8d0', cx, 0.5, cz); G.box(0.3, 0.3, 0.3, '#d8c070', cx, 10.5, cz);
       const band = new THREE.Mesh(guardar(new THREE.PlaneGeometry(2.4, 1.68)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBandeira()), side: THREE.DoubleSide })));
       band.position.set(cx + 1.3, 9.4, cz); g.add(band); S.bandeira = band;
-      S.circ.push({ x: cx, z: cz, r: 2.45 });                         // o canteiro é REDONDO (antes a colisão era um quadrado de 5 m)
+      S.circ.push({ x: cx, z: cz, r: 2.45 });                         // o canteiro é REDONDO
       const banco = (x, z, rot) => { const lx = rot ? 0.5 : 1.8, lz = rot ? 1.8 : 0.5; G.box(lx, 0.1, lz, '#8a5a2b', x, 0.42, z); for (const s of [-0.7, 0.7]) G.box(rot ? 0.4 : 0.12, 0.42, rot ? 0.12 : 0.4, '#9a968c', x + (rot ? 0 : s), 0, z + (rot ? s : 0)); S.col.push({ x0: x - lx / 2, x1: x + lx / 2, z0: z - lz / 2, z1: z + lz / 2 });
         // dois lugares, virados para o caminho mais perto (o do meio da praça)
         const fx = rot ? Math.sign(cx - x) || 1 : 0, fz = rot ? 0 : Math.sign(cz - z) || 1, lugares = [];
@@ -1166,7 +1124,7 @@
     // --- postes da avenida (dos dois lados) e ponto de ônibus
     { const G = new Geo(), LG = new Geo();
       for (let x0 = -112; x0 <= 112; x0 += 24) for (const [z, s] of [[-3.55, 1], [7.55, -1]]) { if ((x0 > -63 && x0 < -54) || (x0 > 52 && x0 < 62)) continue;
-        const x = x0 === -40 && z < 0 ? -31 : x0;                                    // (4.9.5) o poste que atravessava o cinema foi para depois dele
+        const x = x0 === -40 && z < 0 ? -31 : x0;                                    // o poste que atravessava o cinema foi para depois dele
         G.box(0.18, 7, 0.18, '#7d8288', x, 0.12, z); G.box(0.12, 0.12, 1.6, '#7d8288', x, 6.95, z + s * 0.75); LG.box(0.35, 0.18, 0.6, '#f4efc8', x, 6.8, z + s * 1.5);
         S.lampadas.push({ x, y: 6.75, z: z + s * 1.5, px: x, pz: z + s * 1.2, r: 6.6 });
         S.col.push({ x0: x - 0.2, x1: x + 0.2, z0: z - 0.2, z1: z + 0.2 }); }
@@ -1183,7 +1141,7 @@
       const piso = new THREE.Mesh(guardar(new THREE.BoxGeometry(w, 0.1, d)), [mc, mc, mt, mc, mc, mc]); piso.position.set(cx, 0.05, cz); g.add(piso);
       S.pisos.push({ x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1, y: 0.1 });
       const G = new Geo(), hc = 6.2, rh = 1.8;
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = cx + sx * (w / 2 + 0.45), z = cz + sz * (d / 2 + 0.45); G.box(0.4, hc + 0.1, 0.4, '#8c949c', x, 0, z); S.col.push({ x0: x - 0.25, x1: x + 0.25, z0: z - 0.25, z1: z + 0.25 }); }   // (4.9.3) só 4, nos cantos, por fora
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) { const x = cx + sx * (w / 2 + 0.45), z = cz + sz * (d / 2 + 0.45); G.box(0.4, hc + 0.1, 0.4, '#8c949c', x, 0, z); S.col.push({ x0: x - 0.25, x1: x + 0.25, z0: z - 0.25, z1: z + 0.25 }); }   // só 4, nos cantos, por fora
       { const e = 0.6, xa = r.x0 - e, xb = r.x1 + e, yE = hc + 0.1 - e * rh / (d / 2), top = hc + 0.1 + rh;
         for (const s of [1, -1]) { const a = [xa, yE, cz + s * (d / 2 + e)], b = [xb, yE, cz + s * (d / 2 + e)], c = [xb, top, cz], dd = [xa, top, cz]; G.quad(a, b, c, dd, '#a7b0b8', [0, 1, s]); G.quad(a, b, c, dd, '#5f666d', [0, -1, -s]); }
         for (const sx of [-1, 1]) G.box(0.2, 0.3, d + 1.1, '#7d868b', cx + sx * (w / 2 + 0.45), hc + 0.1, cz);
@@ -1195,7 +1153,7 @@
       S.redes.push({ x: cx - 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: -1, y: 0.1 }, { x: cx + 11.8, z: cz, larg: 3, alt: 2.0, prof: 1.0, dir: 1, y: 0.1 });
       S.quadra = { x0: r.x0 + 0.15, x1: r.x1 - 0.15, z0: r.z0 + 0.15, z1: r.z1 - 0.15, cx, cz, gl: 11.8, gm: 1.45, gp: 1.0 }; }
 
-    // --- (4.9.3) DOIS societys do tamanho de verdade (cada um 25 × 35 m, campo de 30 × 18 no comprimento z), um caminho entre eles
+    // --- DOIS societys do tamanho de verdade (cada um 25 × 35 m, campo de 30 × 18 no comprimento z), um caminho entre eles
     S.societys = [];
     for (const [x0, x1, portao] of [[SOCIETY.x0, SOCIETY.x0 + 25, [SOCIETY.x0 + 2, SOCIETY.x0 + 5.5]], [SOCIETY.x1 - 25, SOCIETY.x1, [SOCIETY.x1 - 5.5, SOCIETY.x1 - 2]]]) {
       const r = { x0, x1, z0: SOCIETY.z0, z1: SOCIETY.z1 }, w = x1 - x0, d = r.z1 - r.z0, cx = (x0 + x1) / 2, cz = (r.z0 + r.z1) / 2;
@@ -1206,7 +1164,7 @@
       const G = new Geo(); for (const sz of [-1, 1]) { const gz = cz + sz * 15; for (const t of [-2.5, 2.5]) G.box(0.12, 2.2, 0.12, '#f4f4ec', cx + t, 0.08, gz); G.box(5.12, 0.12, 0.12, '#f4f4ec', cx, 2.28, gz); }
       addMalha(G, 0, 0);
       S.redes.push({ x: cx, z: cz - 15, larg: 5, alt: 2.2, prof: 1.2, dir: -1, y: 0.08, ez: true }, { x: cx, z: cz + 15, larg: 5, alt: 2.2, prof: 1.2, dir: 1, y: 0.08, ez: true });
-      S.societys.push({ r, cx, cz, gate: { out: { x: (portao[0] + portao[1]) / 2, z: r.z0 - 1.4 }, in: { x: (portao[0] + portao[1]) / 2, z: r.z0 + 1.4 } } });   // (4.9.6) o portão: quem sai do campo passa por ele
+      S.societys.push({ r, cx, cz, gate: { out: { x: (portao[0] + portao[1]) / 2, z: r.z0 - 1.4 }, in: { x: (portao[0] + portao[1]) / 2, z: r.z0 + 1.4 } } });   // o portão: quem sai do campo passa por ele
       S.planta.push({ r, cor: '#4f9a3f', chao: true });
     }
 
@@ -1220,7 +1178,7 @@
 
     // --- lago (água 5 cm acima do chão pintado), píer de madeira e taboas
     { const ta = guardar(texAgua()); S.aguaImg = ta.image;
-      const geoA = guardar(new THREE.CircleGeometry(1, 120));            // (5.6.0) o círculo vira a forma do lago (cada ponto da borda vai até formaLago)
+      const geoA = guardar(new THREE.CircleGeometry(1, 120));            // o círculo vira a forma do lago (cada ponto da borda vai até formaLago)
       { const P = geoA.attributes.position, U = geoA.attributes.uv; for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i), r = Math.hypot(px, py); if (r > 1e-6) { const f = formaLago(-Math.atan2(py, px)); P.setXY(i, px * f, py * f); } U.setXY(i, P.getX(i) / FORMA_MAX * 0.5 + 0.5, P.getY(i) / FORMA_MAX * 0.5 + 0.5); }
         P.needsUpdate = true; U.needsUpdate = true; geoA.computeBoundingSphere(); }
       const agua = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: ta, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
@@ -1232,7 +1190,7 @@
         m.rotation.x = -Math.PI / 2; m.scale.set(LAGO.rx, LAGO.rz, 1); m.position.set(LAGO.cx, 0.05 + o * 0.002, LAGO.cz); m.renderOrder = o; g.add(m); S.ondas.push({ tx, vx, vz });
       }
       const G = new Geo(), p = PIER, pw = p.x1 - p.x0, pd = p.z1 - p.z0;
-      // (4.9.5) o tabuado é uma peça com a textura de tábuas juntas; os pilares sobem MAIS ALTO e mais largos que a tábua e saem para fora da borda (pedaço de madeira passando)
+      // o tabuado é uma peça com a textura de tábuas juntas; os pilares sobem MAIS ALTO e mais largos que a tábua e saem para fora da borda (pedaço de madeira passando)
       const mTop = guardar(new THREE.MeshLambertMaterial({ map: guardar(texTabuas()) })), mSide = guardar(new THREE.MeshLambertMaterial({ color: 0x7a4f2a }));
       const geoD = guardar(new THREE.BoxGeometry(pw, 0.12, pd)), uvD = geoD.attributes.uv;
       for (let i = 0; i < uvD.count; i++) uvD.setXY(i, uvD.getX(i) * pw / 1.2, uvD.getY(i));
@@ -1245,7 +1203,7 @@
     // --- árvores (as da planta + as de fora da cidade)
     { const G = new Geo();
       const arvore = (x, z, k, colide) => {
-        const Gt = colide ? new Geo() : G;                                   // (4.9.6) as árvores onde o jogador chega são peças separadas: a copa fica translúcida na frente da câmera
+        const Gt = colide ? new Geo() : G;                                   // as árvores onde o jogador chega são peças separadas: a copa fica translúcida na frente da câmera
         const tr = 0.32 * k, ht = 2.0 * k; Gt.box(tr, ht, tr, '#6c4a2a', x, 0, z);
         const verdes = ['#3f7a33', '#4f8a3a', '#5a9a44', '#356b2c'];
         const n = 2 + Math.floor(rnd() * 2);
@@ -1291,12 +1249,12 @@
     const mT = guardar(new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5, side: THREE.DoubleSide }));
     const mR = guardar(new THREE.MeshLambertMaterial({ map: texR, alphaTest: 0.5, side: THREE.DoubleSide }));
     const plano = (w, h, passo, mat) => { const geo = guardar(new THREE.PlaneGeometry(w, h)), uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / passo, uv.getY(i) * h / passo); return new THREE.Mesh(geo, mat); };
-    S.telasM = [];                                                     // (5.0.1) desenhadas só com o jogador por perto (atualizarTelas)
+    S.telasM = [];                                                     // desenhadas só com o jogador por perto (atualizarTelas)
     const add = (m, r) => { S.grupo.add(m); S.telasM.push({ m, r }); };
     for (const t of S.telas) { const m = plano(t.L, t.alt - 0.1, 0.7, mT); m.position.set(t.x, t.y + (t.alt - 0.1) / 2 + 0.02, t.z); if (!t.hor) m.rotation.y = Math.PI / 2; add(m, t.L / 2); }
     for (const r of S.redes) {      // fundo, dois lados e teto (a rede fica ATRÁS da linha do gol: nada encosta nas traves)
       const bx = r.x + r.dir * r.prof, y = r.y;
-      if (r.ez) {                    // (4.9.3) gol com a linha ao longo de x (societys)
+      if (r.ez) {                    // gol com a linha ao longo de x (societys)
         const f = plano(r.larg, r.alt, 0.25, mR); f.position.set(r.x, y + r.alt / 2, r.z + r.dir * r.prof); add(f, r.larg);
         for (const s of [-1, 1]) { const l = plano(r.prof - 0.08, r.alt, 0.25, mR); l.rotation.y = Math.PI / 2; l.position.set(r.x + s * (r.larg / 2 + 0.03), y + r.alt / 2, r.z + r.dir * (r.prof / 2 + 0.04)); add(l, r.larg); }
         const t = plano(r.larg, r.prof - 0.08, 0.25, mR); t.rotation.x = -Math.PI / 2; t.position.set(r.x, y + r.alt + 0.03, r.z + r.dir * (r.prof / 2 + 0.04)); add(t, r.larg);
@@ -1313,7 +1271,7 @@
     const J = S.jog; for (const o of S.telasM) { const v = Math.hypot(o.m.position.x - J.x, o.m.position.z - J.z) - o.r < DIST_TELAS; if (o.m.visible !== v) o.m.visible = v; }
   }
 
-  // ------------------------------------------------------------------ (4.9.3) lugares para sentar (bancos, cadeiras, banquetas)
+  // ------------------------------------------------------------------ lugares para sentar (bancos, cadeiras, banquetas)
   // fx, fz = para onde a pessoa sentada olha; o ponto de levantar é escolhido na hora (atrás, frente ou dos lados, o que estiver livre)
   function assento(x, z, fx, fz, h, tipo) {
     const a = { x, z, h, tipo, yaw: Math.atan2(-fz, fx), fx, fz, ocupado: null };
@@ -1325,7 +1283,7 @@
     return { x: a.x + a.fx * 0.8, z: a.z + a.fz * 0.8 };
   }
 
-  // ------------------------------------------------------------------ (4.9.3) cerquinhas velhas de madeira em volta do lago (poucas, com falhas)
+  // ------------------------------------------------------------------ cerquinhas velhas de madeira em volta do lago (poucas, com falhas)
   function cerquinhasDoLago(rnd) {
     const G = new Geo(), tons = ['#8a5a2b', '#7a4f26', '#9c6a38', '#6e4824', '#a8763f', '#5f4022'];
     const pk = () => tons[Math.floor(rnd() * tons.length)];
@@ -1354,7 +1312,7 @@
     addMalha(G, 0, 0);
   }
 
-  // ------------------------------------------------------------------ (4.9.3) PLANTAS COM FÍSICA: graminhas altas pelo gramado e taboas na beira do lago
+  // ------------------------------------------------------------------ PLANTAS COM FÍSICA: graminhas altas pelo gramado e taboas na beira do lago
   // Cada planta é uma instância (InstancedMesh): quando alguém passa perto, ela verga para longe e volta balançando (mola).
   function geoPlanta(alt, n, cor0, cor1) {
     const G = new Geo();
@@ -1380,7 +1338,7 @@
       const x = LIM.x0 + rnd() * 240, z = LIM.z0 + rnd() * 152; if (!lugarDeGrama(x, z)) continue;
       const n = 3 + Math.floor(rnd() * 4); for (let i = 0; i < n; i++) { const px = x + (rnd() - 0.5) * 1.4, pz = z + (rnd() - 0.5) * 1.4; if (lugarDeGrama(px, pz)) lista.push({ x: px, z: pz, k: 0.7 + rnd() * 0.6, tipo: 0, yaw: rnd() * 6.28, t: 0.85 + rnd() * 0.3 }); }
     }
-    // taboas: poucas moitas na beira do lago (antes era uma cerca de taboas em volta inteira)
+    // taboas: poucas moitas na beira do lago
     for (let i = 0; i < 26; i++) {
       const a = rnd() * Math.PI * 2, [x, z] = bordaLago(a, 0.2);
       if (x > PIER.x0 - 3 && z > PIER.z0 - 4 && z < PIER.z1 + 4) continue;
@@ -1426,7 +1384,7 @@
     for (const t of sujos) P.meshes[t].instanceMatrix.needsUpdate = true;
   }
 
-  // ------------------------------------------------------------------ (4.9.3) a BOLA da quadra de futsal (física simples) e o gol com comemoração
+  // ------------------------------------------------------------------ a BOLA da quadra de futsal (física simples) e o gol com comemoração
   const texBolinha = () => texCanvas(32, 16, (g, w, h) => { g.fillStyle = '#f4f4f0'; g.fillRect(0, 0, w, h); g.fillStyle = '#1c1c1f'; for (const [x, y] of [[4, 4], [14, 3], [24, 5], [9, 11], [20, 11], [29, 11]]) g.fillRect(x, y, 4, 4); }, false);
   function criarBolaQuadra() {
     const Q = S.quadra, R0 = 0.15;
@@ -1495,7 +1453,7 @@
     try { const t0 = A.currentTime; [523, 659, 784, 1046].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'square'; o.frequency.value = f; g.gain.setValueAtTime(0.06, t0 + i * 0.11); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.11 + 0.25); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.11); o.stop(t0 + i * 0.11 + 0.27); }); } catch (e) { /* sem som */ }
   }
 
-  // ------------------------------------------------------------------ (4.9.3) TREINO no primeiro society: dois batem pênalti, um goleiro defende (ou não)
+  // ------------------------------------------------------------------ TREINO no primeiro society: dois batem pênalti, um goleiro defende (ou não)
   function criarTreino(f2) {
     const rnd = semente(808), F = S.societys[0], gz = F.cz + 15, spot = { x: F.cx, z: F.cz + 8 };
     const bat = [criarPessoa(f2, rnd, false), criarPessoa(f2, rnd, rnd() < 0.4)], gol_ = criarPessoa(f2, rnd, false);
@@ -1508,7 +1466,7 @@
   }
   function tickTreino(dt) {
     const T_ = S.treino; if (!T_) return;
-    if (T_.pausa) { T_.parado = true; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; return; }          // (4.9.6) quem treina foi para casa (ou está na chuva): o treino para
+    if (T_.pausa) { T_.parado = true; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; return; }          // quem treina foi para casa (ou está na chuva): o treino para
     if (T_.parado) { T_.parado = false; const b = T_.bola; b.x = T_.spot.x; b.z = T_.spot.z; b.y = 0.23; b.vx = b.vy = b.vz = 0; b.saiu = false; b.rolando = false; b.defendida = false; T_.fase = 'anda'; T_.t = 0; T_.vez = 0; T_.gol.x = T_.F.cx; b.mesh.visible = true; b.sombra.visible = true; for (const P of T_.bat) { P.chuteT = -1; } }
     const B = T_.bola, A = T_.bat[T_.vez], K = T_.gol, g = 9.8, chao = 0.08 + 0.15;
     const ir = (P, x, z, v) => { const dx = x - P.x, dz = z - P.z, d = Math.hypot(dx, dz); if (d < 0.05) { P.andando = false; return true; } const st = Math.min(d, v * dt); P.x += dx / d * st; P.z += dz / d * st; P.yawAlvo = Math.atan2(-dz, dx); P.andando = true; P.vel = v; return false; };
@@ -1546,7 +1504,7 @@
     B.mesh.position.set(B.x, B.y, B.z); B.sombra.position.set(B.x, 0.1, B.z);
   }
 
-  // ================================================================== (5.3.0) EMPREGOS, FUTEBOL NO SINTÉTICO, CELULAR E BANHO
+  // ================================================================== EMPREGOS, FUTEBOL NO SINTÉTICO, CELULAR E BANHO
   //   Turnos de cada emprego (só a cafeteria tem o expediente jogável por enquanto). Ninguém trabalha sábado e domingo.
   //   O convite do futebol: quem trabalha de manhã/tarde é chamado 2h DEPOIS do turno; quem trabalha de tarde/noite, 4h ANTES.
   //   O primeiro convite é uma LIGAÇÃO do João depois do primeiro dia de trabalho (celular pixelado no canto inferior direito, 10 s
@@ -1568,7 +1526,7 @@
   function agendarHoje() {
     const d = S.dados, f = fut();
     if (diaDeFutebol() && !(f.agenda && f.agenda.dia === d.dia)) f.agenda = { dia: d.dia, hora: horaDoFutebol(), feito: false };
-    mostrarAgenda(); mostrarAgendaFutsal();   // (6.0.6) terça e quinta: o futsal do Biel
+    mostrarAgenda(); mostrarAgendaFutsal(); mostrarAgendaEncontro();   // terça e quinta: o futsal do Biel
   }
   function mostrarAgenda() {
     const d = S.dados, f = fut(), A = f.agenda;
@@ -1696,7 +1654,7 @@
   function atributosJogador() {
     const d = S.dados;
     if (!d.atributos) d.atributos = Object.assign({}, (PERSONAGEM.atributos && Object.keys(PERSONAGEM.atributos).length ? PERSONAGEM.atributos : Atributos.iniciante()));
-    for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number' || d.atributos[n] < 5) d.atributos[n] = Math.max(5, d.atributos[n] || 5);   // (5.3.0) começa com tudo 5
+    for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number' || d.atributos[n] < 5) d.atributos[n] = Math.max(5, d.atributos[n] || 5);   // começa com tudo 5
     return d.atributos;
   }
   function cfgSintetico(duracao, horario, clima) {
@@ -1704,10 +1662,10 @@
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
     const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
-      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), g('Carol', 5151, 'F'), g('Tiago', 4141, 'M')] };   // (6.0.0) 5 x 5: + Tiago
+      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M')] };   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
     const t1 = { id: 's_bryan', nome: T('Galera do Bryan'), sigla: 'BRY', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
       emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'DB' }, tecnico: tec,
-      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // (6.0.0) 5 x 5: + Vitinho
+      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // 5 x 5: + Vitinho
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
     return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
@@ -1732,7 +1690,7 @@
     const d = S.dados, f = fut(), A = f.agenda, P = sintetico(); if (!A || !P) return;
     const r0 = await Escolha.mostrar(T('Quanto tempo de jogo?'), [T('5 minutos'), T('3 minutos'), T('Agora não')], { centro: true });
     Dialogo.esconder(); if (r0 === 2 || r0 < 0) return;
-    const duracao = r0 === 1 ? 180 : 300, h = d.hora;
+    const duracao = r0 === 1 ? 180 : 300, h = d.hora, comLucia = luciaJogaHoje('sintetico');
     const horario = h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite';
     const clima = S.clima.estado === 'chuva' || S.clima.chuva > 0.35 ? 'chuva' : 'seco';
     const cfg = cfgSintetico(duracao, horario, clima);
@@ -1758,6 +1716,7 @@
     // a cena depois do jogo: o Caio vem falar com a gente na saída do campo
     const J = S.jog, E = P.dentro; J.sentado = false; J.x = E.x; J.z = E.z; J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null;
     const C = criarNPCFixo(AP_CAIO, false, 7, ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee']); C.x = E.x + 1.3; C.z = E.z - 0.4; C.yaw = C.yawAlvo = Math.PI; S.caio = C;
+    const LJ = comLucia ? luciaDepoisDoJogo(E.x + 0.9, E.z + 0.9, J, ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee']) : null;
     J.yawAlvo = Math.atan2(-(C.z - J.z), C.x - J.x); S.cam.snap = true;
     Musica.tocar('jazz');
     await preto(false, 900);
@@ -1765,12 +1724,19 @@
       if (!f.conheceCaio) { await fala('caio', T('E aí! Eu sou o Caio, eu organizo o racha aqui.')); f.conheceCaio = true; }
       if (r && r.bom) await fala('caio', T('Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!'));
       else await fala('caio', T('Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!'));
+      if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
       if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
       await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
       Dialogo.esconder();
     } catch (e) { console.error(e); }
-    descartarPessoa(C); S.caio = null;
+    descartarPessoa(C); S.caio = null; if (LJ) soltarLuciaEncontro(LJ);
     gravar('chegada');
+  }
+  // a Lúcia na cena depois do jogo (com o colete do time), olhando para o jogador; ela fala por S.falantesExtra
+  function luciaDepoisDoJogo(x, z, J, cores) {
+    const A = criarNPCFixo(apLucia(), true, 1, cores); A.tipo = 'cena'; A.x = x; A.z = z; A.y = altura(x, z); A.yaw = A.yawAlvo = Math.atan2(-(J.z - z), J.x - x);
+    S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.lucia = { A, nome: T('Lúcia Alves'), voz: 0 };
+    return A;
   }
   function criarNPCFixo(ap, fem, roupa, cores) {
     let m = null, opt = null;
@@ -1786,7 +1752,7 @@
     if (d.hora < A.hora - 0.75) v.push({ x: P.x, z: P.z, r: 2.2, txt: Tf('O jogo é às {0}', fmtHora(A.hora)), fn: async () => {}, y: 2.6 });
     else if (d.hora <= A.hora + 1.5) v.push({ x: P.x, z: P.z, r: 2.4, txt: T('Jogar bola no sintético'), fn: jogarSintetico, y: 2.6, pri: true });
   }
-  // ================================================================== (6.0.6) O BIEL E O FUTSAL DA QUADRA COBERTA
+  // ================================================================== O BIEL E O FUTSAL DA QUADRA COBERTA
   //   A partir da 3ª semana (dia 15+), toda TERÇA, o Biel espera os amigos na frente da quadra de futsal coberta (do lado do portão), com
   //   uma exclamação em cima da cabeça. O horário é o mesmo do futebol (horaDoFutebol: 2h depois do turno de quem trabalha de dia, 4h antes
   //   de quem trabalha de tarde/noite); ele fica lá de 45 min antes até 1h30 depois.
@@ -1887,7 +1853,7 @@
     const tec = { nome: 'Biel', aparencia: { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, roupa: '#222222' } };
     const t0 = { id: 'q_biel', nome: T('Time do Biel'), sigla: 'BIE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_VERDE, uniforme2: UNI_BRANCO,
       emblema: { forma: 'escudo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'BI' }, tecnico: tec,
-      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), g('Bruna', 2323, 'F')] };   // você completa os 5 (o Duda vai no gol)
+      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), (luciaJogaHoje('futsal') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Bruna', 2323, 'F'))] };   // você completa os 5 (o Duda vai no gol)
     const t1 = { id: 'q_quadra', nome: T('Galera da Quadra'), sigla: 'QDR', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_BRANCO, uniforme2: UNI_VERDE,
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'QC' }, tecnico: tec,
       elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M')] };
@@ -1899,7 +1865,7 @@
     const d = S.dados, F = fsal();
     const r0 = await Escolha.mostrar(T('Quanto tempo de jogo?'), [T('5 minutos'), T('3 minutos'), T('Agora não')], { centro: true });
     Dialogo.esconder(); if (r0 === 2 || r0 < 0) { await fala('biel', T('Beleza, fica pra próxima!')); Dialogo.esconder(); return; }
-    const duracao = r0 === 1 ? 180 : 300, h = d.hora;
+    const duracao = r0 === 1 ? 180 : 300, h = d.hora, comLucia = luciaJogaHoje('futsal');
     const horario = h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite';
     const cfg = cfgFutsal(duracao, horario, 'seco');
     await preto(true, 800);
@@ -1926,6 +1892,7 @@
     if (!S.biel) criarBiel();
     const B = S.biel; B.m.raiz.visible = true; B.x = BIEL.x; B.z = BIEL.z; B.yaw = B.yawAlvo = Math.atan2(-(J.z - B.z), J.x - B.x);
     J.yaw = J.yawAlvo = Math.atan2(-(B.z - J.z), B.x - J.x); S.cam.snap = true;
+    const LJ = comLucia ? luciaDepoisDoJogo(BIEL.x - 0.5, BIEL.z + 0.9, J, ['#1f7a4d', '#1c1c1f', '#f2f2ee', '#f2f2ee']) : null;
     Musica.tocar('jazz');
     await preto(false, 900);
     try {
@@ -1933,13 +1900,15 @@
       await fala('biel', r && r.bom ? Tf('Que jogão, {0}! Você manda bem demais na quadra.', nome) : Tf('Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.', nome));
       if (primeiro) await fala('biel', T('A gente joga aqui toda terça e quinta. Cola com a gente sempre que quiser!'));
       else await fala('biel', T('Terça e quinta tem mais, hein? Te espero!'));
+      if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
       if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
       await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
       Dialogo.esconder();
     } catch (e) { console.error(e); }
+    if (LJ) soltarLuciaEncontro(LJ);
     gravar('chegada');
   }
-  // (6.0.6) terça/quinta com o convite do Biel: missão e marcador (os dias não batem com o sintético, que é segunda e quarta)
+  // terça/quinta com o convite do Biel: missão e marcador (os dias não batem com o sintético, que é segunda e quarta)
   function mostrarAgendaFutsal() {
     const F = fsal(), d = S.dados, h = horaFutsalHoje();
     if (!F.convidado || h == null || F.jogouDia === d.dia || d.hora > h + 1.5) return;
@@ -1953,19 +1922,22 @@
     S.ligarT = (S.ligarT == null ? 6 : S.ligarT) - dt;
     if (S.ligarT <= 0) { S.ligarT = null; tocarCelular(); }
   }
-  // ------------------------------------------------------------------ (5.2.0) a cafeteria abre às 8h e fecha às 20h; a LÚCIA mora na casa dos Alves:
+  // ------------------------------------------------------------------ a cafeteria abre às 8h e fecha às 20h; a LÚCIA mora na casa dos Alves:
   //   sai de casa a tempo de chegar às 7h50, entra na cafeteria e às 20h volta para casa pelo mesmo caminho (pela rede de calçadas).
   //   A posição dela na rua sai direto da hora (sem estado): funciona também ao carregar e ao sair de dentro de um lugar.
-  const H_CAFE_ABRE = 8, H_CAFE_FECHA = 16, H_LUCIA_SAI = 17, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;   // (5.3.0) fecha às 16h; a Lúcia fecha o caixa e sai às 17h
-  const cafeAberto = () => S.dados.hora >= H_CAFE_ABRE && S.dados.hora < H_CAFE_FECHA;
-  const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < H_LUCIA_SAI;
+  const H_CAFE_ABRE = 8, H_CAFE_FECHA = 16, H_LUCIA_SAI = 17, H_LUCIA_CHEGA = 7 + 50 / 60, VEL_LUCIA = 2.0;   // fecha às 16h; a Lúcia fecha o caixa e sai às 17h
+  // no dia em que a Lúcia combinou de jogar, ela fecha o café 1h antes do jogo e sai 45 min antes (nunca depois do horário normal)
+  const cafeFecha = () => (luciaJogaHoje() ? Math.max(H_CAFE_ABRE + 0.5, Math.min(H_CAFE_FECHA, horaDoFutebol() - 1)) : H_CAFE_FECHA);
+  const luciaSai = () => (luciaJogaHoje() ? Math.max(H_CAFE_ABRE + 0.75, Math.min(H_LUCIA_SAI, horaDoFutebol() - 0.75)) : H_LUCIA_SAI);
+  const cafeAberto = () => S.dados.hora >= H_CAFE_ABRE && S.dados.hora < cafeFecha();
+  const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < luciaSai();
   function rotaLucia() { return S.rotaLucia || (S.rotaLucia = rotaCasaPorta('alves', 'cafeteria', VEL_LUCIA)); }
-  // (5.4.0) caminho de uma casa (casa.especial) até a porta de um lugar, pela rede de calçadas. dur = horas de jogo andando a vel m/s.
+  // caminho de uma casa (casa.especial) até a porta de um lugar, pela rede de calçadas. dur = horas de jogo andando a vel m/s.
   function rotaCasaPorta(especial, lugar, vel) {
     const C = (S.casas || []).find((c) => c.especial === especial), P = PORTAS.find((p) => p.nome === lugar);
     if (!C || !P || !S.rede) return null;
     let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6));
-    { // (5.3.0) antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
+    { // antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
       const fim = { x: P.x, z: P.z - 0.6 }; let melhor = null;
       for (let i = 2; i < pts.length - 1; i++) {
         const a = pts[i - 1], b = pts[i], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
@@ -1978,7 +1950,7 @@
     const L = acc[acc.length - 1];
     return { pts, acc, L, dur: L / vel * H_POR_S };
   }
-  // (5.4.0) GENTE COM HORÁRIO NA RUA (o Cadu e a Rosa do mercado; ver mercado.js): como a Lúcia, a posição sai direto da hora.
+  // GENTE COM HORÁRIO NA RUA (o Cadu e a Rosa do mercado; ver mercado.js): como a Lúcia, a posição sai direto da hora.
   //   viagens() devolve [{ ida: true, chega: h }] (de casa até a porta, chegando às h) e [{ ida: false, sai: h }] (da porta para casa).
   function criarRuaAgendada(A, especial, lugar, viagens, vel) {
     A.tipo = 'rua'; A.rua = { especial, lugar, viagens, vel: vel || 2, R: null };
@@ -2008,7 +1980,7 @@
     const R = rotaLucia(), h = S.dados.hora; if (!R) { if (!A.oculto) sumirV(A); return; }
     let k = -1, ida = true; const t0 = H_LUCIA_CHEGA - R.dur;
     if (h >= t0 && h < H_LUCIA_CHEGA) k = (h - t0) / R.dur;
-    else if (h >= H_LUCIA_SAI && h < H_LUCIA_SAI + R.dur) { k = 1 - (h - H_LUCIA_SAI) / R.dur; ida = false; }
+    else { const sai = luciaSai(); if (h >= sai && h < sai + R.dur) { k = 1 - (h - sai) / R.dur; ida = false; } }
     if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
     const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
     A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = VEL_LUCIA;
@@ -2025,12 +1997,15 @@
     try { await fala('lucia', T('Já são 17h, vou fechar a cafeteria! Até amanhã!')); Dialogo.esconder(); if (S.jog.sentado) levantar(); await sairDoLugar(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
-  // ------------------------------------------------------------------ (5.1.1) a LÚCIA ALVES adulta: a mesma da Fase 1 (fase1.js, S.luciaA), crescida
+  // ------------------------------------------------------------------ a LÚCIA ALVES adulta: a mesma da Fase 1 (fase1.js, S.luciaA), crescida
   //   pele 2 da escala, cabelo castanho (CORES_CABELO[4]), rabo de cavalo, rosto "Padrão", lábio 2 — só sem a cabeça grande de criança.
   //   Roupa de trabalho: camiseta branca, calça jeans e avental marrom da cafeteria.
-  function criarLucia(f2) {
+  function apLucia() {
     const acha = (lista, n) => Math.max(0, lista.findIndex((x) => x.nome === n));      // mesma busca da Fase 1 (ci/ri no fase1.js)
-    const ap = { pele: PELES_FITZ[1].cor, cabelo: CORES_CABELO[4].cor, estilo: acha(ESTILOS_CABELO, 'Rabo de cavalo'), rosto: acha(ROSTOS, 'Padrão'), labio: 2, barba: 0 };
+    return { pele: PELES_FITZ[1].cor, cabelo: CORES_CABELO[4].cor, estilo: acha(ESTILOS_CABELO, 'Rabo de cavalo'), rosto: acha(ROSTOS, 'Padrão'), labio: 2, barba: 0 };
+  }
+  function criarLucia(f2) {
+    const ap = apLucia();
     let m = null, opt = null;
     try { if (f2 && f2.modeloPessoa) { const r = f2.modeloPessoa({ ap, fem: true, roupa: 1, cores: ['#f2f2ee', '#2a3f66', '#6a4428', '#6a4428'] }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] Lúcia:', e); }
     if (!m) { opt = Object.assign({ camisa: '#f2f2ee', listra: '#6a4428', gola: '#6a4428', calcao: '#2a3f66', meia: '#2a3f66', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
@@ -2039,7 +2014,7 @@
     S.grupo.add(m.raiz); S.meus.add(m);
     return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'parado' };
   }
-  // ------------------------------------------------------------------ (4.9.3) o SEU VALDEMAR, atrás do balcão do lanche
+  // ------------------------------------------------------------------ o SEU VALDEMAR, atrás do balcão do lanche
   function criarValdemar(f2) {
     const rnd = semente(1960);
     const ap = { pele: '#c98e65', cabelo: '#b9b6ae', estilo: 2, rosto: 0, labio: 3, corBarba: '#9a968c', barba: Math.max(0, ESTILOS_BARBA.findIndex((b) => /bigode/i.test(b.nome))) };
@@ -2054,9 +2029,9 @@
     V.estado = 'balcao'; V.plano = null; V.passo = 0; V.timer = 0; snapValdemar();
   }
 
-  // ------------------------------------------------------------------ (4.9.5) a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
+  // ------------------------------------------------------------------ a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
   const H_ABRE = 8, H_FECHA = 20, H_ACORDA_V = 6.3, VEL_V = 2.2;
-  const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_BASE = 20, PAGA_PEDIDO = 5;   // (5.1.1) expediente da cafeteria: 20 fakes pelo dia + 5 por pedido atendido (ver falarComLucia/turnoTrabalho)
+  const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_BASE = 20, PAGA_PEDIDO = 5;   // expediente da cafeteria: 20 fakes pelo dia + 5 por pedido atendido (ver falarComLucia/turnoTrabalho)
   const lojaAberta = () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA;
   const sumirV = (V) => { V.puxa = false; V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
   const surgirV = (V, x, z, yaw) => { V.oculto = false; V.x = x; V.z = z; V.yaw = V.yawAlvo = yaw; S.meus.add(V.m); V.blob.visible = true; };
@@ -2065,7 +2040,7 @@
     const L = S.loja, C = S.casaValdemar;
     return [[L.portaX, L.portaZ - 1.7], [57, 8.1], [57, 38.2], [C.sx, 38.2], [C.sx, C.sz]];
   }
-  // (4.9.6) a porta de dentro fica na parede lateral do vão do balcão; atrás dela ele anda "dentro" da loja (some) até a porta de serviço
+  // a porta de dentro fica na parede lateral do vão do balcão; atrás dela ele anda "dentro" da loja (some) até a porta de serviço
   function portaDentroV() { const cx = (LANCHE.x0 + LANCHE.x1) / 2, cz = (LANCHE.z0 + LANCHE.z1) / 2, d = LANCHE.z1 - LANCHE.z0; return { x: cx - 1.9, px: cx - 0.8, z: cz - (d / 2 - 1.0) }; }
   const persianaPronta = (a) => () => Math.abs(S.loja.pk - a) < 0.01;
   function planoFechar() {
@@ -2092,7 +2067,7 @@
   function snapValdemar() {
     const V = S.valdemar, L = S.loja, B = S.balcao, h = S.dados.hora; if (!V || !L) return;
     V.plano = null; V.avisando = false;
-    // (6.0.4) zera TUDO o que o plano interrompido deixou: antes só o plano era descartado, então a rota antiga (rotaV) e o "andando" ficavam
+    // zera TUDO o que o plano interrompido deixou: antes só o plano era descartado, então a rota antiga (rotaV) e o "andando" ficavam
     // para trás — ele andava no lugar para sempre no balcão ou, no próximo plano, seguia os pontos velhos (andando "no nada")
     V.rotaV = null; V.andando = false; V.correndo = false; V.fala = false; V.timer = 0; V.passo = 0;
     V.puxa = false; L.k2 = L.alvo2 = 0;
@@ -2110,7 +2085,7 @@
   function tickValdemar(V, dt) {
     const L = S.loja; if (!L) return;
     if (!V.plano) {
-      if (V.andando || V.rotaV) { V.andando = false; V.rotaV = null; }   // (6.0.4) sem plano ele não anda (rede de segurança contra "andar no nada")
+      if (V.andando || V.rotaV) { V.andando = false; V.rotaV = null; }   // sem plano ele não anda (rede de segurança contra "andar no nada")
       if (V.estado === 'balcao' && !lojaAberta()) {
         const J = S.jog;
         if (J.sentado && S.sentadoEm && S.sentadoEm.lanche) { if (S.modo === 'livre' && !V.avisando) { V.avisando = true; avisoFechar().then(() => { V.avisando = false; }); } return; }
@@ -2153,7 +2128,7 @@
     G.box(4.2, 0.72, 1.8, cor, 0, 0.32, 0);                                    // carroceria (de frente para +x)
     if (tipo === 'picape') {
       G.box(1.7, 0.66, 1.62, vid, 0.55, 1.04, 0); G.box(1.76, 0.1, 1.66, cor, 0.55, 1.66, 0);
-      // caçamba: as laterais saem 1 cm da carroceria e o fundo fica 3 cm acima do teto dela (antes os dois planos coincidiam e piscavam)
+      // caçamba: as laterais saem 1 cm da carroceria e o fundo fica 3 cm acima do teto dela
       G.box(1.98, 0.4, 0.1, cor, -1.07, 1.02, 0.86); G.box(1.98, 0.4, 0.1, cor, -1.07, 1.02, -0.86); G.box(0.1, 0.4, 1.82, cor, -2.11, 1.02, 0);
       G.box(1.9, 0.05, 1.6, '#2a2a2a', -1.1, 1.07, 0);
     } else {
@@ -2163,7 +2138,7 @@
     for (const [x, z] of [[1.3, 0.8], [1.3, -0.8], [-1.3, 0.8], [-1.3, -0.8]]) { G.box(0.7, 0.66, 0.3, '#1c1c1f', x, 0, z); G.box(0.3, 0.3, 0.32, '#9a9a9a', x, 0.18, z); }
     G.box(0.12, 0.26, 1.86, '#3a3a3e', 2.12, 0.3, 0); G.box(0.12, 0.26, 1.86, '#3a3a3e', -2.12, 0.3, 0);   // para-choques
     G.box(0.04, 0.16, 0.6, esc, 2.12, 0.62, 0);
-    const m = G.malha(MAT), L = new Geo();                          // (5.0.1) faróis e lanternas numa peça que "acende" à noite (material sem sombreamento)
+    const m = G.malha(MAT), L = new Geo();                          // faróis e lanternas numa peça que "acende" à noite (material sem sombreamento)
     for (const z of [0.6, -0.6]) { L.box(0.08, 0.18, 0.36, '#fff6c8', 2.14, 0.74, z); L.box(0.08, 0.18, 0.36, '#e0302a', -2.14, 0.74, z); }
     m.add(L.malha(S.matFarol || (S.matFarol = guardar(new THREE.MeshBasicMaterial({ vertexColors: true })))));
     if (!S.matFarolChao) { S.geoFarol = guardar(new THREE.PlaneGeometry(1, 1)); S.geoFarol.rotateX(-Math.PI / 2); S.matFarolChao = guardar(new THREE.MeshBasicMaterial({ map: guardar(texBrilho()), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, color: 0xfff0c0, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 })); }
@@ -2183,11 +2158,11 @@
     let k = 0; for (const p of PISTAS) for (const x of [-170, -60, 90]) ativarCarro(S.carros[k++], p, x * p.dir);
   }
   function ativarCarro(c, p, x) { c.ativo = true; c.dir = p.dir; c.z = p.z; c.x = x; c.vmax = 9 + Math.random() * 4; c.v = c.vmax; c.parado = 0; c.buzinou = false; c.m.visible = true; c.m.rotation.y = p.dir > 0 ? 0 : Math.PI; }
-  // (5.5.0) a faixa de pedestre: x de 7,7 a 11,9. linhaFaixa = quanto o carro ainda anda até parar antes dela (a frente tem 2,1 m)
+  // a faixa de pedestre: x de 7,7 a 11,9. linhaFaixa = quanto o carro ainda anda até parar antes dela (a frente tem 2,1 m)
   const linhaFaixa = (c) => (c.dir > 0 ? (7.2 - c.x) - 2.1 : (c.x - 12.4) - 2.1);
-  // (6.0.0) algum carro andando chega na faixa em menos de 'seg' segundos (ou está passando nela)?
+  // algum carro andando chega na faixa em menos de 'seg' segundos (ou está passando nela)?
   const carroChegando = (seg) => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c); return dl > -6.8 && (dl < 0 || dl / c.v < seg); });
-  // (6.0.5) quem ainda é PERIGO para atravessar: carro andando que chega em menos de 'seg' segundos e que NÃO vai parar antes da faixa
+  // quem ainda é PERIGO para atravessar: carro andando que chega em menos de 'seg' segundos e que NÃO vai parar antes da faixa
   // (parado já, ou freando para parar e ainda longe). Antes o pedestre esperava TODOS os carros dos próximos segundos pararem de vez,
   // e cada carro novo que vinha atrás (que também ia parar) fazia ele esperar de novo.
   const carroPerigo = (seg) => S.carros.some((c) => {
@@ -2196,9 +2171,9 @@
     if (dl < 0) return true;                                         // em cima da faixa
     return !(c.paraFaixa && (c.v < 1 || dl > 10));
   });
-  const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c);   // (6.0.0) carro PARADO não é perigo (antes travava: carro parado na linha esperando o pedestre e o pedestre esperando o carro)
+  const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c);   // carro PARADO não é perigo
     return (dl > -6.8 && dl < 0) || (c.v > 1.5 && dl >= 0 && dl < (c.v * c.v) / (2 * 5.5) + 0.6); });
-  // (5.5.0) 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
+  // 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
   function assustar(c, P) {
     for (let k = 1; k < 4; k++) setTimeout(() => { if (S && S.ativo && !S.dentro) buzina(c); }, k * 380);
     if (P === S.jog) { if (S.modo === 'livre') sustoJogador(c); return; }
@@ -2234,13 +2209,13 @@
       // espaço livre à frente: o jogador (se estiver na frente, na faixa do carro) e o carro da frente
       let folga = 1e9, bloq = null;
       for (const P of obst) {                                        // o jogador e as pessoas andando (atravessando na faixa, por exemplo)
-        // (6.0.5) só quem está NA FRENTE do carro (na largura dele) o faz parar. Gente DO LADO (passando junto da porta, na calçada,
+        // só quem está NA FRENTE do carro (na largura dele) o faz parar. Gente DO LADO (passando junto da porta, na calçada,
         // atravessando atrás) não conta mais: antes o carro travava no meio da faixa com alguém ao lado e fazia fila.
         if (!P || Math.abs(P.z - c.z) >= 1.25) continue; const fr = (P.x - c.x) * c.dir;
         if (fr > 1.9) { const f = fr - 2.1 - 0.3 - 1.6; if (f < folga) { folga = f; bloq = P; } }
       }
       for (const o of S.carros) { if (o === c || !o.ativo || o.z !== c.z) continue; const fr = (o.x - c.x) * c.dir; if (fr > 0) { const f = fr - 4.2 - 2.2; if (f < folga) { folga = f; bloq = null; } } }
-      if (faixa) {                                                   // (5.5.0) para antes da faixa (se ainda dá para frear; depois de decidir, para mesmo)
+      if (faixa) {                                                   // para antes da faixa (se ainda dá para frear; depois de decidir, para mesmo)
         const dl = linhaFaixa(c);
         if (!c.paraFaixa && dl > -0.5 && dl >= (c.v * c.v) / (2 * 5.5) - 0.4) c.paraFaixa = true;
         if (c.paraFaixa && dl > -0.5) { if (dl < folga) { folga = Math.max(0, dl); bloq = null; } } else c.paraFaixa = false;
@@ -2250,7 +2225,7 @@
       if (alvo < c.v) c.v = Math.max(alvo, c.v - 12 * dt); else c.v = Math.min(alvo, c.v + 2.6 * dt);
       const passo = Math.min(c.v * dt, Math.max(0, folga));
       c.x += c.dir * passo;
-      if (c.v < 0.3 && bloq) { c.parado += dt; if (c.parado > 1.6 && !c.buzinou) { c.buzinou = true; buzina(c); } if (c.parado > 10 && !c.assustou) { c.assustou = true; assustar(c, bloq); } }   // (5.5.0) 10 s travado: susto
+      if (c.v < 0.3 && bloq) { c.parado += dt; if (c.parado > 1.6 && !c.buzinou) { c.buzinou = true; buzina(c); } if (c.parado > 10 && !c.assustou) { c.assustou = true; assustar(c, bloq); } }   // 10 s travado: susto
       else if (c.v > 3) { c.parado = 0; c.buzinou = false; c.assustou = false; }
       void porJog;
       c.m.position.set(c.x, 0, c.z);
@@ -2282,7 +2257,7 @@
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 10), es = A.opt.escala || 1;
     usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0;
     if (m.cabecaLigada) usarCabeca(m, 0);
-    if (A.celeb) {                                                   // (4.9.3) comemoração de gol (as mesmas poses da partida)
+    if (A.celeb) {                                                   // comemoração de gol (as mesmas poses da partida)
       const C = A.celeb, tc = C.t % C.c.dur, P = celebPose(C.c, tc), corre = tc < C.c.swing ? Math.sin(A.anim || 0) * 0.9 : 0;
       r.position.y = A.y + P.y; r.rotation.x = P.roll; m.corpo.rotation.z = P.lean;
       m.bracoE.rotation.z = P.aLz; m.bracoD.rotation.z = P.aRz; m.bracoE.rotation.x = P.aLx; m.bracoD.rotation.x = P.aRx;
@@ -2290,13 +2265,13 @@
       r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z);
       return;
     }
-    if (A.vomita > 0) {                                              // (5.0.0) passando mal: curvado, mãos nos joelhos, o corpo dá uns trancos
+    if (A.vomita > 0) {                                              // passando mal: curvado, mãos nos joelhos, o corpo dá uns trancos
       const h = A.vomita > 0.7 && A.vomita < 2.6 ? Math.sin(A.vomita * 13) * 0.07 : 0, k = Math.min(1, A.vomita / 0.5);
       m.corpo.rotation.z = (-0.6 + h) * k; usarJoelhos(m, -0.35 * k, -0.35 * k); m.pernaE.rotation.z = m.pernaD.rotation.z = 0.22 * k;
       m.bracoE.rotation.z = m.bracoD.rotation.z = 0.8 * k; m.bracoE.rotation.x = -0.12; m.bracoD.rotation.x = 0.12;
       r.position.y = A.y - 0.05 * k; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return;
     }
-    if (A.deitado) {                                                 // (4.9.6) deitado de barriga para cima (a cabeça fica para o lado de -x do personagem)
+    if (A.deitado) {                                                 // deitado de barriga para cima (a cabeça fica para o lado de -x do personagem)
       const yw = A.yaw; r.rotation.z = Math.PI / 2; r.rotation.y = yw; r.position.y = A.y + 0.24 * es;
       r.position.x = A.x + 0.8 * es * Math.cos(yw); r.position.z = A.z - 0.8 * es * Math.sin(yw);
       m.pernaE.rotation.z = m.pernaD.rotation.z = 0; m.bracoE.rotation.z = m.bracoD.rotation.z = 0.1; m.bracoE.rotation.x = m.bracoD.rotation.x = 0;
@@ -2307,21 +2282,21 @@
       const f = Math.sin(A.t * 5.5) * 0.3;
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? 0.55 + f * 0.4 : 0.4, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? 1.0 + f : 0.4, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.8 + f);
-      if (A.comendo > 0) {                                           // (4.9.3) comendo: as duas mãos levam o lanche à boca e a cabeça balança mastigando
+      if (A.comendo > 0) {                                           // comendo: as duas mãos levam o lanche à boca e a cabeça balança mastigando
         m.bracoE.rotation.z = 1.25; m.bracoD.rotation.z = 1.25; m.bracoE.rotation.x = -0.32; m.bracoD.rotation.x = 0.32;
         const mord = Math.max(0, Math.sin(A.t * 7)); usarCotovelo(m.bracoE, 0, 1.55 + mord * 0.25); usarCotovelo(m.bracoD, 0, 1.55 + mord * 0.25);
         usarCabeca(m, -0.05 + Math.sin(A.t * 9) * 0.12);
       }
-      if (A.bebe > 0) {                                              // (5.2.1) tomando o café: a mão para a uns 15 cm na frente da boca e só "bebe" (gole = leve vaivém)
+      if (A.bebe > 0) {                                              // tomando o café: a mão para a uns 15 cm na frente da boca e só "bebe" (gole = leve vaivém)
         const gole = Math.max(0, Math.sin(A.t * 2.4)), oz = 1.22 + gole * 0.08, cz = 1.2 + gole * 0.12;
         m.bracoD.rotation.z = oz; usarCotovelo(m.bracoD, 0, cz);
         usarCabeca(m, 0.07 * gole);                                    // inclina a cabeça um pouquinho para trás no gole
         if (A.copoCli) A.copoCli.rotation.z = -(oz + cz);
       }
-    } else if (A.tipo === 'rosca' && !A.andando) {                   // (4.9.4) academia: rosca com halteres
+    } else if (A.tipo === 'rosca' && !A.andando) {                   // academia: rosca com halteres
       const c = Math.max(0, Math.sin(A.t * 2.4)); m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
       usarCotovelo(m.bracoE, 0, 0.2 + c * 1.9); usarCotovelo(m.bracoD, 0, 0.2 + c * 1.9); r.position.y = A.y;
-    } else if (A.chuteT >= 0) {                                      // (4.9.3) chute do treino: perna de trás e depois para a frente
+    } else if (A.chuteT >= 0) {                                      // chute do treino: perna de trás e depois para a frente
       const t = A.chuteT, pr = t < 0.16 ? -t / 0.16 * 0.9 : -0.9 + Math.min(1, (t - 0.16) / 0.14) * 2.2;
       m.pernaD.rotation.z = pr; m.pernaE.rotation.z = -0.15; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.5; m.bracoE.rotation.z = 0.3;
       r.position.y = A.y;
@@ -2338,14 +2313,28 @@
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.6 + g * 0.3);
       r.position.y = A.y;
     }
-    if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // (4.9.6) puxando a persiana
-    if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // (4.9.5) na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
-    m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // (5.2.1) bebendo: a mão fecha para a frente da boca
-    if (A.pedeFaixa && !A.sentado && !A.recua) { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = -0.12; usarCotovelo(m.bracoD, 0, 0.12); }   // (6.0.0) parado na beira: mão esticada PARA A FRENTE (pare!)
-    if (A.esbarrao > 0) { A.esbarrao = Math.max(0, A.esbarrao - dt); m.corpo.rotation.z = -Math.sin(A.esbarrao * 20) * A.esbarrao * 0.5; }   // (5.5.0) esbarrão: cambaleia (como o técnico)
+    if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // puxando a persiana
+    if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
+    m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // bebendo: a mão fecha para a frente da boca
+    if (A.pedeFaixa && !A.sentado && !A.recua) { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = -0.12; usarCotovelo(m.bracoD, 0, 0.12); }   // parado na beira: mão esticada PARA A FRENTE (pare!)
+    if (A.esbarrao > 0) { A.esbarrao = Math.max(0, A.esbarrao - dt); m.corpo.rotation.z = -Math.sin(A.esbarrao * 20) * A.esbarrao * 0.5; }   // esbarrão: cambaleia (como o técnico)
     if (A.copoCli && A.sentado && A.bebe > 0) A.copoCli.rotation.x = -0.45;
+    if (A.gesto) gestoAtor(A);
     r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw;
     A.blob.position.set(A.x, A.y + 0.02, A.z);
+  }
+  // gestos de cena por cima da pose (encontro): acenar, abraçar, beijar, comer de garfo
+  function gestoAtor(A) {
+    const m = A.m, t = A.t || 0, g = A.gesto;
+    if (g === 'acena') { m.bracoD.rotation.z = 2.7; m.bracoD.rotation.x = -0.35 + Math.sin(t * 11) * 0.32; usarCotovelo(m.bracoD, 0, 0.3); }
+    else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.08; }
+    else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.16; if (m.cabecaLigada) usarCabeca(m, -0.12); }
+    else if (g === 'garfo') {
+      const k = Math.max(0, Math.sin(t * 3.2));
+      m.bracoD.rotation.z = 1.05 + k * 0.25; m.bracoD.rotation.x = 0.25 * k; usarCotovelo(m.bracoD, 0, 0.7 + k * 0.95);
+      m.bracoE.rotation.z = 1.0; m.bracoE.rotation.x = 0; usarCotovelo(m.bracoE, 0, 0.55);
+      if (m.cabecaLigada) usarCabeca(m, k < 0.3 ? Math.sin(t * 10) * 0.06 : -0.04);
+    }
   }
   function sombraAtor(raio) {
     const b = new THREE.Mesh(S.geoSombra || (S.geoSombra = guardar(new THREE.CircleGeometry(1, 12))), S.matSombra || (S.matSombra = guardar(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }))));
@@ -2401,7 +2390,7 @@
     for (const n of nos) n.faixa = Math.abs(n.x - XF) < 0.1 && (Math.abs(n.z - ZN) < 0.1 || Math.abs(n.z - ZS) < 0.1);
     S.rede = nos;
   }
-  // (5.5.0) quem tem ROTINA (horário e destino certos) não para por causa do jogador: passa e o jogador é que cambaleia
+  // quem tem ROTINA (horário e destino certos) não para por causa do jogador: passa e o jogador é que cambaleia
   const temRotina = (A) => !!A && (A.tipo === 'morador' || A.tipo === 'valdemar' || A.tipo === 'luciaRua' || A.tipo === 'rua');
   function pessoaNoCaminho(x, z, A) {
     for (const B of S.npcs) { if (B === A || B.oculto) continue; const dn = Math.hypot(x - B.x, z - B.z); if (dn < 0.58 && dn < Math.hypot(A.x - B.x, A.z - B.z) - 1e-4) return B; }
@@ -2428,11 +2417,11 @@
     for (const B of S.npcs) {
       if (B === A || B.oculto) continue;
       const dn = Math.hypot(x - B.x, z - B.z);
-      if (dn < 0.58) { if (A && dn >= Math.hypot(A.x - B.x, A.z - B.z) - 1e-4 && Math.hypot(A.x - B.x, A.z - B.z) < 0.58) continue; return false; }   // (4.9.6) já sobrepostos: afastar é sempre permitido
+      if (dn < 0.58) { if (A && dn >= Math.hypot(A.x - B.x, A.z - B.z) - 1e-4 && Math.hypot(A.x - B.x, A.z - B.z) < 0.58) continue; return false; }   // já sobrepostos: afastar é sempre permitido
     }
     return true;
   }
-  // (6.0.4) CONTORNAR O QUE TRAVA: sem o "pulo para o lado" (que parecia teleporte) quem travava só ficava parado. Agora, parado há ~0,6 s
+  // CONTORNAR O QUE TRAVA: sem o "pulo para o lado" (que parecia teleporte) quem travava só ficava parado. Agora, parado há ~0,6 s
   // (e sem os ângulos de desvio resolverem), a pessoa escolhe um PONTO DE DESVIO ao lado do caminho e anda até ele, depois retoma a rota:
   //   - tenta 1 m para o lado, depois 2 m, 3,5 m e 5 m (cada nova tentativa em menos de 8 s sobe um degrau);
   //   - escolhe o lado MENOS ABARROTADO (quanto menos gente perto do ponto, melhor) e dá preferência a um ponto levemente adiante;
@@ -2458,7 +2447,7 @@
     A.desvioN = A.t - (A.desvioUlt == null ? -99 : A.desvioUlt) < 8 ? (A.desvioN || 0) + 1 : 0; A.desvioUlt = A.t;
     if (A.desvioN >= DESVIOS.length) { A.desvioN = 0; return false; }
     const fx = dx / d, fz = dz / d, px = -fz, pz = fx;
-    // (6.0.4) 1.º: o MENOR desvio lateral cujo ponto fica livre E com a frente livre (passa ao lado do obstáculo, não só "um pouquinho" de lado
+    // 1.º: o MENOR desvio lateral cujo ponto fica livre E com a frente livre (passa ao lado do obstáculo, não só "um pouquinho" de lado
     // e trava de novo); o alvo vira um ponto 2,4 m adiante dele (dois pontos: lado → adiante). 2.º (se nenhum serve): o ponto livre mais
     // próximo, como antes.
     for (const exigeFrente of [true, false]) for (let i = A.desvioN; i < DESVIOS.length; i++) {
@@ -2495,19 +2484,19 @@
     if (A.dest) { tickDestino(A, dt); return; }
     A.cool = (A.cool == null ? 5 + Math.random() * 25 : A.cool) - dt;
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
-    if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return; }      // (5.5.0) esbarrou: espera o outro passar
-    if (A.desvio && andarDesvio(A, dt)) return;                          // (6.0.4) contornando o que travou
+    if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return; }      // esbarrou: espera o outro passar
+    if (A.desvio && andarDesvio(A, dt)) return;                          // contornando o que travou
     const N = S.rede[A.alvo], dx = N.x - A.x, dz = N.z - A.z, d = Math.hypot(dx, dz);
     if (d < 0.6) {                                                   // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
-      if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // (4.9.6) de cada 10 pedestres que decidem, 5 entram num lugar
+      if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // de cada 10 pedestres que decidem, 5 entram num lugar
       const op = N.viz.filter((i) => i !== A.ant), prox = op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;
-      if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // (5.5.0) saiu pela ponta do mapa
-      if (N.faixa && S.rede[prox].faixa) {                           // (5.5.0) vai atravessar
-        // (6.0.0) Carro chegando nos próximos 5 s: para na beira com a mão esticada para a frente e espera os carros pararem;
+      if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // saiu pela ponta do mapa
+      if (N.faixa && S.rede[prox].faixa) {                           // vai atravessar
+        // Carro chegando nos próximos 5 s: para na beira com a mão esticada para a frente e espera os carros pararem;
         // aí atravessa CORRENDO (com a mão baixa). Sem carro vindo: atravessa andando, como sempre, com a mão para baixo.
-        if (A.pedeFaixa || carroChegando(8)) {                      // (6.0.5) 8 s (era 5)
+        if (A.pedeFaixa || carroChegando(8)) {                      // 8 s
           if (!A.pedeFaixa) { A.pedeFaixa = true; A.maoT = 0; }
-          A.maoT = (A.maoT || 0) + 0.25;                             // (6.0.5) a mão fica pelo menos ~1,2 s esticada (dá para ver o gesto)
+          A.maoT = (A.maoT || 0) + 0.25;                             // a mão fica pelo menos ~1,2 s esticada (dá para ver o gesto)
           if (carroNaoPara() || carroPerigo(8) || A.maoT < 1.25) { A.espera = 0.25; A.andando = false; A.yawAlvo = Math.atan2(-(S.rede[prox].z - A.z), S.rede[prox].x - A.x); return; }
           A.pedeFaixa = false; A.atravessa = true;
           if (!A.correFaixa) { A.correFaixa = true; A.velFaixa = A.vel; A.vel = Math.max(3.3, A.vel * 1.9); A.correndo = true; }
@@ -2520,7 +2509,7 @@
       return;
     }
     const v = A.vel * dt; let moveu = false;
-    { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // (5.5.0) gente no caminho: um passa, o outro cambaleia
+    { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { if (cruzar(A, B)) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return; }
         if (Math.hypot(nx - S.jog.x, nz - S.jog.z) < 0.62 && !(A.esbarrao > 0.05)) { A.esbarrao = 0.5; A.travaE = 0.7; A.andando = false; return; } } }   // o jogador na frente: cambaleia e espera
     for (const ang of [0, 0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) {     // desvia de quem estiver na frente (gente, poste, mesa...)
@@ -2528,7 +2517,7 @@
       if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); moveu = true; break; }
     }
     A.andando = moveu;
-    if (!moveu) { A.bloq = (A.bloq || 0) + dt; if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // (6.0.4) 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio
+    if (!moveu) { A.bloq = (A.bloq || 0) + dt; if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio
       if (A.bloq > 1.6) { A.desvio = null; const t = A.alvo; A.alvo = A.ant != null ? A.ant : t; A.ant = t; A.bloq = 0; A.espera = 0.4 + Math.random(); } }
     else A.bloq = Math.max(0, A.bloq - dt * 0.5);
   }
@@ -2540,7 +2529,7 @@
     for (let i = 0; i < 8; i++) {
       let k; do { k = Math.floor(Math.random() * S.rede.length); } while (usados.has(k) || S.rede[k].faixa || Math.hypot(S.rede[k].x - SPAWN.x, S.rede[k].z - SPAWN.z) < 8);
       usados.add(k);
-      const A = criarPessoa(f2, Math.random, Math.random() < 0.5), N = S.rede[k];   // (5.5.0) gente diferente todo dia
+      const A = criarPessoa(f2, Math.random, Math.random() < 0.5), N = S.rede[k];   // gente diferente todo dia
       A.x = N.x; A.z = N.z; A.ant = null; A.alvo = N.viz[Math.floor(rnd() * N.viz.length)];
       S.npcs.push(A);
     }
@@ -2568,39 +2557,40 @@
     for (const C of S.conversas) {                                    // revezam quem fala
       C.t += dt; if (C.t > C.prox) { C.t = 0; C.quem = Math.random() < 0.2 ? -1 : 1 - Math.max(0, C.quem); C.prox = 1.5 + Math.random() * 3; }
       C.a.fala = C.quem === 0; C.b.fala = C.quem === 1;
-      if (C.a.tipo === 'morador' || C.b.tipo === 'morador' || C.a.oculto || C.b.oculto) { C.a.fala = C.b.fala = false; continue; }   // (4.9.6) quem saiu para casa/árvore não conversa
+      if (C.a.tipo === 'morador' || C.b.tipo === 'morador' || C.a.oculto || C.b.oculto) { C.a.fala = C.b.fala = false; continue; }   // quem saiu para casa/árvore não conversa
       if (!C.a.sentado) { C.a.yawAlvo = Math.atan2(-(C.b.z - C.a.z), C.b.x - C.a.x); C.b.yawAlvo = Math.atan2(-(C.a.z - C.b.z), C.a.x - C.b.x); }
     }
     if (!S.dentro) { tickMoradores(dt); separarPessoas(); gerenciarPedestres(dt); } else tickFluxo(dt);
     const J0 = S.jog;
     for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
       if (A.fantasma > 0) A.fantasma -= dt;
-      if (!S.dentro && A.tipo === 'anda' && !A.dest && !A.oculto && Math.hypot(A.x - J0.x, A.z - J0.z) > 100) {   // (5.5.0) longe: parado e invisível
+      if (!S.dentro && A.tipo === 'anda' && !A.dest && !A.oculto && Math.hypot(A.x - J0.x, A.z - J0.z) > 100) {   // longe: parado e invisível
         A.longeDemais = true; A.m.longe = true; if (A.boneco) A.boneco.visible = false; A.blob.visible = false; A.andando = false; continue;
       } else if (A.longeDemais) { A.longeDemais = false; A.blob.visible = true; }
       if (!S.dentro && !A.oculto && (A.tipo === 'anda' || A.tipo === 'morador') && (A.z < AV.z0 - 0.4 || A.z > AV.z1 + 0.4)) A.seguro = { x: A.x, z: A.z };   // a última calçada
-      if (A.recua) {                                                    // (5.5.0) levou um susto do carro: volta correndo para a calçada
+      if (A.recua) {                                                    // levou um susto do carro: volta correndo para a calçada
         const q = A.recua, dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = 3.3 * dt;
         if (d <= v) { A.x = q.x; A.z = q.z; A.recua = null; A.andando = false; A.correndo = false; A.atravessa = A.pedeFaixa = false; if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; } if (A.tipo === 'anda') { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.travaE = 1.5; } }
         else { A.x += dx / d * v; A.z += dz / d * v; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.correndo = true; A.vel = 3.3; }
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
       }
-      if (temRotina(A) && !A.oculto && A.andando && S.modo === 'livre' && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // (5.5.0) passou por dentro do jogador
+      if (temRotina(A) && !A.oculto && A.andando && S.modo === 'livre' && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador
       if (A.tipo === 'luciaRua') tickLuciaRua(A);
-      else if (A.tipo === 'rua') tickRua(A);                          // (5.4.0) Cadu e Rosa indo e voltando do mercado
+      else if (A.tipo === 'rua') tickRua(A);                          // Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
       else if (A.tipo === 'vaga') vagar(A, dt);
       else if (A.tipo === 'cliente') tickCliente(A, dt);
-      else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // (5.3.1) clientes do mercado.js
+      else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // clientes do mercado.js
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
+      else if (A.tipo === 'cena') passoCena(A, dt);
       if (A === S.valdemar && S.loja) tickLoja(dt);
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
       if (!A.sentado) { const ty = altura(A.x, A.z); A.y += (ty - A.y) * Math.min(1, dt * 18); }
-      // (5.0.1) LONGE (mais de ~32 m): no lugar do boneco completo (~16 peças) aparece um boneco de 1 peça e a pose nem é calculada
+      // LONGE (mais de ~32 m): no lugar do boneco completo (~16 peças) aparece um boneco de 1 peça e a pose nem é calculada
       const J = S.jog, dl = Math.hypot(A.x - J.x, A.z - J.z), longe = !S.dentro && !A.oculto && dl > (A.m.longe ? 30 : 34);
       if (longe !== !!A.m.longe) A.m.longe = longe;
       if (longe) {
@@ -2612,7 +2602,7 @@
       if (A.prop) atualizarProp(A);
     }
   }
-  // (5.5.0) PEDESTRES como os carros: quem está longe demais (ou saiu pela ponta do mapa) vira outra pessoa, num lugar fora da vista
+  // PEDESTRES como os carros: quem está longe demais (ou saiu pela ponta do mapa) vira outra pessoa, num lugar fora da vista
   const borda = (N) => Math.abs(N.x) >= 115 || Math.abs(N.z) >= 71;
   function pontoForaDaVista(min, max) {
     const J = S.jog, cx = camera.position.x - OX, cz = camera.position.z, fx = J.x - cx, fz = J.z - cz, fl = Math.hypot(fx, fz) || 1;
@@ -2646,7 +2636,7 @@
     const m = G.malha(MAT); S.grupo.add(m); return m;
   }
 
-  // (4.9.4) dentro dos interiores: anda até um ponto qualquer da área, para um pouco e escolhe outro
+  // dentro dos interiores: anda até um ponto qualquer da área, para um pouco e escolhe outro
   function vagar(A, dt) {
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
     if (!A.alvoV) { const a = A.area; A.alvoV = { x: a.x0 + Math.random() * (a.x1 - a.x0), z: a.z0 + Math.random() * (a.z1 - a.z0) }; }
@@ -2673,12 +2663,12 @@
     if (S.dentro) { for (const A of S.npcs) if (!A.oculto) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; } return true; }
     if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
     const naPier = x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15;
-    if (!naPier && dentroLago(x, z, 0.45)) return false;   // (4.9.5) fora da água: os pés não entram mais
+    if (!naPier && dentroLago(x, z, 0.45)) return false;   // fora da água: os pés não entram mais
     for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + RJ && Math.abs(z - c.z) < 0.95 + RJ) return false;
-    for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // (5.5.0) dá para se afastar de quem está encostado
+    for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // dá para se afastar de quem está encostado
     return true;
   }
-  // (6.0.3) Cambaleando (esbarrão), a pessoa fica com 10% do "corpo" para o jogador: dá para passar por dentro dela (ver mover).
+  // Cambaleando (esbarrão), a pessoa fica com 10% do "corpo" para o jogador: dá para passar por dentro dela (ver mover).
   const raioNPC = (A) => (A.esbarrao > 0.05 ? 0.058 : 0.58);
   // esbarrar em alguém empurra a pessoa um pouquinho (se ela tiver para onde ir)
   function empurrar(px, pz) {
@@ -2698,19 +2688,19 @@
     if (T_.KeyQ) S.cam.yaw += dt * 1.8; if (T_.KeyE) S.cam.yaw -= dt * 1.8;
     const corre = e.m > 0.12 && (T_.ShiftLeft || T_.ShiftRight || (UI.joy.id != null && e.m >= LIMIAR_CORRER));
     UI.pad.classList.toggle('corre', !!corre);
-    if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0)) levantar(); return; }      // (4.9.3) sentado: empurrar o direcional levanta
+    if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0)) levantar(); return; }      // sentado: empurrar o direcional levanta
     if (e.m < 0.12) { J.andando = false; J.correndo = false; return; }
     const sy = Math.sin(S.cam.yaw), cy = Math.cos(S.cam.yaw);
     const fx = -sy, fz = -cy, rx = cy, rz = -sy;                     // frente (da câmera para o jogador) e direita
     const dx = rx * e.ix - fx * e.iy, dz = rz * e.ix - fz * e.iy, dl = Math.hypot(dx, dz) || 1;
-    const vel = (corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // (5.6.0) café: mais rápido
+    const vel = (corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // café: mais rápido
     const nx = J.x + dx / dl * sp, nz = J.z + dz / dl * sp;
     let moveu = false;
     if (livre(nx, J.z)) { J.x = nx; moveu = true; }
     if (livre(J.x, nz)) { J.z = nz; moveu = true; }
     { const B = S.npcs.find((A) => !A.oculto && !A.sentado && !A.deitado && Math.hypot(nx - A.x, nz - A.z) < 0.6 && Math.hypot(nx - A.x, nz - A.z) < Math.hypot(J.x - A.x, J.z - A.z) + 0.02);
-      if (B && !(B.esbarrao > 0.05)) { B.esbarrao = 0.6; if (!temRotina(B)) B.travaE = Math.max(B.travaE || 0, 0.6); } }   // (5.5.0) não empurra: a pessoa cambaleia
-    // (6.0.3) PASSANDO POR DENTRO de quem cambaleia: o jogador é empurrado de leve para o lado (como se raspasse no ombro dela)
+      if (B && !(B.esbarrao > 0.05)) { B.esbarrao = 0.6; if (!temRotina(B)) B.travaE = Math.max(B.travaE || 0, 0.6); } }   // não empurra: a pessoa cambaleia
+    // PASSANDO POR DENTRO de quem cambaleia: o jogador é empurrado de leve para o lado (como se raspasse no ombro dela)
     // e a pessoa continua cambaleando enquanto ele está "dentro" (senão ela voltaria a ter o corpo inteiro com ele no meio).
     if (moveu) for (const A of S.npcs) {
       if (A.oculto || A.sentado || A.deitado || !(A.esbarrao > 0.05)) continue;
@@ -2721,7 +2711,7 @@
       const px = J.x + sx * lado * f, pz = J.z + sz * lado * f;
       if (livre(px, pz)) { J.x = px; J.z = pz; }
     }
-    if (!S.dentro && (J.z < AV.z0 - 0.4 || J.z > AV.z1 + 0.4)) J.seguro = { x: J.x, z: J.z };   // (5.5.0) a última calçada (para o susto do carro)
+    if (!S.dentro && (J.z < AV.z0 - 0.4 || J.z > AV.z1 + 0.4)) J.seguro = { x: J.x, z: J.z };   // a última calçada (para o susto do carro)
     J.andando = moveu; J.correndo = moveu && corre; J.vel = vel; J.yawAlvo = Math.atan2(-dz, dx);
   }
   function tickJogador(dt) {
@@ -2736,6 +2726,12 @@
     if (J.comendo > 0) J.comendo -= dt;
     poseAtor(J, dt); poseCopo(J); poseFone(J, dt);
     J.anel.position.set(J.x, J.y + 0.03, J.z);
+  }
+  function passoCena(A, dt) {                                           // NPC de cutscene: segue A.rota (andar(A, pontos, vel))
+    if (!(A.rota && A.rota.length)) { A.andando = false; return; }
+    const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = (A.vel || 1.2) * dt;
+    if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; A.andando = false; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
+    else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; }
   }
   const andar = (A, pts, vel) => new Promise((ok) => { A.vel = vel || 2.2; A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.rotaRes = ok; });
   function tickPortao(dt) {
@@ -2779,7 +2775,8 @@
   }
   function atualizarCamera(dt) {
     const J = S.jog, C = S.cam, P = C.pitch || 0.48;
-    if (S.camParada) return;                                          // (5.0.0) cutscene das 2h: ele sai correndo da câmera
+    if (S.camParada) return;                                          // cutscene das 2h: ele sai correndo da câmera
+    if (S.camCena) { const c = S.camCena; camera.position.set(OX + c.px, c.py, c.pz); camera.lookAt(OX + c.tx, c.ty, c.tz); return; }   // câmera fixa de cena (encontro)
     const tx = J.x, ty = J.y + 1.35, tz = J.z;
     C.dAt = C.snap ? C.dist : C.dAt + (C.dist - C.dAt) * (1 - Math.exp(-dt * 4)); C.snap = false;
     const ux = Math.sin(C.yaw) * Math.cos(P), uy = Math.sin(P), uz = Math.cos(C.yaw) * Math.cos(P);
@@ -2821,7 +2818,7 @@
     const A = typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio.ctx : null; if (!A) return;
     try { const t0 = A.currentTime; [660, 880].forEach((f, i) => { const o = A.createOscillator(), g = A.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.08, t0 + i * 0.12); g.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.12 + 0.2); o.connect(g); g.connect(A.destination); o.start(t0 + i * 0.12); o.stop(t0 + i * 0.12 + 0.22); }); } catch (e) { /* sem som */ }
   }
-  // ------------------------------------------------------------------ (5.1.0) PONTOS NOMEADOS: lugares sem placa (lago, societys, várzea) ganham
+  // ------------------------------------------------------------------ PONTOS NOMEADOS: lugares sem placa (lago, societys, várzea) ganham
   // um nome quando o jogador chega perto deles pela primeira vez (fica guardado; o mapa passa a escrever o nome ali). As casas de NPCs
   // nomeados (ver montarMoradores) são diferentes: elas só mostram o nome quando algo específico revelar (ver revelarCasaNPC), exceto a
   // do seu Valdemar, que já tem placa "VALDEMAR" plantada no mundo (então não faz sentido escondê-la no mapa).
@@ -2862,8 +2859,8 @@
     if (S.aguaImg) g.drawImage(S.aguaImg, X(LAGO.cx - LAGO.rx * FORMA_MAX), Z(LAGO.cz - LAGO.rz * FORMA_MAX), LAGO.rx * 2 * FORMA_MAX * kx, LAGO.rz * 2 * FORMA_MAX * kz); else { g.fillStyle = '#4f9fd0'; g.fill(); }
     g.restore();
     for (const p of S.planta) { g.fillStyle = p.cor; g.fillRect(X(p.r.x0), Z(p.r.z0), (p.r.x1 - p.r.x0) * kx, (p.r.z1 - p.r.z0) * kz); if (!p.chao) { g.strokeStyle = 'rgba(42,18,6,0.85)'; g.lineWidth = 1; g.strokeRect(X(p.r.x0) + 0.5, Z(p.r.z0) + 0.5, (p.r.x1 - p.r.x0) * kx - 1, (p.r.z1 - p.r.z0) * kz - 1); } }
-    // (5.1.0) nomes descobertos (lago, societys, várzea) e casas de NPCs já reveladas
-    // (5.6.0) o nome fica numa CAIXINHA centralizada no lugar (fonte menor; quebra em até 2 linhas e nunca sai do mapa)
+    // nomes descobertos (lago, societys, várzea) e casas de NPCs já reveladas
+    // o nome fica numa CAIXINHA centralizada no lugar (fonte menor; quebra em até 2 linhas e nunca sai do mapa)
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = "bold 7px Silkscreen, 'Courier New', monospace";
     const rotulo = (x, z, txt) => {
       const pal = String(txt).split(' '), linhas = []; let at = '';
@@ -2893,13 +2890,13 @@
   function atualizarCoresMapa() { for (const b of UI.cores.children) b.classList.toggle('on', b.dataset.cor === (S.dados.corMarca || CORES_MARCA[0])); UI.remover.disabled = !S.marca; }
   const som = () => { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); };
 
-  // ------------------------------------------------------------------ (4.9.3) INTERAGIR: sentar em bancos/cadeiras/banquetas, o balcão do seu Valdemar e o hospital
-  // (4.9.4) as portas dos lugares (do lado de fora, na calçada) e o nome de cada um
+  // ------------------------------------------------------------------ INTERAGIR: sentar em bancos/cadeiras/banquetas, o balcão do seu Valdemar e o hospital
+  // as portas dos lugares (do lado de fora, na calçada) e o nome de cada um
   const PORTAS = [
     { nome: 'cinema', x: -43.8, z: -4.4, sai: -Math.PI / 2 }, { nome: 'cafeteria', x: -24.7, z: -4.4, sai: -Math.PI / 2 }, { nome: 'supermercado', x: 45.0, z: -4.4, sai: -Math.PI / 2 },
     { nome: 'hospital', x: -104, z: -4.4, sai: -Math.PI / 2 }, { nome: 'bar', x: -100.2, z: 8.6, sai: Math.PI / 2 }, { nome: 'pizzaria', x: 1.2, z: 8.6, sai: Math.PI / 2 },
     { nome: 'restaurante', x: 23.6, z: 8.6, sai: Math.PI / 2 }, { nome: 'academia', x: 76.4, z: 8.6, sai: Math.PI / 2 },
-    { nome: 'esportiva', x: -75.5, z: 8.6, sai: Math.PI / 2 },                       // (5.6.0) Golaço Esportes
+    { nome: 'esportiva', x: -75.5, z: 8.6, sai: Math.PI / 2 },                       // Golaço Esportes
   ];
   const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', esportiva: 'Golaço Esportes' };
   // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
@@ -2916,32 +2913,48 @@
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
     const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
     const rnd = semente(P.nome.length * 31 + 7);
-    const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
-    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs, areaCli = [];                   // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
+    const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // no mercado quem cuida dos clientes é o mercado.js
+    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs, areaCli = [];                   // os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
-      if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // (5.2.0) a Lúcia só está lá das 7h50 às 20h
+      if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
       const A = p.marca === 'lucia' ? criarLucia(S.f2) : criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
       if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
       else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
       else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
-      if (p.marca === 'lucia') S.lucia = A;    // (5.1.0) a moça do caixa da cafeteria é a Lúcia Alves (ver falarComLucia)
+      if (p.marca === 'lucia') S.lucia = A;    // a moça do caixa da cafeteria é a Lúcia Alves (ver falarComLucia)
       S.npcs.push(A);
     }
+    const enc = encontroAgora(P.nome) ? reservarMesaEncontro(P.nome) : null;   // encontro com a Lúcia: a mesa dela fica reservada
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
-    if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
+    if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // Cadu, caixa, estoque (mercado.js)
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
+    if (enc) { enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL); }
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
     S.cam.yaw = 0; S.cam.dist = R.cam.dist; S.cam.pitch = R.cam.pitch; S.cam.snap = true;
     scene.background = new THREE.Color(R.fundo); if (scene.fog) { scene.fog.near = 200; scene.fog.far = 400; }
     UI.btnMapa.hidden = true; UI.seta.hidden = true; if (S.setaAlvo) S.setaAlvo.visible = false; S.setaAlvo = null; if (S.bola) S.bola.jx = null;
     await preto(false, 380);
+    if (enc) await cenaEncontroMesa(enc);
   }
-  // (5.0.0) FLUXO DE CLIENTES: a cidade lá fora fica parada, mas aqui dentro gente sai e, quando tem lugar vazio, entra outra.
+  // já estava lá dentro quando deu a hora: ela chega e senta (corte) e a cena começa
+  async function encontroComecaDentro() {
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.encontroRodando = true; S.jog.andando = false; S.jog.correndo = false;
+    await preto(true, 600);
+    const M = MESA_ENC[S.dentro.nome];
+    for (const A of S.npcs.slice()) if (A.cli && A.cli.a && Math.abs(A.cli.a.x - M.x) < 1 && Math.abs(A.cli.a.z - M.z) < 1) { A.cli.a.ocupado = null; descartarPessoa(A); }
+    const enc = reservarMesaEncontro(S.dentro.nome); if (!enc) { S.encontroRodando = false; await preto(false, 400); liberar(); return; }
+    enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL);
+    if (S.jog.sentado) levantar();
+    const e = S.dentro.entrada; S.jog.x = e.x; S.jog.z = e.z; S.jog.yaw = S.jog.yawAlvo = e.yaw;
+    await preto(false, 600);
+    await cenaEncontroMesa(enc);
+  }
+  // FLUXO DE CLIENTES: a cidade lá fora fica parada, mas aqui dentro gente sai e, quando tem lugar vazio, entra outra.
   // Segunda a quarta: vazio (pouca gente) · quinta: médio · sexta a domingo: cheio (só 2 a 4 lugares vazios). NUNCA lota (sempre 2+ vazios).
   const FLUXO_SEM = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'];
-  const SEM_FLUXO = { hospital: 1, academia: 1, esportiva: 1 };           // (5.6.0) a loja esportiva fica vazia por enquanto
+  const SEM_FLUXO = { hospital: 1, academia: 1, esportiva: 1 };           // a loja esportiva fica vazia por enquanto
   function alvoClientes(n) {
     if (n <= 2) return 0;
     const f = FLUXO_SEM[diaSemana()], v = f === 'vazio' ? Math.round(n * 0.15) + 1 : f === 'medio' ? Math.round(n * 0.45) : n - (2 + Math.floor(Math.random() * 3));
@@ -2950,22 +2963,22 @@
   function montarFluxo(nome, lugares, area, ent) {
     const f = FLUXO_SEM[diaSemana()], F = { nome, lugares, area, ent, alvo: alvoClientes(lugares.length), alvoVaga: area ? (f === 'vazio' ? 2 : f === 'medio' ? 4 : 7) : 0, prox: 3 + Math.random() * 4 };
     const livres = lugares.slice().sort(() => Math.random() - 0.5);
-    if (nome === lugarDoEmprego() || (nome === 'cafeteria' && !S.lucia)) return F;   // (5.3.0) o lugar do emprego começa vazio; (6.0.0) a cafeteria só se estiver fechada
+    if (nome === lugarDoEmprego() || (nome === 'cafeteria' && !S.lucia)) return F;   // o lugar do emprego começa vazio; a cafeteria só se estiver fechada
     const cafe = nome === 'cafeteria';
     for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70;   // já tem gente quando ele entra, cada um num ponto da visita
-      if (cafe) { darCopo(A, Math.floor(Math.random() * 4)); A.cli.pagou = true; A.bebe = A.cli.t; } }   // (6.0.0) na cafeteria: já com o café na mão
+      if (cafe) { darCopo(A, Math.floor(Math.random() * 4)); A.cli.pagou = true; A.bebe = A.cli.t; } }   // na cafeteria: já com o café na mão
     for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
     return F;
   }
   function novoCliente(a, jaDentro) {
     const e0 = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = criarPessoa(S.f2, Math.random, Math.random() < 0.5);
-    const e = { x: e0.x, z: e0.z, yaw: e0.yaw != null ? e0.yaw : ((S.dentro && S.dentro.entrada && S.dentro.entrada.yaw) || Math.PI / 2) };   // (6.0.0) a porta "do lado" não tinha yaw: o ângulo virava NaN e o cliente ficava INVISÍVEL até sentar
+    const e = { x: e0.x, z: e0.z, yaw: e0.yaw != null ? e0.yaw : ((S.dentro && S.dentro.entrada && S.dentro.entrada.yaw) || Math.PI / 2) };   // a porta "do lado" não tinha yaw: o ângulo virava NaN e o cliente ficava INVISÍVEL até sentar
     A.tipo = 'cliente'; A.cli = { a, fase: 'ir', t: 40 + Math.random() * 70, rota: null }; A.vel = 1.1 + Math.random() * 0.3;
     if (a) {
       a.ocupado = A;
       if (jaDentro) { A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.cli.fase = 'fica'; }
       else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = e.yaw; const q = pontoLev(a, A); A.cli.rota = [{ x: q.x, z: q.z }];
-        if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && S.lucia) { A.cli.fase = 'pedir'; A.cli.depois = [{ x: q.x, z: q.z }]; A.cli.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; A.cli.tp = 0; } }   // (5.5.0) pede no caixa antes
+        if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && S.lucia) { A.cli.fase = 'pedir'; A.cli.depois = [{ x: q.x, z: q.z }]; A.cli.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; A.cli.tp = 0; } }   // pede no caixa antes
     } else {
       const ar = (S.fluxo && S.fluxo.area) || { x0: e.x - 2, x1: e.x + 2, z0: e.z - 3, z1: e.z }; A.area = ar; A.cli.fase = 'fica';
       if (jaDentro) { A.x = ar.x0 + Math.random() * (ar.x1 - ar.x0); A.z = ar.z0 + Math.random() * (ar.z1 - ar.z0); } else { A.x = e.x; A.z = e.z; }
@@ -2980,7 +2993,7 @@
     A.m.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
   }
   function tickFluxo(dt) {
-    const F = S.fluxo; if (!F || S.turno || S.turnoMercado || F.nome === lugarDoEmprego()) return;     // (5.2.0) no turno quem manda os clientes é o tickTurno; (5.3.0) no lugar do emprego só há clientes no turno
+    const F = S.fluxo; if (!F || S.turno || S.turnoMercado || F.nome === lugarDoEmprego()) return;     // no turno quem manda os clientes é o tickTurno; no lugar do emprego só há clientes no turno
     F.prox -= dt;
     if (F.prox <= 0) {
       F.prox = 5 + Math.random() * 9; const e = F.ent;
@@ -2995,7 +3008,7 @@
   }
   function tickCliente(A, dt) {
     const C = A.cli, e = S.fluxo ? S.fluxo.ent : S.dentro.entrada;
-    if (C.fase === 'pedir') {                                         // (5.5.0) cafeteria sem turno: pede para a Lúcia, paga e recebe o café
+    if (C.fase === 'pedir') {                                         // cafeteria sem turno: pede para a Lúcia, paga e recebe o café
       if (seguir(A, C.rota, A.vel, dt)) {
         A.andando = false; A.yawAlvo = Math.PI / 2; C.tp += dt; A.fala = C.tp < 1.4;
         if (S.lucia) S.lucia.fala = C.tp > 1.4 && C.tp < 2.6;
@@ -3010,59 +3023,60 @@
       if (C.t <= 0) {
         if (C.a) { const p = pontoLev(C.a, A); A.sentado = false; A.assento = 0.52; A.x = p.x; A.z = p.z; C.a.ocupado = null; C.a = null; A.fala = false; S.conversas = S.conversas.filter((K) => K.a !== A && K.b !== A); }
         const sd = (S.dentro && S.dentro.saida) || e;
-        if (C.pedido && !C.semPagar && !C.pagou) { C.fase = 'caixa'; C.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; C.tc = 0; }   // (5.2.0) vai pagar no caixa
+        if (C.pedido && !C.semPagar && !C.pagou) { C.fase = 'caixa'; C.rota = [{ x: CAIXA_CLI.x, z: CAIXA_CLI.z + 0.4 }, { x: CAIXA_CLI.x, z: CAIXA_CLI.z }]; C.tc = 0; }   // vai pagar no caixa
         else { C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; }
       }
       if (A.bebe > 0) { A.bebe -= dt; if (A.bebe <= 0) tirarCopo(A); }
-    } else if (C.fase === 'caixa') {                                 // (5.2.0) no caixa: vira para a Lúcia, a registradora toca e ele vai embora
+    } else if (C.fase === 'caixa') {                                 // no caixa: vira para a Lúcia, a registradora toca e ele vai embora
       if (seguir(A, C.rota, A.vel, dt)) { A.andando = false; A.yawAlvo = Math.PI / 2; C.tc += dt; if (C.tc > 0.6 && !C.pagou) { C.pagou = true; SomCafe.caixa(); } if (C.tc > 1.6) { const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; } }
     } else if (C.fase === 'sai') {                                   // sai pela porta (some perto dela; não espera o jogador sair da frente)
       C.tSai = (C.tSai || 0) + dt; const q = C.rota[C.rota.length - 1] || e;
       if (seguir(A, C.rota, A.vel, dt) || Math.hypot(A.x - q.x, A.z - q.z) < 1.1 || C.tSai > 14) descartarPessoa(A);
     }
   }
-  async function sairDoLugar() {
+  async function sairDoLugar(semClarear) {
     const F = S.fora, J = S.jog; if (!F) return;
     await preto(true, 380);
-    if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
+    if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();
     if (J.sentado) levantar();
     for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
     const g = S.grupo; scene.remove(g);
     g.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
     Object.assign(S, { col: F.col, circ: F.circ, pisos: F.pisos, assentos: F.assentos, npcs: F.npcs, conversas: F.conversas, camBox: F.camBox, oclusores: F.oclusores, grupo: F.grupo });
-    S.dentro = null; S.fora = null; S.fluxo = null; S.lucia = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;   // (5.1.0) S.lucia só existe dentro da cafeteria; já foi descartada junto do grupo acima
+    S.dentro = null; S.fora = null; S.fluxo = null; S.lucia = null; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;   // S.lucia só existe dentro da cafeteria; já foi descartada junto do grupo acima
     const P = F.porta; J.x = P.x + Math.cos(P.sai) * 0.4; J.z = P.z - Math.sin(P.sai) * 0.4; J.yaw = J.yawAlvo = P.sai; J.y = altura(J.x, J.z);
     Object.assign(S.cam, F.cam); S.cam.snap = true;
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
-    { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // (4.9.5) passou a hora lá dentro: o seu Valdemar já está onde deveria
+    { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
-    montarRuaMercado();                                                // (5.4.0) se o mercado.js chegou com o jogador lá dentro
-    await preto(false, 380);
+    montarRuaMercado();                                                // se o mercado.js chegou com o jogador lá dentro
+    if (semClarear !== true) await preto(false, 380);
   }
   function alvos() {
     const J = S.jog, v = [];
     if (J.sentado) {
-      if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // (4.9.5) sentado no balcão: "Valdemar" ou "Sair"
+      if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // sentado no balcão: "Valdemar" ou "Sair"
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
-    if (!S.turno && !S.turnoMercado) for (const a of S.assentos) if (!a.ocupado) {      // (5.2.0) no turno ele trabalha: nada de sentar
+    if (!S.turno && !S.turnoMercado) for (const a of S.assentos) if (!a.ocupado) {      // no turno ele trabalha: nada de sentar
       if (a.lanche && !lojaAberta()) { v.push({ x: a.x, z: a.z, r: 1.15, txt: T('Lanche fechado. Abre às 8h.'), fn: async () => {}, y: a.h + 1.3 }); continue; }
       v.push({ x: a.x, z: a.z, r: 1.15, txt: a.lanche ? T('Sentar no balcão') : T('Sentar'), fn: () => sentar(a), y: a.h + 1.3 });
     }
-    if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: T('Entrar no prédio'), fn: entrarNoPredio, y: 2.7 });       // (4.9.5) dá para voltar ao prédio (e ao apartamento) a qualquer hora
+    if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: S.luciaPredio ? T('Encontrar a Lúcia') : T('Entrar no prédio'), fn: S.luciaPredio ? cenaEncontroPredio : entrarNoPredio, y: 2.7 });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
+    if (!S.dentro && S.luciaPredio) v.push({ x: S.luciaPredio.x, z: S.luciaPredio.z, r: 2.2, txt: T('Encontrar a Lúcia'), fn: cenaEncontroPredio, y: 2.6, pri: true });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
       const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
-      if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);    // (5.3.1)
+      if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
-        v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // (5.1.0) acao:'caixa' = caixa da cafeteria (Lúcia Alves)
+        v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
     } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); for (const P of PORTAS) {
-      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
-      if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
+      if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
+      if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     } }
     return v;
@@ -3070,7 +3084,7 @@
   function alvoAtual() {
     if (!S || S.modo !== 'livre') return null;
     const J = S.jog; let best = null, bs = 1e9;
-    for (const a of alvos()) { const d = Math.hypot(a.x - J.x, a.z - J.z); if (d > a.r) continue; const sc = d - (a.pri ? 1 : 0); if (sc < bs) { bs = sc; best = a; } }   // (5.2.0) pri: alvos do turno ganham dos outros
+    for (const a of alvos()) { const d = Math.hypot(a.x - J.x, a.z - J.z); if (d > a.r) continue; const sc = d - (a.pri ? 1 : 0); if (sc < bs) { bs = sc; best = a; } }   // pri: alvos do turno ganham dos outros
     return best;
   }
   function atualizarAlvo() {
@@ -3085,7 +3099,7 @@
     if (!S || S.modo !== 'livre') return;
     const a = alvoAtual(); if (!a) return;
     som(); S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
-    S.jog.andando = false; S.jog.correndo = false;     // (5.1.0) sem isto, interagir andando/correndo deixava a animação "correndo" travada até a cena acabar
+    S.jog.andando = false; S.jog.correndo = false;     // sem isto, interagir andando/correndo deixava a animação "correndo" travada até a cena acabar
     try { await a.fn(a); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena' && UI.ficha.hidden) liberar();
   }
@@ -3103,7 +3117,7 @@
     if (S.fimRes) S.fimRes();
   }
   async function menuBalcao() {
-    const i = await Escolha.mostrar(T('No balcão'), [T('Valdemar'), T('Sair')], { centro: true });   // (5.1.0) no balcão do lanche fica no meio da tela, não embaixo
+    const i = await Escolha.mostrar(T('No balcão'), [T('Valdemar'), T('Sair')], { centro: true });   // no balcão do lanche fica no meio da tela, não embaixo
     if (i === 0) { if (S.valdemar && !S.valdemar.oculto) await atendimento(); }
     else levantar();
   }
@@ -3113,8 +3127,8 @@
     J.sentado = false; J.x = p.x; J.z = p.z; if (a) a.ocupado = null; S.sentadoEm = null; tirarLanche(J);
   }
   async function fala(quem, texto) {
-    // (5.1.0) quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
-    const X = S.falantesExtra && S.falantesExtra[quem];                // (5.3.1) falantes de outros arquivos (ex.: o Cadu do mercado.js)
+    // quem==='lucia': a Lúcia Alves, no caixa da cafeteria (ver falarComLucia); mesma voz dela na Fase 1 (SPOT/NOMES.lucia lá no fase1.js)
+    const X = S.falantesExtra && S.falantesExtra[quem];                // falantes de outros arquivos (ex.: o Cadu do mercado.js)
     const A = X ? X.A : quem === 'jog' ? S.jog : quem === 'val' ? S.valdemar : quem === 'lucia' ? S.lucia : quem === 'caio' ? S.caio : null;
     if (A) A.fala = true;
     const nome = X ? X.nome : quem === 'jog' ? nomeJog() : quem === 'val' ? T('Seu Valdemar') : quem === 'lucia' ? T('Lúcia Alves') : quem === 'joao' ? T('João') : quem === 'caio' ? 'Caio' : '';
@@ -3123,7 +3137,7 @@
     if (A) A.fala = false;
   }
 
-  // ------------------------------------------------------------------ (4.9.3) o cardápio do seu Valdemar, a FOME do dia e o dinheiro
+  // ------------------------------------------------------------------ o cardápio do seu Valdemar, a FOME do dia e o dinheiro
   // enche = quanto tira da fome (a fome do dia vale 2). Tudo daqui é comida NÃO saudável.
   const CARDAPIO = [
     { id: 'podrao', nome: 'X-podrão', preco: 20, enche: 1 },
@@ -3138,15 +3152,15 @@
     d.dia = d.dia || 1; d.mes = d.mes || 1;
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
-    if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // (5.1.0) libera o expediente de novo a cada dia; (5.4.3) só num dia NOVO (antes voltar do prédio liberava trabalhar de novo)
+    if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // libera o expediente de novo a cada dia; só num dia NOVO
   }
-  const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // (5.0.0) cliente fiel: −20% em tudo
+  const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // cliente fiel: −20% em tudo
   async function atendimento() {
     const d = S.dados, V = S.valdemar, J = S.jog;
     V.yawAlvo = Math.atan2(-(J.z - V.z), J.x - V.x);
     if (!d.conheceValdemar) { await fala('val', T('Opa, freguês novo! Eu sou o Valdemar, prazer. Aqui é o melhor lanche da cidade!')); d.conheceValdemar = true; }
     await fala('val', T('E aí, o que vai ser hoje?'));
-    const cheio = (d.fome || 0) <= 0;                                // (5.0.0) satisfeito ainda pode pedir (e aí exagera)
+    const cheio = (d.fome || 0) <= 0;                                // satisfeito ainda pode pedir (e aí exagera)
     if (cheio) await fala('jog', T('Eu já tô satisfeito... mas bem que cabia mais um.'));
     Dialogo.esconder();
     const i = await cardapio(d.fakes);
@@ -3157,13 +3171,13 @@
     d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
     await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder();
     await esperar(1400);
-    darLanche(J, c.id);                                              // (6.0.4) o lanche aparece entre as mãos
+    darLanche(J, c.id);                                              // o lanche aparece entre as mãos
     J.comendo = 3.6; await esperar(3700);
-    for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);   // (6.0.4) o relógio do jogo pode andar mais devagar que o de parede: o lanche some junto com a pose de comer
+    for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);   // o relógio do jogo pode andar mais devagar que o de parede: o lanche some junto com a pose de comer
     tirarLanche(J);
     d.fome = Math.max(0, (d.fome || 0) - c.enche);
-    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // (5.2.0) some o ícone da coxinha
-    Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // (5.0.0) cada lanche: 2 de "não saudável"
+    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // some o ícone da coxinha
+    Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // cada lanche: 2 de "não saudável"
     if (cheio) Espectros.mover('saudavel', -4, 'comeu sem fome');                                    // comeu satisfeito: mais 4
     d.diasValdemar = d.diasValdemar || []; if (!d.diasValdemar.includes(d.dia)) d.diasValdemar.push(d.dia);
     if (S.missao) { S.missao = ''; recolherMissao(); }
@@ -3174,7 +3188,7 @@
     if (Sono.deveAvisarSaude()) await fala('jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....'));
     Dialogo.esconder();
   }
-  // (5.0.0) passou mal: inclina, põe as mãos nos joelhos e vomita (partículas verdes e uma poça que some depois)
+  // passou mal: inclina, põe as mãos nos joelhos e vomita (partículas verdes e uma poça que some depois)
   async function vomitar() {
     const J = S.jog; S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
     if (J.sentado) levantar();
@@ -3199,7 +3213,7 @@
   function gotaVomito(J) {
     const P = S.vomGeo || (S.vomGeo = { g: guardar(new THREE.BoxGeometry(0.06, 0.06, 0.06)), m: [0x9ab83a, 0xc8c25a, 0x7a9a2a].map((c) => guardar(new THREE.MeshBasicMaterial({ color: c }))) });
     const fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw), es = J.opt.escala || 1;
-    // (5.1.0) de onde sai o vômito: a pose "vomita" (poseAtor) dobra o CORPO (tronco + cabeça) -0,6 rad para a frente, em torno do
+    // de onde sai o vômito: a pose "vomita" (poseAtor) dobra o CORPO (tronco + cabeça) -0,6 rad para a frente, em torno do
     // quadril. A cabeça fica fixa em (x 0,02, y 1,36) dentro do tronco; giramos esse mesmo ponto pelo mesmo ângulo para achar onde a
     // boca realmente fica no mundo, em vez de um valor fixo "no olho" (que estava saindo perto da barriga, não da boca).
     const DOBRA = 0.6, cb = Math.cos(DOBRA), sb = Math.sin(DOBRA);
@@ -3213,13 +3227,13 @@
     } else if (S.poca.t < 3) { const k = Math.min(1, S.poca.m.scale.x + 0.02); S.poca.m.scale.set(k, k * 0.8, 1); }
   }
 
-  // ------------------------------------------------------------------ (5.1.0) CAFETERIA: o emprego da Lúcia Alves (Merge Game)
+  // ------------------------------------------------------------------ CAFETERIA: o emprego da Lúcia Alves (Merge Game)
   //   Lê o que a Fase 1 deixou salvo (historia.fase1.lucia / .mariposa) para saber como ela reconhece o jogador, e o que a Fase 2
   //   deixou salvo (historia.fase2.emprego) para só liberar o turno quem escolheu trabalhar na cafeteria. O "dia" e a "hora" do
   //   expediente (8h–16h) são só para liberar a conversa: o turno em si é o próprio Merge Game, e ao sair dele a hora pula pra
   //   16h e paga 50 fakes (um valor fixo por dia, não por pedido — ver turnoTrabalho).
-  // (5.3.1) o que o mercado.js (trabalho no mercado) usa daqui. Tudo por função: assim ele sempre vê o S atual.
-  function montarRuaMercado() {                                       // (5.4.0) Cadu e Rosa andando entre a casa e o mercado (precisa estar na rua: o grupo é o da cidade)
+  // o que o mercado.js (trabalho no mercado) usa daqui. Tudo por função: assim ele sempre vê o S atual.
+  function montarRuaMercado() {                                       // Cadu e Rosa andando entre a casa e o mercado (precisa estar na rua: o grupo é o da cidade)
     if (!S || !S.mercado || !S.mercado.montarRua || S.ruaMercadoOk || S.dentro) return;
     S.ruaMercadoOk = true; try { S.mercado.montarRua(); } catch (e) { console.warn('[Cidade] rua do mercado:', e); }
   }
@@ -3229,8 +3243,8 @@
       S: () => S, UI: () => UI, historia: () => API.historia, fala, aviso, esperar, preto, liberar, gravar, som,
       somDinheiro, ganhoNaTela, mostrarDinheiro, somCaixa: () => SomCafe.caixa(), criarPessoa, atorDe, poseAtor, seguir, livreNPC, descartarPessoa,
       guardar, Geo, MAT, texCanvas, fmtHora, H_POR_S, sairDoLugar, diaSemana, nomeJog, empregoEscolhido, levantar,
-      fimDeSemana, fut,                                                  // (5.3.1) regras da 5.3.0: sem trabalho no fim de semana; futebol
-      painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV,    // (5.4.0) painel que vira ícone; Cadu e Rosa na rua
+      fimDeSemana, fut,                                                  // regras: sem trabalho no fim de semana; futebol
+      painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
     };
   }
   function fase1Lucia() {
@@ -3251,7 +3265,7 @@
     { nome: 'Cappuccino com borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: false, chocBorda: true },
     { nome: 'Cappuccino com chantilly e borda de chocolate', cor: '#e8d0a8', creme: true, cacau: true, chantilly: true, chocBorda: true },
   ];
-  // (5.1.1) xícaras em pixel art 24x24, uma silhueta para cada fase do café: a xícara cresce com o nível (cafezinho pequeno →
+  // xícaras em pixel art 24x24, uma silhueta para cada fase do café: a xícara cresce com o nível (cafezinho pequeno →
   // caneca de café com leite → xícara de cremoso → xícara larga de cappuccino), com sombra na louça, espuma, arte no leite,
   // borda e pingos de chocolate, torre de chantilly (com calda no último) e vapor nos que estão quentes e sem cobertura.
   function iconeCafezinho(tier, px) {
@@ -3321,11 +3335,28 @@
     cv.style.cssText = 'width:' + (px || '84%') + ';height:auto;aspect-ratio:1;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
     return cv;
   }
+  // ================================================================== AMIZADE (0 a 100) com os personagens da cidade
+  //   Fica em S.dados.amizade = { lucia: 12, ... }. Amizade.valor(id) / somar(id, n) / definir(id, v) — qualquer NPC usa o mesmo sistema.
+  //   O ponto de partida de cada um vem de BASE_AMIZADE (a Lúcia: +5 por cada interação boa na escola, na Fase 1).
+  const BASE_AMIZADE = { lucia: () => { const f = fase1Lucia(); return (f.mariposa ? 5 : 0) + (f.falou ? 5 : 0); } };
+  const NOME_AMIGO = { lucia: 'Lúcia' };
+  const Amizade = {
+    tabela() { const d = S.dados; return d.amizade || (d.amizade = {}); },
+    valor(id) { const A = this.tabela(); if (A[id] == null) A[id] = clamp(BASE_AMIZADE[id] ? BASE_AMIZADE[id]() : 0, 0, 100); return A[id]; },
+    definir(id, v) { const A = this.tabela(); A[id] = clamp(Math.round(v), 0, 100); return A[id]; },
+    somar(id, n, mostrar = true) { const ant = this.valor(id), v = this.definir(id, ant + n); if (mostrar && v !== ant) amizadeNaTela(id, v - ant); return v; },
+  };
+  function amizadeNaTela(id, n) {                  // "♥ +2 Lúcia" rosa subindo
+    const pai = (UI && UI.hud && UI.hud.parentNode) || document.getElementById('raizJogo') || document.body;   // (também na fase2.js, sem a tela da cidade)
+    const el = document.createElement('div'); el.textContent = '♥ ' + (n > 0 ? '+' : '') + n + ' ' + (NOME_AMIGO[id] || id);
+    el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(92px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 15px/1 var(--font-display);color:#ff8fc0;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.4s ease,opacity 1.4s ease;';
+    pai.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%,-26px)'; el.style.opacity = '0'; }, 700); setTimeout(() => el.remove(), 2300);
+  }
   function ganhoNaTela(v) {                        // "+v" verde subindo (o oposto do gastoNaTela, que é vermelho e desce)
     const el = document.createElement('div'); el.textContent = '+' + v; el.style.cssText = 'position:fixed;z-index:12;right:max(60px,env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));font:700 16px/1 var(--font-display);color:#8fe04a;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.2s ease,opacity 1.2s ease;';
     UI.hud.parentNode.appendChild(el); requestAnimationFrame(() => { el.style.transform = 'translateY(-22px)'; el.style.opacity = '0'; }); setTimeout(() => el.remove(), 1300);
   }
-  // ================================================================== (5.2.0) O EXPEDIENTE NA CAFETERIA (Merge Game de verdade)
+  // ================================================================== O EXPEDIENTE NA CAFETERIA (Merge Game de verdade)
   //   Os clientes entram, sentam e mostram num balãozinho o café que querem (com "!" enquanto ninguém anotou). O jogador vai até a mesa
   //   e ANOTA o pedido; na BANCADA DE PREPARO (parede oeste) abre o joguinho de juntar cafés. A grade fica guardada o turno inteiro.
   //   Quando sai do joguinho o café de um pedido anotado, ele vai para a MÃO do jogador (o jogo fecha sozinho) e é só levar até o
@@ -3362,7 +3393,7 @@
       if (soma > 0 && livres.length) {
         let r = Math.random() * soma, tier = 0; for (let t = 0; t < ok.length; t++) { r -= ok[t]; if (r <= 0) { tier = t; break; } }
         const e = S.fluxo.ent, pe = [[0, 0], [1.1, 0], [-1.1, 0], [0, -1.1]].map(([dx, dz]) => ({ x: e.x + dx, z: e.z + dz, yaw: e.yaw })).find((q) => Math.hypot(q.x - S.jog.x, q.z - S.jog.z) > 0.9) || e;
-        S.fluxo.entAgora = pe;                                               // (5.2.1) não nasce "dentro" do jogador parado na porta
+        S.fluxo.entAgora = pe;                                               // não nasce "dentro" do jogador parado na porta
         const A = novoCliente(livres[Math.floor(Math.random() * livres.length)], false);
         A.cli.t = 1e9; A.cli.pedido = { tier, estado: 'chegando' }; A.oculto = false; S.meus.add(A.m); A.m.raiz.visible = true; SomCafe.sino();
       }
@@ -3412,18 +3443,18 @@
     const m = G.malha(MAT); m.rotation.z = -1.55; m.position.set(0.12, -0.27, 0);
     J.m.bracoD.cotovelo.add(m); J.copo = m;
   }
-  // (5.2.1) a xícara na mão de um cliente: um pivô na mão que fica sempre de pé (poseAtor desfaz o giro do braço)
-  // (6.0.0) a bebida agora é a PIXEL ART do próprio café (iconeCafezinho, a mesma do balcão), num sprite que sempre olha para a câmera.
+  // a xícara na mão de um cliente: um pivô na mão que fica sempre de pé (poseAtor desfaz o giro do braço)
+  // a bebida agora é a PIXEL ART do próprio café (iconeCafezinho, a mesma do balcão), num sprite que sempre olha para a câmera.
   //   No gole ela fica colada na frente da boca (como o cigarro do vizinho), sem entrar no rosto.
   function darCopo(A, tier) {
     tirarCopo(A);
     const tex = new THREE.CanvasTexture(iconeCafezinho(tier));
     tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 }));
-    sp.scale.set(0.36, 0.36, 1); sp.position.set(0.02, 0.09, 0);
+    sp.scale.set(0.4, 0.4, 1); sp.position.set(0.02, 0.09, 0); sp.center.set(0.08, 0.5);   // 10% maior e deslocado para a direita na tela (não cobre o rosto)
     const piv = new THREE.Group(); piv.position.set(0.03, -0.3, 0); piv.add(sp); A.m.bracoD.cotovelo.add(piv); A.copoCli = piv; A.copoSprite = sp;
   }
-  // (6.0.4) o LANCHE na mão: a mesma pixel art do cardápio (iconePx), num sprite que olha para a câmera, preso ao tronco ENTRE as duas mãos
+  // o LANCHE na mão: a mesma pixel art do cardápio (iconePx), num sprite que olha para a câmera, preso ao tronco ENTRE as duas mãos
   // (elas sobem juntas até a boca na pose "comendo" do poseAtor). Sai quando termina de comer.
   function darLanche(A, id) {
     tirarLanche(A);
@@ -3470,11 +3501,11 @@
     S.jog.yawAlvo = Math.atan2(-(A.z - S.jog.z), A.x - S.jog.x);
     U.naMao = -1; copoNaMao(-1); SomCafe.entregar();
     P.estado = 'feliz'; atualizarBalao(A); U.anotados = U.anotados.filter((q) => q !== A);
-    const gorjeta = 1 + Math.floor(Math.random() * 3);                 // (5.2.1) gorjeta aleatória de 1 a 3 fakes, na hora
+    const gorjeta = 1 + Math.floor(Math.random() * 3);                 // gorjeta aleatória de 1 a 3 fakes, na hora
     U.atendidos++; U.gorjetas += gorjeta; d.fakes += gorjeta;
     await esperar(350); somDinheiro(); ganhoNaTela(gorjeta); mostrarDinheiro(true);
     aviso(Tf('Gorjeta: +{0} fakes!', gorjeta)); setTimeout(() => { if (S && UI) aviso(''); }, 1800);
-    darCopo(A, P.tier); A.bebe = 4.6; A.cli.t = 5.4;                 // (5.2.1) toma o café (poseAtor: bebendo) e depois vai pagar no caixa (tickCliente)
+    darCopo(A, P.tier); A.bebe = 4.6; A.cli.t = 5.4;                 // toma o café (poseAtor: bebendo) e depois vai pagar no caixa (tickCliente)
     setTimeout(() => { if (A.cli && A.cli.pedido) A.cli.pedido.estado = 'feito'; if (A.balao) A.balao.visible = false; }, 1600);
     atualizarPainelTurno();
   }
@@ -3583,7 +3614,7 @@
     UI.turno = p; UI.turnoTxt = p.querySelector('.tTxt'); UI.turnoMao = p.querySelector('.tMao'); UI.turnoAcel = p.querySelector('.tAcel');
     UI.turnoAcel.textContent = T('Acelerar final do turno');
     UI.turnoAcel.onclick = () => { if (S && S.modo === 'livre' && S.turno && !S.turno.fim) { som(); S.modo = 'cena'; UI.ctl.hidden = true; acelerarTurno().finally(() => { if (S && S.ativo && S.modo === 'cena') liberar(); }); } };
-    painelRecolhivel(p);                                               // (5.4.0) aparece uma vez e vira o ícone "!"
+    painelRecolhivel(p);                                               // aparece uma vez e vira o ícone "!"
   }
   function atualizarPainelTurno() {
     const U = S.turno; if (!U || !UI.turno) return;
@@ -3602,7 +3633,7 @@
     const U = S.turno, d = S.dados; if (!U || U.fim) return; U.fim = true;
     S.trabalhando = false; MusicaCafe.parar(); copoNaMao(-1);
     for (const A of S.npcs) if (A.cli && A.cli.pedido) { if (A.balao) A.balao.visible = false; if (A.cli.pedido.estado !== 'feliz' && A.cli.pedido.estado !== 'feito') { A.cli.pedido.estado = 'feito'; A.cli.semPagar = true; A.cli.t = Math.min(A.cli.t, 1 + Math.random() * 4); } }
-    if (UI.turno) fimPainel(UI.turno);                                  // (5.4.0)
+    if (UI.turno) fimPainel(UI.turno);
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
     const paga = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos);
     d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
@@ -3616,7 +3647,7 @@
     S.turno = null; try { Musica.tocar('jazz'); } catch (e) { /* sem música */ }
     if (!espera && S && S.ativo && S.modo === 'cena') liberar();
   }
-  // ================================================================== (5.2.0) SONS DA CAFETERIA (tudo sintetizado no WebAudio, como a música do jogo.js)
+  // ================================================================== SONS DA CAFETERIA (tudo sintetizado no WebAudio, como a música do jogo.js)
   //   Som.audio é { ctx, mestre }: o volume geral (e o "mudo") do jogo vale para tudo daqui.
   const audioCafe = () => (typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null);
   const SomCafe = (() => {
@@ -3735,7 +3766,7 @@
       get tocando() { return !!bus; },
     };
   })();
-  // (5.1.0) a conversa no caixa: três jeitos de ela reconhecer o jogador (ou não), e depois a oferta do turno
+  // a conversa no caixa: três jeitos de ela reconhecer o jogador (ou não), e depois a oferta do turno
   async function falarComLucia() {
     const d = S.dados, L = S.lucia, J = S.jog;
     if (L) L.yawAlvo = Math.atan2(-(J.z - L.z), J.x - L.x);
@@ -3743,13 +3774,16 @@
     if (funcionario) {
       if (!d.luciaApresentou) {
         const { mariposa, falou } = fase1Lucia();
-        if (mariposa) {
+        if (d.luciaContratou) {                                         // pediu demissão no encontro para trabalhar com ela
+          await fala('lucia', Tf(PERSONAGEM.genero === 'F' ? 'Bom dia, {0}! Minha funcionária nova chegou!' : 'Bom dia, {0}! Meu funcionário novo chegou!', nomeJog()));
+          await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
+        } else if (mariposa) {
           await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
           await fala('lucia', T('A quanto tempo você mora aqui?'));
           await fala('jog', T('Acabei de me mudar para a cidade.'));
           await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
-          const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')]);   // (6.0.5) uma caixa só, embaixo   // (5.1.0) caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
-          if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); }
+          const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?')]);   // uma caixa só, embaixo   // caixa da cafeteria: igual ao balcão do Valdemar, menu no meio da tela
+          if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); Amizade.somar('lucia', 5); }   // ela fica com vergonha: +5
           else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
         } else if (falou) {
           const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')]);
@@ -3758,37 +3792,43 @@
           await fala('lucia', T('Você me parece familiar, mas não sei de onde... Enfim, deixa eu te explicar como funciona o trabalho aqui.'));
         }
         await fala('lucia', T('O expediente é das 8h às 16h. Os clientes sentam e mostram o que querem: vá até a mesa, anote o pedido e prepare na bancada, juntando dois cafés iguais para subir de nível. Depois é só levar até o cliente!'));
-        await fala('lucia', Tf('Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.', PAGA_BASE, PAGA_PEDIDO));   // (5.1.1)
+        await fala('lucia', Tf('Você ganha {0} fakes pelo dia e mais {1} por pedido atendido.', PAGA_BASE, PAGA_PEDIDO));
         d.luciaApresentou = true; gravar('chegada');
       }
       if (d.luciaApresentou) d.luciaConheceu = true;
-    } else if (!d.luciaConheceu) await apresentacaoLuciaVisitante();      // (5.6.0) quem não trabalha lá também é reconhecido (sem falar de trabalho)
+    } else if (!d.luciaConheceu) await apresentacaoLuciaVisitante();      // quem não trabalha lá também é reconhecido (sem falar de trabalho)
     Dialogo.esconder();
     if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
-    if (d.hora >= H_CAFE_FECHA && d.hora < H_LUCIA_SAI) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
-    // (5.6.0) o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar
-    const ops = [['cafe', T('Comprar um café')]]; if (funcionario) ops.push(['trab', T('Sobre o trabalho')]); ops.push(['papo', T('Conversar')], ['tchau', T('Tchau')]);
+    if (d.hora >= cafeFecha() && d.hora < luciaSai()) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
+    // o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar, convidar para jogar, chamar para sair
+    const ops = [['cafe', T('Comprar um café')]]; if (funcionario) ops.push(['trab', T('Sobre o trabalho')]);
+    ops.push(['papo', T('Conversar')]);
+    if (jogosMistos().length) ops.push(['jogar', T('Convidar para jogar')]);
+    if (Amizade.valor('lucia') >= 50 && !encontroMarcado()) ops.push(['sair', T('Chamar para sair')]);
+    ops.push(['tchau', T('Tchau')]);
     const r = await Escolha.mostrar(T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]));
     Dialogo.esconder();
     const op = (ops[r] || [])[0];
     if (op === 'cafe') await comprarCafe();
     else if (op === 'trab') await trabalhoComLucia();
     else if (op === 'papo') await conversaLucia();
+    else if (op === 'jogar') await convidarLuciaJogar();
+    else if (op === 'sair') await chamarLuciaSair();
   }
   async function trabalhoComLucia() {
     const d = S.dados;
-    if (fimDeSemana() && empregoEscolhido() === 'cafeteria' && d.luciaApresentou) { await fala('lucia', T('Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!')); Dialogo.esconder(); return; }   // (5.3.0) sábado e domingo: sem turno
+    if (fimDeSemana() && empregoEscolhido() === 'cafeteria' && d.luciaApresentou) { await fala('lucia', T('Hoje é fim de semana, você não trabalha! Aproveita e descansa. Até segunda!')); Dialogo.esconder(); return; }   // sábado e domingo: sem turno
     if ((d.dia || 1) < 2) { await fala('lucia', T('Você só começa a trabalhar a partir de amanhã. Pode voltar aqui!')); Dialogo.esconder(); return; }
     if (d.trabalhouHoje) { await fala('lucia', T('Já fechamos o seu turno de hoje. Até amanhã!')); Dialogo.esconder(); return; }
     if (d.hora < H_TRAB_INI || d.hora >= H_TRAB_FIM) { await fala('lucia', T('O expediente é das 8h às 16h. Volta nesse horário!')); Dialogo.esconder(); return; }
-    if (d.precisaBanho) { await fala('lucia', T('Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?')); Dialogo.esconder(); return; }   // (5.3.0) sem banho, não trabalha
+    if (d.precisaBanho) { await fala('lucia', T('Nossa... você tá com cheiro de quem acabou de jogar bola! Passa em casa, toma um banho e depois volta, tá?')); Dialogo.esconder(); return; }   // sem banho, não trabalha
     const r = await Escolha.mostrar(T('Quer começar o seu turno agora?'), [T('Sim, vamos trabalhar'), T('Ainda não')]);
     Dialogo.esconder();
     if (r !== 0) return;
     await fala('lucia', T('Boa! Vou abrir as portas. Os clientes já vão chegar.')); Dialogo.esconder();
     iniciarTurno();
   }
-  // (5.6.0) a Lúcia reconhece quem NÃO trabalha na cafeteria (os mesmos 3 jeitos da Fase 1), sem falar de trabalho
+  // a Lúcia reconhece quem NÃO trabalha na cafeteria (os mesmos 3 jeitos da Fase 1), sem falar de trabalho
   async function apresentacaoLuciaVisitante() {
     const d = S.dados, { mariposa, falou } = fase1Lucia();
     if (mariposa) {
@@ -3797,6 +3837,7 @@
       await fala('jog', T('Acabei de me mudar para a cidade.'));
       const r = await Escolha.mostrar(T('Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!'), [T('Eu também fico feliz de ver você'), T('Você trabalha aqui faz tempo?')]);
       await fala('lucia', r === 0 ? T('A-ah... é... eu também, viu?') : T('Faz uns dois anos. O cheiro de café nem sai mais de mim, haha.'));
+      if (r === 0) Amizade.somar('lucia', 5);                        // ela fica com vergonha: +5
     } else if (falou) {
       const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro')]);
       await fala('lucia', r0 === 0 ? T('Que bom te ver de novo!') : T('Ah... tudo bem, faz tempo mesmo.'));
@@ -3807,20 +3848,331 @@
     }
     d.luciaConheceu = true; gravar(d.ponto || 'chegada');
   }
-  // (5.6.0) papo com a Lúcia: um assunto por vez (ela pergunta, você escolhe a resposta)
+  // papo com a Lúcia: um assunto por vez (ela pergunta, você escolhe a resposta). Sorteado entre os que ainda não saíram hoje.
   const PAPOS_LUCIA = [
     ['E aí, tá gostando da cidade?', ['Tô gostando muito!', 'Que bom! Aqui é calmo, mas tem o seu charme.'], ['Ainda tô me acostumando.', 'Normal! Logo você acha os seus cantinhos preferidos.']],
     ['Você ainda joga bola?', ['Jogo sim, sempre que dá!', 'Eu sabia! Você vivia com a bola lá na escola.'], ['Tô meio parado...', 'Volta! Tem racha no society toda segunda e quarta.']],
     ['Lembra da Dona Graça, a professora? Ela ainda dá aula lá na escola.', ['Sério? Que saudade!', 'Ela pergunta de todo mundo da nossa turma.'], ['Nossa, ela ainda tá lá?', 'Tá! E continua brava do mesmo jeito, haha.']],
     ['Já provou o cappuccino com chantilly daqui? É o meu favorito.', ['Ainda não, vou provar!', 'Prova sim! Ele deixa qualquer um ligadão o dia inteiro.'], ['Prefiro um cafezinho preto.', 'Clássico! Também é muito bom.']],
+    ['Você acredita que hoje um cliente pediu café com sal? Disse que é costume da família.', ['Que estranho!', 'Né? Mas cliente é cliente... fiz com todo carinho, haha.'], ['Até que pode ser bom...', 'Sério?! Então da próxima vez eu faço um pra você provar!']],
+    ['Tô pensando em fazer um curso de confeitaria. Acha que eu levo jeito?', ['Com certeza!', 'Ai, obrigada! Vou procurar umas aulas então.'], ['Você leva jeito pra tudo.', 'Para, assim eu fico sem graça...']],
+    ['Choveu tanto essa semana que o café ficou cheio de gente fugindo da chuva.', ['Bom pro movimento!', 'Pois é! Vendi café que nem água, haha.'], ['Eu adoro dia de chuva.', 'Eu também! Dá vontade de ficar em casa com um chocolate quente.']],
+    ['Qual é a sua comida favorita?', ['Pastel de feira!', 'Ai, de queijo! Tem feira na praça no domingo, sabia?'], ['O lanche do seu Valdemar.', 'O podrão dele é perigoso... mas é bom demais, haha.']],
+    ['Às vezes eu sinto saudade da escola. Era tudo mais simples, né?', ['Também sinto falta.', 'A gente nem sabia quanta coisa vinha pela frente...'], ['Prefiro agora.', 'É... pelo menos ninguém manda a gente fazer prova, haha.']],
+    ['Sabia que eu tenho um gatinho? O nome dele é Grão.', ['Que nome perfeito!', 'Né?! Combina com uma barista, haha.'], ['Prefiro cachorro.', 'Ah, mas o Grão é quase um cachorro: me espera na porta todo dia!']],
+    ['Ontem eu fiquei até tarde vendo filme. Tô morrendo de sono hoje...', ['Toma um café, ué!', 'Já tô no terceiro! Se eu tomar mais um, eu saio voando.'], ['Que filme?', 'Um de terror... e agora eu tô com medo do escuro, haha.']],
+    ['Você já reparou na bola gigante em cima da loja de esportes?', ['Aquela bola é demais!', 'Um dia eu subo lá só pra ver se ela gira de verdade.'], ['Acho meio exagerada.', 'Exagerada, mas todo mundo olha, né? Haha.']],
+    ['Se você pudesse morar em qualquer lugar do mundo, onde seria?', ['Perto da praia.', 'Ai, praia... eu ia abrir um quiosque de café gelado.'], ['Aqui mesmo.', 'Sério? Que fofo... eu também gosto daqui.']],
+    ['Hoje de manhã eu vi um passarinho tomando banho na fonte da praça.', ['Que cena bonita!', 'Fiquei uns cinco minutos olhando. Quase cheguei atrasada!'], ['Você presta atenção em tudo.', 'Haha, é que eu chego cedo... a cidade fica tão calma.']],
   ];
+  // com 30 de amizade ela recebe com mais carinho (uma destas antes do assunto)
+  const OI_LUCIA = ['Que bom ver você hoje!', 'Achei que você não ia vir falar comigo hoje...', 'Já estava com saudades!', 'Oiii, {0}! É tão bom te ver!'];
   async function conversaLucia() {
-    const d = S.dados, P = PAPOS_LUCIA[(d.luciaPapo | 0) % PAPOS_LUCIA.length]; d.luciaPapo = (d.luciaPapo | 0) + 1;
-    await fala('lucia', T(P[0]));
-    const r = await Escolha.mostrar(T(P[0]), [T(P[1][0]), T(P[2][0])]);   // (6.0.5) uma caixa só, embaixo: a pergunta com as respostas (a fala some)
-    await fala('jog', T(P[r === 1 ? 2 : 1][0])); await fala('lucia', T(P[r === 1 ? 2 : 1][1])); Dialogo.esconder();
+    const d = S.dados, hoje = d.dia || 1;
+    const P = d.luciaPapoDia && d.luciaPapoDia.dia === hoje ? d.luciaPapoDia : (d.luciaPapoDia = { dia: hoje, n: 0, usados: [] });
+    if (P.n >= 2) { await fala('lucia', T('Foi muito bom conversar com você! Mas agora eu preciso trabalhar.')); Dialogo.esconder(); return; }   // só 2 conversas por dia
+    P.n++;
+    if (Amizade.valor('lucia') >= 30) await fala('lucia', Tf(OI_LUCIA[Math.floor(Math.random() * OI_LUCIA.length)], nomeJog()));
+    const livres = PAPOS_LUCIA.map((_, i) => i).filter((i) => !P.usados.includes(i) && i !== d.luciaUltimoPapo);
+    const i = livres.length ? livres[Math.floor(Math.random() * livres.length)] : Math.floor(Math.random() * PAPOS_LUCIA.length);
+    P.usados.push(i); d.luciaUltimoPapo = i;
+    const Q = PAPOS_LUCIA[i];
+    await fala('lucia', T(Q[0]));
+    const r = await Escolha.mostrar(T(Q[0]), [T(Q[1][0]), T(Q[2][0])]);
+    await fala('jog', T(Q[r === 1 ? 2 : 1][0])); await fala('lucia', T(Q[r === 1 ? 2 : 1][1]));
+    Amizade.somar('lucia', 2);                                       // conversar (não só interagir) aproxima: +2
+    if (P.n >= 2) await fala('lucia', T('Foi muito bom conversar com você! Mas agora eu preciso trabalhar.'));
+    Dialogo.esconder(); gravar(d.ponto || 'chegada');
   }
-  // ================================================================== (5.6.0) CAFÉS À VENDA: deixam o personagem mais rápido NA CIDADE por um tempo
+  // ---- os jogos mistos que o jogador frequenta (a Lúcia pode ser convidada para eles). A várzea entra aqui quando existir.
+  function jogosMistos() {
+    const v = [];
+    if (fut().convidado) v.push({ id: 'sintetico', nome: T('o racha do sintético'), opc: T('Futebol no sintético (segunda e quarta)'), dias: DIAS_FUTEBOL });
+    if (fsal().convidado) v.push({ id: 'futsal', nome: T('o futsal da quadra'), opc: T('Futsal na quadra (terça e quinta)'), dias: DIAS_FUTSAL });
+    return v;
+  }
+  // o próximo dia desse jogo (hoje, se ainda dá tempo)
+  function proximoDiaDeJogo(dias) {
+    const d = S.dados, hoje = d.dia || 1, h = horaDoFutebol();
+    for (let k = 0; k < 8; k++) { const dia = hoje + k, ds = (((dia - 1) % 7) + 7) % 7; if (dias.includes(ds) && (k > 0 || d.hora < h - 1.2)) return dia; }
+    return hoje + 7;
+  }
+  // a Lúcia combinou de jogar: { tipo, dia }. Some depois do dia (jogando ou não).
+  function luciaJogo() { const d = S.dados, L = d.luciaJogo; if (L && L.dia < (d.dia || 1)) d.luciaJogo = null; return d.luciaJogo || null; }
+  const luciaJogaHoje = (tipo) => { const L = luciaJogo(); return !!L && L.dia === (S.dados.dia || 1) && (!tipo || L.tipo === tipo); };
+  async function convidarLuciaJogar() {
+    const d = S.dados, js = jogosMistos(); if (!js.length) return;
+    const L = luciaJogo();
+    if (L) { await fala('lucia', Tf('Já tá combinado, lembra? Eu vou no dia {0}!', DIAS_SEM[(((L.dia - 1) % 7) + 7) % 7])); Dialogo.esconder(); return; }
+    let J = js[0];
+    if (js.length > 1) { const r = await Escolha.mostrar(T('Qual jogo?'), js.map((j) => j.opc)); J = js[r] || js[0]; }
+    await fala('jog', Tf('Ei, você não quer jogar {0} com a gente?', J.nome));
+    const am = Amizade.valor('lucia');
+    if (am < 30) { await fala('lucia', T('Ah... obrigada pelo convite, mas acho que não vai dar. Fica pra uma próxima, tá?')); Dialogo.esconder(); return; }
+    if (am >= 50) await fala('lucia', T('Haha, achei que você ia me chamar para um encontro... mas isso também serve!'));
+    else await fala('lucia', T('Sério? Eu topo! Faz tempo que eu não jogo.'));
+    const dia = proximoDiaDeJogo(J.dias);
+    d.luciaJogo = { tipo: J.id, dia };
+    await fala('lucia', T('Pode deixar: no dia eu fecho o café no horário e vou direto pra lá!'));
+    Dialogo.esconder(); gravar(d.ponto || 'chegada');
+  }
+  // ---- chamar para sair (50 de amizade): restaurante, pizzaria ou a casa do jogador, no domingo à noite
+  function encontroMarcado() { const d = S.dados, E = d.encontroLucia; if (E && E.dia < (d.dia || 1)) d.encontroLucia = null; return d.encontroLucia || null; }
+  async function chamarLuciaSair() {
+    const d = S.dados;
+    const LUG = [['restaurante', T('Restaurante'), T('o restaurante')], ['pizzaria', T('Pizzaria'), T('a pizzaria')], ['casa', T('Minha casa'), T('a minha casa')]];
+    const r = await Escolha.mostrar(T('Para onde você quer chamar a Lúcia?'), LUG.map((l) => l[1]));
+    const L = LUG[r] || LUG[0];
+    await fala('jog', T('Eu estava pensando...'));
+    await fala('jog', Tf('Você não quer sair comigo? Ir para {0} domingo de noite?', L[2]));
+    await fala('lucia', T('S-sério?! Eu... eu adoraria!'));
+    await fala('lucia', T('Domingo de noite, então. Combinado!'));
+    const hoje = d.dia || 1, ds = (((hoje - 1) % 7) + 7) % 7;
+    d.encontroLucia = { lugar: L[0], dia: hoje + ((6 - ds + 7) % 7 || (d.hora < 18.5 ? 0 : 7)), hora: 19 };
+    Dialogo.esconder(); gravar(d.ponto || 'chegada');
+  }
+  // ================================================================== O ENCONTRO COM A LÚCIA (domingo às 19h)
+  //   Restaurante / pizzaria: ela espera sentada numa mesa com uma velinha; entrar no lugar entre 18h45 e 21h começa a cena.
+  //   Minha casa: ela espera na frente do prédio; a conversa é no quarto (fase2.js) e a despedida volta para a casa dela (aqui).
+  //   A conversa (roteiroEncontro) é a mesma nos três lugares; a fase2.js usa a mesma função (Fases.carregar('cidade').encontro).
+  const ENC_INI = 18.75, ENC_FIM = 21;
+  const ROUPA_ENC = [5, ['#b8325a', '#f2f2ee', '#f2f2ee', '#f2f2ee']];          // o vestido com barra, vinho
+  const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 5.5, z: 3 } };
+  const BEIJO_MIN = 60;
+  function encontroAgora(lugar) {
+    const d = S.dados, E = encontroMarcado();
+    return !!E && !E.feito && E.dia === (d.dia || 1) && (!lugar || E.lugar === lugar) && d.hora >= ENC_INI && d.hora < ENC_FIM;
+  }
+  function nomeEmpregoCom(emp) { return emp === 'mercado' ? T('no Mercadinho Bom Preço') : emp === 'pizzaria' ? T('na pizzaria') : ''; }
+  // ---- a conversa do encontro. io: { nome, fala(q, t), escolha(titulo, ops), somar(n), trabalha, emprego, final: 'comer' | 'passar' }
+  async function roteiroEncontro(io) {
+    const R = { demissao: false }, L = (t) => io.fala('lucia', t), J = (t) => io.fala('jog', t);
+    const oi = Tf('Oi, {0}! Que bom que você veio!', io.nome);
+    await L(oi);
+    const r0 = await io.escolha(oi, [T('Você está linda hoje.'), T('Como você está?'), T('(Não dizer nada)')]);
+    if (r0 === 0) { await J(T('Você está linda hoje.')); await L(T('A-ah... obrigada! Você também está muito bem.')); await io.somar(5); }
+    else if (r0 === 1) { await J(T('Como você está?')); await L(T('Tô bem! Um pouquinho nervosa, pra falar a verdade... mas feliz de estar aqui com você.')); }
+    else await L(PERSONAGEM.genero === 'F' ? T('Haha, tá tímida, é? Eu também tô um pouco.') : T('Haha, tá tímido, é? Eu também tô um pouco.'));
+    const PERG = [
+      ['cafe', T('Como está indo o café?')],
+      ['falta', T('Você sentiu minha falta?')],
+      ['cidade', T('O que você acha da cidade?')],
+    ];
+    const feitas = []; let pulou = false;
+    while (feitas.length < PERG.length) {
+      const resta = PERG.filter((p) => !feitas.includes(p[0]));
+      const ops = resta.map((p) => p[1]).concat([io.final === 'comer' ? T('Adiantar') : T('Passar')]);
+      const r = await io.escolha(T('Sobre o que vocês conversam?'), ops);
+      const P = resta[r]; if (!P) { pulou = true; break; }
+      feitas.push(P[0]); await J(P[1]);
+      if (P[0] === 'cafe') {
+        if (io.trabalha) await L(T('Ficou muito melhor depois que você chegou lá! Sério, eu nem sei como daria conta sem você.'));
+        else {
+          await L(T('Vai indo bem! Mas às vezes eu fico bem cansada... é muita coisa pra uma pessoa só.'));
+          await J(T('Você não pensa em contratar alguém?'));
+          await L(T('Eu até postei na internet que tô procurando alguém... mas ninguém quis ainda.'));
+        }
+      } else if (P[0] === 'falta') {
+        const q = T('Senti, sim... Quer saber? Na escola eu até tinha uma quedinha por você.');
+        await L(q);
+        const r2 = await io.escolha(q, [T('Eu também tinha por você.'), T('Sério? Eu nem percebi!')]);
+        if (r2 === 0) { await J(T('Eu também tinha por você.')); await L(T('S-sério?! Ai, que vergonha... mas eu fico muito feliz em saber disso.')); await io.somar(5); }
+        else { await J(T('Sério? Eu nem percebi!')); await L(T('Haha, ainda bem! Eu disfarçava muito bem.')); }
+      } else {
+        const q = T('Eu gosto daqui, mas acho pequena demais. Penso em abrir uma cafeteria numa cidade maior algum dia... se for possível. Mas acho que não é.');
+        await L(q);
+        const r3 = await io.escolha(q, [T('Por quê?'), T('Eu entendo.')]);
+        if (r3 === 0) { await J(T('Por quê?')); await L(io.trabalha ? T('Eu não ganho o bastante nem pra isso... mesmo com a cafeteria tendo melhorado depois que você chegou.') : T('Eu não ganho o bastante nem pra isso. As coisas estão decentes, mas poderiam estar melhores com mais alguém lá.')); }
+        else { await J(T('Eu entendo.')); await L(T('É... quem sabe um dia, né?')); }
+      }
+    }
+    // no fim (sem pular): quem não trabalha na cafeteria pode dizer que vai trabalhar com ela
+    const fimTxt = io.final === 'comer' ? T('Enfim... vamos comer?') : T('Passar');
+    let passou = pulou;
+    if (!pulou && !io.trabalha && io.emprego) {
+      const r4 = await io.escolha(T('O que você diz?'), [T('Eu vou trabalhar com você!'), fimTxt]);
+      if (r4 !== 0) passou = true;
+      if (r4 === 0) {
+        await J(T('Sabe de uma coisa? Eu vou trabalhar com você!'));
+        await L(Tf('Para! Você não tá falando sério... você tem um emprego {0}!', nomeEmpregoCom(io.emprego)));
+        await J(T('É muito sério! Eu vou pedir demissão e começo amanhã mesmo!'));
+        await L(T('Ai, meu Deus! Eu tô muito feliz!'));
+        await io.somar(10); R.demissao = true;
+      }
+    }
+    if (io.final === 'comer') { await J(T('Enfim... vamos comer?')); await L(T('Vamos!')); }
+    else if (!passou) await io.escolha(T('O que você diz?'), [T('Passar')]);
+    return R;
+  }
+  function ioEncontroCidade() {
+    return { nome: nomeJog(), fala, escolha: (t, o) => Escolha.mostrar(t, o), somar: async (n) => { Amizade.somar('lucia', n); },
+      trabalha: empregoEscolhido() === 'cafeteria', emprego: empregoEscolhido() === 'cafeteria' ? null : empregoEscolhido() };
+  }
+  function criarLuciaEncontro() {
+    const A = criarNPCFixo(apLucia(), true, ROUPA_ENC[0], ROUPA_ENC[1]); A.tipo = 'cena';
+    S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.lucia = { A, nome: T('Lúcia Alves'), voz: 0 };
+    return A;
+  }
+  function soltarLuciaEncontro(A) { if (S.falantesExtra) delete S.falantesExtra.lucia; if (A) descartarPessoa(A); }
+  // a mesa do encontro: reserva os lugares (antes do fluxo de clientes), põe a velinha e senta a Lúcia
+  function reservarMesaEncontro(nome) {
+    const M = MESA_ENC[nome]; if (!M) return null;
+    const lug = S.assentos.filter((a) => Math.abs(a.x - M.x) < 1.0 && Math.abs(a.z - M.z) < 1.0);
+    const aL = lug.find((a) => a.x > M.x + 0.5), aJ = lug.find((a) => a.x < M.x - 0.5); if (!aL || !aJ) return null;
+    const res = { reservado: true }; for (const a of lug) a.ocupado = res;
+    const g = new THREE.Group(), mb = (c) => guardar(new THREE.MeshBasicMaterial({ color: c }));
+    const vela = new THREE.Mesh(guardar(new THREE.CylinderGeometry(0.035, 0.035, 0.13, 8)), guardar(new THREE.MeshLambertMaterial({ color: 0xf4efe2 }))); vela.position.y = 0.065; g.add(vela);
+    const pires = new THREE.Mesh(guardar(new THREE.CylinderGeometry(0.08, 0.08, 0.015, 10)), guardar(new THREE.MeshLambertMaterial({ color: 0xc9a86a }))); g.add(pires);
+    const chama = new THREE.Mesh(guardar(new THREE.ConeGeometry(0.022, 0.06, 6)), mb(0xffb030)); chama.position.y = 0.16; g.add(chama);
+    const luz = new THREE.PointLight(0xffb060, 0.9, 3.2); luz.position.y = 0.3; g.add(luz);
+    g.position.set(M.x, 0.79, M.z); S.grupo.add(g);
+    return { M, aL, aJ, lug, vela: g, chama, luz };
+  }
+  function sentarAtor(A, a) { A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.andando = false; a.ocupado = A; }
+  function pratosNaMesa(E, pizza) {
+    const L = new Geo(), M = E.M;
+    for (const s of [-1, 1]) {
+      const x = M.x + s * 0.24;
+      L.box(0.3, 0.02, 0.3, '#f4f4ec', x, 0.79, M.z);
+      if (pizza) { L.box(0.2, 0.025, 0.1, '#e8a640', x, 0.81, M.z - 0.03); L.box(0.12, 0.026, 0.06, '#c8352b', x, 0.812, M.z + 0.03); L.box(0.04, 0.03, 0.04, '#f2e6a8', x - 0.05, 0.815, M.z); }
+      else { L.box(0.14, 0.04, 0.12, '#f2f2ee', x - 0.04, 0.81, M.z - 0.03); L.box(0.1, 0.04, 0.1, '#7a4a2a', x + 0.05, 0.81, M.z + 0.04); L.box(0.08, 0.03, 0.08, '#6cae3e', x - 0.05, 0.81, M.z + 0.06); }
+      L.box(0.05, 0.12, 0.05, '#d8eef5', x + s * 0.2, 0.79, M.z - 0.16);          // copo
+    }
+    const mesh = L.malha(MAT); S.grupo.add(mesh); return mesh;
+  }
+  // ---- restaurante / pizzaria: ela acena sentada, você vai até a mesa e senta; a conversa; comer (zoom); a casa dela
+  async function cenaEncontroMesa(E) {
+    const d = S.dados, J = S.jog, L = E.L, M = E.M, nome = S.dentro.nome;
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.encontroRodando = true; J.andando = false; J.correndo = false;
+    if (J.sentado) levantar();
+    d.encontroLucia.feito = true; gravar('chegada'); S.missao = ''; recolherMissao(); definirMarca(null);
+    S.camCena = { px: M.x - 2.3, py: 1.75, pz: M.z + 1.7, tx: M.x + 0.7, ty: 1.05, tz: M.z };          // de frente para ela (ela acena para a porta)
+    L.gesto = 'acena';
+    await esperar(700);
+    await fala('lucia', Tf('{0}! Aqui!', nomeJog())); Dialogo.esconder();
+    const p = pontoDeLevantar(E.aJ);
+    await andar(J, [[p.x, p.z]], 1.9);
+    L.gesto = null;
+    sentarAtor(J, E.aJ); S.sentadoEm = E.aJ;
+    S.camCena = { px: M.x + 0.1, py: 2.3, pz: M.z + 4.3, tx: M.x, ty: 0.95, tz: M.z };
+    await esperar(500);
+    const R = await roteiroEncontro(Object.assign(ioEncontroCidade(), { final: 'comer' }));
+    Dialogo.esconder();
+    // comendo: corte para um zoom maior nos dois
+    await preto(true, 600);
+    const pratos = pratosNaMesa(E, nome === 'pizzaria');
+    J.gesto = L.gesto = 'garfo'; L.t = 1.3;
+    S.camCena = { px: M.x + 0.15, py: 1.75, pz: M.z + 2.0, tx: M.x, ty: 0.95, tz: M.z };
+    await preto(false, 600); await esperar(4300);
+    await preto(true, 700);
+    J.gesto = L.gesto = null; if (pratos.parent) pratos.parent.remove(pratos);
+    d.hora = Math.max(d.hora, 21.6);
+    await sairDoLugar(true);
+    await despedidaLucia(R);
+  }
+  // ---- minha casa: ela espera na frente do prédio
+  function tickEncontroPredio() {
+    const L = S.luciaPredio, ok = !S.dentro && encontroAgora('casa');
+    if (ok && !L) {
+      const A = criarLuciaEncontro(); A.x = SPAWN.x + 1.3; A.z = -2.7; A.y = altura(A.x, A.z); A.yaw = A.yawAlvo = Math.atan2(-(-3.7 - A.z), SPAWN.x - A.x); S.luciaPredio = A;
+    } else if (!ok && L && !S.encontroRodando) { soltarLuciaEncontro(L); S.luciaPredio = null; }
+  }
+  async function cenaEncontroPredio() {
+    const d = S.dados, J = S.jog, L = S.luciaPredio; if (!L) return;
+    S.encontroRodando = true; J.andando = false; J.correndo = false;
+    J.yawAlvo = Math.atan2(-(L.z - J.z), L.x - J.x); L.yawAlvo = Math.atan2(-(J.z - L.z), J.x - L.x);
+    if (Math.hypot(L.x - J.x, L.z - J.z) > 1.4) { const k = 1.1 / Math.hypot(L.x - J.x, L.z - J.z); await andar(J, [[L.x + (J.x - L.x) * k, L.z + (J.z - L.z) * k]], 1.9); }
+    J.yawAlvo = Math.atan2(-(L.z - J.z), L.x - J.x);
+    await fala('lucia', T('Oi! Cheguei na hora certa?'));
+    await fala('jog', T('Na hora certinha! Vamos subir?'));
+    await fala('lucia', T('Vamos!')); Dialogo.esconder();
+    d.encontroLucia.feito = true;
+    S.portao.alvo = 1; somPortao(); await esperar(700);
+    L.vel = 1.9; andar(L, [[SPAWN.x + 0.5, -3.7], [SPAWN.x + 0.5, -5.4]], 1.9);
+    await andar(J, [[SPAWN.x, -3.7], [SPAWN.x, -5.5]], 1.9);
+    const io = ioEncontroCidade();
+    gravar('predio'); UI.ctl.hidden = true;
+    S.paraFase2 = { encontroCasa: { ap: apLucia(), roupa: ROUPA_ENC, trabalha: io.trabalha, emprego: io.emprego } };
+    S.modo = 'saindo';
+    await preto(true, 900);
+    if (S.fimRes) S.fimRes();
+  }
+  // ---- a despedida na frente da casa dela (vale para os três encontros). R = { demissao }
+  async function despedidaLucia(R) {
+    const d = S.dados, J = S.jog, C = (S.casas || []).find((c) => c.especial === 'alves');
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.encontroRodando = true;
+    if (J.sentado) levantar();
+    d.hora = Math.max(d.hora, 21.6); if (d.hora >= 24) d.hora = 23.5;
+    S.missao = ''; recolherMissao(); definirMarca(null);
+    const L = criarLuciaEncontro();
+    let luz = null;
+    if (C) {
+      const sg = Math.sign(C.sz - C.z) || 1, fx = C.x, fz = C.z + sg * 1.15;
+      luz = new THREE.PointLight(0xffd9a0, 1.4, 9); luz.position.set(fx, 2.6, C.z + sg * 0.6); S.grupo.add(luz);   // a luz da varanda (é de noite)
+      L.x = fx - 6.5; L.z = fz + sg * 0.15; J.x = fx - 6.5; J.z = fz + sg * 0.85; L.y = altura(L.x, L.z); J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = L.yaw = L.yawAlvo = 0; J.rota = null;
+      S.camCena = { px: fx + 0.8, py: 2.1, pz: C.z + sg * 6.2, tx: fx - 1.2, ty: 1.0, tz: fz };
+      S.cam.snap = true;
+      await preto(false, 900);
+      await Promise.all([andar(L, [[fx - 0.42, fz]], 1.5), andar(J, [[fx + 0.42, fz + sg * 0.05]], 1.5)]);
+      L.yawAlvo = 0; J.yawAlvo = Math.PI;                                      // um de frente para o outro
+      S.camCena = { px: fx + 2.3, py: 1.7, pz: C.z + sg * 3.9, tx: fx - 0.1, ty: 1.15, tz: fz };
+      await esperar(400);
+      await fala('lucia', T('Eu me diverti muito essa noite!'));
+      if (R.demissao) await fala('lucia', PERSONAGEM.genero === 'F' ? T('E ainda ganhei uma funcionária nova!') : T('E ainda ganhei um funcionário novo!'));
+      const r = await Escolha.mostrar(T('Como você se despede?'), [T('Abraçar'), T('Beijar')]);
+      Dialogo.esconder();
+      if (r === 0) {
+        L.x = fx - 0.24; J.x = fx + 0.24; L.gesto = J.gesto = 'abraco'; await esperar(2300); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42;
+        await fala('lucia', Tf('Boa noite, {0}!', nomeJog()));
+        await fala('jog', T('Boa noite, Lúcia!'));
+      } else if (Amizade.valor('lucia') >= BEIJO_MIN) {
+        L.x = fx - 0.2; J.x = fx + 0.2; L.gesto = J.gesto = 'beijo'; coracoes(fx, 1.75, fz); await esperar(2600); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42;
+        await fala('lucia', Tf('Boa noite, {0}.', nomeJog()));
+      } else {
+        await fala('lucia', T('Eu quero... mas ainda não.'));
+        await fala('lucia', Tf('Boa noite, {0}!', nomeJog()));
+      }
+      Dialogo.esconder();
+      await andar(L, [[C.x, C.z + sg * 0.3]], 1.4);
+      soltarLuciaEncontro(L);
+      J.yawAlvo = -sg * Math.PI / 2;
+      if (r === 1 && Amizade.valor('lucia') >= BEIJO_MIN) { await fala('jog', T('É melhor eu ir também.')); Dialogo.esconder(); }
+      await esperar(500);
+    } else soltarLuciaEncontro(L);
+    await preto(true, 900);
+    S.camCena = null; if (luz && luz.parent) luz.parent.remove(luz);
+    // demissão: o emprego vira a cafeteria a partir de amanhã (a mensagem do trabalho antigo chega quando ele acorda)
+    const antigo = empregoEscolhido();
+    if (R.demissao && antigo && antigo !== 'cafeteria') {
+      try { const h2 = API.historia.ler('fase2') || {}; API.historia.gravar('fase2', Object.assign({}, h2, { emprego: 'cafeteria' })); } catch (e) { console.warn('[Cidade] demissão:', e); }
+      d.luciaContratou = { de: antigo, dia: (d.dia || 1) + 1 }; d.luciaApresentou = false; d.luciaConheceu = true;
+    }
+    d.encontros = (d.encontros | 0) + 1; d.encontroLucia = null;
+    d.dia = (d.dia || 1) + 1; d.hora = H_ACORDAR; d.avisouDormir = false; prepararDia(d);
+    gravar('predio');
+    S.paraFase2 = { acordar: 'encontro', demissao: R.demissao && antigo !== 'cafeteria' ? antigo : null };
+    S.modo = 'saindo'; S.encontroRodando = false;
+    if (S.fimRes) S.fimRes();
+  }
+  // corações subindo em cima do beijo (sprites que somem sozinhos)
+  function coracoes(x, y, z) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 9; const g = cv.getContext('2d');
+    ['.##.##...', '#######..', '#######..', '.#####...', '..###....', '...#.....'].forEach((r, yy) => [...r].forEach((ch, xx) => { if (ch === '#') { g.fillStyle = '#ff5c9a'; g.fillRect(xx, yy + 1, 1, 1); } }));
+    const tex = new THREE.CanvasTexture(cv); tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 }), lista = [];
+    for (let i = 0; i < 3; i++) { const s = new THREE.Sprite(mat); s.scale.set(0.22, 0.22, 1); s.position.set(x + (i - 1) * 0.18, y + i * 0.12, z); S.grupo.add(s); lista.push(s); }
+    const t0 = performance.now();
+    const passo = () => { const k = (performance.now() - t0) / 2400; for (const [i, s] of lista.entries()) { s.position.y = y + i * 0.12 + k * 0.6; } mat.opacity = Math.max(0, 1 - k); if (k < 1 && S && S.ativo) requestAnimationFrame(passo); else { for (const s of lista) if (s.parent) s.parent.remove(s); mat.dispose(); tex.dispose(); } };
+    requestAnimationFrame(passo);
+  }
+  // missão do dia do encontro
+  function mostrarAgendaEncontro() {
+    const d = S.dados, E = encontroMarcado(); if (!E || E.feito || E.dia !== (d.dia || 1) || d.hora >= ENC_FIM) return;
+    S.missao = E.lugar === 'restaurante' ? T('Missão: jantar com a Lúcia às 19h no restaurante.') : E.lugar === 'pizzaria' ? T('Missão: jantar com a Lúcia às 19h na pizzaria.') : T('Missão: a Lúcia vai te esperar às 19h na frente do seu prédio.');
+    mostrarMissao();
+    if (!S.dentro) { const P = PORTAS.find((p) => p.nome === E.lugar); if (P) definirMarca(P.x, P.z); else definirMarca(SPAWN.x, -3.0); }
+  }
+  // ================================================================== CAFÉS À VENDA: deixam o personagem mais rápido NA CIDADE por um tempo
   //   tier (o café do joguinho) · mult (velocidade) · horas (de jogo; 0 = o dia inteiro, até ele dormir/o dia virar) · preço
   const CAFES_VENDA = [
     { tier: 0, mult: 1.25, horas: 4, preco: 150 }, { tier: 1, mult: 1.25, horas: 8, preco: 200 }, { tier: 2, mult: 1.5, horas: 4, preco: 300 },
@@ -3875,7 +4227,7 @@
       aviso(textoCafe(d.cafe)); setTimeout(() => { if (S && UI) aviso(''); }, 3200);
     });
   }
-  // (4.9.5) ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
+  // ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
   function iconePx(id) {
     const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null));
     const px = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
@@ -3918,7 +4270,7 @@
       card.style.cssText = 'width:min(560px,100%);max-height:96%;overflow:auto;background:#2a1206;border:4px solid #f0a020;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
       const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:#f0a020;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;';
       const h1 = document.createElement('span'); h1.textContent = T('Cardápio do seu Valdemar'); const h2 = document.createElement('span'); h2.style.color = '#fff0c8'; h2.textContent = fakes + ' ' + T('fakes'); h.append(h1, h2);
-      const grade = document.createElement('div'); grade.className = 'cdGrade';   // (5.0.0) uma linha só, desliza na horizontal (não quebra o layout)
+      const grade = document.createElement('div'); grade.className = 'cdGrade';   // uma linha só, desliza na horizontal (não quebra o layout)
       grade.style.cssText = 'display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding-bottom:6px;';
       if (S.dados.clienteFiel) { const f = document.createElement('div'); f.style.cssText = 'font:700 11px/1.2 var(--font-display);color:#8fe04a;letter-spacing:.06em;'; f.textContent = T('Cliente fiel: −20%'); h.appendChild(f); }
       const fim = (i) => { el.remove(); res(i); };
@@ -3931,8 +4283,8 @@
         b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(-1);
-      card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);   // (5.1.1) dentro do #raizJogo (parte visível do iframe do Canva)
-      const sombra = () => { const fimX = grade.scrollLeft + grade.clientWidth >= grade.scrollWidth - 4, iniX = grade.scrollLeft <= 4;   // (5.0.0) as bordas somem para mostrar que tem mais produtos para os lados
+      card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);   // dentro do #raizJogo (parte visível do iframe do Canva)
+      const sombra = () => { const fimX = grade.scrollLeft + grade.clientWidth >= grade.scrollWidth - 4, iniX = grade.scrollLeft <= 4;   // as bordas somem para mostrar que tem mais produtos para os lados
         const m = 'linear-gradient(90deg,' + (iniX ? '#000 0' : 'transparent 0,#000 14%') + ',' + (fimX ? '#000 100%' : '#000 86%,transparent 100%') + ')'; grade.style.webkitMaskImage = grade.style.maskImage = m; };
       grade.addEventListener('scroll', sombra, { passive: true }); requestAnimationFrame(sombra);
     });
@@ -3946,7 +4298,7 @@
     UI.hud.parentNode.appendChild(el); requestAnimationFrame(() => { el.style.transform = 'translateY(22px)'; el.style.opacity = '0'; }); setTimeout(() => el.remove(), 1300);
   }
 
-  // ------------------------------------------------------------------ (4.9.3) HOSPITAL: a ficha médica (a saúde só aparece aqui)
+  // ------------------------------------------------------------------ HOSPITAL: a ficha médica (a saúde só aparece aqui)
   function abrirFicha() {
     S.pausado = true; const F = UI.ficha, d = S.dados;
     F.querySelector('.cdTit').textContent = T('Ficha médica');
@@ -4014,7 +4366,7 @@
 #cdEsq .cdMissao { box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px; border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
   font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206; cursor: pointer; pointer-events: auto; max-width: min(46vw, 420px); }
 #cdEsq .cdMisIco { color: #f2c230; font-size: 18px; }
-#cdEsq .cdTurIco { color: #fff0c8; background: #a8202a; border-color: #ffcf5a; font-size: 18px; }   /* (5.4.0) o painel do turno recolhido */
+#cdEsq .cdTurIco { color: #fff0c8; background: #a8202a; border-color: #ffcf5a; font-size: 18px; }   /* o painel do turno recolhido */
 #cdEsq .cdTurIco[hidden] { display: none; }
 #cdAviso { position: fixed; z-index: 10; left: 50%; bottom: calc(24% + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 6px 14px; font: 700 14px/1.2 var(--font-display); letter-spacing: 0.06em; color: #fff0c8;
   background: rgba(42, 18, 6, 0.86); border: 3px solid #f0a020; pointer-events: none; text-align: center; max-width: 80vw; }
@@ -4072,7 +4424,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const soltaArr = (e) => { if (e.pointerId === arr.id) arr.id = null; };
     arrasto.addEventListener('pointerup', soltaArr); arrasto.addEventListener('pointercancel', soltaArr);
     arrasto.addEventListener('wheel', (e) => { if (!S) return; e.preventDefault(); S.cam.dist = Math.max(5, Math.min(16, S.cam.dist + Math.sign(e.deltaY) * 0.8)); }, { passive: false });
-    // (5.1.0) ao girar a tela (ou qualquer resize) com o dedo em cima do direcional ou do arrasto da câmera, o toque pode não soltar
+    // ao girar a tela (ou qualquer resize) com o dedo em cima do direcional ou do arrasto da câmera, o toque pode não soltar
     // de verdade (o layout muda debaixo do dedo); sem isto o personagem ficava "andando sozinho" na direção em que o joystick travou.
     const soltarTudo = () => { joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; arr.id = null; };
     window.addEventListener('resize', soltarTudo); window.addEventListener('orientationchange', soltarTudo);
@@ -4093,13 +4445,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.fechar.addEventListener('click', fecharMapa);
     UI.remover.addEventListener('click', () => { som(); definirMarca(null); atualizarCoresMapa(); desenharMapa(); });
     UI.cores.addEventListener('click', (e) => { const b = e.target.closest('.cdCor'); if (!b || !S) return; som(); S.dados.corMarca = b.dataset.cor; if (S.marca) definirMarca(S.marca.x, S.marca.z); atualizarCoresMapa(); desenharMapa(); });
-    UI.mapaCv.addEventListener('click', (e) => {                       // (4.9.3) clique/toque solto marca; arrastar o dedo rola o mapa (antes todo toque marcava)
+    UI.mapaCv.addEventListener('click', (e) => {                       // clique/toque solto marca; arrastar o dedo rola o mapa
       if (!S) return; const r = UI.mapaCv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 240 - 120, z = (e.clientY - r.top) / r.height * 152 - 76;
       som(); definirMarca(clamp(x, LIM.x0 + 2, LIM.x1 - 2), clamp(z, LIM.z0 + 2, LIM.z1 - 2)); atualizarCoresMapa(); desenharMapa();
     });
     UI.btnPausa.addEventListener('click', () => { if (S && S.modo === 'livre') alternarPausa(); });
     UI.fome.appendChild(iconeCoxinha()); UI.fome.setAttribute('aria-label', T('Fome'));
-    UI.cafe.addEventListener('click', () => { if (!S) return; som(); const c = cafeEfeito(); if (!c) return; aviso(textoCafe(c)); clearTimeout(UI.cafeT); UI.cafeT = setTimeout(() => { if (S && UI) aviso(''); }, 2800); });   // (5.6.0)
+    UI.cafe.addEventListener('click', () => { if (!S) return; som(); const c = cafeEfeito(); if (!c) return; aviso(textoCafe(c)); clearTimeout(UI.cafeT); UI.cafeT = setTimeout(() => { if (S && UI) aviso(''); }, 2800); });
     UI.fome.addEventListener('click', () => { if (!S) return; som(); UI.aviso.textContent = T('Seu personagem ainda não comeu hoje.'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
     UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
@@ -4114,7 +4466,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.missao.textContent = S.missao; UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
     clearTimeout(tMissao); tMissao = setTimeout(recolherMissao, 5000);
   }
-  // (5.4.0) o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
+  // o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
   //   esquerdo; tocar no ícone abre o painel de novo (e ele recolhe sozinho depois de uns segundos).
   let tPainel = 0;
   function painelRecolhivel(p) {
@@ -4177,11 +4529,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   const esconderBola = () => { try { ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false; } catch (e) { /* sem bola */ } };
 
-  // ------------------------------------------------------------------ (4.9.5) RELÓGIO (dia de 15 min), céu, clima, chuva, luz da noite e a reação das pessoas
-  const SEG_DIA = 900, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 5;   // (5.2.0) acorda às 5h
+  // ------------------------------------------------------------------ RELÓGIO (dia de 15 min), céu, clima, chuva, luz da noite e a reação das pessoas
+  const SEG_DIA = 900, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 5;   // acorda às 5h
   const K = (h, ceu, hc, hg, hi, sc, si, sp, ng, lamp) => ({ h, ceu: new THREE.Color(ceu), hc: new THREE.Color(hc), hg: new THREE.Color(hg), hi, sc: new THREE.Color(sc), si, sp, ng, lamp });
   const NOITE_ = [0x0a1424, 0x6f82b4, 0x1a2a18, 0.5, 0x8aa0d8, 0.26, [-25, 45, 15], [45, 150], 1];
-  // (5.0.0) luz do dia mais baixa: antes céu 0,97 + sol 0,95 estourava (água branca, mato marrom à tarde, interiores "de vidro")
+  // luz do dia mais baixa: antes céu 0,97 + sol 0,95 estourava (água branca, mato marrom à tarde, interiores "de vidro")
   const CHAVES = [K(0, ...NOITE_), K(5.4, ...NOITE_),
     K(6.2, 0xe8a07a, 0xffd8b8, 0x4a4a30, 0.5, 0xffb070, 0.42, [-70, 10, 20], [55, 170], 0.8),
     K(7.4, 0xbcd8ec, 0xfff4e6, 0x4a6a35, 0.66, 0xfff2dc, 0.56, [-45, 35, 25], [70, 205], 0),
@@ -4219,8 +4571,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const on = Math.max(R.lamp, nuv * 0.4);                            // os postes acendem de noite (e um pouco quando o dia escurece com a chuva)
     if (S.lampMat) S.lampMat.color.copy(_cOff).lerp(_cOn, on);
     if (S.luzes) { S.luzes.matP.opacity = on * 0.62; S.luzes.matH.opacity = on * 0.9; S.luzes.pools.visible = S.luzes.matP.opacity > 0.01;
-      const hv = S.luzes.matH.opacity > 0.01; if (hv !== S.luzes.hv) { S.luzes.hv = hv; for (const h of S.luzes.halos) h.visible = hv; } }   // (5.0.1) de dia os brilhos nem são desenhados
-    // (5.0.1) janelas acesas e faróis: só pela hora (a luz da rua também acende um pouco na chuva, as casas não)
+      const hv = S.luzes.matH.opacity > 0.01; if (hv !== S.luzes.hv) { S.luzes.hv = hv; for (const h of S.luzes.halos) h.visible = hv; } }   // de dia os brilhos nem são desenhados
+    // janelas acesas e faróis: só pela hora (a luz da rua também acende um pouco na chuva, as casas não)
     const noite = R.lamp;
     if (S.matJanela) S.matJanela.emissive.setRGB(noite * 0.95, noite * 0.74, noite * 0.38);
     if (S.matFarol) { const f = 0.78 + 0.22 * Math.max(noite, nuv * 0.6); S.matFarol.color.setRGB(f, f, f); }
@@ -4285,14 +4637,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const d = S.dados, ant = d.hora;
     d.hora += dt * H_POR_S; if (d.hora >= 24) d.hora -= 24;
     if (ant < H_ACORDAR && d.hora >= H_ACORDAR) novoDia();
-    if (ant < 2 && d.hora >= 2 && !S.madrugada) { S.madrugada = true; madrugada(); return; }     // (5.0.0) passou das 2h acordado
+    if (ant < 2 && d.hora >= 2 && !S.madrugada) { S.madrugada = true; madrugada(); return; }     // passou das 2h acordado
     if (!d.avisouDormir && d.hora >= 21 && d.hora < 24 && S.modo === 'livre' && !S.dentro) { d.avisouDormir = true; avisoDormir(); }
   }
   function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 3800); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
-  // (5.0.0) 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
+  // 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
   async function madrugada() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
-    J.andando = false; J.correndo = false;             // (5.1.0) a cutscene das 2h cortava mesmo se ele estivesse correndo na hora
+    J.andando = false; J.correndo = false;             // a cutscene das 2h cortava mesmo se ele estivesse correndo na hora
     if (J.sentado) levantar();
     try { await fala('jog', T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (!S.dentro) {
@@ -4312,16 +4664,16 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
   let relUlt = '', relIco = '';
-  const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // (5.0.0) o dia 1 é uma segunda-feira
+  const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // o dia 1 é uma segunda-feira
   const diaSemana = () => ((((S.dados.dia || 1) - 1) % 7) + 7) % 7;
   function atualizarRelogioUI() {
-    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // (5.3.0) ⚽ = dia de futebol
+    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // ⚽ = dia de futebol
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
     const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;
-    { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // (5.6.0) o café que está fazendo efeito   // (5.2.0) a coxinha fica até ele comer no dia
+    { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // o café que está fazendo efeito   // a coxinha fica até ele comer no dia
   }
-  // (5.2.0) coxinha de frango em pixel art 16x16 (o ícone de "ainda não comeu hoje")
+  // coxinha de frango em pixel art 16x16 (o ícone de "ainda não comeu hoje")
   function iconeCoxinha() {
     const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null)), p = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
     const L = ['......##........', '.....#AA#.......', '.....#AA#.......', '....#BAAB#......', '...#BBAABB#.....', '...#BBBAABB#....', '..#BBBBBAABB#...', '..#BBBBBBBBB#...', '.#CBBBBBBBBBC#..', '.#CBBBBDBBBBC#..', '.#CCBBBBBBDCC#..', '.#CCCBBBBBCCC#..', '..#CCCCCCCCC#...', '...##CCCCC##....', '.....#####......', '................'];
@@ -4385,13 +4737,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function distRede(x, z) { let bd = 1e9; for (const n of S.rede) bd = Math.min(bd, Math.hypot(n.x - x, n.z - z)); return bd; }
   function seguir(A, rota, vel, dt) {
     if (!rota.length) return true;
-    if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return false; }   // (5.5.0) esbarrou: espera um instante
-    if (A.desvio && andarDesvio(A, dt)) return false;                        // (6.0.4) contornando o que travou
+    if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return false; }   // esbarrou: espera um instante
+    if (A.desvio && andarDesvio(A, dt)) return false;                        // contornando o que travou
     const q = rota[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = vel * dt;
     A.vel = vel; A.correndo = vel > 2.5 || !!A.chuva;
     if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
     let moveu = false;
-    { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // (5.5.0) gente no caminho: um passa, o outro cambaleia
+    { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { if (cruzar(A, B)) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return false; } } }
     for (const ang of [0, 0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) {
       const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
@@ -4399,15 +4751,15 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
     A.andando = moveu;
     if (!moveu) {
-      A.bloq = (A.bloq || 0) + dt;                                     // (5.5.0) sem o "pulo para o lado" (parecia teleporte)
-      if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // (6.0.4) contorna: 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio (esgotou: os fallbacks abaixo)
+      A.bloq = (A.bloq || 0) + dt;                                     // sem o "pulo para o lado" (parecia teleporte)
+      if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // contorna: 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio (esgotou: os fallbacks abaixo)
       if (A.bloq > 2.5 && livreNPC(A.x + dx / d * v, A.z + dz / d * v, A, true, true)) { A.fantasma = 0.8; A.bloq = 0.5; }   // preso atrás de alguém: passa por ele
-      if (A.bloq > 5) { A.bloq = 0; rota.shift(); if (!rota.length) { A.andando = false; return true; } }       // (4.9.6) não consegue passar: desiste desse ponto (nada de empurrar para dentro de outra pessoa)
+      if (A.bloq > 5) { A.bloq = 0; rota.shift(); if (!rota.length) { A.andando = false; return true; } }       // não consegue passar: desiste desse ponto (nada de empurrar para dentro de outra pessoa)
     } else A.bloq = Math.max(0, (A.bloq || 0) - dt * 0.5);
     return false;
   }
 
-  // ------------------------------------------------------------------ (4.9.6) A ROTINA DAS PESSOAS
+  // ------------------------------------------------------------------ A ROTINA DAS PESSOAS
   // MORADORES (quem não anda pela rua: os sentados, os que conversam e os três do treino): saem de casa de manhã, vão para o seu lugar e voltam às 18h, 19h ou 20h.
   // Vários moram na mesma casa. Na chuva: quem está na rua escolhe entre se abrigar sob uma árvore (até 3 por árvore, cada um num ponto fixo e em pé, sentado ou deitado)
   // ou ir para casa; quem vai para casa só volta no dia seguinte, quem se abrigou volta ao seu lugar quando a chuva para.
@@ -4433,7 +4785,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // ---- moradores
   const lugarDe = (r) => r.lugarAtual || r.posto.lugar;
   const soltarLugar = (r) => { const L = lugarDe(r); if (L && L.ocupado === r.A) L.ocupado = null; r.lugarAtual = null; };
-  function assentoLivrePerto(ref) {                                   // (5.0.0) o lugar dele está ocupado (pelo jogador): o vazio mais perto
+  function assentoLivrePerto(ref) {                                   // o lugar dele está ocupado (pelo jogador): o vazio mais perto
     let best = null, bd = 40; for (const a of S.assentos) { if (a.ocupado || a.lanche || a === ref) continue; const d = Math.hypot(a.x - ref.x, a.z - ref.z); if (d < bd) { bd = d; best = a; } } return best;
   }
   const liberarSlot = (r) => { if (r.slot) { if (r.slot.ocupado === r) r.slot.ocupado = null; r.slot = null; } };
@@ -4452,7 +4804,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function pontoPosto(r) { const p = r.posto, L = p.lugar; return L ? pontoLev(L, null) : { x: p.x, z: p.z }; }
   function colocarNoPosto(r) {
     const A = r.A, p = r.posto; let L = lugarDe(r);
-    if (L && L.ocupado && L.ocupado !== A) {                          // (5.0.0) alguém (o jogador) está no lugar dele: vai para o banco vazio mais perto
+    if (L && L.ocupado && L.ocupado !== A) {                          // alguém (o jogador) está no lugar dele: vai para o banco vazio mais perto
       const N = assentoLivrePerto(L);
       if (N) { N.ocupado = A; r.lugarAtual = N; A.tipo = 'morador'; r.rota = [pontoLev(N, A)]; r.estado = 'ida'; if (A.oculto) surgirMor(r, r.rota[0].x, r.rota[0].z, p.yaw); return; }
       L = null;
@@ -4500,9 +4852,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       for (let k = 0; k < 3; k++) { const a = base + k * Math.PI * 2 / 3, sx = t.x + Math.cos(a) * 1.5, sz = t.z + Math.sin(a) * 1.5; if (livreNPC(sx, sz, null, true) && distRede(sx, sz) < 14) t.slots.push({ x: sx, z: sz, t, ocupado: null }); }
     }
     const gente = S.npcs.filter((A) => A !== S.valdemar && (A.tipo === 'senta' || A.tipo === 'conversa' || A.tipo === 'treino'));
-    // (5.1.0) casas com "marca" (seu Valdemar, João, os Alves) são exclusivas de quem a planta já reservou para: moradores sem
+    // casas com "marca" (seu Valdemar, João, os Alves) são exclusivas de quem a planta já reservou para: moradores sem
     // nome não vivem nelas. Antes só a do seu Valdemar era excluída; as outras ainda podiam "sortear" um morador qualquer.
-    const casas = (S.casas || []).filter((c) => !c.marca && distRede(c.sx, c.sz) < 11);
+    const casas = (S.casas || []).filter((c) => !c.marca && !c.especial && distRede(c.sx, c.sz) < 11);   // casas de quem tem nome (Valdemar, Alves/Lúcia, João, Cadu, Rosa) são só deles
     for (let i = casas.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [casas[i], casas[j]] = [casas[j], casas[i]]; }
     S.moradores = [];
     gente.forEach((A, i) => {
@@ -4556,7 +4908,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     A.cool = 20 + Math.random() * 30;
     if (!S.sacola.pop()) return;
     let nome = DESTINOS[Math.floor(Math.random() * DESTINOS.length)];
-    if (nome === lugarDoEmprego()) return;                               // (5.3.0) ninguém de fora entra onde o jogador trabalha
+    if (nome === lugarDoEmprego()) return;                               // ninguém de fora entra onde o jogador trabalha
     if (nome === 'lanche') {
       const V = S.valdemar, vagas = S.assentos.filter((a) => a.lanche && !a.ocupado);
       if (V && !V.oculto && V.estado === 'balcao' && vagas.length) {
@@ -4566,7 +4918,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       nome = DESTINOS[Math.floor(Math.random() * (DESTINOS.length - 1))]; if (nome === lugarDoEmprego()) return;
     }
     const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
-    if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;   // (5.3.1)
+    if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;
     A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
   }
   function fimDest(A) { A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.espera = 0; A.bloq = 0; if (S.clima.molhado && !A.chuva) correrNaChuva(A); }
@@ -4587,7 +4939,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const P = D.P, x = P.x + Math.cos(P.sai) * 0.45, z = P.z - Math.sin(P.sai) * 0.45;
       if (!livreNPC(x, z, A, false)) return;
       A.oculto = false; A.x = x; A.z = z; A.yaw = A.yawAlvo = P.sai; S.meus.add(A.m); A.blob.visible = true; fimDest(A);
-    } else if (D.fase === 'pede') {                                   // (5.0.0) senta, espera o lanche um pouco e começa a comer
+    } else if (D.fase === 'pede') {                                   // senta, espera o lanche um pouco e começa a comer
       A.andando = false; D.t -= dt; A.fala = D.t > 2.5 && D.t < 4; if (D.t > 0) return;
       A.fala = false; D.fase = 'come'; D.t = 12 + Math.random() * 12; A.comendo = 1;
     } else if (D.fase === 'come') {
@@ -4601,7 +4953,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (let i = 0; i < L.length; i++) { const a = L[i]; if (a.oculto || a === S.valdemar || a.deitado) continue;
       for (let j = i + 1; j < L.length; j++) { const b = L[j]; if (b.oculto || b === S.valdemar || b.deitado) continue;
         const ma = mov(a), mb = mov(b); if (!ma && !mb) continue;
-        if (a.fantasma > 0 || b.fantasma > 0) continue;                  // (5.5.0) passando um pelo outro de propósito
+        if (a.fantasma > 0 || b.fantasma > 0) continue;                  // passando um pelo outro de propósito
         let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
         if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
         const f = (0.46 - d) / d, kA = ma && mb ? 0.5 : ma ? 1 : 0, kB = ma && mb ? 0.5 : mb ? 1 : 0;
@@ -4618,22 +4970,24 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     esconderBola();
     if (!S.pausado) {
       const n = typeof Cena !== 'undefined' ? Cena.passos() : 1;
-      if (n > 1) S.travaPulo = 0.5; else if (S.travaPulo > 0) S.travaPulo = Math.max(0, S.travaPulo - dt);   // (5.5.0) parado durante o pulo e 0,5 s depois
+      if (n > 1) S.travaPulo = 0.5; else if (S.travaPulo > 0) S.travaPulo = Math.max(0, S.travaPulo - dt);   // parado durante o pulo e 0,5 s depois
       for (let i = 0; i < n; i++) {
         S.t += dt;
         if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.andando = false; S.jog.correndo = false; } else mover(dt); tickHorario(dt); tickDescobertas(); }
-        else if (S.trabalhando) tickHorario(dt);       // (5.1.1) o relógio continua andando durante o expediente
+        else if (S.trabalhando) tickHorario(dt);       // o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);
-        tickCelular(dt); tickConvite(dt); tickBiel();    // (5.3.0); (6.0.6) o Biel na quadra de futsal
+        tickCelular(dt); tickConvite(dt); tickBiel();    // ; o Biel na quadra de futsal
+        if (!S.dentro || S.luciaPredio) tickEncontroPredio();
+        if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt);
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
-        if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
+        if (S.mercado) S.mercado.tick(dt);                              // depois do tickJogador: a pose de carregar caixa vale
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
       if (S.bandeira && !S.dentro) { S.bandeira.rotation.y = Math.sin(S.t * 1.3) * 0.25; S.bandeira.position.x = PRACA_C.x + 1.3 * Math.cos(S.bandeira.rotation.y); S.bandeira.position.z = PRACA_C.z - 1.3 * Math.sin(S.bandeira.rotation.y); }
-      if (S.bolaLoja && !S.dentro) S.bolaLoja.rotation.y += dt * 0.6;     // (5.6.0) a bola em cima da loja esportiva
+      if (S.bolaLoja && !S.dentro) S.bolaLoja.rotation.y += dt * 0.6;     // a bola em cima da loja esportiva
       if (S.ondas && !S.dentro) for (const o of S.ondas) { o.tx.offset.x = (o.tx.offset.x + o.vx * dt) % 1; o.tx.offset.y = (o.tx.offset.y + o.vz * dt) % 1; }
       if (!S.dentro) { atualizarMarca(); atualizarTelas(dt); }
       atualizarAlvo();
@@ -4642,7 +4996,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena' && S.intro);   // só a chegada é cutscene (conversa no balcão e comemoração não)
     for (const a of ATLETAS) a.raiz.visible = S.meus.has(a) && !a.longe;
     atualizarCamera(dt);
-    particulas.atualizar(0);                                            // (4.9.5) a chuva acompanha a câmera da cidade (o quadro do jogo já usou a câmera antiga)
+    particulas.atualizar(0);                                            // a chuva acompanha a câmera da cidade (o quadro do jogo já usou a câmera antiga)
   }
   function limpar() {
     if (!S) return;
@@ -4680,7 +5034,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
-      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
+      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // trabalho no mercado
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
@@ -4693,27 +5047,35 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const primeira = !dados.visitas; dados.visitas = (dados.visitas | 0) + 1;
       gravar('chegada');
       Musica.tocar('jazz');
-      S.intro = true;
-      await preto(false, 1100);
-      await andar(J, [[SPAWN.x, -3.7]], 1.9);
-      S.intro = false;
-      S.portao.alvo = 0; somPortao();                                  // o portão fecha depois que ele sai
-      mostrarDinheiro(primeira);
-      // (5.4.0) a missão "encontre um lugar para comer" saiu (a coxinha no canto já avisa quando ele não comeu)
-      liberar(); if (S.missao) mostrarMissao();
-      agendarHoje();                                                   // (5.3.0) segunda/quarta: futebol no sintético
-      if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
-      if ((dados.dia || 1) === 1) { aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500); }   // (5.2.0) só no 1º dia
+      const encFim = ctx.args && ctx.args.encontroFim;                 // voltou do encontro no quarto (fase2.js): a despedida na casa da Lúcia
+      if (encFim) {
+        S.portao.alvo = 0; S.portao.k = 0; tickPortao(1); UI.ctl.hidden = true;
+        try { await despedidaLucia(encFim); } catch (e) { console.error(e); if (S && S.fimRes) { S.paraFase2 = 'acordar'; S.fimRes(); } }
+      } else {
+        S.intro = true;
+        await preto(false, 1100);
+        await andar(J, [[SPAWN.x, -3.7]], 1.9);
+        S.intro = false;
+        S.portao.alvo = 0; somPortao();                                  // o portão fecha depois que ele sai
+        mostrarDinheiro(primeira);
+        // a missão "encontre um lugar para comer" saiu (a coxinha no canto já avisa quando ele não comeu)
+        liberar(); if (S.missao) mostrarMissao();
+        agendarHoje();                                                   // segunda/quarta: futebol no sintético
+        if (primeira) { aviso(Tf('Agora você tem dinheiro: {0} fakes.', dados.fakes)); await esperar(3200); }
+        if ((dados.dia || 1) === 1) { aviso(T('Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.')); setTimeout(() => { if (S && UI) aviso(''); }, 5500); }   // só no 1º dia
+      }
       await fim; paraFase2 = S.paraFase2 || false;
     } finally {
       limpar();
       if (f1p && f1Vis) { f1p.hidden = false; f1p.classList.remove('claro'); }
     }
-    // (4.9.5) entrou no prédio: o apartamento (Fase 2) abre no saguão, com o personagem livre (e a cidade volta quando ele sair pela porta da rua)
-    if (paraFase2) { const rc = await Fases.executar('fase2', paraFase2 === 'acordar' ? { volta: true, acordar: true } : { volta: true }); if (!rc.ok) console.warn('[Cidade] fase2 não rodou:', rc); }
+    // entrou no prédio: o apartamento (Fase 2) abre no saguão, com o personagem livre (e a cidade volta quando ele sair pela porta da rua)
+    if (paraFase2) { const rc = await Fases.executar('fase2', paraFase2 === 'acordar' ? { volta: true, acordar: true } : typeof paraFase2 === 'object' ? Object.assign({ volta: true }, paraFase2) : { volta: true }); if (!rc.ok) console.warn('[Cidade] fase2 não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar,
+  // a fase2.js usa a mesma conversa do encontro (no quarto) e o "♥ +n" na tela
+  const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
+  window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
+    _fns: { encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
 })();

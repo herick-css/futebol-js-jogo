@@ -8,9 +8,9 @@
      As paredes só têm o lado de DENTRO (vistas de fora elas somem), então a câmera pode ficar "atrás" da parede e ver a sala.
    - Por enquanto: só o visual, onde dá para sentar e pessoas de enfeite (paradas, andando, sentadas, na esteira...).
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
-   - (5.6.0) Golaço Esportes (nome 'esportiva'): piso de pista de corrida. Vazia por enquanto. (6.0.4) a sala é um retângulo (antes: formato de estádio).
-   - (5.3.0) Supermercado reorganizado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
-   - (5.2.0) Cafeteria maior (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
+   - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
+   - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
+   - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
        pessoas:  [{ tipo: 'parado' | 'vaga' | 'senta' | 'esteira' | 'rosca', x, z, yaw, area, assento, fem }]
@@ -72,7 +72,7 @@
     const PROD = ['#c8352b', '#f2c230', '#3a64b8', '#1f7a4d', '#e8742a', '#f2f2ee', '#7a4fb0', '#d95fa0', '#8c5a2b', '#3fb7b0'];
 
     if (nome === 'supermercado') {
-      // (5.3.0) MERCADINHO BOM PREÇO reorganizado para o trabalho de caixa (ver mercado.js):
+      // MERCADINHO BOM PREÇO reorganizado para o trabalho de caixa (ver mercado.js):
       //   frente (sul): o CAIXA ativo (esteira ao longo de z; o jogador fica do lado leste, a fila do lado oeste) e um 2º caixa fechado;
       //   gôndolas de HIGIÊNICO (oeste) e COMIDA (duas, no meio); BEBIDAS nos freezers da parede norte; ILHA DE FRUTAS na frente, a oeste;
       //   ESTOQUE no canto nordeste: quatro pilhas de caixas com placas (higiênico, comida, bebida, fruta).
@@ -135,7 +135,7 @@
       bloq(-7.1, 7.6, 4.6, 0.95);
       for (let i = 0; i < 4; i++) R.pessoas.push({ tipo: 'vaga', area: { x0: -7, x1: 9, z0: -7.5, z1: 1.5 }, fem: rnd() < 0.5 });
     } else if (nome === 'cafeteria') {
-      // (5.2.0) sala maior (20 x 14) para o expediente: 8 mesas de 2 com corredor no meio, o caixa da Lúcia no fundo e a
+      // sala maior (20 x 14) para o expediente: 8 mesas de 2 com corredor no meio, o caixa da Lúcia no fundo e a
       // BANCADA DE PREPARO na parede oeste (máquina de espresso, moedor, jarras de leite, xaropes, xícaras, sacas de café e o quadro de giz).
       sala(20, 14, 3.6, '#f2e6c8', '#8a5a2b', '#7a4f26', 0.6);
       placa('CAFETERIA', '#5b3a22', '#f6e2b8', 5, 0.8, 0, 2.9, -6.96);
@@ -143,7 +143,7 @@
       G.box(0.8, 0.6, 0.5, '#3a3a3e', -2.4, 1.06, -5.5); G.box(0.2, 0.3, 0.2, '#c9ced4', -2.4, 1.66, -5.4);              // máquina de café do caixa
       G.box(2.4, 0.5, 0.7, '#e8f4f8', 2.6, 1.06, -5.4); for (let i = 0; i < 6; i++) G.box(0.3, 0.18, 0.3, pk(['#7a4a2a', '#f4a6c0', '#f2e6c8', '#c8352b']), 1.8 + i * 0.32, 1.1, -5.4);   // vitrine de bolos
       G.box(0.36, 0.3, 0.3, '#2b3a48', 0.4, 1.06, -5.5); G.box(0.3, 0.04, 0.2, '#8fe04a', 0.4, 1.3, -5.38);                // caixa registradora
-      R.pessoas.push({ tipo: 'parado', x: 0.4, z: -6.35, yaw: -Math.PI / 2, fem: true, marca: 'lucia' });    // (5.1.0) moça do caixa = Lúcia Alves (ver falarComLucia em cidade.js)
+      R.pessoas.push({ tipo: 'parado', x: 0.4, z: -6.35, yaw: -Math.PI / 2, fem: true, marca: 'lucia' });    // moça do caixa = Lúcia Alves (ver falarComLucia em cidade.js)
       R.extras.push({ x: 0.4, z: -4.3, r: 1.6, txt: 'Falar com a Lúcia', acao: 'caixa' });
       // --- a bancada de preparo (oeste)
       { const bx = -9.35, bz = -1.2, L = 4.4;
@@ -265,15 +265,15 @@
       R.pessoas.push({ tipo: 'senta', assento: lugares[1], fem: false }, { tipo: 'senta', assento: lugares[4], fem: true });
       G.box(1.2, 2.2, 0.08, '#5b3a22', 4, 0, -4.45);                                                           // porta da cozinha
     } else if (nome === 'esportiva') {
-      // (5.6.0) GOLAÇO ESPORTES: o piso é uma PISTA DE CORRIDA (raias vermelhas com linhas brancas, linha de largada com os números
-      //   na frente da porta, gramado no meio com o pódio). (6.0.4) A SALA agora é um RETÂNGULO de verdade (quatro paredes retas; antes
+      // GOLAÇO ESPORTES: o piso é uma PISTA DE CORRIDA (raias vermelhas com linhas brancas, linha de largada com os números
+      //   na frente da porta, gramado no meio com o pódio). A SALA agora é um RETÂNGULO de verdade (quatro paredes retas; antes
       //   tinha as pontas redondas, de estádio) e as raias também são retangulares.
       //   Vazia por enquanto: só o balcão do caixa, o pódio, uma trave e as faixas. Depois: comemorações, roupas, chuteiras...
       const L = 28, D = 16, Rr = D / 2, H = 4.4, PPM = 12, AZUL = '#1c3aa0', AMAR = '#f2c230';
       R.fundo = 0x0b1430; R.cam = { dist: 9, pitch: 0.85 };
       R.lim = { x0: -L / 2 + 0.35, x1: L / 2 - 0.35, z0: -Rr + 0.35, z1: Rr - 0.35 };
       const PX_ = (x) => (x + L / 2) * PPM, PY_ = (z) => (z + Rr) * PPM;
-      const estadio = (g, e) => { g.beginPath(); g.rect(PX_(-L / 2 + e), PY_(-Rr + e), (L - 2 * e) * PPM, (D - 2 * e) * PPM); };   // (6.0.4) contorno retangular (e = distância da parede)
+      const estadio = (g, e) => { g.beginPath(); g.rect(PX_(-L / 2 + e), PY_(-Rr + e), (L - 2 * e) * PPM, (D - 2 * e) * PPM); };   // contorno retangular (e = distância da parede)
       const tex = guardar(texCanvas(L * PPM, D * PPM, (g, w, h) => {
         g.fillStyle = '#0b1430'; g.fillRect(0, 0, w, h);
         g.fillStyle = '#b5482e'; estadio(g, 0); g.fill();                                   // a pista
