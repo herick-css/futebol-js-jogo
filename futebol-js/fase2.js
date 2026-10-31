@@ -1,9 +1,6 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
-   6.1.0 — SONO: dormir sempre leva para o dia seguinte (antes, quem dormia depois da meia-noite acordava no mesmo dia). Dormiu mal
-     (depois das 22h; na noite de trabalho da pizzaria, depois das 2h) ou apagou de sono: −5 de Saudável (Sono.registrar, soma toda noite)
-     e reclama ao acordar; dormiu bem não reclama. Noite de trabalho (pizzaria, quinta a domingo): acorda às 9h e apaga às 4h.
    Como funciona
      - O jogo.js NÃO traz este arquivo junto. Quando a Fase 1 termina, o jogo baixa o fase2.js do mesmo lugar de onde veio
        (GitHub → jsDelivr, ou a pasta local), roda e chama iniciar(ctx).
@@ -26,7 +23,7 @@
      2. A tela de anos avança 10 anos (a mesma tela de "12 anos atrás": de {ano-12} até {ano-2}) e o personagem diz "Quando eu tinha 16...".
      3. O QUARTO do personagem (às escuras: ele acorda, liga a luz, usa o computador/guarda-roupa/banheiro) com cores e objetos
         de quarto masculino ou feminino (PERSONAGEM.genero). Dois pôsteres (imagens minúsculas embutidas em POSTER_A / POSTER_B).
-     4. O guarda-roupa: 18 roupas masculinas e 22 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
+     4. O guarda-roupa: 18 roupas masculinas e 21 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
      5. O computador: navegador → site "LoggedOn" → 3 notificações de vaga → escolher UM emprego (Mercado, Cafeteria ou Pizzaria).
         Qualquer um dá pontos em "Tranquilo" (espectro Tranquilo ↔ Problemático). A escolha fica salva.
      6. A escada do prédio (4 lances, câmeras fixas que mudam) com o vizinho que fuma, até a porta da rua.
@@ -103,7 +100,6 @@
       { n: 'Top e short', t: 'short', top: 1, c: ['#e8742a', '#2a3f66', '#f2f2ee'] },
       { n: 'Top e calça jeans', t: 'calca', top: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
       { n: 'Top e saia', t: 'saia', top: 1, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Macacão', t: 'macacao', c: ['#8a1f3d', '#f2c230', '#f2f2ee'] },       // (6.1.1) peça única, sem saia: dobra certo ao sentar (a Lúcia usa no encontro)
     ],
   };
   const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
@@ -122,7 +118,6 @@
     else if (R.t === 'saia') { o.meiao = 0; o.meia = '#f2f2ee'; }
     else if (R.t === 'vestido') { o.camisa = c[0]; o.calcao = c[0]; o.listra = c[1]; o.gola = c[2]; o.meiao = 0; }
     else if (R.t === 'jardineira') { o.meia = c[1]; o.meiao = 1; o.gola = c[0]; }
-    else if (R.t === 'macacao') { o.camisa = c[0]; o.calcao = c[0]; o.meia = c[0]; o.meiao = 1; o.listra = c[1]; o.gola = c[2]; }
     if (R.nu) { o.camisa = o.calcao = o.listra = o.gola = o.meia = o.sola = pele; o.meiao = 0; o.manga = 0; }          // banho: o corpo todo é só pele
     if (R.time) {
       o.meiao = 2; o.meia = c[2]; o.numero = '10'; o.nomeCamisa = (PERSONAGEM.nomeCamisa || '').toUpperCase();
@@ -191,7 +186,6 @@
     if (R.top) F(0.327, 0.27, 0.587, pele, 0, 0.875, 0);                           // top curto: a barriga aparece
     if (R.capuz) { F(0.2, 0.3, 0.5, sombra(c[0], 0.85), -0.2, 1.42, 0); F(0.04, 0.16, 0.42, sombra(c[0], 0.82), 0.17, 0.86, 0); }
     if (R.jaqueta) { F(0.06, 0.12, 0.5, c[2], 0.165, 1.32, 0); F(0.03, 0.56, 0.04, c[2], 0.168, 1.03, 0); }
-    if (R.t === 'macacao') { F(0.345, 0.06, 0.6, c[1], 0, 0.8, 0); F(0.02, 0.05, 0.07, c[1], 0.172, 0.8, 0); }   // cinto dourado na cintura
     if (R.t === 'jardineira') { F(0.04, 0.36, 0.44, c[1], 0.17, 1.0, 0); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, 0.15); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, -0.15); }
     if (tem) m.corpo.add(L.malha(MAT_CORES));
   }
@@ -444,7 +438,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
-    if (R.t === 'macacao') pintarCoxas(m, c[0]);
     if (R.nu) pintarPernasTodas(m, base.pele);
     if (R.regata || R.top) pintarBracos(m, base.pele);
     extrasRoupa(m, R, c, base.pele);
@@ -460,7 +453,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const opt = Object.assign({ corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', barba: 0, manga: 0, meiao: 1, labio: 3, cabecao: 1.08, escala: 0.9 }, base, roupaOpts(R, c, base.pele)), m = makeAthlete(opt);
     m.etiqueta.visible = false; m.sombra.visible = false;
     if (R.t === 'calca' || R.t === 'bermuda' || R.t === 'jardineira') pintarCoxas(m, c[1]);
-    if (R.t === 'macacao') pintarCoxas(m, c[0]);
     if (R.regata || R.top) pintarBracos(m, base.pele);
     extrasRoupa(m, R, c, base.pele); pintarEmblema(m, R, c);
     return { m, opt };
@@ -674,7 +666,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ----- O BANHEIRO (4,4 x 4,4 m): porta na parede da esquerda; vaso, pia e chuveiro no fundo
   const B_CAM = [0.1, 3.3, 4.2, 0.1, 0.65, -0.7];
   const B = { vaso: { x: -0.9, spot: [-0.9, -1.2], sent: [-0.9, -1.78] }, pia: { x: 0.5, spot: [0.5, -1.35] }, chuveiro: { spot: [1.55, -0.45] }, porta: { z: 0.6, spot: [-1.7, 0.6] } };
-  const B_RETS = [[-1.2, -0.6, -2.2, -1.5], [0.1, 0.95, -2.2, -1.72], [1.05, 2.2, -2.2, -0.85], [0.95, 1.55, 0.65, 1.25]];   // o último é o Sancho
+  const B_RETS = [[-1.2, -0.6, -2.2, -1.5], [0.1, 0.95, -2.2, -1.72], [1.05, 2.2, -2.2, -0.85]];
   function montarBanheiro() {
     const g = new THREE.Group(); g.position.set(OX + 100, 0, 0);
     const basic = (p) => new THREE.MeshBasicMaterial(p);
@@ -700,35 +692,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
     return { g, seta, vidro };
-  }
-
-  // ----- O SANCHO NO BANHEIRO (SanchoAnimacoesZ.js: modelo com esqueleto, baixado em segundo plano; parado no idle, e quando o
-  //   jogador chega perto ele entra na pose de luta e vira para o jogador; quando o jogador se afasta, volta ao idle)
-  const SANCHO = { x: 1.25, z: 0.95, yaw: -2.4, perto: 1.9, longe: 2.5, idle: 'Sancho_rig|Sancho_idle', luta: 'Sancho_rig|Sancho_idle_luta' };
-  function carregarSancho() {
-    Fases.carregar('SanchoAnimacoesZ').then((mod) => {
-      if (!S || !S.banh || S.sancho || !mod || typeof mod.criar !== 'function') return;
-      const m = mod.criar();
-      m.raiz.position.set(SANCHO.x, 0, SANCHO.z); m.raiz.rotation.y = SANCHO.yaw;
-      m.tocar(SANCHO.idle, { transicao: 0 });
-      S.banh.g.add(m.raiz);
-      S.sancho = { m, yaw: SANCHO.yaw, luta: false };
-    }, (e) => console.warn('[Fase 2] o Sancho não veio:', e));
-  }
-  function sanchoTick(dt) {
-    const Sa = S.sancho; if (!Sa || S.lugar !== 'banheiro') return;
-    const J = S.jog, dx = J.x - SANCHO.x, dz = J.z - SANCHO.z, d = Math.hypot(dx, dz);
-    if (!Sa.luta && d < SANCHO.perto) { Sa.luta = true; Sa.m.tocar(SANCHO.luta, { transicao: 0.25 }); }
-    else if (Sa.luta && d > SANCHO.longe) { Sa.luta = false; Sa.m.tocar(SANCHO.idle, { transicao: 0.35 }); }
-    const alvo = Sa.luta ? Math.atan2(-dz, dx) : SANCHO.yaw;
-    const dy = ((alvo - Sa.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; Sa.yaw += dy * Math.min(1, dt * 6);
-    Sa.m.raiz.rotation.y = Sa.yaw;
-    Sa.m.atualizar(dt);
-  }
-  function descartarSancho() {
-    const Sa = S && S.sancho; if (!Sa) return;
-    try { Sa.m.mixer.stopAllAction(); Sa.m.mixer.uncacheRoot(Sa.m.raiz); Sa.m.raiz.traverse((o) => { if (o.skeleton) o.skeleton.dispose(); }); } catch (e) { console.warn(e); }
-    S.sancho = null;
   }
 
   // ----- A ESCADA DO PRÉDIO: um anel quadrado em volta de um vão vazio. Quatro lances de 1,4 m cada, de cima (5,6 m) até o térreo.
@@ -880,8 +843,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at 5 AM?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las 5h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle 5?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à 5 h ?"],
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
     'Ainda não estou com sono.': ["I'm not sleepy yet.", 'Todavía no tengo sueño.', 'Non ho ancora sonno.', "Je n'ai pas encore sommeil."],
-    'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at {0}?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las {0}h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle {0}?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à {0} h ?"],
-    'Nossa, já são 4h da manhã... não aguento mais de sono.': ["Wow, it's already 4 AM... I can't stay awake any longer.", 'Uf, ya son las 4 de la mañana... no aguanto más el sueño.', 'Accidenti, sono già le 4 del mattino... non reggo più il sonno.', "Ouah, il est déjà 4 h du matin... je tombe de sommeil."],
     'Bom dia! Hora de começar o dia.': ['Good morning! Time to start the day.', '¡Buenos días! Hora de empezar el día.', 'Buongiorno! È ora di iniziare la giornata.', "Bonjour ! C'est l'heure de commencer la journée."],
     'Dormi fedendo, estou me sentindo meio mal.': ['I slept stinky, I feel kind of sick.', 'Dormí apestando, me siento medio mal.', 'Ho dormito puzzolente, mi sento un po\' male.', "J'ai dormi en puant, je me sens un peu mal."],
     'Dormi pouco... acho que não vou render como deveria hoje.': ["I barely slept... I don't think I'll perform as well as I should today.", 'Dormí poco... creo que hoy no voy a rendir como debería.', 'Ho dormito poco... credo che oggi non renderò come dovrei.', "J'ai peu dormi... je crois que je ne serai pas aussi performant que je devrais aujourd'hui."],
@@ -971,7 +932,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Camisa social e saia': ['Dress shirt and skirt', 'Camisa de vestir y falda', 'Camicia elegante e gonna', 'Chemise et jupe'],
     'Polo e short': ['Polo and shorts', 'Polo y short', 'Polo e pantaloncini', 'Polo et short'],
     'Jardineira': ['Overalls', 'Overol', 'Salopette', 'Salopette'],
-    'Macacão': ['Jumpsuit', 'Mono', 'Tuta', 'Combinaison'],
     'Vestido de manga longa': ['Long-sleeve dress', 'Vestido de manga larga', 'Vestito a maniche lunghe', 'Robe à manches longues'],
     'Blusa e saia longa': ['Top and long skirt', 'Blusa y falda larga', 'Top e gonna lunga', 'Haut et jupe longue'],
     // computador / LoggedOn
@@ -1618,43 +1578,26 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       await dizer(['jog', T('Hoje começa o trabalho novo na cafeteria!')]);
     }
   }
-  // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 5h do dia seguinte
-  // (6.1.0) NOITE DE TRABALHO (quem trabalha na pizzaria, de quinta a domingo): acorda às 9h; dormir até as 2h é dormir bem; às 4h ele
-  //   apaga de sono (aqui) ou vai sozinho para casa (na cidade). Numa noite normal: dormir até as 22h é dormir bem; às 2h apaga.
-  //   Dormiu MAL (nível do Sono > 0): reclama ao acordar e perde 5 de Saudável (Sono.registrar; vale toda noite, soma dia após dia).
-  //   Dormir sempre leva para o DIA SEGUINTE (antes, quem dormia depois da meia-noite acordava no mesmo dia).
-  const diaSem = (dia) => ((((dia || 1) - 1) % 7) + 7) % 7;
-  const noiteDeTrabalho = (dia) => !!(S && S.dados && S.dados.emprego === 'pizzaria' && [3, 4, 5, 6].includes(diaSem(dia)));
-  const horaAcordar = (dia) => (noiteDeTrabalho(dia) ? 9 : H_ACORDA);
-  const horaApagar = (dia) => (noiteDeTrabalho(dia) ? 4 : 2);
-  function nivelDoSono(h, dia) {
-    if (h >= horaAcordar(dia) && h < 20) return 0;                       // cochilo de dia: não conta como noite mal dormida
-    if (noiteDeTrabalho(dia)) return h >= 20 || h < 2 ? 0 : h < 4 ? 2 : 3;
-    return typeof Sono !== 'undefined' ? Sono.nivelPelaHora(h) : (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
-  }
-  function registrarSono(nivel, motivo) { try { if (typeof Sono !== 'undefined') Sono.registrar(nivel, motivo); } catch (e) { console.warn('[Fase 2] sono:', e); } }
+  // ----- dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 6h do dia seguinte
   async function dormir() {
     salvarRelogio();
-    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5, acorda = horaAcordar(c.dia);
+    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
-    if (h >= acorda && h < 20) {                                       // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
-      const txt = acorda === H_ACORDA ? T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?') : Tf('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?', acorda);
-      const r = await Escolha.mostrar(txt, [T('Dormir'), T('Agora não')], { centro: true });
+    if (h >= H_ACORDA && h < 20) {                                     // dá para dormir a qualquer hora (pula o resto do dia)
+      const r = await Escolha.mostrar(T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?'), [T('Dormir'), T('Agora não')], { centro: true });
       Dialogo.esconder(); if (r !== 0) return;
     }
     await preto(true, 900); const sujo = dormiuSujo();
-    const nivel = nivelDoSono(h, c.dia), horas = h >= acorda ? 24 - h + acorda : acorda - h;
-    registrarSono(nivel, nivel ? 'dormiu tarde' : 'dormiu bem');
-    const novo = Object.assign({}, c, { hora: acorda, dia: (c.dia || 1) + 1, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0 } });
+    const horas = h >= H_ACORDA ? 24 - h + H_ACORDA : H_ACORDA - h;
+    const novo = Object.assign({}, c, { hora: H_ACORDA, dia: (c.dia || 1) + (h >= H_ACORDA ? 1 : 0), avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: horas >= 8 } });
     if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
     try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
     gravar('fim');
     aparecerNaCama(); await esperar(1600); await preto(false, 1400); await esperar(900);
     J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(200);
     await dizer(['jog', T('Bom dia! Hora de começar o dia.')]);
-    if (nivel > 0) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);   // (6.1.0) só reclama se dormiu mal
+    if (horas < 8) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
     if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
-    if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
   }
 
   // ----- a porta da rua
@@ -1717,8 +1660,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function relogioTick(dt) {
     const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) R.hora -= 24;
     R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }
-    const hAp = horaApagar(R.dia);                                     // (6.1.0) noite de trabalho: 4h
-    if (ant < hAp && R.hora >= hAp && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
+    if (ant < 2 && R.hora >= 2 && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
     mostrarRelogio();
   }
   function mostrarRelogio() {
@@ -1741,17 +1683,15 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     } catch (e) { console.warn('[Fase 2] sujo:', e); return false; }
   }
   async function apagarDeSono() {
-    const sujo = dormiuSujo(), nt = noiteDeTrabalho(S.relogio.dia), acorda = horaAcordar(S.relogio.dia);
-    await dizer(['jog', nt ? T('Nossa, já são 4h da manhã... não aguento mais de sono.') : T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
+    const sujo = dormiuSujo();
+    await dizer(['jog', T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
     await preto(true, 900);
-    registrarSono(3, nt ? 'acordado até as 4h' : 'acordado até as 2h');   // (6.1.0) apagar de sono também é noite mal dormida
-    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = acorda;
-    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? 4 : 2), ok: false } })); } catch (e) { console.warn(e); }
+    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = H_ACORDA;
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: H_ACORDA, dia: S.relogio.dia, avisouDormir: false, sono: { horas: 3, ok: false } })); } catch (e) { console.warn(e); }
     aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
     const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
     await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);
     if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
-    if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
   }
   function gancho(rdt) {
     if (!S || !S.ativo) return;
@@ -1765,7 +1705,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.livreAndando = false; S.jog.correndo = false; } else mover(dt); }
       for (const A of S.elenco) tickAtor(A, S.t, dt);
       if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
-      fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt); sanchoTick(dt);
+      fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
       if (S.relogio && S.modo === 'livre' && !S.camEspecial && nPassos === 1) relogioTick(dt);   // o tempo anda no prédio (menos no banho, banheiro, guarda-roupa, computador...)
     }
     if (nPassos > 1) S.camSnap = true;
@@ -1803,7 +1743,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     S.ativo = false; GANCHO_RENDER = null; camera.clearViewOffset(); if (camera.fov !== 52) { camera.fov = 52; camera.updateProjectionMatrix(); }
     for (const A of S.elenco) descartarAtor(A);
     for (const p of (S.fumaca || [])) p.material.dispose();
-    descartarSancho(); descartarGrupo(S.palco); if (S.quarto) descartarGrupo(S.quarto.g); if (S.banh) descartarGrupo(S.banh.g); if (S.esc) descartarGrupo(S.esc.g);
+    descartarGrupo(S.palco); if (S.quarto) descartarGrupo(S.quarto.g); if (S.banh) descartarGrupo(S.banh.g); if (S.esc) descartarGrupo(S.esc.g);
     restaurarMundo();
     document.body.classList.remove('f2Ativo');
     if (UI.relogio) { UI.relogio.remove(); UI.relogio = null; }
@@ -1844,7 +1784,6 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       prepararMundo();
       S.palco = new THREE.Group(); scene.add(S.palco);
       S.quarto = montarQuarto(S.fem); S.banh = montarBanheiro(); S.esc = montarEscada();
-      carregarSancho();
       S.quarto.g.visible = S.banh.g.visible = S.esc.g.visible = false;
       if (S.quarto.bola) S.bolaQ = { mesh: S.quarto.bola, sombra: S.quarto.bolaSombra, x: 0.9, z: 1.6, vx: 0, vz: 0, jx: null, jz: null, eixo: new THREE.Vector3(), q: new THREE.Quaternion() };
       GANCHO_RENDER = gancho;
@@ -1873,9 +1812,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         await preto(false, 900); await esperar(500);
         const sujo = dormiuSujo();
         await dizer(['jog', T('Nem lembro de ter chegado em casa... apaguei de cansaço.')]);
-        await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);          // (6.1.0) ficou acordado até as 2h (4h na noite de trabalho): dormiu mal
         if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
-        if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
         S.jog.seguir = true; S.jog.pose = 'pe'; S.jog.x = -1.9; S.jog.z = -1.3; S.jog.yaw = S.jog.yawAlvo = 0; S.jog.ySnap = true;
         liberar();
       } else if (volta) {
@@ -1917,5 +1854,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', paraCidade); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir } });   // (_estado/_fns: para testes)
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa } });   // (_estado/_fns: para testes)
 })();
