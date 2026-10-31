@@ -835,13 +835,15 @@
     function darCaixaNaMao(sec) {
       const J = S().jog; tirarCaixaDaMao();
       const G = new api.Geo(); G.box(0.42, 0.34, 0.5, '#c89a64', 0, 0, 0, '#d8b080'); G.box(0.43, 0.06, 0.51, COR_SEC[sec], 0, 0.2, 0);
-      const m = G.malha(api.MAT); m.position.set(0.42, 0.78, 0); J.m.corpo.add(m); J.caixaMesh = m; J.caixaM = sec;
+      const m = G.malha(api.MAT); m.position.set(0.4, 1.1, 0); m.scale.y = 0.85; J.m.corpo.add(m); J.caixaMesh = m; J.caixaM = sec;   // apoiada em cima das duas mãos (ver poseCaixa)
     }
     function tirarCaixaDaMao() { const s = S(); if (!s) return; const J = s.jog; if (J.caixaMesh && J.caixaMesh.parent) J.caixaMesh.parent.remove(J.caixaMesh); J.caixaMesh = null; J.caixaM = null; }
+    // a caixa nas DUAS MÃOS, embaixo dela: braços um pouco para a frente e fechados para dentro, cotovelos dobrados, mãos a 0,2 m do
+    // meio (sob as bordas da caixa, que fica apoiada nelas). Antes os braços abriam para os lados e a caixa flutuava entre as mãos.
     function poseCaixa(J) {
       if (!J.caixaM) return;
-      const m = J.m; m.bracoE.rotation.z = m.bracoD.rotation.z = 1.15; m.bracoE.rotation.x = 0.18; m.bracoD.rotation.x = -0.18;
-      usarCotovelo(m.bracoE, 0, 0.55); usarCotovelo(m.bracoD, 0, 0.55);
+      const m = J.m; m.bracoE.rotation.z = m.bracoD.rotation.z = 0.6; m.bracoE.rotation.x = -0.4; m.bracoD.rotation.x = 0.4;
+      usarCotovelo(m.bracoE, 0, 0.85); usarCotovelo(m.bracoD, 0, 0.85);
     }
 
     // ---- conversa com o Cadu (apresentação na primeira vez, depois a oferta do turno)
@@ -1397,7 +1399,7 @@
     }
     function limpar() { fecharUI(); if (M.painel) { M.painel.remove(); M.painel = null; } for (const t of M.tex.values()) t.dispose(); M.tex.clear(); }
 
-    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
+    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { darCaixaNaMao, tirarCaixaDaMao, comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
   }
 
   window.FutebolJS.registrarFase({ id: 'mercado', nome: 'Mercado', nucleoMinimo: '5.0.0', iniciar: async () => {}, criar, PRODUTOS });

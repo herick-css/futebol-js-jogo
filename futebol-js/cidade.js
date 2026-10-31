@@ -156,6 +156,7 @@
     'Fala, {0}! É o João!': ["Hey, {0}! It's João!", '¡Hola, {0}! ¡Soy João!', 'Ehi, {0}! Sono João!', 'Salut, {0} ! C\'est João !'],
     'Fechou! Te mandei a localização. Até lá!': ['Deal! I sent you the location. See you there!', '¡Listo! Te mandé la ubicación. ¡Nos vemos!', 'Affare fatto! Ti ho mandato la posizione. A dopo!', 'Marché conclu ! Je t\'ai envoyé la localisation. À tout à l\'heure !'],
     'Galera do Bryan': ["Bryan's Crew", 'Los de Bryan', 'Banda di Bryan', 'La bande de Bryan'],
+    'Time do Caio': ["Caio's Team", 'Equipo de Caio', 'Squadra di Caio', 'Équipe de Caio'],
     'Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!': ["Not your day today, huh? But we play here every Monday and Wednesday. Come by and learn: you learn football by playing!", 'Hoy no fue tu día, ¿eh? Pero jugamos aquí todos los lunes y miércoles. Ven a aprender: ¡al fútbol se aprende jugando!', 'Oggi non era la tua giornata, eh? Ma giochiamo qui ogni lunedì e mercoledì. Vieni a imparare: a calcio si impara giocando!', 'Ce n\'était pas ton jour, hein ? Mais on joue ici tous les lundis et mercredis. Viens apprendre : le foot, ça s\'apprend en jouant !'],
     'Jogar bola no sintético': ['Play ball on the turf', 'Jugar en la cancha sintética', 'Giocare sul sintetico', 'Jouer sur le synthétique'],
     'João chamando... toque para atender': ['João calling... tap to answer', 'João llamando... toca para contestar', 'João sta chiamando... tocca per rispondere', 'João appelle... touche pour répondre'],
@@ -490,6 +491,21 @@
     'Bom dia, {0}! Minha funcionária nova chegou!': ['Good morning, {0}! My new employee is here!', '¡Buenos días, {0}! ¡Llegó mi empleada nueva!', 'Buongiorno, {0}! È arrivata la mia nuova dipendente!', 'Bonjour, {0} ! Ma nouvelle employée est arrivée !'],
     'Bom dia, {0}! Meu funcionário novo chegou!': ['Good morning, {0}! My new employee is here!', '¡Buenos días, {0}! ¡Llegó mi empleado nuevo!', 'Buongiorno, {0}! È arrivato il mio nuovo dipendente!', 'Bonjour, {0} ! Mon nouvel employé est arrivé !'],
   });
+  Object.assign(TRAD_CD, {
+    'Falar com o João': ['Talk to João', 'Hablar con João', 'Parla con João', 'Parler à João'],
+    'Vou dar uma volta e já volto.': ["I'll take a walk and be right back.", 'Voy a dar una vuelta y ya vuelvo.', 'Faccio un giro e torno subito.', 'Je vais faire un tour et je reviens.'],
+    'Olha a galera chegando aí! Bora!': ["Look, the guys are coming! Let's go!", '¡Mira, ya llega la banda! ¡Vamos!', 'Guarda, arriva la banda! Andiamo!', 'Regarde, la bande arrive ! On y va !'],
+    'Beleza, mas não demora!': ["Alright, but don't take long!", 'Vale, ¡pero no tardes!', 'Va bene, ma non metterci troppo!', "D'accord, mais ne traîne pas !"],
+    'Fala, {0}! Chegou cedo, hein? A galera já vai chegar.': ['Hey, {0}! Early, huh? The guys will be here soon.', '¡Qué tal, {0}! Llegaste temprano, ¿eh? La banda ya va a llegar.', 'Ehi, {0}! Sei arrivato presto, eh? La banda arriva tra poco.', 'Salut, {0} ! En avance, hein ? La bande va bientôt arriver.'],
+    'E aí, {0}! Calma que a galera já tá vindo.': ["What's up, {0}! Hang on, the guys are on their way.", '¡Qué onda, {0}! Tranquilo, que la banda ya viene.', 'Come va, {0}! Calma, la banda sta arrivando.', 'Ça va, {0} ! Patience, la bande arrive.'],
+    '{0}! Que bom que você veio. O pessoal já deve estar chegando.': ["{0}! Glad you came. Everyone should be here any minute.", '¡{0}! Qué bueno que viniste. La gente ya debe estar llegando.', '{0}! Che bello che sei venuto. Gli altri staranno arrivando.', "{0} ! Content que tu sois venu. Les autres doivent arriver."],
+    'Opa, {0}! O Caio mandou mensagem: a galera já tá a caminho.': ['Hey, {0}! Caio texted: the guys are on the way.', '¡Epa, {0}! Caio mandó un mensaje: la banda ya está en camino.', 'Ehi, {0}! Caio ha scritto: la banda è per strada.', 'Hé, {0} ! Caio a envoyé un message : la bande est en route.'],
+    'Segura aí, {0}, que a galera já vai chegar. Eu até já aqueci!': ["Hold on, {0}, the guys will be here soon. I've already warmed up!", 'Aguanta, {0}, que la banda ya va a llegar. ¡Yo ya hasta calenté!', 'Aspetta, {0}, la banda arriva tra poco. Io mi sono già scaldato!', "Attends, {0}, la bande va arriver. Je me suis déjà échauffé !"],
+    'E aí, {0}! Segunda e quarta tem racha no sintético, não esquece!': ["What's up, {0}! Monday and Wednesday there's a pickup game at the turf field, don't forget!", '¡Qué onda, {0}! Lunes y miércoles hay partido en la cancha sintética, ¡no te olvides!', 'Come va, {0}! Lunedì e mercoledì si gioca al sintetico, non dimenticarlo!', "Ça va, {0} ! Lundi et mercredi, il y a un match au synthétique, n'oublie pas !"],
+    'Fala, {0}! Tô aqui de bobeira em casa. Tudo certo?': ["Hey, {0}! Just chilling at home. All good?", '¡Qué tal, {0}! Aquí, de vago en casa. ¿Todo bien?', 'Ehi, {0}! Sto qui a casa senza far niente. Tutto a posto?', 'Salut, {0} ! Je traîne à la maison. Ça va ?'],
+    '{0}! Lembra quando a gente jogava na quadra da escola? Que saudade...': ['{0}! Remember when we played on the school court? I miss it...', '¡{0}! ¿Te acuerdas cuando jugábamos en la cancha de la escuela? Qué nostalgia...', '{0}! Ti ricordi quando giocavamo nel campetto della scuola? Che nostalgia...', "{0} ! Tu te souviens quand on jouait sur le terrain de l'école ? Ça me manque..."],
+    'Opa, {0}! Minha bola ainda tá inteira, viu? Cuidado com ela dessa vez!': ['Hey, {0}! My ball is still in one piece, see? Careful with it this time!', '¡Epa, {0}! Mi pelota todavía está entera, ¿eh? ¡Cuidado con ella esta vez!', 'Ehi, {0}! Il mio pallone è ancora intero, eh? Stavolta stai attento!', "Hé, {0} ! Mon ballon est encore entier, hein ? Fais attention cette fois !"],
+  });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
 
@@ -743,8 +759,12 @@
     gr.addColorStop(0, 'rgba(255,238,175,0.95)'); gr.addColorStop(0.35, 'rgba(255,214,130,0.45)'); gr.addColorStop(1, 'rgba(255,200,110,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64);
     const t = new THREE.CanvasTexture(c); return t; };
   // placas das lojas: texto pixelado
+  // Se o texto não cabe nem com a fonte mínima (ex.: "HIGIÊNICO" na placa de 1,2 m do mercado, que cortava o H e o O), a textura ganha
+  // mais pixels por metro (a placa continua do mesmo tamanho no mundo).
   function texLetreiro(txt, fundo, frente, wM, hM) {
-    const W = Math.max(32, Math.round(wM * 20)), H = Math.max(12, Math.round(hM * 20));
+    const fonteMin = "bold 6px Silkscreen, 'Courier New', monospace", med = document.createElement('canvas').getContext('2d'); med.font = fonteMin;
+    let ppm = 20; while (ppm < 80 && med.measureText(txt).width > Math.max(32, Math.round(wM * ppm)) - 6) ppm += 4;
+    const W = Math.max(32, Math.round(wM * ppm)), H = Math.max(12, Math.round(hM * ppm));
     return texCanvas(W, H, (g) => {
       g.fillStyle = fundo; g.fillRect(0, 0, W, H);
       g.fillStyle = frente; g.fillRect(0, 0, W, 1); g.fillRect(0, H - 1, W, 1); g.fillRect(0, 0, 1, H); g.fillRect(W - 1, 0, 1, H);
@@ -1673,16 +1693,30 @@
     for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number' || d.atributos[n] < 5) d.atributos[n] = Math.max(5, d.atributos[n] || 5);   // começa com tudo 5
     return d.atributos;
   }
+  // o jogador na partida da cidade tem 16 anos, como na cidade e na Fase 2: sem barba (antes vinha a aparência do criador, com a barba)
+  function aparenciaNaPartida() { return Object.assign(personagemAparencia(), { barba: 0 }); }
+  // altura do topo do cabelo (o boneco tem a mesma altura em todo mundo; quem parece mais alto é o cabelo)
+  function topoCabelo(estilo) { const e = ESTILOS_CABELO[estilo | 0]; const t = e && e.caixas.length ? Math.max(...e.caixas.map((c) => c[4] + c[1] / 2)) : 0; return Math.max(1.88, t); }
+  // a Júlia do outro time com a mesma altura do jogador: o penteado dela (de menina) cujo topo fica mais perto do topo do cabelo dele
+  function apJulia() {
+    const ap = apFixa(7171, 'F'), alvo = topoCabelo((PERSONAGEM.aparencia || {}).estilo);
+    let melhor = ap.estilo, md = 1e9;
+    for (const nome of ['Tranças', 'Maria-chiquinha', 'Rabo de cavalo', 'Chanel', 'Franja reta', 'Pixie', 'Ondulado curto']) {
+      const i = ESTILOS_CABELO.findIndex((c) => c.nome === nome); if (i < 0) continue;
+      const dd = Math.abs(topoCabelo(i) - alvo); if (dd < md - 1e-6) { md = dd; melhor = i; }
+    }
+    return Object.assign(ap, { estilo: melhor });
+  }
   function cfgSintetico(duracao, horario, clima) {
     const g = (nome, seed, gen) => Object.assign({ nome }, apFixa(seed, gen));
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
     const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
-      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), Object.assign({ nome: 'Caio' }, AP_CAIO), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M')] };   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
-    const t1 = { id: 's_bryan', nome: T('Galera do Bryan'), sigla: 'BRY', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
-      emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'DB' }, tecnico: tec,
-      elenco: [g('Rafa', 6161, 'M'), g('Júlia', 7171, 'F'), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // 5 x 5: + Vitinho
-    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
+      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), g('Rafa', 6161, 'M'), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M')] };   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
+    const t1 = { id: 's_caio', nome: T('Time do Caio'), sigla: 'CAI', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
+      emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'CA' }, tecnico: tec,
+      elenco: [Object.assign({ nome: 'Caio' }, AP_CAIO), Object.assign({ nome: 'Júlia' }, apJulia()), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // 5 x 5: + Vitinho
+    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: aparenciaNaPartida() };
     return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
   }
@@ -1728,6 +1762,7 @@
     PERSONAGEM.atributos = Object.assign({}, at);
     A.feito = true; f.jogos = (f.jogos | 0) + 1; d.precisaBanho = true;
     tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
+    f.joaoSai = d.hora;                                                // o João volta para casa a partir de agora
     S.missao = ''; recolherMissao(); definirMarca(null);
     // a cena depois do jogo: o Caio vem falar com a gente na saída do campo
     const J = S.jog, E = P.dentro; J.sentado = false; J.x = E.x; J.z = E.z; J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null;
@@ -1765,8 +1800,105 @@
   // os alvos do futebol (na porta do sintético Doutor Bryan)
   function alvosFutebol(v) {
     const f = fut(), A = f.agenda, P = sintetico(), d = S.dados; if (!A || A.feito || A.dia !== d.dia || !P) return;
+    if (joaoEsperando() && d.hora >= A.hora - 0.75) return;                // o João está na entrada: é com ele que começa o jogo
     if (d.hora < A.hora - 0.75) v.push({ x: P.x, z: P.z, r: 2.2, txt: Tf('O jogo é às {0}', fmtHora(A.hora)), fn: async () => {}, y: 2.6 });
     else if (d.hora <= A.hora + 1.5) v.push({ x: P.x, z: P.z, r: 2.4, txt: T('Jogar bola no sintético'), fn: jogarSintetico, y: 2.6, pri: true });
+  }
+  // ================================================================== O JOÃO (o mesmo da Fase 1, crescido), que mora na Casa do João
+  //   Só aparece depois de ligar convidando para o racha. Nos dias de jogo no sintético ele sai de casa e vai esperar na entrada do
+  //   campo: chega 45 min antes do jogo e fica até 1h30 depois (ou até o jogo acontecer) e então volta para casa. Falando com ele:
+  //   "a galera já vai chegar" (JOAO_ESPERA, 5 jeitos) e dá para começar o jogo. Nos outros dias fica na frente de casa das 18h às 20h.
+  //   A posição sai direto da hora (como a Lúcia): funciona também ao carregar e ao sair de dentro de um lugar.
+  const VEL_JOAO = 1.9;
+  const JOAO_ESPERA = [
+    'Fala, {0}! Chegou cedo, hein? A galera já vai chegar.',
+    'E aí, {0}! Calma que a galera já tá vindo.',
+    '{0}! Que bom que você veio. O pessoal já deve estar chegando.',
+    'Opa, {0}! O Caio mandou mensagem: a galera já tá a caminho.',
+    'Segura aí, {0}, que a galera já vai chegar. Eu até já aqueci!',
+  ];
+  const JOAO_PAPOS = [
+    'E aí, {0}! Segunda e quarta tem racha no sintético, não esquece!',
+    'Fala, {0}! Tô aqui de bobeira em casa. Tudo certo?',
+    '{0}! Lembra quando a gente jogava na quadra da escola? Que saudade...',
+    'Opa, {0}! Minha bola ainda tá inteira, viu? Cuidado com ela dessa vez!',
+  ];
+  function apJoao() { const H = HIST.joao; return { pele: H.pele, cabelo: H.cabelo, estilo: H.estilo, rosto: H.rosto, labio: H.labio, barba: 0 }; }
+  function casaJoao() { return (S.casas || []).find((c) => c.especial === 'joao') || null; }
+  function pontoJoaoSintetico() { const P = sintetico(); return P ? { x: P.x - 2.4, z: P.z + 0.5, yaw: Math.PI / 2 } : null; }   // do lado do portão, olhando para a rua
+  function pontoJoaoCasa() { const C = casaJoao(); if (!C) return null; const dx = C.sx - C.x, dz = C.sz - C.z, d = Math.hypot(dx, dz) || 1; return { x: C.x + dx / d * 0.55, z: C.z + dz / d * 0.55, yaw: Math.atan2(-dz, dx) }; }
+  // caminho da porta de uma casa até um ponto qualquer, pela rede de calçadas (como rotaCasaPorta)
+  function rotaCasaPonto(especial, x, z, vel) {
+    const C = (S.casas || []).find((c) => c.especial === especial); if (!C || !S.rede) return null;
+    const pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, x, z)), acc = [0];
+    for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
+    const L = acc[acc.length - 1];
+    return { pts, acc, L, dur: L / vel * H_POR_S };
+  }
+  function rotaJoao() { if (S.rotaJoao) return S.rotaJoao; const P = pontoJoaoSintetico(); return P ? (S.rotaJoao = rotaCasaPonto('joao', P.x, P.z, VEL_JOAO)) : null; }
+  // onde o João está agora: null (dentro de casa) | { modo: 'anda', k, ida } | { modo: 'espera' } (no sintético) | { modo: 'casa' }
+  function joaoAgora() {
+    const d = S.dados, f = fut(), h = d.hora, A = f.agenda;
+    if (!f.ligou) return null;
+    if (A && A.dia === d.dia) {
+      const R = rotaJoao(); if (!R) return null;
+      if (A.feito && typeof f.joaoSai !== 'number') return null;
+      const chega = A.hora - 0.75, sai = A.feito ? (typeof f.joaoSai === 'number' ? f.joaoSai : h) : A.hora + 1.5;
+      if (!A.feito && h >= chega - R.dur && h < chega) return { modo: 'anda', k: (h - (chega - R.dur)) / R.dur, ida: true };
+      if (h >= chega && h < sai) return { modo: 'espera' };
+      if (h >= sai && h < sai + R.dur) return { modo: 'anda', k: 1 - (h - sai) / R.dur, ida: false };
+      return null;                                                       // dia de jogo: fora disso ele fica em casa
+    }
+    return h >= 18 && h < 20 ? { modo: 'casa' } : null;
+  }
+  const joaoEsperando = () => !!(S.joao && !S.joao.oculto && S.joao.estado === 'espera');
+  function criarJoao(roupa) {
+    const jogo = roupa === 'jogo';
+    const A = criarNPCFixo(apJoao(), false, jogo ? 7 : 0, jogo ? ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee'] : ['#c8352b', '#8c9199', '#f2f2ee', '#f2f2ee']);
+    A.tipo = 'joao'; A.roupa = roupa; A.vel = VEL_JOAO; sumirV(A);
+    S.joao = A; S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.joao = { A, nome: T('João'), voz: 3 };
+    return A;
+  }
+  function removerJoao() { const A = S.joao; if (!A) return; descartarPessoa(A); S.joao = null; if (S.falantesExtra) delete S.falantesExtra.joao; }
+  function tickJoao() {
+    if (S.dentro || !S.casas) return;
+    const E = joaoAgora(), d = S.dados, f = fut();
+    const roupa = E && (E.modo === 'casa') ? 'casa' : 'jogo';
+    let A = S.joao;
+    if (!E) { if (A && !A.oculto) { sumirV(A); A.estado = null; } return; }
+    if (A && A.roupa !== roupa) { removerJoao(); A = null; }            // a roupa do dia (colete no dia de jogo; em casa, camiseta)
+    if (!A) A = criarJoao(roupa);
+    if (E.modo === 'anda') {
+      const R = rotaJoao(), p = pontoNaRota(R, E.k);
+      if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
+      A.x = p.x; A.z = p.z; A.yawAlvo = E.ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = VEL_JOAO; A.estado = 'anda';
+      return;
+    }
+    const P = E.modo === 'espera' ? pontoJoaoSintetico() : pontoJoaoCasa(); if (!P) return;
+    if (A.oculto) surgirV(A, P.x, P.z, P.yaw);
+    A.x = P.x; A.z = P.z; A.andando = false; A.correndo = false; A.estado = E.modo;
+    if (S.modo === 'livre' && !A.fala) A.yawAlvo = Math.hypot(S.jog.x - A.x, S.jog.z - A.z) < 4 ? Math.atan2(-(S.jog.z - A.z), S.jog.x - A.x) : P.yaw;   // olha para quem chega perto
+    void d; void f;
+  }
+  function alvosJoao(v) {
+    const A = S.joao; if (!A || A.oculto || S.dentro || (A.estado !== 'espera' && A.estado !== 'casa')) return;
+    v.push({ x: A.x, z: A.z, r: 2.1, txt: T('Falar com o João'), fn: conversarJoao, y: 2.9, pri: true });
+  }
+  async function conversarJoao() {
+    const A = S.joao, J = S.jog, f = fut(); if (!A) return;
+    A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
+    const nome = nomeJog();
+    if (A.estado === 'espera') {
+      const p = Tf(JOAO_ESPERA[(f.papoJoao | 0) % JOAO_ESPERA.length], nome); f.papoJoao = (f.papoJoao | 0) + 1;
+      await fala('joao', p);
+      const r = await Escolha.mostrar(p, [T('Bora jogar!'), T('Vou dar uma volta e já volto.')]);
+      await fala('jog', r === 0 ? T('Bora jogar!') : T('Vou dar uma volta e já volto.'));
+      if (r === 0) { await fala('joao', T('Olha a galera chegando aí! Bora!')); Dialogo.esconder(); await jogarSintetico(); return; }
+      await fala('joao', T('Beleza, mas não demora!'));
+    } else {
+      await fala('joao', Tf(JOAO_PAPOS[(f.papoJoaoCasa | 0) % JOAO_PAPOS.length], nome)); f.papoJoaoCasa = (f.papoJoaoCasa | 0) + 1;
+    }
+    Dialogo.esconder();
   }
   // ================================================================== O BIEL E O FUTSAL DA QUADRA COBERTA
   //   A partir da 3ª semana (dia 15+), toda TERÇA, o Biel espera os amigos na frente da quadra de futsal coberta (do lado do portão), com
@@ -1873,7 +2005,7 @@
     const t1 = { id: 'q_quadra', nome: T('Galera da Quadra'), sigla: 'QDR', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_BRANCO, uniforme2: UNI_VERDE,
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'QC' }, tecnico: tec,
       elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M')] };
-    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: personagemAparencia() };
+    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: aparenciaNaPartida() };
     return { campo: 'futsal', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Futsal na quadra coberta'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };   // (quadra coberta: sem chuva)
   }
@@ -2189,6 +2321,46 @@
   });
   const carroNaoPara = () => S.carros.some((c) => { if (!c.ativo || c.v < 0.5) return false; const dl = linhaFaixa(c);   // carro PARADO não é perigo
     return (dl > -6.8 && dl < 0) || (c.v > 1.5 && dl >= 0 && dl < (c.v * c.v) / (2 * 5.5) + 0.6); });
+  // A FAIXA DE PEDESTRE (quem anda pela rede: os pedestres e quem vai para um lugar ou volta para casa)
+  //   Chegando na beira, o pedestre PARA, vira para o lado de onde vem o carro, estica o braço para ele e espera o carro PASSAR (os carros
+  //   não freiam por quem está esperando na beira, só por quem já está atravessando). Passou e o próximo está a mais de 2,5 s: atravessa (quem
+  //   está atravessando faz os carros pararem).
+  //   O gesto acontece em 8 de cada 10 travessias (com ou sem carro perto; sem carro nenhum até 120 m, espera 2,5 s e vai); nos outros 15%,
+  //   sem carro perto, ele só olha e atravessa. Nunca espera mais de 10 s.
+  let contFaixa = 0;                                                  // a cada 10 travessias, 8 com o gesto (fixo, não sorteado)
+  const novaEsperaFaixa = () => ({ t: 0, gesto: [0, 1, 2, 4, 5, 6, 7, 9].includes(contFaixa++ % 10), car: null, passou: 0 });
+  const tempoCarro = (c) => { const dl = linhaFaixa(c); return dl < 0 ? 0 : dl / Math.max(c.v, 1.5); };
+  function carroDaFaixa() {                                          // o próximo carro a passar pela faixa (das duas pistas), até 120 m
+    let melhor = null, tm = 1e9;
+    for (const c of S.carros) { if (!c.ativo || c.v < 0.3) continue; const dl = linhaFaixa(c); if (dl < -6.8 || dl > 120) continue; const t = tempoCarro(c); if (t < tm) { tm = t; melhor = c; } }
+    return melhor;
+  }
+  // devolve true enquanto ele espera na beira (o passo do quadro já foi usado); px, pz = o outro lado
+  function esperaFaixa(A, px, pz, dt) {
+    const F = A.faixaE || (A.faixaE = novaEsperaFaixa()); F.t += dt;
+    if (F.car && (!F.car.ativo || linhaFaixa(F.car) < -6.8 || F.car.v < 0.3)) { F.car = null; F.passou++; }   // o carro que ele esperava passou (ou parou)
+    const prox = carroDaFaixa(), tp = prox ? tempoCarro(prox) : 1e9;
+    if (F.gesto && !F.car && prox && F.passou < 1) F.car = prox;           // espera UM carro passar
+    const vai = F.t > 10 || (tp > 2.5 && (F.gesto ? F.t >= 1.6 && !F.car && (F.passou > 0 || F.t >= 2.5) : true));
+    if (vai) { A.pedeFaixa = false; A.olhaCarro = null; return false; }
+    A.andando = false; A.correndo = false; A.espera = 0;
+    const alvo = F.car || prox;
+    if (F.gesto) { A.pedeFaixa = true; A.olhaCarro = alvo || null; }
+    if (alvo) A.yawAlvo = Math.atan2(-(alvo.z - A.z), alvo.x - A.x);   // olha (e estica o braço) para o carro
+    else A.yawAlvo = Math.atan2(-(pz - A.z), px - A.x);
+    return true;
+  }
+  function comecarTravessia(A) {
+    A.faixaE = null; A.pedeFaixa = false; A.olhaCarro = null; A.atravessa = true;
+    const c = carroDaFaixa();
+    if (c && tempoCarro(c) < 7 && !A.correFaixa) { A.correFaixa = true; A.velFaixa = A.vel; A.vel = Math.max(3.0, A.vel * 1.8); A.correndo = true; }   // carro vindo: atravessa apertando o passo
+  }
+  function fimTravessia(A) {
+    A.atravessa = false; A.pedeFaixa = false; A.olhaCarro = null; A.faixaE = null;
+    if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; A.correndo = !!A.chuva; }
+  }
+  // em rotas (seguir): está numa ponta da faixa e o próximo ponto é a outra ponta?
+  function pontaFaixa(x, z) { const XF = PRACA_C.x; if (Math.abs(x - XF) > 0.75) return 0; return Math.abs(z - (-4.2)) < 0.75 ? -1 : Math.abs(z - 8.1) < 0.75 ? 1 : 0; }
   // 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
   function assustar(c, P) {
     for (let k = 1; k < 4; k++) setTimeout(() => { if (S && S.ativo && !S.dentro) buzina(c); }, k * 380);
@@ -2211,8 +2383,8 @@
   }
   function tickCarros(dt) {
     const J = S.jog, FIM = 270;
-    const obst = [J].concat(S.npcs.filter((A) => !A.oculto && !A.longeDemais && !A.sentado && (A.tipo === 'anda' || A.tipo === 'morador' || A.tipo === 'rua' || A.tipo === 'luciaRua' || A.recua) && A.z > AV.z0 - 1 && A.z < AV.z1 + 1));
-    const faixa = S.npcs.some((A) => !A.oculto && (A.pedeFaixa || A.atravessa));
+    const obst = [J].concat(S.npcs.filter((A) => !A.oculto && !A.longeDemais && !A.sentado && (A.tipo === 'anda' || A.tipo === 'morador' || A.tipo === 'rua' || A.tipo === 'luciaRua' || A.tipo === 'joao' || A.recua) && A.z > AV.z0 - 1 && A.z < AV.z1 + 1));
+    const faixa = S.npcs.some((A) => !A.oculto && A.atravessa);       // quem só está esperando na beira não faz o carro parar: ele espera o carro passar
     for (let i = 0; i < PISTAS.length; i++) {                        // novos carros entram pelas pontas (longe, na névoa)
       S.pistaT[i] -= dt; if (S.pistaT[i] > 0) continue;
       const p = PISTAS[i], x0 = -p.dir * FIM, livre = !S.carros.some((c) => c.ativo && c.z === p.z && Math.abs(c.x - x0) < 16);
@@ -2332,7 +2504,7 @@
     if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // puxando a persiana
     if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
     m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // bebendo: a mão fecha para a frente da boca
-    if (A.pedeFaixa && !A.sentado && !A.recua) { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = -0.12; usarCotovelo(m.bracoD, 0, 0.12); }   // parado na beira: mão esticada PARA A FRENTE (pare!)
+    if (A.pedeFaixa && !A.sentado && !A.recua) { m.bracoD.rotation.z = 1.55; m.bracoD.rotation.x = -0.1; usarCotovelo(m.bracoD, 0, 0.1); }   // parado na beira, virado para o carro: braço esticado para ele
     if (A.esbarrao > 0) { A.esbarrao = Math.max(0, A.esbarrao - dt); m.corpo.rotation.z = -Math.sin(A.esbarrao * 20) * A.esbarrao * 0.5; }   // esbarrão: cambaleia (como o técnico)
     if (A.copoCli && A.sentado && A.bebe > 0) A.copoCli.rotation.x = -0.45;
     if (A.gesto) gestoAtor(A);
@@ -2407,15 +2579,61 @@
     S.rede = nos;
   }
   // quem tem ROTINA (horário e destino certos) não para por causa do jogador: passa e o jogador é que cambaleia
-  const temRotina = (A) => !!A && (A.tipo === 'morador' || A.tipo === 'valdemar' || A.tipo === 'luciaRua' || A.tipo === 'rua');
+  const temRotina = (A) => !!A && (A.tipo === 'morador' || A.tipo === 'valdemar' || A.tipo === 'luciaRua' || A.tipo === 'rua' || A.tipo === 'joao');
   function pessoaNoCaminho(x, z, A) {
     for (const B of S.npcs) { if (B === A || B.oculto) continue; const dn = Math.hypot(x - B.x, z - B.z); if (dn < 0.58 && dn < Math.hypot(A.x - B.x, A.z - B.z) - 1e-4) return B; }
     return null;
   }
   // dois no mesmo caminho: um passa (fantasma por um instante) e o outro cambaleia e espera. Quem tem rotina sempre passa.
+  //   Quem não tem rotina cambaleia UMA vez e deixa passar; se a pessoa com rotina está parada no caminho (ou se ele já esbarrou nela
+  //   agora há pouco), ele CONTORNA ('contorna'). Antes ele cambaleava a cada 0,9 s, para sempre, na frente de quem estava parado.
   function cruzar(A, B) {
-    if (temRotina(B) && !temRotina(A)) { if (!(A.esbarrao > 0.05)) A.esbarrao = 0.6; A.travaE = 0.9; return false; }
+    if (temRotina(B) && !temRotina(A)) {
+      const repetiu = A.esbDe === B && S.t - (A.esbT == null ? -99 : A.esbT) < 6;
+      A.esbDe = B; A.esbT = S.t;
+      if (B.andando && !repetiu) { if (!(A.esbarrao > 0.05)) A.esbarrao = 0.6; A.travaE = 0.9; return false; }
+      return 'contorna';
+    }
     if (!(B.esbarrao > 0.05)) B.esbarrao = 0.6; if (!B.sentado) B.travaE = 0.9; A.fantasma = 0.7; return true;
+  }
+  // ABRIR PASSAGEM: quem tem rotina não para (a posição de vários deles sai direto da hora). Antes, quando um deles alcançava um pedestre
+  // comum, a separação empurrava o pedestre PARA A FRENTE, junto com ele (arrastava). Agora o pedestre que está no caminho (até 2 m à
+  // frente, no corredor de quem vem) dá um passo para o lado, espera a pessoa passar olhando para ela e só então segue.
+  const anda = (A) => A.tipo === 'anda' && !A.oculto && !A.sentado && !A.deitado && !A.recua;
+  function abrirPassagens() {
+    for (const R of S.npcs) {
+      if (!temRotina(R) || R.oculto || !R.andando || R.sentado) continue;
+      const fx = Math.cos(R.yawAlvo), fz = -Math.sin(R.yawAlvo);
+      for (const G of S.npcs) {
+        if (!anda(G) || (G.passagem && G.passagem.R === R)) continue;
+        const dx = G.x - R.x, dz = G.z - R.z, fr = dx * fx + dz * fz, lat = -dx * fz + dz * fx;
+        if (fr < -0.1 || fr > 2.0 || Math.abs(lat) > 0.62) continue;
+        let alvo = null;
+        for (const s0 of [Math.sign(lat) || (Math.random() < 0.5 ? 1 : -1), -(Math.sign(lat) || 1)]) {
+          const d = 0.9 * s0 - lat, x = G.x - fz * d, z = G.z + fx * d;
+          if (livreNPC(x, z, G, true, true)) { alvo = { x, z }; break; }
+        }
+        if (alvo) G.passagem = { R, x: alvo.x, z: alvo.z, t: 0 };
+        else G.fantasma = Math.max(G.fantasma || 0, 1.0);                // sem lado livre (calçada estreita): deixa passar rente
+      }
+    }
+  }
+  // devolve true enquanto o pedestre está abrindo passagem (o passo do quadro já foi usado)
+  function tickPassagem(A, dt) {
+    const P = A.passagem; if (!P) return false;
+    P.t += dt; const R = P.R;
+    const dx = A.x - R.x, dz = A.z - R.z, fx = Math.cos(R.yawAlvo), fz = -Math.sin(R.yawAlvo);
+    if (R.oculto || P.t > 5 || dx * fx + dz * fz < -0.7 || Math.hypot(dx, dz) > 2.6) { A.passagem = null; return false; }   // já passou
+    const qx = P.x - A.x, qz = P.z - A.z, dq = Math.hypot(qx, qz), v = Math.max(1.2, A.vel || 1.2) * dt;
+    if (dq > 0.05) { const k = Math.min(1, v / dq); A.x += qx * k; A.z += qz * k; A.andando = true; A.yawAlvo = Math.atan2(-qz, qx); }
+    else { A.andando = false; A.yawAlvo = Math.atan2(-(R.z - A.z), R.x - A.x); }   // parado do lado, olhando quem passa
+    return true;
+  }
+  // contorna quem está parado no caminho (o desvio lateral de sempre); sem lugar para desviar, passa rente (fantasma por um instante)
+  function contornar(A, dx, dz, d) {
+    A.andando = false; A.travaE = 0;
+    if (A.desvio) return;
+    if (!iniciarDesvio(A, dx, dz, d)) { A.fantasma = 0.8; A.bloq = 0; }
   }
   function livreNPC(x, z, A, semJog, ignorarGente) {
     if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
@@ -2497,6 +2715,7 @@
   }
   const carroVindo = () => S.carros.some((c) => { if (!c.ativo || c.v < 1) return false; const fr = (PRACA_C.x - c.x) * c.dir; return fr > -3 && fr < 28; });
   function passoNPC(A, dt) {
+    if (tickPassagem(A, dt)) return;
     if (A.dest) { tickDestino(A, dt); return; }
     A.cool = (A.cool == null ? 5 + Math.random() * 25 : A.cool) - dt;
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
@@ -2504,29 +2723,20 @@
     if (A.desvio && andarDesvio(A, dt)) return;                          // contornando o que travou
     const N = S.rede[A.alvo], dx = N.x - A.x, dz = N.z - A.z, d = Math.hypot(dx, dz);
     if (d < 0.6) {                                                   // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
-      if (A.cool <= 0 && !S.dentro) { decidirDestino(A); if (A.dest) return; }               // de cada 10 pedestres que decidem, 5 entram num lugar
-      const op = N.viz.filter((i) => i !== A.ant), prox = op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;
+      if (A.cool <= 0 && !S.dentro && !A.faixaE) { decidirDestino(A); if (A.dest) return; }               // de cada 10 pedestres que decidem, 5 entram num lugar
+      const op = N.viz.filter((i) => i !== A.ant), atrav = N.faixa ? op.find((i) => S.rede[i].faixa) : undefined, prox = A.faixaE && A.faixaE.no === A.alvo && A.faixaE.prox != null ? A.faixaE.prox : atrav != null && Math.random() < 0.7 ? atrav : op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;   // na ponta da faixa: 7 em 10 atravessam
       if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // saiu pela ponta do mapa
-      if (N.faixa && S.rede[prox].faixa) {                           // vai atravessar
-        // Carro chegando nos próximos 5 s: para na beira com a mão esticada para a frente e espera os carros pararem;
-        // aí atravessa CORRENDO (com a mão baixa). Sem carro vindo: atravessa andando, como sempre, com a mão para baixo.
-        if (A.pedeFaixa || carroChegando(8)) {                      // 8 s
-          if (!A.pedeFaixa) { A.pedeFaixa = true; A.maoT = 0; }
-          A.maoT = (A.maoT || 0) + 0.25;                             // a mão fica pelo menos ~1,2 s esticada (dá para ver o gesto)
-          if (carroNaoPara() || carroPerigo(8) || A.maoT < 1.25) { A.espera = 0.25; A.andando = false; A.yawAlvo = Math.atan2(-(S.rede[prox].z - A.z), S.rede[prox].x - A.x); return; }
-          A.pedeFaixa = false; A.atravessa = true;
-          if (!A.correFaixa) { A.correFaixa = true; A.velFaixa = A.vel; A.vel = Math.max(3.3, A.vel * 1.9); A.correndo = true; }
-        } else A.atravessa = true;
-      } else if (N.faixa) {                                          // chegou do outro lado
-        A.atravessa = false; A.pedeFaixa = false;
-        if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; A.correndo = !!A.chuva; }
-      }
+      if (N.faixa && S.rede[prox].faixa) {                           // vai atravessar: para na beira, estica o braço para o carro e espera ele PASSAR
+        if (!A.faixaE) A.faixaE = novaEsperaFaixa(); A.faixaE.no = A.alvo; A.faixaE.prox = prox;
+        if (esperaFaixa(A, S.rede[prox].x, S.rede[prox].z, dt)) return;
+        comecarTravessia(A);
+      } else if (N.faixa) fimTravessia(A);                             // chegou do outro lado
       A.ant = A.alvo; A.alvo = prox; if (Math.random() < 0.05) A.espera = 2 + Math.random() * 4;
       return;
     }
     const v = A.vel * dt; let moveu = false;
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
-      if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { if (cruzar(A, B)) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return; }
+      if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return; }
         if (Math.hypot(nx - S.jog.x, nz - S.jog.z) < 0.62 && !(A.esbarrao > 0.05)) { A.esbarrao = 0.5; A.travaE = 0.7; A.andando = false; return; } } }   // o jogador na frente: cambaleia e espera
     for (const ang of [0, 0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) {     // desvia de quem estiver na frente (gente, poste, mesa...)
       const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
@@ -2576,7 +2786,7 @@
       if (C.a.tipo === 'morador' || C.b.tipo === 'morador' || C.a.oculto || C.b.oculto) { C.a.fala = C.b.fala = false; continue; }   // quem saiu para casa/árvore não conversa
       if (!C.a.sentado) { C.a.yawAlvo = Math.atan2(-(C.b.z - C.a.z), C.b.x - C.a.x); C.b.yawAlvo = Math.atan2(-(C.a.z - C.b.z), C.a.x - C.b.x); }
     }
-    if (!S.dentro) { tickMoradores(dt); separarPessoas(); gerenciarPedestres(dt); } else tickFluxo(dt);
+    if (!S.dentro) { tickMoradores(dt); abrirPassagens(); separarPessoas(); gerenciarPedestres(dt); } else tickFluxo(dt);
     const J0 = S.jog;
     for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
       if (A.fantasma > 0) A.fantasma -= dt;
@@ -3102,7 +3312,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); if (S.pizzaria) S.pizzaria.alvosRua(v); for (const P of PORTAS) {
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); for (const P of PORTAS) {
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
       if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
@@ -4797,14 +5007,21 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function distRede(x, z) { let bd = 1e9; for (const n of S.rede) bd = Math.min(bd, Math.hypot(n.x - x, n.z - z)); return bd; }
   function seguir(A, rota, vel, dt) {
     if (!rota.length) return true;
+    if (!temRotina(A) && tickPassagem(A, dt)) return false;
     if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return false; }   // esbarrou: espera um instante
     if (A.desvio && andarDesvio(A, dt)) return false;                        // contornando o que travou
-    const q = rota[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = vel * dt;
-    A.vel = vel; A.correndo = vel > 2.5 || !!A.chuva;
+    const q = rota[0];
+    if (!A.dentro && !S.dentro) {                                       // a faixa de pedestre no meio da rota
+      const pa = pontaFaixa(A.x, A.z), pq = pontaFaixa(q.x, q.z);
+      if (pa && pq && pa !== pq && !A.atravessa) { if (esperaFaixa(A, q.x, q.z, dt)) return false; comecarTravessia(A); }
+      else if (A.atravessa && pa && pa === pq) fimTravessia(A);
+    }
+    const dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.correFaixa ? Math.max(vel, A.vel) : vel) * dt;
+    A.vel = A.correFaixa ? Math.max(vel, A.vel) : vel; A.correndo = A.vel > 2.5 || !!A.chuva;
     if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
     let moveu = false;
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
-      if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { if (cruzar(A, B)) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return false; } } }
+      if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return false; } } }
     for (const ang of [0, 0.45, -0.45, 0.9, -0.9, 1.4, -1.4]) {
       const ca = Math.cos(ang), sa = Math.sin(ang), ux = (dx * ca - dz * sa) / d, uz = (dx * sa + dz * ca) / d;
       if (livreNPC(A.x + ux * v, A.z + uz * v, A)) { A.x += ux * v; A.z += uz * v; A.yawAlvo = Math.atan2(-uz, ux); moveu = true; break; }
@@ -5017,6 +5234,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (a.fantasma > 0 || b.fantasma > 0) continue;                  // passando um pelo outro de propósito
         let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
         if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
+        const ra = temRotina(a), rb = temRotina(b);
+        if (ra !== rb) {                                                 // quem tem rotina não é empurrado e o outro sai PARA O LADO (nunca para a frente dela)
+          const R = ra ? a : b, G = ra ? b : a; if (!anda(G)) continue;
+          const fx = Math.cos(R.yawAlvo), fz = -Math.sin(R.yawAlvo), lat = -(G.x - R.x) * fz + (G.z - R.z) * fx, sg = Math.sign(lat) || 1, ds = (0.46 - Math.abs(lat)) * sg;
+          if (Math.abs(lat) < 0.46) { const nx = G.x - fz * ds, nz = G.z + fx * ds; if (livreNPC(nx, nz, G, true)) { G.x = nx; G.z = nz; } }
+          continue;
+        }
         const f = (0.46 - d) / d, kA = ma && mb ? 0.5 : ma ? 1 : 0, kB = ma && mb ? 0.5 : mb ? 1 : 0;
         if (kA) { const nx = a.x - dx * f * kA, nz = a.z - dz * f * kA; if (livreNPC(nx, nz, a, true)) { a.x = nx; a.z = nz; } }
         if (kB) { const nx = b.x + dx * f * kB, nz = b.z + dz * f * kB; if (livreNPC(nx, nz, b, true)) { b.x = nx; b.z = nz; } }
@@ -5038,7 +5262,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         else if (S.trabalhando) tickHorario(dt);       // o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);
         checarFaltaEncontro();
-        tickCelular(dt); tickConvite(dt); tickBiel();    // ; o Biel na quadra de futsal
+        tickCelular(dt); tickConvite(dt); tickBiel(); tickJoao();    // ; o Biel na quadra de futsal
         if (!S.dentro || S.luciaPredio) tickEncontroPredio();
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
@@ -5142,5 +5366,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
+    _fns: { livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, carroChegando, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
 })();

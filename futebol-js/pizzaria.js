@@ -17,7 +17,7 @@
        1. Falar com o Mário (ou tocar no caixa) para começar o turno. A Carla deixa o pedido pronto na RETIRADA (ponta do balcão).
        2. "Pegar o pedido": aparece o sabor e a pixel art. Lá fora, a BICICLETA fica parada na frente da pizzaria:
           "Colocar a pizza na bicicleta" e "Subir na bicicleta" (ela anda 1,5x a velocidade do jogador correndo).
-       3. Ao subir, o mapa marca a CASA de um cliente (uma pessoa espera na frente dela, acenando) e começam os 30 SEGUNDOS.
+       3. Ao subir, o mapa marca a CASA de um cliente (uma pessoa espera na frente dela, acenando) e começam os 25 SEGUNDOS (PRAZO).
        4. Bater em alguma coisa (parede, poste, carro, gente) derruba a bicicleta e a caixa: pegue a caixa, levante a bicicleta
           e continue. Pizza que caiu chega AMASSADA: "Essa pizza veio toda amassada! Sem gorjeta para você!"
        5. Pagamento: 70 fakes pela noite (proporcional se começar depois das 17h30 ou parar antes) + 5 de gorjeta por entrega no prazo
@@ -49,7 +49,11 @@
     'ATRASADA +{0} s': ['LATE +{0} s', 'ATRASADA +{0} s', 'IN RITARDO +{0} s', 'EN RETARD +{0} s'],
     '(amassada)': ['(squashed)', '(aplastada)', '(schiacciata)', '(écrasée)'],
     'Entrega: leve a pizza até a bicicleta, na frente da pizzaria.': ['Delivery: take the pizza to the bike, in front of the pizzeria.', 'Entrega: lleva la pizza a la bicicleta, frente a la pizzería.', 'Consegna: porta la pizza alla bici, davanti alla pizzeria.', 'Livraison : apporte la pizza au vélo, devant la pizzeria.'],
-    'Entrega: siga a marca até a casa do cliente. Você tem 30 segundos!': ['Delivery: follow the marker to the customer’s house. You have 30 seconds!', 'Entrega: sigue la marca hasta la casa del cliente. ¡Tienes 30 segundos!', 'Consegna: segui il segnale fino alla casa del cliente. Hai 30 secondi!', 'Livraison : suis le repère jusqu’à la maison du client. Tu as 30 secondes !'],
+    'Entrega: siga a marca até a casa do cliente. Você tem {0} segundos!': ['Delivery: follow the marker to the customer’s house. You have {0} seconds!', 'Entrega: sigue la marca hasta la casa del cliente. ¡Tienes {0} segundos!', 'Consegna: segui il segnale fino alla casa del cliente. Hai {0} secondi!', 'Livraison : suis le repère jusqu’à la maison du client. Tu as {0} secondes !'],
+    'Desça da bicicleta, pegue a pizza no caixote e entregue ao cliente.': ['Get off the bike, take the pizza from the crate and hand it to the customer.', 'Bájate de la bici, saca la pizza de la caja y entrégasela al cliente.', 'Scendi dalla bici, prendi la pizza dalla cassetta e consegnala al cliente.', 'Descends du vélo, prends la pizza dans la caisse et donne-la au client.'],
+    'Pegue a pizza no caixote da bicicleta e entregue ao cliente.': ['Take the pizza from the bike crate and hand it to the customer.', 'Saca la pizza de la caja de la bici y entrégasela al cliente.', 'Prendi la pizza dalla cassetta della bici e consegnala al cliente.', 'Prends la pizza dans la caisse du vélo et donne-la au client.'],
+    'Pegar a pizza da bicicleta': ['Take the pizza from the bike', 'Sacar la pizza de la bici', 'Prendi la pizza dalla bici', 'Prendre la pizza du vélo'],
+    'Desça da bicicleta e pegue a pizza no caixote primeiro.': ['Get off the bike and take the pizza from the crate first.', 'Bájate de la bici y saca primero la pizza de la caja.', 'Scendi dalla bici e prendi prima la pizza dalla cassetta.', 'Descends du vélo et prends d’abord la pizza dans la caisse.'],
     'Volte para a pizzaria e pegue o próximo pedido.': ['Go back to the pizzeria and pick up the next order.', 'Vuelve a la pizzería y toma el próximo pedido.', 'Torna in pizzeria e prendi il prossimo ordine.', 'Retourne à la pizzeria et prends la prochaine commande.'],
     'Pegue a pizza e levante a bicicleta.': ['Pick up the pizza and lift the bike.', 'Toma la pizza y levanta la bicicleta.', 'Raccogli la pizza e rialza la bici.', 'Ramasse la pizza et relève le vélo.'],
     'Você caiu da bicicleta! A pizza amassou...': ['You fell off the bike! The pizza got squashed...', '¡Te caíste de la bicicleta! La pizza se aplastó...', 'Sei caduto dalla bici! La pizza si è schiacciata...', 'Tu es tombé du vélo ! La pizza s’est écrasée...'],
@@ -77,7 +81,7 @@
     'Ah, você é o novo entregador! Eu sou o Mário, o dono da Forno a Lenha.': ['Ah, you’re the new delivery person! I’m Mário, the owner of Forno a Lenha.', '¡Ah, eres el nuevo repartidor! Soy Mário, el dueño de Forno a Lenha.', 'Ah, sei il nuovo fattorino! Io sono Mario, il proprietario del Forno a Lenha.', 'Ah, c’est toi le nouveau livreur ! Moi c’est Mário, le patron du Forno a Lenha.'],
     'Você trabalha de quinta a domingo, das 17h até a meia-noite.': ['You work Thursday to Sunday, from 5 PM to midnight.', 'Trabajas de jueves a domingo, de las 17h a la medianoche.', 'Lavori dal giovedì alla domenica, dalle 17 a mezzanotte.', 'Tu travailles du jeudi au dimanche, de 17 h à minuit.'],
     'Pega o pedido ali na ponta do balcão, põe na bicicleta lá fora e voa! O cliente fica esperando na frente de casa.': ['Grab the order at the end of the counter, put it on the bike outside and fly! The customer waits in front of the house.', 'Toma el pedido en la punta del mostrador, ponlo en la bicicleta afuera ¡y vuela! El cliente espera frente a su casa.', 'Prendi l’ordine in fondo al bancone, mettilo sulla bici fuori e vola! Il cliente aspetta davanti a casa.', 'Prends la commande au bout du comptoir, mets-la sur le vélo dehors et file ! Le client attend devant chez lui.'],
-    'São 30 segundos para chegar. São {0} fakes por noite, mais {1} de gorjeta por entrega no prazo, e menos {2} por entrega atrasada.': ['You have 30 seconds to get there. It’s {0} fakes a night, plus {1} tip per on-time delivery, and minus {2} per late delivery.', 'Son 30 segundos para llegar. Son {0} fakes por noche, más {1} de propina por entrega a tiempo y menos {2} por entrega atrasada.', 'Hai 30 secondi per arrivare. Sono {0} fakes a sera, più {1} di mancia per ogni consegna in tempo e meno {2} per ogni consegna in ritardo.', 'Tu as 30 secondes pour arriver. C’est {0} fakes par soir, plus {1} de pourboire par livraison à l’heure et moins {2} par livraison en retard.'],
+    'São {3} segundos para chegar. São {0} fakes por noite, mais {1} de gorjeta por entrega no prazo, e menos {2} por entrega atrasada.': ['You have {3} seconds to get there. It’s {0} fakes a night, plus {1} tip per on-time delivery, and minus {2} per late delivery.', 'Son {3} segundos para llegar. Son {0} fakes por noche, más {1} de propina por entrega a tiempo y menos {2} por entrega atrasada.', 'Hai {3} secondi per arrivare. Sono {0} fakes a sera, più {1} di mancia per ogni consegna in tempo e meno {2} per ogni consegna in ritardo.', 'Tu as {3} secondes pour arriver. C’est {0} fakes par soir, plus {1} de pourboire par livraison à l’heure et moins {2} par livraison en retard.'],
     'E cuidado com a bicicleta! Se cair, a pizza amassa e o cliente não dá gorjeta.': ['And careful with the bike! If you fall, the pizza gets squashed and the customer won’t tip.', '¡Y cuidado con la bicicleta! Si te caes, la pizza se aplasta y el cliente no da propina.', 'E attento alla bici! Se cadi, la pizza si schiaccia e il cliente non dà la mancia.', 'Et fais attention au vélo ! Si tu tombes, la pizza s’écrase et le client ne donne pas de pourboire.'],
     'E eu sou a Carla, a pizzaiola! Pode deixar que as pizzas saem quentinhas.': ['And I’m Carla, the pizza maker! Don’t worry, the pizzas come out nice and hot.', '¡Y yo soy Carla, la pizzera! Tranquilo, las pizzas salen calentitas.', 'E io sono Carla, la pizzaiola! Tranquillo, le pizze escono belle calde.', 'Et moi c’est Carla, la pizzaiola ! T’inquiète, les pizzas sortent bien chaudes.'],
     'Hoje não é seu dia! Você trabalha de quinta a domingo, a partir das 17h.': ['Today isn’t your day! You work Thursday to Sunday, from 5 PM.', '¡Hoy no te toca! Trabajas de jueves a domingo, desde las 17h.', 'Oggi non è il tuo giorno! Lavori dal giovedì alla domenica, dalle 17.', 'Ce n’est pas ton jour aujourd’hui ! Tu travailles du jeudi au dimanche, à partir de 17 h.'],
@@ -132,12 +136,17 @@
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 17, H_FECHA = 24, H_EQUIPE = 16.75, H_ULTIMO_GRUPO = 23.25, H_TURNO = 17, H_CHEIO_ATE = 17.5, H_ULTIMO_TURNO = 23;
   const DIAS_TRABALHO = [3, 4, 5, 6];                                  // diaSemana(): 0 = segunda → quinta, sexta, sábado e domingo (4 x 3)
-  const PAGA = 70, GORJETA = 5, ATRASO = 5, PRAZO = 30;                // por noite · por entrega no prazo · por entrega atrasada · segundos
+  const PAGA = 70, GORJETA = 5, ATRASO = 5, PRAZO = 25;                // por noite · por entrega no prazo · por entrega atrasada · segundos
   const PRECO_PIZZA = 100, SAUDE_PIZZA = -3, SAUDE_EXAGERO = -4;       // a pizza do jogador (enche a fome do dia)
   const VEL_BIKE = 1.5;                                                // × a velocidade do jogador correndo
   const DIST_MIN = 40, DIST_MAX = 140;                                 // (m, pela rede de calçadas) da pizzaria até a casa do cliente
-  const BIKE_PARADA = { x: 3.4, z: 8.05, yaw: 0 };                     // na calçada, na frente da pizzaria (a porta fica em x 1,2 · z 8,6)
-  const SELIM = 0.18;                                                  // o selim fica 0,18 m atrás do centro da bicicleta
+  const BIKE_PARADA = { x: 4.6, z: 9.75, yaw: 0 };                     // encostada na fachada da pizzaria (parede em z 10,4), à direita da porta (x 1,2): fora do caminho da calçada
+  // as medidas da bicicleta (m, a partir do centro, no chão): do tamanho das pernas do personagem (quadril a ~0,67 m do chão) — o selim
+  // fica na altura do quadril e o pé alcança o pedal lá embaixo; rodas de 60 cm e guidão na largura dos ombros
+  const BK = { r: 0.3, rodaX: 0.52, eixo: { x: -0.03, y: 0.34 }, pedivela: 0.12, selim: { x: -0.22, y: 0.69 }, guidao: { x: 0.34, y: 0.92 }, largGuidao: 0.6, caixoteX: -0.6 };
+  const INCLINA_BIKE = 0.38;                                           // o tronco inclinado para a frente, pedalando
+  const QUEDA = { cai: 0.45, levanta: 0.8, total: 5 };                 // bateu: cai (0,45 s), fica no chão e levanta (o tombo todo dura 5 s)
+  const CAIXA_MAO = { x: 0.4, y: 1.1 };                                // o fundo da caixa, apoiado em cima das mãos (no corpo do boneco)
   const COMIDA_SEG = 10;                                               // segundos que o jogador leva para comer a pizza
   const ESTADOS = [8, 6, 4, 1];                                        // fatias que sobram em cada estado (depois some)
 
@@ -360,8 +369,8 @@
       A.m.bracoE.cotovelo.add(o.bloco); A.m.bracoD.cotovelo.add(o.lapis);
       o.pa.position.set(0.28, 0.98, 0.0); A.m.corpo.add(o.pa);
       const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshLambertMaterial({ transparent: true, alphaTest: 0.5 }));
-      pl.rotation.x = -Math.PI / 2; pl.position.set(0.5, 1.02, 0); A.m.corpo.add(pl); o.pizza = pl;
-      const cx = new THREE.Group(); cx.add(caixaMesh()); cx.position.set(0.5, 1.0, 0); A.m.corpo.add(cx); o.caixa = cx;
+      pl.rotation.x = -Math.PI / 2; pl.position.set(CAIXA_MAO.x + 0.06, CAIXA_MAO.y + 0.11, 0); A.m.corpo.add(pl); o.pizza = pl;   // em cima das mãos (como o jogador), acima do topo delas para a mão não atravessar a pizza (plano 2D)
+      const cx = new THREE.Group(); cx.add(caixaMesh()); cx.position.set(CAIXA_MAO.x, CAIXA_MAO.y, 0); A.m.corpo.add(cx); o.caixa = cx;
       for (const k of ['bloco', 'lapis', 'pa', 'pizza', 'caixa']) o[k].visible = false;
       A.obj = o; return o;
     }
@@ -690,13 +699,12 @@
             const w = p === 'forno' ? Math.sin(t * 2.4) * 0.12 : -0.2;
             o.pa.position.x = 0.28 + w; m.bracoD.rotation.z = m.bracoE.rotation.z = 1.25; m.bracoD.rotation.x = -0.2; m.bracoE.rotation.x = 0.2;
             usarCotovelo(m.bracoD, 0, 0.2); usarCotovelo(m.bracoE, 0, 0.35); m.corpo.rotation.z = -0.12;
-          } else if (p === 'leva' || p === 'poe') {                      // segurando a pizza (ou a caixa) na frente do corpo
-            const k = p === 'poe' ? 0.25 : 0;
-            m.bracoD.rotation.z = m.bracoE.rotation.z = 1.2 + k; m.bracoD.rotation.x = -0.32; m.bracoE.rotation.x = 0.32; usarCotovelo(m.bracoD, 0, 0.5); usarCotovelo(m.bracoE, 0, 0.5);
-            if (p === 'poe') m.corpo.rotation.z = -0.3;
+          } else if (p === 'leva' || p === 'poe') {                      // segurando a pizza (ou a caixa) com as duas mãos embaixo, igual ao jogador
+            segurarCaixa(m);
+            if (p === 'poe') m.corpo.rotation.z = -0.3;                  // pondo na mesa: inclina para a frente
           }
         }
-        if (C.andando && C.poseP === 'leva') { const m2 = C.m; m2.bracoD.rotation.z = m2.bracoE.rotation.z = 1.2; m2.bracoD.rotation.x = -0.32; m2.bracoE.rotation.x = 0.32; usarCotovelo(m2.bracoD, 0, 0.5); usarCotovelo(m2.bracoE, 0, 0.5); }
+        if (C.andando && C.poseP === 'leva') segurarCaixa(C.m);
       }
       const Mr = M.mario;
       if (Mr && !Mr.andando && !Mr.fala) {
@@ -808,7 +816,7 @@
         await api.fala('mario', T('Ah, você é o novo entregador! Eu sou o Mário, o dono da Forno a Lenha.'));
         await api.fala('mario', T('Você trabalha de quinta a domingo, das 17h até a meia-noite.'));
         await api.fala('mario', T('Pega o pedido ali na ponta do balcão, põe na bicicleta lá fora e voa! O cliente fica esperando na frente de casa.'));
-        await api.fala('mario', Tf('São 30 segundos para chegar. São {0} fakes por noite, mais {1} de gorjeta por entrega no prazo, e menos {2} por entrega atrasada.', PAGA, GORJETA, ATRASO));
+        await api.fala('mario', Tf('São {3} segundos para chegar. São {0} fakes por noite, mais {1} de gorjeta por entrega no prazo, e menos {2} por entrega atrasada.', PAGA, GORJETA, ATRASO, PRAZO));
         await api.fala('mario', T('E cuidado com a bicicleta! Se cair, a pizza amassa e o cliente não dá gorjeta.'));
         if (M.carla) { const C = M.carla; C.conversando = true; C.yawAlvo = Math.atan2(-(s.jog.z - C.z), s.jog.x - C.x); await api.fala('carla', T('E eu sou a Carla, a pizzaiola! Pode deixar que as pizzas saem quentinhas.')); C.conversando = false; }
         dp.apresentou = true; dp.conheceu = true; api.gravar('chegada');
@@ -866,11 +874,15 @@
       s.missao = T('Entrega: leve a pizza até a bicicleta, na frente da pizzaria.'); api.mostrarMissao();
       const B = garantirBike(); api.definirMarca(B.x, B.z);
     }
-    function darCaixaNaMao() { const J = S().jog; tirarCaixaDaMao(); const c = caixaMesh(); c.position.set(0.44, 0.86, 0); J.m.corpo.add(c); J.caixaPz = c; }
+    function darCaixaNaMao() { const J = S().jog; tirarCaixaDaMao(); const c = caixaMesh(); c.position.set(CAIXA_MAO.x, CAIXA_MAO.y, 0); J.m.corpo.add(c); J.caixaPz = c; }
     function tirarCaixaDaMao() { const s = S(); if (!s || !s.jog) return; const J = s.jog; if (J.caixaPz && J.caixaPz.parent) J.caixaPz.parent.remove(J.caixaPz); J.caixaPz = null; }
-    function poseCaixa(J) {
-      if (!J.caixaPz) return; const m = J.m;
-      m.bracoE.rotation.z = m.bracoD.rotation.z = 1.15; m.bracoE.rotation.x = 0.2; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoE, 0, 0.6); usarCotovelo(m.bracoD, 0, 0.6);
+    function poseCaixa(J) { if (J.caixaPz && !M.queda) segurarCaixa(J.m); }
+    // segurando a caixa com as DUAS MÃOS embaixo dela, na frente do corpo: braços descem um pouco para a frente e fecham para dentro,
+    // cotovelos dobrados (antebraços quase na horizontal) e as mãos a 0,2 m do meio, sob as bordas da caixa, que fica apoiada em cima
+    // delas (CAIXA_MAO). Antes os braços abriam para os lados e a caixa ficava flutuando entre as mãos.
+    function segurarCaixa(m) {
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 0.6; m.bracoE.rotation.x = -0.4; m.bracoD.rotation.x = 0.4;
+      usarCotovelo(m.bracoE, 0, 0.85); usarCotovelo(m.bracoD, 0, 0.85);
     }
 
     // ---------------------------------------------------------------- A BICICLETA (na cidade)
@@ -881,36 +893,51 @@
       const matQ = new THREE.MeshLambertMaterial({ color: 0xc8352b }), matP = new THREE.MeshLambertMaterial({ color: 0x1c1c1f }), matC = new THREE.MeshLambertMaterial({ color: 0xc9ced4 });
       const tubo = (x0, y0, x1, y1, esp, mat) => { const L = Math.hypot(x1 - x0, y1 - y0), m = new THREE.Mesh(new THREE.BoxGeometry(L, esp || 0.05, esp || 0.05), mat || matQ); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, 0); m.rotation.z = Math.atan2(y1 - y0, x1 - x0); corpo.add(m); return m; };
       const rodas = [];
-      for (const x of [-0.52, 0.52]) {
-        const r = new THREE.Group(); r.position.set(x, 0.33, 0);
-        r.add(new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.035, 6, 18), matP));
-        for (let k = 0; k < 4; k++) { const raio = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.012, 0.012), matC); raio.rotation.z = k * Math.PI / 4; r.add(raio); }
+      for (const x of [-BK.rodaX, BK.rodaX]) {
+        const r = new THREE.Group(); r.position.set(x, BK.r + 0.03, 0);
+        r.add(new THREE.Mesh(new THREE.TorusGeometry(BK.r, 0.035, 6, 18), matP));
+        for (let k = 0; k < 4; k++) { const raio = new THREE.Mesh(new THREE.BoxGeometry(BK.r * 2 - 0.02, 0.012, 0.012), matC); raio.rotation.z = k * Math.PI / 4; r.add(raio); }
         corpo.add(r); rodas.push(r);
       }
-      const rear = { x: -0.52, y: 0.33 }, front = { x: 0.52, y: 0.33 }, selim = { x: -0.18, y: 0.86 }, guidao = { x: 0.36, y: 0.98 }, eixo = { x: -0.04, y: 0.36 };
+      const rear = { x: -BK.rodaX, y: BK.r + 0.03 }, front = { x: BK.rodaX, y: BK.r + 0.03 }, selim = BK.selim, guidao = BK.guidao, eixo = BK.eixo;
       tubo(rear.x, rear.y, selim.x, selim.y - 0.04); tubo(rear.x, rear.y, eixo.x, eixo.y); tubo(eixo.x, eixo.y, selim.x, selim.y - 0.04);
       tubo(eixo.x, eixo.y, guidao.x - 0.05, guidao.y - 0.16); tubo(selim.x + 0.02, selim.y - 0.1, guidao.x - 0.05, guidao.y - 0.12);
       tubo(front.x, front.y, guidao.x, guidao.y, 0.045, matC);
       const sel = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.06, 0.15), matP); sel.position.set(selim.x, selim.y, 0); corpo.add(sel);
-      const gui = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, 0.56), matC); gui.position.set(guidao.x, guidao.y + 0.02, 0); corpo.add(gui);
-      for (const z of [-0.28, 0.28]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.1), matP); p.position.set(guidao.x, guidao.y + 0.02, z); corpo.add(p); }
+      const gui = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.04, BK.largGuidao - 0.04), matC); gui.position.set(guidao.x, guidao.y + 0.02, 0); corpo.add(gui);
+      for (const z of [-BK.largGuidao / 2, BK.largGuidao / 2]) { const p = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.1), matP); p.position.set(guidao.x, guidao.y + 0.02, z); corpo.add(p); }
       // pedivela + pedais
       const ped = new THREE.Group(); ped.position.set(eixo.x, eixo.y, 0);
-      for (const sz of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.17, 0.02), matC); b.position.set(0, sz * 0.085, sz * 0.09); ped.add(b); const pe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.025, 0.07), matP); pe.position.set(0, sz * 0.17, sz * 0.13); ped.add(pe); }
+      for (const sz of [-1, 1]) { const b = new THREE.Mesh(new THREE.BoxGeometry(0.03, BK.pedivela, 0.02), matC); b.position.set(0, sz * BK.pedivela / 2, sz * 0.09); ped.add(b); const pe = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.025, 0.07), matP); pe.position.set(0, sz * BK.pedivela, sz * 0.13); ped.add(pe); }
       corpo.add(ped);
       // o caixote de entrega atrás (bagageiro) e a caixa de pizza dentro dele
-      const G = new api.Geo(); G.box(0.5, 0.03, 0.42, '#3a3a3e', -0.5, 0.74, 0);
-      G.box(0.5, 0.18, 0.03, '#c8352b', -0.5, 0.77, 0.21); G.box(0.5, 0.18, 0.03, '#c8352b', -0.5, 0.77, -0.21); G.box(0.03, 0.18, 0.42, '#c8352b', -0.25, 0.77, 0); G.box(0.03, 0.18, 0.42, '#c8352b', -0.75, 0.77, 0);
-      G.box(0.03, 0.42, 0.03, '#3a3a3e', -0.62, 0.33, 0.12); G.box(0.03, 0.42, 0.03, '#3a3a3e', -0.62, 0.33, -0.12);
+      const cx = BK.caixoteX, cy = BK.r * 2 + 0.1;                    // o caixote em cima da roda de trás, atrás do selim
+      const G = new api.Geo(); G.box(0.5, 0.03, 0.42, '#3a3a3e', cx, cy, 0);
+      G.box(0.5, 0.18, 0.03, '#c8352b', cx, cy + 0.03, 0.21); G.box(0.5, 0.18, 0.03, '#c8352b', cx, cy + 0.03, -0.21); G.box(0.03, 0.18, 0.42, '#c8352b', cx + 0.25, cy + 0.03, 0); G.box(0.03, 0.18, 0.42, '#c8352b', cx - 0.25, cy + 0.03, 0);
+      G.box(0.03, cy - BK.r - 0.03, 0.03, '#3a3a3e', cx - 0.05, BK.r + 0.03, 0.12); G.box(0.03, cy - BK.r - 0.03, 0.03, '#3a3a3e', cx - 0.05, BK.r + 0.03, -0.12);
       corpo.add(G.malha(api.MAT));
-      const carga = caixaMesh(); carga.position.set(-0.5, 0.78, 0); carga.visible = false; corpo.add(carga);
+      const carga = caixaMesh(); carga.position.set(cx, cy + 0.04, 0); carga.visible = false; corpo.add(carga);
       const desc = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.34, 0.03), matP); desc.position.set(-0.05, 0.18, 0.12); desc.rotation.x = -0.5; corpo.add(desc);   // descanso
       s.grupoCidade.add(g);
       M.bike = { g, corpo, rodas, ped, carga, desc, x: BIKE_PARADA.x, z: BIKE_PARADA.z, yaw: BIKE_PARADA.yaw, estado: 'parada', tomba: 0, giro: 0, pedal: 0 };
       posBike(); return M.bike;
     }
+    // a bicicleta é SÓLIDA quando está parada ou caída: uma caixa de colisão na lista da rua (o jogador e as pessoas não atravessam)
+    function colBike() {
+      const s = S(), B = M.bike; if (!s || !B) return;
+      const col = s.dentro && s.fora ? s.fora.col : s.col;
+      if (M.colArr && M.colArr !== col) { const i = M.colArr.indexOf(M.colBox); if (i >= 0) M.colArr.splice(i, 1); }
+      M.colArr = col; if (!col) return;
+      const i = col.indexOf(M.colBox);
+      if (B.estado === 'montada') { if (i >= 0) col.splice(i, 1); return; }
+      const L = 0.82, W = B.estado === 'caida' ? 0.42 : 0.22, c = Math.abs(Math.cos(B.yaw)), sn = Math.abs(Math.sin(B.yaw)), hx = L * c + W * sn, hz = L * sn + W * c;
+      const bx = M.colBox || (M.colBox = { bike: true });
+      bx.x0 = B.x - hx; bx.x1 = B.x + hx; bx.z0 = B.z - hz; bx.z1 = B.z + hz;
+      if (i < 0) col.push(bx);
+    }
     function posBike() {
       const B = M.bike; if (!B) return;
+      colBike();
       const y = api.altura(B.x, B.z); B.g.position.set(B.x, y, B.z); B.g.rotation.y = B.yaw;
       B.corpo.rotation.x = B.estado === 'caida' ? B.tomba * 1.42 : B.estado === 'parada' ? 0.08 : 0; B.corpo.position.y = B.estado === 'caida' ? B.tomba * 0.03 : 0;
       B.desc.visible = B.estado === 'parada';
@@ -922,23 +949,65 @@
     function subir() {
       const s = S(), J = s.jog, B = garantirBike(), P = M.pedido;
       if (P && P.onde === 'mao') { avisoRapido(T('Coloque a pizza na bicicleta antes de subir.')); return; }
-      J.x = B.x - Math.cos(B.yaw) * SELIM; J.z = B.z + Math.sin(B.yaw) * SELIM; J.yaw = J.yawAlvo = B.yaw; J.rota = null; B.estado = 'montada';
+      const sel = assentoBike(J).sel;
+      J.x = B.x - Math.cos(B.yaw) * sel; J.z = B.z + Math.sin(B.yaw) * sel; J.yaw = J.yawAlvo = B.yaw; J.rota = null; B.estado = 'montada'; colBike();   // montada: a colisão da bicicleta sai (senão ele travava nela)
       s.veiculo = { mult: VEL_BIKE, bater: bater, bloq: 0 };
       SOM.campainha();
       if (P && P.onde === 'bike' && P.t0 == null) comecarCorrida();
     }
     function descer(semPasso) {
       const s = S(), J = s.jog, B = M.bike; if (!B) return;
-      s.veiculo = null; B.estado = 'parada'; posBike();
-      if (!semPasso) { const sx = Math.sin(J.yaw) * 0.7, sz = Math.cos(J.yaw) * 0.7; for (const k of [1, -1]) { if (api.livre(J.x + sx * k, J.z + sz * k)) { J.x += sx * k; J.z += sz * k; break; } } }
+      s.veiculo = null; B.estado = 'parada'; posBike(); soltarPoseBike(J);
+      if (!semPasso) {                                                  // desce do lado da bicicleta, na altura do selim (não dentro do quadro)
+        const fx = Math.cos(B.yaw), fz = -Math.sin(B.yaw), rx = Math.sin(B.yaw), rz = Math.cos(B.yaw), bx = B.x + fx * BK.selim.x, bz = B.z + fz * BK.selim.x;
+        for (const k of [1, -1]) { const x = bx + rx * 0.62 * k, z = bz + rz * 0.62 * k; if (api.livre(x, z)) { J.x = x; J.z = z; break; } }
+      }
+      const P = M.pedido, A = M.cliRua;
+      if (P && P.onde === 'bike' && A && Math.hypot(B.x - A.x, B.z - A.z) < 12) { s.missao = T('Pegue a pizza no caixote da bicicleta e entregue ao cliente.'); api.mostrarMissao(); }
     }
+    // a altura e o recuo do jogador na bicicleta: o quadril em cima do selim, com o tronco inclinado (INCLINA_BIKE)
+    function assentoBike(J) {
+      const es = (J.m && J.m.raiz.scale.y) || 1, topoSelim = BK.selim.y + 0.03;
+      const alt = topoSelim + 0.07 * es - 0.74 * es * Math.cos(INCLINA_BIKE);   // o quadril (pivô das pernas, a 0,74) fica 7 cm acima do selim
+      return { es, alt, sel: 0.74 * es * Math.sin(INCLINA_BIKE) - BK.selim.x };   // sel: quanto o centro da bicicleta fica à frente do jogador
+    }
+    // dois segmentos (coxa+canela ou braço+antebraço) do ponto O até T, no plano do corpo (x para a frente, y para cima).
+    // devolve o ângulo do 1º segmento (0 = para baixo, positivo = para a frente) e a dobra do 2º; joelho=true dobra para a frente (perna)
+    function ik2(ox, oy, tx, ty, l1, l2, joelho) {
+      const dx = tx - ox, dy = ty - oy, d = clampN(Math.hypot(dx, dy), Math.abs(l1 - l2) + 1e-3, l1 + l2 - 1e-3), base = Math.atan2(dx, -dy);
+      const a = Math.acos(clampN((l1 * l1 + d * d - l2 * l2) / (2 * l1 * d), -1, 1)), b = Math.acos(clampN((l1 * l1 + l2 * l2 - d * d) / (2 * l1 * l2), -1, 1));
+      return joelho ? [base + a, -(Math.PI - b)] : [base - a, Math.PI - b];
+    }
+    // a pose de quem está pedalando: quadril no selim, mãos no guidão e os pés NOS PEDAIS (girando com o pedivela)
+    function poseBike(J, B) {
+      const m = J.m, A = assentoBike(J), es = A.es, L = INCLINA_BIKE, cL = Math.cos(L), sL = Math.sin(L);
+      m.raiz.position.y = J.y + A.alt; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0;
+      m.corpo.rotation.z = -L; m.corpo.rotation.x = 0;
+      const noCorpo = (wx, wy) => { const x = wx / es, y = (wy - A.alt) / es; return [x * cL - y * sL, x * sL + y * cL]; };   // do chão (à frente do jogador) para o corpo inclinado
+      // pernas: o pé (centro da chuteira, 0,38 abaixo do joelho e 4 cm à frente) em cima de cada pedal
+      const ex = A.sel + BK.eixo.x, ey = BK.eixo.y, w = B.pedal, r = BK.pedivela, dPe = Math.atan2(0.04, 0.38), lCan = Math.hypot(0.04, 0.38);
+      const pes = [[m.pernaD, ex + r * Math.sin(w), ey + r * Math.cos(w)], [m.pernaE, ex - r * Math.sin(w), ey - r * Math.cos(w)]], joelhos = [];
+      for (const [pe, px, py] of pes) { const [tx, ty] = noCorpo(px, py + 0.05); const [a1, a2] = ik2(0, 0.74, tx, ty, 0.28, lCan, true); pe.rotation.z = a1; joelhos.push(a2 - dPe); }
+      usarJoelhos(m, joelhos[1], joelhos[0]);
+      // braços: a mão (0,27 depois do cotovelo) em cima da manopla, que fica um pouco para dentro dos ombros
+      const [gx, gy] = noCorpo(A.sel + BK.guidao.x, BK.guidao.y + 0.03);
+      for (const [b, sz] of [[m.bracoE, -1], [m.bracoD, 1]]) {
+        const dz = 0.39 - (BK.largGuidao / 2) / es, d = Math.hypot(gx, gy - 1.27) || 1, al = Math.asin(clampN(dz / d, -0.6, 0.6)), c = Math.cos(al);
+        const [a1, a2] = ik2(0, 1.27, gx, gy, 0.3 * c, 0.27 * c, false);
+        b.rotation.z = a1; b.rotation.x = sz * al; usarCotovelo(b, 0, a2);
+      }
+    }
+    function soltarPoseBike(J) { const m = J.m; m.corpo.rotation.z = 0; m.corpo.rotation.x = 0; m.raiz.position.y = J.y; }
     // BATEU: a bicicleta tomba, a caixa voa para o chão e o jogador cambaleia
     function bater() {
       const s = S(), J = s.jog, B = M.bike, P = M.pedido; if (!B || B.estado !== 'montada') return;
       s.veiculo = null; B.estado = 'caida'; B.tomba = 0;
-      SOM.bater(); J.esbarrao = 0.9; J.andando = false;
+      SOM.bater(); J.andando = false; J.correndo = false;
       const fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw);
-      for (const k of [[-0.55, 0.6], [-0.55, -0.6], [-0.9, 0]]) { const x = J.x + fx * k[0] - fz * k[1], z = J.z + fz * k[0] + fx * k[1]; if (api.livre(x, z)) { J.x = x; J.z = z; break; } }
+      for (const k of [[-0.55, 0.9], [-0.55, -0.9], [-1.1, 0]]) { const x = J.x + fx * k[0] - fz * k[1], z = J.z + fz * k[0] + fx * k[1]; if (api.livre(x, z)) { J.x = x; J.z = z; break; } }
+      // O TOMBO: ele cai de lado (para o lado longe da bicicleta), fica no chão e só levanta depois de 5 s (sem controle nesse tempo)
+      const lado = (B.x - J.x) * Math.sin(J.yaw) + (B.z - J.z) * Math.cos(J.yaw) > 0 ? -1 : 1;
+      M.queda = { t: 0, lado }; s.modo = 'cena'; api.UI().ctl.hidden = true;
       if (P && P.onde === 'bike') {
         P.onde = 'chao'; P.caiu = true;
         let q = null; for (const [d, l] of [[1.2, 0.7], [1.2, -0.7], [0.4, 1.1], [0.4, -1.1], [-0.3, 0.9]]) { const x = B.x + fx * d - fz * l, z = B.z + fz * d + fx * l; if (api.livreNPC(x, z, null, true, true)) { q = { x, z }; break; } }
@@ -965,7 +1034,7 @@
       const s = S(), P = M.pedido; if (!P) return;
       if (P.onde === 'chao' || (M.bike && M.bike.estado === 'caida')) { s.missao = T('Pegue a pizza e levante a bicicleta.'); api.mostrarMissao(); return; }
       if (P.t0 == null) return;
-      s.missao = T('Entrega: siga a marca até a casa do cliente. Você tem 30 segundos!'); api.mostrarMissao();
+      s.missao = Tf('Entrega: siga a marca até a casa do cliente. Você tem {0} segundos!', PRAZO); api.mostrarMissao();
       if (P.casa) api.definirMarca(P.casa.sx, P.casa.sz);
     }
     // ---- o cliente esperando na frente de casa
@@ -998,7 +1067,7 @@
         const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: texPizza(P.sabor, 8), transparent: true, alphaTest: 0.3, depthTest: false })); sp.scale.set(0.55, 0.55, 1); sp.renderOrder = 20; s.grupoCidade.add(sp); A.pzIcone = sp;
         api.definirMarca(c.sx, c.sz);
       }
-      s.missao = T('Entrega: siga a marca até a casa do cliente. Você tem 30 segundos!'); api.mostrarMissao();
+      s.missao = Tf('Entrega: siga a marca até a casa do cliente. Você tem {0} segundos!', PRAZO); api.mostrarMissao();
     }
     function tirarClienteRua() {
       const s = S(), A = M.cliRua; if (!A) return;
@@ -1011,15 +1080,14 @@
     // ENTREGAR: o jogador desce (se estiver na bicicleta), entrega a caixa e o cliente responde
     async function entregar() {
       const s = S(), J = s.jog, P = M.pedido, A = M.cliRua, u = U() || s.turnoPizza; if (!P || !A) return;
-      if (montado()) descer(true);
+      if (montado() || P.onde !== 'mao') { avisoRapido(T('Desça da bicicleta e pegue a pizza no caixote primeiro.')); return; }
       s.modo = 'cena'; api.UI().ctl.hidden = true; J.andando = false;
       const atraso = P.t > PRAZO;
       try {
         J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x); A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
-        if (P.onde !== 'mao') darCaixaNaMao();
         P.onde = null; P.entregue = true; if (M.bike) posBike(); tirarCaixaChao();
         await api.esperar(450);
-        tirarCaixaDaMao(); const c = caixaMesh(); c.position.set(0.44, 0.86, 0); A.m.corpo.add(c); A.caixaPz = c; A.segura = true;
+        tirarCaixaDaMao(); const c = caixaMesh(); c.position.set(CAIXA_MAO.x, CAIXA_MAO.y, 0); A.m.corpo.add(c); A.caixaPz = c; A.segura = true;
         if (A.pzIcone) A.pzIcone.visible = false;
         mostrarHud(false);
         if (u) u.entregas++;
@@ -1040,7 +1108,7 @@
       const s = S();
       for (const A of M.entrandoRua.slice()) {
         A.tEntra = (A.tEntra || 0) + dt;
-        const m = A.m; m.bracoE.rotation.z = m.bracoD.rotation.z = 1.15; m.bracoE.rotation.x = 0.2; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoE, 0, 0.6); usarCotovelo(m.bracoD, 0, 0.6);
+        segurarCaixa(A.m);
         if (api.seguir(A, A.rotaRua, 1.2, dt) || A.tEntra > 6 || !s.npcs.includes(A)) {
           if (A.pzIcone && A.pzIcone.parent) A.pzIcone.parent.remove(A.pzIcone);
           if (s.npcs.includes(A)) api.descartarPessoa(A);
@@ -1051,7 +1119,7 @@
     function tickClienteRua(dt) {
       const s = S(), A = M.cliRua; if (!A) return;
       if (A.pzIcone) A.pzIcone.position.set(A.x, (A.y || 0) + 2.35 + Math.sin(s.t * 4) * 0.08, A.z);
-      if (A.segura) { const m = A.m; m.bracoE.rotation.z = m.bracoD.rotation.z = 1.15; m.bracoE.rotation.x = 0.2; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoE, 0, 0.6); usarCotovelo(m.bracoD, 0, 0.6); return; }
+      if (A.segura) { segurarCaixa(A.m); return; }
       const J = s.jog, d = Math.hypot(J.x - A.x, J.z - A.z);
       if (d < 30 && !A.fala) {                                          // acenando para o entregador
         A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
@@ -1068,15 +1136,19 @@
       if (B.estado === 'caida') v.push({ x: B.x, z: B.z, r: 1.6, txt: T('Levantar a bicicleta'), fn: async () => { B.estado = 'parada'; B.tomba = 0; if (P && P.onde === 'mao') { P.onde = 'bike'; tirarCaixaDaMao(); } posBike(); SOM.caixa(); missaoDaEntrega(); }, y: 1.4, pri: !(P && P.onde === 'chao') });
       else if (B.estado === 'parada') {
         if (P && P.onde === 'mao') v.push({ x: B.x, z: B.z, r: 1.6, txt: T('Colocar a pizza na bicicleta'), fn: async () => { P.onde = 'bike'; tirarCaixaDaMao(); posBike(); SOM.caixa(); missaoDaEntrega(); }, y: 1.4, pri: true });
-        else v.push({ x: B.x, z: B.z, r: 1.6, txt: T('Subir na bicicleta'), fn: async () => subir(), y: 1.4, pri: !!(P && P.onde === 'bike') });
+        else {
+          const naCasa = P && P.onde === 'bike' && P.t0 != null && A && !A.segura && Math.hypot(B.x - A.x, B.z - A.z) < 12;   // chegou no cliente: pega a caixa no caixote
+          if (naCasa) { const cx = B.x + Math.cos(B.yaw) * BK.caixoteX, cz = B.z - Math.sin(B.yaw) * BK.caixoteX;
+            v.push({ x: cx, z: cz, r: 1.4, txt: T('Pegar a pizza da bicicleta'), fn: async () => { P.onde = 'mao'; posBike(); darCaixaNaMao(); SOM.caixa(); }, y: 1.4, pri: true }); }
+          v.push({ x: B.x, z: B.z, r: 1.6, txt: T('Subir na bicicleta'), fn: async () => subir(), y: 1.4, pri: !naCasa && !!(P && P.onde === 'bike') });
+        }
       }
-      if (P && A && !A.segura && (P.onde === 'mao' || (P.onde === 'bike' && B.estado === 'parada' && Math.hypot(B.x - A.x, B.z - A.z) < 5))) v.push({ x: A.x, z: A.z, r: 2.4, txt: T('Entregar a pizza'), fn: entregar, y: 2.4, pri: true });
+      if (P && A && !A.segura && P.onde === 'mao') v.push({ x: A.x, z: A.z, r: 2.4, txt: T('Entregar a pizza'), fn: entregar, y: 2.4, pri: true });
     }
     // montado: só descer e entregar (portas, bancos etc. ficam para depois de descer)
     function alvosMontado() {
-      const s = S(), J = s.jog, P = M.pedido, A = M.cliRua, v = [];
-      if (P && A && !A.segura && P.onde === 'bike' && Math.hypot(J.x - A.x, J.z - A.z) < 2.8) return [{ x: A.x, z: A.z, r: 2.8, txt: T('Entregar a pizza'), fn: entregar, y: 2.4, pri: true }];   // perto do cliente: só entregar
-      v.push({ x: J.x, z: J.z, r: 9, txt: T('Descer da bicicleta'), fn: async () => descer() });
+      const s = S(), J = s.jog, v = [];
+      v.push({ x: J.x, z: J.z, r: 9, txt: T('Descer da bicicleta'), fn: async () => descer(), pri: true });   // montado só dá para descer (a entrega é a pé, com a caixa na mão)
       return v;
     }
     // a pose de quem está na bicicleta (por cima do poseAtor) e a bicicleta acompanhando
@@ -1084,14 +1156,10 @@
       const s = S(), B = M.bike; if (!B) return;
       const J = s.jog;
       if (B.estado === 'montada') {
-        B.yaw = J.yaw; B.x = J.x + Math.cos(J.yaw) * SELIM; B.z = J.z - Math.sin(J.yaw) * SELIM;
-        const v = J.andando ? (J.vel || 0) : 0; B.giro += v * dt / 0.3; B.pedal += v * dt / 0.75;
-        const m = J.m, w = B.pedal, ALT = 0.2;
-        m.raiz.position.y = J.y + ALT; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0;
-        m.corpo.rotation.z = -0.34;
-        m.pernaE.rotation.z = 1.12 + Math.sin(w) * 0.42; m.pernaD.rotation.z = 1.12 - Math.sin(w) * 0.42;
-        usarJoelhos(m, -1.35 - Math.cos(w) * 0.42, -1.35 + Math.cos(w) * 0.42);
-        m.bracoE.rotation.z = m.bracoD.rotation.z = 1.22; m.bracoE.rotation.x = 0.1; m.bracoD.rotation.x = -0.1; usarCotovelo(m.bracoE, 0, 0.18); usarCotovelo(m.bracoD, 0, 0.18);
+        const sel = assentoBike(J).sel;
+        B.yaw = J.yaw; B.x = J.x + Math.cos(J.yaw) * sel; B.z = J.z - Math.sin(J.yaw) * sel;
+        const v = J.andando ? (J.vel || 0) : 0; B.giro += v * dt / BK.r; B.pedal += v * dt / 0.75;
+        poseBike(J, B);
       } else {
         if (B.estado === 'caida') B.tomba = Math.min(1, B.tomba + dt / 0.35);
       }
@@ -1214,6 +1282,25 @@
         garantirBike(); tickBike(dt); tickClienteRua(dt); tickEntrandoRua(dt); tickCaixaChao(dt);
       }
       poseCaixa(s.jog);
+      if (M.queda) tickQueda(dt);
+    }
+    // o tombo da bicicleta: cai de lado em 0,45 s (o braço do lado do chão vai para cima da cabeça), fica tonto no chão e levanta no fim dos 5 s
+    function tickQueda(dt) {
+      const Q = M.queda, s = S(); if (!Q || !s) return; const J = s.jog, m = J.m;
+      Q.t += dt; J.andando = false; J.correndo = false; J.esbarrao = 0;
+      const kc = Math.min(1, Q.t / QUEDA.cai), kl = clampN((Q.t - (QUEDA.total - QUEDA.levanta)) / QUEDA.levanta, 0, 1);
+      const k = (1 - (1 - kc) * (1 - kc)) * (1 - kl * kl * (3 - 2 * kl)), tonto = kc >= 1 && kl === 0 ? Math.sin(Q.t * 2.6) * 0.06 : 0;
+      const bChao = Q.lado > 0 ? m.bracoD : m.bracoE, bCima = Q.lado > 0 ? m.bracoE : m.bracoD;
+      m.corpo.rotation.x = Q.lado * 1.45 * k; m.corpo.rotation.z = -0.12 * k;
+      m.raiz.position.y = J.y + 0.26 * k; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0;
+      bChao.rotation.z = 2.9 * k; bChao.rotation.x = 0; usarCotovelo(bChao, 0, 0.3 * k);
+      bCima.rotation.z = 0.5 * k + tonto; bCima.rotation.x = 0; usarCotovelo(bCima, 0, 0.9 * k);
+      m.pernaE.rotation.z = 0.45 * k + tonto; m.pernaD.rotation.z = 0.15 * k; usarJoelhos(m, -0.7 * k, -0.3 * k);
+      if (Q.t >= QUEDA.total) {
+        M.queda = null; m.corpo.rotation.x = 0; m.corpo.rotation.z = 0; m.raiz.position.y = J.y; usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0);
+        if (s.ativo && s.modo === 'cena') api.liberar();
+        missaoDaEntrega();
+      }
     }
     // (cidade: encontro com a Lúcia começando com a gente lá dentro) quem está na mesa dela vai embora, com a pizza
     function liberarMesa(x, z) {
@@ -1225,6 +1312,7 @@
     // uma pizza inteira em pixel art (plano deitado), para quem quiser pôr numa mesa (a cidade usa no encontro com a Lúcia)
     function meshPizza(id) { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshLambertMaterial({ map: texPizza(id, 8), transparent: true, alphaTest: 0.5 })); m.rotation.x = -Math.PI / 2; return m; }
     function limpar() {
+      if (M.colArr && M.colBox) { const i = M.colArr.indexOf(M.colBox); if (i >= 0) M.colArr.splice(i, 1); }
       fecharPainel(); const el = document.getElementById('pzEntrega'); if (el) el.remove(); const c = document.getElementById('pzCardapio'); if (c) c.remove();
       for (const t of M.tex.values()) t.dispose(); M.tex.clear();
     }
