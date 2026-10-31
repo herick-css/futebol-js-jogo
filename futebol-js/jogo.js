@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.2.4
+   FUTEBOL JS · jogo.js · versão 6.3.1
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.2.4';
+const VERSAO_JOGO = '6.3.1';
+// 6.3.0: cidade.js + academia.js — faixa de pedestre (espera, carros param e piscam o farol), pedestres esportivos que correm, casas e horários do Diego e da Fernanda, a Fernanda circulando, falas por treino errado, espelho, limpeza/otimização.
 // 6.2.4: pizzaria.js — bater de bicicleta volta a ser como antes (cambaleia e continua no controle; sem o tombo de 5 s).
 // 6.2.3: privilégios do desenvolvedor no pause da cidade (cidade.js).
 // 6.2.2: a ACADEMIA (academia.js) e a curva de força, velocidade e resistência do personagem da história (Atributos: 5 a 10, sem ficar roubado no 10).
@@ -13006,6 +13007,10 @@ Object.assign(I18N, {
   'Pular cena ▶': ['Skip scene ▶', 'Saltar escena ▶', 'Salta scena ▶', 'Passer la scène ▶'],
   'A história continua em {0} s...': ['The story continues in {0} s...', 'La historia continúa en {0} s...', 'La storia continua tra {0} s...', 'L\'histoire continue dans {0} s...'],
   'Anúncio': ['Ad', 'Anuncio', 'Annuncio', 'Publicité'],
+  'Sessão patrocinada': ['Sponsored screening', 'Sesión patrocinada', 'Proiezione sponsorizzata', 'Séance sponsorisée'],
+  'Espaço do anúncio (demonstração)': ['Ad space (demo)', 'Espacio del anuncio (demostración)', 'Spazio annuncio (demo)', 'Espace publicitaire (démo)'],
+  'Assista até o fim para receber os fakes.': ['Watch until the end to get the fakes.', 'Mira hasta el final para recibir los fakes.', 'Guarda fino alla fine per ricevere i fakes.', 'Regarde jusqu’à la fin pour recevoir les fakes.'],
+  'Pronto! Fim da sessão.': ['Done! End of the screening.', '¡Listo! Fin de la sesión.', 'Fatto! Fine della proiezione.', 'Voilà ! Fin de la séance.'],
   'Espaço do anúncio do Google (demonstração)': ['Google ad space (demo)', 'Espacio del anuncio de Google (demostración)', 'Spazio per l\'annuncio di Google (demo)', 'Espace de la pub Google (démo)'],
   'Anúncio: {0} s': ['Ad: {0} s', 'Anuncio: {0} s', 'Annuncio: {0} s', 'Pub : {0} s'],
   'Aguarde o anúncio terminar para jogar de novo.': ['Wait for the ad to finish to play again.', 'Espera a que termine el anuncio para jugar de nuevo.', 'Aspetta la fine dell\'annuncio per rigiocare.', 'Attends la fin de la pub pour rejouer.'],
@@ -13200,13 +13205,13 @@ const Anuncios = (() => {
     });
   }
   // Google H5 Games Ads (anúncio com recompensa). 'visto' | 'fechou' | 'indisponivel'
-  function googleH5() {
+  function googleH5(nome) {
     return new Promise((res) => {
       let visto = false, mostrou = false, feito = false;
       const fim = (v) => { if (!feito) { feito = true; res(v); } };
       try {
         window.adBreak({
-          type: 'reward', name: 'tentar-de-novo',
+          type: 'reward', name: nome || 'tentar-de-novo',
           beforeReward: (mostrar) => { mostrou = true; mostrar(); },
           adViewed: () => { visto = true; },
           adDismissed: () => { visto = false; },
@@ -13246,7 +13251,34 @@ const Anuncios = (() => {
     }
     return demonstracao();
   }
-  return { oferta, assistir, fechar };
+  // O CINEMA QUE PAGA (cidade.js / cinema.js): o "filme" é um anúncio de 'seg' segundos. Resolve true se foi visto até o fim
+  //   (aí o jogador ganha os fakes). Quem fornece: window.FutebolJS.anuncioCinema(seg) (gancho do site/Canva) → anuncioRecompensado →
+  //   Google H5 (adBreak 'reward') → DEMONSTRAÇÃO (uma caixa no meio da tela, sem tapar o cinema, com a contagem de 'seg' segundos).
+  //   Sem anúncio disponível no Google: false (não paga), e o cinema avisa.
+  function demoCinema(seg) {
+    montar();
+    return new Promise((res) => {
+      el.innerHTML = '<div class="papel" role="dialog" style="width:min(420px,100%)"><p class="aTit">' + esc(T('Sessão patrocinada')) + '</p>' +
+        '<div class="aCaixa">' + esc(T('Espaço do anúncio (demonstração)')) + '</div>' +
+        '<p class="aConta"></p><div class="aBar"><i></i></div>' +
+        '<p class="aTxt">' + esc(T('Assista até o fim para receber os fakes.')) + '</p></div>';
+      el.style.background = 'rgba(0,0,0,0.35)'; el.hidden = false;
+      const conta = el.querySelector('.aConta'), barra = el.querySelector('.aBar i'), t0 = performance.now();
+      const iv = setInterval(async () => {
+        const rest = seg - (performance.now() - t0) / 1000;
+        if (rest <= 0) { clearInterval(iv); conta.textContent = T('Pronto! Fim da sessão.'); barra.style.transform = 'scaleX(0)'; await esperar(700); fechar(); el.style.background = ''; res(true); return; }
+        conta.textContent = Tf('Anúncio: {0} s', Math.ceil(rest));
+        barra.style.transform = 'scaleX(' + (rest / seg).toFixed(3) + ')';
+      }, 100);
+    });
+  }
+  async function filme(seg) {
+    const F = window.FutebolJS || {}, gancho = F.anuncioCinema || F.anuncioRecompensado;
+    if (typeof gancho === 'function') { try { return !!(await gancho(seg)); } catch (e) { return false; } }
+    if (typeof window.adBreak === 'function') return (await googleH5('cinema-' + seg)) === 'visto';
+    return demoCinema(seg);
+  }
+  return { oferta, assistir, fechar, filme };
 })();
 
 // HISTÓRIA SALVA POR FASE + FASES EM ARQUIVOS SEPARADOS

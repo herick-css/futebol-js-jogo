@@ -29,7 +29,7 @@
     const rnd = semente(nome.length * 977 + nome.charCodeAt(0));
     const pk = (l) => l[Math.floor(rnd() * l.length)];
     const grupo = new THREE.Group(), G = new Geo();
-    const R = { grupo, col: [], pisos: [], assentos: [], pessoas: [], extras: [], ocl: [], fundo: 0x15110d, cam: { dist: 7.5, pitch: 0.82 } };
+    const R = { grupo, col: [], colJog: [], pisos: [], assentos: [], pessoas: [], extras: [], ocl: [], fundo: 0x15110d, cam: { dist: 7.5, pitch: 0.82 } };
     const bloq = (x, z, w, d) => R.col.push({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
     const sentar = (x, z, fx, fz, h, tipo) => R.assentos.push({ x, z, fx, fz, h, tipo: tipo || 'cadeira' }) - 1;
 
@@ -399,22 +399,112 @@
       const lugares = []; for (const [x, z] of [[-4.5, 2], [-1, 2.5], [2.5, 2.8]]) lugares.push(...mesa(x, z, '#d23a2a', 4, '#d23a2a'));
       R.pessoas.push({ tipo: 'senta', assento: lugares[4], fem: rnd() < 0.5 }, { tipo: 'senta', assento: lugares[5], fem: rnd() < 0.5 });
     } else if (nome === 'cinema') {
-      sala(24, 30, 6.5, '#5a2a2a', '#7a2a2a', '#6a2424', 0.7);
-      R.cam = { dist: 9, pitch: 0.85 };
-      // saguão (sul): bilheteria, pipoca, cartazes; parede com duas passagens para a sala (norte)
-      balcao(-6, 11, 4, 1.0, '#a8443d', '#f2e6c8'); R.pessoas.push({ tipo: 'parado', x: -6, z: 10.1, yaw: Math.PI / 2, fem: true });
-      balcao(6, 11, 4, 1.0, '#f2c230', '#f4f4ec'); G.box(0.9, 1.0, 0.7, '#e8f4f8', 6.8, 1.06, 11.1); for (let i = 0; i < 8; i++) G.box(0.15, 0.12, 0.15, '#f8f0c8', 6.5 + (i % 4) * 0.2, 1.1 + Math.floor(i / 4) * 0.15, 11.1);   // pipoca
-      R.pessoas.push({ tipo: 'parado', x: 6, z: 10.1, yaw: Math.PI / 2, fem: false });
-      for (const [x, cor] of [[-11.9, '#3a64b8'], [11.9, '#7a4fb0']]) G.box(0.06, 2.4, 1.6, cor, x, 1.1, 8);
-      const zp = 4.0;                                                                                       // a parede entre o saguão e a sala
-      { const P = new Geo(); for (const [x0, x1] of [[-12, -5], [-2.5, 2.5], [5, 12]]) { P.box(x1 - x0, 6.5, 0.3, '#4a2222', (x0 + x1) / 2, 0, zp); bloq((x0 + x1) / 2, zp, x1 - x0, 0.3); }
-        const pm = P.malha(MAT); grupo.add(pm); R.ocl.push({ b: { x0: -12, x1: 12, z0: zp - 0.15, z1: zp + 0.15, y0: 0, y1: 6.5 }, mesh: pm }); }   // fica translúcida quando tapa a câmera
-      // a sala: tela, escadinha de fileiras com poltronas vermelhas
-      G.box(18, 6.0, 0.1, '#1c1c1f', 0, 0.3, -14.9); const tela = new THREE.Mesh(guardar(new THREE.PlaneGeometry(16, 5.2)), guardar(new THREE.MeshBasicMaterial({ color: 0xdfe8f0 }))); tela.position.set(0, 3.4, -14.8); grupo.add(tela); R.tela = tela;
-      const lug = [];
-      for (let f = 0; f < 6; f++) { const z = -8 + f * 1.8, y = f * 0.25; if (y > 0) { G.box(22, y, 1.8, '#4a1c1c', 0, 0, z); R.pisos.push({ x0: -11, x1: 11, z0: z - 0.9, z1: z + 0.9, y }); }
-        for (let i = 0; i < 12; i++) { const x = -8.25 + i * 1.5; if (Math.abs(x) < 0.8) continue; G.box(0.62, 0.42, 0.6, '#a8202a', x, y, z + 0.2); G.box(0.62, 0.62, 0.12, '#a8202a', x, y + 0.42, z + 0.5); lug.push(sentar(x, z + 0.15, 0, -1, y + 0.45, 'poltrona')); bloq(x, z + 0.2, 0.62, 0.6); } }
-      for (const i of [3, 9, 16, 21, 30, 44]) R.pessoas.push({ tipo: 'senta', assento: lug[i], fem: rnd() < 0.5 });
+      // O CINEMA (a lógica fica no cinema.js, com R.cinema):
+      //   SAGUÃO (sul, z 4 a 15): carpete vermelho, BILHETERIA (oeste) com a Joana, o Herick do lado dela, BOMBONIÈRE (leste), cartazes e
+      //   luminárias. PAREDE (z 4) com duas passagens: ENTRADA (oeste, x −5 a −2,5) e SAÍDA (leste, x 2,5 a 5), cada uma com dois pedestais
+      //   e uma corda vermelha do lado do saguão (só o jogador esbarra nelas: R.colJog). O SEGURANÇA fica entre as duas, encostado na parede.
+      //   SALA (norte, z −15 a 4): tela com moldura, palco, cortinas, 7 fileiras em degraus com poltronas, luzinhas nos degraus, arandelas
+      //   e a janela do projetor (o feixe de luz aparece durante o filme).
+      sala(24, 30, 6.5, '#3a1a20', '#4a1a20', '#3e161c', 0.7);
+      R.cam = { dist: 9, pitch: 0.85 }; R.fundo = 0x0b0708;
+      const ZP = 4.0, C = R.cinema = { ZP, cordas: [], fileiras: [] };
+      const carpete = (W, D, x, z, fundo, det, det2, rep) => {
+        const t = guardar(texCanvas(16, 16, (g, w, h) => { g.fillStyle = fundo; g.fillRect(0, 0, w, h); g.fillStyle = det;
+          for (const [a, b] of [[8, 2], [7, 3], [9, 3], [6, 4], [10, 4], [7, 5], [9, 5], [8, 6]]) { g.fillRect(a, b, 1, 1); g.fillRect((a + 8) % 16, b + 8, 1, 1); }
+          g.fillStyle = det2; g.fillRect(8, 4, 1, 1); g.fillRect(0, 12, 1, 1); }, false));
+        t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(W / rep, D / rep);
+        const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(W, D)), guardar(new THREE.MeshLambertMaterial({ map: t }))); m.rotation.x = -Math.PI / 2; m.position.set(x, 0.012, z); grupo.add(m);
+      };
+      carpete(23.3, 10.6, 0, 9.65, '#8a1c26', '#d8a840', '#f2d070', 1.6);          // saguão: vermelho com losangos dourados
+      carpete(23.3, 18.6, 0, -5.6, '#2a1016', '#4a1c24', '#6a2a30', 1.2);           // sala: escuro
+      // ---------------- SAGUÃO
+      // bilheteria: balcão, vidro com moldura e placa
+      balcao(-7, 9.4, 4.2, 0.9, '#7a1c24', '#e8c46a');
+      for (const x of [-9.05, -4.95]) G.box(0.12, 2.6, 0.12, '#e8c46a', x, 1.0, 9.4);
+      G.box(4.22, 0.5, 1.0, '#5a1018', -7, 3.1, 9.4); G.box(4.3, 0.08, 1.08, '#e8c46a', -7, 3.6, 9.4);
+      const vidro = new THREE.Mesh(guardar(new THREE.PlaneGeometry(3.9, 1.6)), guardar(new THREE.MeshLambertMaterial({ color: 0xbfe4f5, transparent: true, opacity: 0.22, depthWrite: false }))); vidro.position.set(-7, 1.85, 9.86); grupo.add(vidro);
+      placa('BILHETERIA', '#5a1018', '#f2d070', 3.4, 0.42, -7, 3.35, 9.92);
+      G.box(0.5, 0.32, 0.36, '#2a2a2e', -7.8, 1.06, 9.25); G.box(0.42, 0.05, 0.3, '#3a3a3e', -6.4, 1.06, 9.3);   // registradora e maquininha
+      C.bilheteria = { x: -7, z: 8.55, yaw: -Math.PI / 2, falar: { x: -7, z: 10.55 } };
+      C.herick = { x: -4.15, z: 9.05, yaw: -Math.PI / 2 }; bloq(-4.15, 9.05, 0.6, 0.6);
+      // bombonière: balcão, pipoqueira de vidro, copos e o quadro de preços
+      balcao(7, 9.4, 4.2, 0.9, '#c89a1a', '#fff4d8');
+      G.box(0.95, 0.3, 0.7, '#c8352b', 8.1, 1.06, 9.3); G.box(0.95, 0.2, 0.7, '#c8352b', 8.1, 2.06, 9.3); G.box(0.6, 0.16, 0.06, '#f2c230', 8.1, 2.08, 9.67);
+      for (const [x, z] of [[7.65, 8.97], [8.55, 8.97], [7.65, 9.63], [8.55, 9.63]]) G.box(0.05, 0.7, 0.05, '#e8c46a', x, 1.36, z);
+      const vp = new THREE.Mesh(guardar(new THREE.BoxGeometry(0.9, 0.7, 0.66)), guardar(new THREE.MeshLambertMaterial({ color: 0xfff2c8, transparent: true, opacity: 0.25, depthWrite: false }))); vp.position.set(8.1, 1.71, 9.3); grupo.add(vp);
+      for (let i = 0; i < 24; i++) G.box(0.13, 0.11, 0.13, i % 4 ? '#fbf0c0' : '#f2d070', 7.76 + (i % 5) * 0.16, 1.37 + Math.floor(i / 8) * 0.1, 9.06 + (i % 4) * 0.15);
+      G.box(0.18, 0.12, 0.18, '#9a9aa0', 8.1, 1.9, 9.3);                     // a panelinha lá em cima
+      for (let i = 0; i < 4; i++) { G.box(0.16, 0.26, 0.16, i % 2 ? '#c8352b' : '#3a64b8', 6.0 + i * 0.3, 1.06, 9.2); G.box(0.17, 0.03, 0.17, '#f4f4ec', 6.0 + i * 0.3, 1.32, 9.2); }
+      G.box(3.6, 1.0, 0.08, '#1c1c1f', 7, 2.75, 8.9); placa('PIPOCA · REFRI', '#1c1c1f', '#f2c230', 3.2, 0.5, 7, 3.0, 8.95);
+      R.pessoas.push({ tipo: 'parado', x: 7, z: 8.55, yaw: -Math.PI / 2, fem: rnd() < 0.5 });
+      // cartazes nas paredes do saguão (filmes de mentira), com moldura dourada
+      const FILMES = [['O CHUTE FINAL', '#1f3a73', '#f2c230'], ['PIXEL F.C.', '#1f7a4d', '#f4f4ec'], ['A BOLA QUE VOLTOU', '#7a1c24', '#f2d070'], ['SAUDADE DO MEIO-CAMPO', '#3a2a5a', '#f4a6c0']];
+      const cartaz = (f, x, z, ry) => {
+        const t = guardar(texCanvas(24, 36, (g, w, h) => {
+          const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, f[1]); gr.addColorStop(1, '#0c0a10'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+          g.fillStyle = f[2]; g.beginPath(); g.arc(12, 13, 6, 0, Math.PI * 2); g.fill(); g.fillStyle = '#1c1c1f'; g.fillRect(10, 11, 2, 2); g.fillRect(13, 15, 2, 2);
+          g.fillStyle = '#0c0a10'; g.fillRect(5, 21, 14, 7); g.fillStyle = f[2]; g.font = 'bold 4px monospace'; g.textAlign = 'center';
+          const pal = f[0].split(' '); pal.slice(0, 3).forEach((p, i) => g.fillText(p, 12, 24 + i * 4)); g.fillRect(2, 33, 20, 1);
+        }, false));
+        G.box(ry ? 0.06 : 1.42, 2.02, ry ? 1.42 : 0.06, '#c8a040', x, 1.0, z);
+        const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(1.3, 1.9)), guardar(new THREE.MeshLambertMaterial({ map: t }))); m.position.set(x + (ry ? Math.sign(-x) * 0.04 : 0), 2.0, z); m.rotation.y = ry || 0; grupo.add(m);
+      };
+      cartaz(FILMES[0], -11.92, 6.6, Math.PI / 2); cartaz(FILMES[1], -11.92, 12.4, Math.PI / 2); cartaz(FILMES[2], 11.92, 6.6, -Math.PI / 2); cartaz(FILMES[3], 11.92, 12.4, -Math.PI / 2);
+      // luminárias penduradas e um banco no meio do saguão
+      for (const [x, z] of [[-6, 7], [0, 7], [6, 7], [-6, 12.5], [0, 12.5], [6, 12.5]]) { G.box(0.04, 0.9, 0.04, '#1c1c1f', x, 5.6, z); G.box(0.5, 0.22, 0.5, '#f2d070', x, 5.4, z); G.box(0.36, 0.04, 0.36, '#fff6c8', x, 5.38, z); }
+      G.box(2.4, 0.42, 0.6, '#5a1018', 0, 0, 10.4, '#7a1c24'); G.box(2.5, 0.08, 0.7, '#e8c46a', 0, 0.42, 10.4); bloq(0, 10.4, 2.4, 0.6);
+      for (let i = 0; i < 2; i++) R.pessoas.push({ tipo: 'senta', assento: sentar(-0.6 + i * 1.2, 10.4, 0, 1, 0.5, 'banco'), fem: rnd() < 0.5 });
+      // ---------------- A PAREDE (z 4): ENTRADA (oeste) e SAÍDA (leste)
+      { const P = new Geo(); for (const [x0, x1] of [[-12, -5], [-2.5, 2.5], [5, 12]]) { P.box(x1 - x0, 6.5, 0.3, '#2e1418', (x0 + x1) / 2, 0, ZP); P.box(x1 - x0, 0.14, 0.34, '#e8c46a', (x0 + x1) / 2, 2.9, ZP); bloq((x0 + x1) / 2, ZP, x1 - x0, 0.3); }
+        for (const x0 of [-5, -2.5, 2.5, 5]) P.box(0.14, 2.9, 0.4, '#e8c46a', x0, 0, ZP);       // batentes dourados
+        P.box(2.5, 3.6, 0.3, '#2e1418', -3.75, 2.9, ZP); P.box(2.5, 3.6, 0.3, '#2e1418', 3.75, 2.9, ZP);   // acima das passagens
+        const pm = P.malha(MAT); grupo.add(pm); R.ocl.push({ b: { x0: -12, x1: 12, z0: ZP - 0.15, z1: ZP + 0.15, y0: 0, y1: 6.5 }, mesh: pm }); }
+      placa('ENTRADA · SALA 1', '#7a1c24', '#f2d070', 2.4, 0.36, -3.75, 3.2, ZP + 0.17);
+      placa('SAÍDA', '#1f7a4d', '#f4f4ec', 1.4, 0.36, 3.75, 3.2, ZP + 0.17);
+      { const t = guardar(texLetreiro('SAÍDA', '#1f7a4d', '#f4f4ec', 1.4, 0.36)), m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(1.4, 0.36)), guardar(new THREE.MeshLambertMaterial({ map: t }))); m.position.set(3.75, 3.2, ZP - 0.17); m.rotation.y = Math.PI; grupo.add(m); }
+      // pedestais dourados e a corda de veludo (malha própria: some quando a passagem abre)
+      R.colJog = R.colJog || [];
+      for (const [tipo, x0, x1] of [['entrada', -5, -2.5], ['saida', 2.5, 5]]) {
+        const zc = ZP + 0.62;
+        for (const x of [x0 + 0.22, x1 - 0.22]) { G.box(0.34, 0.05, 0.34, '#b8902e', x, 0, zc); G.box(0.07, 0.95, 0.07, '#e8c46a', x, 0.05, zc); G.box(0.14, 0.12, 0.14, '#f2d070', x, 1.0, zc); }
+        const K = new Geo(), n = 8, xa = x0 + 0.22, xb = x1 - 0.22;
+        for (let i = 0; i < n; i++) { const u0 = i / n, u1 = (i + 1) / n, um = (u0 + u1) / 2, y = 0.92 - Math.sin(um * Math.PI) * 0.16; K.box((xb - xa) / n + 0.02, 0.06, 0.06, '#a8202a', xa + (xb - xa) * um, y, zc); }
+        const corda = K.malha(MAT); grupo.add(corda);
+        const col = { x0: x0, x1: x1, z0: zc - 0.12, z1: zc + 0.12 }; R.colJog.push(col);
+        C.cordas.push({ tipo, x: (x0 + x1) / 2, x0, x1, z: zc, malha: corda, col, colFechada: Object.assign({}, col) });
+      }
+      C.seguranca = { x: 0, z: ZP + 0.62, yaw: -Math.PI / 2 }; bloq(0, ZP + 0.62, 0.7, 0.5);
+      // ---------------- A SALA
+      G.box(17.4, 6.4, 0.12, '#141014', 0, 0.25, -14.86);                            // moldura preta da tela
+      const tela = new THREE.Mesh(guardar(new THREE.PlaneGeometry(16, 5.2)), guardar(new THREE.MeshBasicMaterial({ color: 0x2a2e36 }))); tela.position.set(0, 3.45, -14.78); grupo.add(tela); R.tela = tela; C.tela = tela;
+      G.box(18.4, 0.55, 1.4, '#3a2418', 0, 0, -14.2, '#5a3a24'); bloq(0, -14.2, 18.4, 1.4);   // palco
+      for (const s0 of [-1, 1]) for (let i = 0; i < 5; i++) G.box(0.3, 6.3, 0.32, i % 2 ? '#7a1018' : '#9a1820', s0 * (8.35 + i * 0.3), 0.2, -14.55 + (i % 2) * 0.06);   // cortinas com pregas
+      G.box(18.6, 0.6, 0.4, '#7a1018', 0, 6.1, -14.6);                               // bandô da cortina
+      for (let f = 0; f < 7; f++) {
+        const z = -9.2 + f * 1.75, y = f * 0.22;
+        if (y > 0) { G.box(23.2, y, 1.75, '#2a1216', 0, 0, z, '#2a1216'); R.pisos.push({ x0: -11.6, x1: 11.6, z0: z - 0.875, z1: z + 0.875, y }); }
+        G.box(23.2, 0.03, 0.06, '#c8a040', 0, y, z - 0.86);                             // filete dourado na beira do degrau
+        for (const x of [-11.2, -0.85, 0.85, 11.2]) G.box(0.12, 0.05, 0.08, '#f2d070', x, y + 0.01, z - 0.8);   // luzinhas dos degraus (corredores)
+        const linha = [];
+        for (let i = 0; i < 12; i++) {
+          const x = -8.25 + i * 1.5; if (Math.abs(x) < 0.8) continue;
+          G.box(0.6, 0.4, 0.58, '#a8202a', x, y, z + 0.2); G.box(0.6, 0.66, 0.12, '#b8242e', x, y + 0.4, z + 0.5); G.box(0.6, 0.06, 0.12, '#d8434e', x, y + 1.06, z + 0.5);
+          for (const sx of [-0.33, 0.33]) G.box(0.06, 0.62, 0.6, '#1c1c1f', x + sx, y, z + 0.22);
+          linha.push(sentar(x, z + 0.15, 0, -1, y + 0.45, 'poltrona'));
+        }
+        C.fileiras.push({ z, y, assentos: linha, passeio: z - 0.62 });
+      }
+      for (const x of [-11.92, 11.92]) for (const z of [-11, -5, 1]) { G.box(0.06, 0.5, 0.36, '#3a2418', x, 2.6, z); G.box(0.08, 0.3, 0.26, '#ffcc80', x + (x < 0 ? 0.04 : -0.04), 2.7, z); }   // arandelas
+      G.box(1.2, 0.6, 0.1, '#0c0a0c', 0, 5.3, ZP - 0.2); G.box(0.7, 0.3, 0.06, '#fff6c8', 0, 5.45, ZP - 0.26);   // janela do projetor
+      { const de = new THREE.Vector3(0, 5.4, ZP - 0.3), ate = new THREE.Vector3(0, 3.45, -14.7), d = ate.clone().sub(de), L = d.length();
+        const feixe = new THREE.Mesh(guardar(new THREE.CylinderGeometry(2.6, 0.2, L, 12, 1, true)), guardar(new THREE.MeshBasicMaterial({ color: 0xbfd8ff, transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })));
+        feixe.position.copy(de).addScaledVector(d, 0.5); feixe.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize()); feixe.visible = false; grupo.add(feixe); C.feixe = feixe; }   // o feixe do projetor (aparece no filme)
+      C.entradaSala = { x: -3.75, z: ZP - 1.1 }; C.saidaSala = { x: 3.75, z: ZP - 1.1 };
+      C.antesEntrada = { x: -3.75, z: ZP + 1.25 }; C.depoisSaida = { x: 3.75, z: ZP + 1.6 };
+      C.fundoSala = { z: ZP - 1.1 };
+      // a plateia fixa (o cinema não tem fluxo de clientes: SEM_FLUXO na cidade)
+      const todos = C.fileiras.flatMap((L) => L.assentos);
+      for (const i of [2, 7, 11, 14, 22, 27, 33, 38, 45, 51, 58, 64]) if (todos[i] != null) R.pessoas.push({ tipo: 'senta', assento: todos[i], fem: rnd() < 0.5 });
     } else if (nome === 'hospital') {
       sala(22, 16, 3.6, '#f4f6f8', '#e8eef4', '#d8e2ea', 0.6);
       placa('RECEPÇÃO', '#2f6f9a', '#f4f6f8', 4, 0.6, -4, 2.9, -7.96);
