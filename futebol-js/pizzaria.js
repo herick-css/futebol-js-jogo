@@ -928,7 +928,7 @@
       if (M.colArr && M.colArr !== col) { const i = M.colArr.indexOf(M.colBox); if (i >= 0) M.colArr.splice(i, 1); }
       M.colArr = col; if (!col) return;
       const i = col.indexOf(M.colBox);
-      if (B.estado === 'montada') { if (i >= 0) col.splice(i, 1); return; }
+      if (B.estado === 'montada' || M.bikeFantasma) { if (i >= 0) col.splice(i, 1); return; }
       const L = 0.82, W = B.estado === 'caida' ? 0.42 : 0.22, c = Math.abs(Math.cos(B.yaw)), sn = Math.abs(Math.sin(B.yaw)), hx = L * c + W * sn, hz = L * sn + W * c;
       const bx = M.colBox || (M.colBox = { bike: true });
       bx.x0 = B.x - hx; bx.x1 = B.x + hx; bx.z0 = B.z - hz; bx.z1 = B.z + hz;
@@ -957,10 +957,14 @@
     function descer(semPasso) {
       const s = S(), J = s.jog, B = M.bike; if (!B) return;
       s.veiculo = null; B.estado = 'parada'; posBike(); soltarPoseBike(J);
-      if (!semPasso) {                                                  // desce do lado da bicicleta, na altura do selim (não dentro do quadro)
+      if (!semPasso) {                                                  // desce do LADO da bicicleta (nunca dentro dela): procura um lugar livre, do mais perto ao mais longe
         const fx = Math.cos(B.yaw), fz = -Math.sin(B.yaw), rx = Math.sin(B.yaw), rz = Math.cos(B.yaw), bx = B.x + fx * BK.selim.x, bz = B.z + fz * BK.selim.x;
-        for (const k of [1, -1]) { const x = bx + rx * 0.62 * k, z = bz + rz * 0.62 * k; if (api.livre(x, z)) { J.x = x; J.z = z; break; } }
+        let ok = false;
+        for (const d of [0.8, 1.0, 1.25, 1.55, 1.9]) { for (const k of [1, -1]) { const x = bx + rx * d * k, z = bz + rz * d * k; if (api.livre(x, z)) { J.x = x; J.z = z; ok = true; break; } } if (ok) break; }
+        for (let r = 1.2; !ok && r <= 3.2; r += 0.4) for (let a = 0; a < 16 && !ok; a++) { const t = a / 16 * Math.PI * 2, x = B.x + Math.cos(t) * r, z = B.z + Math.sin(t) * r; if (api.livre(x, z)) { J.x = x; J.z = z; ok = true; } }
+        if (!ok) M.bikeFantasma = true;                                   // sem lugar nenhum: a bicicleta deixa de ser sólida até ele sair de cima dela
       }
+      J.rota = null; J.andando = false; J.correndo = false; J.y = api.altura(J.x, J.z);
       const P = M.pedido, A = M.cliRua;
       if (P && P.onde === 'bike' && A && Math.hypot(B.x - A.x, B.z - A.z) < 12) { s.missao = T('Pegue a pizza no caixote da bicicleta e entregue ao cliente.'); api.mostrarMissao(); }
     }
@@ -1266,6 +1270,9 @@
       const s = S(); if (!s) return;
       const dentro = s.dentro && s.dentro.nome === 'pizzaria' && M.D;
       tickTurno(dt); tickAvisos(dt);
+      if (M.bikeFantasma && M.bike && !s.dentro) {                       // saiu de cima da bicicleta: ela volta a ser sólida
+        const B = M.bike, J = s.jog; if (Math.hypot(J.x - B.x, J.z - B.z) > 1.4) { M.bikeFantasma = false; colBike(); }
+      }
       if (dentro) {
         tickFluxo(dt); tickGrupos(dt); tickCarla(dt); posesEquipe(); tickPedidoJogador(dt);
         // o fogo do forno: tremeluz (mais forte quando a Carla está assando)

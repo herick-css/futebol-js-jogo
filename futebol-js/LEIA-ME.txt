@@ -11,6 +11,7 @@ ARQUIVOS
   pizzaria.js ........... a pizzaria Forno a Lenha e o trabalho de entregador de bicicleta (baixado pela cidade)
   academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
+  pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
   index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
   three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)

@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.4.0
+     - PESCA (pesca.js, arquivo novo baixado junto do academia.js): ganchos marcados "(6.4.0)": carregar o pesca.js · apiPesca() (a da
+       academia + LAGO, PIER, CASA_PESCA, QUADRO_PESCA, dentroLago, bordaLago, OX, chuva) · alvos na rua (S.pesca.alvos) · tick depois da
+       academia · limpar · montarRuaPesca (o Cadu de rua e o do píer). A CASINHA DA PESCA (casinhaPesca, CASA_PESCA) fica na beira norte do
+       lago, virada para a água, com balcão no vão e a moldura do quadro do catálogo; ganhou nome no mapa ("Casinha da Pesca").
+     - rotaCasaPorta aceita um PONTO fora da rede ({ x, z, fim: [...] }): o Cadu vai pela rede até a trilha do lago e depois areia → píer.
    NOVIDADES DA 6.3.0
      - FAIXA DE PEDESTRE: quem vai atravessar para na beira, vira o corpo para a faixa e espera (3 jeitos: braço esticado para a frente, de lado
        com a mão balançando, ou só olhando; a CABEÇA acompanha o carro mais perto). Os carros param ANTES da faixa, piscam o farol 5–10 vezes
@@ -153,6 +159,7 @@
     'Nem lembro de ter chegado em casa... apaguei de cansaço.': ["I don't even remember getting home... I passed out from exhaustion.", 'Ni me acuerdo de haber llegado a casa... me apagué de cansancio.', 'Non mi ricordo nemmeno di essere arrivato a casa... sono crollato dalla stanchezza.', "Je ne me souviens même pas d'être rentré... je me suis endormi d'épuisement."],
     'Você descobriu: {0}': ['You discovered: {0}', 'Descubriste: {0}', 'Hai scoperto: {0}', 'Tu as découvert : {0}'],
     'Lago do Sapo Cururu': ['Cururu Toad Lake', 'Lago del Sapo Cururu', 'Lago del Rospo Cururu', 'Lac du Crapaud Cururu'],
+    'Casinha da Pesca': ['Fishing Shack', 'Casita de Pesca', 'Casetta della Pesca', 'Cabane de Pêche'],                 // (6.4.0)
     'Campo de Várzea Henrique Antônio': ['Henrique Antônio Field', 'Campo Henrique Antônio', 'Campo Henrique Antônio', 'Terrain Henrique Antônio'],
     'Society do Seu Nonato': ["Seu Nonato's Society", 'Society de don Nonato', 'Society di Seu Nonato', 'Society de Seu Nonato'],
     'Society Doutor Bryan': ['Doctor Bryan Society', 'Society del Doctor Bryan', 'Society del Dottor Bryan', 'Society du Docteur Bryan'],
@@ -599,6 +606,7 @@
   }
   const LANCHE = R(788, 432, 74, 48);                                 // o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
   const PIER = { x0: -54, x1: -37, z0: 54.4, z1: 56.2 };
+  const CASA_PESCA = { x0: -51.6, x1: -46.4, z0: 41.6, z1: 45.4 };    // (6.4.0) a casinha do seu Bené (iscas, varas, compra de peixe), na beira norte do lago, virada para a água
   const SPAWN = { x: -78.8, z: -4.65 };                             // na porta do prédio (calçada norte)
 
   // ------------------------------------------------------------------ geometria: caixas e quadriláteros coloridos numa malha só
@@ -1287,7 +1295,7 @@
       for (let x = p.x0 + 0.3; x < p.x1; x += 2.4) for (const s of [-1, 1]) { const z = s < 0 ? p.z0 + 0.03 : p.z1 - 0.03; G.box(0.26, 1.2, 0.26, '#5a3a1e', x, -0.55, z, '#7a5230'); }
       S.pisos.push({ x0: p.x0, x1: p.x1, z0: p.z0, z1: p.z1, y: 0.42 });
       addMalha(G, 0, 0);
-      cerquinhasDoLago(rnd); }
+      cerquinhasDoLago(rnd); casinhaPesca(); }
 
     // --- árvores (as da planta + as de fora da cidade)
     { const G = new Geo();
@@ -1399,6 +1407,38 @@
       }
     }
     addMalha(G, 0, 0);
+  }
+  // (6.4.0) A CASINHA DA PESCA do seu Bené (quem cuida dele, da loja e do catálogo é o pesca.js): madeira com tábuas, telhado de duas águas,
+  //   um balcão de verdade no vão da frente (virada para o lago), prateleiras com os potes de isca e varas encostadas lá dentro, a moldura
+  //   do QUADRO DO CATÁLOGO na parede ao lado do vão (a imagem do quadro é do pesca.js: ela muda a cada peixe novo) e a porta do Bené do lado.
+  const QUADRO_PESCA = { u: -1.5, w: 1.6, h: 1.0, y: 1.05 };          // u = ao longo da frente (do meio da casinha), y = onde começa (de baixo)
+  function casinhaPesca() {
+    const C = CASA_PESCA, N = { u: 0.85, larg: 2.4, prof: 1.5, alt: 2.15 };
+    edificio({ r: C, frente: 1, h: 2.75, andares: 1, cor: '#b98a58', barrado: '#7a5230', mapa: '#9a6a3a', fundos: false, equipamentos: false,
+      telhado: { rh: 1.05, e: 0.4, cor: '#5f7f3a', eixo: 'x' }, nicho: N,
+      letreiro: { txt: 'PESCA DO BENÉ', fundo: '#24506e', cor: '#fff0c8', w: 2.5, h: 0.38, y: 2.36, u: N.u },
+      montar: (G, w, d) => {
+        const zf = d / 2, zb = d / 2 - N.prof;                             // frente da casinha e parede do fundo do vão
+        for (let y = 0.95; y < 2.7; y += 0.3) {                           // tábuas (frisos mais escuros) na frente e nos lados
+          naFace(G, w, d, 'f', (-w / 2 + (N.u - N.larg / 2)) / 2, y, 0.005, N.u - N.larg / 2 + w / 2, 0.035, 0.02, '#8a5e36');
+          naFace(G, w, d, 'f', (N.u + N.larg / 2 + w / 2) / 2, y, 0.005, w / 2 - N.u - N.larg / 2, 0.035, 0.02, '#8a5e36');
+          for (const f of ['l', 'r', 'b']) naFace(G, w, d, f, 0, y, 0.005, f === 'b' ? w : d, 0.035, 0.02, '#8a5e36');
+        }
+        G.box(2.5, 0.95, 0.42, '#7a5230', N.u, 0, zf - 0.21, '#7a5230'); G.box(2.7, 0.07, 0.62, '#d8b98a', N.u, 0.95, zf - 0.2);   // o balcão
+        G.box(2.36, 0.04, N.prof, '#8a6a48', N.u, 0, zf - N.prof / 2);   // chão do vão
+        for (const y of [1.25, 1.72]) G.box(2.3, 0.07, 0.3, '#6a4428', N.u, y, zb + 0.16);   // prateleiras
+        const potes = ['#c86a5a', '#e8d8b0', '#f2d040', '#6a8a3a', '#f0a080', '#a8402a', '#5a6a5a', '#3fb7f0'];
+        potes.forEach((c, i) => { const x = N.u - 0.95 + (i % 4) * 0.62, y = i < 4 ? 1.32 : 1.79;
+          G.box(0.2, 0.24, 0.2, '#dfe8ea', x, y, zb + 0.16); G.box(0.16, 0.16, 0.16, c, x, y + 0.02, zb + 0.16); G.box(0.22, 0.05, 0.22, '#c8352b', x, y + 0.24, zb + 0.16); });
+        for (let i = 0; i < 4; i++) G.box(0.035, 1.95, 0.035, ['#c9a45c', '#2a2a2e', '#d8b030', '#8a96a0'][i], N.u + N.larg / 2 - 0.12 - i * 0.07, 0.05, zb + 0.12 + i * 0.05);   // varas encostadas no canto
+        G.box(0.42, 0.34, 0.32, '#f4f4ec', N.u - 0.8, 0.98, zf - 0.12); G.box(0.44, 0.06, 0.34, '#3a64b8', N.u - 0.8, 1.32, zf - 0.12);   // a balança do balcão (isopor e tampa)
+        const Q = QUADRO_PESCA;                                            // moldura do quadro do catálogo (a imagem vem do pesca.js)
+        naFace(G, w, d, 'f', Q.u, Q.y - 0.08, 0.01, Q.w + 0.16, Q.h + 0.16, 0.06, '#5a3a1e');
+        porta(G, w, d, 'r', -0.6, 0.9, 2.0, '#5b3a22', '#7a5230');          // a porta do Bené (do lado)
+        janela(G, w, d, 'l', 0, 1.35, 0.8, 0.7, '#7a5230');
+        G.box(0.5, 0.45, 0.5, '#7a5a3a', N.u + 1.75, 0, zf + 0.45); G.box(0.56, 0.06, 0.56, '#8a6a48', N.u + 1.75, 0.45, zf + 0.45);   // caixote na frente
+      },
+      obst: [[N.u + 1.75, 0.45, 0.6, 0.6]] });
   }
 
   // ------------------------------------------------------------------ PLANTAS COM FÍSICA: graminhas altas pelo gramado e taboas na beira do lago
@@ -2134,18 +2174,23 @@
   const luciaNoCafe = () => S.dados.hora >= H_LUCIA_CHEGA && S.dados.hora < luciaSai();
   function rotaLucia() { return S.rotaLucia || (S.rotaLucia = rotaCasaPorta('alves', 'cafeteria', VEL_LUCIA)); }
   // caminho de uma casa (casa.especial) até a porta de um lugar, pela rede de calçadas. dur = horas de jogo andando a vel m/s.
+  //   (6.4.0) lugar também pode ser um PONTO fora da rede: { x, z, fim: [[x, z], ...] } — vai pela rede até (x, z) e depois segue os
+  //   pontos de "fim" (ex.: o Cadu sai da trilha do lago, desce pela areia e anda pelo píer até o lugar dele).
   function rotaCasaPorta(especial, lugar, vel) {
-    const C = (S.casas || []).find((c) => c.especial === especial), P = PORTAS.find((p) => p.nome === lugar);
+    const obj = !!lugar && typeof lugar === 'object';
+    const C = (S.casas || []).find((c) => c.especial === especial), P = obj ? lugar : PORTAS.find((p) => p.nome === lugar);
     if (!C || !P || !S.rede) return null;
-    let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, P.z - 0.6));
+    const pz0 = obj ? P.z : P.z - 0.6;
+    let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, pz0));
     { // antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
-      const fim = { x: P.x, z: P.z - 0.6 }; let melhor = null;
+      const fim = { x: P.x, z: pz0 }; let melhor = null;
       for (let i = 2; i < pts.length - 1; i++) {
         const a = pts[i - 1], b = pts[i], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
         const u = clamp(((fim.x - a.x) * vx + (fim.z - a.z) * vz) / L2, 0, 1), q = { x: a.x + vx * u, z: a.z + vz * u }, dd = Math.hypot(q.x - fim.x, q.z - fim.z);
         if (!melhor || dd < melhor.dd - 1e-6) melhor = { i, q, dd };
       }
       if (melhor) pts = pts.slice(0, melhor.i).concat([melhor.q, fim]); }
+    if (obj && P.fim) pts = pts.concat(P.fim.map(([x, z]) => ({ x, z })));   // (6.4.0) depois da rede: areia, píer...
     const acc = [0];
     for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
     const L = acc[acc.length - 1];
@@ -2703,6 +2748,9 @@
   //   Quem não tem rotina cambaleia UMA vez e deixa passar; se a pessoa com rotina está parada no caminho (ou se ele já esbarrou nela
   //   agora há pouco), ele CONTORNA ('contorna'). Antes ele cambaleava a cada 0,9 s, para sempre, na frente de quem estava parado.
   function cruzar(A, B) {
+    if (!B.andando && !B.sentado && !B.deitado) {                       // quem está PARADO no caminho cambaleia e quem vem andando segue reto (passa por dentro)
+      if (!(B.esbarrao > 0.05)) B.esbarrao = 0.6; A.fantasma = 0.7; return true;
+    }
     if (temRotina(B) && !temRotina(A)) {
       const repetiu = A.esbDe === B && S.t - (A.esbT == null ? -99 : A.esbT) < 6;
       A.esbDe = B; A.esbT = S.t;
@@ -2750,6 +2798,8 @@
     if (A.desvio) return;
     if (!iniciarDesvio(A, dx, dz, d)) { A.fantasma = 0.8; A.bloq = 0; }
   }
+  // o jogador só "tem corpo" para as pessoas quando está andando (ou sentado): parado de pé, quem vem andando segue reto e ele é que cambaleia
+  const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || J.andando || S.modo !== 'livre'; };
   function livreNPC(x, z, A, semJog, ignorarGente) {
     if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
     else if (x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) return false;
@@ -2761,7 +2811,7 @@
     if (!S.dentro && S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     if (!S.dentro) for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
     if (ignorarGente) return true;
-    if (!semJog && !temRotina(A) && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;
+    if (!semJog && !temRotina(A) && jogBloqueia() && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;   // jogador parado: a pessoa segue reto e passa por dentro dele (ele cambaleia)
     if (A && A.fantasma > 0) return true;
     for (const B of S.npcs) {
       if (B === A || B.oculto) continue;
@@ -2916,7 +2966,7 @@
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
       }
-      if (temRotina(A) && !A.oculto && A.andando && S.modo === 'livre' && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador
+      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && S.modo === 'livre' && !J0.sentado && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado)
       if (A.tipo === 'luciaRua') tickLuciaRua(A);
       else if (A.tipo === 'rua') tickRua(A);                          // Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
@@ -3173,6 +3223,7 @@
     if (MARCOS_CACHE || !S.societys || !S.societys.length) return MARCOS_CACHE || [];
     MARCOS_CACHE = [
       { id: 'lago', nome: T('Lago do Sapo Cururu'), x: LAGO.cx, z: LAGO.cz, raio: 20 },
+      { id: 'casaPesca', nome: T('Casinha da Pesca'), x: (CASA_PESCA.x0 + CASA_PESCA.x1) / 2, z: (CASA_PESCA.z0 + CASA_PESCA.z1) / 2, raio: 8 },   // (6.4.0)
       { id: 'varzea', nome: T('Campo de Várzea Henrique Antônio'), x: (VARZEA.x0 + VARZEA.x1) / 2, z: (VARZEA.z0 + VARZEA.z1) / 2, raio: 22 },
       { id: 'society1', nome: T('Society do Seu Nonato'), x: S.societys[0].cx, z: S.societys[0].cz, raio: 16 },
       { id: 'society2', nome: T('Society Doutor Bryan'), x: S.societys[1].cx, z: S.societys[1].cz, raio: 16 },
@@ -3409,7 +3460,7 @@
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
-    montarRuaMercado(); montarRuaAcademia();                           // se o mercado.js / academia.js chegou com o jogador lá dentro
+    montarRuaMercado(); montarRuaAcademia(); montarRuaPesca();          // se o mercado.js / academia.js / pesca.js chegou com o jogador lá dentro
     if (semClarear !== true) await preto(false, 380);
   }
   function alvos() {
@@ -3438,7 +3489,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } for (const P of PORTAS) {
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
       if (P.nome === 'academia' && S.academia && S.academia.aberto && !S.academia.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.academia.rotuloFechada(), fn: async () => {}, y: 3 }); continue; }   // (6.3.0) a academia abre das 7h às 11h e das 13h às 22h
@@ -3608,6 +3659,10 @@
     if (!S || !S.academia || !S.academia.montarRua || S.ruaAcademiaOk || S.dentro) return;
     S.ruaAcademiaOk = true; try { S.academia.montarRua(); } catch (e) { console.warn('[Cidade] rua da academia:', e); }
   }
+  function montarRuaPesca() {                                         // (6.4.0) o Cadu indo de casa até o píer (sábado e domingo) e o Bené na casinha
+    if (!S || !S.pesca || !S.pesca.montarRua || S.ruaPescaOk || S.dentro) return;
+    S.ruaPescaOk = true; try { S.pesca.montarRua(); } catch (e) { console.warn('[Cidade] rua da pesca:', e); }
+  }
   function atorDe(m, opt, tipo) { S.grupo.add(m.raiz); S.meus.add(m); return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: tipo || 'parado' }; }
   function apiMercado() {
     return {
@@ -3632,6 +3687,10 @@
   function erroCinema(e) { if (!S.erroCinema) { S.erroCinema = true; console.warn('[Cidade] cinema:', e); } }   // um erro no cinema.js não trava a cidade (avisa uma vez só)
   function apiCinema() {
     return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; } });
+  }
+  // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
+  function apiPesca() {
+    return Object.assign(apiAcademia(), { LAGO, PIER, CASA_PESCA, QUADRO_PESCA, dentroLago, bordaLago, OX, chuva: () => !!(S.clima && S.clima.chuva > 0.25), amizadeNaTela });
   }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};
@@ -5531,6 +5590,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
         if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
+        if (S.pesca) S.pesca.tick(dt);                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
@@ -5553,6 +5613,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
     if (S.academia) try { S.academia.limpar(); } catch (e) { console.warn('[Cidade] academia:', e); }
     if (S.cinema) try { S.cinema.limpar(); } catch (e) { console.warn('[Cidade] cinema:', e); }
+    if (S.pesca) try { S.pesca.limpar(); } catch (e) { console.warn('[Cidade] pesca:', e); }
     for (const m of S.meus) ATLETAS.delete(m);
     if (S.dentro && S.grupo && S.grupo !== S.grupoCidade) { scene.remove(S.grupo); S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); }); S.grupo = S.grupoCidade; }
     if (S.grupo) {
@@ -5589,6 +5650,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
+      Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e));   // (6.4.0) pesca no lago
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });

@@ -26,7 +26,11 @@
    - Se o jogador tirou o Cadu do armário na Fase 1 (historia.fase1.cadu.salvou), ele lembra e dá +15 fakes no salário (AUMENTO).
    - Salário: PAGA (95) pelo turno inteiro (+15 do Cadu), menos os descontos. Começar depois das 14h30, acelerar ou sair antes paga
      proporcional às horas trabalhadas.
-   - Salva em historia.cidade: mercado = { apresentou, aumento, estoque: {...}, rosaLib: { dia, h } } e trabalhouHoje.
+   - (6.4.0) SÁBADO E DOMINGO o Cadu vai pescar no lago (pesca.js leva ele até o píer) e quem fica no mercado é o pai dele, o SEU
+     RAIMUNDO (criarPai, estadoPai, viagensPai, falarComPai): faz o dia que o Cadu faria (limpa, fecha o 2º caixa, libera a Rosa às 15h e
+     fica no caixa até as 22h). Na 1ª conversa ele conta que o Cadu pesca no Lago do Sapo Cururu das 6h às 20h. Se o jogador reencontrou o
+     Cadu no lago antes do mercado (mercado.reconheceu), o Cadu não "reconhece" de novo.
+   - Salva em historia.cidade: mercado = { apresentou, aumento, estoque: {...}, rosaLib: { dia, h }, conheceu, reconheceu, paiConheceu, papoPai } e trabalhouHoje.
    ===================================================================== */
 (function () {
   'use strict';
@@ -122,6 +126,24 @@
     'Tô indo nessa! Volto às 21h50 pra fechar com você.': ["I'm off! I'll be back at 9:50 PM to close with you.", '¡Me voy! Vuelvo a las 21h50 para cerrar contigo.', 'Vado! Torno alle 21:50 per chiudere con te.', 'J’y vais ! Je reviens à 21 h 50 pour fermer avec toi.'],
     'Rosa, pode ir! Eu assumo o caixa.': ['Rosa, you can go! I’ll take over the checkout.', '¡Rosa, puedes irte! Yo me quedo con la caja.', 'Rosa, puoi andare! Prendo io la cassa.', 'Rosa, tu peux y aller ! Je prends la caisse.'],
     'Valeu, Cadu! Até amanhã!': ['Thanks, Cadu! See you tomorrow!', '¡Gracias, Cadu! ¡Hasta mañana!', 'Grazie, Cadu! A domani!', 'Merci, Cadu ! À demain !'],
+    // (6.4.0) o seu Raimundo, pai do Cadu (sábado e domingo)
+    'Seu Raimundo': ['Mr. Raimundo', 'Don Raimundo', 'Signor Raimundo', 'M. Raimundo'],
+    'Falar com o seu Raimundo': ['Talk to Mr. Raimundo', 'Hablar con don Raimundo', 'Parla con il signor Raimundo', 'Parler à M. Raimundo'],
+    'Vou fechar o caixa aqui do fundo.': ["I'll close out the back register.", 'Voy a cerrar la caja del fondo.', 'Chiudo la cassa qui in fondo.', 'Je vais fermer la caisse du fond.'],
+    'Rosa, pode ir que eu fico no caixa!': ['Rosa, you can go, I’ll take the register!', '¡Rosa, puedes irte, yo me quedo en la caja!', 'Rosa, puoi andare, resto io alla cassa!', 'Rosa, tu peux y aller, je prends la caisse !'],
+    'Valeu, seu Raimundo! Bom fim de semana!': ['Thanks, Mr. Raimundo! Have a good weekend!', '¡Gracias, don Raimundo! ¡Buen fin de semana!', 'Grazie, signor Raimundo! Buon fine settimana!', 'Merci, M. Raimundo ! Bon week-end !'],
+    'Hora de fechar! Volte sempre!': ['Closing time! Come back anytime!', '¡Hora de cerrar! ¡Vuelve cuando quieras!', 'Si chiude! Torna quando vuoi!', 'On ferme ! Revenez quand vous voulez !'],
+    'Opa, tudo bom? Eu sou o Raimundo, o dono do mercado. Seja bem-vindo!': ['Hey, how’s it going? I’m Raimundo, the owner of the market. Welcome!', '¡Hola! ¿Qué tal? Soy Raimundo, el dueño del mercado. ¡Bienvenido!', 'Ehi, tutto bene? Sono Raimundo, il proprietario del mercato. Benvenuto!', 'Salut, ça va ? Je suis Raimundo, le patron de la supérette. Bienvenue !'],
+    'Você é amigo do Cadu, né? Ele fala muito de você.': ["You're Cadu's friend, right? He talks about you a lot.", 'Eres amigo de Cadu, ¿no? Habla mucho de ti.', 'Sei amico di Cadu, vero? Parla molto di te.', 'Tu es l’ami de Cadu, non ? Il parle beaucoup de toi.'],
+    'Durante a semana quem cuida daqui comigo é o meu filho, o Cadu.': ['During the week my son, Cadu, runs the place with me.', 'Entre semana mi hijo, Cadu, cuida de esto conmigo.', 'Durante la settimana se ne occupa con me mio figlio, Cadu.', 'En semaine, c’est mon fils, Cadu, qui s’en occupe avec moi.'],
+    'Sábado e domingo eu fico sozinho. O Cadu vai pescar no Lago do Sapo Cururu, das 6h às 20h. Desde pequeno é assim!': ['On Saturday and Sunday I’m on my own. Cadu goes fishing at Cururu Toad Lake, from 6 AM to 8 PM. He’s been like that since he was little!', 'Sábado y domingo me quedo solo. Cadu se va a pescar al Lago del Sapo Cururu, de 6h a 20h. ¡Desde chico es así!', 'Sabato e domenica sto da solo. Cadu va a pescare al Lago del Rospo Cururu, dalle 6 alle 20. È così da quando era piccolo!', 'Le samedi et le dimanche, je suis seul. Cadu va pêcher au Lac du Crapaud Cururu, de 6 h à 20 h. Il est comme ça depuis tout petit !'],
+    'E fim de semana não tem turno, viu? Descansa, que segunda o caixa te espera.': ['And there’s no shift on weekends, okay? Rest up, the register will be waiting on Monday.', 'Y el fin de semana no hay turno, ¿eh? Descansa, que el lunes la caja te espera.', 'E nel fine settimana non c’è turno, eh? Riposati, lunedì la cassa ti aspetta.', 'Et le week-end, pas de service, hein ? Repose-toi, la caisse t’attend lundi.'],
+    'O Cadu já deve estar lá no lago. Se quiser pescar, ele sempre tem uma varinha sobrando.': ['Cadu must be at the lake by now. If you want to fish, he always has a spare rod.', 'Cadu ya debe estar en el lago. Si quieres pescar, siempre tiene una caña de sobra.', 'Cadu dev’essere già al lago. Se vuoi pescare, ha sempre una canna in più.', 'Cadu doit déjà être au lac. Si tu veux pêcher, il a toujours une canne en trop.'],
+    'O Bené, da casinha da pesca, compra todo peixe que aparece. Diz que conhece cada um daquele lago.': ['Bené, from the fishing shack, buys every fish that turns up. He says he knows every one in that lake.', 'Bené, el de la casita de pesca, compra todo pez que aparece. Dice que conoce cada uno de ese lago.', 'Bené, della casetta della pesca, compra ogni pesce che capita. Dice di conoscere ognuno di quel lago.', 'Bené, de la cabane de pêche, achète tous les poissons qu’on lui apporte. Il dit connaître chacun de ce lac.'],
+    'Quando o Cadu era pequeno, vendia minhoca aqui na porta pra comprar anzol. Acredita?': ['When Cadu was little, he sold worms right here at the door to buy hooks. Can you believe it?', 'Cuando Cadu era chico, vendía lombrices aquí en la puerta para comprar anzuelos. ¿Puedes creerlo?', 'Quando Cadu era piccolo, vendeva lombrichi qui davanti per comprarsi gli ami. Ci credi?', 'Quand Cadu était petit, il vendait des vers ici devant la porte pour s’acheter des hameçons. Tu le crois ?'],
+    'Quarenta anos de mercado e ainda me perco no estoque, haha.': ['Forty years running this market and I still get lost in the stockroom, haha.', 'Cuarenta años de mercado y todavía me pierdo en el almacén, jaja.', 'Quarant’anni di mercato e mi perdo ancora in magazzino, haha.', 'Quarante ans de supérette et je me perds encore dans la réserve, haha.'],
+    'Dizem que tem um pirarucu enorme no Lago do Sapo Cururu. Eu nunca vi, mas o Bené jura que sim.': ['They say there’s a huge arapaima in Cururu Toad Lake. I’ve never seen it, but Bené swears it’s there.', 'Dicen que hay un paiche enorme en el Lago del Sapo Cururu. Yo nunca lo vi, pero Bené jura que sí.', 'Dicono che nel Lago del Rospo Cururu ci sia un arapaima enorme. Io non l’ho mai visto, ma Bené giura di sì.', 'On dit qu’il y a un énorme arapaïma dans le Lac du Crapaud Cururu. Je ne l’ai jamais vu, mais Bené le jure.'],
+    'E segunda tem turno, hein! Hoje é dia de descansar.': ['And there’s a shift on Monday, okay? Today is for resting.', '¡Y el lunes hay turno, eh! Hoy es día de descansar.', 'E lunedì c’è il turno, eh! Oggi si riposa.', 'Et lundi, il y a le service, hein ! Aujourd’hui, on se repose.'],
     'Cheguei! Às 22h eu fecho com você.': ["I'm here! At 10 PM I'll close with you.", '¡Llegué! A las 22h cierro contigo.', 'Sono arrivato! Alle 22 chiudo con te.', 'Me voilà ! À 22 h je ferme avec toi.'],
     'Deu 22h! Pode ir, que eu fecho aqui.': ["It's 10 PM! You can go, I'll close up.", '¡Son las 22h! Puedes irte, yo cierro.', 'Sono le 22! Puoi andare, chiudo io.', 'Il est 22 h ! Tu peux y aller, je ferme.'],
     'Pode deixar que eu atendo esses últimos e fecho o caixa. Não se preocupa, pode ir!': ["Leave it, I'll serve these last ones and close the register. Don't worry, you can go!", 'Deja, yo atiendo a estos últimos y cierro la caja. ¡No te preocupes, puedes irte!', 'Lascia, servo io questi ultimi e chiudo la cassa. Non preoccuparti, puoi andare!', 'Laisse, je sers les derniers et je ferme la caisse. Ne t’en fais pas, tu peux y aller !'],
@@ -522,7 +544,7 @@
   // ================================================================== o módulo (um por cidade aberta)
   function criar(api) {
     const S = () => api.S();
-    const M = { R: null, D: null, cadu: null, rosa: null, marcas: {}, esteiraM: [], tex: new Map(), nav: null, avisos: [], tAviso: 0 };
+    const M = { R: null, D: null, cadu: null, rosa: null, pai: null, marcas: {}, esteiraM: [], tex: new Map(), nav: null, avisos: [], tAviso: 0 };
 
     const dadosM = () => { const d = S().dados; if (!d.mercado) d.mercado = {}; const m = d.mercado; if (!m.estoque) m.estoque = { higiene: EST_MAX, comida: EST_MAX, bebida: EST_MAX, fruta: EST_MAX }; return m; };
     const hora = () => S().dados.hora;
@@ -551,6 +573,17 @@
       if (!m) { opt = Object.assign({ camisa: '#f2f2ee', listra: '#c8352b', gola: '#c8352b', calcao: '#1c1c1f', meia: '#1c1c1f', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
       avental(m, '#1f7a4d');
       const A = api.atorDe(m, opt, 'parado'); A.vel = 1.4; return A;
+    }
+    // (6.4.0) o SEU RAIMUNDO, pai do Cadu e dono do mercado: fica na loja no sábado e no domingo (o Cadu vai pescar no lago).
+    //   Grisalho, cavanhaque com bigode, os mesmos óculos do filho, camisa clara e o avental verde.
+    function criarPai() {
+      const s = S(), acha = (lista, n) => Math.max(0, lista.findIndex((x) => x.nome === n));
+      const ap = { pele: PELES_FITZ[3].cor, cabelo: CORES_CABELO[6].cor, estilo: acha(ESTILOS_CABELO, 'Ralo'), rosto: acha(ROSTOS, 'Sério'), labio: 2, barba: acha(ESTILOS_BARBA, 'Cavanhaque com bigode'), corBarba: CORES_CABELO[6].cor };
+      let m = null, opt = null;
+      try { if (s.f2 && s.f2.modeloPessoa) { const r = s.f2.modeloPessoa({ ap, fem: false, roupa: 6, cores: ['#e8e2d0', '#3a3a3e', '#f2f2ee', '#f2f2ee'] }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Mercado] seu Raimundo:', e); }
+      if (!m) { opt = Object.assign({ camisa: '#e8e2d0', listra: '#e8e2d0', gola: '#f2f2ee', calcao: '#3a3a3e', meia: '#3a3a3e', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 1, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
+      avental(m, '#1f7a4d'); oculos(m, opt);
+      const A = api.atorDe(m, opt, 'parado'); A.vel = 1.3; return A;
     }
     function avental(m, cor) {                                          // avental verde do mercado + crachá
       const G = new api.Geo(); G.box(0.05, 0.62, 0.46, cor, 0.17, 0.55, 0); G.box(0.04, 0.05, 0.5, '#f2c230', 0.18, 0.86, 0); G.box(0.02, 0.08, 0.14, '#f2f2ee', 0.2, 1.1, -0.1);
@@ -585,26 +618,38 @@
 
     // ---------------------------------------------------------------- Cadu e Rosa na RUA (de casa até o mercado e de volta)
     function viagensCadu() {
+      if (fimDeSemana()) return [];                                     // (6.4.0) sábado e domingo ele vai pescar (o pesca.js leva ele até o lago)
       if (!jogadorTrabalhaHoje()) return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_FICA }];
       return [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_SAI }, { ida: true, chega: H_CADU_VOLTA }, { ida: false, sai: H_CADU_FICA }];
     }
     function saidaRosa() { if (!jogadorTrabalhaHoje()) return H_CADU_SAI; const L = dadosM().rosaLib; return L && L.dia === S().dados.dia ? L.h : H_FECHA; }
     function viagensRosa() { return [{ ida: true, chega: H_ROSA_CHEGA }, { ida: false, sai: saidaRosa() }]; }
+    function viagensPai() { return fimDeSemana() ? [{ ida: true, chega: H_CADU_CHEGA }, { ida: false, sai: H_CADU_FICA }] : []; }   // (6.4.0) mora com o Cadu
     function montarRua() {
       api.criarRuaAgendada(criarCadu(), 'cadu', 'supermercado', viagensCadu, 1.6);
       api.criarRuaAgendada(criarRosa(), 'rosa', 'supermercado', viagensRosa, 1.5);
+      api.criarRuaAgendada(criarPai(), 'cadu', 'supermercado', viagensPai, 1.4);   // (6.4.0) o seu Raimundo (sábado e domingo)
     }
 
     // ---------------------------------------------------------------- dentro da loja: onde cada um deve estar a cada hora
     //   cada estado: { id, x, z, yaw, pose } | { id: 'limpa' } (anda entre os pontos de limpeza) | null (não está na loja)
     function estadoCadu(h) {
       const D = M.D; if (!D) return null;
+      if (fimDeSemana()) return null;                                   // (6.4.0) sábado e domingo: está pescando no lago
       if (h < H_CADU_CHEGA) return null;
       if (h < H_CADU_CAIXA2) return { id: 'limpa' };
       if (h < H_CADU_SAI) return { id: 'caixa2', x: D.cadu.x, z: D.cadu.z, yaw: D.cadu.yaw, pose: 'conta' };
       if (!jogadorTrabalhaHoje()) return h < H_CADU_FICA ? { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' } : null;
       if (h < H_CADU_VOLTA) return null;
       return h < H_CADU_FICA ? { id: 'libera', x: D.caixa.jog.x + 0.95, z: D.caixa.jog.z + 0.55, yaw: Math.PI * 0.8, pose: null } : null;
+    }
+    // (6.4.0) o seu Raimundo no fim de semana: o mesmo dia do Cadu quando o jogador não trabalha (limpa, fecha o 2º caixa, libera a Rosa às 15h)
+    function estadoPai(h) {
+      const D = M.D; if (!D || !fimDeSemana()) return null;
+      if (h < H_CADU_CHEGA) return null;
+      if (h < H_CADU_CAIXA2) return { id: 'limpa' };
+      if (h < H_CADU_SAI) return { id: 'caixa2', x: D.cadu.x, z: D.cadu.z, yaw: D.cadu.yaw, pose: 'conta' };
+      return h < H_CADU_FICA ? { id: 'caixa1', x: D.caixaNPC.x, z: D.caixaNPC.z, yaw: D.caixaNPC.yaw, pose: 'caixa' } : null;
     }
     function estadoRosa(h) {
       const D = M.D; if (!D) return null;
@@ -664,6 +709,11 @@
       } else { A.yawAlvo = e.yaw; A.poseM = e.pose; }
     }
     function aoMudar(chave, de, para) {                                   // o que eles falam quando o horário muda (com o jogador lá dentro)
+      if (chave === 'pai') {                                              // (6.4.0)
+        if (para === 'caixa2') falaRapida(T('Seu Raimundo'), T('Vou fechar o caixa aqui do fundo.'));
+        else if (para === 'caixa1' && de === 'caixa2') { falaRapida(T('Seu Raimundo'), T('Rosa, pode ir que eu fico no caixa!')); if (M.rosa) falaRapida(T('Rosa'), T('Valeu, seu Raimundo! Bom fim de semana!')); }
+        return;
+      }
       if (chave !== 'cadu') return;
       if (para === 'caixa2') falaRapida(T('Cadu'), T('Vou fechar o caixa aqui do fundo. Fico até as 15h!'));
       else if (para === 'caixa1' && de === 'caixa2') { falaRapida(T('Cadu'), T('Rosa, pode ir! Eu assumo o caixa.')); if (M.rosa) falaRapida(T('Rosa'), T('Valeu, Cadu! Até amanhã!')); }
@@ -673,7 +723,7 @@
     // poses de trabalho (por cima da pose normal do poseAtor, que já rodou neste quadro)
     function posesTrabalho() {
       const s = S();
-      for (const A of [M.cadu, M.rosa]) {
+      for (const A of [M.cadu, M.rosa, M.pai]) {
         if (!A) continue;
         const V = A.vassoura; if (V) V.visible = A.poseM === 'varre';
         if (!A.poseM || A.andando) continue;
@@ -767,7 +817,7 @@
       const q = R[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt;
       if (d <= Math.max(v, 0.04)) { A.x = q.x; A.z = q.z; R.shift(); A.esperaM = 0; if (!R.length) { A.andando = false; return true; } return false; }
       const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; if (!livreEst(nx, nz)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
-      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0, paciencia = A === M.cadu || A === M.rosa ? 1.2 : 2.6;   // quem trabalha não fica preso atrás do jogador
+      const ux = dx / d, uz = dz / d, esp = A.esperaM || 0, paciencia = A === M.cadu || A === M.rosa || A === M.pai ? 1.2 : 2.6;   // quem trabalha não fica preso atrás do jogador
       let ok = tenta(ux, uz, false);
       if (!ok && esp > 0.7) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
       if (!ok && esp > paciencia) ok = tenta(ux, uz, true);
@@ -783,6 +833,7 @@
       M.avisos = []; M.tAviso = 0;
       tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, 0, true);
       tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, 0, true);
+      tickPessoal('pai', estadoPai, criarPai, T('Seu Raimundo'), 3, 0, true);   // (6.4.0)
       M.filaN = []; M.vende = null; M.tPasseio = 3;
       if (entraPasseio()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }   // já tem gente comprando
       for (const sec of SECOES) mostrarEstoque(sec);
@@ -793,10 +844,10 @@
       if (s.turnoMercado && !s.turnoMercado.fim) { s.turnoMercado.fim = true; fecharUI(); }
       limparEsteira(); tirarCaixaDaMao();
       for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk && mk.parent) mk.parent.remove(mk); } M.marcas = {};
-      if (s.falantesExtra) { delete s.falantesExtra.cadu; delete s.falantesExtra.rosa; }
+      if (s.falantesExtra) { delete s.falantesExtra.cadu; delete s.falantesExtra.rosa; delete s.falantesExtra.pai; }
       if (M.tAviso > 0 || M.avisos.length) api.aviso('');               // o aviso "Cadu: ..." não vai junto para a rua
       for (const A of s.npcs) tirarBalao(A);
-      M.R = null; M.D = null; M.cadu = null; M.rosa = null; M.nav = null; M.avisos = []; M.tAviso = 0; M.filaN = []; M.vende = null;
+      M.R = null; M.D = null; M.cadu = null; M.rosa = null; M.pai = null; M.nav = null; M.avisos = []; M.tAviso = 0; M.filaN = []; M.vende = null;
     }
     function mostrarEstoque(sec) {
       const R = M.R; if (!R || !R.estoque || !R.estoque[sec]) return;
@@ -808,6 +859,7 @@
     function alvos(v) {
       const s = S(), J = s.jog, U = s.turnoMercado, D = M.D; if (!D) return;
       const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 2.6, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });   // dá do outro lado do balcão
+      const Pa = M.pai; if (Pa && Pa.estM !== 'sai') v.push({ x: Pa.x, z: Pa.z, r: 2.6, txt: T('Falar com o seu Raimundo'), fn: falarComPai, y: 2.5 });   // (6.4.0)
       if ((!U || U.fim) && podeComecar()) for (const q of [{ x: D.caixa.x, z: D.caixa.z }, { x: D.cadu.x - 0.95, z: D.caixa.z }]) v.push({ x: q.x, z: q.z, r: 2.1, txt: T('Começar o turno'), fn: comecarTurno, y: 2.3, pri: true });
       if (!U || U.fim) return;
       const cx = D.caixa.jog, prim = U.fila[0];
@@ -896,7 +948,7 @@
           } else await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
           await api.fala('cadu', T('Esse mercado é do meu pai. Eu tô ajudando ele em algumas coisas por aqui.'));
           await api.fala('cadu', T('Passa aqui sempre que precisar de alguma coisa!'));
-          dm.conheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return;
+          dm.conheceu = true; dm.reconheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return;
         }
         const P = PAPOS_CADU.filter((q) => !q.salvou || salvou), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
         await api.fala('cadu', T(Q.p));
@@ -906,18 +958,20 @@
       }
       if (!dm.apresentou) {
         if (salvou) {
-          await api.fala('cadu', Tf('Espera aí... {0}?! É você mesmo?!', api.nomeJog()));
-          await api.fala('cadu', T('Você me tirou daquele armário na escola, lembra? Eu nunca esqueci isso.'));
-          if (cad.conversou) await api.fala('cadu', T('E ainda veio conversar comigo depois. Pouca gente fazia isso.'));
-          await api.fala('jog', T('Cadu?! Quanto tempo!'));
+          if (!dm.reconheceu) {                                           // (6.4.0) se já se reencontraram no lago, ele não "reconhece" de novo
+            await api.fala('cadu', Tf('Espera aí... {0}?! É você mesmo?!', api.nomeJog()));
+            await api.fala('cadu', T('Você me tirou daquele armário na escola, lembra? Eu nunca esqueci isso.'));
+            if (cad.conversou) await api.fala('cadu', T('E ainda veio conversar comigo depois. Pouca gente fazia isso.'));
+            await api.fala('jog', T('Cadu?! Quanto tempo!'));
+          }
           await api.fala('cadu', T('Esse mercado é do meu pai. Eu tô ajudando ele em algumas coisas por aqui.'));
           await api.fala('cadu', T('E por aquele dia na escola... vou aumentar o seu salário em 15 fakes. É o mínimo!'));
           dm.aumento = true;
-        } else await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
+        } else if (!dm.reconheceu) await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
         await api.fala('cadu', T('O expediente é das 14h às 22h. Você fica no caixa: passa as compras, recebe e dá o troco certinho, ou passa na maquininha.'));
         await api.fala('cadu', T('Quando faltar mercadoria numa seção, pega a caixa certa no estoque, ali no fundo, e repõe na seção.'));
         await api.fala('cadu', Tf('O salário é {0} fakes pelo turno. Cada troco errado desconta {1} fakes.', salario(), DESCONTO));
-        dm.apresentou = true; api.gravar('chegada');
+        dm.apresentou = true; dm.reconheceu = true; dm.conheceu = true; api.gravar('chegada');
       }
       fim();
       if (s.turnoMercado) { await api.fala('cadu', T('Bom trabalho! O caixa é seu.')); fim(); return; }
@@ -928,6 +982,35 @@
       if (hora() < H_TURNO - 0.25) { await api.fala('cadu', T('Seu turno começa às 14h. Chega um pouquinho antes que eu libero o caixa pra você!')); fim(); return; }
       if (hora() >= H_ULTIMO_CLIENTE) { await api.fala('cadu', T('Já tá quase na hora de fechar, hoje não dá mais. Amanhã às 14h, hein!')); fim(); return; }
       await perguntarEComecar();
+    }
+    // ---- (6.4.0) conversa com o seu Raimundo (sábado e domingo). Na 1ª vez ele se apresenta e conta que o Cadu vai pescar no lago
+    //   (é assim que o jogador fica sabendo); depois, papos que giram (dicas do lago, do Bené e histórias do Cadu pequeno).
+    const PAPOS_PAI = [
+      'O Cadu já deve estar lá no lago. Se quiser pescar, ele sempre tem uma varinha sobrando.',
+      'O Bené, da casinha da pesca, compra todo peixe que aparece. Diz que conhece cada um daquele lago.',
+      'Quando o Cadu era pequeno, vendia minhoca aqui na porta pra comprar anzol. Acredita?',
+      'Quarenta anos de mercado e ainda me perco no estoque, haha.',
+      'Dizem que tem um pirarucu enorme no Lago do Sapo Cururu. Eu nunca vi, mas o Bené jura que sim.',
+    ];
+    async function falarComPai() {
+      const s = S(), P = M.pai, J = s.jog;
+      if (P) { P.yawAlvo = Math.atan2(-(J.z - P.z), J.x - P.x); P.poseM = null; P.conversando = true; P.andando = false; }
+      try { await conversaPai(); } finally { if (M.pai) M.pai.conversando = false; }
+    }
+    async function conversaPai() {
+      const d = S().dados, dm = dadosM();
+      if (!dm.paiConheceu) {
+        await api.fala('pai', T('Opa, tudo bom? Eu sou o Raimundo, o dono do mercado. Seja bem-vindo!'));
+        if (dm.conheceu || dm.apresentou) await api.fala('pai', T('Você é amigo do Cadu, né? Ele fala muito de você.'));
+        else await api.fala('pai', T('Durante a semana quem cuida daqui comigo é o meu filho, o Cadu.'));
+        await api.fala('pai', T('Sábado e domingo eu fico sozinho. O Cadu vai pescar no Lago do Sapo Cururu, das 6h às 20h. Desde pequeno é assim!'));
+        if (ehMeuEmprego()) await api.fala('pai', T('E fim de semana não tem turno, viu? Descansa, que segunda o caixa te espera.'));
+        dm.paiConheceu = true; api.gravar(d.ponto || 'chegada'); Dialogo.esconder(); return;
+      }
+      const Q = PAPOS_PAI[(dm.papoPai | 0) % PAPOS_PAI.length]; dm.papoPai = (dm.papoPai | 0) + 1;
+      await api.fala('pai', T(Q));
+      if (ehMeuEmprego() && (dm.papoPai % 3) === 0) await api.fala('pai', T('E segunda tem turno, hein! Hoje é dia de descansar.'));
+      Dialogo.esconder();
     }
     // dá para começar tocando no caixa (ou no 2º caixa), sem precisar encostar no Cadu
     function podeComecar() {
@@ -1091,7 +1174,7 @@
     function posBalao(A) { const sp = A.balaoM; if (sp) sp.position.set(A.x, (A.y || 0) + 2.2 + Math.sin((S().t || 0) * 6) * 0.04, A.z); }
     function tirarBalao(A) { if (A.balaoM) { if (A.balaoM.parent) A.balaoM.parent.remove(A.balaoM); A.balaoM.material.dispose(); } A.balaoM = null; A.balaoTipo = null; }
     // a CAIXA (Rosa ou Cadu) vende para quem chega na vez: mexe as mãos, bipa a esteira, registradora, o cliente sai com a sacola
-    function caixaNPC() { for (const A of [M.rosa, M.cadu]) if (A && A.estM === 'caixa1' && !(A.rotaM && A.rotaM.length) && !A.conversando) return A; return null; }
+    function caixaNPC() { for (const A of [M.rosa, M.cadu, M.pai]) if (A && A.estM === 'caixa1' && !(A.rotaM && A.rotaM.length) && !A.conversando) return A; return null; }
     function pararVenda() { const V = M.vende; if (V && V.caixa) V.caixa.atendendo = 0; M.vende = null; }
     function tickCaixaNPC(dt) {
       if (S().turnoMercado) { if (M.vende) pararVenda(); return; }
@@ -1379,7 +1462,7 @@
     // 22h com o jogador lá dentro (sem turno): quem estiver avisa e ele sai
     async function fecharMercado() {
       const s = S(); s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso('');
-      try { if (M.cadu) { await api.fala('cadu', T('Vamos fechar! Até amanhã!')); Dialogo.esconder(); } await api.sairDoLugar(); } catch (e) { console.error(e); }
+      try { if (M.cadu) { await api.fala('cadu', T('Vamos fechar! Até amanhã!')); Dialogo.esconder(); } else if (M.pai) { await api.fala('pai', T('Hora de fechar! Volte sempre!')); Dialogo.esconder(); } await api.sairDoLugar(); } catch (e) { console.error(e); }
       const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
     }
 
@@ -1391,6 +1474,7 @@
       if (dentro) {
         tickPessoal('cadu', estadoCadu, criarCadu, T('Cadu'), 2, dt, false);
         tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, dt, false);
+        tickPessoal('pai', estadoPai, criarPai, T('Seu Raimundo'), 3, dt, false);   // (6.4.0) sábado e domingo
         tickCaixaNPC(dt); posesTrabalho(); tickAvisos(dt); tickPasseio(dt);
         poseCaixa(s.jog);
         for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk) mk.position.y = 2.7 + Math.sin(s.t * 4) * 0.08; }
@@ -1399,7 +1483,7 @@
     }
     function limpar() { fecharUI(); if (M.painel) { M.painel.remove(); M.painel = null; } for (const t of M.tex.values()) t.dispose(); M.tex.clear(); }
 
-    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { darCaixaNaMao, tirarCaixaDaMao, comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
+    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { darCaixaNaMao, tirarCaixaDaMao, comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, estadoPai, conversaPai, viagensCadu, viagensPai, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
   }
 
   window.FutebolJS.registrarFase({ id: 'mercado', nome: 'Mercado', nucleoMinimo: '5.0.0', iniciar: async () => {}, criar, PRODUTOS });
