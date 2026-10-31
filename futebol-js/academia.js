@@ -2,6 +2,9 @@
    FUTEBOL JS · academia.js · A ACADEMIA DA CIDADEZINHA E OS TREINOS (arquivo SEPARADO, como pizzaria.js)
    ---------------------------------------------------------------------
    6.2.0 — primeira versão.
+   6.3.0 — HORÁRIO (7h–11h e 13h–22h; Diego e Fernanda saem para almoçar e voltam, todos saem entre 20h30 e 21h30), cada um com a sua casa;
+           a FERNANDA circula pela academia (orienta gente, treina, bebe água, olha a prancheta); fala DIFERENTE para cada treino/motivo de erro;
+           treino que deu errado não repete no mesmo dia; ESPELHO com 5 poses de fisiculturismo (botão para sair).
    - Registrado com FutebolJS.registrarFase({ id: 'academia' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do pizzaria.js e chama criar(api) (api = apiAcademia() da cidade).
      O interior (recepção, catracas, aparelhos) vem do interiores.js (R.academia). Suba junto do cidade.js / interiores.js / jogo.js.
@@ -66,7 +69,32 @@
     'Nosso combinado vale até o dia {0}. Bora treinar!': ['Our deal is valid until day {0}. Let’s train!', 'Nuestro trato vale hasta el día {0}. ¡A entrenar!', 'Il nostro accordo vale fino al giorno {0}. Allenamoci!', 'Notre accord est valable jusqu’au jour {0}. Allez, on s’entraîne !'],
     'Bora! Eu tô aqui do seu lado.': ['Let’s go! I’m right here with you.', '¡Vamos! Estoy aquí a tu lado.', 'Forza! Sono qui accanto a te.', 'Allez ! Je suis juste à côté.'],
     'Isso aí! Mandou bem demais!': ['That’s it! Awesome job!', '¡Eso es! ¡Lo hiciste genial!', 'Così! Bravissimo!', 'C’est ça ! Super boulot !'],
-    'Calma, acontece com todo mundo. Amanhã a gente acerta!': ['Easy, it happens to everyone. We’ll get it tomorrow!', 'Tranquilo, le pasa a todo el mundo. ¡Mañana lo logramos!', 'Calma, succede a tutti. Domani ce la facciamo!', 'Du calme, ça arrive à tout le monde. Demain on y arrive !'],
+    // (6.3.0) o que a Fernanda diz quando o treino dá errado (cada motivo tem as suas falas)
+    'A lona ganhou de você! O segredo é o ritmo: passadas curtas e constantes, sem desesperar.': ['The belt won! The secret is rhythm: short, steady strides, no panicking.', '¡La cinta ganó! El secreto es el ritmo: pasos cortos y constantes, sin desesperarte.', 'Il tappeto ha vinto! Il segreto è il ritmo: passi corti e costanti, senza farsi prendere dal panico.', 'Le tapis a gagné ! Le secret, c’est le rythme : des foulées courtes et régulières, sans paniquer.'],
+    'Você deixou a lona te puxar no final. Respira, olha para a frente e segura o ritmo!': ['You let the belt pull you back at the end. Breathe, look ahead and hold the pace!', 'Dejaste que la cinta te llevara hacia atrás al final. ¡Respira, mira al frente y mantén el ritmo!', 'Alla fine hai lasciato che il tappeto ti trascinasse. Respira, guarda avanti e mantieni il ritmo!', 'Tu t’es laissé tirer par le tapis à la fin. Respire, regarde devant toi et tiens le rythme !'],
+    'Você subiu fora do verde várias vezes. Espera o marcador chegar e só então sobe!': ['You went up outside the green several times. Wait for the marker to get there, then go up!', 'Subiste fuera del verde varias veces. ¡Espera a que el marcador llegue y solo entonces sube!', 'Sei salito fuori dal verde più volte. Aspetta che l’indicatore arrivi e solo allora sali!', 'Tu es monté hors du vert plusieurs fois. Attends que le repère arrive, et seulement là, monte !'],
+    'Pressa não ajuda no abdominal. Olha o marcador e sobe só na faixa verde.': ['Rushing doesn’t help with sit-ups. Watch the marker and only go up in the green band.', 'La prisa no ayuda en los abdominales. Mira el marcador y sube solo en la franja verde.', 'La fretta non aiuta negli addominali. Guarda l’indicatore e sali solo nella fascia verde.', 'Se presser n’aide pas pour les abdos. Regarde le repère et monte seulement dans la zone verte.'],
+    'O tempo acabou antes de você terminar. Faz menos pausa entre uma subida e outra!': ['Time ran out before you finished. Rest less between one rep and the next!', 'Se acabó el tiempo antes de terminar. ¡Descansa menos entre una subida y otra!', 'Il tempo è finito prima che tu finissi. Fai meno pause tra una salita e l’altra!', 'Le temps s’est écoulé avant la fin. Fais moins de pause entre deux montées !'],
+    'Faltou fôlego no final. Respira na descida e sobe soltando o ar!': ['You ran out of breath at the end. Breathe in on the way down and out on the way up!', 'Te faltó aire al final. ¡Inspira al bajar y suelta el aire al subir!', 'Ti è mancato il fiato alla fine. Inspira in discesa ed espira in salita!', 'Il t’a manqué du souffle à la fin. Inspire en descendant et expire en montant !'],
+    'Eu avisei: não deixa a barra parar no peito! Na próxima, empurra sem dó.': ['I warned you: don’t let the bar rest on your chest! Next time, push hard.', '¡Te lo advertí: no dejes la barra parada en el pecho! La próxima, empuja con todo.', 'Te l’avevo detto: non lasciare la barra ferma sul petto! La prossima volta spingi forte.', 'Je t’avais prévenu : ne laisse pas la barre sur ta poitrine ! La prochaine fois, pousse à fond.'],
+    'A barra desceu e você travou. Respira fundo e empurra no tempo certo!': ['The bar came down and you froze. Take a deep breath and push at the right moment!', 'La barra bajó y te bloqueaste. ¡Respira hondo y empuja en el momento justo!', 'La barra è scesa e ti sei bloccato. Respira a fondo e spingi al momento giusto!', 'La barre est descendue et tu t’es bloqué. Respire à fond et pousse au bon moment !'],
+    'Faltou força para fechar as repetições. Amanhã a gente treina com mais constância!': ['You didn’t have the strength to finish the reps. Tomorrow we’ll train more consistently!', 'Faltó fuerza para terminar las repeticiones. ¡Mañana entrenamos con más constancia!', 'Mancava la forza per finire le ripetizioni. Domani ci alleniamo con più costanza!', 'Il a manqué de la force pour finir les répétitions. Demain, on s’entraîne avec plus de régularité !'],
+    'Sem pressa: o supino é um empurrão firme de cada vez. Amanhã você fecha as cinco!': ['No rush: the bench press is one firm push at a time. Tomorrow you’ll finish all five!', 'Sin prisa: el press de banca es un empujón firme cada vez. ¡Mañana terminas las cinco!', 'Senza fretta: la panca è una spinta decisa alla volta. Domani le chiudi tutte e cinque!', 'Pas de précipitation : le développé couché, c’est une poussée ferme à la fois. Demain tu finis les cinq !'],
+    // (6.3.0) o espelho (poses de fisiculturismo)
+    'Espelho': ['Mirror', 'Espejo', 'Specchio', 'Miroir'],
+    'Posar no espelho': ['Pose in the mirror', 'Posar en el espejo', 'Posa allo specchio', 'Poser devant le miroir'],
+    'Próxima pose ▶': ['Next pose ▶', 'Siguiente pose ▶', 'Posa successiva ▶', 'Pose suivante ▶'],
+    'Sair do espelho': ['Leave the mirror', 'Salir del espejo', 'Lascia lo specchio', 'Quitter le miroir'],
+    'Duplo bíceps': ['Double biceps', 'Doble bíceps', 'Doppio bicipite', 'Double biceps'],
+    'Dorsal aberto': ['Lat spread', 'Dorsal abierto', 'Dorsali aperti', 'Dorsaux écartés'],
+    'Peitoral lateral': ['Side chest', 'Pectoral lateral', 'Pettorale laterale', 'Pectoraux de profil'],
+    'Abdômen e coxas': ['Abs and thighs', 'Abdomen y muslos', 'Addominali e cosce', 'Abdos et cuisses'],
+    'Mais musculoso': ['Most muscular', 'Más musculoso', 'Più muscoloso', 'Le plus musclé'],
+    // (6.3.0) não repete o treino que deu errado no mesmo dia
+    'Errou hoje: indisponível': ['Failed today: unavailable', 'Fallaste hoy: no disponible', 'Sbagliato oggi: non disponibile', 'Raté aujourd’hui : indisponible'],
+    'Já errei na esteira hoje. Melhor tentar outro aparelho ou voltar amanhã.': ['I already messed up the treadmill today. Better try another machine or come back tomorrow.', 'Ya fallé en la cinta hoy. Mejor probar otro aparato o volver mañana.', 'Ho già sbagliato sul tapis oggi. Meglio provare un altro attrezzo o tornare domani.', 'J’ai déjà raté le tapis aujourd’hui. Mieux vaut essayer un autre appareil ou revenir demain.'],
+    'Já errei no abdominal hoje. Melhor tentar outro aparelho ou voltar amanhã.': ['I already messed up the sit-ups today. Better try another machine or come back tomorrow.', 'Ya fallé en los abdominales hoy. Mejor probar otro aparato o volver mañana.', 'Ho già sbagliato gli addominali oggi. Meglio provare un altro attrezzo o tornare domani.', 'J’ai déjà raté les abdos aujourd’hui. Mieux vaut essayer un autre appareil ou revenir demain.'],
+    'Já errei no supino hoje. Melhor tentar outro aparelho ou voltar amanhã.': ['I already messed up the bench press today. Better try another machine or come back tomorrow.', 'Ya fallé en el press de banca hoy. Mejor probar otro aparato o volver mañana.', 'Ho già sbagliato la panca piana oggi. Meglio provare un altro attrezzo o tornare domani.', 'J’ai déjà raté le développé couché aujourd’hui. Mieux vaut essayer un autre appareil ou revenir demain.'],
     // aparelhos e regras
     'Você já fez os {0} treinos de hoje. Descanse e volte amanhã!': ['You’ve already done today’s {0} workouts. Rest and come back tomorrow!', 'Ya hiciste los {0} entrenamientos de hoy. ¡Descansa y vuelve mañana!', 'Hai già fatto i {0} allenamenti di oggi. Riposa e torna domani!', 'Tu as déjà fait les {0} entraînements du jour. Repose-toi et reviens demain !'],
     'Seu plano venceu. Renove com o Diego, na recepção.': ['Your plan has expired. Renew it with Diego at the front desk.', 'Tu plan venció. Renuévalo con Diego, en la recepción.', 'Il tuo abbonamento è scaduto. Rinnovalo con Diego alla reception.', 'Ton abonnement a expiré. Renouvelle-le avec Diego à l’accueil.'],
@@ -96,15 +124,33 @@
     'Valeu... meu peito...': ['Thanks... my chest...', 'Gracias... mi pecho...', 'Grazie... il mio petto...', 'Merci... ma poitrine...'],
     'Ufa! Mandei bem!': ['Phew! Nailed it!', '¡Uf! ¡Lo hice bien!', 'Uff! Ce l’ho fatta!', 'Ouf ! J’ai assuré !'],
     'Alguém': ['Someone', 'Alguien', 'Qualcuno', 'Quelqu’un'],
+    // (6.3.0) horário de funcionamento
+    'Academia fechada. Abre às 7h.': ['Gym closed. Opens at 7 AM.', 'Gimnasio cerrado. Abre a las 7h.', 'Palestra chiusa. Apre alle 7.', 'Salle de sport fermée. Ouvre à 7 h.'],
+    'Academia fechada. Abre às 13h.': ['Gym closed. Opens at 1 PM.', 'Gimnasio cerrado. Abre a las 13h.', 'Palestra chiusa. Apre alle 13.', 'Salle de sport fermée. Ouvre à 13 h.'],
+    'Pessoal, vamos fechar para o almoço! A gente volta às 13h.': ['Folks, we’re closing for lunch! We’ll be back at 1 PM.', '¡Chicos, cerramos para el almuerzo! Volvemos a las 13h.', 'Ragazzi, chiudiamo per il pranzo! Riapriamo alle 13.', 'On ferme pour le déjeuner ! On rouvre à 13 h.'],
+    'Já são 22h, vamos fechar! A gente se vê amanhã, a partir das 7h.': ['It’s 10 PM, we’re closing! See you tomorrow, from 7 AM.', 'Son las 22h, ¡cerramos! Nos vemos mañana, desde las 7h.', 'Sono le 22, chiudiamo! Ci vediamo domani, dalle 7.', 'Il est 22 h, on ferme ! À demain, dès 7 h.'],
+    'Já está quase na hora de fechar: não dá tempo de fazer outro treino.': ['It’s almost closing time: there’s no time for another workout.', 'Ya casi es hora de cerrar: no hay tiempo para otro entrenamiento.', 'È quasi ora di chiudere: non c’è tempo per un altro allenamento.', 'C’est bientôt la fermeture : pas le temps pour un autre entraînement.'],
   };
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
   // ------------------------------------------------------------------ regras
   const PRECO_ACESSO = 400, PRECO_PERSONAL = 300, DIAS_PLANO = 7, TREINOS_DIA = 3, GANHO = 0.1, HORAS_TREINO = 0.5;
+  // (6.3.0) HORÁRIO: abre das 7h às 11h, fecha para o almoço, reabre das 13h às 22h. O Diego e a Fernanda chegam 6 min antes de cada abertura
+  //   (vindos das casas deles) e saem na hora de fechar. Os frequentadores vão saindo aos poucos (começam entre 20h30 e 21h00; às 21h30 não sobra ninguém).
+  const H_ABRE = 7, H_ALMOCO = 11, H_VOLTA = 13, H_FECHA = 22, H_CHEGA_ANTES = 0.1, H_SAI_DE = 20.5, H_SAI_ATE = 21.0, VEL_SAIDA = 1.8;   // começam a sair das 20h30 às 21h00 (a caminhada até a porta leva até ~25 min): às 21h30 não há mais ninguém
   const ATRIB = { esteira: 'velocidade', abdominal: 'resistencia', supino: 'forca' };
   const NOME_ATRIB = { velocidade: 'Velocidade', resistencia: 'Resistência', forca: 'Força' };
   const TITULO = { esteira: 'ESTEIRA · VELOCIDADE', abdominal: 'ABDOMINAL · RESISTÊNCIA', supino: 'SUPINO · FORÇA' };
   const DICA_FER = { esteira: 'Na esteira, o segredo é o ritmo: não deixe a lona te levar para trás.', abdominal: 'No abdominal, sobe só quando o marcador estiver no verde. Sem pressa!', supino: 'No supino, não deixa a barra parar no peito. Empurra sem dó!' };
+  // (6.3.0) a fala da Fernanda quando o treino dá errado: depende do treino e do motivo (e muda de uma vez para a outra)
+  const FALAS_ERRO = {
+    esteira: { queda: ['A lona ganhou de você! O segredo é o ritmo: passadas curtas e constantes, sem desesperar.', 'Você deixou a lona te puxar no final. Respira, olha para a frente e segura o ritmo!'] },
+    abdominal: { erros: ['Você subiu fora do verde várias vezes. Espera o marcador chegar e só então sobe!', 'Pressa não ajuda no abdominal. Olha o marcador e sobe só na faixa verde.'],
+      tempo: ['O tempo acabou antes de você terminar. Faz menos pausa entre uma subida e outra!', 'Faltou fôlego no final. Respira na descida e sobe soltando o ar!'] },
+    supino: { peito: ['Eu avisei: não deixa a barra parar no peito! Na próxima, empurra sem dó.', 'A barra desceu e você travou. Respira fundo e empurra no tempo certo!'],
+      tempo: ['Faltou força para fechar as repetições. Amanhã a gente treina com mais constância!', 'Sem pressa: o supino é um empurrão firme de cada vez. Amanhã você fecha as cinco!'] },
+  };
+  const JA_ERREI = { esteira: 'Já errei na esteira hoje. Melhor tentar outro aparelho ou voltar amanhã.', abdominal: 'Já errei no abdominal hoje. Melhor tentar outro aparelho ou voltar amanhã.', supino: 'Já errei no supino hoje. Melhor tentar outro aparelho ou voltar amanhã.' };
   // esteira: duração, velocidade da lona (de/até, em "posição por segundo") e quanto cada toque empurra para a frente
   const EST = { dur: 12, v0: 0.28, v1: 0.6, toque: 0.13 };
   // abdominal: repetições, erros, tempo, velocidade do marcador (vai e volta por segundo) e a faixa verde (fração da barra)
@@ -161,9 +207,17 @@
     const temAcesso = () => (dadosA().acessoAte || 0) > dia();
     const temPersonal = () => (dadosA().personalAte || 0) > dia();
     const treinosHoje = () => { const a = dadosA(); return a.treinoDia === dia() ? (a.treinos | 0) : 0; };
+    // (6.3.0) o treino que deu errado não pode ser repetido no mesmo dia (vale de novo amanhã)
+    const falhouHoje = (tipo) => { const a = dadosA(); return a.falhouDia === dia() && !!(a.falhou && a.falhou[tipo]); };
+    const marcarFalha = (tipo) => { const a = dadosA(); if (a.falhouDia !== dia()) { a.falhouDia = dia(); a.falhou = {}; } a.falhou[tipo] = 1; };
     const dentroAcad = () => { const s = S(); return !!(s && s.dentro && s.dentro.nome === 'academia' && M.A); };
     const nivel = (n) => { const at = api.atributosJogador(); return +at[n] || 5; };
     const dificuldade = (tipo) => 1 + clampN(nivel(ATRIB[tipo]) - 5, 0, 5) * 0.05;
+    // (6.3.0) horário: 7h–11h e 13h–22h
+    const hora = () => S().dados.hora;
+    const aberto = () => { const h = hora(); return (h >= H_ABRE && h < H_ALMOCO) || (h >= H_VOLTA && h < H_FECHA); };
+    const rotuloFechada = () => { const h = hora(); return T(h >= H_ALMOCO && h < H_VOLTA ? 'Academia fechada. Abre às 13h.' : 'Academia fechada. Abre às 7h.'); };
+    const horasParaFechar = () => { const h = hora(); return h < H_ALMOCO ? H_ALMOCO - h : h >= H_VOLTA && h < H_FECHA ? H_FECHA - h : 0; };
 
     // ---------------------------------------------------------------- pessoas
     function modelo(ap, fem, roupa, cores) {
@@ -183,8 +237,8 @@
     function criarFernanda() {
       const { m, opt } = modelo(AP_FERNANDA(), true, 19, ['#151517', '#151517', '#2a2a2e', '#151517']);   // "Top e calça": top preto + legging preta
       const G = new api.Geo(); G.box(0.03, 0.26, 0.2, '#8a5a2a', 0, -0.36, 0); G.box(0.035, 0.2, 0.16, '#f4f4ec', 0.01, -0.35, 0); G.box(0.04, 0.03, 0.06, '#c9ced4', 0.01, -0.235, 0);
-      m.bracoE.cotovelo.add(G.malha(api.MAT));                                                          // a prancheta (mão esquerda)
-      const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'fernanda'; A.vel = 1.4; return A;
+      const pr = G.malha(api.MAT); m.bracoE.cotovelo.add(pr);                                           // a prancheta (mão esquerda)
+      const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'fernanda'; A.vel = 1.4; A.prancheta = pr; return A;
     }
     const ROUPAS_TREINO = { M: [15, 9, 8, 16], F: [18, 15, 4, 19] };
     const CORES_TREINO = ['#c8352b', '#1c1c1f', '#3a64b8', '#f2c230', '#1f7a4d', '#f2f2ee', '#7a4fb0', '#e8742a', '#3fb7b0', '#d95fa0'];
@@ -194,7 +248,8 @@
       return api.atorDe(m, opt, 'acadNPC');
     }
     function halter(A) {                                                // um halter em cada mão (rosca)
-      for (const b of [A.m.bracoE, A.m.bracoD]) { const G = new api.Geo(); G.box(0.05, 0.05, 0.3, '#c9ced4', 0, -0.3, 0); for (const s of [-1, 1]) G.box(0.13, 0.13, 0.07, '#1c1c1f', 0, -0.3, s * 0.15); const h = G.malha(api.MAT); b.cotovelo.add(h); M.halteres.push(h); }
+      A.halt = [];
+      for (const b of [A.m.bracoE, A.m.bracoD]) { const G = new api.Geo(); G.box(0.05, 0.05, 0.3, '#c9ced4', 0, -0.3, 0); for (const s of [-1, 1]) G.box(0.13, 0.13, 0.07, '#1c1c1f', 0, -0.3, s * 0.15); const h = G.malha(api.MAT); b.cotovelo.add(h); M.halteres.push(h); A.halt.push(h); }
     }
     function colocar(A, x, z, yaw) { const s = S(); A.x = x; A.z = z; A.y = 0; A.yaw = A.yawAlvo = yaw || 0; s.npcs.push(A); return A; }
 
@@ -206,19 +261,31 @@
       s.falantesExtra.diego = { A: M.diego, nome: T('Diego'), voz: 4 };
       M.fer = colocar(criarFernanda(), A.fernanda.x, A.fernanda.z, A.fernanda.yaw);
       s.falantesExtra.fernanda = { A: M.fer, nome: T('Fernanda'), voz: 0 };
-      // frequentadores: duas esteiras, um supino, um abdominal, rosca com halteres e um andando
-      const base = (dia() * 131) % 997;
-      A.esteiras.filter((e) => !e.jog).forEach((e, i) => { const P = colocar(criarFrequentador(i === 0, base + 11 + i * 7), e.x, e.z + 0.1, Math.PI / 2); P.tipo = 'esteira'; P.y = e.y; P.naEsteira = e; M.npcs.push(P); });
-      { const sp = A.supinos.find((q) => !q.jog), P = colocar(criarFrequentador(false, base + 41), sp.x, sp.z, -Math.PI / 2); P.poseA = 'supino'; P.supino = sp; P.fase0 = Math.random() * 6; M.npcs.push(P); }
-      { const c = A.colchonetes.find((q) => !q.jog && q.x < -7), P = colocar(criarFrequentador(true, base + 53), c.x, c.z, -Math.PI / 2); P.poseA = 'abdominal'; P.colch = c; P.fase0 = Math.random() * 6; M.npcs.push(P); }
-      { const P = colocar(criarFrequentador(false, base + 67), A.rosca.x, A.rosca.z, A.rosca.yaw); P.tipo = 'rosca'; halter(P); M.npcs.push(P); }
-      { const P = colocar(criarFrequentador(Math.random() < 0.5, base + 79), (A.vaga.x0 + A.vaga.x1) / 2, (A.vaga.z0 + A.vaga.z1) / 2); P.tipo = 'vaga'; P.area = A.vaga; M.npcs.push(P); }
+      // frequentadores: duas esteiras, um supino, um abdominal, rosca com halteres e um andando.
+      //   (6.3.0) cada um tem a sua hora de ir embora (20h30–21h30, uma de cada vez): quem já "foi" não é criado.
+      const base = (dia() * 131) % 997, agora = hora();
+      let n = 0;
+      const novo = (fem, sem, x, z, yaw, tipo) => {
+        const i = n++, saiH = horaSaida(i, base);
+        if (agora >= saiH && agora < H_FECHA) return null;
+        const P = colocar(criarFrequentador(fem, sem), x, z, yaw); P.saiH = saiH; P.estacao = tipo; if (tipo) P.tipo = tipo; M.npcs.push(P); return P;
+      };
+      A.esteiras.filter((e) => !e.jog).forEach((e, i) => { const P = novo(i === 0, base + 11 + i * 7, e.x, e.z + 0.1, Math.PI / 2, 'esteira'); if (P) { P.y = e.y; P.naEsteira = e; } });
+      { const sp = A.supinos.find((q) => !q.jog), P = novo(false, base + 41, sp.x, sp.z, -Math.PI / 2, 'supinoNPC'); if (P) { P.tipo = 'parado'; P.poseA = 'supino'; P.supino = sp; P.fase0 = Math.random() * 6; } }
+      { const c = A.colchonetes.find((q) => !q.jog && q.x < -7), P = novo(true, base + 53, c.x, c.z, -Math.PI / 2, 'abdNPC'); if (P) { P.tipo = 'parado'; P.poseA = 'abdominal'; P.colch = c; P.fase0 = Math.random() * 6; } }
+      { const P = novo(false, base + 67, A.rosca.x, A.rosca.z, A.rosca.yaw, 'rosca'); if (P) halter(P); }
+      { const P = novo(Math.random() < 0.5, base + 79, (A.vaga.x0 + A.vaga.x1) / 2, (A.vaga.z0 + A.vaga.z1) / 2, 0, 'vaga'); if (P) P.area = A.vaga; }
+    }
+    // a hora em que o frequentador i começa a ir embora: seis horários espalhados entre 20h30 e 21h00 (um por "faixa"; o dia embaralha a ordem)
+    function horaSaida(i, base) {
+      const r = Math.abs(Math.sin((base + i * 7.7) * 12.9898) * 43758.5453) % 1, faixa = (i + base) % 6;
+      return H_SAI_DE + (faixa + 0.1 + 0.8 * r) / 6 * (H_SAI_ATE - H_SAI_DE);
     }
     function saiu() {
       const s = S();
       if (s && s.falantesExtra) { delete s.falantesExtra.diego; delete s.falantesExtra.fernanda; }
-      if (M.mg) fecharOverlay();
-      M.mg = null; M.R = null; M.A = null; M.diego = null; M.fer = null; M.npcs = []; M.halteres = [];
+      if (M.mg || M.esp) fecharOverlay();
+      M.mg = null; M.esp = null; M.R = null; M.A = null; M.diego = null; M.fer = null; M.npcs = []; M.halteres = [];
     }
 
     // ---------------------------------------------------------------- catracas
@@ -244,6 +311,7 @@
       if (E && !temAcesso() && s.jog.z > E.z) v.push({ x: E.x, z: E.z + 0.55, r: 0.9, txt: T('Catraca travada: pague o plano na recepção'), fn: catracaTravada, y: 1.8, pri: true });
       if (M.fer && !M.mg) v.push({ x: M.fer.x, z: M.fer.z, r: 1.6, txt: T('Falar com a Fernanda'), fn: falarComFernanda, y: 2.4 });
       if (s.jog.z > A.ZC) return;                                        // os aparelhos ficam do lado de dentro
+      if (!M.mg && !M.esp && s.jog.z < -5.4 && s.jog.x > -7.8 && s.jog.x < 4.8) v.push({ x: s.jog.x, z: -6.9, r: 1.6, txt: T('Posar no espelho'), fn: espelho, y: 2.2 });   // (6.3.0) o espelho (a parede norte inteira)
       const feitos = treinosHoje(), cheio = feitos >= TREINOS_DIA;
       const ap = [
         ['esteira', A.esteiras.find((q) => q.jog), (q) => ({ x: q.x + 0.85, z: q.z + 0.4 }), 'Esteira (velocidade)'],
@@ -252,7 +320,7 @@
       ];
       for (const [tipo, q, ponto, nome] of ap) {
         if (!q) continue; const p = ponto(q);
-        v.push({ x: p.x, z: p.z, r: 1.25, y: 1.9, txt: cheio ? Tf('Treinos de hoje: {0}/{1}', feitos, TREINOS_DIA) : T(nome) + ' · ' + Tf('Treinos de hoje: {0}/{1}', feitos, TREINOS_DIA), fn: () => treinar(tipo) });
+        v.push({ x: p.x, z: p.z, r: 1.25, y: 1.9, txt: falhouHoje(tipo) ? T(nome) + ' · ' + T('Errou hoje: indisponível') : cheio ? Tf('Treinos de hoje: {0}/{1}', feitos, TREINOS_DIA) : T(nome) + ' · ' + Tf('Treinos de hoje: {0}/{1}', feitos, TREINOS_DIA), fn: () => treinar(tipo) });
       }
     }
     async function catracaTravada() {
@@ -310,7 +378,7 @@
     async function falarComFernanda() {
       const s = S(), F = M.fer, J = s.jog; if (!F) return;
       F.yawAlvo = Math.atan2(-(J.z - F.z), J.x - F.x); F.conversando = true;
-      try { await conversaFernanda(); } finally { if (M.fer) { M.fer.conversando = false; M.fer.yawAlvo = M.A ? M.A.fernanda.yaw : 0; } Dialogo.esconder(); }
+      try { await conversaFernanda(); } finally { if (M.fer) { M.fer.conversando = false; if (M.fer.ia) { M.fer.ia.e = 'espera'; M.fer.ia.t = 0; M.fer.ia.dur = 1.2; M.fer.rota = null; } } Dialogo.esconder(); }
     }
     async function conversaFernanda() {
       const a = dadosA();
@@ -390,12 +458,13 @@
         const m = F.m; m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.1; usarCotovelo(m.bracoE, -0.5, 1.1);
         if (F.torce > 0) { F.torce -= dt; m.bracoD.rotation.z = 2.6 + Math.sin(s.t * 12) * 0.25; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoD, 0, 0.4); }
       }
+      if (F && !F.andandoCena && !F.conversando && !(M.mg && temPersonal())) poseFernandaAcao(F);   // (6.3.0) o que ela está fazendo agora
       if (M.diego && !M.diego.conversando && !M.diego.fala) { const m = M.diego.m, k = Math.max(0, Math.sin(s.t * 0.9)); m.bracoE.rotation.z = m.bracoD.rotation.z = 0.7 + k * 0.1; usarCotovelo(m.bracoE, 0, 0.6 + Math.sin(s.t * 11) * 0.12 * k); usarCotovelo(m.bracoD, 0, 0.6 + Math.sin(s.t * 13 + 1) * 0.12 * k); }   // digitando no computador
     }
 
     // ---------------------------------------------------------------- O TREINO (minigames)
     let elOv = null;
-    function fecharOverlay() { if (elOv) { elOv.remove(); elOv = null; } window.removeEventListener('keydown', teclaMini, true); }
+    function fecharOverlay() { if (elOv) { elOv.remove(); elOv = null; } window.removeEventListener('keydown', teclaMini, true); window.removeEventListener('keydown', teclaEspelho, true); }
     function teclaMini(e) {
       if (!M.mg || M.mg.fase !== 'jogo') return;
       if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyJ' || e.code === 'NumpadEnter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) toque(); }
@@ -479,22 +548,22 @@
       if (G.tipo === 'esteira') {
         const v = lerpN(EST.v0, EST.v1, clampN(G.t / G.dur, 0, 1)) * G.df;
         G.v = v; G.p -= v * dt; if (G.passo > 0) G.passo -= dt;
-        if (G.p <= -1) return acabar(false);
+        if (G.p <= -1) { G.motivo = 'queda'; return acabar(false); }
         if (G.t >= G.dur) return acabar(true);
       } else if (G.tipo === 'abdominal') {
         G.fm = (G.fm + dt * G.vel) % 2; G.marca = G.fm < 1 ? G.fm : 2 - G.fm;
         if (G.sobe > 0) G.sobe = Math.max(0, G.sobe - dt);
-        if (G.erros >= ABD.erros) return acabar(false);
+        if (G.erros >= ABD.erros) { G.motivo = 'erros'; return acabar(false); }
         if (G.reps >= ABD.reps && G.sobe <= 0) return acabar(true);
-        if (G.t >= G.dur && G.sobe <= 0) return acabar(false);
+        if (G.t >= G.dur && G.sobe <= 0) { G.motivo = 'tempo'; return acabar(false); }
       } else {
         if (G.desce > 0) { G.desce = Math.max(0, G.desce - dt); G.b = G.desce / SUP.desce; }
         else {
           G.b = Math.max(0, G.b - G.peso * dt);
           G.noPeito = G.b < 0.04 ? G.noPeito + dt : 0;
-          if (G.noPeito >= SUP.peito) return acabar(false);
+          if (G.noPeito >= SUP.peito) { G.motivo = 'peito'; return acabar(false); }
         }
-        if (G.t >= G.dur) return acabar(false);
+        if (G.t >= G.dur) { G.motivo = 'tempo'; return acabar(false); }
       }
       atualizarHud();
     }
@@ -600,7 +669,9 @@
     async function treinar(tipo) {
       const s = S(), A = M.A; if (!A) return;
       if (!temAcesso()) { await api.fala('jog', T('Seu plano venceu. Renove com o Diego, na recepção.')); Dialogo.esconder(); return; }
+      if (falhouHoje(tipo)) { await api.fala('jog', T(JA_ERREI[tipo])); Dialogo.esconder(); return; }   // (6.3.0)
       if (treinosHoje() >= TREINOS_DIA) { await api.fala('jog', Tf('Você já fez os {0} treinos de hoje. Descanse e volte amanhã!', TREINOS_DIA)); Dialogo.esconder(); return; }
+      if (horasParaFechar() < HORAS_TREINO) { await api.fala('jog', T('Já está quase na hora de fechar: não dá tempo de fazer outro treino.')); Dialogo.esconder(); return; }   // (6.3.0)
       const q = tipo === 'esteira' ? A.esteiras.find((e) => e.jog) : tipo === 'abdominal' ? A.colchonetes.find((c) => c.jog) : A.supinos.find((b) => b.jog);
       const J = s.jog, personal = temPersonal(), F = M.fer;
       const G = M.mg = { tipo, q, fase: 'intro', t: 0, ta: 0, df: dificuldade(tipo), dur: tipo === 'esteira' ? EST.dur : tipo === 'abdominal' ? ABD.dur : SUP.dur,
@@ -635,6 +706,7 @@
       const a = dadosA(), at = api.atributosJogador(), antes = +at[n] || 5;
       if (a.treinoDia !== dia()) { a.treinoDia = dia(); a.treinos = 0; }
       a.treinos = (a.treinos | 0) + 1; a.total = (a.total | 0) + 1;
+      if (!ok) marcarFalha(tipo);                                       // (6.3.0)
       const g = ok ? GANHO * (personal ? 2 : 1) : 0, depois = Math.min(10, Math.round((antes + g) * 100) / 100);
       at[n] = depois; PERSONAGEM.atributos = Object.assign({}, at);
       s.dados.precisaBanho = true;
@@ -672,7 +744,12 @@
         await socorroSupino(q);
         await api.fala('jog', T('Valeu... meu peito...'));
       }
-      if (temPersonal() && F) { F.torce = 0; await api.fala('fernanda', T('Calma, acontece com todo mundo. Amanhã a gente acerta!')); }
+      if (temPersonal() && F) {                                          // (6.3.0) a fala depende do treino e do motivo (e não repete a última)
+        F.torce = 0;
+        const L = (FALAS_ERRO[tipo] || {})[G && G.motivo] || Object.values(FALAS_ERRO[tipo] || { x: [] })[0] || [], a = dadosA();
+        const op = L.filter((x) => x !== a.ultErroFer), t = pk(op.length ? op : L);
+        if (t) { a.ultErroFer = t; await api.fala('fernanda', T(t)); }
+      }
       Dialogo.esconder(); void s; void G;
     }
     // duas pessoas (a Fernanda, se estiver por perto, e quem estiver mais perto) vêm correndo, levantam a barra e voltam
@@ -718,14 +795,252 @@
       if (tipo === 'supino') q.barra.position.set(q.rack.x, q.rack.y, q.rack.z);
       const p = tipo === 'esteira' ? { x: q.x + 0.95, z: q.z + 1.4 } : tipo === 'abdominal' ? { x: q.x + 0.95, z: q.z + 0.5 } : { x: q.x - 1.0, z: q.z + 0.6 };
       J.x = p.x; J.z = p.z; J.y = 0; J.yaw = J.yawAlvo = Math.PI / 2; s.cam.snap = true;
-      if (F && M.A) { F.x = M.A.fernanda.x; F.z = M.A.fernanda.z; F.yaw = F.yawAlvo = M.A.fernanda.yaw; F.torce = 0; }
+      if (F && M.A) { F.x = M.A.fernanda.x; F.z = M.A.fernanda.z; F.yaw = F.yawAlvo = M.A.fernanda.yaw; F.torce = 0; F.ia = null; zerarFer(F); }   // (6.3.0) depois do treino ela volta à agenda
       await api.preto(false, 350); void depois;
+    }
+
+    // ---------------------------------------------------------------- ONDE DÁ PARA ANDAR LÁ DENTRO (6.3.0)
+    //   Uma rede de pontos pelo chão livre da sala (conferida contra as colisões nos testes): quem anda sozinho (a Fernanda, e os
+    //   frequentadores indo embora) vai de ponto em ponto, sem atravessar aparelho nenhum. Coordenadas da sala (22 x 16).
+    const NOS = {
+      H: [-1.2, 1.2], A1: [-3.2, -1.4], A2: [0.6, -2.0], A3: [4.2, -1.9], A35: [6.2, -1.9], A4: [7.6, -1.9], A5: [8.4, -4.3],
+      B2: [-1.5, -3.2], B1: [-1.5, -5.6], N1: [1.2, -6.4], N2: [5.6, -6.4], S1: [5.6, -5.5],
+      C: [-6.0, -2.6], E2: [-7.4, -3.2], E1: [-9.2, -3.2], W0: [-10.0, -2.6], W1: [-10.0, 0.6], WB: [-9.7, 2.5],     // WB: do lado do bebedouro
+      X1: [1.55, 2.2], X2: [1.55, 4.7],                                  // a passagem da catraca de SAÍDA
+    };
+    const ARESTAS = [['H', 'A1'], ['H', 'A2'], ['H', 'X1'], ['A1', 'A2'], ['A1', 'B2'], ['A2', 'B2'], ['A2', 'A3'], ['A3', 'A35'], ['A35', 'A4'], ['A4', 'A5'], ['A3', 'X1'],
+      ['B2', 'B1'], ['B1', 'N1'], ['N1', 'N2'], ['N2', 'S1'], ['A1', 'C'], ['C', 'E2'], ['E2', 'E1'], ['C', 'W0'], ['W0', 'W1'], ['W1', 'WB'], ['X1', 'X2']];
+    const VIZ = {}; for (const [a, b] of ARESTAS) { (VIZ[a] || (VIZ[a] = [])).push(b); (VIZ[b] || (VIZ[b] = [])).push(a); }
+    const dist2 = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+    function noMaisPerto(x, z) { let b = 'H', bd = 1e9; for (const k of Object.keys(NOS)) { const d = dist2(NOS[k], [x, z]); if (d < bd) { bd = d; b = k; } } return b; }
+    // menor caminho (Dijkstra) de um ponto qualquer até o ponto nomeado `fim`; devolve a lista de [x, z] a percorrer
+    function caminhoSala(x, z, fim) {
+      const ini = noMaisPerto(x, z), D = { [ini]: 0 }, de = {}, fila = [ini], feito = new Set();
+      while (fila.length) {
+        fila.sort((a, b) => D[a] - D[b]); const u = fila.shift(); if (feito.has(u)) continue; feito.add(u); if (u === fim) break;
+        for (const v of VIZ[u] || []) { const d = D[u] + dist2(NOS[u], NOS[v]); if (D[v] === undefined || d < D[v]) { D[v] = d; de[v] = u; fila.push(v); } }
+      }
+      const r = []; for (let k = fim; k; k = de[k]) { r.unshift(NOS[k]); if (k === ini) break; }
+      return r;
+    }
+    // anda até o próximo ponto da rota; devolve true quando a rota acabou
+    function passoRota(P, dt, vel) {
+      const r = P.rota; if (!r || !r.length) { P.andando = false; return true; }
+      const [tx, tz] = r[0], dx = tx - P.x, dz = tz - P.z, d = Math.hypot(dx, dz), v = (vel || P.vel || 1.4) * dt;
+      if (d <= Math.max(v, 0.08)) { P.x = tx; P.z = tz; r.shift(); if (!r.length) { P.andando = false; return true; } return false; }
+      P.x += dx / d * v; P.z += dz / d * v; P.yawAlvo = Math.atan2(-dz, dx); P.andando = true; P.vel = vel || P.vel || 1.4; return false;
+    }
+
+    // ---------------------------------------------------------------- A HORA DE IR EMBORA (frequentadores, 20h30–21h30)
+    function comecarSaida(P) {
+      P.saindo = true; P.tipo = 'sai'; P.poseA = null; P.supino = null; P.colch = null; P.naEsteira = null; P.alvoV = null; P.espera = 0;
+      zerarPose(P); P.y = 0; P.correndo = false;
+      if (P.halt) for (const h of P.halt) h.visible = false;
+      const e = P.estacao, ant = [];
+      if (e === 'esteira') ant.push([P.x, -3.2]);                                        // desce da esteira pelo fundo
+      else if (e === 'supinoNPC') ant.push([6.5, -3.7]);                                 // levanta do banco pelo lado
+      else if (e === 'abdNPC') ant.push([-10.0, 0.6]);
+      const base = ant.length ? ant[ant.length - 1] : [P.x, P.z];
+      P.rota = ant.map((q) => q.slice()).concat(caminhoSala(base[0], base[1], 'X2').map((q) => q.slice()));
+      const sd = M.R && M.R.saida; if (sd) P.rota.push([sd.x, sd.z]);
+      if (P.fala) P.fala = false;
+    }
+    function tickSaidas(dt) {
+      const h = hora();
+      for (const P of M.npcs.slice()) {
+        if (!P.saindo) { if (P.saiH != null && h >= P.saiH && h < H_FECHA && P.tipo !== 'cena' && !P.andandoCena && !(M.mg && M.mg.fase === 'jogo')) comecarSaida(P); continue; }
+        if (passoRota(P, dt, VEL_SAIDA)) {                                                    // chegou na porta: vai embora
+          const i = M.npcs.indexOf(P); if (i >= 0) M.npcs.splice(i, 1);
+          if (M.A && M.R) api.descartarPessoa(P);
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------- A FERNANDA CIRCULANDO PELA ACADEMIA (6.3.0)
+    //   Em vez de ficar parada com a prancheta, ela segue uma "agenda" sem fim: faz a ronda pela sala, vai orientar um frequentador
+    //   (fica do lado do aparelho dele, de frente para ele, explicando com as mãos), treina um pouco na frente do espelho
+    //   (agachamento, polichinelo, alongamento), anota na prancheta e bebe água. Estados em F.ia: espera · anda · orienta · treina · prancheta · bebe.
+    const VEL_FER = 1.3;
+    const PONTO_ORIENTA = { supinoNPC: 'S1', abdNPC: 'W1', rosca: 'A5' };      // onde ela fica para orientar cada um (a esteira: E1 ou E2, de acordo com a esteira)
+    const EXERCICIOS = ['agacha', 'polichinelo', 'alonga'];
+    const escolha = (lista) => lista[Math.floor(Math.random() * lista.length)];
+    const alturaQuadril = (phi, psi) => 0.28 * Math.cos(phi) + 0.435 * Math.cos(psi) + 0.025;
+    function pontoDeOrientar(P) { return P.estacao === 'esteira' ? (P.naEsteira && P.naEsteira.x < -8 ? 'E1' : 'E2') : PONTO_ORIENTA[P.estacao] || null; }
+    function proximaAcao(F) {
+      const f = F.ia, ult = f.ult;
+      const cands = M.npcs.filter((P) => !P.saindo && pontoDeOrientar(P) && P !== f.ultP);
+      const opc = [];
+      if (cands.length) opc.push(['orienta', 3.2]);
+      if (!M.esp) opc.push(['treina', 2.4]);                              // (com o jogador posando no espelho ela não treina ali)
+      opc.push(['prancheta', 1.2], ['bebe', 0.8], ['ronda', 1.2]);
+      const lista = opc.filter(([n]) => n !== ult || n === 'orienta');
+      let r = Math.random() * lista.reduce((a, [, w]) => a + w, 0), nome = lista[0][0];
+      for (const [n, w] of lista) { r -= w; if (r <= 0) { nome = n; break; } }
+      f.ult = nome; f.t = 0;
+      if (nome === 'orienta') { const P = escolha(cands); f.ultP = P; irPara(F, pontoDeOrientar(P), { e: 'orienta', P, dur: 9 + Math.random() * 6 }); }
+      else if (nome === 'treina') { const ex = escolha(EXERCICIOS.filter((x) => x !== f.ultEx)); f.ultEx = ex; irPara(F, 'B1', { e: 'treina', ex, dur: 12 + Math.random() * 7 }); }
+      else if (nome === 'bebe') irPara(F, 'WB', { e: 'bebe', dur: 4 + Math.random() * 2 });
+      else if (nome === 'prancheta') irPara(F, escolha(['H', 'A2', 'A1', 'A3']), { e: 'prancheta', dur: 5 + Math.random() * 4 });
+      else irPara(F, escolha(['A1', 'A3', 'A2', 'C', 'A35', 'H']), { e: 'espera', dur: 1 + Math.random() * 1.5 });
+    }
+    function irPara(F, no, depois) {
+      const f = F.ia; f.depois = depois; F.rota = caminhoSala(F.x, F.z, no).map((q) => q.slice());
+      if (F.rota.length && Math.hypot(F.rota[0][0] - F.x, F.rota[0][1] - F.z) < 0.1) F.rota.shift();
+      if (!F.rota.length) chegouFer(F); else { f.e = 'anda'; f.t = 0; }
+    }
+    function chegouFer(F) {
+      const f = F.ia, d = f.depois; F.andando = false; f.e = d.e; f.t = 0; f.dur = d.dur; f.P = d.P || null; f.ex = d.ex || null; F.rota = null;
+      if (d.e === 'orienta' && d.P) virarPara(F, d.P.x, d.P.z);
+      else if (d.e === 'treina') { F.yawAlvo = Math.PI / 2; }                                        // de frente para o espelho (norte)
+      else if (d.e === 'bebe') { F.yawAlvo = Math.PI; }                                              // de frente para o bebedouro (oeste)
+    }
+    function zerarFer(F) {
+      const m = F.m; zerarPose(F); m.corpo.position.x = 0; m.corpo.position.y = 0; m.corpo.rotation.set(0, 0, 0); m.pernaE.rotation.set(0, 0, 0); m.pernaD.rotation.set(0, 0, 0);
+      if (F.prancheta) F.prancheta.visible = true;
+    }
+    function tickFernanda(dt) {
+      const F = M.fer; if (!F || F.conversando || F.andandoCena || (M.mg && temPersonal())) return;
+      if (!F.ia) { F.ia = { e: 'espera', t: 0, dur: 1.2, ult: null }; }
+      const f = F.ia; f.t += dt;
+      if (f.e === 'anda') { if (passoRota(F, dt, VEL_FER)) chegouFer(F); return; }
+      F.andando = false;
+      if (f.e === 'orienta') { if (!f.P || f.P.saindo || f.P.tipo === 'cena') f.t = f.dur; else { F.yawAlvo = Math.atan2(-(f.P.z - F.z), f.P.x - F.x); f.P.fala = Math.sin(f.t * 1.7 + 1) > 0.45; } }
+      if (f.t >= f.dur) {
+        if (f.P) f.P.fala = false;
+        if (f.e === 'treina' || f.e === 'bebe') zerarFer(F);
+        proximaAcao(F);
+      }
+    }
+    // a pose de cada estado (por cima do poseAtor, depois do tickPessoas)
+    function poseFernandaAcao(F) {
+      const s = S(), m = F.m, f = F.ia, t = s.t; if (!f || f.e === 'anda') return;
+      const pr = () => { m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.1; usarCotovelo(m.bracoE, -0.5, 1.1); };
+      if (f.e === 'espera') { pr(); return; }
+      if (F.prancheta) F.prancheta.visible = f.e !== 'treina';                                       // treinando, deixa a prancheta de lado
+      if (f.e === 'orienta') {
+        pr(); const fase = Math.floor(f.t / 2.4) % 3;
+        if (fase === 0) { m.bracoD.rotation.z = 1.35 + Math.sin(t * 3) * 0.05; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, 0.12); }              // aponta para ele
+        else if (fase === 1) { m.bracoD.rotation.z = 1.0 + Math.sin(t * 6) * 0.2; m.bracoD.rotation.x = 0.25; usarCotovelo(m.bracoD, 0, 1.1); }          // explica com a mão
+        else { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = 0.05; usarCotovelo(m.bracoD, 0, 0.5 + Math.sin(t * 8) * 0.18); }                         // marca o ritmo
+        usarCabeca(m, Math.sin(t * 2.2) * 0.08 - 0.001);
+      } else if (f.e === 'prancheta') {
+        pr(); m.bracoD.rotation.z = 0.75; m.bracoD.rotation.x = -0.15; usarCotovelo(m.bracoD, 0, 1.35 + Math.sin(t * 9) * 0.08); usarCabeca(m, -0.32);          // escrevendo
+      } else if (f.e === 'bebe') {
+        m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2; usarCabeca(m, -0.28 - 0.04 * Math.sin(t * 2));
+      } else if (f.e === 'treina') {
+        const T0 = f.t;
+        if (f.ex === 'agacha') {
+          const k = 0.5 - 0.5 * Math.cos(T0 * Math.PI * 2 / 2.8), phi = 1.2 * k, psi = -0.35 * k;
+          m.pernaE.rotation.z = m.pernaD.rotation.z = phi; usarJoelhos(m, psi - phi - 0.001, psi - phi - 0.001);
+          m.corpo.position.y = -(0.74 - alturaQuadril(phi, psi)); m.corpo.position.x = -(0.28 * Math.sin(phi) + 0.435 * Math.sin(psi));
+          bracos(F, [0.15, 0.1, 0, 0.001], [0.15, 1.5, 0, 0.001], k); usarCabeca(m, -0.001 - 0.05 * k);
+        } else if (f.ex === 'polichinelo') {
+          const c = Math.sin(T0 * Math.PI * 2 / 0.8), o = 0.5 + 0.5 * Math.max(-1, Math.min(1, c * 2.5));
+          m.pernaE.rotation.x = 0.34 * o; m.pernaD.rotation.x = -0.34 * o; m.corpo.position.y = 0.1 * Math.abs(Math.sin(T0 * Math.PI * 2 / 0.8 + 0.4));
+          bracos(F, [0.12, 0.05, 0, 0.001], [2.5, 0.1, 0, 0.001], o); usarCabeca(m, -0.001);
+        } else {                                                                                       // alongamento: braços para cima e inclina para os lados
+          const lado = Math.sin(T0 * Math.PI * 2 / 4.5), up = Math.min(1, T0 / 1.0);
+          bracos(F, [0.12, 0.05, 0, 0.001], [0.1, 2.8, 0, 0.001], up); m.corpo.rotation.x = 0.16 * lado * up; usarCabeca(m, -0.001);
+        }
+      }
+    }
+
+    // ---------------------------------------------------------------- O ESPELHO (6.3.0): poses de fisiculturismo
+    //   A câmera fica "no espelho" (colada na parede norte, olhando para a sala) e o personagem posa de frente para ela. Cinco poses,
+    //   que trocam sozinhas a cada ~4 s (ou no botão "Próxima pose ▶"); "Sair do espelho" volta ao jogo.
+    //   Cada braço: [abre (x), frente (z), cotovelo x, cotovelo z]; pernas: [coxaE z, coxaD z, abreE x, abreD x]; k = dobra dos joelhos; yaw = giro do corpo.
+    const POSES_ESP = [
+      { nome: 'Duplo bíceps', E: [1.5, 0.0, 1.7, 0.001], D: [-1.5, 0.0, -1.7, 0.001], L: [0, 0, 0.12, -0.12], k: 0, yaw: 0, desce: 0 },
+      { nome: 'Dorsal aberto', E: [0.85, 0.0, -1.9, 0.001], D: [-0.85, 0.0, 1.9, 0.001], L: [0, 0, 0.1, -0.1], k: 0, yaw: 0, desce: 0 },
+      { nome: 'Peitoral lateral', E: [0.2, 1.0, -1.6, 0.001], D: [-0.2, 1.0, 1.6, 0.001], L: [0.25, -0.1, 0, 0], k: 0.001, yaw: -1.3, desce: 0 },
+      { nome: 'Abdômen e coxas', E: [3.107, 0.142, 2.108, 1.988], D: [-3.107, 0.142, -2.108, 1.988], L: [0.28, -0.05, 0.1, -0.1], k: 0.001, yaw: 0, desce: 0 },
+      { nome: 'Mais musculoso', E: [0.3, 0.9, -1.5, 0.001], D: [-0.3, 0.9, 1.5, 0.001], L: [0.2, 0.2, 0.18, -0.18], k: 0.5, yaw: 0, desce: 0.1 },
+    ];
+    const lerpVet = (a, b, k) => a.map((v, i) => lerpN(v, b[i], k));
+    function poseEsp(i) { return POSES_ESP[i % POSES_ESP.length]; }
+    function vetorPose(P) { return { E: P.E, D: P.D, L: P.L, k: [P.k], yaw: [P.yaw], desce: [P.desce] }; }
+    function aplicarPoseEsp(J, v, trem) {
+      const m = J.m, tr = Math.sin(S().t * 38) * 0.018 * trem;
+      m.bracoE.rotation.set(v.E[0] + tr, 0, v.E[1]); usarCotovelo(m.bracoE, v.E[2], v.E[3] || 0.001);
+      m.bracoD.rotation.set(v.D[0] - tr, 0, v.D[1]); usarCotovelo(m.bracoD, v.D[2], v.D[3] || 0.001);
+      m.pernaE.rotation.set(v.L[2], 0, v.L[0]); m.pernaD.rotation.set(v.L[3], 0, v.L[1]);
+      const k = v.k[0]; usarJoelhos(m, k > 0 ? -k : 0, k > 0 ? -k : 0);
+      m.corpo.position.y = -v.desce[0] + Math.abs(tr) * 0.3; usarCabeca(m, -0.001);
+    }
+    async function espelho() {
+      const s = S(), J = s.jog, F = M.fer; if (!M.A || M.esp) return;
+      // onde posar: perto de onde o jogador estava, mas longe da Fernanda (que treina ali no meio)
+      const x0 = J.x, z0 = J.z, yaw0 = J.yaw;                            // de onde ele veio (volta para lá)
+      let x = clampN(J.x, -3.6, 0.7);
+      if (F && Math.abs(F.x - x) < 2.2) x = F.x < -1.4 ? 0.7 : -3.6;
+      await api.preto(true, 350);
+      J.sentado = false; J.rota = null; J.andando = false; J.correndo = false; J.x = x; J.z = -4.7; J.yaw = J.yawAlvo = Math.PI / 2; J.y = 0;
+      s.camCena = { px: x, py: 1.5, pz: -7.55, tx: x, ty: 0.95, tz: -4.7 };
+      const E = M.esp = { x, i: 0, t: 0, de: poseEsp(POSES_ESP.length - 1), ate: poseEsp(0), k: 1, fim: null, yawAtual: 0 };
+      E.v = vetorPose(E.ate); M.espelhoUI = montarUIEspelho(E);
+      poseEspelho(0.016); await api.preto(false, 350);
+      await new Promise((ok) => { E.fim = ok; });
+      fecharOverlay(); M.espelhoUI = null;
+      await api.preto(true, 350);
+      s.camCena = null; zerarPose(J); J.andando = false; J.yaw = J.yawAlvo = yaw0; J.x = x0; J.z = z0; s.cam.snap = true; M.esp = null;
+      await api.preto(false, 350);
+    }
+    function proximaPoseEsp(E) { E.de = E.ate; E.i = (E.i + 1) % POSES_ESP.length; E.ate = poseEsp(E.i); E.k = 0; E.t = 0; atualizarTituloEspelho(E); }
+    function atualizarTituloEspelho(E) { const el = elOv && elOv.querySelector('.acTopo'); if (el) el.textContent = T(E.ate.nome); }
+    function montarUIEspelho(E) {
+      const el = overlayBase(); el.style.pointerEvents = 'none'; el.style.zIndex = '12'; el.style.top = 'calc(50px + env(safe-area-inset-top,0px))';
+      el.innerHTML = '<div class="acTopo" style="position:absolute;left:50%;top:2px;transform:translateX(-50%);text-align:center;font:700 16px/1.2 var(--font-display);color:#f2c230;text-shadow:0 2px 0 #000;letter-spacing:.06em;white-space:nowrap;text-transform:uppercase;"></div>';
+      const fila = document.createElement('div');
+      fila.style.cssText = 'position:absolute;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:12px;pointer-events:auto;';
+      const b1 = botao(T('Próxima pose ▶'), true), b2 = botao(T('Sair do espelho'), false);
+      b1.onclick = (e) => { e.stopPropagation(); proximaPoseEsp(E); }; b2.onclick = (e) => { e.stopPropagation(); if (E.fim) { const f = E.fim; E.fim = null; f(); } };
+      fila.append(b1, b2); el.appendChild(fila); atualizarTituloEspelho(E);
+      window.addEventListener('keydown', teclaEspelho, true);
+      return el;
+    }
+    function teclaEspelho(e) {
+      const E = M.esp; if (!E) { window.removeEventListener('keydown', teclaEspelho, true); return; }
+      if (e.code === 'Escape' || e.code === 'KeyX') { e.preventDefault(); e.stopPropagation(); if (E.fim) { const f = E.fim; E.fim = null; f(); } }
+      else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); e.stopPropagation(); if (!e.repeat) proximaPoseEsp(E); }
+    }
+    function tickEspelho(dt) {
+      const E = M.esp; if (!E) return;
+      E.t += dt; E.k = Math.min(1, E.k + dt / 0.55);
+      if (E.t > 4.2 && E.k >= 1) proximaPoseEsp(E);
+      const k = suave(E.k), a = vetorPose(E.de), b = vetorPose(E.ate);
+      E.v = { E: lerpVet(a.E, b.E, k), D: lerpVet(a.D, b.D, k), L: lerpVet(a.L, b.L, k), k: lerpVet(a.k, b.k, k), yaw: lerpVet(a.yaw, b.yaw, k), desce: lerpVet(a.desce, b.desce, k) };
+    }
+    function poseEspelho(dt) {
+      const E = M.esp, J = S().jog; if (!E || !E.v) return;
+      J.x = E.x; J.z = -4.7; J.yaw = J.yawAlvo = Math.PI / 2 + E.v.yaw[0];
+      J.m.raiz.rotation.y = J.yaw; aplicarPoseEsp(J, E.v, E.k >= 1 ? 1 : 0.3); void dt;
+    }
+
+    // ---------------------------------------------------------------- FECHAR (11h e 22h) com o jogador lá dentro
+    async function fecharAcademia() {
+      const s = S(); s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso('');
+      try {
+        if (s.jog.sentado) api.levantar();
+        if (M.diego) { await api.fala('diego', T(hora() < 12 ? 'Pessoal, vamos fechar para o almoço! A gente volta às 13h.' : 'Já são 22h, vamos fechar! A gente se vê amanhã, a partir das 7h.')); Dialogo.esconder(); }
+        await api.sairDoLugar();
+      } catch (e) { console.error(e); }
+      const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
+    }
+
+    // ---------------------------------------------------------------- DIEGO E FERNANDA NA RUA: das casas deles até a academia e de volta
+    //   Chegam 6 min antes de abrir (6h54 e 12h54), saem às 11h (almoço em casa) e às 22h. A posição vem direto da hora (como o Cadu e a Rosa).
+    function viagens() { return [{ ida: true, chega: H_ABRE - H_CHEGA_ANTES }, { ida: false, sai: H_ALMOCO }, { ida: true, chega: H_VOLTA - H_CHEGA_ANTES }, { ida: false, sai: H_FECHA }]; }
+    function montarRua() {
+      // as casas ficam a 75–95 m da academia: o Diego vai a passo rápido e a Fernanda (personal) vai trotando, para a ida e a volta do almoço caberem nas 2 h
+      api.criarRuaAgendada(criarDiego(), 'diego', 'academia', viagens, 2.4);
+      api.criarRuaAgendada(criarFernanda(), 'fernanda', 'academia', viagens, 3.4, true);
     }
 
     // ---- a cada quadro (depois do tickJogador e do tickPessoas)
     function tick(dt) {
       const s = S(); if (!s || !dentroAcad()) return;
-      tickCatracas(dt); posesNPC(dt);
+      tickCatracas(dt); tickSaidas(dt); tickFernanda(dt); posesNPC(dt); tickEspelho(dt); poseEspelho(dt);
+      if (!M.mg && !M.esp && !M.fechando && !aberto() && s.modo === 'livre') { M.fechando = true; fecharAcademia().finally(() => { M.fechando = false; }); }   // (6.3.0)
       const G = M.mg;
       if (G) {
         if (G.fase === 'jogo') tickJogo(dt);
@@ -735,10 +1050,10 @@
     function limpar() { fecharOverlay(); }
 
     return {
-      entrou, saiu, alvos, tick, limpar,
+      entrou, saiu, alvos, tick, limpar, aberto, rotuloFechada, montarRua,
       temAcesso, temPersonal, treinosHoje, emTreino: () => !!M.mg,
       _M: M,
-      _f: { treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
+      _f: { espelho, POSES_ESP, aplicarPoseEsp, proximaPoseEsp, falhouHoje, marcarFalha, FALAS_ERRO, NOS, ARESTAS, caminhoSala, horaSaida, comecarSaida, viagens, proximaAcao, irPara, chegouFer, zerarFer, treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
       _regras: { PRECO_ACESSO, PRECO_PERSONAL, DIAS_PLANO, TREINOS_DIA, GANHO, HORAS_TREINO, EST, ABD, SUP, BR },
     };
   }

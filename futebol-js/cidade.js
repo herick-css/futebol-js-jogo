@@ -3280,7 +3280,7 @@
     if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
     if (acadJs) S.academia.entrou(R, idx);                               // (6.2.0)
-    if (P.nome === 'cinema' && S.cinema && R.cinema) S.cinema.entrou(R, idx);
+    if (P.nome === 'cinema' && S.cinema && R.cinema) try { S.cinema.entrou(R, idx); } catch (e) { console.warn('[Cidade] cinema:', e); }
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     if (enc) { enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL); }
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
@@ -3396,7 +3396,7 @@
     if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
     if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
     if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
-    if (S.cinema && S.dentro && S.dentro.nome === 'cinema') S.cinema.saiu();
+    if (S.cinema && S.dentro && S.dentro.nome === 'cinema') try { S.cinema.saiu(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (J.sentado) levantar();
     for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
@@ -3431,17 +3431,17 @@
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
       if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos
-      if (D.nome === 'cinema' && S.cinema) S.cinema.alvos(v);
+      if (D.nome === 'cinema' && S.cinema) try { S.cinema.alvos(v); } catch (e) { erroCinema(e); }
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) S.cinema.alvosRua(v); for (const P of PORTAS) {
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } for (const P of PORTAS) {
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
-      if (P.nome === 'academia' && S.academia && !S.academia.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.academia.rotuloFechada(), fn: async () => {}, y: 3 }); continue; }   // (6.3.0) a academia abre das 7h às 11h e das 13h às 22h
+      if (P.nome === 'academia' && S.academia && S.academia.aberto && !S.academia.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.academia.rotuloFechada(), fn: async () => {}, y: 3 }); continue; }   // (6.3.0) a academia abre das 7h às 11h e das 13h às 22h
       if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
@@ -3629,6 +3629,7 @@
     return Object.assign(apiPizzaria(), { atributosJogador, tickHorario, H_POR_S, andar, poseAtor });
   }
   // o que o cinema.js (o Herick, a Joana, o segurança, as cordas e as sessões pagas) usa daqui
+  function erroCinema(e) { if (!S.erroCinema) { S.erroCinema = true; console.warn('[Cidade] cinema:', e); } }   // um erro no cinema.js não trava a cidade (avisa uma vez só)
   function apiCinema() {
     return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; } });
   }
@@ -5453,7 +5454,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const P = PORTAS.find((q) => q.nome === nome); if (!P) return;
     if (nome === 'supermercado' && S.mercado && !S.mercado.aberto()) return;   // (5.3.1)
     if (nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) return;    // (6.1.0)
-    if (nome === 'academia' && S.academia && !S.academia.aberto()) return;    // (6.3.0)
+    if (nome === 'academia' && S.academia && S.academia.aberto && !S.academia.aberto()) return;    // (6.3.0)
     if (nome === 'cinema' && !cinemaAberto()) return;                        // o cinema abre das 6h às 22h
     A.dest = { tipo: 'lugar', P, fase: 'ir', rota: caminhoRede(A.x, A.z, P.x, P.z), t: 0 };
   }
@@ -5529,7 +5530,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
-        if (S.cinema) S.cinema.tick(dt);                                // o Herick (na rua ou lá dentro), as cordas e a sessão
+        if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;

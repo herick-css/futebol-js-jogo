@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.3.1
+   FUTEBOL JS · jogo.js · versão 6.3.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.3.1';
+const VERSAO_JOGO = '6.3.2';
 // 6.3.0: cidade.js + academia.js — faixa de pedestre (espera, carros param e piscam o farol), pedestres esportivos que correm, casas e horários do Diego e da Fernanda, a Fernanda circulando, falas por treino errado, espelho, limpeza/otimização.
 // 6.2.4: pizzaria.js — bater de bicicleta volta a ser como antes (cambaleia e continua no controle; sem o tombo de 5 s).
 // 6.2.3: privilégios do desenvolvedor no pause da cidade (cidade.js).
