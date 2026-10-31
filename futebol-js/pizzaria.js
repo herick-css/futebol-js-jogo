@@ -1,7 +1,7 @@
 /* =====================================================================
    FUTEBOL JS · pizzaria.js · A PIZZARIA FORNO A LENHA E O TRABALHO DE ENTREGADOR (arquivo SEPARADO, como mercado.js)
    ---------------------------------------------------------------------
-   6.1.0 — primeira versão.
+   6.1.0 — primeira versão. (6.2.4) bater de bicicleta: de novo só cambaleia (o tombo de 5 s no chão foi tirado).
    - Registrado com FutebolJS.registrarFase({ id: 'pizzaria' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do mercado.js e chama criar(api) (api = apiPizzaria() da cidade).
      Suba junto do cidade.js / interiores.js (mesma pasta futebol-js/).
@@ -145,7 +145,6 @@
   // fica na altura do quadril e o pé alcança o pedal lá embaixo; rodas de 60 cm e guidão na largura dos ombros
   const BK = { r: 0.3, rodaX: 0.52, eixo: { x: -0.03, y: 0.34 }, pedivela: 0.12, selim: { x: -0.22, y: 0.69 }, guidao: { x: 0.34, y: 0.92 }, largGuidao: 0.6, caixoteX: -0.6 };
   const INCLINA_BIKE = 0.38;                                           // o tronco inclinado para a frente, pedalando
-  const QUEDA = { cai: 0.45, levanta: 0.8, total: 5 };                 // bateu: cai (0,45 s), fica no chão e levanta (o tombo todo dura 5 s)
   const CAIXA_MAO = { x: 0.4, y: 1.1 };                                // o fundo da caixa, apoiado em cima das mãos (no corpo do boneco)
   const COMIDA_SEG = 10;                                               // segundos que o jogador leva para comer a pizza
   const ESTADOS = [8, 6, 4, 1];                                        // fatias que sobram em cada estado (depois some)
@@ -876,7 +875,7 @@
     }
     function darCaixaNaMao() { const J = S().jog; tirarCaixaDaMao(); const c = caixaMesh(); c.position.set(CAIXA_MAO.x, CAIXA_MAO.y, 0); J.m.corpo.add(c); J.caixaPz = c; }
     function tirarCaixaDaMao() { const s = S(); if (!s || !s.jog) return; const J = s.jog; if (J.caixaPz && J.caixaPz.parent) J.caixaPz.parent.remove(J.caixaPz); J.caixaPz = null; }
-    function poseCaixa(J) { if (J.caixaPz && !M.queda) segurarCaixa(J.m); }
+    function poseCaixa(J) { if (J.caixaPz) segurarCaixa(J.m); }
     // segurando a caixa com as DUAS MÃOS embaixo dela, na frente do corpo: braços descem um pouco para a frente e fecham para dentro,
     // cotovelos dobrados (antebraços quase na horizontal) e as mãos a 0,2 m do meio, sob as bordas da caixa, que fica apoiada em cima
     // delas (CAIXA_MAO). Antes os braços abriam para os lados e a caixa ficava flutuando entre as mãos.
@@ -1002,12 +1001,9 @@
     function bater() {
       const s = S(), J = s.jog, B = M.bike, P = M.pedido; if (!B || B.estado !== 'montada') return;
       s.veiculo = null; B.estado = 'caida'; B.tomba = 0;
-      SOM.bater(); J.andando = false; J.correndo = false;
+      SOM.bater(); J.esbarrao = 0.9; J.andando = false; J.correndo = false;   // (6.2.4) como antes: ele só cambaleia e continua no controle (sem o tombo de 5 s)
       const fx = Math.cos(J.yaw), fz = -Math.sin(J.yaw);
       for (const k of [[-0.55, 0.9], [-0.55, -0.9], [-1.1, 0]]) { const x = J.x + fx * k[0] - fz * k[1], z = J.z + fz * k[0] + fx * k[1]; if (api.livre(x, z)) { J.x = x; J.z = z; break; } }
-      // O TOMBO: ele cai de lado (para o lado longe da bicicleta), fica no chão e só levanta depois de 5 s (sem controle nesse tempo)
-      const lado = (B.x - J.x) * Math.sin(J.yaw) + (B.z - J.z) * Math.cos(J.yaw) > 0 ? -1 : 1;
-      M.queda = { t: 0, lado }; s.modo = 'cena'; api.UI().ctl.hidden = true;
       if (P && P.onde === 'bike') {
         P.onde = 'chao'; P.caiu = true;
         let q = null; for (const [d, l] of [[1.2, 0.7], [1.2, -0.7], [0.4, 1.1], [0.4, -1.1], [-0.3, 0.9]]) { const x = B.x + fx * d - fz * l, z = B.z + fz * d + fx * l; if (api.livreNPC(x, z, null, true, true)) { q = { x, z }; break; } }
@@ -1282,25 +1278,6 @@
         garantirBike(); tickBike(dt); tickClienteRua(dt); tickEntrandoRua(dt); tickCaixaChao(dt);
       }
       poseCaixa(s.jog);
-      if (M.queda) tickQueda(dt);
-    }
-    // o tombo da bicicleta: cai de lado em 0,45 s (o braço do lado do chão vai para cima da cabeça), fica tonto no chão e levanta no fim dos 5 s
-    function tickQueda(dt) {
-      const Q = M.queda, s = S(); if (!Q || !s) return; const J = s.jog, m = J.m;
-      Q.t += dt; J.andando = false; J.correndo = false; J.esbarrao = 0;
-      const kc = Math.min(1, Q.t / QUEDA.cai), kl = clampN((Q.t - (QUEDA.total - QUEDA.levanta)) / QUEDA.levanta, 0, 1);
-      const k = (1 - (1 - kc) * (1 - kc)) * (1 - kl * kl * (3 - 2 * kl)), tonto = kc >= 1 && kl === 0 ? Math.sin(Q.t * 2.6) * 0.06 : 0;
-      const bChao = Q.lado > 0 ? m.bracoD : m.bracoE, bCima = Q.lado > 0 ? m.bracoE : m.bracoD;
-      m.corpo.rotation.x = Q.lado * 1.45 * k; m.corpo.rotation.z = -0.12 * k;
-      m.raiz.position.y = J.y + 0.26 * k; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0;
-      bChao.rotation.z = 2.9 * k; bChao.rotation.x = 0; usarCotovelo(bChao, 0, 0.3 * k);
-      bCima.rotation.z = 0.5 * k + tonto; bCima.rotation.x = 0; usarCotovelo(bCima, 0, 0.9 * k);
-      m.pernaE.rotation.z = 0.45 * k + tonto; m.pernaD.rotation.z = 0.15 * k; usarJoelhos(m, -0.7 * k, -0.3 * k);
-      if (Q.t >= QUEDA.total) {
-        M.queda = null; m.corpo.rotation.x = 0; m.corpo.rotation.z = 0; m.raiz.position.y = J.y; usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0);
-        if (s.ativo && s.modo === 'cena') api.liberar();
-        missaoDaEntrega();
-      }
     }
     // (cidade: encontro com a Lúcia começando com a gente lá dentro) quem está na mesa dela vai embora, com a pizza
     function liberarMesa(x, z) {
