@@ -8,6 +8,8 @@ ARQUIVOS
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   mercado.js ............ o trabalho no mercado (caixa, troco, reposição; baixado pela cidade)
+  pizzaria.js ........... a pizzaria Forno a Lenha e o trabalho de entregador de bicicleta (baixado pela cidade)
+  academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
   index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
   three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)

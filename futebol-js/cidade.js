@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.2.3
+     - PRIVILÉGIOS DO DESENVOLVEDOR no pause (senha DEV_SENHA): dinheiro infinito (d.devInfinito), mudar dia e horário (aplicarDiaHora, com a
+       tela de carregamento), status/efeitos/espectros/atributos e os corações (Amizade) para ver e mudar. Ver abrirDev/painelDev.
    NOVIDADES DA 6.2.2
      - ACADEMIA (academia.js, arquivo novo baixado junto do pizzaria.js): ganchos marcados "(6.2.0)" (feito na 6.2.0, entra na 6.2.2): carregar o academia.js · apiAcademia()
        (a do pizzaria + atributosJogador, tickHorario, H_POR_S, andar, poseAtor) · entrarEm/sairDoLugar chamam S.academia.entrou/saiu (lá dentro
@@ -509,6 +512,43 @@
     'Fala, {0}! Tô aqui de bobeira em casa. Tudo certo?': ["Hey, {0}! Just chilling at home. All good?", '¡Qué tal, {0}! Aquí, de vago en casa. ¿Todo bien?', 'Ehi, {0}! Sto qui a casa senza far niente. Tutto a posto?', 'Salut, {0} ! Je traîne à la maison. Ça va ?'],
     '{0}! Lembra quando a gente jogava na quadra da escola? Que saudade...': ['{0}! Remember when we played on the school court? I miss it...', '¡{0}! ¿Te acuerdas cuando jugábamos en la cancha de la escuela? Qué nostalgia...', '{0}! Ti ricordi quando giocavamo nel campetto della scuola? Che nostalgia...', "{0} ! Tu te souviens quand on jouait sur le terrain de l'école ? Ça me manque..."],
     'Opa, {0}! Minha bola ainda tá inteira, viu? Cuidado com ela dessa vez!': ['Hey, {0}! My ball is still in one piece, see? Careful with it this time!', '¡Epa, {0}! Mi pelota todavía está entera, ¿eh? ¡Cuidado con ella esta vez!', 'Ehi, {0}! Il mio pallone è ancora intero, eh? Stavolta stai attento!', "Hé, {0} ! Mon ballon est encore entier, hein ? Fais attention cette fois !"],
+  });
+  // (6.2.3) PRIVILÉGIOS DO DESENVOLVEDOR (no pause da cidade)
+  Object.assign(TRAD_CD, {
+    'Privilégios do desenvolvedor': ['Developer privileges', 'Privilegios de desarrollador', 'Privilegi da sviluppatore', 'Privilèges de développeur'],
+    'Digite a senha do desenvolvedor.': ['Enter the developer password.', 'Escribe la contraseña de desarrollador.', 'Inserisci la password sviluppatore.', 'Saisis le mot de passe développeur.'],
+    'Senha': ['Password', 'Contraseña', 'Password', 'Mot de passe'],
+    'Entrar': ['Enter', 'Entrar', 'Entra', 'Entrer'],
+    'Cancelar': ['Cancel', 'Cancelar', 'Annulla', 'Annuler'],
+    'Senha incorreta.': ['Wrong password.', 'Contraseña incorrecta.', 'Password errata.', 'Mot de passe incorrect.'],
+    'Dinheiro infinito': ['Infinite money', 'Dinero infinito', 'Soldi infiniti', 'Argent infini'],
+    'Ligado': ['On', 'Activado', 'Attivo', 'Activé'],
+    'Desligado': ['Off', 'Desactivado', 'Disattivo', 'Désactivé'],
+    'Dia e horário': ['Day and time', 'Día y hora', 'Giorno e ora', 'Jour et heure'],
+    'Dia': ['Day', 'Día', 'Giorno', 'Jour'],
+    'Horário': ['Time', 'Hora', 'Ora', 'Heure'],
+    'Corações (amizade, 0 a 100)': ['Hearts (friendship, 0 to 100)', 'Corazones (amistad, 0 a 100)', 'Cuori (amicizia, da 0 a 100)', 'Cœurs (amitié, de 0 à 100)'],
+    'Status e efeitos atuais': ['Current status and effects', 'Estado y efectos actuales', 'Stato ed effetti attuali', 'Statut et effets actuels'],
+    'Salvar mudanças': ['Save changes', 'Guardar cambios', 'Salva modifiche', 'Enregistrer'],
+    'Fechar': ['Close', 'Cerrar', 'Chiudi', 'Fermer'],
+    'Mudanças salvas.': ['Changes saved.', 'Cambios guardados.', 'Modifiche salvate.', 'Modifications enregistrées.'],
+    'Dia {0} ({1}), {2}': ['Day {0} ({1}), {2}', 'Día {0} ({1}), {2}', 'Giorno {0} ({1}), {2}', 'Jour {0} ({1}), {2}'],
+    'Dinheiro: {0} fakes': ['Money: {0} fakes', 'Dinero: {0} fakes', 'Soldi: {0} fakes', 'Argent : {0} fakes'],
+    'Comeu hoje: {0} · fome do dia: {1}': ['Ate today: {0} · day hunger: {1}', 'Comió hoy: {0} · hambre del día: {1}', 'Ha mangiato oggi: {0} · fame del giorno: {1}', 'A mangé aujourd’hui : {0} · faim du jour : {1}'],
+    'Precisa de banho: {0}': ['Needs a shower: {0}', 'Necesita una ducha: {0}', 'Ha bisogno di una doccia: {0}', 'Doit se doucher : {0}'],
+    'sim': ['yes', 'sí', 'sì', 'oui'],
+    'não': ['no', 'no', 'no', 'non'],
+    'Café: nenhum': ['Coffee: none', 'Café: ninguno', 'Caffè: nessuno', 'Café : aucun'],
+    'Sono: nível {0} (0 = dormiu bem, 3 = pego às 2h)': ['Sleep: level {0} (0 = slept well, 3 = caught at 2 AM)', 'Sueño: nivel {0} (0 = durmió bien, 3 = atrapado a las 2h)', 'Sonno: livello {0} (0 = ha dormito bene, 3 = sveglio alle 2)', 'Sommeil : niveau {0} (0 = bien dormi, 3 = debout à 2 h)'],
+    'Condições: {0}': ['Conditions: {0}', 'Condiciones: {0}', 'Condizioni: {0}', 'Conditions : {0}'],
+    'nenhuma': ['none', 'ninguna', 'nessuna', 'aucune'],
+    'Refeição pesada': ['Heavy meal', 'Comida pesada', 'Pasto pesante', 'Repas lourd'],
+    'Emprego: {0} · trabalhou hoje: {1}': ['Job: {0} · worked today: {1}', 'Empleo: {0} · trabajó hoy: {1}', 'Lavoro: {0} · ha lavorato oggi: {1}', 'Emploi : {0} · a travaillé aujourd’hui : {1}'],
+    'Academia: plano até o dia {0} · personal até o dia {1} · treinos hoje {2}/3': ['Gym: plan until day {0} · trainer until day {1} · workouts today {2}/3', 'Gimnasio: plan hasta el día {0} · entrenadora hasta el día {1} · entrenamientos hoy {2}/3', 'Palestra: abbonamento fino al giorno {0} · personal fino al giorno {1} · allenamenti oggi {2}/3', 'Salle : abonnement jusqu’au jour {0} · coach jusqu’au jour {1} · entraînements aujourd’hui {2}/3'],
+    'Clima: {0}': ['Weather: {0}', 'Clima: {0}', 'Meteo: {0}', 'Météo : {0}'],
+    'Atributos': ['Attributes', 'Atributos', 'Attributi', 'Attributs'],
+    'Espectros (−100 a +100)': ['Spectrums (−100 to +100)', 'Espectros (−100 a +100)', 'Spettri (da −100 a +100)', 'Spectres (−100 à +100)'],
+    'Use o pause da cidade para abrir de novo.': ['Use the town pause menu to open it again.', 'Usa la pausa de la ciudad para abrirlo de nuevo.', 'Usa la pausa del paese per riaprirlo.', 'Utilise la pause de la ville pour le rouvrir.'],
   });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
@@ -4673,7 +4713,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
-    const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdMenu"></button></div></div>');
+    const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdMenu"></button><button type="button" class="pxBtn cdDevBtn"></button></div></div>');
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
@@ -4733,9 +4773,124 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
     UI.cont.addEventListener('click', () => alternarPausa());
     UI.menu.addEventListener('click', () => { if (!S || !S.ativo) return; som(); UI.pausa.hidden = true; S.modo = 'saindo'; sair(); });
+    UI.pausa.querySelector('.cdDevBtn').addEventListener('click', () => { if (!S || !S.ativo) return; som(); abrirDev(); });   // (6.2.3)
     return UI;
   }
-  function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; }
+  // ================================================================== (6.2.3) PRIVILÉGIOS DO DESENVOLVEDOR (pause → senha)
+  //   Senha: DEV_SENHA (vale até recarregar a página). Dinheiro infinito (d.devInfinito: a carteira fica sempre cheia; ao desligar volta
+  //   para o que tinha antes), mudar o dia e o horário (aplicados com a tela de carregamento: prepararDia + agenda do dia), ver status,
+  //   efeitos, atributos e espectros, e ver/mudar os corações de amizade. Tudo fica salvo no save da cidade.
+  const DEV_SENHA = 'umCafetaoChamadoMaciota', DEV_GRANA = 999999;
+  let devLiberado = false;
+  function devCss() {
+    if (document.getElementById('cdDevCss')) return;
+    const st = document.createElement('style'); st.id = 'cdDevCss';
+    st.textContent = '#cdDev{position:fixed;inset:0;z-index:16;display:grid;place-items:center;background:rgba(6,4,2,.7);padding:10px;box-sizing:border-box}' +
+      '#cdDev .cdCard{background:#2a1206;border:4px solid #f0a020;color:#fff0c8;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;width:min(560px,100%);max-height:96%;overflow:auto;font-family:var(--font-body)}' +
+      '#cdDev h3{margin:0;font:700 15px/1.2 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:#f0a020}' +
+      '#cdDev h4{margin:6px 0 0;font:700 12px/1.2 var(--font-display);letter-spacing:.08em;text-transform:uppercase;color:#f2c230}' +
+      '#cdDev .pxBtn{--p:var(--p2,2px);height:36px;padding:0 12px;font-size:12px}#cdDev .lin{display:flex;gap:8px;align-items:center;flex-wrap:wrap}' +
+      '#cdDev input{font:700 14px/1 var(--font-body);background:#fff0c8;color:#2a1206;border:3px solid #8a5a2a;padding:6px 8px;box-sizing:border-box;min-width:0}' +
+      '#cdDev .st{font-size:13px;line-height:1.45;white-space:pre-line;background:rgba(0,0,0,.25);padding:6px 8px}#cdDev .erro{color:#ff8a7a;font-size:13px;min-height:16px}';
+    document.head.appendChild(st);
+  }
+  function fecharDev() { const el = document.getElementById('cdDev'); if (el) el.remove(); }
+  function abrirDev() { devCss(); fecharDev(); if (devLiberado) painelDev(); else senhaDev(); }
+  function senhaDev() {
+    const el = document.createElement('div'); el.id = 'cdDev';
+    el.innerHTML = '<div class="cdCard" style="width:min(360px,100%)"><h3></h3><div class="st0"></div><input type="password" autocomplete="off" class="dvSenha"><div class="erro"></div><div class="lin"><button type="button" class="pxBtn pxPrim dvOk"></button><button type="button" class="pxBtn dvNao"></button></div></div>';
+    el.querySelector('h3').textContent = T('Privilégios do desenvolvedor'); el.querySelector('.st0').textContent = T('Digite a senha do desenvolvedor.');
+    const inp = el.querySelector('.dvSenha'); inp.placeholder = T('Senha');
+    el.querySelector('.dvOk').textContent = T('Entrar'); el.querySelector('.dvNao').textContent = T('Cancelar');
+    const ok = () => { if (inp.value === DEV_SENHA) { devLiberado = true; som(); fecharDev(); painelDev(); } else { el.querySelector('.erro').textContent = T('Senha incorreta.'); inp.value = ''; inp.focus(); } };
+    el.querySelector('.dvOk').onclick = ok; el.querySelector('.dvNao').onclick = () => { som(); fecharDev(); };
+    inp.addEventListener('keydown', (e) => { e.stopPropagation(); if (e.key === 'Enter') ok(); });
+    inp.addEventListener('keyup', (e) => e.stopPropagation());
+    (document.getElementById('raizJogo') || document.body).appendChild(el); setTimeout(() => inp.focus(), 50);
+  }
+  function textoStatus() {
+    const d = S.dados, sim = (b) => T(b ? 'sim' : 'não'), L = [];
+    L.push(Tf('Dia {0} ({1}), {2}', d.dia || 1, T(DIAS_SEM[diaSemana()]), fmtHora(d.hora)));
+    L.push(Tf('Dinheiro: {0} fakes', d.fakes) + (d.devInfinito ? ' (∞)' : ''));
+    L.push(Tf('Comeu hoje: {0} · fome do dia: {1}', sim(d.comeuDia === (d.dia || 1)), d.fome == null ? '-' : d.fome));
+    L.push(Tf('Precisa de banho: {0}', sim(!!d.precisaBanho)));
+    { const c = cafeEfeito(); L.push(c ? textoCafe(c) : T('Café: nenhum')); }
+    try { L.push(Tf('Sono: nível {0} (0 = dormiu bem, 3 = pego às 2h)', Sono.nivel())); } catch (e) { /* sem sono */ }
+    try { const cond = Object.entries(Espectros._ler().cond || {}).filter(([k, v]) => v && CONDICOES[k]).map(([k]) => k === 'refeicaoPesada' ? T('Refeição pesada') : k); L.push(Tf('Condições: {0}', cond.length ? cond.join(', ') : T('nenhuma'))); } catch (e) { /* ok */ }
+    L.push(Tf('Emprego: {0} · trabalhou hoje: {1}', empregoEscolhido() || '-', sim(!!d.trabalhouHoje)));
+    { const a = d.academia || {}, hoje = a.treinoDia === d.dia ? (a.treinos | 0) : 0; L.push(Tf('Academia: plano até o dia {0} · personal até o dia {1} · treinos hoje {2}/3', a.acessoAte ? a.acessoAte - 1 : '-', a.personalAte ? a.personalAte - 1 : '-', hoje)); }
+    L.push(Tf('Clima: {0}', S.clima ? S.clima.estado : '-'));
+    let t = L.join('\n');
+    try { t += '\n\n' + T('Espectros (−100 a +100)') + '\n' + Object.keys(ESPECTROS).map((e) => '· ' + T(ESPECTROS[e].polos[0]) + ' / ' + T(ESPECTROS[e].polos[1]) + ': ' + Espectros.valor(e) + ' (' + Espectros.rotulo(e) + ')').join('\n'); } catch (e) { /* ok */ }
+    const at = atributosJogador(), um = (v) => (Math.round(v * 100) / 100).toFixed(2);
+    t += '\n\n' + T('Atributos') + '\n' + Atributos.NOMES.map((n) => '· ' + n + ': ' + um(at[n])).join('\n');
+    return t;
+  }
+  function painelDev() {
+    const d = S.dados, el = document.createElement('div'); el.id = 'cdDev';
+    const am = Amizade.tabela(); if (am.lucia == null) Amizade.valor('lucia');
+    const ids = Object.keys(am);
+    const hh = Math.floor(d.hora), mm = Math.floor((d.hora - hh) * 60 / 10) * 10;
+    el.innerHTML = '<div class="cdCard"><h3 class="t0"></h3>' +
+      '<h4 class="t1"></h4><div class="lin"><button type="button" class="pxBtn dvGrana"></button></div>' +
+      '<h4 class="t2"></h4><div class="lin"><label class="t3"></label><input type="number" min="1" max="9999" class="dvDia" style="width:90px"><label class="t4"></label><input type="time" step="600" class="dvHora" style="width:120px"></div>' +
+      '<h4 class="t5"></h4><div class="dvAm"></div>' +
+      '<div class="erro dvMsg" style="color:#8fe04a"></div><div class="lin"><button type="button" class="pxBtn pxPrim dvSalvar"></button><button type="button" class="pxBtn dvFechar"></button></div>' +
+      '<h4 class="t6"></h4><div class="st dvSt"></div></div>';
+    const q = (s) => el.querySelector(s);
+    q('.t0').textContent = T('Privilégios do desenvolvedor'); q('.t1').textContent = T('Dinheiro infinito'); q('.t2').textContent = T('Dia e horário');
+    q('.t3').textContent = T('Dia'); q('.t4').textContent = T('Horário'); q('.t5').textContent = T('Corações (amizade, 0 a 100)'); q('.t6').textContent = T('Status e efeitos atuais');
+    q('.dvSalvar').textContent = T('Salvar mudanças'); q('.dvFechar').textContent = T('Fechar');
+    q('.dvDia').value = d.dia || 1; q('.dvHora').value = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
+    for (const inp of el.querySelectorAll('input')) { inp.addEventListener('keydown', (e) => e.stopPropagation()); inp.addEventListener('keyup', (e) => e.stopPropagation()); }
+    const pintaGrana = () => { q('.dvGrana').textContent = T('Dinheiro infinito') + ': ' + T(d.devInfinito ? 'Ligado' : 'Desligado'); q('.dvGrana').classList.toggle('pxPrim', !!d.devInfinito); };
+    pintaGrana();
+    q('.dvGrana').onclick = () => {
+      som(); d.devInfinito = !d.devInfinito;
+      if (d.devInfinito) { d.devFakesAntes = d.fakes; d.fakes = DEV_GRANA; } else { d.fakes = d.devFakesAntes != null ? d.devFakesAntes : Math.min(d.fakes, 150); d.devFakesAntes = null; }
+      mostrarDinheiro(true); gravar(d.ponto || 'chegada'); pintaGrana(); q('.dvSt').textContent = textoStatus();
+    };
+    const box = q('.dvAm');
+    for (const id of ids) {
+      const l = document.createElement('div'); l.className = 'lin';
+      l.innerHTML = '<span style="min-width:90px">♥ </span><input type="number" min="0" max="100" style="width:80px">';
+      l.firstChild.textContent = '♥ ' + T(NOME_AMIGO[id] || id); const inp = l.querySelector('input'); inp.value = Amizade.valor(id); inp.dataset.id = id;
+      inp.addEventListener('keydown', (e) => e.stopPropagation()); inp.addEventListener('keyup', (e) => e.stopPropagation());
+      box.appendChild(l);
+    }
+    q('.dvSt').textContent = textoStatus();
+    q('.dvFechar').onclick = () => { som(); fecharDev(); };
+    q('.dvSalvar').onclick = () => {
+      som();
+      const dia = Math.max(1, Math.min(9999, parseInt(q('.dvDia').value, 10) || d.dia || 1));
+      const [h, m] = String(q('.dvHora').value || '').split(':').map((x) => parseInt(x, 10));
+      const hora = Number.isFinite(h) ? (h + (Number.isFinite(m) ? m : 0) / 60) % 24 : d.hora;
+      const coracoes = [...box.querySelectorAll('input')].map((i) => [i.dataset.id, parseInt(i.value, 10)]).filter(([, v]) => Number.isFinite(v));
+      const mudouTempo = dia !== (d.dia || 1) || Math.abs(hora - d.hora) > 1 / 120;
+      const aplicar = () => {
+        for (const [id, v] of coracoes) Amizade.definir(id, v);
+        if (mudouTempo) aplicarDiaHora(dia, hora);
+        gravar(d.ponto || 'chegada');
+        q('.dvSt').textContent = textoStatus(); q('.dvMsg').textContent = T('Mudanças salvas.');
+        q('.dvDia').value = d.dia; const h2 = Math.floor(d.hora), m2 = Math.floor((d.hora - h2) * 6) * 10; q('.dvHora').value = (h2 < 10 ? '0' : '') + h2 + ':' + (m2 < 10 ? '0' : '') + m2;
+      };
+      if (mudouTempo && typeof comCarregamento === 'function') {          // a tela de carregamento (por cima do pause e deste painel)
+        const L = telaCarregando(); L.style.zIndex = '30'; comCarregamento(aplicar); setTimeout(() => { L.style.zIndex = ''; }, 1600);
+      } else aplicar();
+    };
+    (document.getElementById('raizJogo') || document.body).appendChild(el);
+  }
+  // muda o dia e a hora de uma vez (sem as cutscenes do caminho): o dia novo prepara a fome, o expediente e a agenda
+  function aplicarDiaHora(dia, hora) {
+    const d = S.dados, mudouDia = dia !== (d.dia || 1);
+    d.dia = dia; d.hora = Math.max(0, Math.min(23.99, hora));
+    S.madrugada = false; d.avisouDormir = d.hora >= 21 || d.hora < H_ACORDAR ? d.avisouDormir : false;
+    if (mudouDia) { prepararDia(d); try { agendarHoje(); } catch (e) { console.warn('[Cidade] agenda:', e); } }
+    try { if (S.valdemar && !S.dentro) snapValdemar(); } catch (e) { /* ok */ }
+    relUlt = ''; S.cam.snap = true;
+  }
+  function tickDev() { const d = S.dados; if (d.devInfinito && d.fakes < DEV_GRANA) { d.fakes = DEV_GRANA; mostrarDinheiro(false); } }
+  function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; if (!p) fecharDev(); }
   let tMissao = null;
   function mostrarMissao() {
     if (!S) return;
@@ -4764,7 +4919,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.btnPausa.setAttribute('aria-label', T('Pausar')); UI.btnMapa.setAttribute('aria-label', T('Mapa')); UI.misIco.setAttribute('aria-label', T('Missão'));
     UI.mapa.querySelector('.cdTit').textContent = T('Mapa'); UI.mapa.querySelector('.cdDica').textContent = T('Toque no mapa para marcar um destino. A cor escolhida aparece embaixo de você e a setinha mostra o caminho.');
     UI.remover.textContent = T('Remover marca'); UI.fechar.textContent = T('Fechar');
-    UI.pausa.querySelector('.cdTit').textContent = T('Pausado'); UI.cont.textContent = T('Continuar'); UI.menu.textContent = T('Voltar ao menu');
+    UI.pausa.querySelector('.cdTit').textContent = T('Pausado'); UI.cont.textContent = T('Continuar'); UI.menu.textContent = T('Voltar ao menu'); UI.pausa.querySelector('.cdDevBtn').textContent = T('Privilégios do desenvolvedor');
   }
   function mostrarDinheiro(pop) {
     UI.valor.textContent = String(S.dados.fakes);
@@ -5278,7 +5433,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (!S.dentro || S.luciaPredio) tickEncontroPredio();
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
-        tickClima(dt);
+        tickClima(dt); tickDev();                        // (6.2.3) dinheiro infinito
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
