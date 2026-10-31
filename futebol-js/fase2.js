@@ -674,7 +674,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ----- O BANHEIRO (4,4 x 4,4 m): porta na parede da esquerda; vaso, pia e chuveiro no fundo
   const B_CAM = [0.1, 3.3, 4.2, 0.1, 0.65, -0.7];
   const B = { vaso: { x: -0.9, spot: [-0.9, -1.2], sent: [-0.9, -1.78] }, pia: { x: 0.5, spot: [0.5, -1.35] }, chuveiro: { spot: [1.55, -0.45] }, porta: { z: 0.6, spot: [-1.7, 0.6] } };
-  const B_RETS = [[-1.2, -0.6, -2.2, -1.5], [0.1, 0.95, -2.2, -1.72], [1.05, 2.2, -2.2, -0.85]];
+  const B_RETS = [[-1.2, -0.6, -2.2, -1.5], [0.1, 0.95, -2.2, -1.72], [1.05, 2.2, -2.2, -0.85], [0.95, 1.55, 0.65, 1.25]];   // o último é o Sancho
   function montarBanheiro() {
     const g = new THREE.Group(); g.position.set(OX + 100, 0, 0);
     const basic = (p) => new THREE.MeshBasicMaterial(p);
@@ -700,6 +700,35 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const seta = fazSeta(); g.add(seta);
     scene.add(g);
     return { g, seta, vidro };
+  }
+
+  // ----- O SANCHO NO BANHEIRO (SanchoAnimacoesZ.js: modelo com esqueleto, baixado em segundo plano; parado no idle, e quando o
+  //   jogador chega perto ele entra na pose de luta e vira para o jogador; quando o jogador se afasta, volta ao idle)
+  const SANCHO = { x: 1.25, z: 0.95, yaw: -2.4, perto: 1.9, longe: 2.5, idle: 'Sancho_rig|Sancho_idle', luta: 'Sancho_rig|Sancho_idle_luta' };
+  function carregarSancho() {
+    Fases.carregar('SanchoAnimacoesZ').then((mod) => {
+      if (!S || !S.banh || S.sancho || !mod || typeof mod.criar !== 'function') return;
+      const m = mod.criar();
+      m.raiz.position.set(SANCHO.x, 0, SANCHO.z); m.raiz.rotation.y = SANCHO.yaw;
+      m.tocar(SANCHO.idle, { transicao: 0 });
+      S.banh.g.add(m.raiz);
+      S.sancho = { m, yaw: SANCHO.yaw, luta: false };
+    }, (e) => console.warn('[Fase 2] o Sancho não veio:', e));
+  }
+  function sanchoTick(dt) {
+    const Sa = S.sancho; if (!Sa || S.lugar !== 'banheiro') return;
+    const J = S.jog, dx = J.x - SANCHO.x, dz = J.z - SANCHO.z, d = Math.hypot(dx, dz);
+    if (!Sa.luta && d < SANCHO.perto) { Sa.luta = true; Sa.m.tocar(SANCHO.luta, { transicao: 0.25 }); }
+    else if (Sa.luta && d > SANCHO.longe) { Sa.luta = false; Sa.m.tocar(SANCHO.idle, { transicao: 0.35 }); }
+    const alvo = Sa.luta ? Math.atan2(-dz, dx) : SANCHO.yaw;
+    const dy = ((alvo - Sa.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; Sa.yaw += dy * Math.min(1, dt * 6);
+    Sa.m.raiz.rotation.y = Sa.yaw;
+    Sa.m.atualizar(dt);
+  }
+  function descartarSancho() {
+    const Sa = S && S.sancho; if (!Sa) return;
+    try { Sa.m.mixer.stopAllAction(); Sa.m.mixer.uncacheRoot(Sa.m.raiz); Sa.m.raiz.traverse((o) => { if (o.skeleton) o.skeleton.dispose(); }); } catch (e) { console.warn(e); }
+    S.sancho = null;
   }
 
   // ----- A ESCADA DO PRÉDIO: um anel quadrado em volta de um vão vazio. Quatro lances de 1,4 m cada, de cima (5,6 m) até o térreo.
@@ -1736,7 +1765,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.livreAndando = false; S.jog.correndo = false; } else mover(dt); }
       for (const A of S.elenco) tickAtor(A, S.t, dt);
       if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
-      fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);
+      fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt); sanchoTick(dt);
       if (S.relogio && S.modo === 'livre' && !S.camEspecial && nPassos === 1) relogioTick(dt);   // o tempo anda no prédio (menos no banho, banheiro, guarda-roupa, computador...)
     }
     if (nPassos > 1) S.camSnap = true;
@@ -1774,7 +1803,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     S.ativo = false; GANCHO_RENDER = null; camera.clearViewOffset(); if (camera.fov !== 52) { camera.fov = 52; camera.updateProjectionMatrix(); }
     for (const A of S.elenco) descartarAtor(A);
     for (const p of (S.fumaca || [])) p.material.dispose();
-    descartarGrupo(S.palco); if (S.quarto) descartarGrupo(S.quarto.g); if (S.banh) descartarGrupo(S.banh.g); if (S.esc) descartarGrupo(S.esc.g);
+    descartarSancho(); descartarGrupo(S.palco); if (S.quarto) descartarGrupo(S.quarto.g); if (S.banh) descartarGrupo(S.banh.g); if (S.esc) descartarGrupo(S.esc.g);
     restaurarMundo();
     document.body.classList.remove('f2Ativo');
     if (UI.relogio) { UI.relogio.remove(); UI.relogio = null; }
@@ -1815,6 +1844,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       prepararMundo();
       S.palco = new THREE.Group(); scene.add(S.palco);
       S.quarto = montarQuarto(S.fem); S.banh = montarBanheiro(); S.esc = montarEscada();
+      carregarSancho();
       S.quarto.g.visible = S.banh.g.visible = S.esc.g.visible = false;
       if (S.quarto.bola) S.bolaQ = { mesh: S.quarto.bola, sombra: S.quarto.bolaSombra, x: 0.9, z: 1.6, vx: 0, vz: 0, jx: null, jz: null, eixo: new THREE.Vector3(), q: new THREE.Quaternion() };
       GANCHO_RENDER = gancho;

@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.1.2
+   FUTEBOL JS · jogo.js · versão 6.1.3
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -57,7 +57,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.1.2';
+const VERSAO_JOGO = '6.1.3';
 // 6.1.2: tradução (EN/ES/IT/FR) da partida livre: HUD, banners, minigames, pausa, fim de jogo, opções, tutorial e resultados.
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
