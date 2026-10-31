@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.2.1
+   FUTEBOL JS · jogo.js · versão 6.2.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -19,6 +19,10 @@
 /* =====================================================================
    FUTEBOL JS · O SISTEMA DE PARTIDA e o núcleo do jogo
    ---------------------------------------------------------------------
+   Novidades da versão 6.2.2 — a ACADEMIA (academia.js, arquivo novo; o interior vem do interiores.js): plano de 400 fakes por 7 dias com o Diego
+     na recepção, catracas de entrada e de saída, a personal Fernanda (300 fakes: treino vale o dobro por 7 dias), 3 treinos por dia
+     (esteira → velocidade, abdominal → resistência, supino → força; +0,1 por treino certo). Atributos.aplicar: na história, força,
+     velocidade e resistência seguem uma curva de 5 a 10 (cada ponto rende menos que o anterior); a força também segura a bola no bote.
    Novidades da versão 6.1.1 — LÚCIA: abraço e beijo sem os corpos se atravessarem (só os rostos encostam); no encontro ela usa um MACACÃO (roupa nova
      'Macacão' também no guarda-roupa feminino; o vestido bugava ao sentar); se você não for ao encontro até 1h depois da hora marcada (20h), ela manda
      uma mensagem, você perde 25 de amizade. Quadro de missões: o ícone não some mais no 2º dia. Tocar num save não mostra mais o campo por trás.
@@ -57,7 +61,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.2.1';
+const VERSAO_JOGO = '6.2.2';
+// 6.2.2: a ACADEMIA (academia.js) e a curva de força, velocidade e resistência do personagem da história (Atributos: 5 a 10, sem ficar roubado no 10).
 // 6.1.2: tradução (EN/ES/IT/FR) da partida livre: HUD, banners, minigames, pausa, fim de jogo, opções, tutorial e resultados.
 window.__FUTEBOL_VERSAO = VERSAO_JOGO;
 
@@ -576,19 +581,33 @@ const Atributos = (() => {
   const COPIA = { forca: 'chute', recuperacao: 'resistencia', cruzamento: 'passe', finalizacao: 'chute' };
   const tudo = (n) => { const o = {}; for (const k of NOMES) o[k] = n; return o; };
   let atual = tudo(7);
+  // (6.2.0) CURVA DA HISTÓRIA para FORÇA, VELOCIDADE e RESISTÊNCIA (as três que a academia treina, de 5 a 10). O personagem da
+  //   história (marcado por _corridaSeg, o fôlego do iniciante) começa em 5 e cada ponto a mais rende MENOS que o anterior:
+  //   ganho(n) = 1 − (1 − k)^1,5, com k = (n − 5) / 5. O 5 é exatamente o jogo de antes (nada piora); no 10:
+  //     velocidade → conta como 8,5 (corre como um bom jogador do nível difícil, ~+7% sobre o 7 da partida livre, não um foguete)
+  //     força      → conta como 8,5 no chute/passe longo (+~8% de velocidade máxima de chute sobre o 5) e o bote do adversário
+  //                  acerta ~26% menos (Atributos.posse(): 1 → 1,35)
+  //     resistência → 9 s de corrida com a barra cheia (o iniciante tem 5 s; a partida livre tem 10 s com tudo 7)
+  //   A partida livre (sem _corridaSeg) continua igual: tudo 7, sem curva.
+  let posseK = 1, entrada = {};
+  const ganhoHist = (n) => { const k = Math.max(0, Math.min(1, ((+n || 5) - 5) / 5)); return 1 - Math.pow(1 - k, 1.5); };
+  const efetivoHist = (n) => ((+n || 5) <= 5 ? (+n || 5) : 5 + 3.5 * ganhoHist(n));
   const razao = (nome) => Math.pow(clampA((atual[nome] ?? 7) / 7, 0.15, 1.6), EXP[nome] ?? 1);
   function clampA(v, a, b) { return Math.max(a, Math.min(b, v)); }
   function aplicar(attrs) {
     const a = Object.assign({}, attrs || {});
     for (const [novo, velho] of Object.entries(COPIA)) if (a[novo] == null && a[velho] != null) a[novo] = a[velho];
-    atual = Object.assign(tudo(7), a);
+    atual = Object.assign(tudo(7), a); entrada = Object.assign({}, atual);   // entrada: os números como vieram (antes da curva)
+    const hist = a._corridaSeg > 0;                                       // (6.2.0) personagem da história: curva de 5 a 10
+    posseK = hist ? 1 + 0.35 * ganhoHist(a.forca) : 1;
+    if (hist) for (const n of ['velocidade', 'forca']) atual[n] = efetivoHist(atual[n]);
     const vel = razao('velocidade'), res = razao('resistencia'), dri = razao('drible');
     CONFIG.USER_WALK = BASE.USER_WALK * vel; CONFIG.USER_RUN = BASE.USER_RUN * vel;
     CONFIG.USER_WALK_BALL = BASE.USER_WALK_BALL * vel; CONFIG.USER_RUN_BALL = BASE.USER_RUN_BALL * vel;
     CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * res;
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // encher a barra: recuperação
     // Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
-    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg;
+    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 4 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → 9 s no 10
     if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada;
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
@@ -598,7 +617,10 @@ const Atributos = (() => {
     padrao: () => tudo(7), iniciante: () => Object.assign(tudo(5), { _corridaSeg: 5, _recuperaCada: 1.5 }),   // iniciante: TUDO 5; o fôlego curto do iniciante continua
     valor: (nome) => atual[nome],
     fator: (nome) => razao(nome),
+    posse: () => posseK,                                                  // (6.2.0) divide a chance do bote do adversário em você (força)
+    efetivoHist, ganhoHist,
     get atual() { return Object.assign({}, atual); },
+    get entrada() { return Object.assign({}, entrada); },               // (6.2.0) sem a curva da história (para reaplicar com ajustes)
   };
 })();
 
@@ -4388,7 +4410,7 @@ function tryTackle(def, holder, dt) {
     }
     if (Math.random() < 0.1 && startSlide(def, holder)) return;              // de frente, às vezes vai de carrinho
   }
-  let chance = (holder.isUser ? CONFIG.AI_TACKLE_CHANCE : 0.22) * fh(def, 'desarme') / Math.sqrt(fh(holder, 'drible'));   // desarme x drible
+  let chance = (holder.isUser ? CONFIG.AI_TACKLE_CHANCE / Atributos.posse() : 0.22) * fh(def, 'desarme') / Math.sqrt(fh(holder, 'drible'));   // desarme x drible; (6.2.0) a sua força segura a bola
   if (holder.isUser && Math.hypot(holder.vx, holder.vz) < 4.2) chance = Math.min(0.6, chance * 2);   // você andando: bote mais fácil
   if (holder.boost > 0) chance *= 0.6;
   if (Math.random() < chance) {
@@ -6509,7 +6531,7 @@ function updateParadoComBola(dt) {
   if (G.possession !== u || G.state !== 'play' || D.t > 6) { G.desarmeLimpo = null; return; }
   if (dist2D(D.p, u) < 1.2) {
     D.p.tackle = 1; D.p.angle = Math.atan2(u.z - D.p.z, u.x - D.p.x);
-    if (Math.random() > 0.8) { D.p.stun = 0.6; G.desarmeLimpo = null; u.paradoT = 0; showToast('Ele errou o bote! Saia daí', 'good'); return; }   // tentativa: 80%
+    if (Math.random() > 0.8 / Atributos.posse()) { D.p.stun = 0.6; G.desarmeLimpo = null; u.paradoT = 0; showToast('Ele errou o bote! Saia daí', 'good'); return; }   // tentativa: 80%
     givePossession(D.p, { silent: true });
     perderBola(u); u.paradoT = 0; G.stats.perdas++;
     showToast('Ficou parado demais: desarmado!', 'bad');
@@ -13376,7 +13398,7 @@ const Espectros = (() => {
   const penalidadeTime = () => (ruimDeSaude() ? { banco: true, atributos: { velocidade: -20, forca: -20, resistencia: -20 }, corrida: 0.8 } : null);
   function aplicarNaPartida() {
     const pen = penalidadeTime();
-    if (pen) { const a = Atributos.atual; for (const k of ['velocidade', 'forca', 'resistencia']) a[k] = Math.max(1, (a[k] ?? 7) - 2); Atributos.aplicar(a); }
+    if (pen) { const a = Atributos.entrada; for (const k of ['velocidade', 'forca', 'resistencia']) a[k] = Math.max(1, (a[k] ?? 7) - 2); Atributos.aplicar(a); }
     const corrida = efeito('corrida'), rec = efeito('recuperacao');
     CONFIG.STAMINA_RUN_TIME *= corrida * (pen ? pen.corrida : 1); CONFIG.STAMINA_REGEN_TIME /= rec;
     multLesao = clamp(efeito('lesao'), 0.7, 1.3);

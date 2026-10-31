@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.2.2
+     - ACADEMIA (academia.js, arquivo novo baixado junto do pizzaria.js): ganchos marcados "(6.2.0)" (feito na 6.2.0, entra na 6.2.2): carregar o academia.js · apiAcademia()
+       (a do pizzaria + atributosJogador, tickHorario, H_POR_S, andar, poseAtor) · entrarEm/sairDoLugar chamam S.academia.entrou/saiu (lá dentro
+       quem coloca as pessoas é ele) · alvos · tick depois do pizzaria. O interior novo vem do interiores.js (R.academia).
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
@@ -3145,9 +3149,10 @@
     const rnd = semente(P.nome.length * 31 + 7);
     const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
     const pizzaJs = P.nome === 'pizzaria' && !!S.pizzaria;               // (6.1.0) na pizzaria quem cuida de tudo (Mário, Carla, clientes) é o pizzaria.js
+    const acadJs = P.nome === 'academia' && !!S.academia && !!R.academia;   // (6.2.0) na academia quem coloca as pessoas é o academia.js
     const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
-      if (pizzaJs) continue;
+      if (pizzaJs || acadJs) continue;
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
@@ -3162,6 +3167,7 @@
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
     if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
+    if (acadJs) S.academia.entrou(R, idx);                               // (6.2.0)
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     if (enc) { enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL); }
     J.sentado = false; J.x = R.entrada.x; J.z = R.entrada.z; J.yaw = J.yawAlvo = R.entrada.yaw; J.y = 0; J.rota = null;
@@ -3273,6 +3279,7 @@
     await preto(true, 380);
     if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
     if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
+    if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
     if (J.sentado) levantar();
     for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
@@ -3306,6 +3313,7 @@
       const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
+      if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
@@ -3491,6 +3499,10 @@
     return Object.assign(apiMercado(), {
       definirMarca, mostrarMissao, recolherMissao, altura, livre, gastoNaTela, caminhoRede, PORTAS, entrarNoPredio,
     });
+  }
+  // (6.2.0) o que o academia.js (recepção, catracas, Fernanda e os treinos) usa daqui
+  function apiAcademia() {
+    return Object.assign(apiPizzaria(), { atributosJogador, tickHorario, H_POR_S, andar, poseAtor });
   }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};
@@ -5270,6 +5282,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
+        if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
@@ -5290,6 +5303,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     S.ativo = false; GANCHO_RENDER = null; clearTimeout(tMissao); SomChuva.nivel(0);
     if (S.mercado) try { S.mercado.limpar(); } catch (e) { console.warn('[Cidade] mercado:', e); }
     if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
+    if (S.academia) try { S.academia.limpar(); } catch (e) { console.warn('[Cidade] academia:', e); }
     for (const m of S.meus) ATLETAS.delete(m);
     if (S.dentro && S.grupo && S.grupo !== S.grupoCidade) { scene.remove(S.grupo); S.grupo.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); }); S.grupo = S.grupoCidade; }
     if (S.grupo) {
@@ -5324,6 +5338,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
       Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
+      Fases.carregar('academia').then((m) => { if (S && m && m.criar) S.academia = m.criar(apiAcademia()); }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
@@ -5366,5 +5381,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, carroChegando, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS } });   // (_estado/_planta/_fns: para testes)
+    _fns: { livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, carroChegando, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia } });   // (_estado/_planta/_fns: para testes)
 })();

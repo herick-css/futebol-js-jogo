@@ -13,6 +13,7 @@
    - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
+   - (6.2.0) Academia refeita: recepção, duas catracas (entrada e saída), esteiras, supinos e colchonetes (R.academia; ver academia.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
        pessoas:  [{ tipo: 'parado' | 'vaga' | 'senta' | 'esteira' | 'rosca', x, z, yaw, area, assento, fem }]
@@ -281,17 +282,108 @@
       for (const i of [0, 5, 10, 17, 22]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
       for (const [x, z] of [[-9.2, -7.2], [9.2, -7.2], [-9.2, 7], [9.2, 7]]) { G.box(0.6, 0.6, 0.6, '#9a6a44', x, 0, z); G.box(0.8, 1.0, 0.8, '#3f8a3a', x, 0.6, z); bloq(x, z, 0.7, 0.7); }
     } else if (nome === 'academia') {
+      // (6.2.0) ACADEMIA, refeita para os treinos (ver academia.js). Sala 22 x 16:
+      //   SUL (z > 3,4): a RECEPÇÃO, com piso de madeira, o balcão do Diego (oeste), banco, bebedouro e o cartaz do plano.
+      //   z = 3,4: a linha de CATRACAS (grade baixa de parede a parede). Duas passagens: ENTRADA (x = −1,55, só de fora para dentro
+      //     e só com o plano pago) e SAÍDA (x = +1,55, só de dentro para fora). O academia.js liga/desliga as "portas" (R.academia.catracas[].col).
+      //   NORTE: espelho, 3 ESTEIRAS (oeste), 2 SUPINOS (meio), COLCHONETES para o abdominal (sudoeste), halteres (leste) e a Fernanda no meio.
+      //   O aparelho do jogador é sempre o mesmo de cada tipo (jog: true): a esteira de x = −5,6, o supino de x = 2,6 e o colchonete de x = −5,1.
       sala(22, 16, 4.0, '#5f6b7a', '#2e3238', '#383c42', 0.5);
+      R.cam = { dist: 8, pitch: 0.86 }; R.fundo = 0x12161c;
+      const ZC = 3.4, A = R.academia = { ZC, catracas: [], esteiras: [], supinos: [], colchonetes: [] };
+      const novaMalha = (geo) => geo.malha(MAT);
+      const plano = (tex, w, h, x, y, z, rx, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0, 'YXZ'); grupo.add(m); return m; };
+      // piso de madeira da recepção (por cima do piso de borracha)
+      { const tex = guardar(texCanvas(64, 32, (g, w, h) => { for (let i = 0; i < 8; i++) { g.fillStyle = ['#8a5a32', '#7e5230', '#946238', '#82562f'][i % 4]; g.fillRect(0, i * 4, w, 4); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(0, i * 4 + 3, w, 1); g.fillRect(((i * 23) % 48) + 8, i * 4, 1, 4); } granular(g, w, h, 0.08, rnd); }, false));
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(6, 2.4); plano(tex, 22, 8 - ZC, 0, 0.006, (ZC + 8) / 2, -Math.PI / 2); }
       placa('ACADEMIA', '#1c1c1f', '#f2c230', 6, 0.9, 0, 3.1, -7.96);
-      G.box(16, 2.2, 0.05, '#9ec7dd', 0, 0.4, -7.95);                                                        // espelho
-      for (let i = 0; i < 3; i++) { const x = -7 + i * 2.2; G.box(0.9, 0.2, 2.0, '#1c1c1f', x, 0, -4.5); G.box(0.8, 0.05, 1.6, '#3a3a3e', x, 0.2, -4.6); for (const s of [-0.4, 0.4]) G.box(0.06, 1.2, 0.06, '#8c9199', x + s, 0.2, -5.4); G.box(0.86, 0.3, 0.12, '#3a3a3e', x, 1.3, -5.4); bloq(x, -4.5, 0.95, 2.0);
-        R.pessoas.push({ tipo: 'esteira', x, z: -4.4, yaw: Math.PI / 2, fem: rnd() < 0.5 }); }
-      // supino, halteres, anilhas
-      for (const x of [2.5, 6.5]) { G.box(0.4, 0.45, 1.6, '#c8352b', x, 0, -2.5); for (const s of [-0.9, 0.9]) G.box(0.08, 1.1, 0.08, '#8c9199', x + s * 0.5, 0, -3.1); G.box(2.0, 0.05, 0.05, '#c9ced4', x, 1.1, -3.1); for (const s of [-1, 1]) G.box(0.08, 0.45, 0.45, '#1c1c1f', x + s * 0.85, 0.88, -3.1); bloq(x, -2.7, 1.2, 2.0); }
-      G.box(4, 0.9, 0.6, '#3a3a3e', 8, 0, -7.4); for (let i = 0; i < 8; i++) G.box(0.35, 0.15, 0.15, '#1c1c1f', 6.4 + i * 0.45, 0.9, -7.4); bloq(8, -7.4, 4, 0.6);
-      R.pessoas.push({ tipo: 'rosca', x: 7.6, z: -6.4, yaw: Math.PI / 2, fem: false }, { tipo: 'rosca', x: -2.5, z: 0.5, yaw: Math.PI / 2, fem: true });
-      R.pessoas.push({ tipo: 'vaga', area: { x0: -8, x1: 8, z0: 0, z1: 5 }, fem: false });                   // instrutor
-      for (let i = 0; i < 6; i++) G.box(1.0, 0.03, 1.8, '#2a3a2a', -8 + i * 1.3, 0, 3.5);                     // colchonetes
+      G.box(13, 2.2, 0.05, '#9ec7dd', -1.5, 0.45, -7.95); G.box(13.2, 0.08, 0.07, '#c9ced4', -1.5, 2.65, -7.94); G.box(13.2, 0.08, 0.07, '#c9ced4', -1.5, 0.4, -7.94);   // espelho com moldura
+      G.box(22, 0.3, 0.04, '#f2c230', 0, 2.75, -7.97);                                                    // faixa amarela
+      // ---- RECEPÇÃO
+      balcao(-4.6, 5.6, 0.9, 3.0, '#1c1c1f', '#3a3a3e'); G.box(0.92, 0.12, 3.02, '#f2c230', -4.6, 0.7, 5.6);   // faixa amarela na frente
+      G.box(0.08, 0.34, 0.5, '#1c1c1f', -4.8, 1.06, 5.0); G.box(0.02, 0.28, 0.44, '#3fb7b0', -4.74, 1.09, 5.0);   // monitor (a tela olha para o leste)
+      G.box(0.3, 0.04, 0.4, '#3a3a3e', -4.55, 1.06, 6.4);                                                 // a maquininha do cartão
+      A.recepcao = { x: -5.55, z: 5.6, yaw: 0, falar: { x: -3.55, z: 5.6 } };
+      G.box(0.45, 2.1, 3.2, '#3a3a3e', -10.7, 0, 5.6); bloq(-10.7, 5.6, 0.5, 3.2);                         // prateleira de suplementos atrás do Diego
+      for (let f = 0; f < 3; f++) for (let i = 0; i < 7; i++) G.box(0.22, 0.28, 0.22, pk(['#c8352b', '#f2f2ee', '#1c1c1f', '#f2c230', '#3a64b8', '#6cae3e']), -10.55, 0.55 + f * 0.6, 4.4 + i * 0.4);
+      { const t = guardar(texCanvas(80, 56, (g, w, h) => {                                                 // cartaz do plano semanal (parede oeste, para o leste)
+          g.fillStyle = '#1c1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2c230'; g.fillRect(0, 0, w, 14); g.fillRect(0, h - 2, w, 2);
+          g.font = "bold 9px Silkscreen, 'Courier New', monospace"; g.textAlign = 'center'; g.fillStyle = '#1c1c1f'; g.fillText('PLANO', w / 2, 11);
+          g.fillStyle = '#f2f2ee'; g.fillText('SEMANAL', w / 2, 27); g.fillStyle = '#f2c230'; g.font = "bold 12px Silkscreen, 'Courier New', monospace"; g.fillText('400', w / 2, 43);
+          g.fillStyle = '#f2f2ee'; g.font = "bold 7px Silkscreen, 'Courier New', monospace"; g.fillText('FAKES', w / 2, 52); }, true));
+        plano(t, 1.3, 0.9, -10.96, 2.1, 7.4, 0, Math.PI / 2); }
+      // banco, bebedouro e planta do lado leste da recepção
+      G.box(2.4, 0.45, 0.55, '#3a3a3e', 7.4, 0, 7.45); G.box(2.4, 0.5, 0.08, '#3a3a3e', 7.4, 0.45, 7.7); bloq(7.4, 7.45, 2.4, 0.6);
+      G.box(0.5, 1.05, 0.5, '#d8dde2', 10.4, 0, 4.6); G.box(0.36, 0.42, 0.36, '#7ab8d8', 10.4, 1.05, 4.6); bloq(10.4, 4.6, 0.55, 0.55);
+      G.box(0.6, 0.55, 0.6, '#9a6a44', 10.3, 0, 7.3); G.box(0.8, 1.0, 0.8, '#3f8a3a', 10.3, 0.55, 7.3); bloq(10.3, 7.3, 0.7, 0.7);
+      // ---- A LINHA DAS CATRACAS (grade de 1 m) e a ilha do meio com as duas catracas
+      for (const [x0, x1] of [[-11, -2.1], [2.1, 11]]) {
+        const cx = (x0 + x1) / 2, L = x1 - x0;
+        G.box(L, 0.07, 0.08, '#c9ced4', cx, 0.98, ZC); G.box(L, 0.05, 0.05, '#8c9199', cx, 0.12, ZC); G.box(L - 0.1, 0.78, 0.03, '#6f8796', cx, 0.17, ZC);   // corrimão, base e o painel
+        for (let x = x0 + 0.05; x <= x1; x += 1.5) G.box(0.07, 1.02, 0.07, '#c9ced4', x, 0, ZC);
+        bloq(cx, ZC, L, 0.14);
+      }
+      for (const s of [-1, 1]) { G.box(0.14, 1.05, 0.9, '#c9ced4', s * 2.17, 0, ZC); bloq(s * 2.17, ZC, 0.14, 0.9); }   // a ponta da grade: as passagens viram um corredor
+      G.box(2.0, 1.0, 0.9, '#2a2a2e', 0, 0, ZC, '#3a3a3e'); G.box(2.02, 0.1, 0.92, '#f2c230', 0, 0.78, ZC); bloq(0, ZC, 2.0, 0.9);                       // a ilha (as duas catracas, uma de cada lado)
+      G.box(0.5, 0.06, 0.3, '#1c1c1f', -0.6, 1.0, ZC + 0.15); G.box(0.5, 0.06, 0.3, '#1c1c1f', 0.6, 1.0, ZC - 0.15);   // leitores
+      for (const [tipo, s] of [['entrada', -1], ['saida', 1]]) {
+        const x = s * 1.55;
+        // placa em cima: ENTRADA (verde) / SAÍDA (vermelha), voltadas para quem vem
+        const ttx = guardar(texLetreiro(tipo === 'entrada' ? 'ENTRADA' : 'SAÍDA', tipo === 'entrada' ? '#1f7a4d' : '#a8202a', '#f2f2ee', 1.1, 0.3));
+        for (const ry of [0, Math.PI]) plano(ttx, 1.0, 0.28, x, 2.25, ZC + (ry ? -0.03 : 0.03), 0, ry);
+        G.box(0.05, 1.2, 0.05, '#8c9199', s * 2.17, 1.05, ZC); G.box(0.05, 1.2, 0.05, '#8c9199', s * 1.0, 1.0, ZC); G.box(1.22, 0.05, 0.05, '#8c9199', x, 2.2, ZC);
+        // o tripé: três braços num eixo inclinado (o de cima atravessa a passagem na altura da cintura). Gira 120° quando alguém passa.
+        const hub = new THREE.Group(); hub.position.set(s * 1.0, 0.92, ZC);
+        const u = new THREE.Vector3(s, 0, 0), a = new THREE.Vector3(0, Math.SQRT1_2, Math.SQRT1_2), w = new THREE.Vector3().crossVectors(u, a);
+        hub.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(u, a, w));
+        const gira = new THREE.Group(); hub.add(gira);
+        const bg = new Geo(); bg.box(0.14, 0.09, 0.14, '#8c9199', 0, -0.045, 0); bg.box(0.12, 0.05, 0.12, '#c9ced4', 0, 0.04, 0);
+        for (let k = 0; k < 3; k++) { const ang = k * Math.PI * 2 / 3, c = Math.cos(ang), sn = Math.sin(ang); for (let i = 1; i <= 8; i++) bg.box(0.075, 0.075, 0.075, '#e8ecef', c * (0.03 + i * 0.064), 0, -sn * (0.03 + i * 0.064)); }
+        gira.add(novaMalha(bg)); grupo.add(hub);
+        const col = { x0: x - 0.56, x1: x + 0.56, z0: ZC - 0.06, z1: ZC + 0.06 }; R.col.push(col);
+        A.catracas.push({ tipo, x, z: ZC, col, colFechada: Object.assign({}, col), hub, gira });
+      }
+      // ---- ESTEIRAS (oeste, olhando para o espelho). A lona é uma malha à parte (textura que corre).
+      const lona = (g, w, h) => { g.fillStyle = '#1a1b1e'; g.fillRect(0, 0, w, h); g.fillStyle = '#2c2e33'; for (let y = 0; y < h; y += 8) g.fillRect(0, y, w, 2); g.fillStyle = '#3a3d44'; g.fillRect(0, 0, 1, h); g.fillRect(w - 1, 0, 1, h); };
+      for (const x of [-9.2, -7.4, -5.6]) {
+        const z = -5.0, jog = x === -5.6;
+        G.box(0.92, 0.18, 2.1, '#1c1c1f', x, 0, z); G.box(0.1, 0.07, 2.0, '#3a3a3e', x - 0.43, 0.18, z); G.box(0.1, 0.07, 2.0, '#3a3a3e', x + 0.43, 0.18, z);
+        G.box(0.92, 0.2, 0.3, '#2a2a2e', x, 0.0, z - 1.05);                                                 // o motor (frente)
+        for (const s of [-1, 1]) { G.box(0.07, 1.15, 0.07, '#8c9199', x + s * 0.42, 0.18, z - 1.02); G.box(0.05, 0.05, 0.62, '#8c9199', x + s * 0.42, 1.05, z - 0.72); }
+        G.box(0.9, 0.3, 0.2, '#2a2a2e', x, 1.2, z - 1.05); G.box(0.42, 0.12, 0.02, jog ? '#3fb7b0' : '#2f6f9a', x, 1.3, z - 0.94);
+        const tex = guardar(texCanvas(16, 64, lona, false)); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 2);
+        const belt = plano(tex, 0.74, 1.95, x, 0.255, z, -Math.PI / 2);
+        bloq(x, z, 0.98, 2.15);
+        A.esteiras.push({ x, z, jog, belt, tex, z0: z - 0.75, z1: z + 0.75, y: 0.255 });
+      }
+      // ---- SUPINOS (meio): banco vermelho no comprimento de z, cabeça para o norte; a barra é uma peça à parte (sobe e desce)
+      for (const x of [2.6, 5.6]) {
+        const z = -4.0, jog = x === 2.6, zb = z - 0.55;
+        G.box(0.38, 0.12, 1.3, '#c8352b', x, 0.33, z); G.box(0.1, 0.33, 0.1, '#3a3a3e', x, 0, z - 0.5); G.box(0.1, 0.33, 0.1, '#3a3a3e', x, 0, z + 0.5); G.box(0.5, 0.04, 0.3, '#3a3a3e', x, 0, z + 0.5);
+        for (const s of [-1, 1]) { G.box(0.08, 1.3, 0.08, '#8c9199', x + s * 0.58, 0, zb - 0.12); G.box(0.12, 0.05, 0.16, '#8c9199', x + s * 0.58, 1.12, zb - 0.06); G.box(0.3, 0.05, 0.08, '#8c9199', x + s * 0.58, 0, zb - 0.12); }
+        bloq(x, z - 0.15, 1.3, 1.6);
+        const barra = new THREE.Group(), bgeo = new Geo();
+        bgeo.box(2.0, 0.04, 0.04, '#c9ced4', 0, -0.02, 0);
+        for (const s of [-1, 1]) { bgeo.box(0.06, 0.42, 0.42, '#1c1c1f', s * 0.78, -0.21, 0); bgeo.box(0.05, 0.3, 0.3, '#3a3a3e', s * 0.85, -0.15, 0); bgeo.box(0.04, 0.08, 0.08, '#8c9199', s * 0.71, -0.04, 0); }
+        barra.add(novaMalha(bgeo)); barra.position.set(x, 1.19, zb - 0.06); grupo.add(barra);
+        A.supinos.push({ x, z, jog, barra, rack: { x, y: 1.19, z: zb - 0.06 }, banco: 0.45 });
+      }
+      // ---- COLCHONETES (abdominal): no comprimento de z, cabeça para o norte
+      for (const x of [-9.0, -7.7, -6.4, -5.1]) { G.box(0.9, 0.05, 1.8, '#2a5a3a', x, 0, 0.6); G.box(0.92, 0.01, 0.06, '#1c3a26', x, 0.05, -0.25); A.colchonetes.push({ x, z: 0.6, jog: x === -5.1, y: 0.05 }); }
+      // ---- halteres (parede leste), anilhas e um leg press de enfeite
+      G.box(0.7, 0.8, 4.0, '#3a3a3e', 10.3, 0, -4.5); bloq(10.3, -4.5, 0.75, 4.0);
+      for (let i = 0; i < 9; i++) { const z = -6.2 + i * 0.42, c = i % 3 === 0 ? '#c8352b' : '#1c1c1f'; for (const dx of [-0.16, 0.16]) G.box(0.16, 0.16, 0.12, c, 10.3 + dx, 0.8, z); G.box(0.36, 0.04, 0.04, '#c9ced4', 10.3, 0.86, z); }
+      for (const [x, z] of [[9.6, -7.3], [8.6, -7.3]]) { G.box(0.1, 1.2, 0.1, '#8c9199', x, 0, z); for (let k = 0; k < 4; k++) G.box(0.5, 0.5 - k * 0.07, 0.05, '#1c1c1f', x, 0.15 + k * 0.25, z + 0.06); bloq(x, z, 0.5, 0.3); }
+      G.box(1.0, 0.5, 1.8, '#3a3a3e', 8.6, 0, 1.2); G.box(0.8, 0.6, 0.12, '#c8352b', 8.6, 0.5, 0.45); G.box(0.9, 0.08, 0.7, '#8c9199', 8.6, 0.9, 1.9); bloq(8.6, 1.2, 1.05, 1.85);
+      G.box(0.5, 1.05, 0.5, '#d8dde2', -10.4, 0, 2.5); G.box(0.36, 0.42, 0.36, '#7ab8d8', -10.4, 1.05, 2.5); bloq(-10.4, 2.5, 0.55, 0.55);   // bebedouro de dentro
+      A.fernanda = { x: -1.2, z: 1.2, yaw: -Math.PI / 2 };
+      A.rosca = { x: 9.35, z: -4.4, yaw: Math.PI };
+      A.vaga = { x0: 2.8, x1: 7.2, z0: -1.6, z1: 2.4 };
+      // pessoas de enfeite (só se o academia.js não vier; com ele, quem coloca as pessoas é o academia.js)
+      R.pessoas.push({ tipo: 'parado', x: A.recepcao.x, z: A.recepcao.z, yaw: 0, fem: false });
+      for (const e of A.esteiras) if (!e.jog) R.pessoas.push({ tipo: 'esteira', x: e.x, z: e.z, yaw: Math.PI / 2, fem: rnd() < 0.5 });
+      R.pessoas.push({ tipo: 'rosca', x: A.rosca.x, z: A.rosca.z, yaw: A.rosca.yaw, fem: false });
+      R.pessoas.push({ tipo: 'vaga', area: A.vaga, fem: false });
     } else if (nome === 'bar') {
       sala(16, 12, 3.4, '#d9c27a', '#6e5a3a', '#5e4a2e', 0.5);
       placa('BAR', '#1f7a4d', '#f2e6c8', 2.4, 0.7, -4, 2.8, -5.96);
