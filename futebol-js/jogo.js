@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.4
+   FUTEBOL JS · jogo.js · versão 6.6.5
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.4';
+const VERSAO_JOGO = '6.6.5';
+// 6.6.5: cidade/lojas — a pizzaria com menos gente e fluxo controlado (um grupo entra de cada vez, corredor largo, fila de 3 no caixa, só um paga); REGISTRO de quem está em cada loja (as pessoas vêm de fora da cidade, entram pela porta e saem para fora da cidade; nenhuma loja abre com gente dentro); a academia com agenda (o pessoal chega depois de abrir e vai embora antes de fechar); calçadas 1 m mais largas (avenida mais estreita), mão direita e duplas lado a lado, outro caminho quando uma coisa trava, atravessar junto quando o carro já parou; mais vida nas pessoas (papo, abraço, selfie, foto, pedrinhas no lago, roda de bola na quadra e no sintético, pose e selfie no espelho da academia); o Herick mora com a Fernanda (vai para o cinema quando abre e volta para casa quando fecha); bar 16h–2h e restaurante 11h–23h.
 // 6.6.2: junta as mudanças da 6.6.1 (pesca/lago/botões/relógio) com as do academia.js feitas à parte.
 // 6.6.1: botões claros (pxPrim) com o texto marrom escuro em todo o jogo (a cor só existia na tela de idioma); na cidade, o quadradinho recolhido do HUD mostra o horário em vez do ícone do clima; pesca/lago: soltar o peixe (com a cena secreta do Cadu), NPCs não travam mais na casinha do Bené, sapo maior e placa nova, canoa 3D, vitórias-régias/mira sempre visíveis, linha por cima da madeira, banco do deque na ponta, peixe à frente das mãos.
 // 6.6.0: pesca.js + cidade.js — lago com poços (escuros) e bancos de areia (claros), nota do lançamento pelo lugar onde a isca cai, cena do lançamento perfeito (4 câmeras), boia/anzol/isca na ponta da linha, briga com a faixa boa de tensão, vibração, +tranquilo no 1º peixe do dia, pixel art nova dos peixes (e o 3D sai dela), trilha, deque e decoração do lago.
@@ -2230,6 +2231,36 @@ userRing.material.color.set(AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d');
 const targetRing = flatRing(0.7, 0.95, 0xffffff); targetRing.visible = false;
 const dribbleRing = flatRing(0.6, 0.8, 0xff7676, 0.8); dribbleRing.visible = false;
 
+// ÁREA DO LATERAL: quem é do outro time fica fora de um meio-círculo em volta da bola até a cobrança sair — 5 m no
+// lateral com o pé (society/futsal), 2 m no arremesso. Antes você podia ficar em cima de quem cobrava e roubava sempre.
+// O meio-círculo aparece marcado no chão (amarelo) e você desliza pela borda dele.
+function raioDoLateral(S) { return S.pe ? 5 : 2; }
+function centroDoLateral(S) { return S.pe ? S.ballSpot : { x: S.spot.x, z: S.zs * HALF_W }; }
+function longeDoLateral(p, dt) {
+  const S = G.sp;
+  if (!S || S.kind !== 'lateral' || p.team === S.team || p.out || p.scripted) return;
+  const c = centroDoLateral(S), R = raioDoLateral(S), dx = p.x - c.x, dz = p.z - c.z, d = Math.hypot(dx, dz);
+  if (d >= R) return;
+  const ux = d > 0.01 ? dx / d : 0, uz = d > 0.01 ? dz / d : -S.zs;
+  const sai = S.phase === 'set' || S.phase === 'wait' ? R - d : Math.min(R - d, 9 * dt);   // enquanto ele ainda busca/traz a bola, sai andando (mais rápido que a corrida)
+  p.x += ux * sai; p.z += uz * sai;
+  const vn = p.vx * ux + p.vz * uz; if (vn < 0) { p.vx -= vn * ux; p.vz -= vn * uz; }   // desliza pela borda
+}
+const areaLateral = (() => {
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  const mat = (op) => new THREE.MeshBasicMaterial({ color: 0xffe14d, transparent: true, opacity: op, depthWrite: false, side: THREE.DoubleSide });
+  const anel = new THREE.Mesh(new THREE.RingGeometry(0.965, 1, 40, 1, 0, Math.PI), mat(0.85));
+  const fundo = new THREE.Mesh(new THREE.CircleGeometry(0.965, 40, 0, Math.PI), mat(0.13));
+  for (const m of [anel, fundo]) { m.rotation.x = -Math.PI / 2; g.add(m); }
+  return g;
+})();
+function mostrarAreaLateral() {
+  const S = G.sp, mostra = !!(S && S.kind === 'lateral' && G.state !== 'replay');
+  areaLateral.visible = mostra;
+  if (!mostra) return;
+  const c = centroDoLateral(S), R = raioDoLateral(S);
+  areaLateral.position.set(c.x, 0.025, c.z); areaLateral.scale.set(R, 1, R); areaLateral.rotation.y = S.zs > 0 ? 0 : Math.PI;
+}
 const aimArrow = (() => {
   const s = new THREE.Shape();
   s.moveTo(0, -0.22); s.lineTo(4.2, -0.22); s.lineTo(4.2, -0.7); s.lineTo(5.8, 0);
@@ -3338,6 +3369,14 @@ function aiCarry(p, dt) {
       if (margemPasse(p, P, user) > -0.15 && Math.random() < 0.85) { passTo(p, user, Math.random() < erroDePasseParaVoce(p) * 0.5, 'espaco'); G.userRequest = 0; return { vx: 0, vz: 0 }; }
     }
   }
+  // CHUTE DE LONGE: passou do meio com a bola → decide UMA vez nessa posse (30%) se vai arriscar de fora da área.
+  // Arrisca quando estiver de frente para o gol, fora da área e a até ~3/4 do meio-campo, sem ninguém colado.
+  if (p.role !== 'GK' && p.longe === undefined && p.x * p.dir > 0) p.longe = Math.random() < 0.3;
+  if (p.longe && !G.kickoffPending && p.chutePrep <= 0 && dGoal > BOX.depth + 1 && dGoal < HALF_L * 0.78 && Math.abs(p.z) < HALF_W * 0.55 && near.d > 1.5) {
+    p.longe = false; p.chuteDeLonge = true;
+    p.chutePrep = p.chutePrepDur = 0.35;
+    return { vx: 0, vz: 0 };
+  }
   if (p.think <= 0 || p.stuckT > 1.2) {
     p.think = rand(0.35, 0.75) / (0.55 + 0.45 * fh(p, 'passe'));   // quem passa bem decide mais rápido
     const J = jogadaDoTime(p);                       // jogada ensaiada da vez (tabela, pelo lado, enfiada)
@@ -3496,10 +3535,12 @@ function linhaDeChuteLimpa(p) {
 }
 
 // ---------------------------------------------------------------------
-// DRIBLE DA IA — sem minigame e sem zoom, só a animação (as mesmas poses do seu drible: 'corpo', 'pedalada', 'arrancada').
+// DRIBLE DA IA — sem minigame e sem zoom, só a animação (as mesmas poses do seu drible).
 //   corpo (1,0 s) ...... finta para o lado do marcador e sai pelo outro
 //   pedalada (1,5 s) ... parado na frente dele: duas pedaladas e arranca para um lado
 //   arrancada (0,8 s) .. empurra a bola e dispara
+//   elástico (1,1 s) ... a bola vai para o lado dele com o lado de fora do pé e volta com o de dentro; sai pelo outro lado
+//   roleta (1,25 s) .... gira 360° com a bola nas solas e sai pelo lado de longe
 // O resultado é decidido no momento da finta (tDecide): deu certo → o marcador tropeça ('passinhos'; você só fica
 // meio segundo sem reação); deu errado → o marcador toma a bola. Chance ~50% (atacante mais, zagueiro menos, goleiro
 // é mais difícil; a dificuldade da partida mexe um pouco). Durante a finta o marcador da IA não dá o bote.
@@ -3511,13 +3552,14 @@ function iniciarDribleIA(p, o) {
   const px = -fz, pz = fx;
   const lado = ((o.x - p.x) * px + (o.z - p.z) * pz) >= 0 ? 1 : -1;     // +1: o marcador está à direita da corrida
   const vel = Math.hypot(p.vx, p.vz), r = Math.random();
-  const tipo = vel < 2.2 && r < 0.6 ? 'pedalada' : r < 0.55 ? 'corpo' : 'arrancada';
-  const dur = tipo === 'pedalada' ? 1.5 : tipo === 'corpo' ? 1.0 : 0.8;
-  const tDecide = tipo === 'pedalada' ? 0.9 : tipo === 'corpo' ? 0.4 : 0.25;
+  const tipo = vel < 2.2 ? (r < 0.45 ? 'pedalada' : r < 0.7 ? 'elastico' : r < 0.85 ? 'roleta' : 'corpo')
+    : (r < 0.38 ? 'corpo' : r < 0.56 ? 'elastico' : r < 0.72 ? 'roleta' : 'arrancada');
+  const dur = { pedalada: 1.5, corpo: 1.0, arrancada: 0.8, elastico: 1.1, roleta: 1.25 }[tipo];
+  const tDecide = { pedalada: 0.9, corpo: 0.4, arrancada: 0.25, elastico: 0.35, roleta: 0.5 }[tipo];
   let chance = 0.5 + (p.role === 'FWD' ? 0.04 : p.role === 'DEF' ? -0.05 : 0) + (o.role === 'GK' ? -0.12 : 0) + (fh(p, 'drible') - (o.role === 'GK' ? fh(o, 'goleiro') : fh(o, 'defesa'))) * 0.6;   // drible x defesa
   if (o.isUser) chance -= 0.05;
   const sai = tipo === 'pedalada' ? (Math.random() < 0.5 ? -1 : 1) : -lado;
-  p.dribleIA = { tipo, t: 0, dur, tDecide, fx, fz, px, pz, lado, sai, o, ok: Math.random() < clamp(chance, 0.25, 0.75), feito: false };
+  p.dribleIA = { tipo, t: 0, dur, tDecide, fx, fz, px, pz, lado, sai, o, ok: Math.random() < clamp(chance, 0.25, 0.75), feito: false, ang0: Math.atan2(fz, fx), bola: null, angulo: null };
   p.driblePose = { tipo, t: 0, sai, lado };
   p.dribbleCd = rand(5, 9);
   p.think = Math.max(p.think, dur);
@@ -3546,10 +3588,22 @@ function dribleIAVel(p, dt) {
   if (D.t >= D.dur) { p.dribleIA = null; p.driblePose = null; }
   const v = CONFIG.AI_SPEED_BALL * p.speedMul;
   let vx, vz;
+  // a bola nas variações (relativa a ele): elástico vai e volta pelos lados; roleta fica na frente enquanto o corpo gira
+  D.bola = null; D.angulo = null;
+  if (D.tipo === 'elastico' && D.t < 0.55) {
+    const a = smooth(Math.min(1, D.t / 0.22)), b = D.t < 0.22 ? 0 : smooth(Math.min(1, (D.t - 0.22) / 0.18)), sol = D.t < 0.4 ? 0 : smooth((D.t - 0.4) / 0.15);
+    const lat = lerp(D.lado * 0.42 * a, D.sai * 0.45, b) * (1 - sol), fr = lerp(0.62, 0.72, b);
+    D.bola = { x: D.fx * fr + D.px * lat, z: D.fz * fr + D.pz * lat };
+  } else if (D.tipo === 'roleta' && D.t < 0.8) {
+    D.angulo = D.ang0 + D.sai * Math.PI * 2 * smooth(D.t / 0.8);
+    D.bola = { x: Math.cos(D.angulo) * 0.44, z: Math.sin(D.angulo) * 0.44 };
+  }
   if (D.tipo === 'pedalada' && D.t < 0.9) { vx = D.fx * 0.3; vz = D.fz * 0.3; }
+  else if (D.tipo === 'elastico' && D.t < 0.4) { const lat = D.t > 0.22 ? 2.4 : 0; vx = D.fx * 0.9 + D.px * D.sai * lat; vz = D.fz * 0.9 + D.pz * D.sai * lat; }
+  else if (D.tipo === 'roleta' && D.t < 0.8) { vx = D.fx * 0.8 + D.px * D.sai * 0.6; vz = D.fz * 0.8 + D.pz * D.sai * 0.6; }
   else if (D.tipo === 'corpo' && D.t < 0.4) { vx = D.px * D.lado * 2.2 + D.fx * 1.4; vz = D.pz * D.lado * 2.2 + D.fz * 1.4; }
   else {
-    const k = D.tipo === 'arrancada' ? 1.32 : 1.2, lat = D.tipo === 'arrancada' ? 0.25 : 0.6;
+    const k = D.tipo === 'arrancada' ? 1.32 : 1.2, lat = D.tipo === 'arrancada' ? 0.25 : D.tipo === 'roleta' ? 0.45 : 0.6;
     const ex = D.fx + D.px * D.sai * lat, ez = D.fz + D.pz * D.sai * lat, el = Math.hypot(ex, ez) || 1;
     vx = ex / el * v * k; vz = ez / el * v * k;
   }
@@ -3967,13 +4021,27 @@ function cantoAereo(p, cabeca) {
 function erroDeCabeca(p, sp, base) { return gauss() * (base + Math.max(0, sp - 10) * 0.22) / fh(p, 'cabeceio'); }
 function aiFinalizaAereo(p, tipo) {
   const gx = p.dir * HALF_L;
-  let { tz, ty } = cantoAereo(p, tipo === 'cabeca');
+  let tz, ty;
+  if (tipo === 'cabeca') ({ tz, ty } = cantoAereo(p, true));
+  else ({ tz, ty } = miraAcrobatica(p, tipo));      // voleio/bicicleta: a precisão vem do nível acrobático
   const sp = (tipo === 'cabeca' ? rand(9.5, 14.5) : tipo === 'voleio' ? rand(17, 24) : rand(15, 20)) * Math.sqrt(fh(p, 'forca'));
   if (tipo === 'cabeca') { tz += erroDeCabeca(p, sp, 0.6); ty += erroDeCabeca(p, sp, 0.3); }
-  else { tz += gauss() * (0.9 + (sp - 17) * 0.12) / fh(p, 'finalizacao'); ty += gauss() * 0.5 / fh(p, 'finalizacao'); }
+  else tz += gauss() * Math.max(0, sp - 20) * 0.05;   // muito forte: um pouco menos preciso
   const dx = gx - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp);
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
   if (tipo !== 'bicicleta') p.angle = Math.atan2(dz, dx);   // na bicicleta ele está de costas
+  if (tipo !== 'cabeca') {
+    // voleio/bicicleta: a pose começa ~0,22 s antes do contato (a bola espera ali, em câmera lenta) — antes ele
+    // "aparecia" no meio do pulo
+    const t0 = Math.max(0, CONTATO_T[tipo] - 0.22);
+    p.recvPose = { kind: tipo, t: t0, t0, dur: POSE_DUR[tipo], side: Math.random() < 0.5 ? 1 : -1 };
+    G.acroIA = { p, vx: dx / D * sp, vy, vz: dz / D * sp, b: { x: ball.x, y: ball.y, z: ball.z } };
+    G.possession = null; ball.lastKicker = p; G.lastTouch = p; ball.vx = ball.vy = ball.vz = 0; p.controlCd = 0.8;
+    iniciarCenaAcro(p, tipo);
+    const nome = { voleio: 'Voleio', bicicleta: 'Bicicleta' }[tipo];
+    showToast(nome + ' de ' + p.name + '!', p.team === 0 ? 'good' : 'bad');
+    return;
+  }
   p.recvPose = { kind: tipo, t: CONTATO_T[tipo], dur: POSE_DUR[tipo], side: Math.random() < 0.5 ? 1 : -1 };
   kickBall(p, dx / D * sp, vy, dz / D * sp, 0, 0);
   p.kickT = 0;
@@ -4041,35 +4109,54 @@ function erroDeFinalizacao(p, dGoal, tipo) {
   const aperto = nearestOf(opponentsOf(p), p).d < 1.6 ? 0.12 : 0;        // chutando com o marcador em cima
   return (base + aperto) / clamp(nivel, 0.45, 1.6);
 }
+// ONDE A IA MIRA: cada chute sorteia um jeito (com peso) e o time não repete o jeito do chute anterior — antes quase
+// todo chute ia no mesmo lugar e você tomava sempre o mesmo gol.
+//   cantoBaixo ....... rasteiro/baixo no canto            cantoAlto ...... no ângulo, forte
+//   meiaAltura ....... meia altura, perto da trave        cruzado ........ rasteiro no canto CONTRÁRIO ao lado dele
+//   colocado ......... de chapa, com curva para dentro    bomba .......... de peito de pé, forte, perto do meio e alto
+//   cobertura ........ goleiro adiantado: por cima dele (cavadinha / encobrir)
+// Chute de longe (decidido em aiCarry) prefere a bomba, o ângulo e o canto baixo, mais forte e com mais erro.
+const JEITOS_DE_CHUTE = ['cantoBaixo', 'cantoAlto', 'meiaAltura', 'cruzado', 'colocado', 'bomba', 'cobertura'];
 function aiShoot(p) {
   const goalX = p.dir * HALF_L, dGoal = Math.hypot(goalX - p.x, p.z);
   const gk = opponentsOf(p).find((o) => o.role === 'GK');
   const gkFora = gk && Math.abs(gk.x - goalX) > 4.5;
-  let tipo = 'forte';
-  if (gkFora && dGoal < 24 && Math.random() < 0.3) tipo = 'cavadinha';   // era 50%
-  else if (Math.random() < (dGoal < 22 ? 0.5 : 0.25)) tipo = 'colocado';
-  // Canto: o lado mais longe do goleiro (ou o que ele deixou aberto).
+  const deLonge = !!p.chuteDeLonge; p.chuteDeLonge = false;
+  const peso = { cantoBaixo: 3, cantoAlto: 2.2, meiaAltura: 1.5, cruzado: Math.abs(p.z) > GOAL_HALF ? 1.6 : 0.6, colocado: 1.3 * fh(p, 'efeito'), bomba: dGoal > BOX.depth ? 1.0 : 0.3, cobertura: gkFora && dGoal < 24 ? 1.6 : 0 };
+  if (deLonge) { peso.bomba = 2.6; peso.cantoAlto = 2.4; peso.cantoBaixo = 2.0; peso.cruzado = 0.6; peso.cobertura = gkFora ? 0.8 : 0; }
+  const ultimo = (G.ultimoJeito || [])[p.team];
+  if (ultimo && peso[ultimo]) peso[ultimo] *= 0.15;  // quase nunca o mesmo jeito duas vezes seguidas
+  let soma = 0; for (const k of JEITOS_DE_CHUTE) soma += peso[k];
+  let r = Math.random() * soma, jeito = 'cantoBaixo';
+  for (const k of JEITOS_DE_CHUTE) { r -= peso[k]; if (r <= 0) { jeito = k; break; } }
+  (G.ultimoJeito || (G.ultimoJeito = []))[p.team] = jeito;
+  // Canto: o lado mais longe do goleiro (ou o que ele deixou aberto); de vez em quando o do goleiro (para enganar).
   const longeDoGoleiro = gk ? (Math.abs(gk.z) > 0.15 ? (gk.z > 0 ? -1 : 1) : (Math.sign(p.z) || 1)) : (Math.random() < 0.5 ? -1 : 1);
-  const canto = Math.random() < 0.75 ? longeDoGoleiro : -longeDoGoleiro;
+  let canto = Math.random() < 0.72 ? longeDoGoleiro : -longeDoGoleiro;
+  if (jeito === 'cruzado') canto = -(Math.sign(p.z) || 1);
   const folga = clamp(GOAL_HALF * 0.12, 0.28, 0.55) + Math.random() * 0.25;
-  let tz = canto * (GOAL_HALF - folga), ty, sp, curva = 0;
-  const alto = Math.random() < (tipo === 'colocado' ? 0.3 : 0.45);
-  const tyAlto = CONFIG.GOAL_H - rand(0.32, 0.6), tyBaixo = rand(0.22, 0.55);
-  if (tipo === 'forte') { sp = rand(22, 28); ty = alto ? tyAlto : tyBaixo; }          // um pouco mais lento: a força do jogador ajusta abaixo
-  else if (tipo === 'colocado') { sp = rand(16, 21); ty = alto ? tyAlto : tyBaixo * 0.8; curva = -canto * 0.15; }
-  else { sp = rand(11, 14); ty = rand(1.2, 2.0); tz = rand(-1.5, 1.5) * Math.min(1, GOAL_HALF / 3); }
+  const H = CONFIG.GOAL_H;
+  let tz = canto * (GOAL_HALF - folga), ty, sp, curva = 0, tipo = 'forte';
+  if (jeito === 'cantoBaixo') { sp = rand(21, 27); ty = rand(0.22, 0.5); }
+  else if (jeito === 'cantoAlto') { sp = rand(22, 28); ty = H - rand(0.3, 0.55); }
+  else if (jeito === 'meiaAltura') { sp = rand(19, 25); ty = rand(0.85, 1.35); tz = canto * (GOAL_HALF - folga - 0.25); }
+  else if (jeito === 'cruzado') { sp = rand(17, 22); ty = rand(0.2, 0.4); tipo = 'colocado'; curva = -canto * 0.08; }
+  else if (jeito === 'colocado') { sp = rand(16, 21); ty = Math.random() < 0.5 ? H - rand(0.35, 0.6) : rand(0.2, 0.45); tipo = 'colocado'; curva = -canto * 0.15; }
+  else if (jeito === 'bomba') { sp = rand(25, 31); ty = rand(1.3, H - 0.25); tz = canto * rand(0.15, 0.55) * GOAL_HALF; }
+  else { tipo = 'cavadinha'; sp = rand(11, 14); ty = rand(1.2, 2.0); tz = rand(-1.5, 1.5) * Math.min(1, GOAL_HALF / 3); }
+  if (deLonge && tipo !== 'cavadinha') sp *= 1.08;
   sp *= clamp(fh(p, 'forca'), 0.7, 1.2); curva *= fh(p, 'efeito');
   const tz0 = tz;
   if (tipo !== 'cavadinha') {
-    const e = erroDeFinalizacao(p, dGoal, tipo);
+    const e = erroDeFinalizacao(p, dGoal, tipo === 'colocado' ? 'colocado' : 'forte') * (deLonge ? 1.15 : 1);
     tz += gauss() * e;                               // erro para os lados (pode sair pela linha de fundo ou ir no meio)
-    ty += gauss() * e * 0.55 + (tipo === 'forte' ? Math.abs(gauss()) * e * 0.25 : 0);   // chute forte tende a subir
+    ty += gauss() * e * 0.5 + (sp > 24 ? Math.abs(gauss()) * e * 0.15 : 0);   // chute muito forte tende a subir um pouco
     ty = Math.max(0.15, ty);
   }
   const dx = goalX - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp);   // com a resistência do ar
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
   p.angle = Math.atan2(dz, dx);
-  p._tz = tz0 / GOAL_HALF; p._tzReal = tz / GOAL_HALF;   // (para os testes)
+  p._tz = tz0 / GOAL_HALF; p._tzReal = tz / GOAL_HALF; p._jeito = jeito;   // (para os testes)
   kickBall(p, dx / D * sp, vy, dz / D * sp, curva, 0);
   p.kickT = 0.4;
   ball.isShot = true; ball.distChute = dGoal; ball.cavadinha = tipo === 'cavadinha';   // (depois do kickBall, que zera isso)
@@ -4125,9 +4212,20 @@ function goleiroAlcancaBolaSolta(gk, ownGx) {
 }
 
 function progressoMergulho(p) { return clamp(1 - p.diveT / p.diveDur, 0, 1); }
-function tombMergulho(p) { return (p.diveTipo === 'alto' ? 1.0 : 1.4) * Math.min(1, progressoMergulho(p) * 3); }
+// Mergulho mirado (diveTomb/diveAlt/diveKc, ver gkThink): chega na inclinação e na altura certas no momento do toque
+// (diveKc) e depois termina a queda deitado de lado. Os outros mergulhos (pênalti, saída nos pés...) usam o jeito fixo.
+function tombMergulho(p) {
+  const k = progressoMergulho(p);
+  if (p.diveTomb == null) return (p.diveTipo === 'alto' ? 1.0 : 1.4) * Math.min(1, k * 3);
+  const kc = p.diveKc;
+  return k < kc ? p.diveTomb * smooth(Math.min(1, k / kc * 1.15)) : lerp(p.diveTomb, 1.4, smooth((k - kc) / (1 - kc)));
+}
 function alturaMergulho(p) {
   const k = progressoMergulho(p);
+  if (p.diveAlt != null) {
+    const kc = p.diveKc, y = k < kc ? p.diveAlt * Math.sin(k / kc * Math.PI / 2) : lerp(p.diveAlt, 0.3, smooth((k - kc) / (1 - kc)));
+    return Math.max(y, 0.3 * Math.min(1, k * 2));
+  }
   if (p.diveTipo === 'alto') return Math.sin(k * Math.PI) * 1.0;
   return Math.max(Math.sin(k * Math.PI) * 0.3, 0.3 * Math.min(1, k * 2));   // rente ao chão, sem entrar nele
 }
@@ -4138,17 +4236,46 @@ function corpoGoleiro(gk) {
     const k = Math.min(1, progressoMergulho(gk) * 3), rx = -Math.sin(gk.angle) * gk.diveSide, rz = Math.cos(gk.angle) * gk.diveSide;
     return { a: { x: gk.x, y: 0.3, z: gk.z }, b: { x: gk.x + rx * 1.2 * k, y: 0.14, z: gk.z + rz * 1.2 * k }, raio: 0.4 };
   }
-  if (gk.pulaTras) {                                     // pulando para trás na cavadinha: mãos lá no alto, atrás da cabeça
+  // Mergulho e pulo para trás: o segmento vai dos pés até as MÃOS DE VERDADE (a pose desenhada no quadro anterior),
+  // assim o que defende é o que aparece na tela — não uma conta parecida.
+  const M = gk.maosV && G.time - gk.maosV.t < 0.1 ? gk.maosV : null;
+  if (gk.pulaTras) {                                     // pulando para trás na cavadinha
     const P = gk.pulaTras, u = clamp(P.t / P.dur, 0, 1), y0 = Math.sin(Math.min(1, u / 0.55) * Math.PI) * 0.55;
+    if (M) return { a: { x: gk.x, y: y0, z: gk.z }, b: { x: M.x, y: M.y, z: M.z }, raio: 0.45 };
     return { a: { x: gk.x, y: y0, z: gk.z }, b: { x: gk.x - gk.dir * 0.45 * u, y: y0 + 2.55, z: gk.z }, raio: 0.75 };
   }
   if (gk.diveT > 0) {
-    const tb = tombMergulho(gk), y0 = alturaMergulho(gk), lado = Math.sign(gk.diveVZ) || 1;
+    const tb = tombMergulho(gk), y0 = alturaMergulho(gk), lado = Math.sign(gk.diveVZ) || Math.sign((gk.diveSide || 1) * Math.cos(gk.angle)) || 1;
     pe.y = y0;
+    if (M) return { a: pe, b: { x: M.x, y: M.y, z: M.z }, raio: 0.6 };
     return { a: pe, b: { x: gk.x, y: y0 + 2.0 * Math.cos(tb), z: gk.z + lado * 2.0 * Math.sin(tb) }, raio: 0.65 };
   }
   const topo = gk.jumpT > 0 ? 2.3 + Math.sin((1 - gk.jumpT / 0.5) * Math.PI) * 0.7 : 2.3;
   return { a: pe, b: { x: gk.x, y: topo, z: gk.z }, raio: 1.1 };   // em pé: braços alcançam ~1,1 m para os lados
+}
+// Cavadinha: quanto mais adiantado ele estava, menos alcança. Na linha (≤2 m) pega quase sempre; a 6 m, ~45%;
+// a 8 m ou mais, ~20%. Cavadinha bem batida tira até mais 25% — mas só se ele estiver fora da linha.
+function chanceCavadinhaGoleiro(gk, adiant, noCorpo) {
+  const adi = ball.cavadinha ? (ball.cavAdiant || adiant || 0) : (adiant || 0), q = ball.cavadinha ? (ball.cavQual || 0) : 0;
+  let chance = clamp(0.95 - (adi - 2) * 0.12, 0.15, 0.95) - q * 0.25 * clamp((adi - 2) / 4, 0, 1);
+  if (noCorpo && adi < 4) chance = Math.max(chance, 0.95);
+  return chance;
+}
+// Pulo para trás: onde e quando a bola passa na altura das mãos dele lá no alto (1,5–2,75 m), já atrás ou em cima
+// dele, num ponto que ele alcança andando para trás. null = alta demais / entra antes: não tem como pegar.
+const PICO_PULO = 0.29;                              // o ponto mais alto do pulo (0,275 da animação de 1,05 s)
+function planoPulaTras(p) {
+  let x = ball.x, y = ball.y, z = ball.z, vy = ball.vy;
+  const h = 1 / 60;
+  for (let t = h; t <= 1.3; t += h) {
+    vy -= CONFIG.GRAVITY * h; x += ball.vx * h; y += vy * h; z += ball.vz * h;
+    if (Math.abs(x) > HALF_L + 0.1 || y < 0.3) return null;
+    if (t < 0.22 || (x - p.x) * -p.dir < -0.4 || y > 2.75 || y < 1.5) continue;
+    const ax = x + p.dir * 0.4, d = Math.hypot(ax - p.x, z - p.z);     // as mãos vão um pouco atrás da cabeça: ele fica 0,4 m na frente
+    if (d > 4.2 * t + 0.3 || Math.abs(z - p.z) > 1.8) continue;
+    return { t, x: ax, z, y };
+  }
+  return null;
 }
 function distSegmento3D(p, a, b) {
   const abx = b.x - a.x, aby = b.y - a.y, abz = b.z - a.z, l2 = abx * abx + aby * aby + abz * abz || 1;
@@ -4177,24 +4304,30 @@ function gkThink(p, dt) {
       // Depois de pular, ele CAI no chão e levanta:
       //   com a bola ... fica deitado segurando ~0,75 s (segura o jogo: nesse tempo não toca nem lança)
       //   sem a bola ... levanta com pressa (~0,25 s), já se arrastando para o lado onde a bola está
-      p.saidaPes = null; p.diveVX = 0;
+      p.saidaPes = null; p.diveVX = 0; p.diveTomb = p.diveAlt = null;
       p.fall = 1; p.fallKind = 'lado'; p.fallSide = p.diveTipo === 'pe' ? -p.diveSide : p.diveSide;   // no deslize com o pé ele cai do outro lado (de quadril)
-      if (G.possession === p) { p.stun = 0.9; p.caidoComBola = 0.75; p.hold = Math.max(p.hold, 0.75 + 0.5); return { vx: 0, vz: 0 }; }
-      p.stun = 0.25; p.levantaRapido = 0.3;
+      if (G.possession === p) { iniciarLevanta(p, 'lado', true, rand(0.35, 0.6)); return { vx: 0, vz: 0 }; }
+      iniciarLevanta(p, 'lado', false, rand(0.05, 0.2));
     }
-    return { vx: p.diveVX || 0, vz: p.diveVZ };
+    const depoisDoToque = p.diveTomb != null && progressoMergulho(p) > p.diveKc;   // passou do ponto: o voo perde força
+    return { vx: p.diveVX || 0, vz: depoisDoToque ? p.diveVZ * 0.35 : p.diveVZ };
   }
   if (p.jumpT > 0) p.jumpT -= dt;
   if (p.olhaT > 0) p.olhaT -= dt;
   // PULO PARA TRÁS na cavadinha: sobe de costas com os braços esticados e cai deitado de costas.
   if (p.pulaTras) {
     const P = p.pulaTras; P.t += dt;
-    if (P.t >= P.dur) {
+    if (P.t >= P.dur) {                             // caiu de costas (com ou sem a bola) e levanta
       p.pulaTras = null;
-      if (G.possession !== p) { p.fall = 1; p.fallKind = 'costas'; p.stun = Math.max(p.stun, 0.55); }
+      p.fall = 1; p.fallKind = 'costas'; p.fallSide = Math.random() < 0.5 ? -1 : 1;
+      iniciarLevanta(p, 'costas', G.possession === p, rand(0.15, 0.4));
       return { vx: 0, vz: 0 };
     }
-    const u = P.t / P.dur;
+    if (P.alvo && P.t < PICO_PULO) {                // vai para baixo da bola: chega no ponto junto com ela, no alto do pulo
+      const dx = P.alvo.x - p.x, dz = P.alvo.z - p.z, d = Math.hypot(dx, dz), v = Math.min(5.5, d / Math.max(0.06, PICO_PULO - P.t));
+      return d > 0.05 ? { vx: dx / d * v, vz: dz / d * v } : { vx: 0, vz: 0 };
+    }
+    const u = clamp(P.t / P.dur, 0, 1);
     return u < 0.6 ? { vx: -p.dir * P.v * (1 - u), vz: P.vz * (1 - u) } : { vx: -p.dir * 0.4, vz: 0 };
   }
   // O goleiro do SEU time também comemora: se você vem comemorando até ele (chegou a ~7 m), ele corre ao seu encontro e festeja junto.
@@ -4309,8 +4442,14 @@ function gkThink(p, dt) {
         // CAVADINHA / bola por cima: adiantado (ou com a bola passando por cima da cabeça), ele pula PARA TRÁS e cai de costas.
         const adiant = Math.abs(p.x - ownGx);
         if (!p.pulaTras && p.stun <= 0 && t < 0.75 && t > 0.2 && py > 2.0 && Math.abs(gap) < 1.6 && (ball.cavadinha || adiant > 1.8)) {
-          const dur = 1.05;
-          p.pulaTras = { t: 0, dur, v: clamp((adiant - 0.6) / 0.6, 1.2, 4.2), vz: clamp(gap / 0.6, -2.5, 2.5) };
+          // O resultado sai AGORA, junto com a animação: alcança (vai para baixo da bola e segura no alto do pulo) ou não
+          // alcança (a bola passa por cima das mãos esticadas). Antes o sorteio era no toque e ele fazia a animação de
+          // quem perdeu a bola segurando ela.
+          const dur = 1.05, alvo = planoPulaTras(p);
+          const pega = !!alvo && Math.random() < chanceCavadinhaGoleiro(p, adiant, Math.abs(gap) < 0.6);
+          p.pulaTras = pega
+            ? { t: PICO_PULO - alvo.t, dur, v: 1.0, vz: 0, pega: true, alvo: { x: alvo.x, z: alvo.z } }
+            : { t: 0, dur, v: clamp((adiant - 0.6) / 0.6, 1.2, 4.2), vz: clamp(gap / 0.6, -2.5, 2.5), pega: false };
           p.olhaT = 0;
           return { vx: 0, vz: 0 };
         }
@@ -4320,17 +4459,32 @@ function gkThink(p, dt) {
           p.diveT = p.diveDur;
           // O corpo deitado fica entre os pés e as mãos: mira para a bola passar no meio do corpo
           // (~1 m do ponto de partida), não nos pés.
-          const alvoLat = gap - Math.sign(gap) * Math.min(Math.abs(gap), 1.0);
-          p.diveVZ = clamp(alvoLat / Math.max(0.3, t), -9.5, 9.5); p.diveVX = 0;
-          p.diveTipo = py > 1.4 ? 'alto' : 'baixo';   // pula para cima (bola alta) ou se joga no chão
+          // O MERGULHO MIRA A BOLA: inclinação e altura do voo saem da altura da bola, para as MÃOS (o desenho) chegarem
+          // onde ela vai estar no momento do toque — rasteira: deita reto; meia altura: tomba menos; alta: pula e tomba
+          // só o que precisa para o lado. O que falta de distância ele cobre com o corpo voando de lado.
+          const R = 0.85 * 1.84, ag = Math.abs(gap), h = clamp(py, 0.25, 2.7);
+          let th, alt;
+          if (h <= 1.65) { alt = 0.3; th = Math.acos(clamp((h - alt) / R, Math.cos(1.45), Math.cos(0.4))); }
+          else { th = clamp(Math.asin(Math.min(1, ag / R)), 0.35, 1.2); alt = clamp(h - R * Math.cos(th), 0.3, 1.1); }
+          p.diveKc = clamp(t / p.diveDur, 0.3, 0.9); p.diveTomb = th; p.diveAlt = alt;
+          const pes = clamp(ag - R * Math.sin(th), 0, 9.5 * Math.max(0.3, t));
+          p.diveVZ = Math.sign(gap) * pes / Math.max(0.25, t); p.diveVX = 0;
+          p.diveTipo = alt > 0.5 ? 'alto' : 'baixo';   // pula para cima (bola alta) ou se joga no chão
           // bola rasteira não muito longe: às vezes ele DESLIZA COM O PÉ (perna esticada), como no futsal
           const pePref = campoPequeno() ? 0.5 : 0.3;
-          if (py < 0.5 && Math.abs(gap) < 2.4 && Math.random() < pePref) { p.diveTipo = 'pe'; p.diveVZ = clamp((gap - Math.sign(gap) * 1.0) / Math.max(0.3, t), -6, 6); p.diveDur = p.diveT = clamp(t + 0.35, 0.5, 0.85); }
+          if (py < 0.5 && Math.abs(gap) < 2.4 && Math.random() < pePref) { p.diveTipo = 'pe'; p.diveTomb = p.diveAlt = null; p.diveVZ = clamp((gap - Math.sign(gap) * 1.0) / Math.max(0.3, t), -6, 6); p.diveDur = p.diveT = clamp(t + 0.35, 0.5, 0.85); }
           const right = Math.cos(p.angle);        // lado direito do goleiro em Z (ele olha para o campo)
           p.diveSide = Math.sign(gap * right) || 1;
           return { vx: 0, vz: p.diveVZ };
         }
         if (t < 0.5 && py > 2.0 && Math.abs(gap) < 1.2 && p.jumpT <= 0) p.jumpT = 0.5; // bola alta em cima dele: pula
+        // Defesa em pé (sem mergulho): ANTES de a bola chegar ele já leva as mãos para a altura e o lado dela (inclinando
+        // o corpo se ela vem do lado); rasteira no corpo: já vai ajoelhando. Assim a defesa acontece nas mãos desenhadas,
+        // e não com a bola "grudando" nele de longe.
+        if (t < 0.3 && py < 2.2 && !p.defPose && ball.isShot) {
+          if (py < 0.6 && Math.abs(gap) < 0.6) p.defPose = { tipo: 'joelho', t: 0, dur: 0.95 + t };
+          else p.defPose = { tipo: 'lado', lado: Math.sign(gap * Math.cos(p.angle)) || 1, lat: clamp(Math.abs(gap) / 0.8, 0, 1), alt: py, t: 0, dur: 0.75 };
+        }
         // Cavadinha: adiantado, ele volta de costas, devagar (por isso ela funciona). Perto da linha
         // ele só ajeita o corpo e espera a bola cair — e ela é lenta, dá tempo.
         const voltaDeCostas = ball.cavadinha && (ball.cavAdiant || 0) > 4;
@@ -4372,7 +4526,7 @@ function iniciarSaidaNosPes(gk, holder, chance) {
   const tx = ball.x + holder.vx * 0.2, tz = ball.z + holder.vz * 0.2;
   const dx = tx - gk.x, dz = tz - gk.z, d = Math.hypot(dx, dz) || 1;
   const dur = clamp(d / 8.5, 0.3, 0.55);
-  gk.diveDur = dur + 0.15; gk.diveT = gk.diveDur; gk.diveTipo = 'baixo';
+  gk.diveDur = dur + 0.15; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null; gk.diveTipo = 'baixo';
   gk.diveVX = dx / d * (d / dur); gk.diveVZ = dz / d * (d / dur);
   const right = { x: -Math.sin(gk.angle), z: Math.cos(gk.angle) };
   gk.diveSide = Math.sign(dx * right.x + dz * right.z) || 1;
@@ -4649,6 +4803,7 @@ function updatePlayers(dt) {
     if (p.dribleIA && G.possession !== p) { p.dribleIA = null; p.driblePose = null; }   // perdeu a bola no meio do drible da IA
     if (p.bloqueio) { p.bloqueio.t += dt; if (p.bloqueio.t >= p.bloqueio.dur) { if (p.bloqueio.finta) p.stun = Math.max(p.stun, 0.55); p.bloqueio = null; } }
     if (p.defPose) { p.defPose.t += dt; if (p.defPose.t >= p.defPose.dur) p.defPose = null; }   // pose de defesa do goleiro
+    if (p.levanta) { p.levanta.t += dt; if (p.levanta.t >= p.levanta.dur) { p.levanta = null; p.fall = 0; p.falling = false; } }   // goleiro levantando do chão
     if (p.lamento && (G.state === 'goal' || G.state === 'celebrate' || G.state === 'fim')) {
       p.lamentoAtraso -= dt;
       if (p.lamentoAtraso <= 0) p.lamentoK = Math.min(1, p.lamentoK + dt / 0.7);
@@ -4657,7 +4812,7 @@ function updatePlayers(dt) {
     // contador nos jogadores de linha, e quem pulava na barreira ficava de braços para cima pra sempre.
     if (p.role !== 'GK' && p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.jumpAlt = 0; }
     if (p.falling) { p.fall = Math.min(1, p.fall + dt * 2.8); if (p.fall >= 1) p.falling = false; }   // caindo aos poucos
-    else if (p.fall > 0 && !p.scripted && p.stun < 0.5) p.fall = Math.max(0, p.fall - dt * (p.levantaRapido > 0 ? 4.5 : 2.5));   // goleiro levanta com pressa
+    else if (p.fall > 0 && !p.scripted && p.stun < 0.5 && !p.levanta) p.fall = Math.max(0, p.fall - dt * (p.levantaRapido > 0 ? 4.5 : 2.5));   // goleiro levanta com pressa
     if (p.isUser) { updateStamina(p, dt); detectarDribleDeCorpo(p, dt); }
     if (p.scripted) continue;
 
@@ -4733,6 +4888,7 @@ function updatePlayers(dt) {
     p.z = clamp(p.z + p.vz * dt, -BOARD_ZN + 0.6, BOARD_Z - 0.6);
     goalCollide(p, ox, oz);
     colisaoArredores(p);
+    longeDoLateral(p, dt);
     // Goleiro com a bola NAS MÃOS não sai da área: se escorregou para fora (mergulho, saída nos pés), levanta e joga com o pé;
     // se só foi empurrado, fica na linha da área.
     if (p.role === 'GK' && G.possession === p && !p.comPe && !p.goalKick && G.state === 'play' && !G.sp) {
@@ -4769,6 +4925,8 @@ function updatePlayers(dt) {
       // GOLEIRO DE FRENTE: olha para o campo (e para a bola, até ~70° para o lado). Só vira de costas se a bola
       // passou mesmo para trás dele. Anda de lado / de costas sem virar o corpo.
       p.angle = turnToward(p.angle, anguloGoleiro(p), (holder === p ? 6 : 10) * dt);
+    } else if (holder === p && p.dribleIA && p.dribleIA.angulo != null) {
+      p.angle = p.dribleIA.angulo;                    // roleta da IA: o corpo gira em volta da bola
     } else if (holder === p) {
       if (sp > 0.3) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 12 * dt);
     } else if (p.diveT <= 0) {
@@ -4814,6 +4972,10 @@ function updatePlayers(dt) {
 function attachBall(p) {
   if (p.bolaFixa) {                                // cobrança com corrida: a bola fica parada na marca
     ball.x = p.bolaFixa.x; ball.z = p.bolaFixa.z; ball.y = CONFIG.BALL_R; ball.vx = ball.vy = ball.vz = 0;
+    return;
+  }
+  if (p.dribleIA && p.dribleIA.bola && !p.carry && !p.throwIn && p.role !== 'GK') {   // variação de drible da IA: a bola anda com a finta
+    ball.x = p.x + p.dribleIA.bola.x; ball.z = p.z + p.dribleIA.bola.z; ball.y = CONFIG.BALL_R; ball.vx = p.vx; ball.vz = p.vz; ball.vy = 0;
     return;
   }
   const c = Math.cos(p.angle), s = Math.sin(p.angle);
@@ -5084,6 +5246,7 @@ function givePossession(p, opts = {}) {
   ball.broken = false; ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.penalti = false;
   p.think = rand(0.3, 0.6);
   p.controlCd = 0;
+  p.longe = undefined; p.chuteDeLonge = false;     // nova posse: o chute de longe é decidido de novo depois do meio-campo
   if (p.team !== 0) G.userRequest = 0;
   if (p.role === 'GK') p.hold = 1.1;
 }
@@ -5109,6 +5272,25 @@ function checkBallContacts() {
     }   // rebote dele mesmo, já devagar: pode pegar
     const ownGx = -gk.dir * HALF_L;
     const inBox = Math.abs(ball.x - ownGx) < BOX.depth + 0.5 && Math.abs(ball.z) < BOX.half + 0.5;
+    // PULO PARA TRÁS: o resultado já foi decidido no começo do pulo. Pega só quando a bola chega nas mãos desenhadas;
+    // no "não alcança" ela no máximo resvala na ponta dos dedos (sobe um pouco e segue).
+    if (gk.pulaTras) {
+      const P = gk.pulaTras, M = gk.maosV && G.time - gk.maosV.t < 0.1 ? gk.maosV : null;
+      if (!inBox || P.t < 0 || P.pegou != null || !M) continue;
+      const dm = Math.hypot(ball.x - M.x, ball.y - M.y, ball.z - M.z);
+      if (P.pega && dm < 0.8) {
+        P.pegou = P.t; ball.saveRolled = true; ball.saveOk = true;
+        if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+        const wasShot = ball.isShot;
+        givePossession(gk);
+        if (wasShot) { showToast(gk.team === 1 ? 'Defesa do goleiro!' : 'Nosso goleiro defendeu!'); Som.defesa(); }
+        return;
+      }
+      if (!P.pega && !P.resvalou && dm < CONFIG.BALL_R + 0.12) {
+        P.resvalou = true; ball.vy = Math.max(ball.vy, 0) + 1.2; ball.vx *= 0.9; ball.vz *= 0.9;
+      }
+      continue;
+    }
     const reach = gk.diveT > 0 ? 2.0 : 1.2;
     const C = corpoGoleiro(gk);
     // A bola tem que passar no corpo/mãos. Bola rápida anda ~0,5 m por quadro: confere também os
@@ -5138,14 +5320,7 @@ function checkBallContacts() {
       if (ball.distChute && ball.distChute < 13) chance -= (13 - ball.distChute) / 13 * 0.75;
       if (!ball.isShot && sp3 < 22) chance = Math.max(chance, 0.88);   // lançamento/cruzamento: ele sai e segura
       if (noCorpo) chance = Math.max(chance, 0.92);
-      if (ball.cavadinha) {
-        // Quanto mais adiantado ele estava, menos alcança. Na linha (≤2 m) pega quase sempre;
-        // a 6 m, ~45%; a 8 m ou mais, ~20%. Cavadinha bem batida tira até mais 25% — mas só
-        // se ele estiver fora da linha (com ele parado no gol, não existe cavadinha boa).
-        const adi = ball.cavAdiant || 0, q = ball.cavQual || 0;
-        chance = clamp(0.95 - (adi - 2) * 0.12, 0.15, 0.95) - q * 0.25 * clamp((adi - 2) / 4, 0, 1);
-        if (noCorpo && adi < 4) chance = Math.max(chance, 0.95);
-      }
+      if (ball.cavadinha) chance = chanceCavadinhaGoleiro(gk, 0, noCorpo);
       if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
       if (DI && DI.team !== gk.team) chance = 1;     // lateral/indireto: defesa fácil
@@ -5188,7 +5363,7 @@ function checkBallContacts() {
         if (jeito !== 'encaixa') { aplicarJeitoDaDefesa(gk, jeito); return; }
       }
       // Bola rasteira no corpo, em pé: ajoelha para encaixar.
-      if (wasShot && gk.diveT <= 0 && ball.y < 0.75 && ball.defNoCorpo && sp3 > 6) gk.defPose = { tipo: 'joelho', t: 0, dur: 0.95 };
+      if (wasShot && gk.diveT <= 0 && ball.y < 0.75 && ball.defNoCorpo && sp3 > 6 && !(gk.defPose && gk.defPose.tipo === 'joelho')) gk.defPose = { tipo: 'joelho', t: 0, dur: 0.95 };
       givePossession(gk);
       if (wasShot) { showToast(gk.team === 1 ? 'Defesa do goleiro!' : 'Nosso goleiro defendeu!'); Som.defesa(); }
       return;
@@ -5876,7 +6051,7 @@ function saidaDaComemoracao() {
 function clearFlags(p) {
   Object.assign(p, { driblePose: null, perda: null, saidaPes: null, fim: null, bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0,
     dribleIA: null, pedeT: 0, profT: 0, profAlvo: null, espaco: null, espT: 0, jumpAlt: 0, cansadoT: 0,
-    bloqueio: null, levantaRapido: 0, caidoComBola: 0 });
+    bloqueio: null, levantaRapido: 0, caidoComBola: 0, levanta: null, pulaTras: null });
 }
 
 // Saída de bola: o atacante fica na bola e o meia central ao lado dele, no próprio campo.
@@ -6050,6 +6225,7 @@ function restartTarget(p) {
     else afastarDe(t, S.ballSpot, 4);                         // companheiros dão espaço para o cobrador
     return t;
   }
+  if (S && S.kind === 'lateral' && p.team !== S.team) return afastarDe(formationTarget(p, false), centroDoLateral(S), raioDoLateral(S) + 0.6);   // fora do meio-círculo
   if (S && S.kind === 'escanteio' && p.slot >= 0) {
     const slots = p.team === S.team ? CORNER_ATTACK : CORNER_DEFEND;
     if (p.slot < slots.length) { const s = slots[p.slot]; return { x: S.side * (HALF_L - s[0] * ESC), z: s[1] * ESC_W * S.zs }; }   // escala com o campo
@@ -6637,7 +6813,7 @@ function goleiroAdivinha(gk) {
   if (!gk || gk.out) return;
   const r = Math.random(), lado = r < 0.4 ? -1 : r < 0.8 ? 1 : 0;
   if (lado === 0) { gk.jumpT = 0.5; return; }
-  gk.diveDur = 0.65; gk.diveT = gk.diveDur;
+  gk.diveDur = 0.65; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null;
   gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.6 ? 'baixo' : 'alto';
   gk.diveSide = Math.sign(lado * Math.cos(gk.angle)) || 1;
 }
@@ -7112,7 +7288,7 @@ function fintaDeChute(k) {
     const prob = cara ? 0.8 : naArea ? 0.5 : 0.1;
     if (Math.random() < prob) {
       const lado = Math.random() < 0.5 ? -1 : 1;
-      gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.5 ? 'baixo' : 'alto';
+      gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.5 ? 'baixo' : 'alto';
       gk.diveSide = Math.sign(lado * Math.cos(gk.angle)) || 1;
       pulou = true;
       G.fintaCine = { t: 0, seg: -1, cut: true, gk, lado: Math.sign(u.z - gk.z) || 1 };
@@ -7223,6 +7399,70 @@ function avaliarChegada(pr) {
   return { vh, pingando, torta, forte, dificil: (forte && torta) || !!ball.dominioDificil, precisaMinigame };
 }
 
+// FINALIZAÇÃO ACROBÁTICA (voleio e bicicleta, sua ou da IA): CÂMERA LENTA mostrando o chute.
+//   começa antes do contato (o pulo e a perna subindo), corta para uma câmera baixa de lado e, depois do chute, a
+//   câmera acompanha a bola indo para o gol; termina quando a bola entra/sai/é defendida (ou ~2,2 s depois do chute).
+//   Durante a cena a pose e a bola da recepção andam no tempo da cena (lento), não no tempo real.
+// Mira: quanto melhor o "finalizador acrobático" (finalização + domínio: não existe um atributo só para isso), mais
+// perto do canto: o fraco mira mais para o meio e espalha mais; o bom põe no canto, rente à trave/no ângulo.
+const ACRO_LENTO = 0.3;
+function nivelAcrobatico(p) { return Math.sqrt(fh(p, 'finalizacao') * fh(p, 'dominio')); }
+function miraAcrobatica(p, tipo) {
+  const gk = opponentsOf(p).find((o) => o.role === 'GK');
+  const lado = gk && Math.abs(gk.z) > 0.2 ? -Math.sign(gk.z) : (Math.random() < 0.5 ? -1 : 1);
+  const canto = Math.random() < 0.75 ? lado : -lado;
+  const nivel = tipo === 'cabecada' || tipo === 'cabeca' ? fh(p, 'cabeceio') : nivelAcrobatico(p);
+  const q = clamp((nivel - 0.4) / 0.9, 0, 1);       // 0 = fraco ... 1 = no canto
+  const H = CONFIG.GOAL_H, alto = Math.random() < (tipo === 'cabecada' || tipo === 'cabeca' ? 0.35 : 0.5);
+  let tz = canto * (GOAL_HALF - 0.4) * lerp(0.3, 1, q) + gauss() * lerp(0.85, 0.15, q);
+  let ty = lerp(1.2, alto ? H - 0.45 : 0.35, lerp(0.35, 1, q)) + gauss() * lerp(0.45, 0.1, q);
+  return { tz, ty: clamp(ty, 0.2, H + 0.6), nivel };
+}
+function iniciarCenaAcro(p, tipo) {
+  if (G.acroCine || G.state === 'goal' || G.state === 'celebrate' || G.pen) return;
+  const gx = p.dir * HALF_L, ax = gx - p.x, az = -p.z, al = Math.hypot(ax, az) || 1;
+  const fx = ax / al, fz = az / al;
+  // câmera do lado de onde está a câmera agora (não vira a tela)
+  const lado = ((cam.px - p.x) * -fz + (cam.pz - p.z) * fx) >= 0 ? 1 : -1;
+  G.acroCine = { p, tipo, t: 0, tc: -1, fx, fz, lado, cut: true };
+  G.shotCine = null;
+  G.timeScale = G.targetScale = ACRO_LENTO;
+  setLetterbox(true);
+}
+function fatorCenaAcro() { return G.acroCine ? ACRO_LENTO : 1; }
+function updateAcroCine(rdt) {
+  const A = G.acroCine;
+  if (!A) return;
+  A.t += rdt;
+  if (A.tc >= 0) A.tc += rdt;
+  const fim = G.state === 'goal' || G.state === 'celebrate' || G.state === 'restart' || G.state === 'foul' || !!G.possession && A.tc > 0.1 || A.tc > 2.2 || A.t > 5 ||
+    (A.tc > 0.3 && Math.abs(ball.x) > HALF_L + 0.5) || (A.tc > 0.3 && ballSpeed() < 2 && ball.y < 0.5);
+  if (!fim) { G.timeScale = G.targetScale = A.tc > 1.4 ? lerp(ACRO_LENTO, 1, clamp((A.tc - 1.4) / 0.8, 0, 1)) : ACRO_LENTO; return; }
+  G.acroCine = null;
+  if (G.state === 'play') { G.targetScale = 1; setLetterbox(false); }
+}
+function cameraAcro() {
+  const A = G.acroCine, p = A.p, s = A.lado, px = -A.fz * s, pz = A.fx * s;
+  const perto = { px: p.x + px * 4.2 - A.fx * 1.2, py: 1.15, pz: p.z + pz * 4.2 - A.fz * 1.2, tx: p.x + A.fx * 0.4, ty: 1.1, tz: p.z + A.fz * 0.4 };
+  if (A.tc < 0) return perto;
+  // depois do chute: vai abrindo e acompanhando a bola até o gol
+  const k = smooth(clamp(A.tc / 0.9, 0, 1));
+  const bola = { px: ball.x + px * 5 - A.fx * 3.2, py: 1.6, pz: ball.z + pz * 5 - A.fz * 3.2, tx: ball.x + A.fx * 1.5, ty: Math.max(0.8, ball.y), tz: ball.z + A.fz * 1.5 };
+  return { px: lerp(perto.px, bola.px, k), py: lerp(perto.py, bola.py, k), pz: lerp(perto.pz, bola.pz, k), tx: lerp(perto.tx, bola.tx, k), ty: lerp(perto.ty, bola.ty, k), tz: lerp(perto.tz, bola.tz, k) };
+}
+// IA: a decisão sai no contato; a pose começa um pouco antes (a bola espera no ar) e o chute sai no contato da pose.
+function atualizarChuteAcroIA(rdt) {
+  const C = G.acroIA;
+  if (!C) return;
+  const p = C.p, rp = p.recvPose;
+  if (!rp || G.state !== 'play' || G.possession) { G.acroIA = null; return; }
+  if (rp.t < CONTATO_T[rp.kind]) { ball.x = C.b.x; ball.y = C.b.y; ball.z = C.b.z; ball.vx = ball.vy = ball.vz = 0; return; }
+  G.acroIA = null;
+  kickBall(p, C.vx, C.vy, C.vz, 0, 0);
+  p.kickT = 0;
+  ball.isShot = true; ball.distChute = Math.hypot(p.dir * HALF_L - p.x, p.z); prepararBloqueios(p);
+  if (G.acroCine && G.acroCine.p === p) G.acroCine.tc = 0;
+}
 // Para onde você está virado em relação ao gol adversário decide o tipo de finalização.
 function tipoFinalizacao() {
   const toGoal = Math.atan2(-user.z, HALF_L - user.x);
@@ -7283,6 +7523,7 @@ function startReceive(pr) {
   if (kind === 'alto') {
     botao('CABECEAR', 'cabecear', R.fin ? 's2' : 's1', !R.fin);
     if (R.fin) botao(NOME_FIN[R.fin].replace(' AO GOL', ''), 'finalizar', 's1', true);
+    if (pr.y < 2.6) botao('DOMINAR', 'dominar', 's3', false);   // cabecinha para cima e domina
   }
   else botao('DOMINAR', 'dominar', 's1', true);
   $('recvInfo').textContent = T(kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
@@ -7382,7 +7623,15 @@ function resolveReceive(acao, ok) {
   let pose = null;
   if (R.kind === 'peito' || R.kind === 'peitoPulo') pose = R.kind;
   else if (R.kind === 'alto') pose = acao === 'cabecear' || R.fin === 'cabecada' ? 'cabeca' : R.fin;
-  user.recvPose = pose ? { kind: pose, t: 0, dur: POSE_DUR[pose], side: Math.random() < 0.5 ? 1 : -1 } : null;
+  if (acao === 'dominar') { const v = escolherDominio(R, acao); if (v) pose = v; }   // domínios novos (coxa, sola, orientado...)
+  let lado = Math.random() < 0.5 ? 1 : -1;
+  if (pose === 'esticado') {                        // estica a perna do lado por onde a bola vai passar
+    const vh2 = ball.vx * ball.vx + ball.vz * ball.vz || 1, tq = Math.max(0, ((user.x - ball.x) * ball.vx + (user.z - ball.z) * ball.vz) / vh2);
+    const qx = ball.x + ball.vx * tq - user.x, qz = ball.z + ball.vz * tq - user.z;
+    lado = (qx * -Math.sin(user.angle) + qz * Math.cos(user.angle)) >= 0 ? 1 : -1;
+  }
+  user.recvPose = pose ? { kind: pose, t: 0, dur: POSE_DUR[pose], side: lado } : null;
+  if (ok && acao === 'finalizar' && (pose === 'voleio' || pose === 'bicicleta')) iniciarCenaAcro(user, pose);
   G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: CONTATO_T[pose || 'pe'], kind: R.kind, acao, ok, pose, fin: R.fin, fase: 'ida',
     perfeito: !!R.perfeito, culpaDoPasse: !!R.culpaDoPasse, passador: ball.lastKicker };
   if (R.perfeito) iniciarDominioPerfeito(G.recvFx);
@@ -7406,12 +7655,15 @@ function puloRecepcao(rp) {
   const u = clamp(rp.t / rp.dur, 0, 1);
   if (rp.kind === 'peitoPulo') return Math.sin(u * Math.PI) * 0.55;
   if (rp.kind === 'cabeca') return Math.sin(u * Math.PI) * 0.5;
+  if (rp.kind === 'peDoAlto') return Math.sin(u * Math.PI) * 0.45;
+  if (rp.kind === 'cabecinha') return Math.sin(u * Math.PI) * 0.3;
   if (rp.kind === 'bicicleta') return u < 0.5 ? Math.sin(u / 0.5 * Math.PI / 2) * 0.9 : 0.9 - (u - 0.5) / 0.5 * 0.73;
   if (rp.kind === 'voleio') return u < 0.6 ? Math.sin(u / 0.6 * Math.PI / 2) * 0.6 : 0.6 - (u - 0.6) / 0.4 * 0.45;
   return 0;
 }
 const INCL_PEITO = 0.18;
 function pontoContato(pose) {
+  if (DOMINIOS_NOVOS.includes(pose) && user.recvPose && user.recvPose.kind === pose) return pontoContatoNovo(pose);
   const c = Math.cos(user.angle), s = Math.sin(user.angle), j = puloRecepcao(user.recvPose);
   if (pose === 'peito' || pose === 'peitoPulo') {
     // Frente do peito (0,16 m do centro + raio da bola) a 1,15 m, girada junto com o tronco.
@@ -7423,21 +7675,154 @@ function pontoContato(pose) {
   const P = { pe: [0.62, CONFIG.BALL_R], peito: [0.33, 1.12], peitoPulo: [0.33, 1.12], cabeca: [0.18, 2.08], bicicleta: [0.1, 1.35], voleio: [0.45, 1.0] }[pose || 'pe'];
   return { x: user.x + c * P[0], y: P[1] + j, z: user.z + s * P[0] };
 }
+// DOMÍNIOS NOVOS (escolhidos pela bola que chega — altura, queda, quanto passa longe — com um pouco de sorte):
+//   coxa ......... meia altura: levanta a coxa, a bola bate nela e cai no pé
+//   amortece ..... bola caindo baixa: o peito do pé sobe, segura a bola e desce com ela
+//   solaPara ..... rasteira: pisa na bola com a sola
+//   orientado .... rasteira: o lado de fora do pé já leva a bola para a diagonal e o corpo vira junto
+//   esticado ..... bola passando longe do corpo: abre a perna de lado e alcança com a ponta do pé
+//   peitoSobe .... peito: o tronco vai para trás, a bola sobe um pouco no peito e cai no pé
+//   peDoAlto ..... bola na altura da cabeça (pulo): pula e mata com o pé lá no alto
+//   cabecinha .... bola alta (DOMINAR): cabeceia para cima de leve e domina quando ela desce
+// O ponto onde a bola encosta sai da PERNA DESENHADA (coxa, peito do pé, sola, lado de fora): encosta na superfície,
+// sem entrar e sem ficar flutuando.
+const DOMINIOS_NOVOS = ['coxa', 'amortece', 'solaPara', 'orientado', 'esticado', 'peitoSobe', 'peDoAlto', 'cabecinha'];
+Object.assign(POSE_DUR, { coxa: 0.62, amortece: 0.6, solaPara: 0.5, orientado: 0.55, esticado: 0.7, peitoSobe: 0.8, peDoAlto: 0.85, cabecinha: 0.95 });
+Object.assign(CONTATO_T, { coxa: 0.22, amortece: 0.22, solaPara: 0.2, orientado: 0.2, esticado: 0.26, peitoSobe: 0.24, peDoAlto: 0.3, cabecinha: 0.28 });
+// depois do contato: para onde a bola vai (até o pé, com um arco) e em quanto tempo
+const DOM_DEPOIS = { coxa: { arco: 0.1, dur: 0.3 }, amortece: { arco: 0, dur: 0.26 }, solaPara: { arco: 0, dur: 0.12 }, orientado: { arco: 0, dur: 0.22 },
+  esticado: { arco: 0.05, dur: 0.32 }, peitoSobe: { arco: 0.45, dur: 0.6 }, peDoAlto: { arco: 0.05, dur: 0.38 }, cabecinha: { arco: 0.75, dur: 0.75 } };
+function escolherDominio(R, acao) {
+  const pr = R.pr, r = Math.random();
+  if (R.kind === 'alto') return acao === 'dominar' ? 'cabecinha' : null;
+  if (R.kind === 'pe') {
+    if ((pr.lat || 0) > 0.4) return 'esticado';
+    if (pr.y > 0.5) return (pr.vy || 0) < -1.5 && r < 0.55 ? 'amortece' : 'coxa';
+    return r < 0.3 ? 'solaPara' : r < 0.6 ? 'orientado' : null;
+  }
+  if (R.kind === 'peito') { if (pr.y < 1.12 && r < 0.4) return 'coxa'; return r < 0.55 ? 'peitoSobe' : 'peito'; }
+  if (R.kind === 'peitoPulo') return r < 0.5 ? 'peDoAlto' : 'peitoPulo';
+  return null;
+}
+// ponto no mundo de um ponto local da perna (no sistema da canela se o joelho estiver ligado; senão da perna inteira)
+const _pp = new THREE.Vector3();
+function pontoNaPerna(m, perna, x, y, z) {
+  const comJoelho = m.joelhosLigados, o = comJoelho ? perna.joelho : perna;
+  o.updateWorldMatrix(true, false);
+  _pp.set(x, comJoelho ? y : y - 0.28, z).applyMatrix4(o.matrixWorld);
+  return { x: _pp.x, y: _pp.y, z: _pp.z };
+}
+function pontoNaCoxa(m, perna, x, y, z) { perna.updateWorldMatrix(true, false); _pp.set(x, y, z).applyMatrix4(perna.matrixWorld); return { x: _pp.x, y: _pp.y, z: _pp.z }; }
+function pontoContatoNovo(pose) {
+  const u = user, m = u.mesh, rp = u.recvPose, s = rp ? rp.side : 1, perna = s > 0 ? m.pernaD : m.pernaE, R = CONFIG.BALL_R;
+  if (pose === 'coxa') return pontoNaCoxa(m, perna, 0.1 + R, -0.16, 0);                    // em cima da coxa (a caixa da coxa vai até 0,1)
+  if (pose === 'amortece' || pose === 'peDoAlto') return pontoNaPerna(m, perna, 0.38, -0.18, 0);   // em cima da ponta do pé (encostando, sem entrar)
+  if (pose === 'solaPara') return pontoNaPerna(m, perna, 0.06, -0.45 - R, 0);             // embaixo da sola
+  if (pose === 'orientado') return pontoNaPerna(m, perna, 0.06, -0.38, s * (0.125 + R)); // lado de fora do pé
+  if (pose === 'esticado') return pontoNaPerna(m, perna, 0.2 + R, -0.38, 0);              // na ponta do pé esticado
+  if (pose === 'peitoSobe') return pontoContato('peito');
+  if (pose === 'cabecinha') { const c = Math.cos(u.angle), sn = Math.sin(u.angle), j = puloRecepcao(rp); return { x: u.x + c * 0.2, y: 2.12 + j, z: u.z + sn * 0.2 }; }
+  return null;
+}
+// pose dos domínios novos (por cima, no fim de aplicarPoseRecepcao)
+function aplicarPoseDominioNovo(p, m, rp) {
+  const u = clamp(rp.t / rp.dur, 0, 1), uc = CONTATO_T[rp.kind] / rp.dur, s = rp.side;
+  const sobe = u < uc ? smooth(u / uc) : 1, solta = u < uc ? 0 : smooth(clamp((u - uc) / (1 - uc), 0, 1));
+  const e = sobe * (1 - solta);                                         // entra até o contato e sai depois
+  const perna = s > 0 ? m.pernaD : m.pernaE, outra = perna === m.pernaD ? m.pernaE : m.pernaD;
+  const fora = s > 0 ? -1 : 1;                                          // rotation.x que abre a perna para o lado dela
+  const joelhos = (a, b) => usarJoelhos(m, (perna === m.pernaE ? a : b) - 0.0001, (perna === m.pernaE ? b : a) - 0.0001);
+  m.raiz.rotation.x = 0; m.raiz.rotation.z = 0; m.corpo.position.y = 0;
+  m.bracoE.rotation.x = 0.55 * e + 0.1; m.bracoD.rotation.x = -0.55 * e - 0.1;
+  if (rp.kind === 'coxa') {
+    perna.rotation.z = 1.4 * e; perna.rotation.x = 0; outra.rotation.z = -0.05 * e; outra.rotation.x = 0;
+    joelhos(-1.45 * e, -0.1 * e); m.corpo.rotation.z = 0.16 * e;
+    usarCabeca(m, (-0.35 * e) || 0.0001);
+  } else if (rp.kind === 'amortece') {
+    const desce = u < uc ? 0 : smooth(clamp((u - uc) / 0.4, 0, 1));    // sobe ao encontro e desce com a bola
+    const a = sobe * (1 - desce);
+    perna.rotation.z = 0.95 * a; perna.rotation.x = 0; outra.rotation.z = -0.05; outra.rotation.x = 0;
+    joelhos(-0.55 * a, -0.15 * a); m.corpo.rotation.z = 0.06 * a;
+    usarCabeca(m, (-0.4 * e) || 0.0001);
+  } else if (rp.kind === 'solaPara') {
+    perna.rotation.z = 0.62 * e; perna.rotation.x = 0; outra.rotation.z = -0.06 * e; outra.rotation.x = 0;
+    joelhos(-0.95 * e, -0.15 * e); m.corpo.rotation.z = -0.08 * e;
+    usarCabeca(m, (-0.35 * e) || 0.0001);
+  } else if (rp.kind === 'orientado') {
+    perna.rotation.z = 0.32 * e; perna.rotation.x = fora * 0.38 * e; outra.rotation.z = -0.05; outra.rotation.x = 0;
+    joelhos(-0.2 * e, -0.15 * e); m.raiz.rotation.x = -s * 0.1 * e; m.corpo.rotation.z = -0.1 * e;
+  } else if (rp.kind === 'esticado') {
+    perna.rotation.z = 0.25 * e; perna.rotation.x = fora * 0.85 * e; outra.rotation.z = 0.05 * e; outra.rotation.x = 0;
+    joelhos(-0.05 * e, -0.75 * e); m.raiz.rotation.x = s * 0.22 * e; m.corpo.rotation.z = -0.15 * e;
+    if (s > 0) m.bracoE.rotation.x = 0.1 + 1.1 * e; else m.bracoD.rotation.x = -0.1 - 1.1 * e;   // o braço do outro lado abre para equilibrar
+  } else if (rp.kind === 'peitoSobe') {
+    m.corpo.rotation.z = 0.32 * e; m.bracoE.rotation.z = m.bracoD.rotation.z = 0.5 * e; m.bracoE.rotation.x = 0.85 * e; m.bracoD.rotation.x = -0.85 * e;
+    usarCabeca(m, (-0.3 * e) || 0.0001);
+  } else if (rp.kind === 'peDoAlto') {
+    perna.rotation.z = 2.05 * e; perna.rotation.x = 0; outra.rotation.z = -0.35 * e; outra.rotation.x = 0;
+    joelhos(-1.05 * e, -0.6 * e); m.corpo.rotation.z = 0.28 * e;   // a canela fica inclinada: o peito do pé de frente para a bola
+    m.bracoE.rotation.z = m.bracoD.rotation.z = 0.6 * e;
+    usarCabeca(m, (-0.2 * e) || 0.0001);
+  } else if (rp.kind === 'cabecinha') {
+    m.corpo.rotation.z = u < uc ? 0.2 * sobe : lerp(0.2, -0.1, solta);  // cabeça vai para trás e toca para cima
+    m.bracoE.rotation.z = m.bracoD.rotation.z = 0.7 * e; m.bracoE.rotation.x = 0.6 * e; m.bracoD.rotation.x = -0.6 * e;
+    usarCabeca(m, (0.35 * e) || 0.0001);
+  }
+}
+// Bola encostando no boneco sem entrar: se ela está dentro de alguma caixa do corpo, sai pelo lado mais perto da
+// superfície (na direção da caixa para fora), o quanto entrou.
+const _pb = new THREE.Vector3(), _ib = new THREE.Matrix4(), _nb = new THREE.Vector3();
+function piorEntradaDaBola(p) {                       // { entra (m), nx, ny, nz } da caixa onde a bola mais entra
+  const m = p.mesh; m.raiz.updateMatrixWorld(true);
+  let pior = null;
+  for (const q of malhasVisiveis(m.raiz, [])) {
+    _ib.copy(q.matrixWorld).invert(); _pb.set(ball.x, ball.y, ball.z).applyMatrix4(_ib);
+    const sc = q.matrixWorld.getMaxScaleOnAxis(), R = CONFIG.BALL_R / sc;
+    for (const c of caixasDaGeometria(q.geometry)) {
+      const cx = clamp(_pb.x, c[0], c[3]), cy = clamp(_pb.y, c[1], c[4]), cz = clamp(_pb.z, c[2], c[5]);
+      let dx = _pb.x - cx, dy = _pb.y - cy, dz = _pb.z - cz, d = Math.hypot(dx, dy, dz), entra;
+      if (d > 1e-6) { entra = R - d; dx /= d; dy /= d; dz /= d; }
+      else {                                          // centro dentro da caixa: sai pela face mais perto
+        const f = [_pb.x - c[0], c[3] - _pb.x, _pb.y - c[1], c[4] - _pb.y, _pb.z - c[2], c[5] - _pb.z], i = f.indexOf(Math.min(...f));
+        dx = i === 0 ? -1 : i === 1 ? 1 : 0; dy = i === 2 ? -1 : i === 3 ? 1 : 0; dz = i === 4 ? -1 : i === 5 ? 1 : 0; entra = R + f[i];
+      }
+      if (entra > 0 && (!pior || entra * sc > pior.entra)) {
+        _nb.set(dx, dy, dz).transformDirection(q.matrixWorld);
+        pior = { entra: entra * sc, nx: _nb.x, ny: _nb.y, nz: _nb.z };
+      }
+    }
+  }
+  return pior;
+}
+function afastarBolaDoCorpo(p) {
+  for (let i = 0; i < 6; i++) {
+    const P = piorEntradaDaBola(p);
+    if (!P || P.entra < 0.008) break;
+    const k = P.entra + 0.004;
+    ball.x += P.nx * k; ball.y = Math.max(CONFIG.BALL_R, ball.y + P.ny * k); ball.z += P.nz * k;
+  }
+}
 function pontoPe() { return { x: user.x + Math.cos(user.angle) * 0.62, y: CONFIG.BALL_R, z: user.z + Math.sin(user.angle) * 0.62 }; }
 
 // A bola vai (em tempo real) até o ponto de contato e aí acontece o resultado.
 function updateRecvFx(rdt) {
   const F = G.recvFx;
   if (!F) return;
+  rdt *= fatorCenaAcro();                           // na câmera lenta da bicicleta/voleio a bola chega devagar
   F.t += rdt;
   if (F.fase === 'ida') {
     const c = pontoContato(F.pose), k = smooth(Math.min(1, F.t / F.contactT));
     ball.x = lerp(F.from.x, c.x, k); ball.y = lerp(F.from.y, c.y, k); ball.z = lerp(F.from.z, c.z, k);
+    if (k > 0.6 && DOMINIOS_NOVOS.includes(F.pose)) afastarBolaDoCorpo(user);   // encosta na coxa/no pé sem entrar no corpo
     if (k >= 1) contatoRecepcao(F);
-  } else if (F.fase === 'desce') {                 // domínio no peito: a bola escorre até o pé
-    const p = pontoPe(), k = smooth(Math.min(1, (F.t - F.t0) / (F.perfeito ? 0.7 : 0.28)));
-    ball.x = lerp(F.c0.x, p.x, k); ball.y = lerp(F.c0.y, p.y, k); ball.z = lerp(F.c0.z, p.z, k);
-    if (k >= 1) { fimRecepcao(); givePossession(user); }
+  } else if (F.fase === 'desce') {                 // domínio no peito (e os novos): a bola vai até o pé
+    const D = DOM_DEPOIS[F.pose], dur = D ? D.dur * (F.perfeito ? 2 : 1) : (F.perfeito ? 0.7 : 0.28);
+    if (F.pose === 'orientado' && F.giro) user.angle = F.ang0 + F.giro * smooth(Math.min(1, (F.t - F.t0) / dur));   // o corpo vira junto com a bola
+    const p = pontoPe(), a = Math.min(1, (F.t - F.t0) / dur), k = smooth(a);
+    ball.x = lerp(F.c0.x, p.x, k); ball.z = lerp(F.c0.z, p.z, k);
+    ball.y = lerp(F.c0.y, p.y, D && D.arco > 0.2 ? a * a : k) + (D ? D.arco * Math.sin(a * Math.PI) : 0);   // sobe um pouco e cai (gravidade) no peitoSobe/cabecinha
+    if (D) afastarBolaDoCorpo(user);                 // a perna voltando/o peito não atravessam a bola: ela vai um pouco à frente
+    if (a >= 1) { fimRecepcao(); givePossession(user); }
   } else if (F.fase === 'segura') {               // domínio perfeito de pé: bola colada no pé por 0,5 s
     const p = pontoPe(); ball.x = p.x; ball.y = p.y; ball.z = p.z;
     if (F.t - F.t0 > 0.5) { fimRecepcao(); givePossession(user); showToast('Dominou!', 'good'); }
@@ -7450,6 +7835,11 @@ function contatoRecepcao(F) {
   if (F.kind !== 'alto') {
     if (F.ok) {
       G.stats.dominiosOk++;
+      if (DOMINIOS_NOVOS.includes(F.pose)) {      // domínios novos: a bola sai do ponto de contato e vai até o pé
+        F.fase = 'desce'; F.t0 = F.t; F.c0 = { x: ball.x, y: ball.y, z: ball.z };
+        if (F.pose === 'orientado') { F.ang0 = user.angle; F.giro = (user.recvPose ? user.recvPose.side : 1) * 0.6; }
+        return;
+      }
       if (F.kind === 'pe') {
         if (F.perfeito) { F.fase = 'segura'; F.t0 = F.t; return; }   // segura a cena mais um pouquinho com a bola no pé
         fimRecepcao(); givePossession(user); showToast('Dominou!', 'good');
@@ -7465,6 +7855,10 @@ function contatoRecepcao(F) {
       fimRecepcao();
     }
     return;
+  }
+  if (F.acao === 'dominar' && F.pose === 'cabecinha') {   // cabecinha: a bola sobe de leve e você domina quando ela desce
+    if (F.ok) { G.stats.dominiosOk++; F.fase = 'desce'; F.t0 = F.t; F.c0 = { x: ball.x, y: ball.y, z: ball.z }; return; }
+    toqueTorto('Cabeceou mal'); fimRecepcao(); return;
   }
   if (F.acao === 'cabecear') { if (F.ok) cabecearPasse(); else toqueTorto('Cabeceou mal'); }
   else if (F.ok) finalizarAereo(F.fin);
@@ -7511,7 +7905,7 @@ function cabecearPasse() {
 
 // Finalização aérea direto para o gol (sem precisar mirar).
 function finalizarAereo(tipo) {
-  const tz = rand(-(GOAL_HALF - 0.8), GOAL_HALF - 0.8), ty = rand(0.5, 2.0);
+  const { tz, ty } = miraAcrobatica(user, tipo);
   const dx = HALF_L - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1;
   const sp = tipo === 'cabecada' ? rand(16, 20) : rand(20, 25);
   const T = D / sp;
@@ -7521,7 +7915,8 @@ function finalizarAereo(tipo) {
   if (tipo === 'cabecada') user.kickT = 0;
   ball.isShot = true; ball.userShot = true; G.stats.chutes++; prepararBloqueios(user);
   showToast({ cabecada: 'Cabeçada!', voleio: 'Voleio!', bicicleta: 'Bicicleta!' }[tipo], 'good');
-  checarCenaDoAngulo();
+  if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;   // a câmera lenta segue a bola
+  else checarCenaDoAngulo();
 }
 
 function toqueTorto(msg) {
@@ -7533,16 +7928,19 @@ function toqueTorto(msg) {
 
 // Pose de recepção anda em tempo real; no fim da bicicleta/voleio você cai e levanta.
 function updateRecvPose(rdt) {
+  rdt *= fatorCenaAcro();
   for (const p of players) {                     // vale para você e para a IA (cabeceio, voleio, bicicleta)
     const rp = p.recvPose;
     if (!rp) continue;
     rp.t += rdt;
     if (rp.t >= rp.dur) {
-      if (rp.kind === 'bicicleta') { p.fall = 1; p.fallKind = 'costas'; p.stun = Math.max(p.stun, 0.9); }
-      if (rp.kind === 'voleio') { p.fall = 1; p.fallKind = 'lado'; p.fallSide = rp.side; p.stun = Math.max(p.stun, 0.7); }
+      // caiu (de costas na bicicleta, de lado no voleio) e LEVANTA de um dos jeitos (ver LEVANTAR), sem "desgirar" do chão
+      if (rp.kind === 'bicicleta') { p.fall = 1; p.fallKind = 'costas'; p.fallSide = rp.side; iniciarLevanta(p, 'costas', false, 0.12, 0.8); }
+      if (rp.kind === 'voleio') { p.fall = 1; p.fallKind = 'lado'; p.fallSide = rp.side; iniciarLevanta(p, 'lado', false, 0.1, 0.8); }
       p.recvPose = null;
     }
   }
+  atualizarChuteAcroIA(rdt);
 }
 
 // Desenho das poses de recepção (chamado no fim do syncMeshes, por cima de tudo).
@@ -7621,6 +8019,8 @@ function aplicarImpacto(p, m) {
 }
 
 function aplicarPoseRecepcao(p, m) {
+  const rp0 = p.recvPose;
+  if (DOMINIOS_NOVOS.includes(rp0.kind)) { m.raiz.position.y = puloRecepcao(rp0); aplicarPoseDominioNovo(p, m, rp0); naoEntrarNoChao(m); return; }
   const rp = p.recvPose, u = clamp(rp.t / rp.dur, 0, 1), w = Math.sin(u * Math.PI);
   let frente = 0, tomb = 0, incl = 0, aZL = 0, aZR = 0, aXL = 0.2, aXR = -0.2, lL = 0, lR = 0;
   let yLado = 0;
@@ -7648,10 +8048,22 @@ function aplicarPoseRecepcao(p, m) {
     if (rp.side > 0) aXR = lerp(-0.9, -3.0, s); else aXL = lerp(0.9, 3.0, s);   // braço de baixo sobe
     yLado = 0.3 * s;
   }
-  m.raiz.position.y = Math.max(puloRecepcao(rp), yLado); m.raiz.rotation.z = frente; m.raiz.rotation.x = tomb;
+  let y = Math.max(puloRecepcao(rp), yLado);
+  if (rp.kind === 'bicicleta' || rp.kind === 'voleio') {
+    // ENTRADA SUAVE: os primeiros ~0,14 s saem da pose em que ele estava (correndo) — antes ele pulava de uma vez para a pose do chute
+    if (!rp.k0) rp.k0 = Object.assign(lerPose(m), { y: m.raiz.position.y });
+    const K = rp.k0, w0 = smooth(clamp((rp.t - (rp.t0 || 0)) / 0.14, 0, 1));
+    if (w0 < 1) {
+      y = lerp(K.y, y, w0); frente = lerp(K.rz, frente, w0); tomb = lerp(K.rx, tomb, w0); incl = lerp(K.cz, incl, w0);
+      aZL = lerp(K.aE, aZL, w0); aZR = lerp(K.aD, aZR, w0); aXL = lerp(K.xE, aXL, w0); aXR = lerp(K.xD, aXR, w0);
+      lL = lerp(K.lE, lL, w0); lR = lerp(K.lD, lR, w0);
+    }
+  }
+  m.raiz.position.y = y; m.raiz.rotation.z = frente; m.raiz.rotation.x = tomb;
   m.corpo.rotation.z = incl; m.corpo.position.y = 0;
   m.bracoE.rotation.z = aZL; m.bracoD.rotation.z = aZR; m.bracoE.rotation.x = aXL; m.bracoD.rotation.x = aXR;
   m.pernaE.rotation.z = lL; m.pernaD.rotation.z = lR;
+  if (rp.kind === 'bicicleta' || rp.kind === 'voleio') naoEntrarNoChao(m);
 }
 
 // Seu carrinho: em direção a quem está com a bola (se perto) ou para a frente.
@@ -7819,11 +8231,18 @@ function finishDribbleMinigame(T) {
     C.b0 = { x: ball.x, z: ball.z };
     C.b1 = { x: C.p1.x + C.fx * 0.7 - C.px * lat * 0.3, z: C.p1.z + C.fz * 0.7 - C.pz * lat * 0.3 };
     C.b2 = { x: C.p2.x + C.fx * 0.7, z: C.p2.z + C.fz * 0.7 };
-    C.lunge = { x: o.x + (u.x - o.x) * 0.4, z: o.z + (u.z - o.z) * 0.4 };   // bote onde a bola estava
+    C.lunge = { x: o.x + (u.x - o.x) * 0.3, z: o.z + (u.z - o.z) * 0.3 };   // bote onde a bola estava (sem trombar em você)
     const lx = C.lunge.x - o.x, lz = C.lunge.z - o.z, ll = Math.hypot(lx, lz) || 1;
     C.stumble = { x: C.lunge.x + lx / ll * 0.9, z: C.lunge.z + lz / ll * 0.9 };  // embalo depois de errar
     C.fallSide = Math.random() < 0.5 ? 1 : -1;
     C.perfect = T.perfect === T.count;
+    // Variações: de frente (fora o goleiro) às vezes sai elástico, caneta ou chapéu; com ele do lado, roleta; parado, elástico.
+    if (!C.noGoleiro) {
+      const r = Math.random();
+      if (C.tipo === 'frente') C.tipo = r < 0.2 ? 'elastico' : r < 0.36 ? 'caneta' : r < 0.54 ? 'chapeu' : 'frente';
+      else if (C.tipo === 'corpo' && r < 0.45) C.tipo = 'roleta';
+      else if (C.tipo === 'pedalada' && r < 0.35) C.tipo = 'elastico';
+    }
     if (C.tipo !== 'frente') {                     // dribles novos: sem carretel, cada um com o seu caminho
       prepararDribleNovo(C, u, o);
       G.targetScale = 0.55;
@@ -7831,9 +8250,9 @@ function finishDribbleMinigame(T) {
     }
     // De vez em quando o drible sai de CARRETEL (carretilha): você levanta a bola com o
     // calcanhar por trás, ela passa por cima da sua cabeça e da do marcador, e você busca na frente.
-    C.carretel = !C.noGoleiro && Math.random() < 0.3;
+    C.carretel = !C.noGoleiro && Math.random() < 0.4;
     if (C.carretel) {
-      C.p1 = { x: u.x + C.fx * along * 0.5 + C.px * lat * 1.1, z: u.z + C.fz * along * 0.5 + C.pz * lat * 1.1 };
+      C.p1 = { x: u.x + C.fx * along * 0.5 + C.px * lat * 1.5, z: u.z + C.fz * along * 0.5 + C.pz * lat * 1.5 };   // passa longe dele (ombro não encosta)
       C.p2 = { x: u.x + C.fx * along, z: u.z + C.fz * along };
       C.b2 = { x: C.p2.x + C.fx * 0.9, z: C.p2.z + C.fz * 0.9 };
       C.calcanhar = { x: u.x - C.fx * 0.25, z: u.z - C.fz * 0.25 };   // a bola vai para o calcanhar
@@ -7917,36 +8336,58 @@ function updateCine(dt) {
   }
 }
 
-// Animação do carretel (1,3 s):
-//   0–15%  a bola rola para trás até o calcanhar
-//   12–35% o calcanhar levanta a bola (perna de trás chuta para cima)
-//   15–85% a bola faz um arco por cima de você e do marcador (até ~2,9 m)
-//   o marcador olha para cima, pula tentando alcançar e não cai (só fica sem reação)
-//   você passa por ele e pega a bola na frente.
+// CARRETILHA / LAMBRETA (1,4 s):
+//   0–16%  a perna direita passa por cima da bola e a sola puxa ela para trás, até encostar atrás da panturrilha esquerda
+//   16–30% o pé direito (atrás) sobe dobrando o joelho e leva a bola para cima, por trás; o corpo vai bem para a frente
+//          (a bola passa atrás e por cima da cabeça sem bater nela)
+//   30–85% a bola faz o arco por cima de você e do marcador (até ~3 m) e cai lá na frente
+//   o marcador olha a bola passar por cima; você passa por ele e pega a bola na frente.
 function atualizarCarretel(C, dt) {
-  const u = user, o = C.opp;
-  const k = Math.min(1, C.t / 1.3);
-  // Você: começa a correr depois do toque.
-  const ek = smooth(clamp((k - 0.2) / 0.8, 0, 1));
-  const pt = bezier(C.p0, C.p1, C.p2, ek), pt2 = bezier(C.p0, C.p1, C.p2, Math.min(1, ek + 0.02));
+  const u = user, o = C.opp, R = CONFIG.BALL_R;
+  const k = Math.min(1, C.t / 1.4);
+  if (!u.driblePose || u.driblePose.tipo !== 'lambreta') u.driblePose = { tipo: 'lambreta', t: 0, lado: C.oppSide };
+  u.driblePose.t = C.t; u.carretel = 0;
+  const f = { x: C.fx, z: C.fz }, dir = { x: C.px, z: C.pz };               // dir: à direita da corrida
+  // você: parado no toque; depois corre pelo lado dele até ficar AO LADO de onde a bola cai (sem passar embaixo dela)
+  // e, quando ela cai, entra nela
+  if (!C.aoLado) {
+    const lat = Math.sign((C.p1.x - C.p0.x) * dir.x + (C.p1.z - C.p0.z) * dir.z) || 1;
+    C.aoLado = { x: C.b2.x - f.x * 1.1 + dir.x * lat * 0.85, z: C.b2.z - f.z * 1.1 + dir.z * lat * 0.85 };
+    C.pegaB = { x: C.b2.x + f.x * 0.2 - f.x * 0.62, z: C.b2.z + f.z * 0.2 - f.z * 0.62 };
+  }
+  let pt, pt2;
+  if (k < 0.86) {
+    const ek = smooth(clamp((k - 0.32) / 0.54, 0, 1));
+    pt = bezier(C.p0, C.p1, C.aoLado, ek); pt2 = bezier(C.p0, C.p1, C.aoLado, Math.min(1, ek + 0.02));
+  } else {
+    const ek = smooth((k - 0.86) / 0.14);
+    pt = { x: lerp(C.aoLado.x, C.pegaB.x, ek), z: lerp(C.aoLado.z, C.pegaB.z, ek) }; pt2 = { x: lerp(C.aoLado.x, C.pegaB.x, Math.min(1, ek + 0.05)), z: lerp(C.aoLado.z, C.pegaB.z, Math.min(1, ek + 0.05)) };
+  }
   u.vx = (pt2.x - pt.x) * 260; u.vz = (pt2.z - pt.z) * 260;
   u.x = pt.x; u.z = pt.z;
-  if (k > 0.25 && Math.hypot(u.vx, u.vz) > 0.1) u.angle = Math.atan2(u.vz, u.vx);
-  u.anim += (k > 0.25 ? 7 : 2) * 2.6 * dt;
-  u.carretel = k < 0.12 ? 0 : k < 0.24 ? smooth((k - 0.12) / 0.12) : Math.max(0, 1 - (k - 0.24) / 0.12);
-  // Bola.
-  if (k < 0.15) {
-    const bk = smooth(k / 0.15);
-    ball.x = lerp(C.b0.x, C.calcanhar.x, bk); ball.z = lerp(C.b0.z, C.calcanhar.z, bk); ball.y = CONFIG.BALL_R;
+  if (k > 0.33 && k < 0.86 && Math.hypot(u.vx, u.vz) > 0.1) u.angle = turnToward(u.angle, Math.atan2(u.vz, u.vx), 10 * dt);
+  else if (k >= 0.86) u.angle = turnToward(u.angle, Math.atan2(f.z, f.x), 10 * dt);
+  u.anim += (k > 0.3 ? 7 : 0.5) * 2.6 * dt;
+  // bola
+  const atras = { x: C.p0.x - f.x * 0.33 - dir.x * 0.13, z: C.p0.z - f.z * 0.33 - dir.z * 0.13 };   // atrás da panturrilha esquerda
+  const alto = { x: C.p0.x - f.x * 0.45, z: C.p0.z - f.z * 0.45 };                                   // atrás da cintura, quando sai do pé
+  if (k < 0.16) {
+    const a = smooth(k / 0.16);
+    ball.x = lerp(C.b0.x, atras.x, a); ball.z = lerp(C.b0.z, atras.z, a); ball.y = R + 0.08 * a * a;
+    if (!C.puxou && k > 0.06) { C.puxou = true; Som.toque(0.25); }
+  } else if (k < 0.3) {
+    const a = smooth((k - 0.16) / 0.14);
+    ball.x = lerp(atras.x, alto.x, a); ball.z = lerp(atras.z, alto.z, a); ball.y = lerp(R + 0.08, 1.05, a);
+    if (!C.subiu && k > 0.22) { C.subiu = true; Som.toque(0.5); }
   } else {
-    const a = clamp((k - 0.15) / 0.7, 0, 1);
-    ball.x = lerp(C.calcanhar.x, C.b2.x, a); ball.z = lerp(C.calcanhar.z, C.b2.z, a);
-    ball.y = CONFIG.BALL_R + Math.sin(a * Math.PI) * 2.7;
+    const a = clamp((k - 0.3) / 0.55, 0, 1), h = Math.pow(a, 1.6);
+    if (a < 1) { ball.x = lerp(alto.x, C.b2.x, h); ball.z = lerp(alto.z, C.b2.z, h); ball.y = lerp(1.05, R, a) + Math.sin(a * Math.PI) * 2.7; }
+    else { const r = smooth((k - 0.85) / 0.15); ball.x = C.b2.x + f.x * 0.2 * r; ball.z = C.b2.z + f.z * 0.2 * r; ball.y = R + Math.abs(Math.sin(r * Math.PI)) * 0.2; }   // quica e rola
   }
-  // Marcador: acompanha a bola com o olhar e pula tentando alcançar.
+  if (k >= 1) { C.p1 = { x: C.b2.x - f.x, z: C.b2.z - f.z }; C.p2 = { x: C.b2.x + f.x * 2, z: C.b2.z + f.z * 2 }; }   // saída: reto para a frente
+  // marcador: acompanha a bola com o olhar (ela passa alta por cima dele)
   o.vx = o.vz = 0; o.tackle = 0; o.guard = Math.max(0, o.guard - dt * 4);
   o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
-  if (!C.pulou && k > 0.38) { C.pulou = true; o.jumpT = 0.5; }
   if (k >= 1) endCine(true);
 }
 
@@ -7981,11 +8422,15 @@ function prepararDribleNovo(C, u, o) {
     C.p1 = { x: C.cutPos.x + f.x * 1.6 - C.px * lado * 0.7, z: C.cutPos.z + f.z * 1.6 - C.pz * lado * 0.7 };
     C.p2 = { x: C.cutPos.x + f.x * 4.6 - C.px * lado * 1.0, z: C.cutPos.z + f.z * 4.6 - C.pz * lado * 1.0 };
     C.fallSide = lado;
+    // Perto da linha (lateral ou de fundo) a finta levava vocês dois para fora com a bola. Lá vira CHAPÉU DE COSTAS.
+    if ([C.fintaPos, C.oMorde, C.cutPos, C.p1, C.p2].some((q) => foraDoCampo(q, 0.6))) prepararChapeuCostas(C, u, o);
   } else if (C.tipo === 'corpo') {
     C.dur = 1.1;
     C.finta = { x: u.x + C.px * lado * 0.35, z: u.z + C.pz * lado * 0.35 };
     C.p1 = { x: C.finta.x + f.x * 1.5, z: C.finta.z + f.z * 1.5 }; C.p2 = { x: u.x + f.x * 5.5, z: u.z + f.z * 5.5 };
     C.oMorde = { x: o.x + C.px * lado * 1.0 + f.x * 0.4, z: o.z + C.pz * lado * 1.0 + f.z * 0.4 };
+  } else if (C.tipo === 'elastico' || C.tipo === 'caneta' || C.tipo === 'chapeu' || C.tipo === 'roleta') {
+    prepararVariacao(C, u, o);
   } else {                                                     // pedalada
     C.dur = 1.6;
     const sai = Math.random() < 0.5 ? -1 : 1;                   // lado do arranque
@@ -7994,6 +8439,207 @@ function prepararDribleNovo(C, u, o) {
     C.p2 = { x: u.x + C.px * sai * 1.4 + f.x * 5, z: u.z + C.pz * sai * 1.4 + f.z * 5 };
   }
   u.driblePose = { tipo: C.tipo, t: 0, sai: C.saiLado || 0, lado };
+}
+
+// VARIAÇÕES DE DRIBLE (o lugar de cada uma é decidido depois do minigame certo, ver finishDribbleMinigame):
+//   elástico (1,25 s) ... a bola vai para fora com o lado de fora do pé (ele morde para lá) e volta com o lado de dentro
+//                         para o outro lado; você sai por ali
+//   caneta (1,35 s) ..... ele abre as pernas no bote e a bola passa entre elas; você contorna e pega atrás dele
+//   chapéu (1,5 s) ...... o bico do pé levanta a bola por cima da cabeça dele; você contorna e pega na frente
+//   roleta (1,35 s) ..... meia-volta com a sola puxando a bola, mais meia-volta com a outra sola, e sai pelo lado de longe
+function prepararVariacao(C, u, o) {
+  const f = { x: C.fx, z: C.fz }, lado = C.oppSide, sai = -lado;
+  C.saiLado = sai;
+  if (C.tipo === 'elastico') {
+    C.dur = 1.25;
+    C.bFora = { x: C.b0.x + C.px * lado * 0.42 + f.x * 0.1, z: C.b0.z + C.pz * lado * 0.42 + f.z * 0.1 };
+    C.bVolta = { x: C.b0.x + C.px * sai * 0.5 + f.x * 0.25, z: C.b0.z + C.pz * sai * 0.5 + f.z * 0.25 };
+    C.passo = { x: u.x + C.px * sai * 0.45 + f.x * 0.25, z: u.z + C.pz * sai * 0.45 + f.z * 0.25 };
+    C.p1 = { x: C.passo.x + f.x * 1.8 + C.px * sai * 0.6, z: C.passo.z + f.z * 1.8 + C.pz * sai * 0.6 };
+    C.p2 = { x: u.x + f.x * 5.5 + C.px * sai * 0.9, z: u.z + f.z * 5.5 + C.pz * sai * 0.9 };
+    C.oMorde = { x: o.x + C.px * lado * 0.9 + f.x * 0.25, z: o.z + C.pz * lado * 0.9 + f.z * 0.25 };
+  } else if (C.tipo === 'caneta' || C.tipo === 'chapeu') {
+    C.dur = C.tipo === 'caneta' ? 1.35 : 1.5;
+    const dx = o.x - C.b0.x, dz = o.z - C.b0.z, dl = Math.hypot(dx, dz) || 1, dir = { x: dx / dl, z: dz / dl };
+    C.dirB = dir;
+    C.bFim = { x: o.x + dir.x * (C.tipo === 'caneta' ? 1.7 : 2.0), z: o.z + dir.z * (C.tipo === 'caneta' ? 1.7 : 2.0) };   // a bola passa por ele (no meio)
+    const qx = -dir.z, qz = dir.x;                                   // lateral da linha da bola
+    C.contorno = { x: o.x + qx * sai * 1.15 + dir.x * 0.1, z: o.z + qz * sai * 1.15 + dir.z * 0.1 };   // longe o bastante para os ombros não se encostarem
+    C.bRola = C.tipo === 'chapeu' ? { x: C.bFim.x + dir.x * 0.35, z: C.bFim.z + dir.z * 0.35 } : C.bFim;   // o chapéu quica e rola mais um pouco
+    C.pega = { x: C.bRola.x - dir.x * 0.62, z: C.bRola.z - dir.z * 0.62 };
+    C.aoLado = { x: C.bFim.x - dir.x * 0.35 + qx * sai * 0.8, z: C.bFim.z - dir.z * 0.35 + qz * sai * 0.8 };   // chapéu: espera a bola cair do lado dela
+    C.p1 = C.bFim; C.p2 = { x: C.bFim.x + dir.x * 3, z: C.bFim.z + dir.z * 3 };
+    if (C.tipo === 'caneta') o.driblePose = { tipo: 'pernasAbertas', t: 0 };
+  } else if (C.tipo === 'roleta') {
+    C.dur = 1.35;
+    C.bFim = { x: C.b0.x + f.x * 0.9 + C.px * sai * 0.45, z: C.b0.z + f.z * 0.9 + C.pz * sai * 0.45 };
+    const ex = f.x + C.px * sai * 0.45, ez = f.z + C.pz * sai * 0.45, el = Math.hypot(ex, ez) || 1;
+    C.ex = ex / el; C.ez = ez / el;
+    C.p1 = { x: C.bFim.x + C.ex * 1.5, z: C.bFim.z + C.ez * 1.5 }; C.p2 = { x: C.bFim.x + C.ex * 4.5, z: C.bFim.z + C.ez * 4.5 };
+    C.lunge = { x: o.x + (C.b0.x - o.x) * 0.3, z: o.z + (C.b0.z - o.z) * 0.3 };   // o bote vai onde a bola estava (ela já saiu)
+  }
+}
+function atualizarVariacao(C, dt, mover, tropeca) {
+  const u = user, o = C.opp, t = C.t, R = CONFIG.BALL_R, ang = Math.atan2(C.fz, C.fx);
+  if (C.tipo === 'elastico') {
+    if (t < 0.22) {                                  // lado de fora: a bola vai para o lado dele
+      const a = smooth(t / 0.22);
+      mover(lerp(C.p0.x, C.p0.x + C.fx * 0.15, a), lerp(C.p0.z, C.p0.z + C.fz * 0.15, a), 1.5);
+      ball.x = lerp(C.b0.x, C.bFora.x, a); ball.z = lerp(C.b0.z, C.bFora.z, a); ball.y = R;
+    } else if (t < 0.4) {                            // lado de dentro: volta para o outro lado e o corpo vai junto
+      const a = smooth((t - 0.22) / 0.18);
+      if (!C.estalou) { C.estalou = true; Som.toque(0.45); }
+      mover(lerp(C.p0.x + C.fx * 0.15, C.passo.x, a), lerp(C.p0.z + C.fz * 0.15, C.passo.z, a), 3);
+      ball.x = lerp(C.bFora.x, C.bVolta.x, a); ball.z = lerp(C.bFora.z, C.bVolta.z, a); ball.y = R;
+    } else {
+      const a = smooth((t - 0.4) / (C.dur - 0.4)), pt = bezier(C.passo, C.p1, C.p2, a);
+      mover(pt.x, pt.z, 8);
+      const ex = C.p2.x - C.passo.x, ez = C.p2.z - C.passo.z, el = Math.hypot(ex, ez) || 1;
+      u.angle = turnToward(u.angle, Math.atan2(ez, ex), 9 * dt);
+      const w = smooth(Math.min(1, a * 3)), dist = lerp(0.62, 1.0, a);
+      ball.x = lerp(C.bVolta.x - C.passo.x + pt.x, pt.x + ex / el * dist, w); ball.z = lerp(C.bVolta.z - C.passo.z + pt.z, pt.z + ez / el * dist, w); ball.y = R;
+      tropeca(C.px * C.oppSide * 0.8, C.pz * C.oppSide * 0.8);
+    }
+    if (t < 0.4) {                                   // ele morde: vai para o lado da primeira puxada
+      const m = smooth(Math.min(1, t / 0.32));
+      o.x = lerp(C.o0.x, C.oMorde.x, m); o.z = lerp(C.o0.z, C.oMorde.z, m); o.anim += 6 * dt; o.tackle = m * 0.7;
+    } else o.tackle = Math.max(0, o.tackle - dt * 4);
+    if (t < 0.4) u.angle = ang;
+  } else if (C.tipo === 'caneta' || C.tipo === 'chapeu') {
+    const caneta = C.tipo === 'caneta', tToque = caneta ? 0.22 : 0.26, tChega = caneta ? 0.95 : 1.2, tBola = caneta ? tChega : 0.98;
+    if (t < tToque) {                                // prepara o toque
+      mover(C.p0.x + C.fx * 0.1 * (t / tToque), C.p0.z + C.fz * 0.1 * (t / tToque), 1);
+      ball.x = C.b0.x; ball.z = C.b0.z; ball.y = R;
+      u.angle = ang;
+    } else {
+      if (!C.tocou) { C.tocou = true; Som.toque(caneta ? 0.4 : 0.5); C.u1 = { x: u.x, z: u.z }; }
+      const a = clamp((t - tToque) / (tChega - tToque), 0, 1), ab = clamp((t - tToque) / (tBola - tToque), 0, 1);
+      if (caneta) { const h = 1 - Math.pow(1 - a, 1.6); ball.x = lerp(C.b0.x, C.bFim.x, h); ball.z = lerp(C.b0.z, C.bFim.z, h); ball.y = R; }   // rasteira, perdendo força
+      else if (ab < 1) { const h = Math.pow(ab, 1.3); ball.x = lerp(C.b0.x, C.bFim.x, h); ball.z = lerp(C.b0.z, C.bFim.z, h); ball.y = R + Math.sin(ab * Math.PI) * 2.65; }   // sobe rápido: passa alto por cima da cabeça dele
+      else { const r = smooth(clamp((t - tBola) / (tChega - tBola), 0, 1)); ball.x = lerp(C.bFim.x, C.bRola.x, r); ball.z = lerp(C.bFim.z, C.bRola.z, r); ball.y = R + Math.abs(Math.sin(r * Math.PI)) * 0.25; }   // quica e rola
+      if (t < tChega) {                              // contorna ele e chega junto com a bola (no chapéu: pelo lado de onde ela cai)
+        const fim = caneta ? C.pega : C.aoLado, ta = caneta ? tChega : tBola + 0.04;
+        let pt, pt2;
+        // a curva PASSA pelo ponto de contorno (o controle fica do outro lado dele), assim ele não raspa no marcador
+        const ctl = { x: 2 * C.contorno.x - (C.u1.x + fim.x) / 2, z: 2 * C.contorno.z - (C.u1.z + fim.z) / 2 };
+        if (t < ta) { const g = smooth(clamp((t - tToque) / (ta - tToque), 0, 1)); pt = bezier(C.u1, ctl, fim, g); pt2 = bezier(C.u1, ctl, fim, Math.min(1, g + 0.03)); }
+        else { const g = smooth(clamp((t - ta) / (tChega - ta), 0, 1)); pt = { x: lerp(C.aoLado.x, C.pega.x, g), z: lerp(C.aoLado.z, C.pega.z, g) }; pt2 = { x: lerp(C.aoLado.x, C.pega.x, Math.min(1, g + 0.05)), z: lerp(C.aoLado.z, C.pega.z, Math.min(1, g + 0.05)) }; }
+        mover(pt.x, pt.z, 8);
+        if (Math.hypot(pt2.x - pt.x, pt2.z - pt.z) > 1e-4) u.angle = turnToward(u.angle, Math.atan2(pt2.z - pt.z, pt2.x - pt.x), 12 * dt);
+      } else {                                       // sai conduzindo
+        const g = smooth((t - tChega) / (C.dur - tChega));
+        mover(lerp(C.pega.x, C.p2.x - C.dirB.x * 0.62, g), lerp(C.pega.z, C.p2.z - C.dirB.z * 0.62, g), 8);
+        u.angle = turnToward(u.angle, Math.atan2(C.dirB.z, C.dirB.x), 12 * dt);
+        ball.x = u.x + C.dirB.x * lerp(0.62, 0.95, g); ball.z = u.z + C.dirB.z * lerp(0.62, 0.95, g); ball.y = R;
+      }
+    }
+    // ele: dá o bote (na caneta abrindo as pernas), a bola passa, ele vira para trás procurando e fica desnorteado
+    if (t < 0.4) { const m = smooth(Math.min(1, t / 0.3)); o.tackle = caneta ? 0 : m * 0.5; o.guard = caneta ? 1 : 1 - m; }
+    else o.tackle = Math.max(0, o.tackle - dt * 4);
+    if (o.driblePose) o.driblePose.t = t;
+    if (!C.tontou && t > (caneta ? 0.78 : 0.9)) {
+      C.tontou = true; o.driblePose = null;
+      perderBola(o, 'desnorteado'); o.perda.vx = -C.dirB.x * 0.3; o.perda.vz = -C.dirB.z * 0.3; o.perda.giro = C.saiLado * 5;   // gira no lugar, sem ir para cima da bola
+    }
+    if (!o.perda) o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), (caneta ? 2 : 6) * dt);
+  } else if (C.tipo === 'roleta') {
+    if (t < 0.8) {                                   // o corpo gira 360° em volta da bola, que anda devagar para o lado de longe
+      const a = smooth(t / 0.8), bx = lerp(C.b0.x, C.bFim.x, a), bz = lerp(C.b0.z, C.bFim.z, a);
+      const giro = ang + C.saiLado * Math.PI * 2 * a;
+      u.angle = giro;
+      mover(bx - Math.cos(giro) * 0.44, bz - Math.sin(giro) * 0.44, 3);
+      ball.x = bx; ball.z = bz; ball.y = R;
+      if (!C.sola1 && t > 0.15) { C.sola1 = true; Som.toque(0.3); }
+      if (!C.sola2 && t > 0.5) { C.sola2 = true; Som.toque(0.3); }
+    } else {
+      const a = smooth((t - 0.8) / (C.dur - 0.8)), pt = bezier({ x: C.bFim.x - C.ex * 0.44, z: C.bFim.z - C.ez * 0.44 }, C.p1, C.p2, a);
+      mover(pt.x, pt.z, 8);
+      u.angle = turnToward(u.angle, Math.atan2(C.ez, C.ex), 10 * dt);
+      ball.x = u.x + C.ex * lerp(0.44, 0.95, a); ball.z = u.z + C.ez * lerp(0.44, 0.95, a); ball.y = R;
+      tropeca(C.px * C.oppSide * 0.6, C.pz * C.oppSide * 0.6);
+    }
+    if (t < 0.45) { const m = smooth(Math.min(1, t / 0.4)); o.x = lerp(C.o0.x, C.lunge.x, m); o.z = lerp(C.o0.z, C.lunge.z, m); o.anim += 6 * dt; o.tackle = m * 0.7; }   // bote onde a bola estava
+    else o.tackle = Math.max(0, o.tackle - dt * 3);
+  }
+  if (!o.perda && C.tipo !== 'caneta' && C.tipo !== 'chapeu') o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 6 * dt);
+  o.vx = o.vz = 0;
+}
+function foraDoCampo(q, margem) { return Math.abs(q.x) > HALF_L - margem || Math.abs(q.z) > HALF_W - margem; }
+const dentroDoCampo = (q, margem) => ({ x: clamp(q.x, -HALF_L + margem, HALF_L - margem), z: clamp(q.z, -HALF_W + margem, HALF_W - margem) });
+// CHAPÉU DE COSTAS (2,0 s), no lugar da proteção quando ela sairia do campo: de costas para o marcador, você puxa a bola
+// para baixo do corpo com a sola, dá o toque de CALCANHAR para cima e ela passa por cima de você e dele; você gira para o
+// lado de dentro do campo, passa por ele e pega a bola atrás dele. Ele pula tentando alcançar e fica desnorteado.
+function prepararChapeuCostas(C, u, o) {
+  const f = { x: C.fx, z: C.fz }, lado = C.oppSide;
+  C.tipo = 'chapeuCostas'; C.dur = 2.0;
+  C.encosta = dentroDoCampo(C.encosta, 0.4); C.oEncosta = dentroDoCampo(C.oEncosta, 0.3);
+  // gira e passa pelo lado mais livre: o mais longe do marcador, sem sair do campo (empate: o lado contrário ao dele)
+  const cand = [-lado, lado].map((sd) => {
+    const S = dentroDoCampo({ x: C.encosta.x + C.px * sd * 0.95 - f.x * 0.2, z: C.encosta.z + C.pz * sd * 0.95 - f.z * 0.2 }, 0.4);
+    return { sd, S, d: Math.hypot(S.x - C.oEncosta.x, S.z - C.oEncosta.z) };
+  });
+  const esc = cand[1].d > cand[0].d + 0.05 ? cand[1] : cand[0];
+  C.giraLado = esc.sd; C.passa = esc.S;
+  C.cai = dentroDoCampo({ x: C.encosta.x - f.x * 3.3 + C.px * C.giraLado * 0.4, z: C.encosta.z - f.z * 3.3 + C.pz * C.giraLado * 0.4 }, 1.0);   // onde a bola cai
+  const vx = C.cai.x - C.passa.x, vz = C.cai.z - C.passa.z, vl = Math.hypot(vx, vz) || 1;
+  C.sx = vx / vl; C.sz = vz / vl;                                  // direção da saída
+  C.pega = { x: C.cai.x - C.sx * 0.62, z: C.cai.z - C.sz * 0.62 };  // ele chega aqui junto com a bola
+  C.p1 = C.cai;
+  C.p2 = dentroDoCampo({ x: C.cai.x + C.sx * 2.8, z: C.cai.z + C.sz * 2.8 }, 0.8);
+}
+function atualizarChapeuCostas(C, dt, mover) {
+  const u = user, o = C.opp, t = C.t, R = CONFIG.BALL_R, ang = Math.atan2(C.fz, C.fx);
+  if (t < 0.35) {                                   // encosta nele (igual à proteção)
+    const a = smooth(t / 0.35);
+    mover(lerp(C.p0.x, C.encosta.x, a), lerp(C.p0.z, C.encosta.z, a), 1.5);
+    o.x = lerp(C.o0.x, C.oEncosta.x, a); o.z = lerp(C.o0.z, C.oEncosta.z, a); o.anim += 5 * dt;
+    ball.x = u.x + C.fx * 0.55; ball.z = u.z + C.fz * 0.55; ball.y = R;
+  } else if (t < 0.55) {                            // puxa a bola com a sola para baixo do corpo
+    const a = smooth((t - 0.35) / 0.2);
+    mover(C.encosta.x, C.encosta.z, 0.3);
+    const l = -C.oppSide * 0.28 * a;                  // vai para baixo do pé do lado LONGE do marcador (que está em cima dela)
+    ball.x = u.x + C.fx * lerp(0.55, 0.12, a) + C.px * l; ball.z = u.z + C.fz * lerp(0.55, 0.12, a) + C.pz * l; ball.y = R;
+    o.tackle = PROT.bote * Math.sin(a * Math.PI);
+    if (!C.puxou && t > 0.42) { C.puxou = true; Som.toque(0.25); }
+  } else if (t < 0.68) {                            // toque de calcanhar: a bola sobe atrás dele
+    const a = (t - 0.55) / 0.13;
+    mover(C.encosta.x, C.encosta.z, 0.3);
+    ball.x = u.x + C.fx * lerp(0.12, -0.32, a) - C.px * C.oppSide * 0.28; ball.z = u.z + C.fz * lerp(0.12, -0.32, a) - C.pz * C.oppSide * 0.28; ball.y = R + a * 0.45;
+    if (!C.tocou && t > 0.6) { C.tocou = true; Som.toque(0.5); C.b1 = { x: ball.x, z: ball.z, y: ball.y }; }
+  } else {
+    if (!C.b1) C.b1 = { x: ball.x, z: ball.z, y: ball.y };
+    // a bola: sobe quase reto (passa por cima da cabeça dele, que está colado atrás) e desce longe, atrás dele
+    const a = clamp((t - 0.68) / 0.8, 0, 1), h = Math.pow(a, 1.8);
+    if (a < 1) { ball.x = lerp(C.b1.x, C.cai.x, h); ball.z = lerp(C.b1.z, C.cai.z, h); ball.y = lerp(C.b1.y, R, a) + Math.sin(a * Math.PI) * 2.7; }
+    if (t < 1.0) {                                  // gira para o lado de dentro e dá o primeiro passo
+      const g = smooth((t - 0.68) / 0.32);
+      mover(lerp(C.encosta.x, C.passa.x, g), lerp(C.encosta.z, C.passa.z, g), 3);
+    } else if (t < 1.48) {                          // passa por ele correndo e chega junto com a bola
+      const g = smooth((t - 1.0) / 0.48);
+      mover(lerp(C.passa.x, C.pega.x, g), lerp(C.passa.z, C.pega.z, g), 8);
+    } else {                                        // sai conduzindo
+      const g = smooth((t - 1.48) / (C.dur - 1.48));
+      mover(lerp(C.pega.x, C.p2.x - C.sx * 0.62, g), lerp(C.pega.z, C.p2.z - C.sz * 0.62, g), 8);
+      ball.x = u.x + C.sx * lerp(0.62, 0.9, g); ball.z = u.z + C.sz * lerp(0.62, 0.9, g); ball.y = R;
+    }
+    o.tackle = 0;
+    if (!C.tontou && t > 1.25) {
+      C.tontou = true;
+      perderBola(o, 'desnorteado'); o.perda.vx = C.fx * 0.4; o.perda.vz = C.fz * 0.4; o.perda.giro = C.giraLado * 5;
+    }
+  }
+  // Você: de costas para ele (como na proteção); no giro vira para o lado de dentro e fica de frente para a bola que cai.
+  const saida = Math.atan2(C.sz, C.sx);
+  if (t < 0.68) u.angle = ang - C.oppSide * PROT.giro * smooth(Math.min(1, t / 0.3));
+  else if (t < 1.0) {                              // o giro (meia-volta) é para o lado por onde ele passa
+    let d = wrapAngle(saida - ang);
+    if (C.giraLado > 0 && d < 0) d += Math.PI * 2; else if (C.giraLado < 0 && d > 0) d -= Math.PI * 2;
+    u.angle = ang + d * smooth((t - 0.68) / 0.32);
+  }
+  else u.angle = turnToward(u.angle, saida, 12 * dt);
+  if (!o.perda) o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 8 * dt);
+  else o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 3 * dt);
+  o.vx = o.vz = 0;
 }
 
 function atualizarDribleNovo(C, dt) {
@@ -8015,7 +8661,9 @@ function atualizarDribleNovo(C, dt) {
     const f = Math.max(0, 1 - o.perda.t / o.perda.dur);
     o.x += o.perda.vx * f * dt; o.z += o.perda.vz * f * dt; o.anim += dt * 9;
   }
-  if (C.tipo === 'protecao') {
+  if (C.tipo === 'chapeuCostas') atualizarChapeuCostas(C, dt, mover);
+  else if (C.tipo === 'elastico' || C.tipo === 'caneta' || C.tipo === 'chapeu' || C.tipo === 'roleta') atualizarVariacao(C, dt, mover, tropeca);
+  else if (C.tipo === 'protecao') {
     const t = C.t, ang = Math.atan2(C.fz, C.fx);
     if (t < 0.35) {                                 // encosta nele
       const a = smooth(t / 0.35);
@@ -8123,7 +8771,19 @@ function aplicarDriblePose(p, m) {
     m.raiz.rotation.x = Math.sin((P.t / 0.9) * Math.PI * 2) * 0.2;    // balanço do corpo
     m.corpo.rotation.z = -0.15;
     m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.7; m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2;
-  } else if (P.tipo === 'protecao' && P.t < 0.75) {
+  } else if (P.tipo === 'chapeuCostas' && P.t >= 0.35 && P.t < 0.8) {
+    // puxa a bola com a sola (a perna do lado longe do marcador vai à frente e volta) e dá o toque de calcanhar (a perna vai para trás e a
+    // canela sobe); o corpo vem um pouco para a frente e os braços abrem para equilibrar
+    const t = P.t, puxa = t < 0.55 ? Math.sin(((t - 0.35) / 0.2) * Math.PI) : 0, cal = t < 0.55 ? 0 : Math.sin(clamp((t - 0.55) / 0.25, 0, 1) * Math.PI);
+    const toca = P.lado > 0 ? m.pernaE : m.pernaD, apoia = toca === m.pernaE ? m.pernaD : m.pernaE;   // a perna do lado longe dele
+    toca.rotation.z = 0.55 * puxa - 0.75 * cal; toca.rotation.x = 0;
+    apoia.rotation.z = -0.08 * puxa + 0.15 * cal; apoia.rotation.x = 0;
+    const jT = -0.25 * puxa - 1.5 * cal - 0.0001, jA = -0.15 * cal - 0.0001;
+    usarJoelhos(m, toca === m.pernaE ? jT : jA, toca === m.pernaE ? jA : jT);
+    m.corpo.rotation.z = -0.12 - 0.22 * cal; m.raiz.rotation.x = 0;
+    m.bracoE.rotation.x = 0.55; m.bracoD.rotation.x = -0.55; m.bracoE.rotation.z = 0.25 * cal; m.bracoD.rotation.z = -0.2 * cal;
+    usarCabeca(m, (0.25 * cal) || 0.0001);                                // olha a bola subindo
+  } else if ((P.tipo === 'protecao' && P.t < 0.75) || (P.tipo === 'chapeuCostas' && P.t < 0.35)) {
     // Corpo para trás (encostado nele), ombro do lado dele baixo, braço de lá segurando ele e o
     // outro aberto para equilibrar.
     const a = smooth(Math.min(1, P.t / 0.3)), sw = Math.sin(P.t * 13) * 0.05;
@@ -8136,6 +8796,53 @@ function aplicarDriblePose(p, m) {
     bL.rotation.z = PROT.bz * a * (1 - cut); bL.rotation.x = s * PROT.bx * a * (1 - cut) + cut * 0.3;
     bO.rotation.z = (0.25 + 0.5 * cut) * a; bO.rotation.x = -s * 0.6 * a * (1 - cut);
     m.pernaE.rotation.z = 0.12 * a; m.pernaD.rotation.z = -0.12 * a;   // base aberta
+  } else if (P.tipo === 'lambreta' && P.t < 0.62) {
+    // a perna direita passa por cima da bola, a sola puxa para trás; depois o pé direito sobe por trás (joelho dobra até
+    // o calcanhar quase encostar) levando a bola; o tronco vai bem para a frente e os braços abrem
+    const k = P.t / 1.4, puxa = k < 0.16 ? Math.sin((k / 0.16) * Math.PI * 0.5) : 1, sobe = k < 0.16 ? 0 : smooth(clamp((k - 0.16) / 0.14, 0, 1));
+    const solta = k < 0.3 ? 0 : smooth(clamp((k - 0.3) / 0.14, 0, 1));
+    const coxa = k < 0.08 ? 0.45 * Math.sin((k / 0.08) * Math.PI * 0.5) : lerp(0.45, -0.38, smooth(clamp((k - 0.08) / 0.08, 0, 1)));
+    m.pernaD.rotation.z = lerp(lerp(coxa, -0.12, sobe), 0, solta); m.pernaD.rotation.x = 0;
+    m.pernaE.rotation.z = lerp(0.06, 0, solta); m.pernaE.rotation.x = 0;
+    usarJoelhos(m, -0.0001, (-0.15 * puxa - 1.95 * sobe) * (1 - solta) - 0.0001);
+    m.corpo.rotation.z = lerp(-0.12 - 0.3 * sobe, -0.2, solta);
+    m.raiz.rotation.x = 0;
+    m.bracoE.rotation.x = 0.6; m.bracoD.rotation.x = -0.6; m.bracoE.rotation.z = 0.2 * sobe; m.bracoD.rotation.z = 0.2 * sobe;
+    usarCabeca(m, (0.25 * solta - 0.1 * sobe) || 0.0001);
+  } else if (P.tipo === 'elastico' && P.t < 0.55) {
+    // o pé do lado da finta vai para fora (lado de fora do pé leva a bola) e varre para dentro (lado de dentro traz de volta)
+    const t = P.t, perna = P.lado > 0 ? m.pernaD : m.pernaE, outra = perna === m.pernaD ? m.pernaE : m.pernaD, fo = P.lado > 0 ? -1 : 1;
+    const a = smooth(Math.min(1, t / 0.22)), b = t < 0.22 ? 0 : smooth(Math.min(1, (t - 0.22) / 0.18)), sol = t < 0.4 ? 1 : 1 - smooth((t - 0.4) / 0.15);
+    perna.rotation.z = 0.35 * a * sol; perna.rotation.x = lerp(fo * 0.38 * a, -fo * 0.3, b) * sol;
+    outra.rotation.z = -0.08 * sol; outra.rotation.x = 0;
+    m.raiz.rotation.x = lerp(P.lado * 0.22 * a, -P.lado * 0.25, b) * sol;
+    m.corpo.rotation.z = -0.12;
+    m.bracoE.rotation.x = 0.55; m.bracoD.rotation.x = -0.55;
+  } else if ((P.tipo === 'caneta' && P.t < 0.4) || (P.tipo === 'chapeu' && P.t < 0.5)) {
+    // caneta: perna para trás e cutucada com o bico; chapéu: perna para trás e o bico "cava" a bola para cima (joelho dobra)
+    const t = P.t, ch = P.tipo === 'chapeu', tT = ch ? 0.26 : 0.22;
+    const prep = smooth(Math.min(1, t / tT)), toque = t < tT ? 0 : Math.sin(clamp((t - tT) / (ch ? 0.24 : 0.18), 0, 1) * Math.PI);
+    m.pernaD.rotation.z = -0.4 * prep * (1 - toque) + (ch ? 1.05 : 0.6) * toque; m.pernaD.rotation.x = 0;
+    m.pernaE.rotation.z = 0.08; m.pernaE.rotation.x = 0;
+    usarJoelhos(m, -0.0001, (ch ? -0.55 * toque : -0.2 * prep * (1 - toque)) - 0.0001);
+    m.corpo.rotation.z = ch ? 0.14 * toque - 0.06 * prep * (1 - toque) : -0.15;   // no chapéu o tronco vai para trás quando a bola sobe
+    m.bracoE.rotation.x = 0.5; m.bracoD.rotation.x = -0.5;
+  } else if (P.tipo === 'roleta' && P.t < 0.85) {
+    // gira com as solas: 1ª metade a sola de uma perna em cima da bola, 2ª metade a da outra; braços abertos
+    const t = P.t, s1 = Math.sin(clamp(t / 0.4, 0, 1) * Math.PI), s2 = Math.sin(clamp((t - 0.4) / 0.4, 0, 1) * Math.PI);
+    const pA = P.sai > 0 ? m.pernaE : m.pernaD, pB = pA === m.pernaE ? m.pernaD : m.pernaE;
+    pA.rotation.z = 0.42 * s1 - 0.05 * s2; pB.rotation.z = 0.42 * s2 - 0.05 * s1; pA.rotation.x = pB.rotation.x = 0;
+    usarJoelhos(m, -0.25 * (pA === m.pernaE ? s1 : s2) - 0.0001, -0.25 * (pA === m.pernaE ? s2 : s1) - 0.0001);
+    m.corpo.rotation.z = -0.06; m.raiz.rotation.x = 0;
+    m.bracoE.rotation.x = 0.8; m.bracoD.rotation.x = -0.8; m.bracoE.rotation.z = 0.3; m.bracoD.rotation.z = 0.3;
+  } else if (P.tipo === 'pernasAbertas') {
+    // o marcador abre as pernas no bote (a caneta passa entre elas) e fecha depois
+    const t = P.t, w = t < 0.15 ? smooth(t / 0.15) : t < 0.62 ? 1 : 1 - smooth(Math.min(1, (t - 0.62) / 0.16));
+    m.pernaE.rotation.x = 0.42 * w; m.pernaD.rotation.x = -0.42 * w; m.pernaE.rotation.z *= 1 - w; m.pernaD.rotation.z *= 1 - w;
+    usarJoelhos(m, -0.2 * w - 0.0001, -0.2 * w - 0.0001);
+    m.corpo.rotation.z = -0.22 * w; m.corpo.position.y = Math.min(m.corpo.position.y, -0.04 * w);
+    m.bracoE.rotation.x = 0.45 * w; m.bracoD.rotation.x = -0.45 * w;
+    usarCabeca(m, (-0.35 * w) || 0.0001);                                 // olha a bola passando por baixo
   } else if (P.tipo === 'corpo' && P.t < 0.4) {
     const a = Math.sin((P.t / 0.4) * Math.PI);
     m.raiz.rotation.x = P.lado * 0.32 * a;         // tomba o corpo para o lado do marcador (a finta)
@@ -8143,7 +8850,7 @@ function aplicarDriblePose(p, m) {
     if (P.lado > 0) m.bracoE.rotation.x = 0.4 + 0.6 * a; else m.bracoD.rotation.x = -0.4 - 0.6 * a;
   } else {
     m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0;
-    if (P.tipo === 'arrancada' || P.tipo === 'protecao' || P.tipo === 'corpo' || P.tipo === 'pedalada') m.corpo.rotation.z = Math.min(m.corpo.rotation.z, P.tipo === 'protecao' ? -0.1 : -0.22);   // inclinado na arrancada (protecao anda com o corpo quase reto)
+    if (P.tipo === 'arrancada' || P.tipo === 'protecao' || P.tipo === 'corpo' || P.tipo === 'pedalada' || P.tipo === 'elastico' || P.tipo === 'caneta' || P.tipo === 'chapeu' || P.tipo === 'roleta' || P.tipo === 'chapeuCostas') m.corpo.rotation.z = Math.min(m.corpo.rotation.z, P.tipo === 'protecao' ? -0.1 : -0.22);   // inclinado na arrancada (protecao anda com o corpo quase reto)
   }
 }
 
@@ -8155,8 +8862,9 @@ function endCine(success) {
   G.state = 'play'; G.targetScale = 1;
   if (success) {
     G.stats.driblesOk++;
-    if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; }   // no carretel o marcador não cai, só fica parado
-    else if (C.tipo === 'protecao' || C.tipo === 'corpo') {
+    if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; user.driblePose = null; }   // no carretel o marcador não cai, só fica parado
+    else if (C.tipo === 'protecao' || C.tipo === 'corpo' || C.tipo === 'chapeuCostas' || C.tipo === 'caneta' || C.tipo === 'chapeu') {
+      C.opp.driblePose = null;
       user.driblePose = null;
       const resta = C.opp.perda && C.opp.perda.tipo === 'desnorteado' ? Math.max(0.3, C.opp.perda.dur - C.opp.perda.t) : 0;   // o de costas já começou a ficar tonto no corte
       C.opp.stun = resta; if (!resta) perderBola(C.opp, 'desnorteado');
@@ -8173,7 +8881,7 @@ function endCine(success) {
     user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
     if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
     Som.drible();
-    const nomes = { arrancada: 'Arrancada!', protecao: 'Protegeu a bola!', corpo: 'Drible de corpo!', pedalada: 'Pedalada!' };
+    const nomes = { arrancada: 'Arrancada!', protecao: 'Protegeu a bola!', corpo: 'Drible de corpo!', pedalada: 'Pedalada!', chapeuCostas: 'Chapéu de costas!', elastico: 'Elástico!', caneta: 'Caneta!', chapeu: 'Chapéu!', roleta: 'Roleta!' };
     showToast(C.carretel ? 'CARRETEL!' : C.noGoleiro ? 'Driblou o goleiro!' : nomes[C.tipo] || (C.perfect ? 'Drible perfeito!' : 'Driblou!'), 'good');
   } else {
     if (!user.perda) perderBola(user);
@@ -9253,14 +9961,16 @@ function cameraGoal() {
   if (G.cine) {                                   // drible: câmera de lado, entre você e o marcador
     const C = G.cine, s = C.camSide, o = C.opp;
     const mx = (user.x + o.x) / 2, mz = (user.z + o.z) / 2;
-    if (C.tipo === 'protecao') {                  // mesma câmera baixa dos outros dribles (1,8 m, 6,4 m), só que de FRENTE/3-4 (do lado contrário ao marcador): as andadas para os lados aparecem na horizontal
+    if (C.tipo === 'protecao' || C.tipo === 'chapeuCostas') {   // mesma câmera baixa dos outros dribles (1,8 m, 6,4 m), só que de FRENTE/3-4 (do lado contrário ao marcador): as andadas para os lados aparecem na horizontal
       if (!C.camBase) C.camBase = { x: mx, z: mz };
-      const bx = C.camBase.x, bz = C.camBase.z, along = Math.max(0, (mx - bx) * C.fx + (mz - bz) * C.fz);   // acompanha só o avanço para a frente (ele corre para a câmera)
-      const ax = bx + C.fx * along, az = bz + C.fz * along, D = 5.8 + along * 0.5, ca = Math.cos(0.45) * D, sa = Math.sin(0.45) * D;
+      const bx = C.camBase.x, bz = C.camBase.z, ad = (mx - bx) * C.fx + (mz - bz) * C.fz;
+      const along = C.tipo === 'chapeuCostas' ? clamp(ad, -2.5, 0) : Math.max(0, ad);   // acompanha o avanço (no chapéu de costas, o recuo: a bola vai para trás dele)
+      const ax = bx + C.fx * along, az = bz + C.fz * along, D = 5.8 + Math.abs(along) * 0.5, ca = Math.cos(0.45) * D, sa = Math.sin(0.45) * D;
       return { px: ax + C.fx * ca + C.px * s * sa, py: 1.8, pz: az + C.fz * ca + C.pz * s * sa, tx: ax + C.fx * 0.1, ty: 1.0, tz: az + C.fz * 0.1 };
     }
     return { px: mx + C.px * s * 6.4, py: 1.8, pz: mz + C.pz * s * 6.4, tx: mx, ty: 1.0, tz: mz };
   }
+  if (G.acroCine) return cameraAcro();
   if (G.shotCine) return shotCameraGoal();
   if (G.fintaCine) return cameraFinta();
   if (G.camOvo) return G.camOvo;                   // cena do ovo de páscoa
@@ -9324,8 +10034,8 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   const g = cameraGoal();
   let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
-  const corte = (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
-  if (corte) { k = 1; G.fimCorte = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.foul) G.foul.cut = false; }
+  const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
+  if (corte) { k = 1; G.fimCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.foul) G.foul.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
   cam.tx = lerp(cam.tx, g.tx, k); cam.ty = lerp(cam.ty, g.ty, k); cam.tz = lerp(cam.tz, g.tz, k);
   const sp = Math.hypot(user.vx, user.vz);
@@ -9394,6 +10104,148 @@ function aplicarEstiloCorrida(p, m, EC, ecK) {
 //   pulo para trás (cavadinha) ... sobe de costas com os braços esticados para trás da cabeça e cai deitado de costas
 //   joelho .... bola rasteira no corpo: um joelho no chão, a outra perna dobrada na frente e as mãos juntas recolhendo a bola
 //   tapa ...... bola alta: um braço esticado lá em cima tocando por cima do travessão, o outro baixo
+// LEVANTAR DO CHÃO (goleiro): depois do mergulho ou do pulo para trás ele levanta de um jeito sorteado, e isso o
+// atrasa (até terminar fica sem poder defender — stun):
+//   apoio .... de lado: empurra o chão com a mão de baixo, agacha e sobe ............... 1,0–1,25 s
+//   joelho ... de lado: senta de lado, põe um joelho no chão e sobe ...................... 1,3–1,6 s
+//   rola ..... de lado: rola de bruços, fica de quatro, põe um pé na frente e sobe ........ 1,7–2,0 s
+//   senta .... de costas: senta, agacha e sobe ............................................ 1,3–1,7 s
+//   costas ... de costas: senta, vira para um joelho no chão e sobe ....................... 1,8–2,2 s
+// Com a bola só os jeitos sem as mãos no chão (apoio, joelho, senta), com ela segura no peito.
+// Poses para quem caiu do lado DIREITO (s = 1); do esquerdo é o espelho. O primeiro quadro é a pose em que ele
+// estava (sem salto) e a altura sai sozinha: o ponto mais baixo do boneco encosta no gramado.
+//   rx = tomba de lado · rz = para trás (+) / para a frente (−) · cz = tronco · l = coxa (+ frente) · j = joelho (−)
+//   a = braço para a frente/cima · x = braço para o lado (E: + abre, D: − abre) · cab = cabeça
+const SENTADO = { rx: 0, rz: 0, cz: 0.25, lE: 1.7, lD: 1.7, jE: -0.6, jD: -0.6, aE: -0.7, xE: 0.3, aD: -0.7, xD: -0.3, cab: 0.1 };
+const UM_JOELHO = { rx: 0, rz: 0, cz: -0.2, lE: 0.15, lD: 1.6, jE: -1.5, jD: -1.6, aE: 0.35, xE: 0.15, aD: 0.6, xD: -0.1, cab: -0.1 };
+const SUBINDO = { rx: 0, rz: 0, cz: -0.25, lE: 0.45, lD: 0.85, jE: -0.8, jD: -0.9, aE: 0.3, xE: 0.1, aD: 0.4, xD: -0.1, cab: 0 };
+const LEVANTAR = {
+  apoio: { dur: [1.0, 1.25], kf: [
+    [0.35, { rx: 0.8, rz: 0, cz: -0.15, lE: 0.9, lD: 0.35, jE: -1.3, jD: -0.9, aE: 0.7, xE: 0.25, aD: 0.15, xD: -1.25, cab: 0.15 }],
+    [0.7, { rx: 0.12, rz: 0, cz: -0.45, lE: 1.35, lD: 1.15, jE: -1.95, jD: -1.85, aE: 0.6, xE: 0.2, aD: 0.5, xD: -0.35, cab: 0 }]] },
+  joelho: { dur: [1.3, 1.6], kf: [
+    [0.3, { rx: 0.85, rz: 0.2, cz: 0, lE: 1.1, lD: 0.5, jE: -1.6, jD: -1.0, aE: 0.9, xE: 0.2, aD: 0, xD: -1.0, cab: 0.2 }],
+    [0.6, UM_JOELHO], [0.82, SUBINDO]] },
+  rola: { dur: [1.7, 2.0], kf: [
+    [0.28, { rx: 0.1, rz: -1.45, cz: 0.1, lE: -0.15, lD: -0.05, jE: -0.2, jD: -0.1, aE: 1.5, xE: 0.35, aD: 1.5, xD: -0.35, cab: 0.25 }],
+    [0.55, { rx: 0, rz: -1.05, cz: 0, lE: 1.05, lD: 1.05, jE: -1.57, jD: -1.57, aE: 1.05, xE: 0.1, aD: 1.05, xD: -0.1, cab: 0.3 }],
+    [0.8, { rx: 0, rz: -0.3, cz: -0.2, lE: 1.5, lD: 0.4, jE: -1.5, jD: -1.6, aE: 0.6, xE: 0.1, aD: 0.6, xD: -0.1, cab: 0 }]] },
+  senta: { dur: [1.3, 1.7], kf: [
+    [0.35, SENTADO],
+    [0.68, { rx: 0, rz: 0, cz: -0.55, lE: 1.9, lD: 1.9, jE: -2.3, jD: -2.3, aE: 1.3, xE: 0.1, aD: 1.3, xD: -0.1, cab: 0 }]] },
+  costas: { dur: [1.8, 2.2], kf: [[0.3, SENTADO], [0.55, UM_JOELHO], [0.8, SUBINDO]] },
+};
+const POSE_EM_PE = { rx: 0, rz: 0, cz: 0, lE: 0, lD: 0, jE: 0, jD: 0, aE: 0, xE: 0.08, aD: 0, xD: -0.08, cab: 0 };
+const CAMPOS_POSE = Object.keys(POSE_EM_PE);
+function iniciarLevanta(p, deOnde, comBola, espera, fator) {
+  const ops = deOnde === 'costas' ? (comBola ? ['senta'] : ['senta', 'senta', 'costas']) : (comBola ? ['apoio', 'joelho'] : ['apoio', 'apoio', 'joelho', 'joelho', 'rola']);
+  const tipo = ops[Math.floor(Math.random() * ops.length)], L = LEVANTAR[tipo], dur = rand(L.dur[0], L.dur[1]) * (fator || 1);
+  p.levanta = { tipo, t: -espera, dur, comBola, s: p.fallSide || 1, k0: null };
+  p.levantaRapido = 0;
+  p.stun = Math.max(p.stun, espera + dur);
+  if (comBola) { p.caidoComBola = espera + dur; p.hold = Math.max(p.hold || 0, espera + dur + 0.5); }
+}
+function espelharPose(P, s) {
+  return s > 0 ? P : { rx: -P.rx, rz: P.rz, cz: P.cz, lE: P.lD, lD: P.lE, jE: P.jD, jD: P.jE, aE: P.aD, aD: P.aE, xE: -P.xD, xD: -P.xE, cab: P.cab };
+}
+function lerPose(m) {
+  return { rx: m.raiz.rotation.x, rz: m.raiz.rotation.z, cz: m.corpo.rotation.z, lE: m.pernaE.rotation.z, lD: m.pernaD.rotation.z,
+    jE: m.joelhosLigados ? m.pernaE.joelho.rotation.z : 0, jD: m.joelhosLigados ? m.pernaD.joelho.rotation.z : 0,
+    aE: m.bracoE.rotation.z, xE: m.bracoE.rotation.x, aD: m.bracoD.rotation.z, xD: m.bracoD.rotation.x, cab: m.cabecaLigada ? m.cabeca.rotation.z : 0 };
+}
+// Ponto mais baixo do boneco (só as peças visíveis), em metros.
+function pisoDoBoneco(o, min) {
+  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO) return min;
+  if (o.isMesh) {
+    const a = o.geometry.attributes.position, e = o.matrixWorld.elements;
+    for (let i = 0; i < a.count; i++) { const y = e[1] * a.getX(i) + e[5] * a.getY(i) + e[9] * a.getZ(i) + e[13]; if (y < min) min = y; }
+  }
+  for (const c of o.children) min = pisoDoBoneco(c, min);
+  return min;
+}
+function apoiarNoChao(m) {
+  m.raiz.position.y = 0; m.raiz.updateMatrixWorld(true);
+  m.raiz.position.y = -pisoDoBoneco(m.raiz, Infinity);
+  m.raiz.updateMatrixWorld(true);
+}
+// Se alguma parte do boneco entrou no gramado, sobe ele o quanto entrou (não mexe se já está em cima).
+function naoEntrarNoChao(m) {
+  m.raiz.updateMatrixWorld(true);
+  const piso = pisoDoBoneco(m.raiz, Infinity);
+  if (piso < 0) { m.raiz.position.y -= piso; m.raiz.updateMatrixWorld(true); }
+}
+function aplicarLevanta(p, m) {
+  const L = p.levanta;
+  if (!L.k0) L.k0 = lerPose(m);
+  const D = LEVANTAR[L.tipo], u = clamp(L.t / L.dur, 0, 1);
+  let a = { u: 0, P: L.k0 }, b = { u: 1, P: POSE_EM_PE };
+  for (let i = 0; i <= D.kf.length; i++) {
+    const nu = i < D.kf.length ? D.kf[i][0] : 1, nP = i < D.kf.length ? espelharPose(D.kf[i][1], L.s) : POSE_EM_PE;
+    if (u <= nu) { b = { u: nu, P: nP }; break; }
+    a = { u: nu, P: nP };
+  }
+  const f = smooth(clamp((u - a.u) / Math.max(1e-6, b.u - a.u), 0, 1)), Q = {};
+  for (const c of CAMPOS_POSE) Q[c] = lerp(a.P[c], b.P[c], f);
+  if (L.comBola) {                                  // segurando a bola no peito o tempo todo
+    const w = smooth(Math.min(1, u / 0.15));
+    Q.aE = lerp(L.k0.aE, 1.25, w); Q.xE = lerp(L.k0.xE, -0.15, w); Q.aD = lerp(L.k0.aD, 1.25, w); Q.xD = lerp(L.k0.xD, 0.15, w);
+  }
+  m.raiz.rotation.x = Q.rx; m.raiz.rotation.z = Q.rz;
+  m.corpo.rotation.z = Q.cz; m.corpo.rotation.x = 0; m.corpo.position.y = 0;
+  m.pernaE.rotation.z = Q.lE; m.pernaD.rotation.z = Q.lD; m.pernaE.rotation.x = m.pernaD.rotation.x = 0;
+  usarJoelhos(m, Q.jE, Q.jD);
+  m.bracoE.rotation.z = Q.aE; m.bracoE.rotation.x = Q.xE; m.bracoD.rotation.z = Q.aD; m.bracoD.rotation.x = Q.xD;
+  m.bracoE.position.z = -0.39 + 0.09 * Math.abs(Math.sin(Q.xE)); m.bracoD.position.z = 0.39 - 0.09 * Math.abs(Math.sin(Q.xD));
+  usarCotovelos(m, 0, 0);
+  usarCabeca(m, Q.cab); if (m.cabecaLigada) m.cabeca.rotation.y = 0;
+  apoiarNoChao(m);
+}
+
+// MÃOS DO GOLEIRO de verdade (centro de cada mão, no mundo), medidas na pose pronta de cada quadro.
+const _mA = new THREE.Vector3(), _mB = new THREE.Vector3(), _oA = new THREE.Vector3(), _oB = new THREE.Vector3(), _eixo = new THREE.Vector3(), _bolaVis = new THREE.Vector3();
+const SEGURA = CONFIG.BALL_R + 0.085;               // do centro da bola ao centro da mão encostada nela (mão de 0,17 m)
+function maoDoBraco(b, out) {
+  const o = b.cotLigado ? b.cotovelo : b;
+  o.updateWorldMatrix(true, false);
+  return out.set(0, b.cotLigado ? -0.27 : -0.57, 0).applyMatrix4(o.matrixWorld);
+}
+function medirMaos(p, m) {
+  maoDoBraco(m.bracoE, _mA); maoDoBraco(m.bracoD, _mB);
+  const V = p.maosV || (p.maosV = { x: 0, y: 0, z: 0, t: 0 });
+  V.x = (_mA.x + _mB.x) / 2; V.y = (_mA.y + _mB.y) / 2; V.z = (_mA.z + _mB.z) / 2; V.t = G.time;
+}
+// BOLA NAS MÃOS DO GOLEIRO: depois da pose pronta a bola vai para as mãos DE VERDADE, encostando nas palmas — nem
+// flutuando longe nem entrando nelas. Mãos abertas demais (braços abertos no mergulho): os braços fecham até as
+// palmas encostarem na bola. Só o desenho muda: a física continua com ball.x/y/z (assim o desenho da bola nas mãos
+// atrás da linha nunca vira gol).
+function bolaNasMaosDoGoleiro() {
+  const h = G.possession;
+  if (!h || h.role !== 'GK' || h.goalKick || h.comPe || h.throwIn || h.carry || h.bolaFixa || ball.hidden || !h.mesh || !h.mesh.raiz.visible) return null;
+  const E = h.mesh.bracoE, D = h.mesh.bracoD;
+  for (let it = 0; it < 4; it++) {
+    const d = maoDoBraco(E, _mA).distanceTo(maoDoBraco(D, _mB));
+    if (d <= 0.62) break;
+    for (const b of [E, D]) {
+      const outra = maoDoBraco(b === E ? D : E, _oB), h0 = maoDoBraco(b, _oA).distanceTo(outra);
+      b.rotation.x += 0.05; const h1 = maoDoBraco(b, _oA).distanceTo(outra); b.rotation.x -= 0.05;
+      const der = (h1 - h0) / 0.05;
+      if (Math.abs(der) > 0.05) b.rotation.x += clamp(-(h0 - 0.6) / 2 / der, -0.4, 0.4);
+    }
+  }
+  maoDoBraco(E, _mA); maoDoBraco(D, _mB);
+  const d = _mA.distanceTo(_mB) || 0.001;
+  _oA.setFromMatrixPosition(E.matrixWorld); _oB.setFromMatrixPosition(D.matrixWorld);
+  // para fora das palmas: a direção ombro → mão dos dois braços, sem a parte que vai de uma mão à outra
+  _bolaVis.subVectors(_mA, _oA).add(_mB).sub(_oB);
+  _eixo.subVectors(_mB, _mA).divideScalar(d);
+  _bolaVis.addScaledVector(_eixo, -_bolaVis.dot(_eixo)).normalize();
+  const fora = Math.sqrt(Math.max(0, SEGURA * SEGURA - d * d / 4));
+  _bolaVis.multiplyScalar(fora);
+  _bolaVis.x += (_mA.x + _mB.x) / 2; _bolaVis.y += (_mA.y + _mB.y) / 2; _bolaVis.z += (_mA.z + _mB.z) / 2;
+  if (_bolaVis.y < CONFIG.BALL_R) _bolaVis.y = CONFIG.BALL_R;
+  return _bolaVis;
+}
+
 function aplicarPosesGoleiro(p, m, dt) {
   // olhar com a cabeça
   const olha = p.olhaT > 0 && p.diveT <= 0 && !p.pulaTras && p.fall === 0 && G.possession !== p;
@@ -9404,6 +10256,7 @@ function aplicarPosesGoleiro(p, m, dt) {
     usarCabeca(m, olha ? -0.06 + clamp((1.2 - ball.y) * 0.05, -0.12, 0.05) : m.cabeca.rotation.z || -0.0001);
     m.cabeca.rotation.y = p.olhaYaw;
   }
+  if (p.levanta && p.levanta.t >= 0) { aplicarLevanta(p, m); return; }
   // deslizando com o pé
   if (p.diveT > 0 && p.diveTipo === 'pe') {
     const l = p.diveSide || 1, a = smooth(Math.min(1, progressoMergulho(p) * 3.2));
@@ -9424,11 +10277,50 @@ function aplicarPosesGoleiro(p, m, dt) {
     usarCabeca(m, (0.25 * a) || 0.0001); m.cabeca.rotation.x = l * 0.5 * a;    // a cabeça fica de pé, olhando a bola
     return;
   } else if (m.cabeca.rotation.x) m.cabeca.rotation.x = 0;
-  // pulo para trás (cavadinha)
+  // pulo para trás (cavadinha). Dois jeitos, decididos no começo do pulo (ver gkThink):
+  //   alcança ..... recua para baixo da bola, sobe com os braços retos lá no alto, segura no ponto mais alto, traz a
+  //                 bola para o peito e cai de costas abraçado nela
+  //   não alcança . sobe de costas com os braços esticados para trás da cabeça e cai deitado de costas
   if (p.pulaTras) {
     const P = p.pulaTras, u = clamp(P.t / P.dur, 0, 1);
-    if (u < 0.55) {
+    if (P.t < 0) {                                   // recuando de olho na bola, braços prontos
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 0.8; m.bracoE.rotation.x = 0.15; m.bracoD.rotation.x = -0.15;
+      m.corpo.rotation.z = 0.06;
+      if (m.cabecaLigada) m.cabeca.rotation.y = 0;
+      usarCabeca(m, 0.35);
+      return;
+    }
+    if (P.pega && P.pegou != null) {                 // segurou: traz a bola para o peito e cai de costas com ela
+      const kc = clamp(P.pegou / P.dur / 0.55, 0, 1), y0 = Math.sin(kc * Math.PI) * 0.55, rz0 = 0.3 * smooth(kc);
+      const c = P.t - P.pegou, k = smooth(clamp(c / Math.max(0.3, P.dur - P.pegou), 0, 1)), w = smooth(Math.min(1, c / 0.3));
+      m.raiz.position.y = lerp(y0, 0.17, k); m.raiz.rotation.z = lerp(rz0, 1.45, k); m.raiz.rotation.x = 0;
+      m.bracoE.rotation.z = m.bracoD.rotation.z = lerp(3.0, 1.35, w);
+      m.bracoE.rotation.x = lerp(0.12, -0.15, w); m.bracoD.rotation.x = lerp(-0.12, 0.15, w);
+      m.pernaE.rotation.z = lerp(0.5, 0.15, k); m.pernaD.rotation.z = lerp(0.2, 0.05, k);
+      usarJoelhos(m, -1.0 * (1 - k) - 0.0001, -0.5 * (1 - k) - 0.0001);
+      usarCotovelos(m, 0, 0);
+      m.corpo.rotation.z = lerp(0.1, 0, k); m.corpo.position.y = 0;
+      if (m.cabecaLigada) m.cabeca.rotation.y = 0;
+      usarCabeca(m, lerp(0.2, -0.25, w) || 0.0001);                         // olha para a bola no peito
+      naoEntrarNoChao(m);
+      return;
+    }
+    if (P.pega && u < 0.55) {                        // subindo de braços retos para segurar lá em cima
       const k = u / 0.55, sobe = Math.sin(k * Math.PI);
+      m.raiz.position.y = sobe * 0.55; m.raiz.rotation.z = 0.3 * smooth(k); m.raiz.rotation.x = 0;
+      m.bracoE.rotation.z = m.bracoD.rotation.z = lerp(2.2, 3.0, smooth(Math.min(1, k * 1.8)));
+      m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
+      m.pernaE.rotation.z = 0.5 * sobe; m.pernaD.rotation.z = 0.2 * sobe;
+      usarJoelhos(m, -1.0 * sobe - 0.0001, -0.5 * sobe - 0.0001);
+      usarCotovelos(m, 0, 0);
+      m.corpo.rotation.z = 0.1 * k; m.corpo.position.y = 0;
+      if (m.cabecaLigada) m.cabeca.rotation.y = 0;
+      usarCabeca(m, 0.35 * k + 0.0001);
+      return;
+    }
+    const uf = P.pega ? Math.max(u, 0.55) : u;       // (alcançaria, mas a bola não chegou nas mãos: cai como quem não alcançou)
+    if (uf < 0.55) {
+      const k = uf / 0.55, sobe = Math.sin(k * Math.PI);
       m.raiz.position.y = sobe * 0.55; m.raiz.rotation.z = 0.55 * smooth(k); m.raiz.rotation.x = 0;
       m.bracoE.rotation.z = m.bracoD.rotation.z = lerp(2.2, 3.35, smooth(Math.min(1, k * 1.6)));   // braços esticados, indo para trás da cabeça
       m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
@@ -9439,7 +10331,7 @@ function aplicarPosesGoleiro(p, m, dt) {
       if (m.cabecaLigada) m.cabeca.rotation.y = 0;
       usarCabeca(m, 0.3 * k + 0.0001);                                      // olhando a bola passar por cima
     } else {
-      const k = smooth((u - 0.55) / 0.45);
+      const k = smooth((uf - 0.55) / 0.45);
       m.raiz.position.y = 0.17 * k; m.raiz.rotation.z = lerp(0.55, 1.45, k); m.raiz.rotation.x = 0;
       m.bracoE.rotation.z = m.bracoD.rotation.z = lerp(3.35, -0.2, k);
       m.bracoE.rotation.x = lerp(0.12, 0.9, k); m.bracoD.rotation.x = lerp(-0.12, -0.9, k);
@@ -9447,6 +10339,7 @@ function aplicarPosesGoleiro(p, m, dt) {
       usarJoelhos(m, -0.4 * (1 - k) - 0.0001, -0.0001);
       m.corpo.rotation.z = lerp(0.15, 0, k); m.corpo.position.y = 0;
       usarCabeca(m, lerp(0.3, 0.12, k));
+      naoEntrarNoChao(m);
     }
     return;
   }
@@ -9464,6 +10357,15 @@ function aplicarPosesGoleiro(p, m, dt) {
       m.bracoE.rotation.x = -0.12 * w; m.bracoD.rotation.x = 0.12 * w;
       usarCotovelos(m, -0.15 * w, 0.15 * w);
       usarCabeca(m, -0.35 * w - 0.0001);
+    } else if (D.tipo === 'lado') {
+      // lat 0 = bola no meio: as duas mãos na frente, na altura dela; lat 1 = do lado: corpo inclina e as mãos vão para lá
+      const l = D.lado, q = D.lat || 0, aZ = clamp(Math.acos(clamp((1.27 - D.alt) / 0.6, -1, 1)), 0.5, 2.7);
+      m.raiz.rotation.x = l * 0.3 * q * w; m.corpo.rotation.z = lerp(m.corpo.rotation.z, -0.08, w);
+      const fora = l > 0 ? m.bracoD : m.bracoE, cruza = l > 0 ? m.bracoE : m.bracoD, sg = l > 0 ? 1 : -1;
+      fora.rotation.z = lerp(fora.rotation.z, aZ * lerp(1, 0.9, q), w); fora.rotation.x = lerp(fora.rotation.x, lerp(sg * 0.15, -l * 0.9, q), w);   // o braço do lado da bola abre para ela
+      cruza.rotation.z = lerp(cruza.rotation.z, aZ, w); cruza.rotation.x = lerp(cruza.rotation.x, lerp(-sg * 0.15, -l * 0.45, q), w);       // o outro cruza na frente do corpo
+      usarCotovelos(m, 0, 0);
+      if (m.cabecaLigada) m.cabeca.rotation.y = 0;
     } else if (D.tipo === 'tapa') {
       const l = D.lado || 1, cima = (l * Math.cos(p.angle)) >= 0 ? m.bracoD : m.bracoE, baixo = cima === m.bracoD ? m.bracoE : m.bracoD, sg = cima === m.bracoD ? -1 : 1;
       cima.rotation.z = lerp(cima.rotation.z, 3.25, w); cima.rotation.x = sg * 0.25 * w;
@@ -9513,6 +10415,74 @@ function atualizarColados(dt) {
   }
 }
 
+// BRAÇO NÃO ATRAVESSA O OUTRO: dois bonecos colados (drible, disputa, marcação) com o braço aberto entravam um no outro.
+// Depois das poses, se algum canto do braço de um está DENTRO do corpo do outro, o braço fecha/baixa aos poucos até sair.
+function caixasDaGeometria(g) {
+  if (g.userData.caixas) return g.userData.caixas;
+  const a = g.attributes.position, out = [];
+  if (a.count % 24 === 0) for (let i = 0; i < a.count; i += 24) {
+    let x0 = 1e9, y0 = 1e9, z0 = 1e9, x1 = -1e9, y1 = -1e9, z1 = -1e9;
+    for (let j = i; j < i + 24; j++) { const x = a.getX(j), y = a.getY(j), z = a.getZ(j); if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+    out.push([x0, y0, z0, x1, y1, z1]);
+  }
+  g.userData.caixas = out;
+  return out;
+}
+function malhasVisiveis(o, lista) {
+  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO) return lista;
+  if (o.isMesh) lista.push(o);
+  for (const c of o.children) malhasVisiveis(c, lista);
+  return lista;
+}
+const _cw = new THREE.Vector3(), _cl = new THREE.Vector3();
+function bracoEntraNoOutro(b, alvo) {               // alvo: [{ inv, caixas }]
+  for (const q of malhasVisiveis(b, [])) {
+    q.updateWorldMatrix(true, false);
+    for (const c of caixasDaGeometria(q.geometry)) for (let k = 0; k < 8; k++) {
+      _cw.set(c[k & 1 ? 3 : 0], c[k & 2 ? 4 : 1], c[k & 4 ? 5 : 2]).applyMatrix4(q.matrixWorld);
+      for (const A of alvo) { _cl.copy(_cw).applyMatrix4(A.inv); for (const d of A.caixas) if (_cl.x > d[0] + 0.03 && _cl.x < d[3] - 0.03 && _cl.y > d[1] + 0.03 && _cl.y < d[4] - 0.03 && _cl.z > d[2] + 0.03 && _cl.z < d[5] - 0.03) return true; }
+    }
+  }
+  return false;
+}
+// o contrário: algum canto do corpo do outro dentro do braço (braço fino passando pela quina do tronco)
+function outroEntraNoBraco(b, alvoMalhas) {
+  for (const q of malhasVisiveis(b, [])) {
+    q.updateWorldMatrix(true, false);
+    const inv = q.matrixWorld.clone().invert(), cx = caixasDaGeometria(q.geometry);
+    for (const A of alvoMalhas) for (const c of A.caixas) for (let k = 0; k < 8; k++) {
+      _cl.set(c[k & 1 ? 3 : 0], c[k & 2 ? 4 : 1], c[k & 4 ? 5 : 2]).applyMatrix4(A.mw).applyMatrix4(inv);
+      for (const d of cx) if (_cl.x > d[0] + 0.03 && _cl.x < d[3] - 0.03 && _cl.y > d[1] + 0.03 && _cl.y < d[4] - 0.03 && _cl.z > d[2] + 0.03 && _cl.z < d[5] - 0.03) return true;
+    }
+  }
+  return false;
+}
+function alvoDoBoneco(m) {
+  m.raiz.updateMatrixWorld(true);
+  return malhasVisiveis(m.raiz, []).map((q) => ({ mw: q.matrixWorld, inv: q.matrixWorld.clone().invert(), caixas: caixasDaGeometria(q.geometry) }));
+}
+function bracosSemAtravessar() {
+  const n = players.length;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const a = players[i], b = players[j];
+    if (a.out || b.out || !a.mesh.raiz.visible || !b.mesh.raiz.visible) continue;
+    if ((a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z) > 2.9) continue;   // braço aberto alcança ~0,85 m
+    for (const [p, q] of [[a, b], [b, a]]) {
+      let alvo = null;
+      for (const br of [p.mesh.bracoE, p.mesh.bracoD]) {
+        for (let it = 0; it < 5; it++) {
+          if (!alvo) alvo = alvoDoBoneco(q.mesh);
+          if (!bracoEntraNoOutro(br, alvo) && !outroEntraNoBraco(br, alvo)) break;
+          br.rotation.x *= 0.6; br.rotation.z *= 0.72;
+          if (br.cotLigado) { br.cotovelo.rotation.x *= 0.6; br.cotovelo.rotation.z *= 0.6; }
+          br.updateMatrixWorld(true);
+          p.mexeuBraco = true;
+        }
+      }
+      if (p.mexeuBraco) { p.mexeuBraco = false; naoEntrarNoChao(p.mesh); }   // (deitado, o braço baixando podia entrar no chão)
+    }
+  }
+}
 function syncMeshes(dt) {
   const agora = performance.now();
   const k = Math.min(1, dt * 14);
@@ -9551,6 +10521,10 @@ function syncMeshes(dt) {
     if (prep > 0) { legR = lerp(legR, -0.95, prep); legL = lerp(legL, 0.15, prep); }
     if (p.fall > 0 && p.fallKind === 'frente') { legL = lerp(legL, -0.3, p.fall); legR = lerp(legR, -0.12, p.fall); } // pernas largadas
     if (p.carretel > 0) { legR = lerp(legR, -1.9, p.carretel); legL = lerp(legL, 0.25, p.carretel); }   // calcanhar levanta a bola por trás
+    // Postura de defesa (o corpo desce até 0,12 m): os joelhos dobram e as coxas vão um pouco para a frente, para os pés
+    // continuarem EM CIMA do gramado (antes a perna inteira descia junto e o pé entrava no chão).
+    const aG = p.guard > 0.01 && p.fall === 0 && p.diveT <= 0 && !p.celeb ? Math.acos(1 - Math.min(0.3, p.guard * 0.12) / 0.73) : 0;
+    legL += aG; legR += aG;
     m.pernaE.rotation.z += (legL - m.pernaE.rotation.z) * k;
     m.pernaD.rotation.z += (legR - m.pernaD.rotation.z) * (p.kickT > 0 || p.carretel > 0 ? Math.min(1, dt * 30) : k);
     // Braços.
@@ -9559,13 +10533,13 @@ function syncMeshes(dt) {
     if (pose === 'hold') { aZL = aZR = 1.25; aXL = -0.15; aXR = 0.15; }   // mãos fechando dos lados da bola
     if (p.tackle > 0) { aZL = aZR = 0.6 * p.tackle; aXL = 0.9 * p.tackle; aXR = -0.9 * p.tackle; }
     const caiFrente = p.fall > 0 && p.fallKind === 'frente';
-    if (p.fall > 0 && p.fallKind === 'costas') { aZL = aZR = -0.2 * p.fall; aXL = 0.9 * p.fall; aXR = -0.9 * p.fall; }
+    if (p.fall > 0 && p.fallKind === 'costas' && pose !== 'hold') { aZL = aZR = -0.2 * p.fall; aXL = 0.9 * p.fall; aXR = -0.9 * p.fall; }   // com a bola: abraçada no peito
     if (caiFrente) {                              // braços esticados à frente para apoiar no chão
       const f = p.fall;
       aZL = lerp(aZL, 2.8, f); aZR = lerp(aZR, 2.7, f); aXL = 0.45 * f; aXR = -0.35 * f;   // conferido: nada abaixo do gramado
     }
     // Caído de lado: o braço de baixo vai para cima da cabeça (senão ele atravessa o gramado).
-    if (p.fall > 0 && !caiFrente && p.fallKind !== 'costas') {
+    if (p.fall > 0 && !caiFrente && p.fallKind !== 'costas' && pose !== 'hold') {   // (segurando a bola: os dois braços nela)
       if (p.fallSide > 0) aXR = lerp(aXR, -3.0, p.fall); else aXL = lerp(aXL, 3.0, p.fall);
     }
     if (prep > 0) { aXL = lerp(aXL, 0.75, prep); aXR = lerp(aXR, -0.45, prep); aZR = lerp(aZR, -0.4, prep); }
@@ -9702,6 +10676,7 @@ function syncMeshes(dt) {
       if (p.dkVis > 0) { const V = DISPUTA_POSES[p.disputaVar || 0]; usarCotovelo(p.disputaLado < 0 ? m.bracoE : m.bracoD, (p.disputaLado < 0 ? 1 : -1) * V.cx * p.dkVis, V.cz * p.dkVis); }
     }
     if (!p.celeb && !(p.lamento === 'sentado' && p.lamentoK > 0) && !(p.isUser && G.celebAuto) && m.joelhosLigados) usarJoelhos(m, 0, 0);
+    if (aG > 0.01 && !(p.slidePose > 0) && !lamentando) usarJoelhos(m, -2 * aG, -2 * aG);
     if (p.ckVis > 0 && !lamentando) { usarCotovelo(m.bracoE, 0, 0.45 * p.ckVis); usarCotovelo(m.bracoD, 0, 0.45 * p.ckVis); }   // mãos espalmadas nas costas dele
     else if (EC && !lamentando && !(p.isUser && G.celebAuto)) aplicarEstiloCorrida(p, m, EC, ecK);
     if (p.isUser && G.celebAuto) aplicarCelebAuto(p, m);
@@ -9719,11 +10694,19 @@ function syncMeshes(dt) {
     if (p.impacto) aplicarImpacto(p, m);
     if (p.driblePose) aplicarDriblePose(p, m); else if (m.pernaE.rotation.x || m.pernaD.rotation.x) { m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0; }
     if (p.bloqueio) aplicarBloqueio(p, m); else if (m.cabeca.rotation.y) m.cabeca.rotation.y = 0;
-    if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);              // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa
+    if (p.levanta && p.levanta.t >= 0 && p.role !== 'GK') aplicarLevanta(p, m);   // levantando do chão (depois do voleio/bicicleta)
+    if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);   // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa, levantar
+    // NADA ABAIXO DO GRAMADO: depois de todas as poses, se alguma parte do boneco entrou no chão (a ponta do pé na
+    // passada, o braço no aviãozinho, o corpo no mergulho...), ele sobe o quanto entrou.
+    if (m.raiz.visible && G.state !== 'replay') naoEntrarNoChao(m);
+    if (p.role === 'GK') medirMaos(p, m);
     m.etiqueta.visible = G.state !== 'fim' && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
-  ball.mesh.position.set(ball.x, ball.y, ball.z);
+  bracosSemAtravessar();
+  if (G.recvFx && DOMINIOS_NOVOS.includes(G.recvFx.pose)) afastarBolaDoCorpo(user);   // com a pose deste quadro (a perna se mexe rápido)
+  const bolaMao = bolaNasMaosDoGoleiro();
+  if (bolaMao) ball.mesh.position.copy(bolaMao); else ball.mesh.position.set(ball.x, ball.y, ball.z);
   // Só gira quando está rolando/voando. Nas mãos (goleiro, lateral, cobrador levando) fica parada.
   const h = G.possession;
   const naMao = (h && (h.carry || h.throwIn || (h.role === 'GK' && !h.goalKick && !h.comPe))) || (G.sp && G.sp.taker && G.sp.taker.carry) || G.recvFx;
@@ -9731,8 +10714,8 @@ function syncMeshes(dt) {
     ball.mesh.rotation.x += ball.vz * dt / CONFIG.BALL_R;
     ball.mesh.rotation.z -= ball.vx * dt / CONFIG.BALL_R;
   }
-  ball.shadow.position.set(ball.x, 0.02, ball.z);
-  ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.y - CONFIG.BALL_R) * 0.12));
+  ball.shadow.position.set(ball.mesh.position.x, 0.02, ball.mesh.position.z);
+  ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.mesh.position.y - CONFIG.BALL_R) * 0.12));
   userRing.position.set(user.x, 0.03, user.z);
   userRing.visible = !G.cine && !G.espectador && G.state !== 'replay' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
@@ -9740,6 +10723,7 @@ function syncMeshes(dt) {
   if (kk) { aimArrow.position.set(ball.x, kk.throwIn ? 0.06 : 0.06, ball.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX); }
   targetRing.visible = !!(kk && kk.target);
   if (targetRing.visible) targetRing.position.set(kk.target.x, 0.04, kk.target.z);
+  mostrarAreaLateral();
   const showDr = G.dribbleWin > 0 && !!G.dribbleOpp;
   if (showDr) dribbleRing.position.set(G.dribbleOpp.x, 0.04, G.dribbleOpp.z);
   dribbleRing.visible = showDr;
@@ -9775,6 +10759,7 @@ function stepGame(dt, rdt) {
   updateDribbleWindow(dt);
   updateKickClock(rdt);
   updateShotCine(rdt);
+  updateAcroCine(rdt);
   updateFintaCine(rdt);
   updateSpares(dt);
   updateOfficials(dt, rdt);

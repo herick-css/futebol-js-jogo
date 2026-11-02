@@ -2,6 +2,12 @@
    FUTEBOL JS · pizzaria.js · A PIZZARIA FORNO A LENHA E O TRABALHO DE ENTREGADOR (arquivo SEPARADO, como mercado.js)
    ---------------------------------------------------------------------
    6.1.0 — primeira versão. (6.2.4) bater de bicicleta: de novo só cambaleia (o tombo de 5 s no chão foi tirado).
+   6.6.5 — FLUXO: menos grupos (vazio 2 / médio 3 / cheio 4), um grupo entra de cada vez (portaLivre), o 2.º da dupla vem logo atrás;
+           corredor de 4 m no meio (as mesas foram para os lados, interiores.js): entra pela faixa da esquerda e sai pela da direita
+           (rotaSaida); no fim, SÓ UM paga, numa FILA de até 3 lugares na frente do balcão (tickFila), e o outro já vai saindo; quem não cabe
+           na fila espera sentado conversando (fase 'acabou'). Gente na frente: desvia mais cedo e passa por ela antes (clientePz).
+           REGISTRO da cidade: entrou() monta quem já estava lá dentro (pela hora em que entrou), chegou(ents) recebe quem vem da rua,
+           sairCliente → lojaSaiu e saiu() → lojaRestam (quanto falta para cada grupo ir embora).
    - Registrado com FutebolJS.registrarFase({ id: 'pizzaria' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do mercado.js e chama criar(api) (api = apiPizzaria() da cidade).
      Suba junto do cidade.js / interiores.js (mesma pasta futebol-js/).
@@ -454,9 +460,9 @@
       const q = R[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt;
       if (d <= Math.max(v, 0.04)) { A.x = q.x; A.z = q.z; R.shift(); A.esperaP = 0; if (!R.length) { A.andando = false; return true; } return false; }
       const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; if (!livreEst(nx, nz) && livreEst(A.x, A.z)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
-      const ux = dx / d, uz = dz / d, esp = A.esperaP || 0, paciencia = A === M.carla || A === M.mario ? 0.9 : 2.2;
+      const cli = A.tipo === 'clientePz', ux = dx / d, uz = dz / d, esp = A.esperaP || 0, paciencia = A === M.carla || A === M.mario ? 0.9 : cli ? 1.4 : 2.2;
       let ok = tenta(ux, uz, false);
-      if (!ok && esp > 0.6) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
+      if (!ok && esp > (cli ? 0.3 : 0.6)) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
       if (!ok && esp > paciencia) ok = tenta(ux, uz, true);
       A.andando = ok; A.correndo = false; A.esperaP = ok ? Math.max(0, esp - dt * 2) : esp + dt;
       return false;
@@ -474,8 +480,17 @@
         M.mario = colocar('mario', criarMario, T('Mário'), 1, M.D.mario);
         M.carla = colocar('carla', criarCarla, T('Carla'), 0, M.D.carla);
         objetosCarla(M.carla); M.carla.estP = 'livre';
-        if (aberto()) {                                                  // já tem gente quando você entra, cada grupo num ponto da visita
-          const alvo = alvoGrupos(), livres = M.mesas.filter(mesaLivre).sort(() => Math.random() - 0.5);   // (a mesa do encontro com a Lúcia já vem reservada)
+        if (aberto() && api.lojaGente) {                                 // (6.6.5) quem já está lá dentro é quem ENTROU (o registro da cidade): nada de gente inventada
+          const porG = new Map(); for (const e of api.lojaGente('pizzaria')) { if (!porG.has(e.g)) porG.set(e.g, []); porG.get(e.g).push(e); }
+          const livres = M.mesas.filter(mesaLivre).sort(() => Math.random() - 0.5);   // (a mesa do encontro com a Lúcia já vem reservada)
+          for (const ents of porG.values()) {
+            const T0 = livres.length > 1 ? livres.shift() : null;
+            if (!T0) { for (const e of ents) api.lojaSaiu('pizzaria', e); continue; }   // não coube: já tinha ido embora
+            const d = ents[0].desde, fase = d < 0.25 ? 'espera' : 'come', g = novoGrupo(T0, fase, ents.map((e) => e.ref));
+            if (fase === 'come') { g.estado = clampN(Math.floor((d - 0.25) / 0.6), 0, 2); mostrarPizzaMesa(T0, g.sabor, g.estado); }
+          }
+        } else if (aberto()) {                                           // (sem o registro: como antes)
+          const alvo = alvoGrupos(), livres = M.mesas.filter(mesaLivre).sort(() => Math.random() - 0.5);
           for (let i = 0; i < Math.max(0, alvo - 1) && i < livres.length; i++) novoGrupo(livres[i], pk(['come', 'come', 'come', 'espera']));
         }
         if (U()) mostrarCaixaPronta(!M.pedido);
@@ -488,8 +503,11 @@
       const q = pontoLivre(p.x, p.z); A.x = q.x; A.z = q.z; A.yaw = A.yawAlvo = p.yaw || 0;
       return A;
     }
+    // quanto falta (em horas do relógio) para cada grupo ir embora, pela fase em que ele está (o registro da cidade continua a conta)
+    const RESTA_FASE = { entra: 2.3, espera: 2.1, aguarda: 1.9, preparando: 1.7, come: 1.0, filaPaga: 0.25, paga: 0.15, sai: 0.03 };
     function saiu() {
       const s = S();
+      if (api.lojaRestam) { const L = []; for (const g of M.grupos) for (const A of g.membros) if (A.reg) L.push({ e: A.reg, resta: (RESTA_FASE[g.fase] || 1) - (g.fase === 'come' ? g.estado * 0.25 : 0) }); api.lojaRestam('pizzaria', L); }
       for (const [, m] of M.pizzasMesa) if (m.parent) m.parent.remove(m);
       M.pizzasMesa = new Map();
       if (s.falantesExtra) { delete s.falantesExtra.mario; delete s.falantesExtra.carla; }
@@ -517,21 +535,21 @@
 
     // ---------------------------------------------------------------- CLIENTES (grupos de 1 ou 2 por mesa)
     const FLUXO = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'];
-    function alvoGrupos() { const f = FLUXO[api.diaSemana()], n = M.mesas ? M.mesas.length : 8; return Math.min(n - 2, f === 'vazio' ? 2 : f === 'medio' ? 4 : 6); }
+    function alvoGrupos() { const f = FLUXO[api.diaSemana()], n = M.mesas ? M.mesas.length : 8; return Math.min(n - 2, f === 'vazio' ? 2 : f === 'medio' ? 3 : 4); }   // (6.6.5) era 2/4/6: lotava e travava
     const mesaLivre = (T0) => !T0.grupo && T0.assentos.every((a) => !a.ocupado);
     // onde a pessoa fica de pé ao lado da cadeira (do lado do corredor do meio)
     function pontoDaCadeira(a, T0) { const lado = T0.z < 1.4 ? 1 : -1; return pontoLivre(a.x, a.z + lado * 0.72); }
     // onde a Carla fica para anotar/servir (do lado da mesa que não tem cadeira, virado para o corredor)
     function pontoDaCarla(T0) { return pontoLivre(T0.x, T0.z - 0.95); }
-    function novoGrupo(T0, fase) {
-      const s = S(), n = Math.random() < 0.6 ? 2 : 1, g = { mesa: T0, membros: [], fase: fase || 'entra', sabor: pk(SABORES).id, estado: 0, t: 0, tEst: 0 };
+    function novoGrupo(T0, fase, ents) {
+      const s = S(), n = ents ? Math.min(2, ents.length) : Math.random() < 0.6 ? 2 : 1, g = { mesa: T0, membros: [], fase: fase || 'entra', sabor: pk(SABORES).id, estado: 0, t: 0, tEst: 0 };
       T0.grupo = g;
       for (let i = 0; i < n; i++) {
-        const a = T0.assentos[i], A = api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
-        A.tipo = 'clientePz'; A.vel = 1.1 + Math.random() * 0.3; A.pz = { g, a }; a.ocupado = A;
-        if (g.fase === 'entra') {
-          const e = entradaLivre(i); A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = Math.PI / 2;
-          const p = pontoDaCadeira(a, T0); A.rotaP = caminho(A.x, A.z, p.x, p.z);
+        const a = T0.assentos[i], e = ents && ents[i], A = e && api.semente ? api.criarPessoa(s.f2, api.semente(e.seed), e.fem) : api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
+        A.tipo = 'clientePz'; A.vel = 1.1 + Math.random() * 0.3; A.pz = { g, a }; a.ocupado = A; if (e) A.reg = e;
+        if (g.fase === 'entra') {                                        // (6.6.5) entra pela FAIXA DA ESQUERDA do corredor (a da direita é de quem sai); o 2.º vem logo atrás
+          const ent = M.R.entrada; A.x = ent.x - 0.55; A.z = ent.z + 0.25 + i * 0.5; A.yaw = A.yawAlvo = Math.PI / 2; A.atrasoEntra = i * 0.9;
+          const p = pontoDaCadeira(a, T0), meio = pontoLivre(ent.x - 0.8, ent.z - 1.6); A.rotaP = [meio].concat(caminho(meio.x, meio.z, p.x, p.z));
         } else { sentarNPC(A, a); }
         s.npcs.push(A); api.poseAtor(A, 0.016); g.membros.push(A);
       }
@@ -553,28 +571,59 @@
       }
       const t = texPizza(id, ESTADOS[estado]); if (m.material.map !== t) { m.material.map = t; m.material.needsUpdate = true; }
     }
+    // (6.6.5) chegou gente (do registro da cidade, vindo da rua): entra se tiver mesa e a porta estiver livre
+    function portaLivre() {
+      const s = S(), e = M.R.entrada;
+      if (M.grupos.some((g) => g.fase === 'entra')) return false;          // um grupo entrando de cada vez
+      for (const A of s.npcs) if (!A.sentado && Math.hypot(A.x - e.x, A.z - e.z) < 1.9) return false;
+      return true;
+    }
+    function chegou(ents) {
+      if (!M.mesas || !M.carla || !aberto() || hora() >= H_ULTIMO_GRUPO || !portaLivre()) return false;
+      if (M.grupos.filter((g) => g.fase !== 'sai').length >= alvoGrupos() + 1) return false;
+      const livres = M.mesas.filter(mesaLivre); if (livres.length < 3) return false;   // nunca lota
+      novoGrupo(pk(livres), 'entra', ents); return true;
+    }
     function tickFluxo(dt) {
       if (!M.mesas || !M.carla) return;
+      if (api.lojaGente) return;                                         // (6.6.5) com o registro, quem chega vem de fora (chegou)
       M.prox -= dt; if (M.prox > 0) return; M.prox = rnd(7, 14);
       if (!aberto() || hora() >= H_ULTIMO_GRUPO) return;
       const ativos = M.grupos.filter((g) => g.fase !== 'sai').length;
       if (ativos >= alvoGrupos()) return;
       const livres = M.mesas.filter(mesaLivre); if (livres.length < 3) return;   // nunca lota
+      if (!portaLivre()) return;
       novoGrupo(pk(livres), 'entra');
     }
     // (chamado pela cidade em tickPessoas para cada cliente)
     function tickCliente(A, dt) {
       const P = A.pz; if (!P || !M.D) return; const g = P.g;
-      if (A.saindo) { A.tSai = (A.tSai || 0) + dt; const sd = M.R.saida; if (andarP(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 1.0 || A.tSai > 25) sairCliente(A); return; }
+      if (A.saindo) { A.tSai = (A.tSai || 0) + dt; const sd = M.R.saida; if (andarP(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.8 || A.tSai > 25) sairCliente(A); return; }
       if (g.fase === 'entra') {
+        if (A.atrasoEntra > 0) { A.atrasoEntra -= dt; A.andando = false; return; }
         if (!A.sentado) { A.tEntra = (A.tEntra || 0) + dt; if (andarP(A, dt) || A.tEntra > 30) sentarNPC(A, P.a); }
         if (g.membros.every((B) => B.sentado)) { g.fase = 'espera'; g.t = 0; M.tarefas.push({ tipo: 'anotar', g }); }
-      } else if (g.fase === 'paga') {
-        if (A.rotaP && A.rotaP.length) andarP(A, dt); else { A.andando = false; A.yawAlvo = Math.PI / 2; }   // no caixa, olhando o Mário
+      } else if (g.fase === 'paga' || g.fase === 'filaPaga') {
+        if (A.rotaP && A.rotaP.length) andarP(A, dt); else { A.andando = false; A.yawAlvo = Math.PI / 2; }   // na fila / no caixa, olhando o Mário
       }
     }
+    // (6.6.5) indo embora: pela FAIXA DA DIREITA do corredor (quem entra usa a da esquerda) até a porta
+    function rotaSaida(A) {
+      const sd = M.R.saida, meio = pontoLivre(sd.x + 0.8, sd.z - 1.9);
+      const r = caminho(A.x, A.z, meio.x, meio.z); r.push({ x: sd.x + 0.8, z: sd.z - 1.6 }, { x: sd.x + 0.45, z: sd.z }); return r;
+    }
+    // a FILA DO CAIXA: até 3 lugares na frente do balcão (o 1.º paga); quem não cabe espera sentado na mesa (conversando)
+    function vagaFila(k) { const P = M.D.pagar; return pontoLivre(P.x - k * 0.85, P.z); }
+    function tickFila() {
+      const fila = M.grupos.filter((g) => g.fase === 'filaPaga' || g.fase === 'paga').sort((a, b) => a.ordem - b.ordem);
+      fila.forEach((g, k) => {
+        const A = g.membros[0]; if (!A) return;
+        if (g.vaga !== k) { g.vaga = k; const q = vagaFila(k); A.rotaP = caminho(A.x, A.z, q.x, q.z); }
+        if (k === 0 && g.fase === 'filaPaga') g.fase = 'paga';
+      });
+    }
     function sairCliente(A) {
-      const s = S(), g = A.pz && A.pz.g; tirarFatia(A); api.descartarPessoa(A);
+      const s = S(), g = A.pz && A.pz.g; tirarFatia(A); if (A.reg && api.lojaSaiu) api.lojaSaiu('pizzaria', A.reg); api.descartarPessoa(A);
       if (g) { g.membros = g.membros.filter((B) => B !== A && s.npcs.includes(B)); if (!g.membros.length) { M.grupos = M.grupos.filter((q) => q !== g); if (g.mesa.grupo === g) g.mesa.grupo = null; } }
     }
     // a vida do grupo (o que não é andar: comer, levantar, pagar)
@@ -592,20 +641,25 @@
           if (g.tEst <= 0) {
             g.estado++; g.tEst = rnd(6, 10);
             mostrarPizzaMesa(g.mesa, g.sabor, g.estado);
-            if (g.estado >= ESTADOS.length) {                            // comeram tudo: levantam e vão pagar
-              for (const A of g.membros) levantarNPC(A);
-              for (const a of g.mesa.assentos) if (a.ocupado && a.ocupado.pz && a.ocupado.pz.g === g) a.ocupado = null;
-              g.fase = 'paga'; g.t = 0; g.pagou = false;
-              const P = M.D.pagar; g.membros.forEach((A, i) => { A.rotaP = caminho(A.x, A.z, P.x - i * 0.75, P.z + i * 0.35); });
-            }
+            if (g.estado >= ESTADOS.length) g.fase = 'acabou';             // comeram tudo: esperam a vez na fila do caixa (sentados, conversando)
+          }
+        } else if (g.fase === 'acabou') {
+          const k = Math.floor(g.t / 2.4) % 2; g.membros.forEach((A, i) => { A.comendo = 0; tirarFatia(A); A.fala = g.membros.length > 1 && k === i; });
+          if (M.grupos.filter((q) => q.fase === 'filaPaga' || q.fase === 'paga').length < 3) {   // tem lugar na fila: um paga, o outro já vai saindo
+            for (const A of g.membros) { A.fala = false; levantarNPC(A); }
+            for (const a of g.mesa.assentos) if (a.ocupado && a.ocupado.pz && a.ocupado.pz.g === g) a.ocupado = null;
+            g.fase = 'filaPaga'; g.t = 0; g.pagou = false; g.ordem = (M.ordemFila = (M.ordemFila || 0) + 1); g.vaga = -1;
+            for (const A of g.membros.slice(1)) { A.saindo = true; A.rotaP = rotaSaida(A); }   // o acompanhante sai na frente (pela faixa da direita)
+            g.membros = g.membros.slice(0, 1); if (g.mesa.grupo === g) g.mesa.grupo = null;
+            tickFila();
           }
         } else if (g.fase === 'paga') {
-          const P = M.D.pagar, chegou = g.membros[0] && !(g.membros[0].rotaP && g.membros[0].rotaP.length) && Math.hypot(g.membros[0].x - P.x, g.membros[0].z - P.z) < 1.2;
+          const P = M.D.pagar, A0 = g.membros[0], chegou = A0 && !(A0.rotaP && A0.rotaP.length) && Math.hypot(A0.x - P.x, A0.z - P.z) < 1.2;
           if (chegou && M.mario && !M.mario.conversando) {
-            g.tc = (g.tc || 0) + dt; M.mario.cobrando = g.tc < 1.8; g.membros[0].fala = g.tc < 0.9;
+            g.tc = (g.tc || 0) + dt; M.mario.cobrando = g.tc < 1.8; A0.fala = g.tc < 0.9;
             if (g.tc > 1.0 && !g.pagou) { g.pagou = true; api.somCaixa(); }
-            if (g.tc > 2.0) { M.mario.cobrando = false; g.fase = 'sai'; for (const A of g.membros) { A.fala = false; A.saindo = true; A.rotaP = caminho(A.x, A.z, M.R.saida.x, M.R.saida.z); } if (g.mesa.grupo === g) g.mesa.grupo = null; }
-          } else if (g.t > 30) { g.fase = 'sai'; for (const A of g.membros) { A.saindo = true; A.rotaP = caminho(A.x, A.z, M.R.saida.x, M.R.saida.z); } if (g.mesa.grupo === g) g.mesa.grupo = null; }
+            if (g.tc > 2.0) { M.mario.cobrando = false; g.fase = 'sai'; for (const A of g.membros) { A.fala = false; A.saindo = true; A.rotaP = rotaSaida(A); } if (g.mesa.grupo === g) g.mesa.grupo = null; tickFila(); }
+          } else if (g.t > 40) { g.fase = 'sai'; for (const A of g.membros) { A.saindo = true; A.rotaP = rotaSaida(A); } if (g.mesa.grupo === g) g.mesa.grupo = null; tickFila(); }
         }
       }
     }
@@ -1320,7 +1374,7 @@
     }
 
     return {
-      aberto, entrou, saiu, alvos, alvosSentado, alvosRua, alvosMontado, montado, tick, tickCliente, limpar, encerrarAntes, liberarMesa, meshPizza,
+      aberto, entrou, saiu, alvos, alvosSentado, alvosRua, alvosMontado, montado, tick, tickCliente, limpar, encerrarAntes, liberarMesa, meshPizza, chegou,
       emTurno: () => !!U(), _M: M,
       _f: { iniciarTurno, pegarPedido, subir, descer, bater, entregar, encerrar, comecarCorrida, escolherCasa, garantirBike, guardarBike, novoGrupo, mostrarPizzaMesa, pedirPizza, falarComMario, alvoGrupos, cardapioUI },
       _regras: { H_ABRE, H_FECHA, PAGA, GORJETA, ATRASO, PRAZO, PRECO_PIZZA, VEL_BIKE, DIAS_TRABALHO },

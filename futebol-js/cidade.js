@@ -1,6 +1,21 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.5
+     - REGISTRO DAS LOJAS (MOV, regLoja, tickLojas): quem está dentro do bar, restaurante, cafeteria, pizzaria e mercado é quem ENTROU.
+       As pessoas saem de uma ponta da cidade (a do caminho mais curto pela rede), andam até a porta e entram; na hora delas, saem pela
+       porta e vão para uma ponta da cidade. Longe do jogador a viagem é só conta (S.viagens: posição pela hora, sem boneco); perto
+       (R_GANHA) ganha boneco, um ou dois lado a lado. Lá dentro, montarFluxo/novoCliente usam o registro (a mesma aparência: semente);
+       pizzaria.js e mercado.js recebem pelo chegou(ents) e devolvem pelo lojaSaiu/lojaRestam. Nenhuma loja abre com gente dentro.
+       Bar 16h–2h e restaurante 11h–23h (porta com "fechado"). Os FREQUENTADORES da academia vêm de fora pela agenda (tickAgendaAcad).
+     - CALÇADAS: a avenida ficou 2 m mais estreita (AV −2,2…6,2) e cada calçada 1 m mais larga; postes e a marquise do hospital na beira
+       do meio-fio. MÃO DIREITA (maoDireita): quem anda ao longo da avenida vai pelo lado direito da linha; o parceiro anda do lado que
+       tiver espaço. Travou numa COISA e o desvio não resolveu: OUTRO CAMINHO pela rede (outroCaminho). FAIXA: carro que já decidiu parar
+       não atrapalha, e quem chega com o carro já parado atravessa junto (faixaAberta), sem acenar.
+     - MAIS VIDA (tickVida, A.ativ): papo (às vezes com abraço e selfie), pedrinhas no lago (umas quicam: anéis e respingos), foto da
+       praça / do sapo, a dupla de fora para uma selfie, e a RODA DE BOLA na quadra e no sintético (bola própria, sem gol nem comemoração;
+       quem passa perto entra; às vezes a cidade já abre com uma roda). Gestos novos: selfie, pose, fotografa, olhaCel, ri, joga.
+     - S.atoresExtra: atores fora de S.npcs que os carros, as pessoas e o jogador respeitam (o Herick indo/voltando do cinema).
    NOVIDADES DA 6.6.1
      - Lago: a trilha passa mais longe da frente da casinha do Bené (o caixote travava os NPCs) e dois postes e um banco saíram de cima
        do caminho (conferido: nenhum ponto da rede de caminhos perto do lago fica bloqueado). O SAPO CURURU ficou 2× maior, no gramado entre
@@ -538,6 +553,8 @@
     'Barriga cheia!': ['Full belly!', '¡Barriga llena!', 'Pancia piena!', 'Ventre plein !'],
     'Dia, hora e dinheiro': ['Day, time and money', 'Día, hora y dinero', 'Giorno, ora e soldi', 'Jour, heure et argent'],
     'Cinema fechado. Abre às 6h.': ['Cinema closed. Opens at 6 AM.', 'Cine cerrado. Abre a las 6h.', 'Cinema chiuso. Apre alle 6.', 'Cinéma fermé. Ouvre à 6 h.'],
+    'Bar fechado. Abre às 16h.': ['Bar closed. Opens at 4 PM.', 'Bar cerrado. Abre a las 16h.', 'Bar chiuso. Apre alle 16.', 'Bar fermé. Ouvre à 16 h.'],
+    'Restaurante fechado. Abre às 11h.': ['Restaurant closed. Opens at 11 AM.', 'Restaurante cerrado. Abre a las 11h.', 'Ristorante chiuso. Apre alle 11.', 'Restaurant fermé. Ouvre à 11 h.'],
     'Vou dar uma volta e já volto.': ["I'll take a walk and be right back.", 'Voy a dar una vuelta y ya vuelvo.', 'Faccio un giro e torno subito.', 'Je vais faire un tour et je reviens.'],
     'Olha a galera chegando aí! Bora!': ["Look, the guys are coming! Let's go!", '¡Mira, ya llega la banda! ¡Vamos!', 'Guarda, arriva la banda! Andiamo!', 'Regarde, la bande arrive ! On y va !'],
     'Beleza, mas não demora!': ["Alright, but don't take long!", 'Vale, ¡pero no tardes!', 'Va bene, ma non metterci troppo!', "D'accord, mais ne traîne pas !"],
@@ -599,7 +616,7 @@
   const R = (l, t, w, h) => ({ x0: PX(l), x1: PX(l + w), z0: PZ(t), z1: PZ(t + h) });
   const LIM = { x0: -120, x1: 120, z0: -76, z1: 76 };
   const RUAS_TERRA = [R(295, 0, 26, 760), R(872, 0, 26, 760), R(0, 190, 600, 22), R(0, 560, 900, 22), R(388, 582, 14, 34), R(1030, 338, 30, 24)];
-  const AV = { z0: -3.2, z1: 7.2, zc: 2 };                         // asfalto (sem as calçadas)
+  const AV = { z0: -2.2, z1: 6.2, zc: 2 };                         // asfalto (sem as calçadas). (6.6.5) era −3,2…7,2: a avenida ficou 2 m mais estreita e as calçadas, 1 m mais largas cada (dá para andar de 2 em 2)
   const PISTAS = [{ z: 4.6, dir: 1 }, { z: -0.6, dir: -1 }];        // mão direita: quem vai para leste (+x) anda no lado sul (+z)
   const CALCADAS = [];                                             // calçadas elevadas (12 cm), com os vãos onde as ruas de terra cruzam
   {
@@ -1144,11 +1161,11 @@
       letreiro: { txt: 'HOSPITAL', fundo: '#f4f6f8', cor: '#c8352b', w: 8, h: 1.2, y: 7.55 },
       montar: (G, w, d) => {
         naFace(G, w, d, 'f', 0, 0, 0, 3.2, 2.6, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 0, 0.02, 0.08, 2.6, 0.18, '#d8d8d0');
-        G.box(5.0, 0.25, 1.6, '#d8dde2', 0, 2.9, d / 2 + 0.8); for (const s of [-2.3, 2.3]) G.box(0.18, 2.78, 0.18, '#d8dde2', s, 0.12, d / 2 + 1.45);   // marquise da entrada
+        G.box(5.0, 0.25, 2.6, '#d8dde2', 0, 2.9, d / 2 + 1.3); for (const s of [-2.3, 2.3]) G.box(0.18, 2.78, 0.18, '#d8dde2', s, 0.12, d / 2 + 2.45);   // marquise da entrada (6.6.5: os pilares na beira da calçada nova)
         for (const s of [-1, 1]) for (let i = 0; i < 2; i++) janela(G, w, d, 'f', s * (4.5 + i * 3.6), 1.0, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
         for (let i = 0; i < 5; i++) if (i !== 2) janela(G, w, d, 'f', -8.4 + i * 4.2, 4.5, 1.6, 1.2, '#f4f6f8', '#7aa2bd');
         G.box(1.6, 0.5, 0.2, '#c8352b', 0, 5.75, d / 2 + 0.1); G.box(0.5, 1.6, 0.2, '#c8352b', 0, 5.2, d / 2 + 0.12);   // cruz vermelha
-      }, obst: [[-2.3, 1.45, 0.3, 0.3], [2.3, 1.45, 0.3, 0.3]] });
+      }, obst: [[-2.3, 2.45, 0.3, 0.3], [2.3, 2.45, 0.3, 0.3]] });
     // GOLAÇO ESPORTES — loja de artigos esportivos ao lado do bar (vazia por enquanto: depois vende comemorações, roupas...).
     //   Fachada verde e amarela com faixa azul, duas vitrines grandes com camisas e chuteiras, a porta emoldurada por uma TRAVE de gol,
     //   toldo listrado, bandeirinhas na platibanda e uma BOLA gigante girando em cima da loja.
@@ -1290,7 +1307,7 @@
 
     // --- postes da avenida (dos dois lados) e ponto de ônibus
     { const G = new Geo(), LG = new Geo();
-      for (let x0 = -112; x0 <= 112; x0 += 24) for (const [z, s] of [[-3.55, 1], [7.55, -1]]) { if ((x0 > -63 && x0 < -54) || (x0 > 52 && x0 < 62)) continue;
+      for (let x0 = -112; x0 <= 112; x0 += 24) for (const [z, s] of [[AV.z0 - 0.4, 1], [AV.z1 + 0.4, -1]]) {   // (6.6.5) os postes na beira do meio-fio if ((x0 > -63 && x0 < -54) || (x0 > 52 && x0 < 62)) continue;
         const x = x0 === -40 && z < 0 ? -31 : x0;                                    // o poste que atravessava o cinema foi para depois dele
         G.box(0.18, 7, 0.18, '#7d8288', x, 0.12, z); G.box(0.12, 0.12, 1.6, '#7d8288', x, 6.95, z + s * 0.75); LG.box(0.35, 0.18, 0.6, '#f4efc8', x, 6.8, z + s * 1.5);
         S.lampadas.push({ x, y: 6.75, z: z + s * 1.5, px: x, pz: z + s * 1.2, r: 6.6 });
@@ -2618,10 +2635,15 @@
       if (!c.ativo) continue;
       const dl = linhaFaixa(c); if (dl <= -6.8) continue;                // já passou
       if (c.v < 0.5) { if (dl < -0.6) return false; continue; }       // parado EM CIMA da faixa atrapalha; parado na linha (dl ≈ 0), não
-      if (dl < 0 || dl / Math.max(c.v, 1.5) < 6) return false;
+      if (dl < 0) return false;                                         // passando por cima da faixa agora
+      if (c.paraFaixa && (c.v * c.v) / (2 * 5.5) <= dl + 0.3) continue;   // (6.6.5) já decidiu parar na linha e ainda dá para frear: não atrapalha
+      if (S.carros.some((o) => o !== c && o.ativo && o.z === c.z && o.v < 0.5 && (o.x - c.x) * c.dir > 0 && linhaFaixa(o) > -0.6)) continue;   // tem carro parado na frente dele, antes da faixa
+      if (dl / Math.max(c.v, 1.5) < 6) return false;
     }
     return true;
   }
+  // (6.6.5) os carros JÁ ESTÃO PARADOS na faixa (alguém acenou) ou tem gente atravessando: quem chega depois aproveita e vai junto
+  const faixaAberta = (A) => S.carros.some((c) => c.ativo && c.paraFaixa && c.v < 0.5 && linhaFaixa(c) < 3) || S.npcs.some((B) => B !== A && B.atravessa && !B.oculto && Math.abs(B.x - PRACA_C.x) < 2.5);
   // o carro que ele acompanha com a cabeça: o mais perto que ainda não passou da faixa (com um pouco de histerese, para não ficar trocando)
   function carroParaOlhar(A, atual) {
     let b = null, bd = 75;
@@ -2634,7 +2656,7 @@
   function esperaFaixa(A, px, pz, dt) {
     const F = A.faixaE || (A.faixaE = novaEsperaFaixa()); F.t += dt;
     F.ok = faixaLivre() ? F.ok + dt : 0;
-    if (F.t > 20 || (F.t >= 2 && F.ok >= F.reacao)) { A.pedeFaixa = false; return false; }
+    if (F.t > 20 || (F.t >= 2 && F.ok >= F.reacao) || (F.ok > 0 && F.t >= 0.2 && faixaAberta(A))) { A.pedeFaixa = false; return false; }   // (6.6.5) carro já parado: atravessa junto, sem acenar
     A.andando = false; A.correndo = false; A.espera = 0; A.pedeFaixa = true; A.pedeEstilo = F.estilo; A.pedeFx = S.t;
     F.olha = carroParaOlhar(A, F.olha);
     const frente = Math.atan2(-(pz - A.z), px - A.x);                   // o corpo olha para a faixa
@@ -2684,6 +2706,7 @@
       if (!A.longeDemais && !A.sentado && (A.tipo === 'anda' || A.tipo === 'morador' || A.tipo === 'rua' || A.tipo === 'luciaRua' || A.tipo === 'joao' || A.recua) && A.z > AV.z0 - 1 && A.z < AV.z1 + 1) obst.push(A);
       if (A.atravessa || (A.pedeFx != null && S.t - A.pedeFx < 0.35)) peds.push(A);
     }
+    if (S.atoresExtra) for (const A of S.atoresExtra) if (A && A.z > AV.z0 - 1 && A.z < AV.z1 + 1) { obst.push(A); if (A.z > AV.z0 - 0.3 && A.z < AV.z1 + 0.3) peds.push(A); }   // (6.6.5) o Herick indo/voltando do cinema (ator próprio)
     for (let i = 0; i < PISTAS.length; i++) {                        // novos carros entram pelas pontas (longe, na névoa)
       S.pistaT[i] -= dt; if (S.pistaT[i] > 0) continue;
       const p = PISTAS[i], x0 = -p.dir * FIM, livre = !S.carros.some((c) => c.ativo && c.z === p.z && Math.abs(c.x - x0) < 16);
@@ -2853,7 +2876,21 @@
     if (g === 'acena') { m.bracoD.rotation.z = 2.7; m.bracoD.rotation.x = -0.35 + Math.sin(t * 11) * 0.32; usarCotovelo(m.bracoD, 0, 0.3); }
     else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.03; }
     else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.05; if (m.cabecaLigada) usarCabeca(m, -0.06); }
-    else if (g === 'garfo') {
+    else if (g === 'selfie') {                                         // (6.6.5) celular lá no alto, na frente (a mão direita), olhando para ele
+      m.bracoD.rotation.z = 1.95; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoD, 0, 0.2); usarCabeca(m, 0.12);
+    } else if (g === 'pose') {                                        // (6.6.5) o "paz e amor" com a mão esquerda do lado do rosto
+      m.bracoE.rotation.z = 2.3; m.bracoE.rotation.x = 0.32; usarCotovelo(m.bracoE, 0, 1.55); usarCabeca(m, 0.06);
+    } else if (g === 'fotografa') {                                   // (6.6.5) celular com as duas mãos, na altura dos olhos
+      for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.42; usarCotovelo(b, 0, 1.05); }
+    } else if (g === 'olhaCel') {                                     // (6.6.5) olhando a foto no celular
+      m.bracoD.rotation.z = 0.95; m.bracoD.rotation.x = 0.3; usarCotovelo(m.bracoD, 0, 1.25); usarCabeca(m, -0.22);
+    } else if (g === 'ri') {                                          // (6.6.5) rindo: o corpo sacode, a mão na barriga
+      m.corpo.rotation.z = 0.05 + Math.sin(t * 19) * 0.035; m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.5; usarCotovelo(m.bracoE, 0, 1.2); usarCabeca(m, 0.12 + Math.sin(t * 19) * 0.03);
+    } else if (g === 'joga') {                                        // (6.6.5) jogando a pedrinha: o braço vai para trás e vem por cima
+      const k = A.jogaK || 0, u = k < 0.42 ? k / 0.42 : Math.min(1, (k - 0.42) / 0.2);
+      m.bracoD.rotation.z = k < 0.42 ? lerp(0.3, -1.1, u) : lerp(-1.1, 2.3, u); m.bracoD.rotation.x = 0.15; usarCotovelo(m.bracoD, 0, k < 0.42 ? 0.9 * u : 0.9 * (1 - u));
+      m.corpo.rotation.z = k < 0.42 ? 0.08 * u : 0.08 - 0.22 * u; m.bracoE.rotation.z = 0.5;
+    } else if (g === 'garfo') {
       const k = Math.max(0, Math.sin(t * 3.2));
       m.bracoD.rotation.z = 1.05 + k * 0.25; m.bracoD.rotation.x = 0.25 * k; usarCotovelo(m.bracoD, 0, 0.7 + k * 0.95);
       m.bracoE.rotation.z = 1.0; m.bracoE.rotation.x = 0; usarCotovelo(m.bracoE, 0, 0.55);
@@ -2998,10 +3035,11 @@
     if (!semJog && !temRotina(A) && jogBloqueia() && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;   // jogador parado: a pessoa segue reto e passa por dentro dele (ele cambaleia)
     if (A && A.fantasma > 0) return true;
     for (const B of S.npcs) {
-      if (B === A || B.oculto) continue;
+      if (B === A || B.oculto || (A && B === A.parceiro)) continue;      // (6.6.5) o par anda junto
       const dn = Math.hypot(x - B.x, z - B.z);
       if (dn < 0.58) { if (A && dn >= Math.hypot(A.x - B.x, A.z - B.z) - 1e-4 && Math.hypot(A.x - B.x, A.z - B.z) < 0.58) continue; return false; }   // já sobrepostos: afastar é sempre permitido
     }
+    if (!S.dentro && S.atoresExtra) for (const B of S.atoresExtra) { const dn = Math.hypot(x - B.x, z - B.z); if (dn < 0.58 && !(A && dn >= Math.hypot(A.x - B.x, A.z - B.z) - 1e-4)) return false; }   // (6.6.5) o Herick andando
     return true;
   }
   // CONTORNAR O QUE TRAVA: sem o "pulo para o lado" (que parecia teleporte) quem travava só ficava parado. Agora, parado há ~0,6 s
@@ -3062,7 +3100,20 @@
     A.andando = false; q.parado += dt; if (q.parado > 0.7) { A.desvio = null; A.bloq = 0.4; return false; }   // o desvio também travou: desiste (o próximo degrau é mais largo)
     return true;
   }
+  // (6.6.5) MÃO DIREITA nas calçadas da avenida: quem anda ao longo delas vai pelo lado DIREITO da linha (indo para o leste, o lado sul),
+  //   e quem vem de frente passa pelo outro lado, sem se trombar. O par anda quase no meio (o parceiro vai do lado que tiver espaço).
+  //   Se o lado direito estiver ocupado por alguma coisa (mesa, pilar), vai pelo meio. Só muda PARA ONDE o passo aponta: chegar no ponto continua igual.
+  const LINHA_N = -4.2, LINHA_S = 8.1, LADO_CALC = 0.42;
+  function maoDireita(A, tx, tz) {
+    if (S.dentro || A.atravessa || A.desvio) return null;
+    const lin = Math.abs(tz - LINHA_N) < 0.3 ? LINHA_N : Math.abs(tz - LINHA_S) < 0.3 ? LINHA_S : null; if (lin == null) return null;
+    const dx = tx - A.x; if (Math.abs(A.z - lin) > 1.0 || Math.abs(dx) < 0.3) return null;   // chegando na calçada (da faixa, de uma porta, de uma rua de terra)
+    const sx = dx > 0 ? 1 : -1, z = lin + (A.parceiro ? 0.12 : LADO_CALC) * sx;
+    if (!livreNPC(A.x + sx * 0.6, z, A, true, true)) return null;
+    return { x: tx, z };
+  }
   function passoNPC(A, dt) {
+    if (A.ativ) { tickAtiv(A, dt); return; }                             // (6.6.5) papo, pedrinhas, foto...
     if (A.esporte) A.correndo = true;                                    // (6.3.0) o esportivo trota
     if (tickPassagem(A, dt)) return;
     if (A.dest) { tickDestino(A, dt); return; }
@@ -3070,8 +3121,8 @@
     if (A.espera > 0) { A.espera -= dt; A.andando = false; return; }
     if (A.travaE > 0) { A.travaE -= dt; A.andando = false; return; }      // esbarrou: espera o outro passar
     if (A.desvio && andarDesvio(A, dt)) return;                          // contornando o que travou
-    const N = S.rede[A.alvo], dx = N.x - A.x, dz = N.z - A.z, d = Math.hypot(dx, dz);
-    if (d < 0.6) {                                                   // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
+    const N = S.rede[A.alvo], d0 = Math.hypot(N.x - A.x, N.z - A.z);
+    if (d0 < 0.6) {                                                  // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
       if (A.cool <= 0 && !S.dentro && !A.faixaE) { decidirDestino(A); if (A.dest) return; }               // de cada 10 pedestres que decidem, 5 entram num lugar
       const op = N.viz.filter((i) => i !== A.ant), atrav = N.faixa ? op.find((i) => S.rede[i].faixa) : undefined, prox = A.faixaE && A.faixaE.no === A.alvo && A.faixaE.prox != null ? A.faixaE.prox : atrav != null && Math.random() < 0.7 ? atrav : op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;   // na ponta da faixa: 7 em 10 atravessam
       if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // saiu pela ponta do mapa
@@ -3083,6 +3134,7 @@
       A.ant = A.alvo; A.alvo = prox; if (!A.esporte && Math.random() < 0.05) A.espera = 2 + Math.random() * 4;
       return;
     }
+    const md = maoDireita(A, N.x, N.z), dx = (md ? md.x : N.x) - A.x, dz = (md ? md.z : N.z) - A.z, d = Math.hypot(dx, dz) || 1e-6;   // (6.6.5) mão direita
     const v = A.vel * dt; let moveu = false;
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return; }
@@ -3242,6 +3294,7 @@
     if (!naDeque(x, z) && dentroLago(x, z, 0.45)) return false;   // fora da água: os pés não entram mais (o píer e o deque oeste são chão)
     for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + RJ && Math.abs(z - c.z) < 0.95 + RJ) return false;
     for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // dá para se afastar de quem está encostado
+    if (S.atoresExtra) for (const A of S.atoresExtra) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < 0.55 && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // (6.6.5)
     return true;
   }
   // Cambaleando (esbarrão), a pessoa fica com 10% do "corpo" para o jogador: dá para passar por dentro dela (ver mover).
@@ -3555,15 +3608,26 @@
     const livres = lugares.slice().sort(() => Math.random() - 0.5);
     if (nome === lugarDoEmprego() || (nome === 'cafeteria' && !S.lucia)) return F;   // o lugar do emprego começa vazio; a cafeteria só se estiver fechada
     const cafe = nome === 'cafeteria';
+    if (MOV[nome]) {                                                    // (6.6.5) quem está lá dentro é quem ENTROU (o registro): nada de gente inventada
+      F.mov = true;
+      for (const e of lojaGente(nome)) {
+        const a = livres.find((q) => !q.ocupado);
+        if (!a || livres.filter((q) => !q.ocupado).length <= 2) { lojaSaiu(nome, e); continue; }   // não coube sentado: já tinha ido embora
+        const A = novoCliente(a, true, e.ref); A.cli.t = Math.max(4, e.resta / H_POR_S);
+        if (cafe) { darCopo(A, Math.floor(Math.random() * 4)); A.cli.pagou = true; A.bebe = Math.min(A.cli.t, 25 + Math.random() * 30); }
+      }
+      return F;
+    }
     for (let i = 0; i < F.alvo && i < livres.length; i++) { const a = livres[i]; if (a.ocupado) continue; const A = novoCliente(a, true); A.cli.t = 6 + Math.random() * 70;   // já tem gente quando ele entra, cada um num ponto da visita
       if (cafe) { darCopo(A, Math.floor(Math.random() * 4)); A.cli.pagou = true; A.bebe = A.cli.t; } }   // na cafeteria: já com o café na mão
     for (let i = 0; i < F.alvoVaga; i++) { const A = novoCliente(null, true); A.cli.t = 6 + Math.random() * 60; }
     return F;
   }
-  function novoCliente(a, jaDentro) {
-    const e0 = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = criarPessoa(S.f2, Math.random, Math.random() < 0.5);
+  function novoCliente(a, jaDentro, reg) {
+    const e0 = S.fluxo ? (S.fluxo.entAgora || S.fluxo.ent) : S.dentro.entrada, A = reg ? criarPessoa(S.f2, semente(reg.seed), reg.fem) : criarPessoa(S.f2, Math.random, Math.random() < 0.5);
     const e = { x: e0.x, z: e0.z, yaw: e0.yaw != null ? e0.yaw : ((S.dentro && S.dentro.entrada && S.dentro.entrada.yaw) || Math.PI / 2) };   // a porta "do lado" não tinha yaw: o ângulo virava NaN e o cliente ficava INVISÍVEL até sentar
-    A.tipo = 'cliente'; A.cli = { a, fase: 'ir', t: 40 + Math.random() * 70, rota: null }; A.vel = 1.1 + Math.random() * 0.3;
+    A.tipo = 'cliente'; A.cli = { a, fase: 'ir', t: reg ? Math.max(8, (reg.sai - tAbs()) / H_POR_S) : 40 + Math.random() * 70, rota: null }; A.vel = 1.1 + Math.random() * 0.3;
+    if (reg) { A.reg = reg; A.cli.nomeLoja = S.dentro && S.dentro.nome; }   // (6.6.5) a linha dele no registro da loja
     if (a) {
       a.ocupado = A;
       if (jaDentro) { A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.cli.fase = 'fica'; }
@@ -3576,6 +3640,8 @@
     S.npcs.push(A); poseAtor(A, 0.016); return A;
   }
   function descartarPessoa(A) {
+    if (A.ativ) fimAtiv(A); tirarCel(A);                                 // (6.6.5)
+    if (A.dest && A.dest.tipo === 'bola' && A.dest.R) { const R = A.dest.R; if (A.dest.fase === 'ir') R.vindo = Math.max(0, (R.vindo || 1) - 1); R.jog = R.jog.filter((q) => q !== A); if (R.dono === A) R.dono = R.jog[0] || null; if (R.busca === A) R.busca = null; if (!R.jog.length && R.bola) R.bola.mesh.visible = R.bola.sombra.visible = false; }
     const i = S.npcs.indexOf(A); if (i >= 0) S.npcs.splice(i, 1);
     S.conversas = S.conversas.filter((C) => C.a !== A && C.b !== A);
     ATLETAS.delete(A.m); S.meus.delete(A.m); removerProp(A);
@@ -3584,6 +3650,10 @@
   }
   function tickFluxo(dt) {
     const F = S.fluxo; if (!F || S.turno || S.turnoMercado || F.nome === lugarDoEmprego()) return;     // no turno quem manda os clientes é o tickTurno; no lugar do emprego só há clientes no turno
+    if (F.mov) {                                                        // (6.6.5) quem chega vem do registro (tickLojas → chegarDentro); fechou: vão saindo
+      if (!lojaAbertaMov(F.nome)) for (const A of S.npcs) if (A.cli && A.cli.fase === 'fica' && A.cli.t > 8) A.cli.t = 1 + Math.random() * 7;
+      return;
+    }
     F.prox -= dt;
     if (F.prox <= 0) {
       F.prox = 5 + Math.random() * 9; const e = F.ent;
@@ -3621,7 +3691,7 @@
       if (seguir(A, C.rota, A.vel, dt)) { A.andando = false; A.yawAlvo = Math.PI / 2; C.tc += dt; if (C.tc > 0.6 && !C.pagou) { C.pagou = true; SomCafe.caixa(); } if (C.tc > 1.6) { const sd = (S.dentro && S.dentro.saida) || e; C.fase = 'sai'; C.rota = [{ x: sd.x, z: sd.z }]; } }
     } else if (C.fase === 'sai') {                                   // sai pela porta (some perto dela; não espera o jogador sair da frente)
       C.tSai = (C.tSai || 0) + dt; const q = C.rota[C.rota.length - 1] || e;
-      if (seguir(A, C.rota, A.vel, dt) || Math.hypot(A.x - q.x, A.z - q.z) < 1.1 || C.tSai > 14) descartarPessoa(A);
+      if (seguir(A, C.rota, A.vel, dt) || Math.hypot(A.x - q.x, A.z - q.z) < 1.1 || C.tSai > 14) { if (A.reg && C.nomeLoja) lojaSaiu(C.nomeLoja, A.reg); descartarPessoa(A); }
     }
   }
   async function sairDoLugar(semClarear) {
@@ -3644,6 +3714,7 @@
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
     montarRuaMercado(); montarRuaAcademia(); montarRuaPesca();          // se o mercado.js / academia.js / pesca.js chegou com o jogador lá dentro
+    voltarSaidas();                                                     // (6.6.5) quem saiu das lojas enquanto ele estava lá dentro
     if (semClarear !== true) await preto(false, 380);
   }
   function alvos() {
@@ -3677,6 +3748,7 @@
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
       if (P.nome === 'academia' && S.academia && S.academia.aberto && !S.academia.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.academia.rotuloFechada(), fn: async () => {}, y: 3 }); continue; }   // (6.3.0) a academia abre das 7h às 11h e das 13h às 22h
       if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
+      if ((P.nome === 'bar' || P.nome === 'restaurante') && !lojaAbertaMov(P.nome) && !(S.dados.encontroLucia && S.dados.encontroLucia.lugar === P.nome && !S.dados.encontroLucia.feito)) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T(P.nome === 'bar' ? 'Bar fechado. Abre às 16h.' : 'Restaurante fechado. Abre às 11h.'), fn: async () => {}, y: 3 }); continue; }   // (6.6.5) bar 16h–2h, restaurante 11h–23h
       if (P.nome === 'cafeteria' && !cafeAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cafeteria fechada. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.2.0) a cafeteria abre às 8h
       v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Entrar') + ': ' + T(NOME_LUGAR[P.nome]), fn: () => entrarEm(P), y: 3 });
     } }
@@ -3854,6 +3926,7 @@
       guardar, Geo, MAT, texCanvas, fmtHora, H_POR_S, sairDoLugar, diaSemana, nomeJog, empregoEscolhido, levantar,
       fimDeSemana, fut,                                                  // regras: sem trabalho no fim de semana; futebol
       painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
+      lojaGente, lojaSaiu, lojaRestam, semente,                         // (6.6.5) o registro de quem está nas lojas
     };
   }
   // (6.1.0) o que o pizzaria.js (Forno a Lenha + entregas de bicicleta) usa daqui: o mesmo do mercado e mais o mapa/missão e a física da rua
@@ -3869,7 +3942,7 @@
   // o que o cinema.js (o Herick, a Joana, o segurança, as cordas e as sessões pagas) usa daqui
   function erroCinema(e) { if (!S.erroCinema) { S.erroCinema = true; console.warn('[Cidade] cinema:', e); } }   // um erro no cinema.js não trava a cidade (avisa uma vez só)
   function apiCinema() {
-    return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; } });
+    return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; }, rotaCasaPorta, pontoNaRota });   // (6.6.5) a rota do Herick (mora com a Fernanda)
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {
@@ -4584,7 +4657,7 @@
   //   A conversa (roteiroEncontro) é a mesma nos três lugares; a fase2.js usa a mesma função (Fases.carregar('cidade').encontro).
   const ENC_INI = 18.75, ENC_FIM = 21;
   const ROUPA_ENC = [21, ['#8a1f3d', '#f2c230', '#f2f2ee', '#f2f2ee']];          // (6.1.1) o macacão vinho com cinto dourado (o vestido bugava ao sentar)
-  const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 5.0, z: 3.4 } };   // (6.1.0) a pizzaria foi redecorada: a mesa do canto sudeste
+  const MESA_ENC = { restaurante: { x: 5.5, z: 2.5 }, pizzaria: { x: 7.0, z: 3.4 } };   // (6.1.0) a pizzaria foi redecorada: a mesa do canto sudeste (6.6.5: as mesas abriram para os lados)
   const BEIJO_MIN = 60;
   const ABRACO_D = 0.56, BEIJO_D = 0.66;      // (6.1.1) distância entre os dois (corpos de ~0,33 m de espessura): se encostam, não entram um no outro
   function encontroAgora(lugar) {
@@ -5546,12 +5619,25 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!A.prop) return; const es = A.opt.escala || 1;
     A.prop.visible = !A.oculto; A.prop.position.set(A.x, A.y + (A.chuva === 'guarda' ? 2.22 : 1.95) * es, A.z); A.prop.rotation.y = A.yaw;
   }
-  function caminhoRede(x0, z0, x1, z1) {
+  function caminhoRede(x0, z0, x1, z1, evitar) {
     const N = S.rede, perto = (x, z) => { let b = 0, bd = 1e9; N.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
     const a = perto(x0, z0), b = perto(x1, z1), prev = new Map([[a, -1]]), fila = [a];
-    for (let qi = 0; qi < fila.length; qi++) { const u = fila[qi]; if (u === b) break; for (const v of N[u].viz) if (!prev.has(v)) { prev.set(v, u); fila.push(v); } }
+    for (let qi = 0; qi < fila.length; qi++) { const u = fila[qi]; if (u === b) break; for (const v of N[u].viz) if (!prev.has(v) && !(evitar && evitar.has(v) && v !== b)) { prev.set(v, u); fila.push(v); } }
+    if (evitar && !prev.has(b)) return null;                             // (6.6.5) sem outro caminho
     const cam = []; for (let u = b; u !== -1 && prev.has(u); u = prev.get(u)) cam.push({ x: N[u].x, z: N[u].z });
     cam.reverse(); cam.push({ x: x1, z: z1 }); return cam;
+  }
+  // (6.6.5) OUTRO CAMINHO: travado por alguma COISA (não gente) e sem desvio que resolva, refaz a rota pela rede sem passar pelo ponto que
+  //   travou (dá a volta pelo outro lado do quarteirão, pela outra calçada...). No máximo uma vez a cada 6 s.
+  function outroCaminho(A, rota) {
+    if (S.dentro || !S.rede || rota.length < 2 || (A.tReplan || 0) > A.t) return false;
+    A.tReplan = A.t + 6;
+    const q = rota[0], fim = rota[rota.length - 1]; let iq = -1, bd = 0.35;
+    S.rede.forEach((n, i) => { const d = Math.hypot(n.x - q.x, n.z - q.z); if (d < bd) { bd = d; iq = i; } });
+    if (iq < 0) return false;
+    const nova = caminhoRede(A.x, A.z, fim.x, fim.z, new Set([iq]));
+    if (!nova || nova.length < 2 || nova.length > rota.length + 14) return false;   // a volta não pode ser enorme
+    rota.splice(0, rota.length, ...nova); A.bloq = 0; A.desvio = null; return true;
   }
   function distRede(x, z) { let bd = 1e9; for (const n of S.rede) bd = Math.min(bd, Math.hypot(n.x - x, n.z - z)); return bd; }
   function seguir(A, rota, vel, dt) {
@@ -5565,9 +5651,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if (pa && pq && pa !== pq && !A.atravessa) { if (esperaFaixa(A, q.x, q.z, dt)) return false; comecarTravessia(A); }
       else if (A.atravessa && pa && pa === pq) fimTravessia(A);
     }
-    const dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.correFaixa ? Math.max(vel, A.vel) : vel) * dt;
+    const md = rota.length > 1 ? maoDireita(A, q.x, q.z) : null;      // (6.6.5) mão direita na calçada da avenida (o último ponto, não: é a porta, o banco...)
+    const dq = Math.hypot(q.x - A.x, q.z - A.z), dx = (md ? md.x : q.x) - A.x, dz = (md ? md.z : q.z) - A.z, d = Math.hypot(dx, dz) || 1e-6, v = (A.correFaixa ? Math.max(vel, A.vel) : vel) * dt;
     A.vel = A.correFaixa ? Math.max(vel, A.vel) : vel; A.correndo = A.vel > 2.5 || !!A.chuva;
-    if (d <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
+    if (dq <= Math.max(v, rota.length > 1 ? 0.6 : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
     let moveu = false;
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return false; } } }
@@ -5579,6 +5666,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (!moveu) {
       A.bloq = (A.bloq || 0) + dt;                                     // sem o "pulo para o lado" (parecia teleporte)
       if (A.bloq > 0.6 && !A.desvio && iniciarDesvio(A, dx, dz, d)) A.bloq = 0.2;   // contorna: 1 m, 2 m, 3,5 m, 5 m para o lado menos cheio (esgotou: os fallbacks abaixo)
+      if (A.bloq > 1.8 && !A.desvio && !livreNPC(A.x + dx / d * 0.5, A.z + dz / d * 0.5, A, true, true) && outroCaminho(A, rota)) return false;   // (6.6.5) uma COISA no caminho: vai por outro
       if (A.bloq > 2.5 && livreNPC(A.x + dx / d * v, A.z + dz / d * v, A, true, true)) { A.fantasma = 0.8; A.bloq = 0.5; }   // preso atrás de alguém: passa por ele
       if (A.bloq > 5) { A.bloq = 0; rota.shift(); if (!rota.length) { A.andando = false; return true; } }       // não consegue passar: desiste desse ponto (nada de empurrar para dentro de outra pessoa)
     } else A.bloq = Math.max(0, (A.bloq || 0) - dt * 0.5);
@@ -5600,6 +5688,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const noMaisPerto = (x, z) => { let b = 0, bd = 1e9; S.rede.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
   function correrNaChuva(A) { A.chuva = PROPS[Math.floor(Math.random() * 3)]; A.velBase = A.velBase || A.vel; A.vel = A.velBase * (A.esporte ? 1.15 : 1.9); A.correndo = true; criarProp(A); }
   function chuvaComecou() {
+    for (const A of S.npcs.slice()) if (A.ativ) fimAtiv(A);              // (6.6.5)
     for (const A of npcsFora()) if (A.tipo === 'anda' && !A.oculto && !A.chuva && !(A.dest && A.sentado)) correrNaChuva(A);
     if (S.moradores) for (const r of S.moradores) r.reagiu = false;   // cada morador decide (árvore ou casa) quando a cidade estiver à vista (tickMoradores)
   }
@@ -5727,15 +5816,262 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.treino) S.treino.pausa = M.some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto');
   }
 
+  // ------------------------------------------------------------------ (6.6.5) O MOVIMENTO DAS LOJAS: quem entra e quem sai, num REGISTRO
+  //   Cada loja guarda quem está lá dentro (S.lojas[nome].gente: { id, seed, fem, g, chegou, sai }, em horas "absolutas" = dia*24 + hora).
+  //   Os clientes NÃO nascem dentro da loja: vêm DE FORA DA CIDADE (uma ponta da rede de caminhos), andam até a porta e entram (o boneco é
+  //   descartado e a pessoa vira só uma linha do registro); na hora de ir embora saem pela porta e andam até uma ponta da cidade e somem.
+  //   A VIAGEM (S.viagens) é só conta enquanto ninguém vê: a posição sai da hora em que ela começou (pontos da rota + distância andada),
+  //   sem boneco nenhum. Chegando a ~60 m do jogador ela GANHA o boneco (que de longe é o de 1 peça, o LOD de sempre) e anda de verdade
+  //   (desvia, espera a faixa...); longe de novo, volta a ser só conta. Longe da vista eles andam mais rápido (ninguém vê).
+  //   Toda loja ABRE VAZIA e enche aos poucos; perto de fechar ninguém novo entra e, fechou, quem estava sai. Com o jogador DENTRO de
+  //   uma loja, quem chega nela entra pela porta da sala (o fluxo da sala ou o módulo da loja: pizzaria.js, mercado.js) e quem sai
+  //   some pela porta da sala; quem saiu das outras lojas nesse meio-tempo fica anotado (S.saidasLoja) e, quando ele volta para a rua,
+  //   aparece onde estaria no caminho de volta. Em pares (pizzaria, restaurante, bar): os dois andam lado a lado.
+  const MOV = {
+    cafeteria:    { alvo: [2, 3, 5], fica: [0.7, 1.4], par: 0.2 },
+    bar:          { alvo: [2, 4, 6], fica: [1.4, 2.6], par: 0.45, abre: 16, fecha: 26 },
+    restaurante:  { alvo: [2, 4, 6], fica: [1.0, 1.8], par: 0.5, abre: 11, fecha: 23 },
+    pizzaria:     { alvo: [2, 4, 6], fica: [2.0, 2.7], par: 0.65 },
+    supermercado: { alvo: [1, 2, 4], fica: [0.4, 0.8], par: 0.15 },
+  };
+  const VEL_VISITA = 1.3, VEL_VISITA_LONGE = 3.6, R_GANHA = 58, R_PERDE = 72;
+  const tAbs = () => (S.dados.dia || 1) * 24 + S.dados.hora;
+  function janelaLoja(nome) {                                            // [abre, fecha) em horas (fecha > 24 = depois da meia-noite)
+    if (nome === 'cafeteria') return [H_CAFE_ABRE, cafeFecha()];
+    if (nome === 'pizzaria') return [17, 24];
+    if (nome === 'supermercado') return [8, 22];
+    const m = MOV[nome]; return m && m.abre != null ? [m.abre, m.fecha] : [0, 24];
+  }
+  function lojaAbertaMov(nome) {
+    if (nome === 'pizzaria' && S.pizzaria) return S.pizzaria.aberto();
+    if (nome === 'supermercado' && S.mercado) return S.mercado.aberto();
+    if (nome === 'cafeteria') return cafeAberto() && !!luciaNoCafe();
+    const [a, b] = janelaLoja(nome), h = S.dados.hora, hh = b > 24 && h < a ? h + 24 : h; return hh >= a && hh < b;
+  }
+  const recebeMov = (nome) => { if (nome !== 'supermercado') return true; if (S.mercado && S.mercado.recebe) return S.mercado.recebe(); const h = S.dados.hora; return h >= 8 && h < 21 && (h < 12 || h >= 15); };
+  const horasAteFechar = (nome) => { const [a, b] = janelaLoja(nome), h = S.dados.hora, hh = b > 24 && h < a ? h + 24 : h; return b - hh; };
+  const horasDesdeAbrir = (nome) => { const [a, b] = janelaLoja(nome), h = S.dados.hora, hh = b > 24 && h < a ? h + 24 : h; return hh - a; };
+  const semVisita = (nome) => nome === 'cafeteria' && lugarDoEmprego() === 'cafeteria';   // a cafeteria do emprego tem o próprio movimento (o do turno); o mercado não: fora do turno, quem compra vem de fora
+  function regLoja(nome) { S.lojas = S.lojas || {}; return S.lojas[nome] || (S.lojas[nome] = { gente: [], prox: 0 }); }
+  function alvoMov(nome) {
+    const m = MOV[nome], f = FLUXO_SEM[diaSemana()], base = m.alvo[f === 'vazio' ? 0 : f === 'medio' ? 1 : 2];
+    return Math.max(1, Math.round(base * clamp(horasDesdeAbrir(nome) / 0.9, 0.35, 1)));   // na primeira hora depois de abrir, menos gente
+  }
+  let idVisita = 1;
+  function novaGente(nome, n) {                                          // 1 ou 2 pessoas (um par sai e entra junto)
+    const m = MOV[nome], g = idVisita++, L = [];
+    for (let k = 0; k < n; k++) L.push({ id: idVisita++, seed: 1 + Math.floor(Math.random() * 1e9), fem: Math.random() < 0.5, g, nome, chegou: 0, sai: 0, fica: m.fica[0] + Math.random() * (m.fica[1] - m.fica[0]) });
+    return L;
+  }
+  function registrar(nome, ents) { const R = regLoja(nome), a = tAbs(); for (const e of ents) { e.chegou = a; e.sai = a + e.fica; if (!R.gente.includes(e)) R.gente.push(e); } }
+  // API dos módulos e do fluxo da sala
+  function lojaGente(nome) { const a = tAbs(); return regLoja(nome).gente.map((e) => Object.assign({}, e, { desde: a - e.chegou, resta: e.sai - a, ref: e })); }
+  function lojaSaiu(nome, e) {                                           // saiu pela porta da sala (o jogador está lá dentro)
+    const R = regLoja(nome), ref = e && e.ref ? e.ref : e, i = R.gente.indexOf(ref); if (i >= 0) R.gente.splice(i, 1);
+    if (ref) (S.saidasLoja || (S.saidasLoja = [])).push(Object.assign({}, ref, { t: tAbs() }));
+  }
+  function lojaRestam(nome, lista) { const a = tAbs(); for (const { e, resta } of lista) { const ref = e && e.ref ? e.ref : e; if (ref) ref.sai = a + Math.max(0.05, resta); } }
+  // as pontas da cidade (onde a rede de caminhos termina): de onde vêm e para onde vão os clientes
+  function pontasCidade() { if (!S.pontas) S.pontas = S.rede.map((N, i) => i).filter((i) => borda(S.rede[i]) && S.rede[i].viz.length === 1); return S.pontas; }
+  // a ponta da cidade de onde a pessoa vem (ou para onde vai): uma das 3 com o CAMINHO mais curto pela rede (não a reta: a ponta do outro lado
+  //   da avenida obrigava a ir até a faixa e voltar). O comprimento de cada ponta até cada porta fica guardado.
+  function pontaPara(x, z) {
+    const memo = S.memoPontas || (S.memoPontas = new Map()), k = x.toFixed(1) + ',' + z.toFixed(1);
+    let L = memo.get(k);
+    if (!L) { L = pontasCidade().map((i) => ({ i, d: rotaPts(caminhoRede(S.rede[i].x, S.rede[i].z, x, z)).L })).sort((a, b) => a.d - b.d); memo.set(k, L); }
+    const top = L.filter((q) => q.d < L[0].d * 1.6 + 20).slice(0, 3);
+    return top.length ? S.rede[top[Math.floor(Math.random() * top.length)].i] : null;
+  }
+  const portaDe = (nome) => PORTAS.find((p) => p.nome === nome);
+  const naPorta = (P) => ({ x: P.x + Math.cos(P.sai) * 0.45, z: P.z - Math.sin(P.sai) * 0.45 });
+  function rotaPts(pts) { const acc = [0]; for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z)); return { pts, acc, L: acc[acc.length - 1] }; }
+  // começa uma viagem: 'ir' (da ponta da cidade até a porta) ou 'sai' (da porta até a ponta). t0 = quando começou (horas absolutas).
+  function viagem(nome, ents, fase, t0) {
+    const P = portaDe(nome); if (!P || !S.rede) return null;
+    const q = naPorta(P), E = pontaPara(q.x, q.z); if (!E) return null;
+    const pts = fase === 'ir' ? caminhoRede(E.x, E.z, q.x, q.z) : caminhoRede(q.x, q.z, E.x, E.z);
+    if (fase === 'ir') pts.unshift({ x: E.x, z: E.z }); else pts.unshift({ x: q.x, z: q.z });
+    const V = Object.assign({ nome, ents, fase, t0: t0 == null ? tAbs() : t0, feito: 0, A: [], P }, rotaPts(pts));
+    (S.viagens || (S.viagens = [])).push(V); return V;
+  }
+  // onde a viagem está agora (só conta): a distância andada sai do tempo
+  const andadoV = (V, a) => V.feito + Math.max(0, a - V.t0) / H_POR_S * VEL_VISITA_LONGE;
+  function pontoDaViagem(V, d) {
+    let i = 1; while (i < V.acc.length - 1 && V.acc[i] < d) i++;
+    const a = V.pts[i - 1], b = V.pts[i], seg = (V.acc[i] - V.acc[i - 1]) || 1, u = clamp((d - V.acc[i - 1]) / seg, 0, 1);
+    return { x: a.x + (b.x - a.x) * u, z: a.z + (b.z - a.z) * u, yaw: Math.atan2(-(b.z - a.z), b.x - a.x), i };
+  }
+  function fimViagem(V) {
+    S.viagens = S.viagens.filter((q) => q !== V);
+    for (const A of V.A) if (S.npcs.includes(A)) descartarPessoa(A);
+    V.A = [];
+    if (V.fase === 'ir' && V.acad) return;                               // (6.6.5) frequentador: lá dentro quem cuida é a agenda do academia.js
+    if (V.fase === 'ir') {                                              // chegou na porta: entra (se a loja ainda estiver aberta)
+      if (lojaAbertaMov(V.nome) && horasAteFechar(V.nome) > 0.25) registrar(V.nome, V.ents);
+      else viagem(V.nome, V.ents, 'sai');                               // fechou no caminho: dá meia-volta
+    }
+  }
+  // o boneco da viagem (um, ou dois lado a lado): nasce onde a conta diz que a pessoa está
+  function ganharBoneco(V, p) {
+    const lider = V.ents[0];
+    V.A = V.ents.map((e, k) => {
+      const A = e.acad && S.academia && S.academia.criarFreq ? S.academia.criarFreq(e.fem, e.sem) : criarPessoa(S.f2, semente(e.seed), e.fem);
+      A.tipo = 'anda'; A.vel = A.velV = VEL_VISITA * (0.92 + Math.random() * 0.16);   // velV: a velocidade dele (o seguir() reescreve o A.vel)
+      const lado = k ? 0.62 : 0, rx = Math.sin(p.yaw) * lado, rz = Math.cos(p.yaw) * lado;    // o parceiro anda do lado direito
+      A.x = p.x + rx; A.z = p.z + rz; A.yaw = A.yawAlvo = p.yaw; A.y = altura(A.x, A.z);
+      if (!livreNPC(A.x, A.z, A, true, true)) { A.x = p.x; A.z = p.z; A.fantasma = 1.2; }
+      A.dest = k === 0 ? { tipo: 'visita', V, rota: V.pts.slice(p.i).map((q) => ({ x: q.x, z: q.z })) } : { tipo: 'parDe', V };
+      A.visita = e; S.npcs.push(A); poseAtor(A, 0.016); return A;
+    });
+    if (V.A[1]) { V.A[0].parceiro = V.A[1]; V.A[1].parceiro = V.A[0]; V.A[1].lider = V.A[0]; }
+    void lider;
+  }
+  function perderBoneco(V) {                                             // longe de novo: volta a ser só conta (a partir de onde o boneco está)
+    const L = V.A[0]; if (!L) return;
+    let best = 0, bd = 1e9;                                              // a distância andada = a projeção do boneco na rota
+    for (let i = 1; i < V.pts.length; i++) {
+      const a = V.pts[i - 1], b = V.pts[i], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1, u = clamp(((L.x - a.x) * vx + (L.z - a.z) * vz) / L2, 0, 1);
+      const d = Math.hypot(a.x + vx * u - L.x, a.z + vz * u - L.z); if (d < bd) { bd = d; best = V.acc[i - 1] + u * Math.sqrt(L2); }
+    }
+    V.feito = best; V.t0 = tAbs();
+    for (const A of V.A) if (S.npcs.includes(A)) descartarPessoa(A);
+    V.A = [];
+  }
+  // a cada quadro (na rua): as viagens que só são conta andam pelo tempo; perto do jogador ganham boneco; longe, perdem
+  function tickViagens() {
+    if (!S.viagens || !S.viagens.length || S.dentro) return;
+    const J = S.jog, a = tAbs();
+    for (const V of S.viagens.slice()) {
+      if (V.A.length) {
+        const L = V.A[0];
+        if (!S.npcs.includes(L)) { fimViagem(V); continue; }
+        if (Math.hypot(L.x - J.x, L.z - J.z) > R_PERDE && !L.atravessa) perderBoneco(V);
+        continue;
+      }
+      if (a < V.t0) continue;                                            // ainda não saiu (a hora de sair é para chegar na hora certa)
+      const d = andadoV(V, a); if (d >= V.L) { fimViagem(V); continue; }
+      const p = pontoDaViagem(V, d);
+      if (Math.hypot(p.x - J.x, p.z - J.z) < R_GANHA) ganharBoneco(V, p);
+    }
+  }
+  // o boneco andando a viagem (A.dest.tipo === 'visita'); devolve true se o passo do quadro foi usado
+  function tickVisita(A, dt) {
+    const D = A.dest, V = D.V;
+    if (A.ativ) { tickAtiv(A, dt); return; }                             // (6.6.5) a selfie no caminho
+    if (D.tipo === 'visita' && A.parceiro && !V.selfie && !chovendoAgora() && S.modo === 'livre' && (S.tSelfie || 0) < S.t && Math.random() < dt * 0.06 && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) < 26 &&
+      !(A.z > AV.z0 - 0.4 && A.z < AV.z1 + 0.4) && !A.parceiro.atravessa && Math.hypot(A.x - A.parceiro.x, A.z - A.parceiro.z) < 1.2) { V.selfie = true; S.tSelfie = S.t + 25; comecarSelfieDupla(A, A.parceiro); return; }
+    if (D.tipo === 'parDe') { seguirLider(A, dt); return; }
+    const J = S.jog, longe = Math.hypot(A.x - J.x, A.z - J.z) > 45;   // longe da vista (já é o boneco de 1 peça): um pouco mais rápido
+    if (seguir(A, D.rota, (A.velV || VEL_VISITA) * (longe ? 1.6 : 1), dt)) fimViagem(V);   // chegou (na porta ou no fim da cidade): some junto com o parceiro
+  }
+  // o parceiro: do lado direito do líder, um passo atrás; se ficar para trás, apressa
+  function seguirLider(A, dt) {
+    const L = A.lider; if (!L || !S.npcs.includes(L)) { if (S.npcs.includes(A)) descartarPessoa(A); return; }
+    const fx = Math.cos(L.yaw), fz = -Math.sin(L.yaw), rx = -fz, rz = fx;
+    // (6.6.5) do lado que tiver espaço (a direita, de preferência; perto da parede ou do poste, a esquerda), sem ficar trocando toda hora
+    const ladoOk = (k) => livreNPC(L.x + rx * 0.62 * k, L.z + rz * 0.62 * k, A, true, true);
+    if (!A.ladoPar || ((A.tLado = (A.tLado || 0) - dt) <= 0 && !ladoOk(A.ladoPar))) { A.ladoPar = ladoOk(A.ladoPar || 1) ? (A.ladoPar || 1) : -(A.ladoPar || 1); A.tLado = 0.8; }
+    const k = A.ladoPar, tx = L.x + rx * 0.62 * k - fx * 0.12, tz = L.z + rz * 0.62 * k - fz * 0.12, dx = tx - A.x, dz = tz - A.z, d = Math.hypot(dx, dz);
+    if (d > 6) { A.x = L.x - fx * 0.7; A.z = L.z - fz * 0.7; A.fantasma = 0.6; return; }   // ficou muito para trás (a faixa, um esbarrão): emenda atrás dele
+    const v = Math.min(d, (L.vel || 1.3) * (d > 0.5 ? 1.35 : 1) * dt);
+    A.atravessa = L.atravessa; A.pedeFaixa = false; A.correndo = L.correndo; A.vel = L.vel;
+    if (d < 0.05) { A.andando = L.andando; A.yawAlvo = L.yawAlvo; return; }
+    let moveu = false;
+    for (const ang of [0, 0.5, -0.5, 1.0, -1.0]) {
+      const c = Math.cos(ang), s = Math.sin(ang), ux = (dx * c - dz * s) / d, uz = (dx * s + dz * c) / d;
+      if (livreNPC(A.x + ux * v, A.z + uz * v, A, true)) { A.x += ux * v; A.z += uz * v; moveu = true; break; }
+    }
+    if (!moveu) { A.x = L.x - fx * 0.55; A.z = L.z - fz * 0.55; A.fantasma = 0.4; }   // sem espaço do lado (calçada cheia): vai atrás dele
+    A.andando = L.andando || d > 0.15; A.yawAlvo = d > 0.3 ? Math.atan2(-dz, dx) : L.yawAlvo;
+  }
+  // quem chega numa loja com o jogador LÁ DENTRO: entra pela porta da sala (fluxo da sala ou módulo). Devolve true se coube.
+  function chegarDentro(nome, ents) {
+    if (nome === 'pizzaria' && S.pizzaria && S.pizzaria.chegou) return S.pizzaria.chegou(ents);
+    if (nome === 'supermercado' && S.mercado && S.mercado.chegou) return S.mercado.chegou(ents);
+    const F = S.fluxo; if (!F || S.turno || S.turnoMercado) return false;
+    const livres = F.lugares.filter((a) => !a.ocupado);
+    if (livres.length >= 2 + ents.length) { for (const e of ents) novoCliente(livres.splice(Math.floor(Math.random() * livres.length), 1)[0], false, e); return true; }
+    if (F.area && S.npcs.filter((A) => A.cli && !A.cli.a && A.cli.fase !== 'sai').length < F.alvoVaga) { for (const e of ents) novoCliente(null, false, e); return true; }
+    return false;
+  }
+  // tira da loja (a hora dele chegou, ou a loja fechou): na rua, sai pela porta e vai embora andando; com o jogador em outra loja, fica anotado
+  function sairDaLoja(nome, e) {
+    const R = regLoja(nome), grupo = R.gente.filter((q) => q.g === e.g);
+    R.gente = R.gente.filter((q) => q.g !== e.g);
+    if (!S.dentro) viagem(nome, grupo, 'sai');
+    else for (const q of grupo) (S.saidasLoja || (S.saidasLoja = [])).push(Object.assign({}, q, { t: tAbs() }));
+  }
+  // voltou para a rua: quem saiu das lojas enquanto ele estava lá dentro aparece onde estaria no caminho de volta
+  function voltarSaidas() {
+    const L = S.saidasLoja || []; S.saidasLoja = [];
+    const porG = new Map(); for (const q of L) { const k = q.nome + ':' + q.g; if (!porG.has(k)) porG.set(k, []); porG.get(k).push(q); }
+    for (const ents of porG.values()) { const V = viagem(ents[0].nome, ents, 'sai', ents[0].t); if (V && andadoV(V, tAbs()) >= V.L) S.viagens = S.viagens.filter((q) => q !== V); }
+  }
+  // a cada meio segundo: abre/fecha, quem chega, quem vai embora
+  function tickLojas(dt) {
+    S.tLojas = (S.tLojas || 0) - dt; if (S.tLojas > 0) return; S.tLojas = 0.5;
+    if (!S.rede) return;
+    const a = tAbs();
+    for (const nome of Object.keys(MOV)) {
+      if (semVisita(nome)) continue;
+      const R = regLoja(nome), ab = lojaAbertaMov(nome), aqui = !!(S.dentro && S.dentro.nome === nome);
+      if (!ab) { if (!aqui) while (R.gente.length) sairDaLoja(nome, R.gente[0]); continue; }   // fechou: todo mundo sai (lá dentro, quem cuida é a sala)
+      if (!aqui) for (const e of R.gente.slice()) if (e.sai <= a && R.gente.includes(e)) sairDaLoja(nome, e);
+      if (horasAteFechar(nome) < 0.6 || a < R.prox || !recebeMov(nome)) continue;   // perto de fechar ninguém novo entra (o mercado tem a pausa do almoço)
+      const f = FLUXO_SEM[diaSemana()];
+      R.prox = a + (f === 'cheio' ? 0.1 : f === 'medio' ? 0.16 : 0.24) * (0.7 + Math.random() * 0.8);
+      const vindo = (S.viagens || []).filter((V) => V.nome === nome && V.fase === 'ir').reduce((s, V) => s + V.ents.length, 0);
+      if (R.gente.length + vindo >= alvoMov(nome)) continue;
+      const ents = novaGente(nome, Math.random() < MOV[nome].par ? 2 : 1);
+      if (aqui) { registrar(nome, ents); if (!chegarDentro(nome, ents)) R.gente = R.gente.filter((q) => !ents.includes(q)); }   // lá dentro: entra pela porta da sala (se couber)
+      else if (S.dentro) registrar(nome, ents);                          // ele está em outra loja: a pessoa "chegou" sem ninguém ver
+      else viagem(nome, ents, 'ir');
+    }
+  }
+  // (6.6.5) os FREQUENTADORES da academia (a agenda é do academia.js): saem de fora da cidade para chegar na porta na hora deles e,
+  //   na hora de ir embora, saem pela porta e vão para fora da cidade. Lá dentro, quem cuida é a sala (chegam pela porta, vão embora por ela).
+  function tickAgendaAcad() {
+    const ac = S.academia; if (!ac || !ac.agenda || !S.rede) return;
+    const dia = S.dados.dia || 1, h = S.dados.hora, naAcad = !!(S.dentro && S.dentro.nome === 'academia');
+    if (S.agDia !== dia) { S.agDia = dia; S.agFeito = {}; }
+    for (const g of ac.agenda()) {
+      const ent = () => [{ id: 'ac' + dia + g.k, fem: g.fem, sem: g.sem, g: 'ac' + g.k, acad: true, nome: 'academia' }];
+      if (!S.agFeito['i' + g.k] && h >= g.chega - 1.2 && h < g.chega - 0.02) {      // começa a vir (sai do fim da cidade com o tempo certo de chegar)
+        S.agFeito['i' + g.k] = 1;
+        if (!naAcad) { const V = viagem('academia', ent(), 'ir'); if (V) { V.acad = true; V.t0 = Math.max(tAbs(), dia * 24 + g.chega - V.L / VEL_VISITA_LONGE * H_POR_S); } }
+      }
+      if (!S.agFeito['s' + g.k] && h >= g.sai + 0.08 && h < g.sai + 1.0) {           // foi embora: da porta até o fim da cidade
+        S.agFeito['s' + g.k] = 1;
+        const V = viagem('academia', ent(), 'sai', dia * 24 + g.sai + 0.08); if (V) V.acad = true;
+      }
+    }
+  }
+  // a cidade acabou de abrir: as lojas que já estão abertas há um tempo já têm gente (chegou antes de ele aparecer na rua)
+  function povoarLojas() {
+    const a = tAbs();
+    for (const nome of Object.keys(MOV)) {
+      if (semVisita(nome) || !lojaAbertaMov(nome) || !recebeMov(nome)) continue;
+      const desde = horasDesdeAbrir(nome); if (desde < 0.4) continue;
+      const n = Math.round(alvoMov(nome) * (0.4 + Math.random() * 0.5));
+      for (let k = 0, tent = 0; k < n && tent < 40; tent++) {
+        const ents = novaGente(nome, Math.random() < MOV[nome].par && n - k >= 2 ? 2 : 1), ch = a - Math.random() * Math.min(desde, ents[0].fica * 0.9);
+        for (const e of ents) { e.chegou = ch; e.sai = ch + e.fica; } if (ents[0].sai - a < 0.1) continue;
+        regLoja(nome).gente.push(...ents); k += ents.length;
+      }
+    }
+  }
+
   // ---- pedestres que entram nos lugares
   const DESTINOS = ['cinema', 'cafeteria', 'supermercado', 'bar', 'pizzaria', 'restaurante', 'academia', 'lanche'];
   function decidirDestino(A) {
     if (!S.sacola || !S.sacola.length) S.sacola = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0].sort(() => Math.random() - 0.5);     // de cada 10 decisões, 5 entram
     A.cool = 20 + Math.random() * 30;
+    if (Math.random() < (A.esporte ? 0.35 : 0.12) && entrarNaRoda(A)) return;   // (6.6.5) vai jogar bola na roda da quadra / do sintético
     if (A.esporte) return;                                               // (6.3.0) o esportivo só corre: não entra em lugar
     if (!S.sacola.pop()) return;
     let nome = DESTINOS[Math.floor(Math.random() * DESTINOS.length)];
     if (nome === lugarDoEmprego()) return;                               // ninguém de fora entra onde o jogador trabalha
+    if (nome !== 'lanche') return;                                       // (6.6.5) nas lojas só entra quem vem de fora da cidade (tickLojas); quem passeia só come no lanche
     if (nome === 'lanche') {
       const V = S.valdemar, vagas = S.assentos.filter((a) => a.lanche && !a.ocupado);
       if (V && !V.oculto && V.estado === 'balcao' && vagas.length) {
@@ -5754,6 +6090,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function fimDest(A) { A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.espera = 0; A.bloq = 0; if (S.clima.molhado && !A.chuva) correrNaChuva(A); }
   function tickDestino(A, dt) {
     const D = A.dest;
+    if (D.tipo === 'visita' || D.tipo === 'parDe') { tickVisita(A, dt); return; }   // (6.6.5) cliente vindo de fora / indo embora
+    if (D.tipo === 'bola') { tickBolaNPC(A, dt); return; }                 // (6.6.5) a roda de bola na quadra / no sintético
     if (D.fase === 'ir') {
       if (!seguir(A, D.rota, A.vel, dt)) return;
       if (D.tipo === 'lugar') {                                      // entra: some da rua e volta pela mesma porta depois de um tempo
@@ -5778,12 +6116,353 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
   }
   // separa quem ficou sobreposto (só os que andam; quem está parado no seu lugar não é empurrado)
+  // ================================================================== (6.6.5) MAIS VIDA NA RUA
+  //   Perto do jogador (longe ninguém vê, então nada disso roda lá), de vez em quando quem passeia faz alguma coisa (A.ativ):
+  //     · PAPO: dois que se cruzam param e conversam (um fala, o outro ri); às vezes começam com um ABRAÇO e terminam com uma SELFIE juntos;
+  //     · PEDRINHAS no lago: vai até a beira e joga 3 a 5 (umas quicam na água: anéis e respingos);
+  //     · FOTO: na praça ou na frente do sapo cururu, tira uma foto com o celular (com flash);
+  //     · a DUPLA que vem de fora para no caminho para uma selfie;
+  //     · BOLA: alguns vão para a quadra ou para o sintético e jogam uma roda (bobinho/altinha) com uma bola SÓ DELES (não é a do jogador:
+  //       não tem gol nem comemoração). Cada um fica um tempo e vai embora; quem passa perto entra na roda (até 4).
+  //   A pose de cada coisa é um gesto (gestoAtor): 'selfie', 'pose', 'fotografa', 'joga', 'ri'. O celular é uma pecinha presa na mão.
+  const VIDA_R = 40, VIDA_MAX = 6;
+  const ativavel = (A) => A.tipo === 'anda' && !A.dest && !A.ativ && !A.oculto && !A.longeDemais && !A.faixaE && !A.atravessa && !A.pedeFaixa && !A.recua && !A.desvio &&
+    !A.chuva && !A.esporte && (A.cdVida || 0) < S.t && !(A.z > AV.z0 - 0.4 && A.z < AV.z1 + 0.4);
+  const chovendoAgora = () => !!(S.clima && S.clima.chuva > 0.3);
+  function tickVida(dt) {
+    tickFxVida(dt);
+    if (S.dentro) return;
+    tickRodas(dt);
+    S.tVida = (S.tVida == null ? 3 : S.tVida) - dt; if (S.tVida > 0) return; S.tVida = 1.2;
+    if (chovendoAgora() || S.modo !== 'livre') return;
+    const J = S.jog; let n = 0;
+    for (const A of S.npcs) if (A.ativ) n++;
+    if (n >= VIDA_MAX) return;
+    // quem passa perto da quadra ou do sintético (com a roda aberta e pouca gente) às vezes entra para jogar
+    for (const R of rodas()) {
+      if (R.jog.length + (R.vindo || 0) >= 3 || !rodaAberta(R)) continue;
+      for (const A of S.npcs) if (A.tipo === 'anda' && !A.dest && !A.ativ && !A.oculto && !A.faixaE && !A.atravessa && Math.hypot(A.x - R.ent.fora.x, A.z - R.ent.fora.z) < 30 && Math.random() < (A.esporte ? 0.4 : 0.15)) { entrarNaRoda(A); break; }
+    }
+    const perto = S.npcs.filter((A) => ativavel(A) && Math.hypot(A.x - J.x, A.z - J.z) < VIDA_R);
+    for (const A of perto) {
+      if (Math.random() > 0.3) continue;
+      const B = perto.find((q) => q !== A && !q.ativ && Math.hypot(q.x - A.x, q.z - A.z) < 3.4);
+      if (B && comecarPapo(A, B)) return;
+      if (dentroLago(A.x, A.z, 4.5) && !dentroLago(A.x, A.z, 0.3) && Math.random() < 0.8 && comecarPedra(A)) return;
+      if (Math.random() < 0.5 && comecarFoto(A)) return;
+    }
+  }
+  // a cidade acabou de abrir (de dia, sem chuva): às vezes já tem uma roda acontecendo (como os pedestres, que já começam espalhados)
+  function semearRodas(f2) {
+    for (const R of rodas()) {
+      if (!rodaAberta(R) || Math.random() > (R.nome === 'sintetico' ? 0.6 : 0.45)) continue;
+      const n = 2 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < n; i++) {
+        const A = criarPessoa(f2, Math.random, Math.random() < 0.35, true); A.tipo = 'anda'; A.correndo = false; A.vel = 1.3 + Math.random() * 0.3;
+        R.jog.push(A); const v = vagaNaRoda(R, i); A.x = v.x; A.z = v.z; A.y = R.y; A.yaw = A.yawAlvo = Math.atan2(-(R.cz - v.z), R.cx - v.x);
+        A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 20 + Math.random() * 100 }; S.npcs.push(A);
+      }
+      const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0;
+    }
+  }
+  // termina o que estava fazendo (e o par, junto)
+  function fimAtiv(A, semPar) {
+    const a = A.ativ; if (!a) return;
+    A.ativ = null; A.gesto = null; A.fala = false; A.andando = false; tirarCel(A); A.cdVida = S.t + 35 + Math.random() * 50;
+    if (!semPar && a.com && a.com.ativ && a.com.ativ.com === A) fimAtiv(a.com, true);
+    if (A.tipo === 'anda' && !A.dest && S.rede) { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); }
+  }
+  // anda reto até (x, z) ignorando gente (os dois vão um na direção do outro); devolve true quando chegou
+  function irAte(A, x, z, vel, dt) {
+    const dx = x - A.x, dz = z - A.z, d = Math.hypot(dx, dz);
+    if (d < 0.06) { A.andando = false; return true; }
+    const st = Math.min(d, vel * dt), nx = A.x + dx / d * st, nz = A.z + dz / d * st;
+    if (livreNPC(nx, nz, A, true, true)) { A.x = nx; A.z = nz; } else { A.andando = false; return true; }   // travou numa coisa: fica onde está
+    A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.correndo = false; A.vel = vel; return false;
+  }
+  const olharPara = (A, x, z) => { A.yawAlvo = Math.atan2(-(z - A.z), x - A.x); };
+  // o celular na mão direita
+  function darCel(A) {
+    if (A.cel) return;
+    if (!S.geoCel) { const G = new Geo(); G.box(0.09, 0.16, 0.024, '#1c1c1f', 0, -0.08, 0); G.box(0.072, 0.13, 0.004, '#7fb2e8', 0, -0.08, 0.013); S.geoCel = G.malha(MAT).geometry; guardar(S.geoCel); }
+    const c = new THREE.Mesh(S.geoCel, MAT); c.position.set(0.04, -0.3, 0); c.rotation.set(0, 0, Math.PI);
+    A.m.bracoD.cotovelo.add(c); A.cel = c;
+  }
+  function tirarCel(A) { if (A.cel) { if (A.cel.parent) A.cel.parent.remove(A.cel); A.cel = null; } }
+  function flashCel(A) {
+    if (!A.cel) return;
+    const p = new THREE.Vector3(); A.cel.getWorldPosition(p);
+    if (!S.texFlash) S.texFlash = guardar(texCanvas(16, 16, (g) => { const r = g.createRadialGradient(8, 8, 0, 8, 8, 8); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.4, 'rgba(255,255,240,0.8)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, 16, 16); }, false));
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: S.texFlash, transparent: true, depthWrite: false })); sp.position.copy(p); sp.scale.set(0.5, 0.5, 1); sp.renderOrder = 8; S.grupo.add(sp);
+    (S.fxVida || (S.fxVida = [])).push({ tipo: 'flash', m: sp, t: 0, dur: 0.28 });
+  }
+
+  // ---- PAPO (com abraço e selfie, às vezes)
+  function comecarPapo(A, B, op) {
+    const dx = B.x - A.x, dz = B.z - A.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2;
+    op = op || {};
+    const abraca = op.abraca != null ? op.abraca : Math.random() < 0.35, r = abraca ? ABRACO_D / 2 : 0.5;
+    const pa = { x: mx - ux * r, z: mz - uz * r }, pb = { x: mx + ux * r, z: mz + uz * r };
+    for (const p of [pa, pb, { x: mx - ux * 0.5, z: mz - uz * 0.5 }, { x: mx + ux * 0.5, z: mz + uz * 0.5 }]) if (!livreNPC(p.x, p.z, null, true, true) || (p.z > AV.z0 - 0.4 && p.z < AV.z1 + 0.4)) return false;
+    const dur = op.dur || 6 + Math.random() * 9, selfie = op.selfie != null ? op.selfie : Math.random() < 0.32, base = { tipo: 'papo', t: 0, fase: 'chega', mx, mz, ux, uz, abraca, selfie, dur, prox: 1 + Math.random() * 1.5, quem: Math.random() < 0.5 ? 0 : 1 };
+    A.ativ = Object.assign({}, base, { com: B, eu: 0, alvo: pa }); B.ativ = Object.assign({}, base, { com: A, eu: 1, alvo: pb });
+    B.ativ.par = A.ativ; A.ativ.par = A.ativ;                            // os dois olham o mesmo "relógio" (o do A)
+    return true;
+  }
+  function tickPapo(A, dt) {
+    const a = A.ativ, R = a.par, B = a.com, eu = a.eu;
+    if (!B || !S.npcs.includes(B) || !B.ativ || B.ativ.com !== A) { fimAtiv(A, true); return; }
+    if (eu === 0) R.t += dt;                                              // quem manda no tempo é o A
+    if (R.fase === 'chega') {
+      const ok = irAte(A, a.alvo.x, a.alvo.z, 1.3, dt);
+      if (ok) olharPara(A, B.x, B.z);
+      if (eu === 0 && ((ok && B.ativ && Math.hypot(B.x - B.ativ.alvo.x, B.z - B.ativ.alvo.z) < 0.1) || R.t > 3.5)) { R.fase = R.abraca ? 'abraco' : 'papo'; R.t = 0; }
+    } else if (R.fase === 'abraco') {
+      A.andando = false; olharPara(A, B.x, B.z); A.gesto = 'abraco';
+      if (eu === 0 && R.t > 1.9) { R.fase = 'afasta'; R.t = 0; }
+    } else if (R.fase === 'afasta') {
+      A.gesto = null; const s = eu === 0 ? -1 : 1, x = R.mx + R.ux * 0.5 * s, z = R.mz + R.uz * 0.5 * s;
+      if (irAte(A, x, z, 0.9, dt)) olharPara(A, B.x, B.z); A.correndo = false;
+      if (eu === 0 && R.t > 0.8) { R.fase = 'papo'; R.t = 0; }
+    } else if (R.fase === 'papo') {
+      A.andando = false; olharPara(A, B.x, B.z);
+      if (eu === 0) { R.prox -= dt; if (R.prox <= 0) { R.quem = Math.random() < 0.75 ? 1 - R.quem : R.quem; R.prox = 1.4 + Math.random() * 2.2; R.ri = Math.random() < 0.3 ? 1.1 : 0; } if (R.ri > 0) R.ri -= dt; }
+      A.fala = R.quem === eu; A.gesto = !A.fala && R.ri > 0 ? 'ri' : null;
+      if (eu === 0 && R.t > R.dur) { A.fala = B.fala = false; R.fase = R.selfie ? 'juntos' : 'tchau'; R.t = 0; const J = S.jog, fx = J.x - R.mx, fz = J.z - R.mz, fd = Math.hypot(fx, fz) || 1; R.fx = fx / fd; R.fz = fz / fd; }
+    } else if (R.fase === 'juntos') {                                     // lado a lado, virados para o mesmo lado (para o jogador ver a selfie)
+      A.fala = false; A.gesto = null; const px = -R.fz, pz = R.fx, s = eu === 0 ? 1 : -1, x = R.mx + px * 0.3 * s, z = R.mz + pz * 0.3 * s;
+      if (irAte(A, x, z, 1.0, dt)) A.yawAlvo = Math.atan2(-R.fz, R.fx);
+      if (eu === 0 && R.t > 1.0) { R.fase = 'selfie'; R.t = 0; R.flash = false; }
+    } else if (R.fase === 'selfie') {
+      A.andando = false; A.yawAlvo = Math.atan2(-R.fz, R.fx);
+      if (eu === 0) { darCel(A); A.gesto = 'selfie'; if (!R.flash && R.t > 2.0) { R.flash = true; flashCel(A); } }
+      else A.gesto = 'pose';
+      if (eu === 0 && R.t > 3.0) { tirarCel(A); if (R.viagem) { fimAtiv(A); return; } R.fase = 'tchau'; R.t = 0; }   // a dupla de fora segue junto (sem tchau)
+    } else if (R.fase === 'tchau') {
+      A.andando = false; A.gesto = R.t < 0.9 ? 'acena' : null; if (R.t < 0.2) olharPara(A, B.x, B.z);
+      if (eu === 0 && R.t > 1.0) { fimAtiv(A); }
+    }
+  }
+  // a dupla que vem de fora para uma selfie no caminho (os dois param; depois seguem a viagem)
+  function comecarSelfieDupla(L, P) {
+    const J = S.jog, mx = (L.x + P.x) / 2, mz = (L.z + P.z) / 2, fx = J.x - mx, fz = J.z - mz, fd = Math.hypot(fx, fz) || 1;
+    const base = { tipo: 'papo', t: 0, fase: 'juntos', mx, mz, ux: 1, uz: 0, abraca: false, selfie: true, dur: 0, prox: 9, quem: 0, fx: fx / fd, fz: fz / fd, viagem: true };
+    L.ativ = Object.assign({}, base, { com: P, eu: 0, alvo: { x: L.x, z: L.z } }); P.ativ = Object.assign({}, base, { com: L, eu: 1, alvo: { x: P.x, z: P.z } });
+    L.ativ.par = L.ativ; P.ativ.par = L.ativ;
+  }
+
+  // ---- PEDRINHAS no lago
+  function comecarPedra(A) {
+    const nx = (A.x - LAGO.cx) / LAGO.rx, nz = (A.z - LAGO.cz) / LAGO.rz, ang = Math.atan2(nz, nx);
+    const [x, z] = bordaLago(ang, 0.75); if (!livreNPC(x, z, A, true, true) || Math.hypot(x - A.x, z - A.z) > 5) return false;
+    if (naDeque(x, z) || Math.hypot(x - (-52.7), z - 55.0) < 6) return false;   // o píer é da pescaria
+    A.ativ = { tipo: 'pedra', t: 0, fase: 'vai', x, z, n: 3 + Math.floor(Math.random() * 3), k: -1, espera: 0.4 };
+    return true;
+  }
+  function tickPedra(A, dt) {
+    const a = A.ativ; a.t += dt;
+    if (a.fase === 'vai') { if (irAte(A, a.x, a.z, 1.2, dt) || a.t > 6) { a.fase = 'joga'; a.t = 0; olharPara(A, LAGO.cx, LAGO.cz); } return; }
+    A.andando = false; olharPara(A, LAGO.cx + (a.mira || 0), LAGO.cz);
+    if (a.k < 0) { a.espera -= dt; A.gesto = null; if (a.espera <= 0) { a.k = 0; a.mira = (Math.random() - 0.5) * 10; a.quica = Math.random() < 0.45; } return; }
+    a.k += dt; A.gesto = 'joga'; A.jogaK = a.k;
+    if (a.k >= 0.42 && !a.solta) { a.solta = true; lancarPedra(A, a.quica); }
+    if (a.k > 0.85) { a.k = -1; a.solta = false; a.n--; a.espera = 1.0 + Math.random() * 1.4; if (a.n <= 0) { a.fase = 'fim'; a.t = 0; } }
+    if (a.fase === 'fim') fimAtiv(A);
+  }
+  function lancarPedra(A, quica) {
+    const fx = Math.cos(A.yaw), fz = -Math.sin(A.yaw), x0 = A.x + fx * 0.35 + fz * 0.25, z0 = A.z + fz * 0.35 - fx * 0.25, y0 = (A.y || 0) + 1.55;
+    let d = quica ? 3 + Math.random() * 2 : 4 + Math.random() * 5, tx = A.x + fx * d, tz = A.z + fz * d;
+    for (let i = 0; i < 6 && !dentroLago(tx, tz, -1.2); i++) { d *= 0.8; tx = A.x + fx * d; tz = A.z + fz * d; }
+    if (!dentroLago(tx, tz, -0.6)) return;
+    if (!S.geoPedra) { S.geoPedra = guardar(new THREE.BoxGeometry(0.07, 0.045, 0.06)); S.matPedra = guardar(new THREE.MeshLambertMaterial({ color: 0x8a8a84 })); }
+    const m = new THREE.Mesh(S.geoPedra, S.matPedra); m.position.set(x0, y0, z0); S.grupo.add(m);
+    const tt = quica ? 0.45 : 0.85 + Math.random() * 0.25, g = 9.8, yA = 0.06;
+    (S.fxVida || (S.fxVida = [])).push({ tipo: 'pedra', m, t: 0, vx: (tx - x0) / tt, vz: (tz - z0) / tt, vy: (yA - y0 + 0.5 * g * tt * tt) / tt, quica: quica ? 2 + Math.floor(Math.random() * 3) : 0 });
+  }
+  function anelVida(x, z, tam) {
+    if (!S.geoAnelV) { S.geoAnelV = guardar(new THREE.RingGeometry(0.74, 1, 24)); S.geoAnelV.rotateX(-Math.PI / 2); }
+    const m = new THREE.Mesh(S.geoAnelV, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false }));
+    m.position.set(x, 0.085, z); m.renderOrder = 6; m.scale.setScalar(0.06); S.grupo.add(m);
+    S.fxVida.push({ tipo: 'anel', m, t: 0, dur: 1.3, tam });
+  }
+  function respingoVida(x, z, n) {
+    anelVida(x, z, 1.2); setTimeout(() => { if (S && S.ativo && S.fxVida) anelVida(x, z, 0.7); }, 220);
+    if (!S.geoGotaV) S.geoGotaV = guardar(new THREE.BoxGeometry(0.045, 0.045, 0.045));
+    for (let k = 0; k < n; k++) {
+      const m = new THREE.Mesh(S.geoGotaV, new THREE.MeshBasicMaterial({ color: 0xe8f6ff, transparent: true, opacity: 0.95 })), a = Math.random() * 6.28, v = 0.5 + Math.random() * 1.1;
+      m.position.set(x, 0.1, z); S.grupo.add(m); S.fxVida.push({ tipo: 'gota', m, t: 0, dur: 0.8, vx: Math.cos(a) * v, vy: 1.6 + Math.random() * 1.6, vz: Math.sin(a) * v });
+    }
+  }
+  function tickFxVida(dt) {
+    const L = S.fxVida; if (!L || !L.length) return;
+    for (let k = L.length - 1; k >= 0; k--) {
+      const e = L[k]; e.t += dt; let fim = false;
+      if (e.tipo === 'pedra') {
+        e.vy -= 9.8 * dt; const p = e.m.position; p.x += e.vx * dt; p.y += e.vy * dt; p.z += e.vz * dt; e.m.rotation.x += dt * 9; e.m.rotation.y += dt * 5;
+        if (p.y <= 0.07 && e.vy < 0) {
+          if (e.quica > 0 && dentroLago(p.x, p.z, -0.6)) { e.quica--; anelVida(p.x, p.z, 0.55); e.vy = Math.abs(e.vy) * 0.5 + 0.6; e.vx *= 0.72; e.vz *= 0.72; p.y = 0.08; }
+          else { if (dentroLago(p.x, p.z, 0)) respingoVida(p.x, p.z, 4); fim = true; }
+        }
+        if (e.t > 6) fim = true;
+        if (fim) { if (e.m.parent) e.m.parent.remove(e.m); L.splice(k, 1); }
+        continue;
+      }
+      const u = Math.min(1, e.t / e.dur);
+      if (e.tipo === 'anel') { e.m.scale.setScalar(0.06 + e.tam * (1 - (1 - u) * (1 - u))); e.m.material.opacity = 0.95 * (1 - u); }
+      else if (e.tipo === 'gota') { e.vy -= 9.8 * dt; e.m.position.x += e.vx * dt; e.m.position.y += e.vy * dt; e.m.position.z += e.vz * dt; if (e.m.position.y < 0.05) e.t = e.dur; }
+      else if (e.tipo === 'flash') { e.m.material.opacity = 1 - u; e.m.scale.setScalar(0.5 + u * 0.4); }
+      if (e.t >= e.dur) { if (e.m.parent) e.m.parent.remove(e.m); e.m.material.dispose(); L.splice(k, 1); }
+    }
+  }
+
+  // ---- FOTO (da praça ou do sapo cururu)
+  const ALVOS_FOTO = () => [{ x: PRACA_C.x, z: PRACA_C.z, r: 14 }, { x: -54.6, z: 40.0, r: 12 }, { x: LAGO.cx + 18, z: LAGO.cz - 10, r: 0 }];
+  function comecarFoto(A) {
+    const F = ALVOS_FOTO().find((f) => f.r && Math.hypot(A.x - f.x, A.z - f.z) < f.r); if (!F) return false;
+    const dx = A.x - F.x, dz = A.z - F.z, d = Math.hypot(dx, dz) || 1, dist = Math.min(d, 6.5), x = F.x + dx / d * dist, z = F.z + dz / d * dist;
+    if (!livreNPC(x, z, A, true, true) || dist < 3) return false;
+    A.ativ = { tipo: 'foto', t: 0, fase: 'vai', x, z, fx: F.x, fz: F.z };
+    return true;
+  }
+  function tickFoto(A, dt) {
+    const a = A.ativ; a.t += dt;
+    if (a.fase === 'vai') { if (irAte(A, a.x, a.z, 1.15, dt) || a.t > 7) { a.fase = 'mira'; a.t = 0; } return; }
+    A.andando = false; olharPara(A, a.fx, a.fz);
+    if (a.fase === 'mira') { darCel(A); A.gesto = 'fotografa'; if (a.t > 1.5 && !a.flash) { a.flash = true; flashCel(A); } if (a.t > 2.6) { a.fase = 'olha'; a.t = 0; } }
+    else if (a.fase === 'olha') { A.gesto = 'olhaCel'; if (a.t > 1.6) fimAtiv(A); }   // olha a foto que tirou
+  }
+  function tickAtiv(A, dt) {
+    const t = A.ativ.tipo;
+    if (chovendoAgora()) { fimAtiv(A); return; }
+    if (t === 'papo') tickPapo(A, dt); else if (t === 'pedra') tickPedra(A, dt); else if (t === 'foto') tickFoto(A, dt);
+    else fimAtiv(A);
+  }
+
+  // ---- BOLA: a roda na quadra e no sintético
+  //   R = { nome, cx, cz, raio, ent: {fora, dentro}, jog: [], bola: {...}, dono, t }. Quem entra: passeando, decide (decidirDestino) ir jogar.
+  const H_RODA = [7.5, 20.5], MAX_RODA = 4;
+  function rodas() {
+    if (S.rodas) return S.rodas;
+    const L = [];
+    if (S.quadra) { const Q = S.quadra; L.push({ nome: 'quadra', cx: Q.cx - 6.5, cz: Q.cz, raio: 2.8, y: 0.1, ent: { fora: { x: -39, z: 10.1 }, dentro: { x: -39, z: 13.2 } }, lim: Q, jog: [] }); }
+    const F = S.societys && S.societys[1];
+    if (F) L.push({ nome: 'sintetico', cx: F.cx + 3, cz: F.r.z0 + 9, raio: 3.2, y: 0.08, ent: { fora: F.gate.out, dentro: F.gate.in }, lim: F.r, jog: [] });
+    return (S.rodas = L);
+  }
+  // a roda está aberta? (de dia, sem chuva; o sintético não, no dia e na hora do racha; a quadra não, com o jogador jogando nela)
+  function rodaAberta(R) {
+    const h = S.dados.hora; if (h < H_RODA[0] || h >= H_RODA[1] || chovendoAgora() || S.dentro) return false;
+    if (R.nome === 'sintetico') { const f = fut(), A = f.agenda; if (A && A.dia === S.dados.dia && !A.feito && Math.abs(h - (A.hora || horaDoFutebol())) < 2.5) return false; }
+    if (R.nome === 'quadra') { const J = S.jog, Q = R.lim; if (J && J.x > Q.x0 - 1 && J.x < Q.x1 + 1 && J.z > Q.z0 - 1 && J.z < Q.z1 + 1) return false; }
+    return true;
+  }
+  function entrarNaRoda(A) {
+    const L = rodas().filter((R) => rodaAberta(R) && R.jog.length + (R.vindo || 0) < MAX_RODA);
+    if (!L.length) return false;
+    let R = null, bd = 1e9; for (const q of L) { const d = Math.hypot(q.ent.fora.x - A.x, q.ent.fora.z - A.z) + (q.jog.length ? -15 : 0); if (d < bd) { bd = d; R = q; } }
+    if (!R || bd > 75) return false;
+    const rota = caminhoRede(A.x, A.z, R.ent.fora.x, R.ent.fora.z); rota.push({ x: R.ent.dentro.x, z: R.ent.dentro.z });
+    A.dest = { tipo: 'bola', R, fase: 'ir', rota, t: 0 }; R.vindo = (R.vindo || 0) + 1;
+    return true;
+  }
+  function vagaNaRoda(R, i) { const n = Math.max(2, R.jog.length), a = (i / n) * Math.PI * 2 + (R.giro || 0); return { x: R.cx + Math.cos(a) * R.raio, z: R.cz + Math.sin(a) * R.raio }; }
+  function bolaDaRoda(R) {
+    if (R.bola) return R.bola;
+    const mesh = new THREE.Mesh(S.geoBolaR || (S.geoBolaR = guardar(new THREE.SphereGeometry(0.15, 12, 8))), S.matBolaR || (S.matBolaR = guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) }))));
+    S.grupo.add(mesh);
+    return (R.bola = { mesh, sombra: sombraAtor(0.17), x: R.cx, y: R.y + 0.15, z: R.cz, vx: 0, vy: 0, vz: 0, voa: false, rola: false, alvo: null });
+  }
+  function tickBolaNPC(A, dt) {
+    const D = A.dest, R = D.R;
+    if (D.fase === 'ir') {
+      if (!seguir(A, D.rota, A.vel, dt)) return;
+      R.vindo = Math.max(0, (R.vindo || 1) - 1);
+      if (!rodaAberta(R) || R.jog.length >= MAX_RODA) { sairDaRoda(A); return; }
+      D.fase = 'joga'; D.fim = S.t + 55 + Math.random() * 90; R.jog.push(A); A.correndo = false;
+      if (R.jog.length === 1) { const B = bolaDaRoda(R); B.x = A.x; B.z = A.z + 0.4; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
+      return;
+    }
+    if (D.fase === 'sai') {
+      if (!seguir(A, D.rota, A.vel, dt)) return;
+      A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.cool = 25 + Math.random() * 30; return;
+    }
+    // jogando: vai para a vaga dele na roda (quem não está com a bola); o dono fica com ela no pé
+    if (S.t > D.fim || !rodaAberta(R)) { sairDaRoda(A); return; }
+    const i = R.jog.indexOf(A); if (i < 0) { sairDaRoda(A); return; }
+    const B = R.bola, v = vagaNaRoda(R, i);
+    if (R.busca === A) {                                                 // foi buscar a bola que escapou
+      if (irAte(A, B.x, B.z, 2.6, dt) || Math.hypot(A.x - B.x, A.z - B.z) < 0.45) { R.busca = null; B.rola = false; B.voa = false; B.vx = B.vz = 0; R.dono = A; R.t = 0; }
+      A.correndo = true; return;
+    }
+    if (Math.hypot(A.x - v.x, A.z - v.z) > 0.15 && !(A.chuteT >= 0)) { irAte(A, v.x, v.z, 1.6, dt); if (A.andando) return; }
+    A.andando = false;
+    if (R.dono === A && !B.voa && !B.rola) olharPara(A, R.cx, R.cz);
+    else olharPara(A, B.x, B.z);
+  }
+  function sairDaRoda(A) {
+    const D = A.dest, R = D && D.R; if (!R) { A.dest = null; return; }
+    if (D.fase === 'ir') R.vindo = Math.max(0, (R.vindo || 1) - 1);
+    R.jog = R.jog.filter((q) => q !== A); if (R.dono === A) R.dono = R.jog[0] || null; if (R.busca === A) R.busca = null;
+    A.chuteT = -1; A.correndo = false;
+    const rota = [{ x: R.ent.dentro.x, z: R.ent.dentro.z }, { x: R.ent.fora.x, z: R.ent.fora.z }], N = S.rede[noMaisPerto(R.ent.fora.x, R.ent.fora.z)];
+    if (N) rota.push({ x: N.x, z: N.z });
+    A.dest = { tipo: 'bola', R, fase: 'sai', rota, t: 0 };
+    if (!R.jog.length && R.bola) { R.bola.mesh.visible = R.bola.sombra.visible = false; }
+  }
+  // a bola da roda: o dono domina (às vezes faz embaixadinha), chuta para outro (por cima, a "altinha", ou rasteira); de vez em quando escapa
+  function tickRodas(dt) {
+    if (!S.rodas) return;
+    for (const R of S.rodas) {
+      if (!R.jog.length || !R.bola) continue;
+      const B = R.bola, chao = R.y + 0.15, g = 9.8; R.t = (R.t || 0) + dt;
+      R.giro = (R.giro || 0) + dt * 0.02;
+      for (const P of R.jog) if (P.chuteT >= 0) { P.chuteT += dt; if (P.chuteT > 0.45) P.chuteT = -1; }
+      if (B.voa) {
+        B.vy -= g * dt; B.x += B.vx * dt; B.y += B.vy * dt; B.z += B.vz * dt;
+        if (B.y <= chao) {
+          B.y = chao; const T_ = B.alvo;
+          if (T_ && R.jog.includes(T_) && !B.erra && Math.hypot(T_.x - B.x, T_.z - B.z) < 1.0) { B.voa = false; B.vx = B.vz = 0; R.dono = T_; R.t = 0; }   // dominou
+          else { B.voa = false; B.rola = true; B.vy = 0; }
+        }
+      } else if (B.rola) {
+        const sp = Math.hypot(B.vx, B.vz), k = Math.max(0, sp - 2.4 * dt) / (sp || 1); B.vx *= k; B.vz *= k; B.x += B.vx * dt; B.z += B.vz * dt; B.y = chao;
+        const L = R.lim; if (L) { B.x = clamp(B.x, L.x0 + 0.4, L.x1 - 0.4); B.z = clamp(B.z, L.z0 + 0.4, L.z1 - 0.4); }
+        const T_ = B.alvo; if (T_ && R.jog.includes(T_) && !B.erra && Math.hypot(T_.x - B.x, T_.z - B.z) < 0.5) { B.rola = false; B.vx = B.vz = 0; R.dono = T_; R.t = 0; }
+        else if (sp < 0.15) { B.rola = false; B.vx = B.vz = 0; if (!R.busca) { let q = null, bd = 1e9; for (const P of R.jog) { const d = Math.hypot(P.x - B.x, P.z - B.z); if (d < bd) { bd = d; q = P; } } R.busca = q; R.dono = null; } }
+      } else if (R.dono && R.jog.includes(R.dono)) {
+        const P = R.dono, fx = Math.cos(P.yaw), fz = -Math.sin(P.yaw);
+        if (R.t < 0.25) { B.x = lerp(B.x, P.x + fx * 0.42, Math.min(1, dt * 10)); B.z = lerp(B.z, P.z + fz * 0.42, Math.min(1, dt * 10)); B.y = chao; }
+        else {
+          B.x = P.x + fx * 0.42; B.z = P.z + fz * 0.42;
+          if (!R.emb) R.emb = Math.random() < 0.35 ? 1 : 0;              // embaixadinha antes de passar
+          B.y = R.emb ? chao + Math.abs(Math.sin(R.t * 6.2)) * 0.55 : chao;
+          const espera = R.emb ? 2.6 : 0.9;
+          if (R.t > espera && R.jog.length > 1 && !(P.chuteT >= 0)) {         // passa
+            const outros = R.jog.filter((q) => q !== P && !(R.busca === q)), T_ = outros[Math.floor(Math.random() * outros.length)];
+            if (T_) {
+              P.chuteT = 0; R.emb = 0;
+              const alto = Math.random() < 0.6, erra = Math.random() < 0.12, tx = T_.x + (erra ? (Math.random() - 0.5) * 6 : 0), tz = T_.z + (erra ? (Math.random() - 0.5) * 6 : 0);
+              const d = Math.hypot(tx - B.x, tz - B.z) || 1, tt = alto ? 0.95 + d * 0.04 : 0;
+              B.alvo = T_; B.erra = erra;
+              if (alto) { B.voa = true; B.vx = (tx - B.x) / tt; B.vz = (tz - B.z) / tt; B.vy = 0.5 * g * tt; }
+              else { B.rola = true; const v = Math.sqrt(2 * 2.4 * d) + 0.6; B.vx = (tx - B.x) / d * v; B.vz = (tz - B.z) / d * v; }
+              R.dono = null; R.t = 0;
+            }
+          } else if (R.jog.length === 1 && R.t > 6) { R.t = 0.3; R.emb = 1; }   // sozinho: fica nas embaixadinhas, esperando
+        }
+      }
+      B.mesh.position.set(B.x, B.y, B.z); B.mesh.rotation.x += (B.voa || B.rola ? 8 : (R.emb ? 3 : 0)) * dt;
+      B.sombra.position.set(B.x, R.y + 0.02, B.z); B.mesh.visible = B.sombra.visible = true;
+    }
+  }
+
   function separarPessoas() {
     const L = S.npcs, mov = (A) => (A.tipo === 'anda' || A.tipo === 'morador') && !A.oculto && !A.sentado && !A.deitado;
     for (let i = 0; i < L.length; i++) { const a = L[i]; if (a.oculto || a === S.valdemar || a.deitado) continue;
       for (let j = i + 1; j < L.length; j++) { const b = L[j]; if (b.oculto || b === S.valdemar || b.deitado) continue;
         const ma = mov(a), mb = mov(b); if (!ma && !mb) continue;
         if (a.fantasma > 0 || b.fantasma > 0) continue;                  // passando um pelo outro de propósito
+        if (a.ativ && a.ativ.com === b) continue;                         // (6.6.5) abraço / selfie: os dois juntos de propósito
         let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
         if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
         const ra = temRotina(a), rb = temRotina(b);
@@ -5819,6 +6498,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt); tickDev();                        // (6.2.3) dinheiro infinito
+        tickVida(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } if (!S.dentro) tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
@@ -5889,7 +6569,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
       S.jog = criarJogador(f2, H);
-      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); criarLuciaRua(f2); montarMoradores(); criarPlantas();
+      criarPessoas(f2); criarTreino(f2); criarValdemar(f2); criarLuciaRua(f2); montarMoradores(); criarPlantas(); povoarLojas(); semearRodas(f2);
       const J = S.jog; J.x = SPAWN.x; J.z = -4.9; J.y = 0.22; J.yaw = J.yawAlvo = -Math.PI / 2;
       tickJogador(0.016); tickPortao(1); atualizarCamera(0.016);
       GANCHO_RENDER = gancho;
@@ -5927,5 +6607,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita } });   // (_estado/_planta/_fns: para testes)
 })();

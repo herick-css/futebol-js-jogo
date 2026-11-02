@@ -2,6 +2,10 @@
    FUTEBOL JS · academia.js · A ACADEMIA DA CIDADEZINHA E OS TREINOS (arquivo SEPARADO, como pizzaria.js)
    ---------------------------------------------------------------------
    6.2.0 — primeira versão.
+   6.6.5 — AGENDA dos frequentadores (agendaFreq): de manhã (3 em 4 vêm; chegam 7h10–8h30, vão embora 10h10–10h50) e de tarde (chegam
+           13h10–15h20, vão embora 20h30–21h). Ninguém está lá quando abre: chegam pela porta e pela catraca de ENTRADA (o tripé gira) e vão
+           ao aparelho (chegarFreq); a cidade mostra a mesma pessoa vindo de fora (agenda/criarFreq). O ESPELHO também é deles: de vez em
+           quando o que anda pela sala faz duas poses ou tira uma selfie no espelho (tickEspelhoNPC).
    6.3.0 — HORÁRIO (7h–11h e 13h–22h; Diego e Fernanda saem para almoçar e voltam, todos saem entre 20h30 e 21h30), cada um com a sua casa;
            a FERNANDA circula pela academia (orienta gente, treina, bebe água, olha a prancheta); fala DIFERENTE para cada treino/motivo de erro;
            treino que deu errado não repete no mesmo dia; ESPELHO com 5 poses de fisiculturismo (botão para sair).
@@ -268,19 +272,70 @@
       M.fer = colocar(criarFernanda(), A.fernanda.x, A.fernanda.z, A.fernanda.yaw);
       s.falantesExtra.fernanda = { A: M.fer, nome: T('Fernanda'), voz: 0 };
       // frequentadores: duas esteiras, um supino, um abdominal, rosca com halteres e um andando.
-      //   (6.3.0) cada um tem a sua hora de ir embora (20h30–21h30, uma de cada vez): quem já "foi" não é criado.
-      const base = (dia() * 131) % 997, agora = hora();
-      let n = 0;
-      const novo = (fem, sem, x, z, yaw, tipo) => {
-        const i = n++, saiH = horaSaida(i, base);
-        if (agora >= saiH && agora < H_FECHA) return null;
-        const P = colocar(criarFrequentador(fem, sem), x, z, yaw); P.saiH = saiH; P.estacao = tipo; if (tipo) P.tipo = tipo; M.npcs.push(P); return P;
-      };
-      A.esteiras.filter((e) => !e.jog).forEach((e, i) => { const P = novo(i === 0, base + 11 + i * 7, e.x, e.z + 0.1, Math.PI / 2, 'esteira'); if (P) { P.y = e.y; P.naEsteira = e; } });
-      { const sp = A.supinos.find((q) => !q.jog), P = novo(false, base + 41, sp.x, sp.z, -Math.PI / 2, 'supinoNPC'); if (P) { P.tipo = 'parado'; P.poseA = 'supino'; P.supino = sp; P.fase0 = Math.random() * 6; } }
-      { const c = A.colchonetes.find((q) => !q.jog && q.x < -7), P = novo(true, base + 53, c.x, c.z, -Math.PI / 2, 'abdNPC'); if (P) { P.tipo = 'parado'; P.poseA = 'abdominal'; P.colch = c; P.fase0 = Math.random() * 6; } }
-      { const P = novo(false, base + 67, A.rosca.x, A.rosca.z, A.rosca.yaw, 'rosca'); if (P) halter(P); }
-      { const P = novo(Math.random() < 0.5, base + 79, (A.vaga.x0 + A.vaga.x1) / 2, (A.vaga.z0 + A.vaga.z1) / 2, 0, 'vaga'); if (P) P.area = A.vaga; }
+      //   (6.6.5) cada um tem a SUA AGENDA (agendaFreq): chega depois que a academia abre (entra pela porta e passa pela catraca) e vai
+      //   embora antes de fechar. Quem está no horário dele já está no aparelho; quem ainda não chegou chega andando; quem já foi não aparece.
+      M.base = (dia() * 131) % 997; M.turnoAg = null;
+      const agora = hora();
+      M.slots = FREQ.map((f, i) => ({ i, f, P: null, foi: null }));
+      for (const sl of M.slots) { const j = janelaFreq(sl.i, M.base, agora); if (j && agora >= j[0] && agora < j[1]) noAparelho(sl, j); }
+    }
+    // os 6 frequentadores (a ordem é a do i da agenda): esteiras (as duas que não são do jogador), supino, abdominal, rosca e o que anda
+    const FREQ = [{ tipo: 'esteira', k: 0, fem: true, s: 11 }, { tipo: 'esteira', k: 1, fem: false, s: 18 }, { tipo: 'supinoNPC', fem: false, s: 41 },
+      { tipo: 'abdNPC', fem: true, s: 53 }, { tipo: 'rosca', fem: false, s: 67 }, { tipo: 'vaga', fem: null, s: 79 }];
+    const femFreq = (i, base) => FREQ[i].fem == null ? (base + i) % 2 === 0 : FREQ[i].fem;
+    // (6.6.5) a agenda do dia: de MANHÃ (3 em cada 4 vêm; chegam 7h10–8h30 e vão embora 10h10–10h50, antes do almoço) e de TARDE
+    //   (chegam 13h10–15h20 e vão embora 20h30–21h, uma de cada vez: horaSaida)
+    const H_CHEGA_M = [7.15, 8.5], H_SAI_M = [10.15, 10.8], H_CHEGA_T = [13.15, 15.3];
+    function agendaFreq(i, base) {
+      const r = (k) => Math.abs(Math.sin((base + i * 7.7 + k * 3.31) * 12.9898) * 43758.5453) % 1;
+      return { manha: r(4) < 0.75, m: [H_CHEGA_M[0] + r(1) * (H_CHEGA_M[1] - H_CHEGA_M[0]), H_SAI_M[0] + r(2) * (H_SAI_M[1] - H_SAI_M[0])],
+        t: [H_CHEGA_T[0] + r(3) * (H_CHEGA_T[1] - H_CHEGA_T[0]), horaSaida(i, base)] };
+    }
+    function janelaFreq(i, base, h) { const g = agendaFreq(i, base); return h < H_ALMOCO ? (g.manha ? g.m : null) : h >= H_VOLTA ? g.t : null; }
+    // para a cidade: quem vem hoje e a que horas (a mesma pessoa que aparece lá dentro anda pela rua até a porta)
+    function agenda() {
+      const base = (dia() * 131) % 997, L = [];
+      FREQ.forEach((f, i) => { const g = agendaFreq(i, base); if (g.manha) L.push({ k: 'm' + i, i, fem: femFreq(i, base), sem: base + f.s, chega: g.m[0], sai: g.m[1] }); L.push({ k: 't' + i, i, fem: femFreq(i, base), sem: base + f.s, chega: g.t[0], sai: g.t[1] }); });
+      return L;
+    }
+    const criarFreq = (fem, sem) => criarFrequentador(fem, sem);
+    // o aparelho de cada um (na sala de agora)
+    function aparelho(sl) {
+      const A = M.A, f = sl.f;
+      if (f.tipo === 'esteira') { const e = A.esteiras.filter((q) => !q.jog)[f.k]; return e && { x: e.x, z: e.z + 0.1, yaw: Math.PI / 2, antes: [e.x, -3.2], prep: (P) => { P.tipo = 'esteira'; P.y = e.y; P.naEsteira = e; } }; }
+      if (f.tipo === 'supinoNPC') { const sp = A.supinos.find((q) => !q.jog); return sp && { x: sp.x, z: sp.z, yaw: -Math.PI / 2, antes: [6.5, -3.7], prep: (P) => { P.tipo = 'parado'; P.poseA = 'supino'; P.supino = sp; P.fase0 = Math.random() * 6; } }; }
+      if (f.tipo === 'abdNPC') { const c = A.colchonetes.find((q) => !q.jog && q.x < -7); return c && { x: c.x, z: c.z, yaw: -Math.PI / 2, antes: [-10.0, 0.6], prep: (P) => { P.tipo = 'parado'; P.poseA = 'abdominal'; P.colch = c; P.fase0 = Math.random() * 6; } }; }
+      if (f.tipo === 'rosca') return { x: A.rosca.x, z: A.rosca.z, yaw: A.rosca.yaw, antes: null, prep: (P) => { P.tipo = 'rosca'; if (!P.halt) halter(P); else for (const h of P.halt) h.visible = true; } };
+      const v = A.vaga; return { x: (v.x0 + v.x1) / 2, z: (v.z0 + v.z1) / 2, yaw: 0, antes: null, prep: (P) => { P.tipo = 'vaga'; P.area = v; } };
+    }
+    function noAparelho(sl, j) {
+      const ap = aparelho(sl); if (!ap) return null;
+      const P = colocar(criarFrequentador(femFreq(sl.i, M.base), M.base + sl.f.s), ap.x, ap.z, ap.yaw);
+      P.saiH = j[1]; P.estacao = sl.f.tipo; P.slot = sl; sl.P = P; ap.prep(P); M.npcs.push(P); return P;
+    }
+    // (6.6.5) chegou: entra pela porta, passa pela catraca de ENTRADA (x = −1,55) e vai até o aparelho dele
+    function chegarFreq(sl, j) {
+      const ap = aparelho(sl), e = M.R && M.R.entrada; if (!ap || !e) return null;
+      const P = colocar(criarFrequentador(femFreq(sl.i, M.base), M.base + sl.f.s), e.x, e.z, Math.PI / 2);
+      P.saiH = j[1]; P.slot = sl; sl.P = P; P.tipo = 'chega'; P.chegando = ap; P.estacao = null;
+      const fim = ap.antes || [ap.x, ap.z], volta = caminhoSala(fim[0], fim[1], 'H').map((q) => q.slice()).reverse();
+      P.rota = [[-1.55, e.z - 0.6], [-1.55, 2.3]].concat(volta.length ? volta : [NOS.H.slice()]);
+      if (ap.antes) P.rota.push(ap.antes.slice());
+      P.rota.push([ap.x, ap.z]); M.npcs.push(P); return P;
+    }
+    function tickChegadas(dt) {
+      if (!M.slots || !M.A || !aberto()) return;
+      const h = hora(), turno = h < H_ALMOCO ? 'm' : 't';
+      for (const sl of M.slots) {
+        if (sl.P) {
+          const P = sl.P;
+          if (P.chegando && passoRota(P, dt, 1.25)) { const ap = P.chegando; P.chegando = null; P.x = ap.x; P.z = ap.z; P.yaw = P.yawAlvo = ap.yaw; P.estacao = sl.f.tipo; ap.prep(P); }
+          continue;
+        }
+        if (sl.foi === turno) continue;
+        const j = janelaFreq(sl.i, M.base, h);
+        if (j && h >= j[0] && h < j[1] - 0.2 && !(M.mg && M.mg.fase === 'jogo')) chegarFreq(sl, j);
+      }
     }
     // a hora em que o frequentador i começa a ir embora: seis horários espalhados entre 20h30 e 21h00 (um por "faixa"; o dia embaralha a ordem)
     function horaSaida(i, base) {
@@ -291,7 +346,7 @@
       const s = S();
       if (s && s.falantesExtra) { delete s.falantesExtra.diego; delete s.falantesExtra.fernanda; }
       if (M.mg || M.esp) fecharOverlay();
-      M.mg = null; M.esp = null; M.R = null; M.A = null; M.diego = null; M.fer = null; M.npcs = []; M.halteres = [];
+      M.mg = null; M.esp = null; M.R = null; M.A = null; M.diego = null; M.fer = null; M.npcs = []; M.halteres = []; M.slots = null; M.espN = null; M.tEspN = null;
     }
 
     // ---------------------------------------------------------------- catracas
@@ -305,6 +360,11 @@
         // passou pela catraca: o tripé gira 120°
         if (C.zAnt != null && Math.abs(J.x - C.x) < 0.65 && Math.sign(J.z - C.z) !== Math.sign(C.zAnt - C.z)) { C.alvo += (J.z < C.z ? 1 : -1) * Math.PI * 2 / 3; SOM.catraca(); }
         C.zAnt = J.z;
+        for (const P of M.npcs) {                                           // (6.6.5) frequentador chegando/saindo também gira o tripé
+          if (!(P.chegando || P.saindo)) continue;
+          const k = 'zAnt' + C.tipo; if (P[k] != null && Math.abs(P.x - C.x) < 0.65 && Math.sign(P.z - C.z) !== Math.sign(P[k] - C.z)) C.alvo += (P.z < C.z ? 1 : -1) * Math.PI * 2 / 3;
+          P[k] = P.z;
+        }
         C.ang += (C.alvo - C.ang) * Math.min(1, dt * 9); C.gira.rotation.y = C.ang;
       }
     }
@@ -900,9 +960,10 @@
     function tickSaidas(dt) {
       const h = hora();
       for (const P of M.npcs.slice()) {
-        if (!P.saindo) { if (P.saiH != null && h >= P.saiH && h < H_FECHA && P.tipo !== 'cena' && !P.andandoCena && !(M.mg && M.mg.fase === 'jogo')) comecarSaida(P); continue; }
+        if (!P.saindo) { if (P.chegando) continue; if (P.saiH != null && h >= P.saiH && h < H_FECHA && P.tipo !== 'cena' && !P.andandoCena && !(M.mg && M.mg.fase === 'jogo')) comecarSaida(P); continue; }
         if (passoRota(P, dt, VEL_SAIDA)) {                                                    // chegou na porta: vai embora
           const i = M.npcs.indexOf(P); if (i >= 0) M.npcs.splice(i, 1);
+          if (P.slot) { P.slot.P = null; P.slot.foi = hora() < H_ALMOCO + 0.5 ? 'm' : 't'; }   // (6.6.5) hoje, nesse turno, ele já foi
           if (M.A && M.R) api.descartarPessoa(P);
         }
       }
@@ -1062,6 +1123,54 @@
       const k = suave(E.k), a = vetorPose(E.de), b = vetorPose(E.ate);
       E.v = { E: lerpVet(a.E, b.E, k), D: lerpVet(a.D, b.D, k), L: lerpVet(a.L, b.L, k), k: lerpVet(a.k, b.k, k), yaw: lerpVet(a.yaw, b.yaw, k), desce: lerpVet(a.desce, b.desce, k) };
     }
+    // (6.6.5) O ESPELHO TAMBÉM É DOS FREQUENTADORES: de vez em quando o que anda pela sala vai até o espelho (longe da Fernanda e do
+    //   jogador), faz duas poses (as mesmas do jogador) ou tira uma SELFIE no espelho (celular na mão, flash) e volta a andar pela sala.
+    const SPOTS_ESP = [[-3.5, -5.45], [0.55, -5.55]];
+    const NEUTRO_ESP = { E: [0, 0, 0, 0.001], D: [0, 0, 0, 0.001], L: [0, 0, 0, 0], k: [0], yaw: [0], desce: [0] };
+    const SELFIE_ESP = { E: [1.5, 0.0, 1.7, 0.001], D: [0.38, 1.55, 0, 1.3], L: [0, 0, 0.1, -0.1], k: [0], yaw: [0], desce: [0] };   // celular na frente do rosto, o outro braço flexionado
+    let geoCelA = null;
+    function darCelA(P) {
+      if (P.celA) return;
+      if (!geoCelA) { const G = new api.Geo(); G.box(0.09, 0.16, 0.024, '#1c1c1f', 0, -0.08, 0); G.box(0.072, 0.13, 0.004, '#7fb2e8', 0, -0.08, 0.013); geoCelA = G.malha(api.MAT).geometry; }
+      const c = new THREE.Mesh(geoCelA, api.MAT); c.position.set(0.04, -0.3, 0); c.rotation.z = Math.PI; P.m.bracoD.cotovelo.add(c); P.celA = c;
+    }
+    function tirarCelA(P) { if (P.celA) { if (P.celA.parent) P.celA.parent.remove(P.celA); P.celA = null; } }
+    function flashA(P) {
+      if (!P.celA) return; const p = new THREE.Vector3(); P.celA.getWorldPosition(p);
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false })); sp.position.copy(p); sp.scale.set(0.22, 0.22, 1); S().grupo.add(sp);
+      const t0 = performance.now(), passo = () => { const u = (performance.now() - t0) / 260; sp.material.opacity = 0.95 * (1 - u); if (u < 1) requestAnimationFrame(passo); else { if (sp.parent) sp.parent.remove(sp); sp.material.dispose(); } }; requestAnimationFrame(passo);
+    }
+    function tickEspelhoNPC(dt) {
+      const E = M.espN;
+      if (!E) {
+        M.tEspN = (M.tEspN == null ? 12 + Math.random() * 15 : M.tEspN) - dt; if (M.tEspN > 0) return;
+        M.tEspN = 28 + Math.random() * 40;
+        if (M.esp || M.mg || !M.A) return;
+        const P = M.npcs.find((q) => q.slot && q.slot.f.tipo === 'vaga' && q.tipo === 'vaga' && !q.saindo && !q.chegando && !q.conversando); if (!P) return;
+        const F = M.fer, J = S().jog, sp = SPOTS_ESP.find(([x, z]) => (!F || Math.hypot(F.x - x, F.z - z) > 1.9) && Math.hypot(J.x - x, J.z - z) > 1.5); if (!sp) return;
+        P.tipo = 'espelhoNPC'; P.alvoV = null; P.rota = rotaLivre(P.x, P.z, sp[0], sp[1]).map((q) => q.slice());
+        M.espN = { P, fase: 'vai', t: 0, sp, selfie: Math.random() < 0.45, i: 0, k: 0, pose: POSES_ESP[Math.floor(Math.random() * POSES_ESP.length)] };
+        return;
+      }
+      const P = E.P; E.t += dt;
+      if (!M.npcs.includes(P) || P.saindo) { tirarCelA(P); M.espN = null; return; }
+      if (E.fase === 'vai') { if (passoRota(P, dt, 1.2) || E.t > 14) { E.fase = 'posa'; E.t = 0; E.k = 0; P.andando = false; P.yaw = P.yawAlvo = Math.PI / 2; } return; }
+      if (E.fase === 'posa') {
+        P.andando = false; P.yawAlvo = Math.PI / 2; E.k = Math.min(1, E.k + dt / 0.5);
+        let acabou = false;
+        if (E.selfie) { darCelA(P); if (E.t > 1.7 && !E.flash) { E.flash = true; flashA(P); } if (E.t > 3.3) acabou = true; }
+        else if (E.t > 2.8) { E.i++; if (E.i >= 2) acabou = true; else { E.de = E.pose; E.pose = POSES_ESP.filter((q) => q !== E.pose)[Math.floor(Math.random() * (POSES_ESP.length - 1))]; E.t = 0; E.k = 0; } }
+        if (acabou) { tirarCelA(P); zerarPose(P); E.fase = 'volta'; E.t = 0; const v = M.A.vaga; P.rota = rotaLivre(P.x, P.z, (v.x0 + v.x1) / 2, (v.z0 + v.z1) / 2).map((q) => q.slice()); }
+        return;
+      }
+      if (E.fase === 'volta' && (passoRota(P, dt, 1.2) || E.t > 14)) { P.tipo = 'vaga'; P.area = M.A.vaga; P.alvoV = null; M.espN = null; }
+    }
+    function poseEspelhoNPC() {
+      const E = M.espN; if (!E || E.fase !== 'posa') return;
+      const P = E.P, alvo = E.selfie ? SELFIE_ESP : vetorPose(E.pose), de = E.de ? vetorPose(E.de) : NEUTRO_ESP, k = suave(E.k);
+      const v = { E: lerpVet(de.E, alvo.E, k), D: lerpVet(de.D, alvo.D, k), L: lerpVet(de.L, alvo.L, k), k: lerpVet(de.k, alvo.k, k), yaw: lerpVet(de.yaw, alvo.yaw, k), desce: lerpVet(de.desce, alvo.desce, k) };
+      P.yaw = P.yawAlvo = Math.PI / 2 + v.yaw[0]; P.m.raiz.rotation.y = P.yaw; aplicarPoseEsp(P, v, E.k >= 1 ? 0.6 : 0.2);
+    }
     function poseEspelho(dt) {
       const E = M.esp, J = S().jog; if (!E || !E.v) return;
       J.x = E.x; J.z = -4.7; J.yaw = J.yawAlvo = Math.PI / 2 + E.v.yaw[0];
@@ -1091,7 +1200,7 @@
     // ---- a cada quadro (depois do tickJogador e do tickPessoas)
     function tick(dt) {
       const s = S(); if (!s || !dentroAcad()) return;
-      tickCatracas(dt); tickSaidas(dt); tickFernanda(dt); posesNPC(dt); tickEspelho(dt); poseEspelho(dt);
+      tickCatracas(dt); tickChegadas(dt); tickSaidas(dt); tickFernanda(dt); tickEspelhoNPC(dt); posesNPC(dt); poseEspelhoNPC(); tickEspelho(dt); poseEspelho(dt);
       if (!M.mg && !M.esp && !M.fechando && !aberto() && s.modo === 'livre') { M.fechando = true; fecharAcademia().finally(() => { M.fechando = false; }); }   // (6.3.0)
       const G = M.mg;
       if (G) {
@@ -1102,10 +1211,10 @@
     function limpar() { fecharOverlay(); }
 
     return {
-      entrou, saiu, alvos, tick, limpar, aberto, rotuloFechada, montarRua,
+      entrou, saiu, alvos, tick, limpar, aberto, rotuloFechada, montarRua, agenda, criarFreq,
       temAcesso, temPersonal, treinosHoje, emTreino: () => !!M.mg,
       _M: M,
-      _f: { socorroSupino, rotaLivre, segLivre, segurarPrancheta, espelho, POSES_ESP, aplicarPoseEsp, proximaPoseEsp, falhouHoje, marcarFalha, FALAS_ERRO, NOS, ARESTAS, caminhoSala, horaSaida, comecarSaida, viagens, proximaAcao, irPara, chegouFer, zerarFer, treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
+      _f: { socorroSupino, rotaLivre, segLivre, segurarPrancheta, espelho, POSES_ESP, aplicarPoseEsp, proximaPoseEsp, falhouHoje, marcarFalha, FALAS_ERRO, NOS, ARESTAS, caminhoSala, horaSaida, comecarSaida, viagens, agendaFreq, janelaFreq, chegarFreq, FREQ, tickEspelhoNPC, proximaAcao, irPara, chegouFer, zerarFer, treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
       _regras: { PRECO_ACESSO, PRECO_PERSONAL, DIAS_PLANO, TREINOS_DIA, GANHO, HORAS_TREINO, EST, ABD, SUP, BR },
     };
   }

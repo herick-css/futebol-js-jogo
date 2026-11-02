@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · cinema.js · O CINEMA QUE PAGA (arquivo SEPARADO, como pizzaria.js e academia.js)
    ---------------------------------------------------------------------
+   - (6.6.5) O HERICK MORA COM A FERNANDA: sai de casa a tempo de chegar quando o cinema abre (6h) e, quando fecha (22h), volta andando
+     para casa (rotaHerick/herickNoCaminho/tickHerickCaminho; a posição sai da hora). Antes da primeira conversa ele vai para o ponto da
+     calçada na frente do cinema; depois, entra pela porta. Andando, ele está em S.atoresExtra (carros, pessoas e jogador o respeitam).
    - Registrado com FutebolJS.registrarFase({ id: 'cinema' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano e chama criar(api) (api = apiCinema() da cidade). O interior vem do interiores.js
      (R.cinema: bilheteria, lugar do Herick, cordas, segurança, fileiras, tela e feixe do projetor).
@@ -202,7 +205,7 @@
         if (d <= st) { H.x = q.x; H.z = q.z; H.rota.shift(); if (!H.rota.length) { H.rota = null; if (H.fimRota) { const f = H.fimRota; H.fimRota = null; f(); } } }
         else { H.x += dx / d * st; H.z += dz / d * st; H.yawAlvo = Math.atan2(-dz, dx); }
         H.andando = !!H.rota;
-      } else H.andando = false;
+      } else H.andando = !!H.andarSempre;                                 // (6.6.5) indo/voltando de casa (a posição vem da hora)
       if (!H.andando && !H.fala && H.olha && J) {                         // olha para quem chega perto (o corpo vira devagar)
         const dj = Math.hypot(J.x - H.x, J.z - H.z); H.yawAlvo = dj < 3.2 ? Math.atan2(-(J.z - H.z), J.x - H.x) : H.yawBase;
       }
@@ -240,6 +243,33 @@
       }
       const mx = (H.x + J.x) / 2, mz = (H.z + J.z) / 2, dist = 3.6 + d * 0.8;
       return { px: mx + nx * dist, py: H.y + 2.1, pz: mz + nz * dist, tx: mx, ty: H.y + 0.75, tz: mz };
+    }
+    // ---------------------------------------------------------------- (6.6.5) O HERICK MORA COM A FERNANDA
+    //   Sai de casa (a da Fernanda) a tempo de chegar no cinema quando abre (6h) e, quando fecha (22h), volta andando para casa. Antes da
+    //   primeira conversa ele vai para o ponto da calçada na frente do cinema (onde espera o jogador); depois, entra pela porta (lá dentro
+    //   ele fica do lado da bilheteria). A posição sai da hora (como a da Fernanda): não importa quando o jogador aparece na rua.
+    const VEL_HERICK = 2.4, H_ABRE_C = 6, H_FECHA_C = 22;   // passo rápido (como o Diego): a cidade é grande para o relógio do jogo
+    function rotaHerick() {
+      const conheceu = !!dadosC().conheceu, k = conheceu ? 'porta' : 'rua';
+      if (M.rotaH && M.rotaH.k === k && M.rotaH.R) return M.rotaH.R;
+      const p = pontoRua(); let R = null;
+      if (api.rotaCasaPorta) R = conheceu ? api.rotaCasaPorta('fernanda', 'cinema', VEL_HERICK) : p ? api.rotaCasaPorta('fernanda', { x: p.x, z: p.z }, VEL_HERICK) : null;
+      M.rotaH = { k, R }; return R;
+    }
+    function herickNoCaminho() {                                         // { k (0 = casa, 1 = cinema), ida, R } ou null
+      const R = rotaHerick(); if (!R) return null; const h = hora();
+      if (h >= H_ABRE_C - R.dur && h < H_ABRE_C) return { k: (h - (H_ABRE_C - R.dur)) / R.dur, ida: true, R };
+      if (h >= H_FECHA_C && h < H_FECHA_C + R.dur) return { k: 1 - (h - H_FECHA_C) / R.dur, ida: false, R };
+      return null;
+    }
+    function tirarHcam() { const s = S(); if (M.Hcam) { removerHerick(M.Hcam); if (s && s.atoresExtra) s.atoresExtra = s.atoresExtra.filter((q) => q !== M.Hcam); M.Hcam = null; } }
+    function tickHerickCaminho(dt) {
+      const s = S(), c = s.dentro || !api.pontoNaRota ? null : herickNoCaminho();
+      if (!c) { tirarHcam(); return; }
+      const p = api.pontoNaRota(c.R, c.k);
+      if (!M.Hcam) { M.Hcam = novoHerick(s.grupoCidade || s.grupo, p.x, p.z, c.ida ? p.yaw : p.yaw + Math.PI, api.altura(p.x, p.z)); M.Hcam.olha = false; (s.atoresExtra || (s.atoresExtra = [])).push(M.Hcam); }
+      const H = M.Hcam; H.x = p.x; H.z = p.z; H.yawAlvo = c.ida ? p.yaw : p.yaw + Math.PI; H.andarSempre = true;
+      tickHerick(H, dt);
     }
     function pontoRua() { const P = porta(); return P ? { x: P.x + 2.5, z: P.z - 0.38, yaw: P.sai } : null; }
     function querHerickRua() { const s = S(); return !s.dentro && !dadosC().conheceu && aberto() && !M.entrando; }
@@ -456,7 +486,9 @@
     function tick(dt) {
       const s = S(); if (!s) return;
       if (!s.dentro) {
+        tickHerickCaminho(dt);                                            // (6.6.5) indo para o cinema / voltando para casa
         if (querHerickRua() && !M.Hfora) criarHerickRua();
+        else if (!querHerickRua() && M.Hfora && !M.entrando && M.Hcam && !dadosC().conheceu && s.modo === 'livre') removerHerickRua();   // (6.6.5) fechou (22h): quem segue é o Herick que volta para casa (do mesmo lugar)
         else if (!querHerickRua() && M.Hfora && !M.entrando && s.modo === 'livre') {      // fechou (22h): ele entra no cinema em vez de sumir na frente de todo mundo
           const H = M.Hfora, P = porta(); M.entrando = true; tirarColFora(); if (H.excl) H.excl.visible = false;
           const fim = () => { if (M.Hfora === H) removerHerickRua(); M.entrando = false; };
@@ -472,11 +504,11 @@
         const k = (s.t || 0) * 1.7, c = M.C.tela.material.color; c.setRGB(0.55 + Math.sin(k) * 0.3, 0.55 + Math.sin(k * 1.3 + 2) * 0.3, 0.6 + Math.sin(k * 0.7 + 4) * 0.3);
       }
     }
-    function limpar() { removerHerickRua(); if (M.H) removerHerick(M.H); M.H = null; }
+    function limpar() { removerHerickRua(); tirarHcam(); if (M.H) removerHerick(M.H); M.H = null; }
 
     return {
       entrou, saiu, alvos, alvosRua, tick, limpar, aberto, _M: M,
-      _f: { conversaRua, falarHerick, falarJoana, sessao, escolherPoltrona, avisoSeguranca, criarHerickRua, removerHerickRua, dadosC },
+      _f: { herickNoCaminho, rotaHerick, conversaRua, falarHerick, falarJoana, sessao, escolherPoltrona, avisoSeguranca, criarHerickRua, removerHerickRua, dadosC },
       _regras: { PAGA, HERICK_PAPOS, JOANA_PAPOS },
     };
   }

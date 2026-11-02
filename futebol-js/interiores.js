@@ -1,6 +1,7 @@
 /* =====================================================================
    FUTEBOL JS · interiores.js · OS INTERIORES da cidadezinha (arquivo SEPARADO, como cidade.js)
    ---------------------------------------------------------------------
+   - (6.6.5) Pizzaria: as 8 mesas foram para os lados (x ±3,4 e ±7,0): um corredor de 4 m da porta até o balcão.
    - Registrado com FutebolJS.registrarFase({ id: 'interiores' }) só para o jogo saber baixar o arquivo; ele NÃO roda como fase.
      A cidade baixa este arquivo em segundo plano quando abre (Fases.carregar('interiores')) e chama construir(nome, api) quando o
      jogador entra num lugar. Suba junto do jogo.js / cidade.js (mesma pasta futebol-js/).
@@ -248,7 +249,8 @@
       // --- as MESAS (2 lugares) com toalha xadrez vermelha e branca e luminária em cima
       const toalha = (x, z) => { for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) G.box(0.235, 0.01, 0.235, (i + j) % 2 ? '#f4f4ec' : '#c8352b', x - 0.3525 + i * 0.235, 0.79, z - 0.3525 + j * 0.235); G.box(0.98, 0.18, 0.02, '#c8352b', x, 0.62, z + 0.48); G.box(0.98, 0.18, 0.02, '#c8352b', x, 0.62, z - 0.48); };
       R.pizzaria.mesas = [];
-      for (const [x, z] of [[-6.4, -0.6], [-2.6, -0.6], [1.2, -0.6], [5.0, -0.6], [-6.4, 3.4], [-2.6, 3.4], [1.2, 3.4], [5.0, 3.4]]) {
+      // (6.6.5) as mesas foram para os lados: um CORREDOR largo (4 m) no meio, da porta até o balcão (antes era um vão de 1 m entre duas cadeiras)
+      for (const [x, z] of [[-7.0, -0.6], [-3.4, -0.6], [3.4, -0.6], [7.0, -0.6], [-7.0, 3.4], [-3.4, 3.4], [3.4, 3.4], [7.0, 3.4]]) {
         const sl = mesa(x, z, '#7a4a2a', 2, '#f4f4ec'); toalha(x, z);
         G.box(0.02, 0.85, 0.02, '#1c1c1f', x, 2.95, z); G.box(0.34, 0.16, 0.34, '#c8352b', x, 2.8, z); G.box(0.24, 0.03, 0.24, '#fff2b0', x, 2.78, z);   // luminária (alta, para não tapar a câmera)
         G.box(0.06, 0.16, 0.06, '#f2f2ee', x + 0.3, 0.8, z - 0.32); G.box(0.06, 0.16, 0.06, '#8a5a2a', x + 0.38, 0.8, z - 0.32);   // sal e orégano

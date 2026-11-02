@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · mercado.js · O TRABALHO NO MERCADINHO BOM PREÇO (arquivo SEPARADO, como interiores.js)
    ---------------------------------------------------------------------
+   - (6.6.5) REGISTRO da cidade: quem passeia lá dentro é quem entrou (entrou monta pelo api.lojaGente; chegou(ents) recebe quem vem da
+     rua, a dupla compra junto; recebe() = as horas de passeio; quem sai avisa api.lojaSaiu; saiu() → api.lojaRestam). O mercado não
+     inventa mais clientes de passeio quando o registro existe.
    - HORÁRIO: o mercado abre das 8h às 22h. O turno do jogador (quem escolheu o mercado na Fase 2) é das 14h às 22h, de segunda a
      sexta, a partir do 2º dia (TURNO_*).
    - A ROSA (outra caixa) fica no caixa das 7h50 até o jogador começar. Ao começar, o Cadu libera a Rosa ("Rosa, você tá liberada do
@@ -835,12 +838,17 @@
       tickPessoal('rosa', estadoRosa, criarRosa, T('Rosa'), 0, 0, true);
       tickPessoal('pai', estadoPai, criarPai, T('Seu Raimundo'), 3, 0, true);   // (6.4.0)
       M.filaN = []; M.vende = null; M.tPasseio = 3;
-      if (entraPasseio()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }   // já tem gente comprando
+      if (api.lojaGente) { if (!s.turnoMercado) for (const e of api.lojaGente('supermercado')) novoPasseio(true, e.ref); }   // (6.6.5) já tem gente comprando: SÓ quem entrou (o registro da cidade)
+      else if (entraPasseio()) { const n = 2 + Math.floor(Math.random() * 2); for (let k = 0; k < n; k++) novoPasseio(true); }
       for (const sec of SECOES) mostrarEstoque(sec);
       SOM.porta();
     }
     function saiu() {
       const s = S();
+      if (api.lojaRestam) {                                               // (6.6.5) o registro continua a conta de quem ficou comprando
+        const L = []; for (const A of s.npcs) if (A.cm && A.reg) L.push({ e: A.reg, resta: A.cm.fase === 'compra' ? 0.12 + (A.cm.secs ? A.cm.secs.length : 0) * 0.1 : A.cm.fase === 'sai' ? 0.02 : 0.1 });
+        api.lojaRestam('supermercado', L);
+      }
       if (s.turnoMercado && !s.turnoMercado.fim) { s.turnoMercado.fim = true; fecharUI(); }
       limparEsteira(); tirarCaixaDaMao();
       for (const k of Object.keys(M.marcas)) { const mk = M.marcas[k]; if (mk && mk.parent) mk.parent.remove(mk); } M.marcas = {};
@@ -1049,7 +1057,7 @@
       for (const A of s.npcs) if (A.cli && A.cli.fase === 'fica') A.cli.t = Math.min(A.cli.t, 2 + Math.random() * 8);
       await api.preto(true, 350);
       if (M.rosa) tirar('rosa');                                          // (se ela ainda estava saindo)
-      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }   // a loja começa vazia
+      for (const A of s.npcs.slice()) if (A.cm && A.cm.fake) { tirarSacola(A); tirarBalao(A); if (A.reg && api.lojaSaiu) api.lojaSaiu('supermercado', A.reg); api.descartarPessoa(A); }   // a loja começa vazia
       pararVenda(); M.filaN = []; limparEsteira();
       const J = s.jog, p = D.caixa.jog; J.x = p.x; J.z = p.z; J.yaw = J.yawAlvo = p.yaw; J.rota = null; s.cam.yaw = 2.55; s.cam.snap = true;   // câmera do lado nordeste: vê o caixa, a fila e o corredor
       await api.preto(false, 350);
@@ -1144,7 +1152,7 @@
       } else if (C.fase === 'sai') {
         C.tSai += dt; const sd = M.R.saida;
         if (A.balaoM) posBalao(A);
-        if (andarM(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.9 || C.tSai > 30) { tirarSacola(A); tirarBalao(A); api.descartarPessoa(A); }
+        if (andarM(A, dt) || Math.hypot(A.x - sd.x, A.z - sd.z) < 0.9 || C.tSai > 30) { tirarSacola(A); tirarBalao(A); if (A.reg && api.lojaSaiu) api.lojaSaiu('supermercado', A.reg); api.descartarPessoa(A); }
       }
     }
     function filaSem(A) { const F = filaAtiva(), i = F.indexOf(A); if (i >= 0) { F.splice(i, 1); if (i === 0) { limparEsteira(); if (M.vende && M.vende.A === A) pararVenda(); } posicionarFila(); } }
@@ -1192,20 +1200,29 @@
     // CLIENTES DE PASSEIO: fazem de conta que compram (andam pelas seções, param olhando as prateleiras) e vão embora
     // entram até o meio-dia e de novo a partir das 15h (até as 21h); no turno do jogador só entram os clientes do turno
     const entraPasseio = () => { const h = hora(); return aberto() && !S().turnoMercado && h < H_FIM_PASSEIO && (h < H_PARA_ENTRAR || h >= H_VOLTA_PASSEIO); };
-    function novoPasseio(dentro) {
-      const s = S(), e = dentro ? null : entradaLivre(); if (!dentro && !e) return;
+    function novoPasseio(dentro, reg, atras) {
+      const s = S(), e = dentro ? null : entradaLivre(); if (!dentro && !e) return null;
       const secs = SECOES.slice().sort(() => Math.random() - 0.5).slice(0, 2 + Math.floor(Math.random() * 2));
-      const A = api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
-      A.tipo = 'clienteMerc'; A.vel = 1.05 + Math.random() * 0.3; A.cm = { fase: 'compra', secs, itens: [], t: 0, fake: true };
+      const A = reg && api.semente ? api.criarPessoa(s.f2, api.semente(reg.seed), reg.fem) : api.criarPessoa(s.f2, Math.random, Math.random() < 0.5);
+      A.tipo = 'clienteMerc'; A.vel = 1.05 + Math.random() * 0.3; A.cm = { fase: 'compra', secs, itens: [], t: 0, fake: true }; if (reg) A.reg = reg;
+      if (atras) { A.cm.secs = [atras.cm.secAtual].concat(atras.cm.secs).filter((q) => q != null); A.cm.par = atras; atras.cm.par = A; }   // (6.6.5) o casal compra junto
       if (dentro) { const ar = M.D.secoes[secs[0]].compra, p = pontoLivre(rnd(ar.x0, ar.x1), rnd(ar.z0, ar.z1)); A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = rnd(-3, 3); }
       else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = Math.PI / 2; SOM.porta(); }
-      proximaCompra(A); s.npcs.push(A); api.poseAtor(A, 0.016);
+      proximaCompra(A); s.npcs.push(A); api.poseAtor(A, 0.016); return A;
+    }
+    // (6.6.5) quem chega pela rua (o registro da cidade): entra pela porta se estiver aberto para passeio e a porta estiver livre
+    const recebe = () => { const h = hora(); return aberto() && h < H_FIM_PASSEIO && (h < H_PARA_ENTRAR || h >= H_VOLTA_PASSEIO); };
+    function chegou(ents) {
+      if (!M.D || !entraPasseio() || !entradaLivre()) return false;
+      const A = novoPasseio(false, ents[0]); if (!A) return false;
+      if (ents[1]) { const B = novoPasseio(false, ents[1], A); if (!B) api.lojaSaiu('supermercado', ents[1]); }
+      return true;
     }
     function tickPasseio(dt) {
       const s = S(), fakes = s.npcs.filter((A) => A.cm && A.cm.fake && A.cm.fase !== 'sai'), h = hora();
       if (s.turnoMercado) return;
       if (h >= H_TODOS_FORA && h < H_VOLTA_PASSEIO) for (const A of fakes) if (A.cm.fase === 'compra') { A.cm.secs = []; if (A.cm.itens.length) entrarNaFila(A); else sairCliente(A); }   // 13h50: quem ainda compra vai para o caixa
-      if (!entraPasseio()) return;
+      if (!entraPasseio() || api.lojaGente) return;                         // (6.6.5) com o registro, quem chega vem da rua (chegou)
       M.tPasseio = (M.tPasseio == null ? 2 : M.tPasseio) - dt;
       const alvo = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'][api.diaSemana()] === 'cheio' ? 5 : 3;
       if (M.tPasseio <= 0) { M.tPasseio = rnd(4, 9); if (fakes.length < alvo) novoPasseio(false); }
@@ -1483,7 +1500,7 @@
     }
     function limpar() { fecharUI(); if (M.painel) { M.painel.remove(); M.painel = null; } for (const t of M.tex.values()) t.dispose(); M.tex.clear(); }
 
-    return { aberto, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { darCaixaNaMao, tirarCaixaDaMao, comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, estadoPai, conversaPai, viagensCadu, viagensPai, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
+    return { aberto, recebe, chegou, entrou, saiu, alvos, tick, tickCliente, sairNoTurno, limpar, montarRua, _M: M, _f: { darCaixaNaMao, tirarCaixaDaMao, comecarTurno, podeComecar, caminho, estadoCadu, estadoRosa, estadoPai, conversaPai, viagensCadu, viagensPai, pagamentoDe, jogadorTrabalhaHoje, iniciarTurno, liberarRosa, falarComCadu, encerrar }, _regras: { H_ABRE, H_TURNO, H_FECHA, PAGA, AUMENTO, DESCONTO, FALTA, EST_MAX, REPOR_EM } };
   }
 
   window.FutebolJS.registrarFase({ id: 'mercado', nome: 'Mercado', nucleoMinimo: '5.0.0', iniciar: async () => {}, criar, PRODUTOS });
