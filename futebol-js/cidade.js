@@ -1487,9 +1487,12 @@
         const x = cx + (rnd() - 0.5) * 3.4, z = cz + (rnd() - 0.5) * 2.4, r = 0.3 + rnd() * 0.36;
         if (!dentroLago(x, z, -0.5) || naDeque(x, z)) continue;
         const verde = ['#3f7f3a', '#4a8f40', '#58a04a', '#457f36'][Math.floor(rnd() * 4)];
-        G.box(r * 2, 0.03, r * 1.25, verde, x, 0.072, z); G.box(r * 1.25, 0.03, r * 2, verde, x, 0.072, z); G.box(r * 1.7, 0.032, r * 1.7, verde, x, 0.071, z);
-        G.box(r * 0.55, 0.036, 0.05, '#2b5f26', x + r * 0.5, 0.073, z);                       // o cortezinho da folha
-        if (rnd() < 0.4) { const c = rnd() < 0.5 ? '#f2a0c8' : '#f8f0f4'; G.box(0.18, 0.08, 0.18, c, x - r * 0.25, 0.1, z + r * 0.2); G.box(0.12, 0.06, 0.12, escurece(c, 0.85), x - r * 0.25, 0.17, z + r * 0.2); G.box(0.06, 0.04, 0.06, '#f2d040', x - r * 0.25, 0.22, z + r * 0.2); }
+        // cada folha é uma peça própria (centrada nela): a linha de pesca passando por cima faz ela balançar (pesca.js, S.vitorias)
+        const V = new Geo();
+        V.box(r * 2, 0.03, r * 1.25, verde, 0, 0.072, 0); V.box(r * 1.25, 0.03, r * 2, verde, 0, 0.072, 0); V.box(r * 1.7, 0.032, r * 1.7, verde, 0, 0.071, 0);
+        V.box(r * 0.55, 0.036, 0.05, '#2b5f26', r * 0.5, 0.073, 0);                       // o cortezinho da folha
+        if (rnd() < 0.4) { const c = rnd() < 0.5 ? '#f2a0c8' : '#f8f0f4'; V.box(0.18, 0.08, 0.18, c, -r * 0.25, 0.1, r * 0.2); V.box(0.12, 0.06, 0.12, escurece(c, 0.85), -r * 0.25, 0.17, r * 0.2); V.box(0.06, 0.04, 0.06, '#f2d040', -r * 0.25, 0.22, r * 0.2); }
+        const mv = addMalha(V, x, z); if (mv) (S.vitorias || (S.vitorias = [])).push({ x, z, r, m: mv, k: 0, t: 0, dx: 0, dz: 0 });
       }
     }
     // pedras na beira (as grandes têm corpo)
@@ -3865,7 +3868,7 @@
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {
-    return Object.assign(apiAcademia(), { LAGO, PIER, CASA_PESCA, QUADRO_PESCA, DEQUE_OESTE, naDeque, trilhaLago, profLago, POCOS_LAGO, BANCOS_LAGO, dentroLago, bordaLago, OX, chuva: () => !!(S.clima && S.clima.chuva > 0.25), amizadeNaTela });
+    return Object.assign(apiAcademia(), { LAGO, PIER, CASA_PESCA, QUADRO_PESCA, DEQUE_OESTE, naDeque, trilhaLago, profLago, POCOS_LAGO, BANCOS_LAGO, dentroLago, bordaLago, OX, vitorias: () => S.vitorias || [], chuva: () => !!(S.clima && S.clima.chuva > 0.25), amizadeNaTela });
   }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};

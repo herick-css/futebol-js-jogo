@@ -1701,6 +1701,7 @@
       if (m.trofeu && m.trofeu.m.parent) m.trofeu.m.parent.remove(m.trofeu.m);
       if (m.voa && m.voa.m.parent) m.voa.m.parent.remove(m.voa.m);
       P.isopor.visible = false; U.el.remove(); P.mg = null;
+      for (const v of (api.vitorias ? api.vitorias() : [])) { v.k = 0; v.px = v.pz = null; v.m.rotation.set(0, 0, 0); v.m.position.y = 0; }   // as vitórias-régias param de balançar
       const ss = S(); if (ss) { ss.camCena = null; ss.cam.snap = true; ss.jog.yaw = ss.jog.yawAlvo = 0; ui.esq.hidden = esqAntes; if (ui.ctl) ui.ctl.hidden = ctlAntes; }
       gravar();
       await api.preto(false, 350);
@@ -1986,8 +1987,12 @@
       await api.esperar(720); if (P.mg !== m) return;
       m.voa = null; if (peixe.parent) peixe.parent.remove(peixe);
       if (peixe.userData.L < 0.3) peixe.scale.setScalar(0.3);          // (6.6.1) peixinho muito pequeno: mostra um pouco maior (senão some na mão)
-      const grande = peixe.userData.L > 1.1;
-      peixe.position.set(grande ? 0.95 : 0.8, grande ? 1.02 : 1.14, 0); peixe.rotation.set(0, Math.PI / 2, 0); J.m.corpo.add(peixe);   // (6.6.1) um pouco à FRENTE das mãos (como a pizza), não enfiado nelas m.trofeu = { m: peixe, grande };
+      // MOSTRANDO O PEIXE: os braços esticados para a frente, o peixe deitado de lado (o corpo inteiro virado para a câmera) e apoiado
+      //   em cima das mãos, longe do peito. Peixe grande: as mãos mais abertas (uma em cada ponta).
+      const grande = peixe.userData.L > 1.1, ab = poseTrofeu(peixe.userData.L);
+      peixe.geometry.computeBoundingBox(); const bb = peixe.geometry.boundingBox, k = peixe.scale.x;
+      peixe.position.set(ab.x + 0.03, ab.y + 0.05 - bb.min.y * k, 0); peixe.rotation.set(0, Math.PI / 2, 0); J.m.corpo.add(peixe);
+      m.trofeu = { m: peixe, grande, ab };
       m.vara.raiz.visible = false;
       const c = p.cat[b.i] || (p.cat[b.i] = { n: 0, rec: 0, cl: [0, 0, 0] }), novo = !c.n, recorde = !novo && b.kg > c.rec;
       c.n++; c.cl[b.classe] = (c.cl[b.classe] | 0) + 1; if (b.kg > c.rec) c.rec = b.kg;
@@ -2127,13 +2132,20 @@
     }
     // o estado "de verdade" para desenhar (na cena do perfeito, o estado do lançamento que está passando)
     const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e);
+    // os braços para mostrar o peixe (achados por busca no boneco do jogador): pequeno = mãos juntas; grande = uma mão em cada ponta.
+    //   Devolve também onde ficam as mãos no tronco (x para a frente, y para cima), para apoiar o peixe em cima delas.
+    function poseTrofeu(L) {
+      const g = clampN((L - 0.4) / 1.0, 0, 1);                           // grande: mais baixo (na altura da barriga), para não tampar o rosto
+      return { rz: lerpN(1.35, 0.85, g), rx: lerpN(0.5, 0.1, g), cz: 0.02, x: lerpN(0.49, 0.43, g), y: lerpN(1.16, 0.9, g) };
+    }
     const tempoV = (m) => (m.e === 'cine' && m.cine ? m.cine.t || 0 : m.t);
     // pose do jogador com a vara (por cima da pose normal, que já rodou neste quadro)
     function poseJogMg(m, J) {
       const M = J.m, t = S().t, e = estadoV(m), tt = tempoV(m); let dz = 0.55, dx = 0.12, cz = 1.05, ez = 0.72, ex = -0.42, ecz = 0.95, lean = 0, joelho = 0;
-      if (m.trofeu) {                                                  // segurando o peixe com as duas mãos
-        const g = m.trofeu.grande; M.bracoE.rotation.z = M.bracoD.rotation.z = g ? 0.85 : 1.12; M.bracoE.rotation.x = -0.3; M.bracoD.rotation.x = 0.3;
-        usarCotovelo(M.bracoE, 0, g ? 1.25 : 0.72); usarCotovelo(M.bracoD, 0, g ? 1.25 : 0.72); M.corpo.rotation.z = g ? 0.1 : 0; return;
+      if (m.trofeu) {                                                  // mostrando o peixe para a câmera: braços esticados, mãos embaixo dele
+        const a = m.trofeu.ab, bal = Math.sin(t * 1.6) * 0.02;
+        M.bracoE.rotation.z = M.bracoD.rotation.z = a.rz + bal; M.bracoE.rotation.x = -a.rx; M.bracoD.rotation.x = a.rx;
+        usarCotovelo(M.bracoE, 0.001, a.cz); usarCotovelo(M.bracoD, 0.001, a.cz); M.corpo.rotation.z = -0.04; return;
       }
       switch (e) {
         case 'mira': dz += Math.sin(t * 1.3) * 0.02; break;
@@ -2175,13 +2187,54 @@
       if (bp && an) linhaDe(Ld, { x: bp.x, y: bp.y - 0.085, z: bp.z }, { x: an.x, y: an.y + 0.1, z: an.z }, 0); else Ld.visible = false;
       return bp;
     }
+    // a boca do peixe (a ponta da frente do modelo), na posição da cidade: é onde a linha fica presa quando ele sai da água
+    const V3b = new THREE.Vector3();
+    function bocaPeixe(o) {
+      const g = o.geometry; if (!g.boundingBox) g.computeBoundingBox(); const bb = g.boundingBox;
+      o.updateMatrixWorld(true); V3b.set(bb.max.x * 0.96, (bb.min.y + bb.max.y) * 0.5, 0); o.localToWorld(V3b);
+      return { x: V3b.x - api.OX, y: V3b.y, z: V3b.z };
+    }
+    // as VITÓRIAS-RÉGIAS balançam quando a linha passa por cima delas (o pedaço da linha perto da água) ou a boia/o peixe passa nelas
+    function tickVitorias(dt, a, b) {
+      const L = api.vitorias ? api.vitorias() : []; if (!L.length) return;
+      for (const v of L) {
+        if (a && b) {
+          const ax = lerpN(a.x, b.x, 0.55), az = lerpN(a.z, b.z, 0.55), dx = b.x - ax, dz = b.z - az, l2 = dx * dx + dz * dz || 1;
+          const u = clampN(((v.x - ax) * dx + (v.z - az) * dz) / l2, 0, 1), px = ax + dx * u, pz = az + dz * u, d = Math.hypot(v.x - px, v.z - pz);
+          if (d < v.r + 0.08) {
+            const px0 = v.px == null ? px : v.px, pz0 = v.pz == null ? pz : v.pz, mov = Math.hypot(px - px0, pz - pz0);
+            if (mov > 0.004 || v.k < 0.15) { v.k = Math.min(1, v.k + 0.5 + mov * 4); v.dx = clampN((px - px0) * 30, -1, 1) || 0.6; v.dz = clampN((pz - pz0) * 30, -1, 1) || 0.4; }
+            v.px = px; v.pz = pz;
+          } else { v.px = v.pz = null; }
+        }
+        if (v.k > 0.001) {
+          v.t += dt; v.k *= Math.exp(-dt * 1.6);
+          const w = Math.sin(v.t * 9) * v.k, w2 = Math.cos(v.t * 7.3) * v.k;
+          v.m.rotation.x = v.dz * w * 0.16; v.m.rotation.z = -v.dx * w2 * 0.16; v.m.position.y = Math.sin(v.t * 11) * v.k * 0.025; v.m.rotation.y = w * 0.05;
+          if (v.k <= 0.001) { v.k = 0; v.m.rotation.set(0, 0, 0); v.m.position.y = 0; }
+        }
+      }
+    }
     function visualMg(m, tip, dt) {
       const L = m.linha, t = S().t, e = estadoV(m), bp = rigMg(m, tip, e, dt);
-      let verga = 0.04;
-      if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) { const te = m.B ? m.B.tensao : 0.6; linhaDe(L, tip, { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z }, 0.3 * (1 - te)); verga = 0.15 + te * 0.95; }
-      else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, { x: m.voa.m.position.x, y: m.voa.m.position.y, z: m.voa.m.position.z }, 0.03);
-      else if (bp) { linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; }
+      let verga = 0.04, fim = null;
+      // o peixe pulando fora da água na corrida (os raros "de escama"): a cabeça virada para o jogador (é a boca que a linha puxa),
+      //   sobe de nariz para cima e desce de nariz para baixo (meio de lado, para aparecer). Atualizado ANTES da linha, para ela sair da boca já neste quadro.
+      if (m.pulo && m.peixeP && m.bite) {
+        const pl = m.pulo; if (!pl.m) { pl.m = malhaPeixe(m.bite.i, m.bite.kg); grupo().add(pl.m); respingo(m.peixeP.x, m.peixeP.z, 6, 0.3); }
+        pl.t += dt; const u = pl.t / 0.75, Lp = pl.m.userData.L, J = S().jog, yawJ = Math.atan2(-(J.z - m.peixeP.z), J.x - m.peixeP.x);
+        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); if (pl.lado == null) pl.lado = Math.random() < 0.5 ? -1 : 1; pl.m.rotation.set(0, yawJ + pl.lado * 0.8, 0.9 - Math.min(1, u) * 1.8);   // meio de lado (dá para ver o peixe), com a boca ainda para o lado da vara
+        if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, 7, 0.4); SOM.agua(); tirarPulo(m); }
+      }
+      if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) {
+        const te = m.B ? m.B.tensao : 0.6, pl = m.pulo && m.pulo.m ? m.pulo : null;
+        fim = pl ? bocaPeixe(pl.m) : { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z };
+        linhaDe(L, tip, fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
+      }
+      else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, bocaPeixe(m.voa.m), 0.03);
+      else if (bp) { linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; if (bp.y < 0.5) fim = bp; }
       else L.visible = false;
+      tickVitorias(dt, fim ? tip : null, fim);                            // a linha (o pedaço perto da água) passando por cima das vitórias-régias
       vergar(m.vara, SINAL_VERGA * verga);
       // o peixe saindo da água até a mão
       if (m.voa) { const v = m.voa; v.t += dt; const u = clampN(v.t / 0.7, 0, 1), J = S().jog, alvo = { x: J.x + Math.cos(J.yaw) * 0.5, y: m.y + 1.15, z: J.z - Math.sin(J.yaw) * 0.5 };
@@ -2190,13 +2243,6 @@
       if (m.solta) { const g = m.solta; g.t += dt; const u = clampN(g.t / 0.55, 0, 1); g.m.position.set(lerpN(g.de.x, g.alvo.x, u), lerpN(g.de.y, Y_AGUA, u) + Math.sin(u * Math.PI) * 0.7, lerpN(g.de.z, g.alvo.z, u)); g.m.rotation.z = -u * 1.6 + Math.sin(t * 22) * 0.3; }
       // guardando no isopor
       if (m.guarda) { const g = m.guarda; g.t += dt; const u = clampN(g.t / 0.5, 0, 1); g.m.position.set(lerpN(g.de.x, P.isopor.position.x, u), lerpN(g.de.y, m.y + 0.35, u) + Math.sin(u * Math.PI) * 0.4, lerpN(g.de.z, P.isopor.position.z, u)); g.m.scale.setScalar(g.k0 * (1 - u * 0.6)); }
-      // o peixe pulando fora da água na corrida (os raros "de escama")
-      if (m.pulo && m.peixeP && m.bite) {
-        const pl = m.pulo; if (!pl.m) { pl.m = malhaPeixe(m.bite.i, m.bite.kg); grupo().add(pl.m); respingo(m.peixeP.x, m.peixeP.z, 6, 0.3); }
-        pl.t += dt; const u = pl.t / 0.75, Lp = pl.m.userData.L;
-        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); pl.m.rotation.set(0, m.yaw0 + m.ang0 + Math.PI / 2, -0.9 + u * 1.8);
-        if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, 7, 0.4); SOM.agua(); tirarPulo(m); }
-      }
       // a mira: pontinhos na água até onde a boia vai cair (e o anel do alvo enquanto enche a barra)
       const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(m.yaw0 + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.5, dadosP().vara);
       m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = m.ox + d.x * dd, z = m.oz + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.045, z); });
