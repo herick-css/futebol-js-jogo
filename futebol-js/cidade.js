@@ -1,6 +1,13 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.0
+     - O LAGO: a água agora é pintada pela PROFUNDIDADE (profLago: cinco POÇOS escuros e cinco BANCOS DE AREIA claros, POCOS_LAGO /
+       BANCOS_LAGO), a mesma que a pesca usa para dar a nota do lançamento. 8 tons (o miolo do poço é o mais escuro).
+     - A TRILHA em volta do lago (trilhaLago: terra batida pintada no chão, entra na rede de caminhos dos NPCs, liga na rua e na casinha),
+       o DEQUE OESTE (DEQUE_OESTE, dá para andar e pescar dele; naDeque), e a decoração (decoLago): vitórias-régias, pedras, tronco caído,
+       o SAPO CURURU de pedra com a placa do lago, uma canoa amarrada no píer, bancos de frente para a água e postes que acendem de noite.
+     - apiPesca ganhou DEQUE_OESTE, naDeque, trilhaLago, profLago, POCOS_LAGO, BANCOS_LAGO.
    NOVIDADES DA 6.4.0
      - PESCA (pesca.js, arquivo novo baixado junto do academia.js): ganchos marcados "(6.4.0)": carregar o pesca.js · apiPesca() (a da
        academia + LAGO, PIER, CASA_PESCA, QUADRO_PESCA, dentroLago, bordaLago, OX, chuva) · alvos na rua (S.pesca.alvos) · tick depois da
@@ -463,6 +470,7 @@
     'Você sentiu minha falta?': ['Did you miss me?', '¿Me extrañaste?', 'Ti sono mancato?', 'Je t’ai manqué ?'],
     'O que você acha da cidade?': ['What do you think of the town?', '¿Qué piensas de la ciudad?', 'Cosa pensi della città?', 'Tu penses quoi de la ville ?'],
     'Adiantar': ['Skip ahead', 'Adelantar', 'Vai avanti', 'Passer'],
+    'Passar': ['Move on', 'Seguir', 'Andiamo avanti', 'Passer à la suite'],   // (6.6.0) faltava a tradução (a escolha de encerrar o papo no encontro)
     'Sobre o que vocês conversam?': ['What do you talk about?', '¿De qué hablan?', 'Di cosa parlate?', 'De quoi vous parlez ?'],
     'Ficou muito melhor depois que você chegou lá! Sério, eu nem sei como daria conta sem você.': ['It got so much better after you started there! Seriously, I don’t know how I’d manage without you.', '¡Mejoró muchísimo desde que llegaste! En serio, no sé cómo me las arreglaría sin ti.', 'È andato tutto molto meglio da quando sei arrivato! Davvero, non so come farei senza di te.', 'Ça va beaucoup mieux depuis que tu es là ! Sérieux, je ne sais pas comment je ferais sans toi.'],
     'Vai indo bem! Mas às vezes eu fico bem cansada... é muita coisa pra uma pessoa só.': ['It’s going well! But sometimes I get really tired... it’s a lot for one person.', '¡Va bien! Pero a veces me canso mucho... es demasiado para una sola persona.', 'Va bene! Ma a volte sono stanchissima... è tanto per una persona sola.', 'Ça va bien ! Mais parfois je suis très fatiguée... c’est beaucoup pour une seule personne.'],
@@ -607,9 +615,44 @@
     const ex = (x - LAGO.cx) / (LAGO.rx * f + (m || 0)), ez = (z - LAGO.cz) / (LAGO.rz * f + (m || 0));
     return ex * ex + ez * ez < 1;
   }
+  // (6.6.0) a PROFUNDIDADE do lago (0 = raso, 1 = o miolo de um poço): fundo médio no meio, raso na beira, cinco POÇOS (manchas escuras)
+  //   e cinco BANCOS DE AREIA (manchas claras). [x, z, raio em x, raio em z, quanto muda]. A textura da água é pintada com isto.
+  const POCOS_LAGO = [[-63, 59.6, 2.3, 1.7, 0.46], [-74, 53.8, 2.7, 1.9, 0.46], [-87, 57.5, 2.5, 1.8, 0.52], [-69.5, 65, 2.5, 1.6, 0.5], [-80.5, 51.6, 2.4, 1.5, 0.56]];
+  const BANCOS_LAGO = [[-69.5, 59, 3.0, 1.2, 0.5], [-57.5, 63.2, 2.2, 1.5, 0.45], [-80.5, 56.8, 2.0, 1.3, 0.45], [-93.5, 64.5, 2.4, 1.7, 0.4], [-62.5, 51.2, 2.2, 1.2, 0.42]];
+  function profLago(x, z) {
+    const nx = (x - LAGO.cx) / LAGO.rx, nz = (z - LAGO.cz) / LAGO.rz, r = Math.hypot(nx, nz) / formaLago(Math.atan2(nz, nx));
+    if (r >= 1) return 0;
+    const sm = (k) => { k = Math.min(1, Math.max(0, k)); return k * k * (3 - 2 * k); }, fade = sm((1 - r) / 0.28);
+    let p = 0.1 + 0.5 * sm((1 - r) / 0.65);
+    for (const [px, pz, sx, sz, a] of POCOS_LAGO) p += a * fade * Math.exp(-(((x - px) / sx) ** 2 + ((z - pz) / sz) ** 2) / 2);
+    for (const [px, pz, sx, sz, a] of BANCOS_LAGO) p -= a * Math.exp(-(((x - px) / sx) ** 2 + ((z - pz) / sz) ** 2) / 2);
+    return Math.max(0, Math.min(1, p));
+  }
   const LANCHE = R(788, 432, 74, 48);                                 // o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
   const PIER = { x0: -54, x1: -37, z0: 54.4, z1: 56.2 };
   const CASA_PESCA = { x0: -51.6, x1: -46.4, z0: 41.6, z1: 45.4 };    // (6.4.0) a casinha do seu Bené (iscas, varas, compra de peixe), na beira norte do lago, virada para a água
+  const DEQUE_OESTE = { x0: -104.6, x1: -100.0, z0: 52.2, z1: 54.0, y: 0.3 };   // (6.6.0) um deque baixo de madeira na beira oeste (dá para pescar dele)
+  const naDeque = (x, z) => (x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15) || (x > DEQUE_OESTE.x0 - 0.5 && x < DEQUE_OESTE.x1 && z > DEQUE_OESTE.z0 + 0.15 && z < DEQUE_OESTE.z1 - 0.15);
+  // (6.6.0) a TRILHA em volta do lago: um anel de terra uns 3,4 m fora da água (mais longe onde tem as cercas velhas; passa na frente da
+  //   casinha da pesca e não sai do mundo no sul). É desenhada no chão (texChao), entra na rede de calçadas (gente passeando em volta do
+  //   lago) e tira a grama alta de cima dela.
+  let TRILHA = null;
+  function trilhaLago() {
+    if (TRILHA) return TRILHA;
+    const cercas = [[150, 185], [205, 230], [250, 275], [100, 122]], pts = [];
+    for (let k = 0; k < 64; k++) {
+      const a = k / 64 * Math.PI * 2, gr = a * 180 / Math.PI, m = cercas.some(([a0, a1]) => gr > a0 - 4 && gr < a1 + 4) ? 4.3 : 3.4;
+      let [x, z] = bordaLago(a, m); z = Math.min(z, LIM.z1 - 2.2); z = Math.max(z, 41.7);
+      if (x > CASA_PESCA.x0 - 1 && x < CASA_PESCA.x1 + 1.2 && z < CASA_PESCA.z1 + 0.9) z = CASA_PESCA.z1 + 0.9;
+      pts.push([Math.round(x * 100) / 100, Math.round(z * 100) / 100]);
+    }
+    TRILHA = pts; return pts;
+  }
+  function distTrilha(x, z) {
+    const T = trilhaLago(); let bd = 1e9;
+    for (let i = 0; i < T.length; i++) { const a = T[i], b = T[(i + 1) % T.length], vx = b[0] - a[0], vz = b[1] - a[1], L2 = vx * vx + vz * vz || 1, u = clamp(((x - a[0]) * vx + (z - a[1]) * vz) / L2, 0, 1); bd = Math.min(bd, Math.hypot(a[0] + vx * u - x, a[1] + vz * u - z)); }
+    return bd;
+  }
   const SPAWN = { x: -78.8, z: -4.65 };                             // na porta do prédio (calçada norte)
 
   // ------------------------------------------------------------------ geometria: caixas e quadriláteros coloridos numa malha só
@@ -731,6 +774,16 @@
       // areia em volta do lago (a água é um volume à parte, 5 cm acima)
       const formaChao = (m, cor) => { g.fillStyle = cor; g.beginPath(); for (let i = 0; i <= 120; i++) { const [x, z] = bordaLago(i / 120 * Math.PI * 2, m); if (i) g.lineTo(gx(x), gz(z)); else g.moveTo(gx(x), gz(z)); } g.closePath(); g.fill(); };
       formaChao(2.2, '#d7c28a'); formaChao(0.3, '#6c7b56');            // a areia e a beirada seguem o formato do lago
+      { const T = trilhaLago(), c = 0.45, rnd = semente(4242);            // (6.6.0) a trilha em volta do lago: quadradinhos de terra, borda torta (sorteio próprio)
+        for (let i = 0; i < T.length; i++) {
+          const a = T[i], b = T[(i + 1) % T.length], L = Math.hypot(b[0] - a[0], b[1] - a[1]), ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
+          for (let t = 0; t < L; t += c * 0.9) for (let w = -0.7; w <= 0.7; w += c) {
+            const borda = Math.abs(w) > 0.45; if (borda && rnd() < 0.35) continue;
+            const x = a[0] + ux * t - uz * (w + (rnd() - 0.5) * 0.15), z = a[1] + uz * t + ux * (w + (rnd() - 0.5) * 0.15);
+            g.fillStyle = rnd() < (borda ? 0.2 : 0.04) ? TONS_GRAMA[Math.floor(rnd() * TONS_GRAMA.length)] : TONS_TERRA[Math.floor(rnd() * TONS_TERRA.length)];
+            g.fillRect(Math.floor(gx(x - c / 2)), Math.floor(gz(z - c / 2)), Math.ceil(c * sx), Math.ceil(c * sz));
+          }
+        } }
       // várzea: terra batida, carecas e linhas de cal gastas
       ret(VARZEA, '#b98a52');
       for (let i = 0; i < 70; i++) { g.globalAlpha = 0.4; elip(VARZEA.x0 + 3 + rnd() * 51, VARZEA.z0 + 3 + rnd() * 32, 0.8 + rnd() * 3, 0.6 + rnd() * 2, rnd() < 0.5 ? '#a57643' : '#cfa46c'); }
@@ -798,13 +851,16 @@
       g.fillStyle = '#4a3320'; for (const px of [3, 11]) for (const py of [2, h - 4]) g.fillRect(i * 16 + px, py, 2, 2);
     }
   }, true); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  // a água do lago: pixels quadrados, mais azul-escuro quanto mais para o meio (mais fundo), 6 degraus de profundidade e espuma na beira
-  const AGUA_TONS = ['#17467f', '#1f5a9a', '#2a70b4', '#3a88c8', '#52a0d6', '#74b9e2'];
+  // (6.6.0) a água do lago: pixels quadrados, a cor é a PROFUNDIDADE de verdade (profLago, a mesma que a pesca usa para dar a pontuação do
+  //   lançamento): 8 tons, do miolo dos poços (o mais escuro: lançamento perfeito) aos bancos de areia (o mais claro), e espuma na beira
+  const AGUA_TONS = ['#123a6c', '#17467f', '#1f5a9a', '#2a70b4', '#3a88c8', '#52a0d6', '#74b9e2', '#9fd2ea'];
+  const tomAgua = (p) => (p >= 0.93 ? 0 : Math.min(7, 1 + Math.floor((0.93 - p) * 7.2)));
   const texAgua = () => texCanvas(128, 60, (g, w, h) => {
     const rnd = semente(66);
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const nx = (((x + 0.5) / w) * 2 - 1) * FORMA_MAX, ny = (1 - ((y + 0.5) / h) * 2) * FORMA_MAX, r = Math.hypot(nx, ny) / formaLago(-Math.atan2(ny, nx));   // fundo relativo à borda irregular
-      let i = Math.min(5, Math.floor(r * 6.2)); if (rnd() < 0.16) i = Math.max(0, Math.min(5, i + (rnd() < 0.5 ? -1 : 1)));
+      let i = tomAgua(profLago(LAGO.cx + nx * LAGO.rx, LAGO.cz - ny * LAGO.rz));
+      if (i > 0 && rnd() < 0.14) i = Math.max(1, Math.min(7, i + (rnd() < 0.5 ? -1 : 1)));   // o miolo do poço fica liso (dá para mirar nele)
       g.fillStyle = AGUA_TONS[i]; g.fillRect(x, y, 1, 1);
       if (r > 0.9 && r < 1 && rnd() < 0.3) { g.fillStyle = '#d6eef7'; g.fillRect(x, y, 1, 1); }
     }
@@ -1298,7 +1354,7 @@
       for (let x = p.x0 + 0.3; x < p.x1; x += 2.4) for (const s of [-1, 1]) { const z = s < 0 ? p.z0 + 0.03 : p.z1 - 0.03; G.box(0.26, 1.2, 0.26, '#5a3a1e', x, -0.55, z, '#7a5230'); }
       S.pisos.push({ x0: p.x0, x1: p.x1, z0: p.z0, z1: p.z1, y: 0.42 });
       addMalha(G, 0, 0);
-      cerquinhasDoLago(rnd); casinhaPesca(); }
+      cerquinhasDoLago(rnd); casinhaPesca(); decoLago(); }
 
     // --- árvores (as da planta + as de fora da cidade)
     { const G = new Geo();
@@ -1414,6 +1470,87 @@
   // (6.4.0) A CASINHA DA PESCA do seu Bené (quem cuida dele, da loja e do catálogo é o pesca.js): madeira com tábuas, telhado de duas águas,
   //   um balcão de verdade no vão da frente (virada para o lago), prateleiras com os potes de isca e varas encostadas lá dentro, a moldura
   //   do QUADRO DO CATÁLOGO na parede ao lado do vão (a imagem do quadro é do pesca.js: ela muda a cada peixe novo) e a porta do Bené do lado.
+  // (6.6.0) DECORAÇÃO DO LAGO: vitórias-régias, pedras na beira, um tronco caído meio na água, o SAPO CURURU de pedra (com a placa) na
+  //   entrada da trilha, o deque oeste (com banco), uma canoa amarrada no píer, bancos de frente para a água e postes que acendem de noite.
+  function decoLago() {
+    const G = new Geo(), LGp = new Geo(), rnd = semente(5150);
+    // vitórias-régias (folhas redondas boiando, algumas com flor)
+    for (const [ang, n] of [[160, 9], [200, 8], [112, 7], [244, 7], [75, 6], [135, 6], [30, 4]]) {
+      const a = ang * Math.PI / 180, [cx, cz] = bordaLago(a, -2.6);
+      for (let i = 0; i < n; i++) {
+        const x = cx + (rnd() - 0.5) * 3.4, z = cz + (rnd() - 0.5) * 2.4, r = 0.3 + rnd() * 0.36;
+        if (!dentroLago(x, z, -0.5) || naDeque(x, z)) continue;
+        const verde = ['#3f7f3a', '#4a8f40', '#58a04a', '#457f36'][Math.floor(rnd() * 4)];
+        G.box(r * 2, 0.02, r * 1.25, verde, x, 0.062, z); G.box(r * 1.25, 0.02, r * 2, verde, x, 0.062, z); G.box(r * 1.7, 0.022, r * 1.7, verde, x, 0.061, z);
+        G.box(r * 0.55, 0.026, 0.05, '#2b5f26', x + r * 0.5, 0.063, z);                       // o cortezinho da folha
+        if (rnd() < 0.4) { const c = rnd() < 0.5 ? '#f2a0c8' : '#f8f0f4'; G.box(0.18, 0.08, 0.18, c, x - r * 0.25, 0.08, z + r * 0.2); G.box(0.12, 0.06, 0.12, escurece(c, 0.85), x - r * 0.25, 0.15, z + r * 0.2); G.box(0.06, 0.04, 0.06, '#f2d040', x - r * 0.25, 0.2, z + r * 0.2); }
+      }
+    }
+    // pedras na beira (as grandes têm corpo)
+    for (const ang of [140, 292, 58, 182, 228]) {
+      const a = ang * Math.PI / 180, [cx, cz] = bordaLago(a, 0.5);
+      for (let i = 0; i < 5; i++) {
+        const sz = 0.22 + rnd() * 0.5, x = cx + (rnd() - 0.5) * 2.2, z = cz + (rnd() - 0.5) * 1.5, c = ['#8a8a84', '#9a988e', '#7a7a76', '#a8a59a'][Math.floor(rnd() * 4)];
+        G.box(sz, sz * 0.62, sz * 0.85, c, x, -0.03, z, '#b4b1a6'); if (rnd() < 0.5) G.box(sz * 0.5, sz * 0.3, sz * 0.4, escurece(c, 0.9), x + sz * 0.3, sz * 0.5, z - sz * 0.1);
+        if (sz > 0.5) S.col.push({ x0: x - sz / 2, x1: x + sz / 2, z0: z - sz * 0.42, z1: z + sz * 0.42 });
+      }
+    }
+    // o tronco caído, metade dentro da água (beira sul)
+    { const [cx, cz] = bordaLago(98 * Math.PI / 180, -0.3);
+      G.box(3.6, 0.36, 0.38, '#6a4a2a', cx, -0.1, cz, '#7e5a34'); G.box(0.38, 0.38, 0.4, '#c8a878', cx - 1.8, -0.1, cz); G.box(0.2, 0.2, 0.22, '#a8865a', cx - 1.8, 0.0, cz);
+      G.box(0.12, 0.55, 0.1, '#6a4a2a', cx + 0.7, 0.2, cz - 0.1); G.box(0.55, 0.1, 0.1, '#6a4a2a', cx - 0.5, 0.2, cz + 0.16); G.box(0.3, 0.14, 0.3, '#4f8a3a', cx + 1.1, 0.24, cz); }
+    // o SAPO CURURU de pedra na entrada da trilha (olhando para o lago) e a placa do lago (virada para quem chega pela trilha)
+    { const x = -43.6, z = 44.0;
+      G.box(1.15, 0.45, 0.95, '#8a8a84', x, 0, z, '#9a988e'); G.box(1.25, 0.08, 1.05, '#7a7a76', x, 0, z);
+      G.box(0.84, 0.38, 0.64, '#7a7038', x, 0.45, z - 0.04, '#857a3c');                     // corpo
+      G.box(0.66, 0.28, 0.52, '#8a8040', x, 0.74, z + 0.1);                                 // cabeça (frente = +z, o lago)
+      for (const sg of [-1, 1]) {
+        G.box(0.16, 0.14, 0.14, '#e8c830', x + sg * 0.21, 0.92, z + 0.22); G.box(0.07, 0.09, 0.05, '#101010', x + sg * 0.21, 0.94, z + 0.29);   // olhos
+        G.box(0.2, 0.12, 0.32, '#7a7038', x + sg * 0.4, 0.45, z + 0.22); G.box(0.24, 0.16, 0.26, '#6a6030', x + sg * 0.44, 0.45, z - 0.22);       // patas
+        G.box(0.14, 0.1, 0.14, '#c8a838', x + sg * 0.36, 0.78, z - 0.12);                   // as glândulas do cururu (atrás dos olhos)
+      }
+      G.box(0.52, 0.03, 0.04, '#3a3418', x, 0.79, z + 0.36);                                // boca
+      for (let i = 0; i < 12; i++) G.box(0.06, 0.04, 0.06, '#5a5228', x + (rnd() - 0.5) * 0.7, 0.82, z - 0.3 + rnd() * 0.3);   // verrugas
+      S.col.push({ x0: x - 0.62, x1: x + 0.62, z0: z - 0.52, z1: z + 0.52 });
+      // a placa (mourão + tábua com o nome), um pouco atrás e ao lado, virada para o norte
+      const px = x + 1.15, pz = z - 0.75; G.box(0.12, 1.55, 0.12, '#6a4428', px - 0.98, 0, pz); G.box(0.12, 1.55, 0.12, '#6a4428', px + 0.98, 0, pz);
+      const tex = guardar(texLetreiro('LAGO DO SAPO CURURU', '#e2c48e', '#3a2210', 2.3, 0.5)), mb = guardar(new THREE.MeshLambertMaterial({ color: 0x6a4428 }));
+      const mf = guardar(new THREE.MeshLambertMaterial({ map: tex, emissive: 0x000000, emissiveMap: tex })); (S.letreiros || (S.letreiros = [])).push(mf);
+      const placa = new THREE.Mesh(guardar(new THREE.BoxGeometry(2.3, 0.5, 0.08)), [mb, mb, mb, mb, mb, mf]); placa.position.set(px, 1.22, pz - 0.02); S.grupo.add(placa);
+      S.col.push({ x0: px - 0.85, x1: px + 0.85, z0: pz - 0.12, z1: pz + 0.12 }); }
+    // o DEQUE OESTE (tábuas, pilares e um banco virado para a água)
+    { const D = DEQUE_OESTE, w = D.x1 - D.x0, d = D.z1 - D.z0, cx = (D.x0 + D.x1) / 2, cz = (D.z0 + D.z1) / 2;
+      G.box(w, 0.08, d, '#a8743f', cx, D.y - 0.08, cz, '#b8844a');
+      for (let x = D.x0 + 0.42; x < D.x1 - 0.1; x += 0.46) G.box(0.035, 0.006, d - 0.04, '#6a4428', x, D.y, cz);   // as frestas das tábuas
+      for (const x of [D.x0 + 0.3, cx, D.x1 - 0.2]) for (const z of [D.z0 + 0.1, D.z1 - 0.1]) G.box(0.22, 1.0, 0.22, '#5a3a1e', x, -0.7, z, '#7a5230');
+      S.pisos.push({ x0: D.x0, x1: D.x1, z0: D.z0, z1: D.z1, y: D.y });
+      const bx = D.x0 + 0.55;                                                                // banco no deque (encostado na beira, virado para o leste)
+      G.box(0.48, 0.08, 1.4, '#8a5a2b', bx, D.y + 0.42, cz); G.box(0.1, 0.5, 1.4, '#8a5a2b', bx - 0.2, D.y + 0.5, cz); for (const sg of [-0.55, 0.55]) G.box(0.4, 0.42, 0.1, '#6a4428', bx, D.y, cz + sg);
+      S.col.push({ x0: bx - 0.26, x1: bx + 0.24, z0: cz - 0.72, z1: cz + 0.72 });
+      for (const t of [-0.35, 0.35]) assento(bx + 0.04, cz + t, 1, 0, D.y + 0.5, 'banco'); }
+    // a CANOA amarrada do lado do píer
+    { const x = -44.2, z = 53.45;
+      G.box(3.2, 0.24, 0.66, '#8a4a2a', x, -0.04, z, '#6a3a1e'); G.box(2.8, 0.06, 0.52, '#4a2a14', x, 0.14, z);
+      for (const sg of [-1, 1]) { G.box(0.34, 0.18, 0.4, '#8a4a2a', x + sg * 1.72, 0.0, z); G.box(0.16, 0.12, 0.2, '#8a4a2a', x + sg * 1.92, 0.08, z); }
+      G.box(0.3, 0.05, 0.62, '#a8743f', x - 0.5, 0.17, z); G.box(0.3, 0.05, 0.62, '#a8743f', x + 0.7, 0.17, z);
+      G.box(1.9, 0.035, 0.06, '#c8a878', x + 0.3, 0.22, z + 0.16); G.box(0.24, 0.04, 0.14, '#c8a878', x + 1.3, 0.22, z + 0.16);   // o remo
+      G.box(0.04, 0.04, 0.95, '#d8d0b8', x + 1.85, 0.2, z + 0.5); }                                 // a corda até o píer
+    // bancos de frente para a água (beira norte e beira sudeste)
+    const banco = (x, z, fx, fz) => {
+      const ao = fx !== 0, lx = ao ? 0.5 : 1.8, lz = ao ? 1.8 : 0.5, y = altura(x, z);
+      G.box(lx, 0.1, lz, '#8a5a2b', x, y + 0.42, z); for (const sg of [-0.7, 0.7]) G.box(ao ? 0.4 : 0.12, 0.42, ao ? 0.12 : 0.4, '#9a968c', x + (ao ? 0 : sg), y, z + (ao ? sg : 0));
+      G.box(ao ? 0.08 : 1.8, 0.45, ao ? 1.8 : 0.08, '#8a5a2b', x - fx * 0.22, y + 0.55, z - fz * 0.22);
+      S.col.push({ x0: x - lx / 2, x1: x + lx / 2, z0: z - lz / 2, z1: z + lz / 2 });
+      for (const t of [-0.45, 0.45]) assento(x + (ao ? 0 : t), z + (ao ? t : 0), fx, fz, y + 0.52, 'banco');
+    };
+    banco(-62.5, 45.5, 0, 1); banco(-38.9, 64.2, -1, 0); banco(-84.5, 71.6, 0, -1);
+    // postes (acendem de noite como os da praça): na ponta do píer em terra, na frente da casinha e no deque oeste
+    for (const [x, z] of [[-35.6, 53.4], [-44.6, 46.9], [-105.6, 51.6], [-70, 42.6]]) {
+      G.box(0.14, 3.6, 0.14, '#3f4348', x, 0, z); G.box(0.5, 0.06, 0.12, '#3f4348', x, 3.55, z); LGp.box(0.4, 0.36, 0.4, '#f4efc8', x, 3.6, z);
+      S.lampadas.push({ x, y: 3.8, z, px: x, pz: z, r: 4.6 }); S.col.push({ x0: x - 0.15, x1: x + 0.15, z0: z - 0.15, z1: z + 0.15 });
+    }
+    addMalha(G, 0, 0); if (S.lampMat) S.grupo.add(LGp.malha(S.lampMat));
+  }
   const QUADRO_PESCA = { u: -1.5, w: 1.6, h: 1.0, y: 1.05 };          // u = ao longo da frente (do meio da casinha), y = onde começa (de baixo)
   function casinhaPesca() {
     const C = CASA_PESCA, N = { u: 0.85, larg: 2.4, prof: 1.5, alt: 2.15 };
@@ -1461,6 +1598,7 @@
     for (const r of [PRACA, VARZEA, SOCIETY, FUTSAL]) if (x > r.x0 - 1 && x < r.x1 + 1 && z > r.z0 - 1 && z < r.z1 + 1) return false;
     for (const b of S.col) if (x > b.x0 - 0.8 && x < b.x1 + 0.8 && z > b.z0 - 0.8 && z < b.z1 + 0.8) return false;
     if (dentroLago(x, z, 3)) return false;
+    if (distTrilha(x, z) < 1.1) return false;                             // (6.6.0) a trilha do lago
     return true;
   }
   function criarPlantas() {
@@ -1474,6 +1612,7 @@
     for (let i = 0; i < 26; i++) {
       const a = rnd() * Math.PI * 2, [x, z] = bordaLago(a, 0.2);
       if (x > PIER.x0 - 3 && z > PIER.z0 - 4 && z < PIER.z1 + 4) continue;
+      if (x > DEQUE_OESTE.x0 - 2 && x < DEQUE_OESTE.x1 + 1.5 && z > DEQUE_OESTE.z0 - 2.5 && z < DEQUE_OESTE.z1 + 2.5) continue;   // (6.6.0) o deque oeste
       if (Math.abs(x + 41) < 3 && z < LAGO.cz) continue;                  // o caminho que chega no lago
       for (let j = 0; j < 3 + Math.floor(rnd() * 2); j++) lista.push({ x: x + (rnd() - 0.5) * 0.9, z: z + (rnd() - 0.5) * 0.9, k: 0.85 + rnd() * 0.5, tipo: 1, yaw: rnd() * 6.28, t: 0.85 + rnd() * 0.3 });
     }
@@ -2731,7 +2870,9 @@
     linha([[-116, ZN], [XW, ZN], [XF, ZN], [XE, ZN], [116, ZN]]);                    // calçada norte
     linha([[-116, ZS], [XW, ZS], [XF, ZS], [XE, ZS], [116, ZS]]);                    // calçada sul
     linha([[XF, ZN], [XF, ZS]]);                                                     // faixa de pedestre
-    linha([[XW, ZN], [XW, -35.8], [XW, -72]]); linha([[XW, ZS], [XW, 38.2], [XW, 72]]);   // rua de terra oeste
+    linha([[XW, ZN], [XW, -35.8], [XW, -72]]); linha([[XW, ZS], [XW, 38.2]]);              // rua de terra oeste (antes ela atravessava o lago até z 72)
+    { const T = trilhaLago(), perto = (x, z) => T.reduce((b, p) => (Math.hypot(p[0] - x, p[1] - z) < Math.hypot(b[0] - x, b[1] - z) ? p : b), T[0]);   // (6.6.0) a trilha do lago
+      linha(T.concat([T[0]])); linha([[XW, 38.2], perto(XW, 43)]); linha([[-41, 46], perto(-41, 46)]); }
     linha([[XE, ZN], [XE, -72]]); linha([[XE, ZS], [XE, 38.2], [XE, 72]]);                // rua de terra leste
     linha([[-116, -35.8], [XW, -35.8], [0, -35.8], [0, -31], [cx, -29.5]]);           // rua de terra norte até o adro da igreja
     linha([[-116, 38.2], [XW, 38.2], [-41, 38.2], [XE, 38.2]]); linha([[-41, 38.2], [-41, 46]]);   // rua de terra sul e o caminho do lago
@@ -3058,8 +3199,7 @@
     for (const c of S.circ) if (Math.hypot(x - c.x, z - c.z) < c.r + RJ) return false;
     if (S.dentro) { for (const A of S.npcs) if (!A.oculto) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; } return true; }
     if (S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
-    const naPier = x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15;
-    if (!naPier && dentroLago(x, z, 0.45)) return false;   // fora da água: os pés não entram mais
+    if (!naDeque(x, z) && dentroLago(x, z, 0.45)) return false;   // fora da água: os pés não entram mais (o píer e o deque oeste são chão)
     for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + RJ && Math.abs(z - c.z) < 0.95 + RJ) return false;
     for (const A of S.npcs) if (!A.oculto && !A.longeDemais) { const dn = Math.hypot(x - A.x, z - A.z); if (dn < raioNPC(A) && dn < Math.hypot(S.jog.x - A.x, S.jog.z - A.z) - 1e-4) return false; }   // dá para se afastar de quem está encostado
     return true;
@@ -3693,7 +3833,7 @@
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {
-    return Object.assign(apiAcademia(), { LAGO, PIER, CASA_PESCA, QUADRO_PESCA, dentroLago, bordaLago, OX, chuva: () => !!(S.clima && S.clima.chuva > 0.25), amizadeNaTela });
+    return Object.assign(apiAcademia(), { LAGO, PIER, CASA_PESCA, QUADRO_PESCA, DEQUE_OESTE, naDeque, trilhaLago, profLago, POCOS_LAGO, BANCOS_LAGO, dentroLago, bordaLago, OX, chuva: () => !!(S.clima && S.clima.chuva > 0.25), amizadeNaTela });
   }
   function fase1Lucia() {
     const h1 = (API.historia.ler('fase1')) || {};

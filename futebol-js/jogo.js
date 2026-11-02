@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.5.0
+   FUTEBOL JS · jogo.js · versão 6.6.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.5.0';
+const VERSAO_JOGO = '6.6.0';
+// 6.6.0: pesca.js + cidade.js — lago com poços (escuros) e bancos de areia (claros), nota do lançamento pelo lugar onde a isca cai, cena do lançamento perfeito (4 câmeras), boia/anzol/isca na ponta da linha, briga com a faixa boa de tensão, vibração, +tranquilo no 1º peixe do dia, pixel art nova dos peixes (e o 3D sai dela), trilha, deque e decoração do lago.
 // 6.4.0: pesca.js (arquivo novo) — a pesca no Lago do Sapo Cururu: 60 peixes, 8 iscas, 5 varas, caixa de 30, catálogo, a casinha do seu Bené e o minigame; o Cadu pescando no fim de semana (cidade.js) e o seu Raimundo, pai dele, no mercado (mercado.js).
 // 6.3.0: cidade.js + academia.js — faixa de pedestre (espera, carros param e piscam o farol), pedestres esportivos que correm, casas e horários do Diego e da Fernanda, a Fernanda circulando, falas por treino errado, espelho, limpeza/otimização.
 // 6.2.4: pizzaria.js — bater de bicicleta volta a ser como antes (cambaleia e continua no controle; sem o tombo de 5 s).

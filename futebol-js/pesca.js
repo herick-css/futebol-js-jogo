@@ -26,10 +26,30 @@
    - MINIGAME (como o chute da partida): mira arrastando o dedo na tela (◀ ▶ / A D no teclado), segurar LANÇAR para encher a barra de força e soltar; a boia cai na água;
      beliscadas (não fisgue ainda!); quando a boia afunda: FISGAR; a briga: segurar PUXAR recolhe a linha, mas quando o peixe corre
      a tensão sobe — solte antes de arrebentar, e não deixe a linha frouxa demais. O peixe vai para a CAIXA (até 30).
+   6.6.0 — a pesca ficou mais "lógica":
+   - O LAGO tem manchas ESCURAS (poços fundos) e CLARAS (bancos de areia): é a profundidade de verdade (cidade.js: profLago), a mesma que
+     pinta a água. O LANÇAMENTO ganha uma NOTA (0–100) pela profundidade de ONDE A ISCA CAIU: nota alta = peixes mais raros, mais pesados
+     e que mordem mais rápido; nota baixa = o contrário (e os peixinhos de beira gostam do raso, os bagres do fundo). A barra do LANÇAR
+     agora é só a DISTÂNCIA (vai e volta, como a força do chute): não tem lançamento bom ou ruim pela força, só pelo lugar. A vara espalha
+     um pouco (as melhores são mais precisas).
+   - NOTA MÁXIMA (93+, o miolo de um poço): a cena do LANÇAMENTO PERFEITO — o mesmo lançamento em 4 câmeras (de lado, seguindo a isca
+     desde a ponta da vara, de longe com o arco todo e rente à água onde ela cai), em câmera lenta, e a mensagem. Tocar pula.
+   - A MONTAGEM na ponta da linha: boia (nova), linha curtinha, chumbinho, anzol e a ISCA da vez (uma para cada tipo). Pendurada, ela
+     balança com a vara; voa atrás da boia; volta sem a isca quando o peixe comeu.
+   - A BRIGA: a barra de TENSÃO tem a FAIXA BOA (verde). Segurar PUXAR sobe a tensão, soltar desce; o peixe correndo puxa para cima.
+     Só na faixa a linha é recolhida e o peixe cansa. Abaixo dela enche o "linha frouxa" (cheio: o peixe cospe o anzol); acima, o
+     "linha esticada" (cheio: arrebenta). A faixa é mais estreita para peixe raro e pesado (e com vara fraca para o peixe), mais larga com
+     isca boa e vara boa, e ANDA nos peixes raros. Simulado no Node (sim3.js do desenvolvimento) com jogadores "bom/médio/fraco".
+   - VIBRAÇÃO do celular: leve na beliscada, forte na mordida, pulsos na briga (arrancada, linha esticando cada vez mais forte, linha
+     frouxa, o molinete), forte ao arrebentar e no peixe pego.
+   - O primeiro peixe do dia: +5 no "tranquilo" (Espectros; escala −100 a +100 = +0,5 numa de 0 a 10). Guarda o dia em pesca.tranqDia.
+   - PIXEL ART nova dos 60 peixes (80×48, artePeixe): perfil da espécie, rabo e nadadeiras pelo tipo, degradê pontilhado, sombras,
+     escamas/placas/couro, linha lateral, guelra, olho com brilho, bigodes, desenhos e contorno. O PEIXE 3D sai da MESMA arte (cada pixel
+     vira um bloquinho com a grossura do corpo). O quadro da casinha ficou 512×320.
    - TEXTOS: TRAD (en, es, it, fr) — as traduções daqui valem PRIMEIRO dentro da pesca (tr/trf): "LANÇAR" no jogo é o lateral do futebol
      (THROW); aqui é lançar a isca (CAST). Os nomes dos peixes ficam em PEIXES[].tr.
    - Salva em historia.cidade: pesca = { vara, varas, iscas, isca, caixa: [{ i, kg, c }], cat: { i: { n, rec, cl } }, total, ganhos, lendarios,
-     caduVara, caduLago, caduMinhoca (dia em que o Cadu deu minhoca), conheceBene, papo } e mercado.conheceu/reconheceu (o 1º encontro com
+     caduVara, caduLago, caduMinhoca (dia em que o Cadu deu minhoca), conheceBene, papo, tranqDia } e mercado.conheceu/reconheceu (o 1º encontro com
      o Cadu pode ser aqui no lago).
    ===================================================================== */
 (function () {
@@ -49,7 +69,6 @@
     'Pescar': ['Fish', 'Pescar', 'Pesca', 'Pêcher'],
     'Pescar aqui': ['Fish here', 'Pescar aquí', 'Pesca qui', 'Pêcher ici'],
     'Eu acho melhor não pescar hoje, por conta do trabalho...': ['I think I’d better not fish today, because of work...', 'Creo que mejor no pesco hoy, por el trabajo...', 'Credo sia meglio non pescare oggi, per via del lavoro...', 'Je crois que je ferais mieux de ne pas pêcher aujourd’hui, à cause du travail...'],
-    'Arraste a tela para mirar e segure LANÇAR. Solte na faixa verde!': ['Drag the screen to aim and hold CAST. Release in the green zone!', 'Arrastra la pantalla para apuntar y mantén LANZAR. ¡Suelta en la franja verde!', 'Trascina lo schermo per mirare e tieni premuto LANCIA. Rilascia nella fascia verde!', 'Fais glisser l’écran pour viser et maintiens LANCER. Relâche dans la zone verte !'],
     'Equipamento': ['Gear', 'Equipo', 'Attrezzatura', 'Équipement'],
     'Falar com o seu Bené': ['Talk to Mr. Bené', 'Hablar con don Bené', 'Parla con il signor Bené', 'Parler à M. Bené'],
     'Casinha da pesca fechada. Abre às 6h.': ['Fishing shack closed. Opens at 6 AM.', 'Casita de pesca cerrada. Abre a las 6h.', 'Casetta della pesca chiusa. Apre alle 6.', 'Cabane de pêche fermée. Ouvre à 6 h.'],
@@ -147,10 +166,8 @@
     'Valeu pela companhia!': ['Thanks for the company!', '¡Gracias por la compañía!', 'Grazie per la compagnia!', 'Merci pour la compagnie !'],
     'Sair': ['Leave', 'Salir', 'Esci', 'Sortir'],
     'Fôlego do peixe': ['Fish stamina', 'Aliento del pez', 'Fiato del pesce', 'Endurance du poisson'],
-    'FORÇA': ['POWER', 'FUERZA', 'FORZA', 'FORCE'],
     'TENSÃO': ['TENSION', 'TENSIÓN', 'TENSIONE', 'TENSION'],
     'Sem isca! Compre na casinha do seu Bené.': ['No bait! Buy some at Mr. Bené’s shack.', '¡Sin carnada! Compra en la casita de don Bené.', 'Niente esca! Comprala nella casetta del signor Bené.', 'Plus d’appâts ! Achètes-en à la cabane de M. Bené.'],
-    'A linha embolou! Desembolando...': ['The line got tangled! Untangling...', '¡Se enredó la línea! Desenredando...', 'La lenza si è aggrovigliata! La sto sbrogliando...', 'La ligne s’est emmêlée ! Je la démêle...'],
     'Água funda': ['Deep water', 'Agua profunda', 'Acqua profonda', 'Eau profonde'],
     'Água média': ['Medium water', 'Agua media', 'Acqua media', 'Eau moyenne'],
     'Água rasa': ['Shallow water', 'Agua baja', 'Acqua bassa', 'Eau peu profonde'],
@@ -183,14 +200,10 @@
     'PUXAR': ['PULL', 'TIRAR', 'TIRA', 'TIRER'],
     'Distância {0} m': ['Distance {0} m', 'Distancia {0} m', 'Distanza {0} m', 'Distance {0} m'],
     'Mire com ◀ ▶ e segure LANÇAR. Solte na faixa verde!': ['Aim with ◀ ▶ and hold CAST. Release in the green zone!', 'Apunta con ◀ ▶ y mantén LANZAR. ¡Suelta en la franja verde!', 'Mira con ◀ ▶ e tieni premuto LANCIA. Molla nella fascia verde!', 'Vise avec ◀ ▶ et maintiens LANCER. Lâche dans la zone verte !'],
-    'Solte na faixa verde!': ['Release in the green zone!', '¡Suelta en la franja verde!', 'Molla nella fascia verde!', 'Lâche dans la zone verte !'],
     'Espere a boia afundar. Se ela só tremer, não puxe!': ['Wait for the bobber to sink. If it only twitches, don’t pull!', 'Espera a que el corcho se hunda. Si solo tiembla, ¡no tires!', 'Aspetta che il galleggiante affondi. Se trema soltanto, non tirare!', 'Attends que le bouchon coule. S’il tremble seulement, ne tire pas !'],
-    'O peixe está correndo! Solte antes de arrebentar!': ['The fish is running! Let go before the line snaps!', '¡El pez está corriendo! ¡Suelta antes de que se rompa!', 'Il pesce sta scappando! Molla prima che si spezzi!', 'Le poisson file ! Lâche avant que ça casse !'],
     'Linha frouxa! Segure PUXAR!': ['Slack line! Hold PULL!', '¡Línea floja! ¡Mantén TIRAR!', 'Lenza molle! Tieni premuto TIRA!', 'Ligne molle ! Maintiens TIRER !'],
-    'Segure PUXAR para recolher.': ['Hold PULL to reel in.', 'Mantén TIRAR para recoger.', 'Tieni premuto TIRA per recuperare.', 'Maintiens TIRER pour ramener.'],
     "A isca caiu fora d'água!": ['The bait landed out of the water!', '¡La carnada cayó fuera del agua!', 'L’esca è caduta fuori dall’acqua!', 'L’appât est tombé hors de l’eau !'],
     'Isca boa faz o peixe morder mais rápido. Mas os grandões não se impressionam fácil, não.': ['Good bait makes fish bite faster. But the big ones aren’t easily impressed.', 'Una buena carnada hace que el pez muerda más rápido. Pero los grandes no se impresionan fácil.', 'Un’esca buona fa abboccare prima il pesce. Ma i pezzi grossi non si fanno impressionare facilmente.', 'Un bon appât fait mordre le poisson plus vite. Mais les gros ne se laissent pas impressionner facilement.'],
-    'Joga a isca lá pro meio do lago. Lá é mais fundo e aparece peixe mais raro.': ['Cast toward the middle of the lake. It’s deeper there and rarer fish show up.', 'Tira la carnada hacia el medio del lago. Ahí es más hondo y aparecen peces más raros.', 'Lancia l’esca verso il centro del lago. Lì è più profondo e ci sono pesci più rari.', 'Lance l’appât vers le milieu du lac. C’est plus profond et il y a des poissons plus rares.'],
     'Se a boia só tremer, espera! Fisga quando ela afundar de vez.': ['If the bobber only twitches, wait! Strike when it goes all the way under.', 'Si el corcho solo tiembla, ¡espera! Clava cuando se hunda del todo.', 'Se il galleggiante trema soltanto, aspetta! Ferra quando affonda del tutto.', 'Si le bouchon tremble seulement, attends ! Ferre quand il coule pour de bon.'],
     'Quando o peixe correr, solta a linha. Se segurar, arrebenta!': ['When the fish runs, let the line out. If you hold on, it snaps!', 'Cuando el pez corra, suelta la línea. ¡Si aguantas, se rompe!', 'Quando il pesce scappa, molla la lenza. Se tieni, si spezza!', 'Quand le poisson file, lâche du fil. Si tu tiens, ça casse !'],
     'Mas não deixa a linha frouxa demais, senão ele cospe o anzol.': ['But don’t leave the line too slack, or it spits out the hook.', 'Pero no dejes la línea muy floja, o escupe el anzuelo.', 'Ma non lasciare la lenza troppo molle, sennò sputa l’amo.', 'Mais ne laisse pas la ligne trop molle, sinon il recrache l’hameçon.'],
@@ -256,6 +269,27 @@
     'Vara de carbono': ['Carbon rod', 'Caña de carbono', 'Canna in carbonio', 'Canne en carbone'],
     'Vara com molinete': ['Rod and reel', 'Caña con carrete', 'Canna con mulinello', 'Canne à moulinet'],
     'Vara de titânio': ['Titanium rod', 'Caña de titanio', 'Canna in titanio', 'Canne en titane'],
+    // (6.6.0) a nota do lançamento, o lançamento perfeito, a briga com a faixa boa, o tranquilo e as dicas novas do Cadu
+    'Poço fundo': ['Deep pool', 'Pozo hondo', 'Pozza profonda', 'Fosse profonde'],
+    'Nota {0}': ['Score {0}', 'Nota {0}', 'Voto {0}', 'Note {0}'],
+    'Água rasa demais...': ['Way too shallow...', 'Agua demasiado baja...', 'Acqua troppo bassa...', 'Eau bien trop peu profonde...'],
+    'Lançamento fraco': ['Weak cast', 'Lanzamiento flojo', 'Lancio debole', 'Lancer faible'],
+    'Bom lançamento': ['Good cast', 'Buen lanzamiento', 'Buon lancio', 'Bon lancer'],
+    'Ótimo lançamento!': ['Great cast!', '¡Gran lanzamiento!', 'Ottimo lancio!', 'Excellent lancer !'],
+    'LANÇAMENTO PERFEITO!': ['PERFECT CAST!', '¡LANZAMIENTO PERFECTO!', 'LANCIO PERFETTO!', 'LANCER PARFAIT !'],
+    'Toque para pular': ['Tap to skip', 'Toca para saltar', 'Tocca per saltare', 'Touchez pour passer'],
+    'DISTÂNCIA': ['DISTANCE', 'DISTANCIA', 'DISTANZA', 'DISTANCE'],
+    'Linha frouxa': ['Slack line', 'Línea floja', 'Lenza molle', 'Ligne molle'],
+    'Linha esticada': ['Strained line', 'Línea tensa', 'Lenza tesa', 'Ligne tendue'],
+    'Arraste para mirar. Segure LANÇAR: a barra é a distância. Mire nas manchas escuras (fundo)!': ['Drag to aim. Hold CAST: the bar is the distance. Aim for the dark patches (deep water)!', 'Arrastra para apuntar. Mantén LANZAR: la barra es la distancia. ¡Apunta a las manchas oscuras (hondo)!', 'Trascina per mirare. Tieni premuto LANCIA: la barra è la distanza. Mira alle chiazze scure (acqua profonda)!', 'Glisse pour viser. Maintiens LANCER : la barre est la distance. Vise les taches sombres (eau profonde) !'],
+    'Solte na distância certa!': ['Release at the right distance!', '¡Suelta en la distancia justa!', 'Molla alla distanza giusta!', 'Lâche à la bonne distance !'],
+    'O peixe está correndo! Solte a linha!': ['The fish is running! Let the line out!', '¡El pez está corriendo! ¡Suelta la línea!', 'Il pesce sta scappando! Molla la lenza!', 'Le poisson file ! Laisse filer la ligne !'],
+    'Linha esticada demais! Solte!': ['Line too tight! Let go!', '¡Línea demasiado tensa! ¡Suelta!', 'Lenza troppo tesa! Molla!', 'Ligne trop tendue ! Lâche !'],
+    'Mantenha a tensão na faixa verde.': ['Keep the tension in the green zone.', 'Mantén la tensión en la franja verde.', 'Tieni la tensione nella fascia verde.', 'Garde la tension dans la zone verte.'],
+    'Pescar acalma a cabeça. Você está mais tranquilo hoje.': ['Fishing clears the mind. You feel calmer today.', 'Pescar calma la cabeza. Hoy estás más tranquilo.', 'Pescare rilassa la mente. Oggi sei più tranquillo.', 'Pêcher apaise l’esprit. Tu es plus serein aujourd’hui.'],
+    'Tá vendo as manchas escuras na água? Ali é fundo. Isca bem no meio da mancha escura é peixe grande!': ['See the dark patches in the water? That’s the deep part. Bait right in the middle of a dark patch means big fish!', '¿Ves las manchas oscuras en el agua? Ahí es hondo. ¡Carnada justo en el medio de la mancha oscura es pez grande!', 'Vedi le chiazze scure nell’acqua? Lì è profondo. Esca proprio al centro della chiazza scura vuol dire pesce grosso!', 'Tu vois les taches sombres dans l’eau ? C’est profond. Un appât pile au milieu d’une tache sombre, c’est un gros poisson !'],
+    'As partes clarinhas são banco de areia. Ali só dá peixinho.': ['The light parts are sandbars. Only tiny fish there.', 'Las partes claritas son bancos de arena. Ahí solo hay pececitos.', 'Le parti chiare sono banchi di sabbia. Lì ci sono solo pesciolini.', 'Les parties claires sont des bancs de sable. Il n’y a que du menu fretin.'],
+    'Deixa a tensão na faixa verde. Peixe raro faz a faixa ficar andando, aí é que é difícil!': ['Keep the tension in the green zone. Rare fish make the zone move around, that’s the hard part!', 'Deja la tensión en la franja verde. Los peces raros hacen que la franja se mueva, ¡eso es lo difícil!', 'Tieni la tensione nella fascia verde. I pesci rari fanno muovere la fascia, ed è lì che è difficile!', 'Garde la tension dans la zone verte. Les poissons rares font bouger la zone, c’est ça le plus dur !'],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
@@ -366,22 +400,31 @@
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
   const lerpN = (a, b, k) => a + (b - a) * k;
   const blocoHora = (h) => (h >= 5 && h < 11 ? 'm' : h >= 11 && h < 17 ? 't' : h >= 17 && h < 20 ? 'e' : 'n');
-  // qual peixe vai morder: raridade pela vara (e pela profundidade: prof 0 = beira, 1 = meio do lago), espécie pela hora e pela isca
-  function sortearPeixe(h, vara, isca, prof, rnd) {
-    rnd = rnd || Math.random;
-    const b = blocoHora(h), dm = [1.15 - 0.3 * prof, 1, 0.8 + 0.4 * prof, 0.7 + 0.6 * prof, 0.6 + 0.8 * prof];
+  // (6.6.0) o LANÇAMENTO dá uma NOTA (0–100) pela PROFUNDIDADE de onde a isca caiu (a cor da água: miolo escuro de poço = 100, banco de
+  //   areia claro ≈ 10). q = nota/100. Nota alta: mais raros, mais pesados e mordem mais rápido; nota baixa: o contrário.
+  const NOTA_PERFEITA = 93;
+  const faixaNota = (n) => (n >= NOTA_PERFEITA ? 4 : n >= 78 ? 3 : n >= 55 ? 2 : n >= 30 ? 1 : 0);
+  // quem gosta de fundo (+1: bagres, cascudos, arraia, poraquê) e quem gosta de beira (−1: os peixinhos de escama)
+  const gostoFundo = (p) => ('bcre'.indexOf(p.f.t) >= 0 ? 1 : (p.f.t === 'p' || p.f.t === 'a') && p.kg1 <= 0.4 ? -1 : 0);
+  // qual peixe vai morder: raridade pela vara e pela nota do lançamento, espécie pela hora, pela isca e pela profundidade
+  function sortearPeixe(h, vara, isca, q, rnd) {
+    rnd = rnd || Math.random; q = clampN(q == null ? 0.5 : q, 0, 1);
+    const b = blocoHora(h), perf = q * 100 >= NOTA_PERFEITA ? 1.2 : 1;
+    const dm = [1.3 - 0.5 * q, 1.05 - 0.1 * q, 0.65 + 0.6 * q, (0.5 + 0.9 * q) * perf, (0.4 + 1.2 * q) * perf];
     const disp = [[], [], [], [], []]; PEIXES.forEach((p, i) => { if (p.h.indexOf(b) >= 0) disp[p.r].push(i); });
     const pesos = []; let tot = 0;
     for (let r = 0; r < 5; r++) {
       const L = disp[r], base = RAR_VARA[vara][r] * dm[r]; if (!L.length || base <= 0) continue;
-      for (const i of L) { const fav = PEIXES[i].isca === isca ? (r === 4 ? 2 : 3) : 1, w = base / L.length * fav; pesos.push([i, w]); tot += w; }
+      let sl = 0; const ws = L.map((i) => { const w = (1 + 0.5 * gostoFundo(PEIXES[i]) * (q - 0.5) * 2); sl += w; return w; });
+      L.forEach((i, k) => { const fav = PEIXES[i].isca === isca ? (r === 4 ? 2 : 3) : 1, w = base * ws[k] / sl * fav; pesos.push([i, w]); tot += w; });
     }
     let x = rnd() * tot; for (const [i, w] of pesos) { x -= w; if (x <= 0) return i; }
     return pesos[pesos.length - 1][0];
   }
-  // peso dentro da faixa da espécie (varas melhores puxam para cima) e a classe (0 magro, 1 comum, 2 pesado)
-  function sortearPeso(i, vara, rnd) {
-    rnd = rnd || Math.random; const p = PEIXES[i], t = Math.pow(rnd(), 1.3 - 0.12 * vara), kg = p.kg0 + (p.kg1 - p.kg0) * t;
+  // peso dentro da faixa da espécie (varas melhores e lançamentos melhores puxam para cima) e a classe (0 magro, 1 comum, 2 pesado)
+  function sortearPeso(i, vara, rnd, q) {
+    rnd = rnd || Math.random; q = clampN(q == null ? 0.5 : q, 0, 1);
+    const p = PEIXES[i], t = Math.pow(rnd(), (1.3 - 0.12 * vara) * (1.4 - 0.8 * q)), kg = p.kg0 + (p.kg1 - p.kg0) * t;
     return { kg: kg < 1 ? Math.round(kg * 1000) / 1000 : Math.round(kg * 10) / 10, classe: classeDe(i, kg) };
   }
   function classeDe(i, kg) { const p = PEIXES[i], t = (kg - p.kg0) / ((p.kg1 - p.kg0) || 1); return t < 0.25 ? 0 : t > 0.78 ? 2 : 1; }
@@ -395,50 +438,71 @@
       espera: [lerpN(14, 4, er), lerpN(26, 8, er)].map((v) => v * [1, 1.1, 1.25, 1.4, 1.6][r] * (fav ? 0.7 : 1)),   // segundos até morder (de–até)
       janela: lerpN(0.85, 1.45, er) * [1, 0.92, 0.82, 0.72, 0.62][r] * (fav ? 1.15 : 1),                         // segundos para fisgar
       beliscadas: Math.max(0, Math.round(lerpN(3, 0.6, er) + r * 0.3)),                                         // falsos toques antes
-      forca: Math.min(1.3, [0.3, 0.42, 0.6, 0.78, 0.95][r] * fc * (1 + 0.3 * falta) * (1 - 0.3 * er)),
+      forca: Math.min(1.3, [0.3, 0.42, 0.6, 0.78, 0.95][r] * fc * (1 + 0.22 * falta) * (1 - 0.3 * er)),
       folego: [5, 7, 11, 15, 22][r] * fc * (1 - 0.45 * er) * (1 + 0.15 * falta),
       firmeza: lerpN(0.5, 0.9, er),                                       // o anzol bem preso (isca boa) solta menos com a linha frouxa
       tranco: 1 + 0.6 * (1 - er),                                         // isca ruim: a corrida do peixe dá tranco mais forte na linha
+      // (6.6.0) a FAIXA BOA da tensão: mais estreita para peixe raro e pesado, mais larga com isca boa e vara boa (vara fraca para o peixe: estreita)
+      zona: clampN([0.42, 0.36, 0.3, 0.25, 0.2][r] * [1.1, 1, 0.88][classe] * (1 + 0.3 * er) * (1 + 0.05 * vara) * (1 - 0.14 * falta), 0.13, 0.5),
+      deriva: [0.02, 0.05, 0.09, 0.13, 0.17][r] * (1 - 0.3 * er),         // o quanto a faixa anda (os raros ficam mudando)
+      tremor: [0.05, 0.07, 0.1, 0.13, 0.16][r] * fc,                      // as sacudidas de cabeça (a tensão treme)
       falta, er,
     };
   }
-  // A BRIGA. B = { dist, tensao, folego, folego0, forca, corre, tFase, frouxa, res, rec, alc, choque } · seg = segurando PUXAR
+  // A BRIGA (6.6.0). Segurar PUXAR sobe a tensão (e recolhe a linha); soltar deixa ela cair. O peixe correndo puxa a tensão para cima.
+  //   A tensão tem que ficar na FAIXA BOA (verde): só ali a linha é recolhida de verdade e o peixe cansa. Abaixo dela, a linha frouxa vai
+  //   enchendo o "frouxo" (cheio = o peixe cospe o anzol); acima, o "esticado" (cheio = a linha arrebenta). A faixa anda nos peixes raros.
+  //   B = { dist, tensao, zc, zw, frouxo, estica, folego, corre, ... } · seg = segurando PUXAR
   //   devolve null (continua) ou 'pegou' | 'arrebentou' | 'soltou' | 'linha' (acabou a linha)
   function novaBriga(dist, d, vara, rnd) {
     rnd = rnd || Math.random; const V = VARAS[vara];
-    return { dist, tensao: 0.3, folego: d.folego, folego0: d.folego, forca: d.forca, corre: false, tFase: 0.6 + rnd() * 0.6, frouxa: 0, solta: 0, firmeza: d.firmeza, tranco: d.tranco,
-      res: V.res, rec: V.rec, alc: V.alc, lado: 0, ladoAlvo: 0, t: 0, choque: 0 };
+    return { dist, tensao: 0.45, folego: d.folego, folego0: d.folego, forca: d.forca, corre: false, tFase: 0.9 + rnd() * 0.7, firmeza: d.firmeza, tranco: d.tranco,
+      res: V.res, rec: V.rec, alc: V.alc, lado: 0, ladoAlvo: 0, t: 0, choque: 0,
+      zw: d.zona, deriva: d.deriva, tremor: d.tremor, fase: rnd() * 6.28, zc: 0.5, lo: 0.5 - d.zona / 2, hi: 0.5 + d.zona / 2, frouxo: 0, estica: 0, onde: 0 };
+  }
+  function zonaBriga(B) {
+    const w = B.zw * (B.folego <= 0 ? 1.3 : 1), dv = B.deriva;
+    const c = clampN(0.5 + dv * Math.sin(B.t * (0.55 + dv * 2.5) + B.fase) + dv * 0.45 * Math.sin(B.t * 1.7 + B.fase * 2) + (B.corre ? dv * 0.4 : 0), w / 2 + 0.05, 0.95 - w / 2);
+    B.zc = c; B.lo = c - w / 2; B.hi = c + w / 2;
   }
   function passoBriga(B, seg, dt, rnd) {
     rnd = rnd || Math.random; B.t += dt; B.tFase -= dt;
     const cansado = B.folego <= 0;
     if (B.tFase <= 0) {
-      if (B.corre) { B.corre = false; B.tFase = (0.9 + rnd() * 1.3) * (1 + 0.9 * (1 - Math.max(0, B.folego) / B.folego0)); }
+      if (B.corre) { B.corre = false; B.tFase = (1.0 + rnd() * 1.4) * (1 + 0.9 * (1 - Math.max(0, B.folego) / B.folego0)); }
       else { B.corre = cansado ? rnd() < 0.3 : true; B.tFase = B.corre ? (0.7 + rnd() * 1.1) * (0.6 + B.forca) * (cansado ? 0.5 : 1) : 0.8 + rnd() * 0.7; if (B.corre) B.ladoAlvo = (rnd() < 0.5 ? -1 : 1) * (0.25 + rnd() * 0.4); }
     }
+    zonaBriga(B);
     const F = B.forca * (cansado ? 0.55 : 1);
+    // a tensão: segurando, sobe (cada vez mais devagar perto do topo); soltando, cai até o quanto o peixe está puxando
+    const puxa = B.corre ? B.hi - B.zw * 0.3 + 0.3 * (F * B.tranco / B.res - 0.6) : 0.04;   // com a vara certa, o peixe correndo fica no alto da faixa
     let alvo, k;
-    if (seg) {
-      if (B.corre) { alvo = 0.55 + 0.9 * F / B.res; k = (1.4 + 1.2 * F) * B.tranco; B.dist += dt * Math.max(0, 2.0 * F - 0.6); }
-      else { alvo = 0.35 + 0.35 * F / B.res; k = 1.8; B.dist -= dt * B.rec * (1 - 0.3 * F); }
-      B.folego -= dt * (B.corre ? 1.6 : 0.35);
-    } else {
-      if (B.corre) { alvo = 0.12 + 0.15 * F; k = 2; B.dist += dt * (1.0 + 2.2 * F); B.folego -= dt * 0.6; }
-      else { alvo = 0; k = 1.2; B.folego -= dt * 0.1; }
-    }
-    B.tensao += (alvo - B.tensao) * (1 - Math.exp(-k * dt)); if (B.tensao < 0) B.tensao = 0;
+    if (seg) { alvo = 1.08 + (B.corre ? 0.3 * F : 0); k = 1.25 + 0.4 * F; }
+    else { alvo = puxa; k = B.corre ? 2.2 : 1.7; }
+    B.tensao += (alvo - B.tensao) * (1 - Math.exp(-k * dt));
+    B.tensao += B.tremor * (Math.sin(B.t * 11.3 + B.fase) + 0.6 * Math.sin(B.t * 27.1)) * dt * (B.corre ? 3.2 : 1.6);
+    B.tensao = clampN(B.tensao, 0, 1);
     if (B.choque > 0) B.choque -= dt;
     B.lado += (B.ladoAlvo * (B.corre ? 1 : 0.4) - B.lado) * Math.min(1, dt * 1.5);
-    if (B.tensao < 0.12 && !B.corre) B.frouxa += dt; else B.frouxa = Math.max(0, B.frouxa - dt * 2);
-    if (B.corre && B.tensao < 0.2) B.solta += dt * (1 - B.firmeza) * 0.9;   // correndo com a linha bamba: o anzol vai soltando
-    if (B.tensao >= 1) return 'arrebentou';
-    if (B.frouxa > 2.2 || B.solta >= 1) return 'soltou';
+    const T = B.tensao, dentro = T >= B.lo && T <= B.hi; B.onde = T < B.lo ? -1 : T > B.hi ? 1 : 0;
+    // a linha: recolhe segurando (bem dentro da faixa, pouco fora dela); o peixe correndo leva linha (menos com a linha esticada)
+    if (seg) B.dist -= dt * B.rec * 1.5 * (dentro ? 1 : T > B.hi ? 0.45 : 0.15) * (1 - 0.35 * F * (B.corre ? 1 : 0.4));
+    if (B.corre) B.dist += dt * (0.3 + 2.2 * F) * (1 - 0.65 * T);
+    // o fôlego do peixe: cansa de verdade quando a tensão está na faixa
+    B.folego -= dt * (dentro ? (B.corre ? 1.7 : 0.7) : 0.15);
+    // frouxo e esticado
+    if (T < B.lo) B.frouxo += dt * (0.5 + 1.0 * (B.lo - T) / Math.max(0.05, B.lo)) * (1.25 - B.firmeza) * (B.corre ? 1.35 : 1);
+    else B.frouxo = Math.max(0, B.frouxo - dt * 0.4);
+    if (T > B.hi) B.estica += dt * (0.3 + 1.7 * Math.pow((T - B.hi) / Math.max(0.05, 1 - B.hi), 1.5)) / Math.sqrt(B.res);
+    else B.estica = Math.max(0, B.estica - dt * 0.45);
+    if (B.estica >= 1) return 'arrebentou';
+    if (B.frouxo >= 1) return 'soltou';
     if (B.dist > B.alc + 6) return 'linha';
     if (B.dist <= 1.0) return 'pegou';
     return null;
   }
   const DADOS = { RARIDADES, COR_RAR, PRECO_RAR, CLASSES, MULT, ISCAS, VARAS, RAR_VARA, FACIL_RAR, HORAS, ORIGENS, PEIXES };
-  const LOGICA = { blocoHora, sortearPeixe, sortearPeso, classeDe, precoPeixe, dificuldade, novaBriga, passoBriga, limiteMagro, limitePesado };
+  const LOGICA = { blocoHora, sortearPeixe, sortearPeso, classeDe, precoPeixe, dificuldade, novaBriga, passoBriga, zonaBriga, limiteMagro, limitePesado, faixaNota, gostoFundo, NOTA_PERFEITA };
 
   // ------------------------------------------------------------------ textos curtos e números
   // as traduções DAQUI valem primeiro (ex.: "LANÇAR" no jogo é o lateral do futebol = THROW; aqui é lançar a isca = CAST)
@@ -517,59 +581,257 @@
   // pseudo-aleatório fixo por peixe (as pintas ficam sempre no mesmo lugar)
   const sem = (i, k) => { const v = Math.sin(i * 91.7 + k * 17.31) * 43758.5453; return v - Math.floor(v); };
 
-  // o DESENHO (pixel art, vista de lado; a arraia é vista de cima) num canvas pequeno, guardado; silhueta = peixe ainda não pescado
+  // ------------------------------------------------------------------ (6.6.0) a PIXEL ART de cada peixe: 80×48, vista de lado (a arraia, de cima)
+  //   Um "pintor" de pixels: o corpo sai do perfil da espécie (formaDe), o rabo e as nadadeiras do tipo (e de alguns ids), as cores têm
+  //   degradê pontilhado (costas → barriga), sombra nas costas e embaixo, brilho no flanco, escamas (ou placas, ou couro liso), linha
+  //   lateral, guelra, olho com brilho, boca, bigodes, os desenhos da espécie e um contorno escuro. A MESMA arte vira o peixe 3D: cada
+  //   pixel vira um bloquinho com a grossura do corpo naquele ponto (geoDeArte, lá no módulo).
+  const ARTE_W = 80, ARTE_H = 48;
+  const hexC = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const mixC = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
+  const mulC = (a, k) => [a[0] * k, a[1] * k, a[2] * k];
+  const claroC = (a, k) => mixC(a, [255, 255, 255], k);
+  const hexDe = (c) => '#' + c.map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('');
+  const BAYER = [[0.125, 0.625], [0.875, 0.375]];
+  const RABO_REDONDO = new Set(['cara', 'acaraacu', 'jacunda', 'traira', 'trairao', 'jeju', 'tamoata', 'disco', 'aruana', 'aruanapreto', 'tucunare', 'tucunareacu', 'bodo', 'barrigudinho', 'pirarucu', 'cascudo', 'acarizebra', 'cangati']);
+  const CICLIDEOS = new Set(['cara', 'acaraacu', 'jacunda', 'tucunare', 'tucunareacu', 'disco']);
+  const PACUS = new Set(['pacu', 'pirapitinga', 'tambaqui', 'pacupeba', 'piranha', 'piranhapreta']);
+  const SEM_ADIPOSA = new Set(['pescada', 'apapa', 'barrigudinho', 'aruana', 'aruanapreto', 'pirarucu', 'traira', 'trairao', 'jeju']);
+  // Catmull-Rom nos pontos (u decrescente): valor em u
+  function curva(U, V, u) {
+    if (u >= U[0]) return V[0]; const n = U.length; if (u <= U[n - 1]) return V[n - 1];
+    let k = 0; while (k < n - 2 && u < U[k + 1]) k++;
+    const s = (U[k] - u) / (U[k] - U[k + 1]), p0 = V[Math.max(0, k - 1)], p1 = V[k], p2 = V[k + 1], p3 = V[Math.min(n - 1, k + 2)];
+    return 0.5 * (2 * p1 + (-p0 + p2) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (-p0 + 3 * p1 - 3 * p2 + p3) * s * s * s);
+  }
+  // { w, h, cor: [ [r,g,b] | null ], tipo (1 corpo, 2 nadadeira, 3 contorno), esp (grossura, em comprimentos), K (pixels por comprimento), cx, cy, deCima }
+  const cacheArte = new Map();
+  function artePeixe(i) {
+    if (cacheArte.has(i)) return cacheArte.get(i);
+    const A = PEIXES[i].f.t === 'r' ? arteArraia(i) : arteLado(i); cacheArte.set(i, A); return A;
+  }
+  function arteLado(i) {
+    const p = PEIXES[i], f = p.f, F = formaDe(i), t = f.t, X = F.x, id = p.id, W = ARTE_W, Hh = ARTE_H;
+    const cor = new Array(W * Hh).fill(null), tipo = new Uint8Array(W * Hh), esp = new Float32Array(W * Hh);
+    const C = hexC(f.c), Bc = hexC(f.b), N = hexC(f.n), PC = hexC(f.pc || '#2a2a2a');
+    const tem = (k) => X.indexOf(k) >= 0, cic = CICLIDEOS.has(id), pacu = PACUS.has(id), enguia = t === 'e';
+    const comp = enguia ? 1.15 : 1;
+    // --- o perfil (altura e largura ao longo do comprimento; u = 0,5 é o focinho, −0,5 o fim do rabo)
+    const nariz = { b: 0.55, c: 0.6, l: 0.32, p: 0.24, a: 0.34, d: 0.5, e: 0.6 }[t] || 0.26, hf = F.hf, wf = F.wf;
+    const UP = enguia ? [0.5, 0.46, 0.4, 0.25, 0.1, -0.05, -0.19, -0.31, -0.42, -0.5] : [0.5, 0.465, 0.4, 0.25, 0.1, -0.05, -0.19, -0.31, -0.37, -0.4];
+    const HP = enguia ? [0.55, 0.9, 1, 1, 1, 0.98, 0.9, 0.72, 0.42, 0.06] : [nariz * hf[0], (0.62 + 0.38 * nariz) * hf[0], hf[0], hf[1], hf[2], hf[3], hf[4], hf[5], 0.6 * hf[5], 0.56 * hf[5]];
+    const WP = enguia ? [0.5, 0.85, 1, 1, 1, 0.95, 0.85, 0.7, 0.45, 0.15] : [0.35 * wf[0], 0.75 * wf[0], wf[0], wf[1], wf[2], wf[3], wf[4], wf[5], 0.45 * wf[5], 0.35 * wf[5]];
+    const hAt = (u) => F.H * Math.max(0.02, curva(UP, HP, u)), wAt = (u) => F.W * Math.max(0.05, curva(UP, WP, u));
+    const aTop = { b: 0.6, c: 0.66, a: 0.5, d: 0.5, p: 0.53, l: 0.5, e: 0.5 }[t] || 0.52;
+    // --- quanto cabe: pixels por comprimento (K) e onde fica o meio (cx, cy)
+    const bigode = t === 'b' || tem('L') ? (tem('L') ? 0.2 : 0.11) : 0, bico = tem('S') || tem('P') ? 0.1 : 0;
+    const th = F.H * (tem('r') ? 1.35 : 0.95) * (t === 'b' ? 0.9 : 1);
+    const dors = t === 'c' ? 0.6 : t === 'b' ? 0.5 : pacu ? 0.42 : 0.34, anal = enguia ? 0.55 : 0.26;
+    const cima = Math.max(F.H * aTop + F.H * dors * 0.95, enguia ? 0 : th / 2), baixo = Math.max(F.H * (1 - aTop) + F.H * anal, enguia ? 0 : th / 2);
+    const uMin = -0.5 * comp, uMax = 0.5 * comp + Math.max(bico, bigode * 0.9);
+    const K = Math.min(68, (W - 5) / (uMax - uMin), (Hh - 5) / (cima + baixo));
+    const cx = W / 2 - (uMin + uMax) / 2 * K, cy = 2.5 + cima * K + ((Hh - 5) - (cima + baixo) * K) / 2;
+    const Xu = (u) => cx + u * comp * K, Uof = (x) => (x + 0.5 - cx) / (comp * K);
+    const put = (x, y, c, tp, e) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= Hh) return; const k = y * W + x; if (tp === 2 && tipo[k] === 1) return; cor[k] = c; tipo[k] = tp; esp[k] = e == null ? 0.016 : e; };
+    const ehCorpo = (x, y) => x >= 0 && y >= 0 && x < W && y < Hh && tipo[y * W + x] === 1;
+    // --- o corpo (guarda o alto e o baixo de cada coluna)
+    const topo = new Float32Array(W).fill(NaN), base = new Float32Array(W).fill(NaN);
+    const x0 = Math.floor(Xu(enguia ? -0.5 : -0.4)), x1 = Math.ceil(Xu(0.5)) - 1;
+    for (let x = x0; x <= x1; x++) {
+      const u = Uof(x), h = hAt(u) * K, a = cy - h * aTop, b = cy + h * (1 - aTop); topo[x] = a; base[x] = b;
+      let y0 = Math.round(a), y1 = Math.round(b) - 1; if (y1 < y0) { y0 = y1 = Math.round((a + b) / 2 - 0.5); }
+      const yc = (a + b) / 2, hh = Math.max(0.5, (b - a) / 2), w = wAt(u);
+      for (let y = y0; y <= y1; y++) { const k = (y + 0.5 - yc) / hh; put(x, y, C, 1, w * Math.sqrt(Math.max(0.08, 1 - k * k))); }
+    }
+    // focinho comprido (bicuda, peixe-lenha) ou bico de pato (jurupoca)
+    if (tem('S') || tem('P')) {
+      const xa = x1 + 1, xb = Math.round(Xu(0.5 + 0.1 / comp)), hb = (base[x1] - topo[x1]), ym = topo[x1] + hb * (tem('P') ? 0.6 : 0.55);
+      for (let x = xa; x <= xb; x++) { const s = (x - xa) / Math.max(1, xb - xa), hh = tem('P') ? hb * 0.22 * (s > 0.8 ? 0.7 : 1) : Math.max(0.5, hb * 0.28 * (1 - s)); for (let y = Math.round(ym - hh); y <= Math.round(ym + hh) - 1 || y === Math.round(ym - hh); y++) put(x, y, C, 1, 0.02); topo[x] = ym - hh; base[x] = ym + hh; }
+    }
+    // --- o rabo
+    const xp = Math.round(Xu(-0.37)), xt = Math.round(Xu(-0.5)), uPed = -0.38, hPed = hAt(uPed) * K, ycT = cy + hPed * (0.5 - aTop), thp = th * K;
+    const tc = tem('T') ? hexC('#d83020') : N;
+    if (!enguia) {
+      const red = RABO_REDONDO.has(id), trunc = t === 'c', fundo = pacu || t === 'b' ? 0.45 : 0.72;
+      for (let x = xp; x >= xt; x--) {
+        const s = (xp - x) / Math.max(1, xp - xt);
+        let out, inn = 0;
+        if (red) out = s < 0.6 ? lerpN(hPed / 2, thp / 2 * 0.9, suave(s / 0.6)) : thp / 2 * 0.9 * Math.sqrt(Math.max(0, 1 - ((s - 0.6) / 0.42) ** 2));
+        else if (trunc) out = lerpN(hPed / 2, thp / 2, s);
+        else { out = lerpN(hPed / 2, thp / 2, Math.pow(s, 0.85)); inn = s > 0.3 ? (s - 0.3) / 0.7 * thp / 2 * fundo : 0; }
+        for (let y = Math.floor(ycT - out); y <= Math.ceil(ycT + out); y++) {
+          const dy = y + 0.5 - ycT; if (Math.abs(dy) > out + 0.3 || Math.abs(dy) < inn) continue;
+          let c = tc; if ((Math.round(Math.abs(dy)) % 2) === 0) c = mulC(c, 0.84);
+          if (s < 0.18) c = mixC(c, C, 0.45);
+          if (f.p === 8) c = ((x + Math.round(Math.abs(dy))) >> 1) % 2 ? PC : N;
+          if (f.p === 6 && s > 0.55) c = mixC(c, PC, 0.65);
+          if (Math.abs(Math.abs(dy) - out) < 0.8 && s > 0.3) c = claroC(c, 0.12);
+          put(x, y, c, 2);
+        }
+        if (trunc && s > 0.9) { put(x - 1, ycT - out - 1, tc, 2); put(x - 2, ycT - out - 1, tc, 2); put(x - 1, ycT + out, tc, 2); put(x - 2, ycT + out, tc, 2); }
+      }
+    }
+    // --- as nadadeiras: [u da frente, u de trás, altura (fração de H), forma]
+    const ND = [], NA = [];
+    if (enguia) NA.push([0.28, -0.5, 0.55, 'enguia']);
+    else if (cic) { if (id === 'disco') { ND.push([0.32, -0.34, 0.22, 'baixa']); NA.push([0.12, -0.34, 0.22, 'baixa']); } else { ND.push([0.3, -0.3, id.indexOf('tucunare') === 0 ? 0.32 : 0.3, id.indexOf('tucunare') === 0 ? 'dupla' : 'longa']); NA.push([-0.06, -0.32, 0.26, 'longa']); } }
+    else if (pacu) { ND.push([0.12, -0.08, 0.42, 'tri']); ND.push([-0.26, -0.32, 0.1, 'adip']); NA.push([-0.04, -0.33, 0.26, 'tri']); }
+    else if (t === 'b') { ND.push([0.25, 0.1, 0.5, 'espinho']); ND.push([-0.1, -0.34, 0.13, 'baixa']); NA.push([-0.06, -0.32, 0.2, 'baixa']); }
+    else if (t === 'c') { ND.push([0.28, 0.0, 0.6, 'vela']); ND.push([-0.27, -0.32, 0.12, 'adip']); NA.push([-0.14, -0.26, 0.16, 'tri']); }
+    else if (id === 'aruana' || id === 'aruanapreto' || id === 'pirarucu') { ND.push([-0.15, -0.4, 0.24, 'baixa']); NA.push([-0.1, -0.4, 0.24, 'baixa']); }
+    else if (t === 'l' && (id === 'traira' || id === 'trairao' || id === 'jeju')) { ND.push([0.1, -0.12, 0.32, 'redonda']); NA.push([-0.14, -0.3, 0.24, 'redonda']); }
+    else if (t === 'l') { ND.push([-0.06, -0.22, 0.32, 'tri']); ND.push([-0.28, -0.33, 0.1, 'adip']); NA.push([-0.1, -0.32, 0.24, 'tri']); }
+    else { ND.push([0.1, -0.06, 0.36, 'tri']); if (!SEM_ADIPOSA.has(id)) ND.push([-0.25, -0.31, 0.1, 'adip']); NA.push([-0.1, -0.3, 0.24, 'tri']); }
+    const perfilN = (forma, s, x) => {
+      if (forma === 'tri') return s < 0.28 ? s / 0.28 : 1 - (s - 0.28) / 0.72 * 0.8;
+      if (forma === 'longa') { let v = 0.55 + 0.45 * suave((s - 0.35) / 0.5); if (s < 0.5 && x % 2) v -= 0.14; if (s > 0.9) v *= 1 - (s - 0.9) / 0.1 * 0.6; return s < 0.06 ? v * s / 0.06 : v; }
+      if (forma === 'dupla') { if (s < 0.06) return s / 0.06 * 0.6; if (s < 0.44) return 0.6 - (x % 2) * 0.14; if (s < 0.52) return 0.28; return Math.sin(Math.PI * Math.min(1, (s - 0.52) / 0.48 * 0.92 + 0.08)) * 1.0; }
+      if (forma === 'baixa') return (0.8 + 0.2 * Math.sin(Math.PI * s)) * (s < 0.1 ? s / 0.1 : s > 0.9 ? (1 - s) / 0.1 : 1);
+      if (forma === 'vela') return Math.pow(Math.sin(Math.PI * Math.min(1, s * 1.08)), 0.65);
+      if (forma === 'espinho') return s < 0.14 ? 1 : (1 - (s - 0.14) / 0.86) * 0.85;
+      if (forma === 'redonda') return Math.pow(Math.sin(Math.PI * s), 0.6);
+      if (forma === 'adip') return Math.sin(Math.PI * s);
+      if (forma === 'enguia') return (0.65 + 0.35 * Math.sin(Math.PI * s)) * (0.88 + 0.12 * Math.sin(x * 1.1)) * (s > 0.92 ? (1 - s) / 0.08 : 1);
+      return 0;
+    };
+    const nadadeira = ([u0, u1, alt, forma], emCima) => {
+      const xa = Math.round(Xu(u0)), xb = Math.round(Xu(u1));
+      for (let x = xa; x >= xb; x--) {
+        if (!(topo[x] === topo[x])) continue;
+        const s = (xa - x) / Math.max(1, xa - xb), hh = alt * F.H * K * perfilN(forma, s, x); if (hh < 0.5) continue;
+        const ad = forma === 'adip';
+        for (let k = 0; k < Math.round(hh); k++) {
+          const y = emCima ? Math.round(topo[x]) - 1 - k : Math.round(base[x]) + k;
+          let c = ad ? mixC(C, N, 0.3) : N;
+          if (!ad && (x % 2 === 0)) c = mulC(c, 0.82);
+          if (forma === 'espinho' && s < 0.14) c = mulC(N, 0.7);
+          if (forma === 'vela' && k === Math.round(hh) - 1 && x % 3 === 0) c = mulC(N, 0.6);
+          if (k >= Math.round(hh) - 1 && !ad) c = claroC(c, 0.14);
+          if (f.p === 6 && !emCima && s > 0.4) c = mixC(c, PC, 0.5);
+          put(x, y, c, 2);
+        }
+      }
+    };
+    for (const n of ND) nadadeira(n, true);
+    for (const n of NA) nadadeira(n, false);
+    if (!enguia) nadadeira([t === 'b' ? 0.02 : 0.07, t === 'b' ? -0.08 : -0.02, t === 'c' ? 0.24 : 0.17, 'tri'], false);   // pélvica
+    // --- as cores do corpo: degradê pontilhado, sombras, brilho e a textura da pele
+    const escama = t === 'p' || t === 'a' || t === 'l' || t === 'd', placas = t === 'c', liso = t === 'b' || enguia;
+    const vb = t === 'b' ? 0.58 : t === 'c' ? 0.74 : enguia ? 0.62 : 0.52;
+    for (let x = 0; x < W; x++) {
+      if (!(topo[x] === topo[x])) continue;
+      const a = topo[x], b = base[x], u = Uof(x);
+      for (let y = 0; y < Hh; y++) {
+        if (!ehCorpo(x, y)) continue;
+        const v = (y + 0.5 - a) / Math.max(1, b - a);
+        let c = v < vb - 0.1 ? C : v > vb + 0.1 ? Bc : ((v - (vb - 0.1)) / 0.2 > BAYER[y % 2][x % 2] ? Bc : C);
+        if (f.p === 6 && u < 0.05) c = mixC(c, PC, suave((0.05 - u) / 0.4) * 0.55 * (v > 0.3 ? 1 : 0.4));
+        if (v < 0.1) c = mulC(c, 0.78); else if (v < 0.2) c = mulC(c, 0.9); else if (v > 0.88) c = mulC(c, 0.84);
+        if (!liso && !placas && v > 0.2 && v < 0.3 && u > -0.25 && u < 0.32) c = claroC(c, 0.13);
+        if (escama && u < 0.3 && u > -0.37 && v > 0.08 && v < 0.9) {
+          const r = Math.floor(y / 3), xx = x + (r % 2) * 2;
+          if (y % 3 === 2 && xx % 4 === 0) c = mulC(c, 0.84);
+          else if (y % 3 === 0 && xx % 4 === 1) c = claroC(c, 0.07);
+          if (f.p === 6 && u < 0 && y % 3 === 2 && xx % 4 <= 1) c = mixC(c, PC, 0.7);
+        }
+        if (placas) { if (x % 4 === 0 && v > 0.12) c = mulC(c, 0.78); if (y % 4 === 0) c = mulC(c, 0.9); if (sem(i, x * 13 + y * 7) < 0.12) c = claroC(c, 0.15); }
+        if (liso && sem(i, x * 31 + y * 17) < 0.06) c = mulC(c, 0.9);
+        cor[y * W + x] = c;
+      }
+    }
+    // --- desenhos da espécie (só no corpo)
+    const pinta = (x, y, r, c, sobre) => { for (let dy = -Math.ceil(r); dy <= Math.ceil(r); dy++) for (let dx = -Math.ceil(r); dx <= Math.ceil(r); dx++) { if (dx * dx + dy * dy > r * r + 0.6) continue; const xx = Math.round(x + dx), yy = Math.round(y + dy); if (ehCorpo(xx, yy) || (sobre && xx >= 0 && yy >= 0 && xx < W && yy < Hh && cor[yy * W + xx])) cor[yy * W + xx] = c; } };
+    const yAt = (x, v) => topo[x] + (base[x] - topo[x]) * v;
+    const colX = (u) => Math.round(Xu(u));
+    if (f.p === 1) {                                                   // listras em pé (cachara: muitas e finas)
+      const fin = id === 'cachara', L = fin ? [0.3, 0.22, 0.14, 0.06, -0.02, -0.1, -0.18, -0.26] : id.indexOf('tucunare') === 0 ? [0.2, 0.03, -0.14] : id === 'aracu' ? [0.26, 0.14, 0.02, -0.1, -0.22] : [0.24, 0.1, -0.04, -0.18];
+      for (const u of L) { const xc = colX(u), lw = fin ? 1 : Math.max(2, Math.round(K * 0.035)); for (let x = xc - (lw >> 1); x < xc - (lw >> 1) + lw; x++) { if (!(topo[x] === topo[x])) continue; const ya = Math.round(yAt(x, 0.04)), yb = Math.round(yAt(x, fin ? 0.9 : 0.78)); for (let y = ya; y <= yb; y++) { const xw = fin ? x + Math.round(Math.sin(y * 0.7 + u * 20) * 0.6) : x; if (!fin && (y === yb || y === ya) && sem(i, x + y * 3) < 0.5) continue; if (ehCorpo(xw, y)) cor[y * W + xw] = mixC(cor[y * W + xw], PC, 0.85); } } }
+    }
+    if (f.p === 2 || f.p === 7) {                                      // pintas (escuras ou claras); piau: 3 manchas grandes no meio
+      if (tem('3')) for (const u of [0.18, -0.02, -0.22]) { const xc = colX(u); pinta(xc, yAt(xc, 0.48), Math.max(1.5, K * 0.03), PC); }
+      else { const n = Math.round(10 + (F.H * K) * 0.6); for (let k = 0; k < n; k++) { const u = 0.34 - sem(i, k) * 0.7, xc = colX(u); if (!(topo[xc] === topo[xc])) continue; pinta(xc, yAt(xc, 0.12 + sem(i, k + 50) * (f.p === 2 && t === 'b' ? 0.55 : 0.7)), sem(i, k + 90) < 0.3 ? 1.2 : 0.6, f.p === 7 ? claroC(PC, 0.1) : PC); }
+        if (id === 'pintado') for (let k = 0; k < 14; k++) { const xc = Math.round(xt + sem(i, k + 200) * (xp - xt)), yc = ycT + (sem(i, k + 210) - 0.5) * thp * 0.8; if (cor[Math.round(yc) * W + xc]) pinta(xc, yc, 0.6, PC, true); } }
+    }
+    if (f.p === 3) {                                                   // faixa deitada (piaba: azul brilhante no alto; dourado: linhas de pontinhos)
+      if (id === 'dourado') { for (let x = 0; x < W; x++) { if (!(topo[x] === topo[x]) || Uof(x) > 0.3) continue; for (let y = 0; y < Hh; y++) if (ehCorpo(x, y) && y % 3 === 1 && (x + (Math.floor(y / 3) % 2)) % 3 === 0) cor[y * W + x] = PC; } }
+      else { const v0 = id === 'piaba' ? 0.36 : 0.44, lw = id === 'lenha' || id === 'cuiucuiu' ? 1 : Math.max(1, Math.round(F.H * K * 0.1)); for (let x = colX(0.36); x >= colX(-0.37); x--) { if (!(topo[x] === topo[x])) continue; const y0 = Math.round(yAt(x, v0)); for (let k = 0; k < lw; k++) if (ehCorpo(x, y0 + k)) cor[(y0 + k) * W + x] = id === 'piaba' ? claroC(PC, 0.25 * (k === 0)) : PC; if (id === 'cuiucuiu' && x % 3 === 0 && ehCorpo(x, y0 - 1)) cor[(y0 - 1) * W + x] = claroC(PC, 0.3); } }
+    }
+    if (f.p === 5) {
+      if (id === 'disco') { for (let k = 0; k < 7; k++) { for (let x = colX(0.36); x >= colX(-0.34); x--) { if (!(topo[x] === topo[x])) continue; const y = Math.round(yAt(x, 0.1 + k * 0.13) + Math.sin(x * 0.55 + k) * 1.1); if (ehCorpo(x, y)) cor[y * W + x] = PC; } } }
+      else { for (let k = 0; k < 7; k++) { const xc0 = colX(0.36 - k * 0.105); for (let y = 0; y < Hh; y++) { const xw = xc0 + Math.round(Math.sin(y * 0.6 + k) * 1.2); for (let d = 0; d < 2; d++) if (ehCorpo(xw + d, y)) cor[y * W + xw + d] = PC; } } }
+    }
+    if (f.p === 4 && t !== 'r') { const xc = colX(-0.34); pinta(xc, ycT, 2.6, PC); pinta(xc, ycT, 1.2, [16, 16, 16]); }
+    if (tem('o')) { const xc = colX(-0.345); pinta(xc, ycT, 2.4, hexC('#f08030')); pinta(xc, ycT, 1.3, [20, 18, 16]); }
+    if (tem('m')) for (let k = 0; k < 5; k++) { const xc = colX(0.22 - k * 0.12); pinta(xc, yAt(xc, 0.5 + (sem(i, k) - 0.5) * 0.4), 1.4 + sem(i, k + 5), hexC('#e86030')); }
+    if (tem('w')) for (let k = 0; k < 14; k++) { const xc = colX(0.32 - sem(i, k + 3) * 0.64); if (topo[xc] === topo[xc]) pinta(xc, yAt(xc, 0.12 + sem(i, k + 7) * 0.5), 0.4, hexC('#f8f4e8')); }
+    if (tem('k')) { const xc = colX(0.26); pinta(xc, yAt(xc, 0.4), 1.3, [16, 16, 16]); }
+    // --- linha lateral, guelra, nadadeira peitoral, olho, boca, dentes e bigodes
+    if (!placas) for (let x = colX(0.3); x >= colX(-0.36); x--) { if (!(topo[x] === topo[x])) continue; const y = Math.round(yAt(x, liso ? 0.46 : 0.4)); if (ehCorpo(x, y) && (liso || x % 2 === 0)) cor[y * W + x] = liso ? claroC(cor[y * W + x], 0.22) : claroC(cor[y * W + x], 0.3); }
+    { const xg = colX(enguia ? 0.36 : t === 'b' ? 0.31 : 0.3); if (topo[xg] === topo[xg]) for (let y = Math.round(yAt(xg, 0.18)); y <= Math.round(yAt(xg, 0.86)); y++) { const v = (y + 0.5 - topo[xg]) / (base[xg] - topo[xg]), xx = xg - Math.round(Math.sin(Math.PI * v) * 1.6); if (ehCorpo(xx, y)) cor[y * W + xx] = mulC(cor[y * W + xx], 0.66); if (ehCorpo(xx - 1, y)) cor[y * W + xx - 1] = claroC(cor[y * W + xx - 1], 0.1); } }
+    if (!enguia) { const xa = colX(0.29), xb = colX(t === 'b' || t === 'c' ? 0.12 : 0.17); for (let x = xa; x >= xb; x--) { if (!(topo[x] === topo[x])) continue; const s = (xa - x) / Math.max(1, xa - xb), yc = yAt(x, 0.64 + s * 0.08), hh = Math.max(0.5, (base[x] - topo[x]) * lerpN(0.12, 0.0, Math.pow(s, 0.8))); for (let y = Math.round(yc - hh); y <= Math.round(yc + hh); y++) if (ehCorpo(x, y)) cor[y * W + x] = mixC(cor[y * W + x], (y % 2 ? mulC(N, 0.8) : N), 0.55 - s * 0.15); } }
+    const xo = colX(t === 'b' ? 0.415 : t === 'c' ? 0.37 : enguia ? 0.43 : 0.395), hcab = (base[xo] - topo[xo]) || 4, yo = yAt(xo, t === 'b' || t === 'c' ? 0.3 : 0.36);
+    {                                                                  // o olho: íris (clara, ou vermelha), pupila escura para a frente e um pontinho de brilho
+      const es = Math.max(2, Math.min(pacu ? 5 : 4, Math.round(hcab * (t === 'b' ? 0.13 : 0.2) + 0.6))), ex = Math.round(xo - es / 2), ey = Math.round(yo - es / 2);
+      const iris = tem('R') ? hexC('#d02020') : t === 'b' || t === 'c' ? hexC('#cfc6a4') : hexC('#f0e2b0');
+      for (let dy = 0; dy < es; dy++) for (let dx = 0; dx < es; dx++) { if (es >= 3 && (dx === 0 || dx === es - 1) && (dy === 0 || dy === es - 1)) continue; if (ehCorpo(ex + dx, ey + dy)) cor[(ey + dy) * W + ex + dx] = iris; }
+      const ps = es >= 3 ? 2 : 1, px0 = ex + es - ps - (es >= 4 ? 1 : 0), py0 = ey + (es >= 4 ? 1 : es - ps);
+      for (let dy = 0; dy < ps; dy++) for (let dx = 0; dx < ps; dx++) if (ehCorpo(px0 + dx, py0 + dy)) cor[(py0 + dy) * W + px0 + dx] = [14, 14, 16];
+      if (es >= 3 && ehCorpo(px0, py0)) cor[py0 * W + px0] = [250, 250, 244];
+      if (es >= 3) for (let dx = 0; dx < es; dx++) if (ehCorpo(ex + dx, ey - 1) && dx > 0 && dx < es - 1) cor[(ey - 1) * W + ex + dx] = mulC(cor[(ey - 1) * W + ex + dx], 0.75);   // a "sobrancelha" (sombra em cima do olho)
+    }
+    { const xm = Math.round(Xu(0.5)) - 1, ym = Math.round(yAt(Math.min(W - 1, xm), id.indexOf('aruana') === 0 ? 0.3 : 0.56)), up = id.indexOf('aruana') === 0;
+      for (let k = 0; k < Math.max(2, Math.round(K * 0.04)); k++) { const x = xm - k, y = up ? ym + Math.round(k * 0.6) : ym; if (ehCorpo(x, y)) cor[y * W + x] = mulC(cor[y * W + x], 0.45); }
+      if (tem('d')) for (let k = 1; k < 4; k += 1) { const x = xm - k; if (ehCorpo(x, ym + 1)) cor[(ym + 1) * W + x] = k % 2 ? [248, 248, 240] : cor[(ym + 1) * W + x]; if (k % 2 && ehCorpo(x, ym - 1)) cor[(ym - 1) * W + x] = [248, 248, 240]; }
+      if (t === 'b' || tem('L')) {                                    // bigodes: um em cima (longo nos 'L') e dois no queixo
+        const Lb = (tem('L') ? 0.2 : 0.1) * K, bc = mixC(N, [230, 220, 200], 0.35);
+        for (let k = 0; k <= Lb; k++) { const x = xm + 1 + k, y = Math.round(yAt(Math.min(W - 1, xm), 0.42) - Math.sin(k / Lb * 2.2) * Lb * 0.18 + (k / Lb) * Lb * 0.25); put(x, y, bc, 2, 0.01); }
+        for (const [vv, LL] of [[0.85, 0.55], [0.9, 0.4]]) for (let k = 0; k <= Lb * LL; k++) put(xm - 1 + k * 0.7, yAt(Math.min(W - 1, xm), vv) + k * 0.55, bc, 2, 0.01);
+      }
+      if (tem('B')) { const bc = mulC(N, 0.9); for (let k = 0; k < Math.round(K * 0.1); k++) put(xm + k, base[Math.min(W - 1, xm)] - 1 + k * 0.15, bc, 2, 0.01); }
+    }
+    // --- o contorno (um pixel escuro em volta, puxando para a cor vizinha)
+    const fora = [];
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+      if (cor[y * W + x]) continue; let viz = null, e = 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= W || yy >= Hh) continue; const k = yy * W + xx; if (cor[k] && tipo[k] !== 3) { if (!viz || tipo[k] === 1) { viz = cor[k]; e = tipo[k] === 1 ? esp[k] * 0.8 : 0.014; } } }
+      if (viz) fora.push([y * W + x, mixC(mulC(viz, 0.32), [22, 14, 8], 0.35), e]);
+    }
+    for (const [k, c, e] of fora) { cor[k] = c; tipo[k] = 3; esp[k] = Math.max(0.01, e); }
+    return { w: W, h: Hh, cor, tipo, esp, K: K * comp, cx, cy, deCima: false };
+  }
+  // a arraia (de cima): disco com ocelos laranja, olhos em cima, borda mais clara, rabo com ferrão
+  function arteArraia(i) {
+    const p = PEIXES[i], f = p.f, W = ARTE_W, Hh = ARTE_H, cor = new Array(W * Hh).fill(null), tipo = new Uint8Array(W * Hh), esp = new Float32Array(W * Hh);
+    const C = hexC(f.c), N = hexC(f.n), PC = hexC(f.pc || '#e88030'), rx = 19, ry = 21, cxD = 49, cy = 24, K = 2 * rx + 26;
+    const put = (x, y, c, tp, e) => { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= Hh) return; const k = y * W + x; cor[k] = c; tipo[k] = tp; esp[k] = e; };
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+      const nx = (x + 0.5 - cxD) / rx, ny = (y + 0.5 - cy) / ry, r = Math.hypot(nx, ny); if (r > 1) continue;
+      let c = C; if (r > 0.86) c = claroC(C, 0.12); else if (sem(i, x * 11 + y * 5) < 0.12) c = mulC(C, 0.88);
+      if (r < 0.5 && nx > -0.2 && Math.abs(ny) < 0.25) c = mulC(c, 0.92);
+      put(x, y, c, 1, 0.13 * Math.sqrt(Math.max(0.05, 1 - r * r)));
+    }
+    for (const sg of [-1, 1]) for (let k = 0; k < 7; k++) for (let j = 0; j < 4 - (k >> 1); j++) put(cxD - rx + 3 - k * 0.5 + j, cy + sg * (ry - 7 + k), mulC(C, 0.9), 2, 0.02);   // as pélvicas
+    for (let x = cxD - rx; x >= cxD - rx - 26; x--) { const s = (cxD - rx - x) / 26, hh = lerpN(2.2, 0.5, s); for (let y = Math.round(cy - hh); y <= Math.round(cy + hh) - 1 || y === Math.round(cy - hh); y++) put(x, y, (x % 3 === 0 ? mulC(N, 0.8) : N), 1, 0.03 * (1 - s) + 0.01); }
+    for (let k = 0; k < 6; k++) put(cxD - rx - 12 - k, cy - 2 - (k >> 1), [232, 224, 200], 2, 0.008);   // o ferrão
+    const ang = 2.39996;                                                // ocelos em espiral (ângulo de ouro): anel escuro, laranja e o miolo
+    for (let k = 0; k < 11; k++) {
+      const rr = 0.22 + 0.62 * Math.sqrt((k + 0.5) / 11), a = k * ang + sem(i, k) * 0.4, x = cxD + Math.cos(a) * rr * rx * 0.92, y = cy + Math.sin(a) * rr * ry * 0.92;
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) { const d = Math.hypot(dx, dy), xx = Math.round(x + dx), yy = Math.round(y + dy), q = yy * W + xx; if (xx < 0 || yy < 0 || xx >= W || yy >= Hh || tipo[q] !== 1) continue; if (d <= 0.8) cor[q] = mixC(PC, [250, 236, 140], 0.55); else if (d <= 2.1) cor[q] = PC; else if (d <= 3.0) cor[q] = mulC(C, 0.5); }
+    }
+    for (const sg of [-1, 1]) { const x = cxD + 9, y = cy + sg * 4; put(x, y, [16, 16, 16], 1, 0.15); put(x + 1, y, [16, 16, 16], 1, 0.15); put(x - 1, y, mulC(C, 0.6), 1, 0.15); put(x - 3, y + sg, mulC(C, 0.45), 1, 0.13); put(x, y - 1, claroC(C, 0.3), 1, 0.15); }
+    const fora = [];
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { if (cor[y * W + x]) continue; let viz = null; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (xx >= 0 && yy >= 0 && xx < W && yy < Hh && cor[yy * W + xx] && tipo[yy * W + xx] !== 3) viz = cor[yy * W + xx]; } if (viz) fora.push([y * W + x, mixC(mulC(viz, 0.32), [22, 14, 8], 0.35)]); }
+    for (const [k, c] of fora) { cor[k] = c; tipo[k] = 3; esp[k] = 0.012; }
+    return { w: W, h: Hh, cor, tipo, esp, K, cx: cxD - 13, cy, deCima: true };
+  }
+  // o DESENHO num canvas (guardado); silhueta = peixe ainda não pescado (só a sombra, sem detalhe)
   const cacheIcone = new Map();
   function iconePeixe(i, silhueta) {
     const ch = i + (silhueta ? 's' : ''); if (cacheIcone.has(ch)) return cacheIcone.get(ch);
-    const W = 48, Hc = 32, cv = document.createElement('canvas'); cv.width = W; cv.height = Hc; const g = cv.getContext('2d');
-    const p = PEIXES[i], f = p.f, F = formaDe(i), K = 38, cx = 23, cy = 16;
-    const cor = (c) => (silhueta ? '#24170c' : c);
-    const ret = (x0, y0, x1, y1, c) => { const a = Math.round(Math.min(x0, x1)), b = Math.round(Math.min(y0, y1)), w = Math.max(1, Math.round(Math.abs(x1 - x0))), h = Math.max(1, Math.round(Math.abs(y1 - y0))); g.fillStyle = cor(c); g.fillRect(a, b, w, h); };
-    const X = (u) => cx + u * K, Y = (v) => cy - v * K;
-    if (f.t === 'r') {                                                // arraia: de cima (disco + rabo)
-      const R = 0.36 * K; for (let yy = -R; yy <= R; yy++) { const w = Math.sqrt(Math.max(0, R * R - yy * yy)); ret(cx + 4 - w, cy + yy, cx + 4 + w, cy + yy + 1, f.c); }
-      ret(cx + 4 - R - 13, cy - 0.5, cx + 4 - R + 1, cy + 0.5, f.n);
-      if (!silhueta) { for (let k = 0; k < 9; k++) { const a = sem(i, k) * 6.28, r = (0.25 + sem(i, k + 20) * 0.6) * R; ret(cx + 4 + Math.cos(a) * r - 1, cy + Math.sin(a) * r - 1, cx + 4 + Math.cos(a) * r + 1, cy + Math.sin(a) * r + 1, f.pc || '#e88030'); }
-        ret(cx + 10, cy - 4, cx + 12, cy - 2, '#101010'); ret(cx + 10, cy + 2, cx + 12, cy + 4, '#101010'); }
-      cacheIcone.set(ch, cv); return cv;
-    }
-    const H = F.H, comp = f.t === 'e' ? 1.15 : 1;
-    // rabo (nadadeira caudal): dois lóbulos (a enguia não tem)
-    if (f.t !== 'e') {
-      const th = H * (F.x.indexOf('r') >= 0 ? 1.35 : 0.95) * (f.t === 'b' ? 0.9 : 1), tc = F.x.indexOf('T') >= 0 ? '#d83020' : f.n;
-      ret(X(-0.5), Y(th / 2), X(-0.38), Y(0.04), tc); ret(X(-0.5), Y(-0.04), X(-0.38), Y(-th / 2), tc);
-      ret(X(-0.4), Y(0.06), X(-0.36), Y(-0.06), tc);
-      if (f.p === 8 && !silhueta) for (let k = 0; k < 3; k++) ret(X(-0.49 + k * 0.04), Y(th / 2), X(-0.47 + k * 0.04), Y(-th / 2), f.pc);
-    }
-    // nadadeira de cima e de baixo
-    ret(X(f.t === 'l' ? -0.24 : -0.08), Y(H / 2 + H * 0.28), X(f.t === 'l' ? -0.04 : 0.16), Y(H / 2 - 0.01), f.n);
-    ret(X(-0.24), Y(-H / 2 + 0.01), X(-0.1), Y(-H / 2 - H * 0.18), f.n);
-    if (f.t === 'e') ret(X(-0.5), Y(-H / 2 + 0.01), X(0.2), Y(-H / 2 - H * 0.5), f.n);
-    // corpo: fatias (costas em cima, barriga embaixo)
-    FATIAS_X.forEach((xc, k) => {
-      const h = H * F.hf[k], x0 = X((xc - FATIA_L / 2) * comp), x1 = X((xc + FATIA_L / 2) * comp);
-      ret(x0, Y(h / 2), x1, Y(-h / 2 + h * 0.42), f.c); ret(x0, Y(-h / 2 + h * 0.42), x1, Y(-h / 2), f.p === 6 && k >= 3 ? f.pc : f.b);
-    });
-    if (F.x.indexOf('S') >= 0 || F.x.indexOf('P') >= 0) ret(X(0.475), Y(H * 0.12), X(0.58), Y(-H * 0.08), f.c);   // focinho comprido / bico de pato
-    if (silhueta) { cacheIcone.set(ch, cv); return cv; }
-    // desenhos
-    const pc = f.pc || '#2a2a2a';
-    if (f.p === 1) for (const xc of [0.24, 0.08, -0.08, -0.22]) ret(X(xc - 0.02), Y(H * 0.42), X(xc + 0.02), Y(-H * 0.3), pc);
-    if (f.p === 5) for (let k = 0; k < 8; k++) { const xc = 0.36 - k * 0.09; ret(X(xc - 0.015), Y(H * 0.45), X(xc + 0.015), Y(-H * 0.45), pc); }
-    if (f.p === 2 || f.p === 7) for (let k = 0; k < (F.x.indexOf('3') >= 0 ? 3 : 9); k++) { const xc = F.x.indexOf('3') >= 0 ? 0.2 - k * 0.2 : 0.34 - sem(i, k) * 0.66, yc = F.x.indexOf('3') >= 0 ? 0 : (sem(i, k + 9) - 0.5) * H * 0.7; ret(X(xc) - 1, Y(yc) - 1, X(xc) + 1, Y(yc) + 1, pc); }
-    if (f.p === 3) ret(X(0.38), Y(0.012), X(-0.36), Y(-0.012), pc);
-    if (f.p === 4 || F.x.indexOf('o') >= 0) { ret(X(-0.37) - 2, Y(0.02) - 2, X(-0.37) + 2, Y(0.02) + 2, f.p === 4 ? pc : '#e86030'); ret(X(-0.37) - 1, Y(0.02) - 1, X(-0.37) + 1, Y(0.02) + 1, '#101010'); }
-    if (F.x.indexOf('m') >= 0) for (let k = 0; k < 4; k++) ret(X(0.2 - k * 0.14) - 1, Y((sem(i, k) - 0.5) * H * 0.6) - 1, X(0.2 - k * 0.14) + 2, Y((sem(i, k) - 0.5) * H * 0.6) + 1, '#e86030');
-    if (F.x.indexOf('w') >= 0) for (let k = 0; k < 8; k++) ret(X(0.3 - sem(i, k + 3) * 0.6), Y((sem(i, k + 7) - 0.5) * H * 0.6), X(0.3 - sem(i, k + 3) * 0.6) + 1, Y((sem(i, k + 7) - 0.5) * H * 0.6) + 1, '#f8f4e8');
-    if (F.x.indexOf('k') >= 0) ret(X(0.27) - 1, Y(0.03) - 1, X(0.27) + 1, Y(0.03) + 1, '#101010');
-    if (f.b === '#d8402a' || F.x.indexOf('v') >= 0) { /* barriga vermelha já está na cor */ }
-    // olho, boca, bigodes
-    const ex = X(0.38), ey = Y(H * 0.12);
-    ret(ex - 1, ey - 1, ex + 2, ey + 2, F.x.indexOf('R') >= 0 ? '#d02020' : '#f4f0e0'); ret(ex, ey, ex + 1, ey + 1, '#101010');
-    if (F.x.indexOf('d') >= 0) ret(X(0.44), Y(-H * 0.18), X(0.47), Y(-H * 0.24), '#f8f8f0');
-    if (f.t === 'b' || F.x.indexOf('L') >= 0) { const L = F.x.indexOf('L') >= 0 ? 0.22 : 0.12; ret(X(0.46), Y(-H * 0.05), X(0.46 + L), Y(-H * 0.05) + 1, f.n); ret(X(0.44), Y(-H * 0.28), X(0.44 + L * 0.7), Y(-H * 0.28) + 1, f.n); }
-    if (F.x.indexOf('B') >= 0) ret(X(0.46), Y(-H * 0.32), X(0.56), Y(-H * 0.32) + 1, f.n);
-    cacheIcone.set(ch, cv); return cv;
+    const A = artePeixe(i), cv = document.createElement('canvas'); cv.width = A.w; cv.height = A.h;
+    const g = cv.getContext('2d'), im = g.createImageData(A.w, A.h), d = im.data;
+    for (let k = 0; k < A.cor.length; k++) { const c = A.cor[k]; if (!c) continue; const s = silhueta ? (A.tipo[k] === 3 ? [16, 10, 4] : [42, 28, 16]) : c; d[k * 4] = Math.max(0, Math.min(255, s[0])); d[k * 4 + 1] = Math.max(0, Math.min(255, s[1])); d[k * 4 + 2] = Math.max(0, Math.min(255, s[2])); d[k * 4 + 3] = 255; }
+    g.putImageData(im, 0, 0); cacheIcone.set(ch, cv); return cv;
   }
 
   // ================================================================== o módulo (um por cidade aberta)
@@ -661,10 +923,37 @@
     // na mão direita (antebraço = cotovelo): o ângulo deixa a vara para a frente e uns 40° para cima na pose de segurar
     function varaNaMao(m, Vr) { Vr.raiz.position.set(0, -0.27, 0); Vr.raiz.rotation.set(0, 0, -2.47); m.bracoD.cotovelo.add(Vr.raiz); }
     function tirarVara(Vr) { if (Vr && Vr.raiz.parent) Vr.raiz.parent.remove(Vr.raiz); }
+    // (6.6.0) a BOIA (bico branco, faixa amarela, cabeça vermelha e a antena) — a origem fica na linha d'água
     function criarBoia() {
-      const G = new api.Geo(); G.box(0.08, 0.07, 0.08, '#e83a2a', 0, 0.02, 0); G.box(0.075, 0.06, 0.075, '#f4f4ec', 0, -0.04, 0); G.box(0.015, 0.1, 0.015, '#1c1c1f', 0, 0.09, 0);
+      const G = new api.Geo();
+      G.box(0.034, 0.03, 0.034, '#f4f4ec', 0, -0.085, 0); G.box(0.072, 0.056, 0.072, '#f4f4ec', 0, -0.058, 0); G.box(0.08, 0.014, 0.08, '#f2c230', 0, -0.004, 0);
+      G.box(0.08, 0.052, 0.08, '#e83a2a', 0, 0.01, 0); G.box(0.05, 0.022, 0.05, '#c8281c', 0, 0.062, 0); G.box(0.012, 0.085, 0.012, '#1c1c1f', 0, 0.084, 0); G.box(0.02, 0.02, 0.02, '#e83a2a', 0, 0.166, 0);
       const m = G.malha(api.MAT); m.visible = false; grupo().add(m); return m;
     }
+    // o ANZOL com o CHUMBINHO e a ISCA (uma de cada tipo, só a da vez fica visível). Origem = o olho do anzol (a linha chega aqui de cima).
+    //   Tudo um pouco maior que o de verdade, para dar para ver da câmera.
+    function criarAnzol() {
+      const g = new THREE.Group(), A = new api.Geo(), pr = '#c8ccd2';
+      A.box(0.026, 0.026, 0.026, '#7a7e86', 0, 0.06, 0); A.box(0.014, 0.012, 0.014, '#9aa0a8', 0, 0.086, 0);             // o chumbinho
+      A.box(0.008, 0.065, 0.008, pr, 0, -0.065, 0); A.box(0.014, 0.008, 0.008, pr, 0, 0.0, 0);                           // a haste e o olho
+      A.box(0.034, 0.008, 0.008, pr, 0.013, -0.072, 0); A.box(0.008, 0.03, 0.008, pr, 0.028, -0.066, 0); A.box(0.007, 0.007, 0.008, '#e8ecf0', 0.022, -0.045, 0);   // a curva, a ponta e a farpa
+      g.add(A.malha(api.MAT));
+      const iscas = ISCAS.map((_, k) => {
+        const G = new api.Geo();
+        if (k === 0) { for (const [x, y, c] of [[-0.012, -0.02, '#c86a5a'], [0.008, -0.04, '#a84a3a'], [0.022, -0.058, '#c86a5a'], [0.03, -0.034, '#a84a3a'], [-0.016, -0.06, '#c86a5a'], [-0.02, -0.085, '#a84a3a']]) G.box(0.022, 0.026, 0.02, c, x, y, 0); }
+        else if (k === 1) { G.box(0.05, 0.046, 0.046, '#e8d8b0', 0.01, -0.075, 0); G.box(0.04, 0.012, 0.04, '#f4ead0', 0.006, -0.03, 0); G.box(0.012, 0.01, 0.02, '#fff8e8', 0.022, -0.04, 0.02); }
+        else if (k === 2) { for (const [x, y] of [[0, -0.022], [0.002, -0.048], [0.02, -0.07]]) { G.box(0.024, 0.024, 0.02, '#f2d040', x, y, 0); G.box(0.01, 0.01, 0.022, '#e0b020', x + 0.006, y + 0.012, 0); } }
+        else if (k === 3) { G.box(0.056, 0.022, 0.022, '#6a8a3a', 0.008, -0.058, 0); G.box(0.02, 0.02, 0.02, '#4a6a2a', 0.044, -0.056, 0); for (const sx of [-0.016, 0.004, 0.024]) G.box(0.006, 0.026, 0.03, '#4a6a2a', sx, -0.078, 0); G.box(0.004, 0.03, 0.004, '#2a3a1a', 0.05, -0.04, 0.006); }
+        else if (k === 4) { for (const [x, y, w] of [[0.026, -0.03, 0.022], [0.016, -0.05, 0.024], [0.0, -0.064, 0.024], [-0.018, -0.066, 0.02]]) G.box(w, 0.02, 0.02, '#f0a080', x, y, 0); G.box(0.016, 0.03, 0.026, '#e07050', -0.032, -0.072, 0); G.box(0.006, 0.006, 0.026, '#101010', 0.034, -0.016, 0); G.box(0.03, 0.003, 0.003, '#c86040', 0.05, -0.012, 0); }
+        else if (k === 5) { G.box(0.044, 0.042, 0.042, '#a8402a', 0.012, -0.072, 0); G.box(0.012, 0.012, 0.012, '#d86a4a', 0.02, -0.044, 0.016); G.box(0.006, 0.018, 0.006, '#4a3a20', 0.012, -0.03, 0); G.box(0.024, 0.006, 0.014, '#5a8a3a', 0.024, -0.02, 0); }
+        else if (k === 6) { G.box(0.1, 0.02, 0.016, '#5a6a5a', 0.012, -0.075, 0); G.box(0.08, 0.008, 0.017, '#8a9a8a', 0.012, -0.079, 0); G.box(0.02, 0.026, 0.004, '#4a5a4a', -0.044, -0.079, 0); G.box(0.006, 0.006, 0.018, '#101010', 0.052, -0.068, 0); }
+        else { G.box(0.074, 0.026, 0.02, '#3fb7f0', 0.012, -0.08, 0); G.box(0.07, 0.01, 0.021, '#f2f2ee', 0.012, -0.08, 0); G.box(0.008, 0.008, 0.022, '#101010', 0.04, -0.066, 0); G.box(0.026, 0.018, 0.004, '#d8d8d8', 0.06, -0.074, 0);
+          for (const dx of [-0.012, 0.0, 0.012]) G.box(0.004, 0.022, 0.004, pr, -0.01 + dx, -0.104, dx * 0.6); }
+        const mm = G.malha(api.MAT); mm.visible = false; g.add(mm); return mm;
+      });
+      g.iscas = iscas; g.visible = false; grupo().add(g); return g;
+    }
+    function iscaNoAnzol(g, k) { g.iscas.forEach((m, q) => { m.visible = q === k; }); }
     const MAT_LINHA = new THREE.LineBasicMaterial({ color: 0xe8e8e0, transparent: true, opacity: 0.8 });
     function criarLinha() {
       const N = 16, g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(new Array(N * 3).fill(0), 3));
@@ -687,51 +976,53 @@
       const G = new api.Geo(); G.box(0.3, 0.32, 0.3, '#2f7fb8', 0, 0, 0); G.box(0.32, 0.03, 0.32, '#3a8ac8', 0, 0.3, 0); G.box(0.26, 0.02, 0.26, '#5a9ad0', 0, 0.24, 0);
       const m = G.malha(api.MAT); m.position.set(BALDE.x, Y_PIER, BALDE.z); m.visible = false; grupo().add(m); return m;
     }
-    // o PEIXE 3D: comprimento 1 (cabeça para +x), centrado; a escala é o comprimento de verdade (ver comprimentoDe)
+    // (6.6.0) o PEIXE 3D sai da MESMA pixel art: cada pixel vira um bloquinho (frente e trás com a cor do pixel; os lados só onde o vizinho
+    //   é mais fino), com a grossura do corpo naquele ponto — o peixe tem volume e mostra todos os detalhes do desenho.
+    //   Comprimento 1 (cabeça para +x), centrado; a escala é o comprimento de verdade (ver comprimentoDe). A arraia fica deitada.
     const geoPeixes = new Map();
-    function geoPeixe(i) {
-      if (geoPeixes.has(i)) return geoPeixes.get(i);
-      const p = PEIXES[i], f = p.f, F = formaDe(i), G = new api.Geo(), box = (w, h, d, cor, x, yc, z) => G.box(w, h, d, cor, x, yc - h / 2, z);
-      if (f.t === 'r') {                                                // arraia: disco achatado + rabo
-        for (let k = -4; k <= 4; k++) { const wx = Math.sqrt(1 - (k / 4.6) * (k / 4.6)) * 0.62; box(wx, 0.03, 0.075, f.c, 0.12, 0.015, k * 0.075); box(wx, 0.025, 0.075, f.b, 0.12, -0.012, k * 0.075); }
-        box(0.55, 0.022, 0.022, f.n, -0.45, 0.01, 0); for (let k = 0; k < 9; k++) { const a = sem(i, k) * 6.28, r = 0.08 + sem(i, k + 20) * 0.18; box(0.04, 0.005, 0.04, f.pc, 0.12 + Math.cos(a) * r, 0.033, Math.sin(a) * r); }
-        box(0.03, 0.02, 0.03, '#101010', 0.32, 0.04, 0.06); box(0.03, 0.02, 0.03, '#101010', 0.32, 0.04, -0.06);
-      } else {
-        const H = F.H, W = F.W, comp = f.t === 'e' ? 1.15 : 1;
-        FATIAS_X.forEach((xc, k) => {
-          const h = H * F.hf[k], w = W * F.wf[k], x = xc * comp, L = FATIA_L * comp + 0.002;
-          box(L, h * 0.58, w, f.c, x, h / 2 - h * 0.29, 0); box(L, h * 0.42, w * 0.96, f.p === 6 && k >= 3 ? f.pc : f.b, x, -h / 2 + h * 0.21, 0);
-          const lado = w / 2 + 0.003;                                     // desenhos nos dois lados
-          for (const sz of [-1, 1]) {
-            if (f.p === 1 && k >= 1 && k <= 4) box(0.035, h * 0.72, 0.006, f.pc, x, h * 0.05, sz * lado);
-            if (f.p === 5) { box(0.025, h * 0.85, 0.006, f.pc, x - 0.035, 0, sz * lado); box(0.025, h * 0.85, 0.006, f.pc, x + 0.04, 0, sz * lado); }
-            if (f.p === 3) box(L, Math.max(0.012, h * 0.08), 0.006, f.pc, x, 0, sz * lado);
-            if ((f.p === 2 || f.p === 7) && k <= 4) for (let q = 0; q < 2; q++) box(0.03, 0.03, 0.006, f.pc, x + (sem(i, k * 3 + q) - 0.5) * 0.12, (sem(i, k * 5 + q) - 0.5) * h * 0.6, sz * lado);
-            if (F.x.indexOf('w') >= 0 && k <= 4) box(0.02, 0.02, 0.006, '#f8f4e8', x + (sem(i, k + 40) - 0.5) * 0.1, (sem(i, k + 50) - 0.5) * h * 0.5, sz * lado);
-          }
-        });
-        const tc = F.x.indexOf('T') >= 0 ? '#d83020' : f.n;
-        if (f.t !== 'e') { const th = H * (F.x.indexOf('r') >= 0 ? 1.35 : 0.95) * (f.t === 'b' ? 0.9 : 1);
-          box(0.13, th * 0.46, 0.018, tc, -0.445, th * 0.27, 0); box(0.13, th * 0.46, 0.018, tc, -0.445, -th * 0.27, 0); box(0.05, H * 0.3, 0.02, tc, -0.385, 0, 0);
-          if (f.p === 8) for (let k = 0; k < 3; k++) box(0.02, th * 0.9, 0.022, f.pc, -0.48 + k * 0.035, 0, 0); }
-        box(0.22, H * 0.28, 0.018, f.n, f.t === 'l' ? -0.14 : 0.04, H / 2 + H * 0.12, 0);                 // de cima
-        box(0.14, H * 0.18, 0.018, f.n, -0.17, -H / 2 - H * 0.07, 0);                                     // de baixo
-        if (f.t === 'e') box(0.7, H * 0.45, 0.016, f.n, -0.15, -H / 2 - H * 0.2, 0);
-        for (const sz of [-1, 1]) box(0.1, 0.012, 0.07, f.n, 0.24, -H * 0.2, sz * (W * 0.45 + 0.03));                    // peitorais
-        if (F.x.indexOf('S') >= 0 || F.x.indexOf('P') >= 0) box(0.12, H * (F.x.indexOf('P') >= 0 ? 0.18 : 0.22), W * (F.x.indexOf('P') >= 0 ? 0.9 : 0.4), f.c, 0.53, 0, 0);
-        const ew = W * F.wf[0] / 2 + 0.006;
-        for (const sz of [-1, 1]) {
-          box(0.055, 0.055, 0.006, F.x.indexOf('R') >= 0 ? '#d02020' : '#f4f0e0', 0.38, H * 0.12, sz * ew); box(0.03, 0.03, 0.008, '#101010', 0.385, H * 0.12, sz * (ew + 0.002));
-          if (f.p === 4 || F.x.indexOf('o') >= 0) { box(0.06, 0.06, 0.006, f.p === 4 ? f.pc : '#e86030', -0.36, 0.01, sz * (W * F.wf[5] / 2 + 0.004)); box(0.03, 0.03, 0.008, '#101010', -0.36, 0.01, sz * (W * F.wf[5] / 2 + 0.006)); }
-          if (F.x.indexOf('k') >= 0) box(0.035, 0.035, 0.006, '#101010', 0.27, 0.02, sz * (W * F.wf[1] / 2 + 0.004));
-          if (F.x.indexOf('m') >= 0) for (let q = 0; q < 3; q++) box(0.05, 0.035, 0.006, '#e86030', 0.18 - q * 0.15, (sem(i, q) - 0.5) * H * 0.5, sz * (W / 2 + 0.004));
-          if (f.t === 'b' || F.x.indexOf('L') >= 0) { const L = F.x.indexOf('L') >= 0 ? 0.32 : 0.18; box(L, 0.012, 0.012, f.n, 0.48 + L / 2, -H * 0.05, sz * W * 0.3); box(L * 0.7, 0.01, 0.01, f.n, 0.46 + L * 0.35, -H * 0.3, sz * W * 0.18); }
-          if (F.x.indexOf('B') >= 0) box(0.1, 0.01, 0.01, f.n, 0.52, -H * 0.32, sz * 0.012);
+    function geoDeArte(A) {
+      const pos = [], nor = [], col = [], W = A.w, H = A.h, K = A.K, E = (x, y) => (x < 0 || y < 0 || x >= W || y >= H || !A.cor[y * W + x] ? 0 : Math.round(A.esp[y * W + x] * 400) / 400);
+      const P = (x, y, z) => (A.deCima ? [(x - A.cx) / K, z, (y - A.cy) / K] : [(x - A.cx) / K, (A.cy - y) / K, z]);
+      const Nn = (nx, ny, nz) => (A.deCima ? [nx, nz, -ny] : [nx, ny, nz]);
+      const quad = (a, b, c, d, n, k) => { for (const v of [a, b, c, a, c, d]) { pos.push(v[0], v[1], v[2]); nor.push(n[0], n[1], n[2]); col.push(k[0], k[1], k[2]); } };
+      const cc = (c) => [Math.max(0, Math.min(255, c[0])) / 255, Math.max(0, Math.min(255, c[1])) / 255, Math.max(0, Math.min(255, c[2])) / 255];
+      for (let y = 0; y < H; y++) {
+        let x = 0;
+        while (x < W) {                                                   // frente e trás: juntando os pixels iguais vizinhos da linha
+          const c = A.cor[y * W + x]; if (!c) { x++; continue; }
+          const e = E(x, y); let x2 = x + 1; while (x2 < W && A.cor[y * W + x2] === c && E(x2, y) === e) x2++;
+          const h = e / 2, k = cc(c);
+          const f = A.deCima ? [P(x, y, h), P(x2, y, h), P(x2, y + 1, h), P(x, y + 1, h)] : [P(x, y + 1, h), P(x2, y + 1, h), P(x2, y, h), P(x, y, h)];
+          const t = A.deCima ? [P(x, y + 1, -h), P(x2, y + 1, -h), P(x2, y, -h), P(x, y, -h)] : [P(x2, y + 1, -h), P(x, y + 1, -h), P(x, y, -h), P(x2, y, -h)];
+          if (A.deCima) { quad(f[3], f[2], f[1], f[0], Nn(0, 0, 1), k); quad(t[3], t[2], t[1], t[0], Nn(0, 0, -1), k); }
+          else { quad(f[0], f[1], f[2], f[3], Nn(0, 0, 1), k); quad(t[0], t[1], t[2], t[3], Nn(0, 0, -1), k); }
+          x = x2;
         }
-        if (F.x.indexOf('d') >= 0) for (let q = -1; q <= 1; q++) box(0.015, 0.03, 0.015, '#f8f8f0', 0.47, -H * 0.12, q * W * 0.12);
       }
-      const geo = G.malha(api.MAT).geometry; geoPeixes.set(i, geo); return geo;
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {          // os lados: só a parte que fica para fora do vizinho
+        const c = A.cor[y * W + x]; if (!c) continue; const e = E(x, y), k = cc(mulC(c, 0.86));
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const en = E(x + dx, y + dy); if (en >= e) continue;
+          const faixas = en > 0 ? [[en / 2, e / 2], [-e / 2, -en / 2]] : [[-e / 2, e / 2]];
+          for (const [z0, z1] of faixas) {
+            let a, b, c2, d, n;
+            if (dx === 1) { a = P(x + 1, y + 1, z0); b = P(x + 1, y + 1, z1); c2 = P(x + 1, y, z1); d = P(x + 1, y, z0); n = [1, 0, 0]; }
+            else if (dx === -1) { a = P(x, y + 1, z1); b = P(x, y + 1, z0); c2 = P(x, y, z0); d = P(x, y, z1); n = [-1, 0, 0]; }
+            else if (dy === 1) { a = P(x, y + 1, z1); b = P(x + 1, y + 1, z1); c2 = P(x + 1, y + 1, z0); d = P(x, y + 1, z0); n = [0, -1, 0]; }
+            else { a = P(x, y, z0); b = P(x + 1, y, z0); c2 = P(x + 1, y, z1); d = P(x, y, z1); n = [0, 1, 0]; }
+            const nn = Nn(n[0], n[1], n[2]);
+            // a ordem dos cantos tem que olhar para fora (confere pela normal)
+            const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = d[0] - a[0], vy = d[1] - a[1], vz = d[2] - a[2];
+            const cx2 = uy * vz - uz * vy, cy2 = uz * vx - ux * vz, cz2 = ux * vy - uy * vx;
+            if (cx2 * nn[0] + cy2 * nn[1] + cz2 * nn[2] < 0) quad(a, d, c2, b, nn, k); else quad(a, b, c2, d, nn, k);
+          }
+        }
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.computeBoundingSphere(); return g;
     }
+    function geoPeixe(i) { if (geoPeixes.has(i)) return geoPeixes.get(i); const g = geoDeArte(artePeixe(i)); geoPeixes.set(i, g); return g; }
     function malhaPeixe(i, kg) { const m = new THREE.Mesh(geoPeixe(i), api.MAT), L = comprimentoDe(i, kg); m.scale.setScalar(L); m.userData.L = L; return m; }
 
     // ---------------------------------------------------------------- água: anéis e respingos (poucos objetos, reaproveitados)
@@ -769,22 +1060,22 @@
       m.position.set(BALCAO.x, 2.15 / 2, CP.z1 + 0.03); m.visible = false; grupo().add(m); return m;
     }
     function criarQuadro() {
-      const cv = document.createElement('canvas'); cv.width = 256; cv.height = 160;
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 320;
       const tx = new THREE.CanvasTexture(cv); tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.LinearFilter; tx.generateMipmaps = false;
       const m = new THREE.Mesh(new THREE.PlaneGeometry(QP.w, QP.h), new THREE.MeshLambertMaterial({ map: tx, emissive: 0x222222, emissiveMap: tx }));
       m.position.set(CX + QP.u, QP.y + QP.h / 2, CP.z1 + 0.046); grupo().add(m); P.texQuadro = tx; P.cvQuadro = cv; return m;
     }
-    function desenharQuadro() {
+    function desenharQuadro() {                                          // (6.6.0) 512×320: cada peixe numa plaquinha de 48×44 com o desenho novo
       const cv = P.cvQuadro; if (!cv) return; const g = cv.getContext('2d'), p = dadosP();
-      g.imageSmoothingEnabled = false; g.fillStyle = '#3a2414'; g.fillRect(0, 0, 256, 160);
-      g.fillStyle = '#f0a020'; g.font = "bold 12px Silkscreen, 'Courier New', monospace"; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(tr('Catálogo do lago').toUpperCase(), 128, 11);
+      g.imageSmoothingEnabled = false; g.fillStyle = '#3a2414'; g.fillRect(0, 0, 512, 320);
+      g.fillStyle = '#f0a020'; g.font = "bold 22px Silkscreen, 'Courier New', monospace"; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(tr('Catálogo do lago').toUpperCase(), 256, 20);
       PEIXES.forEach((pe, i) => {
-        const c = i % 10, l = Math.floor(i / 10), x = 8 + c * 24, y = 22 + l * 20, tem = !!p.cat[i];
-        g.fillStyle = tem ? COR_RAR[pe.r] : '#5a3a20'; g.fillRect(x, y, 23, 19); g.fillStyle = tem ? '#f4ead2' : '#2e1c0e'; g.fillRect(x + 1, y + 1, 21, 17);
-        g.drawImage(iconePeixe(i, !tem), 0, 0, 48, 32, x + 1, y + 2, 21, 14);
+        const c = i % 10, l = Math.floor(i / 10), x = 12 + c * 49, y = 40 + l * 44, tem = !!p.cat[i];
+        g.fillStyle = tem ? COR_RAR[pe.r] : '#5a3a20'; g.fillRect(x, y, 47, 42); g.fillStyle = tem ? '#f4ead2' : '#2e1c0e'; g.fillRect(x + 2, y + 2, 43, 38);
+        g.imageSmoothingEnabled = true; g.drawImage(iconePeixe(i, !tem), 0, 0, ARTE_W, ARTE_H, x + 2, y + 8, 43, 26); g.imageSmoothingEnabled = false;
       });
-      g.fillStyle = '#fff0c8'; g.font = "bold 9px Silkscreen, 'Courier New', monospace"; g.fillText(trf('Descobertos: {0}/60', descobertos()), 128, 152);
+      g.fillStyle = '#fff0c8'; g.font = "bold 16px Silkscreen, 'Courier New', monospace"; g.fillText(trf('Descobertos: {0}/60', descobertos()), 256, 306);
       P.texQuadro.needsUpdate = true; P.verQuadro = P.versao;
     }
 
@@ -871,7 +1162,7 @@
       if (cp.e === 'puxa' || cp.e === 'pega' || cp.e === 'escapa') { bx = cp.px; bz = cp.pz; by = cp.e === 'puxa' ? Y_AGUA - 0.05 : Y_AGUA + 0.02; }
       if (cp.e === 'lanca') { if (!cp.solto) { bx = a.x; by = a.y - 0.3; bz = a.z; } else { const u = clampN(cp.voo / 0.55, 0, 1); bx = lerpN(a.x, cp.bx, u); bz = lerpN(a.z, cp.bz, u); by = lerpN(a.y, Y_AGUA + 0.02, u) + Math.sin(u * Math.PI) * 1.4; } }
       cp.boia.visible = cp.e !== 'pega'; cp.boia.position.set(bx, by, bz);
-      if (cp.e === 'pega' && cp.mPeixe) linhaDe(cp.linha, a, mundo(cp.mPeixe), 0.02); else linhaDe(cp.linha, a, { x: bx, y: by + 0.06, z: bz }, cp.e === 'puxa' ? 0.05 : 0.3);
+      if (cp.e === 'pega' && cp.mPeixe) linhaDe(cp.linha, a, mundo(cp.mPeixe), 0.02); else linhaDe(cp.linha, a, { x: bx, y: by + 0.17, z: bz }, cp.e === 'puxa' ? 0.05 : 0.3);
       // olhando para o jogador quando ele chega perto (só a cabeça)
       const s = S(), J = s.jog, dj = Math.hypot(J.x - C.x, J.z - C.z);
       if (dj < 5 || C.conversando) { const ang = Math.atan2(-(J.z - C.z), J.x - C.x) - C.yaw, a2 = ((ang + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; usarCabeca(m, -0.0001); m.cabeca.rotation.y = clampN(a2, -1.1, 1.1); }
@@ -929,10 +1220,12 @@
     }
     const PAPOS_LAGO = [
       'Isca boa faz o peixe morder mais rápido. Mas os grandões não se impressionam fácil, não.',
-      'Joga a isca lá pro meio do lago. Lá é mais fundo e aparece peixe mais raro.',
+      'Tá vendo as manchas escuras na água? Ali é fundo. Isca bem no meio da mancha escura é peixe grande!',
+      'As partes clarinhas são banco de areia. Ali só dá peixinho.',
       'Se a boia só tremer, espera! Fisga quando ela afundar de vez.',
       'Quando o peixe correr, solta a linha. Se segurar, arrebenta!',
       'Mas não deixa a linha frouxa demais, senão ele cospe o anzol.',
+      'Deixa a tensão na faixa verde. Peixe raro faz a faixa ficar andando, aí é que é difícil!',
       'Cada peixe tem a sua hora. De noite aparecem os bagres grandes, mas não vai ficar acordado até tarde, hein.',
       'O seu Bené anota todo peixe que a gente pega naquele quadro da casinha.',
       'Dizem que tem um pirarucu nesse lago. Só com vara muito boa pra segurar um bicho desses.',
@@ -1055,7 +1348,7 @@
 #pcPainel .pcMsg{flex:none;min-height:18px;padding:0 10px 8px;font-size:13px;color:#ffe08a}
 .pcLinha{display:flex;align-items:center;gap:10px;background:#3a1c0a;border:2px solid #5a3414;padding:6px 8px}
 .pcLinha.on{border-color:#f0a020}
-.pcIco{width:48px;height:32px;image-rendering:pixelated;flex:none}
+.pcIco{width:80px;height:48px;image-rendering:pixelated;flex:none}
 .pcIcoP{width:32px;height:32px;image-rendering:pixelated;flex:none}
 .pcTxt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
 .pcNome{font:700 13px/1.2 var(--font-display)}
@@ -1064,10 +1357,10 @@
 .pcBt{height:34px;padding:0 10px;font-size:12px}
 .pcGrade{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
 .pcCel{display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 3px;background:#3a1c0a;border:2px solid #5a3414;cursor:pointer;font-size:11px;text-align:center;line-height:1.15;color:#fff0c8}
-.pcCel img{width:72px;height:48px;image-rendering:pixelated}
+.pcCel img{width:80px;height:48px;image-rendering:pixelated}
 .pcFil{display:flex;gap:5px;flex-wrap:wrap}
 .pcFicha{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start}
-.pcFicha img{width:192px;height:128px;image-rendering:pixelated;background:#f4ead2;border:3px solid #5a3414}
+.pcFicha img{width:240px;height:144px;max-width:100%;image-rendering:pixelated;background:#f4ead2;border:3px solid #5a3414}
 .pcDados{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;flex:1;min-width:200px}
 .pcDados b{color:#f0a020;font-weight:700}
 #pcHud{position:fixed;inset:0;z-index:11;pointer-events:none;font-family:var(--font-body);color:#fff0c8}
@@ -1090,15 +1383,37 @@
 #pcHud .pxBtn.pxPrim.pcAcao{height:52px;font-size:14px}
 #pcHud .pcAcao.urgente{animation:pcPisca .25s steps(1) infinite}
 @keyframes pcPisca{50%{filter:brightness(1.6)}}
-#pcHud .pcBarra{position:absolute;right:calc(140px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:20px;height:104px;background:#1c0e04;border:3px solid #5a3414;box-sizing:border-box}
+#pcHud .pcBarra{position:absolute;right:calc(140px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:26px;height:104px;background:#1c0e04;border:3px solid #5a3414;box-sizing:border-box}
 #pcHud .pcBarra .pcZona{position:absolute;left:0;right:0}
 #pcHud .pcBarra .pcEnche{position:absolute;left:3px;right:3px;bottom:0;background:#fff0c8;opacity:.9}
 #pcHud .pcBarra .pcMarca{position:absolute;left:-6px;right:-6px;height:3px;background:#fff;box-shadow:0 0 0 1px #2a1206}
 #pcHud .pcBarra .pcRot{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:700 9px/1 var(--font-display);white-space:nowrap;text-shadow:0 1px 0 #2a1206}
-#pcHud .pcBriga{position:absolute;right:calc(170px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:3px;align-items:flex-end;font:700 10px/1.2 var(--font-display);text-shadow:0 1px 0 #2a1206}
+#pcHud .pcBriga{position:absolute;right:calc(176px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:3px;align-items:flex-end;font:700 10px/1.2 var(--font-display);text-shadow:0 1px 0 #2a1206}
 #pcHud .pcFol{width:72px;height:6px;background:#1c0e04;border:2px solid #5a3414}
 #pcHud .pcFol i{display:block;height:100%;background:#e8452f}
 #pcHud .pcChoque{position:absolute;inset:0;background:#d8f0ff;opacity:0;transition:opacity .25s;pointer-events:none}
+#pcHud .pcBarra{transition:border-color .12s}
+#pcHud .pcBarra .pcFaixaZ{position:absolute;left:0;right:0;background:#3fae4a;opacity:.85;box-shadow:inset 0 0 0 1px #8fe04a}
+#pcHud .pcBarra .pcTique{position:absolute;left:0;right:0;height:2px;background:rgba(42,18,6,.75)}
+#pcHud .pcRisT{font-size:9px;opacity:.92}
+#pcHud .pcRis{width:72px;height:5px;background:#1c0e04;border:2px solid #5a3414}
+#pcHud .pcRis i{display:block;height:100%;width:0}
+#pcHud .pcFr i{background:#5fa8f0}
+#pcHud .pcEs i{background:#ff7a3a}
+#pcHud .pcNota{position:absolute;left:50%;top:24%;transform:translate(-50%,-6px);display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;text-align:center}
+#pcHud .pcNota.on{opacity:1;transform:translate(-50%,0)}
+#pcHud .pcNota b{font:700 34px/1 var(--font-display);text-shadow:0 3px 0 #2a1206,0 0 6px #2a1206}
+#pcHud .pcNota span{font:700 13px/1.1 var(--font-display);letter-spacing:.06em;text-shadow:0 2px 0 #2a1206,0 0 5px #2a1206;white-space:nowrap}
+#pcHud .pcCine{position:absolute;inset:0;pointer-events:none;display:none}
+#pcHud.cine .pcCine{display:block}
+#pcHud .pcCine i{position:absolute;left:0;right:0;height:11%;background:#000}
+#pcHud .pcCine i.t{top:0}
+#pcHud .pcCine i.b{bottom:0}
+#pcHud .pcPlano{position:absolute;right:max(14px,env(safe-area-inset-right,0px));top:calc(11% + 8px);font:700 10px/1 var(--font-display);color:#fff0c8;opacity:.75;letter-spacing:.12em}
+#pcHud .pcPular{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(11% + 8px);font:600 10px/1 var(--font-body);color:#fff0c8;opacity:.7}
+#pcHud .pcPerf{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.55);opacity:0;font:700 clamp(20px,5.4vw,42px)/1.1 var(--font-display);color:#ffd84a;text-shadow:0 3px 0 #7a3a06,0 0 16px rgba(255,200,60,.75);letter-spacing:.06em;white-space:nowrap;transition:transform .4s cubic-bezier(.2,1.6,.4,1),opacity .2s}
+#pcHud .pcPerf.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#pcHud.cine .pcEsq,#pcHud.cine .pcDir,#pcHud.cine .pcAcao,#pcHud.cine .pcBarra,#pcHud.cine .pcDica,#pcHud.cine .pcRecado,#pcHud.cine .pcBriga,#pcHud.cine .pcNota{display:none}
 #pcBanner{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:13;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 12px 4px;background:rgba(42,18,6,.88);border:3px solid #f0a020;color:#fff0c8;text-align:center;pointer-events:none;max-width:min(520px,58vw);box-sizing:border-box}
 #pcBanner .pcL1{font:700 13px/1.15 var(--font-display);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 #pcBanner .pcL2{font:600 11px/1.2 var(--font-body);opacity:.95}
@@ -1163,7 +1478,7 @@
             if (!p.caixa.length) { const t = document.createElement('div'); t.className = 'pcSub'; t.textContent = temVara() ? tr('A caixa está vazia. Vá pescar!') : tr('Você ainda não tem peixes para vender.'); C.appendChild(t); return; }
             const tudo = botao(trf('Vender tudo ({0} fakes)', valorCaixa()), true); tudo.onclick = () => venderPeixes(p.caixa.map((_, k) => k), Pn, desenha); C.appendChild(tudo);
             p.caixa.map((f, k) => ({ f, k })).sort((a, b) => precoPeixe(b.f.i, b.f.c) - precoPeixe(a.f.i, a.f.c)).forEach(({ f, k }) => {
-              const L = linha(imgDe(iconePeixe(f.i), 48, 32), nomePeixe(f.i), nomeRar(PEIXES[f.i].r) + ' · ' + fmtKg(f.kg) + ' · ' + nomeClasse(f.c) + ' (×' + String(MULT[f.c]).replace('.', virgula() ? ',' : '.') + ')', COR_RAR[PEIXES[f.i].r]);
+              const L = linha(imgDe(iconePeixe(f.i), 80, 48), nomePeixe(f.i), nomeRar(PEIXES[f.i].r) + ' · ' + fmtKg(f.kg) + ' · ' + nomeClasse(f.c) + ' (×' + String(MULT[f.c]).replace('.', virgula() ? ',' : '.') + ')', COR_RAR[PEIXES[f.i].r]);
               const b = botao(trf('Vender ({0})', precoPeixe(f.i, f.c))); b.onclick = () => venderPeixes([k], Pn, desenha); L.bts.appendChild(b); C.appendChild(L);
             });
           }
@@ -1204,7 +1519,7 @@
           PEIXES.forEach((pe, i) => {
             if (filtro >= 0 && (!p.cat[i] || pe.r !== filtro)) return;
             const tem = !!p.cat[i], c = document.createElement('button'); c.type = 'button'; c.className = 'pcCel';
-            c.appendChild(imgDe(iconePeixe(i, !tem), 72, 48, ''));
+            c.appendChild(imgDe(iconePeixe(i, !tem), 80, 48, ''));
             const n = document.createElement('span'); n.textContent = tem ? nomePeixe(i) : '???'; c.appendChild(n);
             if (tem) c.style.borderColor = COR_RAR[pe.r];
             c.onclick = () => ficha(i); G.appendChild(c);
@@ -1215,7 +1530,7 @@
         const ficha = (i) => {
           const p = dadosP(), c = p.cat[i], pe = PEIXES[i], C = Pn.corpo; C.innerHTML = ''; Pn.msg.textContent = '';
           Pn.abas([tr('Voltar')], -1, () => desenhaLista());
-          const F = document.createElement('div'); F.className = 'pcFicha'; F.appendChild(imgDe(iconePeixe(i, !c), 192, 128, ''));
+          const F = document.createElement('div'); F.className = 'pcFicha'; F.appendChild(imgDe(iconePeixe(i, !c), 240, 144, ''));
           const D = document.createElement('div'); D.className = 'pcDados'; F.appendChild(D);
           const par = (k, v, cor) => { const a = document.createElement('b'); a.textContent = k; const b = document.createElement('span'); b.textContent = v; if (cor) b.style.color = cor; D.appendChild(a); D.appendChild(b); };
           if (!c) { par(tr('Nome'), '???'); par(tr('Dica'), tr('Pesque este peixe para descobrir.')); }
@@ -1240,7 +1555,7 @@
           const p = dadosP(), C = Pn.corpo; C.innerHTML = ''; Pn.tit.textContent = tr('Caixa de peixes') + ' · ' + p.caixa.length + '/' + CAIXA_MAX; Pn.abasEl.innerHTML = '';
           if (!p.caixa.length) { const t = document.createElement('div'); t.className = 'pcSub'; t.textContent = tr('A caixa está vazia.'); C.appendChild(t); }
           p.caixa.forEach((f, k) => {
-            const L = linha(imgDe(iconePeixe(f.i), 48, 32), nomePeixe(f.i), nomeRar(PEIXES[f.i].r) + ' · ' + fmtKg(f.kg) + ' · ' + nomeClasse(f.c) + ' · ' + trf('vale {0} fakes', precoPeixe(f.i, f.c)), COR_RAR[PEIXES[f.i].r]);
+            const L = linha(imgDe(iconePeixe(f.i), 80, 48), nomePeixe(f.i), nomeRar(PEIXES[f.i].r) + ' · ' + fmtKg(f.kg) + ' · ' + nomeClasse(f.c) + ' · ' + trf('vale {0} fakes', precoPeixe(f.i, f.c)), COR_RAR[PEIXES[f.i].r]);
             const b = botao(tr('Soltar')); b.onclick = () => { p.caixa.splice(k, 1); gravar(); Pn.msg.textContent = tr('O peixe voltou para o lago.'); desenha(); }; L.bts.appendChild(b); C.appendChild(L);
           });
           Pn.msg.textContent = Pn.msg.textContent || tr('Venda os peixes na casinha do seu Bené.');
@@ -1271,17 +1586,32 @@
       });
     }
 
-    // ================================================================ O MINIGAME (na ponta do píer, em 3D, como o chute da partida)
-    //   estados: mira → forca (segurando LANÇAR) → swing → voo (a boia no ar) → espera (beliscadas) → mordida (FISGAR!) → fisgou → briga
-    //   → pegou (troféu, reação, caixa) | falhou (escapou/arrebentou) → recolhe → mira. Outros: embolou (força no vermelho), assustou.
+    // ================================================================ O MINIGAME (na ponta do píer ou na beira, em 3D, como o chute da partida)
+    //   estados: mira → forca (segurando LANÇAR: a barra é só a DISTÂNCIA, vai e volta) → swing → voo (a boia no ar) → [cine, se foi
+    //   PERFEITO] → espera (beliscadas) → mordida (FISGAR!) → fisgou → briga → pegou (troféu, reação, caixa) | falhou (escapou/arrebentou)
+    //   → recolhe → mira. Outro: assustou (puxou na beliscada).
+    //   (6.6.0) A NOTA do lançamento vem de ONDE a isca caiu (a profundidade: a cor da água). Nota máxima = cena do LANÇAMENTO PERFEITO.
     const SINAL_VERGA = -1;
     // mostrando o peixe: o jogador vira um pouco para o lado (m.yaw0 - 0.45) e a câmera vem de frente                                            // (conferido na tela: assim a ponta verga para o lado da linha)
     const dirDe = (yaw) => ({ x: Math.cos(yaw), z: -Math.sin(yaw) });
     const angN = (a) => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-    function naAgua(x, z) { const pr = api.PIER; if (x > pr.x0 - 0.4 && x < pr.x1 + 0.4 && z > pr.z0 - 0.4 && z < pr.z1 + 0.4) return false; return api.dentroLago(x, z, -0.7); }
-    function profundidade(x, z) { const L = api.LAGO, r = Math.hypot((x - L.cx) / L.rx, (z - L.cz) / L.rz); return clampN((0.62 - r) / 0.5, 0, 1); }
-    const distLance = (v, vara) => 4 + Math.min(v, 0.93) / 0.93 * (VARAS[vara].alc - 4) * (v > 0.93 ? 1.04 : 1);
+    function naAgua(x, z) { if (api.naDeque ? api.naDeque(x, z) : false) return false; const pr = api.PIER; if (x > pr.x0 - 0.4 && x < pr.x1 + 0.4 && z > pr.z0 - 0.4 && z < pr.z1 + 0.4) return false; return api.dentroLago(x, z, -0.7); }
+    // a profundidade (0 raso … 1 miolo do poço): a mesma da cor da água (cidade.js: profLago)
+    function profundidade(x, z) { if (api.profLago) return api.profLago(x, z); const L = api.LAGO, r = Math.hypot((x - L.cx) / L.rx, (z - L.cz) / L.rz); return clampN((0.62 - r) / 0.5, 0, 1); }
+    const notaDe = (x, z) => Math.round(clampN(profundidade(x, z), 0, 1) * 100);
+    // a distância pela barra (0 = 3 m, cheia = o alcance da vara) e o quanto cada vara espalha (varas melhores são mais precisas)
+    const distLance = (v, vara) => 3 + clampN(v, 0, 1) * (VARAS[vara].alc - 3);
+    const ESPALHA = [[0.055, 0.05], [0.05, 0.045], [0.045, 0.04], [0.04, 0.035], [0.035, 0.03]];   // [ângulo (rad), distância (fração)]
+    const T_FORCA = 1.25;                                                // segundos para a barra ir de vazia a cheia (e volta)
+    const NOMES_NOTA = ['Água rasa demais...', 'Lançamento fraco', 'Bom lançamento', 'Ótimo lançamento!', 'LANÇAMENTO PERFEITO!'];
+    const CORES_NOTA = ['#8fc0ff', '#d8d4c8', '#8fe04a', '#f0a020', '#ffd84a'];
+    const nomeFundo = (pf) => tr(pf >= 0.85 ? 'Poço fundo' : pf >= 0.6 ? 'Água funda' : pf >= 0.3 ? 'Água média' : 'Água rasa');
     function msgMg(txt, seg) { const m = P.mg; if (!m) return; m.U.recado.textContent = txt; m.tRec = seg || 2; }
+    // VIBRAÇÃO do celular (leve na beliscada, forte na mordida, pulsos na briga): uma de cada vez, sem atropelar
+    let vibAte = 0;
+    function vib(pd, forte) {
+      try { if (typeof navigator === 'undefined' || !navigator.vibrate) return; const t = performance.now(); if (!forte && t < vibAte) return; navigator.vibrate(pd); vibAte = t + (Array.isArray(pd) ? pd.reduce((a, b) => a + b, 0) : pd) + 30; } catch (e) { /* sem vibrar */ }
+    }
 
     async function pescar(comCadu, lugar) {
       const s = S(), J = s.jog, p = dadosP(); if (!temVara() || P.mg) return;
@@ -1295,10 +1625,10 @@
       await api.preto(true, 350);
       J.sentado = false; J.rota = null; J.andando = false; J.correndo = false; J.x = Lg.x; J.z = Lg.z; J.yaw = J.yawAlvo = Lg.yaw;
       const yChao = api.altura(Lg.x, Lg.z);
-      const U = montarHud(), ui = api.UI(); const esqAntes = ui.esq.hidden; ui.esq.hidden = true; api.aviso('');
+      const U = montarHud(), ui = api.UI(); const esqAntes = ui.esq.hidden, ctlAntes = ui.ctl ? ui.ctl.hidden : true; ui.esq.hidden = true; if (ui.ctl) ui.ctl.hidden = true; api.aviso('');   // (6.6.0) o joystick da cidade some na pesca (não serve para nada aqui)
       const m = P.mg = { e: 'mira', t: 0, ang: 0, ang0: 0, mira: 0, segura: false, forca: 0, comCadu: !!comCadu, U, tRec: 0, pausa: false, ocupado: false,
-        vara: criarVara(p.vara), boiaM: criarBoia(), linha: criarLinha(), boiaP: null, bite: null, B: null, cam: null, pontos: [], alvoM: null,
-        ox: Lg.x, oz: Lg.z, yaw0: Lg.yaw, y: yChao, lim: lugar ? 1.4 : 0.75 };
+        vara: criarVara(p.vara), boiaM: criarBoia(), linha: criarLinha(), lider: criarLinha(), anzol: criarAnzol(), boiaP: null, bite: null, B: null, cam: null, pontos: [], alvoM: null,
+        ox: Lg.x, oz: Lg.z, yaw0: Lg.yaw, y: yChao, lim: lugar ? 1.4 : 0.75, temIsca: true, nota: 50, pend: { x: 0, z: 0, vx: 0, vz: 0, ox: null } };
       varaNaMao(J.m, m.vara); P.isopor.visible = true; P.isopor.tampa.rotation.x = 0;
       if (lugar) {                                                        // a caixa de isopor do lado do jogador (do lado que for terra firme)
         const d = dirDe(Lg.yaw), lx = -d.z, lz = d.x; let ix = Lg.x + lx * 0.8 - d.x * 0.25, iz = Lg.z + lz * 0.8 - d.z * 0.25;
@@ -1316,11 +1646,12 @@
       await api.preto(true, 350);
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
       fecharPainel(); esconderBanner(); tirarVara(m.vara);
-      for (const o of [m.boiaM, m.linha, m.alvoM].concat(m.pontos)) { if (o.parent) o.parent.remove(o); if (o.material && o.material !== MAT_LINHA) o.material.dispose(); if (o.geometry && o.geometry !== geoAnel) o.geometry.dispose(); }
+      for (const o of [m.boiaM, m.linha, m.lider, m.anzol, m.alvoM].concat(m.pontos)) { if (o.parent) o.parent.remove(o); if (o.material && o.material !== MAT_LINHA) o.material.dispose(); if (o.geometry && o.geometry !== geoAnel) o.geometry.dispose(); }
+      m.anzol.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
       if (m.trofeu && m.trofeu.m.parent) m.trofeu.m.parent.remove(m.trofeu.m);
       if (m.voa && m.voa.m.parent) m.voa.m.parent.remove(m.voa.m);
       P.isopor.visible = false; U.el.remove(); P.mg = null;
-      const ss = S(); if (ss) { ss.camCena = null; ss.cam.snap = true; ss.jog.yaw = ss.jog.yawAlvo = 0; ui.esq.hidden = esqAntes; }
+      const ss = S(); if (ss) { ss.camCena = null; ss.cam.snap = true; ss.jog.yaw = ss.jog.yawAlvo = 0; ui.esq.hidden = esqAntes; if (ui.ctl) ui.ctl.hidden = ctlAntes; }
       gravar();
       await api.preto(false, 350);
       if (m.comCadu && P.cadu && !P.cadu.oculto) aviso(tr('Cadu') + ': ' + tr('Valeu pela companhia!'), 2.5);
@@ -1333,8 +1664,10 @@
     }
     function trocarVaraMg() { const m = P.mg, p = dadosP(); if (!m || m.vara.v === p.vara) return; tirarVara(m.vara); m.vara = criarVara(p.vara); varaNaMao(S().jog.m, m.vara); }
     function teclaMg(e) {
-      const m = P.mg; if (!m || P.painel || m.ocupado) return;
+      const m = P.mg; if (!m || P.painel) return;
       const desce = e.type === 'keydown';
+      if (m.e === 'cine' && m.cine) { if (['Space', 'Enter', 'KeyE', 'Escape'].indexOf(e.code) >= 0) { e.preventDefault(); e.stopPropagation(); if (desce && !e.repeat) m.cine.pular = true; } return; }
+      if (m.ocupado) return;
       if (e.code === 'Space' || e.code === 'Enter' || e.code === 'KeyE') { e.preventDefault(); e.stopPropagation(); if (desce && e.repeat) return; apertar(desce); }
       else if (e.code === 'ArrowLeft' || e.code === 'KeyA') { e.preventDefault(); e.stopPropagation(); m.mira = desce ? 1 : (m.mira > 0 ? 0 : m.mira); }
       else if (e.code === 'ArrowRight' || e.code === 'KeyD') { e.preventDefault(); e.stopPropagation(); m.mira = desce ? -1 : (m.mira < 0 ? 0 : m.mira); }
@@ -1347,16 +1680,21 @@
         '<div class="pcEsq"><button type="button" class="pcQuad pcMenuB"><span class="pcMenuI"></span><span class="pcBadge"></span></button>' +
         '<div class="pcMenu" hidden><button type="button" class="pxBtn pcInfo pcIsca"></button><button type="button" class="pxBtn pcInfo pcVara"></button><button type="button" class="pxBtn pcInfo pcCaixa"></button><button type="button" class="pxBtn pcInfo pcCat"></button></div></div>' +
         '<div class="pcDir"><button type="button" class="pcQuad pcSair">✕</button></div>' +
-        '<div class="pcRecado"></div><div class="pcDica"></div>' +
-        '<div class="pcBarra"><div class="pcZonas"></div><div class="pcEnche"></div><div class="pcMarca"></div><span class="pcRot"></span></div>' +
-        '<div class="pcBriga"><span class="pcDist"></span><span class="pcFolT"></span><div class="pcFol"><i></i></div></div>' +
+        '<div class="pcRecado"></div><div class="pcDica"></div><div class="pcNota"><b></b><span></span></div>' +
+        '<div class="pcBarra"><div class="pcZonas"></div><div class="pcFaixaZ"></div><div class="pcEnche"></div><div class="pcMarca"></div><span class="pcRot"></span></div>' +
+        '<div class="pcBriga"><span class="pcDist"></span><span class="pcFolT"></span><div class="pcFol"><i></i></div>' +
+        '<span class="pcRisT pcFrT"></span><div class="pcRis pcFr"><i></i></div><span class="pcRisT pcEsT"></span><div class="pcRis pcEs"><i></i></div></div>' +
+        '<div class="pcCine"><i class="t"></i><i class="b"></i><span class="pcPlano"></span><div class="pcPerf"></div><span class="pcPular"></span></div>' +
         '<button type="button" class="pxBtn pxPrim pcAcao"></button>';
       (document.getElementById('raizJogo') || document.body).appendChild(el);
       const q = (s) => el.querySelector(s);
       const U = { el, isca: q('.pcIsca'), vara: q('.pcVara'), caixa: q('.pcCaixa'), cat: q('.pcCat'), sair: q('.pcSair'), recado: q('.pcRecado'), dica: q('.pcDica'),
-        menuB: q('.pcMenuB'), menuI: q('.pcMenuI'), badge: q('.pcBadge'), menu: q('.pcMenu'), arrasto: q('.pcArrasto'),
-        barra: q('.pcBarra'), zonas: q('.pcZonas'), enche: q('.pcEnche'), marca: q('.pcMarca'), rot: q('.pcRot'), briga: q('.pcBriga'), dist: q('.pcDist'), folT: q('.pcFolT'), fol: q('.pcFol i'), acao: q('.pcAcao'), choque: q('.pcChoque'), modo: '', cache: {} };
-      U.cat.textContent = tr('Catálogo'); U.folT.textContent = tr('Fôlego do peixe');
+        menuB: q('.pcMenuB'), menuI: q('.pcMenuI'), badge: q('.pcBadge'), menu: q('.pcMenu'), arrasto: q('.pcArrasto'), nota: q('.pcNota'), notaN: q('.pcNota b'), notaT: q('.pcNota span'),
+        barra: q('.pcBarra'), zonas: q('.pcZonas'), faixa: q('.pcFaixaZ'), enche: q('.pcEnche'), marca: q('.pcMarca'), rot: q('.pcRot'), briga: q('.pcBriga'), dist: q('.pcDist'), folT: q('.pcFolT'), fol: q('.pcFol i'),
+        fr: q('.pcFr i'), es: q('.pcEs i'), frT: q('.pcFrT'), esT: q('.pcEsT'), cine: q('.pcCine'), plano: q('.pcPlano'), perf: q('.pcPerf'), pular: q('.pcPular'),
+        acao: q('.pcAcao'), choque: q('.pcChoque'), modo: '', cache: {} };
+      U.cat.textContent = tr('Catálogo'); U.folT.textContent = tr('Fôlego do peixe'); U.frT.textContent = tr('Linha frouxa'); U.esT.textContent = tr('Linha esticada');
+      U.perf.textContent = tr('LANÇAMENTO PERFEITO!'); U.pular.textContent = tr('Toque para pular');
       U.sair.setAttribute('aria-label', tr('Sair')); U.sair.title = tr('Sair'); U.menuB.setAttribute('aria-label', tr('Equipamento')); U.menuB.title = tr('Equipamento');
       // o menu do equipamento (isca, vara, caixa, catálogo) fica recolhido num quadradinho: tocar abre/fecha (fecha sozinho depois de uns segundos)
       let tMenu = 0;
@@ -1369,9 +1707,9 @@
         b.addEventListener('contextmenu', (e) => e.preventDefault());
       };
       segurar(U.acao, () => apertar(true), () => apertar(false));
-      // mirar arrastando o dedo na tela (como girar a câmera na cidade)
+      // mirar arrastando o dedo na tela (como girar a câmera na cidade); na cena do lançamento perfeito, tocar pula
       const arr = { id: null, x: 0 };
-      U.arrasto.addEventListener('pointerdown', (e) => { if (arr.id != null) return; arr.id = e.pointerId; arr.x = e.clientX; try { U.arrasto.setPointerCapture(e.pointerId); } catch (x) { /* ok */ } if (!U.menu.hidden) menu(false); });
+      U.arrasto.addEventListener('pointerdown', (e) => { const m = P.mg; if (m && m.e === 'cine') { m.cine.pular = true; return; } if (arr.id != null) return; arr.id = e.pointerId; arr.x = e.clientX; try { U.arrasto.setPointerCapture(e.pointerId); } catch (x) { /* ok */ } if (!U.menu.hidden) menu(false); });
       U.arrasto.addEventListener('pointermove', (e) => {
         if (e.pointerId !== arr.id) return; const dx = e.clientX - arr.x; arr.x = e.clientX; const m = P.mg;
         if (!m || m.pausa || m.ocupado || !(m.e === 'mira' || m.e === 'forca')) return;
@@ -1384,55 +1722,68 @@
       U.sair.onclick = () => sairDaPesca();
       return U;
     }
-    // a barra (como a de força do chute): zonas de cor por baixo, o preenchimento e a marca
+    // a barra: no lançamento é a DISTÂNCIA (marquinhas a cada 25%); na briga é a TENSÃO com a FAIXA BOA (verde) andando por cima
     function zonasBarra(U, modo) {
       if (U.modo === modo) return; U.modo = modo;
-      const Z = modo === 'forca' ? [[0, 12, '#3f7fd0'], [12, 80, '#3fae4a'], [80, 93, '#e8c030'], [93, 100, '#d8402a']] : [[0, 15, '#3f7fd0'], [15, 70, '#3fae4a'], [70, 88, '#e8c030'], [88, 100, '#d8402a']];
-      U.zonas.innerHTML = Z.map(([a, b, c]) => '<div class="pcZona" style="bottom:' + a + '%;height:' + (b - a) + '%;background:' + c + ';opacity:.55"></div>').join('');
-      U.rot.textContent = modo === 'forca' ? tr('FORÇA') : tr('TENSÃO');
+      U.zonas.innerHTML = modo === 'forca' ? '<div class="pcZona" style="bottom:0;height:100%;background:linear-gradient(to top,#3a5a8a,#3f8fd0 60%,#9fd2ea);opacity:.6"></div>' + [25, 50, 75].map((v) => '<div class="pcTique" style="bottom:' + v + '%"></div>').join('')
+        : '<div class="pcZona" style="bottom:0;height:100%;background:#3a2a1a;opacity:.7"></div>';
+      U.faixa.style.display = modo === 'forca' ? 'none' : '';
+      U.rot.textContent = modo === 'forca' ? tr('DISTÂNCIA') : tr('TENSÃO');
     }
     function apertar(on) {
       const m = P.mg; if (!m) return;
+      if (m.e === 'cine') { if (on) m.cine.pular = true; return; }
       if (m.pausa || m.ocupado) { if (!on) m.segura = false; return; }
       m.segura = on;
       if (on) { if (m.e === 'mira') comecarForca(); else if (m.e === 'espera') puxarNaEspera(); else if (m.e === 'mordida') fisgar(); }
       else if (m.e === 'forca') soltarLance();
     }
-    function irPara(e) { const m = P.mg; m.e = e; m.t = 0; if (e === 'mira') { m.boiaP = null; m.arrebentou = false; m.bite = null; m.B = null; m.de = null; } }
+    function irPara(e) { const m = P.mg; m.e = e; m.t = 0; if (e === 'mira') { m.boiaP = null; m.arrebentou = false; m.bite = null; m.B = null; m.de = null; m.comida = false; } }
     function comecarForca() {
       const m = P.mg, p = dadosP();
       if (nIsca(p.isca) <= 0) { const k = ISCAS.findIndex((_, q) => nIsca(q) > 0); if (k < 0) { msgMg(tr('Sem isca! Compre na casinha do seu Bené.'), 2.5); SOM.erro(); return; } p.isca = k; }
-      m.e = 'forca'; m.t = 0; m.forca = 0;
+      m.e = 'forca'; m.t = 0; m.forca = 0; m.temIsca = true; m.iscaLance = p.isca;
     }
+    // soltou: a barra diz a distância; a vara espalha um pouco (ângulo e distância). A nota já fica decidida aqui (a cena perfeita começa já)
     function soltarLance() {
-      const m = P.mg, p = dadosP(), v = m.forca, faixa = v < 0.12 ? 0 : v < 0.8 ? 1 : v < 0.93 ? 2 : 3;
-      if (faixa === 3 && Math.random() < 0.4) { msgMg(tr('A linha embolou! Desembolando...'), 2.3); SOM.erro(); m.e = 'embolou'; m.t = 0; return; }
+      const m = P.mg, p = dadosP(), v = m.forca, E = ESPALHA[p.vara] || ESPALHA[0];
       const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
-      m.dist = distLance(v, p.vara) * (1 + gauss() * 0.05); m.forcaUsada = v;
-      const yaw = m.yaw0 + m.ang + gauss() * [0.06, 0.035, 0.08, 0.2][faixa], d = dirDe(yaw);
+      m.dist = distLance(v, p.vara) * (1 + gauss() * E[1]); m.forcaUsada = Math.max(0.25, v);
+      const yaw = m.yaw0 + m.ang + gauss() * E[0], d = dirDe(yaw);
       m.alvo = { x: m.ox + d.x * m.dist, z: m.oz + d.z * m.dist }; m.voo = null; m.e = 'swing'; m.t = 0; SOM.lanca();
+      m.nota = naAgua(m.alvo.x, m.alvo.z) ? notaDe(m.alvo.x, m.alvo.z) : 0;
+      if (m.nota >= NOTA_PERFEITA) comecarCine();
     }
-    function pousou() {
+    function pousou(semRespingo) {
       const m = P.mg, a = m.alvo; m.boiaP = { x: a.x, y: Y_AGUA, z: a.z };
       if (!naAgua(a.x, a.z)) { msgMg(tr("A isca caiu fora d'água!"), 2.2); SOM.erro(); m.e = 'falhou'; m.t = 1.0; m.de = { x: a.x, y: Y_AGUA + 0.3, z: a.z }; return; }
-      respingo(a.x, a.z, 5, 0); SOM.agua(); novaEspera(false);
-      const pf = profundidade(a.x, a.z); msgMg(pf > 0.6 ? tr('Água funda') : pf > 0.25 ? tr('Água média') : tr('Água rasa'), 1.6);
+      if (!semRespingo) { respingo(a.x, a.z, 5, 0); SOM.agua(); }
+      novaEspera(false);
+      const n = m.nota, fx = faixaNota(n), pf = profundidade(a.x, a.z);
+      mostrarNota(n, fx); msgMg(nomeFundo(pf) + ' · ' + trf('Nota {0}', n), 2.4);
     }
+    function mostrarNota(n, fx) {
+      const U = P.mg.U; U.notaN.textContent = String(n); U.notaN.style.color = CORES_NOTA[fx]; U.notaT.textContent = tr(NOMES_NOTA[fx]); U.notaT.style.color = CORES_NOTA[fx];
+      U.nota.classList.add('on'); clearTimeout(U.tNota); U.tNota = setTimeout(() => U.nota.classList.remove('on'), 1900);
+      if (fx >= 3) SOM.pegou(); else if (fx === 0) SOM.erro();
+    }
+    // a espera: o peixe (e o peso) já são sorteados com a NOTA; a nota também apressa (ou atrasa) a mordida
     function novaEspera(re) {
-      const m = P.mg, p = dadosP(), b = m.boiaP, pf = profundidade(b.x, b.z), i = sortearPeixe(hora(), p.vara, p.isca, pf), pw = sortearPeso(i, p.vara), d = dificuldade(i, pw.classe, p.vara, p.isca);
-      const W = rnd(d.espera[0], d.espera[1]) * (api.chuva() ? 0.85 : 1) * (re ? 1.15 : 1);
-      const bel = []; for (let k = 0; k < d.beliscadas; k++) { const tb = rnd(1.5, Math.max(2, W - 1.4)); if (bel.every((x) => Math.abs(x - tb) > 1.2)) bel.push(tb); } bel.sort((a, c) => a - c);
-      m.bite = { i, kg: pw.kg, classe: pw.classe, d, W, bel, isca: p.isca }; m.e = 'espera'; m.t = 0; m.belAtiva = -1; m.beliscando = false;
+      const m = P.mg, p = dadosP(), q = (m.nota | 0) / 100, i = sortearPeixe(hora(), p.vara, p.isca, q), pw = sortearPeso(i, p.vara, undefined, q), d = dificuldade(i, pw.classe, p.vara, p.isca);
+      const W = rnd(d.espera[0], d.espera[1]) * (api.chuva() ? 0.85 : 1) * (re ? 1.15 : 1) * (1.3 - 0.55 * q);
+      const nb = d.beliscadas + (q < 0.3 ? 1 : 0);
+      const bel = []; for (let k = 0; k < nb; k++) { const tb = rnd(1.5, Math.max(2, W - 1.4)); if (bel.every((x) => Math.abs(x - tb) > 1.2)) bel.push(tb); } bel.sort((a, c) => a - c);
+      m.bite = { i, kg: pw.kg, classe: pw.classe, d, W, bel, isca: p.isca, nota: m.nota }; m.e = 'espera'; m.t = 0; m.belAtiva = -1; m.beliscando = false;
     }
     function tickEspera() {
       const m = P.mg, b = m.bite; let ativa = -1;
       for (let k = 0; k < b.bel.length; k++) if (m.t >= b.bel[k] && m.t < b.bel[k] + 0.4) ativa = k;
-      if (ativa >= 0 && m.belAtiva !== ativa) { m.belAtiva = ativa; SOM.toc(); anel(m.boiaP.x, m.boiaP.z, 0.35); msgMg(tr('Beliscou...'), 0.9); }
+      if (ativa >= 0 && m.belAtiva !== ativa) { m.belAtiva = ativa; SOM.toc(); anel(m.boiaP.x, m.boiaP.z, 0.35); msgMg(tr('Beliscou...'), 0.9); vib(18); }
       m.beliscando = ativa >= 0 || (m.belAtiva >= 0 && m.t < b.bel[m.belAtiva] + 0.55);
       if (m.t >= b.W) {
         const p = dadosP(); p.iscas[b.isca] = Math.max(0, nIsca(b.isca) - 1); gravar();            // mordeu: a isca foi (pegando ou não)
-        m.e = 'mordida'; m.t = 0; SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 4, 0.2); msgMg(tr('FISGA!'), 1);
-        try { if (navigator.vibrate) navigator.vibrate(120); } catch (e) { /* sem vibrar */ }
+        m.comida = true; m.e = 'mordida'; m.t = 0; SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 4, 0.2); msgMg(tr('FISGA!'), 1);
+        vib([90, 40, 170], true);
       }
     }
     function puxarNaEspera() {
@@ -1444,8 +1795,8 @@
       const m = P.mg, b = m.bite, p = dadosP(), bonus = m.t < b.d.janela * 0.45 ? 0.08 : -0.05;
       m.B = novaBriga(Math.hypot(m.boiaP.x - m.ox, m.boiaP.z - m.oz), b.d, p.vara); m.B.firmeza = clampN(m.B.firmeza + bonus, 0.3, 0.98);
       m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
-      m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(4, 7); m.corriaAntes = false;
-      SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 6, 0.3); msgMg(tr('Fisgou!'), 1.2);
+      m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(4, 7); m.corriaAntes = false; m.tVib = 0;
+      SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 6, 0.3); msgMg(tr('Fisgou!'), 1.2); vib(60, true);
     }
     function tickBriga(dt) {
       const m = P.mg, B = m.B, pe = PEIXES[m.bite.i];
@@ -1453,20 +1804,24 @@
       m.peixeP = { x: m.ox + d.x * B.dist, z: m.oz + d.z * B.dist };
       if (B.corre) { m.tAnel = (m.tAnel || 0) - dt; if (m.tAnel <= 0) { m.tAnel = 0.25; anel(m.peixeP.x, m.peixeP.z, 0.5 + B.forca * 0.6); } if (!m.segura) { m.tZum = (m.tZum || 0) - dt; if (m.tZum <= 0) { m.tZum = 0.45; SOM.zum(); } } }
       else if (m.segura) { m.tCli = (m.tCli || 0) - dt; if (m.tCli <= 0) { m.tCli = 0.085; SOM.clique(); } }
+      // vibração da briga: arrancada do peixe, linha esticando (cada vez mais forte e mais rápido), linha frouxa (dois toquinhos) e o molinete
+      m.tVib = (m.tVib || 0) - dt;
       if (B.corre && !m.corriaAntes) {
         if ((pe.f.t === 'p' || pe.f.t === 'l') && pe.r >= 2 && Math.random() < 0.4 && !m.pulo) m.pulo = { t: 0, m: null };
-        try { if (navigator.vibrate) navigator.vibrate(50); } catch (e) { /* sem vibrar */ }
-      }
+        vib(70, true); m.tVib = 0.25;
+      } else if (B.onde > 0) { if (m.tVib <= 0) { m.tVib = lerpN(0.32, 0.1, clampN(B.estica, 0, 1)); vib(Math.round(22 + 34 * clampN(B.estica, 0, 1))); } }
+      else if (B.onde < 0 && B.frouxo > 0.2) { if (m.tVib <= 0) { m.tVib = 0.7; vib([12, 60, 12]); } }
+      else if (m.segura && B.onde === 0) { if (m.tVib <= 0) { m.tVib = 0.24; vib(8); } }
       m.corriaAntes = B.corre;
       if (pe.id === 'poraque') {                                          // o poraquê dá choque de vez em quando: a tensão pula
         m.proxChoque -= dt;
-        if (m.proxChoque <= 0) { m.proxChoque = rnd(5, 9); B.tensao = Math.min(0.97, B.tensao + 0.22); SOM.choque(); msgMg(tr('Levou um choque!'), 1.4); m.choque = 0.45; m.U.choque.style.opacity = '0.55'; try { if (navigator.vibrate) navigator.vibrate([60, 40, 60]); } catch (e) { /* ok */ } }
+        if (m.proxChoque <= 0) { m.proxChoque = rnd(5, 9); B.tensao = Math.min(0.97, B.tensao + 0.22); SOM.choque(); msgMg(tr('Levou um choque!'), 1.4); m.choque = 0.45; m.U.choque.style.opacity = '0.55'; vib([60, 40, 60], true); }
       }
       if (m.choque > 0) { m.choque -= dt; if (m.choque <= 0) m.U.choque.style.opacity = '0'; }
       if (r === 'pegou') cenaPegou();
-      else if (r === 'arrebentou') { SOM.arrebenta(); escapou(tr('A linha arrebentou!'), true); }
-      else if (r === 'soltou') escapou(tr('O peixe se soltou do anzol...'));
-      else if (r === 'linha') { SOM.arrebenta(); escapou(tr('Acabou a linha! O peixe levou tudo.'), true); }
+      else if (r === 'arrebentou') { SOM.arrebenta(); vib(300, true); escapou(tr('A linha arrebentou!'), true); }
+      else if (r === 'soltou') { vib([40, 40, 40], true); escapou(tr('O peixe se soltou do anzol...')); }
+      else if (r === 'linha') { SOM.arrebenta(); vib(300, true); escapou(tr('Acabou a linha! O peixe levou tudo.'), true); }
     }
     function escapou(txt, arrebentou) {
       const m = P.mg, onde = m.peixeP || m.boiaP; msgMg(txt, 2.4); if (!arrebentou) SOM.erro();
@@ -1475,6 +1830,71 @@
     }
     function recolher() { const m = P.mg; m.de = m.boiaP ? { x: m.boiaP.x, y: m.boiaP.y || Y_AGUA, z: m.boiaP.z } : mundo(m.vara.ponta); m.e = 'recolhe'; m.t = 0; m.bite = null; }
     function tirarPulo(m) { if (m.pulo && m.pulo.m && m.pulo.m.parent) m.pulo.m.parent.remove(m.pulo.m); m.pulo = null; }
+
+    // ---- (6.6.0) a cena do LANÇAMENTO PERFEITO: o mesmo lançamento visto de 4 câmeras (em câmera lenta), a isca caindo no miolo do poço
+    //   e a mensagem. A linha do tempo: tau < 0 = o jogador armando, 0–T_SWING = o balanço da vara, depois o voo (dur) e a água.
+    const T_SWING = 0.17;
+    const durVoo = (m) => 0.45 + m.dist / 32;
+    function comecarCine() {
+      const m = P.mg; m.e = 'cine'; m.t = 0; m.ocupado = true; m.segura = false;
+      const D = durVoo(m), fim = T_SWING + D;
+      // de que lado fica a câmera de lado: o contrário de onde o Cadu está (para ele não tampar)
+      const d0 = dirDe(m.yaw0 + m.ang), C0 = P.cadu && !P.cadu.oculto && m.comCadu ? P.cadu : null;
+      const lado = C0 && ((C0.x - m.ox) * -d0.z + (C0.z - m.oz) * d0.x) > 0 ? -1 : 1;
+      m.cine = { k: -1, tp: 0, tau: -0.25, pular: false, caiu: false, msg: false, D, lado,
+        planos: [{ de: -0.25, ate: T_SWING + 0.12, vel: 0.42, nome: 'lado' }, { de: 0.0, ate: T_SWING + D * 0.72, vel: 0.55, nome: 'isca' },
+          { de: T_SWING - 0.02, ate: T_SWING + D * 0.94, vel: 0.85, nome: 'aberta' }, { de: T_SWING + D * 0.55, ate: fim + 0.95, vel: 0.45, nome: 'agua' }] };
+      m.U.el.classList.add('cine'); m.U.perf.classList.remove('on'); proximoPlano(m); SOM.zum();
+    }
+    function proximoPlano(m) {
+      const C = m.cine; C.k++; if (C.k >= C.planos.length) return fimCine(m);
+      const pl = C.planos[C.k]; C.tp = 0; C.tau = pl.de; S().cam.snap = true;
+      m.U.plano.textContent = (C.k + 1) + '/4';
+    }
+    function fimCine(m) {
+      const C = m.cine; m.U.el.classList.remove('cine'); m.U.perf.classList.remove('on'); m.cine = null; m.ocupado = false;
+      if (!C.caiu) { respingo(m.alvo.x, m.alvo.z, 8, 0.4); SOM.agua(); }
+      S().cam.snap = true; pousou(true);
+    }
+    // onde a isca está no tempo tau (o mesmo voo do lançamento de verdade)
+    function lanceEm(m, tau, tip) {
+      const C = m.cine;
+      if (tau < T_SWING) { C.e = tau < 0 ? 'forca' : 'swing'; C.t = Math.max(0, tau); m.boiaP = null; return; }
+      if (!C.de) C.de = tip;                                               // a isca sai da ponta da vara no fim do balanço
+      const u = clampN((tau - T_SWING) / C.D, 0, 1); C.e = u >= 1 ? 'agua' : 'voo'; C.t = tau;
+      m.boiaP = { x: lerpN(C.de.x, m.alvo.x, u), y: lerpN(C.de.y, Y_AGUA, u) + Math.sin(u * Math.PI) * (1.2 + m.dist * 0.12), z: lerpN(C.de.z, m.alvo.z, u) };
+      if (u >= 1) m.boiaP = { x: m.alvo.x, y: Y_AGUA + 0.015, z: m.alvo.z };
+    }
+    function tickCine(dt, tip) {
+      const m = P.mg, C = m.cine;
+      if (C.pular) {                                                     // pular: vai direto para a isca caindo na água (e, se já caiu, acaba)
+        C.pular = false; if (C.msg) { fimCine(m); return; }
+        C.k = 3; const p4 = C.planos[3]; C.tau = Math.max(C.tau, T_SWING + C.D - 0.02); C.tp = (C.tau - p4.de) / p4.vel; S().cam.snap = true; m.U.plano.textContent = '4/4';
+      }
+      const P2 = C.planos[C.k]; C.tp += dt; C.tau = P2.de + C.tp * P2.vel;
+      lanceEm(m, C.tau, tip);
+      if (P2.nome === 'agua' && !C.caiu && C.tau >= T_SWING + C.D) {
+        C.caiu = true; respingo(m.alvo.x, m.alvo.z, 10, 0.5); SOM.agua(); anel(m.alvo.x, m.alvo.z, 1.4, 0.6);
+      }
+      if (P2.nome === 'agua' && C.caiu && !C.msg && C.tau >= T_SWING + C.D + 0.25) { C.msg = true; m.U.perf.classList.add('on'); SOM.lendario(); vib([30, 40, 30, 40, 120], true); }
+      if (C.tau >= P2.ate) proximoPlano(m);
+    }
+    function camCine(m, J) {
+      const C = m.cine, pl = C.planos[C.k], d = dirDe(m.yaw0 + m.ang), lado = { x: -d.z * C.lado, z: d.x * C.lado }, yJ = J.y || m.y, A = m.alvo, b = m.boiaP;
+      if (pl.nome === 'lado') {                                            // de lado, perto: o balanço da vara (do lado sem o Cadu)
+        return { px: J.x + lado.x * 2.7 + d.x * 0.35, py: yJ + 1.35, pz: J.z + lado.z * 2.7 + d.z * 0.35, tx: J.x + d.x * 0.7, ty: yJ + 1.45, tz: J.z + d.z * 0.7 };
+      }
+      if (pl.nome === 'isca') {                                            // seguindo a isca: da ponta da vara até perto da água
+        const tip = mundo(m.vara.ponta), o = b || { x: tip.x, y: tip.y - 0.5, z: tip.z };
+        return { px: o.x - d.x * 1.5 + lado.x * 0.35, py: o.y + 0.45, pz: o.z - d.z * 1.5 + lado.z * 0.35, tx: o.x + d.x * 2.2, ty: o.y - 0.15, tz: o.z + d.z * 2.2 };
+      }
+      if (pl.nome === 'aberta') {                                          // de longe, de lado: o arco inteiro
+        const mx = (J.x + A.x) / 2, mz = (J.z + A.z) / 2, k = m.dist * 0.55 + 4;
+        return { px: mx + lado.x * k, py: yJ + 2.2 + m.dist * 0.08, pz: mz + lado.z * k, tx: mx, ty: 1.0, tz: mz };
+      }
+      // rente à água, do outro lado do ponto onde ela cai, olhando de volta
+      return { px: A.x + d.x * 2.4 + lado.x * 1.2, py: Y_AGUA + 0.32, pz: A.z + d.z * 2.4 + lado.z * 1.2, tx: A.x - d.x * 0.6, ty: Y_AGUA + 0.35, tz: A.z - d.z * 0.6 };
+    }
 
     // ---- pegou: o peixe sai da água, o troféu, a reação, o catálogo e a caixa
     const REACAO = [   // [raridade][classe]: o que o jogador diz ({0} = nome do peixe)
@@ -1517,8 +1937,11 @@
       m.vara.raiz.visible = false;
       const c = p.cat[b.i] || (p.cat[b.i] = { n: 0, rec: 0, cl: [0, 0, 0] }), novo = !c.n, recorde = !novo && b.kg > c.rec;
       c.n++; c.cl[b.classe] = (c.cl[b.classe] | 0) + 1; if (b.kg > c.rec) c.rec = b.kg;
-      p.total = (p.total | 0) + 1; if (pe.r === 4) p.lendarios = (p.lendarios | 0) + 1; P.versao++; gravar();
-      (pe.r >= 4 ? SOM.lendario : pe.r >= 2 ? SOM.raro : SOM.pegou)();
+      p.total = (p.total | 0) + 1; if (pe.r === 4) p.lendarios = (p.lendarios | 0) + 1; P.versao++;
+      // (6.6.0) o primeiro peixe do dia acalma: +5 no "tranquilo" (escala −100 a +100; seria +0,5 numa de 0 a 10). Uma vez por dia.
+      const dd = s.dados.dia, tranq = p.tranqDia !== dd; if (tranq) { p.tranqDia = dd; try { if (typeof Espectros !== 'undefined') Espectros.mover('tranquilo', 5, 'pescou no lago'); } catch (e) { /* ok */ } }
+      gravar();
+      (pe.r >= 4 ? SOM.lendario : pe.r >= 2 ? SOM.raro : SOM.pegou)(); vib(pe.r >= 3 ? [60, 40, 60, 40, 220] : [60, 40, 160], true);
       mostrarBanner(b, novo, recorde);
       await api.esperar(1000);
       try {
@@ -1530,7 +1953,7 @@
       } catch (e) { console.error(e); }
       esconderBanner(); if (peixe.parent) peixe.parent.remove(peixe); m.trofeu = null; m.guarda = null; m.vara.raiz.visible = true;
       if (P.isopor) P.isopor.tampa.rotation.x = 0;
-      gravar(); m.ocupado = false; if (P.mg === m) irPara('mira');
+      gravar(); m.ocupado = false; if (P.mg === m) { irPara('mira'); if (tranq) setTimeout(() => { if (P.mg === m) msgMg(tr('Pescar acalma a cabeça. Você está mais tranquilo hoje.'), 3.2); }, 1800); }
     }
     async function guardarNaCaixa(b, peixe, m) {
       const p = dadosP();
@@ -1553,7 +1976,7 @@
     // ---- a cada quadro do minigame
     function tickMg(dt) {
       const s = S(), m = P.mg, J = s.jog;
-      if (!m.pausa) api.tickHorario(dt);
+      if (!m.pausa && m.e !== 'cine') api.tickHorario(dt);
       m.t += dt; if (m.tRec > 0) { m.tRec -= dt; if (m.tRec <= 0) m.U.recado.textContent = ''; }
       if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -m.lim, m.lim);
       const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou';
@@ -1563,56 +1986,78 @@
       J.m.raiz.updateMatrixWorld(true);
       const tip = mundo(m.vara.ponta);
       switch (m.e) {
-        case 'forca': m.forca = Math.min(1, m.t / 1.15); if (m.forca >= 1) soltarLance(); break;
-        case 'embolou': if (m.t >= 2.4) irPara('mira'); break;
-        case 'swing': if (m.t >= 0.17) { m.voo = { de: tip, t: 0, dur: 0.45 + m.dist / 32 }; m.e = 'voo'; m.t = 0; } break;
+        case 'forca': { const x = (m.t / T_FORCA) % 2; m.forca = x <= 1 ? x : 2 - x; break; }   // vai e volta: soltar na hora certa é a distância certa
+        case 'swing': if (m.t >= T_SWING) { m.voo = { de: tip, t: 0, dur: durVoo(m) }; m.e = 'voo'; m.t = 0; } break;
         case 'voo': { const v = m.voo; v.t += dt; const u = clampN(v.t / v.dur, 0, 1); m.boiaP = { x: lerpN(v.de.x, m.alvo.x, u), y: lerpN(v.de.y, Y_AGUA, u) + Math.sin(u * Math.PI) * (1.2 + m.dist * 0.12), z: lerpN(v.de.z, m.alvo.z, u) }; if (u >= 1) pousou(); break; }
+        case 'cine': tickCine(dt, tip); break;
         case 'espera': tickEspera(); break;
         case 'mordida': if (m.t > m.bite.d.janela) escapou(tr('O peixe comeu a isca e fugiu...')); break;
         case 'fisgou': if (m.t >= 0.3) { m.e = 'briga'; m.t = 0; } break;
         case 'briga': tickBriga(dt); break;
         case 'assustou': if (m.t >= 1.6) novaEspera(true); break;
         case 'falhou': if (m.t >= 1.8) recolher(); break;
-        case 'recolhe': { const u = clampN(m.t / 0.7, 0, 1); m.boiaP = { x: lerpN(m.de.x, tip.x, u), y: lerpN(m.de.y, tip.y - 0.4, u) + Math.sin(u * Math.PI) * 0.3, z: lerpN(m.de.z, tip.z, u) }; if (Math.random() < dt * 12) SOM.clique(); if (u >= 1) irPara('mira'); break; }
+        case 'recolhe': { const u = clampN(m.t / 0.7, 0, 1); m.boiaP = { x: lerpN(m.de.x, tip.x, u), y: lerpN(m.de.y, tip.y - 0.55, u) + Math.sin(u * Math.PI) * 0.3, z: lerpN(m.de.z, tip.z, u) }; if (Math.random() < dt * 12) SOM.clique(); if (u >= 1) irPara('mira'); break; }
         default: break;
       }
       if (P.mg !== m) return;
       visualMg(m, tip, dt); camMg(m, J, dt); hudMg(m);
     }
+    // o estado "de verdade" para desenhar (na cena do perfeito, o estado do lançamento que está passando)
+    const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e);
+    const tempoV = (m) => (m.e === 'cine' && m.cine ? m.cine.t || 0 : m.t);
     // pose do jogador com a vara (por cima da pose normal, que já rodou neste quadro)
     function poseJogMg(m, J) {
-      const M = J.m, t = S().t; let dz = 0.55, dx = 0.12, cz = 1.05, ez = 0.72, ex = -0.42, ecz = 0.95, lean = 0, joelho = 0;
+      const M = J.m, t = S().t, e = estadoV(m), tt = tempoV(m); let dz = 0.55, dx = 0.12, cz = 1.05, ez = 0.72, ex = -0.42, ecz = 0.95, lean = 0, joelho = 0;
       if (m.trofeu) {                                                  // segurando o peixe com as duas mãos
         const g = m.trofeu.grande; M.bracoE.rotation.z = M.bracoD.rotation.z = g ? 0.85 : 1.12; M.bracoE.rotation.x = -0.3; M.bracoD.rotation.x = 0.3;
         usarCotovelo(M.bracoE, 0, g ? 1.25 : 0.72); usarCotovelo(M.bracoD, 0, g ? 1.25 : 0.72); M.corpo.rotation.z = g ? 0.1 : 0; return;
       }
-      switch (m.e) {
-        case 'mira': case 'embolou': dz += Math.sin(t * 1.3) * 0.02; if (m.e === 'embolou') { ez = 1.0; ecz = 1.4 + Math.sin(t * 9) * 0.3; } break;
+      switch (e) {
+        case 'mira': dz += Math.sin(t * 1.3) * 0.02; break;
         case 'forca': { const k = m.forca; dz = 0.55 + 1.9 * k; cz = 1.05 - 0.35 * k; ez = 0.72 + 1.1 * k; lean = 0.12 * k; break; }
-        case 'swing': { const u = clampN(m.t / 0.24, 0, 1), k = m.forcaUsada || 0.5; dz = lerpN(0.55 + 1.9 * k, 0.3, suave(u)); cz = lerpN(1.05 - 0.35 * k, 0.85, u); ez = lerpN(0.72 + 1.1 * k, 0.6, suave(u)); lean = lerpN(0.12 * k, -0.08, u); break; }
+        case 'swing': { const u = clampN(tt / 0.24, 0, 1), k = m.forcaUsada || 0.5; dz = lerpN(0.55 + 1.9 * k, 0.3, suave(u)); cz = lerpN(1.05 - 0.35 * k, 0.85, u); ez = lerpN(0.72 + 1.1 * k, 0.6, suave(u)); lean = lerpN(0.12 * k, -0.08, u); break; }
         case 'voo': dz = 0.35; cz = 0.9; ez = 0.62; lean = -0.06; break;
         case 'espera': case 'mordida': case 'assustou': dz = 0.5 + Math.sin(t * 1.1) * 0.02; break;
         case 'fisgou': dz = 1.45; cz = 0.85; lean = 0.12; break;
         case 'briga': { const B = m.B, te = B ? B.tensao : 0.3; dz = 0.95 + te * 0.25 + (B && B.corre ? Math.sin(t * 30) * 0.03 : 0); dx = 0.15; cz = 0.85; ez = 0.95; ex = -0.5; ecz = 1.05 + (m.segura ? Math.sin(t * 16) * 0.28 : 0); lean = 0.15 + te * 0.12; joelho = 0.22 + te * 0.15; break; }
         case 'recolhe': dz = 0.75; ecz = 1.05 + Math.sin(t * 16) * 0.28; break;
-        case 'falhou': if (m.t < 1.3) { dz = 0.9; cz = 1.2; ez = 2.75; ecz = 1.9; ex = 0; } break;
+        case 'falhou': if (tt < 1.3) { dz = 0.9; cz = 1.2; ez = 2.75; ecz = 1.9; ex = 0; } break;
         default: break;
       }
       M.bracoD.rotation.z = dz; M.bracoD.rotation.x = dx; usarCotovelo(M.bracoD, 0, cz);
       M.bracoE.rotation.z = ez; M.bracoE.rotation.x = ex; usarCotovelo(M.bracoE, 0, ecz);
       M.corpo.rotation.z = lean; if (joelho) usarJoelhos(M, -joelho, -joelho);
     }
+    // a montagem na ponta da linha: a BOIA, o LÍDER (linha curtinha) e o ANZOL com a isca. Pendurada balança (atrasa o movimento da ponta).
+    function rigMg(m, tip, e, dt) {
+      const B = m.boiaM, A = m.anzol, Ld = m.lider, t = S().t, pd = m.pend; let bp = null, an = null, isca = false;
+      const pendura = e === 'mira' || e === 'forca' || e === 'swing' || (e === 'recolhe' && m.t > 0.66);
+      if (pendura) {                                                     // pendurada na ponta da vara (um pêndulo simples)
+        if (pd.ox == null) { pd.ox = tip.x; pd.oz = tip.z; }
+        const vx = (tip.x - pd.ox) / Math.max(dt, 1e-3), vz = (tip.z - pd.oz) / Math.max(dt, 1e-3); pd.ox = tip.x; pd.oz = tip.z;
+        pd.vx += (-pd.x * 26 - vx * 1.4 - pd.vx * 3.2) * dt; pd.vz += (-pd.z * 26 - vz * 1.4 - pd.vz * 3.2) * dt;
+        pd.x = clampN(pd.x + pd.vx * dt, -0.5, 0.5); pd.z = clampN(pd.z + pd.vz * dt, -0.5, 0.5);
+        bp = { x: tip.x + pd.x * 0.6, y: tip.y - 0.48, z: tip.z + pd.z * 0.6 }; an = { x: tip.x + pd.x, y: tip.y - 0.82, z: tip.z + pd.z };
+        isca = m.e === 'recolhe' ? !m.comida && m.temIsca : nIsca(dadosP().isca) > 0;
+      } else {
+        pd.ox = null; pd.x = pd.z = pd.vx = pd.vz = 0;
+        if (e === 'voo' || e === 'recolhe') { bp = m.boiaP; if (bp) { const d = dirDe(m.yaw0 + m.ang); an = { x: bp.x - d.x * 0.25 * (e === 'voo' ? 1 : -1), y: bp.y - 0.3, z: bp.z - d.z * 0.25 * (e === 'voo' ? 1 : -1) }; isca = e === 'voo' ? m.temIsca : !m.comida && m.temIsca; } if (e === 'recolhe' && m.arrebentou) bp = an = null; }
+        else if (e === 'espera' || e === 'assustou') bp = { x: m.boiaP.x, y: Y_AGUA + 0.015 + Math.sin(t * 2) * 0.01 - (m.beliscando ? 0.05 : 0), z: m.boiaP.z };
+        else if (e === 'mordida') bp = { x: m.boiaP.x, y: Y_AGUA - 0.12 + Math.sin(t * 25) * 0.02, z: m.boiaP.z };
+        else if ((e === 'briga' || e === 'fisgou') && m.peixeP) bp = { x: m.peixeP.x - dirDe(m.yaw0 + m.ang0).x * 0.6, y: Y_AGUA - 0.03 + Math.sin(t * 9) * 0.015, z: m.peixeP.z - dirDe(m.yaw0 + m.ang0).z * 0.6 };
+        else if (e === 'falhou' && m.de && !m.arrebentou) bp = m.de;
+      }
+      B.visible = !!bp; if (bp) B.position.set(bp.x, bp.y, bp.z);
+      A.visible = !!an; if (an) { A.position.set(an.x, an.y, an.z); A.rotation.y = m.yaw0 + m.ang + Math.PI / 2; iscaNoAnzol(A, isca ? (m.e === 'mira' || m.e === 'forca' ? dadosP().isca : m.iscaLance) : -1); }
+      if (bp && an) linhaDe(Ld, { x: bp.x, y: bp.y - 0.085, z: bp.z }, { x: an.x, y: an.y + 0.1, z: an.z }, 0); else Ld.visible = false;
+      return bp;
+    }
     function visualMg(m, tip, dt) {
-      const L = m.linha, t = S().t; let bp = null, mostra = false;
-      if (m.e === 'voo' || m.e === 'recolhe') { bp = m.boiaP; mostra = !!bp && !(m.e === 'recolhe' && m.arrebentou); }
-      else if (m.e === 'espera' || m.e === 'assustou') { bp = { x: m.boiaP.x, y: Y_AGUA + 0.015 + Math.sin(t * 2) * 0.01 - (m.beliscando ? 0.05 : 0), z: m.boiaP.z }; mostra = true; }
-      else if (m.e === 'mordida') { bp = { x: m.boiaP.x, y: Y_AGUA - 0.14 + Math.sin(t * 25) * 0.02, z: m.boiaP.z }; mostra = true; }
-      else if (m.e === 'falhou' && m.de && !m.arrebentou) { bp = m.de; mostra = true; }
-      m.boiaM.visible = mostra; if (bp) m.boiaM.position.set(bp.x, bp.y, bp.z);
+      const L = m.linha, t = S().t, e = estadoV(m), bp = rigMg(m, tip, e, dt);
       let verga = 0.04;
       if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) { const te = m.B ? m.B.tensao : 0.6; linhaDe(L, tip, { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z }, 0.3 * (1 - te)); verga = 0.15 + te * 0.95; }
       else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, { x: m.voa.m.position.x, y: m.voa.m.position.y, z: m.voa.m.position.z }, 0.03);
-      else if (mostra) { linhaDe(L, tip, { x: bp.x, y: bp.y + 0.06, z: bp.z }, m.e === 'voo' ? 0.04 : 0.32); if (m.e === 'mordida') verga = 0.2; }
+      else if (bp) { linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; }
       else L.visible = false;
       vergar(m.vara, SINAL_VERGA * verga);
       // o peixe saindo da água até a mão
@@ -1627,25 +2072,29 @@
         pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); pl.m.rotation.set(0, m.yaw0 + m.ang0 + Math.PI / 2, -0.9 + u * 1.8);
         if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, 7, 0.4); SOM.agua(); tirarPulo(m); }
       }
-      // a mira: pontinhos na água até onde a boia vai cair (e o anel do alvo enquanto enche a força)
-      const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(m.yaw0 + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.55, dadosP().vara);
+      // a mira: pontinhos na água até onde a boia vai cair (e o anel do alvo enquanto enche a barra)
+      const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(m.yaw0 + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.5, dadosP().vara);
       m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = m.ox + d.x * dd, z = m.oz + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.02, z); });
       if (m.alvoM) { m.alvoM.visible = m.e === 'forca'; const x = m.ox + d.x * Dm, z = m.oz + d.z * Dm; m.alvoM.position.set(x, Y_AGUA + 0.025, z); m.alvoM.scale.setScalar(0.5 + Dm * 0.03); m.alvoM.material.color.setHex(naAgua(x, z) ? 0xf0a020 : 0xd8402a); }
     }
     function camMg(m, J, dt) {
       const s = S(), yaw = m.yaw0 + (m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou' ? m.ang0 : m.ang), d = dirDe(yaw), dir = { x: -d.z, z: d.x }, yJ = J.y || m.y;
+      const snap = s.cam.snap; s.cam.snap = false;                       // (a cidade não zera o snap enquanto tem câmera de cena: zera aqui)
       let c;
+      if (m.e === 'cine' && m.cine) { m.cam = camCine(m, J); s.camCena = m.cam; return; }
       if (m.trofeu || (m.e === 'pegou' && !m.voa)) {                    // de frente (um pouco para o lado de fora do píer, para o Cadu não tampar); peixe grande = câmera mais longe
         const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, k = 2.6 + Math.min(2.2, L * 0.7), dT = dirDe((m.yaw0 - 0.45));
         c = { px: J.x + dT.x * k, py: yJ + 1.75 + Math.min(0.8, L * 0.2), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 0.8, tz: J.z };   // mira no peito: o jogador e o peixe ficam na metade de cima da tela (a fala fica embaixo e o banner, fininho, no topo)
       }
       else if ((m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou') && m.peixeP) { const f = m.peixeP; c = { px: J.x - d.x * 4.4 + dir.x * 1.6, py: yJ + 2.9, pz: J.z - d.z * 4.4 + dir.z * 1.6, tx: lerpN(J.x, f.x, 0.55), ty: 0.4, tz: lerpN(J.z, f.z, 0.55) }; }
       else {
-        let tx = J.x + d.x * 10, tz = J.z + d.z * 10;
+        // mirando: um pouco mais alto, para dar para ver as manchas escuras (fundo) e claras (raso) da água
+        let tx = J.x + d.x * 11, tz = J.z + d.z * 11;
         if (m.boiaP && (m.e === 'espera' || m.e === 'mordida' || m.e === 'assustou' || m.e === 'voo')) { tx = lerpN(tx, m.boiaP.x, 0.5); tz = lerpN(tz, m.boiaP.z, 0.5); }
-        c = { px: J.x - d.x * 4.9 + dir.x * 1.3, py: yJ + 3.0, pz: J.z - d.z * 4.9 + dir.z * 1.3, tx, ty: 0.2, tz };
+        const alto = m.e === 'mira' || m.e === 'forca';
+        c = { px: J.x - d.x * (alto ? 4.4 : 4.9) + dir.x * 1.3, py: yJ + (alto ? 3.9 : 3.0), pz: J.z - d.z * (alto ? 4.4 : 4.9) + dir.z * 1.3, tx, ty: 0.2, tz };
       }
-      if (!m.cam || s.cam.snap) m.cam = Object.assign({}, c);
+      if (!m.cam || snap) m.cam = Object.assign({}, c);
       else { const k = 1 - Math.exp(-dt * 3.2); for (const q in c) m.cam[q] += (c[q] - m.cam[q]) * k; }
       s.camCena = m.cam;
     }
@@ -1666,18 +2115,27 @@
       else if (m.e === 'mordida') { rot = tr('FISGAR!'); ativo = true; urg = true; }
       else if (m.e === 'briga' || m.e === 'fisgou') { rot = tr('PUXAR'); ativo = true; }
       set(U.acao, 'acao', rot); U.acao.disabled = !ativo || m.ocupado; U.acao.classList.toggle('urgente', urg);
-      // barra
+      // a barra: distância no lançamento (com os metros em cima); tensão na briga (com a faixa boa)
       const B = m.B;
-      if (m.e === 'mira' || m.e === 'forca') { zonasBarra(U, 'forca'); U.barra.style.display = ''; U.enche.style.height = (m.e === 'forca' ? m.forca * 100 : 0) + '%'; U.marca.style.display = 'none'; }
-      else if ((m.e === 'briga' || m.e === 'fisgou') && B) { zonasBarra(U, 'tensao'); U.barra.style.display = ''; U.enche.style.height = Math.min(100, B.tensao * 100) + '%'; U.enche.style.background = B.tensao > 0.88 ? '#ff6a50' : B.tensao < 0.15 ? '#8fc0ff' : '#fff0c8'; U.marca.style.display = 'none'; }
-      else U.barra.style.display = 'none';
-      if (B && (m.e === 'briga' || m.e === 'fisgou')) { U.briga.style.display = ''; set(U.dist, 'dist', trf('Distância {0} m', Math.max(0, B.dist).toFixed(1).replace('.', virgula() ? ',' : '.'))); U.fol.style.width = Math.max(0, B.folego / B.folego0 * 100) + '%'; }
-      else U.briga.style.display = 'none';
+      if (m.e === 'mira' || m.e === 'forca') {
+        zonasBarra(U, 'forca'); U.barra.style.display = ''; U.enche.style.height = (m.e === 'forca' ? m.forca * 100 : 0) + '%'; U.enche.style.background = '#fff0c8'; U.enche.style.opacity = '0.9'; U.marca.style.display = 'none'; U.barra.style.borderColor = '';
+        set(U.rot, 'rot', m.e === 'forca' ? Math.round(distLance(m.forca, p.vara)) + ' m' : tr('DISTÂNCIA'));
+      } else if ((m.e === 'briga' || m.e === 'fisgou') && B) {
+        zonasBarra(U, 'tensao'); U.barra.style.display = ''; set(U.rot, 'rot', tr('TENSÃO'));
+        U.faixa.style.bottom = (B.lo * 100) + '%'; U.faixa.style.height = ((B.hi - B.lo) * 100) + '%';
+        U.enche.style.height = Math.min(100, B.tensao * 100) + '%'; U.enche.style.background = B.onde > 0 ? '#ff6a50' : B.onde < 0 ? '#8fc0ff' : '#fff0c8'; U.enche.style.opacity = '0.45';
+        U.marca.style.display = ''; U.marca.style.bottom = 'calc(' + Math.min(100, B.tensao * 100) + '% - 1px)';
+        U.barra.style.borderColor = B.onde > 0 ? '#e8452f' : B.onde < 0 ? '#3f8fd0' : '#3fae4a';
+      } else U.barra.style.display = 'none';
+      if (B && (m.e === 'briga' || m.e === 'fisgou')) {
+        U.briga.style.display = ''; set(U.dist, 'dist', trf('Distância {0} m', Math.max(0, B.dist).toFixed(1).replace('.', virgula() ? ',' : '.')));
+        U.fol.style.width = Math.max(0, B.folego / B.folego0 * 100) + '%'; U.fr.style.width = clampN(B.frouxo, 0, 1) * 100 + '%'; U.es.style.width = clampN(B.estica, 0, 1) * 100 + '%';
+      } else U.briga.style.display = 'none';
       let dica = '';
-      if (m.e === 'mira') dica = tr('Arraste a tela para mirar e segure LANÇAR. Solte na faixa verde!');
-      else if (m.e === 'forca') dica = tr('Solte na faixa verde!');
+      if (m.e === 'mira') dica = tr('Arraste para mirar. Segure LANÇAR: a barra é a distância. Mire nas manchas escuras (fundo)!');
+      else if (m.e === 'forca') dica = tr('Solte na distância certa!');
       else if (m.e === 'espera') dica = tr('Espere a boia afundar. Se ela só tremer, não puxe!');
-      else if (m.e === 'briga' && B) dica = B.corre ? tr('O peixe está correndo! Solte antes de arrebentar!') : B.frouxa > 0.7 ? tr('Linha frouxa! Segure PUXAR!') : tr('Segure PUXAR para recolher.');
+      else if (m.e === 'briga' && B) dica = B.corre && B.onde >= 0 ? tr('O peixe está correndo! Solte a linha!') : B.onde > 0 ? tr('Linha esticada demais! Solte!') : B.onde < 0 ? tr('Linha frouxa! Segure PUXAR!') : tr('Mantenha a tensão na faixa verde.');
       set(U.dica, 'dica', dica);
     }
 
@@ -1703,5 +2161,5 @@
     return { alvos, tick, limpar, montarRua, aberta, _P: P, _f: { dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
   }
 
-  window.FutebolJS.registrarFase({ id: 'pesca', nome: 'Pesca', nucleoMinimo: '6.4.0', iniciar: async () => {}, criar, _dados: DADOS, _logica: LOGICA });
+  window.FutebolJS.registrarFase({ id: 'pesca', nome: 'Pesca', nucleoMinimo: '6.4.0', iniciar: async () => {}, criar, _dados: DADOS, _logica: LOGICA, _arte: { artePeixe } });
 })();
