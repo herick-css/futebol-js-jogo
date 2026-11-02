@@ -243,7 +243,7 @@
       const G = new api.Geo(); G.box(0.024, 0.32, 0.24, '#8a5a2a', 0, 0.06, 0); G.box(0.006, 0.26, 0.2, '#f4f4ec', -0.014, 0.08, 0); G.box(0.014, 0.035, 0.08, '#c9ced4', -0.017, 0.34, 0);   // (a base em y > 0,05: o Geo desenha a face de baixo)
       for (const y of [0.29, 0.25, 0.21, 0.17, 0.13]) G.box(0.002, 0.008, 0.14, '#9aa4b0', -0.018, y, 0);     // as linhas escritas
       const pr = new THREE.Group(), tab = G.malha(api.MAT); tab.position.y = -0.06; pr.add(tab);              // a origem fica na borda de baixo
-      pr.position.set(PR_POS.x, PR_POS.y, PR_POS.z); pr.rotation.z = PR_POS.rz; m.corpo.add(pr);
+      pr.position.set(PR_POS.x, PR_POS.y, PR_POS.z); pr.rotation.z = PR_POS.rz; pr.visible = false; m.corpo.add(pr);   // escondida: só aparece quando ela está anotando
       const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'fernanda'; A.vel = 1.4; A.prancheta = pr; return A;
     }
     const ROUPAS_TREINO = { M: [15, 9, 8, 16], F: [18, 15, 4, 19] };
@@ -465,9 +465,12 @@
       M.beltOff = (M.beltOff + dt * 1.1) % 1;
       for (const e of M.A.esteiras) if (!e.jog) e.tex.offset.y = M.beltOff;
       const F = M.fer;
-      if (F && F.prancheta) F.prancheta.visible = !F.andandoCena && !(F.ia && (F.ia.e === 'treina' || F.ia.e === 'bebe') && !F.conversando && !(M.mg && temPersonal()));
-      if (F && !F.andandoCena && F.poseA === 'fernanda' && !F.andando) {             // a Fernanda segura a prancheta na frente do corpo
-        const m = F.m; segurarPrancheta(m);
+      // a prancheta só aparece quando ela está ANOTANDO (olhando e escrevendo nela); no resto (andando, orientando, treinando, bebendo água,
+      //   conversando, no treino com o jogador) ela fica guardada
+      const anota = !!(F && F.ia && F.ia.e === 'prancheta' && !F.andandoCena && !F.conversando && !F.andando && !(M.mg && temPersonal()));
+      if (F && F.prancheta) F.prancheta.visible = anota;
+      if (F && !F.andandoCena && F.poseA === 'fernanda' && !F.andando) {
+        const m = F.m;
         if (F.torce > 0) { F.torce -= dt; m.bracoD.rotation.z = 2.6 + Math.sin(s.t * 12) * 0.25; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoD, 0, 0.4); }
       }
       if (F && !F.andandoCena && !F.conversando && !(M.mg && temPersonal())) poseFernandaAcao(F);   // (6.3.0) o que ela está fazendo agora
@@ -945,7 +948,7 @@
     }
     function zerarFer(F) {
       const m = F.m; zerarPose(F); m.corpo.position.x = 0; m.corpo.position.y = 0; m.corpo.rotation.set(0, 0, 0); m.pernaE.rotation.set(0, 0, 0); m.pernaD.rotation.set(0, 0, 0);
-      if (F.prancheta) F.prancheta.visible = true;
+      if (F.prancheta) F.prancheta.visible = false;
     }
     function tickFernanda(dt) {
       const F = M.fer; if (!F) return;
@@ -965,10 +968,9 @@
     function poseFernandaAcao(F) {
       const s = S(), m = F.m, f = F.ia, t = s.t; if (!f || f.e === 'anda') return;
       const pr = () => segurarPrancheta(m);
-      if (F.prancheta) F.prancheta.visible = f.e !== 'treina' && f.e !== 'bebe';                     // treinando ou bebendo água, deixa a prancheta de lado
-      if (f.e === 'espera' || f.e === 'anda') { pr(); return; }                                       // andando, ela leva a prancheta junto ao peito
+      if (f.e === 'espera') return;
       if (f.e === 'orienta') {
-        pr(); const fase = Math.floor(f.t / 2.4) % 3;
+        const fase = Math.floor(f.t / 2.4) % 3;
         if (fase === 0) { m.bracoD.rotation.z = 1.35 + Math.sin(t * 3) * 0.05; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, 0.12); }              // aponta para ele
         else if (fase === 1) { m.bracoD.rotation.z = 1.0 + Math.sin(t * 6) * 0.2; m.bracoD.rotation.x = 0.25; usarCotovelo(m.bracoD, 0, 1.1); }          // explica com a mão
         else { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = 0.05; usarCotovelo(m.bracoD, 0, 0.5 + Math.sin(t * 8) * 0.18); }                         // marca o ritmo

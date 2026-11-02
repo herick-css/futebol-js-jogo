@@ -380,6 +380,11 @@
     'Eu estava pensando...': ['I was thinking...', 'Estaba pensando...', 'Stavo pensando...', 'Je me disais...'],
     'Você não quer sair comigo? Ir para {0} domingo de noite?': ['Would you like to go out with me? To {0} on Sunday night?', '¿No quieres salir conmigo? ¿Ir a {0} el domingo en la noche?', 'Ti andrebbe di uscire con me? Andare {0} domenica sera?', 'Tu ne voudrais pas sortir avec moi ? Aller {0} dimanche soir ?'],
     'S-sério?! Eu... eu adoraria!': ['R-really?! I... I’d love to!', '¿E-en serio?! ¡Yo... me encantaría!', 'D-davvero?! Io... mi piacerebbe tantissimo!', 'S-sérieux ?! Je... j’adorerais !'],
+    'Mas... você não trabalha nesse dia?': ['But... don’t you work that day?', 'Pero... ¿no trabajas ese día?', 'Ma... non lavori quel giorno?', 'Mais... tu ne travailles pas ce jour-là ?'],
+    'Eu vou pedir pro meu patrão me liberar no domingo pra te levar. Depois eu pago esse dia de trabalho.': ['I’ll ask my boss to give me Sunday off so I can take you. I’ll make up that work day later.', 'Le voy a pedir a mi jefe que me libere el domingo para llevarte. Después recupero ese día de trabajo.', 'Chiederò al mio capo di lasciarmi libero domenica per portarti fuori. Poi recupero quel giorno di lavoro.', 'Je vais demander à mon patron de me libérer dimanche pour t’emmener. Je rattraperai ce jour de travail après.'],
+    'Então tá! Domingo de noite, combinado!': ['Alright then! Sunday night, it’s a date!', '¡Entonces sí! ¡Domingo por la noche, quedamos!', 'Allora va bene! Domenica sera, d’accordo!', 'D’accord ! Dimanche soir, c’est promis !'],
+    '... Mas você trabalha aqui e o seu chefe te liberou para esse encontro. Ele não vai ficar com raiva?': ['... But you work here, and your boss gave you the night off for this date. Won’t he be mad?', '... Pero trabajas aquí y tu jefe te dio libre para esta cita. ¿No se va a enojar?', '... Ma tu lavori qui e il tuo capo ti ha lasciato libero per questo appuntamento. Non si arrabbierà?', '... Mais tu travailles ici et ton patron t’a libéré pour ce rendez-vous. Il ne va pas être en colère ?'],
+    'Eu não tô nem aí. Eu quero te ajudar, porque eu gosto de você.': ['I don’t care. I want to help you, because I like you.', 'Me da igual. Quiero ayudarte, porque me gustas.', 'Non m’importa. Voglio aiutarti, perché mi piaci.', 'Je m’en fiche. Je veux t’aider, parce que je t’aime bien.'],
     'Domingo de noite, então. Combinado!': ['Sunday night, then. It’s a date!', 'El domingo en la noche, entonces. ¡Trato hecho!', 'Domenica sera, allora. D’accordo!', 'Dimanche soir, alors. C’est noté !'],
     'Foi muito divertido, {0}! Obrigada por me chamar.': ['That was so much fun, {0}! Thanks for inviting me.', '¡Fue muy divertido, {0}! Gracias por invitarme.', 'È stato divertentissimo, {0}! Grazie per avermi invitata.', 'C’était trop drôle, {0} ! Merci de m’avoir invitée.'],
   });
@@ -4563,9 +4568,14 @@
     await fala('jog', T('Eu estava pensando...'));
     await fala('jog', Tf('Você não quer sair comigo? Ir para {0} domingo de noite?', L[2]));
     await fala('lucia', T('S-sério?! Eu... eu adoraria!'));
-    await fala('lucia', T('Domingo de noite, então. Combinado!'));
+    const pizzaiolo = empregoEscolhido() === 'pizzaria';               // a pizzaria abre de quinta a domingo à noite: o domingo é dia de trabalho
+    if (pizzaiolo) {
+      await fala('lucia', T('Mas... você não trabalha nesse dia?'));
+      await fala('jog', T('Eu vou pedir pro meu patrão me liberar no domingo pra te levar. Depois eu pago esse dia de trabalho.'));
+      await fala('lucia', T('Então tá! Domingo de noite, combinado!'));
+    } else await fala('lucia', T('Domingo de noite, então. Combinado!'));
     const hoje = d.dia || 1, ds = (((hoje - 1) % 7) + 7) % 7;
-    d.encontroLucia = { lugar: L[0], dia: hoje + ((6 - ds + 7) % 7 || (d.hora < 18.5 ? 0 : 7)), hora: 19 };
+    d.encontroLucia = { lugar: L[0], dia: hoje + ((6 - ds + 7) % 7 || (d.hora < 18.5 ? 0 : 7)), hora: 19, liberado: pizzaiolo };
     Dialogo.esconder(); gravar(d.ponto || 'chegada');
   }
   // ================================================================== O ENCONTRO COM A LÚCIA (domingo às 19h)
@@ -4634,6 +4644,10 @@
         await J(T('Sabe de uma coisa? Eu vou trabalhar com você!'));
         await L(Tf('Para! Você não tá falando sério... você tem um emprego {0}!', nomeEmpregoCom(io.emprego)));
         await J(T('É muito sério! Eu vou pedir demissão e começo amanhã mesmo!'));
+        if (io.emprego === 'pizzaria' && io.lugar === 'pizzaria') {        // o encontro é justamente na pizzaria onde ele trabalha (e o Mário o liberou hoje)
+          await L(T('... Mas você trabalha aqui e o seu chefe te liberou para esse encontro. Ele não vai ficar com raiva?'));
+          await J(T('Eu não tô nem aí. Eu quero te ajudar, porque eu gosto de você.'));
+        }
         await L(T('Ai, meu Deus! Eu tô muito feliz!'));
         await io.somar(10); R.demissao = true;
       }
@@ -4644,7 +4658,7 @@
   }
   function ioEncontroCidade() {
     return { nome: nomeJog(), fala, escolha: (t, o) => Escolha.mostrar(t, o), somar: async (n) => { Amizade.somar('lucia', n); },
-      trabalha: empregoEscolhido() === 'cafeteria', emprego: empregoEscolhido() === 'cafeteria' ? null : empregoEscolhido() };
+      trabalha: empregoEscolhido() === 'cafeteria', emprego: empregoEscolhido() === 'cafeteria' ? null : empregoEscolhido(), lugar: S.dentro ? S.dentro.nome : 'casa' };
   }
   function criarLuciaEncontro() {
     const A = criarNPCFixo(apLucia(), true, ROUPA_ENC[0], ROUPA_ENC[1]); A.tipo = 'cena';
@@ -5011,6 +5025,8 @@
 #cdEsq .cdMissao { box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px; border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
   font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206; cursor: pointer; pointer-events: auto; max-width: min(46vw, 420px); }
 #cdEsq .cdMisIco { color: #f2c230; font-size: 18px; }
+#cdEsq .cdMisIco.pisca { animation: cdPisca 0.45s steps(1) 4; }
+@keyframes cdPisca { 50% { background: #f2c230; color: #2a1206; } }
 #cdEsq .cdTurIco { color: #fff0c8; background: #a8202a; border-color: #ffcf5a; font-size: 18px; }   /* o painel do turno recolhido */
 #cdEsq .cdTurIco[hidden] { display: none; }
 #cdAviso { position: fixed; z-index: 10; left: 50%; bottom: calc(24% + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); padding: 6px 14px; font: 700 14px/1.2 var(--font-display); letter-spacing: 0.06em; color: #fff0c8;
@@ -5086,7 +5102,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     // missão: aparece inteira por 5 s e recolhe num quadradinho; tocar no quadradinho mostra de novo
     UI.missao.hidden = true; UI.misIco.hidden = false;                 // (6.1.1) começa recolhido (a caixa vazia aparecia e, ao tocar, o ícone não voltava)
     UI.missao.addEventListener('click', () => recolherMissao());
-    UI.misIco.addEventListener('click', () => { som(); mostrarMissao(); });
+    UI.misIco.addEventListener('click', () => { som(); UI.misIco.classList.remove('pisca'); UI.missao.dataset.abrir = '1'; mostrarMissao(); delete UI.missao.dataset.abrir; });   // tocar no "!" sempre abre
     UI.btnMapa.addEventListener('click', abrirMapa);
     UI.fechar.addEventListener('click', fecharMapa);
     UI.remover.addEventListener('click', () => { som(); definirMarca(null); atualizarCoresMapa(); desenharMapa(); });
@@ -5227,17 +5243,22 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   let tMissao = null;
   function mostrarMissao() {
     if (!S) return;
+    if (S.turnoPizza && !S.turnoPizza.fim && !UI.missao.dataset.abrir) {   // no turno da pizzaria a missão muda a toda hora: ela NÃO abre sozinha (a tela já tem muita coisa); só o "!" pisca
+      UI.missao.textContent = S.missao || T('Nenhuma missão por enquanto.');
+      if (UI.missao.hidden) { UI.misIco.hidden = false; UI.misIco.classList.remove('pisca'); void UI.misIco.offsetWidth; UI.misIco.classList.add('pisca'); }
+      return;
+    }
     UI.missao.textContent = S.missao || T('Nenhuma missão por enquanto.'); UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
     clearTimeout(tMissao); tMissao = setTimeout(recolherMissao, 5000);
   }
   // o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
   //   esquerdo; tocar no ícone abre o painel de novo (e ele recolhe sozinho depois de uns segundos).
   let tPainel = 0;
-  function painelRecolhivel(p) {
+  function painelRecolhivel(p, seg) {
     if (!p || !UI) return;
     p.hidden = false; UI.turIco.hidden = true; UI.esq.hidden = false;
-    UI.turIco.onclick = () => { som(); if (p.hidden) painelRecolhivel(p); else recolherPainel(p); };
-    clearTimeout(tPainel); tPainel = setTimeout(() => recolherPainel(p), 6000);
+    UI.turIco.onclick = () => { som(); if (p.hidden) painelRecolhivel(p, seg); else recolherPainel(p); };
+    clearTimeout(tPainel); tPainel = setTimeout(() => recolherPainel(p), (seg || 6) * 1000);
   }
   function recolherPainel(p) { clearTimeout(tPainel); if (!UI || !p || !p.isConnected) return; p.hidden = true; UI.turIco.hidden = false; }
   function fimPainel(p) { clearTimeout(tPainel); if (p) p.hidden = true; if (UI) { UI.turIco.hidden = true; UI.turIco.onclick = null; } }
@@ -5906,5 +5927,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia } });   // (_estado/_planta/_fns: para testes)
 })();

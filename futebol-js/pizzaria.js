@@ -84,6 +84,7 @@
     'São {3} segundos para chegar. São {0} fakes por noite, mais {1} de gorjeta por entrega no prazo, e menos {2} por entrega atrasada.': ['You have {3} seconds to get there. It’s {0} fakes a night, plus {1} tip per on-time delivery, and minus {2} per late delivery.', 'Son {3} segundos para llegar. Son {0} fakes por noche, más {1} de propina por entrega a tiempo y menos {2} por entrega atrasada.', 'Hai {3} secondi per arrivare. Sono {0} fakes a sera, più {1} di mancia per ogni consegna in tempo e meno {2} per ogni consegna in ritardo.', 'Tu as {3} secondes pour arriver. C’est {0} fakes par soir, plus {1} de pourboire par livraison à l’heure et moins {2} par livraison en retard.'],
     'E cuidado com a bicicleta! Se cair, a pizza amassa e o cliente não dá gorjeta.': ['And careful with the bike! If you fall, the pizza gets squashed and the customer won’t tip.', '¡Y cuidado con la bicicleta! Si te caes, la pizza se aplasta y el cliente no da propina.', 'E attento alla bici! Se cadi, la pizza si schiaccia e il cliente non dà la mancia.', 'Et fais attention au vélo ! Si tu tombes, la pizza s’écrase et le client ne donne pas de pourboire.'],
     'E eu sou a Carla, a pizzaiola! Pode deixar que as pizzas saem quentinhas.': ['And I’m Carla, the pizza maker! Don’t worry, the pizzas come out nice and hot.', '¡Y yo soy Carla, la pizzera! Tranquilo, las pizzas salen calentitas.', 'E io sono Carla, la pizzaiola! Tranquillo, le pizze escono belle calde.', 'Et moi c’est Carla, la pizzaiola ! T’inquiète, les pizzas sortent bien chaudes.'],
+    'Hoje você tá de folga, lembra? Eu te liberei. Vai lá no seu encontro!': ['You’re off today, remember? I gave you the night off. Go to your date!', 'Hoy tienes libre, ¿te acuerdas? Te di permiso. ¡Ve a tu cita!', 'Oggi sei libero, ricordi? Ti ho dato la serata. Vai al tuo appuntamento!', 'Tu es de repos aujourd’hui, tu te souviens ? Je t’ai libéré. Va à ton rendez-vous !'],
     'Hoje não é seu dia! Você trabalha de quinta a domingo, a partir das 17h.': ['Today isn’t your day! You work Thursday to Sunday, from 5 PM.', '¡Hoy no te toca! Trabajas de jueves a domingo, desde las 17h.', 'Oggi non è il tuo giorno! Lavori dal giovedì alla domenica, dalle 17.', 'Ce n’est pas ton jour aujourd’hui ! Tu travailles du jeudi au dimanche, à partir de 17 h.'],
     'Seu turno de hoje já acabou. Bom descanso!': ['Your shift today is over. Get some rest!', 'Tu turno de hoy ya terminó. ¡Descansa!', 'Il tuo turno di oggi è finito. Riposati!', 'Ton service est terminé pour aujourd’hui. Repose-toi bien !'],
     'Já tá quase na hora de fechar, hoje não dá mais. Até a próxima!': ['It’s almost closing time, not today anymore. See you next time!', 'Ya casi cerramos, hoy ya no da. ¡Hasta la próxima!', 'È quasi ora di chiudere, oggi non si fa più. Alla prossima!', 'On ferme bientôt, ce sera pas pour aujourd’hui. À la prochaine !'],
@@ -329,6 +330,8 @@
     const equipeLa = () => { const h = hora(); return h >= H_EQUIPE && h < H_FECHA; };
     const ehMeuEmprego = () => api.empregoEscolhido() === 'pizzaria';
     const diaDeTrabalho = () => DIAS_TRABALHO.includes(api.diaSemana());
+    // o domingo do encontro com a Lúcia: o Mário liberou (o jogador paga esse dia depois)
+    const folgaEncontro = () => { const d = S().dados, E = d.encontroLucia; return !!(E && E.dia === (d.dia || 1)); };
     const U = () => { const s = S(); return s && s.turnoPizza && !s.turnoPizza.fim ? s.turnoPizza : null; };
     const texDe = (cv, chave) => { if (M.tex.has(chave)) return M.tex.get(chave); const t = new THREE.CanvasTexture(cv); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; M.tex.set(chave, t); return t; };
     const texPizza = (id, n) => texDe(canvasPizza(id, n), 'p:' + id + ':' + n);
@@ -822,6 +825,7 @@
       }
       if (U()) { await api.fala('mario', T('Bom trabalho! O próximo pedido tá saindo.')); return; }
       if (!diaDeTrabalho()) { await api.fala('mario', T('Hoje não é seu dia! Você trabalha de quinta a domingo, a partir das 17h.')); return; }
+      if (folgaEncontro()) { await api.fala('mario', T('Hoje você tá de folga, lembra? Eu te liberei. Vai lá no seu encontro!')); return; }
       if (d.trabalhouHoje) { await api.fala('mario', T('Seu turno de hoje já acabou. Bom descanso!')); return; }
       if (d.precisaBanho) { await api.fala('mario', T('Eita... você tá com cheiro de quem acabou de jogar bola! Vai tomar um banho e volta, beleza?')); return; }
       if (hora() >= H_ULTIMO_TURNO || hora() < 12) { await api.fala('mario', T('Já tá quase na hora de fechar, hoje não dá mais. Até a próxima!')); return; }
@@ -835,7 +839,7 @@
     }
     function podeComecar() {
       const s = S(), d = s.dados, h = hora();
-      return ehMeuEmprego() && !!dadosP().apresentou && !s.turnoPizza && diaDeTrabalho() && !d.trabalhouHoje && !d.precisaBanho && h >= H_TURNO && h < H_ULTIMO_TURNO && !!M.mario;
+      return ehMeuEmprego() && !!dadosP().apresentou && !s.turnoPizza && diaDeTrabalho() && !folgaEncontro() && !d.trabalhouHoje && !d.precisaBanho && h >= H_TURNO && h < H_ULTIMO_TURNO && !!M.mario;
     }
     async function comecarTurno() {
       const C = M.mario; if (C) { C.conversando = true; const J = S().jog; C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); }
@@ -1168,29 +1172,31 @@
 
     // ---------------------------------------------------------------- HUD da entrega (sabor + pixel art + cronômetro)
     function mostrarHud(sim) {
-      // aparece aberto (sabor + cronômetro) por 3 s e recolhe para um quadradinho com a pizza e os segundos; tocar abre de novo por 3 s
+      // um quadradinho no canto superior esquerdo (junto dos outros ícones: missão, mapa...), com a pizza e os segundos que faltam.
+      //   Na hora do pedido (e quando a pizza amassa) ele abre por 3 s, com o sabor e o tempo ao lado; tocar abre de novo por 3 s.
       let el = document.getElementById('pzEntrega');
       if (!sim) { if (el) { el.hidden = true; clearTimeout(M.tHudE); } return; }
       if (!el) {
         el = document.createElement('div'); el.id = 'pzEntrega';
-        el.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(84px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.92);border:3px solid #f2c230;color:#fff0c8;padding:4px 10px 4px 6px;font:700 12px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);pointer-events:auto;cursor:pointer;box-sizing:border-box;';
-        el.innerHTML = '<span class="pzIc" style="position:relative;display:block"></span><span class="pzTxts" style="display:flex;flex-direction:column;gap:2px"><span class="pzNome"></span><span class="pzT" style="font-size:11px"></span></span><span class="pzMini" style="position:absolute;right:-7px;bottom:-8px;padding:1px 3px;background:#2a1206;border:2px solid currentColor;font:700 9px/1 var(--font-display)"></span>';
+        el.style.cssText = 'display:flex;align-items:center;gap:6px;pointer-events:auto;cursor:pointer;color:#fff0c8;font:700 11px/1.2 var(--font-display);white-space:nowrap;';
+        el.innerHTML = '<span class="pzQ" style="position:relative;flex:none;width:34px;height:34px;box-sizing:border-box;display:grid;place-items:center;background:rgba(42,18,6,.86);border:3px solid #f2c230">' +
+          '<span class="pzIc" style="display:block;line-height:0"></span><span class="pzMini" style="position:absolute;right:-8px;bottom:-8px;min-width:12px;text-align:center;padding:1px 3px;background:#2a1206;border:2px solid currentColor;font:700 9px/1 var(--font-display)"></span></span>' +
+          '<span class="pzTxts" style="display:flex;flex-direction:column;gap:1px;background:rgba(42,18,6,.92);border:3px solid #f2c230;padding:2px 8px"><span class="pzNome"></span><span class="pzT" style="font-size:10px"></span></span>';
         el.addEventListener('click', () => { api.som(); abrirHudE(!M.hudAberto); });
-        (document.getElementById('raizJogo') || document.body).appendChild(el);
+        const esq = api.UI && api.UI() && api.UI().esq;
+        if (esq) esq.appendChild(el); else { el.style.cssText += 'position:fixed;z-index:9;left:10px;top:50px;'; (document.getElementById('raizJogo') || document.body).appendChild(el); }
       }
       el.hidden = false; abrirHudE(true); atualizarHud(true);
     }
     function abrirHudE(abre) {
       const el = document.getElementById('pzEntrega'); if (!el) return;
       clearTimeout(M.tHudE); M.hudAberto = !!abre;
-      el.querySelector('.pzTxts').style.display = abre ? 'flex' : 'none'; el.querySelector('.pzMini').style.display = abre ? 'none' : '';
-      el.style.padding = abre ? '4px 10px 4px 6px' : '3px'; el.style.gap = abre ? '8px' : '0';
-      const ic = el.querySelector('.pzIc canvas'); if (ic) ic.style.width = ic.style.height = abre ? '40px' : '30px';
+      el.querySelector('.pzTxts').style.display = abre ? 'flex' : 'none';
       if (abre) M.tHudE = setTimeout(() => abrirHudE(false), 3000);
     }
     function atualizarHud(forca) {
       const el = document.getElementById('pzEntrega'), P = M.pedido; if (!el || el.hidden || !P) return;
-      const ic = el.querySelector('.pzIc'); if (forca || ic.dataset.k !== P.sabor) { ic.dataset.k = P.sabor; ic.replaceChildren(iconePizza(P.sabor, 8, 40)); const cv = ic.querySelector('canvas'); if (cv) { cv.style.display = 'block'; cv.style.width = cv.style.height = M.hudAberto ? '40px' : '30px'; } }
+      const ic = el.querySelector('.pzIc'); if (forca || ic.dataset.k !== P.sabor) { ic.dataset.k = P.sabor; ic.replaceChildren(iconePizza(P.sabor, 8, 40)); const cv = ic.querySelector('canvas'); if (cv) { cv.style.display = 'block'; cv.style.width = cv.style.height = '24px'; } }
       const nome = Tf('Pedido: {0}', T(SABORES.find((q) => q.id === P.sabor).nome)) + (P.caiu ? ' ' + T('(amassada)') : '');
       let t, cor;
       if (P.t0 == null) { t = T('coloque na bicicleta e suba'); cor = '#fff0c8'; }
@@ -1200,19 +1206,19 @@
       if (n.textContent !== nome) n.textContent = nome; if (tt.textContent !== t) tt.textContent = t; tt.style.color = cor;
       const mi = el.querySelector('.pzMini'), mt = P.t0 == null ? '🚲' : P.t <= PRAZO ? String(Math.ceil(PRAZO - P.t)) : '+' + Math.floor(P.t - PRAZO);
       if (mi.textContent !== mt) mi.textContent = mt; mi.style.color = cor;
-      el.style.borderColor = P.t0 != null && P.t > PRAZO ? '#c8352b' : '#f2c230';
+      const late = P.t0 != null && P.t > PRAZO ? '#c8352b' : '#f2c230'; el.querySelector('.pzQ').style.borderColor = late; el.querySelector('.pzTxts').style.borderColor = late;
     }
 
     // ---- o painel do turno (alto, no meio): hora, entregas, no prazo, atrasadas e "Acelerar"
     function montarPainel() {
-      if (M.painel) { api.painelRecolhivel(M.painel); return; }
+      if (M.painel) { api.painelRecolhivel(M.painel, 3); return; }
       const p = document.createElement('div'); p.id = 'pzTurno';
       p.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(48px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.9);border:3px solid #c8352b;color:#fff0c8;padding:3px 6px 3px 8px;font:700 11px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);';
       p.innerHTML = '<span class="pTxt"></span><button type="button" class="pxBtn pAcel" style="--p:var(--p2,2px);min-height:26px;font-size:9px;padding:0 6px"></button>';
       (document.getElementById('raizJogo') || document.body).appendChild(p);
       M.painel = p; M.pTxt = p.querySelector('.pTxt'); M.pAcel = p.querySelector('.pAcel'); M.pAcel.textContent = T('Acelerar final do turno');
       M.pAcel.onclick = () => { const s = S(); if (s && s.modo === 'livre' && U()) { api.som(); if (M.pedido) { avisoRapido(T('Termine a entrega antes.')); return; } s.modo = 'cena'; api.UI().ctl.hidden = true; acelerar().finally(() => { const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar(); }); } };
-      api.painelRecolhivel(p);
+      api.painelRecolhivel(p, 3);
     }
     function atualizarPainel() {
       const s = S(), u = s && s.turnoPizza; if (!u || !M.painel) return;

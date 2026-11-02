@@ -1016,6 +1016,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     // o encontro no quarto e a manhã seguinte
     'Hahahaha! Você ainda manda bem!': ['Hahahaha! You’ve still got it!', '¡Jajajaja! ¡Todavía lo haces bien!', 'Ahahahah! Sei ancora bravissima!', 'Hahahaha ! Tu assures toujours !'],
     'Que noite boa ontem...': ['What a great night last night...', 'Qué buena noche la de ayer...', 'Che bella serata ieri...', 'Quelle belle soirée hier...'],
+    'Te liberei do serviço e você ainda pede demissão logo em seguida? É cuspir no prato que comeu mesmo...': ['I gave you the night off and right after you quit? That’s really biting the hand that feeds you...', '¿Te di libre y enseguida renuncias? Eso es escupir en el plato en que comiste...', 'Ti ho dato la serata libera e subito dopo ti licenzi? È proprio sputare nel piatto in cui hai mangiato...', 'Je t’ai libéré et juste après tu démissionnes ? C’est vraiment cracher dans la soupe...'],
+    'Me desculpa, seu Mário... Mas eu precisava ajudar quem eu gosto.': ['I’m sorry, Mr. Mário... But I had to help someone I care about.', 'Perdón, don Mário... Pero tenía que ayudar a quien quiero.', 'Mi scusi, signor Mário... Ma dovevo aiutare chi mi sta a cuore.', 'Désolé, M. Mário... Mais je devais aider quelqu’un que j’aime.'],
+    'Hunf... Boa sorte lá.': ['Hmph... Good luck there.', 'Hmpf... Suerte allá.', 'Mpf... Buona fortuna.', 'Pff... Bonne chance là-bas.'],
     'Poxa, tem certeza?': ['Oh no, are you sure?', 'Vaya, ¿estás seguro?', 'Accidenti, sei sicuro?', 'Mince, tu es sûr ?'],
     'Tenho sim': ['Yes, I am', 'Sí, lo estoy', 'Sì, lo sono', 'Oui, j’en suis sûr'],
     'É uma pena ouvir isso, mas tudo bem! Sucesso no novo trabalho': ['Sorry to hear that, but that’s okay! Good luck at your new job', 'Qué pena oír eso, ¡pero está bien! Éxito en el nuevo trabajo', 'Mi dispiace sentirlo, ma va bene! In bocca al lupo per il nuovo lavoro', 'Dommage, mais pas de souci ! Bonne chance dans ton nouveau travail'],
@@ -1551,25 +1554,26 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (S.fimRes) S.fimRes();
   }
   // ---- acordou depois do encontro (cidade.js: { acordar: 'encontro', demissao: 'mercado' | 'pizzaria' | null })
-  const CONTATO_EMPREGO = { mercado: 'Mercadinho Bom Preço', pizzaria: 'Pizzaria' };
+  const CONTATO_EMPREGO = { mercado: 'Mercadinho Bom Preço', pizzaria: 'Mário (Pizzaria)' };
   function celularMensagens(contato, msgs) {
     return new Promise((ok) => {
       const el = document.createElement('div'); el.id = 'f2Celular';
       el.style.cssText = 'position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(0,0,0,.35);';
       const cel = document.createElement('div');
-      cel.style.cssText = 'width:min(250px,70vw);height:min(330px,86vh);background:#1c1c1f;border:4px solid #3a3a3e;border-radius:18px;padding:10px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;font-family:var(--font-body);box-shadow:0 6px 0 rgba(0,0,0,.4);';
+      cel.style.cssText = 'width:min(250px,70vw);height:min(330px,92vh);background:#1c1c1f;border:4px solid #3a3a3e;border-radius:18px;padding:10px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;font-family:var(--font-body);box-shadow:0 6px 0 rgba(0,0,0,.4);';
       const topo = document.createElement('div'); topo.textContent = contato;
       topo.style.cssText = 'font:700 13px/1.2 var(--font-display);color:#fff0c8;text-align:center;padding:4px 0 6px;border-bottom:2px solid #3a3a3e;';
-      const lista = document.createElement('div'); lista.style.cssText = 'flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden;justify-content:flex-end;';
-      const ok_ = document.createElement('button'); ok_.type = 'button'; ok_.className = 'pxBtn pxPrim'; ok_.textContent = T('Fechar'); ok_.hidden = true; ok_.style.cssText = 'align-self:center;';
+      const lista = document.createElement('div'); lista.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overscroll-behavior:contain;';   // rola: mensagem comprida não fica cortada em cima
+      const ok_ = document.createElement('button'); ok_.type = 'button'; ok_.className = 'pxBtn pxPrim'; ok_.textContent = T('Fechar'); ok_.hidden = true; ok_.style.cssText = 'align-self:center;height:34px;min-height:0;padding:0 18px;font-size:13px;';
       cel.append(topo, lista, ok_); el.appendChild(cel); ($('raizJogo') || document.body).appendChild(el);
       let i = 0;
       const prox = () => {
         if (!S || !S.ativo) { el.remove(); ok(); return; }
-        if (i >= msgs.length) { ok_.hidden = false; return; }
+        if (i >= msgs.length) { ok_.hidden = false; setTimeout(() => { lista.scrollTop = lista.scrollHeight; }, 0); return; }
         const [eu, txt] = msgs[i++], b = document.createElement('div'); b.textContent = txt;
         b.style.cssText = 'max-width:82%;padding:6px 8px;font:600 12px/1.3 var(--font-body);border-radius:10px;' + (eu ? 'align-self:flex-end;background:#3fa34d;color:#fff;' : 'align-self:flex-start;background:#f2f2ee;color:#1c1c1f;');
-        lista.appendChild(b); try { somClique(); } catch (e) { /* sem som */ }
+        if (!lista.children.length) b.style.marginTop = 'auto';          // as mensagens começam embaixo (como num chat)
+        lista.appendChild(b); lista.scrollTop = lista.scrollHeight; try { somClique(); } catch (e) { /* sem som */ }
         setTimeout(prox, 1500);
       };
       ok_.onclick = () => { el.remove(); ok(); };
@@ -1584,7 +1588,11 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     J.seguir = true; J.pose = 'pe'; J.x = -1.9; J.z = -1.3; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(300);
     if (demissao) {
       J.pose = poseCelular; J.yaw = J.yawAlvo = -Math.PI / 2; await esperar(700);
-      await celularMensagens(CONTATO_EMPREGO[demissao] || T('Trabalho'), [[false, T('Poxa, tem certeza?')], [true, T('Tenho sim')], [false, T('É uma pena ouvir isso, mas tudo bem! Sucesso no novo trabalho')]]);
+      // a pizzaria: o Mário tinha liberado o domingo para o encontro, e no dia seguinte vem o pedido de demissão
+      const msgs = demissao === 'pizzaria'
+        ? [[false, T('Te liberei do serviço e você ainda pede demissão logo em seguida? É cuspir no prato que comeu mesmo...')], [true, T('Me desculpa, seu Mário... Mas eu precisava ajudar quem eu gosto.')], [false, T('Hunf... Boa sorte lá.')]]
+        : [[false, T('Poxa, tem certeza?')], [true, T('Tenho sim')], [false, T('É uma pena ouvir isso, mas tudo bem! Sucesso no novo trabalho')]];
+      try { await celularMensagens(CONTATO_EMPREGO[demissao] || T('Trabalho'), msgs); } catch (e) { console.error(e); const el = document.getElementById('f2Celular'); if (el) el.remove(); }
       J.pose = 'pe';
       await dizer(['jog', T('Hoje começa o trabalho novo na cafeteria!')]);
     }
@@ -1833,7 +1841,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         try { await encontroNoQuarto(encCasa); } catch (e) { console.error(e); S.paraCidade = true; S.fimDaFase = true; if (S.fimRes) S.fimRes(); }
       } else if (volta && acordarTipo === 'encontro') {
         dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');
-        await acordarDoEncontro(ctx.args.demissao || null);
+        try { await acordarDoEncontro(ctx.args.demissao || null); } catch (e) { console.error(e); }   // um erro aqui não pode deixar o jogo preso na cena
         liberar();
       } else if (volta && acordar) {
         // passou das 2h da madrugada na rua: antes ele "chegava" na entrada do prédio e um novo dia começava ali mesmo
