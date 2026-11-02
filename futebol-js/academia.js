@@ -232,12 +232,18 @@
       const { m, opt } = modelo(ap, false, 3, ['#1c1c1f', '#2a2a2e', '#f2c230', '#f2c230']);           // polo preta da academia
       const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'balcao'; return A;
     }
+    const PR_POS = { x: 0.40, y: 1.11, z: -0.05, rz: -0.6 };            // a prancheta no tronco da Fernanda (borda de baixo, na ponta dos dedos da mão esquerda)
     // A FERNANDA: cabelo vermelho marsala cacheado, pele branca, rosto delicado, top e legging pretos (+ prancheta na mão)
     const AP_FERNANDA = () => ({ pele: PELES_FITZ[1].cor, cabelo: '#6e1a2e', estilo: acha(ESTILOS_CABELO, 'Cacheado volumoso'), rosto: acha(ROSTOS, 'Delicada'), labio: 1, barba: 0, corBarba: '#6e1a2e' });
     function criarFernanda() {
       const { m, opt } = modelo(AP_FERNANDA(), true, 19, ['#151517', '#151517', '#2a2a2e', '#151517']);   // "Top e calça": top preto + legging preta
-      const G = new api.Geo(); G.box(0.03, 0.26, 0.2, '#8a5a2a', 0, -0.36, 0); G.box(0.035, 0.2, 0.16, '#f4f4ec', 0.01, -0.35, 0); G.box(0.04, 0.03, 0.06, '#c9ced4', 0.01, -0.235, 0);
-      const pr = G.malha(api.MAT); m.bracoE.cotovelo.add(pr);                                           // a prancheta (mão esquerda)
+      // a prancheta fica presa ao tronco, na frente do peito e inclinada para ela (a face com o papel virada para os olhos); a mão
+      //   esquerda (PR_MAO_E) só encosta de leve na borda de baixo. Assim ela aparece inteira (antes ficava dentro da mão) e não some
+      //   quando o braço "desliga" o cotovelo.
+      const G = new api.Geo(); G.box(0.024, 0.32, 0.24, '#8a5a2a', 0, 0.06, 0); G.box(0.006, 0.26, 0.2, '#f4f4ec', -0.014, 0.08, 0); G.box(0.014, 0.035, 0.08, '#c9ced4', -0.017, 0.34, 0);   // (a base em y > 0,05: o Geo desenha a face de baixo)
+      for (const y of [0.29, 0.25, 0.21, 0.17, 0.13]) G.box(0.002, 0.008, 0.14, '#9aa4b0', -0.018, y, 0);     // as linhas escritas
+      const pr = new THREE.Group(), tab = G.malha(api.MAT); tab.position.y = -0.06; pr.add(tab);              // a origem fica na borda de baixo
+      pr.position.set(PR_POS.x, PR_POS.y, PR_POS.z); pr.rotation.z = PR_POS.rz; m.corpo.add(pr);
       const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'fernanda'; A.vel = 1.4; A.prancheta = pr; return A;
     }
     const ROUPAS_TREINO = { M: [15, 9, 8, 16], F: [18, 15, 4, 19] };
@@ -377,7 +383,8 @@
     // ---------------------------------------------------------------- FERNANDA (personal)
     async function falarComFernanda() {
       const s = S(), F = M.fer, J = s.jog; if (!F) return;
-      F.yawAlvo = Math.atan2(-(J.z - F.z), J.x - F.x); F.conversando = true;
+      F.yawAlvo = Math.atan2(-(J.z - F.z), J.x - F.x); F.conversando = true; F.andando = false;
+      if (F.ia && (F.ia.e === 'treina' || F.ia.e === 'bebe')) { zerarFer(F); F.ia.e = 'espera'; F.ia.t = 0; F.ia.dur = 1.2; }   // para o exercício e pega a prancheta
       try { await conversaFernanda(); } finally { if (M.fer) { M.fer.conversando = false; if (M.fer.ia) { M.fer.ia.e = 'espera'; M.fer.ia.t = 0; M.fer.ia.dur = 1.2; M.fer.rota = null; } } Dialogo.esconder(); }
     }
     async function conversaFernanda() {
@@ -443,6 +450,10 @@
     }
 
     // poses dos frequentadores e da equipe (por cima do poseAtor da cidade)
+    // a mão esquerda encostando na borda de baixo da prancheta e a direita escrevendo nela (ângulos achados por busca, conferidos na tela)
+    const PR_MAO_E = { rz: 0.3, rx: -0.2, cx: -0.5, cz: 1.4 };
+    const PR_MAO_D = { rz: 1.5, rx: 0.75, cx: 0.001, cz: 0.15 };
+    function segurarPrancheta(m) { m.bracoE.rotation.z = PR_MAO_E.rz; m.bracoE.rotation.x = PR_MAO_E.rx; usarCotovelo(m.bracoE, PR_MAO_E.cx, PR_MAO_E.cz); }
     function posesNPC(dt) {
       const s = S();
       for (const P of M.npcs) {
@@ -454,8 +465,9 @@
       M.beltOff = (M.beltOff + dt * 1.1) % 1;
       for (const e of M.A.esteiras) if (!e.jog) e.tex.offset.y = M.beltOff;
       const F = M.fer;
+      if (F && F.prancheta) F.prancheta.visible = !F.andandoCena && !(F.ia && (F.ia.e === 'treina' || F.ia.e === 'bebe') && !F.conversando && !(M.mg && temPersonal()));
       if (F && !F.andandoCena && F.poseA === 'fernanda' && !F.andando) {             // a Fernanda segura a prancheta na frente do corpo
-        const m = F.m; m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.1; usarCotovelo(m.bracoE, -0.5, 1.1);
+        const m = F.m; segurarPrancheta(m);
         if (F.torce > 0) { F.torce -= dt; m.bracoD.rotation.z = 2.6 + Math.sin(s.t * 12) * 0.25; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoD, 0, 0.4); }
       }
       if (F && !F.andandoCena && !F.conversando && !(M.mg && temPersonal())) poseFernandaAcao(F);   // (6.3.0) o que ela está fazendo agora
@@ -681,7 +693,7 @@
       await api.preto(true, 350);
       s.camCena = camDe(tipo, q); J.sentado = false; J.rota = null;
       if (tipo === 'esteira') { J.x = q.x; J.z = q.z + 0.1; J.yaw = J.yawAlvo = Math.PI / 2; }
-      if (personal && F) { const p = pontoFer(tipo, q); F.x = p.x; F.z = p.z; virarPara(F, q.x, q.z); F.poseA = 'fernanda'; }
+      if (personal && F) { const p = pontoFer(tipo, q); F.x = p.x; F.z = p.z; virarPara(F, q.x, q.z); F.poseA = 'fernanda'; F.andando = false; F.rota = null; if (F.ia) { if (F.ia.e === 'treina' || F.ia.e === 'bebe') zerarFer(F); F.ia.e = 'espera'; } }
       poseJogador(0.016);
       await api.preto(false, 350);
       if (personal && F) { F.torce = 1.5; await api.fala('fernanda', T('Bora! Eu tô aqui do seu lado.')); Dialogo.esconder(); }
@@ -755,10 +767,15 @@
     // duas pessoas (a Fernanda, se estiver por perto, e quem estiver mais perto) vêm correndo, levantam a barra e voltam
     async function socorroSupino(q) {
       const G = M.mg, cands = [M.fer, ...M.npcs.filter((P) => P.tipo === 'vaga' || P.tipo === 'rosca')].filter(Boolean).slice(0, 2);
-      const lados = [{ x: q.x - 0.62, z: q.z - 0.35 }, { x: q.x + 0.62, z: q.z - 0.35 }];
-      const ajud = cands.map((P, i) => ({ P, volta: { x: P.x, z: P.z, yaw: P.yaw, tipo: P.tipo, poseA: P.poseA }, lado: lados[i] }));
-      for (const h of ajud) { h.P.tipo = 'cena'; h.P.poseA = null; h.P.andandoCena = true; for (const m of M.halteres) m.visible = false; }
-      await Promise.race([Promise.all(ajud.map((h) => api.andar(h.P, [[h.lado.x, h.lado.z]], 3.2))), api.esperar(4500)]);
+      // os dois lados da barra; cada um chega pelo seu lado (a "entrada" fica um pouco mais longe do banco) contornando os aparelhos
+      const lados = [{ x: q.x - 0.62, z: q.z - 0.35, ax: q.x - 1.25 }, { x: q.x + 0.62, z: q.z - 0.35, ax: q.x + 1.25 }];
+      const comp = (P, L) => { const r = rotaLivre(P.x, P.z, L.ax, L.z); let c = 0, px = P.x, pz = P.z; for (const [x, z] of r) { c += Math.hypot(x - px, z - pz); px = x; pz = z; } return { r, c }; };
+      let ordem = [0, 1];                                                   // quem vai para cada lado: o menor caminho somado (a Fernanda do outro lado do banco fica do lado dela)
+      if (cands.length === 2) { const a = comp(cands[0], lados[0]).c + comp(cands[1], lados[1]).c, b = comp(cands[0], lados[1]).c + comp(cands[1], lados[0]).c; if (b < a) ordem = [1, 0]; }
+      else if (cands.length === 1 && comp(cands[0], lados[1]).c < comp(cands[0], lados[0]).c) ordem = [1];
+      const ajud = cands.map((P, i) => { const L = lados[ordem[i]]; return { P, volta: { x: P.x, z: P.z, yaw: P.yaw, tipo: P.tipo, poseA: P.poseA }, lado: L, ida: comp(P, L).r.concat([[L.x, L.z]]) }; });
+      for (const h of ajud) { h.P.tipo = 'cena'; h.P.poseA = null; h.P.andandoCena = true; h.P.rota = null; for (const m of M.halteres) m.visible = false; }
+      await Promise.race([Promise.all(ajud.map((h) => api.andar(h.P, h.ida, 3.2))), api.esperar(6000)]);
       for (const h of ajud) { h.P.x = h.lado.x; h.P.z = h.lado.z; virarPara(h.P, q.x, h.lado.z); h.P.andando = false; }
       if (ajud[0]) { ajud[0].P.fala = true; }
       api.aviso((ajud[0] ? (ajud[0].P === M.fer ? T('Fernanda') : T('Alguém')) + ': ' : '') + T('Calma, a gente tira! Um, dois... já!'));
@@ -769,8 +786,9 @@
       G.socorro = 'livre';
       await api.esperar(500);
       for (const h of ajud) { h.P.curva = 0; }
-      await Promise.race([Promise.all(ajud.map((h) => api.andar(h.P, [[h.volta.x, h.volta.z]], 1.6))), api.esperar(5000)]);
-      for (const h of ajud) { const P = h.P; P.x = h.volta.x; P.z = h.volta.z; P.yaw = P.yawAlvo = h.volta.yaw; P.tipo = h.volta.tipo; P.poseA = h.volta.poseA; P.andandoCena = false; P.andando = false; }
+      // a volta: sai pelo mesmo lado e contorna até onde estava
+      await Promise.race([Promise.all(ajud.map((h) => api.andar(h.P, [[h.lado.ax, h.lado.z]].concat(rotaLivre(h.lado.ax, h.lado.z, h.volta.x, h.volta.z)), 1.6))), api.esperar(8000)]);
+      for (const h of ajud) { const P = h.P; P.x = h.volta.x; P.z = h.volta.z; P.yaw = P.yawAlvo = h.volta.yaw; P.tipo = h.volta.tipo; P.poseA = h.volta.poseA; P.andandoCena = false; P.andando = false; if (P === M.fer && P.ia) { P.ia.e = 'espera'; P.ia.t = 0; P.ia.dur = 1; P.rota = null; } }
       for (const m of M.halteres) m.visible = true;
     }
     function tickSocorro(dt) {
@@ -822,6 +840,37 @@
       }
       const r = []; for (let k = fim; k; k = de[k]) { r.unshift(NOS[k]); if (k === ini) break; }
       return r;
+    }
+    // caminho LIVRE de (x, z) até (tx, tz): se a reta não passa por aparelho nenhum, vai direto; senão entra na rede pelo ponto mais
+    //   perto que dá para alcançar em linha reta e sai dela pelo ponto mais perto do destino que também chega reto nele
+    function segLivre(ax, az, bx, bz, folga) {
+      const L = (M.R && M.R.col) || [], d = Math.hypot(bx - ax, bz - az), n = Math.max(1, Math.ceil(d / 0.1)), f = folga == null ? 0.22 : folga;
+      for (let k = 0; k <= n; k++) {
+        const u = k / n, x = ax + (bx - ax) * u, z = az + (bz - az) * u;
+        if (u * d < 0.3 || (1 - u) * d < 0.05) continue;                // o começo pode estar encostado num aparelho
+        for (const b of L) if (x > b.x0 - f && x < b.x1 + f && z > b.z0 - f && z < b.z1 + f) return false;
+      }
+      return true;
+    }
+    function caminhoNos(ini, fim) {
+      const D = { [ini]: 0 }, de = {}, fila = [ini], feito = new Set();
+      while (fila.length) {
+        fila.sort((a, b) => D[a] - D[b]); const u = fila.shift(); if (feito.has(u)) continue; feito.add(u); if (u === fim) break;
+        for (const v of VIZ[u] || []) { const d = D[u] + dist2(NOS[u], NOS[v]); if (D[v] === undefined || d < D[v]) { D[v] = d; de[v] = u; fila.push(v); } }
+      }
+      const r = []; for (let k = fim; k; k = de[k]) { r.unshift(NOS[k].slice()); if (k === ini) break; }
+      return r;
+    }
+    function rotaLivre(x, z, tx, tz) {
+      if (segLivre(x, z, tx, tz)) return [[tx, tz]];
+      const nos = Object.keys(NOS), porDist = (px, pz) => nos.slice().sort((a, b) => dist2(NOS[a], [px, pz]) - dist2(NOS[b], [px, pz]));
+      const ini = porDist(x, z).find((k) => segLivre(x, z, NOS[k][0], NOS[k][1])) || noMaisPerto(x, z);
+      const fim = porDist(tx, tz).find((k) => segLivre(NOS[k][0], NOS[k][1], tx, tz)) || noMaisPerto(tx, tz);
+      const r = caminhoNos(ini, fim); r.push([tx, tz]);
+      // atalhos: pula pontos da rede quando dá para ir reto até um ponto mais à frente
+      const out = []; let px = x, pz = z, k = 0;
+      while (k < r.length) { let j = r.length - 1; while (j > k && !segLivre(px, pz, r[j][0], r[j][1])) j--; out.push(r[j]); px = r[j][0]; pz = r[j][1]; k = j + 1; }
+      return out;
     }
     // anda até o próximo ponto da rota; devolve true quando a rota acabou
     function passoRota(P, dt, vel) {
@@ -884,7 +933,7 @@
       else irPara(F, escolha(['A1', 'A3', 'A2', 'C', 'A35', 'H']), { e: 'espera', dur: 1 + Math.random() * 1.5 });
     }
     function irPara(F, no, depois) {
-      const f = F.ia; f.depois = depois; F.rota = caminhoSala(F.x, F.z, no).map((q) => q.slice());
+      const f = F.ia; f.depois = depois; F.rota = rotaLivre(F.x, F.z, NOS[no][0], NOS[no][1]);
       if (F.rota.length && Math.hypot(F.rota[0][0] - F.x, F.rota[0][1] - F.z) < 0.1) F.rota.shift();
       if (!F.rota.length) chegouFer(F); else { f.e = 'anda'; f.t = 0; }
     }
@@ -899,7 +948,8 @@
       if (F.prancheta) F.prancheta.visible = true;
     }
     function tickFernanda(dt) {
-      const F = M.fer; if (!F || F.conversando || F.andandoCena || (M.mg && temPersonal())) return;
+      const F = M.fer; if (!F) return;
+      if (F.conversando || F.andandoCena || (M.mg && temPersonal())) { if (!F.andandoCena) F.andando = false; return; }   // conversando ou no treino: ela PARA (senão ficava andando no lugar)
       if (!F.ia) { F.ia = { e: 'espera', t: 0, dur: 1.2, ult: null }; }
       const f = F.ia; f.t += dt;
       if (f.e === 'anda') { if (passoRota(F, dt, VEL_FER)) chegouFer(F); return; }
@@ -914,9 +964,9 @@
     // a pose de cada estado (por cima do poseAtor, depois do tickPessoas)
     function poseFernandaAcao(F) {
       const s = S(), m = F.m, f = F.ia, t = s.t; if (!f || f.e === 'anda') return;
-      const pr = () => { m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.1; usarCotovelo(m.bracoE, -0.5, 1.1); };
-      if (f.e === 'espera') { pr(); return; }
-      if (F.prancheta) F.prancheta.visible = f.e !== 'treina';                                       // treinando, deixa a prancheta de lado
+      const pr = () => segurarPrancheta(m);
+      if (F.prancheta) F.prancheta.visible = f.e !== 'treina' && f.e !== 'bebe';                     // treinando ou bebendo água, deixa a prancheta de lado
+      if (f.e === 'espera' || f.e === 'anda') { pr(); return; }                                       // andando, ela leva a prancheta junto ao peito
       if (f.e === 'orienta') {
         pr(); const fase = Math.floor(f.t / 2.4) % 3;
         if (fase === 0) { m.bracoD.rotation.z = 1.35 + Math.sin(t * 3) * 0.05; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, 0.12); }              // aponta para ele
@@ -924,7 +974,7 @@
         else { m.bracoD.rotation.z = 1.5; m.bracoD.rotation.x = 0.05; usarCotovelo(m.bracoD, 0, 0.5 + Math.sin(t * 8) * 0.18); }                         // marca o ritmo
         usarCabeca(m, Math.sin(t * 2.2) * 0.08 - 0.001);
       } else if (f.e === 'prancheta') {
-        pr(); m.bracoD.rotation.z = 0.75; m.bracoD.rotation.x = -0.15; usarCotovelo(m.bracoD, 0, 1.35 + Math.sin(t * 9) * 0.08); usarCabeca(m, -0.32);          // escrevendo
+        pr(); m.bracoD.rotation.z = PR_MAO_D.rz; m.bracoD.rotation.x = PR_MAO_D.rx; usarCotovelo(m.bracoD, PR_MAO_D.cx, PR_MAO_D.cz + Math.sin(t * 9) * 0.07); usarCabeca(m, -0.38);   // escrevendo na prancheta
       } else if (f.e === 'bebe') {
         m.bracoE.rotation.z = 0.2; m.bracoD.rotation.z = 0.2; usarCabeca(m, -0.28 - 0.04 * Math.sin(t * 2));
       } else if (f.e === 'treina') {
@@ -1053,7 +1103,7 @@
       entrou, saiu, alvos, tick, limpar, aberto, rotuloFechada, montarRua,
       temAcesso, temPersonal, treinosHoje, emTreino: () => !!M.mg,
       _M: M,
-      _f: { espelho, POSES_ESP, aplicarPoseEsp, proximaPoseEsp, falhouHoje, marcarFalha, FALAS_ERRO, NOS, ARESTAS, caminhoSala, horaSaida, comecarSaida, viagens, proximaAcao, irPara, chegouFer, zerarFer, treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
+      _f: { socorroSupino, rotaLivre, segLivre, segurarPrancheta, espelho, POSES_ESP, aplicarPoseEsp, proximaPoseEsp, falhouHoje, marcarFalha, FALAS_ERRO, NOS, ARESTAS, caminhoSala, horaSaida, comecarSaida, viagens, proximaAcao, irPara, chegouFer, zerarFer, treinar, toque, falarComDiego, falarComFernanda, catracaTravada, poseSupino, poseAbd, deitar, bracos, maos, acabar, pagar, dadosA, dificuldade },
       _regras: { PRECO_ACESSO, PRECO_PERSONAL, DIAS_PLANO, TREINOS_DIA, GANHO, HORAS_TREINO, EST, ABD, SUP, BR },
     };
   }

@@ -1,6 +1,12 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.1
+     - Lago: a trilha passa mais longe da frente da casinha do Bené (o caixote travava os NPCs) e dois postes e um banco saíram de cima
+       do caminho (conferido: nenhum ponto da rede de caminhos perto do lago fica bloqueado). O SAPO CURURU ficou 2× maior, no gramado entre
+       a rua de terra e a trilha, olhando para quem chega; a PLACA nova (tábuas, moldura, pregos, nome dos dois lados num plano à frente da
+       madeira e um sapinho pintado). Canoa com casco 3D de verdade. Água sem "polygonOffsetFactor" (não passa mais por cima das
+       vitórias-régias, que também subiram um pouco). Deque oeste mais largo, com o banco na PONTA (a saída para a terra ficou livre).
    NOVIDADES DA 6.6.0
      - O LAGO: a água agora é pintada pela PROFUNDIDADE (profLago: cinco POÇOS escuros e cinco BANCOS DE AREIA claros, POCOS_LAGO /
        BANCOS_LAGO), a mesma que a pesca usa para dar a nota do lançamento. 8 tons (o miolo do poço é o mais escuro).
@@ -631,7 +637,7 @@
   const LANCHE = R(788, 432, 74, 48);                                 // o balcão do seu Valdemar (frente para o norte, a porta de serviço fica 4,6 m do lado)
   const PIER = { x0: -54, x1: -37, z0: 54.4, z1: 56.2 };
   const CASA_PESCA = { x0: -51.6, x1: -46.4, z0: 41.6, z1: 45.4 };    // (6.4.0) a casinha do seu Bené (iscas, varas, compra de peixe), na beira norte do lago, virada para a água
-  const DEQUE_OESTE = { x0: -104.6, x1: -100.0, z0: 52.2, z1: 54.0, y: 0.3 };   // (6.6.0) um deque baixo de madeira na beira oeste (dá para pescar dele)
+  const DEQUE_OESTE = { x0: -105.0, x1: -99.4, z0: 51.6, z1: 54.6, y: 0.3 };   // (6.6.0) um deque baixo de madeira na beira oeste (dá para pescar dele); 6.6.1: mais largo, banco na ponta
   const naDeque = (x, z) => (x > PIER.x0 && x < PIER.x1 + 0.5 && z > PIER.z0 + 0.15 && z < PIER.z1 - 0.15) || (x > DEQUE_OESTE.x0 - 0.5 && x < DEQUE_OESTE.x1 && z > DEQUE_OESTE.z0 + 0.15 && z < DEQUE_OESTE.z1 - 0.15);
   // (6.6.0) a TRILHA em volta do lago: um anel de terra uns 3,4 m fora da água (mais longe onde tem as cercas velhas; passa na frente da
   //   casinha da pesca e não sai do mundo no sul). É desenhada no chão (texChao), entra na rede de calçadas (gente passeando em volta do
@@ -643,7 +649,7 @@
     for (let k = 0; k < 64; k++) {
       const a = k / 64 * Math.PI * 2, gr = a * 180 / Math.PI, m = cercas.some(([a0, a1]) => gr > a0 - 4 && gr < a1 + 4) ? 4.3 : 3.4;
       let [x, z] = bordaLago(a, m); z = Math.min(z, LIM.z1 - 2.2); z = Math.max(z, 41.7);
-      if (x > CASA_PESCA.x0 - 1 && x < CASA_PESCA.x1 + 1.2 && z < CASA_PESCA.z1 + 0.9) z = CASA_PESCA.z1 + 0.9;
+      if (x > CASA_PESCA.x0 - 1 && x < CASA_PESCA.x1 + 1.6 && z < CASA_PESCA.z1 + 1.75) z = CASA_PESCA.z1 + 1.75;   // (6.6.1) longe do caixote e do balcão do Bené (os NPCs travavam ali)
       pts.push([Math.round(x * 100) / 100, Math.round(z * 100) / 100]);
     }
     TRILHA = pts; return pts;
@@ -1337,12 +1343,12 @@
       const geoA = guardar(new THREE.CircleGeometry(1, 120));            // o círculo vira a forma do lago (cada ponto da borda vai até formaLago)
       { const P = geoA.attributes.position, U = geoA.attributes.uv; for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i), r = Math.hypot(px, py); if (r > 1e-6) { const f = formaLago(-Math.atan2(py, px)); P.setXY(i, px * f, py * f); } U.setXY(i, P.getX(i) / FORMA_MAX * 0.5 + 0.5, P.getY(i) / FORMA_MAX * 0.5 + 0.5); }
         P.needsUpdate = true; U.needsUpdate = true; geoA.computeBoundingSphere(); }
-      const agua = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: ta, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+      const agua = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: ta, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1 })));
       agua.rotation.x = -Math.PI / 2; agua.scale.set(LAGO.rx, LAGO.rz, 1); agua.position.set(LAGO.cx, 0.05, LAGO.cz); g.add(agua); S.agua = agua;
       S.ondas = [];                                                            // duas camadas de ondinhas por cima, andando devagar em sentidos diferentes (pixels quadrados: 64 px = 15 m)
       for (const [seed, cor, rep, vx, vz, o] of [[71, 'rgba(206,238,250,0.55)', [4, 3.75], 0.011, 0.004, 2], [72, 'rgba(150,205,236,0.5)', [3, 2.8], -0.007, 0.009, 3]]) {
         const tx = guardar(texOndas(seed, cor)); tx.repeat.set(rep[0], rep[1]);
-        const m = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: tx, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -1 - o, polygonOffsetUnits: -1 - o })));
+        const m = new THREE.Mesh(geoA, guardar(new THREE.MeshLambertMaterial({ map: tx, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1 - o })));   // (6.6.1) sem 'factor': a água não passa mais por cima das vitórias-régias, da canoa e da mira
         m.rotation.x = -Math.PI / 2; m.scale.set(LAGO.rx, LAGO.rz, 1); m.position.set(LAGO.cx, 0.05 + o * 0.002, LAGO.cz); m.renderOrder = o; g.add(m); S.ondas.push({ tx, vx, vz });
       }
       const G = new Geo(), p = PIER, pw = p.x1 - p.x0, pd = p.z1 - p.z0;
@@ -1481,9 +1487,9 @@
         const x = cx + (rnd() - 0.5) * 3.4, z = cz + (rnd() - 0.5) * 2.4, r = 0.3 + rnd() * 0.36;
         if (!dentroLago(x, z, -0.5) || naDeque(x, z)) continue;
         const verde = ['#3f7f3a', '#4a8f40', '#58a04a', '#457f36'][Math.floor(rnd() * 4)];
-        G.box(r * 2, 0.02, r * 1.25, verde, x, 0.062, z); G.box(r * 1.25, 0.02, r * 2, verde, x, 0.062, z); G.box(r * 1.7, 0.022, r * 1.7, verde, x, 0.061, z);
-        G.box(r * 0.55, 0.026, 0.05, '#2b5f26', x + r * 0.5, 0.063, z);                       // o cortezinho da folha
-        if (rnd() < 0.4) { const c = rnd() < 0.5 ? '#f2a0c8' : '#f8f0f4'; G.box(0.18, 0.08, 0.18, c, x - r * 0.25, 0.08, z + r * 0.2); G.box(0.12, 0.06, 0.12, escurece(c, 0.85), x - r * 0.25, 0.15, z + r * 0.2); G.box(0.06, 0.04, 0.06, '#f2d040', x - r * 0.25, 0.2, z + r * 0.2); }
+        G.box(r * 2, 0.03, r * 1.25, verde, x, 0.072, z); G.box(r * 1.25, 0.03, r * 2, verde, x, 0.072, z); G.box(r * 1.7, 0.032, r * 1.7, verde, x, 0.071, z);
+        G.box(r * 0.55, 0.036, 0.05, '#2b5f26', x + r * 0.5, 0.073, z);                       // o cortezinho da folha
+        if (rnd() < 0.4) { const c = rnd() < 0.5 ? '#f2a0c8' : '#f8f0f4'; G.box(0.18, 0.08, 0.18, c, x - r * 0.25, 0.1, z + r * 0.2); G.box(0.12, 0.06, 0.12, escurece(c, 0.85), x - r * 0.25, 0.17, z + r * 0.2); G.box(0.06, 0.04, 0.06, '#f2d040', x - r * 0.25, 0.22, z + r * 0.2); }
       }
     }
     // pedras na beira (as grandes têm corpo)
@@ -1499,42 +1505,68 @@
     { const [cx, cz] = bordaLago(98 * Math.PI / 180, -0.3);
       G.box(3.6, 0.36, 0.38, '#6a4a2a', cx, -0.1, cz, '#7e5a34'); G.box(0.38, 0.38, 0.4, '#c8a878', cx - 1.8, -0.1, cz); G.box(0.2, 0.2, 0.22, '#a8865a', cx - 1.8, 0.0, cz);
       G.box(0.12, 0.55, 0.1, '#6a4a2a', cx + 0.7, 0.2, cz - 0.1); G.box(0.55, 0.1, 0.1, '#6a4a2a', cx - 0.5, 0.2, cz + 0.16); G.box(0.3, 0.14, 0.3, '#4f8a3a', cx + 1.1, 0.24, cz); }
-    // o SAPO CURURU de pedra na entrada da trilha (olhando para o lago) e a placa do lago (virada para quem chega pela trilha)
-    { const x = -43.6, z = 44.0;
-      G.box(1.15, 0.45, 0.95, '#8a8a84', x, 0, z, '#9a988e'); G.box(1.25, 0.08, 1.05, '#7a7a76', x, 0, z);
-      G.box(0.84, 0.38, 0.64, '#7a7038', x, 0.45, z - 0.04, '#857a3c');                     // corpo
-      G.box(0.66, 0.28, 0.52, '#8a8040', x, 0.74, z + 0.1);                                 // cabeça (frente = +z, o lago)
+    // (6.6.1) o SAPO CURURU de pedra, BEM MAIOR, no gramado entre a rua de terra e a trilha (quem desce a rua oeste dá de cara com ele),
+    //   olhando para quem chega (norte); a PLACA do lago do lado dele: tábuas com moldura, o nome entalhado e um sapinho pintado.
+    { const x = -54.6, z = 40.0, K = 2.0, B = (w, h, d, c, dx, y, dz, topo) => G.box(w * K, h * K, d * K, c, x + dx * K, y * K, z + dz * K, topo);
+      B(1.25, 0.32, 1.05, '#8a8a84', 0, 0, 0, '#9a988e'); B(1.35, 0.06, 1.15, '#7a7a76', 0, 0, 0); B(1.1, 0.06, 0.9, '#a8a59a', 0, 0.32, 0);   // pedestal
+      B(0.84, 0.38, 0.66, '#6f6a34', 0, 0.38, 0.03, '#7c7638');                        // corpo
+      B(0.7, 0.3, 0.56, '#7d7738', 0, 0.68, -0.1, '#857f3e');                           // cabeça (frente = −z, para quem chega)
       for (const sg of [-1, 1]) {
-        G.box(0.16, 0.14, 0.14, '#e8c830', x + sg * 0.21, 0.92, z + 0.22); G.box(0.07, 0.09, 0.05, '#101010', x + sg * 0.21, 0.94, z + 0.29);   // olhos
-        G.box(0.2, 0.12, 0.32, '#7a7038', x + sg * 0.4, 0.45, z + 0.22); G.box(0.24, 0.16, 0.26, '#6a6030', x + sg * 0.44, 0.45, z - 0.22);       // patas
-        G.box(0.14, 0.1, 0.14, '#c8a838', x + sg * 0.36, 0.78, z - 0.12);                   // as glândulas do cururu (atrás dos olhos)
+        B(0.18, 0.16, 0.16, '#e8c830', sg * 0.22, 0.88, -0.24); B(0.08, 0.1, 0.05, '#101010', sg * 0.22, 0.9, -0.33); B(0.04, 0.04, 0.02, '#fff8e0', sg * 0.24, 0.96, -0.355);   // olhos com brilho
+        B(0.22, 0.12, 0.34, '#6f6a34', sg * 0.42, 0.38, -0.22); B(0.08, 0.04, 0.1, '#5e5a2c', sg * 0.42 + sg * 0.06, 0.38, -0.4);   // patas da frente (com dedinhos)
+        B(0.26, 0.18, 0.3, '#625e2e', sg * 0.46, 0.38, 0.24);                           // coxas de trás
+        B(0.15, 0.11, 0.18, '#c8a838', sg * 0.37, 0.74, 0.08);                          // as glândulas do cururu
       }
-      G.box(0.52, 0.03, 0.04, '#3a3418', x, 0.79, z + 0.36);                                // boca
-      for (let i = 0; i < 12; i++) G.box(0.06, 0.04, 0.06, '#5a5228', x + (rnd() - 0.5) * 0.7, 0.82, z - 0.3 + rnd() * 0.3);   // verrugas
-      S.col.push({ x0: x - 0.62, x1: x + 0.62, z0: z - 0.52, z1: z + 0.52 });
-      // a placa (mourão + tábua com o nome), um pouco atrás e ao lado, virada para o norte
-      const px = x + 1.15, pz = z - 0.75; G.box(0.12, 1.55, 0.12, '#6a4428', px - 0.98, 0, pz); G.box(0.12, 1.55, 0.12, '#6a4428', px + 0.98, 0, pz);
-      const tex = guardar(texLetreiro('LAGO DO SAPO CURURU', '#e2c48e', '#3a2210', 2.3, 0.5)), mb = guardar(new THREE.MeshLambertMaterial({ color: 0x6a4428 }));
-      const mf = guardar(new THREE.MeshLambertMaterial({ map: tex, emissive: 0x000000, emissiveMap: tex })); (S.letreiros || (S.letreiros = [])).push(mf);
-      const placa = new THREE.Mesh(guardar(new THREE.BoxGeometry(2.3, 0.5, 0.08)), [mb, mb, mb, mb, mb, mf]); placa.position.set(px, 1.22, pz - 0.02); S.grupo.add(placa);
-      S.col.push({ x0: px - 0.85, x1: px + 0.85, z0: pz - 0.12, z1: pz + 0.12 }); }
+      B(0.56, 0.035, 0.04, '#3a3418', 0, 0.74, -0.385); B(0.5, 0.05, 0.05, '#9a9442', 0, 0.705, -0.37);   // boca e o "queixo" claro
+      for (let i = 0; i < 18; i++) B(0.06, 0.04, 0.06, '#545024', (rnd() - 0.5) * 0.72, 0.76 + rnd() * 0.04, -0.2 + rnd() * 0.5);   // verrugas
+      for (let i = 0; i < 6; i++) B(0.12, 0.012, 0.1, '#5a8a3a', (rnd() - 0.5) * 1.1, 0.32, (rnd() - 0.5) * 0.85);   // musgo no pedestal
+      S.col.push({ x0: x - 0.68 * K, x1: x + 0.68 * K, z0: z - 0.58 * K, z1: z + 0.58 * K });
+      // a placa
+      const px = x + 3.5, pz = z - 0.2, W = 2.6, Hp = 0.78, yb = 1.0;
+      for (const sg of [-1, 1]) { G.box(0.16, yb + Hp + 0.22, 0.16, '#5a3a1e', px + sg * (W / 2 - 0.05), 0, pz, '#6a4428'); G.box(0.22, 0.08, 0.22, '#7a5230', px + sg * (W / 2 - 0.05), yb + Hp + 0.22, pz); }
+      G.box(W + 0.12, 0.08, 0.14, '#4a2c14', px, yb - 0.06, pz); G.box(W + 0.12, 0.08, 0.14, '#4a2c14', px, yb + Hp - 0.02, pz);   // moldura
+      for (let k = 0; k < 3; k++) G.box(W - 0.06, Hp / 3 - 0.025, 0.08, ['#c89a62', '#bb8e58', '#c49660'][k], px, yb + 0.02 + k * Hp / 3, pz);   // 3 tábuas
+      for (const sg of [-1, 1]) for (const yy of [yb + 0.12, yb + Hp - 0.14]) G.box(0.04, 0.04, 0.1, '#2a2a2e', px + sg * (W / 2 - 0.22), yy, pz);   // pregos
+      const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128; const g = cv.getContext('2d');
+      g.clearRect(0, 0, 512, 128); g.font = "bold 46px Silkscreen, 'Courier New', monospace"; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = 'rgba(60,32,12,0.55)'; g.fillText('LAGO DO', 300, 38); g.fillText('SAPO CURURU', 300, 92);
+      g.fillStyle = '#3a1e0a'; g.fillText('LAGO DO', 298, 35); g.fillText('SAPO CURURU', 298, 89);
+      const sp = [[2, 0, 6, 1], [1, 1, 8, 3], [0, 4, 10, 3], [1, 7, 2, 2], [7, 7, 2, 2]];   // o sapinho pintado (verde, olhos amarelos)
+      for (const [qx, qy, qw, qh] of sp) { g.fillStyle = '#4f7f2e'; g.fillRect(14 + qx * 9, 26 + qy * 9, qw * 9, qh * 9); }
+      g.fillStyle = '#f2d040'; g.fillRect(14 + 2 * 9, 26 + 1 * 9, 9, 9); g.fillRect(14 + 7 * 9, 26 + 1 * 9, 9, 9); g.fillStyle = '#101010'; g.fillRect(14 + 2 * 9 + 3, 26 + 9 + 3, 4, 4); g.fillRect(14 + 7 * 9 + 3, 26 + 9 + 3, 4, 4);
+      const tx = guardar(new THREE.CanvasTexture(cv)); tx.magFilter = THREE.NearestFilter; tx.minFilter = THREE.LinearFilter; tx.generateMipmaps = false;
+      const mt = guardar(new THREE.MeshLambertMaterial({ map: tx, transparent: true, alphaTest: 0.3, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+      const geoT = guardar(new THREE.PlaneGeometry(W - 0.2, Hp - 0.08));
+      for (const sg of [-1, 1]) { const pl = new THREE.Mesh(geoT, mt); pl.position.set(px, yb + Hp / 2 - 0.02, pz + sg * 0.046); if (sg < 0) pl.rotation.y = Math.PI; S.grupo.add(pl); }   // o nome dos dois lados (um pouco à frente da madeira: sem briga de textura)
+      S.col.push({ x0: px - W / 2 - 0.1, x1: px + W / 2 + 0.1, z0: pz - 0.12, z1: pz + 0.12 }); }
     // o DEQUE OESTE (tábuas, pilares e um banco virado para a água)
     { const D = DEQUE_OESTE, w = D.x1 - D.x0, d = D.z1 - D.z0, cx = (D.x0 + D.x1) / 2, cz = (D.z0 + D.z1) / 2;
       G.box(w, 0.08, d, '#a8743f', cx, D.y - 0.08, cz, '#b8844a');
       for (let x = D.x0 + 0.42; x < D.x1 - 0.1; x += 0.46) G.box(0.035, 0.006, d - 0.04, '#6a4428', x, D.y, cz);   // as frestas das tábuas
       for (const x of [D.x0 + 0.3, cx, D.x1 - 0.2]) for (const z of [D.z0 + 0.1, D.z1 - 0.1]) G.box(0.22, 1.0, 0.22, '#5a3a1e', x, -0.7, z, '#7a5230');
       S.pisos.push({ x0: D.x0, x1: D.x1, z0: D.z0, z1: D.z1, y: D.y });
-      const bx = D.x0 + 0.55;                                                                // banco no deque (encostado na beira, virado para o leste)
+      const bx = D.x1 - 0.42;                                                                // (6.6.1) o banco fica na PONTA (a saída para a terra fica livre)                                                                // banco no deque (encostado na beira, virado para o leste)
       G.box(0.48, 0.08, 1.4, '#8a5a2b', bx, D.y + 0.42, cz); G.box(0.1, 0.5, 1.4, '#8a5a2b', bx - 0.2, D.y + 0.5, cz); for (const sg of [-0.55, 0.55]) G.box(0.4, 0.42, 0.1, '#6a4428', bx, D.y, cz + sg);
       S.col.push({ x0: bx - 0.26, x1: bx + 0.24, z0: cz - 0.72, z1: cz + 0.72 });
       for (const t of [-0.35, 0.35]) assento(bx + 0.04, cz + t, 1, 0, D.y + 0.5, 'banco'); }
-    // a CANOA amarrada do lado do píer
-    { const x = -44.2, z = 53.45;
-      G.box(3.2, 0.24, 0.66, '#8a4a2a', x, -0.04, z, '#6a3a1e'); G.box(2.8, 0.06, 0.52, '#4a2a14', x, 0.14, z);
-      for (const sg of [-1, 1]) { G.box(0.34, 0.18, 0.4, '#8a4a2a', x + sg * 1.72, 0.0, z); G.box(0.16, 0.12, 0.2, '#8a4a2a', x + sg * 1.92, 0.08, z); }
-      G.box(0.3, 0.05, 0.62, '#a8743f', x - 0.5, 0.17, z); G.box(0.3, 0.05, 0.62, '#a8743f', x + 0.7, 0.17, z);
-      G.box(1.9, 0.035, 0.06, '#c8a878', x + 0.3, 0.22, z + 0.16); G.box(0.24, 0.04, 0.14, '#c8a878', x + 1.3, 0.22, z + 0.16);   // o remo
-      G.box(0.04, 0.04, 0.95, '#d8d0b8', x + 1.85, 0.2, z + 0.5); }                                 // a corda até o píer
+    // (6.6.1) a CANOA amarrada do lado do píer: casco de verdade (com volume): fundo estreito, bordas abertas, pontas levantadas e o lado de dentro
+    { const x0 = -44.2, z0 = 53.45, Lc = 1.65, N = 12, pts = [];
+      for (let i = 0; i <= N; i++) { const u = -1 + 2 * i / N, w = 0.36 * Math.pow(Math.max(0, 1 - Math.abs(u) ** 2.2), 0.55), h = 0.36 + 0.14 * u * u; pts.push({ x: x0 + u * Lc, w, h, wb: w * 0.42 }); }
+      const yk = -0.03, cor = '#8a4a2a', corE = '#6a3a1e', corD = '#5a2e14', borda = '#a8743f';
+      for (let i = 0; i < N; i++) {
+        const a = pts[i], b = pts[i + 1];
+        for (const sg of [-1, 1]) {
+          G.quad([a.x, yk, z0 + sg * a.wb], [b.x, yk, z0 + sg * b.wb], [b.x, b.h, z0 + sg * b.w], [a.x, a.h, z0 + sg * a.w], i % 2 ? cor : escurece(cor, 0.94), [0, -0.2, sg]);        // casco por fora
+          G.quad([a.x, 0.08, z0 + sg * a.wb * 0.85], [b.x, 0.08, z0 + sg * b.wb * 0.85], [b.x, b.h, z0 + sg * b.w * 0.88], [a.x, a.h, z0 + sg * a.w * 0.88], corE, [0, 0.3, -sg]);   // por dentro
+          G.quad([a.x, a.h, z0 + sg * a.w * 0.88], [b.x, b.h, z0 + sg * b.w * 0.88], [b.x, b.h + 0.035, z0 + sg * b.w], [a.x, a.h + 0.035, z0 + sg * a.w], borda, [0, 1, 0]);   // a borda (amurada)
+        }
+        G.quad([a.x, yk, z0 - a.wb], [b.x, yk, z0 - b.wb], [b.x, yk, z0 + b.wb], [a.x, yk, z0 + a.wb], corD, [0, -1, 0]);   // fundo
+        G.quad([a.x, 0.08, z0 - a.wb * 0.85], [b.x, 0.08, z0 - b.wb * 0.85], [b.x, 0.08, z0 + b.wb * 0.85], [a.x, 0.08, z0 + a.wb * 0.85], '#4a2a14', [0, 1, 0]);   // assoalho
+      }
+      for (const u of [-0.45, 0.4]) { const xx = x0 + u * Lc, w = 0.36 * Math.pow(1 - Math.abs(u) ** 2.2, 0.55); G.box(0.22, 0.05, w * 1.75, '#a8743f', xx, 0.26, z0); }   // os bancos
+      for (const sg of [-1, 1]) G.box(0.1, 0.12, 0.08, borda, x0 + sg * Lc * 0.99, 0.48, z0);   // as pontas
+      G.box(1.6, 0.035, 0.06, '#c8a878', x0 + 0.2, 0.13, z0 + 0.1); G.box(0.26, 0.04, 0.15, '#c8a878', x0 + 1.05, 0.13, z0 + 0.1);   // o remo no fundo
+      G.box(0.04, 0.04, 0.95, '#d8d0b8', x0 + 1.55, 0.36, z0 + 0.5); }                                  // a corda até o píer
     // bancos de frente para a água (beira norte e beira sudeste)
     const banco = (x, z, fx, fz) => {
       const ao = fx !== 0, lx = ao ? 0.5 : 1.8, lz = ao ? 1.8 : 0.5, y = altura(x, z);
@@ -1543,9 +1575,9 @@
       S.col.push({ x0: x - lx / 2, x1: x + lx / 2, z0: z - lz / 2, z1: z + lz / 2 });
       for (const t of [-0.45, 0.45]) assento(x + (ao ? 0 : t), z + (ao ? t : 0), fx, fz, y + 0.52, 'banco');
     };
-    banco(-62.5, 45.5, 0, 1); banco(-38.9, 64.2, -1, 0); banco(-84.5, 71.6, 0, -1);
+    banco(-62.5, 45.5, 0, 1); banco(-38.9, 64.2, -1, 0); banco(-84.5, 70.9, 0, -1);
     // postes (acendem de noite como os da praça): na ponta do píer em terra, na frente da casinha e no deque oeste
-    for (const [x, z] of [[-35.6, 53.4], [-44.6, 46.9], [-105.6, 51.6], [-70, 42.6]]) {
+    for (const [x, z] of [[-34.0, 52.3], [-43.0, 45.3], [-105.9, 51.2], [-70, 42.6]]) {   // (6.6.1) fora da trilha
       G.box(0.14, 3.6, 0.14, '#3f4348', x, 0, z); G.box(0.5, 0.06, 0.12, '#3f4348', x, 3.55, z); LGp.box(0.4, 0.36, 0.4, '#f4efc8', x, 3.6, z);
       S.lampadas.push({ x, y: 3.8, z, px: x, pz: z, r: 4.6 }); S.col.push({ x0: x - 0.15, x1: x + 0.15, z0: z - 0.15, z1: z + 0.15 });
     }
@@ -4957,7 +4989,7 @@
 #cdHud .cdRel { gap: 6px; padding: 0 8px 0 5px; border-color: #7fb4e0; }
 #cdHud .cdInfo { display: flex; gap: 6px; align-items: center; cursor: pointer; animation: cdAbre 0.18s ease-out; }
 #cdHud .cdInfo[hidden], #cdHud .cdResumo[hidden], #cdHud .cdQuad[hidden] { display: none; }
-#cdHud .cdResumo { border-color: #7fb4e0; }
+#cdHud .cdResumo { border-color: #7fb4e0; width: auto; min-width: 34px; padding: 0 7px; font: 700 13px/1 var(--font-display); letter-spacing: 0.04em; white-space: nowrap; text-shadow: 0 2px 0 #2a1206; }
 @keyframes cdAbre { from { transform: scaleX(0.3); opacity: 0; transform-origin: right center; } to { transform: scaleX(1); opacity: 1; transform-origin: right center; } }
 #cdHud .cdClimaIco { display: block; width: 24px; height: 24px; }
 #cdHud .cdGrana small { font-size: 11px; color: #f0c060; }
@@ -5414,7 +5446,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function atualizarRelogioUI() {
     const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // ⚽ = dia de futebol
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
-    if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); UI.resumo.replaceChildren(iconeClima(ic)); }
+    if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
+    { const hh = fmtHora(d.hora); if (UI.resumo.textContent !== hh) UI.resumo.textContent = hh; }   // (6.6.1) recolhido, o quadradinho mostra o HORÁRIO (não mais o ícone do clima)
     const nc = Math.round(nivelComida() * 8) / 8; if (UI.fome.dataset.n !== String(nc)) { UI.fome.dataset.n = String(nc); UI.fome.replaceChildren(iconeCoxa(nc)); }
     { const ch = (d.dia || 1) + '|' + Math.floor(d.hora) + '|' + ic + '|' + nc + '|' + (cafeEfeito() ? 1 : 0); if (ch !== hudChave) { const prim = !hudChave; hudChave = ch; abrirHud(prim ? 4 : 3.5); } }   // muda o dia, a hora cheia, o clima, a fome ou o café: o HUD abre por uns segundos
     { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // o café que está fazendo efeito   // a coxinha fica até ele comer no dia

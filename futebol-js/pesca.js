@@ -46,6 +46,11 @@
    - PIXEL ART nova dos 60 peixes (80×48, artePeixe): perfil da espécie, rabo e nadadeiras pelo tipo, degradê pontilhado, sombras,
      escamas/placas/couro, linha lateral, guelra, olho com brilho, bigodes, desenhos e contorno. O PEIXE 3D sai da MESMA arte (cada pixel
      vira um bloquinho com a grossura do corpo). O quadro da casinha ficou 512×320.
+   6.6.1 — SOLTAR o peixe na hora (guardar ou soltar): o jogador fala (magrinho: "deixa engordar"; gordinho e raro: "mesmo assim vou
+     soltar") e o Cadu reage pela raridade (concordando com o magrinho; cada vez mais espantado com os outros). Lendário solto na frente do
+     Cadu: CENA SECRETA (ele larga a vara, levanta revoltado e depois se acalma; pesca.cenaSecretaCadu conta as vezes; pesca.soltos).
+     A linha não atravessa madeira/chão (fica por cima); madeira (píer, deque com folga, canoa) não conta como água, nem na briga.
+     Mira e anéis sempre por cima da água. O peixe mostrado fica um pouco à frente das mãos.
    - TEXTOS: TRAD (en, es, it, fr) — as traduções daqui valem PRIMEIRO dentro da pesca (tr/trf): "LANÇAR" no jogo é o lateral do futebol
      (THROW); aqui é lançar a isca (CAST). Os nomes dos peixes ficam em PEIXES[].tr.
    - Salva em historia.cidade: pesca = { vara, varas, iscas, isca, caixa: [{ i, kg, c }], cat: { i: { n, rec, cl } }, total, ganhos, lendarios,
@@ -290,6 +295,35 @@
     'Tá vendo as manchas escuras na água? Ali é fundo. Isca bem no meio da mancha escura é peixe grande!': ['See the dark patches in the water? That’s the deep part. Bait right in the middle of a dark patch means big fish!', '¿Ves las manchas oscuras en el agua? Ahí es hondo. ¡Carnada justo en el medio de la mancha oscura es pez grande!', 'Vedi le chiazze scure nell’acqua? Lì è profondo. Esca proprio al centro della chiazza scura vuol dire pesce grosso!', 'Tu vois les taches sombres dans l’eau ? C’est profond. Un appât pile au milieu d’une tache sombre, c’est un gros poisson !'],
     'As partes clarinhas são banco de areia. Ali só dá peixinho.': ['The light parts are sandbars. Only tiny fish there.', 'Las partes claritas son bancos de arena. Ahí solo hay pececitos.', 'Le parti chiare sono banchi di sabbia. Lì ci sono solo pesciolini.', 'Les parties claires sont des bancs de sable. Il n’y a que du menu fretin.'],
     'Deixa a tensão na faixa verde. Peixe raro faz a faixa ficar andando, aí é que é difícil!': ['Keep the tension in the green zone. Rare fish make the zone move around, that’s the hard part!', 'Deja la tensión en la franja verde. Los peces raros hacen que la franja se mueva, ¡eso es lo difícil!', 'Tieni la tensione nella fascia verde. I pesci rari fanno muovere la fascia, ed è lì che è difficile!', 'Garde la tension dans la zone verte. Les poissons rares font bouger la zone, c’est ça le plus dur !'],
+    // (6.6.1) soltar o peixe, a reação do Cadu e a cena secreta
+    'O que fazer com o peixe?': ['What should I do with the fish?', '¿Qué hago con el pez?', 'Cosa faccio con il pesce?', 'Que faire du poisson ?'],
+    'Guardar na caixa': ['Keep it in the cooler', 'Guardar en la caja', 'Metterlo nella cassetta', 'Le garder dans la glacière'],
+    'Soltar no lago': ['Release it', 'Soltarlo en el lago', 'Rilasciarlo nel lago', 'Le relâcher'],
+    'Tá magrinho... É melhor soltar pra ele engordar um pouco. Depois a gente pesca ele de novo!': ['He’s skinny... Better let him go so he can fatten up. We’ll catch him again later!', 'Está flaquito... Mejor soltarlo para que engorde un poco. ¡Después lo pescamos de nuevo!', 'È magrolino... Meglio liberarlo, così ingrassa un po’. Poi lo ripeschiamo!', 'Il est maigrichon... Mieux vaut le relâcher pour qu’il grossisse. On le repêchera plus tard !'],
+    '{0} gordinho e raro... mas mesmo assim, vou soltar esse.': ['A chunky, rare {0}... but I’m letting this one go anyway.', '{0} gordito y raro... pero igual voy a soltar este.', '{0} bello grasso e raro... ma lo libero lo stesso.', '{0} bien dodu et rare... mais je le relâche quand même.'],
+    'Tá gordinho... mas vou soltar esse mesmo. Vai, {0}!': ['He’s a chunky one... but I’m letting him go. Off you go, {0}!', 'Está gordito... pero voy a soltarlo igual. ¡Vete, {0}!', 'È bello grasso... ma lo libero lo stesso. Vai, {0}!', 'Il est bien dodu... mais je le relâche. Allez, {0} !'],
+    'Volta pro lago, {0}! Cresce mais um pouco.': ['Back to the lake, {0}! Grow a little more.', '¡Vuelve al lago, {0}! Crece un poco más.', 'Torna nel lago, {0}! Cresci ancora un po’.', 'Retourne dans le lac, {0} ! Grandis encore un peu.'],
+    'Um lendário... e mesmo assim eu vou soltar. O lago merece ele mais do que eu. Vai, {0}!': ['A legendary... and I’m still letting it go. The lake deserves it more than I do. Go, {0}!', 'Un legendario... y aun así lo voy a soltar. El lago lo merece más que yo. ¡Ve, {0}!', 'Un leggendario... e lo libero lo stesso. Il lago se lo merita più di me. Vai, {0}!', 'Un légendaire... et je le relâche quand même. Le lac le mérite plus que moi. Va, {0} !'],
+    'Boa! Deixa ele crescer.': ['Nice! Let him grow.', '¡Bien! Déjalo crecer.', 'Bravo! Lascialo crescere.', 'Bien ! Laisse-le grandir.'],
+    'Apesar de ser incomum de ver, é melhor mesmo. Ele volta maior.': ['Even though you don’t see those often, it’s the right call. He’ll come back bigger.', 'Aunque no se ve seguido, es mejor así. Vuelve más grande.', 'Anche se non se ne vedono spesso, è meglio così. Tornerà più grande.', 'Même si on n’en voit pas souvent, c’est mieux. Il reviendra plus gros.'],
+    'Raro assim é difícil de largar... mas magrinho desse jeito, é melhor mesmo.': ['A rare one is hard to let go... but this skinny, it’s for the best.', 'Uno raro cuesta soltarlo... pero así de flaquito, es lo mejor.', 'Uno raro è difficile da lasciare... ma così magro, è meglio.', 'Un rare, c’est dur à relâcher... mais aussi maigre, c’est mieux.'],
+    'Um épico magrinho... tá certo. Dói no coração, mas tá certo.': ['A skinny epic... you’re right. It hurts, but you’re right.', 'Un épico flaquito... tienes razón. Duele, pero tienes razón.', 'Un epico magrolino... hai ragione. Fa male, ma hai ragione.', 'Un épique maigrichon... tu as raison. Ça fait mal, mais tu as raison.'],
+    'Eu não soltaria esse nem se viesse só o esqueleto! É quase impossível pescar um... mas tá, o peixe é seu.': ['I wouldn’t let that one go even if it were just the skeleton! It’s almost impossible to catch one... but fine, it’s your fish.', '¡Yo no soltaría ese ni aunque viniera solo el esqueleto! Es casi imposible pescar uno... pero bueno, el pez es tuyo.', 'Io non lo libererei nemmeno se fosse solo lo scheletro! È quasi impossibile pescarne uno... ma va bene, il pesce è tuo.', 'Je ne relâcherais pas celui-là même si ce n’était que le squelette ! C’est presque impossible d’en pêcher un... mais bon, c’est ton poisson.'],
+    'Soltou? Tranquilo, desse tem de monte no lago.': ['Let it go? No worries, there are plenty of those in the lake.', '¿Lo soltaste? Tranquilo, de esos hay un montón.', 'L’hai liberato? Tranquillo, ce ne sono un sacco nel lago.', 'Tu l’as relâché ? Pas grave, il y en a plein dans le lac.'],
+    'Ué, vai soltar? Esse não aparece toda hora, hein!': ['Wait, you’re letting it go? Those don’t show up every day!', '¿Eh, lo vas a soltar? ¡Ese no aparece todos los días!', 'Ehi, lo liberi? Quello non capita tutti i giorni!', 'Hein, tu le relâches ? On n’en voit pas tous les jours !'],
+    'Peraí... você soltou um peixe RARO?! Assim, de boa?!': ['Hold on... you let a RARE fish go?! Just like that?!', 'Espera... ¿soltaste un pez RARO?! ¿¡Así, tranquilo?!', 'Aspetta... hai liberato un pesce RARO?! Così, tranquillo?!', 'Attends... tu as relâché un poisson RARE ?! Comme ça, tranquille ?!'],
+    'NÃO! Um ÉPICO?! Você... soltou... um épico. Eu preciso sentar. Eu já tô sentado. Eu preciso sentar MAIS.': ['NO! An EPIC?! You... let... an epic go. I need to sit down. I’m already sitting. I need to sit down MORE.', '¡NO! ¿¡Un ÉPICO?! Tú... soltaste... un épico. Necesito sentarme. Ya estoy sentado. Necesito sentarme MÁS.', 'NO! Un EPICO?! Tu... hai liberato... un epico. Devo sedermi. Sono già seduto. Devo sedermi DI PIÙ.', 'NON ! Un ÉPIQUE ?! Tu... as relâché... un épique. Il faut que je m’assoie. Je suis déjà assis. Il faut que je m’assoie ENCORE PLUS.'],
+    '...': ['...', '...', '...', '...'],
+    'Espera. Você... SOLTOU... UM LENDÁRIO?!': ['Wait. You... RELEASED... A LEGENDARY?!', 'Espera. ¿Tú... SOLTASTE... UN LEGENDARIO?!', 'Aspetta. Tu... hai LIBERATO... UN LEGGENDARIO?!', 'Attends. Tu as... RELÂCHÉ... UN LÉGENDAIRE ?!'],
+    'Sabe há quantos anos eu sento nesse píer esperando um desses?! ANOS!': ['Do you know how many years I’ve sat on this pier waiting for one of those?! YEARS!', '¿¡Sabes cuántos años llevo sentado en este muelle esperando uno de esos?! ¡AÑOS!', 'Sai da quanti anni mi siedo su questo pontile aspettandone uno?! ANNI!', 'Tu sais depuis combien d’années je m’assois sur ce ponton à en attendre un ?! DES ANNÉES !'],
+    'EU VOU PULAR NESSE LAGO ATRÁS DELE!': ['I’M JUMPING IN THIS LAKE AFTER IT!', '¡ME VOY A TIRAR AL LAGO A BUSCARLO!', 'MI BUTTO NEL LAGO A RIPRENDERLO!', 'JE VAIS SAUTER DANS CE LAC POUR LE RATTRAPER !'],
+    'Calma, Cadu! Calma!': ['Easy, Cadu! Easy!', '¡Calma, Cadu! ¡Calma!', 'Calma, Cadu! Calma!', 'Du calme, Cadu ! Du calme !'],
+    'Tá. Tá bom. Respira, Cadu. Respira.': ['Okay. Okay. Breathe, Cadu. Breathe.', 'Vale. Está bien. Respira, Cadu. Respira.', 'Ok. Va bene. Respira, Cadu. Respira.', 'D’accord. Ça va. Respire, Cadu. Respire.'],
+    'Mas se alguém perguntar, eu nunca vi isso. Combinado?': ['But if anyone asks, I never saw that. Deal?', 'Pero si alguien pregunta, yo nunca vi esto. ¿Trato?', 'Ma se qualcuno chiede, io non ho mai visto niente. D’accordo?', 'Mais si quelqu’un demande, je n’ai jamais vu ça. Marché conclu ?'],
+    'Combinado.': ['Deal.', 'Trato hecho.', 'D’accordo.', 'Marché conclu.'],
+    'DE NOVO?! Você soltou OUTRO lendário?!': ['AGAIN?! You released ANOTHER legendary?!', '¡¿OTRA VEZ?! ¿Soltaste OTRO legendario?!', 'DI NUOVO?! Hai liberato UN ALTRO leggendario?!', 'ENCORE ?! Tu as relâché UN AUTRE légendaire ?!'],
+    'Eu não acredito. Eu NÃO acredito. Eu vou contar pro seu Bené!': ['I can’t believe it. I CAN’T believe it. I’m telling Mr. Bené!', 'No lo puedo creer. NO lo puedo creer. ¡Se lo voy a contar al señor Bené!', 'Non ci credo. NON ci credo. Lo dico al signor Bené!', 'J’y crois pas. J’y crois PAS. Je vais le dire à monsieur Bené !'],
+    '...tá. Tá bom. Mas eu tô de olho em você, hein.': ['...fine. Okay. But I’m keeping an eye on you.', '...vale. Está bien. Pero te estoy vigilando, eh.', '...va bene. Ok. Ma ti tengo d’occhio, eh.', '...bon. D’accord. Mais je t’ai à l’œil, hein.'],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
@@ -960,9 +994,15 @@
       const l = new THREE.Line(g, MAT_LINHA); l.frustumCulled = false; l.visible = false; grupo().add(l); return l;
     }
     // a linha da ponta da vara (a) até a boia/peixe (b), com barriga (sag) — quanto mais tensa, mais reta
+    // a altura da superfície num ponto: o tabuado (píer/deque) ou o chão; na água, a água
+    function superficie(x, z) { let y = 0; try { y = api.altura(x, z) || 0; } catch (e) { /* ok */ } if (api.dentroLago(x, z, 0) && !(api.naDeque && api.naDeque(x, z))) y = Math.max(y, Y_AGUA); return y; }
     function linhaDe(L, a, b, sag) {
       const pos = L.geometry.attributes.position, N = pos.count;
-      for (let k = 0; k < N; k++) { const t = k / (N - 1); pos.setXYZ(k, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t - sag * 4 * t * (1 - t), a.z + (b.z - a.z) * t); }
+      for (let k = 0; k < N; k++) {
+        const t = k / (N - 1), x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t; let y = a.y + (b.y - a.y) * t - sag * 4 * t * (1 - t);
+        if (k > 0 && k < N - 1) y = Math.max(y, superficie(x, z) + 0.02);   // (6.6.1) a linha fica POR CIMA da madeira (píer, deque) e do chão, não atravessa
+        pos.setXYZ(k, x, y, z);
+      }
       pos.needsUpdate = true; L.visible = true;
     }
     function criarIsopor() {
@@ -1030,7 +1070,7 @@
     function anel(x, z, tam, forca) {
       if (!geoAnel) { geoAnel = new THREE.RingGeometry(0.82, 1, 20); geoAnel.rotateX(-Math.PI / 2); geoGota = new THREE.BoxGeometry(0.05, 0.05, 0.05); }
       const m = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: 0.8, depthWrite: false }));
-      m.position.set(x, Y_AGUA + 0.012, z); m.scale.setScalar(0.08); grupo().add(m);
+      m.position.set(x, Y_AGUA + 0.03, z); m.renderOrder = 6; m.scale.setScalar(0.08); grupo().add(m);
       P.fx.push({ m, t: 0, dur: 1.1 + (forca || 0) * 0.6, tam: tam || 0.9, tipo: 'anel' });
     }
     function respingo(x, z, n, forca) {
@@ -1124,6 +1164,7 @@
         if (P.mg && P.mg.comCadu && hora() >= H_CADU_SAI) { msgMg(tr('Cadu') + ': ' + tr('Já são 20h! Vou nessa. Boa pescaria!'), 4); P.mg.comCadu = false; }
       }
       if (C.oculto) return;
+      if (cp.e === 'brabo') { C.x = LUGAR_CADU.x; C.z = LUGAR_CADU.z; return; }   // (6.6.1) a cena secreta: de pé, revoltado (quem mexe é a cena)
       C.yawAlvo = LUGAR_CADU.yaw; C.x = LUGAR_CADU.x; C.z = LUGAR_CADU.z;
       cp.t -= dt;
       if (cp.e === 'espera') { if (cp.t <= 0 && !C.conversando) { cp.e = 'fisga'; cp.t = 0.35; cp.peixe = sortearPeixe(hora(), 0, 0, 0.25); cp.pega = Math.random() < 0.72; } }
@@ -1144,18 +1185,20 @@
     // a pose do Cadu sentado com a vara (por cima da pose de sentado do poseAtor, que já rodou neste quadro)
     function poseCaduLago() {
       const C = P.cadu, cp = P.cp; if (!C || C.oculto || !cp) return;
-      const longe = !!C.m.longe; cp.vara.raiz.visible = !longe; if (longe) { cp.linha.visible = false; return; }
+      const longe = !!C.m.longe; cp.vara.raiz.visible = !longe && cp.e !== 'brabo'; if (longe || cp.e === 'brabo') { cp.linha.visible = false; if (cp.e !== 'brabo') return; }
       const m = C.m, t = S().t; let dz = 0.55, cz = 1.05, ez = 0.7, ecz = 0.95, ex = -0.42, b = 0.05;
       if (cp.e === 'espera') { dz += Math.sin(t * 0.8) * 0.03; }
       else if (cp.e === 'fisga') { dz = 1.35; cz = 0.9; b = 0.4; }
       else if (cp.e === 'puxa') { dz = 1.0 + Math.sin(t * 9) * 0.05; cz = 0.85; b = 0.55 + Math.sin(t * 13) * 0.08; ecz = 1.2 + Math.sin(t * 7) * 0.3; }
       else if (cp.e === 'pega') { dz = 0.9; ez = 2.0; ecz = 0.35; ex = -0.15; }
       else if (cp.e === 'escapa') { dz = 0.5 + Math.max(0, cp.t - 1.0) * 1.5; b = 0; }
+      else if (cp.e === 'brabo') { const k = cp.furia || 0; dz = 2.5 + Math.sin(t * 13) * 0.45 * k; ez = 2.5 + Math.sin(t * 13 + 1.7) * 0.45 * k; cz = 0.4; ecz = 0.4; ex = 0; b = 0; }
       else if (cp.e === 'lanca') { const u = 1 - cp.t / 1.3; dz = u < 0.45 ? 0.55 + suave(u / 0.45) * 1.9 : 2.45 - suave((u - 0.45) / 0.3) * 2.0; cz = 1.05 - Math.min(1, u * 2) * 0.3; }
-      if (C.fala) { ez = 0.9 + Math.sin(t * 6) * 0.3; ecz = 0.8; }
+      if (C.fala && cp.e !== 'brabo') { ez = 0.9 + Math.sin(t * 6) * 0.3; ecz = 0.8; }
       m.bracoD.rotation.z = dz; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, cz);
       m.bracoE.rotation.z = ez; m.bracoE.rotation.x = ex; usarCotovelo(m.bracoE, 0, ecz);
       vergar(cp.vara, SINAL_VERGA * b);
+      if (cp.e === 'brabo') { cp.boia.visible = false; return; }
       // a linha e a boia
       const a = mundo(cp.vara.ponta);
       let bx = cp.bx, bz = cp.bz, by = Y_AGUA + 0.02 + Math.sin(t * 2.2) * 0.012;
@@ -1595,7 +1638,14 @@
     // mostrando o peixe: o jogador vira um pouco para o lado (m.yaw0 - 0.45) e a câmera vem de frente                                            // (conferido na tela: assim a ponta verga para o lado da linha)
     const dirDe = (yaw) => ({ x: Math.cos(yaw), z: -Math.sin(yaw) });
     const angN = (a) => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
-    function naAgua(x, z) { if (api.naDeque ? api.naDeque(x, z) : false) return false; const pr = api.PIER; if (x > pr.x0 - 0.4 && x < pr.x1 + 0.4 && z > pr.z0 - 0.4 && z < pr.z1 + 0.4) return false; return api.dentroLago(x, z, -0.7); }
+    // (6.6.1) madeira não é água: o píer, o deque oeste (com folga para fora) e a canoa
+    const CANOA = { x0: -46.0, x1: -42.4, z0: 52.95, z1: 53.95 };
+    function naAgua(x, z) {
+      if (api.naDeque ? api.naDeque(x, z) : false) return false; const pr = api.PIER; if (x > pr.x0 - 0.4 && x < pr.x1 + 0.4 && z > pr.z0 - 0.4 && z < pr.z1 + 0.4) return false;
+      const dq = api.DEQUE_OESTE; if (dq && x > dq.x0 - 0.5 && x < dq.x1 + 0.4 && z > dq.z0 - 0.4 && z < dq.z1 + 0.4) return false;
+      if (x > CANOA.x0 && x < CANOA.x1 && z > CANOA.z0 && z < CANOA.z1) return false;
+      return api.dentroLago(x, z, -0.7);
+    }
     // a profundidade (0 raso … 1 miolo do poço): a mesma da cor da água (cidade.js: profLago)
     function profundidade(x, z) { if (api.profLago) return api.profLago(x, z); const L = api.LAGO, r = Math.hypot((x - L.cx) / L.rx, (z - L.cz) / L.rz); return clampN((0.62 - r) / 0.5, 0, 1); }
     const notaDe = (x, z) => Math.round(clampN(profundidade(x, z), 0, 1) * 100);
@@ -1636,8 +1686,8 @@
         if (api.dentroLago(ix, iz, 0.2)) { ix = Lg.x - d.x * 0.8; iz = Lg.z - d.z * 0.8; }
         P.isopor.position.set(ix, api.altura(ix, iz), iz); P.isopor.rotation.y = Lg.yaw + Math.PI / 2;
       } else { P.isopor.position.set(ISOPOR.x, Y_PIER, ISOPOR.z); P.isopor.rotation.y = 0.15; }
-      for (let k = 0; k < 7; k++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.02, 0.13), new THREE.MeshBasicMaterial({ color: 0xfff0c8, transparent: true, opacity: 0.75, depthWrite: false })); d.visible = false; grupo().add(d); m.pontos.push(d); }
-      { if (!geoAnel) anel(0, -900, 0.1); const a = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({ color: 0xf0a020, transparent: true, opacity: 0.85, depthWrite: false })); a.visible = false; grupo().add(a); m.alvoM = a; }
+      for (let k = 0; k < 7; k++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.02, 0.13), new THREE.MeshBasicMaterial({ color: 0xfff0c8, transparent: true, opacity: 0.75, depthWrite: false })); d.visible = false; d.renderOrder = 7; grupo().add(d); m.pontos.push(d); }
+      { if (!geoAnel) anel(0, -900, 0.1); const a = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({ color: 0xf0a020, transparent: true, opacity: 0.85, depthWrite: false })); a.visible = false; a.renderOrder = 7; grupo().add(a); m.alvoM = a; }
       window.addEventListener('keydown', teclaMg, true); window.addEventListener('keyup', teclaMg, true);
       if (m.comCadu) msgMg(tr('Cadu') + ': ' + tr('Boa pescaria!'), 2.5);
       tickMg(0.016); s.cam.snap = true;
@@ -1800,8 +1850,11 @@
     }
     function tickBriga(dt) {
       const m = P.mg, B = m.B, pe = PEIXES[m.bite.i];
-      const r = passoBriga(B, m.segura && !m.pausa, dt), d = dirDe(m.yaw0 + m.ang0 + B.lado);
-      m.peixeP = { x: m.ox + d.x * B.dist, z: m.oz + d.z * B.dist };
+      const r = passoBriga(B, m.segura && !m.pausa, dt);
+      // (6.6.1) o peixe nunca passa por baixo da madeira (píer, deque, canoa) nem pela terra: se o lugar novo não é água, ele fica onde estava
+      let d = dirDe(m.yaw0 + m.ang0 + B.lado), np = { x: m.ox + d.x * B.dist, z: m.oz + d.z * B.dist };
+      if (!naAgua(np.x, np.z) && B.dist > 1.6) { B.lado *= 0.8; B.ladoAlvo = -B.ladoAlvo * 0.5; d = dirDe(m.yaw0 + m.ang0 + B.lado); np = { x: m.ox + d.x * B.dist, z: m.oz + d.z * B.dist }; if (!naAgua(np.x, np.z) && m.peixeP) np = m.peixeP; }
+      m.peixeP = np;
       if (B.corre) { m.tAnel = (m.tAnel || 0) - dt; if (m.tAnel <= 0) { m.tAnel = 0.25; anel(m.peixeP.x, m.peixeP.z, 0.5 + B.forca * 0.6); } if (!m.segura) { m.tZum = (m.tZum || 0) - dt; if (m.tZum <= 0) { m.tZum = 0.45; SOM.zum(); } } }
       else if (m.segura) { m.tCli = (m.tCli || 0) - dt; if (m.tCli <= 0) { m.tCli = 0.085; SOM.clique(); } }
       // vibração da briga: arrancada do peixe, linha esticando (cada vez mais forte e mais rápido), linha frouxa (dois toquinhos) e o molinete
@@ -1932,8 +1985,9 @@
       respingo(m.peixeP.x, m.peixeP.z, 8, Math.min(1, peixe.userData.L)); SOM.agua();
       await api.esperar(720); if (P.mg !== m) return;
       m.voa = null; if (peixe.parent) peixe.parent.remove(peixe);
+      if (peixe.userData.L < 0.3) peixe.scale.setScalar(0.3);          // (6.6.1) peixinho muito pequeno: mostra um pouco maior (senão some na mão)
       const grande = peixe.userData.L > 1.1;
-      peixe.position.set(grande ? 0.56 : 0.46, grande ? 0.98 : 1.12, 0); peixe.rotation.set(0, Math.PI / 2, 0); J.m.corpo.add(peixe); m.trofeu = { m: peixe, grande };
+      peixe.position.set(grande ? 0.95 : 0.8, grande ? 1.02 : 1.14, 0); peixe.rotation.set(0, Math.PI / 2, 0); J.m.corpo.add(peixe);   // (6.6.1) um pouco à FRENTE das mãos (como a pizza), não enfiado nelas m.trofeu = { m: peixe, grande };
       m.vara.raiz.visible = false;
       const c = p.cat[b.i] || (p.cat[b.i] = { n: 0, rec: 0, cl: [0, 0, 0] }), novo = !c.n, recorde = !novo && b.kg > c.rec;
       c.n++; c.cl[b.classe] = (c.cl[b.classe] | 0) + 1; if (b.kg > c.rec) c.rec = b.kg;
@@ -1948,12 +2002,81 @@
         await api.fala('jog', trf(REACAO[pe.r][b.classe], nomePeixe(b.i)));
         if (novo && pe.r >= 2) await api.fala('jog', tr('Primeira vez que eu pego esse peixe! Vou mostrar pro seu Bené.'));
         if (m.comCadu && P.cadu && !P.cadu.oculto) { s.falantesExtra = s.falantesExtra || {}; s.falantesExtra.cadu = { A: P.cadu, nome: tr('Cadu'), voz: 2 }; await api.fala('cadu', tr(REACAO_CADU[pe.r][b.classe])); }
-        Dialogo.esconder();
-        await guardarNaCaixa(b, peixe, m);
+        // (6.6.1) guardar na caixa ou SOLTAR (com as falas do jogador e a reação do Cadu)
+        const op = await Escolha.mostrar(tr('O que fazer com o peixe?'), [tr('Guardar na caixa'), tr('Soltar no lago')], { centro: true }); Dialogo.esconder();
+        if (op === 1) await soltarPeixe(b, peixe, m); else await guardarNaCaixa(b, peixe, m);
       } catch (e) { console.error(e); }
       esconderBanner(); if (peixe.parent) peixe.parent.remove(peixe); m.trofeu = null; m.guarda = null; m.vara.raiz.visible = true;
       if (P.isopor) P.isopor.tampa.rotation.x = 0;
       gravar(); m.ocupado = false; if (P.mg === m) { irPara('mira'); if (tranq) setTimeout(() => { if (P.mg === m) msgMg(tr('Pescar acalma a cabeça. Você está mais tranquilo hoje.'), 3.2); }, 1800); }
+    }
+    // ---- (6.6.1) SOLTAR o peixe: a fala do jogador (magrinho: "deixa engordar"; gordinho e raro: "mesmo assim vou soltar") e o Cadu reagindo
+    //   pela raridade (magrinho: ele concorda; gordinho/normal: cada vez mais espantado). Lendário (não magrinho) com o Cadu: a CENA SECRETA.
+    const FALA_SOLTA = {
+      magro: 'Tá magrinho... É melhor soltar pra ele engordar um pouco. Depois a gente pesca ele de novo!',
+      gordoRaro: '{0} gordinho e raro... mas mesmo assim, vou soltar esse.',
+      gordo: 'Tá gordinho... mas vou soltar esse mesmo. Vai, {0}!',
+      comum: 'Volta pro lago, {0}! Cresce mais um pouco.',
+      lendario: 'Um lendário... e mesmo assim eu vou soltar. O lago merece ele mais do que eu. Vai, {0}!',
+    };
+    const CADU_SOLTA_MAGRO = ['Boa! Deixa ele crescer.', 'Apesar de ser incomum de ver, é melhor mesmo. Ele volta maior.', 'Raro assim é difícil de largar... mas magrinho desse jeito, é melhor mesmo.',
+      'Um épico magrinho... tá certo. Dói no coração, mas tá certo.', 'Eu não soltaria esse nem se viesse só o esqueleto! É quase impossível pescar um... mas tá, o peixe é seu.'];
+    const CADU_SOLTA = ['Soltou? Tranquilo, desse tem de monte no lago.', 'Ué, vai soltar? Esse não aparece toda hora, hein!', 'Peraí... você soltou um peixe RARO?! Assim, de boa?!',
+      'NÃO! Um ÉPICO?! Você... soltou... um épico. Eu preciso sentar. Eu já tô sentado. Eu preciso sentar MAIS.'];
+    async function soltarPeixe(b, peixe, m) {
+      const p = dadosP(), pe = PEIXES[b.i], c = b.classe, r = pe.r, nome = nomePeixe(b.i), s = S();
+      const comCadu = m.comCadu && P.cadu && !P.cadu.oculto;
+      const fj = c === 0 ? FALA_SOLTA.magro : r === 4 ? FALA_SOLTA.lendario : c === 2 && r >= 2 ? FALA_SOLTA.gordoRaro : c === 2 ? FALA_SOLTA.gordo : FALA_SOLTA.comum;
+      await api.fala('jog', trf(fj, nome));
+      p.soltos = (p.soltos | 0) + 1; gravar();
+      if (comCadu) {
+        s.falantesExtra = s.falantesExtra || {}; s.falantesExtra.cadu = { A: P.cadu, nome: tr('Cadu'), voz: 2 };
+        if (c === 0) await api.fala('cadu', tr(CADU_SOLTA_MAGRO[r]));
+        else if (r === 4) { Dialogo.esconder(); await jogarNaAgua(peixe, m); await cenaSecretaCadu(m); return; }
+        else await api.fala('cadu', tr(CADU_SOLTA[r]));
+      }
+      Dialogo.esconder();
+      await jogarNaAgua(peixe, m);
+      msgMg(tr('O peixe voltou para o lago.'), 2);
+    }
+    // o peixe sai das mãos, faz um arco e cai na água na frente do jogador
+    async function jogarNaAgua(peixe, m) {
+      const pos = mundo(peixe), d = dirDe(m.yaw0), alvo = { x: m.ox + d.x * 2.2, z: m.oz + d.z * 2.2 };
+      if (peixe.parent) peixe.parent.remove(peixe); peixe.position.set(pos.x, pos.y, pos.z); peixe.rotation.set(0, m.yaw0 + Math.PI / 2, 0); grupo().add(peixe);
+      m.trofeu = null; m.solta = { m: peixe, de: pos, alvo, t: 0 }; SOM.toc();
+      await api.esperar(620);
+      m.solta = null; if (peixe.parent) peixe.parent.remove(peixe); respingo(alvo.x, alvo.z, 8, 0.4); SOM.agua(); anel(alvo.x, alvo.z, 1.0, 0.3);
+      await api.esperar(400);
+    }
+    // a CENA SECRETA: soltou um lendário na frente do Cadu. Ele larga a vara, levanta, fica revoltado... e depois se acalma.
+    async function cenaSecretaCadu(m) {
+      const p = dadosP(), C = P.cadu, cp = P.cp, s = S(), vez = (p.cenaSecretaCadu | 0) + 1; p.cenaSecretaCadu = vez; gravar();
+      const antes = { e: cp.e, t: cp.t }; tirarPeixeCadu(cp);
+      cp.e = 'brabo'; cp.furia = 0.3; C.sentado = false; C.conversando = true;
+      C.yawAlvo = C.yaw = Math.atan2(-(m.oz - C.z), m.ox - C.x);          // vira para o jogador
+      m.camCadu = true; s.cam.snap = true; SOM.erro(); vib([80, 60, 80, 60, 200], true);
+      try {
+        const F = (t) => api.fala('cadu', tr(t));
+        if (vez > 1) {
+          cp.furia = 1; await F('DE NOVO?! Você soltou OUTRO lendário?!'); await F('Eu não acredito. Eu NÃO acredito. Eu vou contar pro seu Bené!');
+          cp.furia = 0.2; await F('...tá. Tá bom. Mas eu tô de olho em você, hein.');
+        } else {
+          await F('...');
+          cp.furia = 0.6; await F('Espera. Você... SOLTOU... UM LENDÁRIO?!');
+          cp.furia = 1; await F('Sabe há quantos anos eu sento nesse píer esperando um desses?! ANOS!');
+          await F('EU VOU PULAR NESSE LAGO ATRÁS DELE!');
+          await api.fala('jog', tr('Calma, Cadu! Calma!'));
+          cp.furia = 0.15; await F('...');
+          await F('Tá. Tá bom. Respira, Cadu. Respira.');
+          await F('Mas se alguém perguntar, eu nunca vi isso. Combinado?');
+          await api.fala('jog', tr('Combinado.'));
+        }
+        Dialogo.esconder();
+      } finally {
+        m.camCadu = false; s.cam.snap = true; cp.furia = 0; C.conversando = false;
+        if (P.cadu === C) { C.sentado = true; C.assento = Y_PIER; C.yawAlvo = C.yaw = LUGAR_CADU.yaw; cp.e = 'espera'; cp.t = Math.max(6, antes.t || 8); cp.vara.raiz.visible = true; }
+      }
+      msgMg(tr('O peixe voltou para o lago.'), 2);
     }
     async function guardarNaCaixa(b, peixe, m) {
       const p = dadosP();
@@ -2063,6 +2186,8 @@
       // o peixe saindo da água até a mão
       if (m.voa) { const v = m.voa; v.t += dt; const u = clampN(v.t / 0.7, 0, 1), J = S().jog, alvo = { x: J.x + Math.cos(J.yaw) * 0.5, y: m.y + 1.15, z: J.z - Math.sin(J.yaw) * 0.5 };
         v.m.position.set(lerpN(v.de.x, alvo.x, suave(u)), lerpN(v.de.y, alvo.y, u) + Math.sin(u * Math.PI) * 1.4, lerpN(v.de.z, alvo.z, suave(u))); v.m.rotation.set(0, J.yaw, Math.sin(t * 20) * 0.5); }
+      // (6.6.1) soltando: o peixe faz um arco até a água
+      if (m.solta) { const g = m.solta; g.t += dt; const u = clampN(g.t / 0.55, 0, 1); g.m.position.set(lerpN(g.de.x, g.alvo.x, u), lerpN(g.de.y, Y_AGUA, u) + Math.sin(u * Math.PI) * 0.7, lerpN(g.de.z, g.alvo.z, u)); g.m.rotation.z = -u * 1.6 + Math.sin(t * 22) * 0.3; }
       // guardando no isopor
       if (m.guarda) { const g = m.guarda; g.t += dt; const u = clampN(g.t / 0.5, 0, 1); g.m.position.set(lerpN(g.de.x, P.isopor.position.x, u), lerpN(g.de.y, m.y + 0.35, u) + Math.sin(u * Math.PI) * 0.4, lerpN(g.de.z, P.isopor.position.z, u)); g.m.scale.setScalar(g.k0 * (1 - u * 0.6)); }
       // o peixe pulando fora da água na corrida (os raros "de escama")
@@ -2074,15 +2199,19 @@
       }
       // a mira: pontinhos na água até onde a boia vai cair (e o anel do alvo enquanto enche a barra)
       const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(m.yaw0 + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.5, dadosP().vara);
-      m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = m.ox + d.x * dd, z = m.oz + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.02, z); });
-      if (m.alvoM) { m.alvoM.visible = m.e === 'forca'; const x = m.ox + d.x * Dm, z = m.oz + d.z * Dm; m.alvoM.position.set(x, Y_AGUA + 0.025, z); m.alvoM.scale.setScalar(0.5 + Dm * 0.03); m.alvoM.material.color.setHex(naAgua(x, z) ? 0xf0a020 : 0xd8402a); }
+      m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = m.ox + d.x * dd, z = m.oz + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.045, z); });
+      if (m.alvoM) { m.alvoM.visible = m.e === 'forca'; const x = m.ox + d.x * Dm, z = m.oz + d.z * Dm; m.alvoM.position.set(x, Y_AGUA + 0.05, z); m.alvoM.scale.setScalar(0.5 + Dm * 0.03); m.alvoM.material.color.setHex(naAgua(x, z) ? 0xf0a020 : 0xd8402a); }
     }
     function camMg(m, J, dt) {
       const s = S(), yaw = m.yaw0 + (m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou' ? m.ang0 : m.ang), d = dirDe(yaw), dir = { x: -d.z, z: d.x }, yJ = J.y || m.y;
       const snap = s.cam.snap; s.cam.snap = false;                       // (a cidade não zera o snap enquanto tem câmera de cena: zera aqui)
       let c;
       if (m.e === 'cine' && m.cine) { m.cam = camCine(m, J); s.camCena = m.cam; return; }
-      if (m.trofeu || (m.e === 'pegou' && !m.voa)) {                    // de frente (um pouco para o lado de fora do píer, para o Cadu não tampar); peixe grande = câmera mais longe
+      if (m.camCadu && P.cadu) {                                          // (6.6.1) a cena secreta: por cima do ombro do jogador, olhando o Cadu
+        const C = P.cadu, vx = J.x - C.x, vz = J.z - C.z, L = Math.hypot(vx, vz) || 1, ux = vx / L, uz = vz / L;   // de frente para o Cadu (ele olha para o jogador), um pouco de lado
+        c = { px: C.x + ux * 0.9 + uz * 2.7, py: yJ + 1.5, pz: C.z + uz * 0.9 - ux * 2.7, tx: C.x + ux * 0.35, ty: yJ + 1.05, tz: C.z + uz * 0.35 };   // de lado: os dois no quadro, o Cadu em destaque
+      }
+      else if (m.trofeu || (m.e === 'pegou' && !m.voa)) {                    // de frente (um pouco para o lado de fora do píer, para o Cadu não tampar); peixe grande = câmera mais longe
         const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, k = 2.6 + Math.min(2.2, L * 0.7), dT = dirDe((m.yaw0 - 0.45));
         c = { px: J.x + dT.x * k, py: yJ + 1.75 + Math.min(0.8, L * 0.2), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 0.8, tz: J.z };   // mira no peito: o jogador e o peixe ficam na metade de cima da tela (a fala fica embaixo e o banner, fininho, no topo)
       }

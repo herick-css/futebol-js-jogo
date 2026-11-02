@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.0
+   FUTEBOL JS · jogo.js · versão 6.6.2
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,9 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.0';
+const VERSAO_JOGO = '6.6.2';
+// 6.6.2: junta as mudanças da 6.6.1 (pesca/lago/botões/relógio) com as do academia.js feitas à parte.
+// 6.6.1: botões claros (pxPrim) com o texto marrom escuro em todo o jogo (a cor só existia na tela de idioma); na cidade, o quadradinho recolhido do HUD mostra o horário em vez do ícone do clima; pesca/lago: soltar o peixe (com a cena secreta do Cadu), NPCs não travam mais na casinha do Bené, sapo maior e placa nova, canoa 3D, vitórias-régias/mira sempre visíveis, linha por cima da madeira, banco do deque na ponta, peixe à frente das mãos.
 // 6.6.0: pesca.js + cidade.js — lago com poços (escuros) e bancos de areia (claros), nota do lançamento pelo lugar onde a isca cai, cena do lançamento perfeito (4 câmeras), boia/anzol/isca na ponta da linha, briga com a faixa boa de tensão, vibração, +tranquilo no 1º peixe do dia, pixel art nova dos peixes (e o 3D sai dela), trilha, deque e decoração do lago.
 // 6.4.0: pesca.js (arquivo novo) — a pesca no Lago do Sapo Cururu: 60 peixes, 8 iscas, 5 varas, caixa de 30, catálogo, a casinha do seu Bené e o minigame; o Cadu pescando no fim de semana (cidade.js) e o seu Raimundo, pai dele, no mercado (mercado.js).
 // 6.3.0: cidade.js + academia.js — faixa de pedestre (espera, carros param e piscam o farol), pedestres esportivos que correm, casas e horários do Diego e da Fernanda, a Fernanda circulando, falas por treino errado, espelho, limpeza/otimização.
@@ -14507,7 +14509,7 @@ function montarMenuInicial() {
 .pxBtn:active { transform: translateY(var(--p)); }
 .pxBtn:disabled { opacity: 0.5; cursor: default; }
 @media (hover: hover) { .pxBtn:hover:not(:disabled) { border-image-source: var(--sp-grama); } }
-.pxBtn.pxPrim { height: calc(var(--p) * 18); border-image-source: var(--sp-creme); color: var(--mx-ink); text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6); font-size: 24px; }
+.pxBtn.pxPrim { height: calc(var(--p) * 18); border-image-source: var(--sp-creme); color: var(--mx-ink, #2a1206); text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6); font-size: 24px; }
 .pxBtn.pxPrim:focus-visible { border-image-source: var(--sp-laranja); }
 @media (hover: hover) { .pxBtn.pxPrim:hover:not(:disabled) { border-image-source: var(--sp-laranja); } }
 .pxBtn.pxPeq { --p: var(--p3, 3px); width: auto; min-width: 120px; height: 44px; font-size: 14px; }
