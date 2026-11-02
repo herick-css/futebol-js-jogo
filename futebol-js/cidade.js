@@ -515,6 +515,9 @@
   });
   Object.assign(TRAD_CD, {
     'Falar com o João': ['Talk to João', 'Hablar con João', 'Parla con João', 'Parler à João'],
+    'Ainda dava para comer mais um pouco.': ['I could still eat a little more.', 'Todavía podría comer un poco más.', 'Potrei mangiare ancora un po’.', 'Je pourrais encore manger un peu.'],
+    'Barriga cheia!': ['Full belly!', '¡Barriga llena!', 'Pancia piena!', 'Ventre plein !'],
+    'Dia, hora e dinheiro': ['Day, time and money', 'Día, hora y dinero', 'Giorno, ora e soldi', 'Jour, heure et argent'],
     'Cinema fechado. Abre às 6h.': ['Cinema closed. Opens at 6 AM.', 'Cine cerrado. Abre a las 6h.', 'Cinema chiuso. Apre alle 6.', 'Cinéma fermé. Ouvre à 6 h.'],
     'Vou dar uma volta e já volto.': ["I'll take a walk and be right back.", 'Voy a dar una vuelta y ya vuelvo.', 'Faccio un giro e torno subito.', 'Je vais faire un tour et je reviens.'],
     'Olha a galera chegando aí! Bora!': ["Look, the guys are coming! Let's go!", '¡Mira, ya llega la banda! ¡Vamos!', 'Guarda, arriva la banda! Andiamo!', 'Regarde, la bande arrive ! On y va !'],
@@ -4812,6 +4815,10 @@
 #cdHud .cdGrana { display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 10px 0 6px; background: rgba(42, 18, 6, 0.86); border: 3px solid #f0a020; color: #fff0c8;
   font: 700 15px/1 var(--font-display); letter-spacing: 0.04em; text-shadow: 0 2px 0 #2a1206; font-variant-numeric: tabular-nums; }
 #cdHud .cdRel { gap: 6px; padding: 0 8px 0 5px; border-color: #7fb4e0; }
+#cdHud .cdInfo { display: flex; gap: 6px; align-items: center; cursor: pointer; animation: cdAbre 0.18s ease-out; }
+#cdHud .cdInfo[hidden], #cdHud .cdResumo[hidden], #cdHud .cdQuad[hidden] { display: none; }
+#cdHud .cdResumo { border-color: #7fb4e0; }
+@keyframes cdAbre { from { transform: scaleX(0.3); opacity: 0; transform-origin: right center; } to { transform: scaleX(1); opacity: 1; transform-origin: right center; } }
 #cdHud .cdClimaIco { display: block; width: 24px; height: 24px; }
 #cdHud .cdGrana small { font-size: 11px; color: #f0c060; }
 #cdHud .cdNota { position: relative; width: 30px; height: 18px; background: #5fae5a; border: 2px solid #1f4a1c; box-sizing: border-box; }
@@ -4857,7 +4864,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const preto = div('cdPreto'), arrasto = div('cdArrasto'), aviso = div('cdAviso');
     const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
     const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
-    const hud = div('cdHud', '<div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome" hidden></button><button type="button" class="cdQuad cdCafe" hidden></button><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
+    const hud = div('cdHud', '<button type="button" class="cdQuad cdResumo"></button><div class="cdInfo" hidden><div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome"></button><button type="button" class="cdQuad cdCafe" hidden></button></div><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
@@ -4865,7 +4872,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
-      btnPausa: q(hud, '.cdPausar'), fome: q(hud, '.cdFome'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
+      btnPausa: q(hud, '.cdPausar'), resumo: q(hud, '.cdResumo'), info: q(hud, '.cdInfo'), fome: q(hud, '.cdFome'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
     // joystick
@@ -4914,9 +4921,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       som(); definirMarca(clamp(x, LIM.x0 + 2, LIM.x1 - 2), clamp(z, LIM.z0 + 2, LIM.z1 - 2)); atualizarCoresMapa(); desenharMapa();
     });
     UI.btnPausa.addEventListener('click', () => { if (S && S.modo === 'livre') alternarPausa(); });
-    UI.fome.appendChild(iconeCoxinha()); UI.fome.setAttribute('aria-label', T('Fome'));
+    UI.fome.setAttribute('aria-label', T('Fome'));
+    UI.resumo.setAttribute('aria-label', T('Dia, hora e dinheiro'));
+    UI.resumo.addEventListener('click', (e) => { e.stopPropagation(); if (!S) return; som(); abrirHud(5); });
+    UI.info.addEventListener('click', (e) => { if (!S || e.target.closest('.cdFome, .cdCafe')) return; som(); recolherHud(); });
     UI.cafe.addEventListener('click', () => { if (!S) return; som(); const c = cafeEfeito(); if (!c) return; aviso(textoCafe(c)); clearTimeout(UI.cafeT); UI.cafeT = setTimeout(() => { if (S && UI) aviso(''); }, 2800); });
-    UI.fome.addEventListener('click', () => { if (!S) return; som(); UI.aviso.textContent = T('Seu personagem ainda não comeu hoje.'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
+    UI.fome.addEventListener('click', () => { if (!S) return; som(); abrirHud(5); const n = nivelComida(); UI.aviso.textContent = n <= 0 ? T('Seu personagem ainda não comeu hoje.') : n < 1 ? T('Ainda dava para comer mais um pouco.') : T('Barriga cheia!'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
     UI.ficha.querySelector('.cdFecharF').addEventListener('click', () => { som(); UI.ficha.hidden = true; if (S) { S.pausado = false; liberar(); } });
     UI.cont.addEventListener('click', () => alternarPausa());
@@ -5070,7 +5080,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.pausa.querySelector('.cdTit').textContent = T('Pausado'); UI.cont.textContent = T('Continuar'); UI.menu.textContent = T('Voltar ao menu'); UI.pausa.querySelector('.cdDevBtn').textContent = T('Privilégios do desenvolvedor');
   }
   function mostrarDinheiro(pop) {
-    UI.valor.textContent = String(S.dados.fakes);
+    const v = String(S.dados.fakes); if (UI.valor.textContent !== v) { if (UI.valor.textContent !== '0' || v !== '0') abrirHud(); UI.valor.textContent = v; }
     UI.hud.hidden = false; if (pop) { UI.grana.classList.remove('pop'); void UI.grana.offsetWidth; UI.grana.classList.add('pop'); }
   }
   function liberar() { S.modo = 'livre'; UI.ctl.hidden = false; UI.arrasto.hidden = false; UI.esq.hidden = false; }
@@ -5248,26 +5258,53 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     try { await fala('jog', nt ? T('É melhor eu voltar para casa, tenho que dormir até as 2h para descansar bem, ou isso pode afetar meu desempenho.') : T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
-  let relUlt = '', relIco = '';
+  let relUlt = '', relIco = '', hudChave = '', tHud = 0;
+  // o HUD de cima (dia, hora, clima, dinheiro, fome e café) fica recolhido num quadradinho (o ícone do clima): abre quando algo muda
+  //   ou ao tocar nele, e recolhe sozinho depois de alguns segundos (ou tocando nele aberto)
+  function abrirHud(seg) { if (!UI || !UI.info) return; UI.info.hidden = false; UI.resumo.hidden = true; clearTimeout(tHud); tHud = setTimeout(recolherHud, (seg || 3.5) * 1000); }
+  function recolherHud() { clearTimeout(tHud); if (!UI || !UI.info) return; UI.info.hidden = true; UI.resumo.hidden = false; }
+  // quanto o personagem já comeu hoje: 0 = nada (só o osso) … 1 = matou a fome (a coxa inteira)
+  function nivelComida() {
+    const d = S.dados, hoje = d.dia || 1;
+    const fome = d.fomeDia === hoje || d.comeuDia === hoje ? (d.fome == null ? FOME_DO_DIA : d.fome) : FOME_DO_DIA;
+    return clamp(1 - fome / FOME_DO_DIA, 0, 1);
+  }
   const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // o dia 1 é uma segunda-feira
   const diaSemana = () => ((((S.dados.dia || 1) - 1) % 7) + 7) % 7;
   function atualizarRelogioUI() {
     const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // ⚽ = dia de futebol
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
-    if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
-    const semComer = d.comeuDia !== (d.dia || 1); if (UI.fome.hidden === semComer) UI.fome.hidden = !semComer;
+    if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); UI.resumo.replaceChildren(iconeClima(ic)); }
+    const nc = Math.round(nivelComida() * 8) / 8; if (UI.fome.dataset.n !== String(nc)) { UI.fome.dataset.n = String(nc); UI.fome.replaceChildren(iconeCoxa(nc)); }
+    { const ch = (d.dia || 1) + '|' + Math.floor(d.hora) + '|' + ic + '|' + nc + '|' + (cafeEfeito() ? 1 : 0); if (ch !== hudChave) { const prim = !hudChave; hudChave = ch; abrirHud(prim ? 4 : 3.5); } }   // muda o dia, a hora cheia, o clima, a fome ou o café: o HUD abre por uns segundos
     { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // o café que está fazendo efeito   // a coxinha fica até ele comer no dia
   }
-  // coxinha de frango em pixel art 16x16 (o ícone de "ainda não comeu hoje")
-  function iconeCoxinha() {
-    const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null)), p = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
-    const L = ['......##........', '.....#AA#.......', '.....#AA#.......', '....#BAAB#......', '...#BBAABB#.....', '...#BBBAABB#....', '..#BBBBBAABB#...', '..#BBBBBBBBB#...', '.#CBBBBBBBBBC#..', '.#CBBBBDBBBBC#..', '.#CCBBBBBBDCC#..', '.#CCCBBBBBCCC#..', '..#CCCCCCCCC#...', '...##CCCCC##....', '.....#####......', '................'];
-    const COR = { '#': '#3a1806', A: '#f2c98a', B: '#d98a2e', C: '#a85a1a', D: '#f6d36a' };
-    L.forEach((r, y) => [...r].forEach((ch, x) => { if (COR[ch]) p(x, y, COR[ch]); }));
-    for (const [x, y] of [[6, 6], [9, 8], [5, 9], [10, 10], [7, 11]]) p(x, y, '#f2b860');           // farelinho da casquinha
+  // a FOME: uma coxa de frango em pixel art 16x16, deitada na diagonal com a carne para CIMA (à direita) e o osso embaixo (à esquerda).
+  //   n = quanto já comeu hoje (0 a 1): com fome fica só o osso; conforme come, a carne vai aparecendo a partir do osso até a coxa inteira.
+  function iconeCoxa(n) {
+    const N = 16, g = Array.from({ length: N }, () => Array(N).fill(null)), R2 = Math.SQRT2;
+    const tipo = (x, y) => {
+      const px = x + 0.5 - 1.5, py = y + 0.5 - 14.5, a = (px - py) / R2, b = (px + py) / R2;   // a: ao longo da coxa (0 = ponta do osso); b: atravessado
+      const ea = (a - 12.2) / 5.9, eb = b / (3.2 + Math.max(0, a - 9) * 0.22);                // a carne: um ovo, mais gordo em cima
+      if (a > 6.2 && ea * ea + eb * eb < 1) {
+        const t = (a - 6.2) / 12; if (t > n + 1e-6) return null;
+        if (b < -1.4 && a > 9.5 && a < 15.5) return 'luz'; if (b > 1.6) return 'sombra'; return 'carne';
+      }
+      if (a >= 2.2 && a <= 7.4 && Math.abs(b) <= 0.95) return 'osso';                            // o osso (a canela)
+      for (const sb of [-1.25, 1.25]) if (Math.hypot(a - 1.6, b - sb) < 1.25) return 'osso';    // a ponta do osso (os dois "nós")
+      return null;
+    };
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g[y][x] = tipo(x, y);
+    const COR = { carne: '#c8702a', luz: '#f0a050', sombra: '#8e4418', osso: '#f4ead2' }, CONTORNO = '#3a1806';
     const cv = document.createElement('canvas'); cv.width = cv.height = N; const c = cv.getContext('2d');
-    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x]) { c.fillStyle = g[y][x]; c.fillRect(x, y, 1, 1); }
-    cv.style.cssText = 'width:24px;height:24px;image-rendering:pixelated;display:block;pointer-events:none;';
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      if (g[y][x]) { c.fillStyle = COR[g[y][x]]; c.fillRect(x, y, 1, 1); continue; }
+      const viz = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => g[y + dy] && g[y + dy][x + dx]);
+      if (viz) { c.fillStyle = CONTORNO; c.fillRect(x, y, 1, 1); }
+    }
+    if (n > 0.5) for (const [x, y] of [[10, 5], [12, 4], [11, 7]]) if (g[y][x] === 'carne') { c.fillStyle = '#e08a3a'; c.fillRect(x, y, 1, 1); }   // a casquinha
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] === 'osso' && (x + y) % 5 === 0) { c.fillStyle = '#d8c8a4'; c.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:26px;height:26px;image-rendering:pixelated;display:block;pointer-events:none;';
     return cv;
   }
   function iconeClima(tipo) {

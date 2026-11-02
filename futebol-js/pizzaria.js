@@ -1168,19 +1168,29 @@
 
     // ---------------------------------------------------------------- HUD da entrega (sabor + pixel art + cronômetro)
     function mostrarHud(sim) {
+      // aparece aberto (sabor + cronômetro) por 3 s e recolhe para um quadradinho com a pizza e os segundos; tocar abre de novo por 3 s
       let el = document.getElementById('pzEntrega');
-      if (!sim) { if (el) el.hidden = true; return; }
+      if (!sim) { if (el) { el.hidden = true; clearTimeout(M.tHudE); } return; }
       if (!el) {
         el = document.createElement('div'); el.id = 'pzEntrega';
-        el.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(84px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.92);border:3px solid #f2c230;color:#fff0c8;padding:4px 10px 4px 6px;font:700 12px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);pointer-events:none;';
-        el.innerHTML = '<span class="pzIc"></span><span style="display:flex;flex-direction:column;gap:2px"><span class="pzNome"></span><span class="pzT" style="font-size:11px"></span></span>';
+        el.style.cssText = 'position:fixed;z-index:9;left:50%;transform:translateX(-50%);top:calc(84px + env(safe-area-inset-top,0px));display:flex;align-items:center;gap:8px;background:rgba(42,18,6,.92);border:3px solid #f2c230;color:#fff0c8;padding:4px 10px 4px 6px;font:700 12px/1.2 var(--font-display);white-space:nowrap;max-width:calc(100% - 24px);pointer-events:auto;cursor:pointer;box-sizing:border-box;';
+        el.innerHTML = '<span class="pzIc" style="position:relative;display:block"></span><span class="pzTxts" style="display:flex;flex-direction:column;gap:2px"><span class="pzNome"></span><span class="pzT" style="font-size:11px"></span></span><span class="pzMini" style="position:absolute;right:-7px;bottom:-8px;padding:1px 3px;background:#2a1206;border:2px solid currentColor;font:700 9px/1 var(--font-display)"></span>';
+        el.addEventListener('click', () => { api.som(); abrirHudE(!M.hudAberto); });
         (document.getElementById('raizJogo') || document.body).appendChild(el);
       }
-      el.hidden = false; atualizarHud(true);
+      el.hidden = false; abrirHudE(true); atualizarHud(true);
+    }
+    function abrirHudE(abre) {
+      const el = document.getElementById('pzEntrega'); if (!el) return;
+      clearTimeout(M.tHudE); M.hudAberto = !!abre;
+      el.querySelector('.pzTxts').style.display = abre ? 'flex' : 'none'; el.querySelector('.pzMini').style.display = abre ? 'none' : '';
+      el.style.padding = abre ? '4px 10px 4px 6px' : '3px'; el.style.gap = abre ? '8px' : '0';
+      const ic = el.querySelector('.pzIc canvas'); if (ic) ic.style.width = ic.style.height = abre ? '40px' : '30px';
+      if (abre) M.tHudE = setTimeout(() => abrirHudE(false), 3000);
     }
     function atualizarHud(forca) {
       const el = document.getElementById('pzEntrega'), P = M.pedido; if (!el || el.hidden || !P) return;
-      const ic = el.querySelector('.pzIc'); if (forca || ic.dataset.k !== P.sabor) { ic.dataset.k = P.sabor; ic.replaceChildren(iconePizza(P.sabor, 8, 40)); }
+      const ic = el.querySelector('.pzIc'); if (forca || ic.dataset.k !== P.sabor) { ic.dataset.k = P.sabor; ic.replaceChildren(iconePizza(P.sabor, 8, 40)); const cv = ic.querySelector('canvas'); if (cv) { cv.style.display = 'block'; cv.style.width = cv.style.height = M.hudAberto ? '40px' : '30px'; } }
       const nome = Tf('Pedido: {0}', T(SABORES.find((q) => q.id === P.sabor).nome)) + (P.caiu ? ' ' + T('(amassada)') : '');
       let t, cor;
       if (P.t0 == null) { t = T('coloque na bicicleta e suba'); cor = '#fff0c8'; }
@@ -1188,6 +1198,8 @@
       else { t = Tf('ATRASADA +{0} s', Math.floor(P.t - PRAZO)); cor = '#ff5a4a'; }
       const n = el.querySelector('.pzNome'), tt = el.querySelector('.pzT');
       if (n.textContent !== nome) n.textContent = nome; if (tt.textContent !== t) tt.textContent = t; tt.style.color = cor;
+      const mi = el.querySelector('.pzMini'), mt = P.t0 == null ? '🚲' : P.t <= PRAZO ? String(Math.ceil(PRAZO - P.t)) : '+' + Math.floor(P.t - PRAZO);
+      if (mi.textContent !== mt) mi.textContent = mt; mi.style.color = cor;
       el.style.borderColor = P.t0 != null && P.t > PRAZO ? '#c8352b' : '#f2c230';
     }
 

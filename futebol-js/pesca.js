@@ -21,7 +21,9 @@
      mais rápido, a hora de fisgar dura mais e a briga é mais fácil — com limite para raros, épicos e lendários (FACIL_RAR). Varas
      melhores: lançam mais longe, aguentam mais tensão, recolhem mais rápido e trazem peixes mais raros (RAR_VARA). Isca favorita:
      o peixe aparece mais e morde mais rápido. Lançar longe (para o meio do lago, mais fundo) ajuda a achar os raros.
-   - MINIGAME (como o chute da partida): mira (◀ ▶), segurar LANÇAR para encher a barra de força e soltar; a boia cai na água;
+   - ONDE: de qualquer lugar da beira do lago ou do píer com água na frente ("Pescar aqui"); só nos dias de folga (em dia de trabalho
+     o personagem diz que é melhor não pescar). Com o Cadu, a conversa leva para a ponta do píer, do lado dele.
+   - MINIGAME (como o chute da partida): mira arrastando o dedo na tela (◀ ▶ / A D no teclado), segurar LANÇAR para encher a barra de força e soltar; a boia cai na água;
      beliscadas (não fisgue ainda!); quando a boia afunda: FISGAR; a briga: segurar PUXAR recolhe a linha, mas quando o peixe corre
      a tensão sobe — solte antes de arrebentar, e não deixe a linha frouxa demais. O peixe vai para a CAIXA (até 30).
    - TEXTOS: TRAD (en, es, it, fr) — as traduções daqui valem PRIMEIRO dentro da pesca (tr/trf): "LANÇAR" no jogo é o lateral do futebol
@@ -45,6 +47,10 @@
     'Ah, escapou!': ['Ah, it got away!', '¡Ah, se escapó!', 'Ah, è scappato!', 'Ah, il s’est échappé !'],
     'Falar com o Cadu': ['Talk to Cadu', 'Hablar con Cadu', 'Parla con Cadu', 'Parler à Cadu'],
     'Pescar': ['Fish', 'Pescar', 'Pesca', 'Pêcher'],
+    'Pescar aqui': ['Fish here', 'Pescar aquí', 'Pesca qui', 'Pêcher ici'],
+    'Eu acho melhor não pescar hoje, por conta do trabalho...': ['I think I’d better not fish today, because of work...', 'Creo que mejor no pesco hoy, por el trabajo...', 'Credo sia meglio non pescare oggi, per via del lavoro...', 'Je crois que je ferais mieux de ne pas pêcher aujourd’hui, à cause du travail...'],
+    'Arraste a tela para mirar e segure LANÇAR. Solte na faixa verde!': ['Drag the screen to aim and hold CAST. Release in the green zone!', 'Arrastra la pantalla para apuntar y mantén LANZAR. ¡Suelta en la franja verde!', 'Trascina lo schermo per mirare e tieni premuto LANCIA. Rilascia nella fascia verde!', 'Fais glisser l’écran pour viser et maintiens LANCER. Relâche dans la zone verte !'],
+    'Equipamento': ['Gear', 'Equipo', 'Attrezzatura', 'Équipement'],
     'Falar com o seu Bené': ['Talk to Mr. Bené', 'Hablar con don Bené', 'Parla con il signor Bené', 'Parler à M. Bené'],
     'Casinha da pesca fechada. Abre às 6h.': ['Fishing shack closed. Opens at 6 AM.', 'Casita de pesca cerrada. Abre a las 6h.', 'Casetta della pesca chiusa. Apre alle 6.', 'Cabane de pêche fermée. Ouvre à 6 h.'],
     'Ver o catálogo': ['See the catalog', 'Ver el catálogo', 'Guarda il catalogo', 'Voir le catalogue'],
@@ -891,18 +897,35 @@
       const s = S(); if (!s || s.dentro || P.mg || !P.montado) return;
       const C = P.cadu;
       if (C && !C.oculto) v.push({ x: C.x + 0.3, z: C.z - 0.75, r: 1.6, txt: tr('Falar com o Cadu'), fn: falarComCaduLago, y: 1.7, pri: !temVara() });   // sem vara: falar com ele ganha do "Pescar"
-      v.push({ x: PONTA.x, z: PONTA.z, r: 1.4, txt: tr('Pescar'), fn: pescarNaPonta, y: 2.2 });
+      const Lp = lugarPesca();                                            // na beira do lago (ou no píer) com água na frente: "Pescar aqui"
+      if (Lp) { const d = dirDe(Lp.yaw); v.push({ x: s.jog.x + d.x * 1.0, z: s.jog.z + d.z * 1.0, r: 1.25, txt: tr('Pescar aqui'), fn: () => pescarAqui(Lp), y: 0.9 }); }
       v.push({ x: BALCAO.x, z: BALCAO.z, r: 1.7, txt: aberta() ? tr('Falar com o seu Bené') : tr('Casinha da pesca fechada. Abre às 6h.'), fn: aberta() ? falarComBene : async () => {}, y: 2.6 });
       v.push({ x: QUADRO.x, z: QUADRO.z, r: 1.3, txt: tr('Ver o catálogo'), fn: () => abrirCatalogo(), y: 2.3 });
     }
-    async function pescarNaPonta() {
+    // dá para pescar de QUALQUER lugar da beira do lago (e do píer): basta ter água na frente. Vale a direção para onde o jogador olha;
+    //   se não tiver água ali, a direção com água mais perto dela.
+    function lugarPesca() {
+      const s = S(), J = s.jog, L = api.LAGO; if (!J || s.dentro || J.sentado) return null;
+      if (Math.abs(J.x - L.cx) > L.rx + 6 || Math.abs(J.z - L.cz) > L.rz + 6) return null;
+      const agua = (yaw) => { const d = dirDe(yaw); for (const r of [1.6, 2.6, 3.6]) if (naAgua(J.x + d.x * r, J.z + d.z * r)) return true; return false; };
+      if (agua(J.yaw)) return { x: J.x, z: J.z, yaw: J.yaw };
+      let melhor = null, dm = 9;
+      for (let k = 0; k < 24; k++) { const y = k / 24 * Math.PI * 2; if (!agua(y)) continue; const da = Math.abs(angN(y - J.yaw)); if (da < dm) { dm = da; melhor = y; } }
+      return melhor == null ? null : { x: J.x, z: J.z, yaw: melhor };
+    }
+    // a pesca só fica liberada nos dias de folga (em dia de trabalho, o personagem prefere não pescar)
+    const diaDeTrabalho = () => !!api.empregoEscolhido() && !fimDeSemana();
+    async function semPescaHoje() { await api.fala('jog', tr('Eu acho melhor não pescar hoje, por conta do trabalho...')); Dialogo.esconder(); }
+    async function pescarAqui(Lp) {
+      if (diaDeTrabalho()) { await semPescaHoje(); return; }
       if (!temVara()) {
         await api.fala('jog', tr('Preciso de uma vara para pescar...'));
         if (P.cadu && !P.cadu.oculto) await api.fala('jog', tr('O Cadu está bem ali. Posso pedir uma emprestada!'));
         else await api.fala('jog', tr('O seu Bené vende varas na casinha. E dizem que o Cadu pesca aqui no fim de semana.'));
         Dialogo.esconder(); return;
       }
-      await pescar(!!(P.cadu && !P.cadu.oculto));
+      const C = P.cadu, perto = !!(C && !C.oculto && Math.hypot(C.x - Lp.x, C.z - Lp.z) < 6);
+      await pescar(perto, Lp);
     }
     const PAPOS_LAGO = [
       'Isca boa faz o peixe morder mais rápido. Mas os grandões não se impressionam fácil, não.',
@@ -951,6 +974,7 @@
           await api.fala('cadu', tr('Já tem vara, é? Então leva essa de bambu também, de lembrança!'));
           p.varas.unshift(0); p.caduVara = true; gravar();
         }
+        if (diaDeTrabalho()) { await semPescaHoje(); return; }
         const r = await Escolha.mostrar(tr('Você quer pescar agora?'), [tr('Sim'), tr('Conversar'), tr('Agora não')]);
         if (r === 1) {
           const Q = PAPOS_LAGO[(p.papo | 0) % PAPOS_LAGO.length]; p.papo = (p.papo | 0) + 1;
@@ -1012,22 +1036,23 @@
       if (document.getElementById('pcCss')) return;
       const st = document.createElement('style'); st.id = 'pcCss';
       st.textContent = `
-#pcPainel{position:fixed;inset:0;z-index:16;display:grid;place-items:center;background:rgba(6,6,8,.45);font-family:var(--font-body);padding:8px;box-sizing:border-box}
+#pcPainel{position:fixed;inset:0;z-index:16;display:flex;align-items:center;justify-content:center;background:rgba(6,6,8,.45);font-family:var(--font-body);padding:calc(8px + env(safe-area-inset-top,0px)) max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));box-sizing:border-box}
 #pcPainel .pxBtn,#pcHud .pxBtn{width:auto;min-width:0;white-space:nowrap}
 #pcPainel .pxBtn.pcBt,#pcPainel .pxBtn.pxPrim.pcBt{height:34px;min-height:0;padding:0 10px;font-size:12px;line-height:1}
 #pcPainel .pxBtn.pcX{width:38px;padding:0;flex:none}
 #pcHud .pxBtn.pcInfo,#pcHud .pxBtn.pcPeq{height:36px;min-height:0;font-size:12px;line-height:1}
 #pcHud .pxBtn.pxPrim.pcAcao{height:64px;font-size:16px}
 #pcPainel .pxBtn.pxPrim,#pcHud .pxBtn.pxPrim{color:#2a1206}
-#pcPainel .pcCard{width:min(640px,100%);max-height:100%;display:flex;flex-direction:column;background:#2a1206;border:4px solid #f0a020;color:#fff0c8;box-shadow:0 6px 0 rgba(0,0,0,.45);box-sizing:border-box}
-#pcPainel .pcTopo{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:3px solid #5a3414}
+#pcPainel .pcCard{width:min(720px,100%);height:100%;max-height:100%;overflow:hidden;display:flex;flex-direction:column;background:#2a1206;border:4px solid #f0a020;color:#fff0c8;box-shadow:0 6px 0 rgba(0,0,0,.45);box-sizing:border-box}
+#pcPainel .pcTopo{flex:none;display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:3px solid #5a3414}
 #pcPainel .pcTit{font:700 15px/1.2 var(--font-display);letter-spacing:.06em;color:#f0a020;text-transform:uppercase;flex:1;min-width:0}
 #pcPainel .pcGrana{font:700 13px/1 var(--font-display);color:#8fe04a;white-space:nowrap}
-#pcPainel .pcAbas{display:flex;gap:6px;padding:8px 10px 0;flex-wrap:wrap}
+#pcPainel .pcAbas{flex:none;display:flex;gap:6px;padding:8px 10px 0;flex-wrap:wrap}
 #pcPainel .pcAba{height:34px;padding:0 12px;font-size:12px}
 #pcPainel .pcAba.on{outline:2px solid #fff0c8;outline-offset:1px}
-#pcPainel .pcCorpo{overflow:auto;padding:10px;display:flex;flex-direction:column;gap:7px;min-height:120px}
-#pcPainel .pcMsg{min-height:18px;padding:0 10px 8px;font-size:13px;color:#ffe08a}
+#pcPainel .pcCorpo{flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:10px;display:flex;flex-direction:column;gap:7px}
+#pcPainel .pcCorpo>*{flex:none}
+#pcPainel .pcMsg{flex:none;min-height:18px;padding:0 10px 8px;font-size:13px;color:#ffe08a}
 .pcLinha{display:flex;align-items:center;gap:10px;background:#3a1c0a;border:2px solid #5a3414;padding:6px 8px}
 .pcLinha.on{border-color:#f0a020}
 .pcIco{width:48px;height:32px;image-rendering:pixelated;flex:none}
@@ -1046,34 +1071,39 @@
 .pcDados{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:13px;flex:1;min-width:200px}
 .pcDados b{color:#f0a020;font-weight:700}
 #pcHud{position:fixed;inset:0;z-index:11;pointer-events:none;font-family:var(--font-body);color:#fff0c8}
-#pcHud .pcEsq{position:absolute;left:max(10px,env(safe-area-inset-left,0px));top:calc(56px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;pointer-events:auto}
-#pcHud .pcDir{position:absolute;right:max(10px,env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:auto}
-#pcHud .pcInfo{display:flex;align-items:center;gap:6px;height:36px;padding:0 10px 0 6px;font-size:12px;text-align:left;min-width:150px}
-#pcHud .pcInfo img{width:24px;height:24px;image-rendering:pixelated}
-#pcHud .pcPeq{height:36px;padding:0 12px;font-size:12px}
-#pcHud .pcRecado{position:absolute;left:50%;top:calc(100px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:min(560px,80vw);text-align:center;font:700 clamp(15px,3.6vh,22px)/1.25 var(--font-display);color:#fff0c8;text-shadow:0 2px 0 #2a1206,0 0 6px #2a1206;letter-spacing:.04em}
-#pcHud .pcDica{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(520px,62vw);text-align:center;font:600 13px/1.3 var(--font-body);background:rgba(42,18,6,.78);border:2px solid #5a3414;padding:5px 10px}
+#pcHud .pcArrasto{position:absolute;inset:0;pointer-events:auto;touch-action:none;cursor:grab}
+#pcHud .pcQuad{width:38px;height:38px;padding:0;display:grid;place-items:center;position:relative;background:rgba(42,18,6,.86);border:3px solid #f0a020;color:#fff0c8;box-sizing:border-box;cursor:pointer;pointer-events:auto;font:700 15px/1 var(--font-display);text-shadow:0 2px 0 #2a1206}
+#pcHud .pcQuad:active{transform:translateY(2px)}
+#pcHud .pcQuad:disabled{opacity:.5}
+#pcHud .pcQuad img{width:24px;height:24px;image-rendering:pixelated;pointer-events:none}
+#pcHud .pcQuad .pcBadge{position:absolute;right:-6px;bottom:-7px;min-width:14px;padding:1px 3px;background:#2a1206;border:2px solid #f0a020;font:700 9px/1 var(--font-display);color:#fff0c8;text-shadow:none}
+#pcHud .pcEsq{position:absolute;left:max(10px,env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:6px;align-items:flex-start;pointer-events:none}
+#pcHud .pcMenu{display:flex;flex-direction:column;gap:4px;pointer-events:auto}
+#pcHud .pcMenu[hidden]{display:none}
+#pcHud .pcDir{position:absolute;right:max(10px,env(safe-area-inset-right,0px));top:calc(50px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end;pointer-events:none}
+#pcHud .pcInfo{display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 4px;font-size:11px;text-align:left;min-width:120px}
+#pcHud .pcInfo img{width:20px;height:20px;image-rendering:pixelated}
+#pcHud .pcRecado{position:absolute;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:min(440px,56vw);text-align:center;font:700 13px/1.25 var(--font-display);color:#fff0c8;text-shadow:0 2px 0 #2a1206,0 0 5px #2a1206;letter-spacing:.04em}
+#pcHud .pcDica{position:absolute;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(440px,58vw);text-align:center;font:600 11px/1.25 var(--font-body);background:rgba(42,18,6,.62);border:2px solid rgba(90,52,20,.8);padding:3px 8px;opacity:.9}
 #pcHud .pcDica:empty{display:none}
-#pcHud .pcMira{position:absolute;left:max(18px,env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;pointer-events:auto}
-#pcHud .pcMira button{width:64px;height:64px;font-size:22px;touch-action:none}
-#pcHud .pcAcao{position:absolute;right:max(18px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:150px;height:64px;font-size:16px;pointer-events:auto;touch-action:none}
+#pcHud .pcAcao{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:118px;height:52px;font-size:14px;pointer-events:auto;touch-action:none}
+#pcHud .pxBtn.pxPrim.pcAcao{height:52px;font-size:14px}
 #pcHud .pcAcao.urgente{animation:pcPisca .25s steps(1) infinite}
 @keyframes pcPisca{50%{filter:brightness(1.6)}}
-#pcHud .pcBarra{position:absolute;right:calc(178px + env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));width:30px;height:150px;background:#1c0e04;border:3px solid #5a3414;box-sizing:border-box}
+#pcHud .pcBarra{position:absolute;right:calc(140px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));width:20px;height:104px;background:#1c0e04;border:3px solid #5a3414;box-sizing:border-box}
 #pcHud .pcBarra .pcZona{position:absolute;left:0;right:0}
-#pcHud .pcBarra .pcEnche{position:absolute;left:4px;right:4px;bottom:0;background:#fff0c8;opacity:.9}
+#pcHud .pcBarra .pcEnche{position:absolute;left:3px;right:3px;bottom:0;background:#fff0c8;opacity:.9}
 #pcHud .pcBarra .pcMarca{position:absolute;left:-6px;right:-6px;height:3px;background:#fff;box-shadow:0 0 0 1px #2a1206}
-#pcHud .pcBarra .pcRot{position:absolute;left:50%;top:-20px;transform:translateX(-50%);font:700 10px/1 var(--font-display);white-space:nowrap;text-shadow:0 1px 0 #2a1206}
-#pcHud .pcBriga{position:absolute;right:calc(218px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:4px;align-items:flex-end;font:700 12px/1.2 var(--font-display);text-shadow:0 1px 0 #2a1206}
-#pcHud .pcFol{width:90px;height:8px;background:#1c0e04;border:2px solid #5a3414}
+#pcHud .pcBarra .pcRot{position:absolute;left:50%;top:-15px;transform:translateX(-50%);font:700 9px/1 var(--font-display);white-space:nowrap;text-shadow:0 1px 0 #2a1206}
+#pcHud .pcBriga{position:absolute;right:calc(170px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:3px;align-items:flex-end;font:700 10px/1.2 var(--font-display);text-shadow:0 1px 0 #2a1206}
+#pcHud .pcFol{width:72px;height:6px;background:#1c0e04;border:2px solid #5a3414}
 #pcHud .pcFol i{display:block;height:100%;background:#e8452f}
-#pcHud .pcChoque{position:absolute;inset:0;background:#d8f0ff;opacity:0;transition:opacity .25s}
-#pcBanner{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:13;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 18px;background:rgba(42,18,6,.92);border:4px solid #f0a020;color:#fff0c8;text-align:center;pointer-events:none;min-width:240px;max-width:90vw}
-#pcBanner .pcRar{font:700 20px/1.1 var(--font-display);letter-spacing:.1em}
-#pcBanner .pcNomeP{font:700 17px/1.2 var(--font-display)}
-#pcBanner .pcPeso{font-size:14px}
-#pcBanner .pcNovo{font:700 12px/1 var(--font-display);color:#8fe04a;letter-spacing:.08em}
-@media (max-height:430px){#pcHud .pcBarra{height:110px}#pcHud .pcRecado{top:calc(52px + env(safe-area-inset-top,0px))}#pcHud .pcEsq,#pcHud .pcDir{top:calc(48px + env(safe-area-inset-top,0px))}}
+#pcHud .pcChoque{position:absolute;inset:0;background:#d8f0ff;opacity:0;transition:opacity .25s;pointer-events:none}
+#pcBanner{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:13;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 12px 4px;background:rgba(42,18,6,.88);border:3px solid #f0a020;color:#fff0c8;text-align:center;pointer-events:none;max-width:min(520px,58vw);box-sizing:border-box}
+#pcBanner .pcL1{font:700 13px/1.15 var(--font-display);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+#pcBanner .pcL2{font:600 11px/1.2 var(--font-body);opacity:.95}
+#pcBanner .pcNovo{color:#8fe04a;font-weight:700}
+@media (max-height:430px){#pcHud .pcBarra{height:88px}}
 `;
       document.head.appendChild(st);
     }
@@ -1109,7 +1139,7 @@
         const Pn = painel(tr('Loja do seu Bené'), () => { if (!trocando) ok(); });
         let atual = aba || 0;
         const desenha = () => {
-          Pn.grana(); Pn.abas([tr('Iscas'), tr('Varas'), trf('Vender ({0})', dadosP().caixa.length), tr('Catálogo')], atual, (k) => { if (k === 3) { trocando = true; Pn.fechar(); abrirCatalogo().then(() => abrirLoja(atual)).then(ok); return; } atual = k; Pn.msg.textContent = ''; desenha(); });
+          Pn.grana(); Pn.abas([tr('Iscas'), tr('Varas'), trf('Vender ({0})', dadosP().caixa.length), tr('Catálogo')], atual, (k) => { if (k === 3) { trocando = true; Pn.fechar(); abrirCatalogo().then(() => abrirLoja(atual)).then(ok); return; } atual = k; Pn.msg.textContent = ''; desenha(); Pn.corpo.scrollTop = 0; });
           const C = Pn.corpo; C.innerHTML = ''; const p = dadosP(), d = S().dados;
           if (atual === 0) {
             ISCAS.forEach((I, k) => {
@@ -1245,7 +1275,7 @@
     //   estados: mira → forca (segurando LANÇAR) → swing → voo (a boia no ar) → espera (beliscadas) → mordida (FISGAR!) → fisgou → briga
     //   → pegou (troféu, reação, caixa) | falhou (escapou/arrebentou) → recolhe → mira. Outros: embolou (força no vermelho), assustou.
     const SINAL_VERGA = -1;
-    const YAW_TROFEU = YAW_BASE - 0.45;                                // mostrando o peixe: virado para o noroeste (a câmera vem de lá; o Cadu fica de lado)                                            // (conferido na tela: assim a ponta verga para o lado da linha)
+    // mostrando o peixe: o jogador vira um pouco para o lado (m.yaw0 - 0.45) e a câmera vem de frente                                            // (conferido na tela: assim a ponta verga para o lado da linha)
     const dirDe = (yaw) => ({ x: Math.cos(yaw), z: -Math.sin(yaw) });
     const angN = (a) => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
     function naAgua(x, z) { const pr = api.PIER; if (x > pr.x0 - 0.4 && x < pr.x1 + 0.4 && z > pr.z0 - 0.4 && z < pr.z1 + 0.4) return false; return api.dentroLago(x, z, -0.7); }
@@ -1253,19 +1283,29 @@
     const distLance = (v, vara) => 4 + Math.min(v, 0.93) / 0.93 * (VARAS[vara].alc - 4) * (v > 0.93 ? 1.04 : 1);
     function msgMg(txt, seg) { const m = P.mg; if (!m) return; m.U.recado.textContent = txt; m.tRec = seg || 2; }
 
-    async function pescar(comCadu) {
+    async function pescar(comCadu, lugar) {
       const s = S(), J = s.jog, p = dadosP(); if (!temVara() || P.mg) return;
+      if (diaDeTrabalho()) { await semPescaHoje(); return; }
+      const Lg = lugar || { x: PONTA.x, z: PONTA.z, yaw: YAW_BASE };
       if (totalIscas() <= 0) {
         if (comCadu && p.caduMinhoca !== s.dados.dia) { await api.fala('cadu', tr('Tá sem isca? Toma umas minhocas, por minha conta.')); p.iscas[0] = nIsca(0) + 5; p.caduMinhoca = s.dados.dia; p.isca = 0; gravar(); Dialogo.esconder(); }
         else { await api.fala('jog', tr('Estou sem isca... O seu Bené vende lá na casinha.')); Dialogo.esconder(); return; }
       }
       if (nIsca(p.isca) <= 0) p.isca = ISCAS.findIndex((_, k) => nIsca(k) > 0);
       await api.preto(true, 350);
-      J.sentado = false; J.rota = null; J.andando = false; J.correndo = false; J.x = PONTA.x; J.z = PONTA.z; J.yaw = J.yawAlvo = YAW_BASE;
+      J.sentado = false; J.rota = null; J.andando = false; J.correndo = false; J.x = Lg.x; J.z = Lg.z; J.yaw = J.yawAlvo = Lg.yaw;
+      const yChao = api.altura(Lg.x, Lg.z);
       const U = montarHud(), ui = api.UI(); const esqAntes = ui.esq.hidden; ui.esq.hidden = true; api.aviso('');
       const m = P.mg = { e: 'mira', t: 0, ang: 0, ang0: 0, mira: 0, segura: false, forca: 0, comCadu: !!comCadu, U, tRec: 0, pausa: false, ocupado: false,
-        vara: criarVara(p.vara), boiaM: criarBoia(), linha: criarLinha(), boiaP: null, bite: null, B: null, cam: null, pontos: [], alvoM: null };
+        vara: criarVara(p.vara), boiaM: criarBoia(), linha: criarLinha(), boiaP: null, bite: null, B: null, cam: null, pontos: [], alvoM: null,
+        ox: Lg.x, oz: Lg.z, yaw0: Lg.yaw, y: yChao, lim: lugar ? 1.4 : 0.75 };
       varaNaMao(J.m, m.vara); P.isopor.visible = true; P.isopor.tampa.rotation.x = 0;
+      if (lugar) {                                                        // a caixa de isopor do lado do jogador (do lado que for terra firme)
+        const d = dirDe(Lg.yaw), lx = -d.z, lz = d.x; let ix = Lg.x + lx * 0.8 - d.x * 0.25, iz = Lg.z + lz * 0.8 - d.z * 0.25;
+        if (api.dentroLago(ix, iz, 0.2)) { ix = Lg.x - lx * 0.8 - d.x * 0.25; iz = Lg.z - lz * 0.8 - d.z * 0.25; }
+        if (api.dentroLago(ix, iz, 0.2)) { ix = Lg.x - d.x * 0.8; iz = Lg.z - d.z * 0.8; }
+        P.isopor.position.set(ix, api.altura(ix, iz), iz); P.isopor.rotation.y = Lg.yaw + Math.PI / 2;
+      } else { P.isopor.position.set(ISOPOR.x, Y_PIER, ISOPOR.z); P.isopor.rotation.y = 0.15; }
       for (let k = 0; k < 7; k++) { const d = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.02, 0.13), new THREE.MeshBasicMaterial({ color: 0xfff0c8, transparent: true, opacity: 0.75, depthWrite: false })); d.visible = false; grupo().add(d); m.pontos.push(d); }
       { if (!geoAnel) anel(0, -900, 0.1); const a = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({ color: 0xf0a020, transparent: true, opacity: 0.85, depthWrite: false })); a.visible = false; grupo().add(a); m.alvoM = a; }
       window.addEventListener('keydown', teclaMg, true); window.addEventListener('keyup', teclaMg, true);
@@ -1303,27 +1343,44 @@
     function montarHud() {
       cssPesca();
       const el = document.createElement('div'); el.id = 'pcHud';
-      el.innerHTML = '<div class="pcChoque"></div><div class="pcEsq"><button type="button" class="pxBtn pcInfo pcIsca"></button><button type="button" class="pxBtn pcInfo pcVara"></button><button type="button" class="pxBtn pcInfo pcCaixa"></button></div>' +
-        '<div class="pcDir"><button type="button" class="pxBtn pcPeq pcCat"></button><button type="button" class="pxBtn pcPeq pcSair"></button></div>' +
+      el.innerHTML = '<div class="pcArrasto"></div><div class="pcChoque"></div>' +
+        '<div class="pcEsq"><button type="button" class="pcQuad pcMenuB"><span class="pcMenuI"></span><span class="pcBadge"></span></button>' +
+        '<div class="pcMenu" hidden><button type="button" class="pxBtn pcInfo pcIsca"></button><button type="button" class="pxBtn pcInfo pcVara"></button><button type="button" class="pxBtn pcInfo pcCaixa"></button><button type="button" class="pxBtn pcInfo pcCat"></button></div></div>' +
+        '<div class="pcDir"><button type="button" class="pcQuad pcSair">✕</button></div>' +
         '<div class="pcRecado"></div><div class="pcDica"></div>' +
-        '<div class="pcMira"><button type="button" class="pxBtn pcEsqB">◀</button><button type="button" class="pxBtn pcDirB">▶</button></div>' +
         '<div class="pcBarra"><div class="pcZonas"></div><div class="pcEnche"></div><div class="pcMarca"></div><span class="pcRot"></span></div>' +
         '<div class="pcBriga"><span class="pcDist"></span><span class="pcFolT"></span><div class="pcFol"><i></i></div></div>' +
         '<button type="button" class="pxBtn pxPrim pcAcao"></button>';
       (document.getElementById('raizJogo') || document.body).appendChild(el);
       const q = (s) => el.querySelector(s);
-      const U = { el, isca: q('.pcIsca'), vara: q('.pcVara'), caixa: q('.pcCaixa'), cat: q('.pcCat'), sair: q('.pcSair'), recado: q('.pcRecado'), dica: q('.pcDica'), mira: q('.pcMira'), esq: q('.pcEsqB'), dir: q('.pcDirB'),
+      const U = { el, isca: q('.pcIsca'), vara: q('.pcVara'), caixa: q('.pcCaixa'), cat: q('.pcCat'), sair: q('.pcSair'), recado: q('.pcRecado'), dica: q('.pcDica'),
+        menuB: q('.pcMenuB'), menuI: q('.pcMenuI'), badge: q('.pcBadge'), menu: q('.pcMenu'), arrasto: q('.pcArrasto'),
         barra: q('.pcBarra'), zonas: q('.pcZonas'), enche: q('.pcEnche'), marca: q('.pcMarca'), rot: q('.pcRot'), briga: q('.pcBriga'), dist: q('.pcDist'), folT: q('.pcFolT'), fol: q('.pcFol i'), acao: q('.pcAcao'), choque: q('.pcChoque'), modo: '', cache: {} };
-      U.cat.textContent = tr('Catálogo'); U.sair.textContent = tr('Sair'); U.folT.textContent = tr('Fôlego do peixe');
+      U.cat.textContent = tr('Catálogo'); U.folT.textContent = tr('Fôlego do peixe');
+      U.sair.setAttribute('aria-label', tr('Sair')); U.sair.title = tr('Sair'); U.menuB.setAttribute('aria-label', tr('Equipamento')); U.menuB.title = tr('Equipamento');
+      // o menu do equipamento (isca, vara, caixa, catálogo) fica recolhido num quadradinho: tocar abre/fecha (fecha sozinho depois de uns segundos)
+      let tMenu = 0;
+      const menu = (abre) => { clearTimeout(tMenu); U.menu.hidden = !abre; if (abre) tMenu = setTimeout(() => { U.menu.hidden = true; }, 6000); };
+      U.menuB.onclick = () => { SOM.toc(); menu(U.menu.hidden); };
+      U.fecharMenu = () => menu(false);
       const segurar = (b, on, off) => {
         b.addEventListener('pointerdown', (e) => { e.preventDefault(); try { b.setPointerCapture(e.pointerId); } catch (x) { /* ok */ } on(); });
         for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) b.addEventListener(ev, () => off());
         b.addEventListener('contextmenu', (e) => e.preventDefault());
       };
       segurar(U.acao, () => apertar(true), () => apertar(false));
-      segurar(U.esq, () => { if (P.mg) P.mg.mira = 1; }, () => { if (P.mg && P.mg.mira > 0) P.mg.mira = 0; });
-      segurar(U.dir, () => { if (P.mg) P.mg.mira = -1; }, () => { if (P.mg && P.mg.mira < 0) P.mg.mira = 0; });
-      U.isca.onclick = () => painelNoMg(escolherIsca); U.vara.onclick = () => painelNoMg(escolherVara); U.caixa.onclick = () => painelNoMg(abrirCaixa); U.cat.onclick = () => painelNoMg(abrirCatalogo);
+      // mirar arrastando o dedo na tela (como girar a câmera na cidade)
+      const arr = { id: null, x: 0 };
+      U.arrasto.addEventListener('pointerdown', (e) => { if (arr.id != null) return; arr.id = e.pointerId; arr.x = e.clientX; try { U.arrasto.setPointerCapture(e.pointerId); } catch (x) { /* ok */ } if (!U.menu.hidden) menu(false); });
+      U.arrasto.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== arr.id) return; const dx = e.clientX - arr.x; arr.x = e.clientX; const m = P.mg;
+        if (!m || m.pausa || m.ocupado || !(m.e === 'mira' || m.e === 'forca')) return;
+        m.ang = clampN(m.ang - dx * 0.0075, -m.lim, m.lim);
+      });
+      const solta = (e) => { if (e.pointerId === arr.id) arr.id = null; };
+      U.arrasto.addEventListener('pointerup', solta); U.arrasto.addEventListener('pointercancel', solta);
+      const noMenu = (fn) => () => { menu(false); painelNoMg(fn); };
+      U.isca.onclick = noMenu(escolherIsca); U.vara.onclick = noMenu(escolherVara); U.caixa.onclick = noMenu(abrirCaixa); U.cat.onclick = noMenu(abrirCatalogo);
       U.sair.onclick = () => sairDaPesca();
       return U;
     }
@@ -1352,8 +1409,8 @@
       if (faixa === 3 && Math.random() < 0.4) { msgMg(tr('A linha embolou! Desembolando...'), 2.3); SOM.erro(); m.e = 'embolou'; m.t = 0; return; }
       const gauss = () => (Math.random() + Math.random() + Math.random() - 1.5) / 1.5;
       m.dist = distLance(v, p.vara) * (1 + gauss() * 0.05); m.forcaUsada = v;
-      const yaw = YAW_BASE + m.ang + gauss() * [0.06, 0.035, 0.08, 0.2][faixa], d = dirDe(yaw);
-      m.alvo = { x: PONTA.x + d.x * m.dist, z: PONTA.z + d.z * m.dist }; m.voo = null; m.e = 'swing'; m.t = 0; SOM.lanca();
+      const yaw = m.yaw0 + m.ang + gauss() * [0.06, 0.035, 0.08, 0.2][faixa], d = dirDe(yaw);
+      m.alvo = { x: m.ox + d.x * m.dist, z: m.oz + d.z * m.dist }; m.voo = null; m.e = 'swing'; m.t = 0; SOM.lanca();
     }
     function pousou() {
       const m = P.mg, a = m.alvo; m.boiaP = { x: a.x, y: Y_AGUA, z: a.z };
@@ -1385,15 +1442,15 @@
     }
     function fisgar() {
       const m = P.mg, b = m.bite, p = dadosP(), bonus = m.t < b.d.janela * 0.45 ? 0.08 : -0.05;
-      m.B = novaBriga(Math.hypot(m.boiaP.x - PONTA.x, m.boiaP.z - PONTA.z), b.d, p.vara); m.B.firmeza = clampN(m.B.firmeza + bonus, 0.3, 0.98);
-      m.ang0 = angN(Math.atan2(-(m.boiaP.z - PONTA.z), m.boiaP.x - PONTA.x) - YAW_BASE);
+      m.B = novaBriga(Math.hypot(m.boiaP.x - m.ox, m.boiaP.z - m.oz), b.d, p.vara); m.B.firmeza = clampN(m.B.firmeza + bonus, 0.3, 0.98);
+      m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
       m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(4, 7); m.corriaAntes = false;
       SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 6, 0.3); msgMg(tr('Fisgou!'), 1.2);
     }
     function tickBriga(dt) {
       const m = P.mg, B = m.B, pe = PEIXES[m.bite.i];
-      const r = passoBriga(B, m.segura && !m.pausa, dt), d = dirDe(YAW_BASE + m.ang0 + B.lado);
-      m.peixeP = { x: PONTA.x + d.x * B.dist, z: PONTA.z + d.z * B.dist };
+      const r = passoBriga(B, m.segura && !m.pausa, dt), d = dirDe(m.yaw0 + m.ang0 + B.lado);
+      m.peixeP = { x: m.ox + d.x * B.dist, z: m.oz + d.z * B.dist };
       if (B.corre) { m.tAnel = (m.tAnel || 0) - dt; if (m.tAnel <= 0) { m.tAnel = 0.25; anel(m.peixeP.x, m.peixeP.z, 0.5 + B.forca * 0.6); } if (!m.segura) { m.tZum = (m.tZum || 0) - dt; if (m.tZum <= 0) { m.tZum = 0.45; SOM.zum(); } } }
       else if (m.segura) { m.tCli = (m.tCli || 0) - dt; if (m.tCli <= 0) { m.tCli = 0.085; SOM.clique(); } }
       if (B.corre && !m.corriaAntes) {
@@ -1435,11 +1492,12 @@
       ['Eu... eu tô sonhando? Um peixe lendário na minha frente!', 'Eu... eu tô sonhando? Um peixe lendário na minha frente!', 'Ninguém vai acreditar quando eu contar! LENDÁRIO!'],
     ];
     function mostrarBanner(b, novo, recorde) {
+      // no topo da tela, compacto (2 linhas), sem tampar o que o jogador está vendo
       esconderBanner(); const pe = PEIXES[b.i], el = document.createElement('div'); el.id = 'pcBanner'; el.style.borderColor = COR_RAR[pe.r];
-      el.innerHTML = '<div class="pcRar"></div><div class="pcNomeP"></div><div class="pcPeso"></div><div class="pcPeso pcValor"></div>' + (novo || recorde ? '<div class="pcNovo"></div>' : '');
+      el.innerHTML = '<div class="pcL1"><span class="pcRar"></span> · <span class="pcNomeP"></span></div><div class="pcL2"><span class="pcPeso"></span> · <span class="pcValor"></span>' + (novo || recorde ? ' · <span class="pcNovo"></span>' : '') + '</div>';
       const q = (s) => el.querySelector(s);
       q('.pcRar').textContent = nomeRar(pe.r).toUpperCase(); q('.pcRar').style.color = COR_RAR[pe.r]; q('.pcNomeP').textContent = nomePeixe(b.i);
-      q('.pcPeso').textContent = fmtKg(b.kg) + ' · ' + nomeClasse(b.classe) + ' (×' + String(MULT[b.classe]).replace('.', virgula() ? ',' : '.') + ')';
+      q('.pcPeso').textContent = fmtKg(b.kg) + ' ' + nomeClasse(b.classe) + ' (×' + String(MULT[b.classe]).replace('.', virgula() ? ',' : '.') + ')';
       q('.pcValor').textContent = trf('Vale {0} fakes', precoPeixe(b.i, b.classe));
       if (novo || recorde) q('.pcNovo').textContent = novo ? tr('NOVO NO CATÁLOGO!') : tr('NOVO RECORDE!');
       (document.getElementById('raizJogo') || document.body).appendChild(el);
@@ -1480,7 +1538,7 @@
         let barato = -1, vb = 1e9; p.caixa.forEach((f, k) => { const v = precoPeixe(f.i, f.c); if (v < vb) { vb = v; barato = k; } });
         const ops = [tr('Soltar este peixe')]; if (barato >= 0 && vb <= precoPeixe(b.i, b.classe)) ops.push(trf('Soltar o mais barato da caixa ({0}) e guardar este', nomePeixe(p.caixa[barato].i)));
         const r = await Escolha.mostrar(trf('A caixa está cheia ({0}/{1}). O que fazer?', p.caixa.length, CAIXA_MAX), ops, { centro: true }); Dialogo.esconder();
-        if (r !== 1) { msgMg(tr('O peixe voltou para o lago.'), 2); respingo(PONTA.x - 1.2, PONTA.z, 4, 0.1); return; }
+        if (r !== 1) { msgMg(tr('O peixe voltou para o lago.'), 2); { const d = dirDe(m.yaw0); respingo(m.ox + d.x * 1.6, m.oz + d.z * 1.6, 4, 0.1); } return; }
         p.caixa.splice(barato, 1);
       }
       p.caixa.push({ i: b.i, kg: b.kg, c: b.classe }); gravar();
@@ -1497,9 +1555,9 @@
       const s = S(), m = P.mg, J = s.jog;
       if (!m.pausa) api.tickHorario(dt);
       m.t += dt; if (m.tRec > 0) { m.tRec -= dt; if (m.tRec <= 0) m.U.recado.textContent = ''; }
-      if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -0.75, 0.75);
+      if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -m.lim, m.lim);
       const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou';
-      J.x = PONTA.x; J.z = PONTA.z; J.yaw = J.yawAlvo = m.trofeu ? YAW_TROFEU : YAW_BASE + (fixo ? m.ang0 : m.ang); J.andando = false; J.correndo = false; J.sentado = false;
+      J.x = m.ox; J.z = m.oz; J.yaw = J.yawAlvo = m.trofeu ? (m.yaw0 - 0.45) : m.yaw0 + (fixo ? m.ang0 : m.ang); J.andando = false; J.correndo = false; J.sentado = false;
       if (!m.ocupado && !m.saindo && hora() >= 1.85 && hora() < 5 && (m.e === 'mira' || m.e === 'espera')) { msgMg(tr('Já tá tarde... melhor ir pra casa.'), 3); m.ocupado = false; m.saindo = true; if (m.fim) m.fim(); }
       poseJogMg(m, J);
       J.m.raiz.updateMatrixWorld(true);
@@ -1558,28 +1616,28 @@
       else L.visible = false;
       vergar(m.vara, SINAL_VERGA * verga);
       // o peixe saindo da água até a mão
-      if (m.voa) { const v = m.voa; v.t += dt; const u = clampN(v.t / 0.7, 0, 1), J = S().jog, alvo = { x: J.x + Math.cos(J.yaw) * 0.5, y: Y_PIER + 1.15, z: J.z - Math.sin(J.yaw) * 0.5 };
+      if (m.voa) { const v = m.voa; v.t += dt; const u = clampN(v.t / 0.7, 0, 1), J = S().jog, alvo = { x: J.x + Math.cos(J.yaw) * 0.5, y: m.y + 1.15, z: J.z - Math.sin(J.yaw) * 0.5 };
         v.m.position.set(lerpN(v.de.x, alvo.x, suave(u)), lerpN(v.de.y, alvo.y, u) + Math.sin(u * Math.PI) * 1.4, lerpN(v.de.z, alvo.z, suave(u))); v.m.rotation.set(0, J.yaw, Math.sin(t * 20) * 0.5); }
       // guardando no isopor
-      if (m.guarda) { const g = m.guarda; g.t += dt; const u = clampN(g.t / 0.5, 0, 1); g.m.position.set(lerpN(g.de.x, ISOPOR.x, u), lerpN(g.de.y, Y_PIER + 0.35, u) + Math.sin(u * Math.PI) * 0.4, lerpN(g.de.z, ISOPOR.z, u)); g.m.scale.setScalar(g.k0 * (1 - u * 0.6)); }
+      if (m.guarda) { const g = m.guarda; g.t += dt; const u = clampN(g.t / 0.5, 0, 1); g.m.position.set(lerpN(g.de.x, P.isopor.position.x, u), lerpN(g.de.y, m.y + 0.35, u) + Math.sin(u * Math.PI) * 0.4, lerpN(g.de.z, P.isopor.position.z, u)); g.m.scale.setScalar(g.k0 * (1 - u * 0.6)); }
       // o peixe pulando fora da água na corrida (os raros "de escama")
       if (m.pulo && m.peixeP && m.bite) {
         const pl = m.pulo; if (!pl.m) { pl.m = malhaPeixe(m.bite.i, m.bite.kg); grupo().add(pl.m); respingo(m.peixeP.x, m.peixeP.z, 6, 0.3); }
         pl.t += dt; const u = pl.t / 0.75, Lp = pl.m.userData.L;
-        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); pl.m.rotation.set(0, YAW_BASE + m.ang0 + Math.PI / 2, -0.9 + u * 1.8);
+        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); pl.m.rotation.set(0, m.yaw0 + m.ang0 + Math.PI / 2, -0.9 + u * 1.8);
         if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, 7, 0.4); SOM.agua(); tirarPulo(m); }
       }
       // a mira: pontinhos na água até onde a boia vai cair (e o anel do alvo enquanto enche a força)
-      const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(YAW_BASE + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.55, dadosP().vara);
-      m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = PONTA.x + d.x * dd, z = PONTA.z + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.02, z); });
-      if (m.alvoM) { m.alvoM.visible = m.e === 'forca'; const x = PONTA.x + d.x * Dm, z = PONTA.z + d.z * Dm; m.alvoM.position.set(x, Y_AGUA + 0.025, z); m.alvoM.scale.setScalar(0.5 + Dm * 0.03); m.alvoM.material.color.setHex(naAgua(x, z) ? 0xf0a020 : 0xd8402a); }
+      const mira = m.e === 'mira' || m.e === 'forca', d = dirDe(m.yaw0 + m.ang), Dm = distLance(m.e === 'forca' ? m.forca : 0.55, dadosP().vara);
+      m.pontos.forEach((pt, k) => { const dd = 3 + (Dm - 3) * (k + 1) / m.pontos.length, x = m.ox + d.x * dd, z = m.oz + d.z * dd; pt.visible = mira && naAgua(x, z); pt.position.set(x, Y_AGUA + 0.02, z); });
+      if (m.alvoM) { m.alvoM.visible = m.e === 'forca'; const x = m.ox + d.x * Dm, z = m.oz + d.z * Dm; m.alvoM.position.set(x, Y_AGUA + 0.025, z); m.alvoM.scale.setScalar(0.5 + Dm * 0.03); m.alvoM.material.color.setHex(naAgua(x, z) ? 0xf0a020 : 0xd8402a); }
     }
     function camMg(m, J, dt) {
-      const s = S(), yaw = YAW_BASE + (m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou' ? m.ang0 : m.ang), d = dirDe(yaw), dir = { x: -d.z, z: d.x }, yJ = J.y || Y_PIER;
+      const s = S(), yaw = m.yaw0 + (m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou' ? m.ang0 : m.ang), d = dirDe(yaw), dir = { x: -d.z, z: d.x }, yJ = J.y || m.y;
       let c;
       if (m.trofeu || (m.e === 'pegou' && !m.voa)) {                    // de frente (um pouco para o lado de fora do píer, para o Cadu não tampar); peixe grande = câmera mais longe
-        const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, k = 2.6 + Math.min(2.2, L * 0.7), dT = dirDe(YAW_TROFEU);
-        c = { px: J.x + dT.x * k, py: yJ + 1.9 + Math.min(0.8, L * 0.2), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 1.45, tz: J.z };   // mira acima da cabeça: o jogador fica mais embaixo na tela (o banner fica em cima)
+        const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, k = 2.6 + Math.min(2.2, L * 0.7), dT = dirDe((m.yaw0 - 0.45));
+        c = { px: J.x + dT.x * k, py: yJ + 1.75 + Math.min(0.8, L * 0.2), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 0.8, tz: J.z };   // mira no peito: o jogador e o peixe ficam na metade de cima da tela (a fala fica embaixo e o banner, fininho, no topo)
       }
       else if ((m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou') && m.peixeP) { const f = m.peixeP; c = { px: J.x - d.x * 4.4 + dir.x * 1.6, py: yJ + 2.9, pz: J.z - d.z * 4.4 + dir.z * 1.6, tx: lerpN(J.x, f.x, 0.55), ty: 0.4, tz: lerpN(J.z, f.z, 0.55) }; }
       else {
@@ -1594,12 +1652,13 @@
     function hudMg(m) {
       const U = m.U, p = dadosP(), C = U.cache, set = (el, k, v) => { if (C[k] !== v) { C[k] = v; el.textContent = v; } };
       const iscaTxt = tr(ISCAS[p.isca].nome) + ' ×' + nIsca(p.isca);
-      if (C.iscaK !== p.isca || C.iscaTxt !== iscaTxt) { C.iscaK = p.isca; C.iscaTxt = iscaTxt; U.isca.innerHTML = ''; U.isca.appendChild(imgDe(iconeIsca(p.isca), 24, 24, '')); U.isca.appendChild(document.createTextNode(iscaTxt)); }
-      if (C.varaK !== p.vara) { C.varaK = p.vara; U.vara.innerHTML = ''; U.vara.appendChild(imgDe(iconeVara(p.vara), 24, 24, '')); U.vara.appendChild(document.createTextNode(tr(VARAS[p.vara].nome))); }
-      set(U.caixa, 'cx', trf('Caixa {0}/{1}', p.caixa.length, CAIXA_MAX));
+      if (C.iscaK !== p.isca || C.iscaTxt !== iscaTxt) { C.iscaK = p.isca; C.iscaTxt = iscaTxt; U.isca.innerHTML = ''; U.isca.appendChild(imgDe(iconeIsca(p.isca), 20, 20, '')); U.isca.appendChild(document.createTextNode(iscaTxt)); U.menuI.replaceChildren(imgDe(iconeIsca(p.isca), 24, 24, '')); }
+      if (C.varaK !== p.vara) { C.varaK = p.vara; U.vara.innerHTML = ''; U.vara.appendChild(imgDe(iconeVara(p.vara), 20, 20, '')); U.vara.appendChild(document.createTextNode(tr(VARAS[p.vara].nome))); }
+      set(U.caixa, 'cx', trf('Caixa {0}/{1}', p.caixa.length, CAIXA_MAX)); set(U.badge, 'bd', p.caixa.length + '/' + CAIXA_MAX);
       const livre = m.e === 'mira' && !m.ocupado; for (const b of [U.isca, U.vara, U.caixa, U.cat]) b.disabled = !livre;
+      if (!livre && !U.menu.hidden) U.fecharMenu();
       U.sair.disabled = m.ocupado || ['mira', 'espera', 'recolhe', 'assustou'].indexOf(m.e) < 0;
-      U.mira.style.visibility = (m.e === 'mira' || m.e === 'forca') ? 'visible' : 'hidden';
+      U.arrasto.style.cursor = (m.e === 'mira' || m.e === 'forca') ? 'grab' : 'default';
       let rot = '...', ativo = false, urg = false;
       if (m.e === 'mira') { rot = nIsca(p.isca) > 0 || totalIscas() > 0 ? tr('LANÇAR') : tr('SEM ISCA'); ativo = true; }
       else if (m.e === 'forca') { rot = tr('SOLTE!'); ativo = true; }
@@ -1615,7 +1674,7 @@
       if (B && (m.e === 'briga' || m.e === 'fisgou')) { U.briga.style.display = ''; set(U.dist, 'dist', trf('Distância {0} m', Math.max(0, B.dist).toFixed(1).replace('.', virgula() ? ',' : '.'))); U.fol.style.width = Math.max(0, B.folego / B.folego0 * 100) + '%'; }
       else U.briga.style.display = 'none';
       let dica = '';
-      if (m.e === 'mira') dica = tr('Mire com ◀ ▶ e segure LANÇAR. Solte na faixa verde!');
+      if (m.e === 'mira') dica = tr('Arraste a tela para mirar e segure LANÇAR. Solte na faixa verde!');
       else if (m.e === 'forca') dica = tr('Solte na faixa verde!');
       else if (m.e === 'espera') dica = tr('Espere a boia afundar. Se ela só tremer, não puxe!');
       else if (m.e === 'briga' && B) dica = B.corre ? tr('O peixe está correndo! Solte antes de arrebentar!') : B.frouxa > 0.7 ? tr('Linha frouxa! Segure PUXAR!') : tr('Segure PUXAR para recolher.');
