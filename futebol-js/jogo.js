@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.6
+   FUTEBOL JS · jogo.js · versão 6.6.7
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,8 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.6';
+const VERSAO_JOGO = '6.6.7';
+// 6.6.7: pesca — o DUKE (duke.js, arquivo novo): no dia 13 de maio (data do aparelho), um lendário misterioso que levita para fora da água, encara o jogador e volta para o lago.
 // 6.6.6: mais gente nos interiores sem pesar — o boneco CONGELADO (quem está parado vira 1 malha só e a pose não é calculada), metas maiores e chegada mais rápida nas lojas, limite de 16 bonecos completos por sala, comer/beber aos pouquinhos; as viagens de quem vem de fora andam (na conta) também com o jogador lá dentro.
 // 6.6.5: cidade/lojas — a pizzaria com menos gente e fluxo controlado (um grupo entra de cada vez, corredor largo, fila de 3 no caixa, só um paga); REGISTRO de quem está em cada loja (as pessoas vêm de fora da cidade, entram pela porta e saem para fora da cidade; nenhuma loja abre com gente dentro); a academia com agenda (o pessoal chega depois de abrir e vai embora antes de fechar); calçadas 1 m mais largas (avenida mais estreita), mão direita e duplas lado a lado, outro caminho quando uma coisa trava, atravessar junto quando o carro já parou; mais vida nas pessoas (papo, abraço, selfie, foto, pedrinhas no lago, roda de bola na quadra e no sintético, pose e selfie no espelho da academia); o Herick mora com a Fernanda (vai para o cinema quando abre e volta para casa quando fecha); bar 16h–2h e restaurante 11h–23h.
 // 6.6.2: junta as mudanças da 6.6.1 (pesca/lago/botões/relógio) com as do academia.js feitas à parte.

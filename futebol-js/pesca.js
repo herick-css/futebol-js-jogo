@@ -2,6 +2,10 @@
    FUTEBOL JS · pesca.js · A PESCA NO LAGO DO SAPO CURURU (arquivo SEPARADO, como academia.js)
    ---------------------------------------------------------------------
    6.4.0 — primeira versão.
+   6.6.7 — O DUKE (duke.js, arquivo novo: o modelo 3D): no dia 13 de MAIO, pela data do APARELHO, cada mordida tem 7% de chance de ser
+           ele (uma vez por dia). Briga de lendário, sem pular para fora. Pegou: ele LEVITA para fora da água, gira até ficar de frente,
+           ENCARA o jogador (3 planos), volta para a água e o jogador diz "O que foi que acabou de acontecer....?". Não vai para a caixa
+           nem para o catálogo (só conta em pesca.dukeVisto). PP.dukeForcado = 'sempre' força o dia/a mordida (testes).
    - Registrado com FutebolJS.registrarFase({ id: 'pesca' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do academia.js e chama criar(api) (api = apiPesca() da cidade).
      A casinha (o prédio) é montada no cidade.js (casinhaPesca, CASA_PESCA); daqui vêm o Bené, o quadro do catálogo, a persiana,
@@ -353,6 +357,7 @@
     'Olha, eu te pago 10.000 fakes por ele. Espera aí que eu vou buscar o dinheiro lá no fundo.': ['Look, I’ll pay you 10,000 fakes for it. Hang on, I’ll get the money from the back.', 'Mira, te pago 10.000 fakes por él. Espera, que voy a buscar el dinero al fondo.', 'Senti, ti pago 10.000 fakes. Aspetta che vado a prendere i soldi sul retro.', 'Écoute, je t’en donne 10 000 fakes. Attends, je vais chercher l’argent au fond.'],
     'Seu Bené... acho que ele se mexeu.': ['Mr. Bené... I think it just moved.', 'Don Bené... creo que se movió.', 'Signor Bené... credo che si sia mosso.', 'M. Bené... je crois qu’il a bougé.'],
     'Pensando melhor... fica com o dinheiro e não fala pra ninguém que isso aconteceu...': ['On second thought... keep the money and don’t tell anyone this happened...', 'Pensándolo mejor... quédese con el dinero y no le cuente a nadie lo que pasó...', 'Ripensandoci... tenga i soldi e non dica a nessuno quello che è successo...', 'À la réflexion... gardez l’argent et ne dites à personne ce qui s’est passé...'],
+    'O que foi que acabou de acontecer....?': ['What... just happened....?', '¿Qué... acaba de pasar....?', 'Che cosa... è appena successo....?', 'Qu’est-ce qui... vient de se passer....?'],
     'Combinado. Eu não vi nada. E você também não viu nada.': ['Deal. I didn’t see a thing. And neither did you.', 'Trato hecho. Yo no vi nada. Y tú tampoco viste nada.', 'D’accordo. Io non ho visto niente. E nemmeno tu.', 'Marché conclu. Je n’ai rien vu. Et toi non plus.'],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
@@ -2057,6 +2062,7 @@
     async function pescar(comCadu, lugar) {
       const s = S(), J = s.jog, p = dadosP(); if (!temVara() || P.mg) return;
       if (diaDeTrabalho()) { await semPescaHoje(); return; }
+      prepararDuke();                                                     // (6.6.7) 13 de maio: baixa o duke.js
       const Lg = lugar || { x: PONTA.x, z: PONTA.z, yaw: YAW_BASE };
       if (totalIscas() <= 0) {
         if (comCadu && p.caduMinhoca !== s.dados.dia) { await api.fala('cadu', tr('Tá sem isca? Toma umas minhocas, por minha conta.')); p.iscas[0] = nIsca(0) + 5; p.caduMinhoca = s.dados.dia; p.isca = 0; gravar(); Dialogo.esconder(); }
@@ -2217,7 +2223,84 @@
       const nb = d.beliscadas + (q < 0.3 ? 1 : 0);
       const bel = []; for (let k = 0; k < nb; k++) { const tb = rnd(1.5, Math.max(2, W - 1.4)); if (bel.every((x) => Math.abs(x - tb) > 1.2)) bel.push(tb); } bel.sort((a, c) => a - c);
       m.bite = { i, kg: pw.kg, classe: pw.classe, d, W, bel, isca: p.isca, nota: m.nota }; m.e = 'espera'; m.t = 0; m.belAtiva = -1; m.beliscando = false;
+      if (dukeLivre() && (P.dukeForcado === 'sempre' || Math.random() < CHANCE_DUKE)) {   // (6.6.7) 13 de maio: quem mordeu foi ELE (briga de lendário)
+        const ib = Math.max(0, PEIXES.findIndex((q) => q.id === 'pirarucu'));
+        p.dukeDia = chaveDuke(); gravar();
+        m.bite = { i: ib, kg: Math.round(rnd(40, 60) * 10) / 10, classe: 1, d: dificuldade(ib, 1, p.vara, p.isca), W, bel, isca: p.isca, nota: m.nota, duke: true };
+      }
     }
+    // ---- (6.6.7) O DUKE: no dia 13 de maio (a data do APARELHO, não a do jogo), cada mordida tem uma chancezinha de ser ele. Uma vez por dia.
+    //   A briga é a de um lendário (sem pular para fora: ninguém vê o que é). Pegou: ele LEVITA para fora da água e ENCARA o jogador; o
+    //   jogador encara ele... e ele volta para a água. Não vai para a caixa nem para o catálogo (fica só p.dukeVisto). O modelo 3D vem do
+    //   duke.js, que só é baixado nesse dia (FutebolJS.carregarFase('duke'), ao começar a pescar).
+    const CHANCE_DUKE = 0.07;
+    const hojeDuke = () => { if (P.dukeForcado) return true; const d = new Date(); return d.getMonth() === 4 && d.getDate() === 13; };
+    const chaveDuke = () => { const d = new Date(); return P.dukeForcado ? 'teste' : d.getFullYear() + '-05-13'; };
+    const dukeLivre = () => hojeDuke() && !!P.dukeCriar && dadosP().dukeDia !== chaveDuke();
+    function prepararDuke() {
+      if (!hojeDuke() || P.dukeCriar || P.dukeBaixando) return;
+      P.dukeBaixando = true;
+      try { window.FutebolJS.carregarFase('duke').then((f) => { if (f && f.criar) P.dukeCriar = f.criar; }, () => { /* sem o arquivo: hoje não tem Duke */ }).finally(() => { P.dukeBaixando = false; }); }
+      catch (e) { P.dukeBaixando = false; }
+    }
+    const DUKE_ESC = 1.45 / 336, DUKE_MEIO = 143;                         // o modelo tem ~336 de comprimento (z, a cara para +z): fica com ~1,45 m
+    async function cenaDuke() {
+      const m = P.mg, s = S(), p = dadosP(), o = m.peixeP || m.boiaP || { x: m.ox, z: m.oz };
+      m.e = 'pegou'; m.t = 0; m.ocupado = true; m.segura = false; m.B = null; tirarPulo(m);
+      let mod = null; try { mod = P.dukeCriar(); } catch (e) { console.error(e); }
+      if (!mod) { escapou(tr('O peixe se soltou do anzol...')); return; }
+      const g = new THREE.Group(); mod.raiz.scale.setScalar(DUKE_ESC); mod.raiz.position.y = -DUKE_MEIO * DUKE_ESC; g.add(mod.raiz); g.visible = false; grupo().add(g);
+      p.dukeVisto = (p.dukeVisto | 0) + 1; gravar();
+      const D = m.duke = { g, mod, t: 0, x: o.x, z: o.z, cam: null, boca: null, ok: null };
+      m.U.el.classList.add('cine'); m.U.plano.textContent = ''; m.U.pular.textContent = ''; s.cam.snap = true; vib([30, 80, 30], true);
+      await new Promise((ok) => { D.ok = ok; });
+      if (P.mg !== m) return;
+      D.parou = true; D.cam = null; m.camRosto = true; s.cam.snap = true;
+      await api.esperar(1100);
+      try { await api.fala('jog', tr('O que foi que acabou de acontecer....?')); Dialogo.esconder(); } catch (e) { console.error(e); }
+      if (P.mg !== m) return;
+      fimDuke(m); m.camRosto = false; m.ocupado = false; s.cam.snap = true;
+      m.boiaP = { x: D.x, y: Y_AGUA, z: D.z }; recolher();
+    }
+    function fimDuke(m) {
+      const D = m && m.duke; if (!D) return;
+      try { D.mod.descartar(); } catch (e) { /* ok */ } if (D.g.parent) D.g.parent.remove(D.g);
+      m.duke = null; m.U.el.classList.remove('cine'); m.U.pular.textContent = tr('Toque para pular');
+    }
+    // a cena, quadro a quadro: borbulha · LEVITA (girando até ficar de frente para o jogador, pingando) · encara (3 planos: por cima do
+    //   ombro do jogador, por cima do "ombro" dele e o rosto dele, que inclina a cabeça) · desce de volta · a água se acalma
+    const T_DK = [0.9, 4.3, 10.3, 13.1, 14.6];
+    function tickDuke(m, dt) {
+      const D = m.duke; if (!D || !D.g) return;
+      D.t += dt; const t = D.t, J = S().jog, yJ = J.y || m.y, g = D.g, [T1, T2, T3, T4, T5] = T_DK, topo = Y_AGUA + 1.4;
+      const vx = J.x - D.x, vz = J.z - D.z, L = Math.hypot(vx, vz) || 1, ux = vx / L, uz = vz / L, nx = -uz, nz = ux, aJ = Math.atan2(-uz, ux);   // u: dele para o jogador
+      let y = Y_AGUA - 1.4, giro = 1.7, inclina = 0;
+      if (t < T1) { if (Math.random() < dt * 14) anel(D.x + rnd(-0.7, 0.7), D.z + rnd(-0.7, 0.7), 0.35, 0); }
+      else if (t < T2) {
+        const u = suave((t - T1) / (T2 - T1)); y = lerpN(Y_AGUA - 1.1, topo, u); giro = 1.7 * (1 - suave(Math.min(1, (t - T1) / (T2 - T1 - 0.6))));
+        if (!D.saiu && y > Y_AGUA - 0.4) { D.saiu = true; respingo(D.x, D.z, 16, 1.1); anel(D.x, D.z, 2.2, 1); SOM.agua(); }
+        if (D.saiu && Math.random() < dt * 9) { const a = Math.random() * 6.28, r = rnd(0.1, 0.5); respingo(D.x + Math.cos(a) * r, D.z + Math.sin(a) * r, 1, 0); }   // pingando
+      } else if (t < T3) {
+        y = topo + Math.sin((t - T2) * 1.5) * 0.05; giro = 0;
+        if (t > T2 + 4.2 && t < T2 + 5.6) inclina = Math.sin((t - T2 - 4.2) / 1.4 * Math.PI) * 0.22;   // inclina a cabeça, encarando
+      } else if (t < T4) {
+        const u = suave((t - T3) / (T4 - T3)); y = lerpN(topo, Y_AGUA - 1.5, u); giro = 0;
+        if (!D.entrou && y < Y_AGUA + 0.1) { D.entrou = true; respingo(D.x, D.z, 18, 1.2); anel(D.x, D.z, 2.6, 1); SOM.agua(); vib(60, true); }
+      } else { if (Math.random() < dt * 3) anel(D.x + rnd(-0.5, 0.5), D.z + rnd(-0.5, 0.5), 0.6, 0); if (t > T5 && D.ok) { const f = D.ok; D.ok = null; f(); } }
+      g.visible = t >= T1 && t < T4 + 0.3;
+      g.position.set(D.x, y, D.z); g.rotation.set(0, aJ + Math.PI / 2 + giro, inclina);
+      g.updateMatrixWorld(true); V3b.set(0, -0.06, 0.6).applyMatrix4(g.matrixWorld);   // a boca (a cara fica em +z, ~0,6 m na frente do meio)
+      D.boca = y > Y_AGUA - 0.15 && g.visible ? { x: V3b.x - api.OX, y: V3b.y, z: V3b.z } : { x: D.x, y: Y_AGUA - 0.02, z: D.z };
+      // a câmera
+      const mx = (D.x + J.x) / 2, mz = (D.z + J.z) / 2, lado = { px: mx + nx * (3.4 + L * 0.35), py: yJ + 1.5, pz: mz + nz * (3.4 + L * 0.35), tx: mx, ty: 0.9, tz: mz };
+      if (D.parou) return;                                                 // acabou: a câmera é a do rosto do jogador (camRosto)
+      D.plano = t < T2 ? 0 : t < T2 + 2.3 ? 1 : t < T2 + 4.2 ? 2 : t < T3 ? 3 : 4;
+      if (t < T2 || t >= T3) D.cam = lado;
+      else if (t < T2 + 2.3) D.cam = { px: J.x + ux * 1.7 + nx * 1.0, py: yJ + 2.1, pz: J.z + uz * 1.7 + nz * 1.0, tx: lerpN(J.x, D.x, 0.7), ty: lerpN(yJ + 1.5, y, 0.7), tz: lerpN(J.z, D.z, 0.7) };   // por cima do ombro do jogador: ele, lá no alto
+      else if (t < T2 + 4.2) D.cam = { px: D.x + ux * 1.2 - nx * 1.3, py: topo + 0.2, pz: D.z + uz * 1.2 - nz * 1.3, tx: J.x, ty: yJ + 1.4, tz: J.z };   // do lado dele, na frente: o jogador encarando (ele no canto do quadro)
+      else D.cam = { px: D.x + ux * 2.3, py: topo + 0.15, pz: D.z + uz * 2.3, tx: D.x, ty: y, tz: D.z };   // o rosto dele, de perto
+    }
+
     function tickEspera() {
       const m = P.mg, b = m.bite; let ativa = -1;
       if (!m.bagre && m.t > 1.5 && !m.beliscando && bagreLivre()) { comecarBagre(); return; }
@@ -2254,7 +2337,7 @@
       // vibração da briga: arrancada do peixe, linha esticando (cada vez mais forte e mais rápido), linha frouxa (dois toquinhos) e o molinete
       m.tVib = (m.tVib || 0) - dt;
       if (B.corre && !m.corriaAntes) {
-        if (!m.pulo && (m.bagre ? Math.random() < 0.55 : (pe.f.t === 'p' || pe.f.t === 'l') && pe.r >= 2 && Math.random() < 0.4)) m.pulo = { t: 0, m: null };
+        if (!m.pulo && !m.bite.duke && (m.bagre ? Math.random() < 0.55 : (pe.f.t === 'p' || pe.f.t === 'l') && pe.r >= 2 && Math.random() < 0.4)) m.pulo = { t: 0, m: null };   // (6.6.7) o Duke não pula
         vib(70, true); m.tVib = 0.25;
       } else if (B.onde > 0) { if (m.tVib <= 0) { m.tVib = lerpN(0.32, 0.1, clampN(B.estica, 0, 1)); vib(Math.round(22 + 34 * clampN(B.estica, 0, 1))); } }
       else if (B.onde < 0 && B.frouxo > 0.2) { if (m.tVib <= 0) { m.tVib = 0.7; vib([12, 60, 12]); } }
@@ -2271,7 +2354,7 @@
         else { if (r !== 'soltou') { SOM.arrebenta(); vib(300, true); } else vib([40, 40, 40], true); bagreEscapou(tr(r === 'arrebentou' ? 'A linha arrebentou!' : r === 'soltou' ? 'O peixe se soltou do anzol...' : 'Acabou a linha! O peixe levou tudo.'), r !== 'soltou'); }
         return;
       }
-      if (r === 'pegou') cenaPegou();
+      if (r === 'pegou') { if (m.bite.duke) cenaDuke(); else cenaPegou(); }
       else if (r === 'arrebentou') { SOM.arrebenta(); vib(300, true); escapou(tr('A linha arrebentou!'), true); }
       else if (r === 'soltou') { vib([40, 40, 40], true); escapou(tr('O peixe se soltou do anzol...')); }
       else if (r === 'linha') { SOM.arrebenta(); vib(300, true); escapou(tr('Acabou a linha! O peixe levou tudo.'), true); }
@@ -2794,7 +2877,7 @@
     // ---- a cada quadro do minigame
     function tickMg(dt) {
       const s = S(), m = P.mg, J = s.jog;
-      if (!m.pausa && m.e !== 'cine' && !m.bagre) api.tickHorario(dt);
+      if (!m.pausa && m.e !== 'cine' && !m.bagre && !m.duke) api.tickHorario(dt);
       m.t += dt; if (m.tRec > 0) { m.tRec -= dt; if (m.tRec <= 0) m.U.recado.textContent = ''; }
       if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -m.lim, m.lim);
       const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou';
@@ -2819,7 +2902,7 @@
         default: break;
       }
       if (P.mg !== m) return;
-      tickLuzBagre(m, dt);
+      tickLuzBagre(m, dt); if (m.duke) tickDuke(m, dt);
       if (m.camRosto || (m.e === 'raio' && m.t >= 5.6) || (m.trofeu && m.trofeu.m.userData.bagre)) { m.tPisca = (m.tPisca || 0) - dt; if (m.tPisca <= 0) { m.tPisca = rnd(0.7, 1.5); const C = s.clima; if (C) C.flash = Math.max(C.flash || 0, rnd(0.25, 0.45)); } }   // relâmpagos longe iluminando o rosto
       visualMg(m, tip, dt); camMg(m, J, dt); hudMg(m);
     }
@@ -2925,6 +3008,7 @@
         linhaDe(L, tip, fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
       }
       else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, bocaPeixe(m.voa.m), 0.03);
+      else if (m.e === 'pegou' && m.duke && m.duke.boca) linhaDe(L, tip, m.duke.boca, 0.12);   // (6.6.7) a linha até a boca do Duke, lá no alto
       else if (bp) { const puxa = m.e === 'raio' && e === 'fisgou'; linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, puxa ? 0.02 : e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; if (puxa) verga = 0.95 + Math.sin(t * 24) * 0.06; if (bp.y < 0.5) fim = bp; }
       else L.visible = false;
       tickVitorias(dt, fim ? tip : null, fim);                            // a linha (o pedaço perto da água) passando por cima das vitórias-régias
@@ -2947,6 +3031,12 @@
       let c;
       if (m.e === 'cine' && m.cine) { m.cam = camCine(m, J); s.camCena = m.cam; return; }
       if (m.e === 'raio' && m.camB) { m.cam = Object.assign(m.cam || {}, m.camB); s.camCena = m.cam; return; }   // a cena do raio corta seco entre os planos
+      if (m.duke && m.duke.cam) {                                          // (6.6.7) o Duke: corta seco entre os planos, e anda suave dentro de cada um
+        const c2 = m.duke.cam, D = m.duke;
+        if (D.camAnt !== D.plano || !m.cam || snap) { D.camAnt = D.plano; m.cam = Object.assign({}, c2); }
+        else { const k = 1 - Math.exp(-dt * 4); for (const q in c2) m.cam[q] += (c2[q] - m.cam[q]) * k; }
+        s.camCena = m.cam; return;
+      }
       if (m.camCadu && P.cadu) {                                          // (6.6.1) a cena secreta: por cima do ombro do jogador, olhando o Cadu
         const C = P.cadu, vx = J.x - C.x, vz = J.z - C.z, L = Math.hypot(vx, vz) || 1, ux = vx / L, uz = vz / L;   // de frente para o Cadu (ele olha para o jogador), um pouco de lado
         c = { px: C.x + ux * 0.9 + uz * 2.7, py: yJ + 1.5, pz: C.z + uz * 0.9 - ux * 2.7, tx: C.x + ux * 0.35, ty: yJ + 1.05, tz: C.z + uz * 0.35 };   // de lado: os dois no quadro, o Cadu em destaque
@@ -3026,14 +3116,14 @@
     function limpar() {
       try { fecharPainel(); esconderBanner(); const h = document.getElementById('pcHud'); if (h) h.remove(); } catch (e) { /* ok */ }
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
-      if (P.mg && P.mg.fim) P.mg.fim(); P.mg = null;
+      if (P.mg && P.mg.duke) fimDuke(P.mg); if (P.mg && P.mg.fim) P.mg.fim(); P.mg = null;
       Rock.parar(true); if (P.flashEl) { P.flashEl.remove(); P.flashEl = null; }
       for (const g of geoPeixes.values()) g.dispose(); geoPeixes.clear();
       if (geoBagre) { geoBagre.dispose(); geoBagreLuz.dispose(); matBagreLuz.dispose(); geoBagre = geoBagreLuz = matBagreLuz = null; }
       if (P.texQuadro) P.texQuadro.dispose();
     }
 
-    return { alvos, tick, limpar, montarRua, aberta, _P: P, _api: api, _f: { dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
+    return { alvos, tick, limpar, montarRua, aberta, _P: P, _api: api, _f: { cenaDuke, prepararDuke, dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
   }
 
   window.FutebolJS.registrarFase({ id: 'pesca', nome: 'Pesca', nucleoMinimo: '6.4.0', iniciar: async () => {}, criar, _dados: DADOS, _logica: LOGICA, _arte: { artePeixe } });
