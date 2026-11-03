@@ -1,6 +1,15 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.6
+     - BONECO CONGELADO (podeCongelar/congelar/descongelar): quem está parado há ~0,8 s (sentado sem falar nem mastigar, na fila, olhando
+       a prateleira) vira UMA malha (as peças do corpo juntas na pose atual, mesmo material): 1 desenho em vez de ~6–8, e o poseAtor não
+       roda para ele. Mexeu: volta na hora (o próprio poseAtor descongela). Comer/beber agora é aos pouquinhos (mexendoComida: uma
+       mordida/gole de ~2,6 s a cada ~7,5 s), para dar tempo de congelar entre uma e outra. S.semCongelar desliga (medidas/testes).
+     - MAIS GENTE nas lojas: metas maiores (MOV), cheia em meia hora depois de abrir, chegada mais rápida quando está vazia, lugar livre
+       basta 1 a mais; LIMITE de 16 bonecos completos por sala (MAX_ANIMADOS: quem chega espera alguém congelar ou sair).
+     - As viagens de quem vem de fora continuam (na conta) com o jogador dentro de uma loja; quem chega na loja em que ele está entra
+       pela porta da sala (antes ficavam paradas e contavam como "vindo", travando a chegada de gente nova).
    NOVIDADES DA 6.6.5
      - REGISTRO DAS LOJAS (MOV, regLoja, tickLojas): quem está dentro do bar, restaurante, cafeteria, pizzaria e mercado é quem ENTROU.
        As pessoas saem de uma ponta da cidade (a do caminho mais curto pela rede), andam até a porta e entram; na hora delas, saem pela
@@ -2783,7 +2792,57 @@
   const LIMIAR_CORRER = 0.97;                                        // como na partida: direcional quase na borda = corre (o fôlego na cidade nunca acaba)
 
   // ------------------------------------------------------------------ atores: o jogador e as pessoas da cidade (mesmas poses)
+  // (6.6.6) BONECO CONGELADO: quem está parado (sentado sem falar nem mastigar, na fila, olhando a prateleira...) há quase 1 s vira UMA
+  //   malha só (as ~15 peças do corpo, na pose em que ele está, juntas numa geometria com o mesmo material): 1 desenho na tela em vez de
+  //   ~15, e a pose nem é calculada. Mexeu (anda, fala, morde, gesticula, vira): volta na hora a ser o boneco completo. O que não é do
+  //   corpo (o copo, a fatia, o celular) continua como está, preso no mesmo lugar.
+  const TIPOS_CONG = new Set(['cliente', 'clienteMerc', 'clientePz', 'senta', 'conversa', 'morador']);
+  const mexendoComida = (A) => (((A.t || 0) + (A.fase || 0) * 1.3) % 7.5) < 2.6;   // a cada ~7,5 s, uma mordida/gole de ~2,6 s
+  function podeCongelar(A) {
+    if (!TIPOS_CONG.has(A.tipo) || A.oculto || A.longeDemais || S.semCongelar) return false;   // (S.semCongelar: para medir/testes)
+    if (A.andando || A.fala || A.gesto || A.celeb || A.vomita > 0 || A.puxa || A.chuva || A.pedeFaixa || A.recua || A.esbarrao > 0 || A.cabY || A.chuteT >= 0 || A.ativ || A.segura) return false;
+    if ((A.comendo > 0 || A.bebe > 0) && mexendoComida(A)) return false;
+    return Math.abs(difAng(A.yawAlvo, A.yaw)) < 0.02;
+  }
+  const _cInv = new THREE.Matrix4(), _cRel = new THREE.Matrix4(), _cNor = new THREE.Matrix3(), _cV = new THREE.Vector3();
+  function congelar(A) {
+    const m = A.m, r = m.raiz; r.updateMatrixWorld(true); _cInv.copy(r.matrixWorld).invert();
+    const vis = (o) => { for (let q = o; q && q !== r; q = q.parent) if (!q.visible) return false; return true; };
+    const porMat = new Map();
+    r.traverse((o) => { if (o.isMesh && o.geometry && o.geometry.index && vis(o)) { const L = porMat.get(o.material) || []; L.push(o); porMat.set(o.material, L); } });
+    let mat = null, lista = []; for (const [k, L] of porMat) if (L.length > lista.length) { mat = k; lista = L; }
+    if (lista.length < 3) return;
+    let nv = 0, ni = 0; for (const o of lista) { nv += o.geometry.attributes.position.count; ni += o.geometry.index.count; }
+    const ref = lista[0].geometry.attributes, temCor = !!ref.color, kc = temCor ? ref.color.itemSize : 3, temUv = !!ref.uv;
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = temUv ? new Float32Array(nv * 2) : null, cor = temCor ? new Float32Array(nv * kc) : null, idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+    let v0 = 0, i0 = 0;
+    for (const o of lista) {
+      const g = o.geometry, P = g.attributes.position, N = g.attributes.normal, U = g.attributes.uv, C = g.attributes.color, I = g.index, n = P.count;
+      _cRel.multiplyMatrices(_cInv, o.matrixWorld); _cNor.getNormalMatrix(_cRel);
+      for (let k = 0; k < n; k++) {
+        _cV.fromBufferAttribute(P, k).applyMatrix4(_cRel); pos[(v0 + k) * 3] = _cV.x; pos[(v0 + k) * 3 + 1] = _cV.y; pos[(v0 + k) * 3 + 2] = _cV.z;
+        if (N) { _cV.fromBufferAttribute(N, k).applyMatrix3(_cNor).normalize(); nor[(v0 + k) * 3] = _cV.x; nor[(v0 + k) * 3 + 1] = _cV.y; nor[(v0 + k) * 3 + 2] = _cV.z; }
+        if (uv && U) { uv[(v0 + k) * 2] = U.getX(k); uv[(v0 + k) * 2 + 1] = U.getY(k); }
+        if (cor) for (let c = 0; c < kc; c++) cor[(v0 + k) * kc + c] = C && c < C.itemSize ? C.array[k * C.itemSize + c] : 1;
+      }
+      for (let k = 0; k < I.count; k++) idx[i0 + k] = I.getX(k) + v0;
+      v0 += n; i0 += I.count;
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    if (uv) geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); if (cor) geo.setAttribute('color', new THREE.BufferAttribute(cor, kc));
+    geo.setIndex(new THREE.BufferAttribute(idx, 1)); geo.computeBoundingSphere();
+    const bk = new THREE.Mesh(geo, mat); r.add(bk);
+    for (const o of lista) o.visible = false;
+    A.congelado = { bk, lista };
+  }
+  function descongelar(A) {
+    const C = A.congelado; if (!C) return; A.congelado = null; A.tQuieto = 0;
+    for (const o of C.lista) o.visible = true;
+    if (C.bk.parent) C.bk.parent.remove(C.bk); C.bk.geometry.dispose();
+  }
   function poseAtor(A, dt) {
+    if (A.congelado) descongelar(A);                                     // (6.6.6) alguém pediu a pose: volta a ser o boneco completo
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 10), es = A.opt.escala || 1;
     usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0;
     if (m.cabecaLigada) { usarCabeca(m, 0); m.cabeca.rotation.y = 0; }
@@ -2812,12 +2871,17 @@
       const f = Math.sin(A.t * 5.5) * 0.3;
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? 0.55 + f * 0.4 : 0.4, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? 1.0 + f : 0.4, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.8 + f);
-      if (A.comendo > 0) {                                           // comendo: as duas mãos levam o lanche à boca e a cabeça balança mastigando
+      const mexe = mexendoComida(A);                                  // (6.6.6) come/bebe aos pouquinhos: entre uma mordida e outra, as mãos ficam paradas
+      if (A.comendo > 0 && mexe) {                                   // comendo: as duas mãos levam o lanche à boca e a cabeça balança mastigando
         m.bracoE.rotation.z = 1.25; m.bracoD.rotation.z = 1.25; m.bracoE.rotation.x = -0.32; m.bracoD.rotation.x = 0.32;
         const mord = Math.max(0, Math.sin(A.t * 7)); usarCotovelo(m.bracoE, 0, 1.55 + mord * 0.25); usarCotovelo(m.bracoD, 0, 1.55 + mord * 0.25);
         usarCabeca(m, -0.05 + Math.sin(A.t * 9) * 0.12);
+      } else if (A.comendo > 0) {                                    // segurando o lanche na frente do peito
+        m.bracoE.rotation.z = 0.95; m.bracoD.rotation.z = 0.95; m.bracoE.rotation.x = -0.32; m.bracoD.rotation.x = 0.32; usarCotovelo(m.bracoE, 0, 1.2); usarCotovelo(m.bracoD, 0, 1.2);
       }
-      if (A.bebe > 0) {                                              // tomando o café: a mão para a uns 15 cm na frente da boca e só "bebe" (gole = leve vaivém)
+      if (A.bebe > 0 && !mexe) {                                     // o copo parado na mão, na altura da mesa
+        const oz = 0.78, cz = 1.3; m.bracoD.rotation.z = oz; usarCotovelo(m.bracoD, 0, cz); if (A.copoCli) A.copoCli.rotation.z = -(oz + cz);
+      } else if (A.bebe > 0) {                                       // tomando o café: a mão para a uns 15 cm na frente da boca e só "bebe" (gole = leve vaivém)
         const gole = Math.max(0, Math.sin(A.t * 2.4)), oz = 1.22 + gole * 0.08, cz = 1.2 + gole * 0.12;
         m.bracoD.rotation.z = oz; usarCotovelo(m.bracoD, 0, cz);
         usarCabeca(m, 0.07 * gole);                                    // inclina a cabeça um pouquinho para trás no gole
@@ -3226,7 +3290,13 @@
         if (A.deitado) { b.rotation.set(0, A.yaw, Math.PI / 2); b.position.set(A.x + 0.8 * es * Math.cos(A.yaw), A.y + 0.22 * es, A.z - 0.8 * es * Math.sin(A.yaw)); }
         else { b.rotation.set(0, A.yaw, 0); b.position.set(A.x, A.y + (A.sentado ? A.assento - 0.62 * es : 0), A.z); }
         A.blob.position.set(A.x, A.y + 0.02, A.z);
-      } else { if (A.boneco) A.boneco.visible = false; poseAtor(A, dt); }
+      } else {
+        if (A.boneco) A.boneco.visible = false;
+        if (podeCongelar(A)) { A.tQuieto = (A.tQuieto || 0) + dt; if (A.tQuieto > 0.8 && !A.congelado) congelar(A); }   // (6.6.6) parado: vira 1 malha
+        else { A.tQuieto = 0; if (A.congelado) descongelar(A); }
+        if (A.congelado) { const r = A.m.raiz; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); }
+        else poseAtor(A, dt);
+      }
       if (A.prop) atualizarProp(A);
     }
   }
@@ -3538,6 +3608,7 @@
     await preto(true, 380);
     const R = I.construir(P.nome, { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro });
     if (!R) { await preto(false, 300); return; }
+    for (const V of (S.viagens || []).slice()) if (V.A.length) perderBoneco(V);   // (6.6.6) quem vinha andando pela rua continua só na conta enquanto ele está lá dentro
     S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P };
     S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
     S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
@@ -3640,7 +3711,7 @@
     S.npcs.push(A); poseAtor(A, 0.016); return A;
   }
   function descartarPessoa(A) {
-    if (A.ativ) fimAtiv(A); tirarCel(A);                                 // (6.6.5)
+    if (A.ativ) fimAtiv(A); tirarCel(A); if (A.congelado) descongelar(A);   // (6.6.5) (6.6.6)
     if (A.dest && A.dest.tipo === 'bola' && A.dest.R) { const R = A.dest.R; if (A.dest.fase === 'ir') R.vindo = Math.max(0, (R.vindo || 1) - 1); R.jog = R.jog.filter((q) => q !== A); if (R.dono === A) R.dono = R.jog[0] || null; if (R.busca === A) R.busca = null; if (!R.jog.length && R.bola) R.bola.mesh.visible = R.bola.sombra.visible = false; }
     const i = S.npcs.indexOf(A); if (i >= 0) S.npcs.splice(i, 1);
     S.conversas = S.conversas.filter((C) => C.a !== A && C.b !== A);
@@ -3702,7 +3773,7 @@
     if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
     if (S.cinema && S.dentro && S.dentro.nome === 'cinema') try { S.cinema.saiu(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (J.sentado) levantar();
-    for (const A of S.npcs) { ATLETAS.delete(A.m); S.meus.delete(A.m); }
+    for (const A of S.npcs) { if (A.congelado) descongelar(A); ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
     const g = S.grupo; scene.remove(g);
     g.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const m of ms) if (m && m !== MAT && m !== MAT_CORES && m !== SHADOW_MAT && m !== MAT_PRE && m !== S.matSombra) { if (m.map) m.map.dispose(); m.dispose(); } });
@@ -5828,11 +5899,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   //   some pela porta da sala; quem saiu das outras lojas nesse meio-tempo fica anotado (S.saidasLoja) e, quando ele volta para a rua,
   //   aparece onde estaria no caminho de volta. Em pares (pizzaria, restaurante, bar): os dois andam lado a lado.
   const MOV = {
-    cafeteria:    { alvo: [2, 3, 5], fica: [0.7, 1.4], par: 0.2 },
-    bar:          { alvo: [2, 4, 6], fica: [1.4, 2.6], par: 0.45, abre: 16, fecha: 26 },
-    restaurante:  { alvo: [2, 4, 6], fica: [1.0, 1.8], par: 0.5, abre: 11, fecha: 23 },
-    pizzaria:     { alvo: [2, 4, 6], fica: [2.0, 2.7], par: 0.65 },
-    supermercado: { alvo: [1, 2, 4], fica: [0.4, 0.8], par: 0.15 },
+    // (6.6.6) metas maiores (vazio / médio / cheio): com o boneco congelado, mais gente custa pouco
+    cafeteria:    { alvo: [3, 5, 8], fica: [0.7, 1.4], par: 0.25 },
+    bar:          { alvo: [4, 7, 10], fica: [1.4, 2.6], par: 0.5, abre: 16, fecha: 26 },
+    restaurante:  { alvo: [4, 7, 10], fica: [1.0, 1.8], par: 0.55, abre: 11, fecha: 23 },
+    pizzaria:     { alvo: [5, 7, 9], fica: [2.0, 2.7], par: 0.7 },
+    supermercado: { alvo: [2, 4, 6], fica: [0.4, 0.8], par: 0.2 },
   };
   const VEL_VISITA = 1.3, VEL_VISITA_LONGE = 3.6, R_GANHA = 58, R_PERDE = 72;
   const tAbs = () => (S.dados.dia || 1) * 24 + S.dados.hora;
@@ -5855,7 +5927,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function regLoja(nome) { S.lojas = S.lojas || {}; return S.lojas[nome] || (S.lojas[nome] = { gente: [], prox: 0 }); }
   function alvoMov(nome) {
     const m = MOV[nome], f = FLUXO_SEM[diaSemana()], base = m.alvo[f === 'vazio' ? 0 : f === 'medio' ? 1 : 2];
-    return Math.max(1, Math.round(base * clamp(horasDesdeAbrir(nome) / 0.9, 0.35, 1)));   // na primeira hora depois de abrir, menos gente
+    return Math.max(1, Math.round(base * clamp(horasDesdeAbrir(nome) / 0.5, 0.35, 1)));   // logo depois de abrir, menos gente (cheia em meia hora)
   }
   let idVisita = 1;
   function novaGente(nome, n) {                                          // 1 ou 2 pessoas (um par sai e entra junto)
@@ -5907,8 +5979,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     V.A = [];
     if (V.fase === 'ir' && V.acad) return;                               // (6.6.5) frequentador: lá dentro quem cuida é a agenda do academia.js
     if (V.fase === 'ir') {                                              // chegou na porta: entra (se a loja ainda estiver aberta)
-      if (lojaAbertaMov(V.nome) && horasAteFechar(V.nome) > 0.25) registrar(V.nome, V.ents);
-      else viagem(V.nome, V.ents, 'sai');                               // fechou no caminho: dá meia-volta
+      if (lojaAbertaMov(V.nome) && horasAteFechar(V.nome) > 0.25) {
+        registrar(V.nome, V.ents);
+        if (S.dentro && S.dentro.nome === V.nome && !chegarDentro(V.nome, V.ents)) {   // (6.6.6) ele está lá dentro: entra pela porta da sala (sem lugar: vai embora)
+          const R = regLoja(V.nome); R.gente = R.gente.filter((q) => !V.ents.includes(q)); for (const e of V.ents) (S.saidasLoja || (S.saidasLoja = [])).push(Object.assign({}, e, { t: tAbs() }));
+        }
+      } else viagem(V.nome, V.ents, 'sai');                               // fechou no caminho: dá meia-volta
     }
   }
   // o boneco da viagem (um, ou dois lado a lado): nasce onde a conta diz que a pessoa está
@@ -5939,8 +6015,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   // a cada quadro (na rua): as viagens que só são conta andam pelo tempo; perto do jogador ganham boneco; longe, perdem
   function tickViagens() {
-    if (!S.viagens || !S.viagens.length || S.dentro) return;
+    if (!S.viagens || !S.viagens.length) return;
     const J = S.jog, a = tAbs();
+    if (S.dentro) {                                                      // (6.6.6) lá dentro as viagens andam só na conta (antes ficavam paradas e "vindo" travava quem chegava)
+      for (const V of S.viagens.slice()) if (!V.A.length && a >= V.t0 && andadoV(V, a) >= V.L) fimViagem(V);
+      return;
+    }
     for (const V of S.viagens.slice()) {
       if (V.A.length) {
         const L = V.A[0];
@@ -5990,7 +6070,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (nome === 'supermercado' && S.mercado && S.mercado.chegou) return S.mercado.chegou(ents);
     const F = S.fluxo; if (!F || S.turno || S.turnoMercado) return false;
     const livres = F.lugares.filter((a) => !a.ocupado);
-    if (livres.length >= 2 + ents.length) { for (const e of ents) novoCliente(livres.splice(Math.floor(Math.random() * livres.length), 1)[0], false, e); return true; }
+    if (livres.length >= 1 + ents.length) { for (const e of ents) novoCliente(livres.splice(Math.floor(Math.random() * livres.length), 1)[0], false, e); return true; }
     if (F.area && S.npcs.filter((A) => A.cli && !A.cli.a && A.cli.fase !== 'sai').length < F.alvoVaga) { for (const e of ents) novoCliente(null, false, e); return true; }
     return false;
   }
@@ -6007,6 +6087,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const porG = new Map(); for (const q of L) { const k = q.nome + ':' + q.g; if (!porG.has(k)) porG.set(k, []); porG.get(k).push(q); }
     for (const ents of porG.values()) { const V = viagem(ents[0].nome, ents, 'sai', ents[0].t); if (V && andadoV(V, tAbs()) >= V.L) S.viagens = S.viagens.filter((q) => q !== V); }
   }
+  // (6.6.6) LIMITE POR SALA: no máximo 16 bonecos completos (andando/mexendo) ao mesmo tempo, contando a equipe; quem chega depois espera
+  const MAX_ANIMADOS = 16, bonecosAnimados = () => { let n = 0; for (const A of S.npcs) if (!A.oculto && !A.congelado) n++; return n; };
   // a cada meio segundo: abre/fecha, quem chega, quem vai embora
   function tickLojas(dt) {
     S.tLojas = (S.tLojas || 0) - dt; if (S.tLojas > 0) return; S.tLojas = 0.5;
@@ -6018,10 +6100,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if (!ab) { if (!aqui) while (R.gente.length) sairDaLoja(nome, R.gente[0]); continue; }   // fechou: todo mundo sai (lá dentro, quem cuida é a sala)
       if (!aqui) for (const e of R.gente.slice()) if (e.sai <= a && R.gente.includes(e)) sairDaLoja(nome, e);
       if (horasAteFechar(nome) < 0.6 || a < R.prox || !recebeMov(nome)) continue;   // perto de fechar ninguém novo entra (o mercado tem a pausa do almoço)
-      const f = FLUXO_SEM[diaSemana()];
-      R.prox = a + (f === 'cheio' ? 0.1 : f === 'medio' ? 0.16 : 0.24) * (0.7 + Math.random() * 0.8);
-      const vindo = (S.viagens || []).filter((V) => V.nome === nome && V.fase === 'ir').reduce((s, V) => s + V.ents.length, 0);
-      if (R.gente.length + vindo >= alvoMov(nome)) continue;
+      const f = FLUXO_SEM[diaSemana()], alvo = alvoMov(nome);
+      const vindo = (S.viagens || []).filter((V) => V.nome === nome && V.fase === 'ir').reduce((s, V) => s + V.ents.length, 0), tem = R.gente.length + vindo;
+      R.prox = a + (f === 'cheio' ? 0.07 : f === 'medio' ? 0.1 : 0.15) * (0.7 + Math.random() * 0.8) * (tem < alvo * 0.6 ? 0.5 : 1);   // (6.6.6) mais vazia que devia: chega gente mais depressa
+      if (tem >= alvo) continue;
+      if (aqui && bonecosAnimados() >= MAX_ANIMADOS) continue;            // (6.6.6) limite da sala: espera alguém congelar ou sair
       const ents = novaGente(nome, Math.random() < MOV[nome].par ? 2 : 1);
       if (aqui) { registrar(nome, ents); if (!chegarDentro(nome, ents)) R.gente = R.gente.filter((q) => !ents.includes(q)); }   // lá dentro: entra pela porta da sala (se couber)
       else if (S.dentro) registrar(nome, ents);                          // ele está em outra loja: a pessoa "chegou" sem ninguém ver
@@ -6498,7 +6581,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt); tickDev();                        // (6.2.3) dinheiro infinito
-        tickVida(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } if (!S.dentro) tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
+        tickVida(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)

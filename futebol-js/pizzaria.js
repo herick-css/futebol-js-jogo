@@ -2,6 +2,7 @@
    FUTEBOL JS · pizzaria.js · A PIZZARIA FORNO A LENHA E O TRABALHO DE ENTREGADOR (arquivo SEPARADO, como mercado.js)
    ---------------------------------------------------------------------
    6.1.0 — primeira versão. (6.2.4) bater de bicicleta: de novo só cambaleia (o tombo de 5 s no chão foi tirado).
+   6.6.6 — mais grupos (vazio 3 / médio 4 / cheio 5), sobrando só uma mesa livre.
    6.6.5 — FLUXO: menos grupos (vazio 2 / médio 3 / cheio 4), um grupo entra de cada vez (portaLivre), o 2.º da dupla vem logo atrás;
            corredor de 4 m no meio (as mesas foram para os lados, interiores.js): entra pela faixa da esquerda e sai pela da direita
            (rotaSaida); no fim, SÓ UM paga, numa FILA de até 3 lugares na frente do balcão (tickFila), e o outro já vai saindo; quem não cabe
@@ -535,7 +536,7 @@
 
     // ---------------------------------------------------------------- CLIENTES (grupos de 1 ou 2 por mesa)
     const FLUXO = ['vazio', 'vazio', 'vazio', 'medio', 'cheio', 'cheio', 'cheio'];
-    function alvoGrupos() { const f = FLUXO[api.diaSemana()], n = M.mesas ? M.mesas.length : 8; return Math.min(n - 2, f === 'vazio' ? 2 : f === 'medio' ? 3 : 4); }   // (6.6.5) era 2/4/6: lotava e travava
+    function alvoGrupos() { const f = FLUXO[api.diaSemana()], n = M.mesas ? M.mesas.length : 8; return Math.min(n - 1, f === 'vazio' ? 3 : f === 'medio' ? 4 : 5); }   // (6.6.6) 3/4/5 (6.6.5: 2/3/4; antes, 2/4/6 lotava e travava)
     const mesaLivre = (T0) => !T0.grupo && T0.assentos.every((a) => !a.ocupado);
     // onde a pessoa fica de pé ao lado da cadeira (do lado do corredor do meio)
     function pontoDaCadeira(a, T0) { const lado = T0.z < 1.4 ? 1 : -1; return pontoLivre(a.x, a.z + lado * 0.72); }
@@ -581,7 +582,7 @@
     function chegou(ents) {
       if (!M.mesas || !M.carla || !aberto() || hora() >= H_ULTIMO_GRUPO || !portaLivre()) return false;
       if (M.grupos.filter((g) => g.fase !== 'sai').length >= alvoGrupos() + 1) return false;
-      const livres = M.mesas.filter(mesaLivre); if (livres.length < 3) return false;   // nunca lota
+      const livres = M.mesas.filter(mesaLivre); if (livres.length < 2) return false;   // nunca lota (sobra uma mesa: a do jogador)
       novoGrupo(pk(livres), 'entra', ents); return true;
     }
     function tickFluxo(dt) {
