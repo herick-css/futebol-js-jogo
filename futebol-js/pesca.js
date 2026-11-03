@@ -6,6 +6,7 @@
            ele (uma vez por dia). Briga de lendário, sem pular para fora. Pegou: ele LEVITA para fora da água, gira até ficar de frente,
            ENCARA o jogador (3 planos), volta para a água e o jogador diz "O que foi que acabou de acontecer....?". Não vai para a caixa
            nem para o catálogo (só conta em pesca.dukeVisto). PP.dukeForcado = 'sempre' força o dia/a mordida (testes).
+   6.6.8 — ligado pelo painel do desenvolvedor (cidade.js: dukeDev), o Duke pode aparecer de novo no mesmo dia.
    - Registrado com FutebolJS.registrarFase({ id: 'pesca' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do academia.js e chama criar(api) (api = apiPesca() da cidade).
      A casinha (o prédio) é montada no cidade.js (casinhaPesca, CASA_PESCA); daqui vêm o Bené, o quadro do catálogo, a persiana,
@@ -2236,7 +2237,7 @@
     const CHANCE_DUKE = 0.07;
     const hojeDuke = () => { if (P.dukeForcado) return true; const d = new Date(); return d.getMonth() === 4 && d.getDate() === 13; };
     const chaveDuke = () => { const d = new Date(); return P.dukeForcado ? 'teste' : d.getFullYear() + '-05-13'; };
-    const dukeLivre = () => hojeDuke() && !!P.dukeCriar && dadosP().dukeDia !== chaveDuke();
+    const dukeLivre = () => hojeDuke() && !!P.dukeCriar && (P.dukeForcado === 'sempre' || dadosP().dukeDia !== chaveDuke());   // (6.6.8) ligado pelo painel do desenvolvedor: pode repetir
     function prepararDuke() {
       if (!hojeDuke() || P.dukeCriar || P.dukeBaixando) return;
       P.dukeBaixando = true;

@@ -1,6 +1,10 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.8
+     - PRIVILÉGIOS DO DESENVOLVEDOR: CLIMA (climaDev: Automático / Limpo / Nublado / Chuva / Tempestade; já entra pronto e fica ~20 min,
+       sem o sorteio; Tempestade = chuva com trovão a cada poucos segundos) e PESCA DO DUKE (dukeDev: toda mordida no lago é o Duke,
+       pode repetir; o pesca.js baixa o duke.js na hora).
    NOVIDADES DA 6.6.6
      - BONECO CONGELADO (podeCongelar/congelar/descongelar): quem está parado há ~0,8 s (sentado sem falar nem mastigar, na fila, olhando
        a prateleira) vira UMA malha (as peças do corpo juntas na pose atual, mesmo material): 1 desenho em vez de ~6–8, e o poseAtor não
@@ -588,6 +592,15 @@
     'Dinheiro infinito': ['Infinite money', 'Dinero infinito', 'Soldi infiniti', 'Argent infini'],
     'Ligado': ['On', 'Activado', 'Attivo', 'Activé'],
     'Desligado': ['Off', 'Desactivado', 'Disattivo', 'Désactivé'],
+    'Clima': ['Weather', 'Clima', 'Meteo', 'Météo'],
+    'Automático': ['Automatic', 'Automático', 'Automatico', 'Automatique'],
+    'Limpo': ['Clear', 'Despejado', 'Sereno', 'Dégagé'],
+    'Nublado': ['Cloudy', 'Nublado', 'Nuvoloso', 'Nuageux'],
+    'Chuva': ['Rain', 'Lluvia', 'Pioggia', 'Pluie'],
+    'Tempestade': ['Storm', 'Tormenta', 'Tempesta', 'Orage'],
+    'Clima agora: {0}': ['Weather now: {0}', 'Clima ahora: {0}', 'Meteo adesso: {0}', 'Météo actuelle : {0}'],
+    'Pesca do Duke': ['Duke fishing', 'Pesca del Duke', 'Pesca del Duke', 'Pêche du Duke'],
+    'Ligado: toda mordida no lago é o Duke (o lendário do 13 de maio).': ['On: every bite at the lake is Duke (the May 13 legendary).', 'Activado: toda mordida en el lago es el Duke (el legendario del 13 de mayo).', 'Attivo: ogni abboccata al lago è il Duke (il leggendario del 13 maggio).', 'Activé : chaque touche au lac est le Duke (le légendaire du 13 mai).'],
     'Dia e horário': ['Day and time', 'Día y hora', 'Giorno e ora', 'Jour et heure'],
     'Dia': ['Day', 'Día', 'Giorno', 'Jour'],
     'Horário': ['Time', 'Hora', 'Ora', 'Heure'],
@@ -5327,17 +5340,33 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     el.innerHTML = '<div class="cdCard"><h3 class="t0"></h3>' +
       '<h4 class="t1"></h4><div class="lin"><button type="button" class="pxBtn dvGrana"></button></div>' +
       '<h4 class="t2"></h4><div class="lin"><label class="t3"></label><input type="number" min="1" max="9999" class="dvDia" style="width:90px"><label class="t4"></label><input type="time" step="600" class="dvHora" style="width:120px"></div>' +
+      '<h4 class="t7"></h4><div class="lin dvClima"></div><div class="st dvClimaSt"></div>' +
+      '<h4 class="t8"></h4><div class="lin"><button type="button" class="pxBtn dvDuke"></button></div><div class="st dvDukeSt"></div>' +
       '<h4 class="t5"></h4><div class="dvAm"></div>' +
       '<div class="erro dvMsg" style="color:#8fe04a"></div><div class="lin"><button type="button" class="pxBtn pxPrim dvSalvar"></button><button type="button" class="pxBtn dvFechar"></button></div>' +
       '<h4 class="t6"></h4><div class="st dvSt"></div></div>';
     const q = (s) => el.querySelector(s);
     q('.t0').textContent = T('Privilégios do desenvolvedor'); q('.t1').textContent = T('Dinheiro infinito'); q('.t2').textContent = T('Dia e horário');
-    q('.t3').textContent = T('Dia'); q('.t4').textContent = T('Horário'); q('.t5').textContent = T('Corações (amizade, 0 a 100)'); q('.t6').textContent = T('Status e efeitos atuais');
+    q('.t3').textContent = T('Dia'); q('.t4').textContent = T('Horário'); q('.t5').textContent = T('Corações (amizade, 0 a 100)'); q('.t6').textContent = T('Status e efeitos atuais'); q('.t7').textContent = T('Clima'); q('.t8').textContent = T('Pesca do Duke');
     q('.dvSalvar').textContent = T('Salvar mudanças'); q('.dvFechar').textContent = T('Fechar');
     q('.dvDia').value = d.dia || 1; q('.dvHora').value = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
     for (const inp of el.querySelectorAll('input')) { inp.addEventListener('keydown', (e) => e.stopPropagation()); inp.addEventListener('keyup', (e) => e.stopPropagation()); }
     const pintaGrana = () => { q('.dvGrana').textContent = T('Dinheiro infinito') + ': ' + T(d.devInfinito ? 'Ligado' : 'Desligado'); q('.dvGrana').classList.toggle('pxPrim', !!d.devInfinito); };
     pintaGrana();
+    // (6.6.8) CLIMA: escolhe na hora (Limpo / Nublado / Chuva / Tempestade) e fica assim ~20 min; Automático volta ao sorteio normal
+    const CLIMAS_DEV = [['auto', 'Automático'], ['limpo', 'Limpo'], ['nublado', 'Nublado'], ['chuva', 'Chuva'], ['tempestade', 'Tempestade']];
+    const climaAgora = () => { const C = S.clima; return C.estado === 'chuva' ? (C.devTemp ? 'Tempestade' : 'Chuva') : C.estado === 'nublado' ? 'Nublado' : 'Limpo'; };
+    const pintaClima = () => { for (const b of q('.dvClima').children) b.classList.toggle('pxPrim', b.dataset.k === (S.clima.dev || 'auto')); q('.dvClimaSt').textContent = Tf('Clima agora: {0}', T(climaAgora())); };
+    for (const [k, nome] of CLIMAS_DEV) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'pxBtn'; b.dataset.k = k; b.textContent = T(nome); b.style.cssText = 'width:auto;flex:1 1 28%;min-width:0;padding-left:6px;padding-right:6px';   // lado a lado (quebra a linha no celular)
+      b.onclick = () => { som(); climaDev(k); pintaClima(); q('.dvSt').textContent = textoStatus(); };
+      q('.dvClima').appendChild(b);
+    }
+    pintaClima();
+    // (6.6.8) PESCA DO DUKE: toda mordida no lago passa a ser ele (sem esperar o 13 de maio; pode repetir)
+    const pintaDuke = () => { const on = !!(S.pesca && S.pesca._P && S.pesca._P.dukeForcado); q('.dvDuke').textContent = T('Pesca do Duke') + ': ' + T(on ? 'Ligado' : 'Desligado'); q('.dvDuke').classList.toggle('pxPrim', on); q('.dvDukeSt').textContent = on ? T('Ligado: toda mordida no lago é o Duke (o lendário do 13 de maio).') : ''; };
+    q('.dvDuke').onclick = () => { som(); dukeDev(!(S.pesca && S.pesca._P && S.pesca._P.dukeForcado)); pintaDuke(); };
+    pintaDuke();
     q('.dvGrana').onclick = () => {
       som(); d.devInfinito = !d.devInfinito;
       if (d.devInfinito) { d.devFakesAntes = d.fakes; d.fakes = DEV_GRANA; } else { d.fakes = d.devFakesAntes != null ? d.devFakesAntes : Math.min(d.fakes, 150); d.devFakesAntes = null; }
@@ -5372,6 +5401,22 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       } else aplicar();
     };
     (document.getElementById('raizJogo') || document.body).appendChild(el);
+  }
+  // (6.6.8) o clima escolhido no painel do desenvolvedor: já entra pronto (sem esperar as nuvens chegarem) e fica ~20 min de jogo real;
+  //   'tempestade' = chuva com trovão o tempo todo; 'auto' = volta ao sorteio de sempre
+  function climaDev(k) {
+    const C = S.clima; if (!C) return;
+    C.dev = k === 'auto' ? null : k; C.devTemp = k === 'tempestade'; C.devFim = S.t + 1200;
+    if (k === 'auto') { if (C.estado !== 'limpo') C.dur = Math.min(C.dur, C.t + 30); return; }
+    C.estado = k === 'tempestade' ? 'chuva' : k; C.t = 0; C.dur = k === 'limpo' ? 0 : 1200;
+    C.nuv = k === 'limpo' ? 0 : k === 'nublado' ? 0.55 : 0.95; C.chuva = k === 'chuva' || k === 'tempestade' ? 1 : 0;
+    if (C.devTemp) { C.trov = 1.5; C.flash = 1; }
+  }
+  // (6.6.8) liga/desliga a pesca do Duke (pesca.js: dukeForcado = 'sempre'; zera o "uma vez por dia" e já baixa o duke.js)
+  function dukeDev(on) {
+    const P = S.pesca && S.pesca._P; if (!P) return;
+    P.dukeForcado = on ? 'sempre' : false;
+    if (on) { try { S.pesca._f.dadosP().dukeDia = null; S.pesca._f.prepararDuke(); } catch (e) { console.warn('[Cidade] Duke:', e); } }
   }
   // muda o dia e a hora de uma vez (sem as cutscenes do caminho): o dia novo prepara a fome, o expediente e a agenda
   function aplicarDiaHora(dia, hora) {
@@ -5544,13 +5589,15 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // ---- o clima: a cada 1 min de tempo real, 2% de chance de começar a chover; a duração (2 a 10 min) é sorteada uma vez
   function tickClima(dt) {
     const C = S.clima;
+    if (C.dev && C.devFim && S.t > C.devFim) { C.dev = null; C.devTemp = false; }   // (6.6.8) o clima do painel durou ~20 min: volta ao sorteio
     C.acum += dt;
     if (C.acum >= 60) {
       C.acum -= 60;
-      if (C.estado !== 'chuva' && Math.random() < 0.02) { C.estado = 'chuva'; C.t = 0; C.dur = (2 + Math.random() * 8) * 60; }
+      if (C.dev) { /* (6.6.8) clima escolhido no painel do desenvolvedor: sem sorteio */ }
+      else if (C.estado !== 'chuva' && Math.random() < 0.02) { C.estado = 'chuva'; C.t = 0; C.dur = (2 + Math.random() * 8) * 60; }
       else if (C.estado === 'limpo' && Math.random() < 0.15) { C.estado = 'nublado'; C.t = 0; C.dur = 60 + Math.random() * 120; }
     }
-    if (C.estado !== 'limpo') { C.t += dt; if (C.t >= C.dur) C.estado = 'limpo'; }
+    if (C.estado !== 'limpo') { C.t += dt; if (C.t >= C.dur) { C.estado = 'limpo'; C.dev = null; C.devTemp = false; } }
     const nuvAlvo = C.estado === 'chuva' ? 0.95 : C.estado === 'nublado' ? 0.55 : 0, chuvaAlvo = C.estado === 'chuva' ? 1 : 0;
     C.nuv += clamp(nuvAlvo - C.nuv, -dt / 20, dt / 8); C.chuva += clamp(chuvaAlvo - C.chuva, -dt / 8, dt / 4);
     if (C.chuva > 0.01 && typeof particulas.intens === 'function') particulas.definir('chuva');
@@ -5558,7 +5605,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (C.molhado && C.chuva <= 0.02 && C.estado !== 'chuva') { C.molhado = false; chuvaTerminou(); particulas.definir('seco'); }
     SomChuva.nivel(S.dentro ? C.chuva * 0.35 : C.chuva);
     C.flash = Math.max(0, C.flash - dt * 2.2);
-    if (C.estado === 'chuva' && C.chuva > 0.9) { C.trov -= dt; if (C.trov <= 0) { C.trov = 20 + Math.random() * 40; C.flash = 1; setTimeout(() => { if (S && S.ativo) SomChuva.trovao(); }, 500 + Math.random() * 1800); } }
+    if (C.estado === 'chuva' && C.chuva > 0.9) { C.trov -= dt; if (C.trov <= 0) { C.trov = C.devTemp ? 4 + Math.random() * 6 : 20 + Math.random() * 40; C.flash = 1; setTimeout(() => { if (S && S.ativo) SomChuva.trovao(); }, 500 + Math.random() * 1800); } }
   }
 
   // ---- as horas (1 dia = 15 min; o relógio mostra de 10 em 10 minutos), o aviso das 21h e a virada do dia às 6h
@@ -6690,5 +6737,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita } });   // (_estado/_planta/_fns: para testes)
+    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita } });   // (_estado/_planta/_fns: para testes)
 })();
