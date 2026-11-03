@@ -7,6 +7,7 @@
            ENCARA o jogador (3 planos), volta para a água e o jogador diz "O que foi que acabou de acontecer....?". Não vai para a caixa
            nem para o catálogo (só conta em pesca.dukeVisto). PP.dukeForcado = 'sempre' força o dia/a mordida (testes).
    6.6.8 — ligado pelo painel do desenvolvedor (cidade.js: dukeDev), o Duke pode aparecer de novo no mesmo dia.
+   6.6.9 — antes de levitar, ele nada para longe (rastro de bolhas, a linha vai junto) e sobe a ~8,5 m do jogador (DUKE_LONGE; menos se ali não for água).
    - Registrado com FutebolJS.registrarFase({ id: 'pesca' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do academia.js e chama criar(api) (api = apiPesca() da cidade).
      A casinha (o prédio) é montada no cidade.js (casinhaPesca, CASA_PESCA); daqui vêm o Bené, o quadro do catálogo, a persiana,
@@ -2244,7 +2245,7 @@
       try { window.FutebolJS.carregarFase('duke').then((f) => { if (f && f.criar) P.dukeCriar = f.criar; }, () => { /* sem o arquivo: hoje não tem Duke */ }).finally(() => { P.dukeBaixando = false; }); }
       catch (e) { P.dukeBaixando = false; }
     }
-    const DUKE_ESC = 1.45 / 336, DUKE_MEIO = 143;                         // o modelo tem ~336 de comprimento (z, a cara para +z): fica com ~1,45 m
+    const DUKE_ESC = 1.45 / 336, DUKE_MEIO = 143, DUKE_LONGE = 8.5;      // (6.6.8) a que distância do jogador ele levita                         // o modelo tem ~336 de comprimento (z, a cara para +z): fica com ~1,45 m
     async function cenaDuke() {
       const m = P.mg, s = S(), p = dadosP(), o = m.peixeP || m.boiaP || { x: m.ox, z: m.oz };
       m.e = 'pegou'; m.t = 0; m.ocupado = true; m.segura = false; m.B = null; tirarPulo(m);
@@ -2252,7 +2253,11 @@
       if (!mod) { escapou(tr('O peixe se soltou do anzol...')); return; }
       const g = new THREE.Group(); mod.raiz.scale.setScalar(DUKE_ESC); mod.raiz.position.y = -DUKE_MEIO * DUKE_ESC; g.add(mod.raiz); g.visible = false; grupo().add(g);
       p.dukeVisto = (p.dukeVisto | 0) + 1; gravar();
-      const D = m.duke = { g, mod, t: 0, x: o.x, z: o.z, cam: null, boca: null, ok: null };
+      // (6.6.8) a isca trouxe ele para perto: antes de subir, ele nada uns metros para longe (o rastro de bolhas), para dar para ver tudo
+      const ux = o.x - m.ox, uz = o.z - m.oz, ul = Math.hypot(ux, uz) || 1, longe = (k) => ({ x: m.ox + ux / ul * k, z: m.oz + uz / ul * k });
+      let alvo = { x: o.x, z: o.z };
+      for (let k = DUKE_LONGE; k >= Math.max(ul, 4); k -= 0.5) { const q = longe(k); if (naAgua(q.x, q.z) && naAgua(lerpN(o.x, q.x, 0.5), lerpN(o.z, q.z, 0.5))) { alvo = q; break; } }
+      const D = m.duke = { g, mod, t: 0, x0: o.x, z0: o.z, x: o.x, z: o.z, ax: alvo.x, az: alvo.z, cam: null, boca: null, ok: null };
       m.U.el.classList.add('cine'); m.U.plano.textContent = ''; m.U.pular.textContent = ''; s.cam.snap = true; vib([30, 80, 30], true);
       await new Promise((ok) => { D.ok = ok; });
       if (P.mg !== m) return;
@@ -2270,13 +2275,16 @@
     }
     // a cena, quadro a quadro: borbulha · LEVITA (girando até ficar de frente para o jogador, pingando) · encara (3 planos: por cima do
     //   ombro do jogador, por cima do "ombro" dele e o rosto dele, que inclina a cabeça) · desce de volta · a água se acalma
-    const T_DK = [0.9, 4.3, 10.3, 13.1, 14.6];
+    const T_DK = [2.2, 5.6, 11.6, 14.4, 15.9];                          // (6.6.8) +1,3 s no começo: ele nada para longe
     function tickDuke(m, dt) {
       const D = m.duke; if (!D || !D.g) return;
       D.t += dt; const t = D.t, J = S().jog, yJ = J.y || m.y, g = D.g, [T1, T2, T3, T4, T5] = T_DK, topo = Y_AGUA + 1.4;
       const vx = J.x - D.x, vz = J.z - D.z, L = Math.hypot(vx, vz) || 1, ux = vx / L, uz = vz / L, nx = -uz, nz = ux, aJ = Math.atan2(-uz, ux);   // u: dele para o jogador
       let y = Y_AGUA - 1.4, giro = 1.7, inclina = 0;
-      if (t < T1) { if (Math.random() < dt * 14) anel(D.x + rnd(-0.7, 0.7), D.z + rnd(-0.7, 0.7), 0.35, 0); }
+      if (t < T1) {                                                         // nadando para longe: o rastro de bolhas (a linha vai junto, embaixo d'água)
+        const u = suave(Math.min(1, t / (T1 - 0.5))); D.x = lerpN(D.x0, D.ax, u); D.z = lerpN(D.z0, D.az, u);
+        if (Math.random() < dt * 16) anel(D.x + rnd(-0.4, 0.4), D.z + rnd(-0.4, 0.4), 0.35, 0);
+      }
       else if (t < T2) {
         const u = suave((t - T1) / (T2 - T1)); y = lerpN(Y_AGUA - 1.1, topo, u); giro = 1.7 * (1 - suave(Math.min(1, (t - T1) / (T2 - T1 - 0.6))));
         if (!D.saiu && y > Y_AGUA - 0.4) { D.saiu = true; respingo(D.x, D.z, 16, 1.1); anel(D.x, D.z, 2.2, 1); SOM.agua(); }
