@@ -54,8 +54,14 @@
    - TEXTOS: TRAD (en, es, it, fr) — as traduções daqui valem PRIMEIRO dentro da pesca (tr/trf): "LANÇAR" no jogo é o lateral do futebol
      (THROW); aqui é lançar a isca (CAST). Os nomes dos peixes ficam em PEIXES[].tr.
    - Salva em historia.cidade: pesca = { vara, varas, iscas, isca, caixa: [{ i, kg, c }], cat: { i: { n, rec, cl } }, total, ganhos, lendarios,
-     caduVara, caduLago, caduMinhoca (dia em que o Cadu deu minhoca), conheceBene, papo, tranqDia } e mercado.conheceu/reconheceu (o 1º encontro com
+     caduVara, caduLago, caduMinhoca (dia em que o Cadu deu minhoca), conheceBene, papo, tranqDia, bagre } e mercado.conheceu/reconheceu (o 1º encontro com
      o Cadu pode ser aqui no lago).
+   - O BAGRE-TROVÃO (evento escondido, fora do catálogo): pescando entre 0h e 1h com CHUVA, um raio cai no lago (cena em câmera lenta) e algo
+     puxa a isca ("Eita..."). A briga é de lendário, mais comprida, com ROCK (Rock: sintetizado), raios caindo, choque na linha e saltos com
+     faíscas; o relógio para enquanto dura. Perdeu: silêncio e o desabafo. Pegou: o jogador não sabe o que é e guarda para o seu Bené
+     (pesca.bagre = { dia, kg }). No outro dia, falando com o Bené: ele não sabe o que é, oferece 10.000 fakes e vai buscar o dinheiro; o bicho
+     acorda, voa, engole quem passava na trilha e some no céu; o jogador pede para ele ficar com o dinheiro e esquecer (pesca.bagre.fim = true).
+     A arte (arteBagre, 112×64) vira o 3D como os outros peixes, mais uma malha do que brilha (arteBagreLuz).
    ===================================================================== */
 (function () {
   'use strict';
@@ -324,6 +330,30 @@
     'DE NOVO?! Você soltou OUTRO lendário?!': ['AGAIN?! You released ANOTHER legendary?!', '¡¿OTRA VEZ?! ¿Soltaste OTRO legendario?!', 'DI NUOVO?! Hai liberato UN ALTRO leggendario?!', 'ENCORE ?! Tu as relâché UN AUTRE légendaire ?!'],
     'Eu não acredito. Eu NÃO acredito. Eu vou contar pro seu Bené!': ['I can’t believe it. I CAN’T believe it. I’m telling Mr. Bené!', 'No lo puedo creer. NO lo puedo creer. ¡Se lo voy a contar al señor Bené!', 'Non ci credo. NON ci credo. Lo dico al signor Bené!', 'J’y crois pas. J’y crois PAS. Je vais le dire à monsieur Bené !'],
     '...tá. Tá bom. Mas eu tô de olho em você, hein.': ['...fine. Okay. But I’m keeping an eye on you.', '...vale. Está bien. Pero te estoy vigilando, eh.', '...va bene. Ok. Ma ti tengo d’occhio, eh.', '...bon. D’accord. Mais je t’ai à l’œil, hein.'],
+    'Eita...': ['Whoa...', 'Epa...', 'Ehi...', 'Oh là...'],
+    'Eita, eita, EITA! Tem alguma coisa ENORME aqui!': ['Whoa, whoa, WHOA! There’s something HUGE down there!', '¡Epa, epa, EPA! ¡Hay algo ENORME aquí!', 'Ehi, ehi, EHI! C’è qualcosa di ENORME qui!', 'Oh là, oh là, OH LÀ ! Il y a un truc ÉNORME là-dessous !'],
+    'Algo ENORME fisgou a isca!': ['Something HUGE took the bait!', '¡Algo ENORME mordió el anzuelo!', 'Qualcosa di ENORME ha abboccato!', 'Un truc ÉNORME a mordu à l’hameçon !'],
+    'Ele não quer sair da água!': ['It won’t come out of the water!', '¡No quiere salir del agua!', 'Non vuole uscire dall’acqua!', 'Il ne veut pas sortir de l’eau !'],
+    'A tempestade ficou mais forte!': ['The storm is getting stronger!', '¡La tormenta se hizo más fuerte!', 'La tempesta è diventata più forte!', 'L’orage redouble !'],
+    'Ele está cansando! Segura firme!': ['It’s getting tired! Hold on tight!', '¡Se está cansando! ¡Aguanta firme!', 'Si sta stancando! Tieni duro!', 'Il fatigue ! Tiens bon !'],
+    'Choque na linha!': ['Shock on the line!', '¡Descarga en el sedal!', 'Scossa sulla lenza!', 'Décharge dans la ligne !'],
+    'Mas que PORRA foi essa?!': ['What the HELL was that?!', '¡¿Pero qué CARAJOS fue eso?!', 'Ma che CAZZO era quello?!', 'Mais c’était quoi ce BORDEL ?!'],
+    'Que... que bicho é esse?!': ['What... what IS this thing?!', '¿Qué... qué bicho es este?!', 'Ma... ma che bestia è questa?!', 'Mais... c’est quoi cette bestiole ?!'],
+    'Eu não faço ideia do que seja isso. Nem parece pertencer a esse lugar...': ['I have no idea what this is. It doesn’t even look like it belongs here...', 'No tengo ni idea de qué es esto. Ni parece de este lugar...', 'Non ho idea di cosa sia. Non sembra nemmeno di questo posto...', 'Je n’ai aucune idée de ce que c’est. On dirait même que ça ne vient pas d’ici...'],
+    'Amanhã eu vou perguntar pro seu Bené. Ele deve saber o que é.': ['Tomorrow I’ll ask Mr. Bené. He must know what it is.', 'Mañana le pregunto a don Bené. Él debe saber qué es.', 'Domani chiedo al signor Bené. Lui saprà cos’è.', 'Demain je demanderai à M. Bené. Il doit savoir ce que c’est.'],
+    'Você guardou o bicho misterioso para mostrar ao seu Bené.': ['You stored the mysterious creature to show Mr. Bené.', 'Guardaste el bicho misterioso para mostrárselo a don Bené.', 'Hai messo da parte la bestia misteriosa per mostrarla al signor Bené.', 'Tu as rangé la bête mystérieuse pour la montrer à M. Bené.'],
+    'Não consta no catálogo': ['Not in the catalog', 'No está en el catálogo', 'Non è nel catalogo', 'Absent du catalogue'],
+    'Seu Bené! O senhor precisa ver o que eu pesquei ontem, à meia-noite, no meio da tempestade.': ['Mr. Bené! You need to see what I caught last night, at midnight, in the middle of the storm.', '¡Don Bené! Tiene que ver lo que pesqué anoche, a medianoche, en plena tormenta.', 'Signor Bené! Deve vedere cosa ho pescato ieri, a mezzanotte, in piena tempesta.', 'M. Bené ! Il faut que vous voyiez ce que j’ai pêché hier, à minuit, en pleine tempête.'],
+    'Pode mostrar! Põe aí no balcão.': ['Go ahead! Put it on the counter.', '¡Muéstramelo! Ponlo ahí en el mostrador.', 'Fammi vedere! Mettilo sul bancone.', 'Montre ! Pose-le sur le comptoir.'],
+    'No balcão não cabe, não...': ['It won’t fit on the counter...', 'En el mostrador no cabe...', 'Sul bancone non ci sta...', 'Ça ne tient pas sur le comptoir...'],
+    'Mas o que é que é ISSO?!': ['What on earth is THAT?!', '¡¿Pero qué es ESO?!', 'Ma che cos’è QUESTO?!', 'Mais qu’est-ce que c’est que ÇA ?!'],
+    'Rapaz... faz trinta anos que eu pesco nesse lago e nunca vi um bicho desses.': ['Boy... I’ve fished this lake for thirty years and never seen anything like it.', 'Muchacho... llevo treinta años pescando en este lago y nunca vi un bicho así.', 'Ragazzo... pesco in questo lago da trent’anni e non ho mai visto una bestia così.', 'Mon garçon... je pêche dans ce lac depuis trente ans et je n’ai jamais vu une bête pareille.'],
+    'Eu não faço a menor ideia do que seja. Nem sei se isso é peixe de verdade!': ['I haven’t the faintest idea what it is. I don’t even know if it’s a real fish!', 'No tengo la menor idea de qué es. ¡Ni sé si es un pez de verdad!', 'Non ho la minima idea di cosa sia. Non so nemmeno se è un pesce vero!', 'Je n’ai pas la moindre idée de ce que c’est. Je ne sais même pas si c’est un vrai poisson !'],
+    'Olha esse brilho... Um bicho desses não tem preço. O valor disso deve ser inestimável!': ['Look at that glow... A creature like this has no price. It must be priceless!', 'Mira ese brillo... Un bicho así no tiene precio. ¡Su valor debe ser incalculable!', 'Guarda che luce... Una bestia così non ha prezzo. Deve valere una fortuna inestimabile!', 'Regarde cette lueur... Une bête pareille n’a pas de prix. Ça doit valoir une fortune inestimable !'],
+    'Olha, eu te pago 10.000 fakes por ele. Espera aí que eu vou buscar o dinheiro lá no fundo.': ['Look, I’ll pay you 10,000 fakes for it. Hang on, I’ll get the money from the back.', 'Mira, te pago 10.000 fakes por él. Espera, que voy a buscar el dinero al fondo.', 'Senti, ti pago 10.000 fakes. Aspetta che vado a prendere i soldi sul retro.', 'Écoute, je t’en donne 10 000 fakes. Attends, je vais chercher l’argent au fond.'],
+    'Seu Bené... acho que ele se mexeu.': ['Mr. Bené... I think it just moved.', 'Don Bené... creo que se movió.', 'Signor Bené... credo che si sia mosso.', 'M. Bené... je crois qu’il a bougé.'],
+    'Pensando melhor... fica com o dinheiro e não fala pra ninguém que isso aconteceu...': ['On second thought... keep the money and don’t tell anyone this happened...', 'Pensándolo mejor... quédese con el dinero y no le cuente a nadie lo que pasó...', 'Ripensandoci... tenga i soldi e non dica a nessuno quello che è successo...', 'À la réflexion... gardez l’argent et ne dites à personne ce qui s’est passé...'],
+    'Combinado. Eu não vi nada. E você também não viu nada.': ['Deal. I didn’t see a thing. And neither did you.', 'Trato hecho. Yo no vi nada. Y tú tampoco viste nada.', 'D’accordo. Io non ho visto niente. E nemmeno tu.', 'Marché conclu. Je n’ai rien vu. Et toi non plus.'],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
@@ -589,6 +619,86 @@
     lendario: com((A, t) => { for (const [i, f] of [[0, 392], [1, 523], [2, 659], [3, 784], [4, 1047], [5, 1319]]) tom(A, f, t + i * 0.11, 0.35, 0.055, 'triangle'); tom(A, 1568, t + 0.7, 0.8, 0.04, 'sine'); }),
     moeda: com((A, t) => { tom(A, 3100, t, 0.05, 0.03, 'triangle'); tom(A, 4200, t + 0.03, 0.08, 0.025, 'triangle'); }),
   };
+  // ruído grave e comprido, com o volume tremendo (o ronco do trovão)
+  function ronco(A, t, dur, vol, freq) {
+    chiado(A, t, 0.01, 0.0001, 100);
+    const c = A.ctx, s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain(); s.buffer = ruido; s.loop = true; f.type = 'lowpass'; f.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.1);
+    for (let k = 1; k < 8; k++) g.gain.exponentialRampToValueAtTime(Math.max(0.0003, vol * (1 - k / 8) * (0.5 + 0.5 * Math.random())), t + dur * k / 8);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(A.mestre); s.start(t, Math.random() * 0.5); s.stop(t + dur + 0.05);
+  }
+  Object.assign(SOM, {
+    trovaoPerto: com((A, t) => { chiado(A, t, 0.2, 0.55, 3600); chiado(A, t, 0.4, 0.4, 900); tom(A, 62, t, 0.7, 0.3, 'sine', 30); ronco(A, t + 0.04, 3.4, 0.5, 260); }),
+    trovaoLonge: (atraso) => com((A, t) => ronco(A, t + (atraso || 0), 2.6, 0.24, 170))(),
+    zap: com((A, t) => { for (let k = 0; k < 6; k++) tom(A, 900 + Math.random() * 1700, t + k * 0.03, 0.03, 0.05, 'square'); chiado(A, t, 0.2, 0.08, 5200); }),
+    estalos: com((A, t) => { for (let k = 0; k < 10; k++) chiado(A, t + Math.random() * 0.6, 0.025, 0.12, 2400 + Math.random() * 3000); }),
+    nhac: com((A, t) => { tom(A, 190, t, 0.28, 0.32, 'sine', 55); chiado(A, t, 0.22, 0.2, 420); tom(A, 95, t + 0.24, 0.2, 0.2, 'sine', 50); }),
+    rugido: com((A, t) => { tom(A, 72, t, 1.3, 0.16, 'sawtooth', 44); tom(A, 146, t, 1.1, 0.07, 'square', 88); ronco(A, t, 1.4, 0.22, 340); }),
+    pum: com((A, t) => { tom(A, 120, t, 0.18, 0.25, 'sine', 60); chiado(A, t, 0.12, 0.12, 700); }),
+  });
+
+  // ROCK de briga (só com o bagre-trovão): bateria, baixo, power chords distorcidos e um solo em Mi menor, a 150 bpm.
+  //   nivel 1: bateria, guitarra e baixo · 2: entra o solo · 3: chimbal dobrado, bumbo e virada. final(): o acorde final com o prato.
+  const Rock = (() => {
+    let R = null;
+    const PASSO = 60 / 150 / 2, RAIZ = [40, 36, 43, 38];
+    const SOLO = [[76, 0, 74, 76, 79, 0, 76, 74], [72, 0, 71, 72, 76, 0, 72, 71], [71, 0, 74, 79, 78, 0, 74, 71], [74, 0, 78, 81, 79, 78, 76, 74]];
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    const curvaDist = (k) => { const n = 512, c = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); } return c; };
+    function osc(r, tipo, f, t, dur, vol, dest, ate) { const o = r.c.createOscillator(), g = r.c.createGain(); o.type = tipo; o.frequency.setValueAtTime(f, t); if (ate) o.frequency.exponentialRampToValueAtTime(ate, t + dur); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.03); }
+    function barulho(r, t, dur, vol, tipoF, freq, dest, q) { const s = r.c.createBufferSource(), f = r.c.createBiquadFilter(), g = r.c.createGain(); s.buffer = r.rb; f.type = tipoF; f.frequency.value = freq; if (q) f.Q.value = q; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random() * 0.8); s.stop(t + dur + 0.03); }
+    const bumbo = (r, t, v) => { osc(r, 'sine', 150, t, 0.17, 0.95 * v, r.bat, 42); osc(r, 'triangle', 95, t, 0.05, 0.4 * v, r.bat, 50); };
+    const caixa = (r, t, v) => { barulho(r, t, 0.18, 0.55 * v, 'bandpass', 1900, r.bat, 0.8); osc(r, 'triangle', 210, t, 0.09, 0.35 * v, r.bat, 160); };
+    const chimbal = (r, t, v, aberto) => barulho(r, t, aberto ? 0.22 : 0.045, 0.2 * v, 'highpass', 7200, r.bat);
+    const prato = (r, t) => barulho(r, t, 1.7, 0.3, 'highpass', 4800, r.bat);
+    function guitarra(r, raiz, t, dur, v) { for (const [d, q] of [[0, 1], [7, 0.8], [12, 0.6]]) { const f = hz(raiz + 12 + d); osc(r, 'sawtooth', f, t, dur, 0.15 * v * q, r.gt); osc(r, 'square', f * 1.004, t, dur, 0.06 * v * q, r.gt); } }
+    function solo(r, n, t, dur) {
+      const c = r.c, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(); o.type = 'sawtooth'; o.frequency.setValueAtTime(hz(n), t);
+      lfo.frequency.value = 5.5; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(hz(n) * 0.014, t + Math.min(dur, 0.25)); lfo.connect(lg); lg.connect(o.frequency);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.02); g.gain.setValueAtTime(0.1, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(r.ld); o.start(t); lfo.start(t); o.stop(t + dur + 0.03); lfo.stop(t + dur + 0.03);
+    }
+    function passo(r, p, t) {
+      const n = r.nivel, ps = p % 8, cp = Math.floor(p / 8) % 4, raiz = RAIZ[cp], intro = p < 16;
+      if (ps === 0 || ps === 3 || ps === 4 || (n >= 3 && ps === 7)) bumbo(r, t, 1);
+      if (ps === 2 || ps === 6) caixa(r, t, 1);
+      if (n >= 3 && cp === 3 && ps >= 6) { caixa(r, t + PASSO / 2, 0.7); caixa(r, t + PASSO * 0.75, 0.8); }
+      chimbal(r, t, ps % 2 ? 0.7 : 1, ps === 7 && n >= 2); if (n >= 3) chimbal(r, t + PASSO / 2, 0.5);
+      if ((p % 32 === 0 && !intro) || r.pratoJa) { prato(r, t); r.pratoJa = false; }
+      const aberta = ps === 0 || ps === 3; guitarra(r, raiz, t, aberta ? PASSO * 1.9 : PASSO * 0.5, aberta ? 1 : 0.72);
+      if (p >= 8) osc(r, 'sawtooth', hz(raiz - 12 + (ps === 7 ? 7 : 0)), t, PASSO * 0.85, 0.3, r.bx);
+      if (n >= 2 && !intro) { const nota = SOLO[cp][ps]; if (nota) { let d = 1; while (ps + d < 8 && !SOLO[cp][ps + d]) d++; solo(r, nota + (n >= 3 && cp % 2 ? 12 : 0), t, PASSO * d * 0.95); } }
+    }
+    function agenda() { const r = R; if (!r) return; const ate = r.c.currentTime + 0.15; while (r.prox < ate) { passo(r, r.p, r.prox); r.prox += PASSO; r.p++; } }
+    function montar(A) {
+      const c = A.ctx, r = { c, nivel: 1, p: 0, pratoJa: false };
+      r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(0.34, c.currentTime + 0.6); r.saida.connect(A.mestre);
+      r.bat = c.createGain(); r.bat.gain.value = 0.9; r.bat.connect(r.saida);
+      r.gt = c.createGain(); const ws = c.createWaveShaper(); ws.curve = curvaDist(60); ws.oversample = '2x'; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; const gg = c.createGain(); gg.gain.value = 0.5; r.gt.connect(ws); ws.connect(lp); lp.connect(gg); gg.connect(r.saida);
+      r.bx = c.createGain(); const lb = c.createBiquadFilter(); lb.type = 'lowpass'; lb.frequency.value = 650; r.bx.connect(lb); lb.connect(r.saida);
+      r.ld = c.createGain(); const ws2 = c.createWaveShaper(); ws2.curve = curvaDist(25); const l2 = c.createBiquadFilter(); l2.type = 'lowpass'; l2.frequency.value = 4200; const eco = c.createDelay(1); eco.delayTime.value = PASSO * 1.5; const fb = c.createGain(); fb.gain.value = 0.28;
+      r.ld.connect(ws2); ws2.connect(l2); l2.connect(r.saida); l2.connect(eco); eco.connect(fb); fb.connect(eco); fb.connect(r.saida);
+      r.prox = c.currentTime + 0.1; return r;
+    }
+    function soltar(r, seg) { setTimeout(() => { try { r.saida.disconnect(); } catch (e) { /* já foi */ } }, seg * 1000); }
+    return {
+      tocar() { const A = audio(); if (!A || R) return; try { R = montar(A); R.tm = setInterval(agenda, 25); agenda(); } catch (e) { R = null; } },
+      nivel(n) { if (R && n > R.nivel) { R.nivel = n; R.pratoJa = true; } },
+      parar(corte) {
+        const r = R; if (!r) return; R = null; clearInterval(r.tm);
+        try { const t = r.c.currentTime; r.saida.gain.cancelScheduledValues(t); r.saida.gain.setValueAtTime(Math.max(0.0001, r.saida.gain.value), t); r.saida.gain.exponentialRampToValueAtTime(0.0001, t + (corte ? 0.05 : 1.2)); } catch (e) { /* sem som */ }
+        soltar(r, corte ? 0.4 : 2);
+      },
+      final() {
+        const r = R; if (!r) return; R = null; clearInterval(r.tm);
+        try { const t = Math.max(r.c.currentTime + 0.02, r.prox); bumbo(r, t, 1.2); prato(r, t); guitarra(r, 40, t, 2.8, 1.25); osc(r, 'sawtooth', hz(28), t, 2.6, 0.32, r.bx); solo(r, 88, t, 2.2);
+          r.saida.gain.setValueAtTime(0.34, t + 2.2); r.saida.gain.exponentialRampToValueAtTime(0.0001, t + 3.2); } catch (e) { /* sem som */ }
+        soltar(r, 4);
+      },
+      tocando: () => !!R,
+    };
+  })();
 
   // ------------------------------------------------------------------ a FORMA de cada peixe (a mesma para o boneco 3D e o desenho do catálogo)
   //   O corpo é feito de 6 fatias ao longo do comprimento (do focinho para o rabo): altura e largura de cada uma (fração de H e W).
@@ -858,6 +968,174 @@
     for (const [k, c] of fora) { cor[k] = c; tipo[k] = 3; esp[k] = 0.012; }
     return { w: W, h: Hh, cor, tipo, esp, K, cx: cxD - 13, cy, deCima: true };
   }
+  // o BAGRE-TROVÃO (fora do catálogo): 112×64, de lado, a cabeça para a direita. Corpo de bagre (cabeça larga e achatada, barriga reta),
+  //   azul de tempestade com nuvens escuras nas costas, um RAIO descendo pelo flanco, pintinhas elétricas, a nadadeira de cima em pontas de
+  //   raio, o rabo serrilhado, as bordas das nadadeiras estalando, o olho de ouro e os bigodes compridos que brilham.
+  //   luz[k] = 1 marca o que acende no escuro (vira uma segunda malha, sem sombra, um pouco para fora do corpo).
+  function arteBagre() {
+    if (cacheArte.has('bagre')) return cacheArte.get('bagre');
+    const W = 112, Hh = 64, NN = W * Hh, cor = new Array(NN).fill(null), tipo = new Uint8Array(NN), esp = new Float32Array(NN), luz = new Uint8Array(NN);
+    const K = 96, cx = 52, cy = 31, Hm = 0.235, Wm = 0.19, aTop = 0.6;
+    const COSTA = hexC('#15214a'), FLANCO = hexC('#2b4c92'), BARRIGA = hexC('#c4cfea'), NAD = hexC('#222963'), RAIO = hexC('#86eeff'), NUC = hexC('#fdfbe6'), AZUL = hexC('#3c8cff'), OURO = hexC('#ffd447');
+    const UP = [0.5, 0.46, 0.4, 0.3, 0.16, 0.02, -0.14, -0.27, -0.36, -0.4];
+    const HP = [0.3, 0.5, 0.72, 0.9, 1, 0.94, 0.76, 0.54, 0.34, 0.31];
+    const WP = [0.75, 0.98, 1, 0.98, 0.88, 0.76, 0.58, 0.42, 0.3, 0.28];
+    const Xu = (u) => cx + u * K, Uof = (x) => (x + 0.5 - cx) / K, colX = (u) => Math.round(Xu(u));
+    const hAt = (u) => Hm * curva(UP, HP, u), wAt = (u) => Wm * curva(UP, WP, u);
+    const den = (x, y) => x >= 0 && y >= 0 && x < W && y < Hh;
+    const put = (x, y, c, tp, e, l) => { x = Math.round(x); y = Math.round(y); if (!den(x, y)) return; const k = y * W + x; if (tp === 2 && tipo[k] === 1) return; cor[k] = c; tipo[k] = tp; esp[k] = e == null ? 0.016 : e; luz[k] = l ? 1 : 0; };
+    const ehCorpo = (x, y) => den(x, y) && tipo[y * W + x] === 1;
+    const tem = (x, y) => den(x, y) && !!cor[y * W + x];
+    const pinta = (x, y, c, l) => { x = Math.round(x); y = Math.round(y); if (!tem(x, y)) return; cor[y * W + x] = c; if (l != null) luz[y * W + x] = l ? 1 : 0; };
+    const reta = (xa, ya, xb, yb, fn) => { const n = Math.max(1, Math.ceil(Math.max(Math.abs(xb - xa), Math.abs(yb - ya)))); for (let k = 0; k <= n; k++) fn(Math.round(xa + (xb - xa) * k / n), Math.round(ya + (yb - ya) * k / n), k / n); };
+    const ruido = (x, y) => Math.sin(x * 0.31 + y * 0.17) + Math.sin(x * 0.13 - y * 0.41 + 1.3) + Math.sin((x + y) * 0.21 + 2.1);
+    const hs = (k) => { const v = Math.sin(k * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+    // --- o corpo
+    const topo = new Float32Array(W).fill(NaN), base = new Float32Array(W).fill(NaN);
+    const x0 = colX(-0.4), x1 = colX(0.5) - 1;
+    for (let x = x0; x <= x1; x++) {
+      const u = Uof(x), h = hAt(u) * K, a = cy - h * aTop, b = cy + h * (1 - aTop); topo[x] = a; base[x] = b;
+      const yc = (a + b) / 2, hh = Math.max(0.5, (b - a) / 2), w = wAt(u);
+      for (let y = Math.round(a); y <= Math.round(b) - 1; y++) { const k = (y + 0.5 - yc) / hh; put(x, y, FLANCO, 1, w * Math.sqrt(Math.max(0.08, 1 - k * k))); }
+    }
+    for (const [dx, dy] of [[0, 0], [-1, 0], [0, 1]]) { const x = x1 + dx, y = Math.round(topo[x1]) + dy; if (ehCorpo(x, y)) { cor[y * W + x] = null; tipo[y * W + x] = 0; } }   // o focinho arredondado
+    const yAt = (x, v) => topo[x] + (base[x] - topo[x]) * v;
+    // --- o rabo: bifurcado, o lobo de cima mais comprido, a borda de trás serrilhada
+    const xp = colX(-0.37), xt = colX(-0.5), hP = hAt(-0.38) * K, ycT = cy + hP * (0.5 - aTop);
+    const lobo = [];
+    for (let x = xp; x >= xt; x--) {
+      const s = (xp - x) / Math.max(1, xp - xt), sup = lerpN(hP / 2, 17, Math.pow(s, 0.75)), inf = s < 0.86 ? lerpN(hP / 2, 13, Math.pow(s, 0.8)) : -1;
+      const inn = s > 0.22 ? (s - 0.22) / 0.78 * 11 : 0, serr = s > 0.4 && x % 3 === 0 ? 1.6 : 0;
+      lobo.push({ x, s, sup, inf, inn });
+      for (let y = Math.floor(ycT - sup - serr); y <= Math.ceil(ycT + Math.max(0, inf) + serr); y++) {
+        const dy = y + 0.5 - ycT;
+        if (dy < 0 ? -dy > sup + serr + 0.3 : (inf < 0 || dy > inf + serr + 0.3)) continue;
+        if (Math.abs(dy) < inn) continue;
+        let c = NAD; if (Math.round(Math.abs(dy)) % 2 === 0) c = mulC(c, 0.8); if (s < 0.16) c = mixC(c, FLANCO, 0.55);
+        put(x, y, c, 2, 0.014);
+      }
+    }
+    // --- as nadadeiras: a de cima em pontas de raio, a adiposa comprida, a anal ondulada e a pélvica
+    const crista = [[0, 1], [0.34, 0.48], [0.39, 0.84], [0.66, 0.36], [0.71, 0.62], [1, 0.1]];
+    const perfil = (L, s) => { for (let k = 0; k < L.length - 1; k++) if (s <= L[k + 1][0]) return lerpN(L[k][1], L[k + 1][1], (s - L[k][0]) / (L[k + 1][0] - L[k][0])); return L[L.length - 1][1]; };
+    { const xa = colX(0.215), xb = colX(0.03);
+      for (let x = xa; x >= xb; x--) {
+        const s = (xa - x) / (xa - xb), hh = Math.round(0.155 * K * perfil(crista, s));
+        for (let k = 0; k < hh; k++) { const y = Math.round(topo[x]) - 1 - k; let c = x >= xa - 1 ? mixC(NAD, NUC, 0.3) : x % 2 ? mulC(NAD, 0.8) : NAD; if (k < 2) c = mixC(c, FLANCO, 0.4); put(x, y, c, 2, 0.016); }
+      } }
+    { const xa = colX(-0.13), xb = colX(-0.31);
+      for (let x = xa; x >= xb; x--) { const s = (xa - x) / (xa - xb), hh = Math.round(0.046 * K * Math.pow(Math.sin(Math.PI * s), 0.6)); for (let k = 0; k < hh; k++) put(x, Math.round(topo[x]) - 1 - k, mixC(FLANCO, NAD, 0.55), 2, 0.02); } }
+    { const xa = colX(-0.07), xb = colX(-0.33);
+      for (let x = xa; x >= xb; x--) { const s = (xa - x) / (xa - xb), env = s < 0.1 ? s / 0.1 : s > 0.88 ? (1 - s) / 0.12 : 1, hh = Math.round((0.058 * K * (0.78 + 0.22 * Math.sin(Math.PI * s)) + Math.sin(x * 1.3) * 0.8) * env);
+        for (let k = 0; k < hh; k++) put(x, Math.round(base[x]) + k, x % 2 ? mulC(NAD, 0.82) : NAD, 2, 0.014); } }
+    { const xa = colX(0.05), xb = colX(-0.035);
+      for (let x = xa; x >= xb; x--) { const s = (xa - x) / (xa - xb), hh = Math.round(0.07 * K * (s < 0.25 ? s / 0.25 : 1 - (s - 0.25) / 0.75 * 0.85)); for (let k = 0; k < hh; k++) put(x, Math.round(base[x]) + k, x % 2 ? mulC(NAD, 0.82) : NAD, 2, 0.014); } }
+    // --- as cores do corpo: costas escuras com nuvens, flanco azul, barriga clara (degradê pontilhado)
+    for (let x = x0; x <= x1; x++) {
+      const a = topo[x], b = base[x], u = Uof(x);
+      for (let y = 0; y < Hh; y++) {
+        if (!ehCorpo(x, y)) continue;
+        const v = (y + 0.5 - a) / Math.max(1, b - a);
+        let c = v < 0.44 ? mixC(COSTA, FLANCO, suave(v / 0.44)) : FLANCO;
+        if (v > 0.56) c = v > 0.72 ? BARRIGA : ((v - 0.56) / 0.16 > BAYER[y % 2][x % 2] ? BARRIGA : FLANCO);
+        if (v < 0.5) { const n = ruido(x, y); if (n > 1.35) c = mulC(c, 0.78); else if (n < -1.7) c = claroC(c, 0.08); }
+        if (u > 0.3 && v < 0.36) c = mulC(c, 0.86);
+        if (v < 0.09) c = mulC(c, 0.72); else if (v > 0.9) c = mulC(c, 0.8);
+        if (v > 0.18 && v < 0.26 && u > -0.3 && u < 0.36) c = claroC(c, 0.1);
+        if (v > 0.74 && (y % 3 === 0) && hs(x * 7 + y) < 0.3) c = mulC(c, 0.92);
+        cor[y * W + x] = c;
+      }
+    }
+    // --- pintinhas elétricas nas costas
+    for (let k = 0; k < 22; k++) {
+      const u = 0.3 - hs(k + 3) * 0.64, x = colX(u); if (!(topo[x] === topo[x])) continue;
+      const y = Math.round(yAt(x, 0.12 + hs(k + 40) * 0.26));
+      if (hs(k + 90) < 0.3) { pinta(x, y, NUC, 1); for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) pinta(x + dx, y + dy, RAIO, 1); }
+      else pinta(x, y, RAIO, 1);
+    }
+    // --- o RAIO no flanco (núcleo claro, brilho ciano e um halo azul) e dois galhos
+    const raio = (pts, grosso) => {
+      for (let k = 0; k < pts.length - 1; k++) {
+        const [xa, ya] = pts[k], [xb, yb] = pts[k + 1];
+        reta(xa, ya, xb, yb, (x, y) => {
+          if (grosso) { pinta(x, y - 2, mixC(cor[(y - 2) * W + x] || FLANCO, AZUL, 0.55)); pinta(x, y + 2, mixC(cor[(y + 2) * W + x] || FLANCO, AZUL, 0.55)); pinta(x, y - 1, RAIO, 1); pinta(x, y + 1, RAIO, 1); pinta(x, y, NUC, 1); }
+          else { pinta(x, y - 1, mixC(cor[(y - 1) * W + x] || FLANCO, AZUL, 0.45)); pinta(x, y + 1, mixC(cor[(y + 1) * W + x] || FLANCO, AZUL, 0.45)); pinta(x, y, RAIO, 1); }
+        });
+      }
+    };
+    { const pts = []; let x = colX(0.26), sg = -1, q = 0;
+      while (x > colX(-0.34)) { const u = Uof(x), f = clampN((0.26 - u) / 0.6, 0, 1), amp = lerpN(3.4, 1.4, f) * (0.6 + hs(q + 7) * 0.7); pts.push([x, Math.round(yAt(x, lerpN(0.3, 0.52, f)) + sg * amp)]); if (hs(q + 21) > 0.2) sg = -sg; x -= 4 + Math.round(hs(q + 33) * 4); q++; }
+      pts.push([colX(-0.355), Math.round(yAt(colX(-0.355), 0.52))]); raio(pts, true);
+      const g1 = pts[2], g2 = pts[5];
+      raio([g1, [g1[0] - 3, g1[1] - 4], [g1[0] - 2, g1[1] - 7], [g1[0] - 6, g1[1] - 10]], false);
+      raio([g2, [g2[0] - 3, g2[1] + 3], [g2[0] - 2, g2[1] + 6], [g2[0] - 5, g2[1] + 8]], false); }
+    // --- a guelra (com as fendas acesas)
+    { const xg = colX(0.325); for (let y = Math.round(yAt(xg, 0.16)); y <= Math.round(yAt(xg, 0.84)); y++) { const v = (y + 0.5 - topo[xg]) / (base[xg] - topo[xg]), xx = xg - Math.round(Math.sin(Math.PI * v) * 2); pinta(xx, y, mulC(cor[y * W + xx] || FLANCO, 0.6)); if (y % 3 === 0 && v > 0.3 && v < 0.7) pinta(xx - 1, y, RAIO, 1); } }
+    // --- a nadadeira peitoral (grande, por cima do corpo, apontando para trás e para baixo): o espinho da frente serrilhado
+    { const xa = colX(0.31), xb = colX(0.1), y0 = yAt(xa, 0.66);
+      for (let x = xa; x >= xb; x--) {
+        const s = (xa - x) / (xa - xb), yc = y0 + s * 7, hh = lerpN(1.2, 4.3, Math.pow(s, 0.7)) * (s > 0.84 ? 1 - (s - 0.84) / 0.16 * 0.6 : 1);
+        for (let y = Math.round(yc - hh); y <= Math.round(yc + hh); y++) {
+          let c = mixC(NAD, FLANCO, 0.2); if (((y - Math.round(yc) + Math.round(s * 3)) & 1) === 0) c = mulC(c, 0.8);
+          if (y === Math.round(yc - hh)) c = mixC(NAD, NUC, 0.32);
+          if (s > 0.8 && y >= Math.round(yc + hh) - 1) { c = RAIO; }
+          const k = y * W + x; if (!den(x, y)) continue;
+          if (tipo[k] === 1) { cor[k] = c; luz[k] = c === RAIO ? 1 : 0; } else put(x, y, c, 2, 0.014, c === RAIO);
+        }
+        if (x % 3 === 0) { const y = Math.round(yc - hh) - 1; if (den(x, y)) { const k = y * W + x; if (tipo[k] === 1) cor[k] = mixC(NAD, NUC, 0.25); else put(x, y, mixC(NAD, NUC, 0.25), 2, 0.012); } }
+      } }
+    // --- o olho de ouro (pupila em fenda, brilho) e a "sobrancelha" elétrica
+    { const xo = colX(0.43), yo = Math.round(yAt(xo, 0.3)), ex = xo - 2, ey = yo - 2;
+      for (let dy = -1; dy < 5; dy++) for (let dx = -1; dx < 5; dx++) { const borda = dx < 0 || dy < 0 || dx > 3 || dy > 3; if (borda && !((dx < 0 || dx > 3) && (dy < 0 || dy > 3))) pinta(ex + dx, ey + dy, mixC(COSTA, [10, 8, 20], 0.5)); }
+      for (let dy = 0; dy < 4; dy++) for (let dx = 0; dx < 4; dx++) { if ((dx === 0 || dx === 3) && (dy === 0 || dy === 3)) continue; pinta(ex + dx, ey + dy, dy < 2 ? claroC(OURO, 0.25) : OURO, 1); }
+      for (let dy = 0; dy < 4; dy++) pinta(ex + 2, ey + dy, [18, 12, 30], 1);
+      pinta(ex + 1, ey + 1, NUC, 1);
+      for (let dx = -1; dx < 5; dx++) pinta(ex + dx, ey - 2 - (dx > 2 ? 1 : 0), dx % 2 ? RAIO : NUC, 1); }
+    // --- a boca larga (lábio claro, dentinhos)
+    const xm = x1, ym = Math.round(yAt(xm, 0.62));
+    for (let k = 0; k < 11; k++) { const x = xm - k, y = ym + (k > 7 ? 1 : 0); pinta(x, y, [18, 12, 34]); pinta(x, y - 1, mixC(FLANCO, BARRIGA, 0.45)); if (k === 1 || k === 3 || k === 5) pinta(x, y + 1, NUC); }
+    // --- os bigodes: dois compridos (um sobe e enrola, o outro desce), em zigue-zague como raio, e três curtinhos no queixo
+    const bigs = new Set();
+    const bigode = (pts) => {
+      let tot = 0; for (let k = 0; k < pts.length - 1; k++) tot += Math.hypot(pts[k + 1][0] - pts[k][0], pts[k + 1][1] - pts[k][1]);
+      let ac = 0;
+      for (let k = 0; k < pts.length - 1; k++) {
+        const [xa, ya] = pts[k], [xb, yb] = pts[k + 1], L = Math.hypot(xb - xa, yb - ya);
+        reta(xa, ya, xb, yb, (x, y, t) => { const f = (ac + L * t) / tot, c = mixC(OURO, NUC, f * 0.7); if (!ehCorpo(x, y)) { put(x, y, c, 2, 0.012, true); bigs.add(y * W + x); } if (f < 0.4 && !ehCorpo(x, y + 1) && den(x, y + 1)) { put(x, y + 1, mulC(OURO, 0.8), 2, 0.012, true); bigs.add((y + 1) * W + x); } });
+        ac += L;
+      }
+    };
+    bigode([[xm - 7, ym - 1], [xm - 2, ym - 3], [xm + 3, ym - 4], [xm + 7, ym - 7], [xm + 9, ym - 11], [xm + 8, ym - 15], [xm + 5, ym - 18], [xm + 1, ym - 19], [xm - 2, ym - 21]]);
+    bigode([[xm - 6, ym + 1], [xm - 1, ym + 3], [xm + 4, ym + 4], [xm + 8, ym + 7], [xm + 10, ym + 11], [xm + 9, ym + 15], [xm + 6, ym + 18], [xm + 2, ym + 19]]);
+    for (const [u, L] of [[0.475, 6], [0.445, 7], [0.415, 5]]) { const x = colX(u), yb = Math.round(base[x]); for (let k = 0; k < L; k++) { const xx = x + Math.round(k * 0.35), c = k >= L - 2 ? OURO : mulC(OURO, 0.72); if (!tem(xx, yb + k)) { put(xx, yb + k, c, 2, 0.01, k >= L - 2); bigs.add((yb + k) * W + xx); } } }
+    // --- os raios nos lobos do rabo
+    for (const sg of [-1, 1]) {
+      const pts = []; let k = 0;
+      for (const L of lobo) { if (L.s < 0.1 || (sg > 0 && L.inf < 0)) continue; if (k++ % 3) continue; const out = sg < 0 ? L.sup : L.inf; pts.push([L.x, Math.round(ycT + sg * (L.inn + (out - L.inn) * 0.5) + ((pts.length % 2) ? 1.2 : -1.2))]); }
+      for (let q = 0; q < pts.length - 1; q++) reta(pts[q][0], pts[q][1], pts[q + 1][0], pts[q + 1][1], (x, y) => { if (tem(x, y) && tipo[y * W + x] === 2) { cor[y * W + x] = q < 1 ? RAIO : NUC; luz[y * W + x] = 1; } });
+    }
+    // --- a borda das nadadeiras estalando (um pixel aceso, outro não)
+    { const borda = [];
+      for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) { const k = y * W + x; if (tipo[k] !== 2 || luz[k] || bigs.has(k)) continue; let fora = false; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!tem(x + dx, y + dy)) fora = true; if (fora) borda.push(k); }
+      for (const k of borda) { const x = k % W, y = (k / W) | 0; if ((x + y) % 2 === 0) { cor[k] = mixC(NAD, RAIO, 0.8); luz[k] = 1; } else cor[k] = mixC(NAD, RAIO, 0.4); } }
+    // --- o contorno (escuro; perto do que brilha, puxa para o azul)
+    const fora = [];
+    for (let y = 0; y < Hh; y++) for (let x = 0; x < W; x++) {
+      if (cor[y * W + x]) continue; let viz = null, e = 0, acesa = false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const xx = x + dx, yy = y + dy; if (!den(xx, yy)) continue; const k = yy * W + xx; if (cor[k] && tipo[k] !== 3 && !bigs.has(k)) { if (luz[k]) acesa = true; if (!viz || tipo[k] === 1) { viz = cor[k]; e = tipo[k] === 1 ? esp[k] * 0.8 : 0.012; } } }
+      if (viz) fora.push([y * W + x, acesa ? mixC(mulC(AZUL, 0.55), [10, 10, 30], 0.3) : mixC(mulC(viz, 0.3), [12, 10, 26], 0.4), e]);
+    }
+    for (const [k, c, e] of fora) { cor[k] = c; tipo[k] = 3; esp[k] = Math.max(0.01, e); }
+    const A = { w: W, h: Hh, cor, tipo, esp, luz, K, cx, cy, deCima: false };
+    cacheArte.set('bagre', A); return A;
+  }
+  // só o que acende, um pouco mais grosso (fica por fora do corpo) e mais claro
+  function arteBagreLuz() {
+    if (cacheArte.has('bagreLuz')) return cacheArte.get('bagreLuz');
+    const A = arteBagre(), n = A.cor.length, cor = new Array(n).fill(null), esp = new Float32Array(n);
+    for (let k = 0; k < n; k++) if (A.luz[k] && A.cor[k]) { cor[k] = claroC(A.cor[k], 0.12); esp[k] = A.esp[k] + 0.008; }
+    const L = Object.assign({}, A, { cor, esp }); cacheArte.set('bagreLuz', L); return L;
+  }
   // o DESENHO num canvas (guardado); silhueta = peixe ainda não pescado (só a sombra, sem detalhe)
   const cacheIcone = new Map();
   function iconePeixe(i, silhueta) {
@@ -882,7 +1160,7 @@
     const H_CADU_CHEGA = 6, H_CADU_SAI = 20, H_ABRE = 6, H_FECHA = 20, CAIXA_MAX = 30;
     const BALCAO = { x: CX + 0.85, z: CP.z1 + 0.62 }, QUADRO = { x: CX + QP.u, z: CP.z1 + 0.55 };
     const P = { cadu: null, caduRua: null, bene: null, mg: null, quadro: null, texQuadro: null, verQuadro: -1, persiana: null, isopor: null, balde: null,
-      cp: null, versao: 0, tAviso: 0, montado: false, fx: [], painel: null, css: false };
+      cp: null, versao: 0, tAviso: 0, montado: false, fx: [], raios: [], flash: 0, flashEl: null, cenaBene: null, painel: null, css: false };
 
     // ---------------------------------------------------------------- dados salvos
     function dadosP() {
@@ -1084,12 +1362,123 @@
     }
     function tickFx(dt) {
       for (let k = P.fx.length - 1; k >= 0; k--) {
-        const e = P.fx[k]; e.t += dt; const u = e.t / e.dur;
-        if (e.tipo === 'anel') { e.m.scale.setScalar(0.08 + e.tam * suave(u)); e.m.material.opacity = 0.8 * (1 - u); }
+        const e = P.fx[k]; e.t += dt; const u = Math.min(1, e.t / e.dur);
+        if (e.fn) e.fn(e, u, dt);
+        else if (e.tipo === 'anel') { e.m.scale.setScalar(0.08 + e.tam * suave(u)); e.m.material.opacity = 0.8 * (1 - u); }
         else { e.vy -= 9.8 * dt; e.m.position.x += e.vx * dt; e.m.position.y += e.vy * dt; e.m.position.z += e.vz * dt; if (e.m.position.y < Y_AGUA) e.t = e.dur; e.m.material.opacity = 0.95 * (1 - u * 0.6); }
         if (e.t >= e.dur) { if (e.m.parent) e.m.parent.remove(e.m); e.m.material.dispose(); P.fx.splice(k, 1); }
       }
     }
+
+    // ---------------------------------------------------------------- efeitos da tempestade: brilho, faíscas, vapor, anel colorido, RAIOS e o clarão
+    let texHalo = null;
+    function halo(cor, tam, op) {                                        // um brilho redondo (soma luz; não liga para a neblina)
+      if (!texHalo) {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 64; const g = cv.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.22, 'rgba(255,255,255,0.6)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.16)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 64, 64); texHalo = new THREE.CanvasTexture(cv);
+      }
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: texHalo, color: cor, transparent: true, opacity: op == null ? 0.8 : op, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+      s.scale.set(tam, tam, 1); s.renderOrder = 8; return s;
+    }
+    // o BAGRE-TROVÃO em 3D: a pixel art em bloquinhos (como os outros peixes), mais a malha do que acende (sem sombra) e um brilho em volta
+    let geoBagre = null, geoBagreLuz = null, matBagreLuz = null;
+    function malhaBagre(kg) {
+      if (!geoBagre) { geoBagre = geoDeArte(arteBagre()); geoBagreLuz = geoDeArte(arteBagreLuz()); matBagreLuz = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false }); }
+      const m = new THREE.Mesh(geoBagre, api.MAT), L = Math.cbrt(Math.max(1, kg) / K_FORMA.b); m.scale.setScalar(L); m.userData.L = L;
+      m.add(new THREE.Mesh(geoBagreLuz, matBagreLuz));
+      const h = halo(0x5fd8ff, 1.5, 0.3); m.add(h); m.userData.halo = h; m.userData.bagre = true;
+      return m;
+    }
+    function tirarMalha(o) { if (!o) return; if (o.parent) o.parent.remove(o); o.traverse((q) => { if (q.isSprite && q.material) q.material.dispose(); }); }
+    const geoCubo = new THREE.BoxGeometry(1, 1, 1);
+    function faiscas(x, y, z, n, forca, cor) {
+      for (let k = 0; k < n; k++) {
+        const m = new THREE.Mesh(geoCubo, new THREE.MeshBasicMaterial({ color: cor || (Math.random() < 0.55 ? 0xbff6ff : 0xfff3b0), transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+        const tam = 0.035 + Math.random() * 0.05, a = Math.random() * 6.28, v = (1.4 + Math.random() * 3) * (forca || 1);
+        m.scale.setScalar(tam); m.position.set(x, y, z); m.renderOrder = 9; grupo().add(m);
+        P.fx.push({ m, t: 0, dur: 0.3 + Math.random() * 0.45, vx: Math.cos(a) * v * 0.7, vy: (0.4 + Math.random() * 0.9) * v, vz: Math.sin(a) * v * 0.7, tam, fn: tickFaisca });
+      }
+    }
+    function tickFaisca(e, u, dt) { e.vy -= 7 * dt; e.m.position.x += e.vx * dt; e.m.position.y += e.vy * dt; e.m.position.z += e.vz * dt; e.m.scale.setScalar(e.tam * (1 - u * 0.75)); e.m.material.opacity = u > 0.5 ? 2 * (1 - u) : 1; }
+    function vapor(x, z, n) {                                            // fumacinha redonda subindo da água
+      for (let k = 0; k < n; k++) {
+        const m = halo(0xc8d4e2, 1, 0.3); m.material.blending = THREE.NormalBlending; const tam = 0.7 + Math.random() * 0.6;
+        m.scale.set(tam, tam, 1); m.position.set(x + rnd(-0.6, 0.6), Y_AGUA + 0.2, z + rnd(-0.6, 0.6)); m.renderOrder = 7; grupo().add(m);
+        P.fx.push({ m, t: 0, dur: 1.6 + Math.random() * 0.9, vy: 0.5 + Math.random() * 0.6, tam, fn: tickVapor });
+      }
+    }
+    function tickVapor(e, u, dt) { e.m.position.y += e.vy * dt; const k = e.tam * (1 + u * 1.6); e.m.scale.set(k, k, 1); e.m.material.opacity = 0.3 * (1 - u) * Math.min(1, u * 6); }
+    function anelCor(x, z, tam, cor, dur) {
+      if (!geoAnel) anel(0, -900, 0.1);
+      const m = new THREE.Mesh(geoAnel, new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+      m.position.set(x, Y_AGUA + 0.035, z); m.renderOrder = 7; m.scale.setScalar(0.1); grupo().add(m);
+      P.fx.push({ m, t: 0, dur: dur || 1.2, tam, fn: (e, u) => { e.m.scale.setScalar(0.1 + e.tam * suave(u)); e.m.material.opacity = 0.9 * (1 - u); } });
+    }
+    function brilhoEm(x, y, z, tam, dur, cor) {
+      const s = halo(cor || 0x9fe8ff, tam * 0.5, 0.9); s.position.set(x, y, z); grupo().add(s);
+      P.fx.push({ m: s, t: 0, dur: dur || 0.8, tam, fn: (e, u) => { const k = e.tam * (0.5 + 0.5 * suave(u * 2)); e.m.scale.set(k, k, 1); e.m.material.opacity = 0.9 * (1 - u); } });
+    }
+    // um RAIO: um caminho torto de a até b (com galhos). Cada pedaço é um núcleo quase branco e um brilho ciano por fora.
+    //   o = { desce (segundos até tocar: em câmera lenta na cena), esp, galhos, aoTocar, some (segundos apagando) }. Aparece de a para b.
+    const V_CIMA = new THREE.Vector3(0, 1, 0), V_DIR = new THREE.Vector3();
+    function criarRaio(a, b, o) {
+      o = o || {};
+      const g = new THREE.Group(), segs = [], esp = o.esp || 0.12;
+      const nucleo = new THREE.MeshBasicMaterial({ color: 0xf4fbff, transparent: true, opacity: 1, depthWrite: false, fog: false });
+      const brilho = new THREE.MeshBasicMaterial({ color: 0x6fdcff, transparent: true, opacity: 0.42, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+      const pedaco = (p, q, e, ord) => {
+        const dx = q.x - p.x, dy = q.y - p.y, dz = q.z - p.z, L = Math.hypot(dx, dy, dz) || 0.01; V_DIR.set(dx / L, dy / L, dz / L);
+        for (const [mat, k] of [[nucleo, 1], [brilho, 3.8]]) {
+          const ms = new THREE.Mesh(geoCubo, mat); ms.position.set((p.x + q.x) / 2, (p.y + q.y) / 2, (p.z + q.z) / 2); ms.quaternion.setFromUnitVectors(V_CIMA, V_DIR);
+          ms.scale.set(e * k, L + e * k * 0.4, e * k); ms.renderOrder = 9; ms.visible = false; ms.frustumCulled = false; g.add(ms); segs.push({ m: ms, ord });
+        }
+      };
+      const caminho = (p, q, n, desvio, e, ord0, ordL, galhos) => {
+        let ant = p; const pts = [p];
+        for (let k = 1; k <= n; k++) {
+          const u = k / n, j = k === n ? 0 : desvio * (1 - u * 0.35);
+          const c = { x: lerpN(p.x, q.x, u) + (Math.random() - 0.5) * 2 * j, y: lerpN(p.y, q.y, u) + (k === n ? 0 : (Math.random() - 0.5) * j * 0.5), z: lerpN(p.z, q.z, u) + (Math.random() - 0.5) * 2 * j };
+          pedaco(ant, c, e, ord0 + u * ordL); pts.push(c); ant = c;
+        }
+        for (let k = 0; k < (galhos || 0); k++) {
+          const i = 1 + Math.floor(Math.random() * Math.max(1, n - 3)), s = pts[i], L = Math.hypot(q.x - p.x, q.y - p.y, q.z - p.z) * (0.12 + Math.random() * 0.18), ang = Math.random() * 6.28, sy = Math.sign(q.y - p.y) || -1;
+          caminho(s, { x: s.x + Math.cos(ang) * L * 0.7, y: s.y + sy * L * 0.7, z: s.z + Math.sin(ang) * L * 0.7 }, 4, L * 0.18, e * 0.5, ord0 + i / n * ordL, ordL * 0.3, 0);
+        }
+      };
+      const L = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z), n = Math.max(4, Math.min(22, Math.round(L / 1.6)));
+      caminho(a, b, n, o.desvio != null ? o.desvio : Math.min(2.2, L * 0.07), esp, 0, 1, o.galhos == null ? 3 : o.galhos);
+      grupo().add(g);
+      const R = { g, segs, nucleo, brilho, t: 0, desce: o.desce || 0.1, some: o.some || 0.5, aoTocar: o.aoTocar, tocou: false, b };
+      P.raios.push(R); return R;
+    }
+    function tickRaios(dt) {
+      for (let k = P.raios.length - 1; k >= 0; k--) {
+        const R = P.raios[k]; R.t += dt; const frente = R.t / R.desce;
+        for (const s of R.segs) s.m.visible = s.ord <= frente;
+        if (frente >= 1 && !R.tocou) { R.tocou = true; if (R.aoTocar) try { R.aoTocar(R); } catch (e) { console.error(e); } }
+        if (frente >= 1) {
+          const tf = R.t - R.desce, op = tf < 0.08 ? 1 : tf < 0.13 ? 0.12 : tf < 0.24 ? 1 : tf < 0.29 ? 0.2 : tf < 0.4 ? 0.9 : Math.max(0, 0.9 - (tf - 0.4) / R.some);
+          R.nucleo.opacity = op; R.brilho.opacity = op * 0.45;
+          if (tf > 0.4 + R.some) { if (R.g.parent) R.g.parent.remove(R.g); R.nucleo.dispose(); R.brilho.dispose(); P.raios.splice(k, 1); }
+        }
+      }
+    }
+    // o CLARÃO: a tela clareia (por cima de tudo, sem pegar o toque) e a cidade também (a luz do relâmpago do clima)
+    function relampago(k) {
+      P.flash = Math.max(P.flash || 0, k);
+      try { const C = S().clima; if (C) C.flash = Math.max(C.flash || 0, k * 1.2); } catch (e) { /* sem clima */ }
+      if (!P.flashEl) { const el = document.createElement('div'); el.id = 'pcFlash'; el.style.cssText = 'position:fixed;inset:0;z-index:12;pointer-events:none;background:#eaf6ff;opacity:0'; (document.getElementById('raizJogo') || document.body).appendChild(el); P.flashEl = el; }
+    }
+    function tickFlash(dt) {
+      if (!P.flashEl) return;
+      P.flash = Math.max(0, (P.flash || 0) - dt * 3); P.flashEl.style.opacity = String(Math.min(0.88, P.flash * 0.8));
+      if (P.flash <= 0) { P.flashEl.remove(); P.flashEl = null; }
+    }
+    // animações por quadro para as cenas: fn(t, dt) devolve true quando acabou
+    const anims = [];
+    function animar(fn) { return new Promise((ok) => anims.push({ fn, ok, t: 0 })); }
+    function tickAnims(dt) { for (let k = anims.length - 1; k >= 0; k--) { const a = anims[k]; a.t += dt; let fim = true; try { fim = a.fn(a.t, dt); } catch (e) { console.error(e); } if (fim) { anims.splice(k, 1); a.ok(); } } }
 
     // ---------------------------------------------------------------- a casinha: persiana (fechada à noite) e o QUADRO do catálogo
     function criarPersiana() {
@@ -1217,6 +1606,7 @@
       else if (!ab && !A.oculto) api.sumirV(A);
       if (P.persiana) P.persiana.visible = !aberta();
       if (A.oculto || A.m.longe) return;
+      if (P.cenaBene) { const C = P.cenaBene; A.x = C.bx; A.z = C.bz; A.yawAlvo = C.byaw; A.andando = !!C.anda; return; }
       A.x = BALCAO.x; A.z = CP.z1 - 0.8;
       const J = s.jog, dj = Math.hypot(J.x - A.x, J.z - A.z), m = A.m, t = s.t;
       if (dj < 7 || A.conversando) { const ang = Math.atan2(-(J.z - A.z), J.x - A.x); A.yawAlvo = -Math.PI / 2 + clampN(((ang + Math.PI / 2 + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI, -0.7, 0.7); }
@@ -1335,7 +1725,8 @@
           await api.fala('bene', tr('E naquele quadro da parede eu anoto cada peixe que aparece. São sessenta tipos, acredita?'));
           if (!temVara()) await api.fala('bene', tr('Tá sem vara? O Cadu, filho do seu Raimundo do mercado, pesca aqui sábado e domingo. Ele sempre empresta uma. Ou compra aqui comigo, ué!'));
           p.conheceBene = true; gravar();
-        } else await api.fala('bene', tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.'])));
+        } else if (!p.bagre || p.bagre.fim) await api.fala('bene', tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.'])));
+        if (p.bagre && !p.bagre.fim) { await cenaBagreBene(); Dialogo.esconder(); return; }
         Dialogo.esconder();
         await abrirLoja();
       } finally { if (P.bene) P.bene.conversando = false; }
@@ -1693,6 +2084,7 @@
       tickMg(0.016); s.cam.snap = true;
       await api.preto(false, 350);
       await new Promise((ok) => { m.fim = ok; });
+      if (m.bagre) fimBagre(m); Rock.parar(true);
       await api.preto(true, 350);
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
       fecharPainel(); esconderBanner(); tirarVara(m.vara);
@@ -1828,6 +2220,7 @@
     }
     function tickEspera() {
       const m = P.mg, b = m.bite; let ativa = -1;
+      if (!m.bagre && m.t > 1.5 && !m.beliscando && bagreLivre()) { comecarBagre(); return; }
       for (let k = 0; k < b.bel.length; k++) if (m.t >= b.bel[k] && m.t < b.bel[k] + 0.4) ativa = k;
       if (ativa >= 0 && m.belAtiva !== ativa) { m.belAtiva = ativa; SOM.toc(); anel(m.boiaP.x, m.boiaP.z, 0.35); msgMg(tr('Beliscou...'), 0.9); vib(18); }
       m.beliscando = ativa >= 0 || (m.belAtiva >= 0 && m.t < b.bel[m.belAtiva] + 0.55);
@@ -1861,7 +2254,7 @@
       // vibração da briga: arrancada do peixe, linha esticando (cada vez mais forte e mais rápido), linha frouxa (dois toquinhos) e o molinete
       m.tVib = (m.tVib || 0) - dt;
       if (B.corre && !m.corriaAntes) {
-        if ((pe.f.t === 'p' || pe.f.t === 'l') && pe.r >= 2 && Math.random() < 0.4 && !m.pulo) m.pulo = { t: 0, m: null };
+        if (!m.pulo && (m.bagre ? Math.random() < 0.55 : (pe.f.t === 'p' || pe.f.t === 'l') && pe.r >= 2 && Math.random() < 0.4)) m.pulo = { t: 0, m: null };
         vib(70, true); m.tVib = 0.25;
       } else if (B.onde > 0) { if (m.tVib <= 0) { m.tVib = lerpN(0.32, 0.1, clampN(B.estica, 0, 1)); vib(Math.round(22 + 34 * clampN(B.estica, 0, 1))); } }
       else if (B.onde < 0 && B.frouxo > 0.2) { if (m.tVib <= 0) { m.tVib = 0.7; vib([12, 60, 12]); } }
@@ -1871,7 +2264,13 @@
         m.proxChoque -= dt;
         if (m.proxChoque <= 0) { m.proxChoque = rnd(5, 9); B.tensao = Math.min(0.97, B.tensao + 0.22); SOM.choque(); msgMg(tr('Levou um choque!'), 1.4); m.choque = 0.45; m.U.choque.style.opacity = '0.55'; vib([60, 40, 60], true); }
       }
+      if (m.bagre) tickBrigaBagre(dt);
       if (m.choque > 0) { m.choque -= dt; if (m.choque <= 0) m.U.choque.style.opacity = '0'; }
+      if (m.bagre && r) {
+        if (r === 'pegou') cenaPegouBagre();
+        else { if (r !== 'soltou') { SOM.arrebenta(); vib(300, true); } else vib([40, 40, 40], true); bagreEscapou(tr(r === 'arrebentou' ? 'A linha arrebentou!' : r === 'soltou' ? 'O peixe se soltou do anzol...' : 'Acabou a linha! O peixe levou tudo.'), r !== 'soltou'); }
+        return;
+      }
       if (r === 'pegou') cenaPegou();
       else if (r === 'arrebentou') { SOM.arrebenta(); vib(300, true); escapou(tr('A linha arrebentou!'), true); }
       else if (r === 'soltou') { vib([40, 40, 40], true); escapou(tr('O peixe se soltou do anzol...')); }
@@ -1883,7 +2282,7 @@
       if (m.comCadu && P.cadu && !P.cadu.oculto && Math.random() < 0.6) setTimeout(() => { if (P.mg && P.mg.comCadu) msgMg(tr('Cadu') + ': ' + (arrebentou ? tr('Arrebentou? Solta a linha quando ele correr!') : tr('Ih, escapou! Faz parte.')), 2.6); }, 1500);
     }
     function recolher() { const m = P.mg; m.de = m.boiaP ? { x: m.boiaP.x, y: m.boiaP.y || Y_AGUA, z: m.boiaP.z } : mundo(m.vara.ponta); m.e = 'recolhe'; m.t = 0; m.bite = null; }
-    function tirarPulo(m) { if (m.pulo && m.pulo.m && m.pulo.m.parent) m.pulo.m.parent.remove(m.pulo.m); m.pulo = null; }
+    function tirarPulo(m) { if (m.pulo && m.pulo.m) tirarMalha(m.pulo.m); m.pulo = null; }
 
     // ---- (6.6.0) a cena do LANÇAMENTO PERFEITO: o mesmo lançamento visto de 4 câmeras (em câmera lenta), a isca caindo no miolo do poço
     //   e a mensagem. A linha do tempo: tau < 0 = o jogador armando, 0–T_SWING = o balanço da vara, depois o voo (dur) e a água.
@@ -2101,10 +2500,301 @@
       msgMg(trf('Guardado na caixa ({0}/{1})', p.caixa.length, CAIXA_MAX), 2);
     }
 
+    // ---- o BAGRE-TROVÃO: pescando à MEIA-NOITE (0h–1h) num dia de CHUVA, um raio cai na água e algo puxa a isca. A briga é de lendário,
+    //   mais comprida (o bicho não sai da água descansado), com rock, raios caindo no lago, choque na linha e saltos cheios de faíscas.
+    //   Não entra no catálogo nem na caixa: fica guardado (pesca.bagre = { dia, kg }) para mostrar ao seu Bené no outro dia.
+    //   Perdeu: silêncio... e o jogador solta o que ficou entalado. O relógio para durante o evento (a briga não atravessa as 2h).
+    const bagreLivre = () => { const p = dadosP(); return !p.bagre && p.bagreNoite !== S().dados.dia && hora() < 1 && api.chuva(); };   // uma vez por noite
+    function segurarTempestade() { const C = S().clima; if (!C) return; C.estado = 'chuva'; C.t = Math.min(C.t || 0, 1); C.dur = Math.max(C.dur || 0, 600); C.trov = 999; }
+    function soltarTempestade() { const C = S().clima; if (!C) return; C.t = 0; C.dur = 50 + Math.random() * 40; C.trov = 6 + Math.random() * 8; }
+    function comecarBagre() {
+      const m = P.mg, p = dadosP(), isca = m.bite ? m.bite.isca : p.isca, ib = Math.max(0, PEIXES.findIndex((q) => q.id === 'pirarucu'));
+      const d = dificuldade(ib, 2, p.vara, isca);
+      d.folego *= 3; d.zona = clampN(d.zona * 1.38, 0.14, 0.5); d.tremor *= 1.1;   // (simulado: a chance é a de um lendário, mas a briga dura uns 2× mais)
+      p.iscas[isca] = Math.max(0, nIsca(isca) - 1); p.bagreNoite = S().dados.dia; gravar(); m.comida = true;
+      m.bite = { i: ib, kg: Math.round(rnd(150, 185) * 10) / 10, classe: 2, d, W: 0, bel: [], isca, nota: m.nota, bagre: true };
+      const bp = m.boiaP, a = Math.atan2(-(bp.z - m.oz), bp.x - m.ox), dd = dirDe(a);
+      let ix = bp.x + dd.x * 3.2, iz = bp.z + dd.z * 3.2; if (!naAgua(ix, iz)) { ix = bp.x + dd.x * 1.4; iz = bp.z + dd.z * 1.4; }
+      m.bagre = { e: 'raio', imp: { x: ix, z: iz }, lado: Math.random() < 0.5 ? -1 : 1, fase: 0, tBolha: 0 };
+      m.e = 'raio'; m.t = 0; m.ocupado = true; m.segura = false; m.beliscando = false; m.camB = null;
+      m.U.el.classList.add('cine'); m.U.plano.textContent = ''; m.U.pular.textContent = '';
+      segurarTempestade(); SOM.trovaoLonge(0.1);
+    }
+    function impactoRaio() {
+      const m = P.mg; if (!m || !m.bagre) return; const I = m.bagre.imp; m.bagre.tocou = true;
+      relampago(1.4); SOM.trovaoPerto(); SOM.estalos(); vib([200, 60, 120], true);
+      respingo(I.x, I.z, 18, 1.3); anel(I.x, I.z, 2.6, 1); anelCor(I.x, I.z, 3.6, 0x8ff0ff, 1.5); anelCor(I.x, I.z, 1.8, 0xffffff, 0.7);
+      faiscas(I.x, Y_AGUA + 0.1, I.z, 34, 1.7); vapor(I.x, I.z, 12); brilhoEm(I.x, Y_AGUA + 0.4, I.z, 8, 1.1, 0x9fe8ff);
+    }
+    // a cena do raio: o céu, o raio caindo (câmera lenta, a câmera desce junto), a água fervendo, algo nadando até a boia, o puxão e o "eita"
+    function tickCenaRaio(dt) {
+      const m = P.mg, G = m.bagre, t = m.t, I = G.imp, bp = m.boiaP;
+      segurarTempestade();
+      if (t > 0.35 && !G.f1) { G.f1 = true; relampago(0.35); }
+      if (t > 0.85 && !G.f2) { G.f2 = true; relampago(0.25); SOM.trovaoLonge(0.3); }
+      if (t >= 1.4 && !G.raio) G.raio = criarRaio({ x: I.x + rnd(-3, 3), y: 34, z: I.z + rnd(-3, 3) }, { x: I.x, y: Y_AGUA, z: I.z }, { desce: 1.15, esp: 0.2, galhos: 7, some: 0.7, aoTocar: impactoRaio });
+      if (G.tocou && t < 4.6) { G.tBolha -= dt; if (G.tBolha <= 0) { G.tBolha = 0.14; anel(I.x + rnd(-0.8, 0.8), I.z + rnd(-0.8, 0.8), 0.35, 0); if (Math.random() < 0.35) faiscas(I.x + rnd(-0.5, 0.5), Y_AGUA + 0.05, I.z + rnd(-0.5, 0.5), 3, 0.6); if (Math.random() < 0.25) vapor(I.x, I.z, 1); } }
+      if (t >= 3.1 && t < 4.5) {                                          // a sombra acesa nadando do raio até a boia
+        if (!G.sombra) { G.sombra = halo(0x5fd8ff, 2.4, 0.55); grupo().add(G.sombra); }
+        const u = suave((t - 3.1) / 1.25); G.sombra.position.set(lerpN(I.x, bp.x, u), Y_AGUA + 0.03, lerpN(I.z, bp.z, u)); G.sombra.material.opacity = 0.45 + 0.2 * Math.sin(t * 30);
+        if (Math.random() < dt * 9) anel(G.sombra.position.x, G.sombra.position.z, 0.5, 0.2);
+      }
+      if (t >= 4.5 && !G.puxou) {
+        G.puxou = true; if (G.sombra) { tirarMalha(G.sombra); G.sombra = null; }
+        respingo(bp.x, bp.z, 14, 0.9); anelCor(bp.x, bp.z, 1.8, 0x8ff0ff, 1); faiscas(bp.x, Y_AGUA + 0.1, bp.z, 16, 1.1); SOM.agua(); SOM.ploc(); SOM.zap(); vib([120, 40, 200], true);
+        m.peixeP = { x: bp.x, z: bp.z };
+      }
+      if (t >= 5.4 && !G.eita) { G.eita = true; relampago(0.55); SOM.trovaoLonge(0.4); dizerEita(m); }
+      m.camB = camRaio(m, t);
+    }
+    function camRaio(m, t) {
+      const J = S().jog, G = m.bagre, I = G.imp, bp = m.boiaP, yJ = J.y || m.y, a = Math.atan2(-(I.z - m.oz), I.x - m.ox), d = dirDe(a), lado = { x: -d.z * G.lado, z: d.x * G.lado };
+      if (t < 1.4) { const k = t / 1.4; return { px: J.x - d.x * (3.4 - k * 0.8) + lado.x * 1.3, py: yJ + 1.25, pz: J.z - d.z * (3.4 - k * 0.8) + lado.z * 1.3, tx: I.x, ty: 2.2 + k * 2.2, tz: I.z }; }
+      if (t < 2.8) { const k = clampN((t - 1.4) / 1.15, 0, 1), ty = Math.max(1.0, lerpN(26, Y_AGUA, k * k)); return { px: I.x + lado.x * 10 - d.x * 3, py: 1.3, pz: I.z + lado.z * 10 - d.z * 3, tx: I.x, ty, tz: I.z }; }
+      if (t < 4.4) { const mx = (I.x + bp.x) / 2, mz = (I.z + bp.z) / 2; return { px: mx + lado.x * 4.2 - d.x * 1.5, py: 1.0, pz: mz + lado.z * 4.2 - d.z * 1.5, tx: mx, ty: 0.15, tz: mz }; }
+      if (t < 5.4) return { px: bp.x - d.x * 2.0 + lado.x * 1.1, py: 0.75, pz: bp.z - d.z * 2.0 + lado.z * 1.1, tx: bp.x, ty: 0.05, tz: bp.z };
+      const f = dirDe(J.yaw); return { px: J.x + f.x * 1.75 + lado.x * 0.45, py: yJ + 1.55, pz: J.z + f.z * 1.75 + lado.z * 0.45, tx: J.x, ty: yJ + 1.42, tz: J.z };
+    }
+    async function dizerEita(m) {
+      try { await api.fala('jog', tr('Eita...')); await api.fala('jog', tr('Eita, eita, EITA! Tem alguma coisa ENORME aqui!')); Dialogo.esconder(); } catch (e) { console.error(e); }
+      if (P.mg === m && m.bagre) comecarBrigaBagre();
+    }
+    function comecarBrigaBagre() {
+      const m = P.mg, G = m.bagre, p = dadosP(), b = m.bite;
+      m.U.el.classList.remove('cine'); m.ocupado = false; m.camB = null; S().cam.snap = true;
+      m.B = novaBriga(Math.hypot(m.boiaP.x - m.ox, m.boiaP.z - m.oz), b.d, p.vara); m.B.firmeza = clampN(m.B.firmeza + 0.05, 0.3, 0.98);
+      m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
+      m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(6, 9); m.corriaAntes = false; m.tVib = 0;
+      G.e = 'briga'; G.fase = 1; G.tRaio = rnd(3, 5); G.tFaisca = 0;
+      Rock.tocar(); msgMg(tr('Algo ENORME fisgou a isca!'), 2.6);
+    }
+    // um raio caindo no lago (longe, ou perto nas fases mais bravas)
+    function raioPerto(m, perto) {
+      const d = dirDe(m.yaw0 + rnd(-1.1, 1.1)), dist = perto ? rnd(9, 16) : rnd(22, 45), x = m.ox + d.x * dist, z = m.oz + d.z * dist, agua = naAgua(x, z);
+      criarRaio({ x: x + rnd(-5, 5), y: 42, z: z + rnd(-5, 5) }, { x, y: agua ? Y_AGUA : superficie(x, z), z }, { desce: 0.12, esp: perto ? 0.15 : 0.22, galhos: 3, aoTocar: () => {
+        relampago(perto ? 0.9 : 0.5); if (perto) SOM.trovaoPerto(); else SOM.trovaoLonge(dist / 70);
+        if (agua) { respingo(x, z, perto ? 10 : 4, 0.8); anelCor(x, z, 2.6, 0x8ff0ff, 1.2); if (perto) faiscas(x, Y_AGUA + 0.1, z, 14, 1.2); }
+      } });
+    }
+    // os extras da briga com o bagre (depois do passoBriga de cada quadro)
+    function tickBrigaBagre(dt) {
+      const m = P.mg, B = m.B, G = m.bagre, f = B.folego / B.folego0;
+      segurarTempestade();
+      if (!B.corre && B.dist < 4.5 && f > 0.25) {                        // chegou perto ainda descansado: dispara de novo
+        B.corre = true; B.tFase = 1.4 + Math.random() * 0.9; B.ladoAlvo = (Math.random() < 0.5 ? -1 : 1) * (0.35 + Math.random() * 0.3);
+        msgMg(tr('Ele não quer sair da água!'), 1.8);
+      }
+      const fase = f > 0.66 ? 1 : f > 0.33 ? 2 : 3;
+      if (fase > G.fase) {
+        G.fase = fase; Rock.nivel(fase); raioPerto(m, true); vib([80, 40, 80], true);
+        msgMg(tr(fase === 2 ? 'A tempestade ficou mais forte!' : 'Ele está cansando! Segura firme!'), 2.6);
+      }
+      G.tRaio -= dt; if (G.tRaio <= 0) { G.tRaio = [0, rnd(5, 8), rnd(3.5, 5.5), rnd(2.2, 3.6)][G.fase]; raioPerto(m, G.fase >= 2 && Math.random() < 0.5); }
+      if (G.fase >= 2) {                                                  // choque na linha
+        m.proxChoque -= dt;
+        if (m.proxChoque <= 0) {
+          m.proxChoque = rnd(5, 8) - G.fase * 0.8; B.tensao = Math.min(0.97, B.tensao + 0.14); SOM.choque(); SOM.zap(); msgMg(tr('Choque na linha!'), 1.3);
+          m.choque = 0.4; m.U.choque.style.opacity = '0.5'; vib([60, 40, 60], true);
+          const tip = mundo(m.vara.ponta); faiscas(tip.x, tip.y, tip.z, 10, 0.6); faiscas(m.peixeP.x, Y_AGUA + 0.1, m.peixeP.z, 12, 0.9);
+        }
+      }
+      G.tFaisca -= dt;
+      if (G.tFaisca <= 0) { G.tFaisca = B.corre ? 0.12 : 0.4; faiscas(m.peixeP.x + rnd(-0.3, 0.3), Y_AGUA + 0.05, m.peixeP.z + rnd(-0.3, 0.3), B.corre ? 4 : 2, 0.6); if (B.corre) anelCor(m.peixeP.x, m.peixeP.z, 0.9, 0x5fd8ff, 0.6); }
+      if (m.pulo && m.pulo.m && !m.pulo.fx) {                             // o salto: clarão, faíscas e raiozinhos do corpo para a água
+        m.pulo.fx = true; relampago(0.45); SOM.zap(); SOM.estalos();
+        for (let k = 0; k < 3; k++) { const o = m.peixeP, a = Math.random() * 6.28, r = rnd(0.8, 1.8); criarRaio({ x: o.x, y: 1.1, z: o.z }, { x: o.x + Math.cos(a) * r, y: Y_AGUA, z: o.z + Math.sin(a) * r }, { desce: 0.03, esp: 0.04, galhos: 0, some: 0.25, desvio: 0.25 }); }
+      }
+    }
+    // o brilho do bicho embaixo d'água (na briga, e fugindo quando escapa)
+    function tickLuzBagre(m, dt) {
+      const G = m.bagre; if (!G) return;
+      const onde = G.foge ? G.foge : (m.e === 'briga' || m.e === 'fisgou') && m.peixeP ? m.peixeP : null;
+      if (!onde) { if (G.luz) { tirarMalha(G.luz); G.luz = null; } return; }
+      if (!G.luz) { G.luz = halo(0x5fd8ff, 2.4, 0.5); grupo().add(G.luz); }
+      if (G.foge) { const F = G.foge; F.t += dt; F.x += F.vx * dt; F.z += F.vz * dt; if (F.t > 2.6) { tirarMalha(G.luz); G.luz = null; G.foge = null; return; } }
+      const t = S().t, fade = G.foge ? 1 - G.foge.t / 2.6 : 1, k = 2.2 + Math.sin(t * 7) * 0.3 + (m.B && m.B.corre ? 0.6 : 0);
+      G.luz.position.set(onde.x, Y_AGUA + 0.03, onde.z); G.luz.scale.set(k, k, 1); G.luz.material.opacity = (0.38 + 0.14 * Math.sin(t * 23)) * fade;
+    }
+    function fimBagre(m) {
+      const G = m.bagre; if (G) { if (G.luz) tirarMalha(G.luz); if (G.sombra) tirarMalha(G.sombra); }
+      m.bagre = null; m.camB = null; m.camRosto = false; m.U.el.classList.remove('cine'); soltarTempestade();
+    }
+    // perdeu: a música corta, o brilho foge pelo lago... silêncio... e o desabafo
+    async function bagreEscapou(txt, arrebentou) {
+      const m = P.mg, G = m.bagre, onde = m.peixeP || m.boiaP;
+      Rock.parar(true);
+      m.e = 'perdeu'; m.t = 0; m.ocupado = true; m.segura = false; m.de = { x: onde.x, y: Y_AGUA + 0.02, z: onde.z }; m.arrebentou = !!arrebentou; m.B = null; tirarPulo(m);
+      msgMg(txt, 2.4);
+      const d = dirDe(Math.atan2(-(onde.z - m.oz), onde.x - m.ox)); G.e = 'perdeu'; G.foge = { x: onde.x, z: onde.z, vx: d.x * 4, vz: d.z * 4, t: 0 };
+      setTimeout(() => { if (P.mg === m) criarRaio({ x: onde.x + d.x * 30 + rnd(-6, 6), y: 44, z: onde.z + d.z * 30 + rnd(-6, 6) }, { x: onde.x + d.x * 22, y: Y_AGUA, z: onde.z + d.z * 22 }, { desce: 0.1, esp: 0.2, galhos: 2, aoTocar: () => { relampago(0.45); SOM.trovaoLonge(0.5); } }); }, 900);
+      await api.esperar(1600); if (P.mg !== m) return;
+      m.camRosto = true; S().cam.snap = true;
+      await api.esperar(2400); if (P.mg !== m) return;
+      try { await api.fala('jog', '...'); await api.fala('jog', tr('Mas que PORRA foi essa?!')); Dialogo.esconder(); } catch (e) { console.error(e); }
+      if (P.mg !== m) return;
+      fimBagre(m); m.ocupado = false; S().cam.snap = true; recolher();
+    }
+    // pegou: o bicho sai da água no meio de um clarão, o jogador mostra (não sabe o que é) e guarda para levar ao seu Bené
+    async function cenaPegouBagre() {
+      const m = P.mg, b = m.bite, p = dadosP(), s = S(), J = s.jog;
+      m.e = 'pegou'; m.t = 0; m.ocupado = true; m.segura = false; m.B = null; tirarPulo(m); m.bagre.e = 'pegou';
+      Rock.final();
+      const peixe = malhaBagre(b.kg); grupo().add(peixe);
+      m.voa = { m: peixe, de: { x: m.peixeP.x, y: Y_AGUA, z: m.peixeP.z }, t: 0 };
+      respingo(m.peixeP.x, m.peixeP.z, 18, 1.2); SOM.agua(); relampago(1.1); SOM.trovaoPerto(); faiscas(m.peixeP.x, Y_AGUA + 0.2, m.peixeP.z, 28, 1.4); if (naAgua(m.peixeP.x, m.peixeP.z)) { anelCor(m.peixeP.x, m.peixeP.z, 3, 0x8ff0ff, 1.3); vapor(m.peixeP.x, m.peixeP.z, 6); }
+      await api.esperar(720); if (P.mg !== m) return;
+      m.voa = null; if (peixe.parent) peixe.parent.remove(peixe);
+      const ab = poseTrofeu(peixe.userData.L), k = peixe.scale.x;
+      peixe.position.set(ab.x + 0.03, ab.y + 0.05 + 0.1 * k, 0); peixe.rotation.set(0, Math.PI / 2, 0); J.m.corpo.add(peixe);   // apoiado pela barriga (os bigodes e a nadadeira de baixo ficam pendurados)
+      m.trofeu = { m: peixe, grande: true, ab }; m.vara.raiz.visible = false;
+      SOM.lendario(); vib([60, 40, 60, 40, 220], true); bannerBagre(b.kg); relampago(0.6);
+      await api.esperar(1200);
+      try {
+        await api.fala('jog', tr('Que... que bicho é esse?!'));
+        await api.fala('jog', tr('Eu não faço ideia do que seja isso. Nem parece pertencer a esse lugar...'));
+        await api.fala('jog', tr('Amanhã eu vou perguntar pro seu Bené. Ele deve saber o que é.'));
+        Dialogo.esconder();
+      } catch (e) { console.error(e); }
+      p.bagre = { dia: s.dados.dia, kg: b.kg }; gravar();
+      const w = mundo(peixe); faiscas(w.x, w.y, w.z, 14, 0.8); SOM.zap();
+      await animar((t) => { peixe.scale.setScalar(k * Math.max(0.02, 1 - t / 0.45)); return t >= 0.45; });
+      esconderBanner(); tirarMalha(peixe); m.trofeu = null; m.vara.raiz.visible = true;
+      fimBagre(m); m.ocupado = false; gravar();
+      if (P.mg === m) { irPara('mira'); msgMg(tr('Você guardou o bicho misterioso para mostrar ao seu Bené.'), 3.4); }
+    }
+    function bannerBagre(kg) {
+      esconderBanner(); const el = document.createElement('div'); el.id = 'pcBanner'; el.style.borderColor = '#6fe0ff';
+      el.innerHTML = '<div class="pcL1"><span class="pcRar"></span> · <span class="pcNomeP"></span></div><div class="pcL2"></div>';
+      const q = (x) => el.querySelector(x); q('.pcRar').textContent = '???'; q('.pcRar').style.color = '#8ff0ff'; q('.pcNomeP').textContent = '???';
+      q('.pcL2').textContent = fmtKg(kg) + ' · ' + tr('Não consta no catálogo');
+      (document.getElementById('raizJogo') || document.body).appendChild(el); if (P.mg) P.mg.U.recado.style.visibility = 'hidden';
+    }
+    // ---- no outro dia, o bicho vai para o seu Bené: ele não sabe o que é, oferece 10.000 fakes e vai buscar o dinheiro... o bicho ACORDA,
+    //   levanta voo, dá uma volta sobre o lago, engole quem estava passando na trilha e some no céu num raio. Ninguém viu nada.
+    const BENE_FRENTE = () => ({ x: BALCAO.x, z: CP.z1 - 0.8 });
+    function camEm(px, py, pz, tx, ty, tz) { const s = S(); s.camCena = { px, py, pz, tx, ty, tz }; }
+    async function cenaBagreBene() {
+      const s = S(), p = dadosP(), A = P.bene, J = s.jog, zf = CP.z1;
+      const C = P.cenaBene = { bx: BALCAO.x, bz: zf - 0.8, byaw: -Math.PI / 2, anda: false, susto: 0 };
+      const fala = (q, txt) => api.fala(q, tr(txt));
+      let peixe = null, pessoa = null;
+      try { const ui = api.UI(); if (ui && ui.ctl) ui.ctl.hidden = true; } catch (e) { /* ok */ }
+      try {
+        J.andando = J.correndo = false; J.x = BALCAO.x - 1.55; J.z = zf + 1.3; J.yaw = J.yawAlvo = Math.atan2(-((zf - 0.2) - J.z), BALCAO.x - J.x);
+        const cam0 = () => camEm(BALCAO.x + 1.3, 2.5, zf + 4.4, BALCAO.x - 0.35, 0.95, zf + 0.5);
+        cam0(); s.cam.snap = true;
+        await fala('jog', 'Seu Bené! O senhor precisa ver o que eu pesquei ontem, à meia-noite, no meio da tempestade.');
+        await fala('bene', 'Pode mostrar! Põe aí no balcão.');
+        await fala('jog', 'No balcão não cabe, não...');
+        Dialogo.esconder(); await api.preto(true, 300);
+        peixe = malhaBagre(p.bagre.kg || 160); peixe.geometry.computeBoundingBox();
+        const bb = peixe.geometry.boundingBox, k = peixe.scale.x, F0 = { x: BALCAO.x + 0.35, z: zf + 1.25 }; F0.y = superficie(F0.x, F0.z) + bb.max.z * k + 0.01;
+        peixe.position.set(F0.x, F0.y, F0.z); peixe.rotation.set(-Math.PI / 2, 0, 0); grupo().add(peixe);
+        await api.preto(false, 300); SOM.pum();
+        await fala('bene', 'Mas o que é que é ISSO?!');
+        await fala('bene', 'Rapaz... faz trinta anos que eu pesco nesse lago e nunca vi um bicho desses.');
+        await fala('bene', 'Eu não faço a menor ideia do que seja. Nem sei se isso é peixe de verdade!');
+        await fala('bene', 'Olha esse brilho... Um bicho desses não tem preço. O valor disso deve ser inestimável!');
+        await fala('bene', 'Olha, eu te pago 10.000 fakes por ele. Espera aí que eu vou buscar o dinheiro lá no fundo.');
+        Dialogo.esconder();
+        // o Bené vai até o fundo da casinha (de costas)
+        C.anda = true; C.byaw = Math.PI / 2;
+        await animar((t) => { C.bz = lerpN(zf - 0.8, zf - 1.3, Math.min(1, t / 0.6)); C.bx = lerpN(BALCAO.x, BALCAO.x - 0.6, Math.min(1, t / 0.6)); if (t >= 0.6) C.anda = false; return t >= 0.9; });
+        // o bicho estremece: faíscas, o brilho acende
+        await animar((t) => { peixe.rotation.z = Math.sin(t * 40) * 0.05 * Math.min(1, t); peixe.position.y = F0.y + Math.abs(Math.sin(t * 22)) * 0.03; if (Math.random() < 0.18) { const w = mundo(peixe); faiscas(w.x + rnd(-0.8, 0.8), w.y + 0.2, w.z + rnd(-0.3, 0.3), 3, 0.5); } if (t > 0.3 && !C.z1) { C.z1 = true; SOM.zap(); } camEm(F0.x - 0.4, 1.45, F0.z + 2.1, F0.x + 0.2, F0.y + 0.1, F0.z); return t >= 1.1; });
+        peixe.rotation.z = 0; peixe.position.y = F0.y; cam0();
+        await fala('jog', 'Seu Bené... acho que ele se mexeu.');
+        Dialogo.esconder();
+        // quem estava passando pela trilha
+        pessoa = api.criarPessoa(s.f2, Math.random, Math.random() < 0.5, false); pessoa.tipo = 'cena'; pessoa.x = -37.4; pessoa.z = 49.5; listaNpcs().push(pessoa);
+        api.andar(pessoa, [[-39.19, 48.01], [-41.82, 46.82], [-45.06, 47.15], [-48.52, 47.15], [-52, 47.15], [-55.2, 45.24]], 1.3);
+        await voo(peixe, F0, pessoa, C);
+        tirarMalha(peixe); peixe = null;
+        if (pessoa) { api.descartarPessoa(pessoa); pessoa = null; }
+        // o silêncio
+        C.bx = BENE_FRENTE().x; C.bz = zf - 0.95; C.byaw = -Math.PI / 2; C.susto = 0; J.yaw = J.yawAlvo = Math.atan2(-(C.bz - J.z), C.bx - J.x);
+        camEm(BALCAO.x + 0.2, 1.75, zf + 3.3, BALCAO.x - 0.7, 1.4, zf + 0.2); s.cam.snap = true;
+        await api.esperar(1400);
+        await api.fala('jog', '...'); await api.fala('bene', '...');
+        await fala('jog', 'Pensando melhor... fica com o dinheiro e não fala pra ninguém que isso aconteceu...');
+        await fala('bene', 'Combinado. Eu não vi nada. E você também não viu nada.');
+        Dialogo.esconder();
+      } catch (e) { console.error(e); }
+      finally {
+        if (peixe) tirarMalha(peixe); if (pessoa) api.descartarPessoa(pessoa);
+        p.bagre.fim = true; p.bagre.visto = s.dados.dia; gravar();
+        P.cenaBene = null; s.camCena = null; s.cam.snap = true;
+      }
+    }
+    // o VOO: acorda e sobe (raiozinhos no chão), ruge, dá uma volta sobre o lago, mergulha em quem passava, engole, e sobe num raio
+    function voo(peixe, F0, pessoa, C) {
+      const s = S(), J = s.jog, zf = CP.z1, L = peixe.userData.L, centro = { x: BALCAO.x + 2.2, y: 4.6, z: zf + 8.2 }, R0 = 4.6;
+      let pos = { x: F0.x, y: F0.y, z: F0.z }, ant = { x: pos.x, y: pos.y, z: pos.z }, alvoCam = { x: pos.x, y: pos.y, z: pos.z }, ang0 = null, mergulho = null, engoliu = false, subiu = false, sumiu = false, raioOk = false;
+      const olhar = (q, de) => { const dx = q.x - de.x, dz = q.z - de.z; return Math.atan2(-dz, dx); };
+      return animar((t, dt) => {
+        if (t < 1.4) {                                                    // acorda e levanta, virando de pé
+          const u = suave(t / 1.4); pos = { x: F0.x, y: F0.y + u * 2.0, z: F0.z };
+          peixe.rotation.set(-Math.PI / 2 * (1 - u), Math.sin(t * 3) * 0.3 * u, Math.sin(t * 30) * 0.04 * (1 - u));
+          if (Math.random() < 0.3) criarRaio({ x: pos.x + rnd(-0.6, 0.6), y: pos.y, z: pos.z + rnd(-0.3, 0.3) }, { x: pos.x + rnd(-1.2, 1.2), y: superficie(pos.x, pos.z) + 0.02, z: pos.z + rnd(-0.6, 0.6) }, { desce: 0.02, esp: 0.035, galhos: 0, some: 0.18, desvio: 0.2 });
+          if (t > 0.1 && !C.a1) { C.a1 = true; relampago(0.7); SOM.trovaoPerto(); SOM.estalos(); C.susto = 1; C.byaw = -Math.PI / 2; }
+          if (t > 1.0 && !C.a2) { C.a2 = true; SOM.rugido(); faiscas(pos.x, pos.y, pos.z, 20, 1); }
+          camEm(BALCAO.x - 0.8, 1.4, zf + 5.6, pos.x, pos.y + 0.2, pos.z);
+        } else if (t < 4.9) {                                             // a volta sobre o lago
+          if (ang0 == null) ang0 = Math.atan2(pos.z - centro.z, pos.x - centro.x);
+          const u = (t - 1.4) / 3.5, a = ang0 + u * Math.PI * 2 * 0.92, rr = lerpN(Math.hypot(pos.x - centro.x, pos.z - centro.z), R0, Math.min(1, u * 3));
+          const alvo = { x: centro.x + Math.cos(a) * rr, y: centro.y + Math.sin(u * Math.PI * 2) * 0.8, z: centro.z + Math.sin(a) * rr };
+          pos = { x: lerpN(pos.x, alvo.x, Math.min(1, dt * 6)), y: lerpN(pos.y, alvo.y, Math.min(1, dt * 4)), z: lerpN(pos.z, alvo.z, Math.min(1, dt * 6)) };
+          camEm(BALCAO.x - 3.4, 1.7, zf + 1.4, lerpN(centro.x, pos.x, 0.35), lerpN(centro.y, pos.y, 0.35), lerpN(centro.z, pos.z, 0.35));   // de longe, a volta inteira no quadro
+          if (Math.random() < dt * 3) { const w = pos; faiscas(w.x, w.y, w.z, 4, 0.5); }
+        } else if (t < 6.2) {                                             // o mergulho em quem passava
+          if (!mergulho) {                                                 // a câmera de lado (perpendicular ao mergulho), do lado longe da casinha
+            mergulho = { de: { x: pos.x, y: pos.y, z: pos.z } }; pessoa.rota = null; pessoa.andando = false; SOM.rugido();
+            const hx = pessoa.x - pos.x, hz = pessoa.z - pos.z, hl = Math.hypot(hx, hz) || 1, ux = hx / hl, uz = hz / hl; let nx = -uz, nz = ux;
+            if ((pessoa.x + nx - CX) ** 2 + (pessoa.z + nz - CZ) ** 2 < (pessoa.x - nx - CX) ** 2 + (pessoa.z - nz - CZ) ** 2) { nx = -nx; nz = -nz; }
+            mergulho.cam = { px: pessoa.x + nx * 5.2 - ux * 1.5, py: 1.55, pz: pessoa.z + nz * 5.2 - uz * 1.5, tx: pessoa.x - ux * 1.3, ty: 1.7, tz: pessoa.z - uz * 1.3 };
+          }
+          pessoa.yawAlvo = olhar(pos, pessoa); C.susto = 1;
+          const u = clampN((t - 4.9) / 1.15, 0, 1), hx = pessoa.x - mergulho.de.x, hz = pessoa.z - mergulho.de.z, hl = Math.hypot(hx, hz) || 1, rec = L * 0.5 + 0.12;
+          const cab = { x: pessoa.x - hx / hl * rec, y: superficie(pessoa.x, pessoa.z) + 1.45, z: pessoa.z - hz / hl * rec };   // a BOCA para na cabeça (o corpo fica de fora)
+          pos = { x: lerpN(mergulho.de.x, cab.x, suave(u)), y: lerpN(mergulho.de.y, cab.y, 1 - (1 - u) * (1 - u)), z: lerpN(mergulho.de.z, cab.z, suave(u)) };
+          { const c = mergulho.cam; camEm(c.px, c.py, c.pz, c.tx, c.ty, c.tz); }
+        } else if (t < 7.1) {                                             // NHAC
+          if (!engoliu) { engoliu = true; SOM.nhac(); faiscas(pos.x, pos.y, pos.z, 26, 1.1); relampago(0.4); vib([80, 40, 140], true); if (pessoa.blob) pessoa.blob.visible = false; }
+          const u = clampN((t - 6.2) / 0.3, 0, 1), r = pessoa.m.raiz, fr = dirDe(peixe.rotation.y), boca = { x: pos.x + fr.x * L * 0.47, y: pos.y - 0.05 * L, z: pos.z + fr.z * L * 0.47 };
+          r.scale.setScalar(Math.max(0.01, 1 - u)); r.position.set(lerpN(pessoa.x, boca.x, u), lerpN(superficie(pessoa.x, pessoa.z), boca.y - 0.4 * (1 - u), u), lerpN(pessoa.z, boca.z, u));
+          if (u >= 1) r.visible = false;
+          peixe.scale.setScalar(L * (1 + Math.sin((t - 6.2) * 18) * 0.06 * (t < 6.8 ? 1 : 0)));
+          pos.y += dt * 0.6; { const c = mergulho.cam; camEm(c.px, c.py, c.pz, c.tx, c.ty, c.tz); }
+        } else if (t < 8.5) {                                             // sobe num raio e some
+          const u = t - 7.1; pos = { x: pos.x, y: pos.y + dt * (3 + u * u * 30), z: pos.z };
+          if (!subiu) { subiu = true; SOM.rugido(); }
+          if (u > 0.45 && !raioOk) { raioOk = true; criarRaio({ x: pos.x, y: pos.y, z: pos.z }, { x: pos.x + rnd(-3, 3), y: 70, z: pos.z + rnd(-3, 3) }, { desce: 0.08, esp: 0.3, galhos: 4, some: 0.8, aoTocar: () => { relampago(1.4); SOM.trovaoPerto(); } }); }
+          if (u > 0.6 && !sumiu) { sumiu = true; peixe.visible = false; }
+          if (Math.random() < 0.5 && !sumiu) faiscas(pos.x, pos.y - 0.5, pos.z, 2, 0.4);
+          { const c = mergulho.cam; camEm(c.px, c.py, c.pz, lerpN(c.tx, pos.x, 0.7), Math.min(pos.y, 16), lerpN(c.tz, pos.z, 0.7)); }
+        } else {
+          camEm(J.x - 0.6, 1.2, J.z + 3.0, J.x + 2.5, 9, J.z + 6);
+          if (t > 9.6) return true;
+        }
+        // o corpo segue a direção do movimento (de pé, a cabeça na frente)
+        if (t >= 1.4 && t < 7.1) { const vx = pos.x - ant.x, vz = pos.z - ant.z, vy = pos.y - ant.y, h = Math.hypot(vx, vz); if (h > 1e-4) peixe.rotation.set(0, Math.atan2(-vz, vx), clampN(Math.atan2(vy, h), -1.1, 1.1)); }
+        if (t >= 7.1) peixe.rotation.set(0, peixe.rotation.y, lerpN(peixe.rotation.z, 1.45, Math.min(1, dt * 6)));
+        peixe.position.set(pos.x, pos.y, pos.z); ant = { x: pos.x, y: pos.y, z: pos.z };
+        alvoCam = { x: lerpN(alvoCam.x, pos.x, Math.min(1, dt * 5)), y: lerpN(alvoCam.y, pos.y, Math.min(1, dt * 5)), z: lerpN(alvoCam.z, pos.z, Math.min(1, dt * 5)) };
+        J.yawAlvo = olhar(pos, J);
+        return false;
+      });
+    }
+    // as poses durante a cena (por cima das poses normais deste quadro): o susto do Bené e do jogador (braços para cima)
+    function poseCenaBene() {
+      const C = P.cenaBene; if (!C) return;
+      const t = S().t;
+      if (C.susto > 0) { for (const M of [P.bene && P.bene.m, S().jog.m]) { if (!M) continue; M.bracoE.rotation.z = M.bracoD.rotation.z = 2.7 + Math.sin(t * 9) * 0.12; usarCotovelo(M.bracoE, 0, 0.5); usarCotovelo(M.bracoD, 0, 0.5); } }
+    }
     // ---- a cada quadro do minigame
     function tickMg(dt) {
       const s = S(), m = P.mg, J = s.jog;
-      if (!m.pausa && m.e !== 'cine') api.tickHorario(dt);
+      if (!m.pausa && m.e !== 'cine' && !m.bagre) api.tickHorario(dt);
       m.t += dt; if (m.tRec > 0) { m.tRec -= dt; if (m.tRec <= 0) m.U.recado.textContent = ''; }
       if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -m.lim, m.lim);
       const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou';
@@ -2118,6 +2808,7 @@
         case 'swing': if (m.t >= T_SWING) { m.voo = { de: tip, t: 0, dur: durVoo(m) }; m.e = 'voo'; m.t = 0; } break;
         case 'voo': { const v = m.voo; v.t += dt; const u = clampN(v.t / v.dur, 0, 1); m.boiaP = { x: lerpN(v.de.x, m.alvo.x, u), y: lerpN(v.de.y, Y_AGUA, u) + Math.sin(u * Math.PI) * (1.2 + m.dist * 0.12), z: lerpN(v.de.z, m.alvo.z, u) }; if (u >= 1) pousou(); break; }
         case 'cine': tickCine(dt, tip); break;
+        case 'raio': tickCenaRaio(dt); break;
         case 'espera': tickEspera(); break;
         case 'mordida': if (m.t > m.bite.d.janela) escapou(tr('O peixe comeu a isca e fugiu...')); break;
         case 'fisgou': if (m.t >= 0.3) { m.e = 'briga'; m.t = 0; } break;
@@ -2128,10 +2819,12 @@
         default: break;
       }
       if (P.mg !== m) return;
+      tickLuzBagre(m, dt);
+      if (m.camRosto || (m.e === 'raio' && m.t >= 5.6) || (m.trofeu && m.trofeu.m.userData.bagre)) { m.tPisca = (m.tPisca || 0) - dt; if (m.tPisca <= 0) { m.tPisca = rnd(0.7, 1.5); const C = s.clima; if (C) C.flash = Math.max(C.flash || 0, rnd(0.25, 0.45)); } }   // relâmpagos longe iluminando o rosto
       visualMg(m, tip, dt); camMg(m, J, dt); hudMg(m);
     }
     // o estado "de verdade" para desenhar (na cena do perfeito, o estado do lançamento que está passando)
-    const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e);
+    const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e === 'raio' ? (m.bagre && m.bagre.puxou ? 'fisgou' : 'espera') : m.e === 'perdeu' ? 'falhou' : m.e);
     // os braços para mostrar o peixe (achados por busca no boneco do jogador): pequeno = mãos juntas; grande = uma mão em cada ponta.
     //   Devolve também onde ficam as mãos no tronco (x para a frente, y para cima), para apoiar o peixe em cima delas.
     function poseTrofeu(L) {
@@ -2221,10 +2914,10 @@
       // o peixe pulando fora da água na corrida (os raros "de escama"): a cabeça virada para o jogador (é a boca que a linha puxa),
       //   sobe de nariz para cima e desce de nariz para baixo (meio de lado, para aparecer). Atualizado ANTES da linha, para ela sair da boca já neste quadro.
       if (m.pulo && m.peixeP && m.bite) {
-        const pl = m.pulo; if (!pl.m) { pl.m = malhaPeixe(m.bite.i, m.bite.kg); grupo().add(pl.m); respingo(m.peixeP.x, m.peixeP.z, 6, 0.3); }
-        pl.t += dt; const u = pl.t / 0.75, Lp = pl.m.userData.L, J = S().jog, yawJ = Math.atan2(-(J.z - m.peixeP.z), J.x - m.peixeP.x);
-        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * (0.6 + Lp * 0.8), m.peixeP.z); if (pl.lado == null) pl.lado = Math.random() < 0.5 ? -1 : 1; pl.m.rotation.set(0, yawJ + pl.lado * 0.8, 0.9 - Math.min(1, u) * 1.8);   // meio de lado (dá para ver o peixe), com a boca ainda para o lado da vara
-        if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, 7, 0.4); SOM.agua(); tirarPulo(m); }
+        const pl = m.pulo; if (!pl.m) { pl.m = m.bite.bagre ? malhaBagre(m.bite.kg) : malhaPeixe(m.bite.i, m.bite.kg); grupo().add(pl.m); respingo(m.peixeP.x, m.peixeP.z, m.bite.bagre ? 12 : 6, m.bite.bagre ? 0.9 : 0.3); }
+        pl.t += dt; const u = pl.t / (m.bite.bagre ? 1.05 : 0.75), Lp = pl.m.userData.L, J = S().jog, yawJ = Math.atan2(-(J.z - m.peixeP.z), J.x - m.peixeP.x);
+        pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * Math.min(1.9, 0.6 + Lp * 0.8), m.peixeP.z); if (pl.lado == null) pl.lado = Math.random() < 0.5 ? -1 : 1; pl.m.rotation.set(0, yawJ + pl.lado * 0.8, 0.9 - Math.min(1, u) * 1.8);   // meio de lado (dá para ver o peixe), com a boca ainda para o lado da vara
+        if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, m.bite.bagre ? 14 : 7, m.bite.bagre ? 1 : 0.4); SOM.agua(); if (m.bite.bagre) { anelCor(m.peixeP.x, m.peixeP.z, 2.4, 0x8ff0ff, 1); faiscas(m.peixeP.x, Y_AGUA + 0.1, m.peixeP.z, 12, 1); } tirarPulo(m); }
       }
       if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) {
         const te = m.B ? m.B.tensao : 0.6, pl = m.pulo && m.pulo.m ? m.pulo : null;
@@ -2232,7 +2925,7 @@
         linhaDe(L, tip, fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
       }
       else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, bocaPeixe(m.voa.m), 0.03);
-      else if (bp) { linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; if (bp.y < 0.5) fim = bp; }
+      else if (bp) { const puxa = m.e === 'raio' && e === 'fisgou'; linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, puxa ? 0.02 : e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; if (puxa) verga = 0.95 + Math.sin(t * 24) * 0.06; if (bp.y < 0.5) fim = bp; }
       else L.visible = false;
       tickVitorias(dt, fim ? tip : null, fim);                            // a linha (o pedaço perto da água) passando por cima das vitórias-régias
       vergar(m.vara, SINAL_VERGA * verga);
@@ -2253,13 +2946,15 @@
       const snap = s.cam.snap; s.cam.snap = false;                       // (a cidade não zera o snap enquanto tem câmera de cena: zera aqui)
       let c;
       if (m.e === 'cine' && m.cine) { m.cam = camCine(m, J); s.camCena = m.cam; return; }
+      if (m.e === 'raio' && m.camB) { m.cam = Object.assign(m.cam || {}, m.camB); s.camCena = m.cam; return; }   // a cena do raio corta seco entre os planos
       if (m.camCadu && P.cadu) {                                          // (6.6.1) a cena secreta: por cima do ombro do jogador, olhando o Cadu
         const C = P.cadu, vx = J.x - C.x, vz = J.z - C.z, L = Math.hypot(vx, vz) || 1, ux = vx / L, uz = vz / L;   // de frente para o Cadu (ele olha para o jogador), um pouco de lado
         c = { px: C.x + ux * 0.9 + uz * 2.7, py: yJ + 1.5, pz: C.z + uz * 0.9 - ux * 2.7, tx: C.x + ux * 0.35, ty: yJ + 1.05, tz: C.z + uz * 0.35 };   // de lado: os dois no quadro, o Cadu em destaque
       }
+      else if (m.camRosto) { const f = dirDe(J.yaw), dl = { x: -f.z, z: f.x }; c = { px: J.x + f.x * 1.8 + dl.x * 0.5, py: yJ + 1.5, pz: J.z + f.z * 1.8 + dl.z * 0.5, tx: J.x, ty: yJ + 1.38, tz: J.z }; }
       else if (m.trofeu || (m.e === 'pegou' && !m.voa)) {                    // de frente (um pouco para o lado de fora do píer, para o Cadu não tampar); peixe grande = câmera mais longe
-        const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, k = 2.6 + Math.min(2.2, L * 0.7), dT = dirDe((m.yaw0 - 0.45));
-        c = { px: J.x + dT.x * k, py: yJ + 1.75 + Math.min(0.8, L * 0.2), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 0.8, tz: J.z };   // mira no peito: o jogador e o peixe ficam na metade de cima da tela (a fala fica embaixo e o banner, fininho, no topo)
+        const L = m.trofeu ? m.trofeu.m.userData.L || 0.5 : 0.5, bg = m.trofeu && m.trofeu.m.userData.bagre, k = 2.6 + Math.min(2.2, L * 0.7) + (bg ? 1.2 : 0), dT = dirDe((m.yaw0 - (bg ? 0.75 : 0.45)));   // o bicho é enorme: mais de lado, para o rosto aparecer
+        c = { px: J.x + dT.x * k, py: yJ + 1.75 + Math.min(0.8, L * 0.2) + (bg ? 0.1 : 0), pz: J.z + dT.z * k, tx: J.x, ty: yJ + 0.8 + (bg ? 0.35 : 0), tz: J.z };   // mira no peito: o jogador e o peixe ficam na metade de cima da tela (a fala fica embaixo e o banner, fininho, no topo)
       }
       else if ((m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou') && m.peixeP) { const f = m.peixeP; c = { px: J.x - d.x * 4.4 + dir.x * 1.6, py: yJ + 2.9, pz: J.z - d.z * 4.4 + dir.z * 1.6, tx: lerpN(J.x, f.x, 0.55), ty: 0.4, tz: lerpN(J.z, f.z, 0.55) }; }
       else {
@@ -2271,7 +2966,8 @@
       }
       if (!m.cam || snap) m.cam = Object.assign({}, c);
       else { const k = 1 - Math.exp(-dt * 3.2); for (const q in c) m.cam[q] += (c[q] - m.cam[q]) * k; }
-      s.camCena = m.cam;
+      if (m.bagre && m.B && m.B.corre) { const a = 0.05 + (m.bagre.fase || 1) * 0.015, j = () => (Math.random() - 0.5) * a; s.camCena = { px: m.cam.px + j(), py: m.cam.py + j(), pz: m.cam.pz + j(), tx: m.cam.tx, ty: m.cam.ty, tz: m.cam.tz }; }   // o tremor quando o bicho corre
+      else s.camCena = m.cam;
     }
     function hudMg(m) {
       const U = m.U, p = dadosP(), C = U.cache, set = (el, k, v) => { if (C[k] !== v) { C[k] = v; el.textContent = v; } };
@@ -2320,20 +3016,24 @@
       if (P.tAviso > 0) { P.tAviso -= dt; if (P.tAviso <= 0 && s.modo === 'livre') api.aviso(''); }
       if (!P.montado) { if (!s.dentro && s.jog) montarRua(); if (!P.montado) return; }
       if (P.versao !== P.verQuadro) desenharQuadro();
-      tickFx(dt);
+      tickFx(dt); tickRaios(dt); tickFlash(dt); tickAnims(dt);
+      if (matBagreLuz) { const k = 0.82 + 0.12 * Math.sin(s.t * 9) + (Math.random() < 0.04 ? 0.25 : 0); matBagreLuz.color.setRGB(k, k, k); }
       tickCaduLago(dt); tickBene();
       if (!s.dentro) { if (P.cadu && !P.cadu.oculto) { P.cadu.m.raiz.updateMatrixWorld(true); poseCaduLago(); } }
       if (P.mg) tickMg(dt);
+      poseCenaBene();
     }
     function limpar() {
       try { fecharPainel(); esconderBanner(); const h = document.getElementById('pcHud'); if (h) h.remove(); } catch (e) { /* ok */ }
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
       if (P.mg && P.mg.fim) P.mg.fim(); P.mg = null;
+      Rock.parar(true); if (P.flashEl) { P.flashEl.remove(); P.flashEl = null; }
       for (const g of geoPeixes.values()) g.dispose(); geoPeixes.clear();
+      if (geoBagre) { geoBagre.dispose(); geoBagreLuz.dispose(); matBagreLuz.dispose(); geoBagre = geoBagreLuz = matBagreLuz = null; }
       if (P.texQuadro) P.texQuadro.dispose();
     }
 
-    return { alvos, tick, limpar, montarRua, aberta, _P: P, _f: { dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
+    return { alvos, tick, limpar, montarRua, aberta, _P: P, _api: api, _f: { dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
   }
 
   window.FutebolJS.registrarFase({ id: 'pesca', nome: 'Pesca', nucleoMinimo: '6.4.0', iniciar: async () => {}, criar, _dados: DADOS, _logica: LOGICA, _arte: { artePeixe } });

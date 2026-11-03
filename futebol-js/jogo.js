@@ -3309,7 +3309,7 @@ function aiCarry(p, dt) {
   if (p.chutePrep > 0) {                           // preparando o chute: planta o pé e mira o gol
     p.chutePrep -= dt;
     p.angle = turnToward(p.angle, Math.atan2(-p.z, p.dir * HALF_L - p.x), 8 * dt);
-    if (p.chutePrep <= 0) { p.chutePrep = 0; aiShoot(p); }
+    if (p.chutePrep <= 0) { p.chutePrep = 0; if (p.vaiFintar) fintaDaIA(p); else aiShoot(p); }
     return { vx: 0, vz: 0 };
   }
   p.think -= dt;
@@ -3390,6 +3390,7 @@ function aiCarry(p, dt) {
     if (campoPequeno()) shootChance *= limpo ? 0.6 : 0.3;   // quadra/society: menos chute de qualquer lugar (o gol é pequeno e o goleiro está perto)
     if (Math.abs(p.z) < 22 * ESC_W && Math.random() < shootChance) {
       p.chutePrep = p.chutePrepDur = 0.3;          // prepara o chute (perna para trás) e só então bate
+      p.vaiFintar = !p.fintou && bloqueadorNaLinha(p) && Math.random() < 0.3;   // com alguém na frente: às vezes é FINTA
       return { vx: 0, vz: 0 };
     }
     // CONTRA-ATAQUE: acabou de recuperar a bola (até 3 s) → lançamento para quem está mais na frente.
@@ -3553,17 +3554,83 @@ function iniciarDribleIA(p, o) {
   const px = -fz, pz = fx;
   const lado = ((o.x - p.x) * px + (o.z - p.z) * pz) >= 0 ? 1 : -1;     // +1: o marcador está à direita da corrida
   const vel = Math.hypot(p.vx, p.vz), r = Math.random();
-  const tipo = vel < 2.2 ? (r < 0.45 ? 'pedalada' : r < 0.7 ? 'elastico' : r < 0.85 ? 'roleta' : 'corpo')
+  const dO = dist2D(o, p), deFrente = ((o.x - p.x) * fx + (o.z - p.z) * fz) / (dO || 1) > 0.5 && dO > 1.1 && dO < 3.2;
+  const r2 = Math.random();
+  let tipo = vel < 2.2 ? (r < 0.45 ? 'pedalada' : r < 0.7 ? 'elastico' : r < 0.85 ? 'roleta' : 'corpo')
     : (r < 0.38 ? 'corpo' : r < 0.56 ? 'elastico' : r < 0.72 ? 'roleta' : 'arrancada');
-  const dur = { pedalada: 1.5, corpo: 1.0, arrancada: 0.8, elastico: 1.1, roleta: 1.25 }[tipo];
-  const tDecide = { pedalada: 0.9, corpo: 0.4, arrancada: 0.25, elastico: 0.35, roleta: 0.5 }[tipo];
+  // marcador de frente, a uns passos: às vezes sai caneta (só em marcador da IA: ele abre as pernas), chapéu ou carretilha
+  if (deFrente && o.role !== 'GK' && r2 < 0.42) tipo = r2 < 0.12 && !o.isUser ? 'caneta' : r2 < 0.28 ? 'chapeu' : 'lambreta';
+  const dur = { pedalada: 1.5, corpo: 1.0, arrancada: 0.8, elastico: 1.1, roleta: 1.25, caneta: 1.2, chapeu: 1.4, lambreta: 1.45 }[tipo];
+  const tDecide = { pedalada: 0.9, corpo: 0.4, arrancada: 0.25, elastico: 0.35, roleta: 0.5, caneta: 0.2, chapeu: 0.24, lambreta: 0.3 }[tipo];
   let chance = 0.5 + (p.role === 'FWD' ? 0.04 : p.role === 'DEF' ? -0.05 : 0) + (o.role === 'GK' ? -0.12 : 0) + (fh(p, 'drible') - (o.role === 'GK' ? fh(o, 'goleiro') : fh(o, 'defesa'))) * 0.6;   // drible x defesa
   if (o.isUser) chance -= 0.05;
   const sai = tipo === 'pedalada' ? (Math.random() < 0.5 ? -1 : 1) : -lado;
   p.dribleIA = { tipo, t: 0, dur, tDecide, fx, fz, px, pz, lado, sai, o, ok: Math.random() < clamp(chance, 0.25, 0.75), feito: false, ang0: Math.atan2(fz, fx), bola: null, angulo: null };
+  if (tipo === 'caneta' || tipo === 'chapeu' || tipo === 'lambreta') prepararDribleAbsIA(p, p.dribleIA);
   p.driblePose = { tipo, t: 0, sai, lado };
   p.dribbleCd = rand(5, 9);
   p.think = Math.max(p.think, dur);
+}
+// CANETA, CHAPÉU E CARRETILHA DA IA: a bola anda num caminho próprio (bolaAbs) e o jogador corre em volta do marcador
+// até pegá-la de novo (a velocidade sai do ponto do caminho um pouco à frente). O resultado continua saindo em tDecide.
+function prepararDribleAbsIA(p, D) {
+  const o = D.o, f = { x: D.fx, z: D.fz }, q = { x: D.px, z: D.pz }, sai = D.sai || 1;
+  D.abs = true; D.p0 = { x: p.x, z: p.z }; D.b0 = { x: ball.x, z: ball.z };
+  const dx = o.x - D.b0.x, dz = o.z - D.b0.z, dl = Math.hypot(dx, dz) || 1, dir = { x: dx / dl, z: dz / dl };
+  D.dirB = dir;
+  const longe = D.tipo === 'caneta' ? 1.7 : 2.3;
+  D.bFim = { x: o.x + dir.x * longe, z: o.z + dir.z * longe };
+  D.contorno = { x: o.x + q.x * sai * 1.25, z: o.z + q.z * sai * 1.25 };
+  D.aoLado = { x: D.bFim.x - dir.x * 0.4 + q.x * sai * 0.85, z: D.bFim.z - dir.z * 0.4 + q.z * sai * 0.85 };
+  D.pega = { x: D.bFim.x - dir.x * 0.62, z: D.bFim.z - dir.z * 0.62 };
+  D.bolaAbs = { x: ball.x, y: CONFIG.BALL_R, z: ball.z };
+  if (!o.isUser) o.stun = Math.max(o.stun, D.tDecide + 0.05);   // o marcador da IA "planta" esperando o drible (não entra no caminho)
+  if (D.tipo === 'caneta') { o.driblePose = { tipo: 'pernasAbertas', t: 0 }; D.angO = Math.atan2(-dir.z, -dir.x); o.angle = D.angO; }   // de frente para a bola: ela passa reto entre as pernas
+  if (D.tipo === 'lambreta') p.driblePose = { tipo: 'lambreta', t: 0, lado: D.lado };
+}
+function caminhoAbsIA(D, t) {                         // onde o jogador deve estar no tempo t
+  const tT = D.tipo === 'lambreta' ? 0.42 : 0.22, tFim = D.dur - 0.12;
+  if (t < tT) return { x: D.p0.x, z: D.p0.z };
+  const a = clamp((t - tT) / (tFim - tT), 0, 1);
+  if (D.tipo === 'caneta') {
+    const ctl = { x: 2 * D.contorno.x - (D.p0.x + D.pega.x) / 2, z: 2 * D.contorno.z - (D.p0.z + D.pega.z) / 2 };
+    return bezier(D.p0, ctl, D.pega, smooth(a));
+  }
+  if (a < 0.72) { const ctl = { x: 2 * D.contorno.x - (D.p0.x + D.aoLado.x) / 2, z: 2 * D.contorno.z - (D.p0.z + D.aoLado.z) / 2 }; return bezier(D.p0, ctl, D.aoLado, smooth(a / 0.72)); }
+  const g = smooth((a - 0.72) / 0.28); return { x: lerp(D.aoLado.x, D.pega.x, g), z: lerp(D.aoLado.z, D.pega.z, g) };
+}
+function dribleAbsIA(p, D) {
+  const R = CONFIG.BALL_R, t = D.t, B = D.bolaAbs, o = D.o;
+  if (o.driblePose) o.driblePose.t = t;
+  if (D.tipo === 'caneta' && D.angO != null && o.driblePose && o.driblePose.tipo === 'pernasAbertas') o.angle = D.angO;
+  if (D.tipo === 'caneta') {                         // rasteira, entre as pernas dele, perdendo força
+    const a = clamp((t - 0.2) / 0.75, 0, 1), h = 1 - Math.pow(1 - a, 1.6);
+    B.x = lerp(D.b0.x, D.bFim.x, h); B.z = lerp(D.b0.z, D.bFim.z, h); B.y = R;
+    if (t > 0.75 && o.driblePose && o.driblePose.tipo === 'pernasAbertas') {   // a bola passou: ele fecha as pernas e fica desnorteado
+      o.driblePose = null;
+      if (D.feito && D.ok && !o.isUser) { perderBola(o, 'desnorteado'); if (o.perda) { o.perda.vx = -D.fx * 0.3; o.perda.vz = -D.fz * 0.3; } }
+    }
+  } else if (D.tipo === 'chapeu') {                  // o bico do pé cava a bola por cima da cabeça dele
+    const a = clamp((t - 0.24) / 0.72, 0, 1);
+    if (a < 1) { const h = Math.pow(a, 1.3); B.x = lerp(D.b0.x, D.bFim.x, h); B.z = lerp(D.b0.z, D.bFim.z, h); B.y = R + Math.sin(a * Math.PI) * 2.65; }
+    else { B.x = D.bFim.x; B.z = D.bFim.z; B.y = R; }
+  } else {                                           // carretilha: para trás do calcanhar, sobe e passa por cima dos dois
+    if (p.driblePose) p.driblePose.t = t;
+    const atras = { x: D.p0.x - D.fx * 0.33 - D.px * 0.13, z: D.p0.z - D.fz * 0.33 - D.pz * 0.13 }, alto = { x: D.p0.x - D.fx * 0.45, z: D.p0.z - D.fz * 0.45 };
+    if (t < 0.22) { const a = smooth(t / 0.22); B.x = lerp(D.b0.x, atras.x, a); B.z = lerp(D.b0.z, atras.z, a); B.y = R + 0.08 * a * a; }
+    else if (t < 0.42) { const a = smooth((t - 0.22) / 0.2); B.x = lerp(atras.x, alto.x, a); B.z = lerp(atras.z, alto.z, a); B.y = lerp(R + 0.08, 1.05, a); }
+    else { const a = clamp((t - 0.42) / 0.75, 0, 1), h = Math.pow(a, 1.6); if (a < 1) { B.x = lerp(alto.x, D.bFim.x, h); B.z = lerp(alto.z, D.bFim.z, h); B.y = lerp(1.05, R, a) + Math.sin(a * Math.PI) * 2.7; } else { B.x = D.bFim.x; B.z = D.bFim.z; B.y = R; } }
+  }
+  if (t >= D.dur - 0.15) {                          // pegou: a bola volta para o pé
+    const ex = Math.cos(p.angle), ez = Math.sin(p.angle);
+    B.x = lerp(B.x, p.x + ex * 0.62, 0.5); B.z = lerp(B.z, p.z + ez * 0.62, 0.5); B.y = R;
+  }
+  // o jogador segue o caminho exatamente (a posição é aplicada depois do movimento, em updatePlayers)
+  const a0 = caminhoAbsIA(D, Math.min(D.dur, t)), a1 = caminhoAbsIA(D, Math.min(D.dur, t + 0.05));
+  const vx = (a1.x - a0.x) / 0.05, vz = (a1.z - a0.z) / 0.05;
+  D.alvoPos = a0; D.vel = { x: vx, z: vz };
+  if (Math.hypot(vx, vz) > 0.5) p.angle = turnToward(p.angle, Math.atan2(vz, vx), 12 * (1 / 60));
+  return { vx, vz };
 }
 function dribleIAVel(p, dt) {
   const D = p.dribleIA, o = D.o;
@@ -3571,16 +3638,19 @@ function dribleIAVel(p, dt) {
   D.t += dt; if (p.driblePose) p.driblePose.t = D.t;
   if (!D.feito && D.t >= D.tDecide) {
     D.feito = true;
-    if (D.ok || o.out || o.stun > 0 || dist2D(o, p) > 3.2) {
-      if (!o.out && o.stun <= 0 && dist2D(o, p) < 3.2) {
+    if (D.ok || o.out || (o.stun > 0 && !D.abs) || dist2D(o, p) > 3.2) {
+      if (!o.out && (o.stun <= 0 || D.abs) && dist2D(o, p) < 3.2) {
         if (o.isUser) { o.stun = Math.max(o.stun, 0.5); o.vx *= 0.3; o.vz *= 0.3; }
         else if (o.role === 'GK') { o.stun = Math.max(o.stun, 0.7); o.fall = 1; o.fallKind = 'lado'; o.fallSide = D.lado; }   // goleiro driblado: fica no chão
+        else if (D.abs && D.tipo === 'caneta') o.stun = Math.max(o.stun, 0.8);   // caneta: fica plantado de pernas abertas até a bola passar
+        else if (D.abs) { perderBola(o, 'desnorteado'); if (o.perda) { o.perda.vx = -D.fx * 0.3; o.perda.vz = -D.fz * 0.3; } }   // caneta/chapéu/carretilha: gira no lugar, sem entrar no caminho
         else { perderBola(o, 'passinhos'); if (o.perda) { o.perda.vx = D.px * D.lado * 1.4; o.perda.vz = D.pz * D.lado * 1.4; } }
       }
       D.ok = true;
     } else {
       givePossession(o, { silent: true });
       perderBola(p);
+      if (o.driblePose && o.driblePose.tipo === 'pernasAbertas') o.driblePose = null;
       p.dribleIA = null; p.driblePose = null;
       if (o.isUser) showToast('Roubou no drible!', 'good');
       return { vx: 0, vz: 0 };
@@ -3599,7 +3669,8 @@ function dribleIAVel(p, dt) {
     D.angulo = D.ang0 + D.sai * Math.PI * 2 * smooth(D.t / 0.8);
     D.bola = { x: Math.cos(D.angulo) * 0.44, z: Math.sin(D.angulo) * 0.44 };
   }
-  if (D.tipo === 'pedalada' && D.t < 0.9) { vx = D.fx * 0.3; vz = D.fz * 0.3; }
+  if (D.abs) { const v2 = dribleAbsIA(p, D); vx = v2.vx; vz = v2.vz; }
+  else if (D.tipo === 'pedalada' && D.t < 0.9) { vx = D.fx * 0.3; vz = D.fz * 0.3; }
   else if (D.tipo === 'elastico' && D.t < 0.4) { const lat = D.t > 0.22 ? 2.4 : 0; vx = D.fx * 0.9 + D.px * D.sai * lat; vz = D.fz * 0.9 + D.pz * D.sai * lat; }
   else if (D.tipo === 'roleta' && D.t < 0.8) { vx = D.fx * 0.8 + D.px * D.sai * 0.6; vz = D.fz * 0.8 + D.pz * D.sai * 0.6; }
   else if (D.tipo === 'corpo' && D.t < 0.4) { vx = D.px * D.lado * 2.2 + D.fx * 1.4; vz = D.pz * D.lado * 2.2 + D.fz * 1.4; }
@@ -4109,6 +4180,43 @@ function erroDeFinalizacao(p, dGoal, tipo) {
   const base = 0.12 + dGoal * 0.024 + (tipo === 'forte' ? 0.12 : 0);
   const aperto = nearestOf(opponentsOf(p), p).d < 1.6 ? 0.12 : 0;        // chutando com o marcador em cima
   return (base + aperto) / clamp(nivel, 0.45, 1.6);
+}
+// FINTA DA IA: com um marcador na linha do chute, às vezes a IA arma o chute (perna para trás), para a perna em cima da
+// bola e não bate. Quem estava na frente (da IA) "compra" igual ao seu marcador (pula, estica a perna ou vira de costas)
+// e ela bate logo depois, com a linha livre, ou passa por ele conduzindo. Você, se estiver na frente, tem que se segurar.
+function bloqueadorNaLinha(p) {
+  const gx = p.dir * HALF_L, alvo = { x: gx, z: clamp(p.z * 0.3, -GOAL_HALF, GOAL_HALF) };
+  for (const o of opponentsOf(p)) {
+    if (o.out || o.role === 'GK' || o.stun > 0) continue;
+    const d = dist2D(o, p);
+    if (d > 0.4 && d < 7 && distPointSegment(o, p, alvo) < 1.6 && ((o.x - p.x) * p.dir) > 0) return o;
+  }
+  return null;
+}
+function fintaDaIA(p) {
+  p.vaiFintar = false; p.fintou = true;
+  p.kickT = 0.2;                                    // a perna vem para a frente e para em cima da bola
+  const gx = p.dir * HALF_L, alvo = { x: gx, z: clamp(p.z * 0.3, -GOAL_HALF, GOAL_HALF) };
+  let comprou = false;
+  for (const o of opponentsOf(p)) {
+    if (o.out || o.isUser || o.role === 'GK' || o.stun > 0 || o.scripted || o.bloqueio) continue;
+    const d = dist2D(o, p);
+    if (d < 0.3 || d > 9 || distPointSegment(o, p, alvo) > 2.4 || ((o.x - p.x) * p.dir) < -0.5) continue;
+    if (Math.random() >= 0.65) continue;
+    const ax = alvo.x - p.x, az = alvo.z - p.z, l2 = ax * ax + az * az || 1, kk = clamp(((o.x - p.x) * ax + (o.z - p.z) * az) / l2, 0, 1);
+    iniciarBloqueio(o, ['pulo', 'perna', 'costas'][Math.floor(Math.random() * 3)], true, { x: p.x + ax * kk, z: p.z + az * kk });
+    comprou = true;
+  }
+  const gk = opponentsOf(p).find((g) => g.role === 'GK' && !g.out && !g.isUser);
+  if (gk && gk.diveT <= 0 && gk.stun <= 0 && Math.hypot(gx - p.x, p.z) < 22 * Math.max(0.6, ESC) && Math.random() < 0.3) {
+    const lado = Math.random() < 0.5 ? -1 : 1;
+    gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = 'baixo';
+    gk.diveSide = Math.sign(lado * Math.cos(gk.angle)) || 1;
+    comprou = true;
+  }
+  // comprou (ou você está no caminho): bate logo depois; senão passa conduzindo
+  if (comprou || bloqueadorNaLinha(p)) { p.chutePrep = p.chutePrepDur = 0.28; p.vaiFintar = false; }
+  else p.think = 0.05;
 }
 // ONDE A IA MIRA: cada chute sorteia um jeito (com peso) e o time não repete o jeito do chute anterior — antes quase
 // todo chute ia no mesmo lugar e você tomava sempre o mesmo gol.
@@ -4801,7 +4909,7 @@ function updatePlayers(dt) {
     if (p.throwAnim > 0) p.throwAnim -= dt;
     if (p.pedeT > 0) p.pedeT -= dt;                 // mão levantada pedindo a bola
     if (p.profT > 0) { p.profT -= dt; if (G.passTarget && G.passTarget.p === p) p.profT = 0; }   // corrida em profundidade
-    if (p.dribleIA && G.possession !== p) { p.dribleIA = null; p.driblePose = null; }   // perdeu a bola no meio do drible da IA
+    if (p.dribleIA && G.possession !== p) { const mo = p.dribleIA.o; if (mo && mo.driblePose && mo.driblePose.tipo === 'pernasAbertas') mo.driblePose = null; p.dribleIA = null; p.driblePose = null; }   // perdeu a bola no meio do drible da IA
     if (p.bloqueio) { p.bloqueio.t += dt; if (p.bloqueio.t >= p.bloqueio.dur) { if (p.bloqueio.finta) p.stun = Math.max(p.stun, 0.55); p.bloqueio = null; } }
     if (p.defPose) { p.defPose.t += dt; if (p.defPose.t >= p.defPose.dur) p.defPose = null; }   // pose de defesa do goleiro
     if (p.levanta) { p.levanta.t += dt; if (p.levanta.t >= p.levanta.dur) { p.levanta = null; p.fall = 0; p.falling = false; } }   // goleiro levantando do chão
@@ -4853,6 +4961,8 @@ function updatePlayers(dt) {
       des = { vx: Math.cos(p.angle) * v, vz: Math.sin(p.angle) * v };
     }
     if (p.stun > 0 && p.diveT <= 0) des = { vx: 0, vz: 0 };
+    if (p.domIA) des = { vx: des.vx * 0.35, vz: des.vz * 0.35 };   // dominando: quase parado até a bola chegar no pé
+    if (!p.isUser && p.leChute && G.time - p.leChute < 0.25 && p.role !== 'GK') { des = { vx: des.vx * 0.3, vz: des.vz * 0.3 }; p.guard = Math.max(p.guard, 0.9); }   // lendo o seu chute: para e se prepara
     if (p.perda) {                                  // perdeu a bola: passinhos para a frente (e para)
       p.perda.t += dt;
       if (p.perda.t >= p.perda.dur) p.perda = null;
@@ -4889,6 +4999,7 @@ function updatePlayers(dt) {
     p.z = clamp(p.z + p.vz * dt, -BOARD_ZN + 0.6, BOARD_Z - 0.6);
     goalCollide(p, ox, oz);
     colisaoArredores(p);
+    if (p.dribleIA && p.dribleIA.alvoPos && G.possession === p) { const D = p.dribleIA; p.x = D.alvoPos.x; p.z = D.alvoPos.z; p.vx = D.vel.x; p.vz = D.vel.z; }   // caneta/chapéu/carretilha: no caminho
     longeDoLateral(p, dt);
     // Goleiro com a bola NAS MÃOS não sai da área: se escorregou para fora (mergulho, saída nos pés), levanta e joga com o pé;
     // se só foi empurrado, fica na linha da área.
@@ -4973,6 +5084,14 @@ function updatePlayers(dt) {
 function attachBall(p) {
   if (p.bolaFixa) {                                // cobrança com corrida: a bola fica parada na marca
     ball.x = p.bolaFixa.x; ball.z = p.bolaFixa.z; ball.y = CONFIG.BALL_R; ball.vx = ball.vy = ball.vz = 0;
+    return;
+  }
+  if (p.domIA && p.domIA.pos) {                    // domínio da IA em andamento: a bola está na coxa/no peito/descendo para o pé
+    ball.x = p.domIA.pos.x; ball.y = p.domIA.pos.y; ball.z = p.domIA.pos.z; ball.vx = p.vx; ball.vz = p.vz; ball.vy = 0;
+    return;
+  }
+  if (p.dribleIA && p.dribleIA.bolaAbs && !p.carry && !p.throwIn) {   // caneta/chapéu/carretilha da IA: a bola tem caminho próprio
+    const B = p.dribleIA.bolaAbs; ball.x = B.x; ball.y = B.y; ball.z = B.z; ball.vx = p.vx; ball.vz = p.vz; ball.vy = 0;
     return;
   }
   if (p.dribleIA && p.dribleIA.bola && !p.carry && !p.throwIn && p.role !== 'GK') {   // variação de drible da IA: a bola anda com a finta
@@ -5228,6 +5347,7 @@ function updateBall(dt) {
 // ---------------------------------------------------------------------
 function givePossession(p, opts = {}) {
   if ((G.apito || G.golPend) && !opts.forcar) return;   // juiz marcando / gol sendo mostrado: ninguém pega a bola
+  const chegada = { x: ball.x, y: ball.y, z: ball.z, vy: ball.vy, vh: Math.hypot(ball.vx, ball.vz) };   // como a bola chegou (domínio da IA)
   // Quem recebe estava impedido no momento do passe? Infração. Qualquer outro toque zera o lance.
   if (G.offside) {
     if (!opts.semImpedimento && G.offside.set.has(p) && G.state === 'play') { callOffside(p); return; }
@@ -5248,8 +5368,12 @@ function givePossession(p, opts = {}) {
   p.think = rand(0.3, 0.6);
   p.controlCd = 0;
   p.longe = undefined; p.chuteDeLonge = false;     // nova posse: o chute de longe é decidido de novo depois do meio-campo
+  p.fintou = false; p.vaiFintar = false;
   if (p.team !== 0) G.userRequest = 0;
   if (p.role === 'GK') p.hold = 1.1;
+  p.domIA = null;
+  if (!p.isUser && p.role !== 'GK' && !opts.silent && !opts.comPe && G.state === 'play' && !G.sp && !G.kickoffPending && !p.carry && !p.throwIn &&
+    (chegada.vh > 6 || chegada.y > 0.55) && dist2D(p, chegada) < 1.6 && Math.random() < 0.75 && !(p.escCorpo < 1)) iniciarDominioIA(p, chegada);
 }
 
 function checkBallContacts() {
@@ -6052,7 +6176,7 @@ function saidaDaComemoracao() {
 function clearFlags(p) {
   Object.assign(p, { driblePose: null, perda: null, saidaPes: null, fim: null, bolaFixa: null, embalo: null, disputaK: 0, stun: 0, dash: 0, boost: 0, controlCd: 0, diveT: 0, jumpT: 0, fall: 0, fallKind: 'lado', tackle: 0, guard: 0, scripted: false, throwIn: false, goalKick: false, setPiece: null, carry: false, pose: null, kickT: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, chutePrep: 0, throwAnim: 0,
     dribleIA: null, pedeT: 0, profT: 0, profAlvo: null, espaco: null, espT: 0, jumpAlt: 0, cansadoT: 0,
-    bloqueio: null, levantaRapido: 0, caidoComBola: 0, levanta: null, pulaTras: null });
+    bloqueio: null, levantaRapido: 0, caidoComBola: 0, levanta: null, pulaTras: null, domIA: null });
 }
 
 // Saída de bola: o atacante fica na bola e o meia central ao lado dele, no próprio campo.
@@ -7236,6 +7360,7 @@ function updateKickClock(rdt) {
   const k = G.kick;
   if (!k.semLimite) k.timer -= rdt;
   k.windup = Math.min(1, k.windup + rdt / 1.5);
+  lerChuteArmado();
   const f = $('kickTimerFill');
   f.style.transform = 'scaleX(' + Math.max(0, k.timer / CONFIG.KICK_TIME_LIMIT).toFixed(3) + ')';
   setClass(f, 'low', k.timer < 2);
@@ -7245,10 +7370,12 @@ function updateKickClock(rdt) {
 function cancelKick() {
   if (!['aim', 'power', 'spin'].includes(G.state)) return;
   if (G.kick && G.kick.semLimite) return;          // bola parada: não tem para onde voltar
-  const k = G.kick, escolheuForca = G.state === 'spin';       // a finta só vale depois de escolher a FORÇA (cancelar na mira ou na barra é só desistir)
+  // A finta vale quando o chute está ARMADO: já escolheu a força, ou está enchendo a barra (perna lá atrás). Cancelar só na mira é desistir.
+  const k = G.kick, armado = G.state === 'spin' || (G.state === 'power' && (power.holding && power.value > 0.12 || (k && k.windup > 0.6)));
+  power.holding = false;
   G.kick = null; G.state = 'play'; G.targetScale = 1;
   hideKickUI();
-  if (k && escolheuForca && k.kind === 'shot' && !k.cruzar && G.possession === user) fintaDeChute(k);   // armou o chute, escolheu a força e cancelou: finta
+  if (k && armado && k.kind === 'shot' && !k.cruzar && G.possession === user) fintaDeChute(k);   // armou o chute e cancelou: finta
 }
 
 // ---------------------------------------------------------------------
@@ -7272,8 +7399,10 @@ function fintaDeChute(k) {
     if (!G.fintaCerta) {
       if (o.stun > 0 || o.scripted || o.bloqueio) continue;
       const d = dist2D(o, u);
-      if (d < 0.8 || d > 8 || distPointSegment(o, u, alvo) > 2.4 || ((o.x - u.x) * dx0 + (o.z - u.z) * dz0) < -0.5) continue;
-      if (Math.random() >= FINTA_CHANCE) continue;
+      // (antes quem estava colado em você — a menos de 0,8 m, justamente quem mais "compra" — ficava de fora)
+      if (d < 0.3 || d > 9 || distPointSegment(o, u, alvo) > 2.6 || ((o.x - u.x) * dx0 + (o.z - u.z) * dz0) < -0.5) continue;
+      const leu = o.leChute && G.time - o.leChute < 0.6;   // estava lendo o chute armado: compra mais
+      if (Math.random() >= (leu ? 0.85 : FINTA_CHANCE)) continue;
     }
     // (G.fintaCerta: na aula do João ele SEMPRE cai, de qualquer distância e para qualquer lado — mesmo parado, caído ou já "reagindo")
     if (G.fintaCerta) { o.stun = 0; o.fall = 0; o.falling = false; o.perda = null; o.bloqueio = null; }
@@ -7286,7 +7415,7 @@ function fintaDeChute(k) {
   if (gk && gk.diveT <= 0 && gk.stun <= 0 && Math.hypot(HALF_L - u.x, u.z) < 36 * Math.max(0.5, ESC)) {
     const naArea = dentroDaArea(u.x, u.z, 1);
     const cara = ultimoHomem({ team: 1, dir: -1, x: u.x }, u, true);
-    const prob = cara ? 0.8 : naArea ? 0.5 : 0.1;
+    const prob = cara ? 0.85 : naArea ? 0.6 : 0.3;   // ele também leu o chute armado (ver lerChuteArmado)
     if (Math.random() < prob) {
       const lado = Math.random() < 0.5 ? -1 : 1;
       gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.5 ? 'baixo' : 'alto';
@@ -7299,7 +7428,24 @@ function fintaDeChute(k) {
     }
   }
   G.stats.fintas = (G.stats.fintas || 0) + 1; G.ultFinta = { enganou, pulou };      // a aula confere a finta (mesmo que ninguém compre)
-  if (enganou || pulou) { G.stats.dribles++; G.stats.driblesOk++; Som.drible(); if (enganou && !pulou) showToast('Finta!', 'good'); }
+  if (enganou || pulou) { G.stats.dribles++; G.stats.driblesOk++; Som.drible(); if (enganou && !pulou) showBanner('FINTA!', 0, 1.4, true); }
+}
+// LENDO O CHUTE: enquanto você arma o chute (mira com a perna indo para trás, barra de força), quem está na linha dele
+// e até ~9 m à frente para de avançar e se prepara para bloquear (marcado em leChute). É isso que faz a finta funcionar:
+// quando você cancela, ele já estava esperando o chute e "compra".
+function lerChuteArmado() {
+  const k = G.kick;
+  if (!k || k.kind !== 'shot' || k.cruzar || G.possession !== user || k.windup < 0.3) return;
+  const u = user, dl = Math.hypot(k.dirX || 0, k.dirZ || 0) || 1, dx = (k.dirX || 1) / dl, dz = (k.dirZ || 0) / dl;
+  const alvo = { x: u.x + dx * 30, z: u.z + dz * 30 };
+  for (const o of TEAMS[1]) {
+    if (o.out || o.role === 'GK' || o.stun > 0) continue;
+    const d = dist2D(o, u);
+    if (d > 9 || ((o.x - u.x) * dx + (o.z - u.z) * dz) < -0.3 || distPointSegment(o, u, alvo) > 2.6) continue;
+    o.leChute = G.time;
+  }
+  const gk = TEAMS[1].find((g) => g.role === 'GK' && !g.out);
+  if (gk) gk.leChute = G.time;
 }
 function updateFintaCine(rdt) {
   const F = G.fintaCine;
@@ -7714,14 +7860,19 @@ function pontoNaPerna(m, perna, x, y, z) {
   return { x: _pp.x, y: _pp.y, z: _pp.z };
 }
 function pontoNaCoxa(m, perna, x, y, z) { perna.updateWorldMatrix(true, false); _pp.set(x, y, z).applyMatrix4(perna.matrixWorld); return { x: _pp.x, y: _pp.y, z: _pp.z }; }
-function pontoContatoNovo(pose) {
-  const u = user, m = u.mesh, rp = u.recvPose, s = rp ? rp.side : 1, perna = s > 0 ? m.pernaD : m.pernaE, R = CONFIG.BALL_R;
+function pontoContatoNovo(pose, quem) {
+  const u = quem || user, m = u.mesh, rp = u.recvPose, s = rp ? rp.side : 1, perna = s > 0 ? m.pernaD : m.pernaE, R = CONFIG.BALL_R;
   if (pose === 'coxa') return pontoNaCoxa(m, perna, 0.1 + R, -0.16, 0);                    // em cima da coxa (a caixa da coxa vai até 0,1)
   if (pose === 'amortece' || pose === 'peDoAlto') return pontoNaPerna(m, perna, 0.38, -0.18, 0);   // em cima da ponta do pé (encostando, sem entrar)
   if (pose === 'solaPara') return pontoNaPerna(m, perna, 0.06, -0.45 - R, 0);             // embaixo da sola
   if (pose === 'orientado') return pontoNaPerna(m, perna, 0.06, -0.38, s * (0.125 + R)); // lado de fora do pé
   if (pose === 'esticado') return pontoNaPerna(m, perna, 0.2 + R, -0.38, 0);              // na ponta do pé esticado
-  if (pose === 'peitoSobe') return pontoContato('peito');
+  if (pose === 'peitoSobe') {                       // frente do peito (como no domínio de peito), com o tronco inclinado
+    if (u === user) return pontoContato('peito');
+    const c = Math.cos(u.angle), sn = Math.sin(u.angle), inc = rp ? 0.32 * Math.sin(clamp(rp.t / rp.dur, 0, 1) * Math.PI) : 0, lx = 0.39, ly = 1.15;
+    const fx = lx * Math.cos(inc) - ly * Math.sin(inc), fy = lx * Math.sin(inc) + ly * Math.cos(inc);
+    return { x: u.x + c * fx, y: fy + puloRecepcao(rp), z: u.z + sn * fx };
+  }
   if (pose === 'cabecinha') { const c = Math.cos(u.angle), sn = Math.sin(u.angle), j = puloRecepcao(rp); return { x: u.x + c * 0.2, y: 2.12 + j, z: u.z + sn * 0.2 }; }
   return null;
 }
@@ -7801,6 +7952,49 @@ function afastarBolaDoCorpo(p) {
     if (!P || P.entra < 0.008) break;
     const k = P.entra + 0.004;
     ball.x += P.nx * k; ball.y = Math.max(CONFIG.BALL_R, ball.y + P.ny * k); ball.z += P.nz * k;
+  }
+}
+// DOMÍNIOS NOVOS DA IA: quando um jogador da IA recebe uma bola que vinha rápida ou alta, ele também usa os domínios
+// novos (coxa, peito do pé, sola, orientado, perna esticada, peito que sobe, pé no alto, cabecinha), escolhidos pela altura
+// e por quanto ela passa do lado dele. A bola vai do ponto onde chegou até a parte do corpo e depois para o pé (p.domIA);
+// enquanto isso ele não toca nem chuta. Se perder a bola no meio, a animação acaba.
+function escolherDominioIA(p, y, lat, vy) {
+  const r = Math.random();
+  if (y > 1.9) return r < 0.55 ? 'cabecinha' : 'peDoAlto';
+  if (y > 1.45) return r < 0.6 ? 'peDoAlto' : 'peitoSobe';
+  if (y > 1.05) return r < 0.55 ? 'peitoSobe' : null;
+  if (y > 0.55) return vy < -1.5 && r < 0.5 ? 'amortece' : 'coxa';
+  if (Math.abs(lat) > 0.35) return 'esticado';
+  return r < 0.28 ? 'solaPara' : r < 0.55 ? 'orientado' : null;
+}
+function iniciarDominioIA(p, b) {
+  const a = p.angle, lat = (b.x - p.x) * -Math.sin(a) + (b.z - p.z) * Math.cos(a);
+  const pose = escolherDominioIA(p, b.y, lat, b.vy);
+  if (!pose) return;
+  const side = pose === 'esticado' || pose === 'orientado' ? (lat >= 0 ? 1 : -1) : (Math.random() < 0.5 ? 1 : -1);
+  const ida = 0.14, t0 = Math.max(0, CONTATO_T[pose] - ida);
+  p.recvPose = { kind: pose, t: t0, t0, dur: POSE_DUR[pose], side };
+  p.domIA = { pose, t: 0, ida, fase: 'ida', c0: { x: b.x, y: b.y, z: b.z }, pos: { x: b.x, y: b.y, z: b.z } };
+  p.think = Math.max(p.think || 0, ida + (DOM_DEPOIS[pose] ? DOM_DEPOIS[pose].dur : 0.3) + 0.15);
+}
+function atualizarDominiosIA(rdt) {
+  for (const p of players) {
+    const D = p.domIA;
+    if (!D) continue;
+    if (G.possession !== p || G.state !== 'play') { p.domIA = null; continue; }
+    D.t += rdt;
+    if (D.fase === 'ida') {
+      const c = pontoContatoNovo(D.pose, p), k = smooth(Math.min(1, D.t / D.ida));
+      if (!c) { p.domIA = null; continue; }
+      D.pos.x = lerp(D.c0.x, c.x, k); D.pos.y = lerp(D.c0.y, c.y, k); D.pos.z = lerp(D.c0.z, c.z, k);
+      if (k >= 1) { D.fase = 'desce'; D.t1 = D.t; D.c1 = { x: D.pos.x, y: D.pos.y, z: D.pos.z }; Som.toque(0.25); }
+    } else {
+      const Dp = DOM_DEPOIS[D.pose], a = Math.min(1, (D.t - D.t1) / Dp.dur), k = smooth(a);
+      const px = p.x + Math.cos(p.angle) * 0.62, pz = p.z + Math.sin(p.angle) * 0.62;
+      D.pos.x = lerp(D.c1.x, px, k); D.pos.z = lerp(D.c1.z, pz, k);
+      D.pos.y = lerp(D.c1.y, CONFIG.BALL_R, Dp.arco > 0.2 ? a * a : k) + Dp.arco * Math.sin(a * Math.PI);
+      if (a >= 1) p.domIA = null;
+    }
   }
 }
 function pontoPe() { return { x: user.x + Math.cos(user.angle) * 0.62, y: CONFIG.BALL_R, z: user.z + Math.sin(user.angle) * 0.62 }; }
@@ -7942,6 +8136,7 @@ function updateRecvPose(rdt) {
     }
   }
   atualizarChuteAcroIA(rdt);
+  atualizarDominiosIA(rdt);
 }
 
 // Desenho das poses de recepção (chamado no fim do syncMeshes, por cima de tudo).
@@ -10706,6 +10901,8 @@ function syncMeshes(dt) {
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
   bracosSemAtravessar();
   if (G.recvFx && DOMINIOS_NOVOS.includes(G.recvFx.pose)) afastarBolaDoCorpo(user);   // com a pose deste quadro (a perna se mexe rápido)
+  if (G.possession && G.possession.dribleIA && G.possession.dribleIA.bolaAbs) { const h = G.possession, B = h.dribleIA.bolaAbs; attachBall(h); afastarBolaDoCorpo(h); B.x = ball.x; B.y = ball.y; B.z = ball.z; }
+  if (G.possession && G.possession.domIA) { const h = G.possession; attachBall(h); afastarBolaDoCorpo(h); h.domIA.pos.x = ball.x; h.domIA.pos.y = ball.y; h.domIA.pos.z = ball.z; }
   const bolaMao = bolaNasMaosDoGoleiro();
   if (bolaMao) ball.mesh.position.copy(bolaMao); else ball.mesh.position.set(ball.x, ball.y, ball.z);
   // Só gira quando está rolando/voando. Nas mãos (goleiro, lateral, cobrador levando) fica parada.
@@ -13058,6 +13255,7 @@ const Idioma = {
   'GOL DELES': ['THEIR GOAL', 'GOL DE ELLOS', 'GOL LORO', 'BUT ADVERSE'],
   'PÊNALTI!': ['PENALTY!', '¡PENAL!', 'RIGORE!', 'PENALTY !'],
   'ENGANOU O GOLEIRO!': ['FOOLED THE KEEPER!', '¡ENGAÑÓ AL PORTERO!', 'HA INGANNATO IL PORTIERE!', 'IL A TROMPÉ LE GARDIEN !'],
+  'FINTA!': ['FAKE SHOT!', '¡AMAGUE!', 'FINTA!', 'FEINTE !'],
   'DOMÍNIO PERFEITO': ['PERFECT CONTROL', 'CONTROL PERFECTO', 'CONTROLLO PERFETTO', 'CONTRÔLE PARFAIT'],
   'VOCÊ SAIU': ['YOU WENT OFF', 'SALISTE', 'SEI USCITO', 'TU ES SORTI'],
   'PÊNALTIS': ['PENALTIES', 'PENALES', 'RIGORI', 'TIRS AU BUT'],
