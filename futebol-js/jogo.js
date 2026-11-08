@@ -811,22 +811,42 @@ class Lote {
   constructor(uvPadrao = [0, 0, 1, 1]) { this.pos = []; this.nor = []; this.uv = []; this.cor = []; this.idx = []; this.uvPadrao = uvPadrao; }
   // cor: 0xRRGGBB. faceUV(i): pedaço do atlas da face i (ou null para usar a cor).
   // giro (opcional): [gx, gy, gz] em graus, ordem XYZ, em volta do centro da caixa (cabelo e barba girados).
-  caixa(w, h, d, cor, x, y, z, faceUV, giro) {
+  // cantos (opcional): 24 números = 8 cantos [x, y, z] da caixa como se ela tivesse tamanho 1 (sem deformar: ±0,5).
+  //   Canto k = (x+ ? 1 : 0) + (y+ ? 2 : 0) + (z+ ? 4 : 0). Serve para cada lado ter um tamanho (trapézio, cunha...).
+  caixa(w, h, d, cor, x, y, z, faceUV, giro, cantos) {
     const tam = { w, h, d };
+    if (cantos && cantos.length !== 24) cantos = null;
     const M = giro && (giro[0] || giro[1] || giro[2]) ? new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(giro[0] * Math.PI / 180, giro[1] * Math.PI / 180, giro[2] * Math.PI / 180, 'XYZ')).elements : null;
+    // gira o canto e a normal (matriz de rotação do three.js, por colunas)
+    const gira = (p) => { const a = p.x, b = p.y, c = p.z; p.x = M[0] * a + M[4] * b + M[8] * c; p.y = M[1] * a + M[5] * b + M[9] * c; p.z = M[2] * a + M[6] * b + M[10] * c; };
     const r = ((cor >> 16) & 255) / 255, g = ((cor >> 8) & 255) / 255, b = (cor & 255) / 255;
     FACES.forEach(([u, v, ww, udir, vdir, Wk, Hk, Dk, sinal], i) => {
       const W = tam[Wk], H = tam[Hk], D = tam[Dk] * sinal;
       const reg = faceUV ? faceUV(i) : null;
       const area = reg || this.uvPadrao;
       const base = this.pos.length / 3;
+      const vs = [];                                 // os 4 cantos da face: [posição, normal, ix, iy]
       for (let iy = 0; iy < 2; iy++) for (let ix = 0; ix < 2; ix++) {
         const vec = { x: 0, y: 0, z: 0 }, n = { x: 0, y: 0, z: 0 };
         vec[u] = (ix * W - W / 2) * udir; vec[v] = (iy * H - H / 2) * vdir; vec[ww] = D / 2; n[ww] = sinal;
-        if (M) {                                     // gira o canto e a normal (matriz de rotação do three.js, por colunas)
-          const gira = (p) => { const a = p.x, b = p.y, c = p.z; p.x = M[0] * a + M[4] * b + M[8] * c; p.y = M[1] * a + M[5] * b + M[9] * c; p.z = M[2] * a + M[6] * b + M[10] * c; };
-          gira(vec); gira(n);
+        if (cantos) {                                // caixa deformada: troca o canto pelo canto guardado
+          const k = (vec.x > 0 ? 1 : 0) + (vec.y > 0 ? 2 : 0) + (vec.z > 0 ? 4 : 0);
+          vec.x = cantos[k * 3] * w; vec.y = cantos[k * 3 + 1] * h; vec.z = cantos[k * 3 + 2] * d;
         }
+        vs.push([vec, n, ix, iy]);
+      }
+      if (cantos) {
+        // normal da face torta: cruzamento das duas diagonais, virada para o mesmo lado da face reta
+        const p0 = vs[0][0], p1 = vs[1][0], p2 = vs[2][0], p3 = vs[3][0];
+        const ax = p3.x - p0.x, ay = p3.y - p0.y, az = p3.z - p0.z, bx = p2.x - p1.x, by = p2.y - p1.y, bz = p2.z - p1.z;
+        let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+        const o = vs[0][1];
+        if (nx * o.x + ny * o.y + nz * o.z < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        const L = Math.hypot(nx, ny, nz);
+        if (L > 1e-9) for (const q of vs) q[1] = { x: nx / L, y: ny / L, z: nz / L };
+      }
+      for (const [vec, n, ix, iy] of vs) {
+        if (M) { gira(vec); gira(n); }
         this.pos.push(x + vec.x, y + vec.y, z + vec.z);
         this.nor.push(n.x, n.y, n.z);
         this.uv.push(area[0] + ix * (area[2] - area[0]), area[1] + (1 - iy) * (area[3] - area[1]));
@@ -1924,12 +1944,12 @@ function makeAthlete(o) {
   // cabelo e barba vêm dos dados (ESTILOS_CABELO / ESTILOS_BARBA); "mix" mistura com a pele (degradê)
   const corBarba = o.corBarba != null ? hex(o.corBarba) : cabelo;
   const pecasCabeca = [];
-  // caixa: [w, h, d, x, y, z, mistura, giroX, giroY, giroZ] — o giro (graus) é opcional
+  // caixa: [w, h, d, x, y, z, mistura, giroX, giroY, giroZ, cantos] — o giro (graus) e os cantos (caixa deformada) são opcionais
   const giroDe = (gx, gy, gz) => (gx || gy || gz ? [gx || 0, gy || 0, gz || 0] : null);
-  for (const [w, h, d, x, y, z, mix, gx, gy, gz] of (ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0]).caixas) pecasCabeca.push([w, h, d, mix ? misturarCor(cabelo, pele, mix) : cabelo, x, y, z, giroDe(gx, gy, gz)]);
-  for (const [w, h, d, x, y, z, , gx, gy, gz] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z, giroDe(gx, gy, gz)]);
+  for (const [w, h, d, x, y, z, mix, gx, gy, gz, cantos] of (ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0]).caixas) pecasCabeca.push([w, h, d, mix ? misturarCor(cabelo, pele, mix) : cabelo, x, y, z, giroDe(gx, gy, gz), cantos || null]);
+  for (const [w, h, d, x, y, z, , gx, gy, gz, cantos] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z, giroDe(gx, gy, gz), cantos || null]);
   if (kc !== 1) for (const p of pecasCabeca) { p[0] *= kc; p[1] *= kc; p[2] *= kc; p[4] *= kc; p[5] = 1.36 + (p[5] - 1.36) * kc; p[6] *= kc; }
-  for (const [w, h, d, cor, x, y, z, giro] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z, null, giro);
+  for (const [w, h, d, cor, x, y, z, giro, cantos] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z, null, giro, cantos);
   const troncoInteiro = C.malha(material); corpo.add(troncoInteiro);
   // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
   // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
@@ -1942,7 +1962,7 @@ function makeAthlete(o) {
   cabeca.position.set(0.02, 1.36, 0); cabeca.rotation.order = 'ZXY'; cabeca.visible = false;
   const CB = new Lote(UV_BRANCO);
   CB.caixa(0.48 * kc, 0.52 * kc, 0.52 * kc, pele, -0.02, 0.26 * kc, 0, fCab);
-  for (const [w, h, d, cor, x, y, z, giro] of pecasCabeca) CB.caixa(w, h, d, cor, x - 0.02, y - 1.36, z, null, giro);
+  for (const [w, h, d, cor, x, y, z, giro, cantos] of pecasCabeca) CB.caixa(w, h, d, cor, x - 0.02, y - 1.36, z, null, giro, cantos);
   cabeca.add(CB.malha(material)); corpo.add(cabeca);
 
   const etiqueta = new THREE.Sprite(new THREE.SpriteMaterial({ map: texNome(o.nome, o.fundoNome), depthTest: false, transparent: true }));
