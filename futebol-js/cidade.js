@@ -134,6 +134,8 @@
     'Use o direcional para andar e arraste a tela para girar a câmera.': ['Use the joystick to walk and drag the screen to turn the camera.', 'Usa el joystick para caminar y arrastra la pantalla para girar la cámara.', 'Usa il joystick per camminare e trascina lo schermo per ruotare la telecamera.', "Utilise le joystick pour marcher et fais glisser l'écran pour tourner la caméra."],
     'Agora você tem dinheiro: {0} fakes.': ['Now you have money: {0} fakes.', 'Ahora tienes dinero: {0} fakes.', 'Ora hai dei soldi: {0} fakes.', "Maintenant tu as de l'argent : {0} fakes."],
     'fakes': ['fakes', 'fakes', 'fakes', 'fakes'],
+    'Barbearia': ['Barbershop', 'Barbería', 'Barbiere', 'Salon de coiffure'],
+    'Barbearia fechada. Abre às 8h.': ['Barbershop closed. Opens at 8 AM.', 'Barbería cerrada. Abre a las 8h.', 'Barbiere chiuso. Apre alle 8.', 'Salon de coiffure fermé. Ouvre à 8 h.'],
     'Dinheiro': ['Money', 'Dinero', 'Soldi', 'Argent'],
     'Modo história · Cidadezinha': ['Story mode · Small town', 'Modo historia · Pueblito', 'Modalità storia · Paesino', 'Mode histoire · Petite ville'],
     'Empurre o direcional até a borda para correr. Arraste a tela para girar a câmera.': ['Push the joystick to the edge to run. Drag the screen to turn the camera.', 'Empuja el joystick hasta el borde para correr. Arrastra la pantalla para girar la cámara.', 'Spingi il joystick fino al bordo per correre. Trascina lo schermo per ruotare la telecamera.', "Pousse le joystick jusqu'au bord pour courir. Fais glisser l'écran pour tourner la caméra."],
@@ -1268,6 +1270,18 @@
       letreiro: { txt: 'ACADEMIA', fundo: '#1c1c1f', cor: '#f2c230', w: 9, h: 1.2, y: 3.45 },
       montar: (G, w, d) => { porta(G, w, d, 'f', -5, 1.8, 2.4, '#2e3a44'); naFace(G, w, d, 'f', 2, 0.5, 0, 9, 2.2, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 4.0, 0, w - 2, 2.1, 0.14, '#7aa2bd');
         for (let i = -4; i <= 4; i++) naFace(G, w, d, 'f', i * 2.0, 4.0, 0.01, 0.1, 2.1, 0.17, '#2e3a44'); } });
+    // BARBEARIA DO TONINHO (barbearia.js): entre a quadra de futsal e a pizzaria. Porta 2,5 m para o oeste, vitrine com toldo e o poste listrado
+    edificio({ r: R(490, 432, 55, 43), frente: -1, h: 3.8, andares: 1, cor: '#f2ece0', barrado: '#1f1f22', platibanda: '#2a3f66',
+      letreiro: { txt: 'BARBEARIA', fundo: '#1c1c1f', cor: '#f4efe2', w: 6.2, h: 1.0, y: 3.85 },
+      montar: (G, w, d) => {
+        porta(G, w, d, 'f', 2.5, 1.5, 2.4, '#3a2a22', '#c9a24a'); naFace(G, w, d, 'f', -2.0, 0.8, 0, 4.4, 1.8, 0.14, '#7aa2bd');
+        naFace(G, w, d, 'f', -2.0, 0.8, 0.02, 4.6, 0.08, 0.18, '#c9a24a'); naFace(G, w, d, 'f', -2.0, 2.6, 0.02, 4.6, 0.08, 0.18, '#c9a24a');
+        toldo(G, w, d, -2.0, 5.0, 3.15, 1.0, ['#2a3f66', '#f4efe2']);
+        const u = 4.05, z = d / 2 + 0.22;                                       // o poste listrado (vermelho, branco e azul) com as tampas de metal
+        G.box(0.12, 0.25, 0.3, '#9aa0a8', u, 1.75, d / 2 + 0.08); G.box(0.3, 0.12, 0.3, '#c9ced4', u, 0.95, z); G.box(0.3, 0.14, 0.3, '#c9ced4', u, 2.42, z);
+        for (let i = 0; i < 9; i++) G.box(0.22, 0.152, 0.22, ['#c8352b', '#f4f4ec', '#2a64b8'][i % 3], u, 1.07 + i * 0.15, z);
+      },
+      obst: [[4.05, 0.22, 0.34, 0.34]] });                                                 // o poste listrado tem corpo
     // mesas de plástico do bar (na calçada) e banquinhos do lanche já estão no prédio; mesas aqui:
     { const G = new Geo(); for (const x of [-102.7, -97.7]) { const z = 9.5; G.box(0.85, 0.06, 0.85, '#d23a2a', x, 0.82, z); G.box(0.08, 0.7, 0.08, '#d23a2a', x, 0.12, z);
         for (const [dx, dz] of [[-0.75, 0], [0.75, 0], [0, -0.75], [0, 0.75]]) {          // cadeiras de plástico (dá para sentar)
@@ -3613,8 +3627,9 @@
     { nome: 'hospital', x: -104, z: -4.4, sai: -Math.PI / 2 }, { nome: 'bar', x: -100.2, z: 8.6, sai: Math.PI / 2 }, { nome: 'pizzaria', x: 1.2, z: 8.6, sai: Math.PI / 2 },
     { nome: 'restaurante', x: 23.6, z: 8.6, sai: Math.PI / 2 }, { nome: 'academia', x: 76.4, z: 8.6, sai: Math.PI / 2 },
     { nome: 'esportiva', x: -75.5, z: 8.6, sai: Math.PI / 2 },                       // Golaço Esportes
+    { nome: 'barbearia', x: -19.0, z: 8.6, sai: Math.PI / 2 },                       // Barbearia do Toninho (barbearia.js)
   ];
-  const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', esportiva: 'Golaço Esportes' };
+  const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', barbearia: 'Barbearia', esportiva: 'Golaço Esportes' };
   // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
   async function entrarEm(P) {
     const I = S.interiores, J = S.jog; if (!I) return;
@@ -3633,9 +3648,10 @@
     const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
     const pizzaJs = P.nome === 'pizzaria' && !!S.pizzaria;               // (6.1.0) na pizzaria quem cuida de tudo (Mário, Carla, clientes) é o pizzaria.js
     const acadJs = P.nome === 'academia' && !!S.academia && !!R.academia;   // (6.2.0) na academia quem coloca as pessoas é o academia.js
+    const barbJs = P.nome === 'barbearia' && !!S.barbearia && !!R.barbearia;   // na barbearia quem põe o Toninho é o barbearia.js
     const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
-      if (pizzaJs || acadJs) continue;
+      if (pizzaJs || acadJs || barbJs) continue;
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
@@ -3651,6 +3667,7 @@
     if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
     if (acadJs) S.academia.entrou(R, idx);                               // (6.2.0)
+    if (barbJs) try { S.barbearia.entrou(R, idx); } catch (e) { console.warn('[Cidade] barbearia:', e); }
     if (P.nome === 'cinema' && S.cinema && R.cinema) try { S.cinema.entrou(R, idx); } catch (e) { console.warn('[Cidade] cinema:', e); }
     S.npcs.filter((A) => A.sentado).reduce((ant, A) => { if (ant && Math.hypot(ant.x - A.x, ant.z - A.z) < 1.8) { S.conversas.push({ a: ant, b: A, t: 0, quem: 0, prox: 2 }); return null; } return A; }, null);
     if (enc) { enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL); }
@@ -3681,7 +3698,7 @@
   const H_CINEMA_ABRE = 6, H_CINEMA_FECHA = 22;
   const cinemaAberto = () => S.dados.hora >= H_CINEMA_ABRE && S.dados.hora < H_CINEMA_FECHA;
   const noCinema = () => !!(S.dentro && S.dentro.nome === 'cinema');
-  const SEM_FLUXO = { hospital: 1, academia: 1, esportiva: 1, cinema: 1 };   // o cinema tem a plateia fixa (cinema.js)           // a loja esportiva fica vazia por enquanto
+  const SEM_FLUXO = { hospital: 1, academia: 1, esportiva: 1, cinema: 1, barbearia: 1 };   // o cinema tem a plateia fixa (cinema.js)           // a loja esportiva fica vazia por enquanto
   function alvoClientes(n) {
     if (n <= 2) return 0;
     const f = FLUXO_SEM[diaSemana()], v = f === 'vazio' ? Math.round(n * 0.15) + 1 : f === 'medio' ? Math.round(n * 0.45) : n - (2 + Math.floor(Math.random() * 3));
@@ -3785,6 +3802,7 @@
     if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
     if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
     if (S.cinema && S.dentro && S.dentro.nome === 'cinema') try { S.cinema.saiu(); } catch (e) { console.warn('[Cidade] cinema:', e); }
+    if (S.barbearia && S.dentro && S.dentro.nome === 'barbearia') try { S.barbearia.saiu(); } catch (e) { console.warn('[Cidade] barbearia:', e); }
     if (J.sentado) levantar();
     for (const A of S.npcs) { if (A.congelado) descongelar(A); ATLETAS.delete(A.m); S.meus.delete(A.m); }
     S.grupoCidade.add(J.m.raiz, J.blob, J.anel);
@@ -3821,6 +3839,7 @@
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
       if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos
       if (D.nome === 'cinema' && S.cinema) try { S.cinema.alvos(v); } catch (e) { erroCinema(e); }
+      if (D.nome === 'barbearia' && S.barbearia) S.barbearia.alvos(v);    // o Toninho
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
@@ -3829,6 +3848,7 @@
       alvosTurno(v);
     } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
+      if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
       if (P.nome === 'academia' && S.academia && S.academia.aberto && !S.academia.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.academia.rotuloFechada(), fn: async () => {}, y: 3 }); continue; }   // (6.3.0) a academia abre das 7h às 11h e das 13h às 22h
       if (P.nome === 'supermercado' && S.mercado && !S.mercado.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Mercado fechado. Abre às 8h.'), fn: async () => {}, y: 3 }); continue; }   // (5.4.0) o mercado abre das 8h às 22h (o turno do jogador é 14h–22h)
@@ -4027,6 +4047,23 @@
   function erroCinema(e) { if (!S.erroCinema) { S.erroCinema = true; console.warn('[Cidade] cinema:', e); } }   // um erro no cinema.js não trava a cidade (avisa uma vez só)
   function apiCinema() {
     return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; }, rotaCasaPorta, pontoNaRota });   // (6.6.5) a rota do Herick (mora com a Fernanda)
+  }
+  // o que o barbearia.js usa daqui: o do cinema e mais refazer o modelo do jogador (corte novo), o letreiro e o assento
+  function apiBarbearia() {
+    return Object.assign(apiCinema(), { refazerJogador, texLetreiro, assento, OX });
+  }
+  // REFAZ o boneco do jogador com a aparência atual (PERSONAGEM.aparencia: corte novo na barbearia) e a roupa salva; troca no mesmo lugar
+  function refazerJogador() {
+    const J = S.jog, velho = J.m, pai = velho.raiz.parent;
+    let m = null, opt = null;
+    try { const f2 = S.f2; if (f2 && typeof f2.modeloJogador === 'function') { const r = f2.modeloJogador(API.historia.ler('fase2')); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
+    if (!m) { const N = criarJogador(null, null); m = N.m; opt = N.opt; for (const o of [N.blob, N.anel]) { if (o.parent) o.parent.remove(o); } S.meus.delete(m); }
+    m.raiz.position.copy(velho.raiz.position); m.raiz.rotation.copy(velho.raiz.rotation);
+    if (pai) { pai.add(m.raiz); pai.remove(velho.raiz); }
+    S.meus.delete(velho); S.meus.add(m); if (typeof ATLETAS !== 'undefined') ATLETAS.delete(velho);
+    velho.raiz.traverse((o) => { if (o.geometry && o.geometry !== SHADOW_GEO) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const q of ms) if (q && q !== MAT && q !== MAT_CORES && q !== SHADOW_MAT) { if (q.map) q.map.dispose(); q.dispose(); } });
+    J.m = m; J.opt = opt;
+    return m;
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {
@@ -6634,7 +6671,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
         if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
-        if (S.pesca) S.pesca.tick(dt);                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
+        if (S.pesca) S.pesca.tick(dt);
+        if (S.barbearia) try { S.barbearia.tick(dt); } catch (e) { if (!S.erroBarb) { S.erroBarb = true; console.warn('[Cidade] barbearia:', e); } }                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); tickTreino(dt); tickPlantas(dt); }
       }
       if (n > 1) S.cam.snap = true;
@@ -6694,6 +6732,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
+      Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));   // a barbearia (cortes da loja)
       Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e));   // (6.4.0) pesca no lago
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();

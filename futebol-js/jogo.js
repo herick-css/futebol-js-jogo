@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.9
+   FUTEBOL JS · jogo.js · versão 6.6.12
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.9';
+const VERSAO_JOGO = '6.6.12';
 // 6.6.9: pesca — o Duke, antes de levitar, nada uns metros para longe do jogador (rastro de bolhas): levita a ~8,5 m, não mais colado no píer.
 // 6.6.8: privilégios do desenvolvedor — mudar o CLIMA na hora (automático, limpo, nublado, chuva, tempestade) e ligar a PESCA DO DUKE (toda mordida no lago é ele).
 // 6.6.7: pesca — o DUKE (duke.js, arquivo novo): no dia 13 de maio (data do aparelho), um lendário misterioso que levita para fora da água, encara o jogador e volta para o lago.
@@ -517,6 +517,7 @@ const CABELO_GENERO = {
   // os outros (curto, volumoso, para trás, franja, black power, cacheados, longo liso, coque longo, bagunçado, tigela, rabo de cavalo,
   // dreads, mullet, repicado, pixie...) são UNISSEX
 };
+const CHANCE_CORTE_LOJA = 0.12;                                          // de cada 100 NPCs, uns 12 com um corte da loja
 const generoDoCabelo = (i) => { const h = ESTILOS_CABELO[i]; if (h && h.g) return h.g; return CABELO_GENERO.M.includes(i) ? 'M' : CABELO_GENERO.F.includes(i) ? 'F' : 'U'; };
 const generoDoRosto = (i) => { const r = ROSTOS[i]; if (!r) return 'U'; if (r.g) return r.g; return /cilios|batom|delineado|sombra|blush|pinta/.test(r.extra || '') ? 'F' : 'U'; };
 function gerarAparencia(semente, genero) {
@@ -525,9 +526,12 @@ function gerarAparencia(semente, genero) {
   const fem = genero === 'F';
   const iPele = pesado([1, 2, 3, 3, 2.5, 2]), pele = PELES_FITZ[Math.min(iPele, PELES_FITZ.length - 1)].cor;
   const iCor = pesado([30, 24, 18, 9, 7, 3, 2, 1].slice(0, CORES_CABELO.length)), cabelo = CORES_CABELO[iCor].cor;
-  const cortes = [], ok = fem ? 'F' : 'M';
-  ESTILOS_CABELO.forEach((h, i) => { const g = generoDoCabelo(i); if (g === ok) cortes.push(i, i); else if (g === 'U') cortes.push(i); });   // do próprio gênero vale em dobro
-  const estilo = pick(cortes);
+  const cortes = [], loja = [], ok = fem ? 'F' : 'M';
+  ESTILOS_CABELO.forEach((h, i) => { const g = generoDoCabelo(i); if (h.cosmetico) { if (g === ok || g === 'U') loja.push(i); return; } if (g === ok) cortes.push(i, i); else if (g === 'U') cortes.push(i); });   // do próprio gênero vale em dobro
+  let estilo = pick(cortes);
+  // os cortes da LOJA (cosmeticos.js, vendidos na barbearia) aparecem em alguns NPCs. Sorteio à parte, com a mesma semente:
+  //   o resto da aparência de cada um continua igual, com ou sem o cosmeticos.js carregado.
+  if (loja.length) { const r2 = sorteador(((semente || 1) * 7919 + 104729) | 0); if (r2() < CHANCE_CORTE_LOJA) estilo = loja[Math.floor(r2() * loja.length)]; }
   const rostosNeutros = [], rostosF = [];
   ROSTOS.forEach((x, i) => (generoDoRosto(i) === 'F' ? rostosF : rostosNeutros).push(i));
   const rosto = fem && rostosF.length && r() < 0.55 ? pick(rostosF) : (r() < 0.35 ? 0 : pick(rostosNeutros));
@@ -15258,7 +15262,7 @@ function montarCriador(tela, aoFechar) {
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const E = Object.assign({ nome: '', genero: 'M', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
     pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, labio: 3, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
-  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
+  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); if (ESTILOS_CABELO[E.estilo].cosmetico) E.estilo = 0; E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
   if (!Array.isArray(E.comemoracoes) || !E.comemoracoes.length) E.comemoracoes = [1, 2];
   let passo = 1, aba = 'pele', msg = '', emCena = false, falaAmostra = null;
   const css = document.createElement('style');
@@ -15451,6 +15455,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
   const irPara = (parte) => { foco = FOCO_CRIADOR[parte] || FOCO_CRIADOR.corpo; };
 
   // ----- telas dos passos -----
+  const chipsIdx = (itens, atual, a) => '<div class="crGrade">' + itens.map(([i, n]) => '<button type="button" class="pxBtn crChip' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '">' + esc(n) + '</button>').join('') + '</div>';   // itens: [índice de verdade, nome]
   const chips = (lista, atual, a) => '<div class="crGrade">' + lista.map((n, i) => '<button type="button" class="pxBtn crChip' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '">' + esc(n) + '</button>').join('') + '</div>';
   const cores = (lista, atual, a, comIgual) => '<div class="crCores">' + (comIgual ? '<button type="button" class="crCor igual' + (atual < 0 ? ' on' : '') + '" data-a="' + a + '" data-i="-1" title="' + esc(T('Igual ao cabelo')) + '" aria-label="' + esc(T('Igual ao cabelo')) + '">=</button>' : '') +
     lista.map((c, i) => '<button type="button" class="crCor' + (i === atual ? ' on' : '') + '" data-a="' + a + '" data-i="' + i + '" style="background:' + (c.cor) + '" title="' + esc(T(c.nome)) + '" aria-label="' + esc(T(c.nome)) + '"></button>').join('') + '</div>';
@@ -15480,7 +15485,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       if (aba === 'pele') {
         h += '<p class="crSecao">' + T('Tom de pele') + '</p>' + cores(PELES_FITZ, E.pele, 'pele', false) + '<p class="crNomeSel">' + esc(T(PELES_FITZ[E.pele].nome)) + '</p><p class="crDica">' + T('Escala de Fitzpatrick, do tipo I ao VI.') + '</p>';
       } else if (aba === 'cabelo') {
-        h += '<p class="crSecao">' + T('Corte') + '</p>' + chips(ESTILOS_CABELO.map((c) => T(c.nome)), E.estilo, 'corte') + '<p class="crSecao">' + T('Cor do cabelo') + '</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(T(CORES_CABELO[E.corCabelo].nome)) + '</p>';
+        h += '<p class="crSecao">' + T('Corte') + '</p>' + chipsIdx(ESTILOS_CABELO.map((c, i) => [i, T(c.nome)]).filter(([i]) => !ESTILOS_CABELO[i].cosmetico), E.estilo, 'corte') + '<p class="crSecao">' + T('Cor do cabelo') + '</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(T(CORES_CABELO[E.corCabelo].nome)) + '</p>';
       } else if (aba === 'barba') {
         const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(T(b.nome)) + '</button>' : '')).join('') + '</div>';
         h += '<p class="crSecao">' + T('Barba') + '</p>' + grupoB('barba') + '<p class="crSecao">' + T('Só bigodinho') + '</p>' + grupoB('bigode') +
@@ -15661,6 +15666,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     try {
       if (sv.personagem && typeof sv.personagem === 'object') Object.assign(PERSONAGEM, sv.personagem);
       PERSONAGEM.ativo = true;
+      await Promise.race([Cosmeticos.pronto, new Promise((r) => setTimeout(r, 6000))]); ajustarCortePersonagem();
       HistoriaSave.limpar();
       for (const f of Object.keys(sv.historia || {})) { try { HistoriaSave.gravar(f, sv.historia[f]); } catch (err) { console.warn(err); } }
       if (Som.ligar) Som.ligar();
@@ -15978,6 +15984,15 @@ function montarMenuInicial() {
 
   if (!window.matchMedia('(pointer: coarse)').matches) menu.querySelector('.pxPrim').focus({ preventScroll: true });
 }
+
+// COSMÉTICOS DA LOJA (cosmeticos.js, feito no conversor): os cortes entram no FIM de ESTILOS_CABELO com cosmetico: true.
+//   Não aparecem no criador de personagem (só comprando na barbearia da cidade, barbearia.js); os NPCs podem usar (gerarAparencia).
+//   O corte comprado fica no personagem pelo NOME (aparencia.estiloNome): se a lista do jogo crescer, o número muda e o nome acha de novo.
+function ajustarCortePersonagem() {
+  const ap = PERSONAGEM.aparencia; if (!ap || !ap.estiloNome) return;
+  const i = ESTILOS_CABELO.findIndex((c) => c.cosmetico && c.nome === ap.estiloNome); if (i >= 0) ap.estilo = i;
+}
+const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 
 montarTelaDeConfig();
 montarTelaDeTatica();
