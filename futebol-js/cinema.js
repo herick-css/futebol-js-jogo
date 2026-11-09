@@ -83,6 +83,14 @@
     'Aqui é só a saída, viu? Para entrar é pelo outro lado, com bilhete.': ['This is the exit only, okay? To get in, use the other side, with a ticket.', 'Aquí es solo la salida, ¿eh? Para entrar es por el otro lado, con boleto.', 'Questa è solo l’uscita, eh? Per entrare si passa dall’altra parte, col biglietto.', 'Ici, c’est seulement la sortie, d’accord ? Pour entrer, c’est de l’autre côté, avec un billet.'],
     'Bilhete conferido. Bom filme!': ['Ticket checked. Enjoy the movie!', 'Boleto revisado. ¡Buena película!', 'Biglietto controllato. Buon film!', 'Billet vérifié. Bon film !'],
   };
+  Object.assign(TRAD, {                                                 // as grosserias
+    'Isso tá com cara de golpe, hein.': ['This looks like a scam, huh.', 'Esto tiene pinta de estafa, ¿eh?', 'Questa sembra una truffa, eh.', 'Ça ressemble à une arnaque, hein.'],
+    'Golpe? Poxa... eu só queria um jeito honesto de manter o jogo de pé.': ['A scam? Gee... I just wanted an honest way to keep the game going.', '¿Estafa? Uf... solo quería una forma honesta de mantener el juego.', 'Una truffa? Accidenti... volevo solo un modo onesto per mandare avanti il gioco.', 'Une arnaque ? Mince... je voulais juste un moyen honnête de faire vivre le jeu.'],
+    'Esse seu jogo tá cheio de bug, hein.': ['This game of yours is full of bugs, huh.', 'Este juego tuyo está lleno de bugs, ¿eh?', 'Questo tuo gioco è pieno di bug, eh.', 'Ton jeu est plein de bugs, hein.'],
+    'Bug? Me manda um print que eu arrumo... mas precisava falar assim?': ['A bug? Send me a screenshot and I’ll fix it... but did you have to say it like that?', '¿Un bug? Mándame una captura y lo arreglo... ¿pero hacía falta decirlo así?', 'Un bug? Mandami uno screenshot e lo sistemo... ma c’era bisogno di dirlo così?', 'Un bug ? Envoie-moi une capture et je corrige... mais fallait-il le dire comme ça ?'],
+    'Anda logo, que demora.': ['Hurry up, you’re so slow.', 'Apúrate, qué lenta.', 'Sbrigati, che lentezza.', 'Dépêche-toi, c’est long.'],
+    'Nossa, calma... eu só tava sendo educada.': ['Wow, calm down... I was just being polite.', 'Vaya, calma... solo estaba siendo amable.', 'Wow, calma... stavo solo essendo gentile.', 'Waouh, du calme... j’étais juste polie.'],
+  });
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
   const PAGA = { 15: 30, 30: 100 };
@@ -299,9 +307,12 @@
           'O "filme", no caso, é um anúncio. Você escolhe se quer ver, quantos quer ver, e ganha fakes por cada um.',
           'E relaxa: lá dentro o tempo do jogo não passa. A sua rotina não fica atrapalhada.',
           'Assim eu consigo manter o jogo, sem você gastar nenhum real e sem ninguém te obrigar a ver anúncio.']) await api.fala('herick', T(t));
-        const r = await Escolha.mostrar(T('Assim eu consigo manter o jogo, sem você gastar nenhum real e sem ninguém te obrigar a ver anúncio.'), [T('Achei justo!'), T('Então eu ganho para ver anúncio?')]);
-        await api.fala('jog', r === 1 ? T('Então eu ganho para ver anúncio?') : T('Achei justo!'));
-        await api.fala('herick', r === 1 ? T('Exatamente! O único lugar da cidade em que ver propaganda dá dinheiro.') : T('Valeu! É assim que eu durmo tranquilo.'));
+        const r = await Escolha.mostrar(T('Assim eu consigo manter o jogo, sem você gastar nenhum real e sem ninguém te obrigar a ver anúncio.'), [T('Achei justo!'), T('Então eu ganho para ver anúncio?'), T('Isso tá com cara de golpe, hein.')]);
+        if (r === 2) await api.falaGrossa('herick', 'herick', T('Isso tá com cara de golpe, hein.'), T('Golpe? Poxa... eu só queria um jeito honesto de manter o jogo de pé.'));   // a grosseria
+        else {
+          await api.fala('jog', r === 1 ? T('Então eu ganho para ver anúncio?') : T('Achei justo!'));
+          await api.fala('herick', r === 1 ? T('Exatamente! O único lugar da cidade em que ver propaganda dá dinheiro.') : T('Valeu! É assim que eu durmo tranquilo.'));
+        }
         await api.fala('herick', T('Eu vou ficar lá dentro, do lado da bilheteria. Quando quiser um bilhete, fala comigo ou com a Joana.'));
         Dialogo.esconder(); api.camCena(null);
         dadosC().conheceu = true; api.gravar(s.dados.ponto || 'chegada');
@@ -394,8 +405,9 @@
       try {
         const p = T(HERICK_PAPOS[(c.papoH | 0) % HERICK_PAPOS.length]); c.papoH = (c.papoH | 0) + 1;
         await api.fala('herick', p);
-        const r = await Escolha.mostrar(p, opcoesBilhete());
+        const r = await Escolha.mostrar(p, opcoesBilhete().concat([T('Esse seu jogo tá cheio de bug, hein.')]));
         if (r === 0 || r === 1) { seg = r ? 30 : 15; await api.fala('herick', r ? T('Trinta segundos! Assim que eu gosto.') : T('Quinze segundinhos. Já ajuda!')); }
+        else if (r === 3) await api.falaGrossa('herick', 'herick', T('Esse seu jogo tá cheio de bug, hein.'), T('Bug? Me manda um print que eu arrumo... mas precisava falar assim?'));
         else await api.fala('herick', T('Tranquilo. O cinema não vai fugir.'));
         Dialogo.esconder();
       } catch (e) { console.error(e); }
@@ -411,8 +423,9 @@
       try {
         const p = T(JOANA_PAPOS[(c.papoJ | 0) % JOANA_PAPOS.length]); c.papoJ = (c.papoJ | 0) + 1;
         await api.fala('joana', p);
-        const r = await Escolha.mostrar(p, opcoesBilhete());
-        if (r === 0 || r === 1) { seg = r ? 30 : 15; await api.fala('joana', T('Aqui está o seu bilhete. Bom filme!')); }
+        const r = await Escolha.mostrar(p, opcoesBilhete().concat([T('Anda logo, que demora.')]));
+        if (r === 3) { await api.falaGrossa('joana', 'joana', T('Anda logo, que demora.'), T('Nossa, calma... eu só tava sendo educada.')); }
+        else if (r === 0 || r === 1) { seg = r ? 30 : 15; await api.fala('joana', T('Aqui está o seu bilhete. Bom filme!')); }
         else await api.fala('joana', T('Tudo bem! Volte quando quiser.'));
         Dialogo.esconder();
       } catch (e) { console.error(e); }

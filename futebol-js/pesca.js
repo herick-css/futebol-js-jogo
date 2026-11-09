@@ -577,6 +577,24 @@
 
   // ------------------------------------------------------------------ textos curtos e números
   // as traduções DAQUI valem primeiro (ex.: "LANÇAR" no jogo é o lateral do futebol = THROW; aqui é lançar a isca = CAST)
+  Object.assign(TRAD, {                                                 // o Cadu que ainda não te conhece e as grosserias
+    'Opa! Eu sou o Cadu. Primeira vez aqui no lago?': ['Hey! I’m Cadu. First time at the lake?', '¡Hola! Soy Cadu. ¿Primera vez en el lago?', 'Ehi! Sono Cadu. Prima volta al lago?', 'Salut ! Moi, c’est Cadu. C’est ta première fois au lac ?'],
+    'Prazer, Cadu! Eu sou {0}.': ['Nice to meet you, Cadu! I’m {0}.', '¡Un gusto, Cadu! Soy {0}.', 'Piacere, Cadu! Sono {0}.', 'Enchanté, Cadu ! Moi, c’est {0}.'],
+    'Prazer, {0}!': ['Nice to meet you, {0}!', '¡Un gusto, {0}!', 'Piacere, {0}!', 'Enchanté, {0} !'],
+    'Lago sujo desse, nem sei por que eu vim.': ['A dirty lake like this, I don’t even know why I came.', 'Un lago tan sucio, ni sé por qué vine.', 'Un lago così sporco, non so nemmeno perché sono venuto.', 'Un lac aussi sale, je sais même pas pourquoi je suis venu.'],
+    'Sujo? Poxa... eu acho ele bonito.': ['Dirty? Gee... I think it’s beautiful.', '¿Sucio? Uf... a mí me parece lindo.', 'Sporco? Accidenti... a me sembra bello.', 'Sale ? Mince... moi je le trouve beau.'],
+    'Pescar é coisa de quem não tem o que fazer.': ['Fishing is for people with nothing better to do.', 'Pescar es cosa de quien no tiene nada que hacer.', 'Pescare è roba da chi non ha niente da fare.', 'Pêcher, c’est pour ceux qui n’ont rien à faire.'],
+    'Cada um com o seu jeito de descansar, né... beleza.': ['Everyone rests their own way, right... alright.', 'Cada uno descansa a su manera, ¿no?... bueno.', 'Ognuno si riposa a modo suo, no... va bene.', 'Chacun se repose à sa façon, hein... bon.'],
+    'Valeu pela dica!': ['Thanks for the tip!', '¡Gracias por el consejo!', 'Grazie del consiglio!', 'Merci pour le conseil !'],
+    'Já sei disso, não precisa me ensinar.': ['I already know that, no need to teach me.', 'Ya lo sé, no hace falta que me enseñes.', 'Lo so già, non serve che me lo insegni.', 'Je le sais déjà, pas besoin de m’apprendre.'],
+    'Foi mal... só queria ajudar.': ['My bad... I just wanted to help.', 'Perdón... solo quería ayudar.', 'Scusa... volevo solo aiutare.', 'Pardon... je voulais juste aider.'],
+    'Tamo junto!': ['We’re in this together!', '¡Estamos juntos!', 'Siamo insieme!', 'On est ensemble !'],
+    'Ver a loja': ['See the shop', 'Ver la tienda', 'Vedi il negozio', 'Voir la boutique'],
+    'Sua casinha cheira a peixe podre, hein.': ['Your little shack smells like rotten fish, huh.', 'Tu casita huele a pescado podrido, ¿eh?', 'La tua casetta puzza di pesce marcio, eh.', 'Ta cabane sent le poisson pourri, hein.'],
+    'É cheiro de trabalho, menino. Volta quando aprender a falar direito.': ['That’s the smell of work, kid. Come back when you learn some manners.', 'Es olor a trabajo, muchacho. Vuelve cuando aprendas a hablar bien.', 'È odore di lavoro, ragazzo. Torna quando avrai imparato a parlare bene.', 'C’est l’odeur du travail, gamin. Reviens quand tu sauras parler poliment.'],
+    'É cheiro de trabalho, menina. Volta quando aprender a falar direito.': ['That’s the smell of work, girl. Come back when you learn some manners.', 'Es olor a trabajo, muchacha. Vuelve cuando aprendas a hablar bien.', 'È odore di lavoro, ragazza. Torna quando avrai imparato a parlare bene.', 'C’est l’odeur du travail, gamine. Reviens quand tu sauras parler poliment.'],
+  });
+  if (typeof I18N !== 'undefined') for (const k of ['Prazer, Cadu! Eu sou {0}.', 'Prazer, {0}!', 'Lago sujo desse, nem sei por que eu vim.']) if (!I18N[k]) I18N[k] = TRAD[k];   // (para o Tgf: a versão feminina)
   const IDX_L = { en: 0, es: 1, it: 2, fr: 3 };
   function tr(t) {
     const L = typeof Idioma !== 'undefined' ? Idioma.atual : 'pt';
@@ -1670,6 +1688,7 @@
       'O seu Bené anota todo peixe que a gente pega naquele quadro da casinha.',
       'Dizem que tem um pirarucu nesse lago. Só com vara muito boa pra segurar um bicho desses.',
     ];
+    const grosso = (id) => { if (api.grosseria) api.grosseria(id || 'cadu'); };   // −5 corações e +arrogância (cidade.js)
     async function falarComCaduLago() {
       const s = S(), d = s.dados, p = dadosP(), A = P.cadu; if (!A) return;
       const dm = d.mercado || (d.mercado = {});
@@ -1683,7 +1702,13 @@
             await api.fala('cadu', tr('Você me tirou daquele armário na escola, lembra? Eu nunca esqueci isso.'));
             if (cad.conversou) await api.fala('cadu', tr('E ainda veio conversar comigo depois. Pouca gente fazia isso.'));
             await api.fala('jog', tr('Cadu?! Quanto tempo!'));
-          } else await api.fala('cadu', tr('Opa! Eu sou o Cadu. Você me parece familiar... de onde será?'));
+          } else {                                                        // nunca se viram: ele se apresenta
+            const oi = tr('Opa! Eu sou o Cadu. Primeira vez aqui no lago?');
+            await api.fala('cadu', oi);
+            const r0 = await Escolha.mostrar(oi, [(typeof Tgf === 'function' ? Tgf : trf)('Prazer, Cadu! Eu sou {0}.', api.nomeJog()), (typeof Tg === 'function' ? Tg : tr)('Lago sujo desse, nem sei por que eu vim.')]);
+            if (r0 === 1) { await api.fala('jog', (typeof Tg === 'function' ? Tg : tr)('Lago sujo desse, nem sei por que eu vim.')); grosso(); await api.fala('cadu', tr('Sujo? Poxa... eu acho ele bonito.')); }
+            else { await api.fala('jog', (typeof Tgf === 'function' ? Tgf : trf)('Prazer, Cadu! Eu sou {0}.', api.nomeJog())); await api.fala('cadu', trf('Prazer, {0}!', api.nomeJog())); }
+          }
           await api.fala('cadu', tr('O meu pai tem o mercado lá na avenida. Durante a semana eu ajudo ele, mas sábado e domingo é dia de pescar!'));
           dm.conheceu = true; dm.reconheceu = true; p.caduLago = true; gravar();
         } else if (!p.caduLago) {
@@ -1692,7 +1717,8 @@
           p.caduLago = true; gravar();
         }
         if (!temVara()) {
-          const r = await Escolha.mostrar(tr('O que você diz?'), [tr('Me empresta uma varinha?'), tr('Só vim dar um oi!')]);
+          const r = await Escolha.mostrar(tr('O que você diz?'), [tr('Me empresta uma varinha?'), tr('Só vim dar um oi!'), tr('Pescar é coisa de quem não tem o que fazer.')]);
+          if (r === 2) { await api.fala('jog', tr('Pescar é coisa de quem não tem o que fazer.')); grosso(); await api.fala('cadu', tr('Cada um com o seu jeito de descansar, né... beleza.')); Dialogo.esconder(); return; }
           if (r !== 0) { await api.fala('jog', tr('Só vim dar um oi!')); await api.fala('cadu', tr('Valeu! Aparece mais vezes. Sábado e domingo eu tô sempre aqui.')); Dialogo.esconder(); return; }
           await api.fala('jog', tr('Me empresta uma varinha?'));
           await api.fala('cadu', tr('Claro! Tenho uma de bambu sobrando. Pode ficar com ela, sério.'));
@@ -1712,6 +1738,10 @@
         if (r === 1) {
           const Q = PAPOS_LAGO[(p.papo | 0) % PAPOS_LAGO.length]; p.papo = (p.papo | 0) + 1;
           await api.fala('cadu', tr(Q));
+          const rq = await Escolha.mostrar(tr(Q), [tr('Valeu pela dica!'), tr('Já sei disso, não precisa me ensinar.')]);   // a grosseria
+          if (rq === 1) { await api.fala('jog', tr('Já sei disso, não precisa me ensinar.')); grosso(); await api.fala('cadu', tr('Foi mal... só queria ajudar.')); Dialogo.esconder(); return; }
+          await api.fala('jog', tr('Valeu pela dica!')); await api.fala('cadu', tr('Tamo junto!'));
+          if (dm.papoDia !== d.dia && api.Amizade) { dm.papoDia = d.dia; api.Amizade.somar('cadu', 2); }   // conversar aproxima (uma vez por dia; vale para o mercado também)
           const n = descobertos(); if (n >= 5 && (p.papo % 3) === 0) await api.fala('cadu', trf('Você já pescou {0} tipos de peixe! Tá ficando craque.', n));
           Dialogo.esconder(); return;
         }
@@ -1732,7 +1762,12 @@
           await api.fala('bene', tr('E naquele quadro da parede eu anoto cada peixe que aparece. São sessenta tipos, acredita?'));
           if (!temVara()) await api.fala('bene', tr('Tá sem vara? O Cadu, filho do seu Raimundo do mercado, pesca aqui sábado e domingo. Ele sempre empresta uma. Ou compra aqui comigo, ué!'));
           p.conheceBene = true; gravar();
-        } else if (!p.bagre || p.bagre.fim) await api.fala('bene', tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.'])));
+        } else if (!p.bagre || p.bagre.fim) {
+          const oi = tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.']));
+          await api.fala('bene', oi);
+          const rb = await Escolha.mostrar(oi, [tr('Ver a loja'), tr('Sua casinha cheira a peixe podre, hein.')]);   // a grosseria
+          if (rb === 1) { await api.fala('jog', tr('Sua casinha cheira a peixe podre, hein.')); grosso('bene'); await api.fala('bene', tr(PERSONAGEM.genero === 'F' ? 'É cheiro de trabalho, menina. Volta quando aprender a falar direito.' : 'É cheiro de trabalho, menino. Volta quando aprender a falar direito.')); Dialogo.esconder(); return; }
+        }
         if (p.bagre && !p.bagre.fim) { await cenaBagreBene(); Dialogo.esconder(); return; }
         Dialogo.esconder();
         await abrirLoja();

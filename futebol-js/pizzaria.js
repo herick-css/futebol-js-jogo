@@ -139,6 +139,18 @@
     'Oi! Tô com as mãos na massa, literalmente!': ['Hi! My hands are in the dough, literally!', '¡Hola! Tengo las manos en la masa, ¡literalmente!', 'Ciao! Ho le mani in pasta, letteralmente!', 'Salut ! J’ai les mains dans la pâte, littéralement !'],
     'O segredo é o forno bem quente!': ['The secret is a really hot oven!', '¡El secreto es el horno bien caliente!', 'Il segreto è il forno bello caldo!', 'Le secret, c’est un four bien chaud !'],
   };
+  Object.assign(TRAD, {                                                 // as grosserias
+    'Avó? Tá explicado porque a massa é tão velha.': ['Grandma? That explains why the dough is so old.', '¿Abuela? Eso explica por qué la masa es tan vieja.', 'Nonna? Ecco perché l’impasto è così vecchio.', 'Grand-mère ? Ça explique pourquoi la pâte est si vieille.'],
+    'Velha?! Rapaz... essa massa tem mais história que você.': ['Old?! Boy... this dough has more history than you.', '¡¿Vieja?! Muchacho... esta masa tiene más historia que tú.', 'Vecchio?! Ragazzo... questo impasto ha più storia di te.', 'Vieille ?! Mon gars... cette pâte a plus d’histoire que toi.'],
+    'Velha?! Menina... essa massa tem mais história que você.': ['Old?! Girl... this dough has more history than you.', '¡¿Vieja?! Muchacha... esta masa tiene más historia que tú.', 'Vecchio?! Ragazza... questo impasto ha più storia di te.', 'Vieille ?! Ma fille... cette pâte a plus d’histoire que toi.'],
+    'Loucura é o tanto que vocês demoram pra entregar.': ['What’s crazy is how long you take to deliver.', 'Lo loco es lo que tardan en entregar.', 'La follia è quanto ci mettete a consegnare.', 'Ce qui est fou, c’est le temps que vous mettez à livrer.'],
+    'Hunf. Se acha que faz melhor, a bicicleta tá ali fora.': ['Hmph. If you think you can do better, the bike is right outside.', 'Hmpf. Si crees que lo haces mejor, la bici está afuera.', 'Hmpf. Se pensi di fare meglio, la bici è qui fuori.', 'Pff. Si tu crois faire mieux, le vélo est dehors.'],
+    'Nenhum. A pizza daqui é bem mais ou menos.': ['None. The pizza here is just so-so.', 'Ninguno. La pizza de acá es bastante regular.', 'Nessuno. La pizza qui è così così.', 'Aucun. La pizza ici est bof.'],
+    'Mais ou menos?! Então pode ir comer na esquina.': ['So-so?! Then go eat at the corner shop.', '¡¿Regular?! Entonces ve a comer a la esquina.', 'Così così?! Allora vai a mangiare all’angolo.', 'Bof ?! Alors va manger au coin de la rue.'],
+    'Fala menos e faz a pizza mais rápido.': ['Talk less and make the pizza faster.', 'Habla menos y haz la pizza más rápido.', 'Parla meno e fai la pizza più in fretta.', 'Parle moins et fais la pizza plus vite.'],
+    'Nossa... tá bom, chefe. Nem precisava disso.': ['Wow... okay, boss. There was no need for that.', 'Vaya... está bien, jefe. No hacía falta.', 'Wow... va bene, capo. Non ce n’era bisogno.', 'Waouh... d’accord, chef. Pas besoin de ça.'],
+    'Valeu, Carla!': ['Thanks, Carla!', '¡Gracias, Carla!', 'Grazie, Carla!', 'Merci, Carla !'],
+  });
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
@@ -850,9 +862,9 @@
 
     // ---- conversas
     const PAPOS_MARIO = [
-      { p: 'Sabia que essa receita de massa era da minha avó?', a: ['Sério? Dá pra sentir!', 'Né? Por isso a gente não muda nada.'], b: ['Ela que te ensinou?', 'Ensinou! E eu ensinei a Carla, que hoje faz melhor que eu.'] },
-      { p: 'Sexta e sábado isso aqui vira uma loucura!', a: ['Imagino!', 'Ainda bem que a Carla é rápida no forno.'], b: ['E dá conta?', 'Com pizza boa, a gente dá conta de tudo!'] },
-      { p: 'Qual é o seu sabor preferido?', a: ['Calabresa, sempre!', 'Clássico! Não tem erro.'], b: ['A doce de chocolate!', 'A da Carla com morango? Ela capricha nessa!'] },
+      { p: 'Sabia que essa receita de massa era da minha avó?', a: ['Sério? Dá pra sentir!', 'Né? Por isso a gente não muda nada.'], b: ['Ela que te ensinou?', 'Ensinou! E eu ensinei a Carla, que hoje faz melhor que eu.'], c: ['Avó? Tá explicado porque a massa é tão velha.', 'Velha?! Rapaz... essa massa tem mais história que você.'] },
+      { p: 'Sexta e sábado isso aqui vira uma loucura!', a: ['Imagino!', 'Ainda bem que a Carla é rápida no forno.'], b: ['E dá conta?', 'Com pizza boa, a gente dá conta de tudo!'], c: ['Loucura é o tanto que vocês demoram pra entregar.', 'Hunf. Se acha que faz melhor, a bicicleta tá ali fora.'] },
+      { p: 'Qual é o seu sabor preferido?', a: ['Calabresa, sempre!', 'Clássico! Não tem erro.'], b: ['A doce de chocolate!', 'A da Carla com morango? Ela capricha nessa!'], c: ['Nenhum. A pizza daqui é bem mais ou menos.', 'Mais ou menos?! Então pode ir comer na esquina.'] },
     ];
     async function falarComMario() {
       const s = S(), C = M.mario, J = s.jog;
@@ -865,7 +877,8 @@
         if (!dp.conheceu) { await api.fala('mario', T('Bem-vindo à Forno a Lenha! Senta aí que a Carla já te atende.')); dp.conheceu = true; api.gravar(d.ponto || 'chegada'); return; }
         const Q = PAPOS_MARIO[(dp.papo | 0) % PAPOS_MARIO.length]; dp.papo = (dp.papo | 0) + 1;
         await api.fala('mario', T(Q.p));
-        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])]);
+        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);
+        if (r === 2) { const re = PERSONAGEM.genero === 'F' && Q.c[1].includes('Rapaz') ? Q.c[1].replace('Rapaz', 'Menina') : Q.c[1]; await api.falaGrossa('mario', 'mario', T(Q.c[0]), T(re)); return; }   // a grosseria
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('mario', T(R[1]));
         return;
       }
@@ -889,7 +902,12 @@
     async function falarComCarla() {
       const s = S(), C = M.carla, J = s.jog; if (!C) return;
       C.conversando = true; C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x);
-      try { await api.fala('carla', T(pk(['Oi! Tô com as mãos na massa, literalmente!', 'O segredo é o forno bem quente!', U() ? 'Corre que essa tá quentinha!' : 'Tô no forno, já já sai mais uma!']))); }
+      try {
+        const q = T(pk(['Oi! Tô com as mãos na massa, literalmente!', 'O segredo é o forno bem quente!', U() ? 'Corre que essa tá quentinha!' : 'Tô no forno, já já sai mais uma!']));
+        await api.fala('carla', q);
+        const r = await Escolha.mostrar(q, [T('Valeu, Carla!'), T('Fala menos e faz a pizza mais rápido.')]);   // a grosseria
+        if (r === 1) await api.falaGrossa('carla', 'carla', T('Fala menos e faz a pizza mais rápido.'), T('Nossa... tá bom, chefe. Nem precisava disso.'));
+      }
       finally { if (M.carla) M.carla.conversando = false; Dialogo.esconder(); }
     }
     function podeComecar() {

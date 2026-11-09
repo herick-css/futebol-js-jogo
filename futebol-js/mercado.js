@@ -907,21 +907,53 @@
     }
 
     // ---- conversa com o Cadu (apresentação na primeira vez, depois a oferta do turno)
+    const grosso = (id) => { if (api.grosseria) api.grosseria(id); };   // −5 corações e +arrogância (cidade.js)
     async function falarComCadu() {
       const s = S(), C = M.cadu, J = s.jog;
       if (C) { C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x); C.poseM = null; C.conversando = true; C.andando = false; }
       try { await conversaCadu(); } finally { if (M.cadu) M.cadu.conversando = false; if (M.rosa) M.rosa.conversando = false; }
     }
     // papo do Cadu (para quem não trabalha no mercado): ele pergunta, você responde
+    //   "ainda joga bola" só para quem já o conhecia da escola (tirou do armário); quem não, ouve a versão de quem acabou de conhecer.
+    //   c: a GROSSERIA (−5 corações com o Cadu e +0,25 em Arrogante e Problemático).
     const PAPOS_CADU = [
-      { p: 'E aí, ainda joga bola?', a: ['Sempre que dá!', 'Eu continuo péssimo no gol, haha. Mas adoro assistir.'], b: ['Tô meio parado.', 'Volta! Tem racha no society toda segunda e quarta.'] },
-      { p: 'Sabia que eu guardei os óculos daquela época? De lembrança.', salvou: true, a: ['Sério? Que demais!', 'Sério! Eles me lembram que tem gente boa por aí.'], b: ['Ainda servem?', 'Nem a pau, haha. Mas ficam na gaveta.'] },
-      { p: 'O que você tá achando da cidade?', a: ['Muito boa!', 'Né? Aqui todo mundo se conhece.'], b: ['Diferente...', 'Logo você se acostuma. E qualquer coisa, tô aqui.'] },
-      { p: 'Meu pai quer abrir uma filial na cidade grande um dia. Já pensou?', a: ['Que demais!', 'Né? Mas por enquanto é só sonho, haha.'], b: ['Dá muito trabalho, hein.', 'Nem me fala. Só de pensar já cansa.'] },
-      { p: 'Se precisar de alguma coisa do mercado, me chama que eu separo pra você.', a: ['Valeu, Cadu!', 'Tamo junto!'], b: ['Tem desconto pra amigo?', 'Hmm... vou ver com o meu pai, haha.'] },
+      { p: 'E aí, ainda joga bola?', salvou: true, a: ['Sempre que dá!', 'Eu continuo péssimo no gol, haha. Mas adoro assistir.'], b: ['Tô meio parado.', 'Volta! Tem racha no society toda segunda e quarta.'], c: ['E você, ainda é péssimo em tudo?', 'Nossa... tá. Valeu, hein.'] },
+      { p: 'E aí, você joga bola?', novo: true, a: ['Sempre que dá!', 'Que massa! Eu sou péssimo no gol, haha. Mas adoro assistir.'], b: ['Tô meio parado.', 'Volta! Tem racha no society toda segunda e quarta.'], c: ['Jogo. Melhor que você, com certeza.', 'Eita... tá bom então, craque.'] },
+      { p: 'Sabia que eu guardei os óculos daquela época? De lembrança.', salvou: true, a: ['Sério? Que demais!', 'Sério! Eles me lembram que tem gente boa por aí.'], b: ['Ainda servem?', 'Nem a pau, haha. Mas ficam na gaveta.'], c: ['Guardou aqueles óculos ridículos? Que coisa de nerd.', 'Ah... é. Coisa de nerd. Esquece.'] },
+      { p: 'O que você tá achando da cidade?', a: ['Muito boa!', 'Né? Aqui todo mundo se conhece.'], b: ['Diferente...', 'Logo você se acostuma. E qualquer coisa, tô aqui.'], c: ['Um tédio. Igual esse mercado.', 'Poxa... desculpa não ser tão emocionante assim.'] },
+      { p: 'Meu pai quer abrir uma filial na cidade grande um dia. Já pensou?', a: ['Que demais!', 'Né? Mas por enquanto é só sonho, haha.'], b: ['Dá muito trabalho, hein.', 'Nem me fala. Só de pensar já cansa.'], c: ['Com esse mercadinho? Esquece.', 'Valeu pelo apoio... sério.'] },
+      { p: 'Se precisar de alguma coisa do mercado, me chama que eu separo pra você.', a: ['Valeu, Cadu!', 'Tamo junto!'], b: ['Tem desconto pra amigo?', 'Hmm... vou ver com o meu pai, haha.'], c: ['Não preciso de favor seu.', 'Tá... só tava tentando ajudar.'] },
     ];
     for (const [k, v] of Object.entries({
       'Passa aqui sempre que precisar de alguma coisa!': ['Come by whenever you need anything!', '¡Pasa por aquí cuando necesites algo!', 'Passa di qui quando ti serve qualcosa!', 'Passe ici quand tu as besoin de quelque chose !'],
+      'E aí, você joga bola?': ['So, do you play football?', 'Y bueno, ¿juegas al fútbol?', 'Allora, giochi a calcio?', 'Alors, tu joues au foot ?'],
+      'Que massa! Eu sou péssimo no gol, haha. Mas adoro assistir.': ['Awesome! I’m terrible in goal, haha. But I love watching.', '¡Qué bueno! Soy pésimo en el arco, jaja. Pero me encanta mirar.', 'Forte! In porta sono un disastro, haha. Ma adoro guardare.', 'Trop bien ! Je suis nul dans les buts, haha. Mais j’adore regarder.'],
+      'E você, ainda é péssimo em tudo?': ['And you, still terrible at everything?', '¿Y tú, sigues siendo pésimo en todo?', 'E tu, sei ancora un disastro in tutto?', 'Et toi, toujours nul en tout ?'],
+      'Nossa... tá. Valeu, hein.': ['Wow... okay. Thanks a lot.', 'Vaya... vale. Gracias, eh.', 'Wow... ok. Grazie tante.', 'Waouh... d’accord. Merci, hein.'],
+      'Jogo. Melhor que você, com certeza.': ['I do. Better than you, for sure.', 'Juego. Mejor que tú, seguro.', 'Gioco. Meglio di te, di sicuro.', 'Oui. Mieux que toi, c’est sûr.'],
+      'Eita... tá bom então, craque.': ['Whoa... alright then, superstar.', 'Epa... bueno, crack.', 'Wow... va bene allora, campione.', 'Ouh... d’accord, la star.'],
+      'Guardou aqueles óculos ridículos? Que coisa de nerd.': ['You kept those ridiculous glasses? What a nerd.', '¿Guardaste esos lentes ridículos? Qué cosa de nerd.', 'Hai tenuto quegli occhiali ridicoli? Roba da secchione.', 'Tu as gardé ces lunettes ridicules ? Quel intello.'],
+      'Ah... é. Coisa de nerd. Esquece.': ['Oh... yeah. Nerd stuff. Forget it.', 'Ah... sí. Cosa de nerd. Olvídalo.', 'Ah... già. Roba da secchione. Lascia stare.', 'Ah... ouais. Un truc d’intello. Oublie.'],
+      'Um tédio. Igual esse mercado.': ['Boring. Just like this market.', 'Un aburrimiento. Igual que este mercado.', 'Una noia. Come questo mercato.', 'Ennuyeuse. Comme ce supermarché.'],
+      'Poxa... desculpa não ser tão emocionante assim.': ['Gee... sorry it’s not that exciting.', 'Uf... perdón por no ser tan emocionante.', 'Accidenti... scusa se non è così emozionante.', 'Mince... désolé que ce ne soit pas plus excitant.'],
+      'Com esse mercadinho? Esquece.': ['With this little market? Forget it.', '¿Con este mercadito? Olvídalo.', 'Con questo mercatino? Lascia perdere.', 'Avec cette petite supérette ? Laisse tomber.'],
+      'Valeu pelo apoio... sério.': ['Thanks for the support... really.', 'Gracias por el apoyo... en serio.', 'Grazie per il supporto... davvero.', 'Merci pour le soutien... vraiment.'],
+      'Não preciso de favor seu.': ['I don’t need any favors from you.', 'No necesito favores tuyos.', 'Non mi servono i tuoi favori.', 'J’ai pas besoin de tes faveurs.'],
+      'Tá... só tava tentando ajudar.': ['Okay... I was just trying to help.', 'Vale... solo intentaba ayudar.', 'Ok... volevo solo aiutare.', 'D’accord... je voulais juste aider.'],
+      'Opa! Cliente novo? Eu sou o Cadu, filho do dono. Prazer!': ['Hey! New customer? I’m Cadu, the owner’s son. Nice to meet you!', '¡Hola! ¿Cliente nuevo? Soy Cadu, el hijo del dueño. ¡Un gusto!', 'Ehi! Cliente nuovo? Sono Cadu, il figlio del proprietario. Piacere!', 'Salut ! Nouveau client ? Moi, c’est Cadu, le fils du patron. Enchanté !'],
+      'Prazer, Cadu! Eu sou {0}.': ['Nice to meet you, Cadu! I’m {0}.', '¡Un gusto, Cadu! Soy {0}.', 'Piacere, Cadu! Sono {0}.', 'Enchanté, Cadu ! Moi, c’est {0}.'],
+      'Tá, beleza... cadê o arroz?': ['Yeah, whatever... where’s the rice?', 'Sí, sí... ¿dónde está el arroz?', 'Sì, va bene... dov’è il riso?', 'Ouais, bon... il est où, le riz ?'],
+      'Ah... corredor dois. Desculpa incomodar.': ['Oh... aisle two. Sorry to bother you.', 'Ah... pasillo dos. Perdón por molestar.', 'Ah... corsia due. Scusa il disturbo.', 'Ah... rayon deux. Désolé de déranger.'],
+      'Prazer, {0}!': ['Nice to meet you, {0}!', '¡Un gusto, {0}!', 'Piacere, {0}!', 'Enchanté, {0} !'],
+      'Opa! Você deve ser o funcionário novo. Eu sou o Cadu, filho do dono. Prazer!': ['Hey! You must be the new employee. I’m Cadu, the owner’s son. Nice to meet you!', '¡Hola! Debes de ser el empleado nuevo. Soy Cadu, el hijo del dueño. ¡Un gusto!', 'Ehi! Tu devi essere il nuovo dipendente. Sono Cadu, il figlio del proprietario. Piacere!', 'Salut ! Tu dois être le nouvel employé. Moi, c’est Cadu, le fils du patron. Enchanté !'],
+      'Opa! Você deve ser a funcionária nova. Eu sou o Cadu, filho do dono. Prazer!': ['Hey! You must be the new employee. I’m Cadu, the owner’s son. Nice to meet you!', '¡Hola! Debes de ser la empleada nueva. Soy Cadu, el hijo del dueño. ¡Un gusto!', 'Ehi! Tu devi essere la nuova dipendente. Sono Cadu, il figlio del proprietario. Piacere!', 'Salut ! Tu dois être la nouvelle employée. Moi, c’est Cadu, le fils du patron. Enchanté !'],
+      'Espero que o salário aqui não seja de mercadinho também.': ['I hope the pay here isn’t as small as the market.', 'Espero que el sueldo no sea de mercadito también.', 'Spero che lo stipendio non sia piccolo come il mercato.', 'J’espère que le salaire n’est pas aussi petit que la supérette.'],
+      'É o que dá pra pagar, tá? Enfim...': ['It’s what we can afford, okay? Anyway...', 'Es lo que se puede pagar, ¿vale? En fin...', 'È quello che possiamo pagare, ok? Comunque...', 'C’est ce qu’on peut payer, d’accord ? Bref...'],
+      'Haha, verdade!': ['Haha, true!', '¡Jaja, es verdad!', 'Haha, vero!', 'Haha, c’est vrai !'],
+      'Tá, seu Raimundo... o senhor fala demais.': ['Okay, Mr. Raimundo... you talk too much.', 'Sí, don Raimundo... usted habla demasiado.', 'Sì, signor Raimundo... lei parla troppo.', 'Oui, M. Raimundo... vous parlez trop.'],
+      'Ih, rapaz... tá bom, não te atrapalho mais.': ['Oh, boy... alright, I won’t bother you anymore.', 'Uy, muchacho... está bien, no te molesto más.', 'Eh, ragazzo... va bene, non ti disturbo più.', 'Oh là, mon gars... d’accord, je ne te dérange plus.'],
+      'Ih, moça... tá bom, não te atrapalho mais.': ['Oh, miss... alright, I won’t bother you anymore.', 'Uy, muchacha... está bien, no te molesto más.', 'Eh, ragazza... va bene, non ti disturbo più.', 'Oh là, ma fille... d’accord, je ne te dérange plus.'],
+      'É isso aí!': ['That’s right!', '¡Así es!', 'Proprio così!', 'C’est ça !'],
       'E aí, ainda joga bola?': ['So, still playing football?', 'Y bueno, ¿todavía juegas al fútbol?', 'Allora, giochi ancora a calcio?', 'Alors, tu joues encore au foot ?'],
       'Sempre que dá!': ['Whenever I can!', '¡Siempre que puedo!', 'Appena posso!', 'Dès que je peux !'], 'Tô meio parado.': ['I’ve kind of stopped.', 'Estoy medio parado.', 'Mi sono un po’ fermato.', 'J’ai un peu arrêté.'],
       'Eu continuo péssimo no gol, haha. Mas adoro assistir.': ['I’m still terrible in goal, haha. But I love watching.', 'Sigo siendo pésimo en el arco, jaja. Pero me encanta mirar.', 'In porta sono ancora un disastro, haha. Ma adoro guardare.', 'Je suis toujours nul dans les buts, haha. Mais j’adore regarder.'],
@@ -953,15 +985,23 @@
             await api.fala('cadu', T('Você me tirou daquele armário na escola, lembra? Eu nunca esqueci isso.'));
             if (cad.conversou) await api.fala('cadu', T('E ainda veio conversar comigo depois. Pouca gente fazia isso.'));
             await api.fala('jog', T('Cadu?! Quanto tempo!'));
-          } else await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
+          } else {                                                        // nunca se viram: ele se apresenta
+            const oi = T('Opa! Cliente novo? Eu sou o Cadu, filho do dono. Prazer!');
+            await api.fala('cadu', oi);
+            const r0 = await Escolha.mostrar(oi, [Tgf('Prazer, Cadu! Eu sou {0}.', api.nomeJog()), T('Tá, beleza... cadê o arroz?')]);
+            if (r0 === 1) { await api.fala('jog', T('Tá, beleza... cadê o arroz?')); grosso('cadu'); await api.fala('cadu', T('Ah... corredor dois. Desculpa incomodar.')); dm.conheceu = true; dm.reconheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return; }
+            await api.fala('jog', Tgf('Prazer, Cadu! Eu sou {0}.', api.nomeJog())); await api.fala('cadu', Tf('Prazer, {0}!', api.nomeJog()));
+          }
           await api.fala('cadu', T('Esse mercado é do meu pai. Eu tô ajudando ele em algumas coisas por aqui.'));
           await api.fala('cadu', T('Passa aqui sempre que precisar de alguma coisa!'));
           dm.conheceu = true; dm.reconheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return;
         }
-        const P = PAPOS_CADU.filter((q) => !q.salvou || salvou), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
+        const P = PAPOS_CADU.filter((q) => (!q.salvou || salvou) && (!q.novo || !salvou)), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
         await api.fala('cadu', T(Q.p));
-        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0])]);   // uma caixa só, embaixo: a pergunta com as respostas
+        const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);   // uma caixa só, embaixo: a pergunta com as respostas
+        if (r === 2) { await api.fala('jog', T(Q.c[0])); grosso('cadu'); await api.fala('cadu', T(Q.c[1])); fim(); return; }
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('cadu', T(R[1]));
+        if (dm.papoDia !== d.dia && api.Amizade) { dm.papoDia = d.dia; api.Amizade.somar('cadu', 2); }   // conversar com ele aproxima (uma vez por dia)
         fim(); return;
       }
       if (!dm.apresentou) {
@@ -975,7 +1015,13 @@
           await api.fala('cadu', T('Esse mercado é do meu pai. Eu tô ajudando ele em algumas coisas por aqui.'));
           await api.fala('cadu', T('E por aquele dia na escola... vou aumentar o seu salário em 15 fakes. É o mínimo!'));
           dm.aumento = true;
-        } else if (!dm.reconheceu) await api.fala('cadu', T('Você me parece familiar... mas não sei bem de onde.'));
+        } else if (!dm.reconheceu) {                                      // nunca se viram: ele se apresenta para quem chegou para trabalhar
+          const oi = PERSONAGEM.genero === 'F' ? T('Opa! Você deve ser a funcionária nova. Eu sou o Cadu, filho do dono. Prazer!') : T('Opa! Você deve ser o funcionário novo. Eu sou o Cadu, filho do dono. Prazer!');
+          await api.fala('cadu', oi);
+          const r0 = await Escolha.mostrar(oi, [Tgf('Prazer, Cadu! Eu sou {0}.', api.nomeJog()), T('Espero que o salário aqui não seja de mercadinho também.')]);
+          if (r0 === 1) { await api.fala('jog', T('Espero que o salário aqui não seja de mercadinho também.')); grosso('cadu'); await api.fala('cadu', T('É o que dá pra pagar, tá? Enfim...')); }
+          else { await api.fala('jog', Tgf('Prazer, Cadu! Eu sou {0}.', api.nomeJog())); await api.fala('cadu', Tf('Prazer, {0}!', api.nomeJog())); }
+        }
         await api.fala('cadu', T('O expediente é das 14h às 22h. Você fica no caixa: passa as compras, recebe e dá o troco certinho, ou passa na maquininha.'));
         await api.fala('cadu', T('Quando faltar mercadoria numa seção, pega a caixa certa no estoque, ali no fundo, e repõe na seção.'));
         await api.fala('cadu', Tf('O salário é {0} fakes pelo turno. Cada troco errado desconta {1} fakes.', salario(), DESCONTO));
@@ -1017,6 +1063,9 @@
       }
       const Q = PAPOS_PAI[(dm.papoPai | 0) % PAPOS_PAI.length]; dm.papoPai = (dm.papoPai | 0) + 1;
       await api.fala('pai', T(Q));
+      const r = await Escolha.mostrar(T(Q), [T('Haha, verdade!'), T('Tá, seu Raimundo... o senhor fala demais.')]);
+      if (r === 1) { await api.fala('jog', T('Tá, seu Raimundo... o senhor fala demais.')); grosso('pai'); await api.fala('pai', PERSONAGEM.genero === 'F' ? T('Ih, moça... tá bom, não te atrapalho mais.') : T('Ih, rapaz... tá bom, não te atrapalho mais.')); Dialogo.esconder(); return; }
+      await api.fala('jog', T('Haha, verdade!')); await api.fala('pai', T('É isso aí!'));
       if (ehMeuEmprego() && (dm.papoPai % 3) === 0) await api.fala('pai', T('E segunda tem turno, hein! Hoje é dia de descansar.'));
       Dialogo.esconder();
     }

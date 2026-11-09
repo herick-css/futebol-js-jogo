@@ -86,6 +86,12 @@
     'Barba nova: {0}': ['New beard: {0}', 'Barba nueva: {0}', 'Barba nuova: {0}', 'Nouvelle barbe : {0}'],
     'E MAIS...': ['AND MORE...', 'Y MÁS...', 'E ALTRI...', 'ET PLUS...'],
   };
+  Object.assign(TRAD, {
+    'Bora!': ['Let’s go!', '¡Vamos!', 'Andiamo!', 'C’est parti !'],
+    'Espero que você corte melhor do que fala.': ['I hope you cut better than you talk.', 'Espero que cortes mejor de lo que hablas.', 'Spero che tu tagli meglio di come parli.', 'J’espère que tu coupes mieux que tu ne parles.'],
+    'Ih, chegou azedo, hein, chefe? Senta aí que eu te dou um trato mesmo assim.': ['Whoa, someone’s grumpy today, boss. Have a seat, I’ll fix you up anyway.', 'Uy, llegaste amargado, ¿eh, jefe? Siéntate que igual te dejo bien.', 'Eh, arrivi acido, eh, capo? Siediti che ti sistemo lo stesso.', 'Oh là, t’es de mauvais poil, chef ? Assieds-toi, je m’occupe de toi quand même.'],
+    'Agora não': ['Not now', 'Ahora no', 'Non adesso', 'Pas maintenant'],
+  });
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
   const DESISTIR = ['Pensando bem, acho melhor eu pesquisar uns cortes antes.', 'Hmm... vou dar uma olhada em umas fotos e depois eu volto.', 'Sabe de uma coisa? Vou pensar mais um pouco antes de mexer no cabelo.', 'Acho que hoje não. Deixa eu ver umas referências primeiro.', 'Melhor não arriscar. Vou pesquisar uns estilos e volto outro dia.'];
 
@@ -277,7 +283,11 @@
           await api.fala('toninho', T_('Aqui a navalha é afiada e o papo é de graça.'));
           b.conheceu = true;
         } else await api.fala('toninho', T_(pk(['Opa! Senta aí que hoje tem corte bom.', 'Voltou! Vai dar um tapa no visual?', 'Chega mais, a cadeira tá livre!'])));
-        await api.fala('toninho', T_('Senta aí que a gente escolhe com calma.'));
+        const q = T_('Senta aí que a gente escolhe com calma.');
+        await api.fala('toninho', q);
+        const rg = await Escolha.mostrar(q, [T_('Bora!'), T_('Espero que você corte melhor do que fala.'), T_('Agora não')]);   // a grosseria (−5 e arrogância)
+        if (rg === 2) { await api.fala('toninho', T_(pk(['Tranquilo, chefe. A cadeira tá aqui quando quiser.', 'De boa! Pesquisa aí e volta que eu deixo na régua.']))); Dialogo.esconder(); return; }
+        if (rg === 1) { await api.falaGrossa('toninho', 'toninho', T_('Espero que você corte melhor do que fala.'), (typeof Tg === 'function' ? Tg : T_)('Ih, chegou azedo, hein, chefe? Senta aí que eu te dou um trato mesmo assim.')); }
         Dialogo.esconder();
         // o corte e a barba de agora (os do criador) já são dele
         const antes = { cabelo: ap.estilo | 0, barba: ap.barba | 0 };

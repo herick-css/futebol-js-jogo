@@ -135,6 +135,14 @@
     'Já são 22h, vamos fechar! A gente se vê amanhã, a partir das 7h.': ['It’s 10 PM, we’re closing! See you tomorrow, from 7 AM.', 'Son las 22h, ¡cerramos! Nos vemos mañana, desde las 7h.', 'Sono le 22, chiudiamo! Ci vediamo domani, dalle 7.', 'Il est 22 h, on ferme ! À demain, dès 7 h.'],
     'Já está quase na hora de fechar: não dá tempo de fazer outro treino.': ['It’s almost closing time: there’s no time for another workout.', 'Ya casi es hora de cerrar: no hay tiempo para otro entrenamiento.', 'È quasi ora di chiudere: non c’è tempo per un altro allenamento.', 'C’est bientôt la fermeture : pas le temps pour un autre entraînement.'],
   };
+  Object.assign(TRAD, {                                                 // as grosserias
+    'Que academia cara, hein. Isso é um assalto.': ['What an expensive gym. This is robbery.', 'Qué gimnasio caro, ¿eh? Esto es un robo.', 'Che palestra cara, eh. È una rapina.', 'Quelle salle chère, hein. C’est du vol.'],
+    'É o preço, parceiro. Se não quiser, a rua é de graça.': ['That’s the price, buddy. If you don’t want it, the street is free.', 'Es el precio, compañero. Si no quieres, la calle es gratis.', 'È il prezzo, amico. Se non vuoi, la strada è gratis.', 'C’est le prix, mon pote. Sinon, la rue, c’est gratuit.'],
+    'É o preço, parceira. Se não quiser, a rua é de graça.': ['That’s the price, friend. If you don’t want it, the street is free.', 'Es el precio, compañera. Si no quieres, la calle es gratis.', 'È il prezzo, amica. Se non vuoi, la strada è gratis.', 'C’est le prix, ma belle. Sinon, la rue, c’est gratuit.'],
+    'Personal? Eu treino melhor sozinho.': ['A personal trainer? I train better on my own.', '¿Personal? Entreno mejor solo.', 'Personal trainer? Mi alleno meglio da solo.', 'Un coach ? Je m’entraîne mieux tout seul.'],
+    'Personal? Eu treino melhor sozinha.': ['A personal trainer? I train better on my own.', '¿Personal? Entreno mejor sola.', 'Personal trainer? Mi alleno meglio da sola.', 'Un coach ? Je m’entraîne mieux toute seule.'],
+    'Tá bom, então. Boa sorte com essa postura aí.': ['Alright, then. Good luck with that posture.', 'Está bien, entonces. Suerte con esa postura.', 'Va bene, allora. Buona fortuna con quella postura.', 'D’accord. Bonne chance avec cette posture.'],
+  });
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
   // ------------------------------------------------------------------ regras
@@ -420,7 +428,8 @@
       }
       const venceu = (a.acessoAte || 0) > 0;
       if (venceu) await api.fala('diego', Tf('Seu plano venceu. Quer renovar por mais uma semana? São {0} fakes.', PRECO_ACESSO));
-      const r = await Escolha.mostrar(T('Quer pagar a semana?'), [Tf('Pagar {0} fakes', PRECO_ACESSO), T('Ver minha ficha de treino'), T('Agora não')]);
+      const r = await Escolha.mostrar(T('Quer pagar a semana?'), [Tf('Pagar {0} fakes', PRECO_ACESSO), T('Ver minha ficha de treino'), T('Agora não'), T('Que academia cara, hein. Isso é um assalto.')]);
+      if (r === 3) { await api.falaGrossa('diego', 'diego', T('Que academia cara, hein. Isso é um assalto.'), (PERSONAGEM.genero === 'F' ? T('É o preço, parceira. Se não quiser, a rua é de graça.') : T('É o preço, parceiro. Se não quiser, a rua é de graça.'))); return; }   // a grosseria
       if (r === 1) { await ficha(); return; }
       if (r !== 0) return;
       if (!pagar(PRECO_ACESSO)) { await api.fala('diego', Tf('Ih, tá faltando grana aí... São {0} fakes.', PRECO_ACESSO)); return; }
@@ -456,7 +465,9 @@
         return;
       }
       await api.fala('fernanda', Tf('Treinando comigo, cada treino bem feito vale o dobro. São {0} fakes pela semana.', PRECO_PERSONAL));
-      const r = await Escolha.mostrar(T('Quer treinar comigo esta semana?'), [Tf('Contratar ({0} fakes)', PRECO_PERSONAL), T('Agora não')]);
+      const grossa = PERSONAGEM.genero === 'F' ? T('Personal? Eu treino melhor sozinha.') : T('Personal? Eu treino melhor sozinho.');
+      const r = await Escolha.mostrar(T('Quer treinar comigo esta semana?'), [Tf('Contratar ({0} fakes)', PRECO_PERSONAL), T('Agora não'), grossa]);
+      if (r === 2) { await api.falaGrossa('fernanda', 'fernanda', grossa, T('Tá bom, então. Boa sorte com essa postura aí.')); return; }   // a grosseria
       if (r !== 0) { await api.fala('fernanda', T('Tranquilo! Se mudar de ideia, eu tô por aqui.')); return; }
       if (!pagar(PRECO_PERSONAL)) { await api.fala('fernanda', T('Sem grana agora? Tranquilo, quando quiser é só me chamar.')); return; }
       a.personalAte = dia() + DIAS_PLANO; a.personalVezes = (a.personalVezes | 0) + 1;

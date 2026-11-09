@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.13
+   FUTEBOL JS · jogo.js · versão 6.6.14
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.13';
+const VERSAO_JOGO = '6.6.14';
 // 6.6.9: pesca — o Duke, antes de levitar, nada uns metros para longe do jogador (rastro de bolhas): levita a ~8,5 m, não mais colado no píer.
 // 6.6.8: privilégios do desenvolvedor — mudar o CLIMA na hora (automático, limpo, nublado, chuva, tempestade) e ligar a PESCA DO DUKE (toda mordida no lago é ele).
 // 6.6.7: pesca — o DUKE (duke.js, arquivo novo): no dia 13 de maio (data do aparelho), um lendário misterioso que levita para fora da água, encara o jogador e volta para o lago.

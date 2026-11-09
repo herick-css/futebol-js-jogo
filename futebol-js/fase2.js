@@ -1025,6 +1025,13 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Hoje começa o trabalho novo na cafeteria!': ['Today my new job at the café starts!', '¡Hoy empieza el trabajo nuevo en la cafetería!', 'Oggi comincia il nuovo lavoro al bar!', 'Aujourd’hui je commence mon nouveau travail au café !'],
     'Trabalho': ['Work', 'Trabajo', 'Lavoro', 'Travail'],
   });
+  Object.assign(TRAD_F2, {                                              // quem não conhecia a Lúcia da escola · a grosseria com o vizinho
+    'Hahahaha! Você manda muito bem!': ['Hahahaha! You’re really good!', '¡Jajajaja! ¡Eres muy buena!', 'Ahahahah! Sei bravissima!', 'Hahahaha ! Tu te débrouilles super bien !'],
+    'Reclamar da fumaça dele': ['Complain about his smoke', 'Quejarse de su humo', 'Lamentarsi del suo fumo', 'Se plaindre de sa fumée'],
+    'Que fedor, hein, tio. Vai fumar na sua casa.': ['What a stink, old man. Go smoke in your own place.', 'Qué peste, ¿eh, señor? Vaya a fumar a su casa.', 'Che puzza, eh, signore. Vada a fumare a casa sua.', 'Quelle odeur, hein, monsieur. Allez fumer chez vous.'],
+    'Ô moleque abusado! Respeita os mais velhos!': ['Hey, you cheeky brat! Respect your elders!', '¡Oye, mocoso atrevido! ¡Respeta a los mayores!', 'Ehi, ragazzino sfacciato! Rispetta i più grandi!', 'Hé, petit insolent ! Respecte tes aînés !'],
+    'Ô menina abusada! Respeita os mais velhos!': ['Hey, you cheeky girl! Respect your elders!', '¡Oye, niña atrevida! ¡Respeta a los mayores!', 'Ehi, ragazzina sfacciata! Rispetta i più grandi!', 'Hé, petite insolente ! Respecte tes aînés !'],
+  });
   for (const k of Object.keys(TRAD_F2)) if (!I18N[k]) I18N[k] = TRAD_F2[k];
   // Variantes FEMININAS (it/fr; null = igual): só as falas do jogador ou ditas a ele que mudam de gênero nesses idiomas.
   const TRAD_F2_F = {
@@ -1420,8 +1427,15 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     olhar(J, V.x, V.z); olhar(V, J.x, J.z); V.pose = 'pe'; await esperar(250);
     for (;;) {
       Dialogo.esconder();
-      const r = await Escolha.mostrar(T('O que você vai fazer?'), [T('Pedir um cigarro'), T('Pedir para ir fumar em outro lugar'), T('Perguntar sobre um lugar para comer'), T('Deixar para lá')]);
-      if (r === 3) break;
+      const r = await Escolha.mostrar(T('O que você vai fazer?'), [T('Pedir um cigarro'), T('Pedir para ir fumar em outro lugar'), T('Perguntar sobre um lugar para comer'), T('Reclamar da fumaça dele'), T('Deixar para lá')]);
+      if (r === 4) break;
+      if (r === 3) {                                                     // a grosseria: −5 com o vizinho e +0,25 em Arrogante e Problemático
+        await dizer(['jog', T('Que fedor, hein, tio. Vai fumar na sua casa.')], ['viz', PERSONAGEM.genero === 'F' ? T('Ô menina abusada! Respeita os mais velhos!') : T('Ô moleque abusado! Respeita os mais velhos!')]);
+        let CD = null; try { CD = await Fases.carregar('cidade'); } catch (e) { /* sem cidade */ }
+        somarAmizadeF2('vizinho', -5, CD, 'Vizinho');
+        try { if (CD && CD.encontro && CD.encontro.arrogancia) CD.encontro.arrogancia(); else if (typeof Espectros !== 'undefined') { Espectros.mover('humilde', -2.5, 'foi grosso com o vizinho'); Espectros.mover('tranquilo', -2.5, 'foi grosso com o vizinho'); } } catch (e) { console.warn('[Fase 2] espectros:', e); }
+        gravar('escada'); await esperar(100); continue;
+      }
       if (r === 0) {
         vz.pediuCigarro = true;
         await dizer(['jog', T('Moço, você me dá um cigarro?')], ['viz', Tj('Cigarro?! Você é de menor, nem devia pensar nisso!')],
@@ -1510,9 +1524,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   function somarAmizadeF2(id, n, CD) {
     try {
-      const c = API.historia.ler('cidade') || {}, am = Object.assign({}, c.amizade || {}), v0 = am[id] || 0, v = Math.max(0, Math.min(100, Math.round(v0 + n)));
+      const c = API.historia.ler('cidade') || {}, am = Object.assign({}, c.amizade || {}), v0 = am[id] != null ? am[id] : (id === 'lucia' ? 0 : 50), v = Math.max(0, Math.min(100, Math.round(v0 + n)));   // quem não tem coração começa no meio
       am[id] = v; API.historia.gravar('cidade', Object.assign({}, c, { amizade: am }));
-      if (v !== v0 && CD && CD.encontro) CD.encontro.coracao(v - v0);
+      if (v !== v0 && CD && CD.encontro) (CD.encontro.coracaoDe ? CD.encontro.coracaoDe(id, v - v0) : CD.encontro.coracao(v - v0));
     } catch (e) { console.warn('[Fase 2] amizade:', e); }
   }
   async function encontroNoQuarto(E) {
@@ -1542,7 +1556,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     J.pose = poseRindo; J.x = -1.25; J.z = 1.35; J.yaw = J.yawAlvo = Math.atan2(-(L.z - J.z), L.x - J.x);
     S.camEspecial = [0.8, 1.5, 3.4, -0.3, 0.7, 0.9]; S.camSnap = true;
     await preto(false, 700); await esperar(3600);
-    await fala('jog', T('Hahahaha! Você ainda manda bem!')); Dialogo.esconder(); await esperar(900);
+    const daEscola = (() => { try { const h1 = API.historia.ler('fase1') || {}; return !!(h1.lucia || h1.mariposa); } catch (e) { return false; } })();   // "ainda" só se ele a conhecia da escola
+    await fala('jog', daEscola ? T('Hahahaha! Você ainda manda bem!') : T('Hahahaha! Você manda muito bem!')); Dialogo.esconder(); await esperar(900);
     await preto(true, 900);
     L.bolaEmb = null; S.quarto.g.remove(bola); bola.geometry.dispose(); bola.material.map.dispose(); bola.material.dispose();
     if (bq) bq.visible = true; if (bs) bs.visible = true;
