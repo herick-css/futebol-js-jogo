@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.12
+   FUTEBOL JS · jogo.js · versão 6.6.13
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.12';
+const VERSAO_JOGO = '6.6.13';
 // 6.6.9: pesca — o Duke, antes de levitar, nada uns metros para longe do jogador (rastro de bolhas): levita a ~8,5 m, não mais colado no píer.
 // 6.6.8: privilégios do desenvolvedor — mudar o CLIMA na hora (automático, limpo, nublado, chuva, tempestade) e ligar a PESCA DO DUKE (toda mordida no lago é ele).
 // 6.6.7: pesca — o DUKE (duke.js, arquivo novo): no dia 13 de maio (data do aparelho), um lendário misterioso que levita para fora da água, encara o jogador e volta para o lago.
@@ -535,7 +535,10 @@ function gerarAparencia(semente, genero) {
   const rostosNeutros = [], rostosF = [];
   ROSTOS.forEach((x, i) => (generoDoRosto(i) === 'F' ? rostosF : rostosNeutros).push(i));
   const rosto = fem && rostosF.length && r() < 0.55 ? pick(rostosF) : (r() < 0.35 ? 0 : pick(rostosNeutros));
-  const barba = fem ? 0 : (r() < 0.5 ? 0 : 1 + Math.floor(r() * (ESTILOS_BARBA.length - 1)));
+  const comBarba = ESTILOS_BARBA.map((b, i) => i).filter((i) => i > 0 && !ESTILOS_BARBA[i].cosmetico);           // (as da loja ficam de fora: sorteio à parte, abaixo)
+  let barba = fem ? 0 : (r() < 0.5 ? 0 : comBarba[Math.floor(r() * comBarba.length)]);
+  const lojaB = fem ? [] : ESTILOS_BARBA.map((b, i) => i).filter((i) => ESTILOS_BARBA[i].cosmetico);
+  if (lojaB.length) { const r3 = sorteador(((semente || 1) * 6151 + 49157) | 0); if (r3() < CHANCE_CORTE_LOJA) barba = lojaB[Math.floor(r3() * lojaB.length)]; }
   const labio = clamp(Math.round(iPele * 1.3 + (r() * 2 - 1)), 0, LABIOS.length - 1);
   return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: Math.floor(r() * CHUTEIRAS.length), manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M' };
 }
@@ -15262,7 +15265,7 @@ function montarCriador(tela, aoFechar) {
   const esc = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const E = Object.assign({ nome: '', genero: 'M', temApelido: false, apelido: '', nomeCamisa: '', camisaEditada: false, numero: 9,
     pele: 2, estilo: 0, corCabelo: 1, barba: 0, corBarba: -1, rosto: 0, labio: 3, manga: 0, meiao: 1, chuteira: 0, pe: 'D', comemoracoes: [1, 2], voz: 2 }, salvo.ler('futebolJs.personagem.v1', {}).E || {});
-  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); if (ESTILOS_CABELO[E.estilo].cosmetico) E.estilo = 0; E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
+  E.estilo = Math.min(E.estilo | 0, ESTILOS_CABELO.length - 1); if (ESTILOS_CABELO[E.estilo].cosmetico) E.estilo = 0; E.barba = Math.min(E.barba | 0, ESTILOS_BARBA.length - 1); if (ESTILOS_BARBA[E.barba].cosmetico) E.barba = 0; E.rosto = Math.min(E.rosto | 0, ROSTOS.length - 1); E.labio = Math.min(Math.max(E.labio | 0, 0), LABIOS.length - 1);
   if (!Array.isArray(E.comemoracoes) || !E.comemoracoes.length) E.comemoracoes = [1, 2];
   let passo = 1, aba = 'pele', msg = '', emCena = false, falaAmostra = null;
   const css = document.createElement('style');
@@ -15487,7 +15490,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       } else if (aba === 'cabelo') {
         h += '<p class="crSecao">' + T('Corte') + '</p>' + chipsIdx(ESTILOS_CABELO.map((c, i) => [i, T(c.nome)]).filter(([i]) => !ESTILOS_CABELO[i].cosmetico), E.estilo, 'corte') + '<p class="crSecao">' + T('Cor do cabelo') + '</p>' + cores(CORES_CABELO, E.corCabelo, 'corCabelo', false) + '<p class="crNomeSel">' + esc(T(CORES_CABELO[E.corCabelo].nome)) + '</p>';
       } else if (aba === 'barba') {
-        const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(T(b.nome)) + '</button>' : '')).join('') + '</div>';
+        const grupoB = (g) => '<div class="crGrade">' + ESTILOS_BARBA.map((b, i) => (b.grupo === g && !b.cosmetico ? '<button type="button" class="pxBtn crChip' + (i === E.barba ? ' on' : '') + '" data-a="barba" data-i="' + i + '">' + esc(T(b.nome)) + '</button>' : '')).join('') + '</div>';
         h += '<p class="crSecao">' + T('Barba') + '</p>' + grupoB('barba') + '<p class="crSecao">' + T('Só bigodinho') + '</p>' + grupoB('bigode') +
           '<p class="crSecao">' + T('Cor da barba') + '</p>' + cores(CORES_CABELO, E.corBarba, 'corBarba', true) + '<p class="crNomeSel">' + (E.corBarba < 0 ? T('Igual ao cabelo') : esc(T(CORES_CABELO[E.corBarba].nome))) + '</p>';
       } else if (aba === 'rosto') {
@@ -15987,10 +15990,12 @@ function montarMenuInicial() {
 
 // COSMÉTICOS DA LOJA (cosmeticos.js, feito no conversor): os cortes entram no FIM de ESTILOS_CABELO com cosmetico: true.
 //   Não aparecem no criador de personagem (só comprando na barbearia da cidade, barbearia.js); os NPCs podem usar (gerarAparencia).
+//   Barbas e bigodes da loja: o mesmo (fora do criador, sorteio à parte nos NPCs, aparencia.barbaNome).
 //   O corte comprado fica no personagem pelo NOME (aparencia.estiloNome): se a lista do jogo crescer, o número muda e o nome acha de novo.
 function ajustarCortePersonagem() {
-  const ap = PERSONAGEM.aparencia; if (!ap || !ap.estiloNome) return;
-  const i = ESTILOS_CABELO.findIndex((c) => c.cosmetico && c.nome === ap.estiloNome); if (i >= 0) ap.estilo = i;
+  const ap = PERSONAGEM.aparencia; if (!ap) return;
+  if (ap.estiloNome) { const i = ESTILOS_CABELO.findIndex((c) => c.cosmetico && c.nome === ap.estiloNome); if (i >= 0) ap.estilo = i; }
+  if (ap.barbaNome) { const i = ESTILOS_BARBA.findIndex((c) => c.cosmetico && c.nome === ap.barbaNome); if (i >= 0) ap.barba = i; }   // a barba da loja, do mesmo jeito
 }
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 

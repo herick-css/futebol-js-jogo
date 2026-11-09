@@ -14,8 +14,9 @@
    - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
-   - Barbearia do Toninho (nome 'barbearia'): piso xadrez, dois espelhos com a bancada, duas cadeiras de barbeiro, o banco de espera
-     e o poste listrado. R.barbearia: { cadeira, toninho, corte, quadro } (o barbearia.js põe o Toninho, o quadro de preços e o corte).
+   - Barbearia do Toninho (nome 'barbearia'): piso xadrez, dois espelhos com a bancada, a segunda cadeira de barbeiro, o banco de espera
+     e o poste listrado. R.barbearia: { cadeira, toninho, corte, quadro } (o barbearia.js põe o Toninho, a cadeira de corte que gira,
+     o quadro de preços e a cena do corte).
    - (6.2.0) Academia refeita: recepção, duas catracas (entrada e saída), esteiras, supinos e colchonetes (R.academia; ver academia.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
@@ -600,7 +601,7 @@
         G.box(0.5, 0.05, 0.16, '#c9ced4', x, 0.16, z - 0.42); G.box(0.05, 0.3, 0.05, '#c9ced4', x, 0.18, z - 0.3);
         bloq(x, z, 0.72, 0.72);
       };
-      cadeira(-2, -2.4); cadeira(2, -2.4);
+      cadeira(2, -2.4); bloq(-2, -2.4, 0.72, 0.72);                                   // a de corte (x −2) é do barbearia.js: ela GIRA (de frente para a sala na escolha)
       for (let i = 0; i < 9; i++) G.box(0.05 + rnd() * 0.05, 0.012, 0.03 + rnd() * 0.04, pk(['#1c140f', '#3b2416', '#6b4423']), 2 + (rnd() - 0.5) * 1.4, 0.005, -2.3 + (rnd() - 0.5) * 1.2);   // cabelo no chão
       // o banco de espera (oeste), a mesinha com revistas e um vaso
       G.box(0.5, 0.45, 2.6, MAD, -4.62, 0, 1.0); G.box(0.55, 0.06, 2.7, '#8a1f24', -4.6, 0.45, 1.0); G.box(0.1, 0.55, 2.7, '#8a1f24', -4.87, 0.5, 1.0); bloq(-4.62, 1.0, 0.6, 2.7);
@@ -612,7 +613,7 @@
       G.box(0.3, 0.12, 0.3, '#c9ced4', 4.7, 0.9, -2.9); G.box(0.3, 0.12, 0.3, '#c9ced4', 4.7, 2.4, -2.9);
       for (let i = 0; i < 9; i++) G.box(0.2, 0.166, 0.2, ['#c8352b', '#f4f4ec', '#2a64b8'][i % 3], 4.7, 1.02 + i * 0.153, -2.9);
       R.barbearia = {
-        cadeira: { x: -2, z: -2.4, fx: 0, fz: -1, h: 0.6 },                         // onde o cliente senta (olhando o espelho)
+        cadeira: { x: -2, z: -2.4, fx: 0, fz: -1, h: 0.6 },                         // a cadeira de corte (gira; virada para o espelho = norte)
         toninho: { x: 1.05, z: -1.55, yaw: -Math.PI / 2 },                          // esperando, do lado da outra cadeira, de frente para a porta
         corte: { x: -2.78, z: -2.2, yaw: 0 },                                       // cortando: do lado oeste da cadeira, virado para ela
         quadro: { x: 4.1, z: zN + 0.06 },                                           // o quadro dos preços (na parede norte, depois do espelho)
