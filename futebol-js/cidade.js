@@ -1,6 +1,17 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.15
+     - PORTAS ANIMADAS (PORTAS_ANIM, criarPortasAnim, tickPortas): lojas (giratória, dupla, de correr, vão aberto) e as casas abrem quando
+       alguém chega (jogador, visitantes, moradores) e fecham ~0,5 s depois. Quem entra pára NA porta (aparaPorta), espera ela abrir e
+       atravessa até sumir lá dentro (comecarPortaV / tickPortaNPC); quem sai aparece lá dentro e sai pela porta. As casas também.
+     - CHUVA: o jornal vai preso no corpo, EM CIMA do cabelo (topoCabeca, do jogo.js); o guarda-chuva sobe acima do cabelo; quem tem
+       cabelo alto (CABELO_ALTO) só corre com a mão para cima.
+     - ÁRVORE: chega ao ponto, vira de costas e dá meio passo para trás até ENCOSTAR no tronco (costasAtor mede quanto o corpo de cada
+       um vai para trás, para não entrar na madeira); 2 lugares por árvore, em lados opostos.
+     - RODA DE BOLA: cada um tem sua vaga fixa (arrumarRoda), só anda se sair dela, fica 2,5–7 min, sai sem a bola no pé, e quem saiu
+       espera 5–12 min para pensar em jogar de novo (cdBola). Depois de uma atividade, a pessoa segue para onde ia (sem voltar).
+     - CENAS: com o jogador parado, o pedestre passa por dentro dele e ele cambaleia, como no jogo.
    NOVIDADES DA 6.6.8
      - PRIVILÉGIOS DO DESENVOLVEDOR: CLIMA (climaDev: Automático / Limpo / Nublado / Chuva / Tempestade; já entra pronto e fica ~20 min,
        sem o sorteio; Tempestade = chuva com trovão a cada poucos segundos) e PESCA DO DUKE (dukeDev: toda mordida no lago é o Duke,
@@ -1180,7 +1191,8 @@
       telhado: laje ? null : { rh: 1.35, e: 0.4, cor: rnd() < 0.7 ? '#b5552e' : '#9c4a2a', eixo: 'x' },
       platibanda: escurece(cor, 0.95),
       montar: (G) => {
-        porta(G, w, d, 'f', lado * w * 0.27, 0.9, 2.1, ['#7a4a2a', '#5b3a22', '#3a5f8a', '#8a2f2a'][Math.floor(rnd() * 4)]);
+        const corP = ['#7a4a2a', '#5b3a22', '#3a5f8a', '#8a2f2a'][Math.floor(rnd() * 4)]; pt.porta = { w: 0.9, h: 2.1, cor: corP, s: sg };   // (6.6.15) a porta que abre (portasAnim)
+        porta(G, w, d, 'f', lado * w * 0.27, 0.9, 2.1, corP);
         janela(G, w, d, 'f', -lado * w * 0.22, 1.0, 1.2, 1.05);
         janela(G, w, d, 'r', 0, 1.0, 1.0, 1.0); janela(G, w, d, 'l', 0, 1.0, 1.0, 1.0);
         if (laje) caixaDagua(G, -lado * w * 0.2, 3.35, -d * 0.15);
@@ -2499,16 +2511,22 @@
     const obj = !!lugar && typeof lugar === 'object';
     const C = (S.casas || []).find((c) => c.especial === especial), P = obj ? lugar : PORTAS.find((p) => p.nome === lugar);
     if (!C || !P || !S.rede) return null;
-    const pz0 = obj ? P.z : P.z - 0.6;
-    let pts = [{ x: C.x, z: C.z }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, pz0));
+    const pz0 = obj ? P.z : P.z;                                         // (6.6.15) na calçada, na frente da porta (antes: 0,6 m "para dentro" — no sul, ainda na calçada)
+    const dCasa = C.porta ? { x: C.x, z: C.z - C.porta.s * 0.9 } : { x: C.x, z: C.z };   // (6.6.15) sai/entra de casa PELA PORTA (lá de dentro)
+    let pts = [dCasa, { x: C.x, z: C.z + (C.porta ? C.porta.s * 0.25 : 0) }, { x: C.sx, z: C.sz }].concat(caminhoRede(C.sx, C.sz, P.x, pz0));
+    if (pts.length >= 5) {                                                // (6.6.15) saindo de casa: o nó da rede mais perto às vezes fica para TRÁS (ia até ele e voltava)
+      const p = pts[2], a = pts[3], b = pts[4], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz;
+      if (L2 > 1e-4) { const u = ((p.x - a.x) * vx + (p.z - a.z) * vz) / L2, d = Math.abs((p.x - a.x) * vz - (p.z - a.z) * vx) / Math.sqrt(L2); if (u > 0 && u < 1 && d < 7) pts[3] = { x: a.x + vx * u, z: a.z + vz * u }; }
+    }
     { // antes ela passava da cafeteria e voltava: corta a rota no ponto da calçada mais perto da porta (projeção no trecho)
       const fim = { x: P.x, z: pz0 }; let melhor = null;
-      for (let i = 2; i < pts.length - 1; i++) {
+      for (let i = 3; i < pts.length - 1; i++) {
         const a = pts[i - 1], b = pts[i], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz || 1;
         const u = clamp(((fim.x - a.x) * vx + (fim.z - a.z) * vz) / L2, 0, 1), q = { x: a.x + vx * u, z: a.z + vz * u }, dd = Math.hypot(q.x - fim.x, q.z - fim.z);
         if (!melhor || dd < melhor.dd - 1e-6) melhor = { i, q, dd };
       }
-      if (melhor) pts = pts.slice(0, melhor.i).concat([melhor.q, fim]); }
+      if (melhor) pts = pts.slice(0, melhor.i).concat([melhor.q, fim]);
+      const dn = !obj && dentroDaPorta(P.nome, 1.1); if (dn) pts.push(dn); }   // (6.6.15) e entra pela porta (some atrás da parede)
     if (obj && P.fim) pts = pts.concat(P.fim.map(([x, z]) => ({ x, z })));   // (6.4.0) depois da rede: areia, píer...
     const acc = [0];
     for (let i = 1; i < pts.length; i++) acc.push(acc[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].z - pts[i - 1].z));
@@ -2913,6 +2931,7 @@
     if (!TIPOS_CONG.has(A.tipo) || A.oculto || A.longeDemais || S.semCongelar) return false;   // (S.semCongelar: para medir/testes)
     if (A.andando || A.fala || A.gesto || A.celeb || A.vomita > 0 || A.puxa || A.chuva || A.pedeFaixa || A.recua || A.esbarrao > 0 || A.cabY || A.chuteT >= 0 || A.ativ || A.segura) return false;
     if ((A.comendo > 0 || A.bebe > 0) && mexendoComida(A)) return false;
+    if (Math.abs(A.m.pernaE.rotation.z - A.m.pernaD.rotation.z) > 0.04) return false;   // (6.6.15) acabou de parar: espera as pernas fecharem (senão congelava no meio do passo)
     return Math.abs(difAng(A.yawAlvo, A.yaw)) < 0.02;
   }
   const _cInv = new THREE.Matrix4(), _cRel = new THREE.Matrix4(), _cNor = new THREE.Matrix3(), _cV = new THREE.Vector3();
@@ -3016,11 +3035,12 @@
       if (A.goleiro) { usarJoelhos(m, -0.45, -0.45); m.bracoE.rotation.x = 0.75; m.bracoD.rotation.x = -0.75; m.bracoE.rotation.z = 0.35; m.bracoD.rotation.z = 0.35; r.position.y = A.y - 0.06; m.bracoE.rotation.y = 0; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return; }
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? f * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? g * 0.35 + 0.45 : 0, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.6 + g * 0.3);
+      if (A.encostado) m.corpo.rotation.z = ENC_INCL;   // (6.6.15) encostado no tronco: o corpo inteiro deita um pouco para trás, em volta dos pés (as costas na madeira)
       r.position.y = A.y;
     }
     if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // puxando a persiana
-    if (A.chuva && !A.sentado) { m.bracoD.rotation.z = 2.55; usarCotovelo(m.bracoD, 0, 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
-    m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : 0;   // bebendo: a mão fecha para a frente da boca
+    if (A.chuva && !A.sentado) { m.bracoD.rotation.z = A.maoAlta ? 2.2 : 2.55; usarCotovelo(m.bracoD, 0, A.maoAlta ? 0.75 : 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
+    m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : A.chuva && A.maoAlta && !A.sentado ? 0.35 : 0;   // bebendo: a mão fecha para a frente da boca · (6.6.15) cabelo alto: a mão na frente da testa, sem entrar no cabelo
     if (A.pedeFaixa && !A.sentado && !A.recua && !A.andando) poseEspera(A, dt);       // (6.3.0) parado na beira da faixa
     else if (A.cabY) { A.cabY *= 1 - Math.min(1, dt * 8); if (Math.abs(A.cabY) < 0.02) A.cabY = 0; }   // atravessando: a cabeça volta a olhar para a frente
     if (A.cabY) { usarCabeca(m, m.cabeca.rotation.z || -0.0001); m.cabeca.rotation.y = A.cabY; }
@@ -3195,7 +3215,10 @@
     if (!iniciarDesvio(A, dx, dz, d)) { A.fantasma = 0.8; A.bloq = 0; }
   }
   // o jogador só "tem corpo" para as pessoas quando está andando (ou sentado): parado de pé, quem vem andando segue reto e ele é que cambaleia
-  const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || J.andando || S.modo !== 'livre'; };
+  //   (6.6.15) nas CENAS também: antes, com S.modo 'cena', o jogador sempre tinha corpo (as pessoas paravam ou davam a volta nele).
+  //   Agora a cena segue a mesma regra do jogo (parado: passam por dentro e ele cambaleia) e, como na cena ele anda pelo roteiro, nem
+  //   andando ele trava ninguém (o roteiro não desvia de pedestre).
+  const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || (S.modo === 'cena' ? false : J.andando || S.modo !== 'livre'); };
   function livreNPC(x, z, A, semJog, ignorarGente) {
     if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
     else if (x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) return false;
@@ -3377,7 +3400,7 @@
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
       }
-      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && S.modo === 'livre' && !J0.sentado && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado)
+      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && (S.modo === 'livre' || S.modo === 'cena') && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado)
       if (A.tipo === 'luciaRua') tickLuciaRua(A);
       else if (A.tipo === 'rua') tickRua(A);                          // Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
@@ -3713,6 +3736,84 @@
     { nome: 'esportiva', x: -75.5, z: 8.6, sai: Math.PI / 2 },                       // Golaço Esportes
     { nome: 'barbearia', x: -19.0, z: 8.6, sai: Math.PI / 2 },                       // Barbearia do Toninho (barbearia.js)
   ];
+  // ================================================================== (6.6.15) PORTAS QUE ABREM
+  //   As portas das lojas (PORTAS) e das casas de quem tem rotina na rua viram peças de verdade: a folha gira para DENTRO (ou as duas
+  //   folhas de vidro correm para os lados, no mercado/hospital), e atrás dela aparece o vão escuro (por cima da porta pintada na fachada).
+  //   Abre sozinha quando alguém (NPC, o Herick, o jogador) vem andando NA DIREÇÃO dela, quando alguém está saindo (do lado de dentro) ou
+  //   quando quem entra/sai pede (abrirPorta). Quem entra passa pelo vão e some atrás da parede (a própria fachada esconde): sem "roçar".
+  //   lado: face da fachada (z) · s: +1 = a rua fica para +z (lado norte da avenida), −1 = para −z.
+  const PORTAS_ANIM = {
+    cinema: { w: 4.2, h: 2.8, cor: '#3b4757', tipo: 'dupla', zf: -5.0, s: 1 },
+    cafeteria: { w: 1.4, h: 2.3, cor: '#6a4428', tipo: 'gira', zf: -5.0, s: 1 },
+    supermercado: { w: 2.4, h: 2.6, cor: '#6f93ab', tipo: 'correr', zf: -5.0, s: 1 },
+    hospital: { w: 3.2, h: 2.6, cor: '#7aa2bd', tipo: 'correr', zf: -5.0, s: 1 },
+    bar: { w: 3.6, h: 2.7, tipo: 'vao', zf: 10.4, s: -1 },
+    pizzaria: { w: 1.6, h: 2.4, cor: '#7a4a2a', tipo: 'gira', zf: 10.4, s: -1 },
+    restaurante: { w: 1.8, h: 2.4, cor: '#5b3a22', tipo: 'gira', zf: 10.4, s: -1 },
+    academia: { w: 1.8, h: 2.4, cor: '#2e3a44', tipo: 'gira', zf: 10.4, s: -1 },
+    esportiva: { w: 2.4, h: 2.85, cor: '#5d9fc4', tipo: 'dupla', zf: 10.4, s: -1 },
+    barbearia: { w: 1.5, h: 2.4, cor: '#3a2a22', tipo: 'gira', zf: 10.4, s: -1 },
+  };
+  // o ponto lá DENTRO, atrás da porta (para onde vai quem entra e de onde vem quem sai)
+  function dentroDaPorta(nome, fundo) { const D = PORTAS_ANIM[nome], P = PORTAS.find((p) => p.nome === nome); if (!D || !P) return null; return { x: P.x, z: D.zf - D.s * (fundo == null ? 0.9 : fundo) }; }
+  function folhaPorta(w, h, cor, vidro, macaneta) {
+    const G = new Geo();
+    if (vidro) { G.box(w, h, 0.05, '#e8eef2', 0, 0, 0); G.box(w - 0.14, h - 0.2, 0.07, cor, 0, 0.1, 0); G.box(w * 0.5, 0.06, 0.08, '#e8eef2', 0, h * 0.48, 0); }
+    else { G.box(w, h, 0.05, cor, 0, 0, 0); G.box(w * 0.62, h * 0.32, 0.07, escurece(cor, 0.85), 0, h * 0.56, 0); G.box(w * 0.62, h * 0.28, 0.07, escurece(cor, 0.85), 0, h * 0.12, 0); }
+    if (macaneta) G.box(0.08, 0.08, 0.13, '#d8c070', macaneta * (w / 2 - 0.13), h * 0.47, 0);
+    return G.malha(MAT);
+  }
+  function criarPortaAnim(id, x, zf, s, D) {
+    if (D.tipo === 'vao') return null;
+    const g = new THREE.Group(); g.position.set(x, 0, zf); g.rotation.y = s > 0 ? 0 : Math.PI; S.grupoCidade.add(g);   // local: +z = para a rua
+    const Gv = new Geo(); Gv.box(D.w, D.h, 0.02, '#120e0b', 0, 0, 0.082); Gv.box(D.w - 0.1, 0.05, 0.12, '#2a2018', 0, 0, 0.0);   // o vão escuro (cobre a porta pintada) + soleira
+    const vao = Gv.malha(MAT); vao.visible = false; g.add(vao);
+    const P = { id, x, zf, s, w: D.w, h: D.h, tipo: D.tipo, g, vao, k: 0, alvo: 0, segura: 0, folhas: [], prim: true }, z = 0.12;
+    if (D.tipo === 'gira') { const piv = new THREE.Group(); piv.position.set(-D.w / 2 + 0.02, 0.02, z); const f = folhaPorta(D.w - 0.05, D.h - 0.04, D.cor, false, 1); f.position.x = (D.w - 0.05) / 2; piv.add(f); g.add(piv); P.folhas.push({ piv, lado: 1 }); }
+    else if (D.tipo === 'dupla') for (const ld of [-1, 1]) { const piv = new THREE.Group(); piv.position.set(ld * (D.w / 2 - 0.02), 0.02, z); const f = folhaPorta(D.w / 2 - 0.04, D.h - 0.04, D.cor, true, -ld); f.position.x = -ld * (D.w / 2 - 0.04) / 2; piv.add(f); g.add(piv); P.folhas.push({ piv, lado: ld }); }
+    else for (const ld of [-1, 1]) { const f = folhaPorta(D.w / 2, D.h - 0.03, D.cor, true, 0); f.position.set(ld * D.w / 4, 0.02, z); g.add(f); P.folhas.push({ m: f, lado: ld, x0: ld * D.w / 4 }); }
+    return P;
+  }
+  function criarPortasAnim() {
+    S.portasA = {};
+    for (const P of PORTAS) { const D = PORTAS_ANIM[P.nome]; if (D) { const A = criarPortaAnim(P.nome, P.x, D.zf, D.s, D); if (A) S.portasA[P.nome] = A; } }
+    for (const C of S.casas || []) if (C.especial && C.porta) { const A = criarPortaAnim('casa:' + C.especial, C.x, C.z, C.porta.s, { w: C.porta.w, h: C.porta.h, cor: C.porta.cor, tipo: 'gira' }); if (A) S.portasA['casa:' + C.especial] = A; }
+  }
+  // pede para a porta ficar aberta por "seg" segundos (quem entra/sai chama)
+  function abrirPorta(id, seg) { const P = S.portasA && S.portasA[id]; if (P) P.segura = Math.max(P.segura, S.t + (seg || 1)); }
+  // alguém vai passar por ela? (lado: posição em relação à porta; vem andando NA DIREÇÃO dela; ou já está do lado de dentro, saindo)
+  function querPassar(P, x, z, yaw, andando) {
+    const lat = Math.abs(x - P.x); if (lat > P.w / 2 + 0.35) return false;
+    const fora = (z - P.zf) * P.s;                                      // > 0: na calçada; < 0: lá dentro
+    if (fora < 0.2 && fora > -2.6) return true;
+    return andando && fora < 1.4 && P.s * Math.sin(yaw) > 0.55;          // vem na direção da porta (o "para dentro" é −s em z)
+  }
+  function tickPortas(dt) {
+    if (S.dentro) return;
+    if (!S.portasA) { if (!S.grupoCidade || !S.casas) return; criarPortasAnim(); }
+    const J = S.jog; S.tPortas = (S.tPortas || 0) - dt;
+    const checa = S.tPortas <= 0; if (checa) S.tPortas = 0.1;
+    for (const id in S.portasA) {
+      const P = S.portasA[id], perto = Math.hypot(P.x - J.x, P.zf - J.z) < 60;
+      P.g.visible = perto; if (!perto && P.k === 0) continue;
+      if (checa) {
+        const jm = P.jx != null && Math.hypot(J.x - P.jx, J.z - P.jz) > 0.04; P.jx = J.x; P.jz = J.z;   // o jogador está andando?
+        let q = P.segura > S.t || querPassar(P, J.x, J.z, J.yaw || 0, jm);
+        if (!q) for (const A of S.npcs) if (!A.oculto && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && querPassar(P, A.x, A.z, A.yaw, A.andando)) { q = true; break; }
+        if (!q && S.atoresExtra) for (const A of S.atoresExtra) if (A && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && querPassar(P, A.x, A.z, A.yaw, A.andando)) { q = true; break; }
+        if (q) P.fecha = S.t + 0.5;
+        P.alvo = q || (P.fecha || 0) > S.t ? 1 : 0;                      // fecha meio segundo depois que ninguém mais precisa
+      }
+      const k0 = P.k; P.k = P.alvo > P.k ? Math.min(1, P.k + dt * 3.2) : Math.max(0, P.k - dt * 1.9);
+      if (P.k === k0 && !P.prim) continue; P.prim = false;
+      const e = P.k * P.k * (3 - 2 * P.k);
+      P.vao.visible = P.k > 0.01;
+      for (const F of P.folhas) {
+        if (F.piv) F.piv.rotation.y = (P.tipo === 'dupla' ? -F.lado : 1) * 1.55 * e;   // gira para DENTRO
+        else F.m.position.x = F.x0 + F.lado * (P.w / 2 - 0.06) * e;      // as de vidro correm para os lados
+      }
+    }
+  }
   const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', barbearia: 'Barbearia', esportiva: 'Golaço Esportes' };
   // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
   async function entrarEm(P) {
@@ -5906,14 +6007,17 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function criarProp(A) {
     if (A.prop || A.chuva === 'mao') return;
     const P = geoProp(), gr = new THREE.Group();
-    if (A.chuva === 'guarda') { const c = new THREE.Mesh(P.cone, P.cores[Math.floor(Math.random() * P.cores.length)]); c.position.y = 0.12; gr.add(c); const h = new THREE.Mesh(P.haste, P.mHaste); h.position.y = -0.2; gr.add(h); }
-    else { const j = new THREE.Mesh(P.jornal, P.mJornal); j.rotation.x = -0.35; gr.add(j); }
-    S.grupo.add(gr); A.prop = gr;
+    if (A.chuva === 'guarda') { const c = new THREE.Mesh(P.cone, P.cores[Math.floor(Math.random() * P.cores.length)]); c.position.y = 0.12; gr.add(c); const h = new THREE.Mesh(P.haste, P.mHaste); h.position.y = -0.2; gr.add(h); S.grupo.add(gr); }
+    else {                                                                 // (6.6.15) o jornal fica EM CIMA da cabeça (e do cabelo), preso no corpo: acompanha o balanço da corrida
+      const j = new THREE.Mesh(P.jornal, P.mJornal); j.rotation.x = -0.18; gr.add(j);
+      gr.position.set(0.04, (A.m.topoCabeca || 1.88) + 0.045, 0); A.m.corpo.add(gr); A.propCorpo = true;
+    }
+    A.prop = gr;
   }
-  function removerProp(A) { if (A.prop) { if (A.prop.parent) A.prop.parent.remove(A.prop); A.prop = null; } }
+  function removerProp(A) { if (A.prop) { if (A.prop.parent) A.prop.parent.remove(A.prop); A.prop = null; A.propCorpo = false; } }
   function atualizarProp(A) {
-    if (!A.prop) return; const es = A.opt.escala || 1;
-    A.prop.visible = !A.oculto; A.prop.position.set(A.x, A.y + (A.chuva === 'guarda' ? 2.22 : 1.95) * es, A.z); A.prop.rotation.y = A.yaw;
+    if (!A.prop || A.propCorpo) return; const es = A.opt.escala || 1;
+    A.prop.visible = !A.oculto; A.prop.position.set(A.x, A.y + Math.max(2.22, (A.m.topoCabeca || 1.88) + 0.36) * es, A.z); A.prop.rotation.y = A.yaw;   // o guarda-chuva acima do cabelo
   }
   function caminhoRede(x0, z0, x1, z1, evitar) {
     const N = S.rede, perto = (x, z) => { let b = 0, bd = 1e9; N.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
@@ -5982,7 +6086,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return { x: a.x + a.fx * 0.8, z: a.z + a.fz * 0.8 };
   }
   const noMaisPerto = (x, z) => { let b = 0, bd = 1e9; S.rede.forEach((n, i) => { const d = Math.hypot(n.x - x, n.z - z); if (d < bd) { bd = d; b = i; } }); return b; };
-  function correrNaChuva(A) { A.chuva = PROPS[Math.floor(Math.random() * 3)]; A.velBase = A.velBase || A.vel; A.vel = A.velBase * (A.esporte ? 1.15 : 1.9); A.correndo = true; criarProp(A); }
+  // (6.6.15) cabelo muito alto (mais de 20 cm acima da cabeça: black, coque...): nada de jornal nem guarda-chuva (entravam no cabelo) — só a mão
+  const CABELO_ALTO = 0.2;
+  function correrNaChuva(A) { A.maoAlta = !!(A.m && A.m.cabelo > CABELO_ALTO); A.chuva = A.maoAlta ? 'mao' : PROPS[Math.floor(Math.random() * 3)]; A.velBase = A.velBase || A.vel; A.vel = A.velBase * (A.esporte ? 1.15 : 1.9); A.correndo = true; criarProp(A); }
   function chuvaComecou() {
     for (const A of S.npcs.slice()) if (A.ativ) fimAtiv(A);              // (6.6.5)
     for (const A of npcsFora()) if (A.tipo === 'anda' && !A.oculto && !A.chuva && !(A.dest && A.sentado)) correrNaChuva(A);
@@ -6003,14 +6109,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function surgirMor(r, x, z, yaw) { const A = r.A; A.oculto = false; A.x = x; A.z = z; A.yaw = A.yawAlvo = yaw; A.y = altura(x, z); S.meus.add(A.m); A.blob.visible = true; A.andando = false; }
   function esconderMor(r) {
     const A = r.A; liberarSlot(r); soltarLugar(r);
-    A.oculto = true; A.sentado = false; A.deitado = false; A.chao = false; A.fala = false; A.andando = false; A.chuva = null; A.correndo = false; removerProp(A);
+    A.oculto = true; A.encostado = false; A.sentado = false; A.deitado = false; A.chao = false; A.fala = false; A.andando = false; A.chuva = null; A.correndo = false; removerProp(A);
     A.x = 0; A.z = -500; S.meus.delete(A.m); A.blob.visible = false; A.tipo = 'morador'; r.estado = 'casa'; r.rota = null;
   }
   function levantarMor(r) {                                          // sai do banco (ou do chão) e fica de pé
     const A = r.A, L = lugarDe(r);
     if (A.sentado && !A.chao && L && L.ocupado === A) { const p = pontoLev(L, A); A.x = p.x; A.z = p.z; }
     if (L && L.ocupado === A) L.ocupado = null; r.lugarAtual = null;
-    A.sentado = false; A.chao = false; A.deitado = false; A.assento = 0.52; A.fala = false; A.comendo = 0;
+    A.sentado = false; A.chao = false; A.deitado = false; A.encostado = false; A.assento = 0.52; A.fala = false; A.comendo = 0;
   }
   function pontoPosto(r) { const p = r.posto, L = p.lugar; return L ? pontoLev(L, null) : { x: p.x, z: p.z }; }
   function colocarNoPosto(r) {
@@ -6048,19 +6154,70 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (const t of S.abrigos || []) for (const sl of t.slots || []) { if (sl.ocupado) continue; const d = Math.hypot(sl.x - A.x, sl.z - A.z); if (d < bd) { bd = d; best = sl; } }
     return best;
   }
+  // (6.6.15) ENCOSTADO NO TRONCO: antes a pessoa ficava parada no ponto do abrigo (1,5 m do tronco, quase na ponta da copa). Agora,
+  //   chegando ao ponto, ela anda reto (sem a colisão da árvore, que a seguraria a ~0,7 m) até ENCOSTAR AS COSTAS no tronco, vira de
+  //   costas para ele e senta no chão ou fica de pé encostada. As distâncias saem da largura do tronco (0,32 x k) mais a metade da
+  //   espessura do corpo, para as costas tocarem a madeira sem entrar nela. Para ir embora, desencosta (volta reto ao ponto) e só
+  //   então segue a rota de sempre.
+  //   Quanto o corpo vai para TRÁS do centro (costas, braços parados, cabelo/coque atrás da cabeça) muda de pessoa para pessoa: é medido
+  //   uma vez no próprio boneco, em pé e sem pose (costasAtor), para ninguém encostar "dentro" do tronco nem ficar a um palmo dele.
+  const ENC_FOLGA = 0.032, ENC_INCL = 0.06;
+  const _ecInv = new THREE.Matrix4(), _ecM = new THREE.Matrix4(), _ecV = new THREE.Vector3();
+  function costasAtor(A) {                                           // perfil das costas: para cada faixa de 5 cm de altura, o quanto o corpo vai para trás
+    const m = A.m; if (m._costas) return m._costas;
+    const partes = [m.corpo, m.bracoE, m.bracoD, m.cabeca].filter(Boolean), salvo = partes.map((o) => o.rotation.clone());
+    for (const o of partes) o.rotation.set(0, 0, 0);
+    const r = m.raiz; r.updateMatrixWorld(true); _ecInv.copy(r.matrixWorld).invert();
+    const faixas = [], pula = new Set([m.sombra, m.etiqueta, m.pernaE, m.pernaD].filter(Boolean));   // as pernas: em pé ficam embaixo do quadril, sentado vão para a frente
+    const visita = (o) => {
+      if (!o.visible || pula.has(o)) return;
+      if (o.isMesh && o.geometry && o.geometry.attributes.position) {
+        const P = o.geometry.attributes.position; _ecM.multiplyMatrices(_ecInv, o.matrixWorld);
+        for (let k = 0; k < P.count; k++) { _ecV.fromBufferAttribute(P, k).applyMatrix4(_ecM); const f = Math.max(0, Math.floor(_ecV.y / 0.05)); if (faixas[f] == null || _ecV.x < faixas[f]) faixas[f] = _ecV.x; }
+      }
+      for (const c of o.children) visita(c);
+    };
+    for (const c of r.children) visita(c);
+    partes.forEach((o, i) => o.rotation.copy(salvo[i])); r.updateMatrixWorld(true);
+    return (m._costas = { faixas, es: r.scale.x || 1 });
+  }
+  // quanto o corpo vai para trás do ponto da pessoa, só no trecho de altura onde há TRONCO (embaixo da copa; lá em cima as folhas cobrem)
+  function trasNoTronco(A, k, alturaTronco) {
+    const c = costasAtor(A), es = c.es, dy = k === 'chao' ? 0.17 - 0.67 * es : 0;
+    let tras = 0.16 * es;
+    c.faixas.forEach((x, f) => {
+      if (x == null) return; const yl = (f + 0.5) * 0.05, y = yl * es + dy; if (y < 0.03 || y > alturaTronco) return;
+      const incl = k === 'pe' ? Math.sin(ENC_INCL) * yl * es : 0;                           // em pé: o corpo todo deita para trás (o giro do 'corpo' é em volta dos pés)
+      tras = Math.max(tras, -x * es + incl);
+    });
+    return tras;
+  }
+  function encostoArvore(sl, k, A) {
+    const t = sl.t, dx = sl.x - t.x, dz = sl.z - t.z, d = Math.hypot(dx, dz) || 1, kt = t.k || 1;
+    const dd = 0.16 * kt / Math.max(Math.abs(dx / d), Math.abs(dz / d)) + trasNoTronco(A, k, 1.7 * kt) + ENC_FOLGA;   // o tronco é quadrado: na diagonal a quina vai mais longe
+    return { x: t.x + dx / d * dd, z: t.z + dz / d * dd, fora: yawPara(dx, dz), ux: dx / d, uz: dz / d };
+  }
+  function chegarNaArvore(r) {                                       // chegou ao ponto do abrigo: escolhe a pose e anda até o tronco
+    const k = Math.random() < 0.5 ? 'pe' : 'chao', q = encostoArvore(r.slot, k, r.A);
+    r.pose = k; r.encosto = q; r.alvoArv = { x: q.x + q.ux * 0.32, z: q.z + q.uz * 0.32 }; r.estado = 'encosta';   // pára um passo antes, vira de costas e dá meio passo para trás
+  }
   function poseNaArvore(r) {
-    const A = r.A, sl = r.slot, k = Math.random() < 0.5 ? 'pe' : 'chao', fora = yawPara(sl.x - sl.t.x, sl.z - sl.t.z);
-    A.andando = false; A.correndo = false; A.chuva = null; removerProp(A); A.vel = 1.2;
-    if (k === 'deitado') { A.deitado = true; A.yaw = A.yawAlvo = fora; }                    // a cabeça fica do lado do tronco
-    else if (k === 'chao') { A.sentado = true; A.chao = true; A.assento = 0.17; A.yaw = A.yawAlvo = fora + (Math.random() - 0.5) * 1.2; }
-    else A.yawAlvo = fora + (Math.random() - 0.5) * 2.4;
-    r.pose = k; r.estado = 'arvore'; r.espera = 3 + Math.random() * 7;
+    const A = r.A, k = r.pose, fora = r.encosto.fora;
+    A.andando = false; A.correndo = false; A.chuva = null; A.maoAlta = false; removerProp(A); A.vel = 1.2;
+    A.yaw = A.yawAlvo = fora;                                         // de costas para o tronco (senão as costas não encostam)
+    if (k === 'chao') { A.sentado = true; A.chao = true; A.assento = 0.17; }
+    else A.encostado = true;
+    r.estado = 'arvore'; r.espera = 3 + Math.random() * 7;
+  }
+  function sairDaArvore(r) {                                         // (6.6.15) desencostou: o que fazia antes (volta ao posto ou para casa)
+    const A = r.A, h = S.dados.hora; liberarSlot(r); r.alvoArv = null;
+    if (horaEntre(h, r.saida, r.volta)) { const f = pontoPosto(r); r.rota = rotaGente(A.x, A.z, f.x, f.z); r.estado = 'voltaPosto'; A.tipo = 'morador'; } else irParaCasa(r);
   }
   function montarMoradores() {
     const rnd = semente(4242), tR = semente(909);
-    for (const t of S.abrigos || []) {                                // 3 pontos fixos em volta de cada árvore (só os livres)
+    for (const t of S.abrigos || []) {                                // 2 pontos fixos em lados OPOSTOS de cada árvore (só os livres) · (6.6.15) eram 3 a 120°: encostados no tronco, os ombros se atravessavam
       t.slots = []; const base = tR() * Math.PI * 2;
-      for (let k = 0; k < 3; k++) { const a = base + k * Math.PI * 2 / 3, sx = t.x + Math.cos(a) * 1.5, sz = t.z + Math.sin(a) * 1.5; if (livreNPC(sx, sz, null, true) && distRede(sx, sz) < 14) t.slots.push({ x: sx, z: sz, t, ocupado: null }); }
+      for (let k = 0; k < 2; k++) { const a = base + k * Math.PI, sx = t.x + Math.cos(a) * 1.5, sz = t.z + Math.sin(a) * 1.5; if (livreNPC(sx, sz, null, true) && distRede(sx, sz) < 14) t.slots.push({ x: sx, z: sz, t, ocupado: null }); }
     }
     const gente = S.npcs.filter((A) => A !== S.valdemar && (A.tipo === 'senta' || A.tipo === 'conversa' || A.tipo === 'treino'));
     // casas com "marca" (seu Valdemar, João, os Alves) são exclusivas de quem a planta já reservou para: moradores sem
@@ -6080,7 +6237,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const h = S.dados.hora, dia = S.dados.dia || 1, molhado = !!S.clima.molhado;
     for (const r of M) {
       const A = r.A;
-      if (molhado && !r.reagiu && r.estado !== 'arvore' && r.estado !== 'paraArvore') {
+      if (molhado && !r.reagiu && r.estado !== 'arvore' && r.estado !== 'paraArvore' && r.estado !== 'encosta' && r.estado !== 'desencosta' && r.estado !== 'viraArv' && r.estado !== 'recuaArv') {
         r.reagiu = true;
         if (r.estado === 'casa' || r.estado === 'volta') r.folga = dia;
         else { const sl = Math.random() < 0.45 ? acharSlot(A) : null; if (sl) irParaArvore(r, sl); else { r.folga = dia; irParaCasa(r); } }
@@ -6097,14 +6254,27 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         A.andando = false;
         if (!molhado) {
           r.espera -= dt;
-          if (r.espera <= 0) { levantarMor(r); liberarSlot(r); if (horaEntre(h, r.saida, r.volta)) { const f = pontoPosto(r); r.rota = rotaGente(A.x, A.z, f.x, f.z); r.estado = 'voltaPosto'; A.tipo = 'morador'; } else irParaCasa(r); }
+          if (r.espera <= 0) { levantarMor(r); A.encostado = false; const sl = r.slot; r.alvoArv = { x: sl.x, z: sl.z }; r.estado = 'desencosta'; }
         }
+      } else if (e === 'encosta' || e === 'desencosta') {           // (6.6.15) os passos reto até perto do tronco (e de volta), sem a colisão da árvore
+        const q = r.alvoArv, dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = 1.1 * dt;
+        if (d > v) { A.x += dx / d * v; A.z += dz / d * v; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.vel = 1.1; A.correndo = false; continue; }
+        A.x = q.x; A.z = q.z; A.andando = false;
+        if (e === 'encosta') { r.estado = 'viraArv'; A.yawAlvo = r.encosto.fora; } else sairDaArvore(r);
+      } else if (e === 'viraArv') {                                  // vira de costas para o tronco (longe o bastante para a cabeça não raspar nele)
+        A.andando = false; A.yawAlvo = r.encosto.fora;
+        if (Math.abs(difAng(A.yawAlvo, A.yaw)) < 0.06) { A.yaw = A.yawAlvo; r.estado = 'recuaArv'; }
+      } else if (e === 'recuaArv') {                                 // meio passo para trás até as costas tocarem a madeira
+        const q = r.encosto, dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = 0.55 * dt;
+        A.andando = false; A.yaw = A.yawAlvo = q.fora;
+        if (d > v) { A.x += dx / d * v; A.z += dz / d * v; continue; }
+        A.x = q.x; A.z = q.z; poseNaArvore(r);
       } else {                                                       // ida, voltaPosto, volta, paraArvore: andando
         if ((e === 'ida' || e === 'voltaPosto') && !horaEntre(h, r.saida, r.volta)) { irParaCasa(r); continue; }
-        A.chuva = molhado ? 'mao' : null;
+        A.chuva = molhado ? 'mao' : null; A.maoAlta = !!(A.m && A.m.cabelo > CABELO_ALTO);
         if (seguir(A, r.rota, molhado ? VEL_CORRE : VEL_MOR, dt)) {
           if (e === 'volta') { A.yawAlvo = yawPara(r.casa.x - A.x, r.casa.z - A.z); esconderMor(r); }
-          else if (e === 'paraArvore') poseNaArvore(r);
+          else if (e === 'paraArvore') chegarNaArvore(r);
           else colocarNoPosto(r);
         }
       }
@@ -6186,10 +6356,44 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function viagem(nome, ents, fase, t0) {
     const P = portaDe(nome); if (!P || !S.rede) return null;
     const q = naPorta(P), E = pontaPara(q.x, q.z); if (!E) return null;
-    const pts = fase === 'ir' ? caminhoRede(E.x, E.z, q.x, q.z) : caminhoRede(q.x, q.z, E.x, E.z);
+    let pts = fase === 'ir' ? caminhoRede(E.x, E.z, q.x, q.z) : caminhoRede(q.x, q.z, E.x, E.z);
     if (fase === 'ir') pts.unshift({ x: E.x, z: E.z }); else pts.unshift({ x: q.x, z: q.z });
+    pts = aparaPorta(pts, q, fase === 'ir');                             // (6.6.15) sem passar da porta e voltar
     const V = Object.assign({ nome, ents, fase, t0: t0 == null ? tAbs() : t0, feito: 0, A: [], P }, rotaPts(pts));
     (S.viagens || (S.viagens = [])).push(V); return V;
+  }
+  // (6.6.15) A ROTA NÃO PASSA DA PORTA: o nó da rede mais perto da porta muitas vezes fica DEPOIS dela (na calçada), e a pessoa ia até
+  //   lá e voltava, roçando na parede. Se a porta (q) cai no meio do trecho anterior, aquele último nó sai da rota (o mesmo na saída).
+  function aparaPorta(pts, q, ir) {
+    const L = ir ? pts : pts.slice().reverse();                          // trabalha sempre "chegando" na porta (q é o último)
+    for (let guarda = 0; guarda < 3 && L.length >= 3; guarda++) {
+      const a = L[L.length - 3], b = L[L.length - 2], vx = b.x - a.x, vz = b.z - a.z, L2 = vx * vx + vz * vz; if (L2 < 1e-4) { L.splice(L.length - 2, 1); continue; }
+      const u = ((q.x - a.x) * vx + (q.z - a.z) * vz) / L2, d = Math.abs((q.x - a.x) * vz - (q.z - a.z) * vx) / Math.sqrt(L2);
+      if (u > 0 && u < 1 && d < 2.2) L.splice(L.length - 2, 1, { x: a.x + vx * u, z: a.z + vz * u }); else break;   // troca o nó pelo ponto da calçada na frente da porta
+      break;
+    }
+    return ir ? L : L.reverse();
+  }
+  // (6.6.15) ENTRANDO / SAINDO PELA PORTA: da calçada na frente da porta, ela abre, a pessoa passa pelo vão e some atrás da parede (a
+  //   fachada esconde); quem sai aparece lá dentro e vem para fora. O par vai um atrás do outro. Sem colisão nesse trecho (é a porta).
+  function comecarPortaV(V) {
+    const P = portaDe(V.nome), q = naPorta(P), alvo = dentroDaPorta(V.nome, 1.1);
+    if (!alvo || !S.portasA || !S.portasA[V.nome] && !PORTAS_ANIM[V.nome]) return false;
+    const ox = Math.cos(P.sai), oz = -Math.sin(P.sai);                  // para fora (a rua)
+    V.A.forEach((A, k) => { A.porta = { id: V.nome, fase: 'entra', via: { x: q.x + ox * 0.75 * k, z: q.z + oz * 0.75 * k }, alvo: { x: alvo.x, z: alvo.z }, espera: 0.35 + k * 0.85, t: 0, V }; A.atravessa = false; A.pedeFaixa = false; });
+    return true;
+  }
+  function tickPortaNPC(A, dt) {
+    const E = A.porta; E.t += dt; abrirPorta(E.id, 0.8);
+    const ir = (p, vel) => { const dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz); if (d < 0.05) return true; const st = Math.min(d, vel * dt); A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.correndo = false; A.vel = vel; A.y = altura(A.x, A.z); return false; };
+    if (E.fase === 'entra') {
+      if (!E.naVia) { if (ir(E.via, 1.25)) E.naVia = true; return; }   // primeiro na frente da porta
+      if (E.t < E.espera) { A.andando = false; A.yawAlvo = Math.atan2(-(E.alvo.z - A.z), E.alvo.x - A.x); return; }   // a porta abrindo
+      if (ir(E.alvo, 1.15)) { E.feito = true; A.andando = false; if (E.V.A.every((q) => q.porta && q.porta.feito)) fimViagem(E.V); }
+    } else {                                                             // saindo: de dentro até a calçada na frente da porta
+      if (E.t < E.espera) { A.andando = false; return; }
+      if (ir(E.via, 1.2)) { A.porta = null; A.fantasma = 0.5; }
+    }
   }
   // onde a viagem está agora (só conta): a distância andada sai do tempo
   const andadoV = (V, a) => V.feito + Math.max(0, a - V.t0) / H_POR_S * VEL_VISITA_LONGE;
@@ -6222,7 +6426,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       A.x = p.x + rx; A.z = p.z + rz; A.yaw = A.yawAlvo = p.yaw; A.y = altura(A.x, A.z);
       if (!livreNPC(A.x, A.z, A, true, true)) { A.x = p.x; A.z = p.z; A.fantasma = 1.2; }
       A.dest = k === 0 ? { tipo: 'visita', V, rota: V.pts.slice(p.i).map((q) => ({ x: q.x, z: q.z })) } : { tipo: 'parDe', V };
-      A.visita = e; S.npcs.push(A); poseAtor(A, 0.016); return A;
+      A.visita = e;
+      if (V.fase === 'sai' && p.d != null && p.d < 0.6 && PORTAS_ANIM[V.nome] && PORTAS_ANIM[V.nome].tipo) {   // (6.6.15) acabou de sair: vem lá de dentro, pela porta
+        const P = portaDe(V.nome), q = naPorta(P), dn = dentroDaPorta(V.nome, 1.0);
+        A.x = dn.x + (k ? 0.3 : 0); A.z = dn.z; A.yaw = A.yawAlvo = P.sai; A.y = 0; A.fantasma = 0;
+        A.porta = { id: V.nome, fase: 'sai', via: { x: q.x + (k ? 0.35 : 0), z: q.z }, espera: k * 0.7, t: 0, V };
+      }
+      S.npcs.push(A); poseAtor(A, 0.016); return A;
     });
     if (V.A[1]) { V.A[0].parceiro = V.A[1]; V.A[1].parceiro = V.A[0]; V.A[1].lider = V.A[0]; }
     void lider;
@@ -6255,19 +6465,23 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       }
       if (a < V.t0) continue;                                            // ainda não saiu (a hora de sair é para chegar na hora certa)
       const d = andadoV(V, a); if (d >= V.L) { fimViagem(V); continue; }
-      const p = pontoDaViagem(V, d);
+      const p = pontoDaViagem(V, d); p.d = d;
       if (Math.hypot(p.x - J.x, p.z - J.z) < R_GANHA) ganharBoneco(V, p);
     }
   }
   // o boneco andando a viagem (A.dest.tipo === 'visita'); devolve true se o passo do quadro foi usado
   function tickVisita(A, dt) {
     const D = A.dest, V = D.V;
+    if (A.porta) { tickPortaNPC(A, dt); return; }                        // (6.6.15) passando pela porta
     if (A.ativ) { tickAtiv(A, dt); return; }                             // (6.6.5) a selfie no caminho
     if (D.tipo === 'visita' && A.parceiro && !V.selfie && !chovendoAgora() && S.modo === 'livre' && (S.tSelfie || 0) < S.t && Math.random() < dt * 0.06 && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) < 26 &&
       !(A.z > AV.z0 - 0.4 && A.z < AV.z1 + 0.4) && !A.parceiro.atravessa && Math.hypot(A.x - A.parceiro.x, A.z - A.parceiro.z) < 1.2) { V.selfie = true; S.tSelfie = S.t + 25; comecarSelfieDupla(A, A.parceiro); return; }
     if (D.tipo === 'parDe') { seguirLider(A, dt); return; }
     const J = S.jog, longe = Math.hypot(A.x - J.x, A.z - J.z) > 45;   // longe da vista (já é o boneco de 1 peça): um pouco mais rápido
-    if (seguir(A, D.rota, (A.velV || VEL_VISITA) * (longe ? 1.6 : 1), dt)) fimViagem(V);   // chegou (na porta ou no fim da cidade): some junto com o parceiro
+    if (seguir(A, D.rota, (A.velV || VEL_VISITA) * (longe ? 1.6 : 1), dt)) {   // chegou (na porta ou no fim da cidade): some junto com o parceiro
+      if (V.fase === 'ir' && !longe && comecarPortaV(V)) return true;     // (6.6.15) na porta: entra por ela (fimViagem quando os dois passarem)
+      fimViagem(V);
+    }
   }
   // o parceiro: do lado direito do líder, um passo atrás; se ficar para trás, apressa
   function seguirLider(A, dt) {
@@ -6449,7 +6663,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     // quem passa perto da quadra ou do sintético (com a roda aberta e pouca gente) às vezes entra para jogar
     for (const R of rodas()) {
       if (R.jog.length + (R.vindo || 0) >= 3 || !rodaAberta(R)) continue;
-      for (const A of S.npcs) if (A.tipo === 'anda' && !A.dest && !A.ativ && !A.oculto && !A.faixaE && !A.atravessa && Math.hypot(A.x - R.ent.fora.x, A.z - R.ent.fora.z) < 30 && Math.random() < (A.esporte ? 0.4 : 0.15)) { entrarNaRoda(A); break; }
+      for (const A of S.npcs) if (A.tipo === 'anda' && !A.dest && !A.ativ && !A.oculto && !A.faixaE && !A.atravessa && (A.cdBola || 0) < S.t && Math.hypot(A.x - R.ent.fora.x, A.z - R.ent.fora.z) < 30 && Math.random() < (A.esporte ? 0.4 : 0.15)) { entrarNaRoda(A); break; }   // (6.6.15) quem acabou de sair não volta
     }
     const perto = S.npcs.filter((A) => ativavel(A) && Math.hypot(A.x - J.x, A.z - J.z) < VIDA_R);
     for (const A of perto) {
@@ -6468,7 +6682,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       for (let i = 0; i < n; i++) {
         const A = criarPessoa(f2, Math.random, Math.random() < 0.35, true); A.tipo = 'anda'; A.correndo = false; A.vel = 1.3 + Math.random() * 0.3;
         R.jog.push(A); const v = vagaNaRoda(R, i); A.x = v.x; A.z = v.z; A.y = R.y; A.yaw = A.yawAlvo = Math.atan2(-(R.cz - v.z), R.cx - v.x);
-        A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 20 + Math.random() * 100 }; S.npcs.push(A);
+        A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 60 + Math.random() * 200, ang: (i / Math.max(2, n)) * Math.PI * 2 }; S.npcs.push(A);
       }
       const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0;
     }
@@ -6478,7 +6692,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const a = A.ativ; if (!a) return;
     A.ativ = null; A.gesto = null; A.fala = false; A.andando = false; tirarCel(A); A.cdVida = S.t + 35 + Math.random() * 50;
     if (!semPar && a.com && a.com.ativ && a.com.ativ.com === A) fimAtiv(a.com, true);
-    if (A.tipo === 'anda' && !A.dest && S.rede) { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); }
+    if (A.tipo === 'anda' && !A.dest && S.rede) {                      // (6.6.15) segue para onde ia (antes voltava para o nó mais perto, que muitas vezes ficava para trás: o "vai e volta")
+      const N = A.alvo != null && S.rede[A.alvo];
+      if (!N || Math.hypot(N.x - A.x, N.z - A.z) > 16) { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); }
+    }
   }
   // anda reto até (x, z) ignorando gente (os dois vão um na direção do outro); devolve true quando chegou
   function irAte(A, x, z, vel, dt) {
@@ -6665,6 +6882,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return true;
   }
   function entrarNaRoda(A) {
+    if ((A.cdBola || 0) > S.t) return false;                          // (6.6.15) já jogou há pouco: agora vai fazer outra coisa
     const L = rodas().filter((R) => rodaAberta(R) && R.jog.length + (R.vindo || 0) < MAX_RODA);
     if (!L.length) return false;
     let R = null, bd = 1e9; for (const q of L) { const d = Math.hypot(q.ent.fora.x - A.x, q.ent.fora.z - A.z) + (q.jog.length ? -15 : 0); if (d < bd) { bd = d; R = q; } }
@@ -6674,6 +6892,24 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return true;
   }
   function vagaNaRoda(R, i) { const n = Math.max(2, R.jog.length), a = (i / n) * Math.PI * 2 + (R.giro || 0); return { x: R.cx + Math.cos(a) * R.raio, z: R.cz + Math.sin(a) * R.raio }; }
+  // (6.6.15) VAGAS QUE NÃO ANDAM: antes a vaga de cada um saía do índice na lista e de um giro contínuo (R.giro), então a cada poucos
+  //   segundos todo mundo dava uns passos, e cada vez que alguém entrava ou saía a roda inteira trocava de lugar (o "vai e volta" sem
+  //   fim). Agora cada um tem o SEU ângulo (D.ang). Quando a roda muda de tamanho, os ângulos se redistribuem por igual mantendo a
+  //   ordem em volta do círculo e partindo de quem já está lá (cada um anda o mínimo). E só anda até a vaga se estiver a mais de 45 cm.
+  function arrumarRoda(R) {
+    const L = R.jog.filter((P) => P.dest && P.dest.R === R); if (!L.length) return;
+    const angDe = (P) => (P.dest.ang != null ? P.dest.ang : Math.atan2(P.z - R.cz, P.x - R.cx));
+    L.sort((a, b) => angDe(a) - angDe(b));
+    const a0 = angDe(L[0]), n = Math.max(2, L.length);
+    L.forEach((P, i) => { P.dest.ang = a0 + (i / n) * Math.PI * 2; P.dest.indo = true; });
+  }
+  const vagaDe = (R, A) => ({ x: R.cx + Math.cos(A.dest.ang) * R.raio, z: R.cz + Math.sin(A.dest.ang) * R.raio });
+  // a roda segue (quem já está jogando continua)? Como rodaAberta, mas o jogador só atrapalha se ficar DENTRO da roda uns segundos
+  function rodaSegue(R) {
+    const h = S.dados.hora; if (h < H_RODA[0] || h >= H_RODA[1] || chovendoAgora() || S.dentro) return false;
+    if (R.nome === 'sintetico') { const f = fut(), A = f.agenda; if (A && A.dia === S.dados.dia && !A.feito && Math.abs(h - (A.hora || horaDoFutebol())) < 2.5) return false; }
+    return (R.jogNaRoda || 0) < 3;
+  }
   function bolaDaRoda(R) {
     if (R.bola) return R.bola;
     const mesh = new THREE.Mesh(S.geoBolaR || (S.geoBolaR = guardar(new THREE.SphereGeometry(0.15, 12, 8))), S.matBolaR || (S.matBolaR = guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) }))));
@@ -6685,8 +6921,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (D.fase === 'ir') {
       if (!seguir(A, D.rota, A.vel, dt)) return;
       R.vindo = Math.max(0, (R.vindo || 1) - 1);
-      if (!rodaAberta(R) || R.jog.length >= MAX_RODA) { sairDaRoda(A); return; }
-      D.fase = 'joga'; D.fim = S.t + 55 + Math.random() * 90; R.jog.push(A); A.correndo = false;
+      if (!rodaSegue(R) || R.jog.length >= MAX_RODA) { sairDaRoda(A); return; }
+      D.fase = 'joga'; D.fim = S.t + 150 + Math.random() * 270; R.jog.push(A); A.correndo = false;   // (6.6.15) fica de 2,5 a 7 minutos (antes 1 a 2,5: era só chegar e já ir)
+      arrumarRoda(R);
       if (R.jog.length === 1) { const B = bolaDaRoda(R); B.x = A.x; B.z = A.z + 0.4; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
       return;
     }
@@ -6695,14 +6932,20 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.cool = 25 + Math.random() * 30; return;
     }
     // jogando: vai para a vaga dele na roda (quem não está com a bola); o dono fica com ela no pé
-    if (S.t > D.fim || !rodaAberta(R)) { sairDaRoda(A); return; }
+    if (!rodaSegue(R)) { sairDaRoda(A); return; }
+    if (S.t > D.fim) {                                                  // (6.6.15) cansou: sai na próxima vez que estiver sem a bola (não larga a roda no meio do lance)
+      if (R.dono !== A && R.busca !== A && !(R.bola && R.bola.alvo === A && (R.bola.voa || R.bola.rola))) { sairDaRoda(A); return; }
+    }
     const i = R.jog.indexOf(A); if (i < 0) { sairDaRoda(A); return; }
-    const B = R.bola, v = vagaNaRoda(R, i);
+    if (D.ang == null) arrumarRoda(R);
+    const B = R.bola, v = vagaDe(R, A);
     if (R.busca === A) {                                                 // foi buscar a bola que escapou
       if (irAte(A, B.x, B.z, 2.6, dt) || Math.hypot(A.x - B.x, A.z - B.z) < 0.45) { R.busca = null; B.rola = false; B.voa = false; B.vx = B.vz = 0; R.dono = A; R.t = 0; }
       A.correndo = true; return;
     }
-    if (Math.hypot(A.x - v.x, A.z - v.z) > 0.15 && !(A.chuteT >= 0)) { irAte(A, v.x, v.z, 1.6, dt); if (A.andando) return; }
+    const dv = Math.hypot(A.x - v.x, A.z - v.z);
+    if (dv > 0.45) D.indo = true;                                       // longe da vaga: volta para ela (perto, fica onde está)
+    if (D.indo && !(A.chuteT >= 0)) { if (irAte(A, v.x, v.z, 1.6, dt) || dv < 0.1) D.indo = false; if (A.andando) return; }
     A.andando = false;
     if (R.dono === A && !B.voa && !B.rola) olharPara(A, R.cx, R.cz);
     else olharPara(A, B.x, B.z);
@@ -6711,7 +6954,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const D = A.dest, R = D && D.R; if (!R) { A.dest = null; return; }
     if (D.fase === 'ir') R.vindo = Math.max(0, (R.vindo || 1) - 1);
     R.jog = R.jog.filter((q) => q !== A); if (R.dono === A) R.dono = R.jog[0] || null; if (R.busca === A) R.busca = null;
-    A.chuteT = -1; A.correndo = false;
+    A.chuteT = -1; A.correndo = false; A.cdBola = S.t + 300 + Math.random() * 400;   // (6.6.15) só pensa em jogar de novo daqui a uns 5 a 12 minutos
+    if (R.jog.length) arrumarRoda(R);
     const rota = [{ x: R.ent.dentro.x, z: R.ent.dentro.z }, { x: R.ent.fora.x, z: R.ent.fora.z }], N = S.rede[noMaisPerto(R.ent.fora.x, R.ent.fora.z)];
     if (N) rota.push({ x: N.x, z: N.z });
     A.dest = { tipo: 'bola', R, fase: 'sai', rota, t: 0 };
@@ -6723,7 +6967,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (const R of S.rodas) {
       if (!R.jog.length || !R.bola) continue;
       const B = R.bola, chao = R.y + 0.15, g = 9.8; R.t = (R.t || 0) + dt;
-      R.giro = (R.giro || 0) + dt * 0.02;
+      { const J = S.jog; R.jogNaRoda = J && Math.hypot(J.x - R.cx, J.z - R.cz) < R.raio + 1.2 ? (R.jogNaRoda || 0) + dt : 0; }   // (6.6.15) o jogador no meio da roda: depois de 3 s eles param
       for (const P of R.jog) if (P.chuteT >= 0) { P.chuteT += dt; if (P.chuteT > 0.45) P.chuteT = -1; }
       if (B.voa) {
         B.vy -= g * dt; B.x += B.vx * dt; B.y += B.vy * dt; B.z += B.vz * dt;
@@ -6765,12 +7009,13 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
 
   function separarPessoas() {
-    const L = S.npcs, mov = (A) => (A.tipo === 'anda' || A.tipo === 'morador') && !A.oculto && !A.sentado && !A.deitado;
+    const L = S.npcs, mov = (A) => (A.tipo === 'anda' || A.tipo === 'morador') && !A.oculto && !A.sentado && !A.deitado && !(A.dest && A.dest.tipo === 'bola' && A.dest.fase === 'joga');   // (6.6.15) quem está na roda não é empurrado para fora da vaga
     for (let i = 0; i < L.length; i++) { const a = L[i]; if (a.oculto || a === S.valdemar || a.deitado) continue;
       for (let j = i + 1; j < L.length; j++) { const b = L[j]; if (b.oculto || b === S.valdemar || b.deitado) continue;
         const ma = mov(a), mb = mov(b); if (!ma && !mb) continue;
         if (a.fantasma > 0 || b.fantasma > 0) continue;                  // passando um pelo outro de propósito
         if (a.ativ && a.ativ.com === b) continue;                         // (6.6.5) abraço / selfie: os dois juntos de propósito
+        if (a.porta || b.porta) continue;                                 // (6.6.15) passando pela porta
         let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
         if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
         const ra = temRotina(a), rb = temRotina(b);
@@ -6806,7 +7051,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt); tickDev();                        // (6.2.3) dinheiro infinito
-        tickVida(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
+        tickVida(dt); tickPortas(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
@@ -6917,5 +7162,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante } });   // (_estado/_planta/_fns: para testes)
+    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco } });   // (_estado/_planta/_fns: para testes)
 })();

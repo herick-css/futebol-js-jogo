@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.14
+   FUTEBOL JS · jogo.js · versão 6.6.15
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,13 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.14';
+const VERSAO_JOGO = '6.6.15';
+// 6.6.15: cidade — PORTAS ANIMADAS (abrem/fecham para quem passa) e gente entrando/saindo de verdade pela porta (sem passar do ponto e voltar);
+//   chuva: o jornal fica EM CIMA do cabelo, o guarda-chuva acima dele e quem tem cabelo alto só corre com a mão na cabeça (makeAthlete agora
+//   informa topoCabeca/cabelo); debaixo da árvore as pessoas encostam as costas no tronco (sentadas ou em pé); a roda de bola sem o vai e volta
+//   (vaga fixa, ficam de 2,5 a 7 min, quem saiu não volta logo); nas cenas o pedestre atravessa o jogador parado e ele cambaleia.
+//   pesca — a CENA DA FISGADA de épico/lendário (o peixe pula, câmera lenta, "ÉPICO/LENDÁRIO FISGADO!"), uma MÚSICA por raridade (do violão
+//   ao heavy metal) e o fôlego dos peixes +25% (menos o bagre-trovão e o Duke).
 // 6.6.9: pesca — o Duke, antes de levitar, nada uns metros para longe do jogador (rastro de bolhas): levita a ~8,5 m, não mais colado no píer.
 // 6.6.8: privilégios do desenvolvedor — mudar o CLIMA na hora (automático, limpo, nublado, chuva, tempestade) e ligar a PESCA DO DUKE (toda mordida no lago é ele).
 // 6.6.7: pesca — o DUKE (duke.js, arquivo novo): no dia 13 de maio (data do aparelho), um lendário misterioso que levita para fora da água, encara o jogador e volta para o lago.
@@ -1980,7 +1986,9 @@ function makeAthlete(o) {
   const sombra = new THREE.Mesh(SHADOW_GEO, SHADOW_MAT);
   sombra.rotation.x = -Math.PI / 2; sombra.position.y = 0.02;
   raiz.add(sombra);
-  const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra };
+  // (6.6.15) o topo da cabeça COM o cabelo (no espaço do corpo): o jornal da chuva fica em cima dele; cabelo muito alto = só a mão
+  let topoCabeca = 1.36 + 0.52 * kc; for (const p of pecasCabeca) topoCabeca = Math.max(topoCabeca, p[5] + p[1] / 2);
+  const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra, topoCabeca, cabelo: topoCabeca - (1.36 + 0.52 * kc) };
   if (o.escala) raiz.scale.setScalar(o.escala);
   raiz.userData.atleta = atleta; ATLETAS.add(atleta);
   return atleta;

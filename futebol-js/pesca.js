@@ -7,6 +7,9 @@
            ENCARA o jogador (3 planos), volta para a água e o jogador diz "O que foi que acabou de acontecer....?". Não vai para a caixa
            nem para o catálogo (só conta em pesca.dukeVisto). PP.dukeForcado = 'sempre' força o dia/a mordida (testes).
    6.6.8 — ligado pelo painel do desenvolvedor (cidade.js: dukeDev), o Duke pode aparecer de novo no mesmo dia.
+   6.6.15 — a CENA DA FISGADA (épico e lendário, fisgando certo): a câmera vai até a água, o peixe pula com a linha na boca, câmera lenta
+           e "ÉPICO FISGADO!" / "LENDÁRIO FISGADO!" no alto (a câmera deixa o peixe na metade de baixo). A TRILHA da briga: uma música
+           por raridade, cada vez mais pesada (a música da cidade pausa e volta). Fôlego dos peixes +25% (FOLEGO_EXTRA; não no bagre/Duke).
    6.6.9 — antes de levitar, ele nada para longe (rastro de bolhas, a linha vai junto) e sobe a ~8,5 m do jogador (DUKE_LONGE; menos se ali não for água).
    - Registrado com FutebolJS.registrarFase({ id: 'pesca' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano junto do academia.js e chama criar(api) (api = apiPesca() da cidade).
@@ -294,6 +297,8 @@
     'Bom lançamento': ['Good cast', 'Buen lanzamiento', 'Buon lancio', 'Bon lancer'],
     'Ótimo lançamento!': ['Great cast!', '¡Gran lanzamiento!', 'Ottimo lancio!', 'Excellent lancer !'],
     'LANÇAMENTO PERFEITO!': ['PERFECT CAST!', '¡LANZAMIENTO PERFECTO!', 'LANCIO PERFETTO!', 'LANCER PARFAIT !'],
+    'ÉPICO FISGADO!': ['EPIC HOOKED!', '¡ÉPICO ENGANCHADO!', 'EPICO ALLAMATO!', 'ÉPIQUE FERRÉ !'],
+    'LENDÁRIO FISGADO!': ['LEGENDARY HOOKED!', '¡LEGENDARIO ENGANCHADO!', 'LEGGENDARIO ALLAMATO!', 'LÉGENDAIRE FERRÉ !'],
     'Toque para pular': ['Tap to skip', 'Toca para saltar', 'Tocca per saltare', 'Touchez pour passer'],
     'DISTÂNCIA': ['DISTANCE', 'DISTANCIA', 'DISTANZA', 'DISTANCE'],
     'Linha frouxa': ['Slack line', 'Línea floja', 'Lenza molle', 'Ligne molle'],
@@ -503,14 +508,16 @@
   const limitePesado = (i) => { const p = PEIXES[i]; return p.kg0 + (p.kg1 - p.kg0) * 0.78; };
   const precoPeixe = (i, classe) => Math.round(PRECO_RAR[PEIXES[i].r] * MULT[classe]);
   // o quanto custa pegar este peixe com esta vara e esta isca
-  function dificuldade(i, classe, vara, isca) {
+  //   (6.6.15) o FÔLEGO de todo peixe ficou 25% maior (FOLEGO_EXTRA); o bagre-trovão e o Duke têm a conta deles (semExtra = true)
+  const FOLEGO_EXTRA = 1.25;
+  function dificuldade(i, classe, vara, isca, semExtra) {
     const p = PEIXES[i], r = p.r, er = (isca / 7) * FACIL_RAR[r], fav = p.isca === isca, falta = Math.max(0, p.vara - vara), fc = [0.85, 1, 1.18][classe];
     return {
       espera: [lerpN(14, 4, er), lerpN(26, 8, er)].map((v) => v * [1, 1.1, 1.25, 1.4, 1.6][r] * (fav ? 0.7 : 1)),   // segundos até morder (de–até)
       janela: lerpN(0.85, 1.45, er) * [1, 0.92, 0.82, 0.72, 0.62][r] * (fav ? 1.15 : 1),                         // segundos para fisgar
       beliscadas: Math.max(0, Math.round(lerpN(3, 0.6, er) + r * 0.3)),                                         // falsos toques antes
       forca: Math.min(1.3, [0.3, 0.42, 0.6, 0.78, 0.95][r] * fc * (1 + 0.22 * falta) * (1 - 0.3 * er)),
-      folego: [5, 7, 11, 15, 22][r] * fc * (1 - 0.45 * er) * (1 + 0.15 * falta),
+      folego: [5, 7, 11, 15, 22][r] * fc * (1 - 0.45 * er) * (1 + 0.15 * falta) * (semExtra ? 1 : FOLEGO_EXTRA),
       firmeza: lerpN(0.5, 0.9, er),                                       // o anzol bem preso (isca boa) solta menos com a linha frouxa
       tranco: 1 + 0.6 * (1 - er),                                         // isca ruim: a corrida do peixe dá tranco mais forte na linha
       // (6.6.0) a FAIXA BOA da tensão: mais estreita para peixe raro e pesado, mais larga com isca boa e vara boa (vara fraca para o peixe: estreita)
@@ -643,6 +650,7 @@
     raro: com((A, t) => { for (const [i, f] of [[0, 523], [1, 659], [2, 784], [3, 1047]]) tom(A, f, t + i * 0.09, 0.22, 0.05, 'triangle'); }),
     lendario: com((A, t) => { for (const [i, f] of [[0, 392], [1, 523], [2, 659], [3, 784], [4, 1047], [5, 1319]]) tom(A, f, t + i * 0.11, 0.35, 0.055, 'triangle'); tom(A, 1568, t + 0.7, 0.8, 0.04, 'sine'); }),
     moeda: com((A, t) => { tom(A, 3100, t, 0.05, 0.03, 'triangle'); tom(A, 4200, t + 0.03, 0.08, 0.025, 'triangle'); }),
+    fisgada: com((A, t) => { tom(A, 70, t, 1.1, 0.32, 'sine', 38); chiado(A, t, 0.7, 0.22, 420); tom(A, 1300, t + 0.05, 0.6, 0.03, 'sawtooth', 260); chiado(A, t + 0.7, 0.5, 0.16, 900); }),   // (6.6.15) o tranco da fisgada (o "BUM" e a água)
   };
   // ruído grave e comprido, com o volume tremendo (o ronco do trovão)
   function ronco(A, t, dur, vol, freq) {
@@ -722,6 +730,154 @@
         soltar(r, 4);
       },
       tocando: () => !!R,
+    };
+  })();
+
+  // (6.6.15) A TRILHA DA BRIGA: uma música para cada raridade, cada vez mais pesada (o bagre-trovão continua com o Rock dele, lá em cima).
+  //   0 Comum: violão limpo dedilhado, ganzá e aro (100 bpm, Dó maior) · 1 Incomum: pop-rock, guitarra "crunch" (118 bpm, Sol maior)
+  //   2 Raro: rock clássico, power chords distorcidos e riff (134 bpm, Lá menor) · 3 Épico: hard rock, palhetada abafada em semicolcheias
+  //   e solo (150 bpm, Mi menor) · 4 Lendário: heavy metal afinado em Ré, bumbo duplo, galope e solo dobrado em quintas (172 bpm).
+  //   nivel(2): entra a melodia/o solo (na 1ª arrancada do peixe) · nivel(3): o peixe cansou, a banda "abre" (prato e chimbal dobrado)
+  //   final(): o acorde final (pegou) · parar(corte): some (escapou / saiu).
+  const Trilha = (() => {
+    let R = null;
+    const hz = (n) => 440 * Math.pow(2, (n - 69) / 12);
+    const curvaDist = (k) => { const n = 512, c = new Float32Array(n); for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; c[i] = (1 + k) * x / (1 + k * Math.abs(x)); } return c; };
+    function osc(r, tipo, f, t, dur, vol, dest, ate, ataque) {
+      const o = r.c.createOscillator(), g = r.c.createGain(); o.type = tipo; o.frequency.setValueAtTime(f, t); if (ate) o.frequency.exponentialRampToValueAtTime(ate, t + dur);
+      if (ataque) { g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + ataque); } else g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.03);
+    }
+    function barulho(r, t, dur, vol, tipoF, freq, dest, q) { const s = r.c.createBufferSource(), f = r.c.createBiquadFilter(), g = r.c.createGain(); s.buffer = r.rb; f.type = tipoF; f.frequency.value = freq; if (q) f.Q.value = q; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random() * 0.8); s.stop(t + dur + 0.03); }
+    const bumbo = (r, t, v) => { osc(r, 'sine', 150, t, 0.16, 0.9 * v, r.bat, 42); osc(r, 'triangle', 95, t, 0.04, 0.35 * v, r.bat, 50); };
+    const caixa = (r, t, v) => { barulho(r, t, 0.17, 0.5 * v, 'bandpass', 1900, r.bat, 0.8); osc(r, 'triangle', 210, t, 0.08, 0.32 * v, r.bat, 160); };
+    const aro = (r, t, v) => { barulho(r, t, 0.05, 0.32 * v, 'bandpass', 2700, r.bat, 3); osc(r, 'triangle', 830, t, 0.03, 0.12 * v, r.bat); };
+    const chimbal = (r, t, v, aberto) => barulho(r, t, aberto ? 0.22 : 0.04, 0.17 * v, 'highpass', 7400, r.bat);
+    const ganza = (r, t, v) => barulho(r, t, 0.07, 0.085 * v, 'highpass', 5200, r.bat);
+    const prato = (r, t, v) => barulho(r, t, 1.5, 0.27 * (v || 1), 'highpass', 4800, r.bat);
+    const china = (r, t) => barulho(r, t, 0.9, 0.24, 'bandpass', 3100, r.bat, 0.6);
+    const violao = (r, n, t, dur, v) => { osc(r, 'triangle', hz(n), t, dur, 0.075 * v, r.gt, 0, 0.004); osc(r, 'sine', hz(n + 12), t, dur * 0.5, 0.018 * v, r.gt); };
+    function acorde(r, raiz, t, dur, v, terca) {                      // power chord (+ a terça, nos estilos mais leves)
+      const L = [[0, 1], [7, 0.8], [12, 0.55]]; if (terca != null) L.push([12 + terca, 0.4]);
+      for (const [d, q] of L) { const f = hz(raiz + d); osc(r, 'sawtooth', f, t, dur, 0.13 * v * q, r.gt); osc(r, 'square', f * 1.005, t, dur, 0.05 * v * q, r.gt); }
+    }
+    const abafado = (r, raiz, t, v) => { osc(r, 'sawtooth', hz(raiz), t, 0.075, 0.2 * v, r.gtM); osc(r, 'square', hz(raiz + 7), t, 0.075, 0.08 * v, r.gtM); };   // palhetada abafada (o "tchug")
+    const baixo = (r, n, t, dur, v, tipo) => osc(r, tipo || 'sawtooth', hz(n), t, dur, 0.27 * (v || 1), r.bx);
+    function lead(r, n, t, dur, v, tipo) {                              // a melodia / o solo (com vibrato que entra devagar)
+      const c = r.c, o = c.createOscillator(), g = c.createGain(), lfo = c.createOscillator(), lg = c.createGain(); o.type = tipo || 'sawtooth'; o.frequency.setValueAtTime(hz(n), t);
+      lfo.frequency.value = 5.6; lg.gain.setValueAtTime(0, t); lg.gain.linearRampToValueAtTime(hz(n) * 0.013, t + Math.min(dur, 0.3)); lfo.connect(lg); lg.connect(o.frequency);
+      const vol = 0.11 * (v || 1); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.015); g.gain.setValueAtTime(vol * 0.85, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(r.ld); o.start(t); lfo.start(t); o.stop(t + dur + 0.03); lfo.stop(t + dur + 0.03);
+    }
+    // a melodia que está escrita em colcheias (8 por compasso): toca a nota e segura até a próxima
+    function frase(r, M, ps8, t, passo8, v, tipo, sobe) { const nota = M[ps8]; if (!nota) return; let d = 1; while (ps8 + d < 8 && !M[ps8 + d]) d++; lead(r, nota + (sobe || 0), t, passo8 * d * 0.95, v, tipo); }
+    const ESTILOS = [
+      { bpm: 100, sub: 2, dist: 0, vol: 0.3, corte: 3600, prog: [[48, 0], [43, 0], [45, 1], [41, 0]],
+        mel: [[72, 0, 74, 76, 0, 79, 76, 0], [74, 0, 71, 74, 0, 79, 0, 0], [72, 0, 76, 0, 74, 72, 69, 0], [72, 0, 69, 72, 0, 77, 76, 74]],
+        passo(r, p, t, P_) {
+          const ps = p % 8, cp = Math.floor(p / 8) % 4, [rz, me] = this.prog[cp], tri = [0, me ? 3 : 4, 7, 12], arp = [0, 1, 2, 3, 2, 1, 2, 3];
+          if (ps === 0 || ps === 4 || (r.nivel >= 3 && ps === 5)) bumbo(r, t, 0.55);
+          if (ps === 2 || ps === 6) aro(r, t, 0.9);
+          ganza(r, t, ps % 2 ? 0.55 : 1);
+          violao(r, rz + 12 + tri[arp[ps]], t, P_ * 2.4, ps === 0 ? 1.2 : 1);
+          if (ps === 0) baixo(r, rz - 12, t, P_ * 2.8, 0.9, 'triangle'); else if (ps === 3) baixo(r, rz - 5, t, P_ * 0.9, 0.7, 'triangle'); else if (ps === 4) baixo(r, rz - 12, t, P_ * 2.6, 0.8, 'triangle');
+          if (r.nivel >= 2 && p >= 16) frase(r, this.mel[cp], ps, t, P_, 0.75, 'sine');
+          if (r.nivel >= 3 && ps === 0 && cp === 0) prato(r, t, 0.5);
+        },
+        final(r, t) { const [rz] = this.prog[0]; for (const [k, n] of [0, 4, 7, 12, 16].entries()) violao(r, rz + 12 + n, t + k * 0.04, 2.6, 1.3); baixo(r, rz - 12, t, 2.4, 1, 'triangle'); aro(r, t, 1); lead(r, 84, t + 0.2, 1.8, 0.6, 'sine'); } },
+      { bpm: 118, sub: 2, dist: 7, vol: 0.3, corte: 3000, prog: [[43, 0], [38, 0], [40, 1], [36, 0]],
+        mel: [[74, 0, 74, 76, 79, 0, 76, 74], [78, 0, 76, 74, 0, 69, 0, 0], [71, 74, 76, 0, 79, 0, 76, 74], [72, 0, 71, 72, 74, 0, 71, 0]],
+        passo(r, p, t, P_) {
+          const ps = p % 8, cp = Math.floor(p / 8) % 4, [rz, me] = this.prog[cp];
+          if (ps === 0 || ps === 3 || ps === 4) bumbo(r, t, 0.85);
+          if (ps === 2 || ps === 6) caixa(r, t, 0.8);
+          chimbal(r, t, ps % 2 ? 0.6 : 0.9, ps === 7); if (r.nivel >= 3) chimbal(r, t + P_ / 2, 0.4);
+          if (p % 32 === 0 || (r.nivel >= 3 && ps === 0 && cp % 2 === 0)) prato(r, t, 0.6);
+          const golpe = { 0: [1.8, 1], 2: [0.5, 0.65], 3: [1.0, 0.85], 5: [0.5, 0.6], 6: [0.9, 0.8], 7: [0.45, 0.55] }[ps];   // batida "baixo, baixo-cima, cima-baixo-cima"
+          if (golpe) acorde(r, rz, t, P_ * golpe[0], golpe[1] * 0.85, me ? 3 : 4);
+          baixo(r, rz - 12 + (ps === 7 ? 7 : 0), t, P_ * 0.85, 0.85);
+          if (r.nivel >= 2 && p >= 16) frase(r, this.mel[cp], ps, t, P_, 0.6, 'square');
+        },
+        final(r, t) { const [rz] = this.prog[0]; bumbo(r, t, 1); prato(r, t, 0.8); acorde(r, rz, t, 2.6, 1.1, 4); baixo(r, rz - 12, t, 2.4, 1); lead(r, 79, t, 2.0, 0.6, 'square'); } },
+      { bpm: 134, sub: 2, dist: 24, vol: 0.32, corte: 3200, prog: [[45, 1], [41, 0], [36, 0], [43, 0]],
+        mel: [[81, 0, 79, 76, 0, 74, 76, 0], [77, 0, 76, 74, 72, 0, 74, 0], [79, 0, 76, 79, 84, 0, 81, 79], [79, 81, 0, 79, 76, 0, 74, 76]],
+        passo(r, p, t, P_) {
+          const ps = p % 8, cp = Math.floor(p / 8) % 4, [rz] = this.prog[cp];
+          if (ps === 0 || ps === 4 || ps === 5 || (ps === 3 && cp % 2)) bumbo(r, t, 1);
+          if (ps === 2 || ps === 6) caixa(r, t, 1);
+          if (cp === 3 && ps === 7) { caixa(r, t, 0.7); caixa(r, t + P_ / 2, 0.85); }
+          chimbal(r, t, ps % 2 ? 0.7 : 1, ps === 7); if (r.nivel >= 3) chimbal(r, t + P_ / 2, 0.45);
+          if (p % 32 === 0 || (r.nivel >= 3 && ps === 0)) prato(r, t, 0.8);
+          const golpe = { 0: 1.8, 2: 0.45, 3: 1.4, 5: 0.45, 6: 1.9 }[ps];   // o riff: acentos no 1, no "e" do 2 e no 4
+          if (golpe) acorde(r, rz, t, P_ * golpe, golpe > 1 ? 1 : 0.7);
+          baixo(r, rz - 12, t, P_ * 0.9, 1);
+          if (r.nivel >= 2 && p >= 16) frase(r, this.mel[cp], ps, t, P_, 0.85);
+        },
+        final(r, t) { const [rz] = this.prog[0]; bumbo(r, t, 1.2); prato(r, t); acorde(r, rz, t, 2.8, 1.2); baixo(r, rz - 12, t, 2.6, 1); lead(r, 88, t, 2.2, 0.9); } },
+      { bpm: 150, sub: 4, dist: 60, vol: 0.33, corte: 3000, prog: [[40, 1], [36, 0], [38, 0], [35, 0]],
+        mel: [[76, 0, 79, 81, 83, 81, 79, 76], [79, 0, 76, 74, 72, 0, 71, 72], [74, 76, 78, 79, 81, 0, 78, 74], [71, 0, 75, 78, 83, 0, 81, 78]],
+        passo(r, p, t, P_) {
+          const ps = p % 16, cp = Math.floor(p / 16) % 4, [rz] = this.prog[cp], acento = { 0: 3, 6: 2, 10: 2, 14: 2 }[ps];
+          if (ps === 0 || ps === 6 || ps === 8 || ps === 10 || ps === 14 || (ps === 3 && r.nivel >= 2)) bumbo(r, t, ps === 3 ? 0.7 : 1);
+          if (ps === 4 || ps === 12) caixa(r, t, 1); else if (cp === 3 && ps >= 13) caixa(r, t, 0.55 + (ps - 13) * 0.15);
+          if (ps % 2 === 0) chimbal(r, t, 1, ps === 14); else if (r.nivel >= 3) chimbal(r, t, 0.45);
+          if (ps === 0 && (cp % 2 === 0 || r.nivel >= 3)) prato(r, t, 0.9);
+          if (acento) acorde(r, rz, t, P_ * acento * 0.95, 1); else abafado(r, rz, t, ps % 2 ? 0.75 : 1);
+          if (ps % 2 === 0) baixo(r, rz - 12, t, P_ * 1.8, 1);
+          if (r.nivel >= 2 && p >= 32 && ps % 2 === 0) frase(r, this.mel[cp], ps / 2, t, P_ * 2, 0.95);
+        },
+        final(r, t) { const [rz] = this.prog[0]; bumbo(r, t, 1.2); prato(r, t); china(r, t + 0.02); acorde(r, rz, t, 3.0, 1.25); baixo(r, rz - 12, t, 2.8, 1.1); lead(r, 88, t, 2.4, 1); } },
+      { bpm: 172, sub: 4, dist: 140, vol: 0.34, corte: 2800, prog: [[26, 1], [22, 0], [24, 0], [21, 0]],
+        mel: [[86, 0, 0, 84, 86, 0, 89, 0], [84, 0, 82, 81, 0, 79, 0, 77], [81, 0, 0, 79, 81, 84, 86, 0], [85, 0, 0, 0, 88, 0, 0, 0]],
+        passo(r, p, t, P_) {
+          const ps = p % 16, cp = Math.floor(p / 16) % 4, [rz] = this.prog[cp], g = ps % 4;
+          bumbo(r, t, ps % 2 ? 0.62 : 0.8);                               // bumbo duplo: todas as semicolcheias
+          if (ps === 4 || ps === 12) caixa(r, t, 1.1);
+          if (ps % 2 === 0) barulho(r, t, 0.3, 0.11, 'highpass', 5200, r.bat);   // condução (ride)
+          if (ps === 0) prato(r, t, 1); if (cp === 3 && ps === 8) china(r, t);
+          if (ps === 0) acorde(r, rz + 12, t, P_ * 2.9, 1.1);                // o acorde no começo do compasso e no meio
+          else if (ps === 8) acorde(r, rz + 12, t, P_ * 1.9, 1);
+          else if (g === 0 || g === 2 || g === 3) abafado(r, rz + 12, t, g === 0 ? 1.05 : 0.8);   // o galope: tchug, tchu-tchug
+          if (g !== 1) baixo(r, rz, t, P_ * 0.9, 1.05);
+          if (r.nivel >= 2 && p >= 32) {
+            if (cp < 2) { if (ps % 2 === 0) frase(r, this.mel[cp], ps / 2, t, P_ * 2, 0.9); if (ps % 2 === 0 && this.mel[cp][ps / 2]) frase(r, this.mel[cp], ps / 2, t, P_ * 2, 0.45, 'sawtooth', 7); }   // o solo dobrado em quintas
+            else { const arp = [0, 3, 7, 12, 15, 12, 7, 3][ps % 8] + (cp === 3 ? -2 : 0); lead(r, rz + 48 + arp, t, P_ * 0.95, 0.8); lead(r, rz + 55 + arp, t, P_ * 0.95, 0.35); }   // as fritadas (arpejos em semicolcheias)
+          }
+          if (r.nivel >= 3 && ps === 8) prato(r, t, 0.7);
+        },
+        final(r, t) { const [rz] = this.prog[0]; for (let k = 0; k < 6; k++) bumbo(r, t + k * 0.06, 1.1 - k * 0.1); prato(r, t); china(r, t + 0.03); acorde(r, rz + 12, t, 3.2, 1.35); baixo(r, rz, t, 3.0, 1.2); lead(r, 98, t, 2.6, 1); lead(r, 105, t, 2.6, 0.4); } },
+    ];
+    function agenda() { const r = R; if (!r) return; const ate = r.c.currentTime + 0.15; while (r.prox < ate) { r.E.passo(r, r.p, r.prox, r.PASSO); r.prox += r.PASSO; r.p++; } }
+    function montar(A, k) {
+      const c = A.ctx, E = ESTILOS[k], r = { c, E, k, nivel: 1, p: 0, PASSO: 60 / E.bpm / E.sub };
+      r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(E.vol, c.currentTime + 0.5); r.saida.connect(A.mestre);
+      r.bat = c.createGain(); r.bat.gain.value = 0.9; r.bat.connect(r.saida);
+      const cadeia = (dist, corte, ganho) => { const ent = c.createGain(), lp = c.createBiquadFilter(), gg = c.createGain(); lp.type = 'lowpass'; lp.frequency.value = corte; gg.gain.value = ganho;
+        if (dist > 0) { const ws = c.createWaveShaper(); ws.curve = curvaDist(dist); ws.oversample = '2x'; ent.connect(ws); ws.connect(lp); } else ent.connect(lp); lp.connect(gg); gg.connect(r.saida); return ent; };
+      r.gt = cadeia(E.dist, E.corte, E.dist > 0 ? 0.5 : 1);
+      r.gtM = cadeia(Math.max(E.dist, 30), 950, 0.55);                   // a abafada: mesma distorção, sem os agudos
+      r.bx = cadeia(E.dist > 50 ? 3 : 0, 650, 1);
+      r.ld = c.createGain(); { const ws = c.createWaveShaper(); ws.curve = curvaDist(E.dist > 0 ? 22 : 0); const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = E.dist > 0 ? 4200 : 2600; const eco = c.createDelay(1); eco.delayTime.value = r.PASSO * 3; const fb = c.createGain(); fb.gain.value = 0.25;
+        r.ld.connect(ws); ws.connect(lp); lp.connect(r.saida); lp.connect(eco); eco.connect(fb); fb.connect(eco); fb.connect(r.saida); }
+      r.prox = c.currentTime + 0.08; return r;
+    }
+    function soltar(r, seg) { setTimeout(() => { try { r.saida.disconnect(); } catch (e) { /* já foi */ } }, seg * 1000); }
+    return {
+      tocar(k) { const A = audio(); if (R && R.k === k) return; if (R) this.parar(true); if (!A) return; try { R = montar(A, clampN(k | 0, 0, 4)); prato(R, R.prox, 0.7); R.tm = setInterval(agenda, 25); agenda(); } catch (e) { R = null; } },
+      nivel(n) { if (R && n > R.nivel) R.nivel = n; },
+      parar(corte) {
+        const r = R; if (!r) return; R = null; clearInterval(r.tm);
+        try { const t = r.c.currentTime; r.saida.gain.cancelScheduledValues(t); r.saida.gain.setValueAtTime(Math.max(0.0001, r.saida.gain.value), t); r.saida.gain.exponentialRampToValueAtTime(0.0001, t + (corte ? 0.05 : 1.4)); } catch (e) { /* sem som */ }
+        soltar(r, corte ? 0.4 : 2.2);
+      },
+      final() {
+        const r = R; if (!r) return; R = null; clearInterval(r.tm);
+        try { const t = Math.max(r.c.currentTime + 0.02, r.prox); r.E.final(r, t); r.saida.gain.setValueAtTime(r.E.vol, t + 2.4); r.saida.gain.exponentialRampToValueAtTime(0.0001, t + 3.4); } catch (e) { /* sem som */ }
+        soltar(r, 4.2);
+      },
+      tocando: () => !!R,
+      _estilos: ESTILOS,
     };
   })();
 
@@ -1889,6 +2045,9 @@
 #pcHud .pcPular{position:absolute;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(11% + 8px);font:600 10px/1 var(--font-body);color:#fff0c8;opacity:.7}
 #pcHud .pcPerf{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%) scale(.55);opacity:0;font:700 clamp(20px,5.4vw,42px)/1.1 var(--font-display);color:#ffd84a;text-shadow:0 3px 0 #7a3a06,0 0 16px rgba(255,200,60,.75);letter-spacing:.06em;white-space:nowrap;transition:transform .4s cubic-bezier(.2,1.6,.4,1),opacity .2s}
 #pcHud .pcPerf.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#pcHud .pcFisgado{position:absolute;left:50%;top:calc(11% + 2.5vh);transform:translateX(-50%) scale(.4);opacity:0;font:700 clamp(24px,6.2vw,56px)/1.05 var(--font-display);letter-spacing:.07em;white-space:nowrap;text-shadow:0 4px 0 #2a1206,0 0 3px #2a1206,0 0 26px currentColor;transition:transform .5s cubic-bezier(.2,1.7,.4,1),opacity .25s}
+#pcHud .pcFisgado.on{opacity:1;transform:translateX(-50%) scale(1)}
+#pcHud .pcFisgado.sai{opacity:0;transform:translateX(-50%) scale(1.15);transition:transform .6s,opacity .6s}
 #pcHud.cine .pcEsq,#pcHud.cine .pcDir,#pcHud.cine .pcAcao,#pcHud.cine .pcBarra,#pcHud.cine .pcDica,#pcHud.cine .pcRecado,#pcHud.cine .pcBriga,#pcHud.cine .pcNota{display:none}
 #pcBanner{position:fixed;left:50%;top:calc(6px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:13;display:flex;flex-direction:column;align-items:center;gap:1px;padding:3px 12px 4px;background:rgba(42,18,6,.88);border:3px solid #f0a020;color:#fff0c8;text-align:center;pointer-events:none;max-width:min(520px,58vw);box-sizing:border-box}
 #pcBanner .pcL1{font:700 13px/1.15 var(--font-display);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
@@ -2127,7 +2286,8 @@
       tickMg(0.016); s.cam.snap = true;
       await api.preto(false, 350);
       await new Promise((ok) => { m.fim = ok; });
-      if (m.bagre) fimBagre(m); Rock.parar(true);
+      if (m.bagre) fimBagre(m); Rock.parar(true); Trilha.parar(true);
+      if (m.fisgada) { tirarMalha(m.fisgada.m); m.fisgada = null; }
       await api.preto(true, 350);
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
       fecharPainel(); esconderBanner(); tirarVara(m.vara);
@@ -2138,7 +2298,7 @@
       P.isopor.visible = false; U.el.remove(); P.mg = null;
       for (const v of (api.vitorias ? api.vitorias() : [])) { v.k = 0; v.px = v.pz = null; v.m.rotation.set(0, 0, 0); v.m.position.y = 0; }   // as vitórias-régias param de balançar
       const ss = S(); if (ss) { ss.camCena = null; ss.cam.snap = true; ss.jog.yaw = ss.jog.yawAlvo = 0; ui.esq.hidden = esqAntes; if (ui.ctl) ui.ctl.hidden = ctlAntes; }
-      gravar();
+      gravar(); voltarMusica();                                            // (6.6.15) a música da cidade volta
       await api.preto(false, 350);
       if (m.comCadu && P.cadu && !P.cadu.oculto) aviso(tr('Cadu') + ': ' + tr('Valeu pela companhia!'), 2.5);
     }
@@ -2170,14 +2330,14 @@
         '<div class="pcBarra"><div class="pcZonas"></div><div class="pcFaixaZ"></div><div class="pcEnche"></div><div class="pcMarca"></div><span class="pcRot"></span></div>' +
         '<div class="pcBriga"><span class="pcDist"></span><span class="pcFolT"></span><div class="pcFol"><i></i></div>' +
         '<span class="pcRisT pcFrT"></span><div class="pcRis pcFr"><i></i></div><span class="pcRisT pcEsT"></span><div class="pcRis pcEs"><i></i></div></div>' +
-        '<div class="pcCine"><i class="t"></i><i class="b"></i><span class="pcPlano"></span><div class="pcPerf"></div><span class="pcPular"></span></div>' +
+        '<div class="pcCine"><i class="t"></i><i class="b"></i><span class="pcPlano"></span><div class="pcPerf"></div><div class="pcFisgado"></div><span class="pcPular"></span></div>' +
         '<button type="button" class="pxBtn pxPrim pcAcao"></button>';
       (document.getElementById('raizJogo') || document.body).appendChild(el);
       const q = (s) => el.querySelector(s);
       const U = { el, isca: q('.pcIsca'), vara: q('.pcVara'), caixa: q('.pcCaixa'), cat: q('.pcCat'), sair: q('.pcSair'), recado: q('.pcRecado'), dica: q('.pcDica'),
         menuB: q('.pcMenuB'), menuI: q('.pcMenuI'), badge: q('.pcBadge'), menu: q('.pcMenu'), arrasto: q('.pcArrasto'), nota: q('.pcNota'), notaN: q('.pcNota b'), notaT: q('.pcNota span'),
         barra: q('.pcBarra'), zonas: q('.pcZonas'), faixa: q('.pcFaixaZ'), enche: q('.pcEnche'), marca: q('.pcMarca'), rot: q('.pcRot'), briga: q('.pcBriga'), dist: q('.pcDist'), folT: q('.pcFolT'), fol: q('.pcFol i'),
-        fr: q('.pcFr i'), es: q('.pcEs i'), frT: q('.pcFrT'), esT: q('.pcEsT'), cine: q('.pcCine'), plano: q('.pcPlano'), perf: q('.pcPerf'), pular: q('.pcPular'),
+        fr: q('.pcFr i'), es: q('.pcEs i'), frT: q('.pcFrT'), esT: q('.pcEsT'), cine: q('.pcCine'), plano: q('.pcPlano'), perf: q('.pcPerf'), fisgado: q('.pcFisgado'), pular: q('.pcPular'),
         acao: q('.pcAcao'), choque: q('.pcChoque'), modo: '', cache: {} };
       U.cat.textContent = tr('Catálogo'); U.folT.textContent = tr('Fôlego do peixe'); U.frT.textContent = tr('Linha frouxa'); U.esT.textContent = tr('Linha esticada');
       U.perf.textContent = tr('LANÇAMENTO PERFEITO!'); U.pular.textContent = tr('Toque para pular');
@@ -2263,7 +2423,7 @@
       if (dukeLivre() && (P.dukeForcado === 'sempre' || Math.random() < CHANCE_DUKE)) {   // (6.6.7) 13 de maio: quem mordeu foi ELE (briga de lendário)
         const ib = Math.max(0, PEIXES.findIndex((q) => q.id === 'pirarucu'));
         p.dukeDia = chaveDuke(); gravar();
-        m.bite = { i: ib, kg: Math.round(rnd(40, 60) * 10) / 10, classe: 1, d: dificuldade(ib, 1, p.vara, p.isca), W, bel, isca: p.isca, nota: m.nota, duke: true };
+        m.bite = { i: ib, kg: Math.round(rnd(40, 60) * 10) / 10, classe: 1, d: dificuldade(ib, 1, p.vara, p.isca, true), W, bel, isca: p.isca, nota: m.nota, duke: true };
       }
     }
     // ---- (6.6.7) O DUKE: no dia 13 de maio (a data do APARELHO, não a do jogo), cada mordida tem uma chancezinha de ser ele. Uma vez por dia.
@@ -2284,6 +2444,7 @@
     async function cenaDuke() {
       const m = P.mg, s = S(), p = dadosP(), o = m.peixeP || m.boiaP || { x: m.ox, z: m.oz };
       m.e = 'pegou'; m.t = 0; m.ocupado = true; m.segura = false; m.B = null; tirarPulo(m);
+      fimMusicaBriga('corta');                                            // (6.6.15) a música corta seco: silêncio para ele subir
       let mod = null; try { mod = P.dukeCriar(); } catch (e) { console.error(e); }
       if (!mod) { escapou(tr('O peixe se soltou do anzol...')); return; }
       const g = new THREE.Group(); mod.raiz.scale.setScalar(DUKE_ESC); mod.raiz.position.y = -DUKE_MEIO * DUKE_ESC; g.add(mod.raiz); g.visible = false; grupo().add(g);
@@ -2368,7 +2529,81 @@
       m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
       m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(4, 7); m.corriaAntes = false; m.tVib = 0;
       SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 6, 0.3); msgMg(tr('Fisgou!'), 1.2); vib(60, true);
+      const r = PEIXES[b.i].r;
+      if (b.duke) musicaBriga(4);                                         // (6.6.15) o Duke finge ser um lendário qualquer (sem a cena: ninguém pode ver o que é)
+      else if (r >= 3) comecarFisgada(m);                                 // (6.6.15) épico / lendário: a cena da fisgada (a música entra no fim dela)
+      else musicaBriga(r);
     }
+    // ---- (6.6.15) a MÚSICA DA BRIGA (Trilha, uma por raridade) no lugar da música da cidade, que pausa e volta quando a pescaria acalma
+    function pausarMusica() { try { if (typeof Musica !== 'undefined' && Musica.tocando) { P.musAntes = Musica.estilo || P.musAntes; Musica.parar(); } } catch (e) { /* sem música */ } clearTimeout(P.tMusVolta); }
+    function musicaBriga(r) { pausarMusica(); Trilha.tocar(r); }
+    function fimMusicaBriga(como) {                                      // 'final' (pegou) · 'some' (escapou) · 'corta' (o Duke: silêncio)
+      if (como === 'final') Trilha.final(); else Trilha.parar(como === 'corta');
+      clearTimeout(P.tMusVolta); P.tMusVolta = setTimeout(voltarMusica, como === 'final' ? 5000 : 2600);
+    }
+    function voltarMusica() {
+      clearTimeout(P.tMusVolta); if (Trilha.tocando() || Rock.tocando() || !P.musAntes) return;
+      try { if (typeof Musica !== 'undefined' && S() && S().ativo !== false) Musica.tocar(P.musAntes); } catch (e) { /* sem música */ }
+      P.musAntes = null;
+    }
+
+    // ---- (6.6.15) A CENA DA FISGADA (épico e lendário): a câmera mergulha até a água, o peixe PULA para fora com a linha na boca,
+    //   o tempo quase para lá no alto (câmera lenta) e aparece "ÉPICO FISGADO!" / "LENDÁRIO FISGADO!" em cima, num espaço livre do
+    //   quadro: a câmera mira ACIMA do peixe, então ele fica na metade de baixo da tela e o texto (logo abaixo da faixa preta de cima)
+    //   nunca fica por cima dele. Depois ele cai de volta e a briga começa (com a música da raridade).
+    //   Linha do tempo (segundos de verdade): 0–0,75 a câmera vai até a água (borbulha) · o pulo, em "tempo de cena" tau (0–1):
+    //   sobe a 100% até 0,3, câmera lenta (14%) até 0,64, volta a 100% na descida · o mergulho · 0,7 s e volta para a briga.
+    const FG_ZOOM = 0.75, FG_LENTO = [0.3, 0.64], FG_VEL = 0.14;
+    function comecarFisgada(m) {
+      const b = m.bite, pe = PEIXES[b.i], f = m.peixeP, peixe = malhaPeixe(b.i, b.kg), L = peixe.userData.L;
+      const a = Math.atan2(-(f.z - m.oz), f.x - m.ox), d = dirDe(a);
+      const C0 = P.cadu && !P.cadu.oculto && m.comCadu ? P.cadu : null;   // a câmera fica do lado contrário ao do Cadu (para ele não tampar)
+      let sl = C0 && ((C0.x - m.ox) * -d.z + (C0.z - m.oz) * d.x) > 0 ? -1 : 1;
+      const Dc = 1.55 + Math.min(2.6, L * 1.05), pos = (k) => ({ x: f.x - d.z * k * Dc * 0.9 + d.x * Dc * 0.42, z: f.z + d.x * k * Dc * 0.9 + d.z * Dc * 0.42 });
+      { const q = pos(sl); if (!naAgua(q.x, q.z) && naAgua(pos(-sl).x, pos(-sl).z)) sl = -sl; }   // a câmera em cima da água (do lado que não for terra ou píer)
+      peixe.visible = false; grupo().add(peixe);
+      m.fisgada = { t: 0, tau: 0, vel: 1, m: peixe, L, d, Dc, cam: pos(sl), alto: Math.min(2.5, 0.95 + L * 0.7), r: pe.r, saiu: false, txt: false, caiu: false, tFim: 0, cam0: m.cam ? Object.assign({}, m.cam) : null, lado: sl * (Math.random() < 0.5 ? 1 : -1) };
+      m.e = 'fisgada'; m.t = 0; m.ocupado = true; m.segura = false;
+      m.U.el.classList.add('cine'); m.U.plano.textContent = ''; m.U.pular.textContent = '';
+      const el = m.U.fisgado; el.textContent = tr(pe.r >= 4 ? 'LENDÁRIO FISGADO!' : 'ÉPICO FISGADO!'); el.style.color = COR_RAR[pe.r]; el.classList.remove('on', 'sai');
+      pausarMusica(); SOM.fisgada(); vib([40, 30, 40, 30, 160], true);
+    }
+    function tickFisgada(m, dt) {
+      const F = m.fisgada, f = m.peixeP; F.t += dt;
+      if (F.t < FG_ZOOM) {                                                // a água fervendo em volta da boia
+        F.vel = 1; if (Math.random() < dt * 14) anel(f.x + rnd(-0.5, 0.5), f.z + rnd(-0.5, 0.5), 0.3 + Math.random() * 0.3, 0.1);
+        return;
+      }
+      const tau0 = F.tau, lento = F.tau >= FG_LENTO[0] && F.tau < FG_LENTO[1];
+      F.vel = lento ? FG_VEL : F.tau >= FG_LENTO[1] && F.tau < FG_LENTO[1] + 0.05 ? lerpN(FG_VEL, 1, (F.tau - FG_LENTO[1]) / 0.05) : 1;
+      if (!F.caiu) F.tau = Math.min(1, F.tau + dt * F.vel);
+      if (!F.saiu) { F.saiu = true; F.m.visible = true; respingo(f.x, f.z, 14, Math.min(1.2, 0.5 + F.L * 0.4)); anel(f.x, f.z, 1.6 + F.L * 0.5, 0.9); SOM.agua(); SOM.ploc(); }
+      if (!F.txt && F.tau >= FG_LENTO[0]) { F.txt = true; m.U.fisgado.classList.add('on'); (F.r >= 4 ? SOM.lendario : SOM.raro)(); vib([30, 40, 30, 40, 120], true); }
+      if (F.txt && !F.saiTxt && F.tau >= FG_LENTO[1]) { F.saiTxt = true; m.U.fisgado.classList.add('sai'); }
+      const u = F.tau, y = Y_AGUA - 0.15 + Math.sin(u * Math.PI) * (F.alto + 0.15), J = S().jog, yawJ = Math.atan2(-(J.z - f.z), J.x - f.x);
+      F.m.position.set(f.x, y, f.z);
+      F.m.rotation.set(0, yawJ + Math.sin(u * 9) * 0.18 * F.lado, 1.05 - u * 2.1 + Math.sin(u * 13) * 0.08);   // a boca para o lado da vara; sobe de nariz para cima, desce de nariz para baixo, se contorcendo
+      if (Math.random() < dt * F.vel * 22 && y > Y_AGUA + 0.1) respingo(f.x + rnd(-0.15, 0.15), f.z + rnd(-0.15, 0.15), 1, 0.05);   // pingando
+      if (!F.caiu && u >= 1 && tau0 < 1) { F.caiu = true; F.m.visible = false; respingo(f.x, f.z, 16, Math.min(1.3, 0.6 + F.L * 0.4)); anel(f.x, f.z, 2 + F.L * 0.5, 1); SOM.agua(); vib(90, true); }
+      if (F.caiu) { F.tFim += dt; if (F.tFim > 0.7) fimFisgada(m); }
+    }
+    function fimFisgada(m) {
+      const F = m.fisgada; if (!F) return;
+      tirarMalha(F.m); m.fisgada = null; m.U.fisgado.classList.remove('on', 'sai'); m.U.el.classList.remove('cine'); m.U.pular.textContent = tr('Toque para pular');
+      m.ocupado = false; m.e = 'briga'; m.t = 0; S().cam.snap = true;
+      musicaBriga(F.r); Trilha.nivel(2);                                  // a melodia já entra junto: é épico/lendário
+    }
+    function camFisgada(m, J) {
+      const F = m.fisgada, f = m.peixeP, k = F.Dc * 0.2;
+      const perto = { px: F.cam.x, py: Y_AGUA + 0.42 + F.alto * 0.28, pz: F.cam.z, tx: f.x, ty: Y_AGUA + k * 0.6, tz: f.z };
+      if (F.t < FG_ZOOM) {                                               // o "zoom": da câmera da pescaria até rente à água
+        const u = suave(F.t / FG_ZOOM), c0 = F.cam0 || perto, c = {};
+        for (const q in perto) c[q] = lerpN(c0[q], perto[q], u); return c;
+      }
+      const yP = F.m.visible ? F.m.position.y : Y_AGUA;
+      perto.ty = Math.max(Y_AGUA + k * 0.6, yP + k); return perto;        // mira ACIMA do peixe: ele fica embaixo do meio da tela e o texto em cima
+    }
+
     function tickBriga(dt) {
       const m = P.mg, B = m.B, pe = PEIXES[m.bite.i];
       const r = passoBriga(B, m.segura && !m.pausa, dt);
@@ -2387,6 +2622,7 @@
       else if (B.onde < 0 && B.frouxo > 0.2) { if (m.tVib <= 0) { m.tVib = 0.7; vib([12, 60, 12]); } }
       else if (m.segura && B.onde === 0) { if (m.tVib <= 0) { m.tVib = 0.24; vib(8); } }
       m.corriaAntes = B.corre;
+      if (!m.bagre) { if (B.corre) Trilha.nivel(2); if (B.folego <= 0) Trilha.nivel(3); }   // (6.6.15) a música cresce: a 1ª arrancada traz a melodia; cansou, a banda abre
       if (pe.id === 'poraque') {                                          // o poraquê dá choque de vez em quando: a tensão pula
         m.proxChoque -= dt;
         if (m.proxChoque <= 0) { m.proxChoque = rnd(5, 9); B.tensao = Math.min(0.97, B.tensao + 0.22); SOM.choque(); msgMg(tr('Levou um choque!'), 1.4); m.choque = 0.45; m.U.choque.style.opacity = '0.55'; vib([60, 40, 60], true); }
@@ -2405,6 +2641,7 @@
     }
     function escapou(txt, arrebentou) {
       const m = P.mg, onde = m.peixeP || m.boiaP; msgMg(txt, 2.4); if (!arrebentou) SOM.erro();
+      fimMusicaBriga('some');
       m.e = 'falhou'; m.t = 0; m.de = { x: onde.x, y: Y_AGUA + 0.02, z: onde.z }; m.arrebentou = !!arrebentou; m.B = null; tirarPulo(m);
       if (m.comCadu && P.cadu && !P.cadu.oculto && Math.random() < 0.6) setTimeout(() => { if (P.mg && P.mg.comCadu) msgMg(tr('Cadu') + ': ' + (arrebentou ? tr('Arrebentou? Solta a linha quando ele correr!') : tr('Ih, escapou! Faz parte.')), 2.6); }, 1500);
     }
@@ -2506,6 +2743,7 @@
     function esconderBanner() { const el = document.getElementById('pcBanner'); if (el) el.remove(); if (P.mg) P.mg.U.recado.style.visibility = ''; }
     async function cenaPegou() {
       const m = P.mg, b = m.bite, p = dadosP(), s = S(), J = s.jog, pe = PEIXES[b.i];
+      fimMusicaBriga('final');
       m.e = 'pegou'; m.t = 0; m.ocupado = true; m.segura = false; m.B = null; tirarPulo(m);
       const peixe = malhaPeixe(b.i, b.kg); grupo().add(peixe);
       m.voa = { m: peixe, de: { x: m.peixeP.x, y: Y_AGUA, z: m.peixeP.z }, t: 0 };
@@ -2636,7 +2874,7 @@
     function soltarTempestade() { const C = S().clima; if (!C) return; C.t = 0; C.dur = 50 + Math.random() * 40; C.trov = 6 + Math.random() * 8; }
     function comecarBagre() {
       const m = P.mg, p = dadosP(), isca = m.bite ? m.bite.isca : p.isca, ib = Math.max(0, PEIXES.findIndex((q) => q.id === 'pirarucu'));
-      const d = dificuldade(ib, 2, p.vara, isca);
+      const d = dificuldade(ib, 2, p.vara, isca, true);
       d.folego *= 3; d.zona = clampN(d.zona * 1.38, 0.14, 0.5); d.tremor *= 1.1;   // (simulado: a chance é a de um lendário, mas a briga dura uns 2× mais)
       p.iscas[isca] = Math.max(0, nIsca(isca) - 1); p.bagreNoite = S().dados.dia; gravar(); m.comida = true;
       m.bite = { i: ib, kg: Math.round(rnd(150, 185) * 10) / 10, classe: 2, d, W: 0, bel: [], isca, nota: m.nota, bagre: true };
@@ -2693,7 +2931,7 @@
       m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
       m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(6, 9); m.corriaAntes = false; m.tVib = 0;
       G.e = 'briga'; G.fase = 1; G.tRaio = rnd(3, 5); G.tFaisca = 0;
-      Rock.tocar(); msgMg(tr('Algo ENORME fisgou a isca!'), 2.6);
+      pausarMusica(); Rock.tocar(); msgMg(tr('Algo ENORME fisgou a isca!'), 2.6);
     }
     // um raio caindo no lago (longe, ou perto nas fases mais bravas)
     function raioPerto(m, perto) {
@@ -2924,7 +3162,7 @@
       if (!m.pausa && m.e !== 'cine' && !m.bagre && !m.duke) api.tickHorario(dt);
       m.t += dt; if (m.tRec > 0) { m.tRec -= dt; if (m.tRec <= 0) m.U.recado.textContent = ''; }
       if ((m.e === 'mira' || m.e === 'forca') && !m.pausa) m.ang = clampN(m.ang + m.mira * dt * 0.9, -m.lim, m.lim);
-      const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou';
+      const fixo = m.e === 'briga' || m.e === 'fisgou' || m.e === 'pegou' || m.e === 'fisgada';
       J.x = m.ox; J.z = m.oz; J.yaw = J.yawAlvo = m.trofeu ? (m.yaw0 - 0.45) : m.yaw0 + (fixo ? m.ang0 : m.ang); J.andando = false; J.correndo = false; J.sentado = false;
       if (!m.ocupado && !m.saindo && hora() >= 1.85 && hora() < 5 && (m.e === 'mira' || m.e === 'espera')) { msgMg(tr('Já tá tarde... melhor ir pra casa.'), 3); m.ocupado = false; m.saindo = true; if (m.fim) m.fim(); }
       poseJogMg(m, J);
@@ -2939,6 +3177,7 @@
         case 'espera': tickEspera(); break;
         case 'mordida': if (m.t > m.bite.d.janela) escapou(tr('O peixe comeu a isca e fugiu...')); break;
         case 'fisgou': if (m.t >= 0.3) { m.e = 'briga'; m.t = 0; } break;
+        case 'fisgada': tickFisgada(m, dt); break;
         case 'briga': tickBriga(dt); break;
         case 'assustou': if (m.t >= 1.6) novaEspera(true); break;
         case 'falhou': if (m.t >= 1.8) recolher(); break;
@@ -2951,7 +3190,7 @@
       visualMg(m, tip, dt); camMg(m, J, dt); hudMg(m);
     }
     // o estado "de verdade" para desenhar (na cena do perfeito, o estado do lançamento que está passando)
-    const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e === 'raio' ? (m.bagre && m.bagre.puxou ? 'fisgou' : 'espera') : m.e === 'perdeu' ? 'falhou' : m.e);
+    const estadoV = (m) => (m.e === 'cine' && m.cine ? (m.cine.e === 'agua' ? 'espera' : m.cine.e || 'swing') : m.e === 'raio' ? (m.bagre && m.bagre.puxou ? 'fisgou' : 'espera') : m.e === 'perdeu' ? 'falhou' : m.e === 'fisgada' ? 'fisgou' : m.e);
     // os braços para mostrar o peixe (achados por busca no boneco do jogador): pequeno = mãos juntas; grande = uma mão em cada ponta.
     //   Devolve também onde ficam as mãos no tronco (x para a frente, y para cima), para apoiar o peixe em cima delas.
     function poseTrofeu(L) {
@@ -3046,7 +3285,12 @@
         pl.m.position.set(m.peixeP.x, Y_AGUA + Math.sin(Math.min(1, u) * Math.PI) * Math.min(1.9, 0.6 + Lp * 0.8), m.peixeP.z); if (pl.lado == null) pl.lado = Math.random() < 0.5 ? -1 : 1; pl.m.rotation.set(0, yawJ + pl.lado * 0.8, 0.9 - Math.min(1, u) * 1.8);   // meio de lado (dá para ver o peixe), com a boca ainda para o lado da vara
         if (u >= 1) { respingo(m.peixeP.x, m.peixeP.z, m.bite.bagre ? 14 : 7, m.bite.bagre ? 1 : 0.4); SOM.agua(); if (m.bite.bagre) { anelCor(m.peixeP.x, m.peixeP.z, 2.4, 0x8ff0ff, 1); faiscas(m.peixeP.x, Y_AGUA + 0.1, m.peixeP.z, 12, 1); } tirarPulo(m); }
       }
-      if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) {
+      if (m.e === 'fisgada' && m.fisgada && m.peixeP) {                   // (6.6.15) a cena da fisgada: a linha esticada até a boca dele (no ar) ou até a água
+        const F = m.fisgada, noAr = F.m.visible && F.m.position.y > Y_AGUA;
+        fim = noAr ? bocaPeixe(F.m) : { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z };
+        linhaDe(L, tip, fim, noAr ? 0.02 : 0.08); verga = 1.05;
+      }
+      else if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) {
         const te = m.B ? m.B.tensao : 0.6, pl = m.pulo && m.pulo.m ? m.pulo : null;
         fim = pl ? bocaPeixe(pl.m) : { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z };
         linhaDe(L, tip, fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
@@ -3074,6 +3318,7 @@
       const snap = s.cam.snap; s.cam.snap = false;                       // (a cidade não zera o snap enquanto tem câmera de cena: zera aqui)
       let c;
       if (m.e === 'cine' && m.cine) { m.cam = camCine(m, J); s.camCena = m.cam; return; }
+      if (m.e === 'fisgada' && m.fisgada) { const c2 = camFisgada(m, J); if (!m.cam) m.cam = Object.assign({}, c2); else { const k = m.fisgada.t < FG_ZOOM ? 1 : 1 - Math.exp(-dt * 6); for (const q in c2) m.cam[q] += (c2[q] - m.cam[q]) * k; } s.camCena = m.cam; return; }   // (6.6.15)
       if (m.e === 'raio' && m.camB) { m.cam = Object.assign(m.cam || {}, m.camB); s.camCena = m.cam; return; }   // a cena do raio corta seco entre os planos
       if (m.duke && m.duke.cam) {                                          // (6.6.7) o Duke: corta seco entre os planos, e anda suave dentro de cada um
         const c2 = m.duke.cam, D = m.duke;
@@ -3150,7 +3395,7 @@
       if (P.tAviso > 0) { P.tAviso -= dt; if (P.tAviso <= 0 && s.modo === 'livre') api.aviso(''); }
       if (!P.montado) { if (!s.dentro && s.jog) montarRua(); if (!P.montado) return; }
       if (P.versao !== P.verQuadro) desenharQuadro();
-      tickFx(dt); tickRaios(dt); tickFlash(dt); tickAnims(dt);
+      tickFx(dt * (P.mg && P.mg.fisgada ? P.mg.fisgada.vel : 1)); tickRaios(dt); tickFlash(dt); tickAnims(dt);   // (6.6.15) na fisgada, os respingos também em câmera lenta
       if (matBagreLuz) { const k = 0.82 + 0.12 * Math.sin(s.t * 9) + (Math.random() < 0.04 ? 0.25 : 0); matBagreLuz.color.setRGB(k, k, k); }
       tickCaduLago(dt); tickBene();
       if (!s.dentro) { if (P.cadu && !P.cadu.oculto) { P.cadu.m.raiz.updateMatrixWorld(true); poseCaduLago(); } }
@@ -3161,13 +3406,13 @@
       try { fecharPainel(); esconderBanner(); const h = document.getElementById('pcHud'); if (h) h.remove(); } catch (e) { /* ok */ }
       window.removeEventListener('keydown', teclaMg, true); window.removeEventListener('keyup', teclaMg, true);
       if (P.mg && P.mg.duke) fimDuke(P.mg); if (P.mg && P.mg.fim) P.mg.fim(); P.mg = null;
-      Rock.parar(true); if (P.flashEl) { P.flashEl.remove(); P.flashEl = null; }
+      Rock.parar(true); Trilha.parar(true); clearTimeout(P.tMusVolta); P.musAntes = null; if (P.flashEl) { P.flashEl.remove(); P.flashEl = null; }
       for (const g of geoPeixes.values()) g.dispose(); geoPeixes.clear();
       if (geoBagre) { geoBagre.dispose(); geoBagreLuz.dispose(); matBagreLuz.dispose(); geoBagre = geoBagreLuz = matBagreLuz = null; }
       if (P.texQuadro) P.texQuadro.dispose();
     }
 
-    return { alvos, tick, limpar, montarRua, aberta, _P: P, _api: api, _f: { cenaDuke, prepararDuke, dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
+    return { alvos, tick, limpar, montarRua, aberta, _P: P, _api: api, _f: { Trilha, musicaBriga, fimMusicaBriga, cenaDuke, prepararDuke, dadosP, pescar, abrirLoja, abrirCatalogo, abrirCaixa, falarComCaduLago, falarComBene, caduNoLago, naAgua, profundidade, iconePeixe, malhaPeixe, apertar, sairDaPesca, PONTA, LUGAR_CADU, DESTINO_CADU }, _dados: DADOS, _logica: LOGICA };
   }
 
   window.FutebolJS.registrarFase({ id: 'pesca', nome: 'Pesca', nucleoMinimo: '6.4.0', iniciar: async () => {}, criar, _dados: DADOS, _logica: LOGICA, _arte: { artePeixe } });
