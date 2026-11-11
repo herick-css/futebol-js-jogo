@@ -868,7 +868,7 @@
     faixa(-5.1, AV.z0); faixa(AV.z1, 10.5);
   }
   const PRACA = R(540, 228, 220, 127), PRACA_C = { x: PX(649), z: PZ(292) };
-  const VARZEA = R(905, 150, 285, 190), VARZEA_L = R(925, 168, 245, 150);
+  const VARZEA = R(905, 135, 285, 205), VARZEA_L = R(925, 168, 245, 150);   // a cerca do lado norte foi 3 m para trás: espaço para os bancos de reserva e a casinha da escada do vestiário
   const SOCIETY = R(925, 535, 260, 175), SOCIETY_L = R(945, 553, 220, 140);
   const FUTSAL = R(335, 438, 140, 92), FUTSAL_L = R(346, 449, 118, 70);
   const LAGO = { cx: PX(260), cz: PZ(670), rx: 30, rz: 14 };
@@ -1614,7 +1614,8 @@
       cerca(r, 2.6, [{ lado: 's', a: 86, b: 92 }], 0);
       const G = new Geo(); for (const gx of [VARZEA_L.x0, VARZEA_L.x1]) { for (const t of [-3, 3]) G.box(0.14, 2.2, 0.14, '#c9c9c0', gx, 0, cz + t); G.box(0.14, 0.14, 6.14, '#c9c9c0', gx, 2.2, cz); }
       addMalha(G, 0, 0);
-      S.redes.push({ x: VARZEA_L.x0, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: -1, y: 0 }, { x: VARZEA_L.x1, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: 1, y: 0 }); }
+      S.redes.push({ x: VARZEA_L.x0, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: -1, y: 0 }, { x: VARZEA_L.x1, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: 1, y: 0 });
+      montarVarzeaCampeonato(); }
     redesDosGols();
 
     // --- lago (água 5 cm acima do chão pintado), píer de madeira e taboas
@@ -1666,6 +1667,67 @@
       addMalha(G, 0, 0); }
   }
   // alambrado em volta de um retângulo; vaos (portões): [{ lado: 'n'|'s'|'e'|'w', a, b }] em metros (x para n/s, z para e/w)
+  // A VÁRZEA DO CAMPEONATO (varzea.js): a casinha da escada dos vestiários subterrâneos e os dois bancos de reserva (lado norte),
+  //   a arquibancada de madeira de dois degraus dos dois lados do portão (lado da avenida) e os bancos da torcida do lado leste.
+  //   As mesmas peças da "Várzea cidadezinha" da partida (jogo.js), nos mesmos lugares em relação ao campo.
+  const VZ = (() => {
+    const cx = (VARZEA_L.x0 + VARZEA_L.x1) / 2, cz = (VARZEA_L.z0 + VARZEA_L.z1) / 2;
+    return {
+      cx, cz, portao: { x: 89, z: -8 },
+      casa: { x0: cx - 1.7, x1: cx + 1.7, z0: VARZEA.z0 + 1.8, z1: VARZEA.z0 + 3.8 },          // a casinha da escada (a porta olha para leste)
+      bancos: [cx - 8, cx + 8].map((x) => ({ x, z: VARZEA.z0 + 3.95 })),                    // os bancos de reserva (de frente para o campo)
+      arq: [[VARZEA.x0 + 5.5, 86 - 0.5], [92 + 0.5, VARZEA.x1 - 5.5]],                       // os dois lances da arquibancada (x), um de cada lado do portão
+      filas: [{ z: VARZEA.z1 + 0.65, h: 0.45 }, { z: VARZEA.z1 + 1.55, h: 0.9 }],            // fila 1 (encostada na cerca) e fila 2 (mais alta)
+      leste: [-38, -30.5, -23, -15.5].map((z) => ({ x: VARZEA.x1 + 2.5, z })),               // os bancos da torcida, do lado de fora da cerca leste (de frente para o oeste)
+    };
+  })();
+  function montarVarzeaCampeonato() {
+    const G = new Geo(), C = VZ.casa, CONC = '#a9a79f', CONC2 = '#8c8a83', MAD = '#a87844', MAD2 = '#9a6b3c', PE = '#6b4a2b';
+    // --- a casinha da escada: cunha de concreto (2,3 m na porta, 0,7 m no fundo), laje inclinada, verga e os degraus descendo no escuro
+    const hA = 2.3, hB = 0.7, x0 = C.x0, x1 = C.x1, z0 = C.z0, z1 = C.z1, e = 0.15;
+    const hy = (x) => hB + (hA - hB) * (x - x0) / (x1 - x0);
+    for (const [za, zb, fora] of [[z0, z0 + e, -1], [z1 - e, z1, 1]]) {               // as duas paredes de lado (trapézios com espessura)
+      for (const zz of [za, zb]) G.quad([x0, 0, zz], [x1, 0, zz], [x1, hA, zz], [x0, hB, zz], CONC, [0, 0, zz === za ? -1 : 1]);
+      G.quad([x1, 0, za], [x1, 0, zb], [x1, hA, zb], [x1, hA, za], CONC2, [1, 0, 0]);
+    }
+    G.box(e, hB, z1 - z0, CONC, x0 + e / 2, 0, (z0 + z1) / 2);                          // a parede do fundo (baixa)
+    { const t = 0.12, L = 0.12;                                                          // a laje: um pouco maior que as paredes, inclinada
+      const a = [x0 - L, hB + t - 0.02, z0 - L], b = [x1 + L, hA + t + 0.02, z0 - L], c = [x1 + L, hA + t + 0.02, z1 + L], d = [x0 - L, hB + t - 0.02, z1 + L];
+      G.quad(a, b, c, d, CONC2, [-0.4, 1, 0]);
+      G.quad([a[0], a[1] - t, a[2]], [b[0], b[1] - t, b[2]], [c[0], c[1] - t, c[2]], [d[0], d[1] - t, d[2]], '#6f6d66', [0, -1, 0]);
+      G.quad(a, b, [b[0], b[1] - t, b[2]], [a[0], a[1] - t, a[2]], CONC2, [0, 0, -1]); G.quad(c, d, [d[0], d[1] - t, d[2]], [c[0], c[1] - t, c[2]], CONC2, [0, 0, 1]);
+      G.quad(b, c, [c[0], c[1] - t, c[2]], [b[0], b[1] - t, b[2]], CONC2, [1, 0, 0]); G.quad(d, a, [a[0], a[1] - t, a[2]], [d[0], d[1] - t, d[2]], CONC2, [-1, 0, 0]); }
+    G.box(0.16, 0.34, z1 - z0 - 2 * e, CONC2, x1 - 0.08, hA - 0.34, (z0 + z1) / 2);    // a verga da porta
+    [[x1 - 0.25, '#5e5b54'], [x1 - 0.75, '#3d3a35'], [x1 - 1.25, '#25221f'], [x1 - 1.95, '#12100e'], [x0 + 0.6, '#080706']].forEach(([x, cor], i) => G.box(i < 3 ? 0.5 : 0.9, 0.02, z1 - z0 - 2 * e, cor, x, 0.005, (z0 + z1) / 2));
+    G.box(0.02, hB - 0.04, z1 - z0 - 2 * e, '#080706', x0 + e + 0.02, 0.02, (z0 + z1) / 2);
+    bloquear(x0 - 0.05, x1 + 0.05, z0 - 0.05, z1 + 0.05, hA);
+    // --- os bancos de reserva: assento, encosto e os pés de madeira
+    for (const B of VZ.bancos) {
+      G.box(5, 0.07, 0.6, MAD, B.x, 0.38, B.z); G.box(5, 0.3, 0.06, MAD2, B.x, 0.7, B.z - 0.33);
+      for (const t of [-2.3, 0, 2.3]) { G.box(0.1, 0.38, 0.5, PE, B.x + t, 0, B.z); G.box(0.08, 1.0, 0.08, PE, B.x + t, 0, B.z - 0.33); }
+      bloquear(B.x - 2.55, B.x + 2.55, B.z - 0.4, B.z + 0.32, 1);
+    }
+    // --- a arquibancada: duas tábuas de sentar por lance (0,45 e 0,9 m), a tábua dos pés da fila de cima e os pés
+    for (const [ax0, ax1] of VZ.arq) {
+      const L = ax1 - ax0, mx = (ax0 + ax1) / 2;
+      VZ.filas.forEach((F, r) => {
+        G.box(L, 0.07, 0.5, r ? MAD2 : MAD, mx, F.h - 0.07, F.z);
+        if (r) G.box(L, 0.05, 0.3, '#7d5630', mx, VZ.filas[0].h - 0.05, F.z - 0.45);   // onde quem senta em cima põe os pés
+        for (let x = ax0 + 0.2; x <= ax1 - 0.1; x += 2.45) { G.box(0.1, F.h - 0.07, 0.1, PE, x, 0, F.z - 0.18); G.box(0.1, F.h - 0.07, 0.1, PE, x, 0, F.z + 0.18); }
+      });
+      bloquear(ax0, ax1, VZ.filas[0].z - 0.28, VZ.filas[1].z + 0.28, 0.9);
+    }
+    // --- os bancos da torcida do lado leste (3 m, de costas para o leste)
+    for (const B of VZ.leste) {
+      G.box(0.6, 0.07, 3, MAD, B.x, 0.38, B.z); G.box(0.06, 0.3, 3, MAD2, B.x + 0.33, 0.7, B.z);
+      for (const t of [-1.3, 1.3]) { G.box(0.5, 0.38, 0.1, PE, B.x, 0, B.z + t); G.box(0.08, 1.0, 0.08, PE, B.x + 0.33, 0, B.z + t); }
+      bloquear(B.x - 0.32, B.x + 0.4, B.z - 1.5, B.z + 1.5, 1);
+    }
+    addMalha(G, 0, 0);
+    // a plaquinha VESTIÁRIOS na verga
+    const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.26), guardar(new THREE.MeshBasicMaterial({ map: guardar(texCanvas(96, 16, (q) => { q.fillStyle = '#f2f0e6'; q.fillRect(0, 0, 96, 16); q.fillStyle = '#2a1206'; q.fillRect(0, 0, 96, 1); q.fillRect(0, 15, 96, 1); q.fillRect(0, 0, 1, 16); q.fillRect(95, 0, 1, 16); q.font = "bold 10px 'Courier New', monospace"; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(T('VESTIÁRIOS'), 48, 9); })) })));
+    pl.position.set(x1 + 0.005, hA - 0.17, (z0 + z1) / 2); pl.rotation.y = Math.PI / 2; S.grupo.add(pl);
+  }
   function cerca(r, alt, vaos, y0) {
     const G = new Geo(), lados = [['n', r.x0, r.z0, r.x1, r.z0], ['s', r.x0, r.z1, r.x1, r.z1], ['w', r.x0, r.z0, r.x0, r.z1], ['e', r.x1, r.z0, r.x1, r.z1]];
     for (const [lado, ax, az, bx, bz] of lados) {
@@ -2306,6 +2368,27 @@
     }
     return Object.assign(ap, { estilo: melhor });
   }
+  // A CARREIRA (o app do computador do quarto, no fase2.js): os números de cada tipo de jogo, somados a cada partida.
+  //   d.carreira = { sintetico, futsal, varzea }: j (jogos), v/e/d, g (gols), a (assistências), chutes, noAlvo, passes, passesOk,
+  //   dribles, desarmes, nota (soma das notas), melhor (maior nota), bons (jogos bons: nota 8+ sem expulsão). Save antigo: monta
+  //   o começo com as partidas que já estavam guardadas (d.partidas).
+  function carreira() {
+    const d = S.dados;
+    if (!d.carreira) {
+      d.carreira = {};
+      for (const p of d.partidas || []) if (p.local === 'sintetico' || p.local === 'futsal') registrarCarreira(p.local, { placar: p.placar, gols: p.gols, nota: p.nota, bom: p.bom, venceu: p.venceu, estatisticas: { chutes: p.chutes, noAlvo: p.noAlvo, passesOk: p.passesOk } }, true);
+    }
+    for (const k of ['sintetico', 'futsal', 'varzea']) d.carreira[k] = Object.assign({ j: 0, v: 0, e: 0, d: 0, g: 0, a: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, desarmes: 0, nota: 0, melhor: 0, bons: 0 }, d.carreira[k] || {});
+    return d.carreira;
+  }
+  function registrarCarreira(tipo, r, montando) {
+    if (!r) return;
+    const C = montando ? (S.dados.carreira[tipo] = S.dados.carreira[tipo] || { j: 0, v: 0, e: 0, d: 0, g: 0, a: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, desarmes: 0, nota: 0, melhor: 0, bons: 0 }) : carreira()[tipo];
+    const st = r.estatisticas || {}, pl = r.placar || [0, 0], nota = Math.round((r.nota || 0) * 10) / 10;
+    C.j++; if (r.venceu) C.v++; else if (r.empate || (pl[0] === pl[1] && !r.penaltis)) C.e++; else C.d++;
+    C.g += r.gols | 0; C.a += st.assist | 0; C.chutes += st.chutes | 0; C.noAlvo += st.noAlvo | 0; C.passes += st.passes | 0; C.passesOk += st.passesOk | 0;
+    C.dribles += st.driblesOk | 0; C.desarmes += st.desarmes | 0; C.nota = Math.round((C.nota + nota) * 10) / 10; C.melhor = Math.max(C.melhor, nota); if (r.bom) C.bons++;
+  }
   function cfgSintetico(duracao, horario, clima) {
     const g = (nome, seed, gen) => Object.assign({ nome }, apFixa(seed, gen));
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
@@ -2355,6 +2438,7 @@
     d.partidas = (d.partidas || []).slice(-29);
     d.partidas.push({ local: 'sintetico', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima, nublado: S.clima.nuv > 0.35, duracao,
       placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
+    carreira(); registrarCarreira('sintetico', r);
     // evolução: a cada 10 chutes no alvo, +0,25 em chute, efeito e força (até 10)
     const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
     while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
@@ -2634,6 +2718,7 @@
     d.partidas = (d.partidas || []).slice(-29);
     d.partidas.push({ local: 'futsal', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima: 'seco', nublado: S.clima.nuv > 0.35, duracao,
       placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
+    carreira(); registrarCarreira('futsal', r);
     const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
     while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
     PERSONAGEM.atributos = Object.assign({}, at);
@@ -3668,6 +3753,7 @@
 
   // ------------------------------------------------------------------ física do jogador
   function altura(x, z) {
+    if (S.alturaExtra) { const h = S.alturaExtra(x, z); if (h != null) return h; }   // a escada e o vestiário subterrâneo da várzea (varzea.js), só na cena
     for (const p of S.pisos) if (x > p.x0 && x < p.x1 && z > p.z0 && z < p.z1) return p.y;
     if (!S.dentro) for (const c of CALCADAS) if (x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1) return c.y;
     return 0;
@@ -4276,7 +4362,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
@@ -4484,6 +4570,10 @@
   function apiBarbearia() {
     return Object.assign(apiCinema(), { refazerJogador, texLetreiro, assento, OX });
   }
+  // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
+  function apiVarzea() {
+    return Object.assign(apiBarbearia(), { VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao });
+  }
   // REFAZ o boneco do jogador com a aparência atual (PERSONAGEM.aparencia: corte novo na barbearia) e a roupa salva; troca no mesmo lugar
   function refazerJogador() {
     const J = S.jog, velho = J.m, pai = velho.raiz.parent;
@@ -4611,7 +4701,7 @@
   const BASE_AMIZADE = { lucia: () => { const f = fase1Lucia(); return (f.mariposa ? 5 : 0) + (f.falou ? 5 : 0); },
     cadu: () => { const c = ((API && API.historia.ler('fase1')) || {}).cadu; return 10 + (c && c.salvou ? 15 : 0) + (c && c.conversou ? 5 : 0); } };
   const BASE_NEUTRA = 50;
-  const NOME_AMIGO = { lucia: 'Lúcia', cadu: 'Cadu', herick: 'Herick', toninho: 'Toninho', val: 'Seu Valdemar', joao: 'João', biel: 'Biel', bene: 'Seu Bené', pai: 'Seu Raimundo', rosa: 'Rosa', fernanda: 'Fernanda', diego: 'Diego', mario: 'Mário', carla: 'Carla', joana: 'Joana', vizinho: 'Vizinho', caio: 'Caio' };
+  const NOME_AMIGO = { rafa: 'Rafa', damiao: 'Seu Damião', lucia: 'Lúcia', cadu: 'Cadu', herick: 'Herick', toninho: 'Toninho', val: 'Seu Valdemar', joao: 'João', biel: 'Biel', bene: 'Seu Bené', pai: 'Seu Raimundo', rosa: 'Rosa', fernanda: 'Fernanda', diego: 'Diego', mario: 'Mário', carla: 'Carla', joana: 'Joana', vizinho: 'Vizinho', caio: 'Caio' };
   const COM_CORACAO = { lucia: 1, cadu: 1 };
   const Amizade = {
     tabela() { const d = S.dados; return d.amizade || (d.amizade = {}); },
@@ -7779,6 +7869,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
         if (S.pesca) S.pesca.tick(dt);
         if (S.barbearia) try { S.barbearia.tick(dt); } catch (e) { if (!S.erroBarb) { S.erroBarb = true; console.warn('[Cidade] barbearia:', e); } }                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
+        if (S.varzea) try { S.varzea.tick(dt); } catch (e) { if (!S.erroVz) { S.erroVz = true; console.warn('[Cidade] várzea:', e); } }   // o campeonato de várzea (olheiro, torcida, rodadas)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); if (S.treinoMod) { try { S.treinoMod.tick(dt); } catch (e) { if (!S.erroTreino) { S.erroTreino = true; console.warn('[Cidade] treino:', e); } } } else tickTreino(dt); tickPlantas(dt); }   // (6.6.16) o treino.js cuida da turma do Nonato
       }
       if (n > 1) S.cam.snap = true;
@@ -7839,7 +7930,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
-      Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));   // a barbearia (cortes da loja)
+      Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));
+      Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e));   // o campeonato de várzea   // a barbearia (cortes da loja)
       Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e));   // (6.4.0) pesca no lago
       Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e));   // (6.6.16) o treino com a turma do Nonato
       prepararDia(dados);

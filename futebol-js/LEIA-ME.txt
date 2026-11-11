@@ -15,6 +15,8 @@ ARQUIVOS
   treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
   treinoCampo.js ........ o campo de treino (mundo à parte, sem relógio) onde acontece o treino de chute, passe e cruzamento
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
+  varzea.js ............. o campeonato de várzea: o olheiro, os 10 times (emblemas em pixel art), a torcida, o vestiário
+                          subterrâneo, a pré-partida e as estatísticas/prêmios (baixado pela cidade; o app Carreira usa a tabela)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
                           compra na barbearia (os NPCs podem usar)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

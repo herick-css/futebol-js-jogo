@@ -286,6 +286,25 @@
 #f2Pc .loIco { flex: 0 0 auto; font-size: 34px; width: 54px; height: 54px; display: grid; place-items: center; background: #eaf0f6; border-radius: 8px; }
 #f2Pc .loBtn { background: #3a64b8; color: #fff; border: 0; border-radius: 20px; padding: 9px 20px; font: 700 14px/1 system-ui; cursor: pointer; }
 #f2Pc .loBtn.sec { background: #fff; color: #3a64b8; border: 1px solid #3a64b8; }
+#f2Pc .crTopo { display: flex; align-items: center; gap: 8px; background: #1f2a44; color: #fff; padding: 8px 12px; position: sticky; top: 0; z-index: 1; font: 800 16px/1 system-ui; }
+#f2Pc .crTopo small { margin-left: auto; font: 600 11px/1 system-ui; opacity: 0.8; }
+#f2Pc .crAbas { display: flex; gap: 6px; padding: 8px 12px 0; background: #e6e9ef; position: sticky; top: 32px; z-index: 1; }
+#f2Pc .crAba { border: 0; background: #cfd5df; color: #1c2a36; font: 700 13px/1 system-ui; padding: 8px 14px; border-radius: 6px 6px 0 0; cursor: pointer; }
+#f2Pc .crAba.on { background: #fff; color: #c8642a; }
+#f2Pc .crCorpo { padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+#f2Pc .crNums { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+#f2Pc .crNum { background: #fff; border: 1px solid #d5d9e0; border-radius: 8px; padding: 8px 10px; }
+#f2Pc .crNum b { display: block; font: 800 20px/1.1 system-ui; color: #1f2a44; }
+#f2Pc .crNum span { font-size: 11px; color: #667; }
+#f2Pc .crCard { background: #fff; border: 1px solid #d5d9e0; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #333; }
+#f2Pc .crCard h4 { margin: 0 0 6px; font-size: 14px; color: #1c1c1f; display: flex; align-items: center; gap: 6px; }
+#f2Pc .crCard h4 img { width: 24px; height: 24px; image-rendering: pixelated; }
+#f2Pc .crTab { width: 100%; border-collapse: collapse; font-size: 12px; }
+#f2Pc .crTab td, #f2Pc .crTab th { padding: 3px 5px; text-align: center; border-bottom: 1px solid #eceff3; }
+#f2Pc .crTab td:nth-child(2), #f2Pc .crTab th:nth-child(2) { text-align: left; }
+#f2Pc .crTab tr.nos td { background: #fff1e4; font-weight: 700; }
+#f2Pc .crTab img { width: 16px; height: 16px; image-rendering: pixelated; vertical-align: -3px; margin-right: 4px; }
+#f2Pc .crVazio { color: #667; font-size: 13px; padding: 6px 2px; }
 #f2Pc .loBtns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
 #f2Pc .pcCarrega { display: grid; place-items: center; height: 100%; color: #667; font-size: 14px; }
 #f2Pc .pcCarrega::before { content: ''; width: 34px; height: 34px; border: 4px solid #ccd; border-top-color: #3a64b8; border-radius: 50%; animation: f2Gira 0.8s linear infinite; margin-bottom: 40px; position: absolute; }
@@ -953,6 +972,29 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Notificações': ['Notifications', 'Notificaciones', 'Notifiche', 'Notifications'],
     'Navegador': ['Browser', 'Navegador', 'Browser', 'Navigateur'],
     'Arquivos': ['Files', 'Archivos', 'File', 'Fichiers'],
+    'Carreira': ['Career', 'Carrera', 'Carriera', 'Carrière'],
+    'Sintético': ['Turf', 'Sintético', 'Sintetico', 'Synthétique'],
+    'Futsal': ['Futsal', 'Fútbol sala', 'Calcio a 5', 'Futsal'],
+    'Várzea': ['Amateur', 'Barrio', 'Dilettanti', 'Amateur'],
+    'Jogos': ['Games', 'Partidos', 'Partite', 'Matchs'],
+    'Vitórias / empates / derrotas': ['Wins / draws / losses', 'Victorias / empates / derrotas', 'Vittorie / pareggi / sconfitte', 'Victoires / nuls / défaites'],
+    'Chutes no gol / chutes': ['Shots on target / shots', 'Tiros al arco / tiros', 'Tiri in porta / tiri', 'Tirs cadrés / tirs'],
+    'Passes certos': ['Completed passes', 'Pases acertados', 'Passaggi riusciti', 'Passes réussies'],
+    'Dribles certos': ['Successful dribbles', 'Regates exitosos', 'Dribbling riusciti', 'Dribbles réussis'],
+    'Desarmes': ['Tackles', 'Quites', 'Contrasti vinti', 'Tacles'],
+    'Nota média': ['Average rating', 'Nota media', 'Voto medio', 'Note moyenne'],
+    'Melhor nota': ['Best rating', 'Mejor nota', 'Voto migliore', 'Meilleure note'],
+    'Jogos bons (nota 8+)': ['Good games (rating 8+)', 'Buenos partidos (nota 8+)', 'Partite buone (voto 8+)', 'Bons matchs (note 8+)'],
+    'Nenhum jogo aqui ainda.': ['No games here yet.', 'Todavía no hay partidos aquí.', 'Ancora nessuna partita qui.', 'Aucun match ici pour l\'instant.'],
+    'Conquistas': ['Achievements', 'Logros', 'Traguardi', 'Palmarès'],
+    'Campeão da várzea: {0}x': ['Amateur champion: {0}x', 'Campeón del barrio: {0}x', 'Campione dei dilettanti: {0}x', 'Champion amateur : {0}x'],
+    'Você ainda não joga em nenhum time de várzea.': ['You don\'t play for any amateur team yet.', 'Todavía no juegas en ningún equipo de barrio.', 'Non giochi ancora in nessuna squadra di dilettanti.', 'Tu ne joues encore dans aucune équipe amateur.'],
+    'encerrado': ['finished', 'terminado', 'concluso', 'terminé'],
+    'em andamento': ['in progress', 'en curso', 'in corso', 'en cours'],
+    'Time': ['Team', 'Equipo', 'Squadra', 'Équipe'],
+    'SG': ['GD', 'DG', 'DR', 'DB'],
+    'Artilharia': ['Top scorers', 'Goleadores', 'Marcatori', 'Buteurs'],
+    'Campeão: {0}': ['Champion: {0}', 'Campeón: {0}', 'Campione: {0}', 'Champion : {0}'],
     'Jogos': ['Games', 'Juegos', 'Giochi', 'Jeux'],
     'Pesquisar na internet...': ['Search the internet...', 'Buscar en internet...', 'Cerca su internet...', 'Rechercher sur internet...'],
     'Notícias': ['News', 'Noticias', 'Notizie', 'Actualités'],
@@ -1235,10 +1277,50 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
 
   // ----- computador, navegador e o site LoggedOn
+  // CARREIRA (app do computador): os números de cada tipo de jogo (o save da cidade: carreira) e o campeonato de várzea
+  //   (a tabela, a artilharia e os prêmios vêm do varzea.js, que é baixado na hora se ainda não veio).
+  let VZ_DADOS = null;
+  function carregarVarzea() {
+    if (VZ_DADOS || typeof Fases === 'undefined') return Promise.resolve(VZ_DADOS);
+    return Fases.carregar('varzea').then((m) => { VZ_DADOS = (m && m.dados) || null; return VZ_DADOS; }, () => null);
+  }
+  function telaCarreira(aba) {
+    let c = null; try { c = API.historia.ler('cidade') || {}; } catch (e) { c = {}; }
+    const K = (c.carreira || {})[aba] || {}, n = (k) => K[k] | 0;
+    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']];
+    const abas = '<div class="crAbas">' + ABAS.map(([k, t]) => '<button type="button" class="crAba' + (k === aba ? ' on' : '') + '" data-a="abaCr" data-v="' + k + '">' + esc(T(t)) + '</button>').join('') + '</div>';
+    const num = (v, t) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(t)) + '</span></div>';
+    const j = n('j'), media = j ? (Math.round(K.nota / j * 10) / 10).toFixed(1) : '—';
+    let corpo = j ? '<div class="crNums">' + num(j, 'Jogos') + num(n('v') + ' / ' + n('e') + ' / ' + n('d'), 'Vitórias / empates / derrotas') + num(n('g'), 'Gols') + num(n('a'), 'Assistências')
+      + num(n('noAlvo') + ' / ' + n('chutes'), 'Chutes no gol / chutes') + num(n('passesOk') + (n('passes') ? ' / ' + n('passes') : ''), 'Passes certos') + num(n('dribles'), 'Dribles certos') + num(n('desarmes'), 'Desarmes')
+      + num(media, 'Nota média') + num(j ? (+K.melhor || 0).toFixed(1) : '—', 'Melhor nota') + num(n('bons'), 'Jogos bons (nota 8+)') + '</div>'
+      : '<p class="crVazio">' + esc(T('Nenhum jogo aqui ainda.')) + '</p>';
+    if (aba === 'varzea') corpo += cardVarzea(c, K);
+    return '<div class="crTopo">⚽ ' + esc(T('Carreira')) + '<small>' + esc(nomeJog()) + '</small></div>' + abas + '<div class="crCorpo">' + corpo
+      + '<div class="loBtns"><button type="button" class="loBtn sec" data-a="desktop">' + esc(T('Voltar')) + '</button></div></div>';
+  }
+  function cardVarzea(c, K) {
+    const V = c.varzea || {}, D = VZ_DADOS;
+    let h = '';
+    if ((K.titulos | 0) || (K.premios && K.premios.length)) {
+      const NOME_P = { melhor: 'Melhor jogador', art: 'Artilheiro', ass: 'Líder de assistências' };
+      h += '<div class="crCard"><h4>🏆 ' + esc(T('Conquistas')) + '</h4>' + (K.titulos ? '<p>' + esc(Tf('Campeão da várzea: {0}x', K.titulos)) + '</p>' : '') + (K.premios || []).map((p) => '<p>' + esc(T(NOME_P[p] || p)) + '</p>').join('') + '</div>';
+    }
+    if (!V.jogos) return h + '<p class="crVazio">' + esc(T('Você ainda não joga em nenhum time de várzea.')) + '</p>';
+    if (!D) return h + '<p class="crVazio">' + esc(T('Carregando...')) + '</p>';
+    const tab = D.classificacao(V), T10 = D.TIMES_VZ;
+    h += '<div class="crCard"><h4>' + esc(T('Campeonato de Várzea')) + ' · ' + esc(V.etapa === 'fim' ? T('encerrado') : T('em andamento')) + '</h4><table class="crTab"><tr><th>#</th><th>' + esc(T('Time')) + '</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>' + esc(T('SG')) + '</th></tr>'
+      + tab.map((x, i) => '<tr' + (x.i === D.NOSSO_I ? ' class="nos"' : '') + '><td>' + (i + 1) + '</td><td><img src="' + D.urlArte(T10[x.i].k) + '" alt="">' + esc(T10[x.i].nome) + '</td><td>' + x.p + '</td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('') + '</table></div>';
+    const est = Object.values(V.est || {}), nomeE = (s) => (s.n === '__voce' ? nomeJog() : s.n) + ' (' + T10[s.t].sigla + ')';
+    const top = (k, t, f) => { const l = est.filter((s) => s[k] > 0).sort((a, b) => b[k] - a[k] || a.j - b.j).slice(0, 5); return '<div class="crCard"><h4>' + esc(T(t)) + '</h4>' + (l.length ? l.map((s, i) => '<p>' + (i + 1) + '. ' + esc(nomeE(s)) + ' · ' + esc(f(s)) + '</p>').join('') : '<p class="crVazio">—</p>') + '</div>'; };
+    h += top('g', 'Artilharia', (s) => Tf('{0} gols', s.g)) + top('a', 'Assistências', (s) => Tf('{0} assistências', s.a));
+    if (V.premios && V.campeao != null) h += '<div class="crCard"><h4>🏆 ' + esc(Tf('Campeão: {0}', T10[V.campeao].nome)) + '</h4>' + [['melhor', 'Melhor jogador'], ['art', 'Artilheiro'], ['ass', 'Líder de assistências']].map(([k, t]) => V.premios[k] ? '<p>' + esc(T(t)) + ': ' + esc(nomeE(V.premios[k])) + '</p>' : '').join('') + '</div>';
+    return h;
+  }
   function abrirPc() {
     return new Promise((fim) => {
       const el = UI.pc, D = S.dados; el.hidden = false; S.modo = 'pc';
-      let etapa = 'desktop', sel = null, msg = '', fechou = false;
+      let etapa = 'desktop', sel = null, msg = '', fechou = false, abaCr = 'sintetico';
       const hora = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
       const sair = (r) => { if (fechou) return; fechou = true; el.hidden = true; el.onclick = null; fim(r); };
       const vagaPorId = (id) => VAGAS.find((v) => v.id === id);
@@ -1248,7 +1330,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const render = () => {
         let tela = '';
         if (etapa === 'desktop') {
-          tela = '<div class="pcIcones"><button type="button" class="pcIcone" data-a="nav"><span>🌐</span>' + esc(T('Navegador')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>📁</span>' + esc(T('Arquivos')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>🎮</span>' + esc(T('Jogos')) + '</button></div><p class="pcMsg" style="position:absolute;left:14px;bottom:10px;color:#ffd98a">' + esc(msg) + '</p>';
+          tela = '<div class="pcIcones"><button type="button" class="pcIcone" data-a="carreira"><span>⚽</span>' + esc(T('Carreira')) + '</button><button type="button" class="pcIcone" data-a="nav"><span>🌐</span>' + esc(T('Navegador')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>📁</span>' + esc(T('Arquivos')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>🎮</span>' + esc(T('Jogos')) + '</button></div><p class="pcMsg" style="position:absolute;left:14px;bottom:10px;color:#ffd98a">' + esc(msg) + '</p>';
+        } else if (etapa === 'carreira') {
+          tela = '<div class="pcJanela"><div class="pcPag">' + telaCarreira(abaCr) + '</div></div>';
         } else if (etapa === 'busca') {
           tela = janela('buscador.net', '<div class="pcBusca"><h3>Buscador</h3><div class="pcCampo">' + esc(T('Pesquisar na internet...')) + '</div><div class="pcFavs"><button type="button" class="pcFav" data-a="lo">💼 LoggedOn</button><button type="button" class="pcFav" data-a="outro">📰 ' + esc(T('Notícias')) + '</button><button type="button" class="pcFav" data-a="outro">▶️ ' + esc(T('Vídeos')) + '</button><button type="button" class="pcFav" data-a="outro">⚽ ' + esc(T('Futebol')) + '</button></div><p class="pcMsg">' + esc(msg) + '</p></div>');
         } else if (etapa === 'carrega') {
@@ -1276,6 +1360,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         if (a === 'fim') return sair(D.emprego);
         if (a === 'outro') { msg = T('Agora não... eu preciso ver as candidaturas.'); render(); return; }
         if (a === 'nav') { etapa = 'busca'; msg = ''; render(); return; }
+        if (a === 'carreira') { etapa = 'carreira'; msg = ''; render(); carregarVarzea().then(() => { if (!fechou && etapa === 'carreira') render(); }); return; }
+        if (a === 'abaCr') { abaCr = b.dataset.v; render(); return; }
+        if (a === 'desktop') { etapa = 'desktop'; render(); return; }
         if (a === 'lo') { etapa = 'carrega'; render(); await esperar(1100); if (fechou) return; etapa = D.emprego ? 'feito' : 'lo'; render(); return; }
         if (a === 'sino' || a === 'notifs') { etapa = D.emprego ? 'feito' : 'notifs'; render(); return; }
         if (a === 'inicio') { etapa = 'lo'; render(); return; }
@@ -1911,5 +1998,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', paraCidade); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir } });   // (_estado/_fns: para testes)
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir, abrirPc } });   // (_estado/_fns: para testes)
 })();

@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.19
+   FUTEBOL JS · jogo.js · versão 7.0
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.19';
+const VERSAO_JOGO = '7.0';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -350,6 +350,10 @@ function walkTo(p, tx, tz, speed, dt) {
 // ---- Campos. comprimento/largura em metros; jogadores = por time, contando o goleiro.
 // estadio: 'arena' (arquibancada, placas, refletores) | 'varzea' (alambrado, torcida em pé,
 //          arquibancadinha de cimento, postes simples) | 'society' (rede em volta, quadra fechada)
+// categoria: 'varzea' junta os MODELOS de campo de várzea. Cada modelo é uma entrada daqui:
+//          varzea ......... a várzea padrão (grama falhada, casinhas em volta, arquibancada de cimento)
+//          varzeaCidade ... a várzea da cidadezinha (modelo: 'cidade'): terra batida com cal gasta, grama por fora do alambrado,
+//                           arquibancada e bancos de madeira, a boca dos vestiários subterrâneos entre os bancos, a avenida de um lado
 // regras (o que faltar vem de REGRAS_PADRAO): impedimento, acréscimos, lateral 'mao' ou 'pe',
 //          substituições por time (99 = à vontade) e se os amarelos acumulam para suspensão.
 const REGRAS_PADRAO = { impedimento: true, acrescimos: true, lateral: 'mao', substituicoes: 3, cartoesAcumulam: true };
@@ -357,9 +361,12 @@ const CAMPOS = {
   estadio: { nome: 'Estádio (7 x 7)', comprimento: 96, largura: 62, jogadores: 7, estadio: 'arena',
     regras: { substituicoes: 3 },
     aparencia: { gramaA: '#2f7a31', gramaB: '#37893a', fundo: '#2a6e2c', padrao: 'faixas', faixas: 16, linhas: '#e9ecdf' } },
-  varzea: { nome: 'Várzea (7 x 7)', comprimento: 78, largura: 48, jogadores: 7, estadio: 'varzea',
+  varzea: { nome: 'Várzea padrão (7 x 7)', categoria: 'varzea', comprimento: 78, largura: 48, jogadores: 7, estadio: 'varzea',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#5d7a33', gramaB: '#6b8a3a', fundo: '#7a6a45', padrao: 'manchas', faixas: 0, linhas: '#f1ead2' } },
+  varzeaCidade: { nome: 'Várzea cidadezinha (7 x 7)', categoria: 'varzea', modelo: 'cidade', comprimento: 64, largura: 40, jogadores: 7, gol: { largura: 6, altura: 2.3 }, estadio: 'varzea',
+    regras: { substituicoes: 5 },
+    aparencia: { gramaA: '#946e42', gramaB: '#a18050', fundo: '#597a38', padrao: 'terra', faixas: 0, linhas: '#e6dcc0' } },
   // society e futsal agora são 5 x 5 (goleiro + 4 na linha: fixo, dois alas e o pivô).
   society: { nome: 'Society (5 x 5)', comprimento: 48, largura: 30, jogadores: 5, gol: { largura: 5.5, altura: 2.3 }, estadio: 'society',
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 99, cartoesAcumulam: false },
@@ -930,6 +937,34 @@ function buildPitch(op) {
       g.fillStyle = (i + j) % 2 ? A.gramaA : A.gramaB;
       g.fillRect(X(-HALF_L + i * sw), Y(-HALF_W) + j * FW / linhasZ, sw * PPM + 1, FW / linhasZ + 1);
     }
+  } else if (A.padrao === 'terra') {
+    // VÁRZEA DA CIDADEZINHA: terra batida por dentro do alambrado (carecas claras e escuras, tufos de grama nas beiradas) e,
+    // do lado de fora da tela, a grama da cidade em quadradinhos de 60 cm. Tudo em quadrados, como o resto do jogo.
+    const pick = (arr) => arr[Math.random() * arr.length | 0];
+    const GRAMA = ['#527333', '#597a38', '#60813d', '#4e6e2f', '#688743', '#557635', '#5e7d3a', '#4b6a2c'];
+    for (let x = -sx / 2; x < sx / 2; x += 0.6) for (let z = -sz / 2; z < sz / 2; z += 0.6) { g.fillStyle = pick(GRAMA); g.fillRect(X(x), Y(z), 0.6 * PPM + 1, 0.6 * PPM + 1); }
+    const fx0 = -BOARD_X, fx1 = BOARD_X, fz0 = -BOARD_ZN, fz1 = BOARD_Z;
+    g.save();
+    g.beginPath(); g.rect(X(fx0), Y(fz0), (fx1 - fx0) * PPM, (fz1 - fz0) * PPM); g.clip();
+    g.fillStyle = A.gramaA; g.fillRect(X(fx0), Y(fz0), (fx1 - fx0) * PPM, (fz1 - fz0) * PPM);
+    const mancha = (cx, cz, r, cores, chance) => {
+      for (let x = Math.floor((cx - r) * 2) / 2; x <= cx + r; x += 0.5) for (let z = Math.floor((cz - r) * 2) / 2; z <= cz + r; z += 0.5) {
+        const d = Math.hypot(x + 0.25 - cx, (z + 0.25 - cz) * 1.25) / r;
+        if (d <= 0.7 || (d <= 1 && Math.random() < chance)) { g.fillStyle = pick(cores); g.fillRect(X(x), Y(z), 0.5 * PPM, 0.5 * PPM); }
+      }
+    };
+    const CLARA = ['#a68356', '#a18050', '#aa8a5e', '#9b764a'], ESCURA = ['#845e36', '#876237', '#8d673a', '#7d5932'];
+    for (let i = 0; i < 70; i++) mancha(rand(fx0, fx1), rand(fz0, fz1), rand(1.2, 3.4), CLARA, 0.6);
+    for (let i = 0; i < 55; i++) mancha(rand(fx0, fx1), rand(fz0, fz1), rand(0.9, 2.6), ESCURA, 0.6);
+    for (const gx of [-1, 1]) { mancha(gx * (HALF_L - 2.2), 0, 3.4, ESCURA, 0.7); mancha(gx * (HALF_L - 6), rand(-2, 2), 2.4, CLARA, 0.6); }   // a frente dos gols é a parte mais pisada
+    mancha(0, 0, 3.2, ESCURA, 0.65);
+    const TUFO = ['#6a813f', '#5e7d3a', '#63823d'];              // capim que nasce encostado na tela
+    for (let i = 0; i < 150; i++) {
+      const lado = i % 4, t = rand(-1, 1), f = rand(0, 1.5);
+      const x = lado < 2 ? t * fx1 : (lado === 2 ? fx0 + f : fx1 - f - 0.5), z = lado < 2 ? (lado ? fz1 - f - 0.5 : fz0 + f) : lerp(fz0, fz1, (t + 1) / 2);
+      g.fillStyle = pick(TUFO); const q = Math.random() < 0.4 ? 0.5 : 0.25; g.fillRect(X(Math.floor(x * 4) / 4), Y(Math.floor(z * 4) / 4), q * PPM, q * PPM);
+    }
+    g.restore();
   } else {
     g.fillStyle = A.gramaA; g.fillRect(X(-HALF_L), Y(-HALF_W), CONFIG.FIELD_L * PPM, FW);
     if (A.padrao === 'manchas') {                 // várzea: grama irregular (QUADRADOS) e pedaços de terra
@@ -1030,11 +1065,21 @@ function buildPitch(op) {
       g.beginPath(); g.arc(X(gx), Y(zs * HALF_W), 1 * PPM, a1, a1 + d, d < 0); g.stroke();
     }
   }
+  if (A.padrao === 'terra' && !neve) {             // cal gasta: a linha some em pedacinhos (o chão de terra aparece por baixo)
+    const im = g.getImageData(0, 0, c.width, c.height), d = im.data, lr = parseInt(A.linhas.slice(1, 3), 16), lg = parseInt(A.linhas.slice(3, 5), 16), lb = parseInt(A.linhas.slice(5, 7), 16);
+    const tr = parseInt(A.gramaA.slice(1, 3), 16), tg = parseInt(A.gramaA.slice(3, 5), 16), tb = parseInt(A.gramaA.slice(5, 7), 16);
+    for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - lr) < 6 && Math.abs(d[i + 1] - lg) < 6 && Math.abs(d[i + 2] - lb) < 6) {
+      const k = Math.random(); if (k < 0.22) { d[i] = tr; d[i + 1] = tg; d[i + 2] = tb; } else if (k < 0.5) { d[i] = (lr + tr) >> 1; d[i + 1] = (lg + tg) >> 1; d[i + 2] = (lb + tb) >> 1; }
+    }
+    g.putImageData(im, 0, 0);
+  }
   const pitch = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz), new THREE.MeshLambertMaterial({ map: pixelTexture(c) }));
   pitch.rotation.x = -Math.PI / 2;
   ESTADIO.add(pitch); freeze(pitch);
   const tipoEst = PARTIDA ? PARTIDA.campo.estadio : 'arena';   // chão de fora: grama escura, terra (várzea) ou cimento (society)
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(320, 240), mat(neve ? 0xdde4ec : tipoEst === 'varzea' ? 0x6b5a3e : tipoEst === 'society' ? (PARTIDA.campo.visual === 'futsal' ? 0x2a2e36 : 0x55595f) : 0x1c3a22));
+  const modeloCidade = !!PARTIDA && PARTIDA.campo.modelo === 'cidade' && !neve;
+  const gramaFora = modeloCidade ? new THREE.MeshLambertMaterial({ map: drawTexture(64, 64, (q) => { const T2 = ['#527333', '#597a38', '#60813d', '#4e6e2f', '#688743', '#557635', '#5e7d3a', '#4b6a2c']; for (let a = 0; a < 16; a++) for (let b = 0; b < 16; b++) { q.fillStyle = T2[Math.random() * T2.length | 0]; q.fillRect(a * 4, b * 4, 4, 4); } }, 320 / 9.6, 240 / 9.6) }) : null;
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(320, 240), gramaFora || mat(neve ? 0xdde4ec : tipoEst === 'varzea' ? 0x6b5a3e : tipoEst === 'society' ? (PARTIDA.campo.visual === 'futsal' ? 0x2a2e36 : 0x55595f) : 0x1c3a22));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02;
   if (!(op && op.semFundo)) { ESTADIO.add(outer); freeze(outer); } else { outer.geometry.dispose(); }
   // Bandeirinhas de escanteio: cada uma é uma malha própria (4 chamadas de desenho em vez de 1)
@@ -2552,7 +2597,11 @@ const G = {
   stats: null, mode: '', pausedFrom: null,
 };
 function resetStats() {
-  G.stats = { gols: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '' };
+  G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '' };
+  // SÚMULA DOS GOLS (quem fez e quem deu o passe): o campeonato da várzea usa para a artilharia e as assistências de todo mundo.
+  //   toqueAtual / toqueAnt: quem tocou na bola por último e quem tocou antes dele (ver stepGame). A assistência é de quem tocou
+  //   antes do autor do gol, se for do mesmo time e o autor tiver recebido a bola há menos de 12 s.
+  G.golsLog = []; G.toqueAtual = null; G.toqueAnt = null; G.toqueAntT = 0;
 }
 resetStats();
 
@@ -5757,6 +5806,13 @@ function scoreGoal(team, tGol) {
   if (byUser) { G.stats.gols++; if (ball.userShot || G.possession === user) G.stats.noAlvo++; }
   ball.userShot = false;
   if (typeof Historia !== 'undefined' && Historia.emTreino()) { G.score[team]--; Historia.golNoTreino(); return; }   // tutorial: gol sem comemoração, replay nem bola no meio
+  {                                               // súmula: autor, assistência (ou gol contra)
+    const quem = byUser ? user : (G.possession && G.possession.team === team ? G.possession : ball.lastKicker && ball.lastKicker.team === team ? ball.lastKicker : null);
+    const passe = quem && G.toqueAnt && G.toqueAnt !== quem && G.toqueAnt.team === team && G.time - G.toqueAntT < 12 ? G.toqueAnt : null;
+    const nomeDe = (p) => (p.isUser ? CHAVE_VOCE : p.ficha || p.name);
+    if (passe && passe.isUser) G.stats.assist++;
+    if (G.golsLog) G.golsLog.push({ time: team, autor: quem ? nomeDe(quem) : null, contra: !quem, assist: passe ? nomeDe(passe) : null, t: Math.round(G.time) });
+  }
   G.possession = null;
   G.lastConceded = team === 0 ? 1 : 0;
   G.scoredBy = team;
@@ -9592,7 +9648,7 @@ function drawRadar() {
 function statsHTML() {
   const s = G.stats;
   const rows = [
-    ['Gols', s.gols], ['Chutes', s.chutes], ['No alvo', s.noAlvo],
+    ['Gols', s.gols], ['Assistências', s.assist | 0], ['Chutes', s.chutes], ['No alvo', s.noAlvo],
     ['Passes certos', s.passesOk + '/' + s.passes], ['Dribles', s.driblesOk + '/' + s.dribles],
     ['Domínios', s.dominiosOk + '/' + s.dominios], ['Desarmes', s.desarmes], ['Bolas perdidas', s.perdas],
     ['Faltas cometidas', s.faltas], ['Faltas sofridas', s.faltasSofridas], ['Impedimentos', s.impedimentos],
@@ -9607,7 +9663,7 @@ function statsHTML() {
 //   zagueiro (DEF) ... gols SOFRIDOS pelo seu time (jogo sem tomar gol = bônus), desarmes e não perder a bola; gol seu vale mais (é raro).
 function notaPorPosicao(s, pos, sofridos) {
   const erros = (s.passes - s.passesOk) * 0.2 + (s.dribles - s.driblesOk) * 0.2 + (s.dominios - s.dominiosOk) * 0.2;
-  const disc = s.faltas * 0.1 + s.impedimentos * 0.15 + (s.cartoes.includes('A') ? 0.4 : 0) + (s.cartoes.includes('V') ? 2 : 0);
+  const disc = s.faltas * 0.1 + s.impedimentos * 0.15 + (s.cartoes.includes('A') ? 0.4 : 0) + (s.cartoes.includes('V') ? 2 : 0) - (s.assist | 0) * (pos === 'MID' ? 0.8 : 0.6);   // a assistência entra aqui (com sinal trocado: soma na nota)
   if (pos === 'DEF') {
     const bonusGol = sofridos === 0 ? 1.2 : sofridos === 1 ? 0.5 : sofridos === 2 ? 0 : -0.4 * (sofridos - 2);
     return 6 + bonusGol + s.desarmes * 0.4 + s.gols * 1.3 + s.noAlvo * 0.1 + s.passesOk * 0.1 + s.driblesOk * 0.25 + s.dominiosOk * 0.1 - erros * 0.8 - s.perdas * 0.2 - disc;
@@ -11001,6 +11057,7 @@ function syncMeshes(dt) {
 //   - resolução interna baixa (RENDER_H) continua sendo o maior ganho
 // ---------------------------------------------------------------------
 function stepGame(dt, rdt) {
+  if (G.lastTouch !== G.toqueAtual) { G.toqueAnt = G.toqueAtual; G.toqueAntT = G.time; G.toqueAtual = G.lastTouch; }   // a súmula dos gols (assistência)
   if (relogioCorre()) G.clock -= dt;
   tecnicoPensa();
   verificarSubstituicoes();
@@ -11347,6 +11404,9 @@ function frame(now) {
 // Emblema desenhado num canvas (camisa: 7×8 px; placar: 26 px). forma + 2 cores + letras.
 function desenharEmblema(g, x, y, w, h, emb) {
   if (!emb) { g.fillStyle = '#FFFFFF'; g.fillRect(x, y, w, h); return; }
+  if (emb.arte && w >= 14) {                       // emblema em PIXEL ART (um canvas quadrado, ex.: os times da várzea): desenhado sem suavizar
+    const s0 = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(emb.arte, x, y, w, h); g.imageSmoothingEnabled = s0; return;
+  }
   g.save();
   g.beginPath();
   if (emb.forma === 'circulo') g.arc(x + w / 2, y + h / 2, Math.min(w, h) / 2, 0, Math.PI * 2);
@@ -11383,7 +11443,7 @@ function resolverPartida(cfg = {}) {
   P.taticas = [0, 1].map((i) => (cfg.taticas && cfg.taticas[i]) || P.timesObj[i].tatica || 'tikitaka');
   P.genero = cfg.genero === 'F' || cfg.genero === 'X' ? cfg.genero : 'M';   // partida masculina, feminina ou mista
   P.elencos = P.timesObj.map((t) => elencoDoTime(t, P.genero));
-  P.tecnicos = [tecnicoDoUsuario(), P.timesObj[1].tecnico || { nome: 'Técnico', aparencia: { pele: '#BF8159', cabelo: '#1C140F', estilo: 0, roupa: '#222222' } }];
+  P.tecnicos = [P.timesObj[0].tecnicoFixo && P.timesObj[0].tecnico ? P.timesObj[0].tecnico : tecnicoDoUsuario(), P.timesObj[1].tecnico || { nome: 'Técnico', aparencia: { pele: '#BF8159', cabelo: '#1C140F', estilo: 0, roupa: '#222222' } }];
   P.ajuste = calcularAjuste(P);
   return P;
 }
@@ -11527,12 +11587,13 @@ function buildArredores(tipo, op) {
   // op.portao (só a cena do pátio da escola) = meia largura de uma ABERTURA no meio do lado +z (mureta, tela e cano): por onde se entra na quadra.
   const portao = op && op.portao > 0 ? op.portao : 0;
   const varzea = tipo === 'varzea';
+  const cidade = varzea && !!PARTIDA && PARTIDA.campo.modelo === 'cidade';   // a várzea da cidadezinha (madeira, grama por fora, boca dos vestiários)
   const futsal = !!PARTIDA && PARTIDA.campo.visual === 'futsal';      // quadra de futsal: sem torcida nem arquibancada
   const ALT = varzea ? 2.6 : futsal ? 4 : 5;                    // altura do alambrado / da rede
   ALTURA_GRADE = ALT;
   const E = new Lote(), Lp = new Lote(), Ep = new Lote(), EpF = { '-1': new Lote(), '1': new Lote() };   // Ep: postes e cano do alambrado (separados para sumirem no replay)
   // Tela: 4 paredes com a textura repetida (1 chamada de desenho).
-  const tex = texturaTela(varzea ? 'rgba(170,175,180,0.9)' : futsal ? 'rgba(20,24,34,0.8)' : 'rgba(30,60,35,0.85)', varzea ? 8 : 6);
+  const tex = texturaTela(cidade ? 'rgba(201,206,212,0.95)' : varzea ? 'rgba(170,175,180,0.9)' : futsal ? 'rgba(20,24,34,0.8)' : 'rgba(30,60,35,0.85)', varzea ? 8 : 6);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, 1);
   const telaMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, alphaTest: 0.25, side: THREE.DoubleSide, depthWrite: false });
   const R0 = new Lote([0, 0, 1, 1]), RF = { '-1': new Lote([0, 0, 1, 1]), '1': new Lote([0, 0, 1, 1]) };
@@ -11561,7 +11622,7 @@ function buildArredores(tipo, op) {
     EpF[s].caixa(0.07, 0.07, Z + Zn, corPoste, s * X, ALT, (Z - Zn) / 2);
   }
   // Arquibancadinha (num dos lados compridos, z > 0): degraus de cimento.
-  const degraus = varzea ? 3 : 2, compr = Math.min(varzea ? 34 : 22, X * 1.4);
+  const degraus = cidade ? 2 : varzea ? 3 : 2, compr = Math.min(cidade ? 30 : varzea ? 34 : 22, X * 1.4);
   if (futsal) {                                    // mureta laranja baixa (1,1 m) com o topo branco, nos quatro lados
     const MH = 1.1, C1 = 0xe0762a, C2 = 0xf4f1e8;
     for (const sz of [-1, 1]) {
@@ -11573,7 +11634,14 @@ function buildArredores(tipo, op) {
     for (const sx of [-1, 1]) { E.caixa(0.3, MH, Z + Zn, C1, sx * X, MH / 2, (Z - Zn) / 2); E.caixa(0.4, 0.08, Z + Zn + 0.3, C2, sx * X, MH + 0.04, (Z - Zn) / 2); }
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) E.caixa(0.7, 4.4, 0.7, 0x9aa0a8, sx * (X + 0.2), 2.2, sz * (Zs(sz) + 0.2));   // colunas de concreto nos cantos
   }
-  if (!futsal) for (let r = 0; r < degraus; r++) E.caixa(compr, 0.45 * (r + 1), 0.9, r % 2 ? 0x9a978f : 0x8c8a83, 0, 0.225 * (r + 1), Z + 1.6 + r * 0.9);
+  if (cidade) {                                    // arquibancada de MADEIRA: duas tábuas de sentar, pés e travessas (a mesma da várzea da cidade)
+    for (let r = 0; r < degraus; r++) {
+      const y = 0.45 * (r + 1), z = Z + 1.6 + r * 0.9;
+      E.caixa(compr, 0.07, 0.5, r ? 0x9a6b3c : 0xa87844, 0, y - 0.035, z);
+      if (r) E.caixa(compr, 0.05, 0.3, 0x7d5630, 0, 0.45 * r - 0.025, z - 0.45);       // a tábua dos pés de quem senta na fila de cima
+      for (let x = -compr / 2 + 0.2; x <= compr / 2 - 0.1; x += 2.45) { E.caixa(0.1, y - 0.07, 0.1, 0x6b4a2b, x, (y - 0.07) / 2, z - 0.18); E.caixa(0.1, y - 0.07, 0.1, 0x6b4a2b, x, (y - 0.07) / 2, z + 0.18); }
+    }
+  } else if (!futsal) for (let r = 0; r < degraus; r++) E.caixa(compr, 0.45 * (r + 1), 0.9, r % 2 ? 0x9a978f : 0x8c8a83, 0, 0.225 * (r + 1), Z + 1.6 + r * 0.9);
   // Postes de luz (4 nos cantos + 2 no meio). Na várzea de madeira, mais baixos.
   const altLuz = varzea ? 9 : 8, corLuz = varzea ? 0x6b4a2b : 0x59606b;
   for (const sx of [-1, 0, 1]) for (const sz of [-1, 1]) {
@@ -11582,8 +11650,46 @@ function buildArredores(tipo, op) {
     E.caixa(0.25, altLuz, 0.25, corLuz, x, altLuz / 2, z);
     Lp.caixa(1.6, 0.6, 0.6, 0xfff3c4, x, altLuz + 0.2, z);
   }
+  // Várzea da cidadezinha: a boca dos vestiários subterrâneos (entre os dois bancos), a avenida de um lado, casas e árvores do outro e os morros.
+  if (cidade) {
+    // --- a casinha da escada (cunha de concreto: alta na porta, baixa no fundo). A porta olha para +x; lá dentro, os degraus somem no escuro.
+    const hz = -(Zn - 1.15), CONC = 0x84827c, CONC2 = 0x6d6c66, tb = 0.7 / 2.3 - 0.5;
+    const cunha = [-0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, tb, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, tb, 0.5, 0.5, 0.5, 0.5];
+    for (const sz of [-1, 1]) E.caixa(3.4, 2.3, 0.15, CONC, 0, 1.15, hz + sz * 0.925, null, null, cunha);
+    E.caixa(0.15, 0.7, 2.0, CONC, -1.625, 0.35, hz);
+    E.caixa(4.06, 0.1, 2.2, CONC2, 0, 1.58, hz, null, [0, 0, 25.2]);                  // a laje inclinada
+    E.caixa(0.16, 0.34, 1.7, CONC2, 1.62, 2.13, hz);                                  // a verga da porta (onde fica a placa)
+    [[1.25, 0x494742], [0.75, 0x302d29], [0.25, 0x1d1b18], [-0.45, 0x0e0c0b], [-1.15, 0x060505]].forEach(([x, cor], i) => E.caixa(i < 3 ? 0.5 : 0.9, 0.02, 1.7, cor, x, 0.012, hz));   // os degraus descendo
+    E.caixa(0.02, 0.66, 1.7, 0x060505, -1.54, 0.34, hz);
+    const placa = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.26), new THREE.MeshBasicMaterial({ map: drawTexture(96, 16, (q) => { q.fillStyle = '#f2f0e6'; q.fillRect(0, 0, 96, 16); q.fillStyle = '#2a1206'; q.fillRect(0, 0, 96, 1); q.fillRect(0, 15, 96, 1); q.fillRect(0, 0, 1, 16); q.fillRect(95, 0, 1, 16); q.font = "bold 10px 'Courier New', monospace"; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(T('VESTIÁRIOS'), 48, 9); }) }));
+    placa.position.set(1.705, 2.13, hz); placa.rotation.y = Math.PI / 2; ESTADIO.add(placa); freeze(placa);
+    // --- a avenida do lado da arquibancada (calçada, asfalto, calçada) e uns prédios baixos do outro lado dela
+    const za = Z + 4.4;
+    E.caixa(X * 2 + 60, 0.12, 2.9, 0x6c6e72, 0, 0.06, za + 1.45); E.caixa(X * 2 + 60, 0.03, 8.4, 0x4a4c50, 0, 0.015, za + 7.1); E.caixa(X * 2 + 60, 0.12, 2.9, 0x6c6e72, 0, 0.06, za + 12.75);
+    for (let x = -X - 28; x < X + 30; x += 4) E.caixa(1.8, 0.012, 0.16, 0xb5a45f, x, 0.036, za + 7.1);
+    const LOJAS = [0xa9975f, 0x9d533a, 0x637f9c, 0xafafa2, 0x7a996c, 0xa97053];
+    for (let i = 0, x = -X - 24; x < X + 26; i++) {
+      const w = rand(7, 11), h = rand(3.6, 6.5);
+      E.caixa(w, h, 7, LOJAS[i % LOJAS.length], x + w / 2, h / 2, za + 18); E.caixa(w + 0.4, 0.3, 7.4, 0x53463a, x + w / 2, h + 0.15, za + 18);
+      E.caixa(w * 0.6, 0.12, 1.2, i % 2 ? 0x9c2922 : 0x185f3c, x + w / 2, 2.6, za + 13.9);   // o toldo
+      x += w + rand(0.6, 2.5);
+    }
+    // --- do outro lado (o do banco): casas baixas com telhado, árvores e os morros no horizonte
+    const CASAS = [0xb6ac96, 0xa9975f, 0x9da7af, 0xaf907d, 0x95a889];
+    for (let i = 0; i < 9; i++) {
+      const w = rand(6, 9), h = rand(3, 4.2), d = rand(6, 8), x = -X - 18 + i * ((X * 2 + 36) / 8) + rand(-2, 2), z = -(Zn + rand(16, 26));
+      E.caixa(w, h, d, CASAS[i % CASAS.length], x, h / 2, z); E.caixa(w + 0.7, 0.45, d + 0.7, i % 2 ? 0x833f25 : 0x6c3a29, x, h + 0.22, z); E.caixa(w * 0.6, 0.4, d * 0.6, i % 2 ? 0x833f25 : 0x6c3a29, x, h + 0.62, z);
+    }
+    const arvore = (x, z, k) => { E.caixa(0.45 * k, 2.6 * k, 0.45 * k, 0x462d1b, x, 1.3 * k, z); E.caixa(3.4 * k, 1.5 * k, 3.4 * k, 0x255321, x, 3.1 * k, z); E.caixa(2.5 * k, 1.3 * k, 2.5 * k, 0x305f26, x, 4.3 * k, z); E.caixa(1.4 * k, 0.9 * k, 1.4 * k, 0x3a6c2d, x, 5.3 * k, z); };
+    for (let i = 0; i < 16; i++) { const lado = i % 3; if (lado === 0) arvore(rand(-X - 20, X + 20), -(Zn + rand(5, 13)), rand(0.85, 1.2)); else arvore((lado === 1 ? -1 : 1) * (X + rand(5, 18)), rand(-Zn - 6, Z + 2), rand(0.85, 1.2)); }
+    for (let i = 0; i < 7; i++) {                                                     // morros: degraus largos de grama, lá longe
+      const x = -110 + i * 36 + rand(-8, 8), z = -(Zn + rand(48, 70)), w = rand(40, 60), h = rand(5, 9);
+      E.caixa(w, h, 26, 0x577a36, x, h / 2, z); E.caixa(w * 0.66, h * 0.5, 22, 0x5e813b, x + rand(-4, 4), h * 1.25, z); E.caixa(w * 0.34, h * 0.36, 18, 0x658841, x + rand(-3, 3), h * 1.68, z);
+    }
+    for (const sx of [-1, 1]) for (let i = 0; i < 2; i++) { const x = sx * (X + 46 + i * 34), z = rand(-30, 20), w = rand(26, 36), h = rand(5, 8); E.caixa(w, h, 60, 0x577a36, x, h / 2, z); E.caixa(w * 0.6, h * 0.5, 44, 0x5e813b, x, h * 1.25, z); }
+  }
   // Várzea: casinhas e árvores ao fundo, chão de terra em volta.
-  if (varzea) {
+  if (varzea && !cidade) {
     const cores = [0xd9c27a, 0xc96b4a, 0x7fa3c8, 0xe0e0d0, 0x9cc48a, 0xd98f6a, 0xb0b8c0];
     for (let i = 0; i < 26; i++) {
       const lado = i % 4, t = rand(-1, 1), w = rand(5, 9), h = rand(3.5, 7), d = rand(5, 8);
@@ -11640,6 +11746,19 @@ function construirBancos() {
       L.caixa(0.1, 0.45, 0.5, 0x59606b, x - 1.45, 0.225, zc); L.caixa(0.1, 0.45, 0.5, 0x59606b, x + 1.45, 0.225, zc);
     }
     const ms = L.malha(MAT_CORES); ESTADIO.add(ms); freeze(ms);
+    return;
+  }
+  if (PARTIDA && PARTIDA.campo.modelo === 'cidade') {   // várzea da cidadezinha: banco de madeira com encosto (sem cobertura) e a casinha da escada, que tem corpo
+    for (const sx of [-1, 1]) {
+      const x = sx * Math.min(9, HALF_L * 0.25);
+      BANCOS.push({ x0: x - 2.6, x1: x + 2.6, z0: z - 0.7, z1: z + 0.08, h: 1.0 });
+      L.caixa(5, 0.07, 0.6, 0xa87844, x, 0.415, z - 0.3);                       // o assento (a 45 cm, como o outro)
+      L.caixa(5, 0.3, 0.06, 0x9a6b3c, x, 0.85, z - 0.63);                       // o encosto
+      for (const t of [-2.3, 0, 2.3]) { L.caixa(0.1, 0.38, 0.5, 0x6b4a2b, x + t, 0.19, z - 0.3); L.caixa(0.08, 1.0, 0.08, 0x6b4a2b, x + t, 0.5, z - 0.63); }
+    }
+    const hz = -(BOARD_ZN - 1.15);
+    BANCOS.push({ x0: -1.75, x1: 1.75, z0: hz - 1.05, z1: hz + 1.05, h: 2.3 });
+    const mc = L.malha(MAT_CORES); ESTADIO.add(mc); freeze(mc);
     return;
   }
   for (const sx of [-1, 1]) {
@@ -13354,6 +13473,8 @@ const Idioma = {
   'PEDALADA': ['STEPOVER', 'PEDALADA', 'DOPPIO PASSO', 'PASSEMENT DE JAMBES'],
   'DRIBLE': ['DRIBBLE', 'REGATE', 'DRIBBLING', 'DRIBBLE'],
   'Gols': ['Goals', 'Goles', 'Gol', 'Buts'],
+  'Assistências': ['Assists', 'Asistencias', 'Assist', 'Passes décisives'],
+  'VESTIÁRIOS': ['LOCKER ROOMS', 'VESTUARIOS', 'SPOGLIATOI', 'VESTIAIRES'],
   'Chutes': ['Shots', 'Tiros', 'Tiri', 'Tirs'],
   'No alvo': ['On target', 'A puerta', 'In porta', 'Cadrés'],
   'Passes certos': ['Passes completed', 'Pases acertados', 'Passaggi riusciti', 'Passes réussies'],
@@ -13456,7 +13577,8 @@ const Idioma = {
   'Usa a formação preferida do seu time': ['Uses your team’s preferred formation', 'Usa la formación preferida de tu equipo', 'Usa la formazione preferita della tua squadra', 'Utilise la formation préférée de ton équipe'],
   'Você controla só o seu jogador (etiqueta laranja). Toque em OPÇÕES DA PARTIDA para ver e escolher tudo o que já dá para mudar (times, campo, clima, competição, tempo...).': ['You control only your own player (orange tag). Tap MATCH OPTIONS to see and choose everything you can already change (teams, pitch, weather, competition, length...).', 'Controlas solo a tu jugador (etiqueta naranja). Toca OPCIONES DEL PARTIDO para ver y elegir todo lo que ya se puede cambiar (equipos, campo, clima, competición, duración...).', 'Controlli solo il tuo giocatore (etichetta arancione). Tocca OPZIONI DELLA PARTITA per vedere e scegliere tutto ciò che si può già cambiare (squadre, campo, meteo, competizione, durata...).', 'Tu contrôles seulement ton joueur (étiquette orange). Touche OPTIONS DU MATCH pour voir et choisir tout ce qui peut déjà changer (équipes, terrain, météo, compétition, durée...).'],
   'Estádio (7 x 7)': ['Stadium (7 v 7)', 'Estadio (7 x 7)', 'Stadio (7 x 7)', 'Stade (7 x 7)'],
-  'Várzea (7 x 7)': ['Pickup pitch (7 v 7)', 'Campo de barrio (7 x 7)', 'Campetto (7 x 7)', 'Terrain de quartier (7 x 7)'],
+  'Várzea padrão (7 x 7)': ['Standard pickup pitch (7 v 7)', 'Campo de barrio estándar (7 x 7)', 'Campetto standard (7 x 7)', 'Terrain de quartier standard (7 x 7)'],
+  'Várzea cidadezinha (7 x 7)': ['Small-town dirt pitch (7 v 7)', 'Campo de tierra del pueblito (7 x 7)', 'Campetto in terra del paesino (7 x 7)', 'Terrain en terre du village (7 x 7)'],
   'Society (5 x 5)': ['Society (5 v 5)', 'Society (5 x 5)', 'Calcetto (5 x 5)', 'Society (5 x 5)'],
   'Quadra de futsal (5 x 5)': ['Futsal court (5 v 5)', 'Cancha de futsal (5 x 5)', 'Campo da futsal (5 x 5)', 'Terrain de futsal (5 x 5)'],
   'Quadra da escola (4 x 4)': ['School court (4 v 4)', 'Cancha de la escuela (4 x 4)', 'Campo della scuola (4 x 4)', 'Terrain de l’école (4 x 4)'],
@@ -15281,7 +15403,9 @@ const Historia = (() => {
     // "jogou bem" também depende da posição: atacante = fez gol; meia = distribuiu o jogo (passes certos ou gol); zagueiro = o time sofreu no máximo 1 gol.
     const pos = user && user.role ? user.role : 'FWD', sofridos = G.score[1];
     const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
-    const out = { placar: G.score.slice(), gols, nota, venceu: G.score[0] > G.score[1], empate: G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s) };
+    const pen = G.penaltisPlacar ? G.penaltisPlacar.slice() : null;      // mata-mata empatado: quem passou nos pênaltis
+    const out = { placar: G.score.slice(), gols, nota, venceu: pen ? pen[0] > pen[1] : G.score[0] > G.score[1], empate: !pen && G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s),
+      penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.isUser ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red })) };
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), G.fimFesta ? 3600 : 1800); }   // com a festa do apito final, fica um pouco mais
   }
   function abortar() { G.treinoGol = 0; G.fintaCerta = false; modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
