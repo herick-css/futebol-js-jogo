@@ -1,6 +1,9 @@
 /* =====================================================================
    FUTEBOL JS · treino.js · A TURMA DO SEU NONATO E O TREINO DE CHUTE, PASSE E CRUZAMENTO (arquivo SEPARADO, como pesca.js)
    ---------------------------------------------------------------------
+   6.6.19 — o MINIGAME foi para o treinoCampo.js (mundo à parte, sem o relógio da cidade); aqui fica a turma, a conversa e o progresso.
+     Poses: paradas (gk, espera...) não travam as pernas andando; mãos na cintura, nos lados da cabeça e palmas que se encontram.
+     O goleiro não usa mais a "base" da cidade (K.goleiro) e mergulha, levanta e anda de verdade.
    6.6.16 — primeira versão.
    - Registrado com FutebolJS.registrarFase({ id: 'treino' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa junto do pesca.js e chama criar(api) (api = apiTreino() da cidade). Sem este arquivo, a turma
@@ -33,6 +36,8 @@
 
   // ------------------------------------------------------------------ textos (pt → en, es, it, fr)
   const TRAD = {
+    'CT DO SEU NONATO': ['MR. NONATO\'S TRAINING GROUND', 'CENTRO DE DON NONATO', 'CENTRO DEL SIGNOR NONATO', 'CENTRE DE M. NONATO'],
+    'O campo de treino não carregou. Tenta de novo.': ['The training ground didn’t load. Try again.', 'El campo de entrenamiento no cargó. Inténtalo de nuevo.', 'Il campo di allenamento non si è caricato. Riprova.', 'Le terrain d’entraînement n’a pas chargé. Réessaie.'],
     'Paredão': ['Paredão', 'Paredão', 'Paredão', 'Paredão'], 'Juninho': ['Juninho', 'Juninho', 'Juninho', 'Juninho'], 'Tonhão': ['Tonhão', 'Tonhão', 'Tonhão', 'Tonhão'],
     'Treinar com a turma do Nonato': ['Train with Nonato’s crew', 'Entrenar con el grupo de Nonato', 'Allenarsi con il gruppo di Nonato', 'S’entraîner avec la bande de Nonato'],
     // apresentação
@@ -617,9 +622,11 @@
     m.pernaD.rotation.y = 0; m.pernaE.rotation.y = 0; m.pernaD.rotation.x = 0; m.pernaE.rotation.x = 0; m.corpo.rotation.x = 0;
     A.pf = null; A.poseFn = null;
   }
+  const POSE_PARADA = new Set(['gk', 'espera', 'alonga', 'aplaude', 'lamenta', 'pega', 'repoe', 'encaixe']);
   function pose(A, tipo, extra) { A.pf = Object.assign({ tipo, t: 0 }, extra || {}); A.poseFn = poseTreino; }
   function poseTreino(A, m, r, dt) {
     const F = A.pf; if (!F) { limparPose(A); return; }
+    if (A.andando && POSE_PARADA.has(F.tipo)) { m.pernaD.rotation.y = m.pernaE.rotation.y = 0; m.corpo.rotation.x = 0; return; }   // (6.6.19) andando: as pernas andam (antes ele deslizava agachado)
     F.t += dt; const t = F.t;
     m.pernaD.rotation.y = 0; m.pernaE.rotation.y = 0; m.pernaD.rotation.x = 0; m.pernaE.rotation.x = 0; m.corpo.rotation.x = 0;
     if (F.tipo === 'chute') {                                            // corrida já feita: plantou o pé esquerdo, a direita vai atrás e vem
@@ -693,12 +700,12 @@
       r.position.y = A.y + s * 0.12; usarJoelhos(m, -0.3 * (1 - s), -0.3 * (1 - s));
       if (t > (F.dur || 1.6)) limparPose(A);
     } else if (F.tipo === 'lamenta') {                                   // mãos na cabeça
-      m.bracoE.rotation.z = m.bracoD.rotation.z = 2.5; m.bracoE.rotation.x = -0.45; m.bracoD.rotation.x = 0.45; usarCotovelo(m.bracoE, 0, 1.7); usarCotovelo(m.bracoD, 0, 1.7);
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 3.0; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.7; usarCotovelo(m.bracoE, -1.9, 0.2); usarCotovelo(m.bracoD, 1.9, 0.2);   // (6.6.19) as mãos nos lados da cabeça (antes entravam nela)
       m.corpo.rotation.z = 0.08 + Math.sin(t * 2) * 0.03;
       if (t > (F.dur || 1.4)) limparPose(A);
     } else if (F.tipo === 'aplaude') {                                   // bate palmas na frente do peito
       const s = Math.sin(t * 16);
-      m.bracoE.rotation.z = m.bracoD.rotation.z = 1.3; m.bracoE.rotation.x = -0.15 + s * 0.22; m.bracoD.rotation.x = 0.15 - s * 0.22; usarCotovelo(m.bracoE, 0, 0.9); usarCotovelo(m.bracoD, 0, 0.9);
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 1.25; m.bracoE.rotation.x = -0.35 + Math.max(0, s) * 0.18; m.bracoD.rotation.x = 0.35 - Math.max(0, s) * 0.18; usarCotovelo(m.bracoE, 0, 0.85); usarCotovelo(m.bracoD, 0, 0.85);   // (6.6.19) as mãos se encontram na frente do peito
       if (t > (F.dur || 1.3)) limparPose(A);
     } else if (F.tipo === 'embaixada') {                                 // embaixadinha: o pé (ou a coxa) sobe quando a bola chega
       const k = Math.max(0, Math.sin(Math.PI * clampN(t / 0.32, 0, 1))), coxa = !!F.coxa;
@@ -709,7 +716,7 @@
       m.bracoE.rotation.z = m.bracoD.rotation.z = 2.85; m.bracoE.rotation.x = 0.1; m.bracoD.rotation.x = -0.1; m.corpo.rotation.x = Math.sin(t * 1.1) * 0.28;
     } else if (F.tipo === 'espera') {                                    // parado esperando a bola: leve balanço, mãos na cintura de vez em quando
       const s = Math.sin(t * 2.2) * 0.04; m.corpo.rotation.z = s * 0.3;
-      if (F.cintura) { m.bracoE.rotation.x = 1.0; m.bracoD.rotation.x = -1.0; m.bracoE.rotation.z = m.bracoD.rotation.z = 0.05; usarCotovelo(m.bracoE, -2.0, 0); usarCotovelo(m.bracoD, 2.0, 0); }
+      if (F.cintura) { m.bracoE.rotation.x = 0.75; m.bracoD.rotation.x = -0.75; m.bracoE.rotation.z = m.bracoD.rotation.z = 0; usarCotovelo(m.bracoE, -1.7, 0); usarCotovelo(m.bracoD, 1.7, 0); }   // (6.6.19) mãos na cintura de verdade (antes o antebraço ia para a frente da barriga)
     }
   }
 
@@ -718,7 +725,7 @@
   // =====================================================================================================================
   function criar(api) {
     const S = () => api.S(), L = LOGICA, Y0 = 0.08;                     // Y0: o piso do society (a grama sintética está 8 cm acima do chão)
-    const P = { mg: null, dr: null, luz: null, t: 0, objs: [], falou: false };
+    const P = { sessao: false, dr: null, luz: null, t: 0, objs: [], falou: false };
     const TT = () => S().treino;                                         // { F, gz, spot, bat: [Juninho, Tonhão], gol: Paredão, esp, bola }
     const W = (u, v) => ({ x: TT().F.cx + u, z: TT().gz - v });          // do treino (u, v) para a cidade (x, z)
     const LC = (x, z) => ({ u: x - TT().F.cx, v: TT().gz - z });
@@ -774,7 +781,7 @@
     }
     function tickLuzes() {
       if (!P.luz) return;
-      const n = api.noite ? api.noite() : 0, on = (TT() && !TT().pausa) || P.mg ? n : 0;   // só com a turma lá (ou treinando) e de noite
+      const n = api.noite ? api.noite() : 0, on = (TT() && !TT().pausa) || P.sessao ? n : 0;   // só com a turma lá (ou treinando) e de noite
       if (Math.abs(on - P.luz.aceso) < 0.01) return; P.luz.aceso = on;
       P.luz.mp.opacity = 0.55 * on; P.luz.halo.opacity = 0.95 * on; P.luz.matCab.color.setRGB(0.35 + 0.65 * on, 0.35 + 0.63 * on, 0.32 + 0.5 * on);
     }
@@ -842,7 +849,6 @@
           if (K.pf && K.pf.tipo === 'mergulho') { if (!K.pf.levanta) K.pf.levanta = 0.001; if (D.ft > 0.7) pose(K, 'gk'); return; }   // primeiro levanta do chão (a pose pode não rodar de longe: o tempo é do treino)
           if (K.pf && K.pf.tipo === 'encaixe') { pose(K, 'repoe'); D.fase = 'volta'; D.ft = 0; limparPose(K); return; }   // encaixou: já está com a bola
           const Bj = D.Jfim.B, bu = clampN(Bj.u, -10, 10), bv = clampN(Bj.v, -1.6, 28);
-          if (!K.pf || K.pf.tipo === 'gk') { K.goleiro = false; }
           if (andarAte(K, bu, bv + 0.4, 2.2, dt)) { pose(K, 'pega'); D.fase = 'pega'; D.ft = 0; }
         } else if (D.fase === 'pega') {
           if (D.ft > 0.35) { const k = W(posLC(K).u, posLC(K).v); bolaNPC(B, posLC(K).u, 0.75, posLC(K).v - 0.3); void k; }
@@ -856,7 +862,7 @@
           else {
             if (!D.rolo) { const du = spot.u - pk.u, dv = spot.v - (pk.v + 0.5), d = Math.hypot(du, dv), v0 = Math.sqrt(2 * 2.2 * d); D.rolo = { u: pk.u, y: L.RB, v: pk.v + 0.5, vu: du / d * v0, vv: dv / d * v0, vy: 0, au: 0, av: 0, voa: false, rola: true }; }
             L.passoBola(D.rolo, dt); bolaNPC(B, D.rolo.u, L.RB, D.rolo.v); B.mesh.rotation.x -= dt * 8;
-            if (D.rolo.parou || D.ft > 6) { D.rolo = null; D.J = null; D.Jfim = null; D.corr = null; D.vez++; D.spot = { u: (Math.random() - 0.5) * 3, v: 8.5 + Math.random() * 4 }; D.fase = 'prepara'; D.ft = 0; pose(K, 'gk'); K.goleiro = true; if (D.t > D.fim) iniciarDrill(D.k + 1); }
+            if (D.rolo.parou || D.ft > 6) { D.rolo = null; D.J = null; D.Jfim = null; D.corr = null; D.vez++; D.spot = { u: (Math.random() - 0.5) * 3, v: 8.5 + Math.random() * 4 }; D.fase = 'prepara'; D.ft = 0; pose(K, 'gk'); if (D.t > D.fim) iniciarDrill(D.k + 1); }
           }
         }
       } else if (D.tipo === 'cruz') {                                     // o Tonhão cruza da ponta, o Juninho cabeceia (ou emenda) para o gol
@@ -961,13 +967,13 @@
     // A CONVERSA (o alvo na rua) e o MENU
     // =====================================================================================================================
     function alvos(v) {
-      const T_ = TT(), s = S(); if (!T_ || T_.pausa || P.mg || s.dentro) return;
+      const T_ = TT(), s = S(); if (!T_ || T_.pausa || P.sessao || s.dentro) return;
       if (api.chovendoAgora && api.chovendoAgora()) return;
       const A = T_.bat[0]; if (!A || A.oculto) return;
       v.push({ x: A.x, z: A.z, r: 2.3, txt: tr('Treinar com a turma do Nonato'), fn: conversar, y: 2.5 });
     }
-    function quandoTxt(dia) {
-      const d = S().dados.dia || 1, k = dia - d;
+    function quandoTxt(dia, ini) {                                       // dia: o do calendário (a agenda); o dia do jogo vira às 5h
+      const d = S().dados.dia || 1, k = (ini != null && ini < 5 ? dia - 1 : dia) - d;
       return k <= 0 ? tr('hoje') : k === 1 ? tr('amanhã') : k === 2 ? tr('depois de amanhã') : trf('daqui a {0} dias', k);
     }
     const fmtH = (h) => api.fmtHora(((h % 24) + 24) % 24);
@@ -985,12 +991,12 @@
           await api.fala('paredao', tr('Só que são 2 treinos por dia, no máximo. O seu Nonato não gosta que gaste a grama.'));
           const pr = api.proximaTurma && api.proximaTurma(), ag = api.turmaAgora && api.turmaAgora();
           if (ag) await api.fala('tonhao', trf('Hoje a gente fica até as {0}.', fmtH(ag.fim)));
-          if (pr) await api.fala('tonhao', trf('A gente vem dia sim, dia não. A próxima vez é {0}, das {1} às {2}.', quandoTxt(pr.dia), fmtH(pr.ini), fmtH(pr.fim)));
+          if (pr) await api.fala('tonhao', trf('A gente vem dia sim, dia não. A próxima vez é {0}, das {1} às {2}.', quandoTxt(pr.dia, pr.ini), fmtH(pr.ini), fmtH(pr.fim)));
           p.conhece = true; gravar();
         }
         if (p.hoje.n >= 2) {
           await api.fala('paredao', tr('Hoje já deu! Foram 2 treinos. Volta no próximo dia de treino.'));
-          const pr = api.proximaTurma && api.proximaTurma(); if (pr) await api.fala('tonhao', trf('A gente vem dia sim, dia não. A próxima vez é {0}, das {1} às {2}.', quandoTxt(pr.dia), fmtH(pr.ini), fmtH(pr.fim)));
+          const pr = api.proximaTurma && api.proximaTurma(); if (pr) await api.fala('tonhao', trf('A gente vem dia sim, dia não. A próxima vez é {0}, das {1} às {2}.', quandoTxt(pr.dia, pr.ini), fmtH(pr.ini), fmtH(pr.fim)));
           Dialogo.esconder(); return;
         }
         const ops = [trf('Chute ({0}/30)', p.prog.chute), trf('Passe ({0}/30)', p.prog.passe), trf('Cruzamento ({0}/30)', p.prog.cruz), tr('Agora não')];
@@ -1075,417 +1081,39 @@
     // =====================================================================================================================
     // O TREINO (o minigame)
     // =====================================================================================================================
-    const ATRASO = 0.3;                                                   // da hora em que solta até o pé na bola (os passinhos de corrida)
+    // (6.6.19) O TREINO agora é num MUNDO À PARTE (treinoCampo.js), como a partida: a cidade para (o relógio não anda) e o treino tem
+    //   o campo dele. Aqui só o antes (a turma para de treinar) e o depois (de volta aos lugares, a turma volta ao rodízio, meia hora).
     async function treinar(Sit, rep) {
-      const s = S(), J = s.jog, T_ = TT(), ui = api.UI();
-      await api.preto(true, 350);
-      T_.ocupado = true; P.dr = null;
+      const s = S(), J = s.jog, T_ = TT();
+      T_.ocupado = true; P.dr = null; P.sessao = true; const modo0 = s.modo; s.modo = 'cena';   // (a cidade não pausa nem anda com as teclas do treino)
       for (const A of [T_.gol].concat(T_.bat)) { limparPose(A); A.andando = false; A.chuteT = -1; }
-      T_.bola.mesh.visible = false; T_.bola.sombra.visible = false;
-      api.esconderHud(true); if (ui.arrasto) ui.arrasto.hidden = true; api.aviso('');
-      const U = montarHud(), B = novaBola();
-      const m = P.mg = { Sit, rep, k: 0, D: null, U, B, bolas: 3, e: 'intro', t: 0, tD: 0, mira: null, p: 0, spin: 0, alto: false, seg: false, J: null, props: [], tecla: {}, feitos: [false, false, false], cam: null, prev: [] };
-      for (let i = 0; i < 12; i++) { const d = new THREE.Mesh(new THREE.SphereGeometry(0.045, 6, 4), matB('#fff0c8', 0.75)); d.visible = false; d.renderOrder = 6; grupo().add(d); m.prev.push(d); }
-      m.ret = criarMira(); ligarEntrada(m);
-      montarDesafio(m, 0);
-      tickMg(0.016); s.cam.snap = true;
-      await api.preto(false, 350);
-      const fim = await new Promise((ok) => { m.fim = ok; });
-      await api.preto(true, 350);
-      desligarEntrada(m); limparDesafio(m); tirar(B.m); if (B.sb && B.sb.parent) B.sb.parent.remove(B.sb); tirar(m.ret.g); for (const d of m.prev) tirar(d);
-      U.el.remove(); P.mg = null; s.camCena = null; s.cam.snap = true;
+      T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; api.aviso('');
+      let fim = 'saiu';
+      try {
+        const M = await Fases.carregar('treinoCampo');
+        if (!M || !M.sessao) throw new Error('sem treinoCampo');
+        fim = await M.sessao({ api, L, SOM, pose, limparPose, tr, trf, virg, esc, montarHud, vib, Sit, rep, dados, gravar, atributos, jog: J, gol: T_.gol, bat: T_.bat });
+      } catch (e) {
+        console.warn('[Treino] o campo de treino não veio:', e); fim = 'erro';
+        api.aviso(tr('O campo de treino não carregou. Tenta de novo.')); setTimeout(() => api.aviso(''), 3200);
+        try { const p = dados(); if (p.hoje.n > 0) p.hoje.n--; gravar(); } catch (e2) { /* sem save */ }   // não conta o treino que nem começou
+      }
+      P.sessao = false; s.modo = modo0;
       for (const A of [T_.gol].concat(T_.bat)) { limparPose(A); A.andando = false; }
       J.andando = false; J.correndo = false; limparPose(J);
       // de volta aos lugares; a turma volta a treinar sozinha
       T_.bat.forEach((A, i) => { A.x = T_.esp[i].x; A.z = T_.esp[i].z; A.yaw = A.yawAlvo = -Math.PI / 2; });
       T_.gol.x = T_.F.cx; T_.gol.z = T_.gz - 0.5; T_.gol.yaw = T_.gol.yawAlvo = Math.PI / 2;
-      const pj = W(-2.5, 11); J.x = pj.x; J.z = pj.z; J.yaw = J.yawAlvo = Math.PI / 2;
+      const pj = W(-2.5, 11); J.x = pj.x; J.z = pj.z; J.y = Y0; J.yaw = J.yawAlvo = Math.PI / 2; s.camCena = null; s.cam.snap = true;
       T_.ocupado = false; iniciarDrill(0);
-      api.esconderHud(false); if (ui.arrasto) ui.arrasto.hidden = false;
-      if (api.tickHorario && api.H_POR_S) api.tickHorario(0.5 / api.H_POR_S);   // o treino leva meia hora do relógio
-      await api.preto(false, 350);
+      if (fim !== 'erro' && api.tickHorario && api.H_POR_S) api.tickHorario(0.5 / api.H_POR_S);   // como a partida (que soma 1 h): o treino leva meia hora
+      if (fim !== 'erro') await api.preto(false, 350);
       falantes();
       if (fim === 'ok') { await api.fala('paredao', tr('Isso aí! Mandou bem demais!')); }
       else if (fim === 'falhou') { await api.fala('paredao', tr('Não foi dessa vez. Volta outro dia que a gente tenta de novo!')); }
       Dialogo.esconder();
     }
-    // ---- montar cada desafio no campo
-    function montarDesafio(m, k) {
-      limparDesafio(m);
-      const D = m.D = m.Sit.desafios[k], T_ = TT(); m.k = k; m.bolas = 3; m.tD = 0; m.e = 'intro'; m.t = 0; m.J = null; m.res = null;
-      m.mira = { u: D.mira.u, v: D.mira.v != null ? D.mira.v : 0, y: D.mira.y != null ? D.mira.y : 0 }; if (D.mira.plano === 'chao') m.mira.y = 0;
-      m.spin = 0; m.alto = D.tipo === 'passe' ? D.trava === 'alto' : false;
-      const props = m.props = [];
-      const add = (o) => { grupo().add(o); props.push(o); return o; };
-      // bonecos de treino (barreira e marcadores extras): amarelo com a "cabeça" preta
-      const boneco = (h) => { const g = new THREE.Group(), c = new THREE.Mesh(new THREE.BoxGeometry(0.46, h - 0.32, 0.12), mat('#f2c230')); c.position.y = (h - 0.32) / 2; g.add(c);
-        const ca = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.28, 0.14), mat('#1c1c1f')); ca.position.y = h - 0.16; g.add(ca); const pe = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.36), mat('#3a3a3a')); pe.position.y = 0.03; g.add(pe); return g; };
-      if (D.barreira) for (const b of D.barreira) { const g = add(boneco(b.h)), p = W(b.u, b.v); g.position.set(p.x, Y0, p.z); g.rotation.y = Math.atan2(-(W(D.bola.u, D.bola.v).z - p.z), W(D.bola.u, D.bola.v).x - p.x) + Math.PI / 2; }
-      m.mkObj = [];
-      if (D.marcadores) D.marcadores.forEach((M, i) => { if (M.npc) m.mkObj.push({ npc: T_.bat[1] }); else { const g = add(boneco(1.9)); m.mkObj.push({ g }); } void i; });
-      // placas (a janela no gol): 4 tábuas em volta da janela
-      if (D.janela) { m.placas = [0, 1, 2, 3].map(() => add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.06), mat('#9b6a3a')))); m.placaBorda = add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.04), mat('#6a4428'))); m.placaBorda.visible = false; }
-      // aros (alvos no gol): o aro laranja e as cordas até o travessão
-      if (D.alvos) m.aros = D.alvos.map((a) => { const g = new THREE.Group(), to = new THREE.Mesh(new THREE.TorusGeometry(a.r, 0.045, 6, 28), mat('#f07a20')); g.add(to);
-        const cd = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1, 0.02), mat('#e8e0c8')); cd.position.y = 0.5; g.add(cd); g.userData.corda = cd; g.userData.r = a.r; return add(g); });
-      // o aro do cruzamento (no alto, de frente para a bola, num poste)
-      if (D.aro) { const g = new THREE.Group(), to = new THREE.Mesh(new THREE.TorusGeometry(D.aro.r, 0.05, 6, 28), mat('#f07a20')); g.add(to); const ps = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1, 0.06), mat('#9aa0a6')); g.add(ps); g.userData.poste = ps; m.aroObj = add(g); }
-      // cones
-      if (D.cones) m.conesObj = [0, 1].map(() => { const c = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.36, 10), mat('#f06a1a')); return add(c); });
-      // círculo no chão (zona)
-      if (D.zona) { const z = new THREE.Mesh(new THREE.RingGeometry(D.zona.r - 0.07, D.zona.r, 40), matB('#fff0c8', 0.85)); z.rotation.x = -Math.PI / 2; const p = W(D.zona.u, D.zona.v); z.position.set(p.x, Y0 + 0.025, p.z); z.renderOrder = 3; add(z);
-        const f = new THREE.Mesh(new THREE.CircleGeometry(D.zona.r - 0.07, 40), matB('#f0a020', 0.18)); f.rotation.x = -Math.PI / 2; f.position.set(p.x, Y0 + 0.022, p.z); f.renderOrder = 3; add(f); }
-      // quem faz o quê: Paredão no gol (ou ao lado), Juninho recebe/cabeceia (ou assiste), Tonhão marca (ou assiste)
-      papeis(m);
-      atualizarHud(m); m.U.msg.className = 'trMsg';
-      porBola(m.B, D.bola.u, L.RB, D.bola.v); m.B.m.visible = true;
-      posicionarJogador(m, true);
-      cartaoDesafio(m);
-    }
-    function limparDesafio(m) { for (const o of m.props || []) tirar(o); m.props = []; m.placas = null; m.aros = null; m.aroObj = null; m.conesObj = null; m.mkObj = []; m.placaBorda = null; }
-    function papeis(m) {
-      const D = m.D, T_ = TT(), [Ju, To] = T_.bat, K = T_.gol, b = D.bola;
-      // quem só assiste fica num lugar livre: dentro do campo, a 4–6 m da bola, longe da câmera, do caminho da bola e de quem joga
-      const usados = [], lado = (A) => { const p0 = lugarDeVer(m, usados); usados.push(p0); const p = W(p0.u, p0.v); A.x = p.x; A.z = p.z; olharP(A, b.u, b.v); };
-      // Paredão
-      if (D.goleiro) { const p = W(D.goleiro.u, D.goleiro.v); K.x = p.x; K.z = p.z; K.yaw = K.yawAlvo = Math.PI / 2; pose(K, 'gk'); }
-      else { const p = W(3.6, -0.4); K.x = p.x; K.z = p.z; olharP(K, b.u, b.v); K.yaw = K.yawAlvo; pose(K, 'espera', { cintura: true }); }
-      // Juninho
-      if (D.recebe) { const p0 = D.recebe.corre ? L.posCorre(D.recebe.corre, 0) : D.recebe, p = W(p0.u, p0.v); Ju.x = p.x; Ju.z = p.z; olharP(Ju, b.u, b.v); Ju.yaw = Ju.yawAlvo; pose(Ju, 'espera'); }
-      else if (D.cabeca) { const p0 = D.cabeca.corre ? L.posCorre(D.cabeca.corre, 0) : D.cabeca, p = W(p0.u, p0.v); Ju.x = p.x; Ju.z = p.z; olharP(Ju, b.u, b.v); Ju.yaw = Ju.yawAlvo; pose(Ju, 'espera'); }
-      else { lado(Ju); Ju.yaw = Ju.yawAlvo; pose(Ju, 'espera', { cintura: Math.random() < 0.5 }); }
-      // Tonhão
-      const mkN = D.marcadores ? D.marcadores.findIndex((q) => q.npc) : -1;
-      if (mkN >= 0) { const M = D.marcadores[mkN], p = W(M.u, M.v); To.x = p.x; To.z = p.z; olharP(To, b.u, b.v); To.yaw = To.yawAlvo; pose(To, 'espera'); }
-      else { lado(To); To.yaw = To.yawAlvo; pose(To, 'espera', { cintura: true }); }
-      for (const A of [K, Ju, To]) A.andando = false;
-    }
-    function lugarDeVer(m, usados) {
-      const D = m.D, b = D.bola, dl = dirLance(m), ru = dl.v, rv = -dl.u, cam = { u: b.u - dl.u * 5 - ru, v: b.v - dl.v * 5 - rv };
-      const alvo = D.mira.plano === 'gol' ? { u: 0, v: 0 } : { u: D.mira.u, v: D.mira.v };
-      const evita = [cam, b, alvo].concat(usados); if (D.goleiro) evita.push({ u: D.goleiro.u, v: D.goleiro.v }); if (D.recebe) evita.push(D.recebe); if (D.cabeca) evita.push(D.cabeca); if (D.zona) evita.push(D.zona);
-      const distSeg = (p, a, c) => { const du = c.u - a.u, dv = c.v - a.v, L2 = du * du + dv * dv || 1, k = clampN(((p.u - a.u) * du + (p.v - a.v) * dv) / L2, 0, 1); return Math.hypot(p.u - a.u - du * k, p.v - a.v - dv * k); };
-      let best = { u: b.u, v: b.v + 3 }, bs = -1;
-      for (let i = 0; i < 16; i++) for (const r of [4.5, 6]) {
-        const a = i / 16 * Math.PI * 2, p = { u: b.u + Math.cos(a) * r, v: b.v + Math.sin(a) * r }; if (Math.abs(p.u) > 8.6 || p.v < 1 || p.v > 29) continue;
-        const sc = Math.min(distSeg(p, b, alvo) * 1.2, distSeg(p, cam, alvo), ...evita.map((q) => Math.hypot(p.u - q.u, p.v - q.v)));
-        if (sc > bs) { bs = sc; best = p; }
-      }
-      return best;
-    }
-    const olharP = (A, u, v) => { const p = W(u, v); A.yawAlvo = Math.atan2(-(p.z - A.z), p.x - A.x); };
-    // a direção do lance (da bola para o lugar padrão da mira): a câmera e o jogador se alinham com ela
-    function dirLance(m) { const D = m.D, b = D.bola, alvo = D.mira.plano === 'gol' ? { u: 0, v: 0 } : { u: D.mira.u, v: D.mira.v }; let du = alvo.u - b.u, dv = alvo.v - b.v; const d = Math.hypot(du, dv) || 1; return { u: du / d, v: dv / d }; }
-    function posicionarJogador(m, inicio) {
-      const J = S().jog, D = m.D, b = D.bola, mi = m.mira, alvo = D.mira.plano === 'gol' ? { u: mi.u, v: 0 } : { u: mi.u, v: mi.v };
-      let du = alvo.u - b.u, dv = alvo.v - b.v; const d = Math.hypot(du, dv) || 1; du /= d; dv /= d;
-      const ru = dv, rv = -du;                                            // "direita" no plano do treino, olhando para a mira (u, v); pé direito: o jogador fica à esquerda da bola
-      m.corrida = { de: { u: b.u - du * 1.35 + ru * 0.55, v: b.v - dv * 1.35 + rv * 0.55 }, ate: { u: b.u - du * 0.32 + ru * 0.24, v: b.v - dv * 0.32 + rv * 0.24 }, du, dv };
-      if (inicio || m.e === 'mira' || m.e === 'intro') { const p = W(m.corrida.de.u, m.corrida.de.v); J.x = p.x; J.z = p.z; J.y = 0.08; J.andando = false; J.correndo = false; const pb = W(b.u, b.v); J.yaw = J.yawAlvo = Math.atan2(-(pb.z - J.z), pb.x - J.x); }
-    }
-    function cartaoDesafio(m) {
-      const U = m.U, D = m.D; U.card.hidden = false; U.card.onclick = null;
-      U.card.innerHTML = '<h3>' + esc(trf('Desafio {0}/3', m.k + 1)) + '</h3><p>' + esc(trf(D.desc, ...D.descA)) + '</p><div class="trBt"><button type="button" class="pxBtn pxPrim">' + esc(tr('Bora!')) + '</button></div>';
-      U.card.onclick = (e) => { if (e.target.closest && e.target.closest('button')) { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); U.card.hidden = true; m.e = 'mira'; m.t = 0; } };
-    }
-    function atualizarHud(m) {
-      const U = m.U, D = m.D, Sit = m.Sit;
-      U.tit.textContent = trf('Situação {0}/30: {1}', Sit.n + 1, tr(Sit.nome));
-      U.pips.innerHTML = [0, 1, 2].map((i) => '<i class="' + (m.feitos[i] ? 'ok' : i === m.k ? 'at' : '') + '"></i>').join('');
-      U.bolas.innerHTML = Array.from({ length: Math.max(3, m.bolas) }, (_, i) => '<b class="' + (i < m.bolas ? '' : 'vazia') + '"></b>').join('');
-      U.desc.textContent = trf(D.desc, ...D.descA);
-      U.chuta.textContent = tr(D.tipo === 'chute' ? 'CHUTAR' : D.tipo === 'passe' ? 'PASSAR' : 'CRUZAR');
-      U.ef.hidden = D.tipo === 'passe'; U.alto.hidden = !(D.tipo === 'cruz' || (D.tipo === 'passe' && !D.trava));
-      U.ef.textContent = m.spin ? tr('Efeito') + (m.spin > 0 ? ' ←' : ' →') : tr('Sem efeito');
-      U.alto.textContent = (D.tipo === 'passe' ? (m.alto ? tr('Pelo alto') : tr('Rasteiro')) : (m.alto ? tr('Pelo alto') : tr('Rasteiro'))) + (D.tipo === 'cruz' ? (m.alto ? ' ⤴' : ' ➝') : '');
-      if (D.tipo === 'cruz') U.alto.textContent = m.alto ? '⤴ ' + tr('Pelo alto') : '➝ ' + tr('Tenso');
-      U.dica.textContent = (matchMedia('(pointer: coarse)').matches ? '' : tr('Setas mira · Espaço força · Q/E efeito · Esc sai') + ' · ') + tr('Arraste para mirar · segure para a força · solte para chutar');
-    }
-    // ---- a MIRA 3D: um aro com uma cruz (no gol: de pé; no chão: deitado; no alto: deitado na altura, com uma haste até o chão)
-    function criarMira() {
-      const g = new THREE.Group(), mm = matB('#ffd23a', 0.95), anel = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.26, 28), mm); anel.renderOrder = 8; g.add(anel);
-      for (const [w, h] of [[0.6, 0.04], [0.04, 0.6]]) { const c = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mm); c.renderOrder = 8; g.add(c); }
-      const haste = new THREE.Mesh(new THREE.BoxGeometry(0.025, 1, 0.025), matB('#ffd23a', 0.55)); grupo().add(haste);
-      const sombra = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.22, 24), matB('#2a1206', 0.45)); sombra.rotation.x = -Math.PI / 2; sombra.renderOrder = 4; grupo().add(sombra);
-      for (const o of g.children) { o.material.depthTest = false; }
-      grupo().add(g); return { g, haste, sombra };
-    }
-    function porMira(m, u, y, v) {
-      const D = m.D, R = m.ret, p = W(u, D.mira.plano === 'gol' ? 0.02 : v);
-      R.g.visible = true; R.g.position.set(p.x, Y0 + (D.mira.plano === 'chao' ? 0.03 : y), p.z);
-      { const b = D.bola, dd = Math.hypot(u - b.u, (D.mira.plano === 'gol' ? 0 : v) - b.v), k = clampN(dd / 8, 1, 2.6); R.g.scale.set(k, k, k); R.sombra.scale.set(k, k, k); }   // de longe a mira cresce (senão some na tela)
-      if (D.mira.plano === 'gol') { R.g.rotation.set(0, 0, 0); R.haste.visible = false; R.sombra.visible = false; }
-      else { R.g.rotation.set(-Math.PI / 2, 0, 0); const alto = D.mira.plano === 'alto'; R.haste.visible = alto; R.sombra.visible = alto; if (alto) { R.haste.scale.y = y; R.haste.position.set(p.x, Y0 + y / 2, p.z); R.sombra.position.set(p.x, Y0 + 0.025, p.z); } }
-    }
-    // ---- entrada: arrastar (mira), segurar o botão (força), botões e teclado
-    function ligarEntrada(m) {
-      const U = m.U;
-      let drag = null;
-      U.arr.onpointerdown = (e) => { if (m.e !== 'mira' && m.e !== 'carrega') return; drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; try { U.arr.setPointerCapture(e.pointerId); } catch (er) { /* ok */ } };
-      U.arr.onpointermove = (e) => { if (!drag || e.pointerId !== drag.id) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY; moverMira(m, dx, dy); };
-      U.arr.onpointerup = U.arr.onpointercancel = (e) => { if (drag && e.pointerId === drag.id) drag = null; };
-      const solta = () => { if (m.e === 'carrega') soltar(m); };
-      U.chuta.onpointerdown = (e) => { e.preventDefault(); try { U.chuta.setPointerCapture(e.pointerId); } catch (er) { /* ok */ } if (m.e === 'mira') { m.e = 'carrega'; m.t = 0; m.fase = Math.random() * 6.28; } };
-      U.chuta.onpointerup = U.chuta.onpointercancel = (e) => { e.preventDefault(); solta(); };
-      U.ef.onclick = () => { if (m.e !== 'mira') return; m.spin = m.spin === 0 ? 1 : m.spin === 1 ? -1 : 0; if (typeof Som !== 'undefined' && Som.clique) Som.clique(); atualizarHud(m); };
-      U.alto.onclick = () => { if (m.e !== 'mira') return; m.alto = !m.alto; if (typeof Som !== 'undefined' && Som.clique) Som.clique(); atualizarHud(m); };
-      U.sair.onclick = () => sairTreino(m);
-      m.teclaFn = (e) => {
-        if (!P.mg || document.getElementById('anuncioTela') && !document.getElementById('anuncioTela').hidden) return;
-        const desce = e.type === 'keydown', c = e.code;
-        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'KeyA', 'KeyD', 'KeyW', 'KeyS'].includes(c)) { e.preventDefault(); e.stopPropagation(); m.tecla[c] = desce; return; }
-        if (c === 'Space' || c === 'Enter') { e.preventDefault(); e.stopPropagation(); if (e.repeat) return; if (!U.card.hidden && desce) { const b = U.card.querySelector('button'); if (b) b.click(); return; } if (desce && m.e === 'mira') { m.e = 'carrega'; m.t = 0; m.fase = Math.random() * 6.28; } else if (!desce) solta(); return; }
-        if (desce && (c === 'KeyQ' || c === 'KeyE') && m.e === 'mira' && m.D.tipo !== 'passe') { e.preventDefault(); m.spin = c === 'KeyQ' ? (m.spin === 1 ? 0 : 1) : (m.spin === -1 ? 0 : -1); atualizarHud(m); }
-        if (desce && c === 'Tab' && m.e === 'mira' && !U.alto.hidden) { e.preventDefault(); U.alto.click(); }
-        if (desce && c === 'Escape') { e.preventDefault(); sairTreino(m); }
-      };
-      window.addEventListener('keydown', m.teclaFn, true); window.addEventListener('keyup', m.teclaFn, true);
-    }
-    function desligarEntrada(m) { if (m.teclaFn) { window.removeEventListener('keydown', m.teclaFn, true); window.removeEventListener('keyup', m.teclaFn, true); } }
-    // arrastar: o ponto da mira anda na tela como o dedo (na distância em que ela está)
-    function moverMira(m, dx, dy) {
-      const D = m.D, cam = typeof camera !== 'undefined' ? camera : null, mi = m.mira; if (!cam) return;
-      const p = W(mi.u, D.mira.plano === 'gol' ? 0 : mi.v), py = Y0 + (D.mira.plano === 'chao' ? 0 : mi.y), ox = api.OX || 0;
-      const dist = Math.hypot(cam.position.x - (p.x + ox), cam.position.y - py, cam.position.z - p.z), k = 2 * Math.tan((cam.fov * Math.PI / 180) / 2) * dist / Math.max(200, innerHeight);
-      const fx = Math.cos(cam.rotation.y), fz = 0; void fx; void fz;
-      const dir = new THREE.Vector3(); cam.getWorldDirection(dir); const rx = -dir.z, rz = dir.x, rl = Math.hypot(rx, rz) || 1;   // a "direita" da câmera no chão
-      if (D.mira.plano === 'gol') { mi.u += (rx / rl) * dx * k; mi.y -= dy * k; }
-      else { const fl = Math.hypot(dir.x, dir.z) || 1, kv = k / Math.max(0.3, Math.abs(dir.y) + 0.25); const wx = (rx / rl) * dx * k + (dir.x / fl) * -dy * kv, wz = (rz / rl) * dx * k + (dir.z / fl) * -dy * kv; mi.u += wx; mi.v -= wz; }
-      limitarMira(m);
-    }
-    function limitarMira(m) {
-      const D = m.D, mi = m.mira;
-      if (D.mira.plano === 'gol') { mi.u = clampN(mi.u, -4.2, 4.2); mi.y = clampN(mi.y, 0.15, 3.4); }
-      else { mi.u = clampN(mi.u, -9, 9); mi.v = clampN(mi.v, 0.3, 29.5); if (D.mira.plano === 'alto') mi.y = D.mira.y; }
-    }
-    function teclasMira(m, dt) {
-      const T_ = m.tecla, D = m.D, cam = typeof camera !== 'undefined' ? camera : null; if (!cam) return;
-      const h = (T_.ArrowRight || T_.KeyD ? 1 : 0) - (T_.ArrowLeft || T_.KeyA ? 1 : 0), vt = (T_.ArrowUp || T_.KeyW ? 1 : 0) - (T_.ArrowDown || T_.KeyS ? 1 : 0);
-      if (!h && !vt) return;
-      const px = 260 * dt; moverMira(m, h * px, -vt * px * (D.mira.plano === 'gol' ? 1 : 1));
-    }
-    function soltar(m) {
-      const D = m.D, p = m.p, at = atributos(), off = balancoMira(m), b = D.bola;
-      m.inp = { u: m.mira.u + off.u, v: m.mira.v + off.v, y: m.mira.y + off.y, p, spin: D.tipo === 'passe' ? 0 : m.spin, alto: m.alto, erroA: gaussR() * 0.003, erroV: gaussR() * 0.012 };
-      if (D.mira.plano === 'gol') m.inp.v = 0; if (D.mira.plano === 'chao') m.inp.y = 0;
-      void at; void b;
-      m.e = 'corrida'; m.t = 0; S().jog.correndo = true;
-      for (const d of m.prev) d.visible = false;
-    }
-    function gaussR() { let u = 0, v = 0; while (u === 0) u = Math.random(); while (v === 0) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
-    // o balanço da mira enquanto segura (em metros, no plano da mira)
-    function balancoMira(m) {
-      if (m.e !== 'carrega' && m.e !== 'corrida') return { u: 0, v: 0, y: 0 };
-      const D = m.D, b = D.bola, at = atributos(), amp = L.balanco(D, m.p, at), dist = Math.hypot(m.mira.u - b.u, (D.mira.plano === 'gol' ? 0 : m.mira.v) - b.v), a = m.tw || 0;
-      const s1 = Math.sin(1.7 * a + (m.fase || 0)) * amp * dist, s2 = Math.sin(2.3 * a + 1 + (m.fase || 0) * 0.7) * amp * dist;
-      if (D.mira.plano === 'gol') return { u: s1, v: 0, y: s2 };
-      const dl = dirLance(m); return { u: s1 * dl.v + s2 * dl.u * 0.5, v: -s1 * dl.u + s2 * dl.v * 0.5, y: 0 };
-    }
-    // a força "certa" na barra (a marquinha): passe rasteiro = chegar redondo no companheiro / parar no círculo
-    function forcaMarca(m) {
-      const D = m.D, at = atributos(), mi = m.mira, b = D.bola;
-      if (D.tipo === 'passe' && !(D.trava ? D.trava === 'alto' : m.alto)) {
-        const d = Math.hypot(mi.u - b.u, mi.v - b.v), vArr = D.crit === 'para' ? 0 : (D.recebe ? D.recebe.ctrl * 0.55 : 3), v0 = Math.sqrt(2 * 2.2 * d + vArr * vArr);
-        let lo = 0, hi = 1; for (let i = 0; i < 22; i++) { const q = (lo + hi) / 2; if (L.velDe(D, q, at, false) < v0) lo = q; else hi = q; } return (lo + hi) / 2;
-      }
-      return L.forcaCerta(D, mi, at, D.tipo === 'passe' ? (D.trava ? D.trava === 'alto' : m.alto) : m.alto);
-    }
-
-    // =====================================================================================================================
-    // O QUADRO A QUADRO DO TREINO
-    // =====================================================================================================================
-    function tickMg(dt) {
-      const m = P.mg; if (!m) return;
-      const D = m.D, U = m.U, T_ = TT(), J = S().jog, b = D.bola;
-      m.t += dt; if (m.e !== 'intro' && m.e !== 'semBola' && m.e !== 'fimSit') m.tD += dt;
-      if (m.e === 'mira' || m.e === 'carrega') { teclasMira(m, dt); posicionarJogador(m); }
-      if (m.e === 'carrega') { m.tw = (m.tw || 0) + dt; m.p = L.forcaEm(D, m.t); if (Math.floor(m.t * 12) !== m.tick12) { m.tick12 = Math.floor(m.t * 12); SOM.carga(m.p); } }
-      else if (m.e === 'mira') { m.p = 0; m.tw = 0; }
-      // a barra e a marquinha da força certa
-      U.barra.style.height = (m.p * 100).toFixed(1) + '%';
-      const fm = (m.e === 'mira' || m.e === 'carrega') ? forcaMarca(m) : null; U.marca.style.display = fm != null ? 'block' : 'none'; if (fm != null) U.marca.style.bottom = 'calc(' + (fm * 100).toFixed(1) + '% - 1px)';
-      const mostraCtl = m.e === 'mira' || m.e === 'carrega'; U.chuta.disabled = !mostraCtl; U.ef.disabled = U.alto.disabled = m.e !== 'mira';
-      // o que anda sozinho: aros, janela, cones, aro do cruzamento, quem corre
-      animarProps(m);
-      // a mira (com o balanço) e o começo da trajetória
-      const off = balancoMira(m);
-      if (mostraCtl) {
-        porMira(m, m.mira.u + off.u, m.mira.y + off.y, m.mira.v + off.v);
-        const inp = { u: m.mira.u + off.u, v: m.mira.v + off.v, y: m.mira.y + off.y, p: m.e === 'carrega' ? m.p : (fm != null ? fm : 0.5), spin: D.tipo === 'passe' ? 0 : m.spin, alto: m.alto };
-        if (D.mira.plano === 'gol') inp.v = 0;
-        const pts = L.previa(D, inp, atributos(), 0.45 * (D.tipo === 'passe' ? 1.6 : 1));
-        m.prev.forEach((d, i) => { const q = pts[Math.min(pts.length - 1, Math.floor((i + 1) / m.prev.length * pts.length * 0.7))]; if (!q || !pts.length) { d.visible = false; return; } const w = W(q.u, q.v); d.position.set(w.x, Y0 + q.y, w.z); d.visible = true; });
-      } else { m.ret.g.visible = m.ret.haste.visible = m.ret.sombra.visible = false; for (const d of m.prev) d.visible = false; }
-      // ---- a corrida e o chute
-      if (m.e === 'corrida') {
-        const c = m.corrida, k = clampN(m.t / ATRASO, 0, 1), a = W(c.de.u, c.de.v), z = W(c.ate.u, c.ate.v);
-        J.x = lerpN(a.x, z.x, k); J.z = lerpN(a.z, z.z, k); const pb = W(b.u, b.v); J.yaw = J.yawAlvo = Math.atan2(-(pb.z - J.z), pb.x - J.x); J.andando = true; J.correndo = true; J.vel = 4;
-        if (k >= 1) { J.andando = false; J.correndo = false; const al = W(m.inp.u, D.mira.plano === 'gol' ? 0 : m.inp.v); J.yaw = J.yawAlvo = Math.atan2(-(al.z - J.z), al.x - J.x); pose(J, 'chute', { estilo: D.tipo === 'passe' ? (m.alto ? 'peito' : 'passe') : D.tipo === 'cruz' ? 'cruz' : m.inp.p > 0.62 ? 'peito' : 'chapa' }); m.e = 'batida'; m.t = 0; }
-      } else if (m.e === 'batida') {
-        if (m.t >= 0.12) { m.J = L.jogada(D, m.inp, atributos(), m.tD); m.acc = 0; m.e = 'voo'; m.t = 0; SOM.chute(0.5 + 0.6 * m.inp.p); vib(25); m.quiques = 0; }
-      } else if (m.e === 'voo' || m.e === 'pos') {
-        const Jg = m.J, Bj = Jg.B; m.acc += dt;
-        while (m.acc >= L.DT) {
-          m.acc -= L.DT;
-          if (!Jg.fim) { L.passo(Jg, L.DT); if (Jg.fim) resultado(m); }
-          else depois(m, L.DT);
-        }
-        const giro = Math.hypot(Bj.vu, Bj.vv) * dt * 2.2; porBola(m.B, Bj.u, Bj.y, Bj.v, giro);
-        if ((Bj.quicou || 0) > m.quiques) { m.quiques = Bj.quicou; SOM.quica(); }
-        atoresNaJogada(m, dt);
-        if (m.e === 'pos' && m.t > 2.1) proximo(m);
-      }
-      cameraMg(m, dt);
-      void T_;
-    }
-    // o que acontece com a bola DEPOIS de decidido (rede, defesa, rebote...): só física, sem decidir mais nada
-    function depois(m, dt) {
-      const Jg = m.J, Bj = Jg.B, D = m.D;
-      if (m.res && m.res.gol) {                                          // dentro do gol: a rede segura
-        L.passoBola(Bj, dt); if (Bj.v < -0.95) { Bj.v = -0.95; Bj.vv = Math.abs(Bj.vv) * 0.05; Bj.vu *= 0.6; } if (Bj.y > 2.1) { Bj.y = 2.1; Bj.vy = -Math.abs(Bj.vy) * 0.2; }
-        return;
-      }
-      if (Jg.gk && Jg.gk.pegou && Jg.gk.encaixe) { Bj.u = Jg.gk.u; Bj.v = Jg.gk.v + 0.3; Bj.y = D.goleiro.modo === 'sai' ? 1.15 : 1.0; Bj.voa = Bj.rola = false; return; }
-      if (m.res && m.res.dominou) { Bj.voa = false; Bj.rola = false; const r = Jg.rc || Jg.cb; if (r) { Bj.u = lerpN(Bj.u, r.u + 0.3, dt * 6); Bj.v = lerpN(Bj.v, r.v - 0.2, dt * 6); Bj.y = lerpN(Bj.y, L.RB, dt * 8); } return; }
-      if (m.res && m.res.cabecada) { L.passoBola(Bj, dt); if (Bj.v < -0.95) { Bj.v = -0.95; Bj.vv = 0; Bj.vu *= 0.6; } return; }
-      L.passoBola(Bj, dt);
-      if (Bj.v < -1.0 && Math.abs(Bj.u) > 2.6) { Bj.v = -1.0; Bj.vv = Math.abs(Bj.vv) * 0.25; }
-      if (Math.abs(Bj.u) > 11.5) { Bj.u = Math.sign(Bj.u) * 11.5; Bj.vu = -Bj.vu * 0.25; }
-      if (Bj.v > 30.5) { Bj.v = 30.5; Bj.vv = -Bj.vv * 0.25; }
-    }
-    // decidiu: mostra, toca o som, mexe em quem participou
-    function resultado(m) {
-      const Jg = m.J, D = m.D, T_ = TT(), ok = Jg.ok, mot = Jg.motivo, U = m.U, Bj = Jg.B;
-      m.res = { ok, mot, gol: mot === 'GOL!' || mot === 'GOL DE CABEÇA!', dominou: mot === 'DOMINOU!', cabecada: mot === 'GOL DE CABEÇA!' };
-      if (mot === 'GOL!') SOM.rede(); else if (mot === 'Na trave!') SOM.trave(); else if (mot === 'Defendeu!' || mot === 'O goleiro pegou!' || mot === 'Interceptado!' || mot === 'O zagueiro cortou!' || mot === 'Na barreira!' || mot === 'Nas placas!') SOM.defesa();
-      if (ok) { SOM.acerto(); vib([30, 40, 30]); } else { setTimeout(() => SOM.erro(), 250); }
-      U.msg.textContent = tr(mot); U.msg.className = 'trMsg on ' + (ok ? 'ok' : 'no');
-      m.e = 'pos'; m.t = 0;
-      const [Ju, To] = T_.bat, K = T_.gol, Jg_ = S().jog;
-      if (m.res.dominou) { if (Jg.altoP) pose(Ju, 'peito'); else pose(Ju, 'dominio'); }
-      if (m.res.cabecada) {                                              // cabeceou: a bola vai para o gol (o Paredão saiu ou não alcança)
-        pose(Ju, 'cabeceio'); const alvoU = (Math.random() < 0.5 ? -1 : 1) * (0.9 + Math.random() * 1.1), du = alvoU - Bj.u, dv = -Bj.v, d = Math.hypot(du, dv) || 1;
-        Bj.vu = du / d * 11; Bj.vv = dv / d * 11; Bj.vy = -1.2; Bj.au = Bj.av = 0; Bj.voa = true; SOM.toque(); setTimeout(() => { if (P.mg === m) SOM.rede(); }, Math.min(1600, d / 11 * 1000));
-      }
-      if (Jg.corte != null) { const o = m.mkObj[Jg.corte]; if (o && o.npc) pose(o.npc, Bj.y > 1.1 ? 'pula' : 'dominio'); }
-      if (ok) { setTimeout(() => { if (P.mg === m) { pose(To, 'aplaude'); if (!D.goleiro) pose(K, 'aplaude'); } }, 300); pose(Jg_, 'comemora', { dur: 1.1 }); }
-      else if (!Jg.gk || !Jg.gk.pegou) setTimeout(() => { if (P.mg === m) pose(Jg_, 'lamenta', { dur: 1.2 }); }, 350);
-      if (Jg.gk && Jg.gk.pegou && Jg.gk.encaixe && D.goleiro.modo === 'sai') pose(K, Bj.y > 1.6 ? 'pula' : 'encaixe');
-    }
-    // NPCs na jogada (as posições vêm da lógica)
-    function atoresNaJogada(m, dt) {
-      const Jg = m.J, D = m.D, T_ = TT(), [Ju, To] = T_.bat, K = T_.gol;
-      if (Jg.gk) {
-        if (D.goleiro.modo === 'gol') goleiroSegue(K, Jg, dt);
-        else { const p = W(Jg.gk.u, Jg.gk.v), dx = p.x - K.x, dz = p.z - K.z, d = Math.hypot(dx, dz); if (d > 0.01 && !(K.pf && (K.pf.tipo === 'encaixe' || K.pf.tipo === 'pula'))) { K.x = p.x; K.z = p.z; K.yawAlvo = Math.atan2(-dz, dx); K.yaw = K.yawAlvo; limparPose(K); K.andando = true; K.correndo = true; K.vel = 4; } else K.andando = false; }
-      }
-      if (Jg.rc && D.recebe) { const p = W(Jg.rc.u, Jg.rc.v); if (Math.hypot(p.x - Ju.x, p.z - Ju.z) > 0.01) { const dx = p.x - Ju.x, dz = p.z - Ju.z; Ju.x = p.x; Ju.z = p.z; if (D.recebe.corre) { Ju.yawAlvo = Math.atan2(-dz, dx); Ju.andando = true; Ju.correndo = true; Ju.vel = 4; } } else Ju.andando = false; if (Jg.fim) Ju.andando = false; }
-      if (Jg.cb && D.cabeca) {
-        const p = W(Jg.cb.u, Jg.cb.v), dx = p.x - Ju.x, dz = p.z - Ju.z; if (Math.hypot(dx, dz) > 0.01 && !Jg.fim) { Ju.x = p.x; Ju.z = p.z; if (D.cabeca.corre) { Ju.yawAlvo = Math.atan2(-dz, dx); Ju.andando = true; Ju.correndo = true; Ju.vel = 4.5; } }
-        if (Jg.cb.pula > 0.4 && (!Ju.pf || Ju.pf.tipo === 'espera') && !Jg.fim) { Ju.andando = false; const pb = W(m.J.B.u, m.J.B.v); Ju.yawAlvo = Math.atan2(-(pb.z - Ju.z), pb.x - Ju.x); pose(Ju, 'cabeceio', { alto: 0.5 }); }
-      }
-      if (Jg.mk) Jg.mk.forEach((g, i) => {
-        const o = m.mkObj[i], p = W(g.u, g.v); if (!o) return;
-        if (o.npc) { const A = o.npc, dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz); A.x = p.x; A.z = p.z; if (d > 0.004 && !Jg.fim) { A.andando = true; A.correndo = true; A.vel = 3.5; A.yawAlvo = Math.atan2(-dz, dx); } else A.andando = false; if (g.pula > 0.5 && (!A.pf || A.pf.tipo === 'espera')) pose(A, 'pula'); }
-        else if (o.g) { o.g.position.set(p.x, Y0 + (g.pula > 0.3 ? Math.sin(Math.min(1, g.pula) * Math.PI) * 0.35 : 0), p.z); }
-      });
-      void To;
-    }
-    // o que anda sozinho no campo (com o tempo do desafio)
-    function animarProps(m) {
-      const D = m.D, t = m.tD, T_ = TT(), Ju = T_.bat[0];
-      if (m.aros) D.alvos.forEach((a, i) => { const P_ = L.posAlvo(a, t), g = m.aros[i], w = W(P_.u, 0.05); g.position.set(w.x, Y0 + P_.y, w.z); const cd = g.userData.corda, top = L.GOL_H + 0.06 - P_.y - a.r; cd.scale.y = Math.max(0.05, top); cd.position.y = a.r + top / 2; if (m.J && m.J.alvoHit === a && m.res) { g.rotation.x += 0.15; } });
-      if (m.placas) {
-        const P_ = L.posJanela(D.janela, t), w = D.janela.w, h = D.janela.h, GW = L.GOL_W, GH = L.GOL_H, u0 = P_.u - w / 2, u1 = P_.u + w / 2, y0 = P_.y - h / 2, y1 = P_.y + h / 2;
-        const rects = [[-GW, u0, 0, GH], [u1, GW, 0, GH], [u0, u1, 0, y0], [u0, u1, y1, GH]];
-        rects.forEach(([a, bq, c, d], i) => { const pl = m.placas[i], lw = Math.max(0.001, bq - a), lh = Math.max(0.001, d - c), wp = W((a + bq) / 2, -0.06); pl.visible = lw > 0.01 && lh > 0.01; pl.scale.set(lw, lh, 1); pl.position.set(wp.x, Y0 + (c + d) / 2, wp.z); });
-      }
-      if (m.conesObj) { const C = L.posCones(D.cones, t); [C.a, C.b].forEach((c, i) => { const w = W(c.u, c.v); m.conesObj[i].position.set(w.x, Y0 + 0.18, w.z); }); }
-      if (m.aroObj) { const P_ = L.posAro(D.aro, t), w = W(P_.u, P_.v), b = W(D.bola.u, D.bola.v); m.aroObj.position.set(w.x, Y0 + P_.y, w.z); m.aroObj.rotation.y = Math.atan2(b.x - w.x, b.z - w.z); const ps = m.aroObj.userData.poste, hgt = P_.y - D.aro.r; ps.scale.y = hgt; ps.position.y = -D.aro.r - hgt / 2; }
-      // quem corre antes do chute (Juninho no passe/cruzamento "correndo")
-      if (!m.J || m.e === 'mira' || m.e === 'carrega' || m.e === 'corrida' || m.e === 'batida' || m.e === 'intro') {
-        const C = (D.recebe && D.recebe.corre) || (D.cabeca && D.cabeca.corre);
-        if (C && m.e !== 'intro') { const p0 = L.posCorre(C, t), p1 = L.posCorre(C, t + 0.05), w = W(p0.u, p0.v), w1 = W(p1.u, p1.v); const mv = Math.hypot(w1.x - w.x, w1.z - w.z) > 0.01; Ju.x = w.x; Ju.z = w.z; Ju.andando = mv; Ju.correndo = mv; Ju.vel = 4; if (mv) { Ju.yawAlvo = Math.atan2(-(w1.z - w.z), w1.x - w.x); if (Ju.pf && Ju.pf.tipo === 'espera') limparPose(Ju); } else if (!Ju.pf) { pose(Ju, 'espera'); olharP(Ju, D.bola.u, D.bola.v); } }
-      }
-    }
-    // ---- a câmera: atrás da bola, por cima do ombro; no voo acompanha a bola
-    function cameraMg(m, dt) {
-      const s = S(), D = m.D, b = D.bola, dl = dirLance(m), ru = dl.v, rv = -dl.u;
-      const back = D.tipo === 'chute' ? 4.6 : 5.4, alt = D.tipo === 'chute' ? 2.55 : 3.3;   // do outro lado da bola (o jogador fica do lado do pé de apoio): ele não tampa a mira
-      let cu = b.u - dl.u * back - ru * 1.0, cv = b.v - dl.v * back - rv * 1.0;
-      const cu2 = clampN(cu, -8.3, 8.3), cv2 = clampN(cv, 0.8, 29.2), sobra = Math.hypot(cu - cu2, cv - cv2); cu = cu2; cv = cv2;   // nunca atrás do alambrado: encosta na linha e sobe
-      const pc = W(cu, cv), altF = alt + Math.min(2.2, sobra * 0.7);
-      let foco;
-      if (D.mira.plano === 'gol') foco = { u: lerpN(b.u, 0, 0.72), v: lerpN(b.v, 0, 0.72), y: 1.05 };
-      else { const alvo = D.mira; foco = { u: lerpN(b.u, alvo.u, 0.6), v: lerpN(b.v, alvo.v, 0.6), y: 0.9 }; }
-      if (m.J && (m.e === 'voo' || m.e === 'pos')) { const Bj = m.J.B, k = 0.35; foco = { u: lerpN(foco.u, Bj.u, k), v: lerpN(foco.v, Bj.v, k), y: lerpN(foco.y, Bj.y, k) }; }
-      const pf = W(foco.u, foco.v), alvoC = { px: pc.x, py: Y0 + altF, pz: pc.z, tx: pf.x, ty: Y0 + foco.y, tz: pf.z };
-      if (!m.cam || m.camSnap) { m.cam = Object.assign({}, alvoC); m.camSnap = false; }
-      else { const k = 1 - Math.exp(-dt * 5); for (const q in alvoC) m.cam[q] += (alvoC[q] - m.cam[q]) * k; }
-      s.camCena = m.cam;
-    }
-    // ---- o que vem depois do resultado: outra bola, outro desafio, o fim
-    function proximo(m) {
-      const U = m.U; U.msg.className = 'trMsg';
-      const T_ = TT(); for (const A of [T_.gol].concat(T_.bat)) { if (A.pf && A.pf.tipo === 'mergulho') limparPose(A); }
-      if (m.res.ok) {
-        m.feitos[m.k] = true; SOM.apito();
-        if (m.k < 2) { U.msg.textContent = trf('Desafio {0} feito!', m.k + 1); U.msg.className = 'trMsg on ouro'; m.e = 'intervalo'; m.t = 0; setTimeout(() => { if (P.mg === m) { U.msg.className = 'trMsg'; montarDesafio(m, m.k + 1); m.camSnap = true; } }, 1200); return; }
-        concluir(m); return;
-      }
-      m.bolas--; atualizarHud(m);
-      if (m.bolas <= 0) { semBola(m); return; }
-      reporBola(m);
-    }
-    function reporBola(m) {
-      const D = m.D; m.J = null; m.res = null; m.e = 'mira'; m.t = 0;
-      porBola(m.B, D.bola.u, L.RB, D.bola.v); papeis(m); posicionarJogador(m, true); limparPose(S().jog);
-    }
-    // sem bola: o anúncio de 15 s (+1) ou de 30 s (+3), ou desiste
-    function semBola(m) {
-      const U = m.U; m.e = 'semBola';
-      U.card.hidden = false;
-      U.card.innerHTML = '<h3>' + esc(tr('Acabaram as bolas!')) + '</h3><p>' + esc(tr('Faltou pouco. Quer mais bola?')) + '</p>' +
-        '<div class="trBt" style="flex-direction:column;align-items:center"><button type="button" class="pxBtn pxPrim" data-a="15">' + esc(tr('Anúncio de 15 s: +1 bola')) + '</button>' +
-        '<button type="button" class="pxBtn pxPrim" data-a="30">' + esc(tr('Anúncio de 30 s: +3 bolas')) + '</button><button type="button" class="pxBtn" data-a="sai">' + esc(tr('Desistir')) + '</button></div><p class="trAv"></p>';
-      let ocupado = false;
-      U.card.onclick = async (e) => {
-        const bt = e.target.closest && e.target.closest('button'); if (!bt || ocupado) return; if (typeof Som !== 'undefined' && Som.clique) Som.clique();
-        const a = bt.dataset.a;
-        if (a === 'sai') { U.card.hidden = true; terminar(m, 'falhou'); return; }
-        ocupado = true; const seg = +a, mais = seg === 15 ? 1 : 3;
-        let visto = false;
-        try { visto = typeof Anuncios !== 'undefined' && await Anuncios.filme(seg, { nome: 'treino-' + seg, tit: tr(mais === 1 ? 'Bola extra' : 'Bolas extras'), txt: tr(mais === 1 ? 'Assista até o fim para ganhar a bola.' : 'Assista até o fim para ganhar as 3 bolas.'), fim: tr('Pronto! Bola na marca.') }); } catch (er) { visto = false; }
-        ocupado = false;
-        if (P.mg !== m) return;
-        if (!visto) { const av = U.card.querySelector('.trAv'); if (av) av.textContent = tr('Nenhum anúncio disponível agora. Tenta de novo daqui a pouco.'); return; }
-        U.card.hidden = true; m.bolas += mais; atualizarHud(m); reporBola(m);
-      };
-    }
-    // fechou os 3: +0,1 na habilidade (só da primeira vez de cada situação) e a turma comemora
-    function concluir(m) {
-      const p = dados(), Sit = m.Sit, U = m.U, T_ = TT(); let txt2 = '';
-      if (!m.rep && p.prog[Sit.tipo] === Sit.n) {
-        const at = atributos(), nome = Sit.atrib, novo = Math.min(10, Math.round(((at[nome] || 5) + 0.1) * 10) / 10);
-        at[nome] = novo; p.ganhos[nome] = Math.round(((p.ganhos[nome] || 0) + 0.1) * 10) / 10; p.prog[Sit.tipo] = Sit.n + 1;
-        txt2 = trf('+0,1 em {0} (agora {1})', tr(L.NOME_ATRIB[nome]), virg(novo)); gravar();
-        try { if (api.ganhoNaTela) api.ganhoNaTela(txt2); } catch (e) { /* sem efeito */ }
-      }
-      SOM.festa(); vib([40, 50, 40, 50, 120]);
-      for (const A of T_.bat) pose(A, 'comemora', { dur: 2.2 }); pose(T_.gol, 'aplaude', { dur: 2.2 }); pose(S().jog, 'comemora', { dur: 2.2 });
-      m.e = 'fimSit'; U.card.hidden = false;
-      U.card.innerHTML = '<h3>' + esc(tr('SITUAÇÃO CONCLUÍDA!')) + '</h3><p>' + esc(trf('Situação {0}/30: {1}', Sit.n + 1, tr(Sit.nome))) + '</p>' + (txt2 ? '<p class="trPr">' + esc(txt2) + '</p>' : '<p class="trPr">' + esc(tr('Repetição: sem ganhar habilidade.')) + '</p>') +
-        '<div class="trBt"><button type="button" class="pxBtn pxPrim">' + esc(tr('Continuar')) + '</button></div>';
-      U.card.onclick = (e) => { if (e.target.closest && e.target.closest('button')) { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); U.card.hidden = true; terminar(m, 'ok'); } };
-    }
-    function terminar(m, como) { if (m.acabou) return; m.acabou = true; if (m.fim) m.fim(como); }
-    async function sairTreino(m) {
-      if (m.e === 'semBola' || m.e === 'fimSit' || m.saindo) return; m.saindo = true;
-      const U = m.U, antes = m.e; m.e = 'pausa';
-      U.card.hidden = false;
-      U.card.innerHTML = '<p>' + esc(tr('Sair do treino? Conta como um dos 2 de hoje.')) + '</p><div class="trBt"><button type="button" class="pxBtn" data-r="1">' + esc(tr('Sair')) + '</button><button type="button" class="pxBtn pxPrim" data-r="0">' + esc(tr('Continuar')) + '</button></div>';
-      U.card.onclick = (e) => { const b = e.target.closest && e.target.closest('button'); if (!b) return; if (typeof Som !== 'undefined' && Som.clique) Som.clique(); U.card.hidden = true; m.saindo = false; if (b.dataset.r === '1') terminar(m, 'saiu'); else m.e = antes === 'carrega' ? 'mira' : antes; };
-    }
+    // (6.6.19) o minigame (montar o desafio, a mira, a força, o chute, a câmera, o resultado, os anúncios) foi para o treinoCampo.js
 
     // =====================================================================================================================
     // tick / limpar
@@ -1494,7 +1122,7 @@
       const s = S(), T_ = TT(); if (!s || !T_ || s.dentro) return;
       if (!P.luz) montarLuzes();
       tickLuzes();
-      if (P.mg) { tickMg(dt); return; }
+      if (P.sessao) return;                                              // (6.6.19) treinando no campo de treino (a cidade está parada)
       if (T_.pausa) {                                                     // a turma não está (foi para casa / na chuva): a bola some, o treino recomeça depois
         if (P.dr) { P.dr = null; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; for (const A of [T_.gol].concat(T_.bat)) limparPose(A); }
         return;
@@ -1504,15 +1132,14 @@
       tickDrill(dt);
     }
     function limpar() {
-      const m = P.mg; if (m) { desligarEntrada(m); terminar(m, 'saiu'); if (m.U) m.U.el.remove(); }
       if (P.uiCard) { P.uiCard.el.remove(); P.uiCard = null; }
       const h = document.getElementById('trHud'); if (h) h.remove();
-      P.mg = null; P.dr = null;
+      P.dr = null;
       for (const k in MATS) { MATS[k].dispose(); delete MATS[k]; }
     }
-    return { alvos, tick, limpar, _P: P, _L: L, _f: { treinar, conversar, cartao, dados, iniciarDrill, pose, limparPose, montarDesafio, tickMg, soltar } };
+    return { alvos, tick, limpar, _P: P, _L: L, _f: { treinar, conversar, cartao, dados, iniciarDrill, pose, limparPose, goleiroSegue } };
   }
 
-  window.FutebolJS.registrarFase({ id: 'treino', nome: 'Treino do Nonato', nucleoMinimo: '6.6.16', iniciar: async () => {}, criar, _logica: LOGICA });
+  window.FutebolJS.registrarFase({ id: 'treino', nome: 'Treino do Nonato', nucleoMinimo: '6.6.19', iniciar: async () => {}, criar, _logica: LOGICA });
 
 })();

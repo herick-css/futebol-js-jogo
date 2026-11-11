@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.18
+   FUTEBOL JS · jogo.js · versão 6.6.19
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,12 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.18';
+const VERSAO_JOGO = '6.6.19';
+// 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
+//   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
+//   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
+//   de verdade, as mãos encaixam (cintura, cabeça, palmas). cidade.js: a dupla da selfie se conhece, conversa, tira a foto e cada um
+//   segue o seu caminho; as portas que abrem não deixam mais a maçaneta pintada flutuando. pesca.js: no peixe no ar, a boia sobe junto.
 // 6.6.18: Escolha — a lista de opções tem no máximo a altura de 3 (o resto rola, com a setinha ▼). cidade.js — a Lúcia atende as mesas
 //   como a Carla (anota, faz na bancada ou pega na vitrine, leva e recebe) e só fica no caixa no turno do jogador; leva o bolo dele até a
 //   mesa; no turno os clientes também pedem bolo e o pagamento sobe 50% com a confeitaria; o encontro marcado no domingo é "hoje, às 19h"

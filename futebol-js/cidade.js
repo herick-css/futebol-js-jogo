@@ -1,6 +1,16 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.19
+     - TURMA DO NONATO: o dia do jogo vira às 5h, mas a agenda (dia sim, dia não, janelas que passam da meia-noite) é do calendário
+       (diaCal): antes a sessão das 16h30 às 4h30 acabava à meia-noite. A turma mora na casa mais perto do campo, sai de casa com tempo
+       de chegar (idaTurma, trotando), espera dar a hora parada e fica as 12 h (a chuva não para o treino); se o relógio pulou e ninguém
+       está vendo, já aparece no campo / em casa (tickTurmaMor). O goleiro: com pose do treino.js (A.poseFn), a pose manda (antes a
+       "base" antiga travava ele no gol) e andando ele anda de verdade.
+     - TREINO À PARTE: suspenderTreino/retomarTreino (apiTreino): a cidade some e para (o relógio também) e o quadro é do treinoCampo.js.
+     - SELFIE: é de quem acabou de se conhecer no papo (aperto de mão → papo → selfie → olham a foto → tchau) e depois cada um segue o seu
+       caminho (separarDupla: quem ia para o mesmo lado dá meia-volta; não repetem o papo por 5 min). A dupla que vem de fora não tira mais.
+     - PORTAS que abrem: a pintada (porta()) não tem mais maçaneta nem folha, só o vão escuro; o vão da animada cobre os enfeites das de vidro.
    NOVIDADES DA 6.6.18
      - A LÚCIA GARÇONETE (tickGarcom): sem o jogador trabalhando, o cliente senta e ela vai até a mesa, anota, faz o café na bancada (ou
        pega o bolo na vitrine), leva e recebe ali mesmo. Rotas por pontos fixos (pontoCafe/rotaCafe: corredor da frente, vãos entre as mesas,
@@ -1201,8 +1211,9 @@
     if (jw > 0.7) naFace(G, w, d, face, u, y + jh * 0.48, 0, 0.07, jh * 0.04 + 0.03, 0.16, moldura || '#f4f2ea');
     naFace(G, w, d, face, u, y - 0.16, 0.04, jw + 0.34, 0.08, 0.22, moldura || '#f4f2ea');
   }
-  function porta(G, w, d, face, u, pw, ph, cor, moldura) {
+  function porta(G, w, d, face, u, pw, ph, cor, moldura, anim) {
     naFace(G, w, d, face, u, 0, 0, pw + 0.18, ph + 0.09, 0.1, moldura || '#f4f2ea');
+    if (anim) { naFace(G, w, d, face, u, 0, 0, pw, ph, 0.104, '#120e0b'); return; }   // (6.6.19) porta que ABRE (portasAnim): a folha de verdade tem a maçaneta; aqui só o vão escuro (antes a maçaneta pintada ficava flutuando no vão aberto)
     naFace(G, w, d, face, u, 0, 0, pw, ph, 0.14, cor);
     naFace(G, w, d, face, u + pw * 0.32, ph * 0.47, 0.08, 0.08, 0.08, 0.06, '#d8c070');   // maçaneta
   }
@@ -1313,7 +1324,7 @@
       platibanda: escurece(cor, 0.95),
       montar: (G) => {
         const corP = ['#7a4a2a', '#5b3a22', '#3a5f8a', '#8a2f2a'][Math.floor(rnd() * 4)]; pt.porta = { w: 0.9, h: 2.1, cor: corP, s: sg };   // (6.6.15) a porta que abre (portasAnim)
-        porta(G, w, d, 'f', lado * w * 0.27, 0.9, 2.1, corP);
+        porta(G, w, d, 'f', lado * w * 0.27, 0.9, 2.1, corP, null, !!pt.especial);   // (6.6.19) a das casas especiais abre
         janela(G, w, d, 'f', -lado * w * 0.22, 1.0, 1.2, 1.05);
         janela(G, w, d, 'r', 0, 1.0, 1.0, 1.0); janela(G, w, d, 'l', 0, 1.0, 1.0, 1.0);
         if (laje) caixaDagua(G, -lado * w * 0.2, 3.35, -d * 0.15);
@@ -1383,7 +1394,7 @@
       } });
     edificio({ r: R(462, 305, 64, 50), frente: 1, h: 6.2, andares: 2, cor: '#f2d27a', faixa: '#e3b95a',
       letreiro: { txt: 'CAFETERIA', fundo: '#5b3a22', cor: '#f6e2b8', w: 7.5, h: 1.0, y: 6.75 },
-      montar: (G, w, d) => { porta(G, w, d, 'f', -3.5, 1.4, 2.3, '#6a4428'); naFace(G, w, d, 'f', 2, 0.6, 0, 6, 1.9, 0.14, '#5d7f96');
+      montar: (G, w, d) => { porta(G, w, d, 'f', -3.5, 1.4, 2.3, '#6a4428', null, true); naFace(G, w, d, 'f', 2, 0.6, 0, 6, 1.9, 0.14, '#5d7f96');
         toldo(G, w, d, 0, w - 0.6, 2.85, 1.4, ['#6a4428', '#f2e6c8']); for (let i = 0; i < 3; i++) janela(G, w, d, 'f', -4 + i * 4, 4.1, 1.3, 1.3);
         G.box(w - 1, 0.12, 1.0, '#cdbf9f', 0, 3.15, d / 2 + 0.5); G.box(w - 1, 0.85, 0.06, '#3f3a34', 0, 3.27, d / 2 + 0.98); } });
     edificio({ r: R(767, 275, 100, 80), frente: 1, h: 5.2, andares: 1, cor: '#f4efe2', barrado: '#c8352b', platibanda: '#c8352b',
@@ -1437,11 +1448,11 @@
       montar: (G, w, d) => { for (const u of [-5, 0, 5]) { naFace(G, w, d, 'f', u, 0, 0, 3.6, 2.7, 0.14, '#24262b'); naFace(G, w, d, 'f', u, 2.35, 0.01, 3.7, 0.4, 0.16, '#8c9199'); } } });
     edificio({ r: R(560, 432, 92, 60), frente: -1, h: 3.9, andares: 1, cor: '#f4efe2', barrado: '#1f7a4d', platibanda: '#c8352b',
       letreiro: { txt: 'PIZZARIA', fundo: '#c8352b', cor: '#f4f4ec', w: 8, h: 1.1, y: 3.95 },
-      montar: (G, w, d) => { porta(G, w, d, 'f', 0, 1.6, 2.4, '#7a4a2a'); for (const s of [-1, 1]) naFace(G, w, d, 'f', s * 5, 0.8, 0, 4.5, 1.8, 0.14, '#5d7f96');
+      montar: (G, w, d) => { porta(G, w, d, 'f', 0, 1.6, 2.4, '#7a4a2a', null, true); for (const s of [-1, 1]) naFace(G, w, d, 'f', s * 5, 0.8, 0, 4.5, 1.8, 0.14, '#5d7f96');
         toldo(G, w, d, 0, w - 0.6, 3.2, 1.3, ['#1f7a4d', '#f4f4ec', '#c8352b']); } });
     edificio({ r: R(668, 432, 100, 66), frente: -1, h: 6.4, andares: 2, cor: '#b9dca0', faixa: '#8fbf74', barrado: '#5f8a4a',
       letreiro: { txt: 'RESTAURANTE', fundo: '#f4f4ec', cor: '#1f7a4d', w: 10, h: 1.1, y: 6.95 },
-      montar: (G, w, d) => { porta(G, w, d, 'f', 0, 1.8, 2.4, '#5b3a22'); for (const s of [-1, 1]) naFace(G, w, d, 'f', s * 5.5, 0.7, 0, 5, 1.9, 0.14, '#5d7f96');
+      montar: (G, w, d) => { porta(G, w, d, 'f', 0, 1.8, 2.4, '#5b3a22', null, true); for (const s of [-1, 1]) naFace(G, w, d, 'f', s * 5.5, 0.7, 0, 5, 1.9, 0.14, '#5d7f96');
         toldo(G, w, d, 0, w - 0.6, 2.95, 1.2, ['#1f7a4d', '#e8f2dc']); for (let i = 0; i < 4; i++) janela(G, w, d, 'f', -7.5 + i * 5, 4.3, 1.4, 1.3);
         for (const s of [-1, 1]) { G.box(0.7, 0.6, 0.7, '#9a6a44', s * 2.2, 0, d / 2 + 0.75); G.box(0.8, 0.7, 0.8, '#3f8a3a', s * 2.2, 0.6, d / 2 + 0.75); } },
       obst: [[-2.2, 0.75, 0.8, 0.8], [2.2, 0.75, 0.8, 0.8]] });                                                 // os vasos de planta têm corpo
@@ -1478,13 +1489,13 @@
       S.balcao = { x: cx + 2.5, z: cz - (d / 2 - 0.9) }; }
     edificio({ r: R(908, 432, 98, 72), frente: -1, h: 6.8, andares: 2, cor: '#5f6b7a', faixa: '#f2c230', barrado: '#3a414b',
       letreiro: { txt: 'ACADEMIA', fundo: '#1c1c1f', cor: '#f2c230', w: 9, h: 1.2, y: 3.45 },
-      montar: (G, w, d) => { porta(G, w, d, 'f', -5, 1.8, 2.4, '#2e3a44'); naFace(G, w, d, 'f', 2, 0.5, 0, 9, 2.2, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 4.0, 0, w - 2, 2.1, 0.14, '#7aa2bd');
+      montar: (G, w, d) => { porta(G, w, d, 'f', -5, 1.8, 2.4, '#2e3a44', null, true); naFace(G, w, d, 'f', 2, 0.5, 0, 9, 2.2, 0.14, '#7aa2bd'); naFace(G, w, d, 'f', 0, 4.0, 0, w - 2, 2.1, 0.14, '#7aa2bd');
         for (let i = -4; i <= 4; i++) naFace(G, w, d, 'f', i * 2.0, 4.0, 0.01, 0.1, 2.1, 0.17, '#2e3a44'); } });
     // BARBEARIA DO TONINHO (barbearia.js): entre a quadra de futsal e a pizzaria. Porta 2,5 m para o oeste, vitrine com toldo e o poste listrado
     edificio({ r: R(490, 432, 55, 43), frente: -1, h: 3.8, andares: 1, cor: '#f2ece0', barrado: '#1f1f22', platibanda: '#2a3f66',
       letreiro: { txt: 'BARBEARIA', fundo: '#1c1c1f', cor: '#f4efe2', w: 6.2, h: 1.0, y: 3.85 },
       montar: (G, w, d) => {
-        porta(G, w, d, 'f', 2.5, 1.5, 2.4, '#3a2a22', '#c9a24a'); naFace(G, w, d, 'f', -2.0, 0.8, 0, 4.4, 1.8, 0.14, '#7aa2bd');
+        porta(G, w, d, 'f', 2.5, 1.5, 2.4, '#3a2a22', '#c9a24a', true); naFace(G, w, d, 'f', -2.0, 0.8, 0, 4.4, 1.8, 0.14, '#7aa2bd');
         naFace(G, w, d, 'f', -2.0, 0.8, 0.02, 4.6, 0.08, 0.18, '#c9a24a'); naFace(G, w, d, 'f', -2.0, 2.6, 0.02, 4.6, 0.08, 0.18, '#c9a24a');
         toldo(G, w, d, -2.0, 5.0, 3.15, 1.0, ['#2a3f66', '#f4efe2']);
         const u = 4.05, z = d / 2 + 0.22;                                       // o poste listrado (vermelho, branco e azul) com as tampas de metal
@@ -2047,14 +2058,32 @@
     }
     return best;
   }
+  // (6.6.19) o "dia" do jogo vira às 5h (quando ele acorda), não à meia-noite: depois da meia-noite ainda é o mesmo dia do jogo, mas o
+  //   calendário (o dia sim, dia não da turma e as janelas de 12 h, que passam da meia-noite) já é o seguinte. Antes a sessão das
+  //   16h30 às 4h30 acabava à meia-noite (a conta achava que era "a de ontem", que não existia) e a turma ia embora mais cedo.
+  const diaCal = () => (S.dados.dia || 1) + (S.dados.hora < H_ACORDAR ? 1 : 0);
   function turmaAgora() {                                               // a sessão que está valendo agora (do dia de hoje ou a de ontem que passou da meia-noite)
-    const d = S.dados, dia = d.dia || 1, H = d.hora;
+    const d = S.dados, dia = diaCal(), H = d.hora;
     for (const k of [0, -1]) { const J = janelaTurma(dia + k); if (J && H - k * 24 >= J[0] && H - k * 24 < J[1]) return { dia: dia + k, ini: J[0], fim: J[1] }; }
     return null;
   }
   const turmaPresente = () => !!turmaAgora();
+  // (6.6.19) a turma sai de casa uns 40 min ANTES (para estar no campo na hora de começar) e, se o relógio pulou (o jogador estava dentro
+  //   de algum lugar, dormindo...), aparece já no campo / já em casa quando ninguém está vendo: fica as 12 h seguidas, na hora certa
+  const TURMA_IDA = 0.7;
+  function turmaVai(ida) {                                              // ida: as horas que ele leva de casa até o campo (+ folga)
+    if (turmaPresente()) return true;
+    const d = S.dados, dia = diaCal(), H = d.hora, lead = ida || TURMA_IDA;
+    for (const k of [0, 1]) { const J = janelaTurma(dia + k); if (J) { const ini = J[0] + k * 24; if (H < ini && ini - H <= lead) return true; } }
+    return false;
+  }
+  function horasDaTurma() {                                             // { desde: horas desde o começo da sessão de agora, fim: horas desde o fim da última }
+    const d = S.dados, dia = diaCal(), H = d.hora, ag = turmaAgora();
+    let fim = Infinity; for (const k of [0, -1]) { const J = janelaTurma(dia + k); if (J && H - k * 24 >= J[1]) fim = Math.min(fim, H - k * 24 - J[1]); }
+    return { desde: ag ? H + (dia - ag.dia) * 24 - ag.ini : -1, fim };
+  }
   function proximaTurma() {                                             // a próxima sessão (para a turma contar ao jogador)
-    const d = S.dados, dia = d.dia || 1, H = d.hora;
+    const d = S.dados, dia = diaCal(), H = d.hora;
     for (let k = 0; k < 4; k++) { const J = janelaTurma(dia + k); if (J && (k > 0 || H < J[0])) return { dia: dia + k, ini: J[0], fim: J[1] }; }
     return null;
   }
@@ -3177,7 +3206,7 @@
       const t = A.chuteT, pr = t < 0.16 ? -t / 0.16 * 0.9 : -0.9 + Math.min(1, (t - 0.16) / 0.14) * 2.2;
       m.pernaD.rotation.z = pr; m.pernaE.rotation.z = -0.15; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.5; m.bracoE.rotation.z = 0.3;
       r.position.y = A.y;
-    } else if (A.andando && !A.goleiro) {
+    } else if (A.andando && (!A.goleiro || A.poseFn || A.tipo === 'morador')) {   // (6.6.19) o goleiro andando (indo/voltando do campo) anda de verdade
       const k = A.correndo ? 1.1 : 0.75; A.fase += dt * A.vel * (A.correndo ? 2.9 : 4.6); const s = Math.sin(A.fase);
       m.pernaE.rotation.z = s * k; m.pernaD.rotation.z = -s * k; m.bracoE.rotation.z = -s * k * 0.8; m.bracoD.rotation.z = s * k * 0.8;
       if (A.correndo) { usarCotovelo(m.bracoE, 0, 1.3); usarCotovelo(m.bracoD, 0, 1.3); }
@@ -3185,7 +3214,8 @@
     } else {
       m.pernaE.rotation.z = lerp(m.pernaE.rotation.z, 0, e); m.pernaD.rotation.z = lerp(m.pernaD.rotation.z, 0, e);
       const f = Math.sin(A.t * 5), g = Math.sin(A.t * 5 + 2);
-      if (A.goleiro) { usarJoelhos(m, -0.45, -0.45); m.bracoE.rotation.x = 0.75; m.bracoD.rotation.x = -0.75; m.bracoE.rotation.z = 0.35; m.bracoD.rotation.z = 0.35; r.position.y = A.y - 0.06; m.bracoE.rotation.y = 0; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return; }
+      if (A.goleiro && !A.poseFn) { usarJoelhos(m, -0.45, -0.45);   // (6.6.19) com pose do treino.js (A.poseFn), quem manda é ela (antes o goleiro ficava travado nesta base)
+        m.bracoE.rotation.x = 0.75; m.bracoD.rotation.x = -0.75; m.bracoE.rotation.z = 0.35; m.bracoD.rotation.z = 0.35; r.position.y = A.y - 0.06; m.bracoE.rotation.y = 0; r.position.x = A.x; r.position.z = A.z; r.rotation.y = A.yaw; A.blob.position.set(A.x, A.y + 0.02, A.z); return; }
       m.bracoE.rotation.z = lerp(m.bracoE.rotation.z, A.fala ? f * 0.35 + 0.4 : 0, e); m.bracoD.rotation.z = lerp(m.bracoD.rotation.z, A.fala ? g * 0.35 + 0.45 : 0, e);
       if (A.fala) usarCotovelo(m.bracoD, 0, 0.6 + g * 0.3);
       if (A.encostado) m.corpo.rotation.z = ENC_INCL;   // (6.6.15) encostado no tronco: o corpo inteiro deita um pouco para trás, em volta dos pés (as costas na madeira)
@@ -3224,6 +3254,7 @@
     const m = A.m, t = A.t || 0, g = A.gesto;
     if (g === 'acena') { m.bracoD.rotation.z = 2.7; m.bracoD.rotation.x = -0.35 + Math.sin(t * 11) * 0.32; usarCotovelo(m.bracoD, 0, 0.3); }
     else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.03; }
+    else if (g === 'aperto') { m.bracoD.rotation.z = 1.0 + Math.sin(t * 13) * 0.09; m.bracoD.rotation.x = -0.18; usarCotovelo(m.bracoD, 0, 0.35); }   // (6.6.19) aperto de mão (a direita para a frente, balançando)
     else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.05; if (m.cabecaLigada) usarCabeca(m, -0.06); }
     else if (g === 'selfie') {                                         // (6.6.5) celular lá no alto, na frente (a mão direita), olhando para ele
       m.bracoD.rotation.z = 1.95; m.bracoD.rotation.x = -0.2; usarCotovelo(m.bracoD, 0, 0.2); usarCabeca(m, 0.12);
@@ -3968,7 +3999,7 @@
   function criarPortaAnim(id, x, zf, s, D) {
     if (D.tipo === 'vao') return null;
     const g = new THREE.Group(); g.position.set(x, 0, zf); g.rotation.y = s > 0 ? 0 : Math.PI; S.grupoCidade.add(g);   // local: +z = para a rua
-    const Gv = new Geo(); Gv.box(D.w, D.h, 0.02, '#120e0b', 0, 0, 0.082); Gv.box(D.w - 0.1, 0.05, 0.12, '#2a2018', 0, 0, 0.0);   // o vão escuro (cobre a porta pintada) + soleira
+    const Gv = new Geo(); Gv.box(D.w, D.h, 0.02, '#120e0b', 0, 0, 0.116);   // (6.6.19) mais para fora: cobre os enfeites pintados das portas de vidro (até 0,106) Gv.box(D.w - 0.1, 0.05, 0.12, '#2a2018', 0, 0, 0.0);   // o vão escuro (cobre a porta pintada) + soleira
     const vao = Gv.malha(MAT); vao.visible = false; g.add(vao);
     const P = { id, x, zf, s, w: D.w, h: D.h, tipo: D.tipo, g, vao, k: 0, alvo: 0, segura: 0, folhas: [], prim: true }, z = 0.12;
     if (D.tipo === 'gira') { const piv = new THREE.Group(); piv.position.set(-D.w / 2 + 0.02, 0.02, z); const f = folhaPorta(D.w - 0.05, D.h - 0.04, D.cor, false, 1); f.position.x = (D.w - 0.05) / 2; piv.add(f); g.add(piv); P.folhas.push({ piv, lado: 1 }); }
@@ -4467,9 +4498,18 @@
     return m;
   }
   // (6.6.16) o que o treino.js (a turma do seu Nonato, os treinos de chute/passe/cruzamento) usa daqui
+  // (6.6.19) o TREINO num mundo à parte (treinoCampo.js), como a partida: a cidade some e PARA (o relógio também) e o quadro é do treino
+  function suspenderTreino(quadro) {
+    S.visCidade = scene.children.filter((c) => !c.isLight && c.visible); for (const c of S.visCidade) c.visible = false;
+    GANCHO_RENDER = quadro; camera.clearViewOffset(); esconderHud(true); UI.arrasto.hidden = true; aviso(''); S.camCena = null;
+  }
+  function retomarTreino() {
+    for (const c of S.visCidade || []) c.visible = true; S.visCidade = null;
+    GANCHO_RENDER = gancho; esconderHud(false); UI.arrasto.hidden = false; S.cam.snap = true;
+  }
   function apiTreino() {
     return Object.assign(apiCinema(), { esconderHud, texBolinha, janelaTurma, turmaAgora, turmaPresente, proximaTurma, TURNOS, chovendoAgora,
-      noite: () => (S.dentro ? 0 : luzDoDia(S.dados.hora).lamp), OX, rotaGente, altura });
+      noite: () => (S.dentro ? 0 : luzDoDia(S.dados.hora).lamp), OX, rotaGente, altura, suspenderTreino, retomarTreino, chuva: () => !!(S.clima && S.clima.chuva > 0.25) });
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {
@@ -6719,7 +6759,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // PEDESTRES: a cada 10 que decidem, 5 entram num lugar (cinema, cafeteria, mercado, bar, pizzaria, restaurante, academia ou o lanche; o hospital não).
   const VEL_MOR = 2.0, VEL_CORRE = 2.9;
   const horaEntre = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
-  const noHorario = (r) => (r.posto && r.posto.tipo === 'treino' ? turmaPresente() : horaEntre(S.dados.hora, r.saida, r.volta));   // (6.6.16) a turma do Nonato tem a agenda dela
+  const noHorario = (r) => (r.posto && r.posto.tipo === 'treino' ? turmaVai(idaTurma(r)) : horaEntre(S.dados.hora, r.saida, r.volta));   // (6.6.16) a turma do Nonato tem a agenda dela · (6.6.19) sai de casa antes
   const yawPara = (dx, dz) => Math.atan2(-dz, dx);
   function pontoLev(a, A) {                                          // onde a pessoa fica de pé ao levantar de um assento (o primeiro ponto livre em volta)
     for (const [ux, uz] of [[a.fx, a.fz], [-a.fz, a.fx], [a.fz, -a.fx], [-a.fx, -a.fz]]) for (const dd of [0.8, 1.1, 1.5]) { const x = a.x + ux * dd, z = a.z + uz * dd; if (livreNPC(x, z, A, true)) return { x, z }; }
@@ -6783,6 +6823,21 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     return caminhoRede(x0, z0, x1, z1);
   }
   const yawFora = (c) => yawPara(c.sx - c.x, c.sz - c.z);
+  // (6.6.19) a turma do Nonato: o goleiro só tem a "base" antiga sem o treino.js (com ele, as poses são dele) e nunca andando;
+  //   se o relógio pulou e eles ainda nem saíram de casa (ou não voltaram), aparecem onde deveriam estar, longe da vista do jogador
+  function idaTurma(r) {                                               // (6.6.19) quanto tempo de jogo ele leva andando de casa até o campo
+    if (r.ida == null) { const c = r.casa, f = pontoPosto(r); r.ida = c ? Math.hypot(c.sx - f.x, c.sz - f.z) * 3.2 / VEL_CORRE * H_POR_S + 0.15 : TURMA_IDA; }   // (medido: com o portão, a faixa e os esbarrões, anda ~1/3 da velocidade)
+    return r.ida;
+  }
+  function tickTurmaMor(r) {
+    const A = r.A, J = S.jog, f = pontoPosto(r);
+    if (r.ehGol) A.goleiro = !S.treinoMod && r.estado === 'posto';
+    const longe = Math.hypot(J.x - f.x, J.z - f.z) > 45 && (A.oculto || Math.hypot(J.x - A.x, J.z - A.z) > 45), h = horasDaTurma();
+    if (!longe) return false;
+    if (turmaPresente() && h.desde > 0.2 && (r.estado === 'casa' || r.estado === 'ida' || r.estado === 'voltaPosto')) { colocarNoPosto(r); return true; }
+    if (!turmaVai(idaTurma(r)) && h.fim > 0.3 && r.estado !== 'casa') { esconderMor(r); return true; }
+    return false;
+  }
   function irAoPosto(r) {
     const A = r.A, c = r.casa, f = pontoPosto(r);
     surgirMor(r, c.sx, c.sz, yawFora(c)); A.tipo = 'morador'; A.vel = VEL_MOR; r.rota = rotaGente(c.sx, c.sz, f.x, f.z); r.estado = 'ida';
@@ -6867,7 +6922,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     S.moradores = [];
     gente.forEach((A, i) => {
       const r = { A, casa: casas[Math.floor(i / 3) % casas.length], posto: { x: A.x, z: A.z, yaw: A.yaw, sentado: A.sentado, assento: A.assento, tipo: A.tipo, lugar: A.lugar || null },
-        saida: 6.0 + rnd() * 1.5, volta: [18, 19, 20][Math.floor(rnd() * 3)], estado: 'posto', rota: null, slot: null, folga: -1, reagiu: false, espera: 0 };
+        saida: 6.0 + rnd() * 1.5, volta: [18, 19, 20][Math.floor(rnd() * 3)], estado: 'posto', rota: null, slot: null, folga: -1, reagiu: false, espera: 0, ehGol: !!A.goleiro };
+      if (r.posto.tipo === 'treino' && casas.length) {                // (6.6.19) a turma mora PERTO do campo (antes caía numa casa a meio quilômetro: chegava horas atrasada)
+        let best = r.casa, bd = 1e9; for (const c of casas) { const dd = Math.hypot(c.sx - r.posto.x, c.sz - r.posto.z); if (dd < bd) { bd = dd; best = c; } } r.casa = best;
+      }
       S.moradores.push(r);
       if (!noHorario(r)) esconderMor(r);
     });
@@ -6878,14 +6936,15 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (const r of M) {
       const A = r.A;
       if (S.treino && S.treino.ocupado && r.posto.tipo === 'treino') continue;   // (6.6.16) treinando com o jogador: o treino.js cuida deles até acabar
-      if (molhado && !r.reagiu && r.estado !== 'arvore' && r.estado !== 'paraArvore' && r.estado !== 'encosta' && r.estado !== 'desencosta' && r.estado !== 'viraArv' && r.estado !== 'recuaArv') {
+      if (r.posto.tipo === 'treino' && tickTurmaMor(r)) continue;          // (6.6.19) a agenda da turma (chuva não para o treino; o relógio que pulou)
+      if (molhado && r.posto.tipo !== 'treino' && !r.reagiu && r.estado !== 'arvore' && r.estado !== 'paraArvore' && r.estado !== 'encosta' && r.estado !== 'desencosta' && r.estado !== 'viraArv' && r.estado !== 'recuaArv') {
         r.reagiu = true;
         if (r.estado === 'casa' || r.estado === 'volta') r.folga = dia;
         else { const sl = Math.random() < 0.45 ? acharSlot(A) : null; if (sl) irParaArvore(r, sl); else { r.folga = dia; irParaCasa(r); } }
       }
       const e = r.estado;
       if (e === 'casa') {
-        if ((r.folga === dia && r.posto.tipo !== 'treino') || molhado || !noHorario(r)) continue;   // (6.6.16) a turma volta quando a chuva passa (a sessão é longa)
+        if ((r.folga === dia && r.posto.tipo !== 'treino') || (molhado && r.posto.tipo !== 'treino') || !noHorario(r)) continue;   // (6.6.16) a turma volta quando a chuva passa (a sessão é longa)
         if (r.espera > 0) { r.espera -= dt; continue; }
         if (!livreNPC(r.casa.sx, r.casa.sz, null, false)) { r.espera = 0.7; continue; }
         irAoPosto(r);
@@ -6913,14 +6972,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       } else {                                                       // ida, voltaPosto, volta, paraArvore: andando
         if ((e === 'ida' || e === 'voltaPosto') && !noHorario(r)) { irParaCasa(r); continue; }
         A.chuva = molhado ? 'mao' : null; A.maoAlta = !!(A.m && A.m.cabelo > CABELO_ALTO);
-        if (seguir(A, r.rota, molhado ? VEL_CORRE : VEL_MOR, dt)) {
+        if (seguir(A, r.rota, molhado || (r.posto.tipo === 'treino' && e === 'ida') ? VEL_CORRE : VEL_MOR, dt)) {   // (6.6.19) a turma vai trotando para o treino
           if (e === 'volta') { A.yawAlvo = yawPara(r.casa.x - A.x, r.casa.z - A.z); esconderMor(r); }
           else if (e === 'paraArvore') chegarNaArvore(r);
           else colocarNoPosto(r);
         }
       }
     }
-    if (S.treino) S.treino.pausa = M.some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto');
+    if (S.treino) S.treino.pausa = M.some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto') || !turmaPresente();   // (6.6.19) chegou antes: espera dar a hora
   }
 
   // ------------------------------------------------------------------ (6.6.5) O MOVIMENTO DAS LOJAS: quem entra e quem sai, num REGISTRO
@@ -7115,8 +7174,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const D = A.dest, V = D.V;
     if (A.porta) { tickPortaNPC(A, dt); return; }                        // (6.6.15) passando pela porta
     if (A.ativ) { tickAtiv(A, dt); return; }                             // (6.6.5) a selfie no caminho
-    if (D.tipo === 'visita' && A.parceiro && !V.selfie && !chovendoAgora() && S.modo === 'livre' && (S.tSelfie || 0) < S.t && Math.random() < dt * 0.06 && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) < 26 &&
-      !(A.z > AV.z0 - 0.4 && A.z < AV.z1 + 0.4) && !A.parceiro.atravessa && Math.hypot(A.x - A.parceiro.x, A.z - A.parceiro.z) < 1.2) { V.selfie = true; S.tSelfie = S.t + 25; comecarSelfieDupla(A, A.parceiro); return; }
+    // (6.6.19) a dupla que vem de fora NÃO tira mais selfie andando junto: a selfie é de quem se conhece no papo (comecarPapo)
     if (D.tipo === 'parDe') { seguirLider(A, dt); return; }
     const J = S.jog, longe = Math.hypot(A.x - J.x, A.z - J.z) > 45;   // longe da vista (já é o boneco de 1 peça): um pouco mais rápido
     if (seguir(A, D.rota, (A.velV || VEL_VISITA) * (longe ? 1.6 : 1), dt)) {   // chegou (na porta ou no fim da cidade): some junto com o parceiro
@@ -7309,7 +7367,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const perto = S.npcs.filter((A) => ativavel(A) && Math.hypot(A.x - J.x, A.z - J.z) < VIDA_R);
     for (const A of perto) {
       if (Math.random() > 0.3) continue;
-      const B = perto.find((q) => q !== A && !q.ativ && Math.hypot(q.x - A.x, q.z - A.z) < 3.4);
+      const B = perto.find((q) => q !== A && !q.ativ && Math.hypot(q.x - A.x, q.z - A.z) < 3.4 && !(A.papoCom && A.papoCom.B === q && A.papoCom.ate > S.t));   // (6.6.19) não repete o papo com quem acabou de conversar
       if (B && comecarPapo(A, B)) return;
       if (dentroLago(A.x, A.z, 4.5) && !dentroLago(A.x, A.z, 0.3) && Math.random() < 0.8 && comecarPedra(A)) return;
       if (Math.random() < 0.5 && comecarFoto(A)) return;
@@ -7367,10 +7425,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function comecarPapo(A, B, op) {
     const dx = B.x - A.x, dz = B.z - A.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d, mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2;
     op = op || {};
-    const abraca = op.abraca != null ? op.abraca : Math.random() < 0.35, r = abraca ? ABRACO_D / 2 : 0.5;
+    const selfie = op.selfie != null ? op.selfie : Math.random() < 0.32;     // (6.6.19) a selfie é de quem ACABOU DE SE CONHECER: aperto de mão, papo, foto e cada um para o seu lado
+    const abraca = op.abraca != null ? op.abraca : !selfie && Math.random() < 0.35, aperta = selfie && !abraca, r = abraca ? ABRACO_D / 2 : aperta ? 0.44 : 0.5;
     const pa = { x: mx - ux * r, z: mz - uz * r }, pb = { x: mx + ux * r, z: mz + uz * r };
     for (const p of [pa, pb, { x: mx - ux * 0.5, z: mz - uz * 0.5 }, { x: mx + ux * 0.5, z: mz + uz * 0.5 }]) if (!livreNPC(p.x, p.z, null, true, true) || (p.z > AV.z0 - 0.4 && p.z < AV.z1 + 0.4)) return false;
-    const dur = op.dur || 6 + Math.random() * 9, selfie = op.selfie != null ? op.selfie : Math.random() < 0.32, base = { tipo: 'papo', t: 0, fase: 'chega', mx, mz, ux, uz, abraca, selfie, dur, prox: 1 + Math.random() * 1.5, quem: Math.random() < 0.5 ? 0 : 1 };
+    const dur = op.dur || (aperta ? 9 : 6) + Math.random() * 9, base = { tipo: 'papo', t: 0, fase: 'chega', mx, mz, ux, uz, abraca, aperta, selfie, dur, prox: 1 + Math.random() * 1.5, quem: Math.random() < 0.5 ? 0 : 1 };
     A.ativ = Object.assign({}, base, { com: B, eu: 0, alvo: pa }); B.ativ = Object.assign({}, base, { com: A, eu: 1, alvo: pb });
     B.ativ.par = A.ativ; A.ativ.par = A.ativ;                            // os dois olham o mesmo "relógio" (o do A)
     return true;
@@ -7382,7 +7441,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (R.fase === 'chega') {
       const ok = irAte(A, a.alvo.x, a.alvo.z, 1.3, dt);
       if (ok) olharPara(A, B.x, B.z);
-      if (eu === 0 && ((ok && B.ativ && Math.hypot(B.x - B.ativ.alvo.x, B.z - B.ativ.alvo.z) < 0.1) || R.t > 3.5)) { R.fase = R.abraca ? 'abraco' : 'papo'; R.t = 0; }
+      if (eu === 0 && ((ok && B.ativ && Math.hypot(B.x - B.ativ.alvo.x, B.z - B.ativ.alvo.z) < 0.1) || R.t > 3.5)) { R.fase = R.abraca ? 'abraco' : R.aperta ? 'aperto' : 'papo'; R.t = 0; }
+    } else if (R.fase === 'aperto') {                                    // (6.6.19) se conhecendo: aperto de mão (cada um diz o nome)
+      A.andando = false; olharPara(A, B.x, B.z); A.gesto = 'aperto'; A.fala = R.t < 0.8 ? eu === 0 : R.t < 1.6 ? eu === 1 : false;
+      if (eu === 0 && R.t > 1.8) { A.gesto = B.gesto = null; A.fala = B.fala = false; R.fase = 'papo'; R.t = 0; }
     } else if (R.fase === 'abraco') {
       A.andando = false; olharPara(A, B.x, B.z); A.gesto = 'abraco';
       if (eu === 0 && R.t > 1.9) { R.fase = 'afasta'; R.t = 0; }
@@ -7403,10 +7465,26 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       A.andando = false; A.yawAlvo = Math.atan2(-R.fz, R.fx);
       if (eu === 0) { darCel(A); A.gesto = 'selfie'; if (!R.flash && R.t > 2.0) { R.flash = true; flashCel(A); } }
       else A.gesto = 'pose';
-      if (eu === 0 && R.t > 3.0) { tirarCel(A); if (R.viagem) { fimAtiv(A); return; } R.fase = 'tchau'; R.t = 0; }   // a dupla de fora segue junto (sem tchau)
+      if (eu === 0 && R.t > 3.0) { R.fase = 'olha'; R.t = 0; }
+    } else if (R.fase === 'olha') {                                      // (6.6.19) os dois olham a foto no celular (e riem)
+      A.andando = false;
+      if (eu === 0) { A.gesto = 'olhaCel'; A.yawAlvo = Math.atan2(-R.fz, R.fx); } else { olharPara(A, B.x, B.z); A.gesto = R.t > 0.6 ? 'ri' : null; }
+      if (eu === 0 && R.t > 1.8) { tirarCel(A); R.fase = 'tchau'; R.t = 0; }
     } else if (R.fase === 'tchau') {
       A.andando = false; A.gesto = R.t < 0.9 ? 'acena' : null; if (R.t < 0.2) olharPara(A, B.x, B.z);
-      if (eu === 0 && R.t > 1.0) { fimAtiv(A); }
+      if (eu === 0 && R.t > 1.0) { separarDupla(A, B); fimAtiv(A); }
+    }
+  }
+  // (6.6.19) fim do papo: cada um segue o SEU caminho. Se iam para o mesmo lado (um alcançou o outro), o segundo volta por onde veio;
+  //   e os dois não puxam papo de novo um com o outro por uns 5 minutos (antes saíam lado a lado e repetiam papo + selfie sem parar).
+  function separarDupla(A, B) {
+    const ate = S.t + 300; A.papoCom = { B, ate }; B.papoCom = { B: A, ate };
+    if (!S.rede || A.tipo !== 'anda' || B.tipo !== 'anda' || A.dest || B.dest) return;
+    const dir = (P) => { const N = P.alvo != null && S.rede[P.alvo]; if (!N) return null; const dx = N.x - P.x, dz = N.z - P.z, d = Math.hypot(dx, dz); return d > 0.3 ? [dx / d, dz / d] : null; };
+    const a = dir(A), b = dir(B);
+    if (a && b && a[0] * b[0] + a[1] * b[1] > 0.5) {                     // mesmo sentido: o B dá meia-volta
+      if (B.ant != null && B.ant !== B.alvo) { const t = B.alvo; B.alvo = B.ant; B.ant = t; }
+      else { const N = S.rede[B.alvo], op = N && N.viz.find((i) => { const q = S.rede[i]; return (q.x - B.x) * a[0] + (q.z - B.z) * a[1] < 0; }); if (op != null) { B.ant = B.alvo; B.alvo = op; } }
     }
   }
   // a dupla que vem de fora para uma selfie no caminho (os dois param; depois seguem a viagem)

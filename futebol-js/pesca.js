@@ -1,6 +1,7 @@
 /* =====================================================================
    FUTEBOL JS · pesca.js · A PESCA NO LAGO DO SAPO CURURU (arquivo SEPARADO, como academia.js)
    ---------------------------------------------------------------------
+   6.6.19 — o peixe NO AR com a linha na boca (a fisgada do épico/lendário, os saltos, voando para a mão): a boia sobe junto (boiaNaLinha).
    6.4.0 — primeira versão.
    6.6.7 — O DUKE (duke.js, arquivo novo: o modelo 3D): no dia 13 de MAIO, pela data do APARELHO, cada mordida tem 7% de chance de ser
            ele (uma vez por dia). Briga de lendário, sem pular para fora. Pegou: ele LEVITA para fora da água, gira até ficar de frente,
@@ -3246,6 +3247,15 @@
       if (bp && an) linhaDe(Ld, { x: bp.x, y: bp.y - 0.085, z: bp.z }, { x: an.x, y: an.y + 0.1, z: an.z }, 0); else Ld.visible = false;
       return bp;
     }
+    // (6.6.19) o peixe NO AR com a linha na boca (o pulo da fisgada, os saltos da briga, voando para a mão): a boia sobe junto, pendurada
+    //   na linha uns 55 cm antes da boca (o líder vai da boia até a boca; o anzol fica dentro dela). Devolve onde a linha principal prende (topo da boia).
+    function boiaNaLinha(m, tip, boca) {
+      const B = m.boiaM, A = m.anzol, Ld = m.lider, dx = tip.x - boca.x, dy = tip.y - boca.y, dz = tip.z - boca.z, d = Math.hypot(dx, dy, dz) || 1, k = Math.min(0.55, d * 0.5) / d;
+      const p = { x: boca.x + dx * k, y: boca.y + dy * k, z: boca.z + dz * k };
+      B.visible = true; B.position.set(p.x, p.y + 0.085, p.z); A.visible = false;
+      linhaDe(Ld, p, boca, 0);
+      return { x: p.x, y: p.y + 0.255, z: p.z };
+    }
     // a boca do peixe (a ponta da frente do modelo), na posição da cidade: é onde a linha fica presa quando ele sai da água
     const V3b = new THREE.Vector3();
     function bocaPeixe(o) {
@@ -3288,14 +3298,15 @@
       if (m.e === 'fisgada' && m.fisgada && m.peixeP) {                   // (6.6.15) a cena da fisgada: a linha esticada até a boca dele (no ar) ou até a água
         const F = m.fisgada, noAr = F.m.visible && F.m.position.y > Y_AGUA;
         fim = noAr ? bocaPeixe(F.m) : { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z };
-        linhaDe(L, tip, fim, noAr ? 0.02 : 0.08); verga = 1.05;
+        linhaDe(L, tip, noAr ? boiaNaLinha(m, tip, fim) : fim, noAr ? 0.02 : 0.08); verga = 1.05;   // (6.6.19) no ar a boia sobe junto com a linha
       }
       else if ((m.e === 'briga' || m.e === 'fisgou') && m.peixeP) {
         const te = m.B ? m.B.tensao : 0.6, pl = m.pulo && m.pulo.m ? m.pulo : null;
         fim = pl ? bocaPeixe(pl.m) : { x: m.peixeP.x, y: Y_AGUA - 0.04, z: m.peixeP.z };
-        linhaDe(L, tip, fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
+        const noArP = pl && pl.m.position.y > Y_AGUA + 0.05;
+        linhaDe(L, tip, noArP ? boiaNaLinha(m, tip, fim) : fim, pl ? 0.04 : 0.3 * (1 - te)); verga = 0.15 + te * 0.95 + (pl ? 0.25 : 0);   // pulando fora d'água: a linha vai na boca dele
       }
-      else if (m.e === 'pegou' && m.voa) linhaDe(L, tip, bocaPeixe(m.voa.m), 0.03);
+      else if (m.e === 'pegou' && m.voa) { const bo = bocaPeixe(m.voa.m); linhaDe(L, tip, boiaNaLinha(m, tip, bo), 0.03); }
       else if (m.e === 'pegou' && m.duke && m.duke.boca) linhaDe(L, tip, m.duke.boca, 0.12);   // (6.6.7) a linha até a boca do Duke, lá no alto
       else if (bp) { const puxa = m.e === 'raio' && e === 'fisgou'; linhaDe(L, tip, { x: bp.x, y: bp.y + 0.17, z: bp.z }, puxa ? 0.02 : e === 'voo' ? 0.04 : (e === 'mira' || e === 'forca' || e === 'swing') ? 0 : 0.32); if (e === 'mordida') verga = 0.2; if (puxa) verga = 0.95 + Math.sin(t * 24) * 0.06; if (bp.y < 0.5) fim = bp; }
       else L.visible = false;
