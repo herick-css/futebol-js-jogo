@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.15
+   FUTEBOL JS · jogo.js · versão 6.6.16
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,11 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.15';
+const VERSAO_JOGO = '6.6.16';
+// 6.6.16: treino.js (arquivo novo) — a TURMA DO SEU NONATO (Paredão, Juninho e Tonhão) vai ao society dia sim, dia não, 12 h fora do turno
+//   do jogador (refletores de noite); treinam sozinhos (cobranças com ponte e encaixe do goleiro, cruzamento e cabeceio, embaixadinhas) e,
+//   falando com eles, o TREINO: chute, passe e cruzamento, 30 situações de cada com 3 desafios, 3 bolas por desafio (acerto não gasta),
+//   anúncio de 15 s (+1 bola) ou 30 s (+3), 2 por dia, +0,1 na habilidade ao fechar a situação. Anuncios.filme aceita textos próprios.
 // 6.6.15: cidade — PORTAS ANIMADAS (abrem/fecham para quem passa) e gente entrando/saindo de verdade pela porta (sem passar do ponto e voltar);
 //   chuva: o jornal fica EM CIMA do cabelo, o guarda-chuva acima dele e quem tem cabelo alto só corre com a mão na cabeça (makeAthlete agora
 //   informa topoCabeca/cabelo); debaixo da árvore as pessoas encostam as costas no tronco (sentadas ou em pé); a roda de bola sem o vai e volta
@@ -14489,28 +14493,28 @@ const Anuncios = (() => {
   //   (aí o jogador ganha os fakes). Quem fornece: window.FutebolJS.anuncioCinema(seg) (gancho do site/Canva) → anuncioRecompensado →
   //   Google H5 (adBreak 'reward') → DEMONSTRAÇÃO (uma caixa no meio da tela, sem tapar o cinema, com a contagem de 'seg' segundos).
   //   Sem anúncio disponível no Google: false (não paga), e o cinema avisa.
-  function demoCinema(seg) {
-    montar();
+  function demoCinema(seg, op) {                                       // (6.6.16) op = { tit, txt, fim }: os textos de quem pediu (o treino.js usa para as bolas extras)
+    montar(); op = op || {};
     return new Promise((res) => {
-      el.innerHTML = '<div class="papel" role="dialog" style="width:min(420px,100%)"><p class="aTit">' + esc(T('Sessão patrocinada')) + '</p>' +
+      el.innerHTML = '<div class="papel" role="dialog" style="width:min(420px,100%)"><p class="aTit">' + esc(op.tit || T('Sessão patrocinada')) + '</p>' +
         '<div class="aCaixa">' + esc(T('Espaço do anúncio (demonstração)')) + '</div>' +
         '<p class="aConta"></p><div class="aBar"><i></i></div>' +
-        '<p class="aTxt">' + esc(T('Assista até o fim para receber os fakes.')) + '</p></div>';
+        '<p class="aTxt">' + esc(op.txt || T('Assista até o fim para receber os fakes.')) + '</p></div>';
       el.style.background = 'rgba(0,0,0,0.35)'; el.hidden = false;
       const conta = el.querySelector('.aConta'), barra = el.querySelector('.aBar i'), t0 = performance.now();
       const iv = setInterval(async () => {
         const rest = seg - (performance.now() - t0) / 1000;
-        if (rest <= 0) { clearInterval(iv); conta.textContent = T('Pronto! Fim da sessão.'); barra.style.transform = 'scaleX(0)'; await esperar(700); fechar(); el.style.background = ''; res(true); return; }
+        if (rest <= 0) { clearInterval(iv); conta.textContent = op.fim || T('Pronto! Fim da sessão.'); barra.style.transform = 'scaleX(0)'; await esperar(700); fechar(); el.style.background = ''; res(true); return; }
         conta.textContent = Tf('Anúncio: {0} s', Math.ceil(rest));
         barra.style.transform = 'scaleX(' + (rest / seg).toFixed(3) + ')';
       }, 100);
     });
   }
-  async function filme(seg) {
+  async function filme(seg, op) {                                      // (6.6.16) op (opcional): { nome, tit, txt, fim } — o nome vai para o Google (padrão 'cinema-<seg>')
     const F = window.FutebolJS || {}, gancho = F.anuncioCinema || F.anuncioRecompensado;
     if (typeof gancho === 'function') { try { return !!(await gancho(seg)); } catch (e) { return false; } }
-    if (typeof window.adBreak === 'function') return (await googleH5('cinema-' + seg)) === 'visto';
-    return demoCinema(seg);
+    if (typeof window.adBreak === 'function') return (await googleH5((op && op.nome) || ('cinema-' + seg))) === 'visto';
+    return demoCinema(seg, op);
   }
   return { oferta, assistir, fechar, filme };
 })();

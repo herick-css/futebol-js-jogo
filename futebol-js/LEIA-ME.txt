@@ -12,6 +12,7 @@ ARQUIVOS
   academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
+  treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
                           compra na barbearia (os NPCs podem usar)
