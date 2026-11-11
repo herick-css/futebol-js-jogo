@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.16
+   FUTEBOL JS · jogo.js · versão 6.6.17
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,10 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.16';
+const VERSAO_JOGO = '6.6.17';
+// 6.6.17: cidade.js + fase2.js — o jogador e a Lúcia não se atravessam mais nas cenas (corpo = elipse; quem anda contorna o outro e o
+//   ponto de chegada sai de dentro dele; portão do prédio em fila, despedida por trás dela, cama do quarto com mais espaço) e, com
+//   100 corações, a CONFEITARIA DA LÚCIA abre no café (cena da inauguração: "só consegui por sua causa") com 5 bolos de 200 fakes.
 // 6.6.16: treino.js (arquivo novo) — a TURMA DO SEU NONATO (Paredão, Juninho e Tonhão) vai ao society dia sim, dia não, 12 h fora do turno
 //   do jogador (refletores de noite); treinam sozinhos (cobranças com ponte e encaixe do goleiro, cruzamento e cabeceio, embaixadinhas) e,
 //   falando com eles, o TREINO: chute, passe e cruzamento, 30 situações de cada com 3 desafios, 3 bolas por desafio (acerto não gasta),

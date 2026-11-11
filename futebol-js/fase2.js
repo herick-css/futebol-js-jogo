@@ -1,6 +1,7 @@
 /* =====================================================================
    FUTEBOL JS · fase2.js · Fase 2 — "Dez anos depois" (arquivo SEPARADO do jogo.js)
    ---------------------------------------------------------------------
+   6.6.17 — ENCONTRO NO QUARTO: o jogador e a Lúcia sentam com 0,82 m entre os dois na cama (antes 0,6: os ombros e os braços se atravessavam).
    6.1.0 — SONO: dormir sempre leva para o dia seguinte (antes, quem dormia depois da meia-noite acordava no mesmo dia). Dormiu mal
      (depois das 22h; na noite de trabalho da pizzaria, depois das 2h) ou apagou de sono: −5 de Saudável (Sono.registrar, soma toda noite)
      e reclama ao acordar; dormiu bem não reclama. Noite de trabalho (pizzaria, quinta a domingo): acorda às 9h e apaga às 4h.
@@ -1534,8 +1535,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const J = S.jog, cb = Q.cama, bx = cb.x1 - 0.12;
     S.escuro = false; mudarLugar('quarto', bx, -1.6, 0.35, 0); missao('');
     const L = criarPessoaF2(E.ap, E.roupa); S.lucia = L;
-    J.seguir = true; J.pose = poseBebeSentado; J.assento = 0.53; J.x = bx; J.z = -1.75; J.yaw = J.yawAlvo = 0.35; J.fase = 0.1;
-    L.pose = poseBebeSentado; L.assento = 0.53; L.x = bx; L.z = -2.35; L.yaw = L.yawAlvo = -0.35; L.fase = 0.55;
+    J.seguir = true; J.pose = poseBebeSentado; J.assento = 0.53; J.x = bx; J.z = -1.56; J.yaw = J.yawAlvo = 0.35; J.fase = 0.1;   // (6.6.17) 0,82 m entre os dois (antes 0,6: os ombros e os braços entravam um no outro)
+    L.pose = poseBebeSentado; L.assento = 0.53; L.x = bx; L.z = -2.38; L.yaw = L.yawAlvo = -0.35; L.fase = 0.55;
     fazCopo(J); fazCopo(L);
     S.camEspecial = [-0.1, 1.5, -0.5, bx, 0.85, -2.05]; S.camSnap = true;          // de frente para os dois, na altura deles
     await preto(false, 900); await esperar(400);

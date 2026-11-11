@@ -1,6 +1,16 @@
 /* =====================================================================
    FUTEBOL JS · cidade.js · A CIDADEZINHA (arquivo SEPARADO do jogo.js, como fase1.js e fase2.js)
    ---------------------------------------------------------------------
+   NOVIDADES DA 6.6.17
+     - CORPO NAS CENAS: o jogador e a Lúcia (S.lucia, S.luciaPredio e a do encontro) nunca se atravessam em modo 'cena'/'saindo'. Cada corpo
+       é uma elipse (0,24 m na frente/atrás, 0,40 m nos lados, +0,03 de folga); quem anda e encosta no outro contorna (corpoNaCena/contornar)
+       e o ponto final da rota sai de dentro dela (chegadaLivre). Abraço, beijo e os dois sentados ficam de fora (encostam de propósito).
+       Portão do prédio: ela passa na frente e ele logo atrás. Despedida: 0,9 m entre os dois e ele dá a volta por trás dela.
+     - CONFEITARIA DA LÚCIA: com 100 corações, ao entrar na cafeteria aberta (ela no caixa, fora do turno) vem a cena da inauguração
+       (cenaConfeitaria): ela pede para fechar os olhos, a vitrine aparece no fim leste do balcão e ela agradece ("só consegui por sua causa";
+       3 respostas, uma é o abraço). S.dados.confeitaria = { dia }. A vitrine (montarConfeitaria) tem os 5 bolos (BOLOS: cenoura, morango,
+       brigadeiro, fubá, prestígio), a prateleira de caixas, o letreiro e as bandeirinhas. Comprar (comprarBolo, pela vitrine ou no menu da
+       Lúcia): 200 fakes; ele senta na mesa livre mais perto e come a fatia (iconeBolo na mão): −1 de fome e −2 de Saudável (doce).
    NOVIDADES DA 6.6.16
      - A TURMA DO SEU NONATO (os três do treino): agenda própria (janelaTurma/turmaAgora/proximaTurma): dia sim, dia não, 12 h seguidas
        fora do turno do jogador, na janela com mais luz do dia. Com o treino.js carregado, ele cuida deles (S.treinoMod: tick, alvos,
@@ -714,6 +724,49 @@
     'Gordura pura é esse seu humor, moça! Quer comer ou não quer?': ['What’s greasy is that attitude of yours, miss! Do you want to eat or not?', '¡Grasoso es ese humor tuyo, muchacha! ¿Quieres comer o no?', 'Unto è il tuo umore, ragazza! Vuoi mangiare o no?', 'C’est ton humeur qui est grasse, ma fille ! Tu veux manger ou pas ?'],
   };
   for (const k of Object.keys(TRAD_GROSSO)) if (!I18N[k]) I18N[k] = TRAD_GROSSO[k];
+  // (6.6.17) a CONFEITARIA DA LÚCIA (100 corações): a cena da inauguração, a vitrine e os 5 bolos
+  const TRAD_CONF = {
+    '{0}! Vem cá, vem cá... fecha os olhos!': ['{0}! Come here, come here... close your eyes!', '¡{0}! Ven, ven... ¡cierra los ojos!', '{0}! Vieni qui, vieni qui... chiudi gli occhi!', '{0} ! Viens, viens... ferme les yeux !'],
+    'Pode abrir!': ['You can open them!', '¡Ya puedes abrirlos!', 'Puoi aprirli!', 'Tu peux les ouvrir !'],
+    'Uau... Lúcia, que lindo!': ['Wow... Lucy, it’s beautiful!', '¡Guau... Lucía, qué bonito!', 'Wow... Lucia, è bellissimo!', 'Waouh... Lucie, c’est magnifique !'],
+    'Lembra do curso de confeitaria que eu queria fazer? Eu fiz!': ['Remember the pastry course I wanted to take? I did it!', '¿Te acuerdas del curso de repostería que quería hacer? ¡Lo hice!', 'Ti ricordi il corso di pasticceria che volevo fare? L’ho fatto!', 'Tu te souviens du cours de pâtisserie que je voulais suivre ? Je l’ai fait !'],
+    'E agora o café tem uma confeitaria! Cinco bolos, todos feitos por mim.': ['And now the café has a pastry shop! Five cakes, all made by me.', '¡Y ahora el café tiene una repostería! Cinco pasteles, todos hechos por mí.', 'E ora il caffè ha una pasticceria! Cinque torte, tutte fatte da me.', 'Et maintenant le café a une pâtisserie ! Cinq gâteaux, tous faits par moi.'],
+    'Mas eu preciso te falar uma coisa...': ['But I need to tell you something...', 'Pero tengo que decirte algo...', 'Ma devo dirti una cosa...', 'Mais je dois te dire quelque chose...'],
+    'Eu só consegui por sua causa. Toda vez que eu duvidei de mim, você estava do meu lado.': ['I only made it because of you. Every time I doubted myself, you were by my side.', 'Solo lo logré gracias a ti. Cada vez que dudé de mí, estuviste a mi lado.', 'Ce l’ho fatta solo grazie a te. Ogni volta che dubitavo di me, tu eri al mio fianco.', 'Je n’y suis arrivée que grâce à toi. Chaque fois que je doutais de moi, tu étais à mes côtés.'],
+    'Você conseguiu sozinha. Eu só torci.': ['You did it yourself. I just cheered you on.', 'Lo lograste tú sola. Yo solo te apoyé.', 'Ce l’hai fatta da sola. Io ho solo fatto il tifo.', 'Tu as réussi toute seule. Moi, j’ai juste encouragé.'],
+    'Eu sempre soube que você ia conseguir!': ['I always knew you’d make it!', '¡Siempre supe que lo lograrías!', 'Ho sempre saputo che ce l’avresti fatta!', 'J’ai toujours su que tu y arriverais !'],
+    '(Abraçar a Lúcia)': ['(Hug Lucy)', '(Abrazar a Lucía)', '(Abbracciare Lucia)', '(Serrer Lucie dans tes bras)'],
+    'Torceu mais do que todo mundo. Isso conta muito pra mim.': ['You cheered more than anyone. That means a lot to me.', 'Me apoyaste más que nadie. Eso significa mucho para mí.', 'Hai fatto il tifo più di tutti. Per me conta tantissimo.', 'Tu m’as encouragée plus que personne. Ça compte beaucoup pour moi.'],
+    'Para... assim eu choro aqui na frente dos clientes, haha.': ['Stop... I’ll cry right here in front of the customers, haha.', 'Para... que voy a llorar aquí delante de los clientes, jaja.', 'Smettila... così piango qui davanti ai clienti, haha.', 'Arrête... je vais pleurer devant les clients, haha.'],
+    'Ai... obrigada. De verdade.': ['Oh... thank you. Really.', 'Ay... gracias. De verdad.', 'Oh... grazie. Davvero.', 'Oh... merci. Vraiment.'],
+    'Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.': ['Each slice costs {0} fakes. I’d make it free for you... but then I’d go broke, haha.', 'Cada porción cuesta {0} fakes. Para ti hasta sería gratis... pero me arruinaría, jaja.', 'Ogni fetta costa {0} fakes. Per te la farei anche gratis... ma poi fallirei, haha.', 'Chaque part coûte {0} fakes. Pour toi, je la ferais même gratuite... mais je ferais faillite, haha.'],
+    'Quando quiser um bolo, é só vir na vitrine ou falar comigo no caixa!': ['Whenever you want a cake, just come to the display case or talk to me at the register!', '¡Cuando quieras un pastel, ven a la vitrina o háblame en la caja!', 'Quando vuoi una torta, vieni alla vetrina o parlami alla cassa!', 'Quand tu veux un gâteau, viens à la vitrine ou parle-moi à la caisse !'],
+    'A Confeitaria da Lúcia abriu! 5 bolos no café.': ['Lucy’s Pastry Shop is open! 5 cakes at the café.', '¡Abrió la Repostería de Lucía! 5 pasteles en el café.', 'La Pasticceria di Lucia ha aperto! 5 torte al caffè.', 'La Pâtisserie de Lucie a ouvert ! 5 gâteaux au café.'],
+    'Confeitaria da Lúcia': ['Lucy’s Pastry Shop', 'Repostería de Lucía', 'Pasticceria di Lucia', 'Pâtisserie de Lucie'],
+    'CONFEITARIA DA LÚCIA': ['LUCY\'S PASTRY SHOP', 'REPOSTERIA DE LUCIA', 'PASTICCERIA DI LUCIA', 'PATISSERIE DE LUCIE'],
+    'Comprar um bolo': ['Buy a cake', 'Comprar un pastel', 'Compra una torta', 'Acheter un gâteau'],
+    'Bolos da Lúcia': ['Lucy’s cakes', 'Pasteles de Lucía', 'Torte di Lucia', 'Gâteaux de Lucie'],
+    'Mata a fome · doce': ['Fills you up · sweet', 'Quita el hambre · dulce', 'Toglie la fame · dolce', 'Cale la faim · sucré'],
+    'No seu turno não dá para comprar bolo.': ['You can’t buy cake during your shift.', 'No puedes comprar pastel durante tu turno.', 'Non puoi comprare torte durante il turno.', 'Pas de gâteau pendant ton service.'],
+    'A confeitaria fecha junto com o café. Volta amanhã!': ['The pastry shop closes with the café. Come back tomorrow!', 'La repostería cierra con el café. ¡Vuelve mañana!', 'La pasticceria chiude con il caffè. Torna domani!', 'La pâtisserie ferme avec le café. Reviens demain !'],
+    'Senta aí que eu levo pra você!': ['Have a seat, I’ll bring it to you!', '¡Siéntate, que te lo llevo!', 'Siediti, te la porto io!', 'Assieds-toi, je te l’apporte !'],
+    'Bolo de cenoura': ['Carrot cake', 'Pastel de zanahoria', 'Torta di carote', 'Gâteau aux carottes'],
+    'Com cobertura de chocolate': ['With chocolate frosting', 'Con cobertura de chocolate', 'Con glassa al cioccolato', 'Avec glaçage au chocolat'],
+    'Bolo de cenoura com chocolate! Receita da minha avó.': ['Carrot cake with chocolate! My grandma’s recipe.', '¡Pastel de zanahoria con chocolate! Receta de mi abuela.', 'Torta di carote al cioccolato! Ricetta di mia nonna.', 'Gâteau aux carottes et au chocolat ! La recette de ma grand-mère.'],
+    'Bolo de morango': ['Strawberry cake', 'Pastel de fresa', 'Torta alle fragole', 'Gâteau aux fraises'],
+    'Com chantilly e morangos': ['With whipped cream and strawberries', 'Con nata y fresas', 'Con panna e fragole', 'Avec chantilly et fraises'],
+    'Morango com chantilly, o mais pedido da semana!': ['Strawberries and cream, the most ordered this week!', '¡Fresas con nata, el más pedido de la semana!', 'Fragole e panna, la più richiesta della settimana!', 'Fraises et chantilly, le plus commandé de la semaine !'],
+    'Bolo de brigadeiro': ['Brigadeiro cake', 'Pastel de brigadeiro', 'Torta al brigadeiro', 'Gâteau brigadeiro'],
+    'Chocolate com granulado': ['Chocolate with sprinkles', 'Chocolate con virutas', 'Cioccolato con codette', 'Chocolat et vermicelles'],
+    'Bolo de brigadeiro... cuidado, que vicia, haha.': ['Brigadeiro cake... careful, it’s addictive, haha.', 'Pastel de brigadeiro... cuidado, que engancha, jaja.', 'Torta al brigadeiro... attenzione, crea dipendenza, haha.', 'Gâteau brigadeiro... attention, c’est addictif, haha.'],
+    'Bolo de fubá': ['Cornmeal cake', 'Pastel de maíz', 'Torta di mais', 'Gâteau de maïs'],
+    'Com calda de goiabada': ['With guava syrup', 'Con almíbar de guayaba', 'Con salsa di guava', 'Avec coulis de goyave'],
+    'Fubá com goiabada, quentinho, igual de vó.': ['Cornmeal with guava, still warm, just like grandma’s.', 'Maíz con guayaba, calentito, como el de la abuela.', 'Mais e guava, caldo caldo, come quella della nonna.', 'Maïs et goyave, tout chaud, comme chez mamie.'],
+    'Bolo prestígio': ['Coconut chocolate cake', 'Pastel de chocolate y coco', 'Torta cocco e cioccolato', 'Gâteau coco-chocolat'],
+    'Chocolate com coco': ['Chocolate and coconut', 'Chocolate con coco', 'Cioccolato e cocco', 'Chocolat et noix de coco'],
+    'Prestígio! Chocolate com coco, o meu favorito.': ['Coconut chocolate! My favorite.', '¡Chocolate con coco! Mi favorito.', 'Cocco e cioccolato! La mia preferita.', 'Coco-chocolat ! Mon préféré.'],
+  };
+  for (const k of Object.keys(TRAD_CONF)) if (!I18N[k]) I18N[k] = TRAD_CONF[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
     'Acabei de me mudar pra cidade.': [null, null, 'Mi sono appena trasferita in città.', null],
     'Prazer, Lúcia! Eu sou {0}.': [null, null, null, 'Enchantée, Lucie ! Moi, c’est {0}.'],
@@ -3588,12 +3641,58 @@
     // (6.1.0) de bicicleta: andou bem menos do que devia (bateu de frente em parede, poste, carro...) → cai
     if (V) { const real = Math.hypot(J.x - x0, J.z - z0); if (e.m > 0.45 && real < sp * 0.5) V.bloq = (V.bloq || 0) + dt; else V.bloq = 0; if (V.bloq > 0.06 && V.bater) V.bater(); }
   }
+  // (6.6.17) CORPO NAS CENAS: o jogador e a Lúcia nunca se atravessam. Cada corpo é uma elipse (0,24 m para a frente e para trás,
+  //   0,40 m para os lados, com os braços); a distância mínima entre os dois é a soma dos "raios" na direção de um para o outro.
+  //   Andando pelo roteiro (andar), quem esbarra no outro contorna (desliza em volta, para o lado do destino) e, se o ponto de chegada
+  //   cair dentro do outro, ele é afastado até encostar. Abraço e beijo têm as distâncias deles (ABRACO_D/BEIJO_D) e não entram nisso.
+  const CORPO_FRENTE = 0.24, CORPO_LADO = 0.4, CORPO_FOLGA = 0.03;
+  function raioCorpo(A, ux, uz) {                                      // o raio da elipse do corpo na direção (ux, uz) (unitária)
+    const fx = Math.cos(A.yaw || 0), fz = -Math.sin(A.yaw || 0), c = ux * fx + uz * fz, sn = ux * fz - uz * fx, a = CORPO_FRENTE, b = CORPO_LADO;
+    return a * b / Math.sqrt((b * c) * (b * c) + (a * sn) * (a * sn));
+  }
+  function distCorpos(A, B, ux, uz) { return raioCorpo(A, ux, uz) + raioCorpo(B, -ux, -uz) + CORPO_FOLGA; }
+  const encostados = (A, B) => ['abraco', 'beijo'].includes(A.gesto) || ['abraco', 'beijo'].includes(B.gesto) || (A.sentado && B.sentado);
+  function luciasNaCena() {                                            // as Lúcias que podem estar no caminho (a do café, a do encontro, a do prédio)
+    const L = [S.lucia, S.luciaPredio, S.falantesExtra && S.falantesExtra.lucia && S.falantesExtra.lucia.A].filter((A, i, v) => A && !A.oculto && v.indexOf(A) === i);
+    return L;
+  }
+  // depois do passo de quem segue um roteiro (A): se entrou no corpo de B, volta para a borda e escorrega para o lado do destino
+  function contornar(A, B, x0, z0, alvo) {
+    let dx = A.x - B.x, dz = A.z - B.z, d = Math.hypot(dx, dz);
+    if (d < 1e-4) { dx = x0 - B.x; dz = z0 - B.z; d = Math.hypot(dx, dz) || 1; }
+    const ux = dx / d, uz = dz / d, need = distCorpos(A, B, ux, uz); if (d >= need) return false;
+    const queria = Math.hypot(A.x - x0, A.z - z0);
+    A.x = B.x + ux * need; A.z = B.z + uz * need;
+    if (alvo && Math.hypot(A.x - x0, A.z - z0) < queria * 0.5) {        // de frente, quase não andou: dá a volta pelo lado do destino
+      const tx = -uz, tz = ux, lado = Math.sign((alvo.x - B.x) * tx + (alvo.z - B.z) * tz) || 1, st = queria * 0.9;
+      const nx = A.x + tx * lado * st - B.x, nz = A.z + tz * lado * st - B.z, nd = Math.hypot(nx, nz) || 1, nn = distCorpos(A, B, nx / nd, nz / nd);
+      A.x = B.x + nx / nd * nn; A.z = B.z + nz / nd * nn;
+    }
+    return true;
+  }
+  // o ponto de chegada do roteiro não pode ficar dentro do outro: puxa para a borda (do lado de onde se vem)
+  function chegadaLivre(A, B, p) {
+    const dx = p.x - B.x, dz = p.z - B.z, d = Math.hypot(dx, dz), ux = d > 1e-4 ? dx / d : (A.x - B.x) / (Math.hypot(A.x - B.x, A.z - B.z) || 1), uz = d > 1e-4 ? dz / d : (A.z - B.z) / (Math.hypot(A.x - B.x, A.z - B.z) || 1);
+    const need = distCorpos(A, B, ux, uz); if (d >= need) return;
+    p.x = B.x + ux * need; p.z = B.z + uz * need;
+  }
+  function corpoNaCena(A, x0, z0) {                                    // A acabou de andar (de x0, z0) pelo roteiro
+    if (S.modo !== 'cena' && S.modo !== 'saindo') return;
+    const J = S.jog, outros = A === J ? luciasNaCena() : luciasNaCena().includes(A) ? [J] : [];
+    for (const B of outros) {
+      if (!B || B === A || encostados(A, B) || (B.m && B.m.raiz && B.m.raiz.visible === false && !S.meus.has(B.m))) continue;
+      const fim = A.rota && A.rota.length ? A.rota[A.rota.length - 1] : null;
+      if (fim && A.rota.length === 1) chegadaLivre(A, B, fim);
+      contornar(A, B, x0, z0, fim);
+    }
+  }
   function tickJogador(dt) {
     const J = S.jog; J.t += dt;
     if (J.rota && J.rota.length) {
+      const x0 = J.x, z0 = J.z; if (J.rota.length === 1) for (const B of luciasNaCena()) if ((S.modo === 'cena' || S.modo === 'saindo') && !encostados(J, B)) chegadaLivre(J, B, J.rota[0]);
       const p = J.rota[0], dx = p.x - J.x, dz = p.z - J.z, d = Math.hypot(dx, dz), st = J.vel * dt;
       if (d <= st) { J.x = p.x; J.z = p.z; J.rota.shift(); if (!J.rota.length) { J.rota = null; J.andando = false; const r = J.rotaRes; J.rotaRes = null; if (r) r(); } }
-      else { J.x += dx / d * st; J.z += dz / d * st; J.yawAlvo = Math.atan2(-dz, dx); J.andando = true; }
+      else { J.x += dx / d * st; J.z += dz / d * st; J.yawAlvo = Math.atan2(-dz, dx); J.andando = true; corpoNaCena(J, x0, z0); }
     }
     const dy = ((J.yawAlvo - J.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; J.yaw += dy * Math.min(1, dt * 10);
     if (J.sentado) J.y = 0; else { const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18); }
@@ -3603,9 +3702,10 @@
   }
   function passoCena(A, dt) {                                           // NPC de cutscene: segue A.rota (andar(A, pontos, vel))
     if (!(A.rota && A.rota.length)) { A.andando = false; return; }
+    const x0 = A.x, z0 = A.z; if (A.rota.length === 1 && luciasNaCena().includes(A) && S.jog && !encostados(A, S.jog) && (S.modo === 'cena' || S.modo === 'saindo')) chegadaLivre(A, S.jog, A.rota[0]);
     const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = (A.vel || 1.2) * dt;
     if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; A.andando = false; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
-    else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; }
+    else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; corpoNaCena(A, x0, z0); }
   }
   const andar = (A, pts, vel) => new Promise((ok) => { A.vel = vel || 2.2; A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.rotaRes = ok; });
   function tickPortao(dt) {
@@ -3898,8 +3998,10 @@
     S.cam.yaw = 0; S.cam.dist = R.cam.dist; S.cam.pitch = R.cam.pitch; S.cam.snap = true;
     scene.background = new THREE.Color(R.fundo); if (scene.fog) { scene.fog.near = 200; scene.fog.far = 400; }
     UI.btnMapa.hidden = true; UI.seta.hidden = true; if (S.setaAlvo) S.setaAlvo.visible = false; S.setaAlvo = null; if (S.bola) S.bola.jx = null;
+    if (P.nome === 'cafeteria' && S.dados.confeitaria) montarConfeitaria();   // (6.6.17) a confeitaria da Lúcia (100 corações)
     await preto(false, 380);
     if (enc) await cenaEncontroMesa(enc);
+    else if (confeitariaPendente()) await cenaConfeitaria();
   }
   // já estava lá dentro quando deu a hora: ela chega e senta (corte) e a cena começa
   async function encontroComecaDentro() {
@@ -4065,6 +4167,7 @@
       if (D.nome === 'barbearia' && S.barbearia) S.barbearia.alvos(v);    // o Toninho
       for (const e of D.extras) {
         if (e.acao === 'caixa' && !S.lucia) continue;
+        if (e.acao === 'bolo') { if (S.lucia && cafeAberto()) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: comprarBolo, y: 2.4 }); continue; }   // (6.6.17) a vitrine da confeitaria
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
@@ -4539,7 +4642,7 @@
   // (elas sobem juntas até a boca na pose "comendo" do poseAtor). Sai quando termina de comer.
   function darLanche(A, id) {
     tirarLanche(A);
-    const tex = new THREE.CanvasTexture(iconePx(id));
+    const tex = new THREE.CanvasTexture(String(id).startsWith('bolo:') ? iconeBolo(id.slice(5)) : iconePx(id));
     tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, alphaTest: 0.1 }));
     sp.scale.set(0.3, 0.3, 1); sp.position.set(LANCHE_MAO.x, LANCHE_MAO.y, LANCHE_MAO.z);
@@ -4891,7 +4994,7 @@
     if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
     if (d.hora >= cafeFecha() && d.hora < luciaSai()) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
     // o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar, convidar para jogar, chamar para sair
-    const ops = [['cafe', T('Comprar um café')]]; if (funcionario) ops.push(['trab', T('Sobre o trabalho')]);
+    const ops = [['cafe', T('Comprar um café')]]; if (d.confeitaria) ops.push(['bolo', T('Comprar um bolo')]); if (funcionario) ops.push(['trab', T('Sobre o trabalho')]);   // (6.6.17) os bolos da confeitaria
     ops.push(['papo', T('Conversar')]);
     if (jogosMistos().length) ops.push(['jogar', T('Convidar para jogar')]);
     if (Amizade.valor('lucia') >= 50 && !encontroMarcado()) ops.push(['sair', T('Chamar para sair')]);
@@ -4900,6 +5003,7 @@
     Dialogo.esconder();
     const op = (ops[r] || [])[0];
     if (op === 'cafe') await comprarCafe();
+    else if (op === 'bolo') await comprarBolo();
     else if (op === 'trab') await trabalhoComLucia();
     else if (op === 'papo') await conversaLucia();
     else if (op === 'jogar') await convidarLuciaJogar();
@@ -5220,8 +5324,10 @@
     await fala('lucia', T('Vamos!')); Dialogo.esconder();
     d.encontroLucia.feito = true;
     S.portao.alvo = 1; somPortao(); await esperar(700);
-    L.vel = 1.9; andar(L, [[SPAWN.x + 0.5, -3.7], [SPAWN.x + 0.5, -5.4]], 1.9);
-    await andar(J, [[SPAWN.x, -3.7], [SPAWN.x, -5.5]], 1.9);
+    // (6.6.17) um atrás do outro pelo portão (lado a lado, com 1,64 m de vão, os ombros se atravessavam): ela na frente, ele logo atrás
+    L.vel = 1.9; andar(L, [[SPAWN.x + 0.15, -3.7], [SPAWN.x + 0.15, -5.7]], 1.9);
+    await esperar(550);
+    await andar(J, [[SPAWN.x - 0.1, -3.55], [SPAWN.x - 0.1, -4.55]], 1.9);
     const io = ioEncontroCidade();
     gravar('predio'); UI.ctl.hidden = true;
     S.paraFase2 = { encontroCasa: { ap: apLucia(), roupa: ROUPA_ENC, trabalha: io.trabalha, emprego: io.emprego } };
@@ -5241,11 +5347,11 @@
     if (C) {
       const sg = Math.sign(C.sz - C.z) || 1, fx = C.x, fz = C.z + sg * 1.15;
       luz = new THREE.PointLight(0xffd9a0, 1.4, 9); luz.position.set(fx, 2.6, C.z + sg * 0.6); S.grupo.add(luz);   // a luz da varanda (é de noite)
-      L.x = fx - 6.5; L.z = fz + sg * 0.15; J.x = fx - 6.5; J.z = fz + sg * 0.85; L.y = altura(L.x, L.z); J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = L.yaw = L.yawAlvo = 0; J.rota = null;
+      L.x = fx - 6.5; L.z = fz + sg * 0.15; J.x = fx - 6.5; J.z = fz + sg * 1.05; L.y = altura(L.x, L.z); J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = L.yaw = L.yawAlvo = 0; J.rota = null;   // (6.6.17) lado a lado com 0,9 m entre os dois (antes 0,7: os braços se atravessavam)
       S.camCena = { px: fx + 0.8, py: 2.1, pz: C.z + sg * 6.2, tx: fx - 1.2, ty: 1.0, tz: fz };
       S.cam.snap = true;
       await preto(false, 900);
-      await Promise.all([andar(L, [[fx - 0.42, fz]], 1.5), andar(J, [[fx + 0.42, fz + sg * 0.05]], 1.5)]);
+      await Promise.all([andar(L, [[fx - 0.42, fz]], 1.5), andar(J, [[fx + 0.42, fz + sg * 1.0], [fx + 0.42, fz + sg * 0.05]], 1.5)]);   // (6.6.17) ele passa por trás dela e só depois vem para a frente (antes cortava por dentro dela)
       L.yawAlvo = 0; J.yawAlvo = Math.PI;                                      // um de frente para o outro
       S.camCena = { px: fx + 2.3, py: 1.7, pz: C.z + sg * 3.9, tx: fx - 0.1, ty: 1.15, tz: fz };
       await esperar(400);
@@ -5357,6 +5463,197 @@
       d.cafe = { tier: c.tier, mult: c.mult, horas: c.horas, ate: tempoAbs() + c.horas, dia: d.dia || 1 };
       gravar(d.ponto || 'chegada');
       aviso(textoCafe(d.cafe)); setTimeout(() => { if (S && UI) aviso(''); }, 3200);
+    });
+  }
+  // ================================================================== (6.6.17) A CONFEITARIA DA LÚCIA
+  //   Com 100 corações, na próxima vez que o jogador entra na cafeteria (aberta, com ela no caixa) ela mostra a vitrine nova:
+  //   "fecha os olhos!" → tela preta → a vitrine aparece ao lado do balcão e ela conta que só conseguiu por causa dele (S.dados.confeitaria).
+  //   Daí em diante a vitrine fica lá (montarConfeitaria) e vende 5 bolos de 200 fakes: pela própria vitrine ou pelo menu da Lúcia.
+  //   Comer um bolo: ele senta na mesa livre mais perto e come a fatia (a mesma pose do lanche) — tira 1 de fome e conta como doce (não saudável).
+  const PRECO_BOLO = 200;
+  const CONF = { x: 6.4, z: -5.4, w: 2.8, d: 0.9 };              // a vitrine: emendada no fim leste do balcão do caixa (que vai até x = 4,9)
+  //   cam = as 6 camadas da fatia, de cima para baixo (ícone e 3D) · topo = a cobertura · enfeite = o que vai por cima
+  const BOLOS = [
+    { id: 'cenoura', nome: 'Bolo de cenoura', desc: 'Com cobertura de chocolate', fala: 'Bolo de cenoura com chocolate! Receita da minha avó.', topo: '#5a3418', enfeite: 'calda', cam: ['#5a3418', '#f0a040', '#f0a040', '#e89838', '#f0a040', '#d88a2c'] },
+    { id: 'morango', nome: 'Bolo de morango', desc: 'Com chantilly e morangos', fala: 'Morango com chantilly, o mais pedido da semana!', topo: '#fff7ea', enfeite: 'frutas', cam: ['#fff7ea', '#f6e3b0', '#d8303a', '#f6e3b0', '#fff7ea', '#e8cc90'] },
+    { id: 'brigadeiro', nome: 'Bolo de brigadeiro', desc: 'Chocolate com granulado', fala: 'Bolo de brigadeiro... cuidado, que vicia, haha.', topo: '#4a2810', enfeite: 'granulado', cam: ['#4a2810', '#6a3a1a', '#2e1608', '#6a3a1a', '#2e1608', '#5a3418'] },
+    { id: 'fuba', nome: 'Bolo de fubá', desc: 'Com calda de goiabada', fala: 'Fubá com goiabada, quentinho, igual de vó.', topo: '#c8402e', enfeite: 'calda', cam: ['#b8302a', '#f2cf5a', '#f2cf5a', '#b8302a', '#f2cf5a', '#e0b840'] },
+    { id: 'prestigio', nome: 'Bolo prestígio', desc: 'Chocolate com coco', fala: 'Prestígio! Chocolate com coco, o meu favorito.', topo: '#4a2810', enfeite: 'coco', cam: ['#4a2810', '#6a3a1a', '#fffaf0', '#f2ead8', '#6a3a1a', '#5a3418'] },
+  ];
+  const escurecer = (c, f) => { const n = hexN(c); const q = (v) => Math.min(255, Math.round(v * f)), r = q((n >> 16) & 255), g = q((n >> 8) & 255), b = q(n & 255); return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1); };
+  // ícone 16x16 da fatia no pratinho (cardápio e na mão, como o lanche)
+  function iconeBolo(id, px) {
+    const B = BOLOS.find((b) => b.id === id) || BOLOS[0], N = 16, g = Array.from({ length: N }, () => Array(N).fill(null));
+    const p = (x, y, c) => { if (x >= 0 && x < N && y >= 0 && y < N) g[y][x] = c; };
+    const linha = (x0, x1, y, c) => { for (let x = x0; x <= x1; x++) p(x, y, c); };
+    linha(2, 13, 13, '#f2f2ee'); linha(3, 12, 14, '#c9ced4');                                // o pratinho
+    for (let k = 0; k < 6; k++) { linha(3, 11, 7 + k, B.cam[k]); p(12, 7 + k - 1, escurecer(B.cam[k], 0.78)); }   // a frente da fatia (as camadas) e o lado
+    linha(6, 12, 4, B.topo); linha(5, 12, 5, B.topo); linha(4, 12, 6, B.topo);              // o topo (em perspectiva)
+    p(12, 12, escurecer(B.cam[5], 0.78));
+    if (B.enfeite === 'calda') { for (const [x, n] of [[4, 2], [6, 1], [8, 3], [10, 1]]) for (let k = 1; k <= n; k++) p(x, 7 + k, B.topo); p(9, 5, escurecer(B.topo, 1.25)); }
+    else if (B.enfeite === 'frutas') { for (const x of [6, 9]) { p(x, 3, '#d8303a'); p(x + 1, 3, '#d8303a'); p(x, 2, '#4a9a3a'); p(x + 1, 4, '#a8201a'); } p(11, 4, '#d8303a'); p(12, 3, '#4a9a3a'); }
+    else if (B.enfeite === 'granulado') { for (const x of [5, 8, 11]) { p(x, 3, '#2e1608'); p(x + 1, 3, '#2e1608'); } for (const [x, y] of [[7, 5], [10, 5], [5, 6], [9, 6], [12, 6], [8, 4]]) p(x, y, '#c89a5a'); }
+    else if (B.enfeite === 'coco') { for (const [x, y] of [[7, 4], [10, 4], [6, 5], [9, 5], [12, 5], [5, 6], [8, 6], [11, 6]]) p(x, y, '#fffaf0'); }
+    const k = '#2a1206', out = g.map((r) => r.slice());                                    // contorno escuro automático
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (!g[y][x]) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const yy = y + dy, xx = x + dx; if (yy >= 0 && yy < N && xx >= 0 && xx < N && g[yy][xx]) { out[y][x] = k; break; } }
+    const cv = document.createElement('canvas'); cv.width = cv.height = N; const c2 = cv.getContext('2d');
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (out[y][x]) { c2.fillStyle = out[y][x]; c2.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:' + (px || '84%') + ';height:auto;aspect-ratio:1;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
+    return cv;
+  }
+  // um bolo inteiro na boleira (3D, dentro da vitrine)
+  function bolo3D(G, B, x, y, z) {
+    G.box(0.07, 0.05, 0.07, '#d8dde2', x, y, z); G.box(0.36, 0.02, 0.36, '#f2f2ee', x, y + 0.05, z);    // a boleira
+    const y0 = y + 0.07, L = 0.28, yt = y0 + 0.175;
+    G.box(L, 0.06, L, B.cam[5], x, y0, z); G.box(L + 0.006, 0.03, L + 0.006, B.cam[2] === B.cam[1] ? B.cam[3] : B.cam[2], x, y0 + 0.06, z);
+    G.box(L, 0.06, L, B.cam[1], x, y0 + 0.09, z); G.box(L + 0.012, 0.025, L + 0.012, B.topo, x, y0 + 0.15, z);
+    if (B.enfeite === 'calda') for (const [dx, h] of [[-0.1, 0.05], [-0.03, 0.03], [0.04, 0.06], [0.1, 0.035]]) G.box(0.026, h, 0.012, B.topo, x + dx, y0 + 0.15 - h, z + L / 2 + 0.004);
+    else if (B.enfeite === 'frutas') for (const [dx, dz] of [[-0.08, -0.07], [0.07, -0.08], [0, 0.01], [-0.08, 0.08], [0.08, 0.07]]) { G.box(0.045, 0.04, 0.045, '#d8303a', x + dx, yt, z + dz); G.box(0.022, 0.012, 0.022, '#4a9a3a', x + dx, yt + 0.04, z + dz); }
+    else if (B.enfeite === 'granulado') { for (const [dx, dz] of [[-0.09, -0.09], [0.09, -0.09], [-0.09, 0.09], [0.09, 0.09], [0, 0]]) G.box(0.05, 0.045, 0.05, '#2e1608', x + dx, yt, z + dz); for (let i = 0; i < 8; i++) G.box(0.014, 0.006, 0.014, '#c89a5a', x - 0.1 + (i % 4) * 0.066, yt, z - 0.04 + Math.floor(i / 4) * 0.08); }
+    else if (B.enfeite === 'coco') for (let i = 0; i < 10; i++) G.box(0.03, 0.008, 0.02, '#fffaf0', x - 0.11 + (i % 5) * 0.055, yt, z - 0.08 + Math.floor(i / 5) * 0.12 + (i % 2) * 0.03);
+  }
+  // a vitrine, a prateleira de trás, o letreiro e as bandeirinhas (no fim leste do balcão da cafeteria)
+  function montarConfeitaria() {
+    const D = S.dentro; if (!D || D.nome !== 'cafeteria' || D.confeitaria) return;
+    const G = new Geo(), { x: cx, z: cz, w, d } = CONF, x0 = cx - w / 2, x1 = cx + w / 2, zf = cz + d / 2, zt = cz - d / 2;
+    G.box(w, 0.1, d, '#5b3a22', cx, 0, cz);                                                   // rodapé
+    G.box(w, 0.72, d, '#f2b8c8', cx, 0.1, cz);                                                // o móvel refrigerado (rosa)
+    for (let i = 0; i < 7; i++) G.box(w / 7 - 0.03, 0.5, 0.02, i % 2 ? '#f8dce6' : '#e89ab0', x0 + (i + 0.5) * w / 7, 0.2, zf + 0.005);   // listras na frente
+    G.box(w + 0.04, 0.06, d + 0.04, '#e8d8b8', cx, 0.82, cz);                                 // o tampo (onde ficam os bolos)
+    for (const sx of [x0 + 0.025, x1 - 0.025]) for (const sz of [zt + 0.025, zf - 0.025]) G.box(0.035, 0.55, 0.035, '#d8dde2', sx, 0.88, sz);   // a armação de metal
+    G.box(w + 0.04, 0.05, d + 0.04, '#d8dde2', cx, 1.43, cz);                                 // o tampo de cima
+    BOLOS.forEach((B, i) => { const bx = x0 + 0.34 + i * (w - 0.68) / 4; bolo3D(G, B, bx, 0.88, cz - 0.04); G.box(0.13, 0.055, 0.012, '#fffaf0', bx, 0.9, zf - 0.07); G.box(0.07, 0.012, 0.014, '#c8352b', bx, 0.92, zf - 0.07); });   // os 5 bolos e as plaquinhas de preço
+    // o bolo de vitrine (3 andares) em cima, na ponta leste
+    { const bx = x1 - 0.3; G.box(0.36, 0.13, 0.36, '#fff7ea', bx, 1.48, cz); G.box(0.27, 0.12, 0.27, '#f8dce6', bx, 1.61, cz); G.box(0.18, 0.11, 0.18, '#fff7ea', bx, 1.73, cz); G.box(0.05, 0.05, 0.05, '#d8303a', bx, 1.84, cz); }
+    G.box(0.42, 0.03, 0.3, '#e8d8b8', x0 + 0.35, 1.48, cz); for (let k = 0; k < 4; k++) G.box(0.3, 0.02, 0.22, '#f2f2ee', x0 + 0.35, 1.51 + k * 0.025, cz);   // pratinhos de sobremesa
+    // a prateleira de trás (parede norte) com as caixas de bolo cor-de-rosa e o laço
+    const zp = -6.84;
+    G.box(w - 0.2, 0.05, 0.3, '#5b3a22', cx, 1.55, zp); G.box(w - 0.2, 0.05, 0.3, '#5b3a22', cx, 2.05, zp);
+    for (let k = 0; k < 4; k++) { const bx = x0 + 0.5 + k * 0.6; G.box(0.36, 0.22, 0.26, k % 2 ? '#f8dce6' : '#fff0f4', bx, 1.6, zp); G.box(0.05, 0.225, 0.265, '#c8356a', bx, 1.6, zp); }
+    for (let k = 0; k < 5; k++) G.box(0.12, 0.16, 0.12, ['#f2c230', '#fff7ea', '#e89ab0', '#7a4a24', '#f2f2ee'][k], x0 + 0.5 + k * 0.45, 2.1, zp);   // potes de confeitos e granulado
+    // bandeirinhas (triângulos pastel) em cima do letreiro
+    const zb = -6.95, by = 3.38;
+    G.box(w + 0.6, 0.015, 0.015, '#8a5a2b', cx, by, zb);
+    for (let i = 0; i < 11; i++) { const bx = x0 - 0.2 + i * (w + 0.4) / 10, c = ['#f2b8c8', '#fff0a8', '#b8e0f2', '#c8f0c8'][i % 4]; G.tri([bx - 0.11, by, zb], [bx + 0.11, by, zb], [bx, by - 0.2, zb], c, [0, 0, 1]); }
+    const m = G.malha(MAT); guardar(m.geometry); S.grupo.add(m);
+    const vidro = new THREE.Mesh(guardar(new THREE.BoxGeometry(w - 0.06, 0.53, d - 0.06)), guardar(new THREE.MeshLambertMaterial({ color: 0xe8f6ff, transparent: true, opacity: 0.2, depthWrite: false })));
+    vidro.position.set(cx, 0.885 + 0.265, cz); vidro.renderOrder = 2; S.grupo.add(vidro);
+    const tex = guardar(texLetreiro(T('CONFEITARIA DA LÚCIA'), '#f8dce6', '#a8285a', 3.4, 0.5));
+    const pl = new THREE.Mesh(guardar(new THREE.PlaneGeometry(3.4, 0.5)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); pl.position.set(cx, 2.85, -6.955); S.grupo.add(pl);
+    S.col.push({ x0, x1, z0: zt, z1: zf });
+    D.extras.push({ x: cx, z: zf + 0.85, r: 1.35, txt: 'Confeitaria da Lúcia', acao: 'bolo' });
+    D.confeitaria = true;
+  }
+  const confeitariaPendente = () => !!S.dentro && S.dentro.nome === 'cafeteria' && !S.dados.confeitaria && !!S.lucia && !S.lucia.oculto && cafeAberto() && !S.turno && !S.encontroRodando && Amizade.valor('lucia') >= 100;
+  // a cena da inauguração (entrarEm chama logo que ele entra na cafeteria)
+  async function cenaConfeitaria() {
+    const d = S.dados, J = S.jog, L = S.lucia; if (!L) return;
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); J.andando = false; J.correndo = false; J.rota = null;
+    if (J.sentado) levantar();
+    const casa = { x: L.x, z: L.z, yaw: L.yaw };
+    S.camCena = { px: L.x + 0.5, py: 1.85, pz: L.z + 3.6, tx: L.x, ty: 1.35, tz: L.z }; S.cam.snap = true;
+    L.yawAlvo = -Math.PI / 2; L.gesto = 'acena';
+    await esperar(600);
+    await fala('lucia', Tf('{0}! Vem cá, vem cá... fecha os olhos!', nomeJog())); Dialogo.esconder();
+    L.gesto = null;
+    await preto(true, 800);
+    montarConfeitaria();
+    const zf = CONF.z + CONF.d / 2, zp = zf + 0.8, xL = CONF.x - 0.6, xJ = CONF.x + 0.6;    // os dois na frente da vitrine, olhando para ela: um em cada ponta, o meio fica à mostra
+    L.x = CONF.x - 0.8; L.z = zp; J.x = CONF.x + 0.8; J.z = zp; L.yaw = L.yawAlvo = J.yaw = J.yawAlvo = Math.PI / 2;
+    L.y = 0; J.y = 0; L.andando = false;
+    S.camCena = { px: CONF.x, py: 2.45, pz: zp + 3.0, tx: CONF.x, ty: 0.95, tz: CONF.z - 0.3 }; S.cam.snap = true;
+    await esperar(300);
+    await preto(false, 900);
+    await fala('lucia', T('Pode abrir!'));
+    await fala('jog', T('Uau... Lúcia, que lindo!'));
+    await fala('lucia', T('Lembra do curso de confeitaria que eu queria fazer? Eu fiz!'));
+    await fala('lucia', T('E agora o café tem uma confeitaria! Cinco bolos, todos feitos por mim.'));
+    Dialogo.esconder();
+    S.camCena = { px: CONF.x, py: 1.6, pz: zp + 2.5, tx: CONF.x, ty: 1.2, tz: zp - 0.2 };
+    L.tipo = 'cena'; L.vel = 1.0;                                                            // ela anda (passoCena) e depois volta a ser a moça do caixa
+    await Promise.all([andar(L, [[xL, zp]], 1.0), andar(J, [[xJ, zp]], 1.0)]);              // um passo na direção do outro: 1,2 m (os braços gesticulando não alcançam o outro)
+    L.yawAlvo = 0; J.yawAlvo = Math.PI;                                                     // um de frente para o outro
+    await esperar(500);
+    await fala('lucia', T('Mas eu preciso te falar uma coisa...'));
+    await fala('lucia', T('Eu só consegui por sua causa. Toda vez que eu duvidei de mim, você estava do meu lado.'));
+    const r = await Escolha.mostrar(T('Eu só consegui por sua causa. Toda vez que eu duvidei de mim, você estava do meu lado.'), [T('Você conseguiu sozinha. Eu só torci.'), T('Eu sempre soube que você ia conseguir!'), T('(Abraçar a Lúcia)')]);
+    Dialogo.esconder();
+    if (r === 2) {                                                                          // o abraço: as mesmas medidas da despedida (rosto com rosto, sem atravessar)
+      const mx = CONF.x - 0.025;
+      L.x = mx - ABRACO_D / 2; J.x = mx + ABRACO_D / 2; L.z = zp + 0.13; J.z = zp - 0.08; L.gesto = J.gesto = 'abraco';
+      coracoes(mx, 1.75, zp); await esperar(2300);
+      L.gesto = J.gesto = null; L.x = xL; J.x = xJ; L.z = J.z = zp;
+      await fala('lucia', T('Ai... obrigada. De verdade.'));
+    } else {
+      await fala('jog', r === 0 ? T('Você conseguiu sozinha. Eu só torci.') : T('Eu sempre soube que você ia conseguir!'));
+      await fala('lucia', r === 0 ? T('Torceu mais do que todo mundo. Isso conta muito pra mim.') : T('Para... assim eu choro aqui na frente dos clientes, haha.'));
+      coracoes(L.x, 1.85, L.z);
+    }
+    await fala('lucia', Tf('Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.', PRECO_BOLO));
+    await fala('lucia', T('Quando quiser um bolo, é só vir na vitrine ou falar comigo no caixa!'));
+    Dialogo.esconder();
+    d.confeitaria = { dia: d.dia || 1 }; gravar(d.ponto || 'chegada');
+    await preto(true, 700);
+    L.tipo = 'parado'; L.rota = null; L.andando = false; L.x = casa.x; L.z = casa.z; L.yaw = L.yawAlvo = casa.yaw;   // ela volta para o caixa
+    J.x = CONF.x; J.z = zf + 1.1; J.yaw = J.yawAlvo = Math.PI / 2;
+    S.camCena = null; S.cam.snap = true;
+    await preto(false, 700);
+    aviso(T('A Confeitaria da Lúcia abriu! 5 bolos no café.')); setTimeout(() => { if (S && UI) aviso(''); }, 3600);
+  }
+  // a mesa livre mais perto da vitrine (para sentar e comer a fatia)
+  function lugarParaBolo() {
+    const J = S.jog; let melhor = null, dm = 1e9;
+    for (const a of S.assentos) { if (a.ocupado || a.lanche) continue; const dd = Math.hypot(a.x - J.x, a.z - J.z); if (dd < dm) { dm = dd; melhor = a; } }
+    return melhor;
+  }
+  function comprarBolo() {
+    const d = S.dados;
+    if (!d.confeitaria) return Promise.resolve();
+    if (S.turno) { aviso(T('No seu turno não dá para comprar bolo.')); setTimeout(() => aviso(''), 2200); return Promise.resolve(); }
+    if (!cafeAberto() || !S.lucia) return fala('lucia', T('A confeitaria fecha junto com o café. Volta amanhã!')).then(() => Dialogo.esconder());
+    return new Promise((res) => {
+      const el = document.createElement('div'); el.id = 'cdBolos';
+      el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
+      const card = document.createElement('div');
+      card.style.cssText = 'width:min(620px,100%);max-height:96%;overflow:auto;background:#3a1424;border:4px solid #e89ab0;color:#fff0f4;padding:10px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:8px;font-family:var(--font-body);';
+      const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.2 var(--font-display);letter-spacing:.1em;text-transform:uppercase;color:#f8b8cc;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;';
+      const h1 = document.createElement('span'); h1.textContent = T('Bolos da Lúcia'); const h2 = document.createElement('span'); h2.style.color = '#fff0f4'; h2.textContent = d.fakes + ' ' + T('fakes'); h.append(h1, h2);
+      const grade = document.createElement('div');
+      grade.style.cssText = 'display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding-bottom:6px;';
+      const fim = (b) => { el.remove(); res(b); };
+      BOLOS.forEach((B) => {
+        const b = document.createElement('button'); b.type = 'button'; b.dataset.bolo = B.id;
+        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#4a1c30;border:3px solid #c8708e;color:#fff0f4;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < PRECO_BOLO ? 'opacity:.55;' : '');
+        b.appendChild(iconeBolo(B.id, '56px'));
+        const n = document.createElement('span'); n.textContent = T(B.nome);
+        const ds = document.createElement('span'); ds.style.cssText = 'color:#f8d8e2;font-size:10px;font-weight:400;'; ds.textContent = T(B.desc);
+        const ef = document.createElement('span'); ef.style.cssText = 'color:#8fe04a;font-size:10px;'; ef.textContent = T('Mata a fome · doce');
+        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = PRECO_BOLO + ' ' + T('fakes');
+        b.append(n, ds, ef, p); b.onclick = () => fim(B); grade.appendChild(b);
+      });
+      const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Deixa pra depois'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(null);
+      card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);
+    }).then(async (B) => {
+      if (!B) return;
+      if (d.fakes < PRECO_BOLO) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      d.fakes -= PRECO_BOLO; somDinheiro(); mostrarDinheiro(false); gastoNaTela(PRECO_BOLO);
+      await fala('lucia', T(B.fala));
+      const J = S.jog, a = J.sentado ? null : lugarParaBolo();
+      if (a) { await fala('lucia', T('Senta aí que eu levo pra você!')); Dialogo.esconder(); await sentar(a); }
+      Dialogo.esconder();
+      const cheio = (d.fome || 0) <= 0;
+      if (J.sentado) {                                                                      // come a fatia sentado (a pose do lanche)
+        await esperar(900);
+        darLanche(J, 'bolo:' + B.id);
+        J.comendo = 3.6; await esperar(3700);
+        for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);
+        tirarLanche(J);
+      }
+      d.fome = Math.max(0, (d.fome || 0) - 1);
+      if (d.ruinsNoMes) d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;
+      d.bolos = d.bolos || {}; d.bolos[B.id] = (d.bolos[B.id] | 0) + 1;
+      try { Espectros.mover('saudavel', -2, 'comeu ' + B.nome); if (cheio) Espectros.mover('saudavel', -4, 'comeu sem fome'); } catch (e) { /* sem espectros */ }
+      gravar(d.ponto || 'chegada');
     });
   }
   // ícones pixel art (16x16, contorno automático) de cada produto + a janelinha do cardápio
@@ -7209,5 +7506,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco } });   // (_estado/_planta/_fns: para testes)
+    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF } });   // (_estado/_planta/_fns: para testes)
 })();
