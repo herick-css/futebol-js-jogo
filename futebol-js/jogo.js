@@ -1,5 +1,5 @@
 /* =====================================================================
-   FUTEBOL JS · jogo.js · versão 6.6.17
+   FUTEBOL JS · jogo.js · versão 6.6.18
    Arquivo gerado a partir do futebol-partida.html (não edite aqui: o código
    comentado é o mesmo, só que o CSS e a tela (HTML) entram por JavaScript).
    Precisa do Three.js r128 carregado antes (variável global THREE).
@@ -61,7 +61,11 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '6.6.17';
+const VERSAO_JOGO = '6.6.18';
+// 6.6.18: Escolha — a lista de opções tem no máximo a altura de 3 (o resto rola, com a setinha ▼). cidade.js — a Lúcia atende as mesas
+//   como a Carla (anota, faz na bancada ou pega na vitrine, leva e recebe) e só fica no caixa no turno do jogador; leva o bolo dele até a
+//   mesa; no turno os clientes também pedem bolo e o pagamento sobe 50% com a confeitaria; o encontro marcado no domingo é "hoje, às 19h"
+//   e vira missão na hora; o convite do futebol não brinca mais com o encontro depois do primeiro; com 100 corações, pedir em namoro.
 // 6.6.17: cidade.js + fase2.js — o jogador e a Lúcia não se atravessam mais nas cenas (corpo = elipse; quem anda contorna o outro e o
 //   ponto de chegada sai de dentro dele; portão do prédio em fila, despedida por trás dela, cama do quarto com mais espaço) e, com
 //   100 corações, a CONFEITARIA DA LÚCIA abre no café (cena da inauguração: "só consegui por sua causa") com 5 bolos de 200 fakes.
@@ -14145,7 +14149,17 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
 #escolha .escCaixa { --p: var(--p3, 3px); box-sizing: border-box; width: min(720px, 100%); padding: 4px 6px 8px; display: flex; flex-direction: column; gap: 8px;
   border: solid transparent; border-width: calc(var(--p) * 7); border-image: var(--sp-escuro) 7 fill / calc(var(--p) * 7) stretch; image-rendering: pixelated; }
 #escolha .escTit { margin: 0; font: 600 clamp(14px, 3.8vh, 19px)/1.3 var(--font-body); }
-#escolha .pxBtn { --p: var(--p2, 2px); width: 100%; height: auto; min-height: 38px; padding: 4px 10px; font-size: 13px; line-height: 1.15; text-transform: none; letter-spacing: 0.02em; }`;
+#escolha .pxBtn { --p: var(--p2, 2px); width: 100%; height: auto; min-height: 38px; padding: 4px 10px; font-size: 13px; line-height: 1.15; text-transform: none; letter-spacing: 0.02em; flex: 0 0 auto; }
+/* (6.6.18) a lista de opções tem no máximo a altura de 3 opções: o resto fica embaixo, rolando (a caixa não cresce e não cobre a tela) */
+#escolha .escLista { position: relative; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+  -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: var(--mx-laranja) rgba(0, 0, 0, 0.25); }
+#escolha .escLista.rola { padding-right: 6px; }
+#escolha .escLista::-webkit-scrollbar { width: 6px; }
+#escolha .escLista::-webkit-scrollbar-thumb { background: var(--mx-laranja); }
+#escolha .escLista::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.25); }
+#escolha .escMais { align-self: center; margin: -4px 0 -2px; font: 700 12px/1 var(--font-display); color: var(--mx-laranja); pointer-events: none; animation: escMaisPisca 1.1s steps(2) infinite; }
+#escolha .escMais[hidden] { display: none; }
+@keyframes escMaisPisca { 50% { opacity: 0.35; } }`;
     document.head.appendChild(css);
     el = document.createElement('div'); el.id = 'escolha'; el.hidden = true;
     ($('raizJogo') || document.body).appendChild(el);
@@ -14162,12 +14176,13 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
     if (typeof Cena !== 'undefined') Cena.interativo();      // decisão do jogador: o "Pular cena" para aqui
     montar();
     el.classList.toggle('centro', !!(opcoes && opcoes.centro));   // ex.: Escolha.mostrar(titulo, ops, { centro: true })
-    el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p>' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div>';
+    el.innerHTML = '<div class="escCaixa" role="dialog"><p class="escTit"></p><div class="escLista">' + ops.map((o, i) => '<button type="button" class="pxBtn" data-i="' + i + '"></button>').join('') + '</div><div class="escMais" hidden>▼</div></div>';
     el.querySelector('.escTit').textContent = titulo || ''; el.querySelector('.escTit').hidden = !titulo;
     if (titulo && Dialogo.aberto()) Dialogo.esconder();      // UMA caixa só: a pergunta vira o título da escolha (a fala some)
     el.classList.toggle('sobreFala', !titulo && Dialogo.aberto());
     el.querySelectorAll('button').forEach((b, i) => { b.textContent = ops[i]; });
     el.hidden = false;
+    limitarLista();
     return new Promise((res) => {
       el.onclick = (e) => {
         const b = e.target.closest('button[data-i]');
@@ -14176,6 +14191,18 @@ const Escolha = (() => {                              // caixa de ESCOLHAS (reut
         el.hidden = true; el.onclick = null; res(Number(b.dataset.i));
       };
     });
+  }
+  // (6.6.18) até 3 opções a caixa mostra tudo; com mais, ela fica com a altura das 3 primeiras e o resto rola (a setinha ▼ avisa que tem mais)
+  function limitarLista() {
+    const lista = el.querySelector('.escLista'), mais = el.querySelector('.escMais'), bs = lista.querySelectorAll('button');
+    lista.style.maxHeight = ''; lista.classList.remove('rola'); lista.scrollTop = 0; mais.hidden = true; lista.onscroll = null;
+    if (bs.length <= 3) return;
+    const h = bs[2].offsetTop + bs[2].offsetHeight;                                  // offsetTop medido dentro da lista (position: relative)
+    lista.style.maxHeight = Math.ceil(h + 1) + 'px';
+    if (lista.scrollHeight <= lista.clientHeight + 2) return;
+    lista.classList.add('rola');
+    const ver = () => { mais.hidden = lista.scrollTop + lista.clientHeight >= lista.scrollHeight - 3; };
+    lista.onscroll = ver; ver();
   }
   return { mostrar, aberta: () => !!(el && !el.hidden) };
 })();
