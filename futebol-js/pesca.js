@@ -1820,7 +1820,7 @@
       return melhor == null ? null : { x: J.x, z: J.z, yaw: melhor };
     }
     // a pesca só fica liberada nos dias de folga (em dia de trabalho, o personagem prefere não pescar)
-    const diaDeTrabalho = () => !!api.empregoEscolhido() && !fimDeSemana();
+    const diaDeTrabalho = () => { const e = api.empregoEscolhido(); return !!e && e !== 'clube' && !fimDeSemana(); };   // jogador do clube: sem expediente fixo
     async function semPescaHoje() { await api.fala('jog', tr('Eu acho melhor não pescar hoje, por conta do trabalho...')); Dialogo.esconder(); }
     async function pescarAqui(Lp) {
       if (diaDeTrabalho()) { await semPescaHoje(); return; }

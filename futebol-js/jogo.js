@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.0';
+const VERSAO_JOGO = '7.1';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -384,7 +384,15 @@ const CAMPOS = {
   oficial: { nome: 'Oficial (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arena',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#2f7a31', gramaB: '#37893a', fundo: '#2a6e2c', padrao: 'xadrez', faixas: 14, linhas: '#e9ecdf' } },
+  // ESTÁDIO DA SÉRIE B: 11 x 11 num estádio mais simples que o oficial (estadio 'arenaB': arquibancada só em três lados e mais baixa,
+  // cimento sem cadeiras, cobertura só na principal, refletores baixos, placas de comércio do bairro) e o gramado GASTO
+  // (aparencia.gasto: carecas de terra na frente dos gols e no meio, buracos e remendos de grama). A torcida sai da popularidade
+  // do mandante (times[].torcidaB, de 0 a 1) e cabe bem menos gente que no estádio oficial.
+  serieB: { nome: 'Estádio da Série B (11 x 11)', comprimento: 100, largura: 64, jogadores: 11, estadio: 'arenaB',
+    regras: { substituicoes: 5 },
+    aparencia: { gramaA: '#3a7330', gramaB: '#427e36', fundo: '#3a6630', padrao: 'faixas', faixas: 12, linhas: '#dfe2d2', gasto: true } },
 };
+const ehArena = (t) => (t || 'arena') === 'arena' || t === 'arenaB';   // os dois estádios com placas (a bola bate na placa de 0,9 m)
 
 // ---- Formações. "linhas" = quantos jogadores em cada linha, da defesa para o ataque, por
 // número de jogadores de LINHA (sem o goleiro). Se o número não estiver na lista, o jogo divide
@@ -916,6 +924,39 @@ const MAT_CORES = new THREE.MeshLambertMaterial({ vertexColors: true });   // ma
 // ---------------------------------------------------------------------
 // 4. CENÁRIO
 // ---------------------------------------------------------------------
+// GRAMADO GASTO (estádio da Série B): tudo em quadradinhos, como o resto do jogo e cortado na linha do campo.
+//   carecas de terra na frente dos dois gols (a pequena área é o que mais apanha) e no círculo central, falhas menores espalhadas,
+//   uns BURACOS (terra escura com a borda mais clara, de 40 a 90 cm) e remendos de grama nova de outro tom.
+function gramadoGasto(g, X, Y, A) {
+  const pick = (arr) => arr[Math.random() * arr.length | 0], PPM = 8;
+  const TERRA = ['#8a7048', '#806640', '#93784e', '#7a6040'], SECA = ['#6f7a3a', '#76803f', '#687336'], REMENDO = ['#4f8f3c', '#559a42'];
+  g.save(); g.beginPath(); g.rect(X(-HALF_L), Y(-HALF_W), CONFIG.FIELD_L * PPM, CONFIG.FIELD_W * PPM); g.clip();
+  const mancha = (cx, cz, r, cores, chance) => {
+    for (let x = Math.floor((cx - r) * 2) / 2; x <= cx + r; x += 0.5) for (let z = Math.floor((cz - r) * 2) / 2; z <= cz + r; z += 0.5) {
+      const d = Math.hypot(x + 0.25 - cx, (z + 0.25 - cz) * 1.2) / r;
+      if (d <= 0.65 || (d <= 1 && Math.random() < chance)) { g.fillStyle = pick(cores); g.fillRect(X(x), Y(z), 0.5 * PPM, 0.5 * PPM); }
+    }
+  };
+  for (const s of [-1, 1]) {                                      // a frente dos gols: grama seca em volta e a careca no meio
+    mancha(s * (HALF_L - 3.2), 0, 4.6, SECA, 0.55);
+    mancha(s * (HALF_L - 2.4), rand(-0.6, 0.6), 2.6, TERRA, 0.6);
+    mancha(s * (HALF_L - 11), rand(-1.5, 1.5), 1.6, SECA, 0.5);      // a marca do pênalti
+  }
+  mancha(0, 0, 2.4, SECA, 0.6); mancha(rand(-0.6, 0.6), 0, 1.3, TERRA, 0.5);
+  for (let i = 0; i < 22; i++) mancha(rand(-HALF_L + 4, HALF_L - 4), rand(-HALF_W + 2, HALF_W - 2), rand(0.6, 1.6), SECA, 0.5);
+  for (let i = 0; i < 9; i++) {                                     // remendos de grama (placas quadradas de outro tom)
+    const x = Math.round(rand(-HALF_L + 6, HALF_L - 6)), z = Math.round(rand(-HALF_W + 3, HALF_W - 3)), t = pick([1, 1.5, 2]);
+    g.fillStyle = pick(REMENDO); g.fillRect(X(x), Y(z), t * PPM, t * PPM);
+    g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(X(x), Y(z + t) - 1, t * PPM, 1);
+  }
+  for (let i = 0; i < 16; i++) {                                    // os buracos
+    const x = Math.round(rand(-HALF_L + 3, HALF_L - 3) * 4) / 4, z = Math.round(rand(-HALF_W + 2, HALF_W - 2) * 4) / 4, t = pick([0.5, 0.5, 0.75, 0.75, 1]);
+    g.fillStyle = '#a08458'; g.fillRect(X(x - 0.25), Y(z - 0.25), (t + 0.5) * PPM, (t + 0.5) * PPM);
+    g.fillStyle = '#4a3420'; g.fillRect(X(x), Y(z), t * PPM, t * PPM);
+    g.fillStyle = '#2e2014'; g.fillRect(X(x), Y(z), t * PPM, Math.max(1, t * PPM * 0.4));
+  }
+  g.restore();
+}
 function buildPitch(op) {
   // op (só a cena do pátio da escola): { margem } = piso só até um pouco depois da grade; { semFundo } = sem o chão grande de fora.
   const PPM = 8, M = op && op.margem != null ? op.margem : CONFIG.BOARD_GAP + 2 + LADO_BANCO.extra;   // pixels por metro, margem até depois das placas
@@ -937,6 +978,7 @@ function buildPitch(op) {
       g.fillStyle = (i + j) % 2 ? A.gramaA : A.gramaB;
       g.fillRect(X(-HALF_L + i * sw), Y(-HALF_W) + j * FW / linhasZ, sw * PPM + 1, FW / linhasZ + 1);
     }
+    if (A.gasto) gramadoGasto(g, X, Y, A);
   } else if (A.padrao === 'terra') {
     // VÁRZEA DA CIDADEZINHA: terra batida por dentro do alambrado (carecas claras e escuras, tufos de grama nas beiradas) e,
     // do lado de fora da tela, a grama da cidade em quadradinhos de 60 cm. Tudo em quadrados, como o resto do jogo.
@@ -1079,7 +1121,7 @@ function buildPitch(op) {
   const tipoEst = PARTIDA ? PARTIDA.campo.estadio : 'arena';   // chão de fora: grama escura, terra (várzea) ou cimento (society)
   const modeloCidade = !!PARTIDA && PARTIDA.campo.modelo === 'cidade' && !neve;
   const gramaFora = modeloCidade ? new THREE.MeshLambertMaterial({ map: drawTexture(64, 64, (q) => { const T2 = ['#527333', '#597a38', '#60813d', '#4e6e2f', '#688743', '#557635', '#5e7d3a', '#4b6a2c']; for (let a = 0; a < 16; a++) for (let b = 0; b < 16; b++) { q.fillStyle = T2[Math.random() * T2.length | 0]; q.fillRect(a * 4, b * 4, 4, 4); } }, 320 / 9.6, 240 / 9.6) }) : null;
-  const outer = new THREE.Mesh(new THREE.PlaneGeometry(320, 240), gramaFora || mat(neve ? 0xdde4ec : tipoEst === 'varzea' ? 0x6b5a3e : tipoEst === 'society' ? (PARTIDA.campo.visual === 'futsal' ? 0x2a2e36 : 0x55595f) : 0x1c3a22));
+  const outer = new THREE.Mesh(new THREE.PlaneGeometry(320, 240), gramaFora || mat(neve ? 0xdde4ec : tipoEst === 'arenaB' ? 0x6e6a60 : tipoEst === 'varzea' ? 0x6b5a3e : tipoEst === 'society' ? (PARTIDA.campo.visual === 'futsal' ? 0x2a2e36 : 0x55595f) : 0x1c3a22));
   outer.rotation.x = -Math.PI / 2; outer.position.y = -0.02;
   if (!(op && op.semFundo)) { ESTADIO.add(outer); freeze(outer); } else { outer.geometry.dispose(); }
   // Bandeirinhas de escanteio: cada uma é uma malha própria (4 chamadas de desenho em vez de 1)
@@ -1100,8 +1142,11 @@ function buildPitch(op) {
 const BANDEIRAS = [];
 
 // Placas de publicidade em volta do campo. Os "anúncios" são dos seus próprios projetos.
-function buildBoards() {
-  const ADS = [['SUPER LAN MASTER', '#0B4F9C', '#F7941D'], ['FUTEBOL JS', '#F7941D', '#071430'], ['PONTO COMUNITÁRIO', '#1f9e5c', '#ffffff'],
+// placas do estádio da Série B: o comércio do bairro (o último é escuro: as faces de cima e das pontas usam um pedaço dele)
+const ANUNCIOS_B = [['PADARIA PÃO QUENTINHO', '#e8c27a', '#5a2a10'], ['AUTO PEÇAS 2 IRMÃOS', '#1f4a8a', '#f2c230'], ['AÇOUGUE BOI GORDO', '#a8201a', '#ffffff'],
+  ['FUTEBOL JS', '#F7941D', '#071430'], ['MATERIAIS SÃO JORGE', '#2f7a3a', '#ffffff'], ['BAR DO TIÃO', '#111111', '#f2c230']];
+function buildBoards(lista) {
+  const ADS = lista || [['SUPER LAN MASTER', '#0B4F9C', '#F7941D'], ['FUTEBOL JS', '#F7941D', '#071430'], ['PONTO COMUNITÁRIO', '#1f9e5c', '#ffffff'],
     ['ATALIBA', '#d8443a', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['CACHOLA', '#111111', '#6bf08e']];
   const tex = drawTexture(256, 16, (g) => {
     const w = 256 / ADS.length;
@@ -1568,6 +1613,85 @@ function buildStands() {
   const estrutura = E.malha(MAT_CORES); ESTADIO.add(estrutura); freeze(estrutura);
   lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });   // cor muda com o horário (aplicarAmbiente)
   const lampadas = Lp.malha(lampadasMat); ESTADIO.add(lampadas); freeze(lampadas);
+}
+
+// ESTÁDIO DA SÉRIE B (estadio 'arenaB'): o mesmo jeito do buildStands, só que mais simples e menor —
+//   principal (atrás dos bancos, z < 0): 10 degraus de cimento com cobertura e colunas atrás · do outro lado: 7 degraus sem cobertura ·
+//   atrás do gol da esquerda: a "geral" de 5 degraus, todo mundo em pé · atrás do gol da direita: muro pintado com o placar e árvores.
+//   Sem cadeiras (o cimento é o assento), 4 refletores baixos. A ocupação vem do mandante (torcidaB de 0 a 1; sem ela, da popularidade).
+function buildStandsB() {
+  const T = new Lote();
+  const DEG_Y = 0.55, DEG_Z = 0.95, D0 = 11.5;
+  const P = PARTIDA, M = P ? P.timesObj[P.mandante] : null, V = P ? P.timesObj[1 - P.mandante] : null;
+  const ocupacao = clamp(M && typeof M.torcidaB === 'number' ? M.torcidaB : 0.1 + 0.45 * (M ? M.popularidade : 0.5), 0.05, 0.92);
+  const casa = P ? P.mandante : 0;
+  const partCasa = clamp(0.78 + 0.15 * ((M ? M.popularidade : 0.5) - (V ? V.popularidade : 0.5)), 0.6, 0.95);   // visitante: pouca gente
+  const angulo = (x, z) => (Math.atan2(z, x) / (Math.PI * 2) + 1) % 1;
+  const ladoFora = casa === 0 ? 1 : -1;                                     // a torcida visitante fica num canto da arquibancada de frente
+  const lances = [   // [eixo, sinal, fileiras, comprimento extra]
+    { eixo: 'z', s: -1, n: 10 }, { eixo: 'z', s: 1, n: 7 }, { eixo: 'x', s: -1, n: 5, geral: true },
+  ];
+  for (const L of lances) {
+    for (let r = 0; r < L.n; r++) {
+      const y = 0.45 + r * DEG_Y, d = D0 + r * DEG_Z, cor = r % 2 ? 0x77736a : 0x6c6860;
+      if (L.eixo === 'z') {
+        const len = CONFIG.FIELD_L + 6;
+        T.caixa(len, y, DEG_Z, cor, 0, y / 2, L.s * (HALF_W + d + DEG_Z / 2));
+        for (let x = -len / 2 + 0.5; x < len / 2; x += 0.8) {
+          if (Math.random() > ocupacao) continue;
+          const z = L.s * (HALF_W + d + 0.55);
+          const time = L.s > 0 && x * ladoFora > HALF_L * 0.55 ? 1 - casa : (Math.random() < partCasa ? casa : 1 - casa);
+          crowd.torcedor(x + rand(-0.12, 0.12), y, z, 0, -L.s, time, Math.random() < 0.35, angulo(x, z));
+        }
+      } else {
+        const len = CONFIG.FIELD_W * 0.7;
+        T.caixa(DEG_Z, y, len, cor, L.s * (HALF_L + d + DEG_Z / 2), y / 2, 0);
+        for (let z = -len / 2 + 0.5; z < len / 2; z += 0.7) {
+          if (Math.random() > Math.min(0.95, ocupacao * 1.15)) continue;
+          const x = L.s * (HALF_L + d + 0.55);
+          crowd.torcedor(x, y, z + rand(-0.12, 0.12), -L.s, 0, Math.random() < 0.9 ? casa : 1 - casa, true, angulo(x, z));
+        }
+      }
+    }
+    // a parede de trás de cada lance (fecha o degrau mais alto) e as escadinhas pintadas de amarelo
+    const n = L.n, yTopo = 0.45 + (n - 1) * DEG_Y, dTras = D0 + n * DEG_Z;
+    if (L.eixo === 'z') {
+      T.caixa(CONFIG.FIELD_L + 6, yTopo + 1.1, 0.3, 0x5c5850, 0, (yTopo + 1.1) / 2, L.s * (HALF_W + dTras + 0.15));
+      for (const ex of [-CONFIG.FIELD_L / 4, 0, CONFIG.FIELD_L / 4]) for (let r = 0; r < n; r++) T.caixa(0.7, 0.02, DEG_Z * 0.9, 0xd8b030, ex, 0.45 + r * DEG_Y + 0.01, L.s * (HALF_W + D0 + r * DEG_Z + DEG_Z / 2));
+    } else T.caixa(0.3, yTopo + 1.1, CONFIG.FIELD_W * 0.7, 0x5c5850, L.s * (HALF_L + dTras + 0.15), (yTopo + 1.1) / 2, 0);
+  }
+  // o muro atrás do gol da direita, com o placar velho em cima de duas pernas de ferro
+  const xm = HALF_L + D0 + 1.5;
+  T.caixa(0.4, 3.2, CONFIG.FIELD_W + 14, 0xd8d2c0, xm, 1.6, 0);
+  T.caixa(0.42, 0.5, CONFIG.FIELD_W + 14, 0x2f7a3a, xm, 0.25, 0);
+  for (const z of [-3.2, 3.2]) T.caixa(0.3, 6, 0.3, 0x55595f, xm + 0.6, 3, z);
+  T.caixa(0.5, 2.6, 8, 0x1c1c1f, xm + 0.6, 7.2, 0);
+  T.caixa(0.06, 2.2, 7.4, 0x2a2e36, xm + 0.33, 7.2, 0);
+  const degraus = T.malha(MAT_CORES); ESTADIO.add(degraus); freeze(degraus);
+  const torcida = crowd.malha(); ESTADIO.add(torcida); freeze(torcida);
+  // cobertura da principal (laje fina inclinada, colunas atrás da última fileira) e os 4 refletores baixos
+  const E = new Lote(), Lp = new Lote();
+  const nP = 10, yP = 0.45 + (nP - 1) * DEG_Y, dP = D0 + nP * DEG_Z, prof = nP * DEG_Z + 2.4, zc = -(HALF_W + D0 + prof / 2 - 1.2);
+  E.caixa(CONFIG.FIELD_L * 0.62, 0.35, prof, 0x9aa0a6, 0, yP + 4.2, zc);
+  E.caixa(CONFIG.FIELD_L * 0.62, 0.6, 0.2, 0x3a64b8, 0, yP + 4.0, zc + prof / 2);
+  for (let i = 0; i < 6; i++) E.caixa(0.35, yP + 4.2, 0.35, 0x55595f, lerp(-CONFIG.FIELD_L * 0.29, CONFIG.FIELD_L * 0.29, i / 5), (yP + 4.2) / 2, -(HALF_W + dP + 0.55));
+  const H = 22;
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const x = sx * (HALF_L + 8), z = sz * (HALF_W + D0 + (sz < 0 ? nP : 7) * DEG_Z + 2.2);
+    E.caixa(0.6, H, 0.6, 0x59606b, x, H / 2, z);
+    E.caixa(3.2, 0.25, 0.9, 0x3a3f46, x, H + 0.2, z);
+    Lp.caixa(3, 1.5, 0.7, 0xfff3c4, x, H + 1, z);
+  }
+  const estrutura = E.malha(MAT_CORES); ESTADIO.add(estrutura); freeze(estrutura);
+  lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const lampadas = Lp.malha(lampadasMat); ESTADIO.add(lampadas); freeze(lampadas);
+  // árvores atrás do muro (blocos)
+  const A = new Lote();
+  for (let i = 0; i < 9; i++) {
+    const z = -CONFIG.FIELD_W / 2 - 4 + i * (CONFIG.FIELD_W + 8) / 8, x = xm + 4 + (i % 3) * 1.6, h = 3 + (i % 4) * 0.7;
+    A.caixa(0.5, h, 0.5, 0x6b4a2a, x, h / 2, z); A.caixa(3, 2.6, 3, i % 2 ? 0x3f7a35 : 0x4a8a3c, x, h + 1.1, z);
+  }
+  const arv = A.malha(MAT_CORES); ESTADIO.add(arv); freeze(arv);
 }
 
 function buildGoal(side) {
@@ -5429,7 +5553,7 @@ function updateBall(dt) {
   // SEM PAREDE INVISÍVEL: a bola só bate no que existe — a placa de publicidade (0,9 m)
   // no estádio, a grade na várzea/society. Por cima dela, sai do estádio de verdade (e a cobrança
   // usa uma bola reserva: cone na lateral, goleiro joga a dele no escanteio — ver updateRestart).
-  const obst = (PARTIDA && (PARTIDA.campo.estadio || 'arena') !== 'arena') ? ALTURA_GRADE : 0.9;
+  const obst = (PARTIDA && !ehArena(PARTIDA.campo.estadio)) ? ALTURA_GRADE : 0.9;
   for (const k of ['x', 'z']) {
     const v = 'v' + k, sg = Math.sign(ball[k]) || 1, lim = k === 'x' ? BOARD_X : limZ(sg);
     if (Math.abs(ball[k]) > lim - R && Math.abs(ball[k]) < lim + 0.35 && ball[k] * ball[v] > 0 && ball.y < obst) { ball[v] *= -0.35; ball[k] = sg * (lim - R); }
@@ -5865,6 +5989,7 @@ function startCelebration(name) {
 //   society ... sem técnico/bandeirinha/placa: PULAR NA GRADE e bola para a torcida
 const CELEB_POR_CAMPO = {
   arena: ['tecnico', 'bandeira', 'placa', 'bola'],
+  arenaB: ['tecnico', 'bandeira', 'placa', 'bola'],
   varzea: ['tecnico', 'bandeira', 'grade', 'bola'],   // a várzea tem alambrado: dá para pular na grade
   society: ['grade', 'bola'],
 };
@@ -11403,6 +11528,7 @@ function frame(now) {
 
 // Emblema desenhado num canvas (camisa: 7×8 px; placar: 26 px). forma + 2 cores + letras.
 function desenharEmblema(g, x, y, w, h, emb) {
+  if (emb && emb.vazio) return;                    // time sem emblema (a peneira: "Time 1" e "Time 2")
   if (!emb) { g.fillStyle = '#FFFFFF'; g.fillRect(x, y, w, h); return; }
   if (emb.arte && w >= 14) {                       // emblema em PIXEL ART (um canvas quadrado, ex.: os times da várzea): desenhado sem suavizar
     const s0 = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(emb.arte, x, y, w, h); g.imageSmoothingEnabled = s0; return;
@@ -11554,7 +11680,7 @@ function montarEstadio() {
   crowd.pintarAtlas(PARTIDA.uniformes[0].camisa, PARTIDA.uniformes[1].camisa);
   const tipo = PARTIDA.campo.estadio || 'arena';
   buildPitch();
-  if (tipo === 'arena') { buildBoards(); buildStands(); } else buildArredores(tipo);
+  if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); } else buildArredores(tipo);
   buildGoal(-1); buildGoal(1);
   if (PARTIDA.campo.visual === 'futsal') BANCOS.length = 0; else construirBancos();   // quadra de futsal: sem banco
   montarCones();
@@ -13583,6 +13709,7 @@ const Idioma = {
   'Quadra de futsal (5 x 5)': ['Futsal court (5 v 5)', 'Cancha de futsal (5 x 5)', 'Campo da futsal (5 x 5)', 'Terrain de futsal (5 x 5)'],
   'Quadra da escola (4 x 4)': ['School court (4 v 4)', 'Cancha de la escuela (4 x 4)', 'Campo della scuola (4 x 4)', 'Terrain de l’école (4 x 4)'],
   'Oficial (11 x 11)': ['Official (11 v 11)', 'Oficial (11 x 11)', 'Ufficiale (11 x 11)', 'Officiel (11 x 11)'],
+  'Estádio da Série B (11 x 11)': ['Série B stadium (11 v 11)', 'Estadio de la Série B (11 x 11)', 'Stadio della Série B (11 x 11)', 'Stade de Série B (11 x 11)'],
   '4-4-2 (clássica)': ['4-4-2 (classic)', '4-4-2 (clásica)', '4-4-2 (classica)', '4-4-2 (classique)'],
   '4-3-3 (ofensiva)': ['4-3-3 (attacking)', '4-3-3 (ofensiva)', '4-3-3 (offensiva)', '4-3-3 (offensive)'],
   '5-3-2 (defensiva)': ['5-3-2 (defensive)', '5-3-2 (defensiva)', '5-3-2 (difensiva)', '5-3-2 (défensive)'],

@@ -17,6 +17,11 @@ ARQUIVOS
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
   varzea.js ............. o campeonato de várzea: o olheiro, os 10 times (emblemas em pixel art), a torcida, o vestiário
                           subterrâneo, a pré-partida e as estatísticas/prêmios (baixado pela cidade; o app Carreira usa a tabela)
+  serieb.js ............. a peneira e a carreira profissional: o presente (18 anos), a peneira "Time 1 x Time 2", a carta com
+                          as 3 propostas, os 20 times da Série B (paródias com emblemas em pixel art e força dos últimos 3 anos),
+                          o ônibus do clube, a confiança do técnico, as missões do clube, a Série B de 38 rodadas e as copas
+                          (baixado pela cidade; o quarto usa a carta e o app Carreira usa a tabela). Popularidade dos times:
+                          serieb.criar(api).popularidade.somar(time, pontos, motivo) — de 15 a 100, 5 faixas de torcida
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
                           compra na barbearia (os NPCs podem usar)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

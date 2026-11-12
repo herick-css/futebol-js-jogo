@@ -1075,7 +1075,25 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Ô moleque abusado! Respeita os mais velhos!': ['Hey, you cheeky brat! Respect your elders!', '¡Oye, mocoso atrevido! ¡Respeta a los mayores!', 'Ehi, ragazzino sfacciato! Rispetta i più grandi!', 'Hé, petit insolent ! Respecte tes aînés !'],
     'Ô menina abusada! Respeita os mais velhos!': ['Hey, you cheeky girl! Respect your elders!', '¡Oye, niña atrevida! ¡Respeta a los mayores!', 'Ehi, ragazzina sfacciata! Rispetta i più grandi!', 'Hé, petite insolente ! Respecte tes aînés !'],
   });
+  Object.assign(TRAD_F2, {   // a carta da peneira (serieb.js)
+    "Vamos lá, vamos ver isso...": ["Here we go, let's see this...", "Vamos allá, a ver esto...", "Vediamo un po'...", "Allez, voyons ça..."],
+    "Vai dar certo, amor. Eu confio.": ["It's going to work out, love. I believe in you.", "Va a salir bien, amor. Yo confío.", "Andrà bene, amore. Io ci credo.", "Ça va marcher, mon amour. J'ai confiance."],
+    "Hmm... a carta veio sem as propostas.": ["Hmm... the letter came without the offers.", "Hmm... la carta vino sin las propuestas.", "Hmm... la lettera è arrivata senza le offerte.", "Hmm... la lettre est arrivée sans les offres."],
+    "Mas... isso significa que eu vou ter que sair do trabalho?! Eu não posso deixar você sozinha.": ["But... does that mean I'll have to quit my job?! I can't leave you on your own.", "Pero... ¿¡eso significa que voy a tener que dejar el trabajo!? No puedo dejarte sola.", "Ma... vuol dire che dovrò lasciare il lavoro?! Non posso lasciarti da sola.", "Mais... ça veut dire que je vais devoir quitter le travail ?! Je ne peux pas te laisser seule."],
+    "Nem pense em recusar isso por causa de mim. É o seu sonho! Vai dar tudo certo no meu trabalho.": ["Don't you dare turn this down because of me. It's your dream! Everything will be fine at work.", "Ni se te ocurra rechazarlo por mí. ¡Es tu sueño! Todo va a ir bien en mi trabajo.", "Non pensare nemmeno di rifiutare per colpa mia. È il tuo sogno! Al lavoro andrà tutto bene.", "N'essaie même pas de refuser à cause de moi. C'est ton rêve ! Tout va bien se passer au travail."],
+    "Obrigado, amor. De verdade.": ["Thank you, love. Really.", "Gracias, amor. De verdad.", "Grazie, amore. Davvero.", "Merci, mon amour. Vraiment."],
+    "Obrigada, amor. De verdade.": ["Thank you, love. Really.", "Gracias, amor. De verdad.", "Grazie, amore. Davvero.", "Merci, mon amour. Vraiment."],
+    "Eu sabia! Estou muito orgulhosa de você.": ["I knew it! I'm so proud of you.", "¡Lo sabía! Estoy muy orgullosa de ti.", "Lo sapevo! Sono orgogliosissima di te.", "Je le savais ! Je suis trop fière de toi."],
+    "Obrigado por estar sempre do meu lado.": ["Thank you for always being by my side.", "Gracias por estar siempre a mi lado.", "Grazie di essere sempre al mio fianco.", "Merci d'être toujours à mes côtés."],
+    "Obrigada por estar sempre do meu lado.": ["Thank you for always being by my side.", "Gracias por estar siempre a mi lado.", "Grazie di essere sempre al mio fianco.", "Merci d'être toujours à mes côtés."],
+    "Uma nova jornada vai começar agora.": ["A new journey begins now.", "Ahora empieza un nuevo camino.", "Adesso comincia un nuovo viaggio.", "Une nouvelle aventure commence maintenant."],
+    "Missão: o primeiro jogo é na {0} (dia {1}) às {2}. O ônibus do clube passa no ponto da avenida 1h30 antes.": ["Mission: the first game is on {0} (day {1}) at {2}. The club bus stops at the avenue bus stop 1h30 before.", "Misión: el primer partido es el {0} (día {1}) a las {2}. El autobús del club pasa por la parada de la avenida 1h30 antes.", "Missione: la prima partita è {0} (giorno {1}) alle {2}. Il pullman del club passa alla fermata del viale 1h30 prima.", "Mission : le premier match est {0} (jour {1}) à {2}. Le bus du club passe à l'arrêt de l'avenue 1h30 avant."],
+    "Série B": ["Série B", "Série B", "Série B", "Série B"],
+    "Jogador profissional": ["Professional player", "Jugador profesional", "Giocatore professionista", "Joueur professionnel"],
+    "Clube da Série B": ["Série B club", "Club de la Série B", "Club di Série B", "Club de Série B"],
+  });
   for (const k of Object.keys(TRAD_F2)) if (!I18N[k]) I18N[k] = TRAD_F2[k];
+  if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, {"Obrigado, amor. De verdade.": "Obrigada, amor. De verdade.", "Obrigado por estar sempre do meu lado.": "Obrigada por estar sempre do meu lado."});
   // Variantes FEMININAS (it/fr; null = igual): só as falas do jogador ou ditas a ele que mudam de gênero nesses idiomas.
   const TRAD_F2_F = {
     'Eu não cheguei onde eu estou só por causa dessa partida...': [null, null, 'Non sono arrivata dove sono solo per quella partita...', "Je ne suis pas arrivée là où j'en suis seulement à cause de ce match..."],
@@ -1280,14 +1298,17 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // CARREIRA (app do computador): os números de cada tipo de jogo (o save da cidade: carreira) e o campeonato de várzea
   //   (a tabela, a artilharia e os prêmios vêm do varzea.js, que é baixado na hora se ainda não veio).
   let VZ_DADOS = null;
+  let SB_DADOS = null;
   function carregarVarzea() {
-    if (VZ_DADOS || typeof Fases === 'undefined') return Promise.resolve(VZ_DADOS);
-    return Fases.carregar('varzea').then((m) => { VZ_DADOS = (m && m.dados) || null; return VZ_DADOS; }, () => null);
+    if (typeof Fases === 'undefined') return Promise.resolve(VZ_DADOS);
+    const sb = SB_DADOS ? Promise.resolve() : Fases.carregar('serieb').then((m) => { SB_DADOS = (m && m.dados) || null; }, () => null);
+    const vz = VZ_DADOS ? Promise.resolve() : Fases.carregar('varzea').then((m) => { VZ_DADOS = (m && m.dados) || null; }, () => null);
+    return Promise.all([sb, vz]).then(() => VZ_DADOS);
   }
   function telaCarreira(aba) {
     let c = null; try { c = API.historia.ler('cidade') || {}; } catch (e) { c = {}; }
     const K = (c.carreira || {})[aba] || {}, n = (k) => K[k] | 0;
-    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']];
+    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']].concat(c.pro && c.pro.clube ? [['serieb', 'Série B']] : []);
     const abas = '<div class="crAbas">' + ABAS.map(([k, t]) => '<button type="button" class="crAba' + (k === aba ? ' on' : '') + '" data-a="abaCr" data-v="' + k + '">' + esc(T(t)) + '</button>').join('') + '</div>';
     const num = (v, t) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(t)) + '</span></div>';
     const j = n('j'), media = j ? (Math.round(K.nota / j * 10) / 10).toFixed(1) : '—';
@@ -1296,6 +1317,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       + num(media, 'Nota média') + num(j ? (+K.melhor || 0).toFixed(1) : '—', 'Melhor nota') + num(n('bons'), 'Jogos bons (nota 8+)') + '</div>'
       : '<p class="crVazio">' + esc(T('Nenhum jogo aqui ainda.')) + '</p>';
     if (aba === 'varzea') corpo += cardVarzea(c, K);
+    if (aba === 'serieb') corpo = SB_DADOS ? SB_DADOS.carreiraHtml(c, nomeJog, esc) : '<p class="crVazio">' + esc(T('Carregando...')) + '</p>';
     return '<div class="crTopo">⚽ ' + esc(T('Carreira')) + '<small>' + esc(nomeJog()) + '</small></div>' + abas + '<div class="crCorpo">' + corpo
       + '<div class="loBtns"><button type="button" class="loBtn sec" data-a="desktop">' + esc(T('Voltar')) + '</button></div></div>';
   }
@@ -1348,7 +1370,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
           const v = vagaPorId(sel);
           tela = janela('loggedon.com/vagas/' + v.id, topoLo(false) + '<div class="loCorpo"><div class="loCard"><h4>' + esc(T('Aceitar esta vaga?')) + '</h4><p>' + esc(T(v.titulo)) + '</p><p><small>' + esc(T('Você só pode aceitar uma vaga.')) + '</small></p><div class="loBtns"><button type="button" class="loBtn" data-a="sim">' + esc(T('Sim, aceitar')) + '</button><button type="button" class="loBtn sec" data-a="vaga" data-v="' + v.id + '">' + esc(T('Voltar')) + '</button></div></div></div>');
         } else {
-          const v = vagaPorId(D.emprego);
+          const v = vagaPorId(D.emprego) || { titulo: 'Jogador profissional', emp: 'Clube da Série B' };   // (serieb.js) o emprego virou o clube
           tela = janela('loggedon.com/aceito', topoLo(false) + '<div class="loCorpo"><div class="loCard"><h4>✅ ' + esc(T('Vaga aceita!')) + '</h4><p>' + esc(T(v.titulo)) + ' · ' + esc(T(v.emp)) + '</p><p><small>' + esc(T('A empresa vai entrar em contato com você.')) + '</small></p><div class="loBtns"><button type="button" class="loBtn" data-a="fim">' + esc(T('Fechar o computador')) + '</button></div></div></div>');
         }
         el.innerHTML = '<div class="pcMonitor"><div class="pcTela">' + tela + '<button type="button" class="pcSair" data-a="sair">✕ ' + esc(T('Sair do computador')) + '</button></div><div class="pcBarra"><span>' + esc(T('Computador')) + '</span><span class="pcHora">' + hora() + '</span></div></div>';
@@ -1656,6 +1678,80 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     S.paraCidade = true; S.fimDaFase = true;
     if (S.fimRes) S.fimRes();
   }
+  // ---- A CARTA DA PENEIRA (serieb.js): sentado na beira da cama com a carta na mão ("vamos lá, vamos ver isso..."); namorando, a Lúcia
+  //   do lado ("vai dar certo, amor"). A folha com as 3 propostas (carta.mostrar), a reação ao time escolhido e, se ele trabalha no café
+  //   dela, a conversa de deixar o trabalho. Os dois de pé, mãos dadas, o beijo no corte para o preto. "Uma nova jornada começa agora."
+  function fazCarta(A) {                                          // a carta (envelope aberto) presa na mão direita, como o copo
+    const L = new Lote(); L.caixa(0.012, 0.2, 0.15, 0xf4f0e4, 0, 0, 0); L.caixa(0.014, 0.05, 0.15, 0xd8cfb8, 0.002, 0.07, 0); L.caixa(0.016, 0.03, 0.03, 0xc8352b, 0.003, 0.02, 0);
+    const mesh = L.malha(MAT_CORES); mesh.position.set(0.08, -0.31, 0.02); A.m.bracoD.cotovelo.add(mesh); A.carta = mesh;
+  }
+  function tirarCarta(A) { if (A.carta) { if (A.carta.parent) A.carta.parent.remove(A.carta); A.carta.geometry.dispose(); A.carta = null; } }
+  function poseCarta(A, t, dt) {                                   // sentado, lendo a carta que segura na frente do peito
+    poseSentado(A, t, dt, false);
+    const m = A.m; m.bracoD.rotation.z = 1.05; m.bracoD.rotation.x = -0.15; usarCotovelo(m.bracoD, 0, 1.05);
+    m.bracoE.rotation.z = 0.6; m.bracoE.rotation.x = 0.1; usarCotovelo(m.bracoE, 0, 0.5);
+    if (A.carta) A.carta.rotation.z = -1.45;
+    if (m.cabecaLigada) usarCabeca(m, -0.22);
+  }
+  function poseMaosDadas(A, t, dt) {                               // de pé, de frente um para o outro, segurando as mãos no meio
+    posePe(A, t, dt, false);
+    const m = A.m, k = A.alcance || 0.58; m.bracoE.rotation.z = m.bracoD.rotation.z = k; m.bracoE.rotation.x = m.bracoD.rotation.x = 0; usarCotovelo(m.bracoE, 0, 0.2); usarCotovelo(m.bracoD, 0, 0.2);
+    m.corpo.rotation.z = -0.06;
+    if (m.cabecaLigada) usarCabeca(m, 0.05);
+  }
+  function coracaoNaTela() {
+    const el = document.createElement('div'); el.textContent = '❤';
+    el.style.cssText = 'position:fixed;z-index:30;left:50%;top:38%;transform:translate(-50%,-50%) scale(.4);font-size:64px;color:#e8405a;opacity:0;transition:transform 1.1s ease, opacity 1.1s ease;pointer-events:none;text-shadow:0 3px 0 #000';
+    (document.getElementById('raizJogo') || document.body).appendChild(el);
+    requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'translate(-50%,-80%) scale(1)'; });
+    setTimeout(() => { el.style.opacity = '0'; }, 1300); setTimeout(() => el.remove(), 2600);
+  }
+  async function cartaPeneira(E) {
+    let SB = null; try { SB = await Fases.carregar('serieb'); } catch (e) { console.warn('[Fase 2] serieb.js:', e); }
+    const c0 = API.historia.ler('cidade') || {}, ofertas = (c0.pro && c0.pro.ofertas) || [];
+    const J = S.jog, bx = Q.cama.x1 - 0.12, com = !!E.namorando;
+    S.escuro = false; mudarLugar('quarto', bx, -1.6, 0.35, 0); missao('');
+    J.seguir = true; J.pose = poseCarta; J.assento = 0.53; J.x = bx; J.z = -1.5; J.yaw = J.yawAlvo = 0.3; fazCarta(J);
+    let L = null;
+    if (com) { L = criarPessoaF2(E.ap || {}, [21, ['#3a6a9a', '#e8c27a', '#f2f2ee', '#f2f2ee']]); S.lucia = L; L.pose = poseSentado; L.assento = 0.53; L.x = bx; L.z = -2.45; L.yaw = L.yawAlvo = -0.3; }
+    S.camEspecial = [0.9, 1.6, com ? -0.05 : 0.2, bx + 0.1, 0.95, com ? -1.98 : -1.5]; S.camSnap = true;
+    await preto(false, 900); await esperar(500);
+    await dizer(['jog', T('Vamos lá, vamos ver isso...')]);
+    if (L) { L.fala = true; await falaLucia(T('Vai dar certo, amor. Eu confio.')); L.fala = false; Dialogo.esconder(); }
+    if (!SB || !ofertas.length) { await dizer(['jog', T('Hmm... a carta veio sem as propostas.')]); tirarCarta(J); return; }
+    const i = await SB.carta.mostrar(ofertas, nomeJog()), o = ofertas[i] || ofertas[0];
+    // grava o contrato no save da cidade (clube, temporada, luvas) e troca o emprego pelo clube
+    try { const c = API.historia.ler('cidade') || {}; SB.aceitarOferta(c, ofertas.indexOf(o)); API.historia.gravar('cidade', c); } catch (e) { console.warn('[Fase 2] contrato:', e); }
+    const antigo = S.dados.emprego; S.dados.emprego = 'clube'; gravar('fim');
+    await dizer(['jog', SB.fraseOferta(o)]);
+    if (L) {
+      if (E.trabalhaComLucia || antigo === 'cafeteria') {
+        await dizer(['jog', T('Mas... isso significa que eu vou ter que sair do trabalho?! Eu não posso deixar você sozinha.')]);
+        L.fala = true; await falaLucia(T('Nem pense em recusar isso por causa de mim. É o seu sonho! Vai dar tudo certo no meu trabalho.')); L.fala = false; Dialogo.esconder();
+        await dizer(['jog', Tg('Obrigado, amor. De verdade.')]);
+      } else {
+        L.fala = true; await falaLucia(T('Eu sabia! Estou muito orgulhosa de você.')); L.fala = false; Dialogo.esconder();
+        await dizer(['jog', Tg('Obrigado por estar sempre do meu lado.')]);
+      }
+      // de pé, de frente, mãos dadas; o beijo fica no corte para o preto
+      await preto(true, 500);
+      tirarCarta(J);
+      J.pose = poseMaosDadas; J.x = 0.15; J.z = 0.55; L.pose = poseMaosDadas; L.x = 0.15; L.z = -0.25;
+      J.yaw = J.yawAlvo = Math.PI / 2; L.yaw = L.yawAlvo = -Math.PI / 2;
+      S.camEspecial = [3.3, 1.45, 0.15, 0.15, 1.0, 0.15]; S.camSnap = true;
+      await preto(false, 600); await esperar(1300);
+      coracaoNaTela(); await preto(true, 1200); await esperar(500);
+      J.pose = 'pe'; J.x = -1.0; J.z = 0.6; J.yaw = J.yawAlvo = 0;
+      S.palco.remove(L.m.raiz); if (L.blob) S.palco.remove(L.blob); S.elenco = S.elenco.filter((x) => x !== L); S.lucia = null;
+      S.camEspecial = null; S.camSnap = true;
+      await preto(false, 700);
+    } else { tirarCarta(J); J.pose = 'pe'; }
+    await dizer(['jog', T('Uma nova jornada vai começar agora.')]);
+    try {
+      const c = API.historia.ler('cidade') || {}, T0 = c.pro && c.pro.temporada, v = T0 && T0.vagas.find((x) => x.comp === 'liga' || x.comp === 'est');
+      if (v) { const DS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']; missao(Tf('Missão: o primeiro jogo é na {0} (dia {1}) às {2}. O ônibus do clube passa no ponto da avenida 1h30 antes.', T(DS[diaSem(v.dia)]), v.dia, String(Math.floor(v.h)).padStart(2, '0') + ':' + String(Math.round((v.h % 1) * 60)).padStart(2, '0'))); }
+    } catch (e) { /* nada */ }
+  }
   // ---- acordou depois do encontro (cidade.js: { acordar: 'encontro', demissao: 'mercado' | 'pizzaria' | null })
   const CONTATO_EMPREGO = { mercado: 'Mercadinho Bom Preço', pizzaria: 'Mário (Pizzaria)' };
   function celularMensagens(contato, msgs) {
@@ -1727,7 +1823,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await preto(true, 900); const sujo = dormiuSujo();
     const nivel = nivelDoSono(h, c.dia), horas = h >= acorda ? 24 - h + acorda : acorda - h;
     registrarSono(nivel, nivel ? 'dormiu tarde' : 'dormiu bem');
-    const novo = Object.assign({}, c, { hora: acorda, dia: (c.dia || 1) + 1, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0 } });
+    const novo = Object.assign({}, c, { hora: acorda, dia: (c.dia || 1) + 1, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0, dia: (c.dia || 1) + 1 } });   // sono.dia = o dia em que acordou (a missão "dormir cedo" do clube)
     if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
     try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
     gravar('fim');
@@ -1910,7 +2006,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     API = ctx.api; montarUI();
     const retomar = ctx.args && ctx.args.retomar, volta = !!(ctx.args && ctx.args.volta);          // volta: o jogador entrou no prédio de novo, vindo da cidade
     const acordar = !!(ctx.args && ctx.args.acordar), acordarTipo = ctx.args && ctx.args.acordar;
-    const encCasa = ctx.args && ctx.args.encontroCasa;      // (cidade.js) a Lúcia veio para o encontro no quarto        // madrugada() na cidade (ficou acordado até as 2h): não para na entrada, acorda direto na cama
+    const encCasa = ctx.args && ctx.args.encontroCasa;
+    const carta = ctx.args && ctx.args.cartaPeneira ? ctx.args : null;   // (serieb.js) a carta com as propostas depois da peneira      // (cidade.js) a Lúcia veio para o encontro no quarto        // madrugada() na cidade (ficou acordado até as 2h): não para na entrada, acorda direto na cama
     const dados = dadosPadrao(), svF2 = ctx.historia && ctx.historia.fase2;
     if (((retomar && retomar !== 'inicio') || volta) && svF2) Object.assign(dados, JSON.parse(JSON.stringify(svF2)));
     dados.ano = new Date().getFullYear() - ANOS_ATRAS + ANOS_FRENTE;
@@ -1939,7 +2036,11 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const fim = new Promise((r) => { S.fimRes = r; });
       const ponto = retomar && svF2 ? retomar : 'inicio';
 
-      if (volta && encCasa) {
+      if (volta && carta) {
+        dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');
+        try { await cartaPeneira(carta); } catch (e) { console.error('[Fase 2] carta:', e); Dialogo.esconder(); }
+        liberar();
+      } else if (volta && encCasa) {
         dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');
         try { await encontroNoQuarto(encCasa); } catch (e) { console.error(e); S.paraCidade = true; S.fimDaFase = true; if (S.fimRes) S.fimRes(); }
       } else if (volta && acordarTipo === 'encontro') {

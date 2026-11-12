@@ -353,7 +353,8 @@
     // ---------------------------------------------------------------- jogos bons (sintético + futsal) e o convite
     function jogosBons() { try { const C = api.carreira(); return (C.sintetico.bons | 0) + (C.futsal.bons | 0); } catch (e) { return 0; } }
     function ondeViu() { try { const C = api.carreira(); return (C.sintetico.j | 0) >= (C.futsal.j | 0) ? 'sintetico' : 'futsal'; } catch (e) { return 'sintetico'; } }
-    const rafaPodeAparecer = () => { const C = camp(), h = dados().hora; return (C.etapa === 'nada' || C.etapa === 'recusou') && jogosBons() >= BONS_PARA_OLHEIRO && h >= 8 && h < 19.5 && !S().dentro; };
+    const rafaPodeAparecer = () => { const C = camp(), h = dados().hora; return ((C.etapa === 'nada' || C.etapa === 'recusou') && jogosBons() >= BONS_PARA_OLHEIRO || peneiraPendente()) && h >= 8 && h < 19.5 && !S().dentro; };
+    const peneiraPendente = () => { const C = camp(); return C.etapa === 'fim' && !!C.jogos && C.peneira !== 'convidado'; };
     function criarRafa() {
       const E = elencoVz(TIMES_VZ[NOSSO_I]), j = E.find((x) => x.nome === 'Rafa') || E[0];
       const A = api.criarNPCFixo(j, false, 7, ['#e8742a', '#1f2a44', '#1f2a44', '#e8742a']);
@@ -395,6 +396,59 @@
       A.yawAlvo = 0; const ida = api.andar(A, [[PORTAO.x + 6, PORTAO.z + 2.6], [PORTAO.x + 40, PORTAO.z + 2.6]], 1.6);
       ida.then(() => { if (M.rafa === A) tirarRafa(); });
       api.gravar('chegada');
+    }
+    // ---------------------------------------------------------------- A PENEIRA: o Rafa conta, depois do campeonato
+    //   Reage ao campeonato do jogador: só ganhamos por causa dele · campeões juntos · bom campeonato sem o título · campeonato fraco.
+    //   E as falas extras: melhor jogador, artilheiro, líder de assistências. No fim, C.peneira = 'convidado' (o serieb.js segue daí).
+    function leituraCampeonato(C) {
+      const est = C.est || {}, me = est[NOSSO + '|__voce'] || { j: 0, g: 0, a: 0, nota: 0 };
+      const doTime = Object.values(est).filter((x) => x.t === NOSSO_I), golsTime = doTime.reduce((s, x) => s + x.g, 0);
+      const outros = doTime.filter((x) => x.n !== '__voce' && x.j > 0), mediaOutros = outros.length ? outros.reduce((s, x) => s + x.nota / x.j, 0) / outros.length : 6;
+      const jogosTime = (C.jogos || []).filter((g) => g.feito && (g.c === NOSSO_I || g.f === NOSSO_I)).length;
+      const media = me.j ? me.nota / me.j : 0, parte = golsTime ? me.g / golsTime : 0, P = C.premios || {};
+      const melhor = !!(P.melhor && P.melhor.n === '__voce'), art = !!(P.art && P.art.n === '__voce'), ass = !!(P.ass && P.ass.n === '__voce');
+      const campeao = C.campeao === NOSSO_I, final = (C.jogos || []).some((g) => g.r === 10 && (g.c === NOSSO_I || g.f === NOSSO_I));
+      const decisivo = melhor || parte >= 0.35 || (media >= 7.6 && media - mediaOutros >= 0.6) || (art && ass);
+      const fraco = me.j < Math.max(2, Math.ceil(jogosTime / 2)) || (media < 6.5 && !melhor && !art && !ass);
+      const caso = campeao ? (decisivo && !fraco ? 'soVoce' : fraco ? 'fracoCampeao' : 'juntos') : fraco ? 'fraco' : 'bem';
+      return { caso, me, media, melhor, art, ass, final, P, faltas: C.faltas | 0 };
+    }
+    async function conversaPeneira(C) {
+      const L = leituraCampeonato(C), nome = api.nomeJog(), rafa = (t) => api.fala('rafa', t);
+      if (L.caso === 'soVoce') {
+        await rafa(Tf('{0}, vamos ser sinceros: esse título tem o seu nome.', nome));
+        await rafa(T('Sem você, o Peladão não passava nem da primeira fase. A gente só ganhou por sua causa.'));
+      } else if (L.caso === 'juntos') {
+        await rafa(Tg('Campeões! E você foi parte importante disso: jogou pro time o campeonato inteiro.'));
+      } else if (L.caso === 'fracoCampeao') {
+        await rafa(T('A gente foi campeão... mas vou ser sincero: não foi o seu melhor campeonato.'));
+        await rafa(Tg('Mesmo assim, eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.'));
+      } else if (L.caso === 'bem') {
+        await rafa(L.final ? T('A gente bateu na trave na final... mas você jogou demais. Todo mundo reparou.') : T('A gente não levou o título, mas você fez um baita campeonato. Todo mundo reparou.'));
+      } else {
+        await rafa(T('Olha... eu sei que o campeonato não foi o seu melhor.'));
+        await rafa(L.faltas ? Tg('Teve jogo que você nem apareceu, teve jogo que não saiu nada. Acontece.') : T('Teve jogo que não saiu nada. Acontece.'));
+        await rafa(Tg('Mas eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.'));
+      }
+      if (L.melhor) await rafa(Tgf('E ainda foi eleito o melhor jogador do campeonato, com nota média {0}!', L.P.melhor.v.toFixed(1)));
+      if (L.art && L.ass) await rafa(Tgf('Artilheiro E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer um!', L.P.art.v, L.P.ass.v));
+      else if (L.art) await rafa(Tgf('Artilheiro do campeonato, com {0} gols!', L.P.art.v));
+      else if (L.ass) await rafa(Tgf('E o líder de assistências, com {0} passes pra gol. Joga pro time!', L.P.ass.v));
+      await rafa(T('Escuta: logo, logo vai ter uma peneira com olheiros de times da Série B do Brasileirão, numa outra cidade.'));
+      await rafa(T('Pode demorar um pouquinho pra sair, mas quando sair a vaga é sua: eu consigo a inscrição e um ônibus pra gente ir até lá.'));
+      await api.fala('jog', T('Rafa, nem sei como te agradecer. Pode deixar: eu vou dar o meu melhor!'));
+      await rafa(pk([Tg('Eu sei que vai. Agora vai descansar, craque.'), T('É isso! Eu te aviso quando for. Vai com tudo!')]));
+      Dialogo.esconder();
+      C.peneira = 'convidado'; api.gravar('chegada');
+    }
+    async function conversarRafaFim() {
+      const A = M.rafa, J = S().jog, C = camp(); if (!A) return;
+      A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
+      await api.fala('rafa', Tf('E aí, {0}! Tava te esperando.', api.nomeJog()));
+      await conversaPeneira(C);
+      if (A.excl) { A.m.raiz.remove(A.excl); A.excl = null; }
+      A.yawAlvo = 0; const ida = api.andar(A, [[PORTAO.x + 6, PORTAO.z + 2.6], [PORTAO.x + 40, PORTAO.z + 2.6]], 1.6);
+      ida.then(() => { if (M.rafa === A) tirarRafa(); });
     }
     function iniciarCampeonato() {
       const C = camp(), d = dados();
@@ -549,7 +603,7 @@
     }
     function alvos(v) {
       const s = S(); if (s.dentro) return;
-      if (M.rafa && M.rafa.excl) v.push({ x: M.rafa.x, z: M.rafa.z, r: 2.2, txt: T('Falar com o Rafa'), fn: conversarRafa, y: 2.6, pri: true });
+      if (M.rafa && M.rafa.excl) v.push({ x: M.rafa.x, z: M.rafa.z, r: 2.2, txt: T('Falar com o Rafa'), fn: peneiraPendente() ? conversarRafaFim : conversarRafa, y: 2.6, pri: true });
       const g = jogoDeHoje(); if (!g) return;
       const H = horaDa(g.r), h = dados().hora;
       if (h >= H - 3 && h < H - 1) v.push({ x: PORTAO.x, z: PORTAO.z, r: 2.2, txt: Tf('Jogo às {0} (o vestiário abre às {1})', fmt(H), fmt(H - 1)), fn: async () => {}, y: 2.4 });
@@ -864,7 +918,7 @@
         }
         if (g.r <= 8 || ganhou) await api.fala('rafa', ganhou ? pk([T('É nóis!'), T('Que jogo! Bora comemorar!')]) : empate ? T('Faltou pouco. No próximo a gente pega!') : T('Bola pra frente, Peladão!'));
         Dialogo.esconder();
-        if (g.r === 10) await painelFinal(C);
+        if (g.r === 10) { await painelFinal(C); if (C.etapa === 'fim' && C.peneira !== 'convidado') await conversaPeneira(C); }
       } finally {
         Dialogo.esconder();
         for (const A of atores) try { api.descartarPessoa(A); } catch (e) { /* nada */ }
@@ -1216,6 +1270,33 @@
     "sábado": ["Saturday", "sábado", "sabato", "samedi"],
     "domingo": ["Sunday", "domingo", "domenica", "dimanche"],
   };
+  Object.assign(TRAD, {   // a conversa da peneira (depois do campeonato)
+    "{0}, vamos ser sinceros: esse título tem o seu nome.": ["{0}, let's be honest: this title has your name on it.", "{0}, seamos sinceros: este título lleva tu nombre.", "{0}, siamo sinceri: questo titolo porta il tuo nome.", "{0}, soyons honnêtes : ce titre porte ton nom."],
+    "Sem você, o Peladão não passava nem da primeira fase. A gente só ganhou por sua causa.": ["Without you, Peladão wouldn't even have made it past the first stage. We only won because of you.", "Sin ti, el Peladão no pasaba ni de la primera fase. Solo ganamos gracias a ti.", "Senza di te, il Peladão non avrebbe superato nemmeno la prima fase. Abbiamo vinto solo grazie a te.", "Sans toi, le Peladão ne passait même pas la première phase. On n'a gagné que grâce à toi."],
+    "Campeões! E você foi parte importante disso: jogou pro time o campeonato inteiro.": ["Champions! And you were a big part of it: you played for the team the whole championship.", "¡Campeones! Y fuiste parte importante: jugaste para el equipo todo el campeonato.", "Campioni! E tu ne sei stato una parte importante: hai giocato per la squadra tutto il campionato.", "Champions ! Et tu y es pour beaucoup : tu as joué pour l'équipe tout le championnat."],
+    "A gente foi campeão... mas vou ser sincero: não foi o seu melhor campeonato.": ["We won it... but I'll be honest: it wasn't your best championship.", "Fuimos campeones... pero voy a ser sincero: no fue tu mejor campeonato.", "Siamo stati campioni... ma sarò sincero: non è stato il tuo miglior campionato.", "On a été champions... mais je vais être honnête : ce n'était pas ton meilleur championnat."],
+    "Mesmo assim, eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.": ["Even so, I've seen you play on the turf and on the court. I know what you're capable of.", "Aun así, ya te vi jugar en la cancha sintética y en la pista. Sé de lo que eres capaz.", "Comunque, ti ho visto giocare sul sintetico e in palestra. So di cosa sei capace.", "Malgré tout, je t'ai vu jouer sur le synthétique et en salle. Je sais de quoi tu es capable."],
+    "A gente bateu na trave na final... mas você jogou demais. Todo mundo reparou.": ["We came so close in the final... but you played brilliantly. Everybody noticed.", "Nos quedamos a nada en la final... pero jugaste muchísimo. Todo el mundo se dio cuenta.", "Ci siamo andati vicinissimi in finale... ma tu hai giocato benissimo. Se ne sono accorti tutti.", "On est passés tout près en finale... mais tu as joué comme un chef. Tout le monde l'a remarqué."],
+    "A gente não levou o título, mas você fez um baita campeonato. Todo mundo reparou.": ["We didn't win the title, but you had a great championship. Everybody noticed.", "No nos llevamos el título, pero hiciste un campeonato tremendo. Todo el mundo se dio cuenta.", "Non abbiamo vinto il titolo, ma tu hai fatto un gran campionato. Se ne sono accorti tutti.", "On n'a pas gagné le titre, mais tu as fait un super championnat. Tout le monde l'a remarqué."],
+    "Olha... eu sei que o campeonato não foi o seu melhor.": ["Look... I know this championship wasn't your best.", "Mira... sé que el campeonato no fue tu mejor momento.", "Senti... lo so che il campionato non è stato il tuo migliore.", "Écoute... je sais que ce championnat n'était pas ton meilleur."],
+    "Teve jogo que você nem apareceu, teve jogo que não saiu nada. Acontece.": ["There were games you didn't even show up for, games where nothing came off. It happens.", "Hubo partidos a los que ni apareciste, partidos en los que no salió nada. Pasa.", "Ci sono state partite in cui non ti sei nemmeno presentato, partite in cui non è venuto fuori niente. Succede.", "Il y a eu des matchs où tu n'es même pas venu, des matchs où rien n'a marché. Ça arrive."],
+    "Teve jogo que não saiu nada. Acontece.": ["There were games where nothing came off. It happens.", "Hubo partidos en los que no salió nada. Pasa.", "Ci sono state partite in cui non è venuto fuori niente. Succede.", "Il y a eu des matchs où rien n'a marché. Ça arrive."],
+    "Mas eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.": ["But I've seen you play on the turf and on the court. I know what you're capable of.", "Pero ya te vi jugar en la cancha sintética y en la pista. Sé de lo que eres capaz.", "Ma ti ho visto giocare sul sintetico e in palestra. So di cosa sei capace.", "Mais je t'ai vu jouer sur le synthétique et en salle. Je sais de quoi tu es capable."],
+    "E ainda foi eleito o melhor jogador do campeonato, com nota média {0}!": ["And you were even voted the best player of the championship, with an average rating of {0}!", "¡Y encima te eligieron el mejor jugador del campeonato, con nota media de {0}!", "E sei stato pure eletto il miglior giocatore del campionato, con una media di {0}!", "Et en plus tu as été élu meilleur joueur du championnat, avec une note moyenne de {0} !"],
+    "E ainda foi eleita a melhor jogadora do campeonato, com nota média {0}!": ["And you were even voted the best player of the championship, with an average rating of {0}!", "¡Y encima te eligieron la mejor jugadora del campeonato, con nota media de {0}!", "E sei stata pure eletta la miglior giocatrice del campionato, con una media di {0}!", "Et en plus tu as été élue meilleure joueuse du championnat, avec une note moyenne de {0} !"],
+    "Artilheiro E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer um!": ["Top scorer AND assists leader: {0} goals and {1} assists. That's not for just anyone!", "Máximo goleador Y líder de asistencias: {0} goles y {1} pases de gol. ¡No es para cualquiera!", "Capocannoniere E re degli assist: {0} gol e {1} assist. Non è roba da tutti!", "Meilleur buteur ET meilleur passeur : {0} buts et {1} passes décisives. Pas donné à tout le monde !"],
+    "Artilheira E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer uma!": ["Top scorer AND assists leader: {0} goals and {1} assists. That's not for just anyone!", "Máxima goleadora Y líder de asistencias: {0} goles y {1} pases de gol. ¡No es para cualquiera!", "Capocannoniera E regina degli assist: {0} gol e {1} assist. Non è roba da tutte!", "Meilleure buteuse ET meilleure passeuse : {0} buts et {1} passes décisives. Pas donné à tout le monde !"],
+    "Artilheiro do campeonato, com {0} gols!": ["Top scorer of the championship, with {0} goals!", "¡Máximo goleador del campeonato, con {0} goles!", "Capocannoniere del campionato, con {0} gol!", "Meilleur buteur du championnat, avec {0} buts !"],
+    "Artilheira do campeonato, com {0} gols!": ["Top scorer of the championship, with {0} goals!", "¡Máxima goleadora del campeonato, con {0} goles!", "Capocannoniera del campionato, con {0} gol!", "Meilleure buteuse du championnat, avec {0} buts !"],
+    "E o líder de assistências, com {0} passes pra gol. Joga pro time!": ["And the assists leader, with {0} assists. You play for the team!", "Y el líder de asistencias, con {0} pases de gol. ¡Juegas para el equipo!", "E il re degli assist, con {0} assist. Giochi per la squadra!", "Et le meilleur passeur, avec {0} passes décisives. Tu joues pour l'équipe !"],
+    "E a líder de assistências, com {0} passes pra gol. Joga pro time!": ["And the assists leader, with {0} assists. You play for the team!", "Y la líder de asistencias, con {0} pases de gol. ¡Juegas para el equipo!", "E la regina degli assist, con {0} assist. Giochi per la squadra!", "Et la meilleure passeuse, avec {0} passes décisives. Tu joues pour l'équipe !"],
+    "Escuta: logo, logo vai ter uma peneira com olheiros de times da Série B do Brasileirão, numa outra cidade.": ["Listen: pretty soon there's going to be a tryout with scouts from Brazilian Série B clubs, in another city.", "Escucha: muy pronto va a haber una prueba con ojeadores de equipos de la Série B del Brasileirão, en otra ciudad.", "Senti: tra poco ci sarà un provino con osservatori di squadre della Série B brasiliana, in un'altra città.", "Écoute : bientôt, il y aura une détection avec des recruteurs de clubs de Série B du Brasileirão, dans une autre ville."],
+    "Pode demorar um pouquinho pra sair, mas quando sair a vaga é sua: eu consigo a inscrição e um ônibus pra gente ir até lá.": ["It might take a little while to happen, but when it does the spot is yours: I'll get you signed up and a bus to take us there.", "Puede tardar un poquito, pero cuando salga el lugar es tuyo: yo consigo la inscripción y un autobús para ir hasta allá.", "Potrebbe volerci un po', ma quando arriva il posto è tuo: ti faccio iscrivere e trovo un pullman per andarci.", "Ça peut prendre un peu de temps, mais quand ça arrive, la place est à toi : je m'occupe de l'inscription et d'un bus pour y aller."],
+    "Rafa, nem sei como te agradecer. Pode deixar: eu vou dar o meu melhor!": ["Rafa, I don't even know how to thank you. Count on me: I'll give it my best!", "Rafa, no sé ni cómo agradecerte. Cuenta conmigo: ¡voy a dar lo mejor de mí!", "Rafa, non so nemmeno come ringraziarti. Contaci: darò il massimo!", "Rafa, je ne sais même pas comment te remercier. Compte sur moi : je vais donner le meilleur de moi-même !"],
+    "Eu sei que vai. Agora vai descansar, craque.": ["I know you will. Now go get some rest, superstar.", "Sé que sí. Ahora ve a descansar, crack.", "Lo so. Adesso vai a riposarti, campione.", "Je sais. Maintenant, va te reposer, champion."],
+    "É isso! Eu te aviso quando for. Vai com tudo!": ["That's it! I'll let you know when it's on. Go all in!", "¡Eso es! Te aviso cuando sea. ¡Dale con todo!", "Così si fa! Ti avviso quando sarà. Dai tutto!", "C'est ça ! Je te préviens quand ce sera. Fonce !"],
+    "E aí, {0}! Tava te esperando.": ["Hey, {0}! I was waiting for you.", "¡Hola, {0}! Te estaba esperando.", "Ehi, {0}! Ti stavo aspettando.", "Salut, {0} ! Je t'attendais."],
+  });
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
   // o que muda quando a personagem é feminina (português igual, outro idioma muda)
   const FEM = {
@@ -1223,8 +1304,16 @@
     "Chegou na hora! Bota a chuteira que hoje tem trabalho.": [null, null, "Sei arrivata in tempo! Metti gli scarpini che oggi c'è da lavorare.", null],
     "Você entrou para o {0}!": [null, null, "Sei entrata nel {0}!", null],
   };
+  Object.assign(FEM, {
+    "Teve jogo que você nem apareceu, teve jogo que não saiu nada. Acontece.": [null, null, "Ci sono state partite in cui non ti sei nemmeno presentata, partite in cui non è venuto fuori niente. Succede.", "Il y a eu des matchs où tu n'es même pas venue, des matchs où rien n'a marché. Ça arrive."],
+    "Campeões! E você foi parte importante disso: jogou pro time o campeonato inteiro.": [null, null, "Campioni! E tu ne sei stata una parte importante: hai giocato per la squadra tutto il campionato.", null],
+    "Mesmo assim, eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.": [null, null, null, "Malgré tout, je t'ai vue jouer sur le synthétique et en salle. Je sais de quoi tu es capable."],
+    "Mas eu já te vi jogar no sintético e na quadra. Eu sei do que você é capaz.": [null, null, null, "Mais je t'ai vue jouer sur le synthétique et en salle. Je sais de quoi tu es capable."],
+    "Eu sei que vai. Agora vai descansar, craque.": [null, null, null, "Je sais. Maintenant, va te reposer, championne."],
+  });
   if (typeof FEM_TRAD !== 'undefined') for (const k of Object.keys(FEM)) if (!FEM_TRAD[k]) FEM_TRAD[k] = FEM[k];
   if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, { 'Tô um pouco nervoso...': 'Tô um pouco nervosa...', 'Time de várzea? Eu sou bom demais pra isso.': 'Time de várzea? Eu sou boa demais pra isso.',
+    "E ainda foi eleito o melhor jogador do campeonato, com nota média {0}!": "E ainda foi eleita a melhor jogadora do campeonato, com nota média {0}!", "Artilheiro E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer um!": "Artilheira E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer uma!", "Artilheiro do campeonato, com {0} gols!": "Artilheira do campeonato, com {0} gols!", "E o líder de assistências, com {0} passes pra gol. Joga pro time!": "E a líder de assistências, com {0} passes pra gol. Joga pro time!",
     'Então você é o tal de {0} que o Rafa tanto falou! Eu sou o Damião, técnico do Peladão faz quinze anos.': 'Então você é a tal de {0} que o Rafa tanto falou! Eu sou o Damião, técnico do Peladão faz quinze anos.' });
 
   window.FutebolJS.registrarFase({ id: 'varzea', nome: 'Campeonato de Várzea', nucleoMinimo: '7.0', iniciar: async () => {}, criar,

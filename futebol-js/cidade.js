@@ -840,6 +840,11 @@
     'Oiii, {0}! Vem cá, me dá um oi direito!': ['Hiii, {0}! Come here, say hi properly!', '¡Holaaa, {0}! ¡Ven, salúdame como se debe!', 'Ciaooo, {0}! Vieni qui, salutami come si deve!', 'Coucouuu, {0} ! Viens, dis-moi bonjour comme il faut !'],
   };
   for (const k of Object.keys(TRAD_NAMORO)) if (!I18N[k]) I18N[k] = TRAD_NAMORO[k];
+  const TRAD_SB_CD = {   // o wrap integral do seu Valdemar (a comida saudável do clube)
+    "Wrap integral de frango": ["Wholewheat chicken wrap", "Wrap integral de pollo", "Wrap integrale di pollo", "Wrap complet au poulet"],
+    "Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!": ["Now I've got a wholewheat chicken wrap for the folks who play ball for real. Healthy, huh!", "Ahora tengo un wrap integral de pollo para la gente que juega al fútbol en serio. ¡Sano, eh!", "Adesso ho un wrap integrale di pollo per chi gioca a calcio sul serio. Sano, eh!", "Maintenant j'ai un wrap complet au poulet pour ceux qui jouent au foot pour de vrai. Sain, hein !"],
+  };
+  for (const k of Object.keys(TRAD_SB_CD)) if (!I18N[k]) I18N[k] = TRAD_SB_CD[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
     'Acabei de me mudar pra cidade.': [null, null, 'Mi sono appena trasferita in città.', null],
     'Prazer, Lúcia! Eu sou {0}.': [null, null, null, 'Enchantée, Lucie ! Moi, c’est {0}.'],
@@ -4362,7 +4367,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
@@ -4438,7 +4443,9 @@
     { id: 'especial', nome: 'Cachorro-quente especial', preco: 15, enche: 1 },
     { id: 'quasetudo', nome: 'X-quase-tudo', preco: 30, enche: 2 },
     { id: 'semsalada', nome: 'X-sem-salada com refri', preco: 22, enche: 1.5 },
+    { id: 'wrapfit', nome: 'Wrap integral de frango', preco: 18, enche: 1, saudavel: true },   // só para quem joga num clube (a missão de comer saudável)
   ];
+  const cardapioHoje = () => CARDAPIO.filter((c) => !c.saudavel || !!(S.dados.pro && S.dados.pro.clube));
   const FOME_DO_DIA = 2;
   // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
   function prepararDia(d) {
@@ -4456,7 +4463,8 @@
     const cheio = (d.fome || 0) <= 0;                                // satisfeito ainda pode pedir (e aí exagera)
     if (cheio) await fala('jog', T('Eu já tô satisfeito... mas bem que cabia mais um.'));
     Dialogo.esconder();
-    const i = await cardapio(d.fakes);
+    if (d.pro && d.pro.clube && !d.valdemarWrap) { d.valdemarWrap = true; await fala('val', T('Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!')); }
+    const lista = cardapioHoje(), i0 = await cardapio(d.fakes), i = i0 >= 0 ? CARDAPIO.indexOf(lista[i0]) : i0;
     if (i === -2) { await falaGrossa('val', 'val', T('Esse lanche aqui é gordura pura, hein. Credo.'), (fem() ? T('Gordura pura é esse seu humor, moça! Quer comer ou não quer?') : T('Gordura pura é esse seu humor, rapaz! Quer comer ou não quer?'))); Dialogo.esconder(); return; }
     const c = CARDAPIO[i];
     if (!c) { await fala('val', T('Tranquilo, fica à vontade!')); Dialogo.esconder(); return; }
@@ -4470,8 +4478,9 @@
     for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);   // o relógio do jogo pode andar mais devagar que o de parede: o lanche some junto com a pose de comer
     tirarLanche(J);
     d.fome = Math.max(0, (d.fome || 0) - c.enche);
-    d.ruinsNoMes.n++; d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // some o ícone da coxinha
-    Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true);   // cada lanche: 2 de "não saudável"
+    d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;   // some o ícone da coxinha
+    if (c.saudavel) { d.comeuSaudavelDia = d.dia; Espectros.mover('saudavel', 2, 'comeu ' + c.nome); }   // o wrap: comida saudável (a missão do clube)
+    else { d.ruinsNoMes.n++; Espectros.mover('saudavel', -2, 'comeu ' + c.nome); Espectros.condicao('refeicaoPesada', true); }   // cada lanche: 2 de "não saudável"
     if (cheio) Espectros.mover('saudavel', -4, 'comeu sem fome');                                    // comeu satisfeito: mais 4
     d.diasValdemar = d.diasValdemar || []; if (!d.diasValdemar.includes(d.dia)) d.diasValdemar.push(d.dia);
     if (S.missao) { S.missao = ''; recolherMissao(); }
@@ -4573,6 +4582,17 @@
   // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
   function apiVarzea() {
     return Object.assign(apiBarbearia(), { VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao });
+  }
+  // o que o serieb.js (a peneira e a carreira na Série B) usa daqui: o da várzea, o ponto de ônibus, a Lúcia (cenas do presente) e a ida
+  //   para o quarto com uma cena pronta (a carta da peneira)
+  function apiSerieB() {
+    return Object.assign(apiVarzea(), { PONTO: { x: -114.6, z: 9.0 }, apLucia, irParaFase2 });
+  }
+  function irParaFase2(args) {
+    try { Dialogo.esconder(); } catch (e) { /* nada */ }
+    S.camCena = null; gravar('predio'); UI.ctl.hidden = true;
+    S.paraFase2 = Object.assign({}, args); S.modo = 'saindo';
+    if (S.fimRes) S.fimRes();
   }
   // REFAZ o boneco do jogador com a aparência atual (PERSONAGEM.aparencia: corte novo na barbearia) e a roupa salva; troca no mesmo lugar
   function refazerJogador() {
@@ -6102,7 +6122,12 @@
     const MEAT = '#6b3a1e', QJ = '#f2c230', ALF = '#5fae5a', TOM = '#d8402f', OVO = '#fff7e0';
     if (id === 'podrao') { hamb(1, 14, [[ALF, 1, true], [QJ, 1], [MEAT, 2], [OVO, 1], [MEAT, 1]], 14); px(5, 9, QJ); px(6, 9, QJ); }
     else if (id === 'quasetudo') { hamb(1, 14, [[ALF, 1, true], [TOM, 1], [QJ, 1], [MEAT, 1], ['#e89a9a', 1], [OVO, 1], [MEAT, 1], [QJ, 1]], 15); }
-    else if (id === 'semsalada') {
+    else if (id === 'wrapfit') {                                   // o wrap integral: a massa enrolada, cortada na diagonal, com alface, frango e tomate aparecendo
+      const MASSA = '#c8a068', MASSA2 = '#a8804a', FR = '#f0dcb0';
+      for (let y = 4; y < 15; y++) { const x0 = Math.max(1, 9 - y), x1 = Math.min(14, 20 - y); rc(x0, y, x1 - x0 + 1, 1, y % 3 === 0 ? MASSA2 : MASSA); }
+      for (const [x, y] of [[4, 6], [5, 5], [6, 4], [7, 3], [8, 2], [9, 2], [10, 3]]) { px(x, y, ALF); px(x + 1, y, FR); }
+      px(6, 5, TOM); px(9, 3, TOM); px(7, 4, FR); px(8, 3, ALF); px(11, 3, ALF); rc(3, 7, 2, 1, ALF);
+    } else if (id === 'semsalada') {
       hamb(0, 10, [[QJ, 1], [MEAT, 2]], 14);
       rc(11, 6, 4, 8, '#f4f4f0'); rc(11, 9, 4, 2, TOM); rc(10, 5, 6, 1, '#c8352b'); rc(13, 2, 1, 3, TOM); rc(12, 2, 1, 1, TOM);
     } else {
@@ -6132,7 +6157,7 @@
       grade.style.cssText = 'display:flex;flex-wrap:nowrap;gap:8px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;touch-action:pan-x;padding-bottom:6px;';
       if (S.dados.clienteFiel) { const f = document.createElement('div'); f.style.cssText = 'font:700 11px/1.2 var(--font-display);color:#8fe04a;letter-spacing:.06em;'; f.textContent = T('Cliente fiel: −20%'); h.appendChild(f); }
       const fim = (i) => { el.remove(); res(i); };
-      CARDAPIO.forEach((c, i) => {
+      cardapioHoje().forEach((c, i) => {
         const b = document.createElement('button'); b.type = 'button';
         const pr = precoDe(c);
         b.style.cssText = 'flex:0 0 124px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 12px/1.2 var(--font-display);text-align:center;' + (fakes < pr ? 'opacity:.55;' : '');
@@ -7870,6 +7895,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.pesca) S.pesca.tick(dt);
         if (S.barbearia) try { S.barbearia.tick(dt); } catch (e) { if (!S.erroBarb) { S.erroBarb = true; console.warn('[Cidade] barbearia:', e); } }                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
         if (S.varzea) try { S.varzea.tick(dt); } catch (e) { if (!S.erroVz) { S.erroVz = true; console.warn('[Cidade] várzea:', e); } }   // o campeonato de várzea (olheiro, torcida, rodadas)
+        if (S.serieb) try { S.serieb.tick(dt); } catch (e) { if (!S.erroSb) { S.erroSb = true; console.warn('[Cidade] série B:', e); } }   // a peneira e a carreira profissional (ônibus, hábitos, rodadas)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); if (S.treinoMod) { try { S.treinoMod.tick(dt); } catch (e) { if (!S.erroTreino) { S.erroTreino = true; console.warn('[Cidade] treino:', e); } } } else tickTreino(dt); tickPlantas(dt); }   // (6.6.16) o treino.js cuida da turma do Nonato
       }
       if (n > 1) S.cam.snap = true;
@@ -7931,7 +7957,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
       Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));
-      Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e));   // o campeonato de várzea   // a barbearia (cortes da loja)
+      Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e));
+      Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e));   // a peneira e a Série B   // o campeonato de várzea   // a barbearia (cortes da loja)
       Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e));   // (6.4.0) pesca no lago
       Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e));   // (6.6.16) o treino com a turma do Nonato
       prepararDia(dados);
