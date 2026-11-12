@@ -36,6 +36,7 @@
   const ANTES_ONIBUS = 1.5, VOLTA_DEPOIS = 2.2;   // o ônibus passa 1h30 antes do jogo; volta 2h12 depois do início
   const HORAS_JOGO = [16, 19, 21, 15.5, 20, 17, 21.5, 19.5];
   const r1 = (v) => Math.round(v * 10) / 10;
+  const PREMIO_IND_B = 200;                                                  // cada prêmio individual da Série B que o jogador ganha
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
   const rndDe = (sem) => (typeof sorteador === 'function' ? sorteador(sem) : (() => { let a = sem >>> 0 || 1; return () => { a = (a * 1664525 + 1013904223) >>> 0; return a / 4294967296; }; })());
   const semDe = (txt) => (typeof sementeDe === 'function' ? sementeDe(txt) : [...String(txt)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261));
@@ -438,17 +439,35 @@
   // os artilheiros e garçons simulados (só a Série B; o jogador entra como __voce)
   const PESO_GOL = { GK: 0.02, DEF: 0.7, MID: 2.2, FWD: 5 }, PESO_ASS = { GK: 0.1, DEF: 1, MID: 4, FWD: 2 };
   function sorteiaPeso(lista, peso) { const tot = lista.reduce((s, x) => s + peso(x), 0); let v = Math.random() * tot; for (const x of lista) { v -= peso(x); if (v <= 0) return x; } return lista[lista.length - 1]; }
-  function marcarGols(T, k, gols) {
+  // os 11 titulares de um time num jogo da Série B: gols, assistências, jogos e a soma das notas ([g, a, j, notas])
+  function notaB(x, g, a, res, sofr) {
+    let n = 6 + res * 0.45 + g * 0.9 + a * 0.5 + ((x.media || 6) - 6) * 0.25 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.7;
+    if (x.pos === 'GK' || x.pos === 'DEF') n += sofr === 0 ? 0.7 : -0.18 * (sofr - 1);
+    return r1(clampN(n, 3, 10));
+  }
+  function marcarJogo(T, k, gols, sofr) {
     const t = TIME_DE[k]; if (!t || t.pequeno) return;
-    const L = elencoB(t).slice(0, 11);
+    const L = elencoB(t).slice(0, 11), G = new Map(), A = new Map();
     for (let i = 0; i < gols; i++) {
-      const a = sorteiaPeso(L, (x) => PESO_GOL[x.pos] * Math.pow((x.hab.finalizacao || 5) / 7, 2)), ka = k + '|' + a.nome;
-      T.est[ka] = T.est[ka] || [0, 0]; T.est[ka][0]++;
-      if (Math.random() < 0.7) { const o = L.filter((x) => x !== a), b = sorteiaPeso(o, (x) => PESO_ASS[x.pos] * Math.pow((x.hab.passe || 5) / 7, 2)), kb = k + '|' + b.nome; T.est[kb] = T.est[kb] || [0, 0]; T.est[kb][1]++; }
+      const a = sorteiaPeso(L, (x) => PESO_GOL[x.pos] * Math.pow((x.hab.finalizacao || 5) / 7, 2)); G.set(a, (G.get(a) | 0) + 1);
+      if (Math.random() < 0.7) { const o = L.filter((x) => x !== a), b = sorteiaPeso(o, (x) => PESO_ASS[x.pos] * Math.pow((x.hab.passe || 5) / 7, 2)); A.set(b, (A.get(b) | 0) + 1); }
+    }
+    const res = Math.sign(gols - sofr);
+    for (const x of L) {
+      const e = (T.est[k + '|' + x.nome] = T.est[k + '|' + x.nome] || [0, 0, 0, 0]), g = G.get(x) | 0, a = A.get(x) | 0;
+      e[0] += g; e[1] += a; e[2] = (e[2] | 0) + 1; e[3] = r1((e[3] || 0) + notaB(x, g, a, res, sofr));
     }
   }
+  // os prêmios individuais da temporada: artilheiro, líder de assistências e o melhor jogador (nota média, com pelo menos metade dos jogos)
+  function premiosSerieB(T) {
+    const L = Object.entries(T.est || {}).map(([key, e]) => { const i = key.indexOf('|'); return { k: key.slice(0, i), n: key.slice(i + 1), g: e[0] | 0, a: e[1] | 0, j: e[2] | 0, nota: e[3] || 0 }; });
+    const melhor = L.filter((x) => x.j >= 19).sort((a, b) => b.nota / b.j - a.nota / a.j || b.j - a.j)[0];
+    const art = L.slice().sort((a, b) => b.g - a.g || b.a - a.a || a.j - b.j)[0], ass = L.slice().sort((a, b) => b.a - a.a || b.g - a.g || a.j - b.j)[0];
+    const pk = (x, v) => (x && v > 0 ? { k: x.k, n: x.n, v } : null);
+    return { art: pk(art, art ? art.g : 0), ass: pk(ass, ass ? ass.a : 0), melhor: melhor ? { k: melhor.k, n: melhor.n, v: r1(melhor.nota / melhor.j) } : null };
+  }
   function artilheiros(T, n) {
-    return Object.entries(T.est).map(([key, [g, a]]) => { const [k, nome] = key.split('|'); return { k, nome, g, a }; }).sort((x, y) => y.g - x.g || y.a - x.a).slice(0, n || 5);
+    return Object.entries(T.est).map(([key, [g, a]]) => { const [k, nome] = key.split('|'); return { k, nome, g, a }; }).filter((x) => x.g > 0 || x.a > 0).sort((x, y) => y.g - x.g || y.a - x.a).slice(0, n || 5);
   }
 
   // a partida acabou no meio de um replay (o apito final chegou junto do gol): nada da tela do replay sobra por cima da cena seguinte
@@ -774,7 +793,7 @@
           const kc = TIMES_B[g[0]].k, kf = TIMES_B[g[1]].k, eNosso = kc === nosso || kf === nosso;
           if (eNosso && R) { g[2] = R.gc; g[3] = R.gf; }
           else { const p = simularPlacar(kc, kf, kc === nosso ? sem : 1, kf === nosso ? sem : 1); g[2] = p[0]; g[3] = p[1]; }
-          marcarGols(T0, kc, eNosso && R && kc === nosso ? R.golsNPC : g[2]); marcarGols(T0, kf, eNosso && R && kf === nosso ? R.golsNPC : g[3]);
+          marcarJogo(T0, kc, eNosso && R && kc === nosso ? R.golsNPC : g[2], g[3]); marcarJogo(T0, kf, eNosso && R && kf === nosso ? R.golsNPC : g[3], g[2]);
         }
       } else {
         const C = T0.copas[v.comp], F = C.fases[v.fase];
@@ -1000,6 +1019,57 @@
         competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T('Série B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
         dificuldade: 'normal', clima: Math.random() < 0.15 ? 'chuva' : 'seco', gramado: 'baixo', horario, duracao: o.duracao, usuario: eu, atributos: api.atributosJogador(), taticas: [null, null], formacoes: [null, null] };
     }
+    // ---- A FESTA: o título no gramado (copas e Série B) e a noite dos prêmios da Série B
+    const vozJog = () => (typeof PERSONAGEM !== 'undefined' && typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
+    function jogadoresDaFesta() {                                       // os 11 do nosso time, com o jogador no lugar do titular da posição dele
+      const t = TIME_DE[pro().clube], E = elencoB(t).slice(0, 11), pos = posJ(), meu = (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9;
+      let iu = E.findIndex((j) => j.pos === pos); if (iu < 0) iu = E.length - 1;
+      const livres = [2, 3, 4, 5, 6, 7, 8, 10, 11, 9, 14, 15].filter((n) => n !== meu);
+      return E.map((j, i) => (i === iu ? Object.assign({}, api.aparenciaNaPartida(), { numero: meu, nomeCamisa: (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.nomeCamisa) || '', voce: true, gk: j.pos === 'GK' })
+        : Object.assign({}, j, { numero: j.pos === 'GK' ? 1 : livres.shift(), gk: j.pos === 'GK' })));
+    }
+    async function festaTitulo(trofeu, cfg) {                           // a tela já está preta e a cidade escondida
+      try {
+        const F = await Fases.carregar('festa'), t = TIME_DE[pro().clube], tm = timeMotor(t);
+        await F.campeao({ cfg, lado: -1, uni: Object.assign({}, tm.uniforme, { emblema: tm.emblema }), jogadores: jogadoresDaFesta(), trofeu, cores: [t.uni[0], t.uni[1]], io: { preto: api.preto, esperar: api.esperar } });
+      } catch (e) { console.error('[Série B] festa do título:', e); }
+    }
+    function premiosDaFesta(T0) {
+      const P = premiosSerieB(T0), out = [];
+      for (const tipo of ['art', 'ass', 'melhor']) {
+        const x = P[tipo]; if (!x || !TIME_DE[x.k]) continue;
+        const voce = x.n === '__voce', t = TIME_DE[x.k];
+        const ap = voce ? Object.assign({ genero: PERSONAGEM.genero === 'F' ? 'F' : 'M' }, PERSONAGEM.aparencia || {}) : Object.assign({}, (t.pequeno ? [] : elencoB(t)).find((j) => j.nome === x.n) || (typeof gerarAparencia === 'function' ? gerarAparencia(semDe('sb|' + x.k + '|' + x.n), 'M') : {}));
+        out.push({ tipo, nome: voce ? nomeJ() : x.n, time: t.nome, ap, voce, v: x.v, voz: voce ? vozJog() : 3 });
+      }
+      return out;
+    }
+    async function cenaFimTemporada() {                                 // fim da Série B: a festa do título (se não teve no último jogo) e a noite dos prêmios
+      const s = S(), P = pro(), T0 = temp(), d = dados(); if (M.cena || !T0) return;
+      M.cena = true; const trava = travar(); P.galaVista = true;
+      try {
+        await api.preto(true, 700);
+        api.sairParaPartida();
+        if (classificacao(T0)[0].k === T0.nosso && !P.comemorou) {
+          P.comemorou = true;
+          const v = T0.vagas.filter((x) => x.comp === 'liga').pop(), jn = v && jogoNosso(T0, v);
+          if (jn) await festaTitulo('serieb', cfgJogo(v, jn, {}));
+        }
+        const lista = premiosDaFesta(T0), meus = lista.filter((x) => x.voce).length;
+        if (meus && !P.pagoPremios) { P.pagoPremios = true; d.fakes = (d.fakes | 0) + meus * PREMIO_IND_B; }
+        if (lista.length) {
+          const F = await Fases.carregar('festa');
+          await F.gala({ nivel: 'serieb', titulo: T('PRÊMIOS DA SÉRIE B'), premios: lista,
+            io: { preto: api.preto, esperar: api.esperar, ganho: () => { try { api.somDinheiro(); api.ganhoNaTela(PREMIO_IND_B); } catch (e) { /* nada */ } } } });
+        }
+      } catch (e) { console.error('[Série B] fim da temporada:', e); }
+      finally {
+        try { api.voltarDaPartida(); if (P.pagoPremios) api.mostrarDinheiro(); } catch (e) { /* nada */ }
+        clearInterval(trava); M.cena = false; try { Dialogo.esconder(); } catch (e) { /* nada */ }
+        gravar();
+        await api.preto(false, 700); if (s.ativo && s.modo === 'cena') api.liberar();
+      }
+    }
     async function partidaDoDia(pv) {
       const v = pv.v, T0 = temp(), jn = jogoNosso(T0, v), P = pro(), d = dados(), nosso = P.clube, adv = jn.c === nosso ? jn.f : jn.c;
       d.hora = Math.max(d.hora, v.h - 0.3);
@@ -1020,6 +1090,12 @@
       try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
       limparHudPartida();
       const res = registrarJogo(pv, jn, esc, sim, r);
+      if (r) {                                                           // título decidido neste jogo: a festa no gramado antes da tela do pós-jogo
+        const T1 = temp(), C = v.comp !== 'liga' ? T1.copas[v.comp] : null;
+        if (C && C.campeao === nosso && v.fase === nFases(C) - 1) await festaTitulo(v.comp === 'est' ? 'estadual' : 'regional', cfgJogo(v, jn, {}));
+        else if (!C && T1.fechadas >= T1.vagas.length && classificacao(T1)[0].k === nosso && !P.comemorou) { P.comemorou = true; await festaTitulo('serieb', cfgJogo(v, jn, {})); }
+        limparHudPartida();
+      }
       await telaPosJogo(res);
       return res;
     }
@@ -1033,7 +1109,8 @@
       const R = { gc: casa ? nos : eles, gf: casa ? eles : nos, pen: pen ? (casa ? pen : [pen[1], pen[0]]) : null, golsNPC: Math.max(0, nos - gols) };
       for (let k0 = T0.fechadas; k0 < pv.i; k0++) fecharVaga(T0, k0, null);   // vagas de antes sem jogo nosso (copa em que já caímos)
       fecharVaga(T0, pv.i, R);
-      const k = nosso + '|__voce'; T0.est[k] = T0.est[k] || [0, 0]; if (v.comp === 'liga') { T0.est[k][0] += gols; T0.est[k][1] += ass; }
+      const k = nosso + '|__voce', ek = (T0.est[k] = T0.est[k] || [0, 0, 0, 0]);
+      if (v.comp === 'liga') { ek[0] += gols; ek[1] += ass; if (r) { ek[2] = (ek[2] | 0) + 1; ek[3] = r1((ek[3] || 0) + nota); } }
       const venceu = pen ? pen[0] > pen[1] : nos > eles, empate = !pen && nos === eles;
       const minJogados = esc.titular ? 90 : 90 - esc.entra, bom = nota >= (minJogados >= 45 ? 7 : 6.5) && !(r && r.expulso);   // quem entrou no fim tem pouco tempo: 6,5 já é um jogo bom
       const [c0, c1] = mudarConf(bom ? 3 : -3, bom ? 'jogo bom' : 'jogo ruim');
@@ -1207,12 +1284,13 @@
         }
         if (contratado() || P.etapa === 'fimTemporada') {
           if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); }
+          if (P.etapa === 'fimTemporada' && !P.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaFimTemporada();
         }
       }
       tickMensagens(dt);
     }
     return { tick, alvos, popularidade, presente, _M: M,
-      _fns: { escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo } };
+      _fns: { escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo, festaTitulo, cenaFimTemporada, premiosDaFesta, jogadoresDaFesta } };
   }
 
   // ============================================================================================ A CARTA (o quarto, fase2.js)
@@ -1302,6 +1380,7 @@
   // ============================================================================================ TEXTOS (pt → en, es, it, fr)
   const TRAD = {
     "Time 1": ["Team 1", "Equipo 1", "Squadra 1", "Équipe 1"],
+    "PRÊMIOS DA SÉRIE B": ["SÉRIE B AWARDS", "PREMIOS DE LA SÉRIE B", "PREMI DELLA SÉRIE B", "TROPHÉES DE LA SÉRIE B"],
     "Time 2": ["Team 2", "Equipo 2", "Squadra 2", "Équipe 2"],
     "Missão do clube: hoje tem jogo contra o {0}, mas você está {1}. Descanse e se recupere.": ["Club mission: there's a game against {0} today, but you're {1}. Rest and recover.", "Misión del club: hoy hay partido contra {0}, pero estás {1}. Descansa y recupérate.", "Missione del club: oggi c'è la partita contro {0}, ma sei {1}. Riposati e recupera.", "Mission du club : il y a match contre {0} aujourd'hui, mais tu es {1}. Repose-toi et récupère."],
     "suspenso por {0} jogo(s)": ["suspended for {0} game(s)", "suspendido por {0} partido(s)", "squalificato per {0} partita/e", "suspendu pour {0} match(s)"],

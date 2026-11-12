@@ -23,6 +23,7 @@
 (() => {
   'use strict';
   const PREMIO_TOTAL = 5000, PREMIO_JOG = Math.round(PREMIO_TOTAL / 8);     // a parte do jogador no prêmio do campeão
+  const PREMIO_IND = 50;                                                     // cada prêmio individual (melhor jogador, artilheiro, assistências)
   const BONS_PARA_OLHEIRO = 10;                                              // jogos bons (sintético + futsal) para o Rafa aparecer
   const H_SAB = 14, H_DOM = 10, DURACAO = 300;                               // horários dos jogos e a partida de 5 minutos
   const NOSSO = 'peladao';
@@ -487,6 +488,8 @@
       C.campeao = camp0; C.premios = premios(C); C.etapa = 'fim';
       const nosso = camp0 === NOSSO_I;
       if (nosso && !C.pago) { C.pago = true; const d = dados(); d.fakes = (d.fakes | 0) + PREMIO_JOG; }
+      const meus = premiosDoJogador(C);
+      if (meus && !C.pagoPremios) { C.pagoPremios = true; const d = dados(); d.fakes = (d.fakes | 0) + meus * PREMIO_IND; }
       try { const K = api.carreira().varzea; K.campeonatos = (K.campeonatos | 0) + 1; if (nosso) K.titulos = (K.titulos | 0) + 1; for (const [q, x] of Object.entries(C.premios)) if (x && x.n === '__voce') (K.premios = K.premios || []).push(q); } catch (e) { /* nada */ }
       if (avisar) M.filaMsg.push(['fim']);
     }
@@ -500,10 +503,56 @@
           const nosC = g.c === NOSSO_I, a = nosC ? g.gc : g.gf, b = nosC ? g.gf : g.gc;
           await api.mensagemCelular('Seu Damião', Tf('Você não apareceu no jogo contra o {0}...', nomeT(adversario(g))), Tf('Jogamos sem você: {0} {1} x {2} {3}.', TIMES_VZ[NOSSO_I].nome, a, b, nomeT(adversario(g))) + (g.pen ? ' ' + Tf('Pênaltis {0}x{1}.', nosC ? g.pen[0] : g.pen[1], nosC ? g.pen[1] : g.pen[0]) : ''));
         } else if (tipo === 'fora') await api.mensagemCelular('Rafa', T('Não deu... a gente ficou fora da semifinal.'), T('Valeu por jogar com a gente! Ano que vem tem mais.'));
-        else if (tipo === 'fim') await mensagemFim(C);
+        else if (tipo === 'fim') { await mensagemFim(C); C.premiosPendentes = true; }
         else if (tipo === 'hoje') await api.mensagemCelular('Rafa', Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', faseNome(g.r), nomeT(adversario(g)), fmt(horaDa(g.r))), T('Chega uma hora antes, no vestiário embaixo do campo.'));
       } catch (e) { console.warn('[Várzea] mensagem:', e); }
       M.lendo = false; M.tMsg = 2.5; api.gravar(dados().ponto || 'chegada');
+    }
+    const premiosDoJogador = (C) => Object.values(C.premios || {}).filter((x) => x && x.n === '__voce').length;
+    // ---------------------------------------------------------------- A FESTA: o título comemorado no campo (só se o Peladão ganhou a final jogando) e a noite dos prêmios
+    const vozJog = () => (typeof PERSONAGEM !== 'undefined' && typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
+    function premiosDaFesta(C) {
+      const P = C.premios || {}, out = [];
+      for (const tipo of ['art', 'ass', 'melhor']) {
+        const x = P[tipo]; if (!x) continue;
+        const voce = x.n === '__voce', t = TIMES_VZ[x.t];
+        const ap = voce ? Object.assign({ genero: PERSONAGEM.genero === 'F' ? 'F' : 'M' }, PERSONAGEM.aparencia || {}) : Object.assign({}, elencoVz(t).find((j) => j.nome === x.n) || {});
+        out.push({ tipo, nome: voce ? api.nomeJog() : x.n, time: t.nome, ap, voce, v: x.v, voz: voce ? vozJog() : (ap.genero === 'F' ? 0 : 3) });
+      }
+      return out;
+    }
+    async function festaDoTitulo(C, g) {                                       // logo depois da final (a tela já está preta)
+      const F = await Fases.carregar('festa'), t = TIMES_VZ[NOSSO_I], tm = timeMotor(t);
+      const uni = Object.assign(uniDe(t.uni), { emblema: tm.emblema });
+      const meu = (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9, livres = [2, 3, 4, 5, 6, 7, 8, 10, 11, 9].filter((n) => n !== meu);
+      const jog = titulares(t).map((x) => (x.voce ? Object.assign({}, api.aparenciaNaPartida(), { numero: meu, nomeCamisa: PERSONAGEM.nomeCamisa || '', voce: true, gk: x.pos === 'GK' })
+        : Object.assign({}, x.ap, { numero: x.pos === 'GK' ? 1 : livres.shift(), gk: x.pos === 'GK' })));
+      api.sairParaPartida();
+      try { await F.campeao({ cfg: cfgPartida(g), lado: 1, uni, jogadores: jog, trofeu: 'varzea', cores: [t.uni[0], t.uni[1]], io: { preto: api.preto, esperar: api.esperar } }); }
+      catch (e) { console.error('[Várzea] festa do título:', e); }
+      finally { api.voltarDaPartida(); }
+    }
+    async function noiteDosPremios(C) {                                        // a tela já está preta; termina preta
+      if (C.galaVista) return; C.galaVista = true;
+      const lista = premiosDaFesta(C); if (!lista.length) return;
+      const F = await Fases.carregar('festa');
+      api.sairParaPartida();
+      try {
+        await F.gala({ nivel: 'varzea', titulo: T('PRÊMIOS DA VÁRZEA'), premios: lista,
+          io: { preto: api.preto, esperar: api.esperar, ganho: () => { try { api.somDinheiro(); api.ganhoNaTela(PREMIO_IND); } catch (e) { /* nada */ } } } });
+      } catch (e) { console.error('[Várzea] noite dos prêmios:', e); }
+      finally { api.voltarDaPartida(); if (lista.some((x) => x.voce)) try { api.mostrarDinheiro(); } catch (e) { /* nada */ } }   // o dinheiro só aparece de volta na cidade (no meio da festa, o HUD fica escondido)
+    }
+    async function cenaPremios(C) {                                            // o campeonato fechou sem o jogador em campo: a noite dos prêmios vira uma cena
+      const s = S(); if (C.galaVista || M.cena) return;
+      M.cena = true; s.modo = 'cena';
+      const trava = setInterval(() => { if (s.modo === 'livre') s.modo = 'cena'; try { const U = api.UI(); if (U && U.ctl && !U.ctl.hidden) U.ctl.hidden = true; } catch (e) { /* nada */ } }, 120);
+      try { await api.preto(true, 700); await noiteDosPremios(C); }
+      catch (e) { console.error('[Várzea] cena dos prêmios:', e); }
+      finally {
+        clearInterval(trava); M.cena = false; try { Dialogo.esconder(); } catch (e) { /* nada */ }
+        await api.preto(false, 600); if (s.ativo && s.modo === 'cena') api.liberar();
+      }
     }
     async function mensagemFim(C) {
       const P = C.premios || {}, nomeP = (x) => (x ? (x.n === '__voce' ? api.nomeJog() : x.n) + ' (' + TIMES_VZ[x.t].nome + ')' : '—');
@@ -588,6 +637,8 @@
         if (rafaPodeAparecer() && !M.rafa && !M.cena) criarRafa();
         else if (M.rafa && !rafaPodeAparecer() && s.modo === 'livre' && !M.rafa.rota) tirarRafa();
         missaoDoDia();
+        const C = camp();                                                  // a noite dos prêmios (campeonato fechado sem o jogador em campo): com o jogador livre, fora de casa e sem ligação
+        if (C.premiosPendentes && C.etapa === 'fim' && !C.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaPremios(C).then(() => api.gravar(dados().ponto || 'chegada'));
       }
       tickTorcida(dt);
       tickMensagens(dt);
@@ -790,7 +841,9 @@
         api.tickHorario(2 / api.H_POR_S);
         // 6) o resultado, a rodada e a conversa na saída do vestiário
         const resumo = registrarJogo(C, g, r, ped);
+        if (g.r === 10 && !resumo.semJogo && C.campeao === NOSSO_I) await festaDoTitulo(C, g);
         await depoisDoJogo(C, g, resumo);
+        if (g.r === 10 && C.etapa === 'fim' && !C.galaVista) { await api.preto(true, 600); await noiteDosPremios(C); }
       } catch (e) {
         console.error('[Várzea] dia de jogo:', e);
       } finally {
@@ -1106,6 +1159,7 @@
       const linha = (rot, x, val) => '<li><span>' + escH(rot) + '</span><span><b>' + escH(nomeP(x)) + '</b> · ' + escH(timeP(x)) + (x ? ' · ' + escH(val) : '') + '</span></li>';
       el.innerHTML = '<div class="caixa"><h2>' + escH(T('CAMPEÃO DA VÁRZEA')) + '</h2><img src="' + urlArte(TIMES_VZ[C.campeao].k) + '" alt=""><b>' + escH(nomeT(C.campeao)) + '</b>'
         + (C.campeao === NOSSO_I ? '<p>' + escH(Tf('Sua parte do prêmio: {0} fakes.', PREMIO_JOG)) + '</p>' : '')
+        + (premiosDoJogador(C) ? '<p>' + escH(Tf('Prêmios individuais: +{0} fakes.', premiosDoJogador(C) * PREMIO_IND)) + '</p>' : '')
         + '<ul>' + linha(T('Melhor jogador'), P.melhor, P.melhor ? Tf('nota média {0}', P.melhor.v.toFixed(1)) : '')
         + linha(T('Artilheiro'), P.art, P.art ? Tf('{0} gols', P.art.v) : '') + linha(T('Líder de assistências'), P.ass, P.ass ? Tf('{0} assistências', P.ass.v) : '') + '</ul>'
         + '<button type="button" class="vzJogar">' + escH(T('Fechar')) + '</button></div>';
@@ -1118,8 +1172,8 @@
       return { etapa: C.etapa, tabela: classificacao(C).map((x) => Object.assign({ nome: TIMES_VZ[x.i].nome, sigla: TIMES_VZ[x.i].sigla }, x)) };
     }
 
-    return { tick, alvos, _M: M, _fns: { conversarRafa, diaDeJogo, iniciarCampeonato, fecharRodadas, fecharRodada, telaPrePartida, painelFinal, montarSala, tirarSala, alturaVestiario, encarada, registrarJogo, depoisDoJogo, camp, vagas, cfgPartida, jogoDeHoje, conversaVestiario },
-      dados: { POSES, TIMES_VZ, elencoVz, forcaTime, estrelas, titulares, classificacao, premios, arte, urlArte, resumoCarreira, PREMIO_JOG } };
+    return { tick, alvos, _M: M, _fns: { conversarRafa, diaDeJogo, iniciarCampeonato, fecharRodadas, fecharRodada, telaPrePartida, painelFinal, montarSala, tirarSala, alturaVestiario, encarada, registrarJogo, depoisDoJogo, camp, vagas, cfgPartida, jogoDeHoje, conversaVestiario, festaDoTitulo, noiteDosPremios, cenaPremios, premiosDaFesta },
+      dados: { POSES, TIMES_VZ, elencoVz, forcaTime, estrelas, titulares, classificacao, premios, arte, urlArte, resumoCarreira, PREMIO_JOG, PREMIO_IND } };
   }
 
   // ============================================================================================ TRADUÇÕES (en, es, it, fr)
@@ -1228,6 +1282,8 @@
     "COMEÇAR PARTIDA": ["START MATCH", "EMPEZAR PARTIDO", "INIZIA PARTITA", "COMMENCER LE MATCH"],
     "CAMPEÃO DA VÁRZEA": ["AMATEUR CHAMPION", "CAMPEÓN DEL BARRIO", "CAMPIONE DEI DILETTANTI", "CHAMPION AMATEUR"],
     "Sua parte do prêmio: {0} fakes.": ["Your share of the prize: {0} fakes.", "Tu parte del premio: {0} fakes.", "La tua parte del premio: {0} fakes.", "Ta part du prix : {0} fakes."],
+    "Prêmios individuais: +{0} fakes.": ["Individual awards: +{0} fakes.", "Premios individuales: +{0} fakes.", "Premi individuali: +{0} fakes.", "Prix individuels : +{0} fakes."],
+    "PRÊMIOS DA VÁRZEA": ["AMATEUR TOURNAMENT AWARDS", "PREMIOS DEL CAMPEONATO DE BARRIO", "PREMI DEL TORNEO DEI DILETTANTI", "TROPHÉES DU CHAMPIONNAT AMATEUR"],
     "Melhor jogador": ["Best player", "Mejor jugador", "Miglior giocatore", "Meilleur joueur"],
     "nota média {0}": ["average rating {0}", "nota media {0}", "voto medio {0}", "note moyenne {0}"],
     "Artilheiro": ["Top scorer", "Goleador", "Capocannoniere", "Meilleur buteur"],

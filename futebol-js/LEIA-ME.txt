@@ -22,6 +22,10 @@ ARQUIVOS
                           o ônibus do clube, a confiança do técnico, as missões do clube, a Série B de 38 rodadas e as copas
                           (baixado pela cidade; o quarto usa a carta e o app Carreira usa a tabela). Popularidade dos times:
                           serieb.criar(api).popularidade.somar(time, pontos, motivo) — de 15 a 100, 5 faixas de torcida
+  festa.js .............. as festas de título e a noite dos prêmios: a comemoração no gramado (roda, joelhos, aviãozinho,
+                          a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
+                          copas e Série B), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno
+                          (baixado pela várzea e pela Série B)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
                           compra na barbearia (os NPCs podem usar)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
