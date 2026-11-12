@@ -4139,6 +4139,26 @@
     }
   }
   const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', barbearia: 'Barbearia', esportiva: 'Golaço Esportes' };
+  // (7.1.2) um LUGAR montado por outro arquivo (imprensa.js: a chegada no estádio da Série B). O mesmo esquema das salas (a cidade fica
+  //   escondida e parada, as listas de colisão/pessoas trocam pelas do lugar), sem o interiores.js e sem escurecer a tela (quem chama
+  //   cuida do preto). R = { nome, grupo, col, pisos, entrada: {x, z, yaw}, cam: {dist, pitch, yaw}, fundo, lim, saida, extras,
+  //   semRelogio (o relógio não anda), semSaida (sem o "Sair"), alvos(v) (as interações do lugar), luz: { ceu, chao, hi, sol, si, sp } }.
+  //   Sai com sairDoLugar(true): o jogador volta para onde estava na cidade.
+  function entrarLugarExtra(R) {
+    const J = S.jog;
+    for (const V of (S.viagens || []).slice()) if (V.A.length) perderBoneco(V);
+    if (J.sentado) levantar();
+    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: { x: J.x, z: J.z, sai: J.yaw || 0 } };
+    S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
+    S.col = R.col || []; S.circ = []; S.pisos = R.pisos || []; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
+    S.dentro = Object.assign({ saida: { x: 9999, z: 9999 }, extras: [], lim: { x0: -40, x1: 40, z0: -40, z1: 40 } }, R, { extra: true });
+    R.grupo.add(J.m.raiz, J.blob, J.anel);
+    const e = R.entrada || { x: 0, z: 0, yaw: 0 };
+    J.sentado = false; J.x = e.x; J.z = e.z; J.yaw = J.yawAlvo = e.yaw || 0; J.y = altura(J.x, J.z); J.rota = null;
+    S.cam.yaw = (R.cam && R.cam.yaw) || 0; S.cam.dist = (R.cam && R.cam.dist) || S.cam.dist; S.cam.pitch = (R.cam && R.cam.pitch) || S.cam.pitch; S.cam.snap = true;
+    scene.background = new THREE.Color(R.fundo || CEU); if (scene.fog) { scene.fog.near = 90; scene.fog.far = 260; }
+    UI.btnMapa.hidden = true; UI.seta.hidden = true; if (S.setaAlvo) S.setaAlvo.visible = false; S.setaAlvo = null; if (S.bola) S.bola.jx = null;
+  }
   // ENTRAR: a cidade fica escondida (parada) e a sala é montada no mesmo lugar; as listas de colisão/assentos/pessoas trocam pelas da sala
   async function entrarEm(P) {
     const I = S.interiores, J = S.jog; if (!I) return;
@@ -4353,7 +4373,9 @@
     if (!S.dentro && !S.intro) v.push({ x: SPAWN.x, z: -3.55, r: 1.35, txt: S.luciaPredio ? T('Encontrar a Lúcia') : T('Entrar no prédio'), fn: S.luciaPredio ? cenaEncontroPredio : S.turnoPizza && S.pizzaria ? async () => { if (await S.pizzaria.encerrarAntes()) await entrarNoPredio(); } : entrarNoPredio, y: 2.7 });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (!S.dentro && S.luciaPredio) v.push({ x: S.luciaPredio.x, z: S.luciaPredio.z, r: 2.2, txt: T('Encontrar a Lúcia'), fn: cenaEncontroPredio, y: 2.6, pri: true });       // dá para voltar ao prédio (e ao apartamento) a qualquer hora
     if (S.dentro) {
-      const D = S.dentro; v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
+      const D = S.dentro;
+      if (D.extra) { if (D.alvos) try { D.alvos(v); } catch (e) { console.warn('[Cidade] lugar:', e); } return v; }   // (7.1.2) lugar de outro arquivo (o estádio da imprensa.js): só as interações dele
+      v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
       if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos

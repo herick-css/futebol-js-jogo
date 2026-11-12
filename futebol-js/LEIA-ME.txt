@@ -26,6 +26,10 @@ ARQUIVOS
                           a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
                           copas e Série B), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno
                           (baixado pela várzea e pela Série B)
+  imprensa.js ........... a imprensa e a popularidade na Série B: um jogo sim, um jogo não, o ônibus chega ao estádio e uma
+                          das 5 repórteres (Esfera, TBS, Band-Aid, TV Recordação, TV Agricultura) entrevista o jogador na
+                          entrada; a pergunta é montada (time + jogador + jogo de hoje) e a resposta tranquila ou arrogante é
+                          uma aposta de popularidade conferida depois do jogo (baixado pela Série B)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
                           compra na barbearia (os NPCs podem usar)
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
