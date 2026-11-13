@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.3';
+const VERSAO_JOGO = '7.1.4';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -796,6 +796,207 @@ function ajustarArea() {
   }
   window.addEventListener('resize', ajustarArea);
   document.addEventListener('fullscreenchange', ajustarArea);
+})();
+
+// ---------------------------------------------------------------------
+// TRAVA DE ENCAIXE: a tela do jogo nunca "desliza". Um elemento com overflow escondido ainda rola quando o navegador quer
+// mostrar algo que está fora dele (foco num botão, arrastar um menu até o fim, teclado virtual, seleção): era isso que
+// desencaixava tudo. Aqui, qualquer rolagem da página, do <html>, do <body> ou do #raizJogo volta para zero na hora. Os
+// menus que rolam por dentro (listas, configurações, celular) continuam rolando: a trava só olha esses quatro.
+// ---------------------------------------------------------------------
+(function () {
+  const alvos = () => [document.scrollingElement, document.documentElement, document.body, raizJogo];
+  function zerar() {
+    if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    for (const e of alvos()) if (e && (e.scrollTop || e.scrollLeft)) { e.scrollTop = 0; e.scrollLeft = 0; }
+  }
+  document.addEventListener('scroll', (ev) => { const t = ev.target; if (t === document || alvos().includes(t)) zerar(); }, true);
+  window.addEventListener('scroll', zerar, { passive: true });
+  window.addEventListener('resize', zerar); window.addEventListener('orientationchange', () => setTimeout(zerar, 60));
+  document.addEventListener('focusin', () => { zerar(); setTimeout(zerar, 0); setTimeout(zerar, 120); });
+  if (window.visualViewport) window.visualViewport.addEventListener('scroll', zerar);
+  const st = document.createElement('style');
+  st.textContent = 'html, body { overscroll-behavior: none; } #raizJogo { overscroll-behavior: none; overflow: clip; } @supports not (overflow: clip) { #raizJogo { overflow: hidden; } }';
+  document.head.appendChild(st);
+  zerar();
+})();
+
+// ---------------------------------------------------------------------
+// ABERTURA (a primeira coisa na tela): o rosto do Harbor em pixel art e o nome embaixo, numa animação curta com sons.
+//   Começa em preto e branco, parado (como a vinheta desenhada à mão). No primeiro toque/tecla (o navegador só solta o som depois
+//   de um gesto) a cor entra: o rosto quica, os olhos saltam, a baba escorre, pinga, e as letras de HARBOR pulam uma a uma, cada
+//   uma com a sua nota; fecha com um acorde. Sem toque em 5 s, toca assim mesmo (o som sai se o navegador deixar). Depois de
+//   começar, outro toque pula. A tampa cobre o jogo desde já (o menu não aparece por baixo); Abertura.tocar(aoFim) roda a animação.
+//   Desenho: tela de 240 x 135 ampliada sem suavizar. Sons: sintetizados (osciladores), respeitando o mudo do jogo.
+// ---------------------------------------------------------------------
+const Abertura = (() => {
+  const W = 240, H = 135, CX = 120, CY = 50, R = 30;
+  const el = document.createElement('div'); el.id = 'abertura';
+  el.style.cssText = 'position:fixed;inset:0;z-index:60;background:#ffffff;display:grid;place-items:center;overflow:hidden;touch-action:none;';
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  cv.style.cssText = 'width:min(100%, calc(100 * var(--avh, 1vh) * 16 / 9));height:auto;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges;display:block;';
+  el.appendChild(cv); raizJogo.appendChild(el);
+  const g = cv.getContext('2d');
+  const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); };
+  // disco em pixels (linha a linha); f(x, y) opcional decide a cor de cada ponto
+  function disco(cx, cy, r, cor, f) {
+    for (let y = -Math.ceil(r); y <= Math.ceil(r); y++) for (let x = -Math.ceil(r); x <= Math.ceil(r); x++) {
+      if (x * x + y * y > r * r) continue;
+      const c = f ? f(x, y) : cor; if (c) px(cx + x, cy + y, 1, 1, c);
+    }
+  }
+  const anel = (cx, cy, r, cor) => disco(cx, cy, r + 0.5, null, (x, y) => (x * x + y * y >= (r - 0.6) * (r - 0.6) ? cor : null));
+  const TINTA = '#1c120c';
+  // a franja: a borda de baixo do cabelo (um "M" no meio, como no desenho)
+  const franja = (x) => { const a = Math.abs(x); return a < 4 ? -9 - (4 - a) * 1.6 : a < 9 ? -14 + (a - 4) * 1.1 : a < 15 ? -8.5 - (a - 9) * 0.5 : -11.5 + (a - 15) * 0.45; };
+  function rosto(cor, t, o) {                                           // cor: 0 = preto e branco … 1 = colorido
+    const col = (c, pb) => (cor >= 1 ? c : cor <= 0 ? pb : null);
+    const mix = (c, pb) => { if (cor >= 1) return c; if (cor <= 0) return pb; const a = parseInt(c.slice(1), 16), b = parseInt(pb.slice(1), 16), k = cor; const ch = (s) => Math.round(((b >> s) & 255) * (1 - k) + ((a >> s) & 255) * k); return 'rgb(' + ch(16) + ',' + ch(8) + ',' + ch(0) + ')'; };
+    void col;
+    const cy = CY + o.dy, sx = o.sx, sy = o.sy;                          // amassa e estica (quique)
+    const X = (x) => CX + x * sx, Y = (y) => cy + y * sy;
+    // cabeça
+    for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
+      const d2 = x * x + y * y; if (d2 > R * R) continue;
+      const borda = d2 >= (R - 1.2) * (R - 1.2), cabelo = y < franja(x), sombra = (x - 9) * (x - 9) + (y - 9) * (y - 9) > (R - 3) * (R - 3) * 0.72;
+      let c;
+      if (borda) c = TINTA;
+      else if (cabelo) c = mix(((x + y * 2) % 9 + 9) % 9 < 2 ? '#8a4f2c' : y < -R + 9 && x < -4 ? '#7a4426' : '#5e321c', '#ffffff');
+      else c = mix(sombra ? '#ee9f7c' : y > 6 && Math.abs(x) > 12 && Math.abs(x) < 21 && y < 16 ? '#f9b79c' : '#f8cdaa', '#ffffff');
+      if (!borda && Math.abs(y - franja(x)) < 0.9 && Math.abs(x) < 26) c = TINTA;   // o traço da franja
+      px(X(x), Y(y), Math.ceil(sx), Math.ceil(sy), c);
+    }
+    // olhos (um para cada lado, de propósito)
+    const olho = (ex, ey, r, k, ax, ay) => {
+      if (k <= 0) return; const rr = r * k, x0 = X(ex), y0 = Y(ey);
+      disco(x0, y0, rr, '#ffffff', (x, y) => (x * x + y * y >= (rr - 1.1) * (rr - 1.1) ? TINTA : cor > 0 && x + y > rr * 0.9 ? mix('#d9dfe8', '#ffffff') : '#ffffff'));
+      const ix = x0 + ax * rr * 0.36, iy = y0 + ay * rr * 0.36;
+      disco(ix, iy, rr * 0.52, mix('#7a4a2a', '#1c120c')); disco(ix, iy, rr * 0.3, '#120a06');
+      px(ix - rr * 0.22, iy - rr * 0.3, Math.max(1, rr * 0.18), Math.max(1, rr * 0.18), '#ffffff');
+    };
+    olho(-23, -3, 12, o.olhoE, o.pE[0], o.pE[1]); olho(23, 2, 13, o.olhoD, o.pD[0], o.pD[1]);
+    // boca aberta e a baba
+    const bx = X(-2), by = Y(16), ab = o.boca;
+    if (ab > 0) {
+      for (let y = -3; y <= 3; y++) for (let x = -5; x <= 5; x++) { const d = (x * x) / 25 + (y * y) / (9 * ab * ab + 0.01); if (d <= 1) px(bx + x, by + y, 1, 1, d > 0.62 ? TINTA : y > 1 ? mix('#e8556a', '#ffffff') : mix('#4a1418', '#1c120c')); }
+      px(bx - 3, by - 3 * ab - 1, 6, 1, TINTA);
+    } else px(bx - 3, by, 6, 1, TINTA);
+    if (o.baba > 0) {                                                   // o fio de baba e a gota na ponta
+      const L = o.baba, fx = bx + 3, fy = by + 2;
+      px(fx, fy, 2, L, mix('#cfeaff', '#ffffff')); px(fx - 1, fy, 1, L, TINTA); px(fx + 2, fy, 1, L, TINTA);
+      disco(fx + 0.5, fy + L, 2.2, mix('#e6f5ff', '#ffffff'), (x, y) => (x * x + y * y >= 2.2 ? TINTA : mix('#e6f5ff', '#ffffff')));
+    }
+    if (o.gota) { const q = o.gota; disco(q.x, q.y, 2.2, null, (x, y) => (x * x + y * y >= 2.2 ? TINTA : mix('#e6f5ff', '#ffffff'))); }
+  }
+  // letras gordinhas (5 x 7), com contorno, sombra e brilho
+  const LETRA = { H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'], A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'], R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'], B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'], O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'] };
+  const NOME = 'HARBOR', CORES = [['#f7941d', '#ffc46b'], ['#ffd23a', '#fff0a0'], ['#e8483b', '#ff8d7e'], ['#3a9be8', '#8fd0ff'], ['#57c466', '#a8f0a8'], ['#b06be8', '#dcb4ff']];
+  function letra(ch, x0, y0, e, cor, k) {                               // e = tamanho do "pixelão"; k = escala do pulo (0..1+)
+    const M = LETRA[ch], w = 5 * e, h = 7 * e, kk = Math.max(0.05, k), ox = x0 + w * (1 - kk) / 2, oy = y0 + h * (1 - kk);
+    const cel = (dx, dy, c, f) => { for (let r = 0; r < 7; r++) for (let q = 0; q < 5; q++) if (M[r][q] === '1') { const cc = f ? f(r, q) : c; px(ox + (q * e + dx) * kk, oy + (r * e + dy) * kk, Math.ceil(e * kk), Math.ceil(e * kk), cc); } };
+    if (cor) cel(3, 3, '#1c120c');                                      // a sombra só na versão colorida (no traço preto e branco embolava)
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]].concat(cor ? [[2, 2]] : [])) cel(dx, dy, TINTA);
+    cel(0, 0, null, (r) => (cor ? (r < 2 ? cor[1] : cor[0]) : '#ffffff'));
+  }
+  // ---- sons (sintetizados)
+  let ctx = null, saida = null;
+  const mudo = () => { try { return localStorage.getItem('futebolJsMudo') === '1'; } catch (e) { return false; } };
+  function ligarSom() {
+    try { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; ctx = new AC(); saida = ctx.createGain(); saida.gain.value = mudo() ? 0 : 0.5; saida.connect(ctx.destination); } if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; }
+  }
+  function tom(f0, f1, t, dur, tipo, vol, vib) {
+    if (!ctx || ctx.state !== 'running') return;
+    try {
+      const o = ctx.createOscillator(), gn = ctx.createGain(), t0 = ctx.currentTime + t; o.type = tipo || 'sine';
+      o.frequency.setValueAtTime(f0, t0); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+      if (vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = vib; lg.gain.value = f0 * 0.06; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + dur); }
+      gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol || 0.3, t0 + 0.012); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      o.connect(gn); gn.connect(saida); o.start(t0); o.stop(t0 + dur + 0.03);
+    } catch (e) { /* sem som */ }
+  }
+  const NOTAS = [262, 330, 392, 523, 659, 784];
+  const T_LETRA = 2.05, PASSO = 0.17, T_FIM = 3.35, DUR = 4.3;
+  function trilha() {
+    tom(170, 560, 0, 0.16, 'sine', 0.4); tom(560, 240, 0.16, 0.2, 'sine', 0.32);                 // boing
+    tom(950, 320, 0.55, 0.07, 'sine', 0.35); tom(760, 250, 0.78, 0.08, 'sine', 0.35);             // os olhos saltam
+    for (let i = 0; i < 4; i++) tom(1300 + (i % 2) * 260, 0, 0.98 + i * 0.07, 0.025, 'square', 0.1);   // os olhos procurando
+    tom(230, 150, 1.3, 0.3, 'sawtooth', 0.16, 11);                                                // "blé"
+    tom(500, 320, 1.45, 0.42, 'sine', 0.1);                                                       // a baba descendo
+    tom(1500, 720, 1.98, 0.09, 'sine', 0.35);                                                     // plip
+    NOTAS.forEach((f, i) => { tom(f, 0, T_LETRA + i * PASSO, 0.16, 'square', 0.13); tom(f * 2, 0, T_LETRA + i * PASSO, 0.12, 'triangle', 0.2); });
+    for (const f of [523, 659, 784, 1047]) { tom(f, 0, T_FIM, 0.75, 'triangle', 0.2); tom(f, 0, T_FIM, 0.45, 'square', 0.06); }   // acorde
+    tom(2100, 3100, T_FIM + 0.08, 0.18, 'sine', 0.1); tom(2600, 3600, T_FIM + 0.22, 0.16, 'sine', 0.08);
+  }
+  const suave = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+  const pulo = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : 1 + Math.sin(x * Math.PI) * 0.35 * (1 - x) + (x - 1) * 0 + (x < 0.6 ? (x / 0.6) - 1 : 0) * (x < 0.6 ? 1 : 0));   // cresce, passa um pouco e assenta
+  function quadro(t, espera) {
+    const cor = espera ? 0 : suave(t / 0.4);
+    // fundo: papel branco na espera; depois, raios em dois tons girando devagar
+    if (cor <= 0) px(0, 0, W, H, '#ffffff');
+    else for (let y = 0; y < H; y += 3) for (let x = 0; x < W; x += 3) {
+      const a = Math.atan2(y - CY, x - CX) + t * 0.25, raio = Math.floor(((a / (Math.PI * 2)) * 16 + 160)) % 2;
+      const dentro = Math.hypot(x - CX, y - CY) < cor * 190;
+      px(x, y, 3, 3, dentro ? (raio ? '#2a1a4a' : '#35225c') : '#ffffff');
+    }
+    const o = { dy: 0, sx: 1, sy: 1, olhoE: 1, olhoD: 1, pE: [-0.5, -0.55], pD: [0.45, 0.5], boca: 0.55, baba: 5, gota: null };
+    let nLetras = 0, tL = 0;
+    if (espera) { const b = Math.floor(t * 2) % 8 === 7; if (b) { o.olhoE = o.olhoD = 0.92; } }
+    else {
+      // quique (0 a 0,5 s)
+      if (t < 0.5) { const u = t / 0.5, h = Math.abs(Math.sin(u * Math.PI * 1.5)) * (1 - u) * 16; o.dy = -h; const am = u < 0.12 ? 1 - u / 0.12 : 0; o.sx = 1 + am * 0.14; o.sy = 1 - am * 0.14; }
+      // os olhos saltam
+      o.olhoE = t < 0.55 ? 0.8 : 0.8 + 0.2 * pulo((t - 0.55) / 0.2) + (t < 0.75 ? Math.sin((t - 0.55) / 0.2 * Math.PI) * 0.25 : 0);
+      o.olhoD = t < 0.78 ? 0.8 : 0.8 + 0.2 * pulo((t - 0.78) / 0.2) + (t < 0.98 ? Math.sin((t - 0.78) / 0.2 * Math.PI) * 0.25 : 0);
+      if (t > 0.98 && t < 1.28) { const k = Math.floor((t - 0.98) / 0.07); o.pE = [[0.6, -0.4], [-0.6, 0.4], [0.5, 0.5], [-0.5, -0.55]][k % 4]; o.pD = [[-0.6, -0.3], [0.6, -0.5], [-0.5, 0.5], [0.45, 0.5]][k % 4]; }
+      // a boca abre e a baba escorre; a gota solta e cai até a linha do nome
+      o.boca = t < 1.3 ? 0.55 : 0.55 + 0.45 * suave((t - 1.3) / 0.15);
+      o.baba = t < 1.4 ? 5 : t < 1.85 ? 5 + suave((t - 1.4) / 0.45) * 9 : 5 + Math.max(0, 1 - (t - 1.85) / 0.25) * 3;
+      if (t >= 1.85 && t < 2.0) { const u = (t - 1.85) / 0.15; o.gota = { x: CX + 1.5, y: CY + 34 + u * u * 46 }; }
+      if (t > T_FIM) { const u = Math.min(1, (t - T_FIM) / 0.25); o.pE = [0.55 * u - 0.5 * (1 - u), 0.1]; o.pD = [-0.55 * u + 0.45 * (1 - u), 0.1]; o.dy = -Math.sin(Math.min(1, (t - T_FIM) / 0.35) * Math.PI) * 5; }   // vesgo no acorde
+      nLetras = t < T_LETRA ? 0 : Math.min(NOME.length, Math.floor((t - T_LETRA) / PASSO) + 1); tL = t;
+    }
+    rosto(cor, t, o);
+    // o nome
+    const e = 3, larg = 5 * e, vao = 4, total = NOME.length * larg + (NOME.length - 1) * vao, x0 = Math.round((W - total) / 2), y0 = 100;
+    for (let i = 0; i < NOME.length; i++) {
+      if (espera) { letra(NOME[i], x0 + i * (larg + vao), y0 + (i % 2 ? 1 : -1), e, null, 1); continue; }
+      if (i >= nLetras) continue;
+      const u = (tL - (T_LETRA + i * PASSO)) / 0.22, k = u >= 1 ? 1 : 1 + Math.sin(u * Math.PI) * 0.28 - (1 - u) * (1 - u);
+      const onda = tL > T_FIM ? Math.sin((tL - T_FIM) * 9 - i * 0.8) * Math.max(0, 1 - (tL - T_FIM) / 0.7) * 3 : 0;
+      letra(NOME[i], x0 + i * (larg + vao), y0 + (i % 2 ? 1 : -1) - onda, e, CORES[i], k);
+    }
+    if (!espera && t >= 1.98 && t < 2.2) { const u = (t - 1.98) / 0.22; for (const a of [-1, 0, 1]) px(CX + 1 + a * u * 9, 96 - Math.sin(u * Math.PI) * 6 + Math.abs(a) * 2, 2, 2, '#e6f5ff'); }   // respingo
+    if (!espera && t > T_FIM && t < T_FIM + 0.6) { const u = (t - T_FIM) / 0.6; for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, r = 20 + u * 60; px(CX + Math.cos(a) * r * 1.5, 70 + Math.sin(a) * r * 0.75, 2, 2, CORES[i % 6][1]); } }   // estrelinhas
+    if (espera && Math.floor(t * 2.5) % 2 === 0) { for (let i = 0; i < 3; i++) px(CX - 1 + i, 128 + i, 1, 5 - 2 * i, TINTA); }   // ▶ piscando: toque para começar
+  }
+  let rodando = false, feito = false;
+  function tocar(aoFim) {
+    if (rodando || feito) { if (feito && aoFim) aoFim(); return; }
+    rodando = true; ligarSom();
+    let fase = 'espera', t0 = performance.now(), tIni = 0, raf = 0, limite = null;
+    const comecar = () => { if (fase !== 'espera') return; ligarSom(); fase = 'anima'; tIni = performance.now(); clearTimeout(limite); el.style.transition = 'background-color 0.4s'; el.style.backgroundColor = '#2a1a4a'; const vai = () => trilha(); if (ctx && ctx.state !== 'running' && ctx.resume) ctx.resume().then(vai, vai); else vai(); };
+    const terminar = () => {
+      if (fase === 'fim') return; fase = 'fim'; cancelAnimationFrame(raf); feito = true; rodando = false;
+      el.removeEventListener('pointerdown', toque); window.removeEventListener('keydown', tecla);
+      try { if (aoFim) aoFim(); } catch (e) { console.error(e); }
+      el.style.transition = 'opacity 0.35s ease'; el.style.opacity = '0'; el.style.pointerEvents = 'none';
+      setTimeout(() => { el.remove(); try { if (ctx) ctx.close(); } catch (e) { /* nada */ } ctx = null; }, 900);
+    };
+    const toque = (ev) => { if (ev) ev.preventDefault(); if (fase === 'espera') comecar(); else if (fase === 'anima' && performance.now() - tIni > 600) terminar(); };
+    const tecla = (ev) => { if (ev.key === 'Tab') return; toque(null); };
+    el.addEventListener('pointerdown', toque); window.addEventListener('keydown', tecla);
+    if (ctx && ctx.state === 'running') comecar(); else limite = setTimeout(comecar, 5000);   // o navegador já deixa tocar: começa direto
+    const laco = () => {
+      if (fase === 'fim') return;
+      const agora = performance.now();
+      if (fase === 'espera') quadro((agora - t0) / 1000, true);
+      else { const t = (agora - tIni) / 1000; quadro(Math.min(t, DUR), false); if (t >= DUR) { terminar(); return; } }
+      raf = requestAnimationFrame(laco);
+    };
+    quadro(0, true); raf = requestAnimationFrame(laco);
+  }
+  quadro(0, true);
+  return { tocar, el };
 })();
 
 function resize() {
@@ -16700,4 +16901,4 @@ snapCamera();
 drawRadar();
 requestAnimationFrame(frame);
 try { document.documentElement.lang = ({ pt: 'pt-BR', en: 'en', es: 'es', it: 'it', fr: 'fr' })[Idioma.atual]; } catch (e) { /* ok */ }
-if (IDIOMA_PERGUNTAR_SEMPRE || !salvo.ler('futebolJs.idioma.v1', {}).id) telaIdioma();          // primeira tela: escolher o idioma
+Abertura.tocar(() => { if (IDIOMA_PERGUNTAR_SEMPRE || !salvo.ler('futebolJs.idioma.v1', {}).id) telaIdioma(); });   // primeiro a abertura (o Harbor); depois, a escolha do idioma
