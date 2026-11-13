@@ -112,6 +112,14 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.5
+     - BAR DO JAIRO (bar.js e sinuca.js, arquivos novos): ganchos marcados "(7.1.5)": carregar o bar.js · apiBar() · entrarEm/sairDoLugar
+       chamam S.bar.entrou/saiu (com R.bar, lá dentro quem cuida de tudo é ele) · alvos (balcão, sinuca, capuz, Valdemar, pista; na
+       banqueta: o menu do balcão) · tickPessoas despacha 'clienteBar' (e ele congela quando está parado) · chegarDentro (registro) ·
+       tick (também na rua: o homem de capuz chegando no sábado/domingo e o e-mail do jogo do bicho no dia seguinte) · a luz do lugar
+       (S.dentro.luz: o bar à meia-luz) · o movimento do bar (MOV.bar: vazio de segunda a quarta, lotado de sexta a domingo).
+     - O SEU VALDEMAR depois de fechar às 20h vai a pé para o bar (rotaBarV) e só volta para casa à 1h20 (planoBarCasa; estado 'bar').
+     - CONDIÇÃO 'ressaca' (jogo.js): 3 doses no mesmo dia = corre menos, cansa mais e erra mais no próximo jogo (aparece na ficha).
    NOVIDADES DA 7.1.3
      - RESTAURANTE SELF-SERVICE (restaurante.js, arquivo novo): ganchos marcados "(7.1.3)": carregar o restaurante.js · apiRestaurante() ·
        entrarEm/sairDoLugar chamam S.restaurante.entrou/saiu (com R.restaurante, lá dentro quem cuida de tudo é ele: sem o fluxo genérico) ·
@@ -216,6 +224,8 @@
     'Hmm... ainda dava para comer mais um pouco.': ['Hmm... I could still eat a bit more.', 'Mmm... todavía podría comer un poco más.', 'Mmm... potrei mangiare ancora un po\'.', "Hmm... je pourrais encore manger un peu."],
     'Ficha médica': ['Medical record', 'Ficha médica', 'Cartella clinica', 'Dossier médical'],
     'A enfermeira confere como você está.': ['The nurse checks how you are doing.', 'La enfermera revisa cómo estás.', "L'infermiera controlla come stai.", "L'infirmière vérifie comment tu vas."],
+    'Ressaca: no próximo jogo você corre menos, cansa mais rápido e erra mais.': ['Hangover: in the next match you run less, tire faster and make more mistakes.', 'Resaca: en el próximo partido corres menos, te cansas más rápido y fallas más.', 'Postumi della sbornia: nella prossima partita corri meno, ti stanchi prima e sbagli di più.', 'Gueule de bois : au prochain match, tu cours moins, tu te fatigues plus vite et tu rates plus.'],
+    'Ressaca': ['Hangover', 'Resaca', 'Postumi della sbornia', 'Gueule de bois'],
     'Refeição pesada: no próximo jogo você corre menos e recupera o fôlego mais devagar.': ['Heavy meal: in the next match you run less and get your breath back more slowly.', 'Comida pesada: en el próximo partido corres menos y recuperas el aliento más despacio.', 'Pasto pesante: nella prossima partita corri meno e recuperi il fiato più lentamente.', 'Repas lourd : au prochain match, tu cours moins et tu récupères ton souffle plus lentement.'],
     'Lanches não saudáveis neste mês: {0}.': ['Unhealthy snacks this month: {0}.', 'Comidas poco saludables este mes: {0}.', 'Spuntini poco sani questo mese: {0}.', 'Snacks pas sains ce mois-ci : {0}.'],
     'Nenhuma observação por enquanto.': ['No notes for now.', 'Ninguna observación por ahora.', 'Nessuna osservazione per ora.', "Aucune remarque pour l'instant."],
@@ -2926,6 +2936,14 @@
 
   // ------------------------------------------------------------------ a ROTINA do seu Valdemar: abre às 8h, fecha às 20h (persiana desce) e vai para casa pela porta de serviço
   const H_ABRE = 8, H_FECHA = 20, H_ACORDA_V = 6.3, VEL_V = 2.2;
+  // (7.1.5) depois de fechar ele não vai para casa: vai a pé até o BAR DO JAIRO (bebe, dança, joga sinuca, fuma) e só volta para casa à 1h20
+  const H_V_SAI_BAR = 1.33, PORTA_BAR_V = { x: -100.2, z: 8.6 };
+  const noBarV = (h) => h >= H_FECHA || h < H_V_SAI_BAR;                  // a noite dele é no bar (20h até 1h20)
+  function rotaBarV() { const L = S.loja; return [[L.portaX, 8.1], [PORTA_BAR_V.x + 0.9, 8.1], [PORTA_BAR_V.x, 9.4], [PORTA_BAR_V.x, 10.8]]; }
+  function planoBarCasa() {                                               // 1h20: sai do bar e vai para casa (a calçada sul até a rua de terra leste)
+    const C = S.casaValdemar, P = PORTA_BAR_V;
+    return [{ t: 'surgir', x: P.x, z: 10.6, yaw: Math.PI / 2 }, { t: 'ir', pts: [[P.x, 8.1], [57, 8.1], [57, 38.2], [C.sx, 38.2], [C.sx, C.sz]], vel: VEL_V * 0.9 }, { t: 'sumir' }, { t: 'estado', e: 'casa' }];
+  }
   const H_TRAB_INI = 8, H_TRAB_FIM = 16, PAGA_BASE = 20, PAGA_PEDIDO = 5;   // expediente da cafeteria: 20 fakes pelo dia + 5 por pedido atendido (ver falarComLucia/turnoTrabalho)
   const lojaAberta = () => S.dados.hora >= H_ABRE && S.dados.hora < H_FECHA;
   const sumirV = (V) => { V.puxa = false; V.oculto = true; V.x = 0; V.z = -500; V.andando = false; V.fala = false; S.meus.delete(V.m); V.blob.visible = false; };
@@ -2944,7 +2962,7 @@
       { t: 'ir', pts: [[D.px, D.z]], vel: 1.5 }, { t: 'porta2', a: 1 }, { t: 'espera', s: 0.6 }, { t: 'ir', pts: [[D.x, D.z]], vel: 1.2 }, { t: 'sumir' }, { t: 'porta2', a: 0 },
       { t: 'espera', s: 2.4 }, { t: 'porta', a: 1 }, { t: 'espera', s: 0.7 },
       { t: 'surgir', x: L.portaX, z: L.portaZ + 0.1, yaw: Math.PI / 2 }, { t: 'ir', pts: [[L.portaX, L.portaZ - 1.6]], vel: 1.5 }, { t: 'porta', a: 0 },
-      { t: 'ir', pts: rotaCasaV().slice(1), vel: VEL_V }, { t: 'sumir' }, { t: 'estado', e: 'casa' }];
+      { t: 'ir', pts: rotaBarV(), vel: VEL_V }, { t: 'sumir' }, { t: 'estado', e: 'bar' }];   // (7.1.5) do trabalho direto para o bar
   }
   // da hora de abrir até ele estar no balcão com a persiana levantada (usado ao chegar e ao carregar já de manhã cedo)
   function planoAbrirLoja() {
@@ -2967,7 +2985,7 @@
     V.rotaV = null; V.andando = false; V.correndo = false; V.fala = false; V.timer = 0; V.passo = 0;
     V.puxa = false; L.k2 = L.alvo2 = 0;
     if (h >= H_ABRE && h < H_FECHA) { L.pk = L.palvo = 0; L.k = L.alvo = 0; surgirV(V, B.x, B.z, Math.PI / 2); V.estado = 'balcao'; }
-    else { L.pk = L.palvo = 1; L.k = L.alvo = 0; sumirV(V); V.estado = h >= H_ACORDA_V && h < H_FECHA ? 'espera' : 'casa'; if (V.estado === 'espera') V.plano = planoAbrirLoja(); }
+    else { L.pk = L.palvo = 1; L.k = L.alvo = 0; sumirV(V); V.estado = h >= H_ACORDA_V && h < H_FECHA ? 'espera' : noBarV(h) ? 'bar' : 'casa'; if (V.estado === 'espera') V.plano = planoAbrirLoja(); }   // (7.1.5) de noite ele está no bar
     tickLoja(0, true);
   }
   function tickLoja(dt, seco) {
@@ -2986,6 +3004,8 @@
         if (J.sentado && S.sentadoEm && S.sentadoEm.lanche) { if (S.modo === 'livre' && !V.avisando) { V.avisando = true; avisoFechar().then(() => { V.avisando = false; }); } return; }
         if (!V.avisando) { V.plano = planoFechar(); V.passo = 0; V.timer = 0; V.estado = 'fechando'; }
       } else if (V.estado === 'casa' && S.dados.hora >= H_ACORDA_V && S.dados.hora < H_FECHA) { V.plano = planoAbrir(); V.passo = 0; V.timer = 0; V.estado = 'vindo'; }
+      else if (V.estado === 'bar' && S.dados.hora >= H_ACORDA_V && S.dados.hora < H_FECHA) { V.estado = 'casa'; return; }   // (pulou a madrugada dormindo)
+      else if (V.estado === 'bar' && !noBarV(S.dados.hora)) { V.plano = planoBarCasa(); V.passo = 0; V.timer = 0; V.estado = 'voltandoBar'; }   // (7.1.5) 1h20: do bar para casa
       else return;
     }
     const P = V.plano[V.passo]; if (!P) { V.plano = null; return; }
@@ -3237,7 +3257,7 @@
   //   malha só (as ~15 peças do corpo, na pose em que ele está, juntas numa geometria com o mesmo material): 1 desenho na tela em vez de
   //   ~15, e a pose nem é calculada. Mexeu (anda, fala, morde, gesticula, vira): volta na hora a ser o boneco completo. O que não é do
   //   corpo (o copo, a fatia, o celular) continua como está, preso no mesmo lugar.
-  const TIPOS_CONG = new Set(['cliente', 'clienteMerc', 'clientePz', 'senta', 'conversa', 'morador']);
+  const TIPOS_CONG = new Set(['cliente', 'clienteMerc', 'clientePz', 'senta', 'conversa', 'morador', 'clienteBar']);   // (7.1.5) o povo do bar parado (sem poseFn) também vira 1 malha
   const mexendoComida = (A) => (((A.t || 0) + (A.fase || 0) * 1.3) % 7.5) < 2.6;   // a cada ~7,5 s, uma mordida/gole de ~2,6 s
   function podeCongelar(A) {
     if (!TIPOS_CONG.has(A.tipo) || A.oculto || A.longeDemais || S.semCongelar) return false;   // (S.semCongelar: para medir/testes)
@@ -3726,6 +3746,7 @@
       else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // (5.3.1) clientes do mercado.js
       else if (A.tipo === 'clientePz') { if (S.pizzaria) S.pizzaria.tickCliente(A, dt); }   // (6.1.0) clientes da pizzaria.js
       else if (A.tipo === 'clienteRs') { if (S.restaurante) S.restaurante.tickCliente(A, dt); }   // (7.1.3) clientes do restaurante.js (self-service)
+      else if (A.tipo === 'clienteBar') { if (S.bar) S.bar.tickCliente(A, dt); }   // (7.1.5) o povo do bar.js (bebe, dança, fuma, joga sinuca)
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       else if (A.tipo === 'cena') passoCena(A, dt);
@@ -4221,11 +4242,12 @@
     const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
     const pizzaJs = P.nome === 'pizzaria' && !!S.pizzaria;               // (6.1.0) na pizzaria quem cuida de tudo (Mário, Carla, clientes) é o pizzaria.js
     const restJs = P.nome === 'restaurante' && !!S.restaurante && !!R.restaurante;   // (7.1.3) no restaurante quem cuida de tudo (Renan, Dona Cida, clientes) é o restaurante.js
+    const barJs = P.nome === 'bar' && !!S.bar && !!R.bar;                // (7.1.5) no bar quem cuida de tudo (Jairo, o povo, o Valdemar, o capuz, a sinuca) é o bar.js
     const acadJs = P.nome === 'academia' && !!S.academia && !!R.academia;   // (6.2.0) na academia quem coloca as pessoas é o academia.js
     const barbJs = P.nome === 'barbearia' && !!S.barbearia && !!R.barbearia;   // na barbearia quem põe o Toninho é o barbearia.js
-    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs && !restJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
+    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs && !restJs && !barJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
-      if (pizzaJs || acadJs || barbJs || restJs) continue;
+      if (pizzaJs || acadJs || barbJs || restJs || barJs) continue;
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
@@ -4241,6 +4263,7 @@
     if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
     if (restJs) try { S.restaurante.entrou(R, idx); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3)
+    if (barJs) try { S.bar.entrou(R, idx); } catch (e) { console.warn('[Cidade] bar:', e); }   // (7.1.5)
     if (acadJs) S.academia.entrou(R, idx);                               // (6.2.0)
     if (barbJs) try { S.barbearia.entrou(R, idx); } catch (e) { console.warn('[Cidade] barbearia:', e); }
     if (P.nome === 'cinema' && S.cinema && R.cinema) try { S.cinema.entrou(R, idx); } catch (e) { console.warn('[Cidade] cinema:', e); }
@@ -4385,6 +4408,7 @@
     if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
     if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
     if (S.restaurante && S.dentro && S.dentro.nome === 'restaurante') try { S.restaurante.saiu(); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3)
+    if (S.bar && S.dentro && S.dentro.nome === 'bar') try { S.bar.saiu(); } catch (e) { console.warn('[Cidade] bar:', e); }   // (7.1.5) a música do bar para e a da cidade volta
     if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
     if (S.cinema && S.dentro && S.dentro.nome === 'cinema') try { S.cinema.saiu(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (S.barbearia && S.dentro && S.dentro.nome === 'barbearia') try { S.barbearia.saiu(); } catch (e) { console.warn('[Cidade] barbearia:', e); }
@@ -4412,6 +4436,7 @@
       if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // sentado no balcão: "Valdemar" ou "Sair"
       if (S.dentro && S.dentro.nome === 'pizzaria' && S.pizzaria) { const vp = S.pizzaria.alvosSentado(); if (vp) return vp; }   // (6.1.0) pedir pizza
       if (S.dentro && S.dentro.nome === 'restaurante' && S.restaurante) { const vr = S.restaurante.alvosSentado(); if (vr) return vr; }   // (7.1.3) comendo o prato
+      if (S.dentro && S.dentro.nome === 'bar' && S.bar) { const vb = S.bar.alvosSentado(); if (vb) return vb; }   // (7.1.5) na banqueta: pedir no balcão
       if (J.esperaPedido && S.dentro && S.dentro.nome === 'cafeteria') return [{ x: J.x, z: J.z, r: 9, txt: S.comeBoloJog ? T('Comendo o bolo...') : T('Esperando o bolo...'), fn: async () => {} }];   // (6.6.18) a Lúcia está trazendo
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
@@ -4428,6 +4453,7 @@
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
       if (D.nome === 'restaurante' && S.restaurante) try { S.restaurante.alvos(v); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3) o self-service, a vitrine, a sopa, o Renan
+      if (D.nome === 'bar' && S.bar) try { S.bar.alvos(v); } catch (e) { console.warn('[Cidade] bar:', e); }   // (7.1.5) o balcão, a sinuca, o capuz, o Valdemar
       if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos
       if (D.nome === 'cinema' && S.cinema) try { S.cinema.alvos(v); } catch (e) { erroCinema(e); }
       if (D.nome === 'barbearia' && S.barbearia) S.barbearia.alvos(v);    // o Toninho
@@ -4654,6 +4680,10 @@
   // (7.1.3) o que o restaurante.js (self-service: Renan no caixa, Dona Cida na cozinha, os clientes e o prato do jogador) usa daqui
   function apiRestaurante() {
     return Object.assign(apiBarbearia(), { sentar, gerarAparencia, PORTAS, lojaAbertaMov });
+  }
+  // (7.1.5) o que o bar.js (Jairo, o povo, o Valdemar, o capuz do bicho e a sinuca) usa daqui
+  function apiBar() {
+    return Object.assign(apiRestaurante(), { mensagemCelular, adulto: () => !!(S.dados.pro && S.dados.pro.presente), valdemarNoBar: () => !!(S.valdemar && S.valdemar.estado === 'bar'), nomeJogFem: () => fem() });
   }
   // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
   function apiVarzea() {
@@ -6268,6 +6298,7 @@
     F.querySelector('.cdFrase').textContent = Espectros.frase(['saudavel', 'ativo']);
     const cond = [];
     if (Espectros.condicao('refeicaoPesada')) cond.push(T('Refeição pesada: no próximo jogo você corre menos e recupera o fôlego mais devagar.'));
+    if (Espectros.condicao('ressaca')) cond.push(T('Ressaca: no próximo jogo você corre menos, cansa mais rápido e erra mais.'));   // (7.1.5) o bar
     if ((d.ruinsNoMes && d.ruinsNoMes.n) > 0) cond.push(Tf('Lanches não saudáveis neste mês: {0}.', d.ruinsNoMes.n));
     if (!cond.length) cond.push(T('Nenhuma observação por enquanto.'));
     F.querySelector('.cdCond').innerHTML = cond.map((c) => '<li></li>').join(''); F.querySelectorAll('.cdCond li').forEach((li, i) => { li.textContent = cond[i]; });
@@ -6471,7 +6502,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     L.push(Tf('Precisa de banho: {0}', sim(!!d.precisaBanho)));
     { const c = cafeEfeito(); L.push(c ? textoCafe(c) : T('Café: nenhum')); }
     try { L.push(Tf('Sono: nível {0} (0 = dormiu bem, 3 = pego às 2h)', Sono.nivel())); } catch (e) { /* sem sono */ }
-    try { const cond = Object.entries(Espectros._ler().cond || {}).filter(([k, v]) => v && CONDICOES[k]).map(([k]) => k === 'refeicaoPesada' ? T('Refeição pesada') : k); L.push(Tf('Condições: {0}', cond.length ? cond.join(', ') : T('nenhuma'))); } catch (e) { /* ok */ }
+    try { const cond = Object.entries(Espectros._ler().cond || {}).filter(([k, v]) => v && CONDICOES[k]).map(([k]) => k === 'refeicaoPesada' ? T('Refeição pesada') : k === 'ressaca' ? T('Ressaca') : k); L.push(Tf('Condições: {0}', cond.length ? cond.join(', ') : T('nenhuma'))); } catch (e) { /* ok */ }
     L.push(Tf('Emprego: {0} · trabalhou hoje: {1}', empregoEscolhido() || '-', sim(!!d.trabalhouHoje)));
     { const a = d.academia || {}, hoje = a.treinoDia === d.dia ? (a.treinos | 0) : 0; L.push(Tf('Academia: plano até o dia {0} · personal até o dia {1} · treinos hoje {2}/3', a.acessoAte ? a.acessoAte - 1 : '-', a.personalAte ? a.personalAte - 1 : '-', hoje)); }
     L.push(Tf('Clima: {0}', S.clima ? S.clima.estado : '-'));
@@ -6684,6 +6715,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // o céu e as luzes: a cada quadro, a partir da hora e do clima (dentro de um lugar fechado a luz é fixa)
   function atualizarCeu() {
     const d = S.dados, C = S.clima;
+    if (S.dentro && S.dentro.luz) { const L = S.dentro.luz; luzCeu.color.set(L.ceu); luzCeu.groundColor.set(L.chao); luzCeu.intensity = L.hi; sun.color.set(L.sol); sun.intensity = L.si; sun.position.set(L.sp[0], L.sp[1], L.sp[2]); if (typeof particulas.intens === 'function') particulas.intens(0); return; }   // (7.1.5) o lugar com a luz dele (o bar à meia-luz)
     if (S.dentro) { luzCeu.color.setHex(0xffffff); luzCeu.groundColor.setHex(0x4a6a35); luzCeu.intensity = 0.72; sun.color.setHex(0xfff6ea); sun.intensity = 0.42; sun.position.set(20, 60, 25); if (typeof particulas.intens === 'function') particulas.intens(0); return; }
     const R = luzDoDia(d.hora), nuv = C.nuv;
     _tmp.copy(R.ceu); if (nuv > 0.001) { const g = (R.ceu.r + R.ceu.g + R.ceu.b) / 3 * 0.72; _cinza.setRGB(g * 0.97, g, g * 1.04); _tmp.lerp(_cinza, 0.8 * nuv); }
@@ -7187,7 +7219,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const MOV = {
     // (6.6.6) metas maiores (vazio / médio / cheio): com o boneco congelado, mais gente custa pouco
     cafeteria:    { alvo: [3, 5, 8], fica: [0.7, 1.4], par: 0.25 },
-    bar:          { alvo: [4, 7, 10], fica: [1.4, 2.6], par: 0.5, abre: 16, fecha: 26 },
+    bar:          { alvo: [3, 6, 16], fica: [1.4, 2.6], par: 0.5, abre: 16, fecha: 26 },   // (7.1.5) vazio no meio da semana, lotado no fim de semana
     restaurante:  { alvo: [4, 7, 10], fica: [1.0, 1.8], par: 0.55, abre: 11, fecha: 23 },
     pizzaria:     { alvo: [5, 7, 9], fica: [2.0, 2.7], par: 0.7 },
     supermercado: { alvo: [2, 4, 6], fica: [0.4, 0.8], par: 0.2 },
@@ -7397,6 +7429,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function chegarDentro(nome, ents) {
     if (nome === 'pizzaria' && S.pizzaria && S.pizzaria.chegou) return S.pizzaria.chegou(ents);
     if (nome === 'restaurante' && S.restaurante && S.restaurante.chegou && S.dentro && S.dentro.restaurante) return S.restaurante.chegou(ents);   // (7.1.3)
+    if (nome === 'bar' && S.bar && S.bar.chegou && S.dentro && S.dentro.bar) return S.bar.chegou(ents);   // (7.1.5)
     if (nome === 'supermercado' && S.mercado && S.mercado.chegou) return S.mercado.chegou(ents);
     const F = S.fluxo; if (!F || S.turno || S.turnoMercado) return false;
     const livres = F.lugares.filter((a) => !a.ocupado);
@@ -7976,6 +8009,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
+        if (S.bar) try { S.bar.tick(dt); } catch (e) { if (!S.erroBar) { S.erroBar = true; console.warn('[Cidade] bar:', e); } }   // (7.1.5) o bar, o e-mail do bicho e o capuz chegando
         if (S.restaurante) try { S.restaurante.tick(dt); } catch (e) { if (!S.erroRest) { S.erroRest = true; console.warn('[Cidade] restaurante:', e); } }   // (7.1.3) a Dona Cida, o Renan, os clientes e a chegada deles de manhã
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
         if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
@@ -8004,6 +8038,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.mercado) try { S.mercado.limpar(); } catch (e) { console.warn('[Cidade] mercado:', e); }
     if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
     if (S.restaurante) try { S.restaurante.limpar(); } catch (e) { console.warn('[Cidade] restaurante:', e); }
+    if (S.bar) try { S.bar.limpar(); } catch (e) { console.warn('[Cidade] bar:', e); }
     if (S.academia) try { S.academia.limpar(); } catch (e) { console.warn('[Cidade] academia:', e); }
     if (S.cinema) try { S.cinema.limpar(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (S.pesca) try { S.pesca.limpar(); } catch (e) { console.warn('[Cidade] pesca:', e); }
@@ -8043,6 +8078,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
       Fases.carregar('restaurante').then((m) => { if (S && m && m.criar) S.restaurante = m.criar(apiRestaurante()); }, (e) => console.warn('[Cidade] restaurante.js não veio:', e));   // (7.1.3) o restaurante self-service
+      Fases.carregar('bar').then((m) => { if (S && m && m.criar) S.bar = m.criar(apiBar()); }, (e) => console.warn('[Cidade] bar.js não veio:', e));   // (7.1.5) o bar, a sinuca e o jogo do bicho
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
       Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));

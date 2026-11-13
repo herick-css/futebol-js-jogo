@@ -13,6 +13,8 @@
      mesas...; ver pizzaria.js).
    - (7.1.3) Restaurante refeito para o self-service (R.restaurante: bufê com 20 cubas e a coifa de vidro, a porta da cozinha, a
      vitrine de sobremesas, a sopa e os sucos, o caixa e as 8 mesas; ver restaurante.js).
+   - (7.1.5) Bar do Jairo refeito para o bar.js (R.bar: balcão com banquetas, sinuca, pista de dança, mesas, área de fumantes e o
+     cantinho do homem de capuz).
    - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
@@ -492,19 +494,72 @@
       R.pessoas.push({ tipo: 'rosca', x: A.rosca.x, z: A.rosca.z, yaw: A.rosca.yaw, fem: false });
       R.pessoas.push({ tipo: 'vaga', area: A.vaga, fem: false });
     } else if (nome === 'bar') {
-      sala(16, 12, 3.4, '#d9c27a', '#6e5a3a', '#5e4a2e', 0.5);
-      placa('BAR', '#1f7a4d', '#f2e6c8', 2.4, 0.7, -4, 2.8, -5.96);
-      balcao(-3, -4.3, 7, 1.0, '#5b3a22', '#8a5a2b');
-      for (const y of [1.3, 1.9]) { G.box(6, 0.08, 0.35, '#5b3a22', -3, y, -5.75); for (let i = 0; i < 14; i++) G.box(0.12, 0.35, 0.12, pk(['#2f8a4a', '#8a5a2b', '#c9ced4', '#c8352b', '#f2c230']), -5.8 + i * 0.42, y + 0.08, -5.75); }
-      R.pessoas.push({ tipo: 'parado', x: -3, z: -5.2, yaw: -Math.PI / 2, fem: false });                     // dono do bar
-      const banq = []; for (let i = 0; i < 5; i++) { const x = -5.6 + i * 1.3; G.box(0.1, 0.75, 0.1, '#6c6c70', x, 0, -3.3); G.box(0.42, 0.08, 0.42, '#c8352b', x, 0.75, -3.3); banq.push(sentar(x, -3.3, 0, -1, 0.83, 'banqueta')); bloq(x, -3.3, 0.3, 0.3); }
-      for (const i of [1, 3]) R.pessoas.push({ tipo: 'senta', assento: banq[i], fem: false });
-      // sinuca e a TV
-      G.box(2.6, 0.8, 1.5, '#5b3a22', 4.2, 0, -1.5); G.box(2.4, 0.05, 1.3, '#1f7a4d', 4.2, 0.8, -1.5); bloq(4.2, -1.5, 2.6, 1.5);
-      R.pessoas.push({ tipo: 'parado', x: 4.2, z: -0.3, yaw: Math.PI / 2, fem: false }, { tipo: 'parado', x: 5.9, z: -1.5, yaw: Math.PI, fem: rnd() < 0.4 });
-      G.box(2.0, 1.2, 0.08, '#1c1c1f', 5.5, 1.6, -5.95); G.box(1.8, 1.0, 0.04, '#3a64b8', 5.5, 1.7, -5.9);
-      const lugares = []; for (const [x, z] of [[-4.5, 2], [-1, 2.5], [2.5, 2.8]]) lugares.push(...mesa(x, z, '#d23a2a', 4, '#d23a2a'));
-      R.pessoas.push({ tipo: 'senta', assento: lugares[4], fem: rnd() < 0.5 }, { tipo: 'senta', assento: lugares[5], fem: rnd() < 0.5 });
+      // (7.1.5) BAR DO JAIRO refeito para o bar.js (R.bar). Sala 22 x 16, de madeira escura:
+      //   NORTE-OESTE: o BALCÃO (x −10,6 a −2,4) com as torneiras de chope, 6 banquetas, a prateleira de garrafas com espelho e o letreiro
+      //   (o Jairo fica atrás; a ponta leste do balcão fecha a passagem). NORTE-LESTE: a SINUCA (mesa de 2,8 x 1,5 com a luminária, o
+      //   suporte de tacos e o placar) e a TV com o futebol. OESTE: a PISTA DE DANÇA (piso de luz: o bar.js pinta e anima) com as caixas de
+      //   som, o globo e a jukebox. LESTE: 4 mesas de bar. SUDESTE: a ÁREA DE FUMANTES (piso de cimento, meia-parede de vidro, a mesinha
+      //   alta com o cinzeiro e o exaustor). SUDOESTE: o cantinho escuro com a mesa do homem de capuz (sábado e domingo).
+      sala(22, 16, 3.6, '#3a2a24', '#6e5236', '#5e4430', 0.5);
+      R.cam = { dist: 9.5, pitch: 0.85 }; R.fundo = 0x0c0806;
+      const B = R.bar = { mesas: [], banquetas: [] };
+      const plano2 = (tex, w, h, x, y, z, ry, basico) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(basico ? new THREE.MeshBasicMaterial({ map: tex, transparent: true }) : new THREE.MeshLambertMaterial({ map: tex, transparent: true }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); return m; };
+      const vidro = (w, h, x, y, z, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ color: 0xbfe0f0, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); };
+      // lambri de madeira até 1,1 m e a faixa (as 3 paredes que a câmera vê)
+      G.box(21.9, 1.1, 0.04, '#5a3a24', 0, 0, -7.94); G.box(21.9, 0.07, 0.06, '#c8952a', 0, 1.1, -7.93);
+      for (const sx of [-1, 1]) { G.box(0.04, 1.1, 15.9, '#5a3a24', sx * 10.94, 0, 0); G.box(0.06, 0.07, 15.9, '#c8952a', sx * 10.93, 1.1, 0); }
+      for (let i = 0; i < 44; i++) G.box(0.02, 1.1, 0.05, '#4a2e1c', -10.8 + i * 0.5, 0, -7.92);
+      // ---- O BALCÃO, as banquetas, as torneiras e a prateleira com espelho
+      const BX0 = -10.6, BX1 = -2.4, BZ = -5.6, bcx = (BX0 + BX1) / 2;
+      G.box(BX1 - BX0, 1.05, 1.0, '#5b3a22', bcx, 0, BZ, '#8a5a2b'); G.box(BX1 - BX0 + 0.1, 0.07, 1.12, '#2a1a10', bcx, 1.05, BZ); bloq(bcx, BZ, BX1 - BX0, 1.0);
+      G.box(BX1 - BX0, 0.06, 0.06, '#c8952a', bcx, 0.2, BZ + 0.53);                                       // o apoio dos pés (metal dourado)
+      G.box(0.55, 1.05, 2.6, '#5b3a22', BX1 + 0.27, 0, -7.0, '#8a5a2b'); bloq(BX1 + 0.27, -7.0, 0.55, 2.6);   // a ponta do balcão fecha a passagem
+      for (let i = 0; i < 4; i++) { const x = -8.2 + i * 0.36; G.box(0.08, 0.38, 0.08, '#c9ced4', x, 1.1, BZ - 0.15); G.box(0.12, 0.06, 0.06, i % 2 ? '#c8352b' : '#2f6aa8', x, 1.46, BZ - 0.12); G.box(0.03, 0.12, 0.03, '#9aa1ab', x, 1.32, BZ - 0.03); }   // as torneiras
+      G.box(0.5, 0.16, 0.3, '#3a3f46', -4.0, 1.12, BZ - 0.1); G.box(0.36, 0.05, 0.2, '#3fb7b0', -4.0, 1.28, BZ - 0.06);   // a registradora
+      for (let i = 0; i < 6; i++) { const x = -9.9 + i * 1.2; G.box(0.08, 0.78, 0.08, '#8c9199', x, 0, BZ + 1.05); G.box(0.44, 0.09, 0.44, '#a8302a', x, 0.78, BZ + 1.05); G.box(0.3, 0.03, 0.3, '#c9ced4', x, 0.3, BZ + 1.05); B.banquetas.push(sentar(x, BZ + 1.05, 0, -1, 0.87, 'banqueta')); bloq(x, BZ + 1.05, 0.32, 0.32); }
+      G.box(BX1 - BX0 - 0.4, 2.3, 0.06, '#9ec0cc', bcx, 1.25, -7.93);                                      // o espelho atrás das garrafas
+      for (const y of [1.35, 1.85, 2.35]) { G.box(BX1 - BX0 - 0.4, 0.06, 0.32, '#5b3a22', bcx, y, -7.78); for (let i = 0; i < 22; i++) { const c = pk(['#2f6a2a', '#7a3a1a', '#c9ced4', '#a3162a', '#c8952a', '#3a2a5a', '#f2f2ee']), h = 0.26 + rnd() * 0.16; G.box(0.1, h, 0.1, c, -10.0 + i * 0.35, y + 0.06, -7.76); G.box(0.04, 0.08, 0.04, c, -10.0 + i * 0.35, y + 0.06 + h, -7.76); } }
+      B.barman = { x: -6.5, z: -6.75, yaw: -Math.PI / 2 }; B.pedir = { x: -6.5, z: -4.1 };
+      // ---- A SINUCA (a mesa, a luminária, o suporte de tacos, o placar) e a TV
+      const SX = 6.0, SZ = -4.4, SW = 2.8, SD = 1.5;
+      G.box(SW, 0.66, SD, '#4a2e1c', SX, 0.14, SZ); G.box(SW - 0.24, 0.04, SD - 0.24, '#1f7a4d', SX, 0.8, SZ);   // o corpo e o pano
+      G.box(SW, 0.08, 0.13, '#5b3a22', SX, 0.78, SZ - SD / 2 + 0.06); G.box(SW, 0.08, 0.13, '#5b3a22', SX, 0.78, SZ + SD / 2 - 0.06);
+      G.box(0.13, 0.08, SD, '#5b3a22', SX - SW / 2 + 0.06, 0.78, SZ); G.box(0.13, 0.08, SD, '#5b3a22', SX + SW / 2 - 0.06, 0.78, SZ);
+      for (const [dx, dz] of [[-1, -1], [0, -1], [1, -1], [-1, 1], [0, 1], [1, 1]]) G.box(0.13, 0.02, 0.13, '#0c0c0e', SX + dx * (SW / 2 - 0.12), 0.85, SZ + dz * (SD / 2 - 0.12));   // as caçapas
+      for (const [dx, dz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) G.box(0.18, 0.14, 0.18, '#3a2416', SX + dx * (SW / 2 - 0.14), 0, SZ + dz * (SD / 2 - 0.14));   // os pés
+      bloq(SX, SZ, SW, SD);
+      G.box(0.02, 1.1, 0.02, '#2a2a2e', SX - 0.7, 2.5, SZ); G.box(0.02, 1.1, 0.02, '#2a2a2e', SX + 0.7, 2.5, SZ); G.box(1.9, 0.16, 0.42, '#1f5a3a', SX, 2.35, SZ); G.box(1.7, 0.02, 0.3, '#fff2c0', SX, 2.33, SZ);   // a luminária
+      G.box(0.1, 1.5, 1.1, '#5b3a22', 10.88, 0.3, -4.4); for (let i = 0; i < 6; i++) G.box(0.04, 1.42, 0.04, '#c8a070', 10.8, 0.36, -4.85 + i * 0.18);   // o suporte de tacos (parede leste)
+      G.box(1.4, 0.5, 0.05, '#1c1c1f', 6.0, 2.3, -7.94); for (let i = 0; i < 8; i++) G.box(0.08, 0.06, 0.03, i < 5 ? '#f2c230' : '#c8352b', 5.45 + i * 0.16, 2.42, -7.9);   // o placar de bolinhas
+      B.sinuca = { x: SX, z: SZ, w: SW, d: SD, y: 0.84 };
+      G.box(2.1, 1.25, 0.08, '#1c1c1f', 2.0, 1.6, -7.94); B.tv = { x: 2.0, y: 2.22, z: -7.89, w: 1.9, h: 1.08 };
+      // ---- A PISTA DE DANÇA (o piso de luz é do bar.js), as caixas de som, a jukebox e o globo
+      B.pista = { x0: -10.2, x1: -3.8, z0: -1.6, z1: 4.4 };
+      G.box(6.6, 0.04, 6.2, '#1c1c1f', -7.0, 0, 1.4);
+      for (const [x, z] of [[-10.45, -1.9], [-10.45, 4.7]]) { G.box(0.7, 1.4, 0.7, '#1c1c1f', x, 0, z); G.box(0.04, 0.4, 0.4, '#3a3a3e', x + 0.36, 0.85, z); G.box(0.04, 0.24, 0.24, '#5a5a5e', x + 0.37, 0.35, z); bloq(x, z, 0.75, 0.75); }
+      G.box(0.8, 1.5, 0.6, '#7a2a5a', -3.0, 0, -2.6, '#c8952a'); G.box(0.6, 0.5, 0.04, '#f2c230', -3.0, 0.75, -2.29); G.box(0.5, 0.3, 0.04, '#3fb7b0', -3.0, 1.15, -2.29); bloq(-3.0, -2.6, 0.8, 0.6);   // a jukebox
+      G.box(0.02, 0.9, 0.02, '#2a2a2e', -7.0, 2.7, 1.4); B.globo = { x: -7.0, y: 2.55, z: 1.4 };
+      // ---- AS MESAS (leste)
+      for (const [x, z] of [[2.6, 0.6], [6.4, 0.6], [2.6, 4.0], [6.4, 4.0]]) { const a = mesa(x, z, '#5b3a22', 4, '#8a2a20'); B.mesas.push({ x, z, assentos: a }); }
+      // ---- A ÁREA DE FUMANTES (sudeste): piso de cimento, meia-parede com vidro, a mesinha alta com o cinzeiro e o exaustor
+      B.fumo = { x0: 7.9, x1: 10.5, z0: 5.6, z1: 7.5 };
+      G.box(3.4, 0.02, 3.0, '#8c8a84', 9.25, 0.005, 6.5);
+      G.box(0.12, 1.0, 1.7, '#5b3a22', 7.55, 0, 7.15); vidro(1.7, 1.2, 7.55, 1.6, 7.15, Math.PI / 2); bloq(7.55, 7.15, 0.14, 1.7);   // a entrada fica entre z 5 e 6,3
+      G.box(3.4, 1.0, 0.12, '#5b3a22', 9.25, 0, 4.95); vidro(3.4, 1.2, 9.25, 1.6, 4.95, 0); bloq(9.25, 4.95, 3.4, 0.14);
+      G.box(0.08, 1.05, 0.08, '#3a3a3e', 9.3, 0, 6.6); G.box(0.55, 0.05, 0.55, '#3a3a3e', 9.3, 1.05, 6.6); G.box(0.16, 0.05, 0.16, '#9aa1ab', 9.3, 1.1, 6.6); bloq(9.3, 6.6, 0.3, 0.3);
+      G.box(0.05, 0.6, 0.6, '#9aa1ab', 10.92, 2.4, 6.5); for (let i = 0; i < 4; i++) G.box(0.06, 0.5, 0.06, '#5a5f66', 10.9, 2.45, 6.28 + i * 0.15);   // o exaustor
+      { const t = guardar(texLetreiro('ÁREA DE FUMANTES', '#3a3a3e', '#f2c230', 2.6, 0.38)); plano2(t, 2.6, 0.38, 9.25, 2.55, 4.88, 0); plano2(t, 2.6, 0.38, 9.25, 2.55, 5.02, Math.PI); }
+      // ---- O CANTINHO DO CAPUZ (sudoeste): mesa pequena, duas cadeiras, a luz vermelha fraca
+      { const a = mesa(-9.3, 6.4, '#3a2416', 2, '#2a1a10'); B.capuz = { assento: a[1], x: -9.3, z: 6.4 }; B.capuzMesa = a; }
+      G.box(0.02, 0.8, 0.02, '#2a2a2e', -9.3, 2.8, 6.4); G.box(0.3, 0.12, 0.3, '#5a1a1a', -9.3, 2.68, 6.4); G.box(0.2, 0.02, 0.2, '#c8352b', -9.3, 2.67, 6.4);
+      // ---- quadros e letreiro
+      const quadroCv = (desenho, w, h) => guardar(texCanvas(w, h, desenho));
+      plano2(quadroCv((g, w, h) => { g.fillStyle = '#1c1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff5ab0'; g.font = 'bold 13px monospace'; g.textAlign = 'center'; g.fillText('BAR DO', w / 2, 15); g.fillStyle = '#5ae8ff'; g.font = 'bold 18px monospace'; g.fillText('JAIRO', w / 2, 34); g.strokeStyle = '#ff5ab0'; g.strokeRect(1.5, 1.5, w - 3, h - 3); }, 96, 40), 2.6, 1.08, -6.5, 3.1, -7.9, 0, true);   // o neon
+      plano2(quadroCv((g, w, h) => { g.fillStyle = '#c8952a'; g.fillRect(0, 0, w, h); g.fillStyle = '#5a2a10'; g.fillRect(2, 2, w - 4, h - 4); g.fillStyle = '#f2c230'; g.fillRect(9, 6, 14, 22); g.fillStyle = '#fff6d8'; g.fillRect(9, 6, 14, 5); g.fillStyle = '#c8352b'; g.fillRect(9, 16, 14, 5); g.fillStyle = '#f2e6c8'; g.font = 'bold 7px monospace'; g.textAlign = 'center'; g.fillText('GELADA', w / 2, 37); }, 32, 42), 0.9, 1.18, -10.92, 2.2, -2.8, Math.PI / 2);   // o pôster da cerveja
+      plano2(quadroCv((g, w, h) => { g.fillStyle = '#1f7a4d'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2f2ee'; g.fillRect(3, 3, w - 6, h - 6); g.fillStyle = '#1f7a4d'; g.fillRect(14, 8, 4, 18); g.fillStyle = '#1c1c1f'; for (const [x, y] of [[10, 12], [20, 18], [12, 24]]) g.fillRect(x, y, 3, 3); g.fillStyle = '#c8352b'; g.font = 'bold 6px monospace'; g.textAlign = 'center'; g.fillText('TORNEIO', w / 2, 36); }, 32, 40), 0.85, 1.06, 10.92, 2.2, 0.8, -Math.PI / 2);   // o cartaz do torneio de sinuca
+      // pessoas de ENFEITE (só sem o bar.js: com ele, quem cuida do bar é ele)
+      R.pessoas.push({ tipo: 'parado', x: B.barman.x, z: B.barman.z, yaw: B.barman.yaw, fem: false });
+      for (const i of [1, 3]) R.pessoas.push({ tipo: 'senta', assento: B.banquetas[i], fem: false });
     } else if (nome === 'cinema') {
       // O CINEMA (a lógica fica no cinema.js, com R.cinema):
       //   SAGUÃO (sul, z 4 a 15): carpete vermelho, BILHETERIA (oeste) com a Joana, o Herick do lado dela, BOMBONIÈRE (leste), cartazes e

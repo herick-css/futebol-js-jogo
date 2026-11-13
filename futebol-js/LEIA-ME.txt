@@ -12,6 +12,10 @@ ARQUIVOS
   restaurante.js ........ o restaurante self-service: 20 pratos em pixel art (a maioria saudável, com saladas e sobremesas), o
                           bufê com as cubas, a Dona Cida (cozinha) e o Renan (caixa), os clientes e a cena de comer e pagar
                           (baixado pela cidade)
+  bar.js ................ o Bar do Jairo: cheio no fim de semana e vazio no meio da semana, o povo bebendo, dançando, fumando e
+                          jogando sinuca, duas músicas (a do bar e a de casa lotada), 15 produtos em pixel art (álcool só depois
+                          dos 18 anos), o seu Valdemar depois do trabalho e o homem de capuz do jogo do bicho (baixado pela cidade)
+  sinuca.js ............. o minigame de sinuca (mesa em pixel art, física, regras da bola 8 e os oponentes; baixado pelo bar.js)
   academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)

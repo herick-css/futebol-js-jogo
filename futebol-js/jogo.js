@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.4';
+const VERSAO_JOGO = '7.1.5';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -15177,6 +15177,7 @@ const ESPECTROS = {
 // condições temporárias: valem até serem consumidas (ex.: na próxima partida da história)
 const CONDICOES = {
   refeicaoPesada: { efeitos: { corrida: -0.15, recuperacao: -0.15 }, ate: 'proximaPartida' },
+  ressaca: { efeitos: { corrida: -0.12, recuperacao: -0.2, precisao: -0.1 }, ate: 'proximaPartida' },   // (7.1.5) bebeu demais no bar (3 doses ou mais no mesmo dia)
 };
 const Espectros = (() => {
   let multLesao = 1;
