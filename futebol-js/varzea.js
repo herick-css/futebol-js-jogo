@@ -363,15 +363,23 @@
       const ex = api.spriteExclamacao(); ex.position.set(0, 2.5, 0); A.m.raiz.add(ex); A.excl = ex;
       const s = S(); s.falantesExtra = s.falantesExtra || {}; s.falantesExtra.rafa = { A, nome: 'Rafa', voz: 3 };
       M.rafa = A;
+      // com o jogador por perto ele não aparece do nada: vem andando de fora da cidade até o portão
+      const J = s.jog; if (api.chegarDeFora && J && Math.hypot(J.x - A.x, J.z - A.z) < 75) { const x = A.x, z = A.z; api.chegarDeFora(A, x, z, -Math.PI / 2, 1.9); }
     }
     function tirarRafa() { if (!M.rafa) return; try { api.descartarPessoa(M.rafa); } catch (e) { /* nada */ } M.rafa = null; }
+    function rafaVaiEmbora() {                                                // anda até uma ponta da cidade e só lá some
+      const A = M.rafa; if (!A || A.indoEmbora) return;
+      if (A.excl) { A.m.raiz.remove(A.excl); A.excl = null; }
+      if (!api.irEmbora) { tirarRafa(); return; }
+      api.irEmbora(A, null, 1.7, () => { if (M.rafa === A) M.rafa = null; });
+    }
     async function conversarRafa() {
       const A = M.rafa, J = S().jog, C = camp(), d = dados(); if (!A) return;
       A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
       const nome = api.nomeJog();
       if (C.etapa === 'recusou') await api.fala('rafa', Tf('E aí, {0}! Pensou melhor no campeonato?', nome));
       else {
-        await api.fala('rafa', ondeViu() === 'sintetico' ? Tf('Ei, {0}! Lembra de mim? Sou o Rafa, já joguei umas vezes no seu time lá no racha do sintético.', nome) : Tf('Ei, {0}! Sou o Rafa. Já te vi jogando na quadra coberta e até bati uma bola com vocês umas vezes.', nome));
+        await api.fala('rafa', ondeViu() === 'sintetico' ? Tf('Ei, {0}! Lembra de mim? Sou o Rafa, já joguei umas vezes no seu time lá no racha do sintético.', nome) : Tf('Ei, {0}! Sou o Rafa. Já te vi jogando na quadra e até bati uma bola com vocês umas vezes.', nome));
         await api.fala('rafa', T('Tô vendo você jogar faz um tempo... e você tá voando!'));
         await api.fala('rafa', T('Eu tô montando o time do Peladão pro campeonato de várzea aqui do campo. São dez times, todo mundo contra todo mundo; os quatro melhores vão pra semifinal e depois tem a final.'));
         await api.fala('rafa', Tf('O campeão leva {0} fakes. A gente divide no time, entre os jogadores e o técnico: a sua parte fica em {1} fakes.', PREMIO_TOTAL.toLocaleString('pt-BR'), PREMIO_JOG));
@@ -394,8 +402,7 @@
       if (A.excl) { A.m.raiz.remove(A.excl); A.excl = null; }
       api.aviso(Tf('Você entrou para o {0}!', TIMES_VZ[NOSSO_I].nome));
       // o Rafa vai embora (ele aparece de novo no vestiário)
-      A.yawAlvo = 0; const ida = api.andar(A, [[PORTAO.x + 6, PORTAO.z + 2.6], [PORTAO.x + 40, PORTAO.z + 2.6]], 1.6);
-      ida.then(() => { if (M.rafa === A) tirarRafa(); });
+      rafaVaiEmbora();
       api.gravar('chegada');
     }
     // ---------------------------------------------------------------- A PENEIRA: o Rafa conta, depois do campeonato
@@ -448,8 +455,7 @@
       await api.fala('rafa', Tf('E aí, {0}! Tava te esperando.', api.nomeJog()));
       await conversaPeneira(C);
       if (A.excl) { A.m.raiz.remove(A.excl); A.excl = null; }
-      A.yawAlvo = 0; const ida = api.andar(A, [[PORTAO.x + 6, PORTAO.z + 2.6], [PORTAO.x + 40, PORTAO.z + 2.6]], 1.6);
-      ida.then(() => { if (M.rafa === A) tirarRafa(); });
+      rafaVaiEmbora();
     }
     function iniciarCampeonato() {
       const C = camp(), d = dados();
@@ -635,7 +641,8 @@
         tLento = 0.5;
         if (!M.cena) fecharRodadas();
         if (rafaPodeAparecer() && !M.rafa && !M.cena) criarRafa();
-        else if (M.rafa && !rafaPodeAparecer() && s.modo === 'livre' && !M.rafa.rota) tirarRafa();
+        else if (M.rafa && !rafaPodeAparecer() && s.modo === 'livre' && !s.dentro && !M.rafa.indoEmbora) rafaVaiEmbora();
+        if (M.rafa && M.rafa.excl) M.rafa.excl.visible = !M.rafa.via;
         missaoDoDia();
         const C = camp();                                                  // a noite dos prêmios (campeonato fechado sem o jogador em campo): com o jogador livre, fora de casa e sem ligação
         if (C.premiosPendentes && C.etapa === 'fim' && !C.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaPremios(C).then(() => api.gravar(dados().ponto || 'chegada'));
@@ -654,7 +661,7 @@
     }
     function alvos(v) {
       const s = S(); if (s.dentro) return;
-      if (M.rafa && M.rafa.excl) v.push({ x: M.rafa.x, z: M.rafa.z, r: 2.2, txt: T('Falar com o Rafa'), fn: peneiraPendente() ? conversarRafaFim : conversarRafa, y: 2.6, pri: true });
+      if (M.rafa && M.rafa.excl && !M.rafa.via) v.push({ x: M.rafa.x, z: M.rafa.z, r: 2.2, txt: T('Falar com o Rafa'), fn: peneiraPendente() ? conversarRafaFim : conversarRafa, y: 2.6, pri: true });
       const g = jogoDeHoje(); if (!g) return;
       const H = horaDa(g.r), h = dados().hora;
       if (h >= H - 3 && h < H - 1) v.push({ x: PORTAO.x, z: PORTAO.z, r: 2.2, txt: Tf('Jogo às {0} (o vestiário abre às {1})', fmt(H), fmt(H - 1)), fn: async () => {}, y: 2.4 });
@@ -1183,7 +1190,7 @@
     "Rodada {0} de 9": ["Round {0} of 9", "Jornada {0} de 9", "Giornata {0} di 9", "Journée {0} sur 9"],
     "E aí, {0}! Pensou melhor no campeonato?": ["Hey, {0}! Did you think it over about the tournament?", "¡Ey, {0}! ¿Lo pensaste mejor lo del campeonato?", "Ehi, {0}! Ci hai ripensato al campionato?", "Salut, {0} ! Tu as réfléchi pour le championnat ?"],
     "Ei, {0}! Lembra de mim? Sou o Rafa, já joguei umas vezes no seu time lá no racha do sintético.": ["Hey, {0}! Remember me? I'm Rafa, I've played on your team a few times at the turf pickup game.", "¡Ey, {0}! ¿Te acuerdas de mí? Soy Rafa, ya jugué algunas veces en tu equipo en la pachanga del sintético.", "Ehi, {0}! Ti ricordi di me? Sono Rafa, ho giocato qualche volta nella tua squadra alla partitella sul sintetico.", "Hé, {0} ! Tu te souviens de moi ? C'est Rafa, j'ai déjà joué quelques fois dans ton équipe au foot sur le synthétique."],
-    "Ei, {0}! Sou o Rafa. Já te vi jogando na quadra coberta e até bati uma bola com vocês umas vezes.": ["Hey, {0}! I'm Rafa. I've seen you play at the covered court and even kicked a ball with you guys a few times.", "¡Ey, {0}! Soy Rafa. Ya te vi jugar en la cancha techada y hasta jugué con ustedes algunas veces.", "Ehi, {0}! Sono Rafa. Ti ho visto giocare al campetto coperto e ho anche giocato con voi qualche volta.", "Hé, {0} ! C'est Rafa. Je t'ai déjà vu jouer au terrain couvert et j'ai même tapé le ballon avec vous quelques fois."],
+    "Ei, {0}! Sou o Rafa. Já te vi jogando na quadra e até bati uma bola com vocês umas vezes.": ["Hey, {0}! I'm Rafa. I've seen you play at the court and even kicked a ball with you guys a few times.", "¡Ey, {0}! Soy Rafa. Ya te vi jugar en la cancha y hasta jugué con ustedes algunas veces.", "Ehi, {0}! Sono Rafa. Ti ho visto giocare al campetto e ho anche giocato con voi qualche volta.", "Hé, {0} ! C'est Rafa. Je t'ai déjà vu jouer au terrain et j'ai même tapé le ballon avec vous quelques fois."],
     "Tô vendo você jogar faz um tempo... e você tá voando!": ["I've been watching you play for a while... and you're on fire!", "Hace tiempo que te veo jugar... ¡y estás volando!", "È da un po' che ti guardo giocare... e stai volando!", "Ça fait un moment que je te regarde jouer... et tu es en feu !"],
     "Eu tô montando o time do Peladão pro campeonato de várzea aqui do campo. São dez times, todo mundo contra todo mundo; os quatro melhores vão pra semifinal e depois tem a final.": ["I'm putting together the Peladão team for the amateur tournament here at the pitch. Ten teams, everyone plays everyone; the top four go to the semifinals and then there's the final.", "Estoy armando el equipo del Peladão para el campeonato de barrio de esta cancha. Son diez equipos, todos contra todos; los cuatro mejores van a semifinales y después viene la final.", "Sto mettendo su la squadra del Peladão per il torneo dilettanti di questo campo. Sono dieci squadre, tutti contro tutti; le prime quattro vanno in semifinale e poi c'è la finale.", "Je monte l'équipe du Peladão pour le championnat amateur de ce terrain. Dix équipes, tout le monde contre tout le monde ; les quatre meilleures vont en demi-finale, puis il y a la finale."],
     "O campeão leva {0} fakes. A gente divide no time, entre os jogadores e o técnico: a sua parte fica em {1} fakes.": ["The champion takes {0} fakes. We split it in the team, between the players and the coach: your share comes to {1} fakes.", "El campeón se lleva {0} fakes. Lo repartimos en el equipo, entre los jugadores y el entrenador: tu parte queda en {1} fakes.", "Il campione prende {0} fakes. Li dividiamo in squadra, tra i giocatori e l'allenatore: la tua parte è di {1} fakes.", "Le champion remporte {0} fakes. On partage dans l'équipe, entre les joueurs et l'entraîneur : ta part fait {1} fakes."],

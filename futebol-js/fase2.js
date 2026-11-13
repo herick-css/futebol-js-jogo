@@ -1171,6 +1171,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const z1 = zonaEsc(A.x, A.z), z2 = zonaEsc(x, z);
     if (z1 === 'NW' && z2 === 'W' && A.y > 2.8) return false;                 // no andar de cima, o canto NW não desce direto para o lance W (é o vão)
     if (z1 === 'NW' && z2 === 'N' && A.y <= 2.8) return false;                // no térreo, o lance N é parede (armário de medidores)
+    if (z2 === 'NW' && A.y > 2.8 && z > -IN - 0.4) return false;                // o corrimão do patamar de cima (em z = -IN - 0,06): o corpo não entra nele
+    if (z2 === 'NW' && A.y <= 2.8 && x > -IN - 0.42) return false;              // a mureta do saguão (em x = -IN)
     if (S.viz && !S.viz.oculto && Math.hypot(x - S.viz.x, z - S.viz.z) < 0.55 && Math.hypot(A.x - S.viz.x, A.z - S.viz.z) >= 0.55) return false;
     return true;
   }
@@ -1891,7 +1893,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ----- O RELÓGIO NO CONDOMÍNIO: a hora mora na cidade (historia.cidade.hora). Aqui ela anda enquanto o personagem está LIVRE
   //   (andando pelo quarto, escada...). Cenas como banho, vaso, pia, guarda-roupa, computador e conversas não contam. Grava a hora de
   //   volta ao sair do prédio (e de 20 em 20 s). Passou das 2h acordado aqui dentro: apaga de sono e acorda às 5h na cama.
-  const H_POR_S_F2 = 24 / 900, H_ACORDA = 5;
+  const H_POR_S_F2 = 24 / 1200, H_ACORDA = 5;
   function relogioTick(dt) {
     const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) R.hora -= 24;
     R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }

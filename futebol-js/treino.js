@@ -810,6 +810,7 @@
       const T_ = TT(), D = P.dr; if (!D) return;
       const K = T_.gol, [A0, A1] = T_.bat, B = D.B, gk = (u, v) => W(u, v);
       D.t += dt; D.ft += dt;
+      K.andando = false; A0.andando = false; A1.andando = false;        // só anda quem o andarAte mover neste quadro (quem ficava no meio do caminho quando a fase mudava corria parado)
       if (D.tipo === 'cobranca') {
         const bat = T_.bat[D.vez % 2], outro = T_.bat[(D.vez + 1) % 2], spot = D.spot || (D.spot = { u: (Math.random() - 0.5) * 3, v: 8.5 + Math.random() * 4 });
         if (D.fase === 'prepara') {                                       // a bola na marca, o batedor dá uns passos para trás
