@@ -279,7 +279,7 @@
       const H = M.Hcam; H.x = p.x; H.z = p.z; H.yawAlvo = c.ida ? p.yaw : p.yaw + Math.PI; H.andarSempre = true;
       tickHerick(H, dt);
     }
-    function pontoRua() { const P = porta(); return P ? { x: P.x + 2.5, z: P.z - 0.38, yaw: P.sai } : null; }
+    function pontoRua() { const P = porta(); return P ? { x: P.x + 2.5, z: P.z + 0.12, yaw: P.sai } : null; }   // (7.1.6) meio metro mais para a frente: as costas dele entravam na parede do cinema
     function querHerickRua() { const s = S(); return !s.dentro && !dadosC().conheceu && aberto() && !M.entrando; }
     function criarHerickRua() {
       const s = S(), p = pontoRua(); if (!p) return;

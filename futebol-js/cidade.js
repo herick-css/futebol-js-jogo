@@ -6149,12 +6149,13 @@
     G.tarefa = null; G.passos = []; G.passo = null; L.cliRota = null; fimPassoGarcom(L); itemNaMaoLucia(L, null);
     if (voltar) { L.x = LUCIA_CAIXA.x; L.z = LUCIA_CAIXA.z; L.yaw = L.yawAlvo = LUCIA_CAIXA.yaw; L.andando = false; G.onde = 'caixa'; }
   }
+  const VEL_GARCOM = 2.25, RITMO_GARCOM = 1.5;                              // (7.1.6) a Lúcia 1,5x mais rápida lá dentro: anda a 2,25 m/s (era 1,5) e anota, prepara e serve em 2/3 do tempo
   function tickGarcom(L, dt) {
     const G = garcom(); if (!G || S.cenaConf) return;
     if (S.turno) {                                                           // turno do jogador: ela fica no caixa
       if (G.tarefa || G.passo || G.fila.length) { pararGarcom(false); G.fila = G.fila.filter((t) => t.tipo === 'jogador'); }
       if (G.onde !== 'caixa' && !L.cliRota) { L.cliRota = rotaCafe(G.onde, 'caixa'); G.onde = 'caixa'; }
-      if (L.cliRota) { if (seguir(L, L.cliRota, 1.5, dt)) { L.cliRota = null; L.yawAlvo = LUCIA_CAIXA.yaw; } }
+      if (L.cliRota) { if (seguir(L, L.cliRota, VEL_GARCOM, dt)) { L.cliRota = null; L.yawAlvo = LUCIA_CAIXA.yaw; } }
       return;
     }
     if (!G.tarefa) {
@@ -6163,7 +6164,7 @@
       if (t) { G.tarefa = t; G.passos = passosGarcom(t); G.passo = null; if (t.tipo === 'cliente') t.estado = 'vem'; }
       else {                                                                 // nada para fazer: de volta ao caixa
         if (G.onde !== 'caixa' && !L.cliRota) { L.cliRota = rotaCafe(G.onde, 'caixa'); G.onde = 'caixa'; }
-        if (L.cliRota) { if (seguir(L, L.cliRota, 1.5, dt)) { L.cliRota = null; L.yawAlvo = LUCIA_CAIXA.yaw; } }
+        if (L.cliRota) { if (seguir(L, L.cliRota, VEL_GARCOM, dt)) { L.cliRota = null; L.yawAlvo = LUCIA_CAIXA.yaw; } }
         else { L.andando = false; if (!L.conversando && S.modo === 'livre') L.yawAlvo = LUCIA_CAIXA.yaw; }
         return;
       }
@@ -6179,10 +6180,10 @@
     const P = G.passo;
     if (P.ir != null) {
       fimPassoGarcom(L);
-      if (seguir(L, L.cliRota || [], 1.5, dt)) { L.cliRota = null; L.andando = false; const q = pontoCafe(P.ir); L.yawAlvo = q.yaw; G.passo = null; }
+      if (seguir(L, L.cliRota || [], VEL_GARCOM, dt)) { L.cliRota = null; L.andando = false; const q = pontoCafe(P.ir); L.yawAlvo = q.yaw; G.passo = null; }
       return;
     }
-    L.andando = false; P.t += dt;
+    L.andando = false; P.t += dt * RITMO_GARCOM;
     if (L.gcPose !== P.pose) { L.gcPose = P.pose; L.poseFn = poseGarcom; }
     if (P.pose === 'anota') { const k = Math.floor(P.t / 0.8) % 2; L.fala = k === 0; if (t.A) t.A.fala = k === 1; }
     if (P.t < P.s) return;

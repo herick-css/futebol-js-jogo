@@ -305,14 +305,8 @@
       // a PORTA DA COZINHA (vai e vem): o vão pintado (a cozinha lá dentro, em pixel art) e a folha que gira no batente oeste
       { const px = 2.6, w = 1.1, h = 2.2;
         const fundo = guardar(texCanvas(44, 88, (g, W, H) => {
-          g.fillStyle = '#e8e2d2'; g.fillRect(0, 0, W, H);
-          for (let y = 0; y < 50; y += 6) for (let x = (y / 6) % 2 ? -3 : 0; x < W; x += 6) { g.fillStyle = '#d8d2c2'; g.fillRect(x, y, 5, 5); }   // azulejo
-          g.fillStyle = '#ffd88a'; g.fillRect(14, 6, 16, 3); g.fillStyle = 'rgba(255,220,140,0.25)'; g.fillRect(8, 9, 28, 30);   // a luz
-          g.fillStyle = '#9aa1ab'; g.fillRect(0, 50, W, 38); g.fillStyle = '#b8bec6'; g.fillRect(0, 50, W, 4); g.fillStyle = '#7d848c'; for (let x = 4; x < W; x += 10) g.fillRect(x, 58, 1, 30);   // a bancada de inox
-          g.fillStyle = '#5a5f66'; g.fillRect(4, 38, 14, 12); g.fillStyle = '#3a3f46'; g.fillRect(6, 36, 10, 3);   // a panela grande
-          g.fillStyle = '#c8352b'; g.fillRect(24, 42, 12, 8); g.fillStyle = '#e8574a'; g.fillRect(25, 42, 10, 2);  // a panela vermelha
-          g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(8, 30, 2, 4); g.fillRect(11, 27, 2, 5); g.fillRect(28, 34, 2, 4);   // o vapor
-          g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 0, 3, H); g.fillRect(W - 3, 0, 3, H);
+          g.fillStyle = '#0a0806'; g.fillRect(0, 0, W, H);                // (7.1.6) o VÃO ESCURO (como as outras portas): a Dona Cida entra e some no escuro, sem "atravessar a parede"
+          g.fillStyle = '#16110c'; g.fillRect(0, H - 10, W, 10); g.fillStyle = '#1e1810'; g.fillRect(0, H - 4, W, 4);   // um resto de luz no chão
         }));
         quadro(fundo, w, h, px, h / 2, -7.965);
         G.box(w + 0.24, 0.12, 0.08, '#7a5232', px, h, -7.95); for (const s of [-1, 1]) G.box(0.12, h, 0.08, '#7a5232', px + s * (w / 2 + 0.06), 0, -7.95);
@@ -374,7 +368,8 @@
       // ---- as MESAS (as mesmas 8 posições: a do encontro com a Lúcia é a de x 5,5 · z 2,5) com as luminárias pendentes
       const lugares = [];
       for (const [x, z] of [[-6.5, -1.5], [-2.5, -1.5], [1.5, -1.5], [5.5, -1.5], [-6.5, 2.5], [-2.5, 2.5], [1.5, 2.5], [5.5, 2.5]]) {
-        const a = mesa(x, z, '#8a5a2b', 4, '#c9a273'); lugares.push(...a);   // tampo de madeira clara: o prato branco aparece RS.mesas.push({ x, z, assentos: a });
+        const a = mesa(x, z, '#8a5a2b', 4, '#c9a273'); lugares.push(...a);   // tampo de madeira clara: o prato branco aparece
+        RS.mesas.push({ x, z, assentos: a });                              // (7.1.6) esta linha tinha ido parar dentro do comentário: o restaurante.js ficava sem mesa nenhuma
         G.box(0.02, 0.86, 0.02, '#2a2a2e', x, 2.94, z); G.box(0.34, 0.12, 0.34, '#2f6a4a', x, 2.82, z); G.box(0.22, 0.02, 0.22, '#ffe8b0', x, 2.81, z);
       }
       // os quadros de legumes (pixel art) nas paredes leste e oeste e as plantas nos cantos do sul

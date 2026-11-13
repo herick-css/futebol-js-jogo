@@ -2,6 +2,9 @@
    FUTEBOL JS · restaurante.js · O RESTAURANTE SELF-SERVICE (arquivo SEPARADO, como pizzaria.js)
    ---------------------------------------------------------------------
    7.1.3 — primeira versão.
+   7.1.6 — as cadeiras entram na navegação (o jogador e os clientes contornam as mesas pelos corredores) · o jogador anda 1,5x mais
+     rápido na cena · a Dona Cida vem de trás da parede pelo vão escuro da porta · o boné do Renan refeito · a pose do Renan não
+     apaga mais o cambaleio do esbarrão. (O "sempre come em pé" era do interiores.js: a lista de mesas estava vazia.)
    - Registrado com FutebolJS.registrarFase({ id: 'restaurante' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade baixa em segundo plano e chama criar(api) (api = apiRestaurante() da cidade). A sala vem do interiores.js (R.restaurante).
    - HORÁRIO: abre das 11h às 23h. A DONA CIDA (a cozinheira) chega às 9h (2 horas antes), o RENAN (o caixa) às 10h30 e aí abre.
@@ -336,7 +339,7 @@
     function enfeitarRenan(m, opt) {                                    // o crachá e o boné verde do restaurante
       const kc = (opt && opt.cabecao) || 1, G = new api.Geo();
       G.box(0.03, 0.09, 0.12, '#f4f4ec', 0.19, 1.06, -0.13); G.box(0.032, 0.03, 0.12, '#1f7a4d', 0.19, 1.13, -0.13);
-      const yc = 1.36 + 0.5 * kc; G.box(0.5 * kc, 0.14, 0.5 * kc, '#1f7a4d', 0, yc + 0.02, 0); G.box(0.24 * kc, 0.04, 0.4 * kc, '#1f7a4d', 0.3 * kc, yc + 0.02, 0); G.box(0.12 * kc, 0.07, 0.12 * kc, '#f4f4ec', 0.2 * kc, yc + 0.08, 0);
+      const yc = 1.36 + 0.5 * kc; G.box(0.56 * kc, 0.13, 0.6 * kc, '#1f7a4d', -0.01 * kc, yc - 0.01, 0); G.box(0.18 * kc, 0.03, 0.44 * kc, '#17603c', 0.35 * kc, yc - 0.01, 0); G.box(0.012, 0.06, 0.14 * kc, '#f4f4ec', 0.272 * kc, yc + 0.035, 0);   // (7.1.6) o boné cobre a cabeça inteira (a aba curta e o emblema liso na frente): antes ele ficava menor que a cabeça, com um bloco branco espetado
       m.corpo.add(G.malha(api.MAT));
     }
     function enfeitarCida(m, opt) {                                     // o dólmã de cozinheira (botões), o avental verde e a touca
@@ -382,7 +385,7 @@
       if (A.poseRs === 'serve') {                                      // a mão direita por cima do bufê (a concha), a esquerda segurando o prato
         const w = Math.sin(t * 6);
         m.bracoD.rotation.z = 1.25 + w * 0.12; m.bracoD.rotation.x = -0.05; usarCotovelo(m.bracoD, 0, 0.35 + w * 0.2);
-        m.bracoE.rotation.z = 0.6; m.bracoE.rotation.x = -0.4; usarCotovelo(m.bracoE, 0, 0.85); m.corpo.rotation.z = -0.08;
+        m.bracoE.rotation.z = 0.6; m.bracoE.rotation.x = -0.4; usarCotovelo(m.bracoE, 0, 0.85); if (!(A.esbarrao > 0)) m.corpo.rotation.z = -0.08;
       } else if (A.poseRs === 'come') {                                // sentado: o garfo vai do prato à boca; a mão esquerda apoiada na mesa
         const p = ((t * 0.42) % 1), k = 0.5 - 0.5 * Math.cos(p * Math.PI * 2);
         m.bracoD.rotation.z = 0.72 + k * 0.5; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, 0.85 + k * 0.95);
@@ -391,12 +394,12 @@
       } else if (A.prato || A.cubaMao || A.poseRs === 'leva') {        // levando o prato (ou a cuba) com as duas mãos
         m.bracoE.rotation.z = m.bracoD.rotation.z = 0.6; m.bracoE.rotation.x = -0.4; m.bracoD.rotation.x = 0.4;
         usarCotovelo(m.bracoE, 0, 0.85); usarCotovelo(m.bracoD, 0, 0.85);
-        if (A.poseRs === 'poe') m.corpo.rotation.z = -0.3;
+        if (A.poseRs === 'poe' && !(A.esbarrao > 0)) m.corpo.rotation.z = -0.3;
       } else if (A.poseRs === 'cobra') {                               // o Renan registrando e passando o cartão
         const w = Math.sin(t * 9), w2 = Math.sin(t * 9 + 1.7);
         m.bracoD.rotation.z = 0.95 + w * 0.3; m.bracoE.rotation.z = 0.85 + w2 * 0.25; usarCotovelo(m.bracoD, 0, 1.0 + w * 0.2); usarCotovelo(m.bracoE, 0, 1.1);
       } else if (A.poseRs === 'balcao') {                              // mãos apoiadas no balcão
-        m.bracoD.rotation.z = m.bracoE.rotation.z = 0.5; usarCotovelo(m.bracoD, 0, 0.6); usarCotovelo(m.bracoE, 0, 0.6); m.corpo.rotation.z = -0.06;
+        m.bracoD.rotation.z = m.bracoE.rotation.z = 0.5; usarCotovelo(m.bracoD, 0, 0.6); usarCotovelo(m.bracoE, 0, 0.6); if (!(A.esbarrao > 0)) m.corpo.rotation.z = -0.06;   // (7.1.6) esbarraram nele: o cambaleio aparece (a pose não apaga)
       }
     }
     function pose(A, p) { A.poseRs = p; A.poseFn = p || A.prato || A.cubaMao ? poseRestaurante : null; }
@@ -406,6 +409,7 @@
     function livreEst(x, z) {
       const L = M.R.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false;
       for (const b of M.R.col) if (x > b.x0 - RR && x < b.x1 + RR && z > b.z0 - RR && z < b.z1 + RR) return false;
+      for (const c of M.cadeiras || []) if (Math.abs(x - c.x) < 0.22 + RR * 0.8 && Math.abs(z - c.z) < 0.22 + RR * 0.8) return false;   // (7.1.6) as cadeiras também: o caminho contorna as mesas pelos corredores
       return true;
     }
     function montarNav() {
@@ -459,7 +463,7 @@
       const R = A.rotaP; if (!R || !R.length) { A.andando = false; return true; }
       const q = R[0], dx = q.x - A.x, dz = q.z - A.z, d = Math.hypot(dx, dz), v = (A.vel || 1.2) * dt;
       if (d <= Math.max(v, 0.04)) { A.x = q.x; A.z = q.z; R.shift(); A.esperaP = 0; if (!R.length) { A.andando = false; return true; } return false; }
-      const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; if (!fantasma && !livreEst(nx, nz) && livreEst(A.x, A.z)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
+      const tenta = (ux, uz, fantasma) => { const nx = A.x + ux * v, nz = A.z + uz * v; fantasma = fantasma || A.livreP; if (!fantasma && !livreEst(nx, nz) && livreEst(A.x, A.z)) return false; if (!fantasma && genteNaFrente(A, nx, nz)) return false; A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-uz, ux); return true; };
       const ux = dx / d, uz = dz / d, esp = A.esperaP || 0;
       let ok = tenta(ux, uz, false);
       if (!ok && esp > 0.3) for (const ang of [0.6, -0.6, 1.1, -1.1]) { const c = Math.cos(ang), s2 = Math.sin(ang); if (tenta(ux * c - uz * s2, ux * s2 + uz * c, false)) { ok = true; break; } }
@@ -474,8 +478,9 @@
     // ---------------------------------------------------------------- entrou / saiu (a sala vem do interiores.js, com R.restaurante)
     function entrou(R, idx) {
       const s = S(); M.R = R; M.D = R.restaurante || null; if (!M.D) return;
-      s.falantesExtra = s.falantesExtra || {}; M.nav = null; montarNav();
+      s.falantesExtra = s.falantesExtra || {};
       M.mesas = M.D.mesas.map((T0, i) => ({ i, x: T0.x, z: T0.z, assentos: T0.assentos.map((k) => idx[k]).filter(Boolean), grupo: null }));
+      M.cadeiras = M.mesas.flatMap((T0) => T0.assentos.map((a) => ({ x: a.x, z: a.z }))); M.nav = null; montarNav();
       M.grupos = []; M.prox = rnd(2, 5); M.pratosMesa = new Map(); M.servindo = false; M.ordemFila = 0;
       montarCubas(); montarVitrine(); montarCardapio();
       M.folha = M.D.folha || null; M.folhaAng = 0;
@@ -653,6 +658,7 @@
     }
 
     // ---------------------------------------------------------------- A DONA CIDA: sai da cozinha com a cuba cheia, troca a mais vazia e volta
+    const Z_COZINHA = -8.75;                                            // (7.1.6) atrás da parede norte (z −8): ela passa pelo vão e a parede a esconde
     function tickCozinha(dt) {
       const K = M.cozinha, A = M.cida; if (!K || !A || !M.D) return;
       const D = M.D, porta = D.porta, atras = D.atras;
@@ -661,7 +667,7 @@
         K.t -= dt; if (K.t > 0) return;
         const alvo = M.cubas.slice().sort((a, b) => a.nivel - b.nivel || Math.random() - 0.5)[0];
         if (!alvo || (alvo.nivel === 2 && Math.random() < 0.6)) { K.t = rnd(12, 22); return; }   // tudo cheio: de vez em quando ela sai só para conferir
-        K.cuba = alvo; K.fase = 'sai'; A.x = porta.x; A.z = porta.z - 0.35; A.yaw = A.yawAlvo = -Math.PI / 2;
+        K.cuba = alvo; K.fase = 'sai'; A.x = porta.x; A.z = Z_COZINHA; A.yaw = A.yawAlvo = -Math.PI / 2; A.livreP = true;   // (7.1.6) vem de trás da parede, pelo vão escuro
         darCuba(A, alvo.id, 2); pose(A, 'leva'); esconder(A, false);
         A.rota = null; A.rotaP = [{ x: porta.x, z: atras }, { x: alvo.x, z: atras }]; K.t = 0;
       } else if (K.fase === 'sai') {
@@ -670,7 +676,7 @@
         K.t += dt;
         if (K.t > 0.9 && !K.trocou) { K.trocou = true; nivelCuba(K.cuba, 2); K.cuba.porcoes = 0; darCuba(A, K.cuba.id, 0); }
         if (K.t > 1.6) {
-          pose(A, 'leva'); K.fase = 'volta'; K.t = 0; K.trocou = false; A.rotaP = [{ x: porta.x, z: atras }, { x: porta.x, z: porta.z - 0.35 }];
+          pose(A, 'leva'); K.fase = 'volta'; K.t = 0; K.trocou = false; A.rotaP = [{ x: porta.x, z: atras }, { x: porta.x, z: Z_COZINHA }];
           const s = S(), J = s.jog; if (J && Math.hypot(J.x - A.x, J.z - A.z) < 4.5 && s.modo === 'livre' && Math.random() < 0.6) { A.fala = true; setTimeout(() => { if (M.cida) M.cida.fala = false; }, 1600); }
         }
       } else if (K.fase === 'volta') {
@@ -748,12 +754,12 @@
       try {
         if (J.sentado) api.levantar();
         // 1) o prato no carrinho (a sopa e as sobremesas também começam pegando a louça lá)
-        await andarJog(D.pratos.x, D.pratos.z, 1.8); J.yawAlvo = Math.PI / 2; await api.esperar(450);
+        await andarJog(D.pratos.x, D.pratos.z, 2.7); J.yawAlvo = Math.PI / 2; await api.esperar(450);
         darPrato(J, p.id, 0); pose(J, null); await api.esperar(350);
         // 2) as paradas: o prato vai sendo montado na mão
         const par = paradasDe(p);
         for (let k = 0; k < par.length; k++) {
-          await andarJog(par[k].x, par[k].z, 1.5); J.yawAlvo = Math.PI / 2; pose(J, 'serve'); await api.esperar(1100);
+          await andarJog(par[k].x, par[k].z, 2.25); J.yawAlvo = Math.PI / 2; pose(J, 'serve'); await api.esperar(1100);
           if (par[k].id !== 'sopa' && par[k].id !== 'doces') servirDaCuba(par[k].id);
           trocarPrato(J, mascara(par, k + 1)); pose(J, null); await api.esperar(150);
         }
@@ -762,7 +768,7 @@
         a = escolherAssento(J);
         if (a) {
           const pl = api.pontoDeLevantar ? api.pontoDeLevantar(a) : pontoDaCadeira(a);
-          await andarJog(pl.x, pl.z, 1.5); await api.sentar(a);
+          await andarJog(pl.x, pl.z, 2.25); await api.sentar(a);
           tirarPrato(J); pratoNaMesa(chave, a, p.id, 0);
         } else { await api.fala('jog', T('Não tem mesa livre agora... vou comer em pé mesmo.')); Dialogo.esconder(); }
         // 4) comendo (o prato esvazia em 4 estados)
@@ -774,7 +780,7 @@
         if (a) { api.levantar(); const k2 = chave; setTimeout(() => pratoNaMesa(k2, null, null, null), 7000); } else tirarPrato(J);
         if (M.renan) {
           M.jogPagando = true; tickFila();
-          await andarJog(D.pagar.x, D.pagar.z, 1.6); J.yawAlvo = 0; await api.esperar(300);
+          await andarJog(D.pagar.x, D.pagar.z, 2.4);   // (7.1.6) 1,5x mais rápido e pelo caminho dos corredores (as cadeiras entram na navegação) J.yawAlvo = 0; await api.esperar(300);
           pose(M.renan, 'cobra'); await api.fala('renan', Tf('{0}: {1} fakes.', T(p.nome), p.preco));
           d.fakes = Math.max(0, d.fakes - p.preco); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(p.preco);
           pose(M.renan, 'balcao'); await api.fala('renan', T('Obrigado! Volte sempre!')); Dialogo.esconder();
