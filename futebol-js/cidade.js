@@ -112,6 +112,11 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.3
+     - RESTAURANTE SELF-SERVICE (restaurante.js, arquivo novo): ganchos marcados "(7.1.3)": carregar o restaurante.js · apiRestaurante() ·
+       entrarEm/sairDoLugar chamam S.restaurante.entrou/saiu (com R.restaurante, lá dentro quem cuida de tudo é ele: sem o fluxo genérico) ·
+       alvos (bufê, sobremesas, sopa, Renan, Dona Cida; sentado comendo) · tickPessoas despacha 'clienteRs' · chegarDentro (registro) ·
+       encontro da Lúcia começando lá dentro libera a mesa · tick (também na rua: a Dona Cida às 9h e o Renan às 10h10 chegando a pé).
    NOVIDADES DA 6.1.0
      - PIZZARIA (pizzaria.js, arquivo novo baixado junto do mercado.js): ganchos marcados "(6.1.0)": carregar o pizzaria.js · apiPizzaria() ·
        entrarEm/sairDoLugar chamam S.pizzaria.entrou/saiu (lá dentro quem cuida de tudo é ele) · alvos (porta fechada fora das 17h–00h,
@@ -3685,6 +3690,7 @@
       else if (A.tipo === 'cliente') tickCliente(A, dt);
       else if (A.tipo === 'clienteMerc') { if (S.mercado) S.mercado.tickCliente(A, dt); }   // (5.3.1) clientes do mercado.js
       else if (A.tipo === 'clientePz') { if (S.pizzaria) S.pizzaria.tickCliente(A, dt); }   // (6.1.0) clientes da pizzaria.js
+      else if (A.tipo === 'clienteRs') { if (S.restaurante) S.restaurante.tickCliente(A, dt); }   // (7.1.3) clientes do restaurante.js (self-service)
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       else if (A.tipo === 'cena') passoCena(A, dt);
@@ -4176,11 +4182,12 @@
     const rnd = semente(P.nome.length * 31 + 7);
     const mercadoJs = P.nome === 'supermercado' && !!S.mercado;          // (5.4.2) no mercado quem cuida dos clientes é o mercado.js
     const pizzaJs = P.nome === 'pizzaria' && !!S.pizzaria;               // (6.1.0) na pizzaria quem cuida de tudo (Mário, Carla, clientes) é o pizzaria.js
+    const restJs = P.nome === 'restaurante' && !!S.restaurante && !!R.restaurante;   // (7.1.3) no restaurante quem cuida de tudo (Renan, Dona Cida, clientes) é o restaurante.js
     const acadJs = P.nome === 'academia' && !!S.academia && !!R.academia;   // (6.2.0) na academia quem coloca as pessoas é o academia.js
     const barbJs = P.nome === 'barbearia' && !!S.barbearia && !!R.barbearia;   // na barbearia quem põe o Toninho é o barbearia.js
-    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
+    const comFluxo = !SEM_FLUXO[P.nome] && !mercadoJs && !pizzaJs && !restJs, areaCli = [];       // (5.0.0) os clientes (sentados; no mercado, os que passeiam) vêm do fluxo
     for (const p of R.pessoas) {
-      if (pizzaJs || acadJs || barbJs) continue;
+      if (pizzaJs || acadJs || barbJs || restJs) continue;
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
@@ -4195,6 +4202,7 @@
     S.fluxo = comFluxo ? montarFluxo(P.nome, idx, areaCli[0] || null, R.entrada) : null;
     if (P.nome === 'supermercado' && S.mercado) S.mercado.entrou(R);     // (5.3.1) Cadu, caixa, estoque (mercado.js)
     if (pizzaJs) S.pizzaria.entrou(R, idx);                              // (6.1.0)
+    if (restJs) try { S.restaurante.entrou(R, idx); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3)
     if (acadJs) S.academia.entrou(R, idx);                               // (6.2.0)
     if (barbJs) try { S.barbearia.entrou(R, idx); } catch (e) { console.warn('[Cidade] barbearia:', e); }
     if (P.nome === 'cinema' && S.cinema && R.cinema) try { S.cinema.entrou(R, idx); } catch (e) { console.warn('[Cidade] cinema:', e); }
@@ -4216,6 +4224,7 @@
     const M = MESA_ENC[S.dentro.nome];
     for (const A of S.npcs.slice()) if (A.cli && A.cli.a && Math.abs(A.cli.a.x - M.x) < 1 && Math.abs(A.cli.a.z - M.z) < 1) { A.cli.a.ocupado = null; descartarPessoa(A); }
     if (S.dentro.nome === 'pizzaria' && S.pizzaria) S.pizzaria.liberarMesa(M.x, M.z);   // (6.1.0) os clientes da pizzaria.js nessa mesa vão embora
+    if (S.dentro.nome === 'restaurante' && S.restaurante) S.restaurante.liberarMesa(M.x, M.z);   // (7.1.3) idem no restaurante.js
     const enc = reservarMesaEncontro(S.dentro.nome); if (!enc) { S.encontroRodando = false; await preto(false, 400); liberar(); return; }
     enc.L = criarLuciaEncontro(); sentarAtor(enc.L, enc.aL);
     if (S.jog.sentado) levantar();
@@ -4337,6 +4346,7 @@
     await preto(true, 380);
     if (S.mercado && S.dentro && S.dentro.nome === 'supermercado') S.mercado.saiu();   // (5.3.1)
     if (S.pizzaria && S.dentro && S.dentro.nome === 'pizzaria') S.pizzaria.saiu();     // (6.1.0)
+    if (S.restaurante && S.dentro && S.dentro.nome === 'restaurante') try { S.restaurante.saiu(); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3)
     if (S.academia && S.dentro && S.dentro.nome === 'academia') S.academia.saiu();     // (6.2.0)
     if (S.cinema && S.dentro && S.dentro.nome === 'cinema') try { S.cinema.saiu(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (S.barbearia && S.dentro && S.dentro.nome === 'barbearia') try { S.barbearia.saiu(); } catch (e) { console.warn('[Cidade] barbearia:', e); }
@@ -4363,6 +4373,7 @@
     if (J.sentado) {
       if (S.sentadoEm && S.sentadoEm.lanche) return [{ x: J.x, z: J.z, r: 9, txt: T('No balcão'), fn: menuBalcao }];       // sentado no balcão: "Valdemar" ou "Sair"
       if (S.dentro && S.dentro.nome === 'pizzaria' && S.pizzaria) { const vp = S.pizzaria.alvosSentado(); if (vp) return vp; }   // (6.1.0) pedir pizza
+      if (S.dentro && S.dentro.nome === 'restaurante' && S.restaurante) { const vr = S.restaurante.alvosSentado(); if (vr) return vr; }   // (7.1.3) comendo o prato
       if (J.esperaPedido && S.dentro && S.dentro.nome === 'cafeteria') return [{ x: J.x, z: J.z, r: 9, txt: S.comeBoloJog ? T('Comendo o bolo...') : T('Esperando o bolo...'), fn: async () => {} }];   // (6.6.18) a Lúcia está trazendo
       return [{ x: J.x, z: J.z, r: 9, txt: T('Levantar'), fn: async () => { levantar(); } }];
     }
@@ -4378,6 +4389,7 @@
       v.push({ x: D.saida.x, z: D.saida.z, r: 1.4, txt: T('Sair'), fn: S.turno ? sairNoTurno : S.turnoMercado ? () => S.mercado.sairNoTurno() : sairDoLugar, y: 2.6 });
       if (D.nome === 'supermercado' && S.mercado) S.mercado.alvos(v);
       if (D.nome === 'pizzaria' && S.pizzaria) S.pizzaria.alvos(v);      // (6.1.0)
+      if (D.nome === 'restaurante' && S.restaurante) try { S.restaurante.alvos(v); } catch (e) { console.warn('[Cidade] restaurante:', e); }   // (7.1.3) o self-service, a vitrine, a sopa, o Renan
       if (D.nome === 'academia' && S.academia) S.academia.alvos(v);      // (6.2.0) recepção, catraca, Fernanda e os aparelhos
       if (D.nome === 'cinema' && S.cinema) try { S.cinema.alvos(v); } catch (e) { erroCinema(e); }
       if (D.nome === 'barbearia' && S.barbearia) S.barbearia.alvos(v);    // o Toninho
@@ -4600,6 +4612,10 @@
   // o que o barbearia.js usa daqui: o do cinema e mais refazer o modelo do jogador (corte novo), o letreiro e o assento
   function apiBarbearia() {
     return Object.assign(apiCinema(), { refazerJogador, texLetreiro, assento, OX });
+  }
+  // (7.1.3) o que o restaurante.js (self-service: Renan no caixa, Dona Cida na cozinha, os clientes e o prato do jogador) usa daqui
+  function apiRestaurante() {
+    return Object.assign(apiBarbearia(), { sentar, gerarAparencia, PORTAS, lojaAbertaMov });
   }
   // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
   function apiVarzea() {
@@ -7342,6 +7358,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // quem chega numa loja com o jogador LÁ DENTRO: entra pela porta da sala (fluxo da sala ou módulo). Devolve true se coube.
   function chegarDentro(nome, ents) {
     if (nome === 'pizzaria' && S.pizzaria && S.pizzaria.chegou) return S.pizzaria.chegou(ents);
+    if (nome === 'restaurante' && S.restaurante && S.restaurante.chegou && S.dentro && S.dentro.restaurante) return S.restaurante.chegou(ents);   // (7.1.3)
     if (nome === 'supermercado' && S.mercado && S.mercado.chegou) return S.mercado.chegou(ents);
     const F = S.fluxo; if (!F || S.turno || S.turnoMercado) return false;
     const livres = F.lugares.filter((a) => !a.ocupado);
@@ -7912,6 +7929,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
+        if (S.restaurante) try { S.restaurante.tick(dt); } catch (e) { if (!S.erroRest) { S.erroRest = true; console.warn('[Cidade] restaurante:', e); } }   // (7.1.3) a Dona Cida, o Renan, os clientes e a chegada deles de manhã
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
         if (S.cinema) try { S.cinema.tick(dt); } catch (e) { erroCinema(e); }                                // o Herick (na rua ou lá dentro), as cordas e a sessão
         if (S.pesca) S.pesca.tick(dt);
@@ -7938,6 +7956,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     S.ativo = false; GANCHO_RENDER = null; clearTimeout(tMissao); SomChuva.nivel(0);
     if (S.mercado) try { S.mercado.limpar(); } catch (e) { console.warn('[Cidade] mercado:', e); }
     if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
+    if (S.restaurante) try { S.restaurante.limpar(); } catch (e) { console.warn('[Cidade] restaurante:', e); }
     if (S.academia) try { S.academia.limpar(); } catch (e) { console.warn('[Cidade] academia:', e); }
     if (S.cinema) try { S.cinema.limpar(); } catch (e) { console.warn('[Cidade] cinema:', e); }
     if (S.pesca) try { S.pesca.limpar(); } catch (e) { console.warn('[Cidade] pesca:', e); }
@@ -7976,6 +7995,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
       Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
+      Fases.carregar('restaurante').then((m) => { if (S && m && m.criar) S.restaurante = m.criar(apiRestaurante()); }, (e) => console.warn('[Cidade] restaurante.js não veio:', e));   // (7.1.3) o restaurante self-service
       Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
       Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
       Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));

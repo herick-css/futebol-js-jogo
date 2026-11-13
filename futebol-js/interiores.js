@@ -11,6 +11,8 @@
      NADA de compra, trabalho ou atendimento ainda (a não ser a ficha médica do hospital, que já existia).
    - (6.1.0) Pizzaria Forno a Lenha redecorada para o trabalho de entregador e os clientes (R.pizzaria: forno, bancada, caixa, retirada,
      mesas...; ver pizzaria.js).
+   - (7.1.3) Restaurante refeito para o self-service (R.restaurante: bufê com 20 cubas e a coifa de vidro, a porta da cozinha, a
+     vitrine de sobremesas, a sopa e os sucos, o caixa e as 8 mesas; ver restaurante.js).
    - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
@@ -275,17 +277,117 @@
       const lugares = []; for (const M of R.pizzaria.mesas) lugares.push(...M.assentos);
       for (const i of [0, 1, 6, 11]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
     } else if (nome === 'restaurante') {
-      sala(20, 16, 3.8, '#e8f2dc', '#d8d4cc', '#c8c4bc', 0.8);
-      placa('RESTAURANTE', '#f4f4ec', '#1f7a4d', 6, 0.8, 0, 3.0, -7.96);
-      // bufê (comida por quilo): balcão com as cubas coloridas, a balança e o caixa
-      balcao(-2, -6.2, 11, 1.1, '#5f8a4a', '#d8d8d0');
-      for (let i = 0; i < 12; i++) G.box(0.75, 0.08, 0.55, pk(['#f2c230', '#6cae3e', '#7a4a2a', '#f2f2ee', '#c8352b', '#e8742a']), -7 + i * 0.9, 1.08, -6.2);
-      balcao(6.5, -6.2, 2.2, 1.0, '#3a414b'); G.box(0.6, 0.15, 0.5, '#c9ced4', 6.5, 1.06, -6.2);
-      R.pessoas.push({ tipo: 'parado', x: 6.5, z: -7.1, yaw: -Math.PI / 2, fem: true });
-      for (const x of [-5, -1.5]) R.pessoas.push({ tipo: 'parado', x, z: -5.2, yaw: Math.PI / 2, fem: rnd() < 0.5 });
-      const lugares = []; for (const [x, z] of [[-6.5, -1.5], [-2.5, -1.5], [1.5, -1.5], [5.5, -1.5], [-6.5, 2.5], [-2.5, 2.5], [1.5, 2.5], [5.5, 2.5]]) lugares.push(...mesa(x, z, '#8a5a2b', 4, '#f4f4ec'));
+      // (7.1.3) RESTAURANTE SELF-SERVICE (ver restaurante.js). Sala 20 x 16:
+      //   NORTE: a área da cozinha (só a equipe: meia-parede dos dois lados, x ±5,15) com a PORTA DA COZINHA (folha que abre para o salão,
+      //   R.restaurante.folha) e o quadro do cardápio. Na frente dela, o BUFÊ (balcão de 10,3 m com 2 fileiras de 10 cubas, a coifa de
+      //   vidro e as luzes). Do lado oeste do bufê, o carrinho com a pilha de PRATOS (onde começa o self-service).
+      //   CANTOS NORTE: a VITRINE DE SOBREMESAS (noroeste) e o balcão da SOPA E DOS SUCOS (nordeste).
+      //   MEIO: 8 mesas de 4 (as mesmas posições de antes: a do encontro com a Lúcia é a de x 5,5 · z 2,5) com as luminárias.
+      //   SUDESTE: o CAIXA (o balcão ao longo de z; o caixa fica a leste, quem paga fica a oeste).
+      sala(20, 16, 3.8, '#eef3e2', '#e2ddd2', '#d2cdc2', 0.8);
+      R.cam = { dist: 9.5, pitch: 0.85 }; R.fundo = 0x16120d;
+      const RS = R.restaurante = { cubas: [], vitrine: [], mesas: [] };
+      const vidro = (w, h, x, y, z, rx, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ color: 0xcfeefa, transparent: true, opacity: 0.26, depthWrite: false, side: THREE.DoubleSide }))); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0, 'YXZ'); grupo.add(m); return m; };
+      const quadro = (tex, w, h, x, y, z, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); return m; };
+      // meia-parede de azulejo verde-claro com a faixa de madeira (norte, leste e oeste)
+      G.box(19.9, 1.05, 0.04, '#a8cf96', 0, 0, -7.94); G.box(19.9, 0.08, 0.06, '#7a5232', 0, 1.05, -7.93);
+      for (const sx of [-1, 1]) { G.box(0.04, 1.05, 15.9, '#a8cf96', sx * 9.94, 0, 0); G.box(0.06, 0.08, 15.9, '#7a5232', sx * 9.93, 1.05, 0); }
+      for (let i = 0; i < 40; i++) G.box(0.02, 1.05, 0.05, '#93bd80', -9.75 + i * 0.5, 0, -7.92);   // rejunte
+      placa('RESTAURANTE SELF-SERVICE', '#1f7a4d', '#f4f4ec', 7.2, 0.7, -1.2, 3.42, -7.96);
+      // ---- a ÁREA DA COZINHA: meia-parede (com vidro em cima) dos dois lados, do bufê até a parede norte
+      for (const sx of [-1, 1]) {
+        G.box(0.16, 1.05, 2.6, '#7a5232', sx * 5.15, 0, -6.7, '#9a7048'); bloq(sx * 5.15, -6.7, 0.24, 2.6);
+        vidro(2.6, 0.6, sx * 5.15, 1.38, -6.7, 0, Math.PI / 2); G.box(0.06, 0.05, 2.6, '#c9ced4', sx * 5.15, 1.68, -6.7);
+      }
+      G.box(10.1, 0.01, 2.6, '#c8c4bc', 0, 0.003, -6.7);                                                   // o piso da área da equipe (mais claro)
+      // a PORTA DA COZINHA (vai e vem): o vão pintado (a cozinha lá dentro, em pixel art) e a folha que gira no batente oeste
+      { const px = 2.6, w = 1.1, h = 2.2;
+        const fundo = guardar(texCanvas(44, 88, (g, W, H) => {
+          g.fillStyle = '#e8e2d2'; g.fillRect(0, 0, W, H);
+          for (let y = 0; y < 50; y += 6) for (let x = (y / 6) % 2 ? -3 : 0; x < W; x += 6) { g.fillStyle = '#d8d2c2'; g.fillRect(x, y, 5, 5); }   // azulejo
+          g.fillStyle = '#ffd88a'; g.fillRect(14, 6, 16, 3); g.fillStyle = 'rgba(255,220,140,0.25)'; g.fillRect(8, 9, 28, 30);   // a luz
+          g.fillStyle = '#9aa1ab'; g.fillRect(0, 50, W, 38); g.fillStyle = '#b8bec6'; g.fillRect(0, 50, W, 4); g.fillStyle = '#7d848c'; for (let x = 4; x < W; x += 10) g.fillRect(x, 58, 1, 30);   // a bancada de inox
+          g.fillStyle = '#5a5f66'; g.fillRect(4, 38, 14, 12); g.fillStyle = '#3a3f46'; g.fillRect(6, 36, 10, 3);   // a panela grande
+          g.fillStyle = '#c8352b'; g.fillRect(24, 42, 12, 8); g.fillStyle = '#e8574a'; g.fillRect(25, 42, 10, 2);  // a panela vermelha
+          g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(8, 30, 2, 4); g.fillRect(11, 27, 2, 5); g.fillRect(28, 34, 2, 4);   // o vapor
+          g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 0, 3, H); g.fillRect(W - 3, 0, 3, H);
+        }));
+        quadro(fundo, w, h, px, h / 2, -7.965);
+        G.box(w + 0.24, 0.12, 0.08, '#7a5232', px, h, -7.95); for (const s of [-1, 1]) G.box(0.12, h, 0.08, '#7a5232', px + s * (w / 2 + 0.06), 0, -7.95);
+        const folha = new THREE.Group(), F = new Geo();
+        F.box(w, h - 0.04, 0.06, '#d8d2c2', w / 2, 0.02, 0); F.box(w - 0.12, 0.12, 0.07, '#c9ced4', w / 2, 0.95, 0);   // a folha e a placa de empurrar
+        F.box(0.38, 0.38, 0.07, '#9ec7dd', w / 2, 1.42, 0); F.box(0.44, 0.04, 0.075, '#8c9199', w / 2, 1.61, 0); F.box(0.44, 0.04, 0.075, '#8c9199', w / 2, 1.21, 0);   // a janelinha
+        folha.add(F.malha(MAT)); folha.position.set(px - w / 2, 0, -7.92); grupo.add(folha);
+        RS.porta = { x: px, z: -7.55 }; RS.folha = folha; }
+      // o quadro do cardápio (o restaurante.js pinta os 20 pratos com os preços por cima; aqui fica a moldura)
+      G.box(5.0, 1.42, 0.06, '#5a3a22', -2.2, 1.66, -7.95); RS.cardapio = { x: -2.2, y: 2.37, z: -7.91, w: 4.8, h: 1.3 };
+      // ---- O BUFÊ: o balcão, as 2 fileiras de cubas (o restaurante.js põe a comida), a coifa de vidro e as luzes
+      const BZ = -4.8, BX = 10.3;
+      G.box(BX, 0.95, 1.2, '#4f7a3e', 0, 0, BZ); G.box(BX + 0.1, 0.08, 1.3, '#e8e4dc', 0, 0.95, BZ); bloq(0, BZ, BX, 1.2);
+      G.box(BX, 0.08, 0.04, '#2f5a2a', 0, 0.12, BZ + 0.62); for (let x = -5; x <= 5; x += 1.03) G.box(0.03, 0.8, 0.02, '#3f6a32', x, 0.12, BZ + 0.61);   // o painel da frente
+      G.box(BX, 0.05, 0.28, '#c9ced4', 0, 0.85, BZ + 0.75);                                                 // a barra para apoiar a bandeja
+      for (let f = 0; f < 2; f++) for (let i = 0; i < 10; i++) {
+        const x = -4.275 + i * 0.95, z = BZ + (f ? -0.3 : 0.3);
+        G.box(0.88, 0.04, 0.54, '#8c9199', x, 1.01, z);                                                    // a borda de inox de cada cuba
+        RS.cubas.push({ x, z, y: 1.058, fila: f, i });
+      }
+      for (let i = 0; i <= 5; i++) { const x = -5.1 + i * 2.04; G.box(0.05, 0.62, 0.05, '#c9ced4', x, 1.03, BZ + 0.58); G.box(0.05, 0.62, 0.05, '#c9ced4', x, 1.03, BZ - 0.58); }   // as colunas da coifa
+      vidro(BX, 1.25, 0, 1.66, BZ, -Math.PI / 2);                                                          // o tampo de vidro
+      vidro(BX, 0.42, 0, 1.43, BZ + 0.68, -0.42);                                                          // o vidro da frente (inclinado)
+      G.box(BX, 0.04, 0.06, '#c9ced4', 0, 1.64, BZ + 0.6); G.box(BX, 0.04, 0.06, '#c9ced4', 0, 1.64, BZ - 0.6);
+      for (let i = 0; i < 5; i++) G.box(1.6, 0.03, 0.1, '#ffe8b0', -4.1 + i * 2.05, 1.6, BZ);             // as luzes quentes da coifa
+      RS.atras = BZ - 1.05; RS.linha = BZ + 1.15;                                                           // z da equipe (atrás) e da fila (na frente)
+      // o carrinho dos PRATOS (oeste do bufê): a pilha de pratos, os talheres e os guardanapos
+      G.box(0.8, 0.9, 0.6, '#7a5232', -5.75, 0, -4.35, '#9a7048'); bloq(-5.75, -4.35, 0.8, 0.6);
+      for (let k = 0; k < 9; k++) G.box(0.34, 0.025, 0.34, k % 2 ? '#e8e8e2' : '#f6f6f2', -5.85, 0.9 + k * 0.026, -4.35);   // a pilha de pratos
+      G.box(0.14, 0.18, 0.14, '#c9ced4', -5.5, 0.9, -4.5); for (const dx of [-0.03, 0, 0.03]) G.box(0.015, 0.12, 0.015, '#e8eaee', -5.5 + dx, 1.08, -4.5);   // os talheres no copo
+      G.box(0.16, 0.06, 0.16, '#f4f4ec', -5.5, 0.9, -4.2);
+      RS.pratos = { x: -5.75, z: -3.55 };
+      // ---- a VITRINE DE SOBREMESAS (noroeste): o balcão refrigerado com vidro; o restaurante.js põe os doces nos lugares
+      G.box(3.2, 0.95, 0.95, '#d8d2c2', -8.0, 0, -7.1, '#efeae0'); bloq(-8.0, -7.1, 3.2, 0.95);
+      G.box(3.2, 0.06, 0.95, '#9ec7dd', -8.0, 0.95, -7.1);
+      for (const s of [-1, 1]) G.box(0.05, 0.5, 0.95, '#c9ced4', -8.0 + s * 1.58, 0.98, -7.1);
+      vidro(3.15, 0.95, -8.0, 1.49, -7.1, -Math.PI / 2); vidro(3.15, 0.52, -8.0, 1.22, -6.62, -0.25);
+      G.box(3.2, 0.12, 0.25, '#c8708e', -8.0, 1.5, -7.45);
+      for (let i = 0; i < 5; i++) RS.vitrine.push({ x: -9.2 + i * 0.6, y: 1.012, z: -7.05 });
+      RS.doces = { x: -8.0, z: -6.0 };
+      { const t = guardar(texLetreiro('SOBREMESAS', '#c8708e', '#fff6f0', 2.4, 0.4)); quadro(t, 2.4, 0.4, -8.0, 2.35, -7.96); }
+      // ---- a SOPA E OS SUCOS (nordeste): o caldeirão com a concha, as tigelas e as duas jarras de suco
+      G.box(3.2, 0.95, 0.95, '#7a5232', 8.0, 0, -7.1, '#e8e4dc'); bloq(8.0, -7.1, 3.2, 0.95);
+      G.box(0.62, 0.5, 0.62, '#9aa1ab', 7.3, 1.0, -7.1, '#3a3f46'); G.box(0.66, 0.06, 0.66, '#c9ced4', 7.3, 1.48, -7.1); G.box(0.5, 0.02, 0.5, '#e89a3a', 7.3, 1.49, -7.1);   // o caldeirão (com a sopa por cima)
+      G.box(0.04, 0.5, 0.04, '#c9ced4', 7.45, 1.45, -7.0); G.box(0.12, 0.04, 0.12, '#c9ced4', 7.45, 1.47, -7.0);   // a concha
+      for (let k = 0; k < 4; k++) G.box(0.26, 0.07, 0.26, '#f4f4ec', 8.05, 1.0 + k * 0.075, -6.85);          // as tigelas
+      for (const [x, c] of [[8.7, '#f2a83a'], [9.25, '#7ab84a']]) { G.box(0.34, 0.6, 0.34, '#e8f2f6', x, 1.0, -7.15); G.box(0.3, 0.42, 0.3, c, x, 1.04, -7.15); G.box(0.36, 0.08, 0.36, '#3a3f46', x, 1.6, -7.15); G.box(0.06, 0.06, 0.1, '#3a3f46', x, 1.1, -6.95); }
+      RS.sopa = { x: 7.6, z: -6.0 };
+      { const t = guardar(texLetreiro('SOPA E SUCOS', '#e8742a', '#fff6e0', 2.4, 0.4)); quadro(t, 2.4, 0.4, 8.0, 2.35, -7.96); }
+      // ---- O CAIXA (sudeste): balcão ao longo de z, a registradora, a maquininha, as balas e a plaquinha
+      G.box(0.9, 1.05, 2.6, '#7a5232', 7.7, 0, 5.1, '#e8e4dc'); bloq(7.7, 5.1, 0.95, 2.6);
+      G.box(0.4, 0.22, 0.45, '#3a3f46', 7.75, 1.05, 4.7); G.box(0.05, 0.22, 0.34, '#3fb7b0', 7.55, 1.2, 4.7);   // a registradora (a telinha olha para o cliente)
+      G.box(0.16, 0.05, 0.24, '#2a2a2e', 7.5, 1.05, 5.3);                                                  // a maquininha do cartão
+      G.box(0.3, 0.22, 0.3, '#e8f2f6', 7.7, 1.05, 6.0); for (const [dx, dz, c] of [[-0.07, -0.07, '#c8352b'], [0.07, -0.05, '#f2c230'], [-0.04, 0.07, '#6cae3e'], [0.06, 0.07, '#d95fa0']]) G.box(0.07, 0.07, 0.07, c, 7.7 + dx, 1.08, 6.0 + dz);   // o pote de balas
+      G.box(0.04, 0.95, 0.04, '#5a3a22', 8.6, 1.9, 5.1);
+      { const t = guardar(texLetreiro('CAIXA', '#1f7a4d', '#f4f4ec', 1.0, 0.36)); const m = quadro(t, 1.0, 0.36, 7.7, 2.55, 5.1, -Math.PI / 2); m.material.side = THREE.DoubleSide; G.box(0.02, 0.6, 0.02, '#3a3a3e', 7.7, 2.73, 4.7); G.box(0.02, 0.6, 0.02, '#3a3a3e', 7.7, 2.73, 5.5); }
+      G.box(0.6, 0.02, 0.9, '#7a2a2a', 6.75, 0.005, 5.1);                                                 // o tapetinho de quem paga
+      RS.caixa = { x: 8.55, z: 5.1, yaw: Math.PI }; RS.pagar = { x: 6.8, z: 5.1 };
+      // ---- as MESAS (as mesmas 8 posições: a do encontro com a Lúcia é a de x 5,5 · z 2,5) com as luminárias pendentes
+      const lugares = [];
+      for (const [x, z] of [[-6.5, -1.5], [-2.5, -1.5], [1.5, -1.5], [5.5, -1.5], [-6.5, 2.5], [-2.5, 2.5], [1.5, 2.5], [5.5, 2.5]]) {
+        const a = mesa(x, z, '#8a5a2b', 4, '#c9a273'); lugares.push(...a);   // tampo de madeira clara: o prato branco aparece RS.mesas.push({ x, z, assentos: a });
+        G.box(0.02, 0.86, 0.02, '#2a2a2e', x, 2.94, z); G.box(0.34, 0.12, 0.34, '#2f6a4a', x, 2.82, z); G.box(0.22, 0.02, 0.22, '#ffe8b0', x, 2.81, z);
+      }
+      // os quadros de legumes (pixel art) nas paredes leste e oeste e as plantas nos cantos do sul
+      const legume = (desenho) => guardar(texCanvas(24, 24, (g, w, h) => { g.fillStyle = '#f4efe2'; g.fillRect(0, 0, w, h); desenho(g); g.fillStyle = '#7a5232'; g.fillRect(0, 0, w, 2); g.fillRect(0, h - 2, w, 2); g.fillRect(0, 0, 2, h); g.fillRect(w - 2, 0, 2, h); }));
+      const QUADROS = [
+        (g) => { g.fillStyle = '#c8352b'; g.fillRect(6, 8, 12, 11); g.fillRect(7, 7, 10, 13); g.fillStyle = '#e8574a'; g.fillRect(8, 9, 4, 3); g.fillStyle = '#3f8a3a'; g.fillRect(10, 5, 4, 3); g.fillRect(9, 4, 1, 2); g.fillRect(14, 4, 1, 2); },   // tomate
+        (g) => { g.fillStyle = '#e8742a'; for (let i = 0; i < 12; i++) g.fillRect(9 + Math.floor(i / 4), 8 + i, 6 - Math.floor(i / 3), 1); g.fillStyle = '#c85a1a'; g.fillRect(10, 12, 3, 1); g.fillRect(11, 16, 2, 1); g.fillStyle = '#3f8a3a'; g.fillRect(10, 4, 1, 4); g.fillRect(12, 3, 1, 5); g.fillRect(14, 4, 1, 4); },   // cenoura
+        (g) => { g.fillStyle = '#2f6a2a'; for (const [x, y] of [[7, 6], [11, 5], [15, 7], [9, 9], [13, 9]]) g.fillRect(x, y, 4, 4); g.fillStyle = '#4a8a3a'; for (const [x, y] of [[8, 6], [12, 5], [16, 7]]) g.fillRect(x, y, 2, 2); g.fillStyle = '#a8c878'; g.fillRect(11, 13, 3, 7); },   // brócolis
+        (g) => { g.fillStyle = '#7a3a8a'; g.fillRect(8, 8, 8, 12); g.fillRect(9, 7, 6, 14); g.fillStyle = '#9a5aaa'; g.fillRect(10, 9, 2, 4); g.fillStyle = '#3f8a3a'; g.fillRect(9, 4, 6, 3); },   // berinjela
+      ];
+      QUADROS.forEach((d, i) => { const sx = i < 2 ? -1 : 1, z = i % 2 ? 1.6 : -2.2; G.box(0.04, 1.0, 1.0, '#7a5232', sx * 9.95, 1.5, z); quadro(legume(d), 0.9, 0.9, sx * 9.92, 2.0, z, sx < 0 ? Math.PI / 2 : -Math.PI / 2); });
+      for (const [x, z] of [[-9.2, 7.2], [9.2, 7.2], [-9.2, 4.6]]) { G.box(0.6, 0.6, 0.6, '#9a6a44', x, 0, z); G.box(0.8, 1.0, 0.8, '#3f8a3a', x, 0.6, z); G.box(0.5, 0.5, 0.5, '#4a9a42', x, 1.55, z); bloq(x, z, 0.7, 0.7); }
+      // pessoas de ENFEITE (só sem o restaurante.js: com ele, quem cuida do restaurante é ele)
+      R.pessoas.push({ tipo: 'parado', x: RS.caixa.x, z: RS.caixa.z, yaw: Math.PI, fem: false });
       for (const i of [0, 5, 10, 17, 22]) R.pessoas.push({ tipo: 'senta', assento: lugares[i], fem: rnd() < 0.5 });
-      for (const [x, z] of [[-9.2, -7.2], [9.2, -7.2], [-9.2, 7], [9.2, 7]]) { G.box(0.6, 0.6, 0.6, '#9a6a44', x, 0, z); G.box(0.8, 1.0, 0.8, '#3f8a3a', x, 0.6, z); bloq(x, z, 0.7, 0.7); }
     } else if (nome === 'academia') {
       // (6.2.0) ACADEMIA, refeita para os treinos (ver academia.js). Sala 22 x 16:
       //   SUL (z > 3,4): a RECEPÇÃO, com piso de madeira, o balcão do Diego (oeste), banco, bebedouro e o cartaz do plano.

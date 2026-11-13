@@ -9,6 +9,9 @@ ARQUIVOS
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   mercado.js ............ o trabalho no mercado (caixa, troco, reposição; baixado pela cidade)
   pizzaria.js ........... a pizzaria Forno a Lenha e o trabalho de entregador de bicicleta (baixado pela cidade)
+  restaurante.js ........ o restaurante self-service: 20 pratos em pixel art (a maioria saudável, com saladas e sobremesas), o
+                          bufê com as cubas, a Dona Cida (cozinha) e o Renan (caixa), os clientes e a cena de comer e pagar
+                          (baixado pela cidade)
   academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
