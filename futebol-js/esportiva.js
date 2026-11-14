@@ -2,6 +2,7 @@
    FUTEBOL JS · esportiva.js · A GOLAÇO ESPORTES (arquivo SEPARADO, como bar.js)
    ---------------------------------------------------------------------
    7.1.9 — primeira versão: o LAYOUT da loja e a seção de COMEMORAÇÕES.
+   7.1.10 — a seção de CHUTEIRAS: 20 chuteiras premium, a parede premium, o catálogo do Biro e o provador.
    - Registrado com FutebolJS.registrarFase({ id: 'esportiva' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade baixa em segundo plano e chama criar(api) (api = apiEsportiva() da cidade). A sala vem do interiores.js (R.esportiva):
      quadrada, com uma seção em cada canto (chuteiras, roupas, bolas, acessórios), o campinho das comemorações no meio e o caixa ao norte.
@@ -12,8 +13,14 @@
      Com o Dedé abre o CATÁLOGO (painel à direita): VER faz o jogador testar a comemoração ali no campinho, LEVAR põe na sacola.
      Quem cobra é a Marta, no CAIXA (paga tudo o que está na sacola). As compradas ficam para sempre; no catálogo escolhe-se qual vai
      em cada um dos 2 botões de comemoração da partida (BOTÃO 1 / BOTÃO 2).
-   - As outras seções (chuteiras, roupas, bolas, acessórios) já têm o lugar, a decoração e o vendedor; as vendas delas vêm depois.
-   - Salva em historia.cidade (dados): celeb = { tem: [chaves compradas], slots: [botão 1, botão 2] } · esportiva = { conheceu... }.
+   - (7.1.10) CHUTEIRAS: 20 modelos premium (os desenhos ficam no jogo.js, em CHUTEIRAS, com loja: true, nivel e preco: de 250 a 6.000
+     fakes, mais caras quanto mais premium). Na PAREDE PREMIUM da seção, uma coluna por nível (Pro, Elite, Galáctica, Lendária,
+     Ícone) com o par de cada modelo, e a mais cara girando na redoma. Com o BIRO abre o catálogo: PROVAR calça a chuteira no
+     jogador ali no espelho (ele gira para mostrar), LEVAR põe na sacola (a mesma das comemorações) e a Marta cobra no caixa.
+     A comprada já vai para o pé (aparencia.chuteira + chuteiraNome); CALÇAR troca entre as suas e a de sempre (a do criador).
+   - As outras seções (roupas, bolas, acessórios) já têm o lugar, a decoração e o vendedor; as vendas delas vêm depois.
+   - Salva em historia.cidade (dados): celeb = { tem: [chaves compradas], slots: [botão 1, botão 2] } · esportiva = { conheceu... } ·
+     chuteiras = { tem: [nomes comprados], usando: nome ou null (a de sempre), original: a chuteira do criador }.
    ===================================================================== */
 (function () {
   'use strict';
@@ -62,6 +69,24 @@
     'Prontinho! Já é tudo seu.': ['All done! It’s all yours.', '¡Listo! Ya es todo tuyo.', 'Fatto! È tutto tuo.', 'Voilà ! Tout est à toi.'],
     'A comemoração "{0}" já ficou no seu botão {1}. Para trocar, é com o Dedé.': ['The "{0}" celebration is already on your button {1}. To change it, talk to Dedé.', 'La celebración "{0}" ya quedó en tu botón {1}. Para cambiarla, habla con Dedé.', 'L’esultanza "{0}" è già sul tuo pulsante {1}. Per cambiarla, vai da Dedé.', 'La célébration « {0} » est déjà sur ton bouton {1}. Pour changer, va voir Dedé.'],
     'Agora é fazer gol para estrear!': ['Now go score a goal to show it off!', '¡Ahora a hacer un gol para estrenarla!', 'Adesso serve un gol per inaugurarla!', 'Maintenant, il faut marquer pour l’inaugurer !'],
+    // (7.1.10) as chuteiras (o Biro e o caixa)
+    'Ver as chuteiras': ['See the boots', 'Ver los botines', 'Vedi gli scarpini', 'Voir les crampons'],
+    'CHUTEIRAS': ['BOOTS', 'BOTINES', 'SCARPINI', 'CRAMPONS'],
+    'Chuteira boa é meio gol! Aqui é a linha premium: 20 modelos, do Pro ao Ícone.': ['A good boot is half a goal! This is the premium line: 20 models, from Pro to Icon.', '¡Un buen botín es medio gol! Esta es la línea premium: 20 modelos, del Pro al Ícono.', 'Uno scarpino buono è mezzo gol! Questa è la linea premium: 20 modelli, dal Pro all’Icona.', 'Un bon crampon, c’est la moitié d’un but ! Voici la gamme premium : 20 modèles, du Pro à l’Icône.'],
+    'Quanto mais para a direita da parede, mais exclusiva (e mais cara). A mais barata sai por {0} fakes.': ['The further right on the wall, the more exclusive (and pricier). The cheapest one is {0} fakes.', 'Cuanto más a la derecha de la pared, más exclusivo (y más caro). El más barato sale {0} fakes.', 'Più sono a destra sulla parete, più sono esclusivi (e cari). Il più economico costa {0} fakes.', 'Plus c’est à droite du mur, plus c’est exclusif (et cher). Le moins cher coûte {0} fakes.'],
+    'Pode provar à vontade aqui no espelho. O que gostar vai para a sacola e você paga com a Marta.': ['Try on as many as you like here at the mirror. What you like goes in the bag and you pay Marta.', 'Pruébate los que quieras aquí en el espejo. Lo que te guste va a la bolsa y le pagas a Marta.', 'Provane quanti vuoi qui allo specchio. Quello che ti piace va nella borsa e paghi da Marta.', 'Essaie autant que tu veux ici devant le miroir. Ce qui te plaît va dans le sac et tu paies Marta.'],
+    'Chegou chuteira nova na parede! Bora provar?': ['New boots on the wall! Want to try some on?', '¡Llegaron botines nuevos a la pared! ¿Te los pruebas?', 'Sono arrivati scarpini nuovi sulla parete! Li provi?', 'Des nouveaux crampons sur le mur ! On essaie ?'],
+    'Qual vai ser hoje, craque?': ['Which one will it be today, star?', '¿Cuál va a ser hoy, crack?', 'Quale sarà oggi, campione?', 'Lequel aujourd’hui, champion ?'],
+    'Boa! Passa no caixa que a Marta embrulha.': ['Nice! Stop by the checkout and Marta will wrap it up.', '¡Bien! Pasa por la caja que Marta te lo envuelve.', 'Ottimo! Passa alla cassa che Marta te lo incarta.', 'Super ! Passe à la caisse, Marta va l’emballer.'],
+    'Volta quando quiser, a parede está sempre cheia.': ['Come back anytime, the wall is always full.', 'Vuelve cuando quieras, la pared siempre está llena.', 'Torna quando vuoi, la parete è sempre piena.', 'Reviens quand tu veux, le mur est toujours plein.'],
+    'PROVAR': ['TRY ON', 'PROBAR', 'PROVA', 'ESSAYER'], 'CALÇAR': ['WEAR', 'PONER', 'METTI', 'CHAUSSER'], 'NO PÉ': ['WEARING', 'PUESTO', 'AI PIEDI', 'AUX PIEDS'],
+    'Calçando: {0}': ['Wearing: {0}', 'Usando: {0}', 'Ai piedi: {0}', 'Aux pieds : {0}'],
+    'A de sempre': ['Your usual', 'Los de siempre', 'Quelli di sempre', 'Les habituels'],
+    'Provando': ['Trying on', 'Probando', 'In prova', 'En essai'],
+    'Clique em PROVAR para ver a chuteira no seu pé. Ela gira sozinha.': ['Tap TRY ON to see the boot on your foot. It spins on its own.', 'Toca PROBAR para ver el botín en tu pie. Gira solo.', 'Tocca PROVA per vedere lo scarpino al piede. Gira da solo.', 'Touche ESSAYER pour voir le crampon à ton pied. Il tourne tout seul.'],
+    'A sua sacola está vazia. O Biro mostra as chuteiras e o Dedé, as comemorações.': ['Your bag is empty. Biro shows the boots and Dedé, the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines y Dedé, las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons et Dedé, les célébrations.'],
+    'Faltam {0} fakes. Tira alguma coisa da sacola com o Biro ou o Dedé, ou volta depois.': ['You’re {0} fakes short. Take something out of the bag with Biro or Dedé, or come back later.', 'Faltan {0} fakes. Quita algo de la bolsa con Biro o Dedé, o vuelve después.', 'Mancano {0} fakes. Togli qualcosa dalla borsa con Biro o Dedé, o torna più tardi.', 'Il te manque {0} fakes. Retire quelque chose du sac avec Biro ou Dedé, ou reviens plus tard.'],
+    'A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.': ['The "{0}" boots are already on your feet for the next match. To switch, talk to Biro.', 'Los botines "{0}" ya quedaron puestos para el próximo partido. Para cambiarlos, habla con Biro.', 'Gli scarpini "{0}" sono già ai tuoi piedi per la prossima partita. Per cambiarli, vai da Biro.', 'Les crampons "{0}" sont déjà à tes pieds pour le prochain match. Pour changer, vois Biro.'],
     'Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.': ['No rush. The bag stays here while you’re in the store.', 'Sin apuro. La bolsa queda guardada aquí mientras estés en la tienda.', 'Con calma. La borsa resta qui finché sei in negozio.', 'Pas de souci. Le sac reste ici tant que tu es dans le magasin.'],
   };
   const fem = () => typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
@@ -77,7 +102,6 @@
     { k: 'juca', nome: 'Juca', sec: 'bolas', sexo: 'M', seed: 6104 }, { k: 'tati', nome: 'Tati', sec: 'acessorios', sexo: 'F', seed: 6105 }, { k: 'dede', nome: 'Dedé', sec: 'comemoracoes', sexo: 'M', seed: 6106 },
   ];
   const PAPO = {
-    biro: ['Chuteira boa é meio gol! Olha à vontade.', 'Estou arrumando o estoque. Daqui a uns dias já dá para comprar.'],
     kelly: ['Camisa, short, agasalho... aqui a gente veste o time inteiro.', 'As peças novas chegam essa semana. Volta depois!'],
     juca: ['Bola de campo, de society, de futsal... tem de tudo.', 'Só não estou vendendo ainda: falta etiquetar. Logo, logo!'],
     tati: ['Caneleira, luva, boné, garrafinha... o detalhe que faz a diferença.', 'A máquina do cartão dessa seção quebrou. Semana que vem eu vendo!'],
@@ -92,6 +116,28 @@
     const CELS = () => (typeof CELEBRACOES !== 'undefined' ? CELEBRACOES : {});
     const daLoja = () => Object.keys(CELS()).filter((k) => CELS()[k].loja);
     const tem = (k) => !CELS()[k].loja || dadosC().tem.includes(k);
+    // (7.1.10) as chuteiras premium (jogo.js: CHUTEIRAS com loja: true) e a sacola compartilhada (comemoração = a chave; chuteira = 'ch:' + nome)
+    const CHS = () => (typeof CHUTEIRAS !== 'undefined' ? CHUTEIRAS : []);
+    const lojaCh = () => CHS().map((c, i) => i).filter((i) => CHS()[i].loja);
+    const idxCh = (nome) => CHS().findIndex((c) => c.loja && c.nome === nome);
+    const dadosCh = () => { const d = S().dados; if (!d.chuteiras || !Array.isArray(d.chuteiras.tem)) d.chuteiras = { tem: [], usando: null }; return d.chuteiras; };
+    const apar = () => (typeof PERSONAGEM !== 'undefined' ? (PERSONAGEM.aparencia || (PERSONAGEM.aparencia = {})) : {});
+    function chOriginal() {                                              // a chuteira do criador (a "de sempre"), guardada na 1ª vez
+      //   (personagem antigo, sem chuteira escolhida: original = −1 → volta sem chuteira; no catálogo aparece a primeira da lista)
+      const D = dadosCh(); if (D.original == null) { const i = apar().chuteira, c = CHS()[i]; D.original = i == null ? -1 : c && !c.loja ? i : 0; } return Math.max(0, D.original);
+    }
+    function calcar(nome) {                                              // põe a chuteira no personagem (nome null = a de sempre)
+      const ap = apar(), D = dadosCh(); chOriginal();
+      if (nome) { const i = idxCh(nome); if (i < 0) return; ap.chuteira = i; ap.chuteiraNome = nome; D.usando = nome; }
+      else { if (D.original >= 0) ap.chuteira = D.original; else delete ap.chuteira; delete ap.chuteiraNome; D.usando = null; }
+    }
+    const usandoIdx = () => { const i = apar().chuteira; return CHS()[i] ? i : chOriginal(); };
+    const ehCh = (k) => String(k).startsWith('ch:');
+    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : PRECO);
+    const nomeItem = (k) => (ehCh(k) ? Tx(k.slice(3)) : Tx(CELS()[k].nome));
+    const totalSacola = () => M.sacola.reduce((a, k) => a + precoDe(k), 0);
+    // a chuteira comprada volta para o pé se o personagem foi recarregado sem ela (o save da cidade é quem manda)
+    function sincronizarChuteira() { try { const D = dadosCh(); chOriginal(); if (D.usando && apar().chuteiraNome !== D.usando && idxCh(D.usando) >= 0) calcar(D.usando); } catch (e) { /* sem dados ainda */ } }
 
     function modelo(ap, fem2, roupa, cores) {
       const s = S(); let m = null, opt = null;
@@ -265,7 +311,7 @@
         const bt = (txt, cor, fn, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'flex:1;min-width:0;height:28px;border:2px solid ' + (on ? '#fff' : '#0b1430') + ';background:' + cor + ';color:' + (cor === AMAR ? '#101a3c' : '#fff') + ';font:700 10px/1 var(--font-display);letter-spacing:.03em;cursor:pointer;padding:0 4px;'; b.onclick = fn; return b; };
         function render() {
           const nomeDe = (k) => Tx(CELS()[k].nome);
-          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, M.sacola.length * PRECO) : Tx('Sacola vazia')) + '\n' + Tfx('Botão 1: {0}', nomeDe(C.slots[0])) + ' · ' + Tfx('Botão 2: {0}', nomeDe(C.slots[1]));
+          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia')) + '\n' + Tfx('Botão 1: {0}', nomeDe(C.slots[0])) + ' · ' + Tfx('Botão 2: {0}', nomeDe(C.slots[1]));
           const rolagem = lista.scrollTop; lista.innerHTML = '';
           for (const k of ['aviao', 'joelhada'].concat(daLoja())) {
             const c = CELS()[k], meu = tem(k), naSac = M.sacola.includes(k), vendo = M.previa && M.previa.k === k;
@@ -314,10 +360,150 @@
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }
     }
+    // ---------------------------------------------------------------- (7.1.10) AS CHUTEIRAS: a vitrine, o provador e o catálogo do Biro
+    // uma malha só com vários pares (o desenho de cada chuteira numa textura, como no jogador): itens = [{ c, x, y, z, yaw, e }]
+    const FACES = [[[1, 0, 0], [[1, -1, 1], [1, -1, -1], [1, 1, -1], [1, 1, 1]]], [[-1, 0, 0], [[-1, -1, -1], [-1, -1, 1], [-1, 1, 1], [-1, 1, -1]]],
+      [[0, 1, 0], [[-1, 1, 1], [1, 1, 1], [1, 1, -1], [-1, 1, -1]]], [[0, -1, 0], [[-1, -1, -1], [1, -1, -1], [1, -1, 1], [-1, -1, 1]]],
+      [[0, 0, 1], [[-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]], [[0, 0, -1], [[1, -1, -1], [-1, -1, -1], [-1, 1, -1], [1, 1, -1]]]];
+    function malhaChuteiras(itens) {
+      const W = 128, H = 64, tile = new Map();
+      [...new Set(itens.map((q) => q.c))].forEach((c, k) => tile.set(c, [(k % 7) * 16, Math.floor(k / 7) * 16]));
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+      g.fillStyle = '#ffffff'; g.fillRect(112, 48, 16, 16);
+      for (const [c, [tx, ty]] of tile) pintarChuteira(g, tx, ty, c);
+      const tex = api.guardar(new THREE.CanvasTexture(cv)); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
+      const P = [], N = [], U = [], C = [], uvT = (tx, ty) => [(tx + 0.05) / W, 1 - (ty + 15.95) / H, (tx + 15.95) / W, 1 - (ty + 0.05) / H], uvB = uvT(112, 48);
+      const rgb = (h) => { const n = parseInt(String(h).slice(1), 16); return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255]; };
+      function caixa(B, w, h, d, lx, ly, lz, uv, cor) {
+        const co = Math.cos(B.yaw), si = Math.sin(B.yaw), e = B.e, col = rgb(cor), uvs = [[uv[0], uv[1]], [uv[2], uv[1]], [uv[2], uv[3]], [uv[0], uv[3]]];
+        const tr = (x, y, z) => { const X = (lx + x) * e, Z = (lz + z) * e; return [B.x + X * co + Z * si, B.y + (ly + y) * e, B.z - X * si + Z * co]; };
+        for (const [n, cs] of FACES) {
+          const q = cs.map(([a, b, c]) => tr(a * w / 2, b * h / 2, c * d / 2)), nn = [n[0] * co + n[2] * si, n[1], -n[0] * si + n[2] * co];
+          for (const k of [0, 1, 2, 0, 2, 3]) { P.push(...q[k]); N.push(...nn); U.push(...uvs[k]); C.push(...col); }
+        }
+      }
+      for (const B of itens) {                                          // a bota: sola (+ filete), o cabedal com o desenho e a boca (ou o cano de tricô)
+        const c = B.c, [tx, ty] = tile.get(c);
+        caixa(B, 0.33, 0.03, 0.25, 0, 0.015, 0, uvB, c.sola || '#e6e6e0');
+        if (c.solaDet) caixa(B, 0.336, 0.012, 0.256, 0, 0.032, 0, uvB, c.solaDet);
+        caixa(B, 0.32, 0.12, 0.24, 0, 0.09, 0, uvT(tx, ty), '#ffffff');
+        if (c.cano) { caixa(B, 0.236, 0.06, 0.236, -0.04, 0.18, 0, uvB, c.cano); caixa(B, 0.17, 0.01, 0.17, -0.04, 0.211, 0, uvB, '#141414'); }
+        else caixa(B, 0.16, 0.008, 0.15, -0.04, 0.152, 0, uvB, '#141414');
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(N, 3));
+      geo.setAttribute('uv', new THREE.Float32BufferAttribute(U, 2)); geo.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      return new THREE.Mesh(api.guardar(geo), api.guardar(new THREE.MeshLambertMaterial({ map: tex, vertexColors: true })));
+    }
+    // a parede premium (um par em cada nicho, a mais barata de cada nível embaixo) e o destaque girando na redoma
+    function montarVitrine(R) {
+      const D = M.D, lista = lojaCh(); if (!D.vitrine || !lista.length || typeof pintarChuteira !== 'function') return;
+      const itens = [], usados = new Set();
+      for (const i of lista) {
+        const c = CHS()[i], v = D.vitrine.find((q, k) => !usados.has(k) && q.nivel === c.nivel); if (!v) continue; usados.add(D.vitrine.indexOf(v));
+        itens.push({ c, x: v.x - 0.19, y: v.y, z: v.z + 0.05, yaw: -0.38, e: 0.92 }, { c, x: v.x + 0.18, y: v.y, z: v.z - 0.05, yaw: -0.16, e: 0.92 });
+      }
+      R.grupo.add(malhaChuteiras(itens));
+      const T = D.destaque; if (!T) return;
+      const top = CHS()[lista[lista.length - 1]], gir = new THREE.Group(); gir.position.set(T.x, T.y + 0.08, T.z);
+      const m = malhaChuteiras([{ c: top, x: 0, y: 0, z: 0, yaw: 0, e: 1.15 }]); m.position.set(0, 0, 0); gir.add(m); R.grupo.add(gir); M.destaque = gir;
+      const vidro = new THREE.Mesh(api.guardar(new THREE.BoxGeometry(0.66, 0.56, 0.5)), api.guardar(new THREE.MeshLambertMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.16, depthWrite: false })));
+      vidro.position.set(T.x, T.y + 0.28, T.z); R.grupo.add(vidro);
+    }
+    // PROVAR: o boneco do jogador é refeito com a chuteira (e gira devagar no provador); desprovar volta ao normal
+    function provar(i) {
+      if (M.provando === i) return; M.provando = i;
+      try { api.refazerJogador({ chuteira: i }); } catch (e) { console.warn('[Esportiva] provar:', e); }
+      try { api.som && api.som('pop'); } catch (e) { /* sem som */ }
+    }
+    function desprovar() { if (M.provando == null) return; M.provando = null; try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] desprovar:', e); } }
+    function camProvar() { const P = M.D.provar; api.camCena({ px: P.x + 1.25, py: 1.55, pz: P.z + 2.9, tx: P.x + 0.62, ty: 0.55, tz: P.z }); }   // de frente, um pouco de cima: o jogador inteiro à esquerda do painel, os pés em destaque
+    function abrirPainelCh() {
+      return new Promise((fim) => {
+        const d = S().dados, D = dadosCh();
+        const el = document.createElement('div'); el.id = 'espChuteiras';
+        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#101a3c;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-shadow:-6px 6px 0 #0008;';
+        const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:' + AZUL + ';border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:3px;';
+        const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;color:' + AMAR + ';'; tit.textContent = Tx('CHUTEIRAS');
+        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);white-space:pre-line;';
+        cab.append(tit, inf);
+        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:5px;';
+        const pe = document.createElement('div'); pe.style.cssText = 'padding:6px 8px;border-top:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:5px;align-items:stretch;';
+        const nota = document.createElement('div'); nota.style.cssText = 'font:600 10.5px/1.3 var(--font-body);color:#c8d0ea;'; nota.textContent = Tx('Clique em PROVAR para ver a chuteira no seu pé. Ela gira sozinha.') + ' ' + Tx('O que está na sacola você paga no caixa, com a Marta.');
+        const fechar = document.createElement('button'); fechar.type = 'button'; fechar.className = 'pxBtn'; fechar.textContent = Tx('FECHAR'); fechar.style.cssText = '--p:var(--p2,2px);height:38px;font-size:12px;';
+        pe.append(nota, fechar);
+        const bt = (txt, cor, fn, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'flex:1;min-width:0;height:28px;border:2px solid ' + (on ? '#fff' : '#0b1430') + ';background:' + cor + ';color:' + (cor === AMAR ? '#101a3c' : '#fff') + ';font:700 10px/1 var(--font-display);letter-spacing:.03em;cursor:pointer;padding:0 4px;'; b.onclick = fn; return b; };
+        const amostra = (c) => { const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16; cv.style.cssText = 'width:32px;height:32px;image-rendering:pixelated;border:2px solid #0b1430;flex:none;'; try { pintarChuteira(cv.getContext('2d'), 0, 0, c); } catch (e) { /* nada */ } return cv; };
+        const NIV = typeof NIVEIS_CHUTEIRA !== 'undefined' ? NIVEIS_CHUTEIRA : [];
+        function linha(i, rotulo) {
+          const c = CHS()[i], loja = !!c.loja, meu = !loja || D.tem.includes(c.nome), k = 'ch:' + c.nome, naSac = M.sacola.includes(k), noPe = usandoIdx() === i, vendo = M.provando === i;
+          const lin = document.createElement('div'); lin.dataset.k = loja ? c.nome : '_sempre';
+          lin.style.cssText = 'background:' + (vendo ? '#2a3a7a' : '#1a2650') + ';border:2px solid ' + (noPe ? '#3fb76a' : naSac ? AMAR : meu ? '#2f7a55' : '#2a3a7a') + ';padding:5px 6px;display:flex;gap:7px;align-items:center;';
+          const dir = document.createElement('div'); dir.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;';
+          const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+          const n = document.createElement('span'); n.style.cssText = 'font:700 12.5px/1.1 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; n.textContent = rotulo || Tx(c.nome);
+          const tag = document.createElement('span'); tag.style.cssText = 'font:700 10px/1 var(--font-display);padding:3px 5px;white-space:nowrap;background:' + (noPe ? '#1f7a4d' : meu ? '#2f5a45' : naSac ? '#8a6a10' : '#0b1430') + ';color:' + (meu || naSac ? '#fff' : AMAR) + ';';
+          tag.textContent = noPe ? Tx('NO PÉ') : !loja ? Tx('A de sempre') : meu ? Tx('É sua') : naSac ? Tx('Na sacola') : Tfx('{0} fakes', c.preco);
+          top.append(n, tag);
+          const bs = document.createElement('div'); bs.style.cssText = 'display:flex;gap:4px;';
+          bs.appendChild(bt(vendo ? Tx('Provando') : Tx('PROVAR'), '#3a64b8', () => { provar(i); render(); }, vendo));
+          if (meu) bs.appendChild(bt(noPe ? Tx('NO PÉ') : Tx('CALÇAR'), noPe ? '#1f7a4d' : '#2a3a7a', () => { if (!noPe) { calcar(loja ? c.nome : null); api.gravar(d.ponto || 'chegada'); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); } }, noPe));
+          else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== k); render(); }));
+          else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push(k); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+          dir.append(top, bs); lin.append(amostra(c), dir); return lin;
+        }
+        function render() {
+          const ui = usandoIdx();
+          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia')) + '\n' + Tfx('Calçando: {0}', Tx(CHS()[ui] ? CHS()[ui].nome : ''));
+          const rolagem = lista.scrollTop; lista.innerHTML = '';
+          lista.appendChild(linha(chOriginal(), Tx(CHS()[chOriginal()].nome)));
+          let nv = 0;
+          for (const i of lojaCh()) {
+            const c = CHS()[i];
+            if (c.nivel !== nv) {                                       // o título de cada nível, na cor dele
+              nv = c.nivel; const h = document.createElement('div'), N = NIV[nv] || { nome: '', cor: '#ffffff' };
+              h.style.cssText = 'margin-top:4px;padding:3px 6px;font:700 11px/1 var(--font-display);letter-spacing:.1em;color:#101a3c;background:' + N.cor + ';'; h.textContent = Tx(N.nome).toUpperCase(); lista.appendChild(h);
+            }
+            lista.appendChild(linha(i));
+          }
+          lista.scrollTop = rolagem;
+        }
+        fechar.onclick = () => { el.remove(); M.painel = null; fim(); };
+        el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
+        M.painel = { el, render }; render();
+      });
+    }
+    async function catalogoCh() {
+      const s = S(), J = s.jog, d = s.dados, E = dadosE(), A = M.eq.biro; if (!A || M.painel) return;
+      s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); A.falando = true;
+      const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+      try {
+        if (!E.biro) {
+          await api.fala('esp_biro', Tx('Chuteira boa é meio gol! Aqui é a linha premium: 20 modelos, do Pro ao Ícone.'));
+          await api.fala('esp_biro', Tfx('Quanto mais para a direita da parede, mais exclusiva (e mais cara). A mais barata sai por {0} fakes.', Math.min(...lojaCh().map((i) => CHS()[i].preco))));
+          await api.fala('esp_biro', Tx('Pode provar à vontade aqui no espelho. O que gostar vai para a sacola e você paga com a Marta.'));
+          E.biro = true; api.gravar(d.ponto || 'chegada');
+        } else await api.fala('esp_biro', Tx(pk(['Chegou chuteira nova na parede! Bora provar?', 'Qual vai ser hoje, craque?'])));
+        Dialogo.esconder();
+        const P = M.D.provar; await andarJog(P.x, P.z, 2.2); J.yaw = J.yawAlvo = -Math.PI / 2 + 0.5;
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        camProvar(); provar(usandoIdx());
+        const n0 = M.sacola.filter(ehCh).length;
+        await abrirPainelCh();
+        desprovar(); api.camCena(null);
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        await api.fala('esp_biro', M.sacola.filter(ehCh).length > n0 ? Tx('Boa! Passa no caixa que a Marta embrulha.') : Tx('Volta quando quiser, a parede está sempre cheia.'));
+      } catch (e) { console.error('[Esportiva] chuteiras:', e); }
+      finally {
+        A.falando = false; A.yawAlvo = y0; if (M.painel) { M.painel.el.remove(); M.painel = null; } desprovar(); api.camCena(null);
+        try { Dialogo.esconder(); } catch (e) { /* nada */ }
+        const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
+      }
+    }
     // os outros vendedores: a seção ainda não vende
     async function falarVendedor(k) {
       const A = M.eq[k], J = S().jog; if (!A) return; const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); A.falando = true;
-      try { for (const t of PAPO[k]) await api.fala('esp_' + k, Tx(t)); } finally { A.falando = false; A.yawAlvo = y0; Dialogo.esconder(); }
+      try { for (const t of PAPO[k] || []) await api.fala('esp_' + k, Tx(t)); } finally { A.falando = false; A.yawAlvo = y0; Dialogo.esconder(); }
     }
     // a Marta, no caixa: cobra o que está na sacola
     async function caixa() {
@@ -325,19 +511,24 @@
       A.falando = true;
       try {
         if (!E.marta) { await api.fala('esp_marta', fem() ? Tx('Bem-vinda à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.') : Tx('Bem-vindo à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.')); E.marta = true; api.gravar(d.ponto || 'chegada'); }
-        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Dedé, ali no campinho, mostra as comemorações.')); return; }
-        const total = M.sacola.length * PRECO, nomes = M.sacola.map((k) => Tx(CELS()[k].nome)).join(', ');
+        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras e o Dedé, as comemorações.')); return; }
+        const total = totalSacola(), nomes = M.sacola.map(nomeItem).join(', ');
         await api.fala('esp_marta', Tfx('Na sacola: {0}. Dá {1} fakes.', nomes, total));
-        if (d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com o Dedé ou volta depois.', total - d.fakes)); return; }
+        if (!d.devInfinito && d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com o Biro ou o Dedé, ou volta depois.', total - d.fakes)); return; }
         const r = await Escolha.mostrar(Tx('Caixa da loja'), [Tfx('Pagar {0} fakes', total), Tx('Agora não')]);
         if (r !== 0) { await api.fala('esp_marta', Tx('Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.')); return; }
-        d.fakes -= total; for (const k of M.sacola) if (!C.tem.includes(k)) C.tem.push(k);
-        const ult = M.sacola[M.sacola.length - 1]; M.sacola = [];
-        let botao = 0; if (!C.slots.includes(ult)) { botao = CELS()[C.slots[1]].loja && !CELS()[C.slots[0]].loja ? 1 : 2; C.slots[botao - 1] = ult; }   // a última comprada já entra num botão (troca primeiro uma das de graça)
+        d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
+        const cels = M.sacola.filter((k) => !ehCh(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), DC = dadosCh(); M.sacola = [];
+        for (const k of cels) if (!C.tem.includes(k)) C.tem.push(k);
+        for (const n of chs) if (!DC.tem.includes(n)) DC.tem.push(n);
+        const ult = cels[cels.length - 1], ultCh = chs[chs.length - 1];
+        let botao = 0; if (ult && !C.slots.includes(ult)) { botao = CELS()[C.slots[1]].loja && !CELS()[C.slots[0]].loja ? 1 : 2; C.slots[botao - 1] = ult; }   // a última comprada já entra num botão (troca primeiro uma das de graça)
+        if (ultCh) calcar(ultCh);                                        // a última chuteira comprada já vai para o pé
         E.compras = (E.compras | 0) + 1; E.gasto = (E.gasto | 0) + total;
         api.gravar(d.ponto || 'chegada'); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(total);
         await api.fala('esp_marta', Tx('Prontinho! Já é tudo seu.'));
         if (botao) await api.fala('esp_marta', Tfx('A comemoração "{0}" já ficou no seu botão {1}. Para trocar, é com o Dedé.', Tx(CELS()[ult].nome), botao));
+        if (ultCh) await api.fala('esp_marta', Tfx('A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.', Tx(ultCh)));
         await api.fala('esp_marta', Tx('Agora é fazer gol para estrear!'));
       } catch (e) { console.error('[Esportiva] caixa:', e); }
       finally { A.falando = false; try { Dialogo.esconder(); } catch (e) { /* nada */ } }
@@ -346,14 +537,16 @@
     // ---------------------------------------------------------------- entrou / saiu / interação / a cada quadro
     function entrou(R, idx) {
       const s = S(); M.R = R; M.D = R.esportiva || null; if (!M.D) return; void idx;
-      M.nav = null; montarNav(); M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null; M.proxDede = null; M.prox = rnd(3, 8);
+      M.nav = null; montarNav(); M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null; M.proxDede = null; M.prox = rnd(3, 8); M.provando = null; M.destaque = null;
+      sincronizarChuteira();
+      try { montarVitrine(R); } catch (e) { console.warn('[Esportiva] vitrine:', e); }
       for (const E of EQUIPE) criarEquipe(E);
       for (let i = 0; i < alvoClientes() - 1; i++) novoCliente(true);
       void s;
     }
     function saiu() {
       const s = S(), J = s.jog;
-      if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove();
+      if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove(); if (M.provando != null && J) desprovar(); M.provando = null; M.destaque = null;
       if (s.falantesExtra) for (const k of Object.keys(s.falantesExtra)) if (k.startsWith('esp_')) delete s.falantesExtra[k];
       M.R = null; M.D = null; M.nav = null; M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null;
     }
@@ -363,20 +556,23 @@
         const A = M.eq[E.k]; if (!A) continue;
         if (E.sec === 'caixa') v.push({ x: D.pagar.x, z: D.pagar.z, r: 1.7, txt: Tx('Caixa da loja') + (M.sacola.length ? ' (' + M.sacola.length + ')' : ''), fn: caixa, y: 2.3, pri: true });
         else if (E.k === 'dede') v.push({ x: A.x, z: A.z, r: 1.8, txt: Tx('Ver as comemorações'), fn: catalogo, y: 2.4, pri: true });
+        else if (E.k === 'biro') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as chuteiras'), fn: catalogoCh, y: 2.4, pri: true });
         else v.push({ x: A.x, z: A.z + 0.5, r: 1.6, txt: Tfx('Falar com {0}', Tx(E.nome)), fn: () => falarVendedor(E.k), y: 2.4 });
       }
     }
     function tick(dt) {
       const s = S(); if (!s || !M.D || !s.dentro || s.dentro.nome !== 'esportiva') return;
       tickPrevia(dt); tickDede(dt); tickFluxo(dt);
+      if (M.destaque) M.destaque.rotation.y += dt * 0.7;                // a mais cara girando na redoma
+      if (M.provando != null) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira
       for (const E of EQUIPE) { const A = M.eq[E.k]; if (A && !A.falando && E.k !== 'dede' && s.modo === 'livre') { const J = s.jog, perto = Math.hypot(J.x - A.x, J.z - A.z) < 3.2; A.yawAlvo = perto ? Math.atan2(-(J.z - A.z), J.x - A.x) : A.casa.yaw; } }   // quem está perto: o vendedor olha para o jogador
     }
     function limpar() { if (M.painel) { M.painel.el.remove(); M.painel = null; } }
-    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente };
+    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira };
     if (typeof window !== 'undefined') window.__esportiva = dbg;
     return { entrou, saiu, chegou: () => false, tickCliente, tick, alvos, alvosSentado: () => null, liberarMesa() {}, limpar, _f: dbg };
   }
 
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
-  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.9', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
+  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.10', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
 })();

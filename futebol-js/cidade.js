@@ -112,6 +112,12 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.10
+   - CHUTEIRAS PREMIUM na Golaço Esportes (esportiva.js; desenhos no jogo.js): 20 modelos em 5 níveis (Pro, Elite, Galáctica,
+     Lendária, Ícone), de 250 a 6.000 fakes. Parede premium com os pares de verdade, a mais cara girando na redoma, o Biro com o
+     catálogo e o PROVADOR (refazerJogador({ chuteira }) calça a chuteira no jogador só para provar). A comprada vai para o pé
+     (aparencia.chuteira + chuteiraNome) e entra nas partidas. dados.chuteiras = { tem, usando, original }.
+
    NOVIDADES DA 7.1.9
    - LOJA ESPORTIVA (esportiva.js + interiores.js): interior quadrado, com uma seção para cada tipo de compra
      (chuteiras, roupas, bolas, acessórios e, no meio, o campinho das comemorações), a Marta no caixa, um
@@ -3442,13 +3448,14 @@
     const b = new THREE.Mesh(S.geoSombra || (S.geoSombra = guardar(new THREE.CircleGeometry(1, 12))), S.matSombra || (S.matSombra = guardar(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }))));
     b.scale.set(raio, raio, 1); b.rotation.x = -Math.PI / 2; S.grupo.add(b); return b;
   }
-  function criarJogador(f2, H) {
+  function criarJogador(f2, H, extra) {
     let m = null, opt = null;
     try { if (f2 && typeof f2.modeloJogador === 'function') { const r = f2.modeloJogador(H && H.fase2); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
     if (!m) {
       const ap = PERSONAGEM.aparencia || {};
       opt = { camisa: '#3a64b8', listra: '#f2f2ee', gola: '#f2f2ee', calcao: '#8c9199', meia: ap.pele || '#946042', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)',
         barba: 0, manga: 0, meiao: 1, labio: ap.labio == null ? 3 : ap.labio, cabecao: 1.08, escala: 0.9, pele: ap.pele || '#946042', cabelo: ap.cabelo || '#1C140F', estilo: ap.estilo | 0, rosto: ap.rosto | 0, corBarba: ap.cabelo || '#1C140F' };
+      if (extra) Object.assign(opt, extra);   // (7.1.10) provando chuteira na Golaço Esportes
       m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false;
     }
     S.grupo.add(m.raiz); S.meus.add(m);
@@ -4717,11 +4724,12 @@
     if (S.fimRes) S.fimRes();
   }
   // REFAZ o boneco do jogador com a aparência atual (PERSONAGEM.aparencia: corte novo na barbearia) e a roupa salva; troca no mesmo lugar
-  function refazerJogador() {
+  //   (7.1.10) extra = { chuteira } → o boneco sai com essa chuteira (provar na Golaço Esportes); sem extra volta ao normal
+  function refazerJogador(extra) {
     const J = S.jog, velho = J.m, pai = velho.raiz.parent;
     let m = null, opt = null;
-    try { const f2 = S.f2; if (f2 && typeof f2.modeloJogador === 'function') { const r = f2.modeloJogador(API.historia.ler('fase2')); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
-    if (!m) { const N = criarJogador(null, null); m = N.m; opt = N.opt; for (const o of [N.blob, N.anel]) { if (o.parent) o.parent.remove(o); } S.meus.delete(m); }
+    try { const f2 = S.f2; if (f2 && typeof f2.modeloJogador === 'function') { const r = f2.modeloJogador(API.historia.ler('fase2'), extra); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
+    if (!m) { const N = criarJogador(null, null, extra); m = N.m; opt = N.opt; for (const o of [N.blob, N.anel]) { if (o.parent) o.parent.remove(o); } S.meus.delete(m); }
     m.raiz.position.copy(velho.raiz.position); m.raiz.rotation.copy(velho.raiz.rotation);
     if (pai) { pai.add(m.raiz); pai.remove(velho.raiz); }
     S.meus.delete(velho); S.meus.add(m); if (typeof ATLETAS !== 'undefined') ATLETAS.delete(velho);

@@ -740,15 +740,36 @@
       // ---- CHUTEIRAS (noroeste): prateleiras nas paredes norte e oeste, o banco de provar e o espelho de pé
       const COR_CH = ['#f2c230', '#c8352b', '#1c1c1f', '#f4f4ec', '#3a64b8', '#1f9a4d', '#e8742a', '#d95fa0', '#3fb7b0', '#7a4fb0'];
       const chuteira = (x, y, z, cor, oeste) => { if (oeste) { G.box(0.11, 0.03, 0.3, '#f4f4ec', x, y, z); G.box(0.1, 0.09, 0.28, cor, x, y + 0.03, z); G.box(0.1, 0.08, 0.1, cor, x, y + 0.12, z + 0.09); } else { G.box(0.3, 0.03, 0.11, '#f4f4ec', x, y, z); G.box(0.28, 0.09, 0.1, cor, x, y + 0.03, z); G.box(0.1, 0.08, 0.1, cor, x - 0.09, y + 0.12, z); } };
-      for (let n = 0; n < 4; n++) { const y = 0.55 + n * 0.55;
-        G.box(4.2, 0.05, 0.34, '#f4f4ec', -7.4, y, -Rr + 0.2); for (let i = 0; i < 9; i++) chuteira(-9.25 + i * 0.46, y + 0.05, -Rr + 0.2, COR_CH[(i * 3 + n * 7) % 10], false);
+      for (let n = 0; n < 4; n++) { const y = 0.55 + n * 0.55;                       // a parede oeste: as chuteiras comuns
         G.box(0.34, 0.05, 4.6, '#f4f4ec', -L / 2 + 0.2, y, -6.6); for (let i = 0; i < 10; i++) chuteira(-L / 2 + 0.2, y + 0.05, -8.65 + i * 0.46, COR_CH[(i * 7 + n * 3 + 1) % 10], true); }
-      bloq(-7.4, -Rr + 0.2, 4.3, 0.45); bloq(-L / 2 + 0.2, -6.6, 0.45, 4.7);
+      bloq(-L / 2 + 0.2, -6.6, 0.45, 4.7);
+      // (7.1.10) a PAREDE PREMIUM (norte): 5 colunas, uma por nível (Pro, Elite, Galáctica, Lendária, Ícone: o preço sobe para a direita),
+      //   4 nichos em cada uma (a mais barata embaixo). Os pares de chuteira (com o desenho de verdade) quem põe é o esportiva.js, nos
+      //   lugares de R.esportiva.vitrine; o destaque (a mais cara, girando na redoma) fica em R.esportiva.destaque.
+      const NIV = (typeof NIVEIS_CHUTEIRA !== 'undefined' && NIVEIS_CHUTEIRA) || [null, { nome: 'Pro', cor: '#B9C2CC' }, { nome: 'Elite', cor: '#3A8AD6' }, { nome: 'Galáctica', cor: '#8A4FD0' }, { nome: 'Lendária', cor: '#D9A92A' }, { nome: 'Ícone', cor: '#7FE3FF' }];
+      const escurece = (h, t) => { const n = parseInt(h.slice(1), 16), f = (v) => Math.round(v * (1 - t)); return '#' + ((f(n >> 16 & 255) << 16) | (f(n >> 8 & 255) << 8) | f(n & 255)).toString(16).padStart(6, '0'); };
+      const VX0 = -9.6, VW = 0.92, VZ = -Rr + 0.24, PRAT = [0.42, 0.98, 1.54, 2.1];
+      ES.vitrine = [];
+      G.box(5 * VW + 0.1, 0.16, 0.48, '#0e1a40', VX0 + 2.5 * VW, 0, VZ); G.box(5 * VW + 0.1, 0.14, 0.48, '#0e1a40', VX0 + 2.5 * VW, 2.98, VZ);   // rodapé e coroa do móvel
+      for (let c = 0; c < 5; c++) {
+        const x = VX0 + VW * (c + 0.5), cor = NIV[c + 1].cor;
+        G.box(VW - 0.04, 2.82, 0.04, escurece(cor, 0.62), x, 0.16, -Rr + 0.03);                          // o fundo do nicho, na cor do nível
+        G.box(0.04, 2.82, 0.44, '#f4f4ec', x - VW / 2, 0.16, VZ); if (c === 4) G.box(0.04, 2.82, 0.44, '#f4f4ec', x + VW / 2, 0.16, VZ);   // as divisórias
+        for (const y of PRAT) {
+          G.box(VW - 0.06, 0.035, 0.42, '#f4f4ec', x, y, VZ);                                                // a prateleira
+          G.box(VW - 0.1, 0.022, 0.03, cor, x, y + 0.5, VZ + 0.17);                                          // a luz do nicho (filete na cor do nível)
+          G.box(0.16, 0.06, 0.012, '#f4f4ec', x, y - 0.075, VZ + 0.21);                                      // a etiqueta de preço
+          ES.vitrine.push({ x, y: y + 0.035, z: VZ + 0.02, nivel: c + 1 });
+        }
+        placa(String(NIV[c + 1].nome).toUpperCase(), escurece(cor, 0.35), '#ffffff', VW - 0.08, 0.24, x, 2.81, -Rr + 0.47);   // o nome do nível no alto
+      }
+      bloq(VX0 + 2.5 * VW, VZ, 5 * VW + 0.1, 0.5);
       G.box(1.7, 0.1, 0.5, '#8a5a2b', -7.0, 0.38, -6.4); for (const sx of [-1, 1]) G.box(0.08, 0.38, 0.44, '#2a2a2e', -7.0 + sx * 0.75, 0, -6.4); bloq(-7.0, -6.4, 1.7, 0.5);   // o banco
       G.box(0.7, 0.5, 0.06, '#9ec7dd', -5.4, 0.05, -5.0); G.box(0.78, 0.06, 0.1, '#8a5a2b', -5.4, 0, -5.0); G.box(0.78, 0.04, 0.08, '#8a5a2b', -5.4, 0.55, -5.0); bloq(-5.4, -5.0, 0.8, 0.2);   // o espelho de pé
-      G.box(0.9, 0.6, 0.6, '#f2f2ee', -8.6, 0, -4.4); G.box(0.92, 0.04, 0.62, '#d8622a', -8.6, 0.6, -4.4); chuteira(-8.6, 0.64, -4.4, '#f2c230', false); bloq(-8.6, -4.4, 0.9, 0.6);   // o destaque
-      pend('CHUTEIRAS', SEC.chuteiras[0], -7.2, -7.6);
-      ES.secoes.chuteiras = { x: -5.6, z: -6.9, yaw: -Math.PI / 2 };
+      G.box(0.9, 0.6, 0.6, '#1c1c1f', -8.6, 0, -4.4); G.box(0.92, 0.04, 0.62, '#d9a92a', -8.6, 0.6, -4.4); G.box(0.94, 0.06, 0.64, '#0e1a40', -8.6, 0, -4.4); bloq(-8.6, -4.4, 0.9, 0.6);   // o destaque: a redoma e a chuteira girando vêm do esportiva.js
+      ES.destaque = { x: -8.6, y: 0.64, z: -4.4 };
+      pend('CHUTEIRAS', SEC.chuteiras[0], -7.3, -9.45);   // (7.1.10) junto da parede, acima da parede premium (pendurado no meio tapava os nichos)
+      ES.secoes.chuteiras = { x: -5.6, z: -6.9, yaw: -Math.PI / 2 }; ES.provar = { x: -6.4, z: -5.5 };   // (7.1.10) onde o jogador fica provando (perto do espelho de pé)
       // ---- ROUPAS (nordeste): camisas penduradas na parede norte, duas araras redondas, os manequins e o provador
       const COR_RP = ['#c8352b', '#f2c230', '#1f9a4d', '#f4f4ec', '#3a64b8', '#1c1c1f', '#e8742a', '#7a4fb0', '#3fb7b0', '#d95fa0'];
       const camisa = (x, y, z, cor, k) => { const e = k || 1; G.box(0.46 * e, 0.52 * e, 0.05, cor, x, y, z); for (const sx of [-1, 1]) G.box(0.16 * e, 0.2 * e, 0.05, cor, x + sx * 0.3 * e, y + 0.32 * e, z); G.box(0.14 * e, 0.05, 0.055, '#f4f4ec', x, y + 0.5 * e, z); };

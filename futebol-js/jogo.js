@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.9';
+const VERSAO_JOGO = '7.1.10';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -577,7 +577,7 @@ function gerarAparencia(semente, genero) {
   const lojaB = fem ? [] : ESTILOS_BARBA.map((b, i) => i).filter((i) => ESTILOS_BARBA[i].cosmetico);
   if (lojaB.length) { const r3 = sorteador(((semente || 1) * 6151 + 49157) | 0); if (r3() < CHANCE_CORTE_LOJA) barba = lojaB[Math.floor(r3() * lojaB.length)]; }
   const labio = clamp(Math.round(iPele * 1.3 + (r() * 2 - 1)), 0, LABIOS.length - 1);
-  return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: Math.floor(r() * CHUTEIRAS.length), manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M' };
+  return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: (() => { const L = chuteirasLivres(); return L[Math.floor(r() * L.length)]; })(),   /* (7.1.10) as premium da loja ficam de fora */ manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M' };
 }
 
 // Seu técnico: nome e aparência sorteados na primeira vez e salvos ('futebolJs.tecnico.v1').
@@ -2092,19 +2092,160 @@ const CHUTEIRAS = [
   { nome: 'Laranja e preta', base: '#F7941D', det: '#17171B', pad: 'metade' },
   { nome: 'Dourada', base: '#D9A92A', det: '#FFF1A8', pad: 'xadrez' },
   { nome: 'Camuflada', base: '#3F5A32', det: '#1F2D1B', pad: 'camuflagem', det2: '#7D8A4F' },
+  // (7.1.10) AS 20 CHUTEIRAS PREMIUM da Golaço Esportes (seção do Biro): loja: true = só aparecem para quem comprou (fora do criador e
+  //   do sorteio dos jogadores). nivel 1..5 (NIVEIS_CHUTEIRA) e preco em fakes: quanto mais premium, mais cara (a partir de 250).
+  //   Extras: sola = cor própria da sola (ignora a do uniforme) · solaDet = filete por cima da sola · cano = gola de tricô no tornozelo
+  //   (cano médio) · cores = paleta do padrão holográfico. Os padrões novos ficam em PADS_PREMIUM (logo abaixo).
+  //   Ficam SEMPRE no fim da lista e nesta ordem (o personagem salvo guarda o número; aparencia.chuteiraNome acha de novo pelo nome).
+  { nome: 'Relâmpago', loja: true, nivel: 1, preco: 250, base: '#F2F2EE', det: '#1E6BFF', det2: '#0B2A6B', pad: 'raio', sola: '#1E6BFF' },
+  { nome: 'Brasa', loja: true, nivel: 1, preco: 300, base: '#17171B', det: '#E8461E', det2: '#FFC21A', pad: 'chamas', sola: '#E8461E' },
+  { nome: 'Maré', loja: true, nivel: 1, preco: 350, base: '#2BD6C8', det: '#0B2A8C', pad: 'gradiente', sola: '#F2F2EE', solaDet: '#2BD6C8' },
+  { nome: 'Canarinho', loja: true, nivel: 1, preco: 400, base: '#FFD21A', det: '#11904A', det2: '#1C4FB5', pad: 'swoosh', sola: '#11904A' },
+  { nome: 'Carbono', loja: true, nivel: 2, preco: 500, base: '#23252B', det: '#D7192A', det2: '#F2F2EE', pad: 'fibra', sola: '#17171B', solaDet: '#D7192A', cano: '#23252B' },
+  { nome: 'Onça-pintada', loja: true, nivel: 2, preco: 600, base: '#E3A23A', det: '#1A1208', det2: '#8A4E14', pad: 'onca', sola: '#1A1208' },
+  { nome: 'Cobra Real', loja: true, nivel: 2, preco: 700, base: '#1F7A3A', det: '#0D3B1C', det2: '#9BE07A', pad: 'escamas', sola: '#D9A92A' },
+  { nome: 'Aurora', loja: true, nivel: 2, preco: 800, base: '#F4F0FF', det: '#B3C8FF', pad: 'holografico', cores: ['#FFB3D9', '#B3C8FF', '#B3FFE6', '#FFF0B3', '#E0B3FF'], sola: '#F4F0FF', solaDet: '#B3C8FF', cano: '#F4F0FF' },
+  { nome: 'Galáxia', loja: true, nivel: 3, preco: 1000, base: '#120A2E', det: '#6A2BBF', det2: '#2B6BD6', pad: 'galaxia', sola: '#6A2BBF', cano: '#120A2E' },
+  { nome: 'Vulcão', loja: true, nivel: 3, preco: 1200, base: '#141210', det: '#E2531A', det2: '#FFD23A', pad: 'lava', sola: '#E2531A', solaDet: '#FFD23A', cano: '#141210' },
+  { nome: 'Gelo Eterno', loja: true, nivel: 3, preco: 1400, base: '#DDF6FF', det: '#8FDDF7', det2: '#4FB3E0', pad: 'cristal', sola: '#4FB3E0', solaDet: '#FFFFFF', cano: '#DDF6FF' },
+  { nome: 'Neon Noturno', loja: true, nivel: 3, preco: 1600, base: '#0C0C14', det: '#FF2E9A', det2: '#2EF2FF', pad: 'circuito', sola: '#2EF2FF', solaDet: '#FF2E9A', cano: '#0C0C14' },
+  { nome: 'Mármore Imperial', loja: true, nivel: 4, preco: 2000, base: '#F4F2EC', det: '#D4A32A', det2: '#B9B6AE', pad: 'marmore', sola: '#D4A32A', cano: '#F4F2EC' },
+  { nome: 'Dragão', loja: true, nivel: 4, preco: 2400, base: '#A3121E', det: '#5A0810', det2: '#F2C230', pad: 'escamas', sola: '#F2C230', solaDet: '#5A0810', cano: '#A3121E' },
+  { nome: 'Rubi', loja: true, nivel: 4, preco: 2800, base: '#C0102C', det: '#7A0418', det2: '#FF6A82', pad: 'cristal', sola: '#D9A92A', solaDet: '#FFF1A8', cano: '#7A0418' },
+  { nome: 'Esmeralda', loja: true, nivel: 4, preco: 3200, base: '#0F9A5A', det: '#06603A', det2: '#7CF0B8', pad: 'cristal', sola: '#D9A92A', solaDet: '#FFF1A8', cano: '#06603A' },
+  { nome: 'Ouro Maciço', loja: true, nivel: 5, preco: 3600, base: '#D9A92A', det: '#9A6E12', pad: 'metal', sola: '#9A6E12', solaDet: '#FFF1A8', cano: '#D9A92A' },
+  { nome: 'Diamante Negro', loja: true, nivel: 5, preco: 4200, base: '#14141A', det: '#2E2E3A', det2: '#5A5A70', pad: 'cristal', sola: '#E8E8F0', solaDet: '#14141A', cano: '#14141A' },
+  { nome: 'Platina', loja: true, nivel: 5, preco: 5000, base: '#C9CED6', det: '#2B6BD6', pad: 'metal', sola: '#8A919C', solaDet: '#2B6BD6', cano: '#C9CED6' },
+  { nome: 'Coroa de Ouro', loja: true, nivel: 5, preco: 6000, base: '#F7F7F2', det: '#D9A92A', det2: '#7FE3FF', pad: 'coroa', sola: '#D9A92A', solaDet: '#FFF1A8', cano: '#D9A92A' },
 ];
+// (7.1.10) os níveis das chuteiras premium (nome e cor da etiqueta na loja)
+const NIVEIS_CHUTEIRA = [null, { nome: 'Pro', cor: '#B9C2CC' }, { nome: 'Elite', cor: '#3A8AD6' }, { nome: 'Galáctica', cor: '#8A4FD0' }, { nome: 'Lendária', cor: '#D9A92A' }, { nome: 'Ícone', cor: '#7FE3FF' }];
+// as chuteiras que qualquer um pode ter (criador e sorteio): as de loja ficam de fora
+const chuteirasLivres = () => CHUTEIRAS.map((c, i) => i).filter((i) => !CHUTEIRAS[i].loja);
 const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 function pintarChuteira(g, ox, oy, c) {
   const px = (x, y, w, h, cor) => { g.fillStyle = cor; g.fillRect(ox + x, oy + y, w || 1, h || 1); };
   px(0, 0, 16, 16, c.base);
   if (c.pad === 'faixa') { px(0, 6, 16, 2, c.det); px(0, 12, 16, 1, c.det); }
   else if (c.pad === 'listras') for (let i = -16; i < 16; i += 5) for (let k = 0; k < 16; k++) { const x = i + k; if (x >= 0 && x < 16) px(x, k, 2, 1, c.det); }
-  else if (c.pad === 'degrade') for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (y / 16 > BAYER4[(y & 3) * 4 + (x & 3)] / 16 + 0.1) px(x, y, 1, 1, c.det);
+  else if (c.pad === 'degrade') { for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (y / 16 > BAYER4[(y & 3) * 4 + (x & 3)] / 16 + 0.1) px(x, y, 1, 1, c.det); }   // (7.1.10) entre chaves: o if solto engolia os padrões de baixo (pontos, metade, xadrez e camuflagem nunca apareciam)
   else if (c.pad === 'pontos') for (let y = 1; y < 16; y += 4) for (let x = (y % 8 === 1 ? 1 : 3); x < 16; x += 4) px(x, y, 2, 2, c.det);
   else if (c.pad === 'metade') { px(0, 8, 16, 8, c.det); px(0, 7, 16, 1, '#FFFFFF'); }
   else if (c.pad === 'xadrez') for (let y = 0; y < 16; y += 2) for (let x = (y % 4 === 0 ? 0 : 2); x < 16; x += 4) px(x, y, 2, 2, c.det);
   else if (c.pad === 'camuflagem') for (let i = 0; i < 26; i++) { const x = (i * 7 + 3) % 15, y = (i * 11 + 5) % 15; px(x, y, 2 + (i % 3), 2, i % 2 ? c.det : c.det2); }
+  else if (PADS_PREMIUM[c.pad]) PADS_PREMIUM[c.pad](px, c);
 }
+// (7.1.10) os padrões das chuteiras premium (16x16; a linha 0 é o alto do cabedal e a 15 encosta na sola)
+const corMix = (a, b, t) => '#' + misturarCor(hexNum(a), hexNum(b), Math.max(0, Math.min(1, t))).toString(16).padStart(6, '0');
+const hashPx = (x, y, k) => { let h = (x * 374761393 + y * 668265263 + k * 982451653) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+function linhaPx(px, pts, cor, grossa) {                          // linha entre os pontos (grossa = 2 px de altura)
+  for (let k = 0; k < pts.length - 1; k++) {
+    const [x0, y0] = pts[k], [x1, y1] = pts[k + 1], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0), 1);
+    for (let i = 0; i <= n; i++) { const x = Math.round(x0 + (x1 - x0) * i / n), y = Math.round(y0 + (y1 - y0) * i / n); px(x, y, 1, grossa ? 2 : 1, cor); }
+  }
+}
+function brilhosPx(px, k, qtd, cor) {                              // brilhinhos (estrela de 1 px com cruz clara)
+  for (let i = 0; i < qtd; i++) {
+    const x = 1 + Math.floor(hashPx(i, k, 3) * 14), y = 1 + Math.floor(hashPx(k, i, 5) * 11);
+    px(x, y, 1, 1, cor || '#FFFFFF'); if (i % 2 === 0) { const meio = corMix(cor || '#FFFFFF', '#888888', 0.35); px(x - 1, y, 1, 1, meio); px(x + 1, y, 1, 1, meio); }
+  }
+}
+const PADS_PREMIUM = {
+  gradiente(px, c) { for (let y = 0; y < 16; y++) px(0, y, 16, 1, corMix(c.base, c.det, y / 15)); px(0, 13, 16, 1, '#FFFFFF'); },
+  raio(px, c) {
+    const pts = [[0, 10], [4, 6], [6, 9], [10, 3], [11, 7], [15, 4]];
+    linhaPx(px, pts.map(([x, y]) => [x, y + 2]), c.det2, true); linhaPx(px, pts, c.det, true);
+    px(0, 14, 16, 2, c.det2);
+  },
+  chamas(px, c) {
+    for (let x = 0; x < 16; x++) {
+      const h = Math.round(7 + 3 * Math.sin(x * 1.3) + 2 * Math.sin(x * 0.7 + 1)), y0 = 15 - h;
+      px(x, y0, 1, 16 - y0, c.det); if (h > 5) px(x, y0 + 3, 1, 16 - y0 - 3, c.det2);
+      if (x % 3 === 1) px(x, y0 - 1, 1, 1, c.det);
+    }
+  },
+  swoosh(px, c) {
+    const pts = []; for (let x = 0; x < 16; x++) pts.push([x, Math.round(11 - 6 * Math.sin((x / 15) * Math.PI * 0.85))]);
+    linhaPx(px, pts.map(([x, y]) => [x, y + 2]), c.det2, false); linhaPx(px, pts, c.det, true);
+    px(0, 15, 16, 1, c.det);
+  },
+  fibra(px, c) {
+    const cl = corMix(c.base, '#FFFFFF', 0.13), ce = corMix(c.base, '#000000', 0.25);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) px(x, y, 1, 1, ((x >> 1) + (y >> 1)) & 1 ? (((x + y) & 1) ? cl : c.base) : ce);
+    px(0, 10, 16, 2, c.det); px(0, 12, 16, 1, c.det2);
+  },
+  onca(px, c) {
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (hashPx(x, y, 9) > 0.86) px(x, y, 1, 1, corMix(c.base, c.det2, 0.35));
+    const C = [[2, 2], [8, 1], [13, 3], [5, 7], [11, 8], [1, 11], [8, 12], [14, 12]];
+    for (const [cx, cy] of C) {
+      px(cx, cy, 2, 2, c.det2);
+      for (const [dx, dy] of [[-1, 0], [-1, 1], [2, 0], [2, 1], [0, -1], [1, -1], [0, 2], [1, 2]]) if (hashPx(cx + dx, cy + dy, 2) > 0.2) px(cx + dx, cy + dy, 1, 1, c.det);
+    }
+  },
+  escamas(px, c) {
+    for (let y = 0; y < 16; y++) {
+      const r = Math.floor(y / 3), off = (r % 2) * 2, fy = y % 3;
+      for (let x = 0; x < 16; x++) {
+        const fx = (x + off) % 4;
+        if (fy === 2 && fx !== 0) px(x, y, 1, 1, c.det);
+        else if (fy === 1 && fx === 0) px(x, y, 1, 1, c.det);
+        else if (fy === 0 && fx === 2) px(x, y, 1, 1, c.det2);
+      }
+    }
+  },
+  holografico(px, c) {
+    const L = c.cores || [c.base, c.det], n = L.length;
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const t = (x + y * 0.8) / 4, i = Math.floor(t), f = t - i; px(x, y, 1, 1, corMix(L[i % n], L[(i + 1) % n], f)); }
+    brilhosPx(px, 11, 5, '#FFFFFF');
+  },
+  galaxia(px, c) {
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const n1 = Math.sin(x * 0.55 + y * 0.3) + Math.sin(y * 0.6 - x * 0.25 + 1.3), n2 = Math.sin(x * 0.35 - y * 0.5 + 2) + Math.cos(y * 0.4 + x * 0.6);
+      let cor = corMix(c.base, c.det, (n1 + 0.4) * 0.45); if (n2 > 0.9) cor = corMix(cor, c.det2, (n2 - 0.9) * 0.8);
+      const h = hashPx(x, y, 7); if (h > 0.955) cor = '#FFFFFF'; else if (h > 0.93) cor = '#FFE9A8';
+      px(x, y, 1, 1, cor);
+    }
+  },
+  lava(px, c) {
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const v = Math.abs(Math.sin(x * 0.9 + Math.sin(y * 0.7) * 2) * Math.sin(y * 0.8 + Math.sin(x * 0.5) * 1.5));
+      px(x, y, 1, 1, v < 0.16 ? c.det2 : v < 0.32 ? c.det : corMix(c.base, c.det, hashPx(x, y, 4) * 0.12));
+    }
+  },
+  cristal(px, c) {
+    const tons = [c.base, c.det, c.det2, corMix(c.base, '#FFFFFF', 0.3)];
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const cx = x >> 2, cy = y >> 2, lado = (x & 3) > (y & 3) ? 1 : 0;
+      px(x, y, 1, 1, tons[Math.floor(hashPx(cx * 2 + lado, cy, 6) * tons.length)]);
+    }
+    brilhosPx(px, 17, 4, '#FFFFFF');
+  },
+  circuito(px, c) {
+    for (const y of [3, 8, 12]) for (let x = 0; x < 16; x++) if (hashPx(x >> 2, y, 8) > 0.25) px(x, y, 1, 1, c.det);
+    for (const [x, y0, y1] of [[3, 3, 8], [9, 8, 12], [13, 3, 8], [6, 12, 15]]) for (let y = y0; y <= y1; y++) px(x, y, 1, 1, c.det2);
+    for (const [x, y] of [[3, 3], [13, 8], [9, 12], [6, 15], [0, 8]]) px(x - 1 < 0 ? 0 : x - 1, y - 1 < 0 ? 0 : y - 1, 2, 2, c.det2);
+  },
+  marmore(px, c) {
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) if (hashPx(x, y, 12) > 0.8) px(x, y, 1, 1, corMix(c.base, c.det2, 0.25));
+    for (const [y0, f, ph, cor] of [[4, 0.45, 0, c.det], [10, 0.35, 2, c.det], [7, 0.6, 4, c.det2], [13, 0.5, 1, c.det2]]) {
+      const pts = []; for (let x = 0; x < 16; x += 2) pts.push([x, Math.round(y0 + 2.2 * Math.sin(x * f + ph))]); pts.push([15, Math.round(y0 + 2.2 * Math.sin(15 * f + ph))]);
+      linhaPx(px, pts, cor, false);
+    }
+  },
+  metal(px, c) {
+    for (let y = 0; y < 16; y++) px(0, y, 16, 1, y < 5 ? corMix(c.base, '#FFFFFF', 0.45 - y * 0.08) : corMix(c.base, '#000000', (y - 5) * 0.035));
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) { const d = x - y * 0.6; if (d > 3 && d < 5.2) px(x, y, 1, 1, corMix(c.base, '#FFFFFF', 0.7)); }
+    px(0, 10, 16, 1, c.det); px(0, 11, 16, 1, corMix(c.det, '#000000', 0.3));
+  },
+  coroa(px, c) {
+    const pts = []; for (let x = 0; x < 16; x++) pts.push([x, Math.round(12 - 5 * Math.sin((x / 15) * Math.PI * 0.85))]);
+    linhaPx(px, pts, c.det, true);
+    const cor = [' #   #   # ', ' ## ### ## ', ' ######### ', ' ######### '];
+    for (let y = 0; y < cor.length; y++) for (let x = 0; x < cor[y].length; x++) if (cor[y][x] === '#') px(3 + x, 1 + y, 1, 1, c.det);
+    px(4, 1, 1, 1, c.det2); px(8, 1, 1, 1, c.det2); px(12, 1, 1, 1, c.det2);
+    brilhosPx(px, 23, 3, c.det2); px(0, 15, 16, 1, c.det);
+  },
+};
 // Cabeça: laterais e nuca pintadas na textura. Faixa "lisa" = tons que ficam mais opacos até certa linha (sem quadradinhos);
 // "degrade" = com pixels (fade). Rostos de lado: as 3 colunas da frente só têm a patilha.
 function pintarLadosCabeca(g, ox, oy, o) {
@@ -2288,6 +2429,13 @@ function makeAthlete(o) {
   // quadril). Ela fica escondida e só aparece durante a joelhada — malha escondida não custa
   // chamada de desenho, então o jogo continua com o mesmo desempenho.
   const meiao = o.meiao == null ? 1 : o.meiao, botaCor = o.chuteira != null ? 0xffffff : 0x1d1f24, botaUV = o.chuteira != null ? () => UV_BOTA : null;
+  // (7.1.10) chuteira premium: sola com cor própria, filete em cima da sola e a gola de tricô (cano médio)
+  const chut = o.chuteira != null ? CHUTEIRAS[o.chuteira] : null, corSola = chut && chut.sola ? hex(chut.sola) : hex(o.sola);
+  const extrasBota = (L, dy) => {
+    if (!chut) return;
+    if (chut.solaDet) L.caixa(0.336, 0.012, 0.256, hex(chut.solaDet), 0.04, -0.703 + dy, 0);
+    if (chut.cano) { L.caixa(0.236, 0.06, 0.236, hex(chut.cano), 0, -0.572 + dy, 0); L.caixa(0.24, 0.014, 0.24, misturarCor(hex(chut.cano), 0xffffff, 0.35), 0, -0.545 + dy, 0); }
+  };
   const perna = (z) => {
     const p = pivo(0, 0.74, z), L = new Lote(UV_BRANCO);
     L.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
@@ -2295,7 +2443,7 @@ function makeAthlete(o) {
     else if (meiao === 2) L.caixa(0.225, 0.46, 0.225, hex(o.meia), 0, -0.39, 0);                                                    // longo: sobe pela coxa
     else L.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.45, 0);
     L.caixa(0.32, 0.12, 0.24, botaCor, 0.04, -0.66, 0, botaUV);
-    L.caixa(0.33, 0.03, 0.25, hex(o.sola), 0.04, -0.715, 0);
+    L.caixa(0.33, 0.03, 0.25, corSola, 0.04, -0.715, 0); extrasBota(L, 0);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LC = new Lote(UV_BRANCO);
     LC.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
@@ -2307,7 +2455,7 @@ function makeAthlete(o) {
     if (meiao === 0) { LK.caixa(0.2, 0.2, 0.2, pele, 0, -0.1, 0); LK.caixa(0.22, 0.14, 0.22, hex(o.meia), 0, -0.27, 0); }
     else LK.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.17, 0);
     LK.caixa(0.32, 0.12, 0.24, botaCor, 0.04, -0.38, 0, botaUV);
-    LK.caixa(0.33, 0.03, 0.25, hex(o.sola), 0.04, -0.435, 0);
+    LK.caixa(0.33, 0.03, 0.25, corSola, 0.04, -0.435, 0); extrasBota(LK, 0.28);
     joelho.add(LK.malha(material)); p.add(joelho);
     p.joelho = joelho;
     return p;
@@ -13910,6 +14058,15 @@ const I18N = {
   'Clássica preta': ['Classic black', 'Clásica negra', 'Classico nero', 'Classique noir'], 'Branca pura': ['Pure white', 'Blanca pura', 'Bianco puro', 'Blanc pur'], 'Azul royal': ['Royal blue', 'Azul real', 'Blu reale', 'Bleu roi'],
   'Vermelho fogo': ['Fire red', 'Rojo fuego', 'Rosso fuoco', 'Rouge feu'], 'Amarelo neon': ['Neon yellow', 'Amarillo neón', 'Giallo neon', 'Jaune fluo'], 'Verde limão': ['Lime green', 'Verde lima', 'Verde lime', 'Vert citron'],
   'Rosa choque': ['Hot pink', 'Rosa fucsia', 'Rosa shocking', 'Rose vif'], 'Laranja e preta': ['Orange and black', 'Naranja y negra', 'Arancione e nera', 'Orange et noir'], 'Dourada': ['Golden', 'Dorada', 'Dorata', 'Dorée'], 'Camuflada': ['Camo', 'Camuflada', 'Mimetica', 'Camouflage'],
+  // (7.1.10) as chuteiras premium da Golaço Esportes e os níveis
+  'Relâmpago': ['Lightning', 'Relámpago', 'Fulmine', 'Éclair'], 'Brasa': ['Ember', 'Brasa', 'Brace', 'Braise'], 'Maré': ['Tide', 'Marea', 'Marea', 'Marée'],
+  'Canarinho': ['Canary', 'Canarinho', 'Canarino', 'Canari'], 'Carbono': ['Carbon', 'Carbono', 'Carbonio', 'Carbone'], 'Onça-pintada': ['Jaguar', 'Jaguar', 'Giaguaro', 'Jaguar'],
+  'Cobra Real': ['King Cobra', 'Cobra Real', 'Cobra Reale', 'Cobra Royal'], 'Aurora': ['Aurora', 'Aurora', 'Aurora', 'Aurore'], 'Galáxia': ['Galaxy', 'Galaxia', 'Galassia', 'Galaxie'],
+  'Vulcão': ['Volcano', 'Volcán', 'Vulcano', 'Volcan'], 'Gelo Eterno': ['Eternal Ice', 'Hielo Eterno', 'Ghiaccio Eterno', 'Glace Éternelle'], 'Neon Noturno': ['Night Neon', 'Neón Nocturno', 'Neon Notturno', 'Néon Nocturne'],
+  'Mármore Imperial': ['Imperial Marble', 'Mármol Imperial', 'Marmo Imperiale', 'Marbre Impérial'], 'Dragão': ['Dragon', 'Dragón', 'Drago', 'Dragon'], 'Rubi': ['Ruby', 'Rubí', 'Rubino', 'Rubis'],
+  'Esmeralda': ['Emerald', 'Esmeralda', 'Smeraldo', 'Émeraude'], 'Ouro Maciço': ['Solid Gold', 'Oro Macizo', 'Oro Massiccio', 'Or Massif'], 'Diamante Negro': ['Black Diamond', 'Diamante Negro', 'Diamante Nero', 'Diamant Noir'],
+  'Platina': ['Platinum', 'Platino', 'Platino', 'Platine'], 'Coroa de Ouro': ['Golden Crown', 'Corona de Oro', 'Corona d’Oro', 'Couronne d’Or'],
+  'Pro': ['Pro', 'Pro', 'Pro', 'Pro'], 'Elite': ['Elite', 'Élite', 'Élite', 'Élite'], 'Galáctica': ['Galactic', 'Galáctica', 'Galattica', 'Galactique'], 'Lendária': ['Legendary', 'Legendaria', 'Leggendaria', 'Légendaire'], 'Ícone': ['Icon', 'Ícono', 'Icona', 'Icône'],
 };
 const _IDX = { en: 0, es: 1, it: 2, fr: 3 };
 const Idioma = {
@@ -16342,7 +16499,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
       } else if (aba === 'meiao') {
         h += '<p class="crSecao">' + T('Meião') + '</p><div class="crGrade largo">' + ['Curto', 'Normal', 'Longo'].map((n, i) => '<button type="button" class="pxBtn crChip' + (i === E.meiao ? ' on' : '') + '" data-a="meiao" data-i="' + i + '">' + T(n) + '</button>').join('') + '</div>';
       } else if (aba === 'chuteira') {
-        h += '<p class="crSecao">' + T('Chuteira') + '</p><div class="crGrade largo">' + CHUTEIRAS.map((c, i) => '<button type="button" class="pxBtn crChip' + (i === E.chuteira ? ' on' : '') + '" data-a="chuteira" data-i="' + i + '"><span class="crSw" style="background:' + c.base + '"></span>' + esc(T(c.nome)) + '</button>').join('') + '</div>';
+        h += '<p class="crSecao">' + T('Chuteira') + '</p><div class="crGrade largo">' + CHUTEIRAS.map((c, i) => (c.loja ? '' : '<button type="button" class="pxBtn crChip' + (i === E.chuteira ? ' on' : '') + '" data-a="chuteira" data-i="' + i + '"><span class="crSw" style="background:' + c.base + '"></span>' + esc(T(c.nome)) + '</button>')).join('') + '</div>';
       } else if (aba === 'pe') {
         h += '<p class="crSecao">' + T('Pé dominante') + '</p><div class="crGrade largo">' + [['D', 'Pé direito'], ['E', 'Pé esquerdo']].map(([k, n]) => '<button type="button" class="pxBtn crChip' + (E.pe === k ? ' on' : '') + '" data-a="pe" data-k="' + k + '">' + T(n) + '</button>').join('') + '</div><p class="crDica">' + T('É o pé com que você chuta e passa melhor.') + '</p>';
       } else if (aba === 'comemoracao') {
@@ -16842,6 +16999,7 @@ function ajustarCortePersonagem() {
     else if (typeof FutebolCosmeticos !== 'undefined') { ap.corteRetirado = ap.estiloNome; delete ap.estiloNome; ap.estilo = 0; }   // saiu da loja: a barbearia devolve o corte de antes e os fakes
   }
   if (ap.barbaNome) { const i = ESTILOS_BARBA.findIndex((c) => c.cosmetico && c.nome === ap.barbaNome); if (i >= 0) ap.barba = i; }   // a barba da loja, do mesmo jeito
+  if (ap.chuteiraNome) { const i = CHUTEIRAS.findIndex((c) => (c.loja || c.cosmetico) && c.nome === ap.chuteiraNome); if (i >= 0) ap.chuteira = i; }   // (7.1.10) a chuteira premium da Golaço Esportes, pelo nome
 }
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 

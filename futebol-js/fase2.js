@@ -485,10 +485,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     extrasRoupa(m, R, c, base.pele); pintarEmblema(m, R, c);
     return { m, opt };
   }
-  function modeloJogador(d) {
+  function modeloJogador(d, extra) {      // (7.1.10) extra = { chuteira }: a cidade usa para o jogador provar chuteira na loja
     const fem = PERSONAGEM.genero === 'F', lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
     const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
-    return vestirModelo(aparenciaJogador(), R, c);
+    return vestirModelo(Object.assign(aparenciaJogador(), extra || {}), R, c);
   }
   // (cidade.js) as pessoas da cidade: adultas (corpo e cabeça normais), com as mesmas roupas do guarda-roupa (menos as de time, que levam o nome do jogador)
   function modeloPessoa(o) {
