@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.8';
+const VERSAO_JOGO = '7.1.9';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -2716,7 +2716,12 @@ const aimArrow = (() => {
 // vel = velocidade ao longo do tempo; giro = quanto ele vai virando (rad/s);
 // swing = até quando as pernas continuam correndo por cima da pose.
 // ---------------------------------------------------------------------
-const POSE0 = { y: 0, lean: 0, roll: 0, aLz: 0, aRz: 0, aLx: 0.2, aRx: -0.2, lLz: 0, lRz: 0, jL: 0, jR: 0 };
+// (7.1.9) canais novos (para as 20 comemorações da loja; os que faltam num quadro-chave valem o de POSE0):
+//   pit = cambalhota (gira para trás/frente)   yaw = gira o corpo no lugar   tw = torce só o tronco
+//   cL/cR = cotovelo dobrando para a frente   cLx/cRx = cotovelo dobrando para dentro (− no esquerdo, + no direito)
+//   lLx/lRx = perna abrindo para o lado   cab = cabeça (− abaixa, + olha para cima)
+//   Com "pivo" na comemoração, roll/pit giram em volta do MEIO do corpo (altura pivo) e nos eixos do próprio boneco.
+const POSE0 = { y: 0, lean: 0, roll: 0, aLz: 0, aRz: 0, aLx: 0.2, aRx: -0.2, lLz: 0, lRz: 0, jL: 0, jR: 0, pit: 0, yaw: 0, tw: 0, cL: 0, cR: 0, cLx: 0, cRx: 0, lLx: 0, lRx: 0, cab: 0 };
 const CELEBRACOES = {
   // Aviãozinho: quando é VOCÊ, só abre os braços e inclina para o lado da curva; para onde ele
   // vai é você que controla no joystick (os quadros-chave abaixo são da versão da IA).
@@ -2751,10 +2756,181 @@ const CELEBRACOES = {
       [2.85, { y: 0, lean: 0, roll: 0, aLz: 0, aRz: 0, aLx: 0.2, aRx: -0.2, lLz: 0, lRz: 0, jL: 0, jR: 0 }],
     ],
   },
+  // ===================================================================== (7.1.9) AS 20 COMEMORAÇÕES DA LOJA (Golaço Esportes, 300 fakes cada)
+  //   loja: true = só aparece para quem comprou. Todas são animações por quadros-chave (o movimento vem da animação).
+  mortal: { nome: 'Mortal', loja: true, dur: 3.0, giro: 0, swing: 0.45, pivo: 0.95, vel: [[0, 5.5], [0.45, 2.5], [0.7, 0.8], [1.5, 0.8], [1.65, 0], [3, 0]], keys: [
+    [0, { lean: -0.15 }],
+    [0.5, { y: -0.2, lean: -0.3, aLz: -0.7, aRz: -0.7, lLz: 0.7, lRz: 0.7, jL: -1.3, jR: -1.3 }],
+    [0.68, { y: 0.3, lean: 0.1, aLz: 2.9, aRz: 2.9, pit: 0.35 }],
+    [1.0, { y: 1.2, pit: 3.1, aLz: 1.2, aRz: 1.2, lLz: 1.5, lRz: 1.5, jL: -1.9, jR: -1.9, lean: -0.3 }],
+    [1.3, { y: 0.55, pit: 5.6, aLz: 1.6, aRz: 1.6, lLz: 0.6, lRz: 0.6, jL: -0.8, jR: -0.8 }],
+    [1.5, { y: -0.16, pit: 6.2832, lean: -0.2, aLz: 0.8, aRz: 0.8, lLz: 0.6, lRz: 0.6, jL: -1.1, jR: -1.1 }],
+    [1.9, { y: 0, pit: 6.2832, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
+    [2.7, { y: 0, pit: 6.2832, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
+    [3.0, { pit: 6.2832 }]] },
+  estrela: { nome: 'Estrelinha', loja: true, dur: 3.2, giro: 0, swing: 0.3, pivo: 0.95, vel: [[0, 5], [0.3, 4], [2.1, 4], [2.4, 0], [3.2, 0]], keys: [
+    [0, {}],
+    [0.3, { yaw: 1.5708, aLz: 3.1, aRz: 3.1, aLx: 0.4, aRx: -0.4 }],
+    [1.2, { yaw: 1.5708, roll: 6.2832, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
+    [2.1, { yaw: 1.5708, roll: 12.5664, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
+    [2.4, { yaw: 0, roll: 12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
+    [3.0, { yaw: 0, roll: 12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
+    [3.2, { roll: 12.5664 }]] },
+  robo: { nome: 'Robô', loja: true, dur: 3.6, giro: 0, swing: 0, vel: [[0, 0], [3.6, 0]], keys: [
+    [0, {}],
+    [0.25, { aLz: 1.5708, cL: 1.5708, aRx: -0.1, cab: 0 }], [0.6, { aLz: 1.5708, cL: 1.5708 }],
+    [0.8, { aLz: 1.5708, cL: 0.2, aRz: 1.5708, cR: 1.5708, tw: 0.5 }], [1.15, { aLz: 1.5708, cL: 0.2, aRz: 1.5708, cR: 1.5708, tw: 0.5 }],
+    [1.35, { aLz: 0.3, cL: 1.5708, aRz: 1.5708, cR: 0.2, tw: -0.5, lean: -0.25, cab: -0.3 }], [1.7, { aLz: 0.3, cL: 1.5708, aRz: 1.5708, cR: 0.2, tw: -0.5, lean: -0.25, cab: -0.3 }],
+    [1.9, { aLx: 1.5, aRx: -1.5, cLx: -1.5708, cRx: 1.5708, lean: 0, y: -0.08, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }], [2.3, { aLx: 1.5, aRx: -1.5, cLx: -1.5708, cRx: 1.5708, y: -0.08, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }],
+    [2.5, { aLx: 1.5, aRx: -1.5, cL: 1.5708, cR: 1.5708, tw: 0.6, cab: 0.2 }], [2.9, { aLx: 1.5, aRx: -1.5, cL: 1.5708, cR: 1.5708, tw: -0.6, cab: 0.2 }],
+    [3.2, { aLz: 1.5708, aRz: 1.5708, cL: 1.5708, cR: 1.5708 }], [3.6, {}]] },
+  coracao: { nome: 'Coraçãozinho', loja: true, dur: 3.0, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3, 0]], keys: [
+    [0, {}],
+    [0.5, { aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, cab: 0.1 }],
+    [1.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: 0.12 }],
+    [1.5, { y: 0, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: -0.12 }],
+    [2.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: 0.12 }],
+    [2.6, { aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06 }],
+    [3.0, {}]] },
+  telefone: { nome: 'Me liga', loja: true, dur: 3.2, giro: 0.5, swing: 3.2, vel: [[0, 3.2], [3.2, 2.2]], keys: [
+    [0, {}],
+    [0.4, { aRx: -1.55, cRx: -2.45, aRz: 0.15, aLz: 1.55, aLx: 0.3, roll: -0.12, cab: 0.05 }],
+    [1.0, { aRx: -1.55, cRx: -2.45, aRz: 0.15, aLz: 1.55, aLx: 0.9, roll: -0.12, tw: 0.25 }],
+    [1.6, { aRx: -1.55, cRx: -2.45, aRz: 0.15, aLz: 1.55, aLx: 0.1, roll: -0.12, tw: -0.1 }],
+    [2.2, { aRx: -1.55, cRx: -2.45, aRz: 0.15, aLz: 1.55, aLx: 0.9, roll: -0.12, tw: 0.25 }],
+    [2.8, { aRx: -1.55, cRx: -2.45, aRz: 0.15, aLz: 1.55, aLx: 0.3, roll: -0.12 }],
+    [3.2, {}]] },
+  silencio: { nome: 'Silêncio', loja: true, dur: 3.2, giro: 0.35, swing: 3.2, vel: [[0, 3.5], [0.8, 1.6], [3.2, 1.6]], keys: [
+    [0, {}],
+    [0.5, { aRz: 1.0, cR: 2.05, cRx: 0.25, aRx: -0.25, aLx: 0.9, aLz: -0.2, lean: 0.05 }],
+    [1.4, { aRz: 1.0, cR: 2.05, cRx: 0.25, aRx: -0.25, aLx: 1.1, aLz: -0.2, lean: 0.05, tw: 0.4 }],
+    [2.3, { aRz: 1.0, cR: 2.05, cRx: 0.25, aRx: -0.25, aLx: 1.1, aLz: -0.2, lean: 0.05, tw: -0.4 }],
+    [2.9, { aRz: 1.0, cR: 2.05, cRx: 0.25, aRx: -0.25, aLx: 0.9, aLz: -0.2 }],
+    [3.2, {}]] },
+  arqueiro: { nome: 'Arqueiro', loja: true, dur: 3.4, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3.4, 0]], keys: [
+    [0, {}],
+    [0.5, { tw: 0.9, aLz: 1.5, aLx: 0.9, aRz: 1.5, aRx: 0.5, cRx: 0.3, lLz: 0.3, lRz: -0.3, lean: 0.05 }],
+    [1.3, { tw: 0.9, aLz: 1.75, aLx: 0.9, aRz: 1.5, aRx: -0.3, cRx: 2.3, lLz: 0.3, lRz: -0.3, lean: 0.18, cab: 0.15 }],
+    [1.9, { tw: 0.9, aLz: 1.78, aLx: 0.9, aRz: 1.5, aRx: -0.35, cRx: 2.35, lLz: 0.3, lRz: -0.3, lean: 0.2, cab: 0.15 }],
+    [2.0, { tw: 0.9, aLz: 1.78, aLx: 0.9, aRz: 1.4, aRx: -1.5, cRx: 0, lLz: 0.3, lRz: -0.3, lean: 0.1, cab: 0.15 }],
+    [2.9, { tw: 0.9, aLz: 1.78, aLx: 0.9, aRz: 1.4, aRx: -1.5, lLz: 0.3, lRz: -0.3, lean: 0.1, cab: 0.15 }],
+    [3.4, {}]] },
+  embala: { nome: 'Embala neném', loja: true, dur: 3.4, giro: 0.3, swing: 3.4, vel: [[0, 2.4], [3.4, 1.4]], keys: (() => { const b = { aLz: 0.95, aRz: 0.95, cLx: -1.25, cRx: 1.25, cL: 0.5, cR: 0.5, aLx: 0.25, aRx: -0.25, cab: -0.25 }, K = [[0, {}]]; for (let i = 0; i < 6; i++) { const s = i % 2 ? 1 : -1; K.push([0.4 + i * 0.45, Object.assign({}, b, { tw: s * 0.5, roll: s * 0.1 })]); } K.push([3.4, {}]); return K; })() },
+  musculoso: { nome: 'Fortão', loja: true, dur: 3.4, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3.4, 0]], keys: [
+    [0, {}],
+    [0.5, { aLx: 1.5, aRx: -1.5, cLx: 1.9, cRx: -1.9, y: -0.08, lLx: -0.25, lRx: 0.25, cab: 0.1 }],
+    [0.9, { aLx: 1.5, aRx: -1.5, cLx: 2.3, cRx: -2.3, y: -0.12, lLx: -0.25, lRx: 0.25, cab: 0.1 }],
+    [1.3, { aLx: 1.5, aRx: -1.5, cLx: 1.9, cRx: -1.9, y: -0.08, lLx: -0.25, lRx: 0.25, cab: 0.1 }],
+    [1.7, { tw: 0.7, aLx: 1.5, cLx: 2.2, aRx: -0.5, aRz: 0.6, cRx: 1.6, y: -0.1, lLx: -0.2, lRx: 0.2 }],
+    [2.3, { tw: 0.7, aLx: 1.5, cLx: 2.35, aRx: -0.5, aRz: 0.6, cRx: 1.7, y: -0.13, lLx: -0.2, lRx: 0.2 }],
+    [2.7, { aLx: 1.5, aRx: -1.5, cLx: 2.3, cRx: -2.3, y: -0.1, lLx: -0.25, lRx: 0.25, cab: 0.15 }],
+    [3.1, { aLx: 1.5, aRx: -1.5, cLx: 2.3, cRx: -2.3, y: -0.1, lLx: -0.25, lRx: 0.25, cab: 0.15 }],
+    [3.4, {}]] },
+  continencia: { nome: 'Continência', loja: true, dur: 3.2, giro: 0, swing: 0, vel: [[0, 1.2], [1.2, 1.2], [1.4, 0], [3.2, 0]], keys: [
+    [0, {}],
+    [0.3, { lLz: 0.9, jL: -1.2, aRz: 0.6, aLz: -0.4 }], [0.6, { lRz: 0.9, jR: -1.2, aLz: 0.6, aRz: -0.4 }],
+    [0.9, { lLz: 0.9, jL: -1.2, aRz: 0.6, aLz: -0.4 }], [1.2, { lRz: 0.9, jR: -1.2, aLz: 0.6, aRz: -0.4 }],
+    [1.45, { aLx: 0.05, aRx: -0.05 }],
+    [1.7, { aRx: -1.8, cRx: -2.05, aRz: 0.35, aLx: 0.05, lean: 0.03, cab: 0.08 }],
+    [2.7, { aRx: -1.8, cRx: -2.05, aRz: 0.35, aLx: 0.05, lean: 0.03, cab: 0.08 }],
+    [2.9, { aRx: -1.5, aRz: 0.5, aLx: 0.05 }],
+    [3.2, {}]] },
+  peixinho: { nome: 'Peixinho', loja: true, dur: 3.3, giro: 0, swing: 0.35, pivo: 0.95, vel: [[0, 7.5], [0.5, 7.5], [1.3, 5], [2.1, 0.5], [2.3, 0], [3.3, 0]], keys: [
+    [0, { lean: -0.2 }],
+    [0.35, { y: 0.15, pit: -0.5, aLz: 2.2, aRz: 2.2, lLz: -0.3, lRz: -0.3 }],
+    [0.6, { y: -0.72, pit: -1.48, aLz: 2.9, aRz: 2.9, aLx: 0.35, aRx: -0.35, lLz: -0.1, lRz: -0.1, cab: 0.5 }],
+    [2.2, { y: -0.72, pit: -1.48, aLz: 2.9, aRz: 2.9, aLx: 0.6, aRx: -0.6, lLz: -0.1, lRz: -0.1, cab: 0.5 }],
+    [2.6, { y: -0.45, pit: -0.9, aLz: 1.3, aRz: 1.3, lLz: 0.9, lRz: 0.2, jL: -1.6, jR: -1.5 }],
+    [3.0, { y: 0, pit: 0, aLz: 2.8, aRz: 2.8, aLx: 0.5, aRx: -0.5 }],
+    [3.3, {}]] },
+  giro: { nome: 'Giro no ar', loja: true, dur: 3.2, giro: 0, swing: 0.5, vel: [[0, 6], [0.5, 5], [1.0, 2.5], [1.2, 0], [3.2, 0]], keys: [
+    [0, { lean: -0.15 }],
+    [0.5, { y: -0.15, lLz: 0.5, lRz: 0.5, jL: -1.0, jR: -1.0, aLz: -0.5, aRz: -0.5, lean: -0.2 }],
+    [0.8, { y: 0.85, yaw: 2.2, aLz: 0.9, aRz: 0.9, cLx: -1.3, cRx: 1.3, lLz: 0.2, lRz: 0.2, jL: -0.6, jR: -0.6 }],
+    [1.1, { y: 0.1, yaw: 3.1416, aLz: 0.9, aRz: 0.9, cLx: -1.3, cRx: 1.3 }],
+    [1.25, { y: -0.14, yaw: 3.1416, aLx: 0.75, aRx: -0.75, aLz: -0.15, aRz: -0.15, lLx: -0.3, lRx: 0.3, jL: -0.35, jR: -0.35, lLz: 0.18, lRz: 0.18, lean: 0.06 }],
+    [2.7, { y: -0.14, yaw: 3.1416, aLx: 0.75, aRx: -0.75, aLz: -0.15, aRz: -0.15, lLx: -0.3, lRx: 0.3, jL: -0.35, jR: -0.35, lLz: 0.18, lRz: 0.18, lean: 0.06, cab: 0.12 }],
+    [3.2, { yaw: 6.2832 }]] },
+  soneca: { nome: 'Soneca', loja: true, dur: 3.8, giro: 0, swing: 0.3, pivo: 0.95, vel: [[0, 3], [0.4, 0], [3.8, 0]], keys: [
+    [0, {}],
+    [0.5, { y: -0.3, lLz: 0.9, lRz: 0.9, jL: -1.7, jR: -1.7, lean: -0.2 }],
+    [1.1, { y: -0.74, roll: 1.5, lLz: 0.5, lRz: 0.9, jL: -1.0, jR: -1.4, aLz: 2.6, cL: 2.2, aRz: 0.8, cRx: 1.2, cab: 0 }],
+    [3.0, { y: -0.74, roll: 1.5, lLz: 0.5, lRz: 0.9, jL: -1.0, jR: -1.4, aLz: 2.6, cL: 2.2, aRz: 0.8, cRx: 1.2 }],
+    [3.4, { y: -0.3, lLz: 0.9, lRz: 0.9, jL: -1.7, jR: -1.7, lean: -0.2 }],
+    [3.8, {}]] },
+  passinho: { nome: 'Passinho', loja: true, dur: 3.6, giro: 0, swing: 0, vel: [[0, 0], [3.6, 0]], keys: (() => { const K = [[0, {}]]; for (let i = 0; i < 14; i++) { const f = i % 4; K.push([0.25 + i * 0.23, { y: f % 2 ? 0.07 : -0.05, lLx: f === 0 ? -0.55 : f === 2 ? 0.2 : 0, lRx: f === 2 ? 0.55 : f === 0 ? -0.2 : 0, lLz: f === 1 ? 0.5 : -0.1, lRz: f === 3 ? 0.5 : -0.1, jL: f === 1 ? -1.1 : -0.25, jR: f === 3 ? -1.1 : -0.25, tw: (f < 2 ? 1 : -1) * 0.3, aLz: 0.5, aRz: 0.5, cL: 1.2 + (f % 2) * 0.5, cR: 1.7 - (f % 2) * 0.5, aLx: 0.45, aRx: -0.45, lean: -0.1 }]); } K.push([3.6, {}]); return K; })() },
+  reverencia: { nome: 'Reverência', loja: true, dur: 3.6, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3.6, 0]], keys: [
+    [0, {}],
+    [0.5, { aLx: 1.35, aRx: -1.35, lean: 0.08, lLz: -0.08, lRz: -0.08, cab: 0.15 }],
+    [1.1, { lean: -1.0, lLz: 1.0, lRz: 1.0, y: 0.39, aRz: 1.0, cRx: 1.7, aRx: -0.1, aLx: 1.2, aLz: -0.5, cab: -0.2 }],
+    [1.7, { lean: -1.0, lLz: 1.0, lRz: 1.0, y: 0.39, aRz: 1.0, cRx: 1.7, aRx: -0.1, aLx: 1.2, aLz: -0.5, cab: -0.2 }],
+    [2.1, { aLx: 1.35, aRx: -1.35, lean: 0.08, lLz: -0.08, lRz: -0.08, yaw: 0.9 }],
+    [2.6, { lean: -0.8, lLz: 0.8, lRz: 0.8, y: 0.26, aRz: 1.0, cRx: 1.7, aRx: -0.1, aLx: 1.2, aLz: -0.5, cab: -0.2, yaw: 0.9 }],
+    [3.1, { lean: -0.8, lLz: 0.8, lRz: 0.8, y: 0.26, aRz: 1.0, cRx: 1.7, aRx: -0.1, aLx: 1.2, aLz: -0.5, cab: -0.2, yaw: 0.9 }],
+    [3.6, {}]] },
+  soco: { nome: 'Soco no ar', loja: true, dur: 3.0, giro: 0, swing: 0.55, vel: [[0, 6.5], [0.55, 5], [1.2, 3], [1.4, 0], [3, 0]], keys: [
+    [0, { lean: -0.15 }],
+    [0.55, { y: -0.16, lLz: 0.55, lRz: 0.55, jL: -1.1, jR: -1.1, aRz: -0.8, aLz: 0.4, lean: -0.25 }],
+    [0.85, { y: 0.8, aRz: 3.0, aRx: -0.15, aLz: 0.7, cL: 1.9, lLz: 0.7, jL: -1.5, lRz: -0.35, jR: -0.9, lean: 0.1, cab: 0.2 }],
+    [1.1, { y: 0.55, aRz: 3.0, aRx: -0.15, aLz: 0.7, cL: 1.9, lLz: 0.5, jL: -1.2, lRz: -0.3, jR: -0.7, lean: 0.1, cab: 0.2 }],
+    [1.35, { y: -0.14, lLz: 0.45, lRz: 0.45, jL: -0.9, jR: -0.9, aLz: 0.5, aRz: 0.5, cL: 1.8, cR: 1.8, lean: -0.3 }],
+    [1.8, { y: -0.08, lLx: -0.3, lRx: 0.3, aLz: 0.55, aRz: 0.55, cL: 2.0, cR: 2.0, aLx: 0.5, aRx: -0.5, lean: -0.22, cab: 0.3 }],
+    [2.6, { y: -0.08, lLx: -0.3, lRx: 0.3, aLz: 0.6, aRz: 0.6, cL: 2.1, cR: 2.1, aLx: 0.55, aRx: -0.55, lean: -0.22, cab: 0.3 }],
+    [3.0, {}]] },
+  piao: { nome: 'Pião', loja: true, dur: 3.2, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3.2, 0]], keys: [
+    [0, {}],
+    [0.4, { aLx: 1.5, aRx: -1.5, lRz: 0.5, jR: -1.5, y: 0.03 }],
+    [2.0, { yaw: 18.85, aLx: 1.5, aRx: -1.5, lRz: 0.5, jR: -1.5, y: 0.03 }],
+    [2.3, { yaw: 18.85, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
+    [2.9, { yaw: 18.85, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
+    [3.2, { yaw: 18.85 }]] },
+  trono: { nome: 'Sentadão', loja: true, dur: 3.8, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3.8, 0]], keys: [
+    [0, {}],
+    [0.5, { y: -0.3, lLz: 0.9, lRz: 0.9, jL: -1.7, jR: -1.7, lean: -0.25 }],
+    [1.0, { y: -0.6, lLz: 1.65, lRz: 1.65, jL: -0.5, jR: -0.5, lean: 0.12, aLz: 0.95, aRz: 0.95, cLx: -1.55, cRx: 1.55, aLx: 0.2, aRx: -0.2, cab: 0.12 }],
+    [2.9, { y: -0.6, lLz: 1.65, lRz: 1.5, jL: -0.5, jR: -0.35, lean: 0.12, aLz: 0.95, aRz: 0.95, cLx: -1.55, cRx: 1.55, aLx: 0.2, aRx: -0.2, cab: 0.12, tw: 0.2 }],
+    [3.4, { y: -0.3, lLz: 0.9, lRz: 0.9, jL: -1.7, jR: -1.7, lean: -0.25 }],
+    [3.8, {}]] },
+  ceu: { nome: 'Dedos pro céu', loja: true, dur: 3.6, giro: 0, swing: 0.3, vel: [[0, 4], [0.5, 1], [0.7, 0], [3.6, 0]], keys: [
+    [0, {}],
+    [0.7, { y: -0.36, lLz: 1.45, jL: -1.5, lRz: -0.12, jR: -1.75, lean: 0.05, aLz: 0.3, aRz: 0.3 }],
+    [1.2, { y: -0.36, lLz: 1.45, jL: -1.5, lRz: -0.12, jR: -1.75, lean: 0.12, aLz: 2.95, aRz: 2.95, aLx: 0.22, aRx: -0.22, cab: 0.45 }],
+    [2.6, { y: -0.36, lLz: 1.45, jL: -1.5, lRz: -0.12, jR: -1.75, lean: 0.12, aLz: 2.95, aRz: 2.95, aLx: 0.3, aRx: -0.3, cab: 0.45 }],
+    [3.1, { y: -0.36, lLz: 1.45, jL: -1.5, lRz: -0.12, jR: -1.75, aLz: 1.0, aRz: 1.0, cLx: -1.3, cRx: 1.3, cab: -0.3 }],
+    [3.6, {}]] },
+  dancinha: { nome: 'Dancinha', loja: true, dur: 3.6, giro: 0, swing: 0, vel: [[0, 0], [3.6, 0]], keys: (() => { const K = [[0, {}]]; for (let i = 0; i < 10; i++) { const s = i % 2 ? 1 : -1, alto = i % 4 < 2; K.push([0.3 + i * 0.32, { y: i % 2 ? 0.08 : -0.08, roll: s * 0.14, tw: s * 0.25, aLz: alto ? 2.6 : 0.8, aRz: alto ? 2.6 : 0.8, aLx: 0.5 + s * 0.3, aRx: -0.5 + s * 0.3, cL: alto ? 0.4 : 1.4, cR: alto ? 0.4 : 1.4, lLx: s < 0 ? -0.35 : 0, lRx: s > 0 ? 0.35 : 0, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }]); } K.push([3.6, {}]); return K; })() },
 };
+// (7.1.9) aplica a pose de uma comemoração num boneco (a partida e a loja usam a mesma). base = { x, y, z } do boneco no chão; ang = para onde ele olha.
+const _vCel = typeof THREE !== 'undefined' ? new THREE.Vector3() : null, _eCel = typeof THREE !== 'undefined' ? new THREE.Euler() : null;
+function aplicarPoseCeleb(m, c, P, corre, base, ang) {
+  const r = m.raiz;
+  if (c.pivo) {                                                       // gira em volta do meio do corpo, nos eixos do boneco
+    r.rotation.order = 'YXZ'; r.rotation.set(P.roll, -ang - P.yaw, P.pit);
+    _eCel.set(P.roll, 0, P.pit, 'YXZ'); _vCel.set(0, c.pivo, 0).applyEuler(_eCel);
+    const lx = -_vCel.x, ly = c.pivo - _vCel.y, lz = -_vCel.z, a = -ang - P.yaw, ca = Math.cos(a), sa = Math.sin(a);
+    r.position.set(base.x + lx * ca + lz * sa, base.y + P.y + ly, base.z - lx * sa + lz * ca);
+  } else { r.position.y = base.y + P.y; r.rotation.x = P.roll; r.rotation.z = 0; r.rotation.y = -ang - P.yaw; }
+  m.corpo.rotation.z = P.lean; m.corpo.rotation.y = P.tw; m.corpo.position.y = 0;
+  m.bracoE.rotation.z = P.aLz; m.bracoD.rotation.z = P.aRz; m.bracoE.rotation.x = P.aLx; m.bracoD.rotation.x = P.aRx;
+  m.pernaE.rotation.z = P.lLz + corre; m.pernaD.rotation.z = P.lRz - corre;
+  usarJoelhos(m, P.jL || 0, P.jR || 0);
+}
+function aplicarPoseCelebExtras(m, P) {                                // cotovelos, pernas para o lado e cabeça (na partida, depois que o resto do quadro "zera" essas peças)
+  usarCotovelo(m.bracoE, P.cLx || 0, P.cL || 0); usarCotovelo(m.bracoD, P.cRx || 0, P.cR || 0);
+  m.pernaE.rotation.x = P.lLx || 0; m.pernaD.rotation.x = P.lRx || 0;
+  if (P.cab || m.cabecaLigada) usarCabeca(m, P.cab || 0);
+}
+// (7.1.9) as comemorações do jogador: as duas de sempre + as compradas na loja; os 2 botões da partida usam os "slots" escolhidos lá.
+const CELEB_BASE = ['aviao', 'joelhada'];
+function celebDoJogador() {
+  let c = null; try { const h = (PERSONAGEM.historia && PERSONAGEM.historia.cidade) || HistoriaSave.ler('cidade'); c = h && h.celeb; } catch (e) { /* sem história */ }
+  const tem = CELEB_BASE.concat(c && Array.isArray(c.tem) ? c.tem.filter((k) => CELEBRACOES[k] && CELEBRACOES[k].loja) : []);
+  const slots = [0, 1].map((i) => { const k = c && Array.isArray(c.slots) ? c.slots[i] : null; return k && tem.includes(k) ? k : CELEB_BASE[i]; });
+  return { tem, slots };
+}
 function celebPose(c, t) {
   const K = c.keys;
-  if (t <= K[0][0]) return K[0][1];
+  if (t <= K[0][0]) return Object.assign({}, POSE0, K[0][1]);
   for (let i = 0; i < K.length - 1; i++) {
     const [t0, a] = K[i], [t1, b] = K[i + 1];
     if (t <= t1) {
@@ -2763,7 +2939,7 @@ function celebPose(c, t) {
       return out;
     }
   }
-  return K[K.length - 1][1];
+  return Object.assign({}, POSE0, K[K.length - 1][1]);
 }
 function celebVel(c, t) {
   const V = c.vel;
@@ -6254,7 +6430,7 @@ function scoreGoal(team, tGol) {
 function startCelebration(name) {
   if (G.state !== 'celebrate' || user.celeb || G.celebAuto) return;
   user.celeb = { name, t: 0 };
-  showToast(CELEBRACOES[name].nome + '!', 'good');
+  showToast(T(CELEBRACOES[name].nome) + '!', 'good');
 }
 
 // ---------------------------------------------------------------------
@@ -9830,8 +10006,8 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyJ') { martelar(G.recv.kind === 'alto' ? 'finalizar' : 'dominar'); return; }
   }
   if (G.state === 'celebrate') {
-    if (e.code === 'Digit1') startCelebration('aviao');
-    if (e.code === 'Digit2') startCelebration('joelhada');
+    if (e.code === 'Digit1') startCelebration(celebDoJogador().slots[0]);
+    if (e.code === 'Digit2') startCelebration(celebDoJogador().slots[1]);
     if (e.code === 'Enter') endCelebration();
   }
   if (e.code === 'KeyJ' && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
@@ -9969,8 +10145,9 @@ function renderButtons(mode) {
     mk('PASSAR', 's2', () => startKick('pass'));
     mk('DRIBLAR', 's3', startDribble, 'primary', 'dribBtn').hidden = true;   // aparece só quando dá para driblar
   } else if (mode === 'celebrate') {
-    mk('CELEBRAÇÃO 1', 's1', () => startCelebration('aviao'), 'primary');
-    mk('CELEBRAÇÃO 2', 's2', () => startCelebration('joelhada'), 'primary');
+    const cs = celebDoJogador().slots;                                 // (7.1.9) os dois botões mostram as comemorações escolhidas na loja
+    const mkC = (i, slot) => { const nome = T(CELEBRACOES[cs[i]].nome).toUpperCase(), bt = mk(nome, slot, () => startCelebration(cs[i]), 'primary'); if (nome.length > 9) { bt.style.fontSize = nome.length > 12 ? '8px' : '9px'; bt.style.whiteSpace = 'normal'; bt.style.lineHeight = '1.05'; bt.style.padding = '0 6px'; } };   // nome comprido: letra menor e quebra de linha
+    mkC(0, 's1'); mkC(1, 's2');
     mk('PULAR', 's3', endCelebration);
   } else if (mode === 'kickoff') {
     mk('PASSAR', 's1', kickoffPass, 'primary');            // um toque só: sem mira nem força
@@ -11379,13 +11556,9 @@ function syncMeshes(dt) {
         P = { y: 0, lean: sp > 0.5 ? -0.18 : -0.05, roll: p.rollAviao * ab, aLz: 0, aRz: 0, aLx: lerp(0.2, 1.5, ab), aRx: lerp(-0.2, -1.5, ab), lLz: 0, lRz: 0 };
         corre = sp > 0.5 ? Math.sin(p.anim) * 0.9 : 0;
       }
-      m.raiz.position.y = P.y; m.raiz.rotation.x = P.roll; m.raiz.rotation.z = 0;
-      m.corpo.rotation.z = P.lean; m.corpo.position.y = 0;
-      m.bracoE.rotation.z = P.aLz; m.bracoD.rotation.z = P.aRz;
-      m.bracoE.rotation.x = P.aLx; m.bracoD.rotation.x = P.aRx;
-      m.pernaE.rotation.z = P.lLz + corre; m.pernaD.rotation.z = P.lRz - corre;
-      usarJoelhos(m, P.jL || 0, P.jR || 0);
-    }
+      if (P.yaw === undefined) P = Object.assign({}, POSE0, P);       // (o aviãozinho controlado monta a pose na mão)
+      aplicarPoseCeleb(m, c, P, corre, { x: p.x, y: 0, z: p.z }, p.angle); p.celebP = P;   // (7.1.9) a mesma função da loja (cambalhotas, giros...)
+    } else if (p.celebP) { p.celebP = null; m.raiz.rotation.order = 'XYZ'; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0; m.corpo.rotation.y = 0; }
     if (p.slidePose > 0) {
       // Carrinho: deita para trás de lado, perna da frente esticada rente ao chão.
       const a = smooth(p.slidePose);
@@ -11421,6 +11594,7 @@ function syncMeshes(dt) {
     if (p.perda) aplicarPerda(p, m);
     if (p.impacto) aplicarImpacto(p, m);
     if (p.driblePose) aplicarDriblePose(p, m); else if (m.pernaE.rotation.x || m.pernaD.rotation.x) { m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0; }
+    if (p.celeb && p.celebP) aplicarPoseCelebExtras(m, p.celebP);       // (7.1.9) cotovelos, cabeça e pernas para o lado das comemorações
     if (p.bloqueio) aplicarBloqueio(p, m); else if (m.cabeca.rotation.y) m.cabeca.rotation.y = 0;
     if (p.levanta && p.levanta.t >= 0 && p.role !== 'GK') aplicarLevanta(p, m);   // levantando do chão (depois do voleio/bicicleta)
     if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);   // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa, levantar
@@ -13631,6 +13805,8 @@ const I18N = {
   'Curto': ['Short', 'Corto', 'Corto', 'Court'], 'Normal': ['Normal', 'Normal', 'Normale', 'Normal'], 'Longo': ['Long', 'Largo', 'Lungo', 'Long'],
   'Pé dominante': ['Dominant foot', 'Pie dominante', 'Piede dominante', 'Pied fort'], 'Pé direito': ['Right foot', 'Pie derecho', 'Piede destro', 'Pied droit'], 'Pé esquerdo': ['Left foot', 'Pie izquierdo', 'Piede sinistro', 'Pied gauche'],
   'É o pé com que você chuta e passa melhor.': ['It is the foot you shoot and pass best with.', 'Es el pie con el que mejor chutas y pasas.', 'È il piede con cui tiri e passi meglio.', 'Le pied avec lequel tu tires et passes le mieux.'],
+  // (7.1.9) as 20 comemorações da loja
+  'Mortal': ['Backflip', 'Mortal', 'Salto mortale', 'Salto arrière'], 'Estrelinha': ['Cartwheel', 'Voltereta lateral', 'Ruota', 'Roue'], 'Robô': ['Robot', 'Robot', 'Robot', 'Robot'], 'Coraçãozinho': ['Little heart', 'Corazoncito', 'Cuoricino', 'Petit cœur'], 'Me liga': ['Call me', 'Llámame', 'Chiamami', 'Appelle-moi'], 'Silêncio': ['Silence', 'Silencio', 'Silenzio', 'Silence'], 'Arqueiro': ['Archer', 'Arquero', 'Arciere', 'Archer'], 'Embala neném': ['Rock the baby', 'Acuna al bebé', 'Culla il bebè', 'Berce le bébé'], 'Fortão': ['Strongman', 'Forzudo', 'Forzuto', 'Costaud'], 'Continência': ['Salute', 'Saludo militar', 'Saluto militare', 'Salut militaire'], 'Peixinho': ['Belly slide', 'Palomita', 'Tuffo', 'Plongeon'], 'Giro no ar': ['Air spin', 'Giro en el aire', 'Giro in aria', 'Vrille en l’air'], 'Soneca': ['Nap', 'Siestita', 'Pisolino', 'Petite sieste'], 'Passinho': ['Footwork', 'Pasito', 'Passetto', 'Petit pas'], 'Reverência': ['Bow', 'Reverencia', 'Inchino', 'Révérence'], 'Soco no ar': ['Air punch', 'Puño al aire', 'Pugno in aria', 'Poing en l’air'], 'Pião': ['Spinning top', 'Trompo', 'Trottola', 'Toupie'], 'Sentadão': ['Sit-down', 'Sentadito', 'Seduto', 'Assis'], 'Dedos pro céu': ['Fingers to the sky', 'Dedos al cielo', 'Dita al cielo', 'Doigts vers le ciel'], 'Dancinha': ['Little dance', 'Bailecito', 'Balletto', 'Petite danse'],
   'Comemorações de gol': ['Goal celebrations', 'Celebraciones de gol', 'Esultanze dopo il gol', 'Célébrations de but'], 'Aviãozinho': ['Airplane', 'Avioncito', 'Aeroplanino', 'Avion'], 'Joelhada': ['Knee slide', 'Rodillazo', 'Scivolata in ginocchio', 'Glissade à genoux'],
   'As duas já vêm marcadas. Toque para desmarcar uma (pelo menos uma fica). Aviãozinho: você guia com o joystick. Joelhada: deslize e caia de joelhos. Mais comemorações virão depois.': ['Both come selected. Tap to unselect one (at least one stays). Airplane: you steer with the joystick. Knee slide: slide and drop to your knees. More celebrations will come later.', 'Las dos vienen marcadas. Toca para desmarcar una (al menos una se queda). Avioncito: lo guías con el joystick. Rodillazo: deslízate y cae de rodillas. Vendrán más celebraciones.', 'Sono già selezionate entrambe. Tocca per deselezionarne una (almeno una resta). Aeroplanino: lo guidi con il joystick. Scivolata: scivola e cadi in ginocchio. Altre esultanze arriveranno.', "Les deux sont déjà cochées. Touche pour en décocher une (au moins une reste). Avion : tu le diriges avec le joystick. Glissade : glisse et tombe à genoux. D'autres célébrations arriveront."],
   'Tom de voz': ['Tone of voice', 'Tono de voz', 'Tono di voce', 'Ton de voix'],

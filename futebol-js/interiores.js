@@ -15,7 +15,8 @@
      vitrine de sobremesas, a sopa e os sucos, o caixa e as 8 mesas; ver restaurante.js).
    - (7.1.5) Bar do Jairo refeito para o bar.js (R.bar: balcão com banquetas, sinuca, pista de dança, mesas, área de fumantes e o
      cantinho do homem de capuz).
-   - Golaço Esportes (nome 'esportiva'): sala retangular com piso de pista de corrida. Vazia por enquanto.
+   - Golaço Esportes (nome 'esportiva'): (7.1.9) sala QUADRADA dividida em seções (chuteiras, roupas, bolas, acessórios, o campinho das
+     comemorações no meio e o caixa); quem cuida das pessoas e das vendas é o esportiva.js (R.esportiva).
    - Supermercado arrumado para o trabalho de caixa (R.mercado, R.estoque, R.mercadoEstoque: ver mercado.js).
    - Cafeteria (20 x 14) com a BANCADA DE PREPARO (extra acao:'bancada') para o expediente (ver cidade.js).
    - Barbearia do Toninho (nome 'barbearia'): piso xadrez, dois espelhos com a bancada, a segunda cadeira de barbeiro, o banco de espera
@@ -681,52 +682,128 @@
       R.pessoas.push({ tipo: 'senta', assento: lugares[1], fem: false }, { tipo: 'senta', assento: lugares[4], fem: true });
       G.box(1.2, 2.2, 0.08, '#5b3a22', 4, 0, -4.45);                                                           // porta da cozinha
     } else if (nome === 'esportiva') {
-      // GOLAÇO ESPORTES: o piso é uma PISTA DE CORRIDA (raias vermelhas com linhas brancas, linha de largada com os números
-      //   na frente da porta, gramado no meio com o pódio). A SALA agora é um RETÂNGULO de verdade (quatro paredes retas; antes
-      //   tinha as pontas redondas, de estádio) e as raias também são retangulares.
-      //   Vazia por enquanto: só o balcão do caixa, o pódio, uma trave e as faixas. Depois: comemorações, roupas, chuteiras...
-      const L = 28, D = 16, Rr = D / 2, H = 4.4, PPM = 12, AZUL = '#1c3aa0', AMAR = '#f2c230';
-      R.fundo = 0x0b1430; R.cam = { dist: 9, pitch: 0.85 };
+      // GOLAÇO ESPORTES (7.1.9, refeita para o esportiva.js): a sala agora é QUADRADA (20 x 20) e dividida em SEÇÕES, cada uma com o
+      //   tapete da cor dela, a placa pendurada e o lugar do vendedor (R.esportiva.secoes):
+      //     NOROESTE chuteiras (prateleiras nas paredes, o banco de provar e o espelho de pé) · NORDESTE roupas (camisas na parede, araras,
+      //     manequins e o provador) · SUDOESTE bolas (prateleira, a pirâmide e o cestão) · SUDESTE acessórios (o painel da parede e as gôndolas)
+      //     NO MEIO as COMEMORAÇÕES: um campinho com trave e placa de LED (o PALCO onde o jogador testa a comemoração: R.esportiva.palco)
+      //     NORTE, no meio: o balcão do CAIXA. Da porta (sul) até o campinho, a pista de corrida vermelha com a linha de largada.
+      const L = 20, D = 20, Rr = D / 2, H = 4.4, PPM = 12, AZUL = '#1c3aa0', AMAR = '#f2c230';
+      R.fundo = 0x0b1430; R.cam = { dist: 9.5, pitch: 0.85 };
       R.lim = { x0: -L / 2 + 0.35, x1: L / 2 - 0.35, z0: -Rr + 0.35, z1: Rr - 0.35 };
       const PX_ = (x) => (x + L / 2) * PPM, PY_ = (z) => (z + Rr) * PPM;
-      const estadio = (g, e) => { g.beginPath(); g.rect(PX_(-L / 2 + e), PY_(-Rr + e), (L - 2 * e) * PPM, (D - 2 * e) * PPM); };   // contorno retangular (e = distância da parede)
+      const CAMPO = { x0: -4.6, x1: 4.6, z0: -2.6, z1: 3.4 };
+      const SEC = { chuteiras: ['#d8622a', -1, -1], roupas: ['#7a4fb0', 1, -1], bolas: ['#1f8a7a', -1, 1], acessorios: ['#c89a1a', 1, 1] };
       const tex = guardar(texCanvas(L * PPM, D * PPM, (g, w, h) => {
-        g.fillStyle = '#0b1430'; g.fillRect(0, 0, w, h);
-        g.fillStyle = '#b5482e'; estadio(g, 0); g.fill();                                   // a pista
-        g.strokeStyle = '#f4f0e6'; g.lineWidth = 1.5; for (let k = 0; k < 5; k++) { estadio(g, 0.3 + k * 0.95); g.stroke(); }
-        g.save(); estadio(g, 4.4); g.clip();                                                // o gramado com faixas de corte
-        for (let i = 0; i * 1.2 < L; i++) { g.fillStyle = i % 2 ? '#3f8f3a' : '#4a9a42'; g.fillRect(i * 1.2 * PPM, 0, 1.2 * PPM + 1, h); }
-        g.restore();
-        g.strokeStyle = '#f4f0e6'; g.lineWidth = 2; estadio(g, 4.4); g.stroke();
-        g.beginPath(); g.arc(PX_(0), PY_(0), 1.8 * PPM, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(PX_(0), PY_(-Rr + 4.4)); g.lineTo(PX_(0), PY_(Rr - 4.4)); g.stroke();
-        g.fillStyle = '#f4f0e6'; g.fillRect(PX_(3.2), PY_(Rr - 4.3), 0.25 * PPM, 4.0 * PPM);          // linha de largada (raias de baixo, na frente da porta)
-        g.font = 'bold 9px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-        for (let k = 0; k < 4; k++) g.fillText(String(k + 1), PX_(4.3), PY_(Rr - 0.78 - k * 0.95));
-        granular(g, w, h, 0.07, rnd);
+        for (let j = 0; j < D; j++) for (let i = 0; i < L; i++) { g.fillStyle = (i + j) % 2 ? '#d9dde3' : '#cfd4db'; g.fillRect(i * PPM, j * PPM, PPM, PPM); g.fillStyle = 'rgba(0,0,0,0.07)'; g.fillRect(i * PPM, j * PPM, PPM, 1); g.fillRect(i * PPM, j * PPM, 1, PPM); }
+        for (const k of Object.keys(SEC)) {                              // os tapetes das seções (com a borda clara)
+          const [cor, sx, sz] = SEC[k], x0 = sx < 0 ? -9.7 : 4.5, z0 = sz < 0 ? -9.7 : 3.9, cw = 5.2, cd = sz < 0 ? 5.9 : 5.8;
+          g.fillStyle = cor; g.fillRect(PX_(x0), PY_(z0), cw * PPM, cd * PPM);
+          g.strokeStyle = 'rgba(255,255,255,0.55)'; g.lineWidth = 2; g.strokeRect(PX_(x0) + 3, PY_(z0) + 3, cw * PPM - 6, cd * PPM - 6);
+        }
+        g.fillStyle = '#b5482e'; g.fillRect(PX_(-1.5), PY_(CAMPO.z1), 3 * PPM, (Rr - CAMPO.z1) * PPM);   // a pista da porta até o campinho
+        g.strokeStyle = '#f4f0e6'; g.lineWidth = 1.5; for (const x of [-1.5, -0.5, 0.5, 1.5]) { g.beginPath(); g.moveTo(PX_(x), PY_(CAMPO.z1)); g.lineTo(PX_(x), PY_(Rr)); g.stroke(); }
+        g.fillStyle = '#f4f0e6'; g.fillRect(PX_(-1.5), PY_(7.2), 3 * PPM, 0.22 * PPM); g.font = 'bold 9px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (let k = 0; k < 3; k++) g.fillText(String(k + 1), PX_(-1 + k), PY_(6.75));
+        // o campinho das comemorações: gramado em faixas, as linhas, a área e a marca do pênalti (o gol fica na ponta oeste)
+        const cw = (CAMPO.x1 - CAMPO.x0), cd = (CAMPO.z1 - CAMPO.z0), cz = (CAMPO.z0 + CAMPO.z1) / 2;
+        for (let i = 0; i * 1.15 < cw; i++) { g.fillStyle = i % 2 ? '#3f8f3a' : '#4a9a42'; g.fillRect(PX_(CAMPO.x0 + i * 1.15), PY_(CAMPO.z0), Math.min(1.15, cw - i * 1.15) * PPM + 1, cd * PPM); }
+        g.strokeStyle = '#f4f0e6'; g.lineWidth = 2; g.strokeRect(PX_(CAMPO.x0) + 1, PY_(CAMPO.z0) + 1, cw * PPM - 2, cd * PPM - 2);
+        g.strokeRect(PX_(CAMPO.x0) + 1, PY_(cz - 2.2), 2.2 * PPM, 4.4 * PPM); g.strokeRect(PX_(CAMPO.x0) + 1, PY_(cz - 1.1), 0.9 * PPM, 2.2 * PPM);
+        g.beginPath(); g.arc(PX_(CAMPO.x1), PY_(cz), 1.5 * PPM, Math.PI / 2, Math.PI * 1.5); g.stroke();
+        g.fillStyle = '#f4f0e6'; g.fillRect(PX_(CAMPO.x0 + 1.6) - 1, PY_(cz) - 1, 3, 3);
+        granular(g, w, h, 0.06, rnd);
       }, false));
       const chao = new THREE.Mesh(guardar(new THREE.PlaneGeometry(L, D)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); chao.rotation.x = -Math.PI / 2; grupo.add(chao);
-      // paredes (só o lado de dentro): norte, leste, sul (com a porta) e oeste, retas; faixa amarela e rodapé
+      // paredes (só o lado de dentro), a faixa amarela e o rodapé
       const parede = (x0, z0, x1, z1, cor, ya, yb, dentro) => { const nx = dentro[0], nz = dentro[1]; G.quad([x0, ya, z0], [x1, ya, z1], [x1, yb, z1], [x0, yb, z0], cor, [nx, 0, nz]); };
       const segs = [[-L / 2, -Rr, L / 2, -Rr, [0, 1]], [L / 2, -Rr, L / 2, Rr, [-1, 0]], [L / 2, Rr, -L / 2, Rr, [0, -1]], [-L / 2, Rr, -L / 2, -Rr, [1, 0]]];
       for (const [x0, z0, x1, z1, n] of segs) {
         parede(x0, z0, x1, z1, AZUL, 0, H, n);
-        const k = 0.03; parede(x0 + n[0] * k, z0 + n[1] * k, x1 + n[0] * k, z1 + n[1] * k, AMAR, 1.15, 1.55, n);
+        const k = 0.03; parede(x0 + n[0] * k, z0 + n[1] * k, x1 + n[0] * k, z1 + n[1] * k, AMAR, 3.0, 3.22, n);
         const k2 = 0.05; parede(x0 + n[0] * k2, z0 + n[1] * k2, x1 + n[0] * k2, z1 + n[1] * k2, '#0e1a40', 0, 0.16, n);
       }
-      // a porta (parede sul, no meio) e o capacho
-      const pz = Rr - 0.03;
+      const pz = Rr - 0.03;                                               // a porta (parede sul, no meio) e o capacho
       G.quad([0.75, 0, pz], [-0.75, 0, pz], [-0.75, 2.35, pz], [0.75, 2.35, pz], '#e8e2d2', [0, 0, -1]);
       G.quad([0.62, 0, pz - 0.01], [-0.62, 0, pz - 0.01], [-0.62, 2.25, pz - 0.01], [0.62, 2.25, pz - 0.01], '#5d9fc4', [0, 0, -1]);
       G.box(1.6, 0.02, 0.9, '#1b7a3e', 0, 0, Rr - 0.6);
       R.entrada = { x: 0, z: Rr - 1.4, yaw: Math.PI / 2 }; R.saida = { x: 0, z: Rr - 0.9 };
-      // o que tem por enquanto: letreiro, o balcão do caixa (vazio), o pódio no gramado, uma trave na ponta oeste e flâmulas
-      placa('GOLAÇO ESPORTES', AZUL, AMAR, 7, 1.0, 0, 3.4, -Rr + 0.04);
-      balcao(0, -Rr + 1.3, 5, 0.9, AZUL, AMAR); G.box(0.36, 0.3, 0.3, '#2b3a48', 1.6, 1.06, -Rr + 1.3);
-      for (const [x, h, c] of [[-1.1, 0.55, '#c9ced4'], [0, 0.85, AMAR], [1.1, 0.4, '#c8823a']]) { G.box(1.05, h, 1.0, c, x, 0, 0, '#f4f4f0'); }
-      bloq(0, 0, 3.3, 1.0);
-      { const gx = -L / 2 + 3.4; for (const s of [-1, 1]) G.box(0.12, 2.0, 0.12, '#f8f8f4', gx, 0, s * 1.6); G.box(0.12, 0.12, 3.32, '#f8f8f4', gx, 2.0, 0); G.box(0.06, 0.06, 3.2, '#d8d8d0', gx - 0.9, 0, 0); bloq(gx - 0.45, 0, 1.0, 3.4); }
+      const ES = R.esportiva = { secoes: {}, olhar: [], campo: CAMPO };
+      // as placas penduradas das seções (viradas para a câmera) com os cabos
+      const pend = (txt, cor, x, z, w) => { placa(txt, cor, '#ffffff', w || 3.2, 0.62, x, 3.45, z); G.box((w || 3.2) + 0.12, 0.74, 0.05, '#0e1a40', x, 3.08, z - 0.03); for (const sx of [-1, 1]) G.box(0.025, H - 3.8, 0.025, '#c9ced4', x + sx * ((w || 3.2) / 2 - 0.2), 3.8, z - 0.03); };
+      // ---- o CAIXA (norte, no meio)
+      placa('GOLAÇO ESPORTES', AZUL, AMAR, 6.4, 0.95, 0, 3.75, -Rr + 0.04);
+      balcao(0, -Rr + 1.5, 4.4, 0.9, AZUL, AMAR); G.box(0.42, 0.3, 0.36, '#2b3a48', 1.2, 1.06, -Rr + 1.5); G.box(0.3, 0.2, 0.02, '#9ec7dd', 1.2, 1.36, -Rr + 1.62);
+      G.box(0.5, 0.26, 0.3, '#f2f2ee', -1.3, 1.06, -Rr + 1.5); G.box(0.52, 0.03, 0.32, AMAR, -1.3, 1.32, -Rr + 1.5);   // as sacolas da loja
+      placa('CAIXA', AMAR, AZUL, 1.6, 0.42, 0, 2.55, -Rr + 0.05);
+      ES.caixa = { x: 0, z: -Rr + 0.72, yaw: -Math.PI / 2 }; ES.pagar = { x: 0, z: -Rr + 2.6 };
+      // ---- CHUTEIRAS (noroeste): prateleiras nas paredes norte e oeste, o banco de provar e o espelho de pé
+      const COR_CH = ['#f2c230', '#c8352b', '#1c1c1f', '#f4f4ec', '#3a64b8', '#1f9a4d', '#e8742a', '#d95fa0', '#3fb7b0', '#7a4fb0'];
+      const chuteira = (x, y, z, cor, oeste) => { if (oeste) { G.box(0.11, 0.03, 0.3, '#f4f4ec', x, y, z); G.box(0.1, 0.09, 0.28, cor, x, y + 0.03, z); G.box(0.1, 0.08, 0.1, cor, x, y + 0.12, z + 0.09); } else { G.box(0.3, 0.03, 0.11, '#f4f4ec', x, y, z); G.box(0.28, 0.09, 0.1, cor, x, y + 0.03, z); G.box(0.1, 0.08, 0.1, cor, x - 0.09, y + 0.12, z); } };
+      for (let n = 0; n < 4; n++) { const y = 0.55 + n * 0.55;
+        G.box(4.2, 0.05, 0.34, '#f4f4ec', -7.4, y, -Rr + 0.2); for (let i = 0; i < 9; i++) chuteira(-9.25 + i * 0.46, y + 0.05, -Rr + 0.2, COR_CH[(i * 3 + n * 7) % 10], false);
+        G.box(0.34, 0.05, 4.6, '#f4f4ec', -L / 2 + 0.2, y, -6.6); for (let i = 0; i < 10; i++) chuteira(-L / 2 + 0.2, y + 0.05, -8.65 + i * 0.46, COR_CH[(i * 7 + n * 3 + 1) % 10], true); }
+      bloq(-7.4, -Rr + 0.2, 4.3, 0.45); bloq(-L / 2 + 0.2, -6.6, 0.45, 4.7);
+      G.box(1.7, 0.1, 0.5, '#8a5a2b', -7.0, 0.38, -6.4); for (const sx of [-1, 1]) G.box(0.08, 0.38, 0.44, '#2a2a2e', -7.0 + sx * 0.75, 0, -6.4); bloq(-7.0, -6.4, 1.7, 0.5);   // o banco
+      G.box(0.7, 0.5, 0.06, '#9ec7dd', -5.4, 0.05, -5.0); G.box(0.78, 0.06, 0.1, '#8a5a2b', -5.4, 0, -5.0); G.box(0.78, 0.04, 0.08, '#8a5a2b', -5.4, 0.55, -5.0); bloq(-5.4, -5.0, 0.8, 0.2);   // o espelho de pé
+      G.box(0.9, 0.6, 0.6, '#f2f2ee', -8.6, 0, -4.4); G.box(0.92, 0.04, 0.62, '#d8622a', -8.6, 0.6, -4.4); chuteira(-8.6, 0.64, -4.4, '#f2c230', false); bloq(-8.6, -4.4, 0.9, 0.6);   // o destaque
+      pend('CHUTEIRAS', SEC.chuteiras[0], -7.2, -7.6);
+      ES.secoes.chuteiras = { x: -5.6, z: -6.9, yaw: -Math.PI / 2 };
+      // ---- ROUPAS (nordeste): camisas penduradas na parede norte, duas araras redondas, os manequins e o provador
+      const COR_RP = ['#c8352b', '#f2c230', '#1f9a4d', '#f4f4ec', '#3a64b8', '#1c1c1f', '#e8742a', '#7a4fb0', '#3fb7b0', '#d95fa0'];
+      const camisa = (x, y, z, cor, k) => { const e = k || 1; G.box(0.46 * e, 0.52 * e, 0.05, cor, x, y, z); for (const sx of [-1, 1]) G.box(0.16 * e, 0.2 * e, 0.05, cor, x + sx * 0.3 * e, y + 0.32 * e, z); G.box(0.14 * e, 0.05, 0.055, '#f4f4ec', x, y + 0.5 * e, z); };
+      for (let n = 0; n < 2; n++) { const y = 0.85 + n * 0.95; G.box(4.3, 0.04, 0.04, '#c9ced4', 7.3, y + 0.62, -Rr + 0.16); for (let i = 0; i < 7; i++) camisa(5.45 + i * 0.62, y, -Rr + 0.14, COR_RP[(i * 3 + n * 4) % 10]); }
+      bloq(7.3, -Rr + 0.15, 4.4, 0.3);
+      for (const [ax, az, k0] of [[6.1, -6.6, 0], [8.3, -5.4, 5]]) {      // as araras redondas
+        G.box(0.06, 1.5, 0.06, '#c9ced4', ax, 0, az); G.box(0.5, 0.04, 0.5, '#8c9199', ax, 0, az); G.box(1.0, 0.04, 0.04, '#c9ced4', ax, 1.5, az); G.box(0.04, 0.04, 1.0, '#c9ced4', ax, 1.5, az);
+        for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, cx = ax + Math.cos(a) * 0.42, cz = az + Math.sin(a) * 0.42, c = COR_RP[(i + k0) % 10]; if (Math.abs(Math.cos(a)) > 0.7) G.box(0.07, 0.6, 0.42, c, cx, 0.86, cz); else G.box(0.42, 0.6, 0.07, c, cx, 0.86, cz); }
+        bloq(ax, az, 1.05, 1.05); }
+      for (const [mx, c1, c2] of [[4.95, '#c8352b', '#1c1c1f'], [9.45, '#f2c230', '#1f7a4d']]) {   // os manequins (na base, dos dois lados da seção)
+        const mz = -3.95; G.box(0.6, 0.12, 0.6, '#f4f4ec', mx, 0, mz); for (const sx of [-1, 1]) G.box(0.15, 0.78, 0.17, '#e8e2d6', mx + sx * 0.11, 0.12, mz); G.box(0.42, 0.26, 0.24, c2, mx, 0.72, mz);
+        G.box(0.5, 0.62, 0.28, c1, mx, 0.98, mz); for (const sx of [-1, 1]) { G.box(0.15, 0.3, 0.2, c1, mx + sx * 0.325, 1.3, mz); G.box(0.12, 0.42, 0.14, '#e8e2d6', mx + sx * 0.325, 0.88, mz); } G.box(0.3, 0.32, 0.28, '#e8e2d6', mx, 1.62, mz); bloq(mx, mz, 0.6, 0.6); }
+      G.box(0.08, 2.3, 1.5, '#f4f4ec', 8.55, 0, -8.4); G.box(1.3, 0.08, 1.5, '#f4f4ec', 9.2, 2.3, -8.4); G.box(1.25, 1.9, 0.05, '#7a4fb0', 9.2, 0.25, -7.66); G.box(1.3, 0.05, 0.05, '#c9ced4', 9.2, 2.18, -7.66); bloq(9.2, -8.4, 1.4, 1.6);   // o provador (a cortina roxa)
+      pend('ROUPAS', SEC.roupas[0], 7.2, -7.6);
+      ES.secoes.roupas = { x: 5.6, z: -6.9, yaw: -Math.PI / 2 };
+      // ---- BOLAS (sudoeste): a prateleira da parede oeste, a pirâmide e o cestão
+      const COR_BL = ['#f4f4ec', '#f2c230', '#e8742a', '#3fb7b0', '#d95fa0', '#c8352b', '#3a64b8', '#1f9a4d'];
+      const geoBola = guardar(new THREE.SphereGeometry(0.15, 10, 8)), matBola = COR_BL.map((c) => guardar(new THREE.MeshLambertMaterial({ color: c })));
+      const bola = (x, y, z, k, e) => { const m = new THREE.Mesh(geoBola, matBola[k % matBola.length]); m.position.set(x, y, z); if (e) m.scale.setScalar(e); grupo.add(m); };
+      for (let n = 0; n < 4; n++) { const y = 0.5 + n * 0.6; G.box(0.42, 0.05, 4.8, '#f4f4ec', -L / 2 + 0.24, y, 6.6); G.box(0.04, 0.1, 4.8, '#1f8a7a', -L / 2 + 0.44, y + 0.05, 6.6); for (let i = 0; i < 11; i++) bola(-L / 2 + 0.24, y + 0.2, 4.45 + i * 0.43, i * 3 + n * 5); }
+      bloq(-L / 2 + 0.24, 6.6, 0.5, 4.9);
+      { const bx = -6.3, bz = 5.0; G.box(1.5, 0.3, 1.5, '#f4f4ec', bx, 0, bz); G.box(1.52, 0.04, 1.52, '#1f8a7a', bx, 0.3, bz); let k = 0;
+        for (let lv = 0; lv < 3; lv++) { const n = 3 - lv; for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) bola(bx + (i - (n - 1) / 2) * 0.32, 0.49 + lv * 0.25, bz + (j - (n - 1) / 2) * 0.32, k++); }
+        bloq(bx, bz, 1.5, 1.5); }
+      { const bx = -7.6, bz = 8.3; for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) G.box(0.05, 0.9, 0.05, '#c9ced4', bx + sx * 0.6, 0, bz + sz * 0.5); for (const y of [0.25, 0.9]) { G.box(1.25, 0.04, 0.04, '#c9ced4', bx, y, bz - 0.5); G.box(1.25, 0.04, 0.04, '#c9ced4', bx, y, bz + 0.5); G.box(0.04, 0.04, 1.05, '#c9ced4', bx - 0.6, y, bz); G.box(0.04, 0.04, 1.05, '#c9ced4', bx + 0.6, y, bz); }
+        for (let i = 0; i < 11; i++) bola(bx + ((i * 37) % 9 - 4) * 0.11, 0.4 + (i % 3) * 0.2, bz + ((i * 53) % 7 - 3) * 0.11, i * 5 + 2); bloq(bx, bz, 1.3, 1.1); }   // o cestão de promoção
+      pend('BOLAS', SEC.bolas[0], -7.2, 4.3);
+      ES.secoes.bolas = { x: -4.9, z: 6.8, yaw: -Math.PI / 2 };
+      // ---- ACESSÓRIOS (sudeste): o painel da parede leste (luvas, caneleiras, bonés, garrafas) e duas gôndolas baixas
+      const COR_AC = ['#c8352b', '#f2c230', '#1c1c1f', '#3a64b8', '#1f9a4d', '#f4f4ec', '#e8742a', '#3fb7b0'];
+      G.box(0.06, 2.4, 5.0, '#e8e2d2', L / 2 - 0.08, 0.4, 6.6);
+      for (let n = 0; n < 4; n++) for (let i = 0; i < 9; i++) { const y = 0.6 + n * 0.55, z = 4.5 + i * 0.52, c = COR_AC[(i * 3 + n * 5) % 8], x = L / 2 - 0.16;
+        if (n === 3) { G.box(0.1, 0.12, 0.26, c, x, y, z); G.box(0.16, 0.03, 0.26, c, x - 0.08, y, z); }                              // bonés
+        else if (n === 2) { G.box(0.07, 0.3, 0.2, c, x, y - 0.05, z); G.box(0.075, 0.1, 0.22, '#f4f4ec', x, y + 0.05, z); }           // luvas de goleiro
+        else if (n === 1) { G.box(0.06, 0.34, 0.14, c, x, y - 0.08, z - 0.09); G.box(0.06, 0.34, 0.14, c, x, y - 0.08, z + 0.09); }   // caneleiras (o par)
+        else { G.box(0.11, 0.28, 0.11, c, x - 0.04, y - 0.1, z); G.box(0.07, 0.06, 0.07, '#1c1c1f', x - 0.04, y + 0.18, z); } }       // garrafas
+      bloq(L / 2 - 0.15, 6.6, 0.4, 5.1);
+      for (const [gx, gz] of [[6.3, 5.1], [6.3, 8.0]]) { G.box(1.8, 0.9, 0.7, '#f4f4ec', gx, 0, gz); G.box(1.84, 0.04, 0.74, '#c89a1a', gx, 0.9, gz); for (let i = 0; i < 5; i++) { const c = COR_AC[(i * 3 + Math.round(gz)) % 8]; G.box(0.22, 0.16, 0.22, c, gx - 0.7 + i * 0.35, 0.94, gz - 0.16); G.box(0.2, 0.1, 0.2, COR_AC[(i + 4) % 8], gx - 0.7 + i * 0.35, 0.94, gz + 0.18); } bloq(gx, gz, 1.8, 0.7); }
+      pend('ACESSÓRIOS', SEC.acessorios[0], 7.2, 4.3, 3.6);
+      ES.secoes.acessorios = { x: 4.9, z: 6.6, yaw: -Math.PI / 2 };
+      // ---- COMEMORAÇÕES (no meio): a trave (ponta oeste do campinho), a placa de LED no lado norte e os refletores
+      { const gx = CAMPO.x0 + 0.05, cz = (CAMPO.z0 + CAMPO.z1) / 2, T0 = '#f8f8f4';
+        for (const s of [-1, 1]) { G.box(0.1, 1.7, 0.1, T0, gx, 0, cz + s * 1.5); G.box(0.05, 0.05, 0.05, T0, gx - 0.8, 0, cz + s * 1.5); G.box(0.85, 0.04, 0.04, '#d8d8d0', gx - 0.4, 1.7, cz + s * 1.5); }
+        G.box(0.1, 0.1, 3.1, T0, gx, 1.7, cz); G.box(0.04, 0.04, 3.0, '#d8d8d0', gx - 0.8, 0, cz);
+        for (let i = 0; i < 7; i++) G.box(0.02, 1.7, 0.02, '#e8e8e2', gx - 0.4, 0, cz - 1.5 + i * 0.5);      // a rede (fios)
+        bloq(gx - 0.4, cz, 0.9, 3.2);
+        placa('COMEMORAÇÕES', '#0e1a40', AMAR, 5.4, 0.62, 0.3, 0.42, CAMPO.z0 - 0.3); G.box(5.6, 0.78, 0.14, '#1c1c1f', 0.3, 0, CAMPO.z0 - 0.38); bloq(0.3, CAMPO.z0 - 0.38, 5.6, 0.2);
+        for (const sx of [-1, 1]) { G.box(0.08, 2.1, 0.08, '#8a8f9a', sx * 4.4, 0, CAMPO.z0 - 0.4); G.box(0.5, 0.26, 0.2, '#fff6c8', sx * 4.4, 2.1, CAMPO.z0 - 0.3); bloq(sx * 4.4, CAMPO.z0 - 0.4, 0.2, 0.2); }
+        ES.palco = { x0: CAMPO.x0 + 2.0, x1: CAMPO.x1 - 0.6, z: cz, ver: { x: 2.4, z: CAMPO.z1 + 1.0 } };
+        ES.secoes.comemoracoes = { x: 3.7, z: CAMPO.z1 + 0.7, yaw: Math.PI * 0.75 }; }
+      // os pontos em que os clientes param para olhar ([x, z, para onde olham])
+      ES.olhar = [[-7.6, -8.6, Math.PI / 2], [-6.2, -8.6, Math.PI / 2], [-8.7, -7.2, Math.PI], [-8.7, -5.6, Math.PI], [6.6, -8.7, Math.PI / 2], [8.0, -8.7, Math.PI / 2], [7.2, -6.0, 0], [5.0, -5.4, -0.8],
+        [-8.6, 5.4, Math.PI], [-8.6, 7.4, Math.PI], [-6.3, 6.4, Math.PI / 2], [-6.3, 8.4, Math.PI], [8.7, 5.6, 0], [8.7, 7.2, 0], [6.3, 6.3, Math.PI / 2], [6.3, 6.8, -Math.PI / 2], [-1.5, 4.4, Math.PI / 2], [1.2, 4.5, Math.PI / 2], [-2.6, -4.2, -Math.PI / 2]];
       const fl = ['#f2c230', '#1b7a3e', '#c8352b', '#f4f4f0'];
-      for (let i = 0; i < 9; i++) { const x = -L / 2 + 2.5 + i * ((L - 5) / 8); G.box(0.7, 0.9, 0.04, fl[i % 4], x, 2.4, -Rr + 0.08); }   // só na parede norte (a sul fica sem desenhar, do lado da câmera)
+      for (let i = 0; i < 5; i++) { const x = -3.0 + i * 1.5; G.box(0.5, 0.64, 0.04, fl[i % 4], x, 3.05 - 0.9, -Rr + 0.08); }   // as flâmulas atrás do caixa
     } else if (nome === 'barbearia') {
       // BARBEARIA DO TONINHO (10 x 8): espelhos e bancada na parede norte, duas cadeiras de barbeiro viradas para eles, banco de espera
       //   na parede oeste, prateleira de produtos e o poste listrado na leste. Quem cuida (Toninho, preços, corte): barbearia.js.
