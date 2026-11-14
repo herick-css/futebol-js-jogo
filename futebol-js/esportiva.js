@@ -18,13 +18,28 @@
      Ícone) com o par de cada modelo, e a mais cara girando na redoma. Com o BIRO abre o catálogo: PROVAR calça a chuteira no
      jogador ali no espelho (ele gira para mostrar), LEVAR põe na sacola (a mesma das comemorações) e a Marta cobra no caixa.
      A comprada já vai para o pé (aparencia.chuteira + chuteiraNome); CALÇAR troca entre as suas e a de sempre (a do criador).
-   - As outras seções (roupas, bolas, acessórios) já têm o lugar, a decoração e o vendedor; as vendas delas vêm depois.
+   - BOLAS: com o Juca abre o catálogo das 15 bolas premium (cosmeticos.js, 350 a 1500 fakes, o preço sobe com o acabamento).
+     OLHAR põe a bola no mostruário em cima da pirâmide, de pertinho; LEVAR põe na sacola (a mesma das outras seções, paga com a Marta).
+     As compradas ficam para sempre e USAR escolhe qual vai para as partidas (a cidade troca a bola ao entrar em campo: cidade.js).
+   - As outras seções (roupas, acessórios) já têm o lugar, a decoração e o vendedor; as vendas delas vêm depois.
    - Salva em historia.cidade (dados): celeb = { tem: [chaves compradas], slots: [botão 1, botão 2] } · esportiva = { conheceu... } ·
-     chuteiras = { tem: [nomes comprados], usando: nome ou null (a de sempre), original: a chuteira do criador }.
+     chuteiras = { tem: [nomes comprados], usando: nome ou null (a de sempre), original: a chuteira do criador } ·
+     bolas = { tem: [nomes comprados], usando: nome ou null (a bola padrão) }.
    ===================================================================== */
 (function () {
   'use strict';
   const PRECO = 300;
+  // as bolas da seção do Juca (os desenhos ficam no cosmeticos.js, com o mesmo nome): o preço sobe com o acabamento
+  const BOLAS = [
+    { nome: 'Clássica Ouro', preco: 350, txt: 'Os gomos de sempre, com a costura dourada.' }, { nome: 'Hélice Tricolor', preco: 380, txt: 'Faixas em espiral, vermelha e azul.' },
+    { nome: 'Oceano Profundo', preco: 420, txt: 'Ondas do turquesa ao azul-marinho.' }, { nome: 'Raio Neon', preco: 460, txt: 'Preta com raios verde-limão.' },
+    { nome: 'Chamas', preco: 500, txt: 'O fogo subindo pela bola.' }, { nome: 'Carnaval', preco: 540, txt: 'Confete e serpentina dourada.' },
+    { nome: 'Mármore Real', preco: 580, txt: 'Mármore branco com fio de ouro.' }, { nome: 'Galáxia', preco: 650, txt: 'Um pedaço do espaço no seu pé.' },
+    { nome: 'Onça Pintada', preco: 700, txt: 'Dourada, com as rosetas da onça.' }, { nome: 'Diamante Azul', preco: 780, txt: 'Lapidada como pedra preciosa.' },
+    { nome: 'Jabulana', preco: 850, txt: 'Inspirada na bola da Copa de 2010.' }, { nome: 'Brasuca', preco: 950, txt: 'Inspirada na bola da Copa de 2014.' },
+    { nome: 'Triunda', preco: 1100, txt: 'Inspirada na bola da Copa de 2026.' }, { nome: 'Rubi Imperial', preco: 1250, txt: 'Vermelho rubi com ouro velho.' },
+    { nome: 'Lenda Negra', preco: 1500, txt: 'Preta fosca e ouro. A mais cara da loja.' },
+  ];
   const TRAD = {
     'Marta': ['Marta', 'Marta', 'Marta', 'Marta'], 'Biro': ['Biro', 'Biro', 'Biro', 'Biro'], 'Kelly': ['Kelly', 'Kelly', 'Kelly', 'Kelly'], 'Juca': ['Juca', 'Juca', 'Juca', 'Juca'], 'Tati': ['Tati', 'Tati', 'Tati', 'Tati'], 'Dedé': ['Dedé', 'Dedé', 'Dedé', 'Dedé'],
     'Falar com {0}': ['Talk to {0}', 'Hablar con {0}', 'Parla con {0}', 'Parler à {0}'],
@@ -87,6 +102,41 @@
     'A sua sacola está vazia. O Biro mostra as chuteiras e o Dedé, as comemorações.': ['Your bag is empty. Biro shows the boots and Dedé, the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines y Dedé, las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons et Dedé, les célébrations.'],
     'Faltam {0} fakes. Tira alguma coisa da sacola com o Biro ou o Dedé, ou volta depois.': ['You’re {0} fakes short. Take something out of the bag with Biro or Dedé, or come back later.', 'Faltan {0} fakes. Quita algo de la bolsa con Biro o Dedé, o vuelve después.', 'Mancano {0} fakes. Togli qualcosa dalla borsa con Biro o Dedé, o torna più tardi.', 'Il te manque {0} fakes. Retire quelque chose du sac avec Biro ou Dedé, ou reviens plus tard.'],
     'A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.': ['The "{0}" boots are already on your feet for the next match. To switch, talk to Biro.', 'Los botines "{0}" ya quedaron puestos para el próximo partido. Para cambiarlos, habla con Biro.', 'Gli scarpini "{0}" sono già ai tuoi piedi per la prossima partita. Per cambiarli, vai da Biro.', 'Les crampons "{0}" sont déjà à tes pieds pour le prochain match. Pour changer, vois Biro.'],
+    // as bolas (o Juca)
+    'Ver as bolas': ['See the balls', 'Ver las pelotas', 'Vedi i palloni', 'Voir les ballons'], 'BOLAS': ['BALLS', 'PELOTAS', 'PALLONI', 'BALLONS'],
+    'Bola nas partidas: {0}': ['Match ball: {0}', 'Pelota en los partidos: {0}', 'Pallone in partita: {0}', 'Ballon en match : {0}'],
+    'Bola padrão': ['Standard ball', 'Pelota estándar', 'Pallone standard', 'Ballon standard'], 'A bola de estrelas de sempre.': ['The usual star ball.', 'La pelota de estrellas de siempre.', 'Il solito pallone a stelle.', 'Le ballon étoilé habituel.'],
+    'OLHAR': ['LOOK', 'MIRAR', 'GUARDA', 'REGARDER'], 'USAR': ['USE', 'USAR', 'USA', 'UTILISER'], 'Em uso': ['In use', 'En uso', 'In uso', 'Utilisé'],
+    'Clássica Ouro': ['Gold Classic', 'Clásica Oro', 'Classica Oro', 'Classique Or'], 'Hélice Tricolor': ['Tricolor Helix', 'Hélice Tricolor', 'Elica Tricolore', 'Hélice Tricolore'],
+    'Oceano Profundo': ['Deep Ocean', 'Océano Profundo', 'Oceano Profondo', 'Océan Profond'], 'Raio Neon': ['Neon Bolt', 'Rayo Neón', 'Fulmine Neon', 'Éclair Néon'],
+    'Chamas': ['Flames', 'Llamas', 'Fiamme', 'Flammes'], 'Carnaval': ['Carnival', 'Carnaval', 'Carnevale', 'Carnaval'],
+    'Mármore Real': ['Royal Marble', 'Mármol Real', 'Marmo Reale', 'Marbre Royal'], 'Galáxia': ['Galaxy', 'Galaxia', 'Galassia', 'Galaxie'],
+    'Onça Pintada': ['Jaguar', 'Jaguar', 'Giaguaro', 'Jaguar'], 'Diamante Azul': ['Blue Diamond', 'Diamante Azul', 'Diamante Blu', 'Diamant Bleu'],
+    'Jabulana': ['Jabulana', 'Jabulana', 'Jabulana', 'Jabulana'], 'Brasuca': ['Brasuca', 'Brasuca', 'Brasuca', 'Brasuca'], 'Triunda': ['Triunda', 'Triunda', 'Triunda', 'Triunda'],
+    'Rubi Imperial': ['Imperial Ruby', 'Rubí Imperial', 'Rubino Imperiale', 'Rubis Impérial'], 'Lenda Negra': ['Black Legend', 'Leyenda Negra', 'Leggenda Nera', 'Légende Noire'],
+    'Os gomos de sempre, com a costura dourada.': ['The classic panels, with gold stitching.', 'Los gajos de siempre, con costura dorada.', 'I soliti spicchi, con cuciture dorate.', 'Les panneaux classiques, avec couture dorée.'],
+    'Faixas em espiral, vermelha e azul.': ['Spiral stripes, red and blue.', 'Franjas en espiral, roja y azul.', 'Strisce a spirale, rossa e blu.', 'Bandes en spirale, rouge et bleue.'],
+    'Ondas do turquesa ao azul-marinho.': ['Waves from turquoise to navy blue.', 'Olas del turquesa al azul marino.', 'Onde dal turchese al blu notte.', 'Des vagues du turquoise au bleu marine.'],
+    'Preta com raios verde-limão.': ['Black with lime-green bolts.', 'Negra con rayos verde lima.', 'Nero con fulmini verde lime.', 'Noir avec des éclairs vert citron.'],
+    'O fogo subindo pela bola.': ['Fire climbing up the ball.', 'El fuego subiendo por la pelota.', 'Il fuoco che sale sul pallone.', 'Le feu qui monte sur le ballon.'],
+    'Confete e serpentina dourada.': ['Confetti and a golden streamer.', 'Confeti y serpentina dorada.', 'Coriandoli e stella filante dorata.', 'Confettis et serpentin doré.'],
+    'Mármore branco com fio de ouro.': ['White marble with a gold thread.', 'Mármol blanco con hilo de oro.', 'Marmo bianco con filo d’oro.', 'Marbre blanc avec un fil d’or.'],
+    'Um pedaço do espaço no seu pé.': ['A piece of outer space at your feet.', 'Un pedazo del espacio en tu pie.', 'Un pezzo di spazio ai tuoi piedi.', 'Un morceau d’espace à tes pieds.'],
+    'Dourada, com as rosetas da onça.': ['Golden, with jaguar rosettes.', 'Dorada, con las rosetas del jaguar.', 'Dorato, con le rosette del giaguaro.', 'Dorée, avec les rosettes du jaguar.'],
+    'Lapidada como pedra preciosa.': ['Cut like a gemstone.', 'Tallada como una piedra preciosa.', 'Tagliato come una pietra preziosa.', 'Taillé comme une pierre précieuse.'],
+    'Inspirada na bola da Copa de 2010.': ['Inspired by the 2010 World Cup ball.', 'Inspirada en la pelota del Mundial 2010.', 'Ispirato al pallone dei Mondiali 2010.', 'Inspirée du ballon de la Coupe du monde 2010.'],
+    'Inspirada na bola da Copa de 2014.': ['Inspired by the 2014 World Cup ball.', 'Inspirada en la pelota del Mundial 2014.', 'Ispirato al pallone dei Mondiali 2014.', 'Inspirée du ballon de la Coupe du monde 2014.'],
+    'Inspirada na bola da Copa de 2026.': ['Inspired by the 2026 World Cup ball.', 'Inspirada en la pelota del Mundial 2026.', 'Ispirato al pallone dei Mondiali 2026.', 'Inspirée du ballon de la Coupe du monde 2026.'],
+    'Vermelho rubi com ouro velho.': ['Ruby red with antique gold.', 'Rojo rubí con oro viejo.', 'Rosso rubino con oro antico.', 'Rouge rubis et or vieilli.'],
+    'Preta fosca e ouro. A mais cara da loja.': ['Matte black and gold. The priciest in the store.', 'Negra mate y oro. La más cara de la tienda.', 'Nero opaco e oro. Il più caro del negozio.', 'Noir mat et or. Le plus cher du magasin.'],
+    'Fala, craque! Aqui ficam as bolas premium da Golaço.': ['Hey, star! This is where Golaço keeps its premium balls.', '¡Hola, crack! Aquí están las pelotas premium de Golaço.', 'Ciao, campione! Qui ci sono i palloni premium della Golaço.', 'Salut, champion ! Ici, ce sont les ballons premium de Golaço.'],
+    'Tem de todo jeito, até umas inspiradas nas bolas da Copa.': ['We’ve got every kind, even some inspired by World Cup balls.', 'Hay de todo tipo, hasta algunas inspiradas en las pelotas del Mundial.', 'Ce ne sono di ogni tipo, anche ispirati ai palloni dei Mondiali.', 'Il y en a de toutes sortes, même inspirés des ballons de Coupe du monde.'],
+    'Dá para ver cada uma de pertinho. O que você escolher, a Marta cobra no caixa.': ['You can see each one up close. Whatever you pick, Marta rings up at the checkout.', 'Puedes ver cada una de cerca. Lo que elijas, Marta te lo cobra en la caja.', 'Puoi vederli tutti da vicino. Quello che scegli te lo fa pagare Marta alla cassa.', 'Tu peux voir chacun de près. Ce que tu choisis, Marta l’encaisse à la caisse.'],
+    'Bora ver as bolas? Chegou coisa boa.': ['Shall we look at the balls? Good stuff just arrived.', '¿Vemos las pelotas? Llegó algo bueno.', 'Diamo un’occhiata ai palloni? È arrivata roba buona.', 'On regarde les ballons ? Il y a du nouveau.'],
+    'Volta quando quiser trocar de bola!': ['Come back whenever you want to switch balls!', '¡Vuelve cuando quieras cambiar de pelota!', 'Torna quando vuoi cambiare pallone!', 'Reviens quand tu veux changer de ballon !'],
+    'A sua sacola está vazia. O Biro mostra as chuteiras, o Juca, as bolas e o Dedé, as comemorações.': ['Your bag is empty. Biro shows the boots, Juca the balls and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Juca las pelotas y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Juca i palloni e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Juca les ballons et Dedé les célébrations.'],
+    'Faltam {0} fakes. Tira alguma coisa da sacola com os vendedores ou volta depois.': ['You’re {0} fakes short. Take something out of the bag with the salespeople or come back later.', 'Faltan {0} fakes. Quita algo de la bolsa con los vendedores o vuelve después.', 'Mancano {0} fakes. Togli qualcosa dalla borsa con i commessi o torna più tardi.', 'Il te manque {0} fakes. Retire quelque chose du sac avec les vendeurs ou reviens plus tard.'],
+    'A bola "{0}" já é a sua bola nas partidas. Para trocar, é com o Juca.': ['The "{0}" ball is now your match ball. To change it, talk to Juca.', 'La pelota "{0}" ya es tu pelota en los partidos. Para cambiarla, habla con Juca.', 'Il pallone "{0}" è già il tuo pallone in partita. Per cambiarlo, parla con Juca.', 'Le ballon « {0} » est déjà ton ballon en match. Pour le changer, parle à Juca.'],
     'Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.': ['No rush. The bag stays here while you’re in the store.', 'Sin apuro. La bolsa queda guardada aquí mientras estés en la tienda.', 'Con calma. La borsa resta qui finché sei in negozio.', 'Pas de souci. Le sac reste ici tant que tu es dans le magasin.'],
   };
   const fem = () => typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
@@ -103,7 +153,6 @@
   ];
   const PAPO = {
     kelly: ['Camisa, short, agasalho... aqui a gente veste o time inteiro.', 'As peças novas chegam essa semana. Volta depois!'],
-    juca: ['Bola de campo, de society, de futsal... tem de tudo.', 'Só não estou vendendo ainda: falta etiquetar. Logo, logo!'],
     tati: ['Caneleira, luva, boné, garrafinha... o detalhe que faz a diferença.', 'A máquina do cartão dessa seção quebrou. Semana que vem eu vendo!'],
   };
   const DANCAS_DEDE = ['robo', 'passinho', 'dancinha', 'coracao', 'musculoso', 'reverencia', 'piao'];
@@ -133,8 +182,12 @@
     }
     const usandoIdx = () => { const i = apar().chuteira; return CHS()[i] ? i : chOriginal(); };
     const ehCh = (k) => String(k).startsWith('ch:');
-    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : PRECO);
-    const nomeItem = (k) => (ehCh(k) ? Tx(k.slice(3)) : Tx(CELS()[k].nome));
+    // as bolas do Juca na mesma sacola: 'bola:' + nome
+    const ehBola = (k) => String(k).startsWith('bola:');
+    const bolaDe = (nome) => BOLAS.find((b) => b.nome === nome);
+    const dadosB = () => { const d = S().dados; if (!d.bolas || !Array.isArray(d.bolas.tem)) d.bolas = { tem: [], usando: null }; return d.bolas; };
+    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : ehBola(k) ? ((bolaDe(k.slice(5)) || {}).preco || 0) : PRECO);
+    const nomeItem = (k) => (ehCh(k) ? Tx(k.slice(3)) : ehBola(k) ? Tx(k.slice(5)) : Tx(CELS()[k].nome));
     const totalSacola = () => M.sacola.reduce((a, k) => a + precoDe(k), 0);
     // a chuteira comprada volta para o pé se o personagem foi recarregado sem ela (o save da cidade é quem manda)
     function sincronizarChuteira() { try { const D = dadosCh(); chOriginal(); if (D.usando && apar().chuteiraNome !== D.usando && idxCh(D.usando) >= 0) calcar(D.usando); } catch (e) { /* sem dados ainda */ } }
@@ -500,6 +553,97 @@
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }
     }
+    // ---------------------------------------------------------------- AS BOLAS (o Juca): mostruário em cima da pirâmide e o catálogo à direita
+    const desenhoBola = (nome) => (typeof FutebolCosmeticos !== 'undefined' && FutebolCosmeticos.dados ? (FutebolCosmeticos.dados.bolas || []).find((b) => b.nome === nome) : null);
+    const VITRINE = { x: -6.3, y: 1.62, z: 5.0, jx: -4.75, jz: 4.55 };     // a bola girando em cima da pirâmide e onde o jogador fica para ver
+    const geoVitrine = {};
+    // a bola do mostruário: a mesma malha alta da bola da loja (IcosahedronGeometry, a ordem dos triângulos do cosmeticos.js), maior
+    function mostrarBola(nome) {
+      const D = desenhoBola(nome); tirarVitrine(); if (!M.R) return;
+      let geo, cores;
+      if (D) {
+        const d = Math.round(Math.sqrt(D.tri.length / 20)) - 1;
+        if (!geoVitrine[d]) { const g0 = new THREE.IcosahedronGeometry(CONFIG.BALL_R, d), g = g0.index ? g0.toNonIndexed() : g0; g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 3), 3)); geoVitrine[d] = g; }
+        geo = geoVitrine[d].clone(); cores = geo.attributes.color;
+        const pal = D.paleta.map((h) => { const v = parseInt(h.slice(1), 16); return [((v >> 16) & 255) / 255, ((v >> 8) & 255) / 255, (v & 255) / 255]; });
+        for (let t = 0; t < D.tri.length; t++) { const c = pal[parseInt(D.tri[t], 36)] || pal[0]; for (let k = 0; k < 3; k++) cores.array.set(c, (t * 3 + k) * 3); }
+      } else geo = BALL_GEO.clone();                                     // a bola padrão (a de estrelas)
+      const m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }));
+      m.scale.setScalar(1.8); m.position.set(VITRINE.x, VITRINE.y, VITRINE.z); m.userData.y = VITRINE.y; m.rotation.x = 0.35;
+      M.R.grupo.add(m); M.vitrine = m; M.vitrineNome = nome || null;
+    }
+    function tirarVitrine() { const m = M.vitrine; if (!m) return; if (m.parent) m.parent.remove(m); m.geometry.dispose(); m.material.dispose(); M.vitrine = null; M.vitrineNome = undefined; }
+    function abrirPainelBolas() {
+      return new Promise((fim) => {
+        const d = S().dados, Bd = dadosB();
+        const el = document.createElement('div'); el.id = 'espBolas';
+        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#0d2a2a;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-shadow:0 6px 0 rgba(0,0,0,.35);';
+        const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:#1f8a7a;border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:3px;';
+        const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;color:' + AMAR + ';'; tit.textContent = Tx('BOLAS');
+        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);white-space:pre-line;';
+        cab.append(tit, inf);
+        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:5px;';
+        const pe = document.createElement('div'); pe.style.cssText = 'padding:5px 8px;border-top:3px solid ' + AMAR + ';display:flex;gap:8px;align-items:center;';
+        const nota = document.createElement('div'); nota.style.cssText = 'flex:1;font:600 10.5px/1.25 var(--font-body);color:#c8e6e0;'; nota.textContent = Tx('O que está na sacola você paga no caixa, com a Marta.');
+        const fechar = document.createElement('button'); fechar.type = 'button'; fechar.className = 'pxBtn'; fechar.textContent = Tx('FECHAR'); fechar.style.cssText = '--p:var(--p2,2px);height:34px;font-size:12px;padding:0 14px;flex:none;width:auto;min-width:0;';
+        pe.append(nota, fechar);
+        const bt = (txt, cor, fn, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'flex:1;min-width:0;height:28px;border:2px solid ' + (on ? '#fff' : '#0b1430') + ';background:' + cor + ';color:' + (cor === AMAR ? '#1a1406' : '#fff') + ';font:700 11px/1 var(--font-display);cursor:pointer;'; b.onclick = (e) => { e.stopPropagation(); fn(); }; return b; };
+        function render() {
+          const usando = Bd.usando && desenhoBola(Bd.usando) ? Bd.usando : null;
+          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia')) + '\n' + Tfx('Bola nas partidas: {0}', usando ? Tx(usando) : Tx('Bola padrão'));
+          const rolagem = lista.scrollTop; lista.innerHTML = '';
+          const itens = [{ nome: null, preco: 0, txt: 'A bola de estrelas de sempre.' }].concat(BOLAS.filter((b) => desenhoBola(b.nome)));
+          for (const b of itens) {
+            const meu = !b.nome || Bd.tem.includes(b.nome), naSac = b.nome && M.sacola.includes('bola:' + b.nome), emUso = (b.nome || null) === usando, vendo = M.vitrineNome === (b.nome || null);
+            const lin = document.createElement('div'); lin.className = 'espBola'; lin.style.cssText = 'background:' + (vendo ? '#1f5a52' : '#143c3a') + ';border:2px solid ' + (emUso ? '#7df0a0' : meu ? '#3fb76a' : naSac ? AMAR : '#1f5a52') + ';padding:5px 6px;display:flex;flex-direction:column;gap:4px;cursor:pointer;';
+            lin.onclick = () => { mostrarBola(b.nome); render(); };
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+            const n = document.createElement('span'); n.style.cssText = 'font:700 12.5px/1.1 var(--font-display);'; n.textContent = b.nome ? Tx(b.nome) : Tx('Bola padrão');
+            const tag = document.createElement('span'); tag.style.cssText = 'font:700 10px/1 var(--font-display);padding:3px 5px;white-space:nowrap;background:' + (emUso ? '#1f7a4d' : meu ? '#155a3a' : naSac ? '#8a6a10' : '#0b1430') + ';color:' + (meu || naSac ? '#fff' : AMAR) + ';';
+            tag.textContent = emUso ? Tx('Em uso') : !b.nome ? Tx('De graça') : meu ? Tx('É sua') : naSac ? Tx('Na sacola') : Tfx('{0} fakes', b.preco);
+            top.append(n, tag);
+            const sub = document.createElement('div'); sub.style.cssText = 'font:500 10.5px/1.25 var(--font-body);color:#c8e6e0;'; sub.textContent = Tx(b.txt);
+            const bs = document.createElement('div'); bs.style.cssText = 'display:flex;gap:4px;';
+            bs.appendChild(bt(Tx('OLHAR'), '#3a8ab8', () => { mostrarBola(b.nome); render(); }, vendo));
+            if (meu) bs.appendChild(bt(emUso ? Tx('Em uso') : Tx('USAR'), emUso ? '#1f7a4d' : '#2a5a7a', () => { Bd.usando = b.nome || null; mostrarBola(b.nome); api.gravar(d.ponto || 'chegada'); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }, emUso));
+            else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== 'bola:' + b.nome); render(); }));
+            else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push('bola:' + b.nome); mostrarBola(b.nome); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+            lin.append(top, sub, bs); lista.appendChild(lin);
+          }
+          lista.scrollTop = rolagem;
+        }
+        fechar.onclick = () => { el.remove(); M.painel = null; fim(); };
+        el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
+        M.painel = { el, render }; render();
+      });
+    }
+    async function catalogoBolas() {
+      const s = S(), J = s.jog, d = s.dados, E = dadosE(), A = M.eq.juca; if (!A || M.painel) return;
+      s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); A.falando = true;
+      const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+      try {
+        if (!E.juca) {
+          await api.fala('esp_juca', Tx('Fala, craque! Aqui ficam as bolas premium da Golaço.'));
+          await api.fala('esp_juca', Tx('Tem de todo jeito, até umas inspiradas nas bolas da Copa.'));
+          await api.fala('esp_juca', Tx('Dá para ver cada uma de pertinho. O que você escolher, a Marta cobra no caixa.'));
+          E.juca = true; api.gravar(d.ponto || 'chegada');
+        } else await api.fala('esp_juca', Tx('Bora ver as bolas? Chegou coisa boa.'));
+        Dialogo.esconder();
+        await andarJog(VITRINE.jx, VITRINE.jz, 2.2); J.yawAlvo = Math.atan2(-(VITRINE.z - J.z), VITRINE.x - J.x);
+        const Bd = dadosB(); mostrarBola(Bd.usando && desenhoBola(Bd.usando) ? Bd.usando : BOLAS[0].nome);
+        api.camCena({ px: VITRINE.x + 1.5, py: VITRINE.y + 0.45, pz: VITRINE.z + 1.2, tx: VITRINE.x + 0.28, ty: VITRINE.y - 0.1, tz: VITRINE.z - 0.4 });   // de perto; a bola fica à esquerda (o painel ocupa a direita)
+        const n0 = M.sacola.filter(ehBola).length;
+        await abrirPainelBolas();
+        tirarVitrine(); api.camCena(null); s.cam.snap = true;
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        await api.fala('esp_juca', M.sacola.filter(ehBola).length > n0 ? Tx('Boa escolha! Passa no caixa que a Marta fecha a conta.') : Tx('Volta quando quiser trocar de bola!'));
+      } catch (e) { console.error('[Esportiva] bolas:', e); }
+      finally {
+        A.falando = false; A.yawAlvo = y0; if (M.painel) { M.painel.el.remove(); M.painel = null; } tirarVitrine();
+        try { api.camCena(null); s.cam.snap = true; Dialogo.esconder(); } catch (e) { /* nada */ }
+        const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
+      }
+    }
     // os outros vendedores: a seção ainda não vende
     async function falarVendedor(k) {
       const A = M.eq[k], J = S().jog; if (!A) return; const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); A.falando = true;
@@ -511,14 +655,17 @@
       A.falando = true;
       try {
         if (!E.marta) { await api.fala('esp_marta', fem() ? Tx('Bem-vinda à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.') : Tx('Bem-vindo à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.')); E.marta = true; api.gravar(d.ponto || 'chegada'); }
-        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras e o Dedé, as comemorações.')); return; }
+        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras, o Juca, as bolas e o Dedé, as comemorações.')); return; }
         const total = totalSacola(), nomes = M.sacola.map(nomeItem).join(', ');
         await api.fala('esp_marta', Tfx('Na sacola: {0}. Dá {1} fakes.', nomes, total));
-        if (!d.devInfinito && d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com o Biro ou o Dedé, ou volta depois.', total - d.fakes)); return; }
+        if (!d.devInfinito && d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com os vendedores ou volta depois.', total - d.fakes)); return; }
         const r = await Escolha.mostrar(Tx('Caixa da loja'), [Tfx('Pagar {0} fakes', total), Tx('Agora não')]);
         if (r !== 0) { await api.fala('esp_marta', Tx('Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.')); return; }
         d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
-        const cels = M.sacola.filter((k) => !ehCh(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), DC = dadosCh(); M.sacola = [];
+        const cels = M.sacola.filter((k) => !ehCh(k) && !ehBola(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), DC = dadosCh();
+        const bolas = M.sacola.filter(ehBola).map((k) => k.slice(5)), Bd = dadosB(); M.sacola = [];
+        for (const n of bolas) if (!Bd.tem.includes(n)) Bd.tem.push(n);
+        const bolaNova = !Bd.usando && bolas.length ? bolas[bolas.length - 1] : null; if (bolaNova) Bd.usando = bolaNova;   // a primeira bola comprada já vai para as partidas
         for (const k of cels) if (!C.tem.includes(k)) C.tem.push(k);
         for (const n of chs) if (!DC.tem.includes(n)) DC.tem.push(n);
         const ult = cels[cels.length - 1], ultCh = chs[chs.length - 1];
@@ -529,6 +676,7 @@
         await api.fala('esp_marta', Tx('Prontinho! Já é tudo seu.'));
         if (botao) await api.fala('esp_marta', Tfx('A comemoração "{0}" já ficou no seu botão {1}. Para trocar, é com o Dedé.', Tx(CELS()[ult].nome), botao));
         if (ultCh) await api.fala('esp_marta', Tfx('A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.', Tx(ultCh)));
+        if (bolaNova) await api.fala('esp_marta', Tfx('A bola "{0}" já é a sua bola nas partidas. Para trocar, é com o Juca.', Tx(bolaNova)));
         await api.fala('esp_marta', Tx('Agora é fazer gol para estrear!'));
       } catch (e) { console.error('[Esportiva] caixa:', e); }
       finally { A.falando = false; try { Dialogo.esconder(); } catch (e) { /* nada */ } }
@@ -546,7 +694,7 @@
     }
     function saiu() {
       const s = S(), J = s.jog;
-      if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove(); if (M.provando != null && J) desprovar(); M.provando = null; M.destaque = null;
+      if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove(); if (M.provando != null && J) desprovar(); M.provando = null; M.destaque = null; tirarVitrine();
       if (s.falantesExtra) for (const k of Object.keys(s.falantesExtra)) if (k.startsWith('esp_')) delete s.falantesExtra[k];
       M.R = null; M.D = null; M.nav = null; M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null;
     }
@@ -557,18 +705,20 @@
         if (E.sec === 'caixa') v.push({ x: D.pagar.x, z: D.pagar.z, r: 1.7, txt: Tx('Caixa da loja') + (M.sacola.length ? ' (' + M.sacola.length + ')' : ''), fn: caixa, y: 2.3, pri: true });
         else if (E.k === 'dede') v.push({ x: A.x, z: A.z, r: 1.8, txt: Tx('Ver as comemorações'), fn: catalogo, y: 2.4, pri: true });
         else if (E.k === 'biro') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as chuteiras'), fn: catalogoCh, y: 2.4, pri: true });
+        else if (E.k === 'juca') v.push({ x: A.x, z: A.z + 0.5, r: 1.8, txt: Tx('Ver as bolas'), fn: catalogoBolas, y: 2.4, pri: true });
         else v.push({ x: A.x, z: A.z + 0.5, r: 1.6, txt: Tfx('Falar com {0}', Tx(E.nome)), fn: () => falarVendedor(E.k), y: 2.4 });
       }
     }
     function tick(dt) {
       const s = S(); if (!s || !M.D || !s.dentro || s.dentro.nome !== 'esportiva') return;
       tickPrevia(dt); tickDede(dt); tickFluxo(dt);
+      if (M.vitrine) { M.vitrine.rotation.y += dt * 0.7; M.vitrine.position.y = M.vitrine.userData.y + Math.sin(performance.now() / 600) * 0.03; }
       if (M.destaque) M.destaque.rotation.y += dt * 0.7;                // a mais cara girando na redoma
       if (M.provando != null) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira
       for (const E of EQUIPE) { const A = M.eq[E.k]; if (A && !A.falando && E.k !== 'dede' && s.modo === 'livre') { const J = s.jog, perto = Math.hypot(J.x - A.x, J.z - A.z) < 3.2; A.yawAlvo = perto ? Math.atan2(-(J.z - A.z), J.x - A.x) : A.casa.yaw; } }   // quem está perto: o vendedor olha para o jogador
     }
-    function limpar() { if (M.painel) { M.painel.el.remove(); M.painel = null; } }
-    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira };
+    function limpar() { if (M.painel) { M.painel.el.remove(); M.painel = null; } tirarVitrine(); }
+    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira, catalogoBolas, dadosB, BOLAS, mostrarBola };
     if (typeof window !== 'undefined') window.__esportiva = dbg;
     return { entrou, saiu, chegou: () => false, tickCliente, tick, alvos, alvosSentado: () => null, liberarMesa() {}, limpar, _f: dbg };
   }

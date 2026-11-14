@@ -20,7 +20,7 @@ ARQUIVOS
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
   treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
-  esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações e as 20 chuteiras premium à venda (baixado pela cidade)
+  esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações, as 20 chuteiras e as 15 bolas premium à venda (baixado pela cidade)
   treinoCampo.js ........ o campo de treino (mundo à parte, sem relógio) onde acontece o treino de chute, passe e cruzamento
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
   varzea.js ............. o campeonato de várzea: o olheiro, os 10 times (emblemas em pixel art), a torcida, o vestiário
@@ -38,8 +38,8 @@ ARQUIVOS
                           das 5 repórteres (Esfera, TBS, Band-Aid, TV Recordação, TV Agricultura) entrevista o jogador na
                           entrada; a pergunta é montada (time + jogador + jogo de hoje) e a resposta tranquila ou arrogante é
                           uma aposta de popularidade conferida depois do jogo (baixado pela Série B)
-  cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja); o jogo baixa na abertura. Não aparecem no criador:
-                          compra na barbearia (os NPCs podem usar)
+  cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
+                          o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)
   index.html ............ abre o jogo direto: three.min.js + jogo.js (pendrive, GitHub Pages)
   three.min.js .......... Three.js r128 (motor 3D, licença MIT, Three.js Authors)

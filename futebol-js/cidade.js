@@ -2440,10 +2440,15 @@
     S.visCidade = scene.children.filter((c) => !c.isLight && c.visible);   // o que é da cidade e está à mostra (volta igual depois)
     for (const c of S.visCidade) c.visible = false;
     restaurarMundo(); esconderHud(true); UI.arrasto.hidden = true; aviso('');
+    trocarBola(true);
+  }
+  function trocarBola(naPartida) {                                       // a bola comprada no Juca (Golaço Esportes) vale nas partidas; a cidade volta com a de sempre
+    try { if (typeof FutebolCosmeticos !== 'undefined' && FutebolCosmeticos.usarBola) FutebolCosmeticos.usarBola(naPartida && S.dados && S.dados.bolas ? S.dados.bolas.usando || null : null); } catch (e) { console.warn('[Cidade] bola:', e); }
   }
   function voltarDaPartida() {
     const volta = S.visCidade || [];
     prepararMundo();                                                     // céu, névoa e câmera da cidade (e esconde o campo da partida)
+    trocarBola(false);
     for (const c of volta) c.visible = true; S.visCidade = null;
     GANCHO_RENDER = gancho; S.cam.snap = true;
     const ps = document.getElementById('pauseScreen'), es = document.getElementById('endScreen'); if (ps) ps.hidden = true; if (es) es.hidden = true;
