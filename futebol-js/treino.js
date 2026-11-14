@@ -20,15 +20,11 @@
      errar gasta. Sem bola: anúncio de 15 s (+1 bola) ou de 30 s (+3 bolas), ou desiste. Fechou os 3 desafios: +0,1 na habilidade da
      situação (chute; nas de falta e barreira, EFEITO, que é o que a cobrança de falta usa na partida; passe; cruzamento), até 10.
      No máximo 2 situações por dia (começou, contou: acertando ou errando). Depois das 30, dá para repetir (sem ganhar habilidade).
-   - O CONTROLE: arrastar (ou setas/WASD) move a MIRA; segurar o botão (ou Espaço) enche a FORÇA, que vai e volta; soltar chuta.
-     Enquanto segura, a mira BALANÇA (mais com mais força e menos com a habilidade maior): soltar na hora certa é parte do jogo.
-     Chute e cruzamento têm EFEITO (curva para um lado ou para o outro: a bola chega na mira fazendo a curva); o passe tem RASTEIRO ou
-     PELO ALTO. O começo da trajetória aparece pontilhado.
-   - A FÍSICA (LOGICA, sem Three.js: dá para simular no Node): bola de 15 cm, gravidade, quique, rolar com atrito, curva constante para o
-     lado; goleiro com tempo de reação, velocidade de mergulho e alcance (menor nos cantos, maior em bola fraca); barreira de bonecos;
-     placas tampando o gol com uma janela (parada ou andando); alvos (aros) parados ou andando; companheiro parado ou correndo; cones;
-     marcador que vai na bola; zona no chão; cabeceio; goleiro que sai do gol no cruzamento. Cada desafio foi testado por um robô
-     (avaliar: procura a melhor mira/força/efeito e chuta com o erro de uma pessoa) para ser difícil mas possível.
+   - O CONTROLE é o da partida: os desafios são jogados no motor do jogo (treinoCampo.js + Historia.desafio), cada tentativa é uma
+     cobrança com corrida (seta, barra de força e toque na bola para o efeito; CHUTAR fora do gol = bola alta; PASSAR = rasteiro).
+     A LOGICA daqui descreve cada desafio (bola, alvos, janela, cones, círculo, quem defende, quem recebe, quem marca).
+   - A FÍSICA da LOGICA (sem Three.js: dá para simular no Node) é a das jogadas da turma sozinha (TREINOS_NPC): bola de 15 cm,
+     gravidade, quique, rolar com atrito, curva, goleiro com reação e alcance, cabeceio e saída do gol no cruzamento.
    - Salva em historia.cidade: treinoNonato = { conhece, prog: { chute, passe, cruz }, hoje: { dia, n }, ganhos: { atributo: total } }.
    ===================================================================== */
 (function () {
@@ -113,6 +109,13 @@
     'O Paredão sai do gol: cruze longe dele.': ['Paredão comes off his line: cross away from him.', 'Paredão sale del arco: centra lejos de él.', 'Paredão esce dai pali: crossa lontano da lui.', 'Paredão sort de sa cage : centre loin de lui.'],
     'Cruze por cima da barreira de {0}.': ['Cross over the {0}-man wall.', 'Centra por encima de la barrera de {0}.', 'Crossa sopra la barriera di {0}.', 'Centre par-dessus le mur de {0}.'],
     'Faça a bola passar dentro do aro que anda.': ['Get the ball through the moving hoop.', 'Haz pasar el balón por el aro que se mueve.', 'Fai passare la palla nel cerchio che si muove.', 'Fais passer la balle dans le cerceau mobile.'],
+    'Faça o gol de {0} m. O Tonhão está na frente.': ['Score from {0} m. Tonhão is in the way.', 'Haz el gol desde {0} m. Tonhão está delante.', 'Segna da {0} m. Tonhão ti sta davanti.', 'Marque de {0} m. Tonhão est devant.'],
+    'Acerte o aro (de {0} m). O Paredão está no gol.': ['Hit the hoop (from {0} m). Paredão is in goal.', 'Acierta el aro (desde {0} m). Paredão está en el arco.', 'Colpisci il cerchio (da {0} m). Paredão è in porta.', 'Touche le cerceau (à {0} m). Paredão est dans le but.'],
+    'Passe para o Juninho, a {0} m. O Tonhão está colado nele.': ['Pass to Juninho, {0} m away. Tonhão is right on him.', 'Pasa a Juninho, a {0} m. Tonhão lo marca de cerca.', 'Passa a Juninho, a {0} m. Tonhão gli sta addosso.', 'Passe à Juninho, à {0} m. Tonhão le colle.'],
+    'Cobrança como na partida: mire, segure a força e toque na bola para o efeito.': ['Same set piece as in a match: aim, hold for power and tap the ball for curl.', 'Tiro como en el partido: apunta, mantén para la fuerza y toca el balón para el efecto.', 'Calcio piazzato come in partita: mira, tieni premuto per la forza e tocca il pallone per l’effetto.', 'Coup de pied arrêté comme en match : vise, maintiens pour la puissance et touche le ballon pour l’effet.'],
+    'Use PASSAR: a força decide até onde a bola vai.': ['Use PASS: the power decides how far the ball goes.', 'Usa PASAR: la fuerza decide hasta dónde va el balón.', 'Usa PASSA: la forza decide fin dove va il pallone.', 'Utilise PASSER : la puissance décide jusqu’où va le ballon.'],
+    'Use CHUTAR / CRUZAR mirando fora do gol: a bola vai pelo alto.': ['Use SHOOT / CROSS aiming away from goal: the ball goes in the air.', 'Usa TIRAR / CENTRAR apuntando fuera del arco: el balón va por arriba.', 'Usa TIRA / CROSS mirando fuori dalla porta: il pallone va alto.', 'Utilise TIRER / CENTRER en visant hors du but : le ballon part en l’air.'],
+    'Treino': ['Practice', 'Entrenamiento', 'Allenamento', 'Entraînement'],
     // HUD
     'CHUTAR': ['SHOOT', 'TIRAR', 'TIRA', 'TIRER'], 'PASSAR': ['PASS', 'PASAR', 'PASSA', 'PASSER'], 'CRUZAR': ['CROSS', 'CENTRAR', 'CROSSA', 'CENTRER'],
     'Efeito': ['Curl', 'Efecto', 'Effetto', 'Effet'], 'Sem efeito': ['No curl', 'Sin efecto', 'Senza effetto', 'Sans effet'],
@@ -132,6 +135,7 @@
     'Fora do corredor!': ['Outside the lane!', '¡Fuera del pasillo!', 'Fuori dal corridoio!', 'Hors du couloir !'], 'Fora do círculo!': ['Outside the circle!', '¡Fuera del círculo!', 'Fuori dal cerchio!', 'Hors du cercle !'],
     'Alta demais!': ['Too high!', '¡Muy alta!', 'Troppo alta!', 'Trop haute !'], 'Baixa demais!': ['Too low!', '¡Muy baja!', 'Troppo bassa!', 'Trop basse !'], 'O goleiro pegou!': ['The keeper claimed it!', '¡El arquero la agarró!', 'Il portiere l’ha presa!', 'Le gardien l’a captée !'],
     'O zagueiro cortou!': ['The defender cleared it!', '¡El defensa la despejó!', 'Il difensore l’ha respinta!', 'Le défenseur a dégagé !'], 'Fora do aro!': ['Missed the hoop!', '¡Fuera del aro!', 'Fuori dal cerchio!', 'Hors du cerceau !'],
+    'Bloqueado!': ['Blocked!', '¡Bloqueado!', 'Murato!', 'Contré !'], 'BOLA NELE!': ['RIGHT ON HIM!', '¡JUSTO A ÉL!', 'DRITTA A LUI!', 'PILE POUR LUI !'],
     // fim de desafio / situação
     'Desafio {0} feito!': ['Challenge {0} done!', '¡Desafío {0} hecho!', 'Sfida {0} fatta!', 'Défi {0} réussi !'],
     'SITUAÇÃO CONCLUÍDA!': ['SITUATION CLEARED!', '¡SITUACIÓN COMPLETADA!', 'SITUAZIONE COMPLETATA!', 'SITUATION RÉUSSIE !'],
@@ -192,116 +196,118 @@
     const NOME_ATRIB = { chute: 'Chute', efeito: 'Falta (efeito)', passe: 'Passe', cruzamento: 'Cruzamento' };
 
     // ---------------------------------------------------------------- um DESAFIO: tudo o que está no campo (em u, v, y)
-    // x = dificuldade (0 a 1): situação n (0..29) e desafio k (0..2): x = n/29 × 0,75 + k × 0,125
+    // x = dificuldade (0 a 1): situação n (0..29) e desafio k (0..2): x = 0,1 + n/29 × 0,75 + k × 0,12
+    // O desafio é jogado na PARTIDA (treinoCampo.js): o goleiro, a barreira, o marcador e o companheiro são jogadores do motor, e a bola
+    // sai do sistema de chute da partida (toque: 'shot' = CHUTAR / CRUZAR, 'pass' = PASSAR).
+    //   goleiro: { modo: 'gol' } defende de verdade · { modo: 'sai' } defende e sai no cruzamento · { modo: 'linha' } fica parado na linha ·
+    //   sem goleiro = o Paredão assiste ao lado da trave. barreira: no chute { n } (a 9,15 m, como na partida); no cruzamento [{ u, v }].
+    //   marcadores: [{ u, v, npc }] (npc 1 = Tonhão; 2 e 3 = os outros da turma).
     function desafio(tipo, n, k) {
-      const fam = ORDEM[tipo][n], x = clamp(n / 29 * 0.75 + k * 0.125, 0, 1), r = semente(9973 * (tipo === 'chute' ? 1 : tipo === 'passe' ? 2 : 3) + n * 31 + k * 7 + 5);
+      const fam = ORDEM[tipo][n], x = clamp(0.1 + n / 29 * 0.75 + k * 0.12, 0, 1), r = semente(9973 * (tipo === 'chute' ? 1 : tipo === 'passe' ? 2 : 3) + n * 31 + k * 7 + 5);
       const lado = r() < 0.5 ? -1 : 1, D = { tipo, fam, n, k, x, desc: '', descA: [] };
       const bola = (u, v) => { D.bola = { u: clamp(u, -8.4, 8.4), v: clamp(v, 0.5, 29) }; };
-      const goleiroNoGol = (tau, vD, reach) => {
-        const b = D.bola, kv = 0.7, gu = clamp(b.u * kv / b.v + Math.sign(b.u || 1) * 0.28 * clamp(Math.abs(b.u) / 6, 0, 1), -1.2, 1.2);
-        D.goleiro = { modo: 'gol', u: gu, v: kv, tau, vD, reach };
-      };
-      const d1 = (m) => Math.round(m);
+      const d1 = (m) => Math.round(m), dGol = () => d1(Math.hypot(D.bola.u, D.bola.v));
       if (tipo === 'chute') {
-        D.mira = { plano: 'gol', u: 0, y: 1.0 };
+        D.mira = { plano: 'gol', u: 0, y: 1.0 }; D.toque = 'shot';
         if (fam === 'gol') {
-          bola(lado * r() * (1.2 + 4.8 * x), 9 + 8 * x); goleiroNoGol(0.4 - 0.16 * x, 2.6 + 1.1 * x, 0.9); D.crit = 'gol';
-          D.desc = 'Faça o gol de {0} m. O Paredão está no gol.'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          bola(lado * (0.5 + r() * (1 + 6 * x)), 10 + 9 * x); D.goleiro = { modo: 'gol' }; D.crit = 'gol';
+          D.desc = 'Faça o gol de {0} m. O Paredão está no gol.';
+          if (k === 2) {                                                 // o Tonhão na frente, fechando o lado da trave mais perto
+            const b = D.bola, pu = (Math.sign(b.u) || lado) * 1.3, du = pu - b.u, dv = -b.v, dl = Math.hypot(du, dv);
+            D.marcadores = [{ u: b.u + du / dl * 3.4, v: b.v + dv / dl * 3.4, npc: 1 }]; D.desc = 'Faça o gol de {0} m. O Tonhão está na frente.';
+          }
+          D.descA = [dGol()];
         } else if (fam === 'falta') {
-          bola(lado * r() * 4, 14 + 5 * x); goleiroNoGol(0.4 - 0.08 * x, 2.7 + 0.5 * x, 0.9); D.crit = 'gol';
-          D.desc = 'Falta de {0} m. O Paredão está esperto.'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          bola(lado * r() * (2 + 4 * x), 16 + 7 * x); D.goleiro = { modo: 'gol' }; D.crit = 'gol';
+          const nb = x < 0.3 ? 0 : x < 0.65 ? 2 : 3;
+          if (nb) { D.barreira = { n: nb }; D.desc = 'Falta de {0} m com barreira de {1}.'; D.descA = [dGol(), nb]; }
+          else { D.desc = 'Falta de {0} m. O Paredão está esperto.'; D.descA = [dGol()]; }
         } else if (fam === 'barreira') {
-          bola(lado * (1 + r() * 3), 12 + 5 * x);
-          const nb = 2 + Math.min(2, Math.floor(x * 2.99)), h = 1.8 + 0.08 * x, b = D.bola, poste = Math.sign(b.u || 1) * 2.44;
-          // a barreira a 5 m da bola, de frente para ela, cobrindo do poste do lado da bola até perto do meio
-          const ax = poste * 0.55 - b.u, av = -b.v, al = Math.hypot(ax, av), fu = ax / al, fv = av / al, cu = b.u + fu * 5, cv = b.v + fv * 5;
-          const nu = -fv, nv = fu, sgn = Math.sign(nu * Math.sign(poste)) || 1;   // n: perpendicular; os bonecos crescem do lado do poste para o meio
-          D.barreira = []; for (let i = 0; i < nb; i++) { const o = (i - (nb - 1) / 2) * 0.56 + sgn * 0.12; D.barreira.push({ u: cu + nu * o, v: cv + nv * o, h, r: 0.24 }); }
-          D.goleiro = { modo: 'gol', u: -Math.sign(poste) * 0.55, v: 0.7, tau: 0.5 - 0.1 * x, vD: 2.4 + 0.4 * x, reach: 0.88 };
-          D.crit = 'gol'; D.desc = 'Falta de {0} m com barreira de {1}.'; D.descA = [d1(Math.hypot(b.u, b.v)), nb];
+          bola(lado * (1 + r() * 4), 15 + 6 * x);
+          const nb = 3 + (x > 0.5 ? 1 : 0); D.barreira = { n: nb }; D.goleiro = { modo: 'gol' }; D.crit = 'gol';
+          D.desc = 'Falta de {0} m com barreira de {1}.'; D.descA = [dGol(), nb];
         } else if (fam === 'alvo') {
-          bola(lado * r() * 3, 11 + 8 * x);
-          const cantos = [[-1.75, 0.55], [1.75, 1.65], [-1.7, 1.65], [1.75, 0.55]], c = cantos[(n + k) % 4];
-          D.alvos = [{ u: c[0], y: c[1], r: 0.55 - 0.27 * x }]; D.crit = 'alvo'; D.mira.u = c[0] * 0.6; D.mira.y = c[1];
-          D.desc = 'Acerte o aro (de {0} m).'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          bola(lado * r() * 4, 12 + 9 * x);
+          const cantos = [[-1.75, 0.52], [1.75, 1.68], [-1.7, 1.68], [1.75, 0.52]], c = cantos[(n + k) % 4];
+          D.alvos = [{ u: c[0], y: c[1], r: 0.5 - 0.24 * x }]; D.crit = 'alvo'; D.mira.u = c[0] * 0.6; D.mira.y = c[1];
+          if (x > 0.45) { D.goleiro = { modo: 'gol' }; D.desc = 'Acerte o aro (de {0} m). O Paredão está no gol.'; } else D.desc = 'Acerte o aro (de {0} m).';
+          D.descA = [dGol()];
         } else if (fam === 'alvoMov') {
-          bola(lado * r() * 2.5, 11 + 6 * x);
-          D.alvos = [{ u: 0, y: [0.6, 1.55, 1.05][k], r: 0.62 - 0.22 * x, mov: { u0: -1.85, u1: 1.85, per: 2 * 3.7 / (0.7 + 1.8 * x), fase: r() } }];
-          D.crit = 'alvo'; D.mira.y = D.alvos[0].y; D.desc = 'Acerte o aro que anda (de {0} m).'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          bola(lado * r() * 3, 12 + 7 * x);
+          D.alvos = [{ u: 0, y: [0.6, 1.6, 1.05][k], r: 0.55 - 0.2 * x, mov: { u0: -1.85, u1: 1.85, per: 2 * 3.7 / (0.9 + 2.2 * x), fase: r() } }];
+          D.crit = 'alvo'; D.mira.y = D.alvos[0].y; D.desc = 'Acerte o aro que anda (de {0} m).'; D.descA = [dGol()];
         } else if (fam === 'bloq') {
-          bola(lado * r() * 3, 11 + 8 * x);
-          const w = 1.3 - 0.65 * x, cu = (r() < 0.5 ? -1 : 1) * (1.0 + 0.7 * r()), cy = [0.62, 1.5, 1.0][k] + (k === 1 ? 0 : 0);
+          bola(lado * r() * 4, 12 + 9 * x);
+          const w = 1.2 - 0.55 * x, cu = (r() < 0.5 ? -1 : 1) * (1.0 + 0.8 * r()), cy = [0.62, 1.55, 1.0][k];
           D.janela = { u: clamp(cu, -GOL_W + w / 2, GOL_W - w / 2), y: clamp(cy, w / 2, GOL_H - w / 2), w, h: w };
-          D.crit = 'janela'; D.mira.u = D.janela.u; D.mira.y = D.janela.y; D.desc = 'Faça o gol pela janela das placas (de {0} m).'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          D.crit = 'janela'; D.mira.u = D.janela.u; D.mira.y = D.janela.y; D.desc = 'Faça o gol pela janela das placas (de {0} m).'; D.descA = [dGol()];
         } else {                                                          // bloqMov
-          bola(lado * r() * 2.5, 10 + 7 * x);
-          const w = 1.35 - 0.55 * x;
-          D.janela = { u: 0, y: [0.75, 1.4, 1.05][k], w, h: w, mov: { u0: -GOL_W + w / 2 + 0.05, u1: GOL_W - w / 2 - 0.05, per: 2 * (2 * GOL_W - w) / (0.6 + 1.6 * x), fase: r() } };
-          D.crit = 'janela'; D.mira.y = D.janela.y; D.desc = 'A janela anda: faça o gol por ela (de {0} m).'; D.descA = [d1(Math.hypot(D.bola.u, D.bola.v))];
+          bola(lado * r() * 3, 11 + 8 * x);
+          const w = 1.25 - 0.5 * x;
+          D.janela = { u: 0, y: [0.75, 1.45, 1.05][k], w, h: w, mov: { u0: -GOL_W + w / 2 + 0.05, u1: GOL_W - w / 2 - 0.05, per: 2 * (2 * GOL_W - w) / (0.8 + 1.8 * x), fase: r() } };
+          D.crit = 'janela'; D.mira.y = D.janela.y; D.desc = 'A janela anda: faça o gol por ela (de {0} m).'; D.descA = [dGol()];
         }
       } else if (tipo === 'passe') {
         // o passe vai "para cima" do campo ou de lado: a bola num lugar e o companheiro a uma distância Dp, num ângulo
-        const Dp = fam === 'longo' ? 18 + 8 * x : fam === 'alvoChao' ? 7 + 8 * x : fam === 'parado' ? 9 + 19 * x : 10 + 10 * x;
-        const ang = (r() - 0.5) * 1.6, bu = clamp(-lado * (2 + r() * 4), -8, 8), bv = clamp(4 + r() * 3 + (fam === 'longo' ? 0 : 0), 2, 8);
+        const Dp = fam === 'longo' ? 16 + 7 * x : fam === 'alvoChao' ? 8 + 10 * x : fam === 'parado' ? 10 + 18 * x : 11 + 10 * x;
+        const ang = (r() - 0.5) * 1.6, bu = clamp(-lado * (2 + r() * 4), -8, 8), bv = clamp(4 + r() * 3, 2, 8);
         bola(bu, bv);
         let tu = bu + Math.sin(ang) * Dp, tv = bv + Math.cos(ang) * Dp;
-        if (Math.abs(tu) > 8) { tu = Math.sign(tu) * 8; } if (tv > 28.5) tv = 28.5;
-        const dist = Math.hypot(tu - bu, tv - bv);
+        if (Math.abs(tu) > 8) tu = Math.sign(tu) * 8; if (tv > 28.5) tv = 28.5;
+        const dist = Math.hypot(tu - bu, tv - bv), fu = (tu - bu) / dist, fv = (tv - bv) / dist, nu = -fv, nv = fu;
         D.mira = { plano: fam === 'longo' ? 'alto' : 'chao', u: tu, v: tv, y: fam === 'longo' ? 1.2 : 0 };
-        D.alto = fam === 'longo';
-        D.trava = fam === 'longo' ? 'alto' : fam === 'correndo' ? null : 'rasteiro';   // o jeito de passar que a situação pede
+        D.toque = fam === 'longo' ? 'shot' : 'pass';
         if (fam === 'alvoChao') {
-          D.zona = { u: tu, v: tv, r: 2.4 - 0.6 * x, para: true }; D.crit = 'para'; D.desc = 'Faça a bola parar dentro do círculo (a {0} m).'; D.descA = [d1(dist)];
+          D.zona = { u: tu, v: tv, r: 2.0 - 0.9 * x, para: true }; D.crit = 'para'; D.desc = 'Faça a bola parar dentro do círculo (a {0} m).'; D.descA = [d1(dist)];
         } else {
-          D.recebe = { u: tu, v: tv, ctrl: 10.5 - 4.5 * x, alcance: 0.9 - 0.35 * x, pousa: 1.3 - 0.4 * x };
-          D.crit = 'recebe'; D.desc = 'Passe para o Juninho, a {0} m.'; D.descA = [d1(dist)];
-          const fu = (tu - bu) / dist, fv = (tv - bv) / dist, nu = -fv, nv = fu;
+          D.recebe = { u: tu, v: tv }; D.crit = 'recebe'; D.desc = 'Passe para o Juninho, a {0} m.'; D.descA = [d1(dist)];
+          if (fam === 'parado' && k === 2) { D.marcadores = [{ u: tu - fu * 0.3 + nu * 1.0, v: tv - fv * 0.3 + nv * 1.0, npc: 1 }]; D.desc = 'Passe para o Juninho, a {0} m. O Tonhão está colado nele.'; }
           if (fam === 'correndo') {
-            const vel = 2 + 3 * x, L = 6, su = tu - nu * L / 2, sv = tv - nv * L / 2;
+            const vel = 3 + 3 * x, L = 7, su = tu - nu * L / 2, sv = tv - nv * L / 2;
             D.recebe.u = su; D.recebe.v = sv; D.recebe.corre = { u0: su, v0: sv, u1: su + nu * L, v1: sv + nv * L, per: 2 * L / vel + 1.2, fase: r() };
-            D.mira.u = tu; D.mira.v = tv; D.desc = 'O Juninho corre: passe na frente dele.'; D.descA = [];
+            D.desc = 'O Juninho corre: passe na frente dele.'; D.descA = [];
           } else if (fam === 'cones' || fam === 'conesMov') {
-            const g = fam === 'cones' ? 1.1 - 0.5 * x : 1.3 - 0.55 * x, pc = 0.65 + 0.1 * r(), cu = bu + fu * dist * pc, cv = bv + fv * dist * pc, off = fam === 'cones' ? (r() - 0.5) * 1.2 : 0;
-            D.cones = { u: cu + nu * off, v: cv + nv * off, nu, nv, gap: g, mov: fam === 'conesMov' ? { amp: 1.6, per: 2 * 3.2 / (0.6 + 1.6 * x), fase: r() } : null };
+            const g = fam === 'cones' ? Math.max(0.5, 1.0 - 0.45 * x) : Math.max(0.6, 1.2 - 0.5 * x), pc = 0.6 + 0.12 * r(), cu = bu + fu * dist * pc, cv = bv + fv * dist * pc, off = fam === 'cones' ? (r() - 0.5) * 1.4 : 0;
+            D.cones = { u: cu + nu * off, v: cv + nv * off, nu, nv, gap: g, mov: fam === 'conesMov' ? { amp: 1.7, per: 2 * 3.4 / (0.8 + 1.8 * x), fase: r() } : null };
             D.desc = fam === 'cones' ? 'Passe entre os cones para o Juninho (vão de {0} m).' : 'Os cones andam: passe entre eles.'; D.descA = [virg(g)];
           } else if (fam === 'marcador') {
-            const pc = 0.4 + 0.1 * r(), off = (r() < 0.5 ? -1 : 1) * (1.0 + 0.4 * r());
-            D.recebe.ctrl = 11.5 - 1.5 * x;                                    // aqui a bola tem que ir firme (senão o Tonhão chega)
-            D.marcadores = [{ u: bu + fu * dist * pc + nu * off, v: bv + fv * dist * pc + nv * off, reach: 0.65, h: 2.3, tau: 0.4 - 0.1 * x, vel: 1.2 + 1.2 * x, npc: 1 }];
+            const pc = 0.35 + 0.15 * r(), off = (r() < 0.5 ? -1 : 1) * (1.9 - 0.6 * x + 0.4 * r());
+            D.marcadores = [{ u: bu + fu * dist * pc + nu * off, v: bv + fv * dist * pc + nv * off, npc: 1 }];
             D.desc = 'O Tonhão marca: passe para o Juninho sem ele cortar.'; D.descA = [];
           } else if (fam === 'longo') {
-            const nm = 1 + (x > 0.45 ? 1 : 0); D.marcadores = [];
-            for (let i = 0; i < nm; i++) { const pc = nm === 1 ? 0.5 : 0.38 + i * 0.26; D.marcadores.push({ u: bu + fu * dist * pc + nu * (i ? -0.4 : 0.35), v: bv + fv * dist * pc + nv * (i ? -0.4 : 0.35), reach: 0.8, h: 2.4, tau: 0.3, vel: 1.4 + 1.2 * x, npc: i === 0 ? 1 : 0 }); }
-            D.recebe.pousa = 1.6 - 0.8 * x; D.desc = 'Lançamento de {0} m para o Juninho, por cima da marcação.'; D.descA = [d1(dist)];
+            const nm = 1 + (x > 0.4 ? 1 : 0); D.marcadores = [];
+            for (let i = 0; i < nm; i++) { const pc = nm === 1 ? 0.5 : 0.38 + i * 0.26; D.marcadores.push({ u: bu + fu * dist * pc + nu * (i ? -0.4 : 0.35), v: bv + fv * dist * pc + nv * (i ? -0.4 : 0.35), npc: 1 + i }); }
+            D.desc = 'Lançamento de {0} m para o Juninho, por cima da marcação.'; D.descA = [d1(dist)];
           }
         }
       } else {                                                            // cruz: da ponta para a área
-        const wu = lado * (6.6 + r() * 1.6), wv = 4 + r() * 7 + 4 * x * r();
+        const wu = lado * (6.6 + r() * 2.4), wv = 4 + r() * 7 + 5 * x * r();
         bola(wu, wv);
-        D.mira = { plano: 'alto', u: 0, v: 6, y: 1.75 };
+        D.toque = 'shot'; D.mira = { plano: 'alto', u: 0, v: 6, y: 1.75 };
         const longe = -lado;                                              // "segundo pau": o lado de lá
         if (fam === 'zona') {
-          D.zona = { u: lado * (0.4 - r() * 1.6), v: 5.5 + r() * 3.5, r: 1.3 - 0.75 * x }; D.crit = 'zona'; D.mira = { plano: 'chao', u: D.zona.u, v: D.zona.v, y: 0 };
-          D.desc = 'Cruze e faça a bola cair no círculo.';
+          D.zona = { u: lado * (0.4 - r() * 1.8), v: 5.5 + r() * 4, r: Math.max(0.55, 1.25 - 0.65 * x) }; D.crit = 'zona'; D.mira = { plano: 'chao', u: D.zona.u, v: D.zona.v, y: 0 };
+          D.goleiro = { modo: 'linha' }; D.desc = 'Cruze e faça a bola cair no círculo.';
         } else if (fam === 'cabeca' || fam === 'zagueiro' || fam === 'goleiro' || fam === 'barreira') {
-          const tu = fam === 'cabeca' ? lado * (0.3 - r() * 2.2) : longe * (0.8 + r() * 1.4), tv = fam === 'goleiro' ? 3.6 + r() * 1.6 : 4.5 + r() * 3.5;
-          D.cabeca = { u: tu, v: tv, alcance: fam === 'cabeca' ? 0.5 - 0.25 * x : 0.6 - 0.25 * x }; D.crit = 'cabeca'; D.mira.u = tu; D.mira.v = tv;
-          D.desc = 'Cruze na cabeça do Juninho.';
-          if (fam === 'zagueiro') { D.marcadores = [{ u: lado * 1.5, v: tv + 0.9, reach: 0.75, h: 2.35, tau: 0.3, vel: 1.2 + 1.2 * x, npc: 1 }]; D.desc = 'Cruze para o Juninho sem o Tonhão cortar.'; }
-          if (fam === 'goleiro') { D.goleiro = { modo: 'sai', u: lado * 0.6, v: 0.8, tau: 0.3 - 0.08 * x, vD: 3.5 + 1.3 * x, reach: 1.0, area: { v: 6, u: 4.5 } }; D.cabeca.vmax = 17; D.desc = 'O Paredão sai do gol: cruze longe dele.'; }
+          const tu = fam === 'cabeca' ? lado * (0.3 - r() * 2.2) : longe * (0.8 + r() * 1.4), tv = fam === 'goleiro' ? 3.8 + r() * 1.6 : 4.5 + r() * 3.5;
+          D.cabeca = { u: tu, v: tv }; D.crit = 'cabeca'; D.mira.u = tu; D.mira.v = tv;
+          D.goleiro = { modo: x > 0.4 ? 'sai' : 'linha' }; D.desc = 'Cruze na cabeça do Juninho.';
+          if (fam === 'zagueiro') { D.marcadores = [{ u: tu + lado * 0.6, v: tv - 0.3, npc: 1 }]; D.goleiro = { modo: x > 0.5 ? 'sai' : 'linha' }; D.desc = 'Cruze para o Juninho sem o Tonhão cortar.'; }
+          if (fam === 'goleiro') { D.goleiro = { modo: 'sai' }; D.desc = 'O Paredão sai do gol: cruze longe dele.'; }
           if (fam === 'barreira') {
-            const nb = 2 + Math.min(2, Math.floor(x * 2.99)), h = 1.9 + 0.2 * x, b = D.bola, ax = tu - b.u, av = tv - b.v, al = Math.hypot(ax, av), fu = ax / al, fv = av / al;
-            const cu = b.u + fu * 4.5, cv = b.v + fv * 4.5, nu = -fv, nv = fu;
-            D.barreira = []; for (let i = 0; i < nb; i++) { const o = (i - (nb - 1) / 2) * 0.56; D.barreira.push({ u: cu + nu * o, v: cv + nv * o, h, r: 0.24 }); }
-            D.desc = 'Cruze por cima da barreira de {0}.'; D.descA = [nb];
+            const nb = 2 + Math.min(2, Math.floor(x * 2.99)), b = D.bola, ax = tu - b.u, av = tv - b.v, al = Math.hypot(ax, av), fu = ax / al, fv = av / al;
+            const cu = b.u + fu * 6, cv = b.v + fv * 6, nu = -fv, nv = fu;
+            D.barreira = []; for (let i = 0; i < nb; i++) { const o = (i - (nb - 1) / 2) * 0.62; D.barreira.push({ u: cu + nu * o, v: cv + nv * o }); }
+            D.goleiro = { modo: 'linha' }; D.desc = 'Cruze por cima da barreira de {0}.'; D.descA = [nb];
           }
         } else if (fam === 'correndo') {
-          const su = longe * 4.2, sv = 12, eu = longe * 0.2 + lado * 0.6, ev = 5.2, vel = 3.5 + 3 * x, L = Math.hypot(eu - su, ev - sv);
-          D.cabeca = { u: su, v: sv, alcance: 0.6 - 0.25 * x, corre: { u0: su, v0: sv, u1: eu, v1: ev, per: 2 * L / vel + 1.6, fase: r() } };
+          const su = longe * 4.6, sv = 12.5, eu = longe * 0.2 + lado * 0.6, ev = 5.2, vel = 3.5 + 3 * x, L = Math.hypot(eu - su, ev - sv);
+          D.cabeca = { u: su, v: sv, corre: { u0: su, v0: sv, u1: eu, v1: ev, per: 2 * L / vel + 1.6, fase: r() } };
+          D.goleiro = { modo: x > 0.6 ? 'sai' : 'linha' };
           D.crit = 'cabeca'; D.mira.u = (su + eu) / 2; D.mira.v = (sv + ev) / 2; D.desc = 'O Juninho vem correndo: cruze no tempo dele.';
         } else {                                                          // aro
-          D.aro = { u: 0, v: 5.5 + r() * 2.5, y: 2.0, r: 0.6 - 0.25 * x, mov: { u0: -2.6, u1: 2.6, per: 2 * 5.2 / (0.7 + 2 * x), fase: r() } };
-          D.crit = 'aro'; D.mira = { plano: 'alto', u: 0, v: D.aro.v, y: 2.0 }; D.desc = 'Faça a bola passar dentro do aro que anda.';
+          D.aro = { u: 0, v: 5.5 + r() * 2.5, y: 1.7, r: 0.75 - 0.3 * x, mov: { u0: -2.6, u1: 2.6, per: 2 * 5.2 / (0.9 + 2.2 * x), fase: r() } };
+          D.goleiro = { modo: 'linha' }; D.crit = 'aro'; D.mira = { plano: 'alto', u: 0, v: D.aro.v, y: 1.7 }; D.desc = 'Faça a bola passar dentro do aro que anda.';
         }
       }
       return D;

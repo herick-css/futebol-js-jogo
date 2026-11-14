@@ -2403,6 +2403,10 @@
     C.g += r.gols | 0; C.a += st.assist | 0; C.chutes += st.chutes | 0; C.noAlvo += st.noAlvo | 0; C.passes += st.passes | 0; C.passesOk += st.passesOk | 0;
     C.dribles += st.driblesOk | 0; C.desarmes += st.desarmes | 0; C.nota = Math.round((C.nota + nota) * 10) / 10; C.melhor = Math.max(C.melhor, nota); if (r.bom) C.bons++;
   }
+  function horarioClimaPartida() {                                      // a partida (e o treino do seu Nonato) com a hora e o tempo da cidade
+    const h = S.dados.hora;
+    return { horario: h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite', clima: S.clima.estado === 'chuva' || S.clima.chuva > 0.35 ? 'chuva' : 'seco' };
+  }
   function cfgSintetico(duracao, horario, clima) {
     const g = (nome, seed, gen) => Object.assign({ nome }, apFixa(seed, gen));
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
@@ -2438,8 +2442,7 @@
     const r0 = await Escolha.mostrar(T('Quanto tempo de jogo?'), [T('5 minutos'), T('3 minutos'), T('Agora não')], { centro: true });
     Dialogo.esconder(); if (r0 === 2 || r0 < 0) return;
     const duracao = r0 === 1 ? 180 : 300, h = d.hora, comLucia = luciaJogaHoje('sintetico');
-    const horario = h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite';
-    const clima = S.clima.estado === 'chuva' || S.clima.chuva > 0.35 ? 'chuva' : 'seco';
+    const { horario, clima } = horarioClimaPartida();
     const cfg = cfgSintetico(duracao, horario, clima);
     await preto(true, 800);
     sairParaPartida();
@@ -3463,7 +3466,7 @@
       m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false;
     }
     S.grupo.add(m.raiz); S.meus.add(m);
-    const P = { m, opt, blob: sombraAtor(0.32), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: rnd() * 6, vel: 1.15 + rnd() * 0.4, t: rnd() * 10, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'anda' };
+    const P = { m, opt, ap, blob: sombraAtor(0.32), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: rnd() * 6, vel: 1.15 + rnd() * 0.4, t: rnd() * 10, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'anda' };
     if (esporte) { P.esporte = true; P.vel = 2.7 + rnd() * 0.6; P.correndo = true; }   // o esportivo trota (2,7–3,3 m/s)
     return P;
   }
@@ -4725,7 +4728,8 @@
   }
   function apiTreino() {
     return Object.assign(apiCinema(), { esconderHud, texBolinha, janelaTurma, turmaAgora, turmaPresente, proximaTurma, TURNOS, chovendoAgora,
-      noite: () => (S.dentro ? 0 : luzDoDia(S.dados.hora).lamp), OX, rotaGente, altura, suspenderTreino, retomarTreino, chuva: () => !!(S.clima && S.clima.chuva > 0.25) });
+      noite: () => (S.dentro ? 0 : luzDoDia(S.dados.hora).lamp), OX, rotaGente, altura, suspenderTreino, retomarTreino, chuva: () => !!(S.clima && S.clima.chuva > 0.25),
+      sairParaPartida, voltarDaPartida, aparenciaNaPartida, gerarAparencia, horarioClimaPartida, UNI_COLETE, UNI_AZUL });   // o treino roda na partida de verdade (campo do sintético)
   }
   // (6.4.0) o que o pesca.js (Cadu no lago, a casinha do Bené, a loja, o catálogo e o minigame) usa daqui
   function apiPesca() {

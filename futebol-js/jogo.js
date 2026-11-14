@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.6';
+const VERSAO_JOGO = '7.1.7';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -2916,6 +2916,7 @@ const G = {
   chasers: [null, null], pressers: [null, null], covers: [null, null], support: [[], []],
   fixo: [null, null], fixoAlvo: [null, null], marca: [new Map(), new Map()],      // campo pequeno: último homem, quem ele cobre e a marcação 1 contra 1
   stats: null, mode: '', pausedFrom: null,
+  desafio: null,                                  // treino do seu Nonato (Historia.desafio): ganchos do desafio (passo, evento, chutou, barreira, toque)
 };
 function resetStats() {
   G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '' };
@@ -5614,6 +5615,7 @@ function attachBall(p) {
 }
 
 function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false) {
+  if (G.desafio && from === user && G.desafio.chutou) G.desafio.chutou();   // treino: solta quem participa ANTES de escolher quem recebe (designarRecebedor)
   // Quem estava impedido no passe e jogou a bola DE PRIMEIRA (cabeçada, voleio, batida de primeira)
   // também está impedido — antes só o domínio (givePossession) conferia.
   if (G.offside && G.offside.set.has(from) && G.state === 'play' && !isThrow) { callOffside(from); return; }
@@ -5945,11 +5947,13 @@ function checkBallContacts() {
       if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
       if (DI && DI.team !== gk.team) chance = 1;     // lateral/indireto: defesa fácil
+      const fD = G.desafio && G.desafio.defesa != null ? G.desafio.defesa : 1;   // treino do seu Nonato: o Paredão fica mais esperto com a dificuldade
+      chance *= fD;
       ball.saveOk = Math.random() < chance;
       ball.defNoCorpo = noCorpo;                     // para escolher COMO ele defende (encaixa, dois tempos, rebote...)
       if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
-      if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe') { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
-      if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5))) {   // no corpo nunca "atravessa": rebate
+      if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
+      if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5 * fD))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
         showToast('Espalmou!'); Som.defesa();
@@ -6137,6 +6141,15 @@ function diretoAtivo() {
 function handleBallOut() {
   const R = CONFIG.BALL_R;
   if (G.sp || G.apito || G.golPend || G.treinoGol > 0) return;       // bola parada de propósito / juiz já marcando / gol sendo mostrado
+  // TREINO DO SEU NONATO: gol e bola fora só avisam o desafio (sem juiz, escanteio, lateral nem comemoração). No gol a rede segura a bola
+  // (G.treinoGol) até a próxima tentativa; fora, ela segue até a grade.
+  if (G.desafio) {
+    if (Math.abs(ball.x) <= HALF_L + R && Math.abs(ball.z) <= HALF_W + R) return;
+    const gol = ball.x > HALF_L + R && Math.abs(ball.z) < GOAL_HALF && (G.possession || ball.y < CONFIG.GOAL_H);
+    if (gol) { G.treinoGol = 999; G.possession = null; hideKickUI(); }
+    if (G.desafio.evento) G.desafio.evento(gol ? 'gol' : 'saiu');
+    return;
+  }
   // TUTORIAL: a bola nunca sai da quadra (só o gol vale). Passou da linha lateral ou de fundo (fora do gol): volta rebatendo, como se houvesse uma parede.
   if (typeof Historia !== 'undefined' && Historia.emTreino()) {
     const noGol = Math.abs(ball.x) > HALF_L + R && Math.abs(ball.z) < GOAL_HALF && (G.possession || ball.y < CONFIG.GOAL_H);
@@ -6185,6 +6198,7 @@ function handleBallOut() {
 }
 
 function scoreGoal(team, tGol) {
+  if (G.desafio) return;                           // treino: quem conta o gol é o desafio (handleBallOut)
   if (G.pen) { registrarCobranca(true); G.possession = null; ball.vx *= 0.2; ball.vz *= 0.2; return; }   // disputa: não conta no placar
   const byUser = team === 0 && (ball.lastKicker === user || G.possession === user);
   G.score[team]++;
@@ -6793,7 +6807,7 @@ function startRestart(kind, team, spot, motivo) {
     Object.assign(ball, { x: sp.mesh.position.x, y: sp.mesh.position.y, z: sp.mesh.position.z, vx: 0, vy: 0, vz: 0 });
     S.onRack = true;                                // parada no suporte até o goleiro pegar
   }
-  else if (kind === 'falta' && team === 0 && !user.out && voceCobra(spot)) S.taker = user;   // falta a favor na sua zona: você cobra
+  else if (kind === 'falta' && team === 0 && !user.out && (G.desafio || voceCobra(spot))) S.taker = user;   // falta a favor na sua zona: você cobra
   else if (kind === 'penalti') {
     // Pênalti: no seu time, VOCÊ bate (é o atacante). No adversário, o atacante deles.
     S.taker = team === 0 && !user.out ? user : (TEAMS[team].find((p) => p.role === 'FWD') || TEAMS[team].find((p) => p.role !== 'GK'));
@@ -7033,7 +7047,7 @@ function startSetPieceWait() {
   // companheiro para tocar/cruzar. Lateral já é o arremesso. Sem relógio e sem câmera lenta.
   // Falta e pênalti: você se afasta uns passos da bola para a corrida (ver updateCobrador).
   if (p.isUser && (S.kind === 'falta' || S.kind === 'penalti')) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z };
-  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : 'shot');
+  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : (G.desafio && G.desafio.toque) || 'shot');   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
 }
 
 // ---------------------------------------------------------------------
@@ -7203,6 +7217,7 @@ const APITO_ATRASO_BOLA = 0.5;     // tiro de meta, lateral e escanteio
 // O atraso NÃO é cumulativo: só existe um agendamento por vez (G.apito); enquanto ele corre,
 // nenhuma outra marcação é agendada, então os tempos nunca se somam.
 function marcarComAtraso(fn, tempo) {
+  if (G.desafio) return;                           // treino: sem juiz (falta, lateral, escanteio)
   if (G.apito) return;
   G.apito = { t: 0, fn, dur: tempo || APITO_ATRASO };
 }
@@ -7217,6 +7232,7 @@ function updateApito(rdt) {
 // Jogo parado (falta ou impedimento): juiz vai até o lance, mostra o cartão se tiver, e aí
 // começa a cena da cobrança (barreira + cobrador).
 function iniciarParalisacao(F) {
+  if (G.desafio) return;
   // Gol de quem cometeu a falta (o time que defende) = o gol que o time da cobrança ataca.
   // (Até a v11 o sinal estava trocado: a área conferida era a do outro lado do campo.)
   const s = F.spot, defGoal = (F.team === 0 ? 1 : -1) * HALF_L;
@@ -7404,10 +7420,15 @@ function montarBarreira(S) {
   S.dGoal = d;
   S.wall = [];
   for (const p of players) p.wallSlot = -1;
-  if (d > 34) return;
-  const n = d < 20 ? 4 : d < 27 ? 3 : 2;
   const ux = dx / d, uz = dz / d, px = -uz, pz = ux;
   const lado = Math.sign(S.ballSpot.z) || 1;       // barreira cobre o lado da trave mais perto
+  if (G.desafio) {                                 // treino: quem fica na barreira e onde é o desafio que diz (pode não ter barreira)
+    const B = G.desafio.barreira ? G.desafio.barreira(S, { ux, uz, px, pz, lado }) || [] : [];
+    B.forEach((q, i) => { S.wall.push({ x: q.x, z: q.z }); q.p.wallSlot = i; });
+    return;
+  }
+  if (d > 34) return;
+  const n = d < 20 ? 4 : d < 27 ? 3 : 2;
   const cx = S.ballSpot.x + ux * 9.15, cz = S.ballSpot.z + uz * 9.15;
   const defensores = TEAMS[1 - S.team].filter((p) => p.role !== 'GK' && !p.isUser)
     .sort((a, b) => dist2D(a, S.ballSpot) - dist2D(b, S.ballSpot)).slice(0, n);
@@ -10101,7 +10122,7 @@ function resetMatch() {
 // ---------------------------------------------------------------------
 const ESTADOS_DE_BOLA_ROLANDO = ['play', 'aim', 'power', 'spin', 'dribble', 'trap'];
 function relogioCorre() {
-  if (G.pen) return false;                         // disputa de pênaltis: sem relógio
+  if (G.pen || G.desafio) return false;           // disputa de pênaltis e treino do seu Nonato: sem relógio
   return ESTADOS_DE_BOLA_ROLANDO.includes(G.state) && !G.kickoffPending && !G.sp && !G.fimPendente;
 }
 function acrescimoPorParadas(n) { return n <= 1 ? 0 : n <= 4 ? 30 : n <= 8 ? 45 : 60; }
@@ -11445,8 +11466,7 @@ function syncMeshes(dt) {
 function stepGame(dt, rdt) {
   if (G.lastTouch !== G.toqueAtual) { G.toqueAnt = G.toqueAtual; G.toqueAntT = G.time; G.toqueAtual = G.lastTouch; }   // a súmula dos gols (assistência)
   if (relogioCorre()) G.clock -= dt;
-  tecnicoPensa();
-  verificarSubstituicoes();
+  if (!G.desafio) { tecnicoPensa(); verificarSubstituicoes(); }   // treino: sem técnico mexendo e sem trocas
   atualizarPenaltis(dt);
   verificarFimDeTempo(dt);
   if (G.userRequest > 0) G.userRequest -= dt;
@@ -11459,6 +11479,7 @@ function stepGame(dt, rdt) {
   updateBall(dt);
   updateCine(dt);
   updateRestart(dt);
+  if (G.desafio && G.desafio.passo) G.desafio.passo(dt);   // treino do seu Nonato: alvos, quem corre e o resultado
   updateDribbleWindow(dt);
   updateKickClock(rdt);
   updateShotCine(rdt);
@@ -15797,13 +15818,91 @@ const Historia = (() => {
       penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.isUser ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red })) };
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), G.fimFesta ? 3600 : 1800); }   // com a festa do apito final, fica um pouco mais
   }
+  // ---- DESAFIO: o treino do seu Nonato (treinoCampo.js) dentro da partida de verdade ----------------------------------------------
+  // O campo (o do racha do sintético), os bonecos, a bola, a câmera e o CHUTE são os da partida: cada tentativa é uma cobrança SUA com
+  // corrida (mira, força e efeito; CHUTAR fora do gol = bola alta; PASSAR = rasteiro). O treinoCampo.js decide os desafios e julga o
+  // resultado; daqui vêm a entrada (só quem participa fica em campo), o armar de cada tentativa e os ganchos em G.desafio
+  // (relógio parado, sem juiz nem técnico, gol e bola fora só avisam: ver handleBallOut, montarBarreira, kickBall e startSetPieceWait).
+  //   op.cfg ........ a partida (campo, times, clima, horário, atributos)
+  //   op.ficar(p) ... quem continua em campo além de você (o resto sai, como no tutorial)
+  //   op.ganchos .... o objeto que vira G.desafio
+  //   op.rodar(api) . a sessão; o que ela devolver é o que Historia.desafio devolve
+  let cssDesafio = false;
+  function zerarJogador(p) {
+    Object.assign(p, { vx: 0, vz: 0, stun: 0, fall: 0, falling: false, fallKind: 'lado', diveT: 0, jumpT: 0, jumpAlt: 0, wallBlockT: 0, wallSlot: -1, levanta: null, defPose: null,
+      celeb: null, lamento: null, recvPose: null, carry: false, throwIn: false, goalKick: false, setPiece: null, slideT: 0, tackle: 0, kickT: 0, controlCd: 0, bloqueio: null,
+      driblePose: null, dribleIA: null, pulaTras: null, perda: null, desTreino: null, scripted: false, parado: false, bolaFixa: null, exhausted: false, stamina: 1, folego: 1, ignBolaT: 0, pedeT: 0, chutePrep: 0, throwAnim: 0 });
+  }
+  // Uma tentativa: o = { bola: {x, z}, face (para onde a bola vai), mira: {x, z} (para onde a seta começa), pos: [{ p, x, z, ang, parado, scripted, fora }] }
+  function armarDesafio(o) {
+    Object.assign(G, { sp: null, kickoffPending: null, apito: null, golPend: null, passTarget: null, foul: null, offside: null, cine: null, shotCine: null, fintaCine: null, acroCine: null,
+      recv: null, recvFx: null, corrida: null, kick: null, direto: null, treinoGol: 0, dribbleWin: 0, dribbleOpp: null, targetScale: 1, timeScale: 1, celebAuto: null });
+    esconderRecepcao(); hideKickUI(); $('skipBtn').hidden = true; $('cineLabel').textContent = ''; setLetterbox(false);
+    for (const p of players) zerarJogador(p);
+    for (const q of o.pos || []) {
+      const p = q.p; if (!p) continue;
+      p.x = q.x; p.z = q.z; p.angle = q.ang != null ? q.ang : Math.atan2(o.bola.z - q.z, o.bola.x - q.x);
+      p.parado = !!q.parado; p.scripted = !!q.scripted; p.out = !!q.fora;
+      p.mesh.raiz.visible = !q.fora; if (p.mesh.etiqueta) p.mesh.etiqueta.visible = !q.fora && p.isUser;
+    }
+    Object.assign(ball, { x: o.bola.x, z: o.bola.z, y: CONFIG.BALL_R, vx: 0, vy: 0, vz: 0, spinSide: 0, spinVert: 0, hidden: false, isShot: false, userShot: false, userPass: false,
+      lastKicker: null, cruzamento: null, distChute: 0, penalti: false, cavadinha: false, saveRolled: false, saveOk: false, broken: false, dominioDificil: false });
+    G.possession = null; G.lastTouch = null; G.state = 'play';
+    startRestart('falta', 0, { x: o.bola.x, z: o.bola.z }, 'desafio');
+    const S = G.sp; if (!S || S.taker !== user) return false;
+    S.face = o.face; S.stand = { x: S.ballSpot.x - Math.cos(S.face) * 0.62, z: S.ballSpot.z - Math.sin(S.face) * 0.62 };
+    for (const p of players) if (p.wallSlot >= 0 && S.wall[p.wallSlot]) { const w = S.wall[p.wallSlot]; p.x = w.x; p.z = w.z; p.angle = Math.atan2(S.ballSpot.z - w.z, S.ballSpot.x - w.x); p.parado = true; }
+    skipRestart();                                   // você já aparece na bola: a seta abre na hora (startSetPieceWait)
+    const k = G.kick;
+    if (k && o.mira) {
+      const dx = o.mira.x - S.ballSpot.x, dz = o.mira.z - S.ballSpot.z, d = Math.hypot(dx, dz) || 1;
+      k.dirX = dx / d; k.dirZ = dz / d; if (k.kind === 'shot') k.cruzar = !mirandoNoGol(k.dirX, k.dirZ);
+      $('stageKind').textContent = rotuloDoToque(k);
+    }
+    const a = k ? Math.atan2(k.dirZ, k.dirX) : o.face, fx = Math.cos(a), fz = Math.sin(a);
+    user.x = o.bola.x - fx * 2.4 + fz * 0.9; user.z = o.bola.z - fz * 2.4 - fx * 0.9;   // atrás da bola, um pouco à esquerda (como updateCobrador)
+    user.angle = Math.atan2(o.bola.z - user.z, o.bola.x - user.x);
+    if (k) k.yawRef = a;
+    snapCamera(); cam.yaw = a; Object.assign(cam, cameraGoal());   // a câmera já começa atrás de você, na direção da cobrança (o snap zera o giro)
+    return true;
+  }
+  async function desafio(op) {
+    montarUI();
+    if (!cssDesafio) {
+      cssDesafio = true;
+      const st = document.createElement('style');
+      st.textContent = 'body.noDesafio #score, body.noDesafio #radar { display: none !important; }' +
+        ' body.desafioCartao #stageBar, body.desafioCartao #powerUI, body.desafioCartao #spinUI, body.desafioCartao #aimPad, body.desafioCartao #cancelKick, body.desafioCartao #actions, body.desafioCartao #joy { visibility: hidden !important; }';
+      document.head.appendChild(st);
+    }
+    modo = 'desafio'; pendente = null; partidaEscola = false; G.treinoGol = 0;
+    entrar(op.cfg); bolaDoJoao(false);
+    for (const p of players.slice()) {
+      if (p === user || (op.ficar && op.ficar(p))) continue;
+      descartarBoneco(p.mesh.raiz);
+      players.splice(players.indexOf(p), 1);
+      const l = TEAMS[p.team], i = l.indexOf(p); if (i >= 0) l.splice(i, 1);
+    }
+    CORPOS = players.concat(officials);
+    for (const o of officials) o.mesh.raiz.visible = false;            // sem juiz: quem comanda é a turma
+    G.clock = 99000; G.kickoffPending = null; G.state = 'play';
+    document.body.classList.add('noDesafio');
+    G.desafio = op.ganchos || {};
+    let r = null;
+    try { r = await op.rodar({ armar: armarDesafio, zerar: zerarJogador }); } catch (e) { console.error(e); }
+    G.desafio = null; G.treinoGol = 0; G.sp = null; G.kick = null; G.corrida = null; G.possession = null;
+    document.body.classList.remove('noDesafio', 'desafioCartao');
+    hideKickUI(); esconderRecepcao(); setLetterbox(false); $('skipBtn').hidden = true; $('cineLabel').textContent = '';
+    G.state = 'menu'; modo = null; sair();
+    return r;
+  }
   function abortar() { G.treinoGol = 0; G.fintaCerta = false; modo = null; esp = null; TT = null; fimResolve = null; pendente = null; if (UI) { UI.obj.hidden = true; UI.pula.hidden = true; } sair(); }
   // Gol no TREINO: só aparece o letreiro e a bola fica na rede por ~1,4 s; depois volta para o jogador (nada de comemoração, replay ou bola no meio do campo).
   const emTreino = () => modo === 'treino' && !!TT;
   function golNoTreino() {
     G.treinoGol = 1.4; G.possession = null; hideKickUI(); showBanner('GOL!', 0, 1.4);
   }
-  return { emTreino, golNoTreino, treino, partida, emPartida, emJogo, ovoPode, ovoBola, ovoFim, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
+  return { emTreino, golNoTreino, treino, partida, desafio, emPartida, emJogo, ovoPode, ovoBola, ovoFim, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
 })();
 
 // ---------------------------------------------------------------------
