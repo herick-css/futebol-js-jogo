@@ -749,6 +749,12 @@
     }
     const irPara = (A, x, z, exato) => { A.rotaP = caminho(A.x, A.z, x, z, exato); };
     async function andarJog(x, z, vel) { const J = S().jog, r = caminho(J.x, J.z, x, z); await api.andar(J, r.map((p) => [p.x, p.z]), vel || 1.7); }
+    // andar sem risco de ficar preso: se o caminho emperra (gente parada no meio), em 8 s o jogador chega de uma vez
+    async function andarJogSeguro(x, z, vel) {
+      const J = S().jog; let ok = false;
+      await Promise.race([andarJog(x, z, vel).then(() => { ok = true; }), api.esperar(8000)]);
+      if (!ok) { J.rota = null; J.andando = false; const r = J.rotaRes; J.rotaRes = null; J.x = x; J.z = z; if (r) r(); }
+    }
 
     // ---------------------------------------------------------------- OS LUGARES (pontos de cada atividade)
     const EMPE = [[-1.6, -0.9], [-1.0, -1.5], [0.4, -2.4], [1.2, -1.9], [-1.4, 5.4], [-0.6, 6.0], [3.0, 6.6], [3.9, 7.0], [9.6, 2.4], [9.9, 1.4], [4.4, 2.3], [5.0, 2.6]];
@@ -1197,10 +1203,21 @@
       const s = S(), J = s.jog, d = s.dados, D = M.D, Jr = M.jairo; if (!D || !Jr) return;
       M.servindo = p.tipo === 'petisco' ? 'come' : 'bebe'; s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); J.andando = false; J.correndo = false;
       const cheio = (d.fome || 0) <= 0;
-      let prato = null;
+      let prato = null, sentouAqui = false;
       try {
+        // quem pediu em pé vai sentar numa banqueta livre (a mais perto do balcão) para comer/beber, e levanta no fim
         const naBanqueta = J.sentado && s.sentadoEm && M.banq.includes(s.sentadoEm);
-        if (!naBanqueta) { if (J.sentado) api.levantar(); await andarJog(D.pedir.x, D.pedir.z, 1.6); J.yawAlvo = Math.PI / 2; await api.esperar(250); }
+        if (!naBanqueta) {
+          if (J.sentado) api.levantar();
+          const perto = (l) => l.sort((a, b) => Math.hypot(a.x - J.x, a.z - J.z) - Math.hypot(b.x - J.x, b.z - J.z));
+          let a = perto(M.banq.filter((q) => !q.ocupado && !reservaVal(q)))[0];
+          if (!a) {                                                       // tudo cheio: um do povo cede a banqueta (nunca o Valdemar nem o capuz)
+            const q = perto(M.banq.filter((b) => b.ocupado && b.ocupado.br && M.gente.includes(b.ocupado) && !reservaVal(b)))[0];
+            if (q) { const o = q.ocupado; terminarAtividade(o); o.br = escolherAtividade(o); irPara(o, o.br.alvo.x, o.br.alvo.z); a = q; await api.esperar(1200); }
+          }
+          if (a) { const pt = pontoDaCadeira(a); await andarJogSeguro(pt.x, pt.z, 1.6); await api.sentar(a); sentouAqui = true; await api.esperar(250); }
+          else { await andarJogSeguro(D.pedir.x, D.pedir.z, 1.6); J.yawAlvo = Math.PI / 2; await api.esperar(250); }
+        }
         const xs = clampN(J.x, -10.0, -3.0);
         Jr.servindoJog = true; pose(Jr, null); Jr.poseJ = null;
         if (p.torneira) { Jr.rotaP = [{ x: -7.7, z: D.barman.z }]; while (Jr.rotaP && Jr.rotaP.length) { andarP(Jr, 1 / 60); await api.esperar(16); } Jr.yawAlvo = -Math.PI / 2; Jr.poseJ = 'tira'; Jr.poseFn = poseJairo; await api.fala('jairo', Tx('É pra já!')); await api.esperar(900); }
@@ -1227,11 +1244,13 @@
         }
         await efeitos(p, cheio);
         const db = dadosB(); db.prod = db.prod || {}; db.prod[p.id] = (db.prod[p.id] | 0) + 1; api.gravar(d.ponto || 'chegada');
+        if (sentouAqui && J.sentado) { await api.esperar(300); api.levantar(); sentouAqui = false; }
       } catch (e) { console.error('[Bar] servir:', e); }
       finally {
         M.servindo = false; if (Jr) { Jr.servindoJog = false; Jr.poseJ = null; Jr.poseFn = null; }
         if (prato) { const pr = prato; setTimeout(() => { if (pr.parent) pr.parent.remove(pr); pr.material.dispose(); pr.geometry.dispose(); }, 5000); }
         tirarDaMao(J); tirarCopoApoio(J); if (J.poseFn === poseBar) J.poseFn = null; J.poseB = null;
+        if (sentouAqui && J.sentado) api.levantar();
         try { Dialogo.esconder(); } catch (e) { /* nada */ }
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }

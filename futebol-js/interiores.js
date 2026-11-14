@@ -550,7 +550,7 @@
       G.box(0.02, 0.8, 0.02, '#2a2a2e', -9.3, 2.8, 6.4); G.box(0.3, 0.12, 0.3, '#5a1a1a', -9.3, 2.68, 6.4); G.box(0.2, 0.02, 0.2, '#c8352b', -9.3, 2.67, 6.4);
       // ---- quadros e letreiro
       const quadroCv = (desenho, w, h) => guardar(texCanvas(w, h, desenho));
-      plano2(quadroCv((g, w, h) => { g.fillStyle = '#1c1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff5ab0'; g.font = 'bold 13px monospace'; g.textAlign = 'center'; g.fillText('BAR DO', w / 2, 15); g.fillStyle = '#5ae8ff'; g.font = 'bold 18px monospace'; g.fillText('JAIRO', w / 2, 34); g.strokeStyle = '#ff5ab0'; g.strokeRect(1.5, 1.5, w - 3, h - 3); }, 96, 40), 2.6, 1.08, -6.5, 3.1, -7.9, 0, true);   // o neon
+      plano2(quadroCv((g, w, h) => { g.fillStyle = '#1c1c1f'; g.fillRect(0, 0, w, h); g.fillStyle = '#ff5ab0'; g.font = 'bold 13px monospace'; g.textAlign = 'center'; g.fillText('BAR DO', w / 2, 15); g.fillStyle = '#5ae8ff'; g.font = 'bold 18px monospace'; g.fillText('JAIRO', w / 2, 34); g.strokeStyle = '#ff5ab0'; g.strokeRect(1.5, 1.5, w - 3, h - 3); }, 96, 40), 2.6, 1.08, -6.5, 3.1, -7.84, 0, true);   // na frente do espelho (no mesmo plano dele, piscava)   // o neon
       plano2(quadroCv((g, w, h) => { g.fillStyle = '#c8952a'; g.fillRect(0, 0, w, h); g.fillStyle = '#5a2a10'; g.fillRect(2, 2, w - 4, h - 4); g.fillStyle = '#f2c230'; g.fillRect(9, 6, 14, 22); g.fillStyle = '#fff6d8'; g.fillRect(9, 6, 14, 5); g.fillStyle = '#c8352b'; g.fillRect(9, 16, 14, 5); g.fillStyle = '#f2e6c8'; g.font = 'bold 7px monospace'; g.textAlign = 'center'; g.fillText('GELADA', w / 2, 37); }, 32, 42), 0.9, 1.18, -10.92, 2.2, -2.8, Math.PI / 2);   // o pôster da cerveja
       plano2(quadroCv((g, w, h) => { g.fillStyle = '#1f7a4d'; g.fillRect(0, 0, w, h); g.fillStyle = '#f2f2ee'; g.fillRect(3, 3, w - 6, h - 6); g.fillStyle = '#1f7a4d'; g.fillRect(14, 8, 4, 18); g.fillStyle = '#1c1c1f'; for (const [x, y] of [[10, 12], [20, 18], [12, 24]]) g.fillRect(x, y, 3, 3); g.fillStyle = '#c8352b'; g.font = 'bold 6px monospace'; g.textAlign = 'center'; g.fillText('TORNEIO', w / 2, 36); }, 32, 40), 0.85, 1.06, 10.92, 2.2, 0.8, -Math.PI / 2);   // o cartaz do torneio de sinuca
       // pessoas de ENFEITE (só sem o bar.js: com ele, quem cuida do bar é ele)
@@ -784,7 +784,7 @@
       for (const mx of [4.95, 9.45]) { const mz = -3.95; G.box(0.6, 0.12, 0.6, '#f4f4ec', mx, 0, mz); G.box(0.64, 0.03, 0.64, SEC.roupas[0], mx, 0.12, mz); bloq(mx, mz, 0.6, 0.6); ES.manequins.push({ x: mx, y: 0.15, z: mz, yaw: -Math.PI / 2 }); }
       G.box(0.08, 2.3, 1.5, '#f4f4ec', 8.55, 0, -8.4); G.box(1.3, 0.08, 1.5, '#f4f4ec', 9.2, 2.3, -8.4); G.box(1.25, 1.9, 0.05, '#7a4fb0', 9.2, 0.25, -7.66); G.box(1.3, 0.05, 0.05, '#c9ced4', 9.2, 2.18, -7.66); bloq(9.2, -8.4, 1.4, 1.6);   // o provador (a cortina roxa)
       pend('ROUPAS', SEC.roupas[0], 7.2, -7.6);
-      ES.secoes.roupas = { x: 5.6, z: -6.9, yaw: -Math.PI / 2 }; ES.provarRoupa = { x: 6.9, z: -4.6 };   // (7.1.12) onde o jogador prova as roupas
+      ES.secoes.roupas = { x: 4.95, z: -6.4, yaw: -Math.PI / 2 };   // a Kelly fica ao lado da arara (no meio dela ficava dentro das roupas) ES.provarRoupa = { x: 6.9, z: -4.6 };   // (7.1.12) onde o jogador prova as roupas
       // ---- BOLAS (sudoeste): a prateleira da parede oeste, a pirâmide e o cestão
       const COR_BL = ['#f4f4ec', '#f2c230', '#e8742a', '#3fb7b0', '#d95fa0', '#c8352b', '#3a64b8', '#1f9a4d'];
       const geoBola = guardar(new THREE.SphereGeometry(0.15, 10, 8)), matBola = COR_BL.map((c) => guardar(new THREE.MeshLambertMaterial({ color: c })));

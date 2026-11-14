@@ -333,11 +333,27 @@
       bSair.style.fontSize = '11px'; bSair.style.marginLeft = '14px'; bOk.hidden = true;
       ctl.append(bE, bTacar, bOk, bD);
       ctl.append(bSair);
+      // celular deitado (tela baixa): a mesa à esquerda e o placar, o aviso, a força e os botões numa coluna à direita;
+      //   nas outras telas tudo em coluna. A mesa ocupa o espaço que sobra (pixels inteiros quando dá).
+      const painel = document.createElement('div'); painel.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;flex:0 0 auto;';
       el.append(topo, cv, msg, barra, ctl);
       (document.getElementById('raizJogo') || document.body).appendChild(el);
-      function ajustar() {                                              // a mesa ocupa o máximo da tela (pixels inteiros quando dá)
-        const wMax = Math.min(window.innerWidth - 20, 1100), hMax = window.innerHeight - 150;
-        let k = Math.min(wMax / CW, hMax / CH); if (k >= 2) k = Math.floor(k); k = Math.max(1, k);
+      let lateral = null;
+      function ajustar() {
+        const W = window.innerWidth, H = window.innerHeight, lat = H < 520 && W > H * 1.3;
+        if (lat !== lateral) {
+          lateral = lat;
+          if (lat) { painel.append(topo, msg, barra, ctl); el.replaceChildren(cv, painel); el.style.flexDirection = 'row'; el.style.gap = '10px';
+            topo.style.gridTemplateColumns = '1fr'; topo.style.width = '100%'; LO.d.style.alignItems = 'flex-start'; barra.style.width = '100%';
+            bTacar.style.minWidth = '96px'; ctl.style.justifyContent = 'center'; }
+          else { el.replaceChildren(topo, cv, msg, barra, ctl); el.style.flexDirection = 'column'; el.style.gap = '6px';
+            topo.style.gridTemplateColumns = '1fr auto 1fr'; topo.style.width = 'min(100%,920px)'; LO.d.style.alignItems = 'flex-end'; barra.style.width = 'min(320px,80%)';
+            bTacar.style.minWidth = '130px'; }
+        }
+        let wMax, hMax;
+        if (lat) { const pw = Math.min(250, Math.max(200, W * 0.28)); painel.style.width = pw + 'px'; wMax = W - pw - 36; hMax = H - 22; }
+        else { const resto = topo.offsetHeight + msg.offsetHeight + barra.offsetHeight + ctl.offsetHeight + 6 * 4 + 22; wMax = Math.min(W - 20, 1100); hMax = H - resto; }
+        let k = Math.min(wMax / CW, hMax / CH); if (k >= 2) k = Math.floor(k); k = Math.max(0.3, k);
         cv.style.width = Math.round(CW * k) + 'px'; cv.style.height = Math.round(CH * k) + 'px';
       }
       ajustar(); window.addEventListener('resize', ajustar);

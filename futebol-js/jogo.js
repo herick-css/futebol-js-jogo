@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.14';
+const VERSAO_JOGO = '7.1.15';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -2573,14 +2573,14 @@ function enfeitesNPC(semente, fem) {
 function pecasAcessorio(A, corMetal, add, s) {
   const M = corMetal, z = (v) => s * v;
   switch (A.k) {
-    case 'ponto_luz': add(0.03, 0.03, 0.014, M, 0, -0.01, z(0.007)); add(0.012, 0.012, 0.004, 0xffffff, -0.006, -0.004, z(0.016)); break;
+    case 'ponto_luz': add(0.032, 0.032, 0.016, M, 0, -0.01, z(0.008)); break;
     case 'argola_p': case 'argola_g': { const L = A.k === 'argola_p' ? 0.05 : 0.09, t = 0.011, cy = -0.005 - L / 2;
       add(L, t, t, M, 0, cy + L / 2 - t / 2, z(0.007)); add(L, t, t, M, 0, cy - L / 2 + t / 2, z(0.007));
       add(t, L - t * 2, t, M, -L / 2 + t / 2, cy, z(0.007)); add(t, L - t * 2, t, M, L / 2 - t / 2, cy, z(0.007)); break; }
     case 'gota': add(0.022, 0.022, 0.012, M, 0, -0.01, z(0.007)); add(0.006, 0.026, 0.006, M, 0, -0.032, z(0.007)); add(0.028, 0.034, 0.012, M, 0, -0.06, z(0.007)); add(0.014, 0.01, 0.012, M, 0, -0.082, z(0.007)); break;
     case 'cruz_b': add(0.02, 0.02, 0.012, M, 0, -0.01, z(0.007)); add(0.006, 0.014, 0.006, M, 0, -0.026, z(0.007)); add(0.012, 0.06, 0.01, M, 0, -0.062, z(0.007)); add(0.036, 0.012, 0.01, M, 0, -0.05, z(0.007)); break;
     case 'corrente_fina': case 'pingente_bola': case 'pingente_cruz': case 'medalhao': case 'corrente_grossa': {
-      const t = A.k === 'corrente_grossa' ? 0.02 : A.k === 'medalhao' ? 0.013 : 0.01, y0 = 1.32 + t / 2, fx = 0.168 + t / 2;
+      const t = A.k === 'corrente_grossa' ? 0.02 : A.k === 'medalhao' ? 0.013 : 0.01, y0 = 1.328 + t / 2, fx = 0.172 + t / 2;   // sem encostar no alto do tronco nem na frente da camisa (piscava)
       add(t, t, 0.21 + t, M, -0.095, y0, 0);                                                  // a volta no pescoço (atrás e dos lados)
       for (const sz of [-1, 1]) add(0.26, t, t, M, 0.035, y0, sz * 0.105);
       const desce = A.k === 'corrente_grossa' ? [[1.335, 1.28, 0.1], [1.28, 1.235, 0.08], [1.235, 1.19, 0.058], [1.19, 1.15, 0.034], [1.15, 1.12, 0.012]] : [[1.335, 1.285, 0.095], [1.285, 1.25, 0.07], [1.25, 1.22, 0.045], [1.22, 1.195, 0.022]];
@@ -2589,17 +2589,19 @@ function pecasAcessorio(A, corMetal, add, s) {
         if (i) { const zp = desce[i - 1][2]; add(t, t, zp - zz + t, M, fx, ya, sz * (zp + zz) / 2); }          // o degrau entre um pedaço e o outro
       } });
       const yb = desce[desce.length - 1][1]; add(t, t, desce[desce.length - 1][2] * 2 + t, M, fx, yb, 0);
-      if (A.k === 'pingente_bola') { add(0.014, 0.016, 0.014, M, fx, yb - 0.012, 0); add(0.048, 0.048, 0.048, 0xf2f2ee, fx + 0.02, yb - 0.044, 0); add(0.004, 0.018, 0.018, 0x151515, fx + 0.046, yb - 0.044, 0);
-        for (const [dy, dz] of [[0.016, 0.016], [0.016, -0.016], [-0.016, 0.016], [-0.016, -0.016]]) add(0.004, 0.01, 0.01, 0x151515, fx + 0.046, yb - 0.044 + dy, dz); }
+      if (A.k === 'pingente_bola') { add(0.014, 0.016, 0.014, M, fx, yb - 0.012, 0); add(0.048, 0.048, 0.048, 0xf2f2ee, fx + 0.02, yb - 0.044, 0); add(0.01, 0.018, 0.018, 0x151515, fx + 0.05, yb - 0.044, 0);
+        for (const [dy, dz] of [[0.016, 0.016], [0.016, -0.016], [-0.016, 0.016], [-0.016, -0.016]]) add(0.01, 0.01, 0.01, 0x151515, fx + 0.05, yb - 0.044 + dy, dz); }
       if (A.k === 'pingente_cruz') { add(0.012, 0.012, 0.012, M, fx, yb - 0.01, 0); add(0.012, 0.075, 0.018, M, fx + 0.004, yb - 0.054, 0); add(0.012, 0.018, 0.05, M, fx + 0.004, yb - 0.038, 0); }
       if (A.k === 'medalhao') { add(0.012, 0.012, 0.012, M, fx, yb - 0.01, 0); const cy = yb - 0.05; add(0.012, 0.06, 0.06, M, fx + 0.004, cy, 0); add(0.012, 0.074, 0.04, M, fx + 0.004, cy, 0); add(0.012, 0.04, 0.074, M, fx + 0.004, cy, 0);
-        add(0.006, 0.022, 0.022, 0xb3202a, fx + 0.012, cy, 0); }
+        add(0.012, 0.022, 0.022, 0xb3202a, fx + 0.016, cy, 0); }
       break; }
-    case 'luva_termica': add(0.182, 0.07, 0.182, 0x353a44, 0, 0.07, 0); add(0.034, 0.022, 0.006, M, 0, 0.07, z(0.094)); break;
-    case 'luva_sem_dedos': add(0.178, 0.11, 0.178, 0x1c1c1f, 0, 0.032, 0); add(0.18, 0.03, 0.18, 0x2c2c30, 0, 0.074, 0); add(0.024, 0.024, 0.006, M, 0, 0.05, z(0.092)); break;
-    case 'luva_goleiro': add(0.186, 0.05, 0.186, 0x1f9a4d, 0, 0.07, 0); add(0.006, 0.12, 0.12, 0x1f9a4d, 0.088, -0.01, 0); add(0.034, 0.03, 0.006, M, 0, 0.07, z(0.096)); break;
-    case 'luva_couro': add(0.182, 0.02, 0.182, M, 0, 0.07, 0); add(0.18, 0.02, 0.18, 0x2a1b13, 0, 0.088, 0); break;
-    case 'luva_cravejada': add(0.18, 0.024, 0.18, M, 0, 0.074, 0); for (const dx of [-0.038, 0.038]) for (const dy of [-0.03, 0.025]) add(0.022, 0.022, 0.012, M, dx, dy, z(0.088)); break;
+    // (as luvas: a mão já sai na cor da luva; o punho é bem mais largo que a mão e o antebraço e não divide face com nenhum dos dois,
+    //  senão as faces quase no mesmo lugar piscam no celular)
+    case 'luva_termica': add(0.2, 0.064, 0.2, 0x353a44, 0, 0.09, 0); add(0.036, 0.024, 0.01, M, 0, 0.09, z(0.105)); break;
+    case 'luva_sem_dedos': add(0.19, 0.12, 0.19, 0x1c1c1f, 0, 0.04, 0); add(0.026, 0.026, 0.01, M, 0, 0.05, z(0.1)); break;
+    case 'luva_goleiro': add(0.2, 0.05, 0.2, 0x1f9a4d, 0, 0.095, 0); add(0.036, 0.03, 0.01, M, 0, 0.095, z(0.105)); break;
+    case 'luva_couro': add(0.2, 0.03, 0.2, M, 0, 0.095, 0); break;
+    case 'luva_cravejada': add(0.2, 0.03, 0.2, M, 0, 0.095, 0); for (const dx of [-0.038, 0.038]) for (const dy of [-0.03, 0.025]) add(0.024, 0.024, 0.02, M, dx, dy, z(0.09)); break;
   }
 }
 // a película da tatuagem em volta de uma caixa (cx, cy, cz, w (x), h, d (z)) do braço/perna do lado s, com a textura cv
@@ -2624,7 +2626,7 @@ function peliculaTatuagem(cv, caixa, s, v0, v1, pai, iCor, pele, tinta) {
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
   const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearMipmapLinearFilter;   // de perto, pixelado; de longe, sem cintilar
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, alphaTest: 0.02, color: tinta }));
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, alphaTest: 0.02, color: tinta, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }));   // sempre na frente da pele (não pisca)
   const pr = ((pele >> 16) & 255) / 255, pg = ((pele >> 8) & 255) / 255, pb = (pele & 255) / 255;
   mesh.onBeforeRender = function () {                                                    // pele à mostra? (barato: 3 números da malha do membro)
     const at = pai.geometry && pai.geometry.attributes.color, a = at && at.array, j = iCor * 3;
