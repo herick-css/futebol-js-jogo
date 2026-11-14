@@ -3,6 +3,8 @@
    ---------------------------------------------------------------------
    7.1.9 — primeira versão: o LAYOUT da loja e a seção de COMEMORAÇÕES.
    7.1.10 — a seção de CHUTEIRAS: 20 chuteiras premium, a parede premium, o catálogo do Biro e o provador.
+   7.1.11 — a seção de BOLAS: 15 bolas premium com o Juca.
+   7.1.12 — a seção de ROUPAS: 25 roupas da loja, o catálogo da Kelly, o provador e os manequins vestidos.
    - Registrado com FutebolJS.registrarFase({ id: 'esportiva' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade baixa em segundo plano e chama criar(api) (api = apiEsportiva() da cidade). A sala vem do interiores.js (R.esportiva):
      quadrada, com uma seção em cada canto (chuteiras, roupas, bolas, acessórios), o campinho das comemorações no meio e o caixa ao norte.
@@ -21,7 +23,11 @@
    - BOLAS: com o Juca abre o catálogo das 15 bolas premium (cosmeticos.js, 350 a 1500 fakes, o preço sobe com o acabamento).
      OLHAR põe a bola no mostruário em cima da pirâmide, de pertinho; LEVAR põe na sacola (a mesma das outras seções, paga com a Marta).
      As compradas ficam para sempre e USAR escolhe qual vai para as partidas (a cidade troca a bola ao entrar em campo: cidade.js).
-   - As outras seções (roupas, acessórios) já têm o lugar, a decoração e o vendedor; as vendas delas vêm depois.
+   - (7.1.12) ROUPAS: 25 roupas novas para cada gênero (os dados e as estampas ficam no fase2.js, em ROUPAS, com loja: 1 e preco).
+     A KELLY abre o catálogo: PROVAR veste a roupa no jogador ali na seção (gira para mostrar), LEVAR põe na sacola e a Marta cobra.
+     A comprada já é vestida (historia.fase2.roupa) e passa a aparecer no guarda-roupa de casa (historia.fase2.roupasLoja = [nomes]);
+     VESTIR troca entre as compradas. Os dois manequins da seção vestem roupas da loja (mudam a cada dia). Sacola: 'rp:' + nome.
+   - A seção de acessórios já tem o lugar, a decoração e a vendedora; as vendas dela vêm depois.
    - Salva em historia.cidade (dados): celeb = { tem: [chaves compradas], slots: [botão 1, botão 2] } · esportiva = { conheceu... } ·
      chuteiras = { tem: [nomes comprados], usando: nome ou null (a de sempre), original: a chuteira do criador } ·
      bolas = { tem: [nomes comprados], usando: nome ou null (a bola padrão) }.
@@ -137,6 +143,22 @@
     'A sua sacola está vazia. O Biro mostra as chuteiras, o Juca, as bolas e o Dedé, as comemorações.': ['Your bag is empty. Biro shows the boots, Juca the balls and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Juca las pelotas y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Juca i palloni e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Juca les ballons et Dedé les célébrations.'],
     'Faltam {0} fakes. Tira alguma coisa da sacola com os vendedores ou volta depois.': ['You’re {0} fakes short. Take something out of the bag with the salespeople or come back later.', 'Faltan {0} fakes. Quita algo de la bolsa con los vendedores o vuelve después.', 'Mancano {0} fakes. Togli qualcosa dalla borsa con i commessi o torna più tardi.', 'Il te manque {0} fakes. Retire quelque chose du sac avec les vendeurs ou reviens plus tard.'],
     'A bola "{0}" já é a sua bola nas partidas. Para trocar, é com o Juca.': ['The "{0}" ball is now your match ball. To change it, talk to Juca.', 'La pelota "{0}" ya es tu pelota en los partidos. Para cambiarla, habla con Juca.', 'Il pallone "{0}" è già il tuo pallone in partita. Per cambiarlo, parla con Juca.', 'Le ballon « {0} » est déjà ton ballon en match. Pour le changer, parle à Juca.'],
+    // (7.1.12) as roupas (a Kelly)
+    'Ver as roupas': ['See the clothes', 'Ver la ropa', 'Vedi i vestiti', 'Voir les vêtements'],
+    'ROUPAS': ['CLOTHES', 'ROPA', 'VESTITI', 'VÊTEMENTS'],
+    'Oi! Aqui é a moda da Golaço: 25 peças que você não acha em outro lugar.': ['Hi! This is Golaço fashion: 25 pieces you won’t find anywhere else.', '¡Hola! Esta es la moda de Golaço: 25 prendas que no encuentras en otro lugar.', 'Ciao! Questa è la moda Golaço: 25 capi che non trovi da nessun’altra parte.', 'Salut ! Voici la mode Golaço : 25 pièces introuvables ailleurs.'],
+    'Estampa, listra, xadrez, tie-dye... cada uma com o seu estilo. Prova aqui mesmo, sem compromisso.': ['Prints, stripes, plaid, tie-dye... each with its own style. Try them on right here, no strings attached.', 'Estampados, rayas, cuadros, tie-dye... cada una con su estilo. Pruébatelas aquí mismo, sin compromiso.', 'Stampe, righe, quadri, tie-dye... ognuno col suo stile. Provali qui, senza impegno.', 'Imprimés, rayures, carreaux, tie-dye... chacun son style. Essaie ici même, sans engagement.'],
+    'O que você comprar já sai vestido e vai para o guarda-roupa de casa. Paga com a Marta.': ['Whatever you buy you wear out of the store, and it goes to your wardrobe at home. Pay Marta.', 'Lo que compres sale puesto y va al armario de casa. Le pagas a Marta.', 'Quello che compri lo indossi subito e va nell’armadio di casa. Paghi da Marta.', 'Ce que tu achètes, tu le portes en sortant et ça va dans l’armoire à la maison. Tu paies Marta.'],
+    'Chegou peça nova! Quer provar?': ['New pieces just arrived! Want to try them on?', '¡Llegaron prendas nuevas! ¿Te las pruebas?', 'Sono arrivati capi nuovi! Vuoi provarli?', 'Nouvelles pièces arrivées ! Tu veux essayer ?'],
+    'Vamos montar esse visual?': ['Shall we put that look together?', '¿Armamos ese look?', 'Mettiamo insieme questo look?', 'On compose ce look ?'],
+    'Ficou ótimo! Passa no caixa com a Marta.': ['Looks great! Head to the checkout with Marta.', '¡Te quedó genial! Pasa por la caja con Marta.', 'Ti sta benissimo! Passa alla cassa da Marta.', 'Ça te va super bien ! Passe à la caisse avec Marta.'],
+    'Volta sempre, toda semana tem novidade.': ['Come back anytime, there’s something new every week.', 'Vuelve siempre, cada semana hay novedades.', 'Torna quando vuoi, ogni settimana ci sono novità.', 'Reviens quand tu veux, il y a du nouveau chaque semaine.'],
+    'VESTIR': ['WEAR', 'PONER', 'INDOSSA', 'PORTER'], 'VESTINDO': ['WEARING', 'PUESTO', 'INDOSSATO', 'PORTÉ'],
+    'Vestindo: {0}': ['Wearing: {0}', 'Usando: {0}', 'Indossi: {0}', 'Tu portes : {0}'],
+    'Clique em PROVAR para ver a roupa em você. Você gira sozinho.': ['Tap TRY ON to see the outfit on you. You spin on your own.', 'Toca PROBAR para ver la ropa puesta. Giras solo.', 'Tocca PROVA per vedere il vestito addosso. Giri da solo.', 'Touche ESSAYER pour voir la tenue sur toi. Tu tournes tout seul.'],
+    'Clique em PROVAR para ver a roupa em você. Você gira sozinha.': ['Tap TRY ON to see the outfit on you. You spin on your own.', 'Toca PROBAR para ver la ropa puesta. Giras sola.', 'Tocca PROVA per vedere il vestito addosso. Giri da sola.', 'Touche ESSAYER pour voir la tenue sur toi. Tu tournes toute seule.'],
+    'A roupa "{0}" você já está vestindo. Para trocar, é com a Kelly ou no guarda-roupa de casa.': ['You’re already wearing the "{0}" outfit. To change, see Kelly or your wardrobe at home.', 'Ya llevas puesta la ropa "{0}". Para cambiarla, habla con Kelly o usa el armario de casa.', 'Stai già indossando "{0}". Per cambiare, vai da Kelly o usa l’armadio di casa.', 'Tu portes déjà la tenue « {0} ». Pour changer, vois Kelly ou ton armoire à la maison.'],
+    'A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas e o Dedé as comemorações.': ['Your bag is empty. Biro shows the boots, Kelly the clothes, Juca the balls and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Kelly la ropa, Juca las pelotas y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Kelly i vestiti, Juca i palloni e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Kelly les vêtements, Juca les ballons et Dedé les célébrations.'],
     'Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.': ['No rush. The bag stays here while you’re in the store.', 'Sin apuro. La bolsa queda guardada aquí mientras estés en la tienda.', 'Con calma. La borsa resta qui finché sei in negozio.', 'Pas de souci. Le sac reste ici tant que tu es dans le magasin.'],
   };
   const fem = () => typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
@@ -152,7 +174,6 @@
     { k: 'juca', nome: 'Juca', sec: 'bolas', sexo: 'M', seed: 6104 }, { k: 'tati', nome: 'Tati', sec: 'acessorios', sexo: 'F', seed: 6105 }, { k: 'dede', nome: 'Dedé', sec: 'comemoracoes', sexo: 'M', seed: 6106 },
   ];
   const PAPO = {
-    kelly: ['Camisa, short, agasalho... aqui a gente veste o time inteiro.', 'As peças novas chegam essa semana. Volta depois!'],
     tati: ['Caneleira, luva, boné, garrafinha... o detalhe que faz a diferença.', 'A máquina do cartão dessa seção quebrou. Semana que vem eu vendo!'],
   };
   const DANCAS_DEDE = ['robo', 'passinho', 'dancinha', 'coracao', 'musculoso', 'reverencia', 'piao'];
@@ -181,13 +202,27 @@
       else { if (D.original >= 0) ap.chuteira = D.original; else delete ap.chuteira; delete ap.chuteiraNome; D.usando = null; }
     }
     const usandoIdx = () => { const i = apar().chuteira; return CHS()[i] ? i : chOriginal(); };
+    // (7.1.12) as roupas da loja (fase2.js: ROUPAS com loja: 1) e o que fica no save da Fase 2 (roupa vestida e as compradas)
+    const RPS = () => { const f2 = S().f2; return f2 && f2._roupas ? f2._roupas : null; };
+    const listaRp = () => { const R = RPS(); return R ? R.ROUPAS[fem() ? 'F' : 'M'] : []; };
+    const lojaRp = () => listaRp().map((r, i) => i).filter((i) => listaRp()[i].loja).sort((a, b) => listaRp()[a].preco - listaRp()[b].preco || a - b);
+    const idxRp = (nome) => listaRp().findIndex((r) => r.loja && r.n === nome);
+    const hF2 = () => { try { return api.historia().ler('fase2') || {}; } catch (e) { return {}; } };
+    const gravarF2 = (mud) => { try { const h = hF2(); api.historia().gravar('fase2', Object.assign({}, h, mud)); } catch (e) { console.warn('[Esportiva] save da Fase 2:', e); } };
+    const minhasRp = () => (hF2().roupasLoja || []).slice();
+    const vestindoRp = () => { const r = hF2().roupa; return r && r.id >= 0 ? r.id : -1; };
+    function vestirRp(nome) {                                            // veste a roupa da loja (cores originais dela) e grava
+      const i = idxRp(nome); if (i < 0) return; const R = listaRp()[i], c = RPS().c4(R.c);
+      gravarF2({ roupa: { id: i, cores: c.slice() } });
+    }
+    const ehRp = (k) => String(k).startsWith('rp:');
     const ehCh = (k) => String(k).startsWith('ch:');
     // as bolas do Juca na mesma sacola: 'bola:' + nome
     const ehBola = (k) => String(k).startsWith('bola:');
     const bolaDe = (nome) => BOLAS.find((b) => b.nome === nome);
     const dadosB = () => { const d = S().dados; if (!d.bolas || !Array.isArray(d.bolas.tem)) d.bolas = { tem: [], usando: null }; return d.bolas; };
-    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : ehBola(k) ? ((bolaDe(k.slice(5)) || {}).preco || 0) : PRECO);
-    const nomeItem = (k) => (ehCh(k) ? Tx(k.slice(3)) : ehBola(k) ? Tx(k.slice(5)) : Tx(CELS()[k].nome));
+    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : ehBola(k) ? ((bolaDe(k.slice(5)) || {}).preco || 0) : ehRp(k) ? ((listaRp()[idxRp(k.slice(3))] || {}).preco || 0) : PRECO);
+    const nomeItem = (k) => (ehCh(k) || ehRp(k) ? Tx(k.slice(3)) : ehBola(k) ? Tx(k.slice(5)) : Tx(CELS()[k].nome));
     const totalSacola = () => M.sacola.reduce((a, k) => a + precoDe(k), 0);
     // a chuteira comprada volta para o pé se o personagem foi recarregado sem ela (o save da cidade é quem manda)
     function sincronizarChuteira() { try { const D = dadosCh(); chOriginal(); if (D.usando && apar().chuteiraNome !== D.usando && idxCh(D.usando) >= 0) calcar(D.usando); } catch (e) { /* sem dados ainda */ } }
@@ -644,6 +679,99 @@
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }
     }
+    // ---------------------------------------------------------------- (7.1.12) AS ROUPAS: os manequins, o provador e o catálogo da Kelly
+    function montarManequins(R) {
+      const RR = RPS(), D = M.D; if (!RR || !D.manequins) return;
+      const L = lojaRp(); if (!L.length) return; const dia = (S().dados.dia | 0);
+      D.manequins.forEach((P, k) => {
+        try {
+          const Rp = listaRp()[L[(dia * 2 + k * 7) % L.length]];
+          const base = { pele: '#e8e2d6', cabelo: '#e8e2d6', estilo: 0, rosto: 0, labio: 3, corBarba: '#e8e2d6', barba: 0, cabecao: 1, escala: 1 };
+          const m = RR.vestirModelo(base, Rp, RR.c4(Rp.c)).m;
+          m.troncoInteiro.visible = false; m.troncoSemCabeca.visible = true; if (m.cabeca) m.cabeca.visible = false;   // sem cabeça: é manequim
+          m.raiz.position.set(P.x, P.y, P.z); m.raiz.rotation.y = P.yaw; m.raiz.visible = true; m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12;
+          R.grupo.add(m.raiz); M.manequins.push(m); S().meus.add(m);   // (só aparece quem está em S.meus)
+        } catch (e) { console.warn('[Esportiva] manequim:', e); }
+      });
+    }
+    function provarRp(i) {
+      if (M.provandoRp === i) return; M.provandoRp = i; const R = listaRp()[i];
+      try { api.refazerJogador({ roupa: { id: i, cores: RPS().c4(R.c) } }); } catch (e) { console.warn('[Esportiva] provar roupa:', e); }
+      try { api.som && api.som('pop'); } catch (e) { /* sem som */ }
+    }
+    function desprovarRp() { if (M.provandoRp == null) return; M.provandoRp = null; try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] desprovar roupa:', e); } }
+    function camProvarRp() { const P = M.D.provarRoupa; api.camCena({ px: P.x + 0.3, py: 2.1, pz: P.z + 4.3, tx: P.x + 0.95, ty: 0.95, tz: P.z }); }   // de frente, de longe: o corpo inteiro à esquerda do painel
+    function abrirPainelRp() {
+      return new Promise((fim) => {
+        const d = S().dados, RR = RPS();
+        const el = document.createElement('div'); el.id = 'espRoupas';
+        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#101a3c;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-shadow:-6px 6px 0 #0008;';
+        const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:' + AZUL + ';border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:3px;';
+        const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;color:' + AMAR + ';'; tit.textContent = Tx('ROUPAS');
+        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);white-space:pre-line;';
+        cab.append(tit, inf);
+        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:5px;';
+        const pe = document.createElement('div'); pe.style.cssText = 'padding:6px 8px;border-top:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:5px;align-items:stretch;';
+        const nota = document.createElement('div'); nota.style.cssText = 'font:600 10.5px/1.3 var(--font-body);color:#c8d0ea;'; nota.textContent = (fem() ? Tx('Clique em PROVAR para ver a roupa em você. Você gira sozinha.') : Tx('Clique em PROVAR para ver a roupa em você. Você gira sozinho.')) + ' ' + Tx('O que está na sacola você paga no caixa, com a Marta.');
+        const fechar = document.createElement('button'); fechar.type = 'button'; fechar.className = 'pxBtn'; fechar.textContent = Tx('FECHAR'); fechar.style.cssText = '--p:var(--p2,2px);height:38px;font-size:12px;';
+        pe.append(nota, fechar);
+        const bt = (txt, cor, fn, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'flex:1;min-width:0;height:28px;border:2px solid ' + (on ? '#fff' : '#0b1430') + ';background:' + cor + ';color:' + (cor === AMAR ? '#101a3c' : '#fff') + ';font:700 10px/1 var(--font-display);letter-spacing:.03em;cursor:pointer;padding:0 4px;'; b.onclick = fn; return b; };
+        const amostra = (R) => { const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; cv.style.cssText = 'width:40px;height:40px;image-rendering:pixelated;border:2px solid #0b1430;flex:none;'; try { RR.amostraRoupa(cv, R); } catch (e) { /* nada */ } return cv; };
+        function render() {
+          const minhas = minhasRp(), vi = vestindoRp(), L = listaRp();
+          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia')) + '\n' + Tfx('Vestindo: {0}', Tx((L[vi >= 0 && L[vi] ? vi : 0] || { n: '' }).n));
+          const rolagem = lista.scrollTop; lista.innerHTML = '';
+          for (const i of lojaRp()) {
+            const R = L[i], meu = minhas.includes(R.n), k = 'rp:' + R.n, naSac = M.sacola.includes(k), noCorpo = vi === i, vendo = M.provandoRp === i;
+            const lin = document.createElement('div'); lin.dataset.k = R.n;
+            lin.style.cssText = 'background:' + (vendo ? '#2a3a7a' : '#1a2650') + ';border:2px solid ' + (noCorpo ? '#3fb76a' : naSac ? AMAR : meu ? '#2f7a55' : '#2a3a7a') + ';padding:5px 6px;display:flex;gap:7px;align-items:center;';
+            const dir = document.createElement('div'); dir.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;';
+            const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+            const n = document.createElement('span'); n.style.cssText = 'font:700 12px/1.1 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; n.textContent = Tx(R.n);
+            const tag = document.createElement('span'); tag.style.cssText = 'font:700 10px/1 var(--font-display);padding:3px 5px;white-space:nowrap;background:' + (noCorpo ? '#1f7a4d' : meu ? '#2f5a45' : naSac ? '#8a6a10' : '#0b1430') + ';color:' + (meu || naSac ? '#fff' : AMAR) + ';';
+            tag.textContent = noCorpo ? Tx('VESTINDO') : meu ? Tx('É sua') : naSac ? Tx('Na sacola') : Tfx('{0} fakes', R.preco);
+            top.append(n, tag);
+            const bs = document.createElement('div'); bs.style.cssText = 'display:flex;gap:4px;';
+            bs.appendChild(bt(vendo ? Tx('Provando') : Tx('PROVAR'), '#3a64b8', () => { provarRp(i); render(); }, vendo));
+            if (meu) bs.appendChild(bt(noCorpo ? Tx('VESTINDO') : Tx('VESTIR'), noCorpo ? '#1f7a4d' : '#2a3a7a', () => { if (!noCorpo) { vestirRp(R.n); api.gravar(d.ponto || 'chegada'); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); } }, noCorpo));
+            else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== k); render(); }));
+            else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push(k); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+            dir.append(top, bs); lin.append(amostra(R), dir); lista.appendChild(lin);
+          }
+          lista.scrollTop = rolagem;
+        }
+        fechar.onclick = () => { el.remove(); M.painel = null; fim(); };
+        el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
+        M.painel = { el, render }; render();
+      });
+    }
+    async function catalogoRp() {
+      const s = S(), J = s.jog, d = s.dados, E = dadosE(), A = M.eq.kelly; if (!A || M.painel || !RPS()) return;
+      s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); A.falando = true;
+      const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+      try {
+        if (!E.kelly) {
+          await api.fala('esp_kelly', Tx('Oi! Aqui é a moda da Golaço: 25 peças que você não acha em outro lugar.'));
+          await api.fala('esp_kelly', Tx('Estampa, listra, xadrez, tie-dye... cada uma com o seu estilo. Prova aqui mesmo, sem compromisso.'));
+          await api.fala('esp_kelly', Tx('O que você comprar já sai vestido e vai para o guarda-roupa de casa. Paga com a Marta.'));
+          E.kelly = true; api.gravar(d.ponto || 'chegada');
+        } else await api.fala('esp_kelly', Tx(pk(['Chegou peça nova! Quer provar?', 'Vamos montar esse visual?'])));
+        Dialogo.esconder();
+        const P = M.D.provarRoupa; await andarJog(P.x, P.z, 2.2); J.yaw = J.yawAlvo = -Math.PI / 2 + 0.4;
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        camProvarRp();
+        const n0 = M.sacola.filter(ehRp).length;
+        await abrirPainelRp();
+        desprovarRp(); api.camCena(null);
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        await api.fala('esp_kelly', M.sacola.filter(ehRp).length > n0 ? Tx('Ficou ótimo! Passa no caixa com a Marta.') : Tx('Volta sempre, toda semana tem novidade.'));
+      } catch (e) { console.error('[Esportiva] roupas:', e); }
+      finally {
+        A.falando = false; A.yawAlvo = y0; if (M.painel) { M.painel.el.remove(); M.painel = null; } desprovarRp(); api.camCena(null);
+        try { Dialogo.esconder(); } catch (e) { /* nada */ }
+        const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
+      }
+    }
     // os outros vendedores: a seção ainda não vende
     async function falarVendedor(k) {
       const A = M.eq[k], J = S().jog; if (!A) return; const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); A.falando = true;
@@ -655,14 +783,14 @@
       A.falando = true;
       try {
         if (!E.marta) { await api.fala('esp_marta', fem() ? Tx('Bem-vinda à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.') : Tx('Bem-vindo à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.')); E.marta = true; api.gravar(d.ponto || 'chegada'); }
-        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras, o Juca, as bolas e o Dedé, as comemorações.')); return; }
+        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas e o Dedé as comemorações.')); return; }
         const total = totalSacola(), nomes = M.sacola.map(nomeItem).join(', ');
         await api.fala('esp_marta', Tfx('Na sacola: {0}. Dá {1} fakes.', nomes, total));
         if (!d.devInfinito && d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com os vendedores ou volta depois.', total - d.fakes)); return; }
         const r = await Escolha.mostrar(Tx('Caixa da loja'), [Tfx('Pagar {0} fakes', total), Tx('Agora não')]);
         if (r !== 0) { await api.fala('esp_marta', Tx('Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.')); return; }
         d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
-        const cels = M.sacola.filter((k) => !ehCh(k) && !ehBola(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), DC = dadosCh();
+        const cels = M.sacola.filter((k) => !ehCh(k) && !ehBola(k) && !ehRp(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), rps = M.sacola.filter(ehRp).map((k) => k.slice(3)), DC = dadosCh();
         const bolas = M.sacola.filter(ehBola).map((k) => k.slice(5)), Bd = dadosB(); M.sacola = [];
         for (const n of bolas) if (!Bd.tem.includes(n)) Bd.tem.push(n);
         const bolaNova = !Bd.usando && bolas.length ? bolas[bolas.length - 1] : null; if (bolaNova) Bd.usando = bolaNova;   // a primeira bola comprada já vai para as partidas
@@ -671,12 +799,18 @@
         const ult = cels[cels.length - 1], ultCh = chs[chs.length - 1];
         let botao = 0; if (ult && !C.slots.includes(ult)) { botao = CELS()[C.slots[1]].loja && !CELS()[C.slots[0]].loja ? 1 : 2; C.slots[botao - 1] = ult; }   // a última comprada já entra num botão (troca primeiro uma das de graça)
         if (ultCh) calcar(ultCh);                                        // a última chuteira comprada já vai para o pé
+        const ultRp = rps[rps.length - 1];
+        if (rps.length) {                                                 // as roupas: vão para o guarda-roupa e a última já é vestida
+          const minhas = minhasRp(); for (const n of rps) if (!minhas.includes(n)) minhas.push(n);
+          gravarF2({ roupasLoja: minhas }); vestirRp(ultRp); try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] vestir:', e); }
+        }
         E.compras = (E.compras | 0) + 1; E.gasto = (E.gasto | 0) + total;
         api.gravar(d.ponto || 'chegada'); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(total);
         await api.fala('esp_marta', Tx('Prontinho! Já é tudo seu.'));
         if (botao) await api.fala('esp_marta', Tfx('A comemoração "{0}" já ficou no seu botão {1}. Para trocar, é com o Dedé.', Tx(CELS()[ult].nome), botao));
         if (ultCh) await api.fala('esp_marta', Tfx('A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.', Tx(ultCh)));
         if (bolaNova) await api.fala('esp_marta', Tfx('A bola "{0}" já é a sua bola nas partidas. Para trocar, é com o Juca.', Tx(bolaNova)));
+        if (ultRp) await api.fala('esp_marta', Tfx('A roupa "{0}" você já está vestindo. Para trocar, é com a Kelly ou no guarda-roupa de casa.', Tx(ultRp)));
         await api.fala('esp_marta', Tx('Agora é fazer gol para estrear!'));
       } catch (e) { console.error('[Esportiva] caixa:', e); }
       finally { A.falando = false; try { Dialogo.esconder(); } catch (e) { /* nada */ } }
@@ -688,6 +822,7 @@
       M.nav = null; montarNav(); M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null; M.proxDede = null; M.prox = rnd(3, 8); M.provando = null; M.destaque = null;
       sincronizarChuteira();
       try { montarVitrine(R); } catch (e) { console.warn('[Esportiva] vitrine:', e); }
+      M.provandoRp = null; M.manequins = []; try { montarManequins(R); } catch (e) { console.warn('[Esportiva] manequins:', e); }
       for (const E of EQUIPE) criarEquipe(E);
       for (let i = 0; i < alvoClientes() - 1; i++) novoCliente(true);
       void s;
@@ -695,6 +830,12 @@
     function saiu() {
       const s = S(), J = s.jog;
       if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove(); if (M.provando != null && J) desprovar(); M.provando = null; M.destaque = null; tirarVitrine();
+      if (M.provandoRp != null && J) desprovarRp(); M.provandoRp = null;
+      for (const m of M.manequins || []) {                               // os manequins: sai da lista da cidade e libera a memória
+        try { s.meus.delete(m); if (typeof ATLETAS !== 'undefined') ATLETAS.delete(m); if (m.raiz.parent) m.raiz.parent.remove(m.raiz);
+          m.raiz.traverse((o) => { if (o.geometry && (typeof SHADOW_GEO === 'undefined' || o.geometry !== SHADOW_GEO)) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const q of ms) if (q && typeof MAT_CORES !== 'undefined' && q !== MAT_CORES && (typeof SHADOW_MAT === 'undefined' || q !== SHADOW_MAT) && (typeof MAT === 'undefined' || q !== MAT)) { if (q.map) q.map.dispose(); q.dispose(); } }); } catch (e) { /* nada */ }
+      }
+      M.manequins = [];
       if (s.falantesExtra) for (const k of Object.keys(s.falantesExtra)) if (k.startsWith('esp_')) delete s.falantesExtra[k];
       M.R = null; M.D = null; M.nav = null; M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null;
     }
@@ -706,6 +847,7 @@
         else if (E.k === 'dede') v.push({ x: A.x, z: A.z, r: 1.8, txt: Tx('Ver as comemorações'), fn: catalogo, y: 2.4, pri: true });
         else if (E.k === 'biro') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as chuteiras'), fn: catalogoCh, y: 2.4, pri: true });
         else if (E.k === 'juca') v.push({ x: A.x, z: A.z + 0.5, r: 1.8, txt: Tx('Ver as bolas'), fn: catalogoBolas, y: 2.4, pri: true });
+        else if (E.k === 'kelly') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as roupas'), fn: catalogoRp, y: 2.4, pri: true });
         else v.push({ x: A.x, z: A.z + 0.5, r: 1.6, txt: Tfx('Falar com {0}', Tx(E.nome)), fn: () => falarVendedor(E.k), y: 2.4 });
       }
     }
@@ -714,15 +856,15 @@
       tickPrevia(dt); tickDede(dt); tickFluxo(dt);
       if (M.vitrine) { M.vitrine.rotation.y += dt * 0.7; M.vitrine.position.y = M.vitrine.userData.y + Math.sin(performance.now() / 600) * 0.03; }
       if (M.destaque) M.destaque.rotation.y += dt * 0.7;                // a mais cara girando na redoma
-      if (M.provando != null) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira
+      if (M.provando != null || M.provandoRp != null) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira (ou a roupa)
       for (const E of EQUIPE) { const A = M.eq[E.k]; if (A && !A.falando && E.k !== 'dede' && s.modo === 'livre') { const J = s.jog, perto = Math.hypot(J.x - A.x, J.z - A.z) < 3.2; A.yawAlvo = perto ? Math.atan2(-(J.z - A.z), J.x - A.x) : A.casa.yaw; } }   // quem está perto: o vendedor olha para o jogador
     }
     function limpar() { if (M.painel) { M.painel.el.remove(); M.painel = null; } tirarVitrine(); }
-    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira, catalogoBolas, dadosB, BOLAS, mostrarBola };
+    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira, catalogoBolas, dadosB, BOLAS, mostrarBola, catalogoRp, abrirPainelRp, provarRp, desprovarRp, vestirRp, lojaRp, listaRp, minhasRp };
     if (typeof window !== 'undefined') window.__esportiva = dbg;
     return { entrou, saiu, chegou: () => false, tickCliente, tick, alvos, alvosSentado: () => null, liberarMesa() {}, limpar, _f: dbg };
   }
 
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
-  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.10', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
+  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.12', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
 })();

@@ -27,7 +27,10 @@
      2. A tela de anos avança 10 anos (a mesma tela de "12 anos atrás": de {ano-12} até {ano-2}) e o personagem diz "Quando eu tinha 16...".
      3. O QUARTO do personagem (às escuras: ele acorda, liga a luz, usa o computador/guarda-roupa/banheiro) com cores e objetos
         de quarto masculino ou feminino (PERSONAGEM.genero). Dois pôsteres (imagens minúsculas embutidas em POSTER_A / POSTER_B).
-     4. O guarda-roupa: 18 roupas masculinas e 22 femininas, cada uma com 4 cores: primária, secundária, detalhes e borda do emblema.
+     4. O guarda-roupa: 18 roupas masculinas e 22 femininas, cada uma com 4 cores: primária, secundária, detalhes e estampa.
+        (7.1.12) Cada roupa tem o seu ESTILO (estampar: listras, xadrez, tie-dye, desenho, texto, bolso, zíper...; só a de time tem
+        escudo), a BARRA da blusa cobre a cintura da calça (barraRoupa) e mais 25 roupas por gênero vêm da loja (loja: 1, só aparecem
+        no guarda-roupa depois de compradas: dados.roupasLoja).
      5. O computador: navegador → site "LoggedOn" → 3 notificações de vaga → escolher UM emprego (Mercado, Cafeteria ou Pizzaria).
         Qualquer um dá pontos em "Tranquilo" (espectro Tranquilo ↔ Problemático). A escolha fica salva.
      6. A escada do prédio (4 lances, câmeras fixas que mudam) com o vizinho que fuma, até a porta da rua.
@@ -63,48 +66,102 @@
     '#d95fa0', '#f4a6c0', '#7a4a2a', '#d8c39a', '#4a6fa5', '#2a3f66', '#9bd1f0', '#a3162a', '#556b2f', '#ffb199', '#b9b6ae', '#5b5f66'];
   const ROUPAS = {
     M: [
-      { n: 'Camiseta e bermuda', t: 'bermuda', c: ['#3a64b8', '#8c9199', '#f2f2ee'] },
-      { n: 'Camiseta e calça jeans', t: 'calca', c: ['#f2f2ee', '#2a3f66', '#c8352b'] },
-      { n: 'Moletom com capuz', t: 'calca', m: 1, capuz: 1, solta: 1, c: ['#7a7e86', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Polo e bermuda', t: 'bermuda', c: ['#1f7a4d', '#d8c39a', '#f2f2ee'] },
-      { n: 'Camiseta de barra colorida', t: 'calca', c: ['#f2f2ee', '#4a6fa5', '#c8352b'] },
-      { n: 'Jaqueta e calça', t: 'calca', m: 1, jaqueta: 1, solta: 1, c: ['#1c1c1f', '#2a3f66', '#f2c230'] },
-      { n: 'Camisa social e calça', t: 'calca', m: 1, c: ['#9bd1f0', '#1f3a73', '#f2f2ee'] },
+      { n: 'Camiseta e bermuda', t: 'bermuda', e: { d: 'onda' }, c: ['#3a64b8', '#8c9199', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta e calça jeans', t: 'calca', e: { txt: 'RIO' }, c: ['#f2f2ee', '#2a3f66', '#c8352b', '#c8352b'] },
+      { n: 'Moletom com capuz', t: 'calca', m: 1, capuz: 1, solta: 1, e: { p: 'moletom' }, c: ['#7a7e86', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Polo e bermuda', t: 'bermuda', e: { p: 'polo' }, c: ['#1f7a4d', '#d8c39a', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta de barra colorida', t: 'calca', e: { p: 'barra' }, c: ['#f2f2ee', '#4a6fa5', '#c8352b', '#c8352b'] },
+      { n: 'Jaqueta e calça', t: 'calca', m: 1, jaqueta: 1, solta: 1, e: { p: 'ziper' }, c: ['#1c1c1f', '#2a3f66', '#f2c230', '#f2c230'] },
+      { n: 'Camisa social e calça', t: 'calca', m: 1, dentro: 1, e: { p: 'social' }, c: ['#9bd1f0', '#1f3a73', '#f2f2ee', '#f2f2ee'] },
       { n: 'Camisa de time e short', t: 'short', time: 1, c: ['#c8352b', '#f2f2ee', '#1c1c1f'] },
-      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, c: ['#1f3a73', '#1f3a73', '#f2f2ee'] },
-      { n: 'Camiseta e short curto', t: 'short', c: ['#e8742a', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Camiseta de manga longa', t: 'calca', m: 1, c: ['#556b2f', '#1c1c1f', '#d8c39a'] },
-      { n: 'Moletom e bermuda', t: 'bermuda', m: 1, capuz: 1, solta: 1, c: ['#a3162a', '#8c9199', '#f2f2ee'] },
-      { n: 'Camiseta e jeans escuro', t: 'calca', c: ['#7a4fb0', '#2a3f66', '#f2f2ee'] },
-      { n: 'Camiseta larga e bermuda', t: 'bermuda', solta: 1, c: ['#f2c230', '#1c1c1f', '#1c1c1f'] },
-      { n: 'Camisa social e bermuda', t: 'bermuda', c: ['#f2f2ee', '#7a4a2a', '#1f3a73'] },
-      { n: 'Regata e bermuda', t: 'bermuda', regata: 1, c: ['#f2f2ee', '#2a3f66', '#c8352b'] },
+      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, e: { p: 'esporte', ziper: 1 }, c: ['#1f3a73', '#1f3a73', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta e short curto', t: 'short', e: { d: 'raio' }, c: ['#e8742a', '#1c1c1f', '#f2f2ee', '#1c1c1f'] },
+      { n: 'Camiseta de manga longa', t: 'calca', m: 1, e: { p: 'listras' }, c: ['#556b2f', '#1c1c1f', '#d8c39a', '#d8c39a'] },
+      { n: 'Moletom e bermuda', t: 'bermuda', m: 1, capuz: 1, solta: 1, e: { p: 'moletom', txt: 'GOL' }, c: ['#a3162a', '#8c9199', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta e jeans escuro', t: 'calca', e: { d: 'estrela' }, c: ['#7a4fb0', '#2a3f66', '#f2f2ee', '#f2c230'] },
+      { n: 'Camiseta larga e bermuda', t: 'bermuda', solta: 1, e: { p: 'faixa' }, c: ['#f2c230', '#1c1c1f', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camisa social e bermuda', t: 'bermuda', e: { p: 'social', listrasV: 1 }, c: ['#f2f2ee', '#7a4a2a', '#1f3a73', '#9bd1f0'] },
+      { n: 'Regata e bermuda', t: 'bermuda', regata: 1, e: { p: 'listras' }, c: ['#f2f2ee', '#2a3f66', '#c8352b', '#2a3f66'] },
       { n: 'Regata de time e short', t: 'short', time: 1, regata: 1, c: ['#3a64b8', '#f2f2ee', '#f2c230'] },
-      { n: 'Regata e calça jeans', t: 'calca', regata: 1, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee'] },
+      { n: 'Regata e calça jeans', t: 'calca', regata: 1, e: { d: 'sol' }, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee', '#e8742a'] },
+      // (7.1.12) ROUPAS DA LOJA (Golaço Esportes, com a Kelly): loja: 1 + preco. Ficam SEMPRE no fim da lista (o save guarda o número)
+      //   e só aparecem no guarda-roupa depois de compradas (dados.roupasLoja = [nomes]).
+      { n: 'Camiseta marinheiro', t: 'bermuda', loja: 1, preco: 180, e: { p: 'listras' }, c: ['#f2f2ee', '#1f3a73', '#1f3a73', '#1f3a73'] },
+      { n: 'Camiseta tie-dye', t: 'short', loja: 1, preco: 240, e: { p: 'tiedye' }, c: ['#f4a6c0', '#3a64b8', '#3fb7b0', '#f2c230'] },
+      { n: 'Camiseta camuflada', t: 'calca', loja: 1, preco: 220, e: { p: 'camuflado' }, c: ['#556b2f', '#1c1c1f', '#2e3b1f', '#b9a36a'] },
+      { n: 'Camisa xadrez', t: 'calca', m: 1, solta: 1, loja: 1, preco: 300, e: { p: 'xadrez', botoes: 1 }, c: ['#a3162a', '#2a3f66', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta degradê', t: 'bermuda', loja: 1, preco: 220, e: { p: 'degrade' }, c: ['#3fb7b0', '#1c1c1f', '#f2f2ee', '#1f3a73'] },
+      { n: 'Camiseta de bolinhas', t: 'short', loja: 1, preco: 180, e: { p: 'bolinhas' }, c: ['#c8352b', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Moletom com estampa', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 380, e: { p: 'moletom', d: 'bola' }, c: ['#1f3a73', '#8c9199', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta palmeira', t: 'bermuda', loja: 1, preco: 200, e: { d: 'palmeira' }, c: ['#9bd1f0', '#d8c39a', '#f2f2ee', '#1f7a4d'] },
+      { n: 'Camiseta pôr do sol', t: 'short', loja: 1, preco: 260, e: { p: 'degrade', d: 'sol' }, c: ['#f2c230', '#1c1c1f', '#f2f2ee', '#c8352b'] },
+      { n: 'Camiseta diagonal', t: 'calca', loja: 1, preco: 200, e: { p: 'diagonal' }, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee', '#e8742a'] },
+      { n: 'Camiseta bicolor', t: 'bermuda', loja: 1, preco: 190, e: { p: 'meia' }, c: ['#f2c230', '#2a3f66', '#1c1c1f', '#1f7a4d'] },
+      { n: 'Camiseta raglan', t: 'calca', m: 1, loja: 1, preco: 210, e: { p: 'ombros' }, c: ['#f2f2ee', '#1c1c1f', '#1c1c1f', '#c8352b'] },
+      { n: 'Corta-vento', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 420, e: { p: 'faixa', ziper: 1 }, c: ['#3fb7b0', '#1c1c1f', '#f2f2ee', '#7a4fb0'] },
+      { n: 'Camiseta montanha', t: 'calca', loja: 1, preco: 210, e: { d: 'montanha' }, c: ['#2a3f66', '#5b5f66', '#f2f2ee', '#9bd1f0'] },
+      { n: 'Camiseta coroa', t: 'bermuda', loja: 1, preco: 230, e: { d: 'coroa' }, c: ['#1c1c1f', '#1c1c1f', '#c8352b', '#f2c230'] },
+      { n: 'Camiseta craque', t: 'short', loja: 1, preco: 200, e: { txt: 'CRAQUE', d: 'bola', dy: 14 }, c: ['#1f7a4d', '#f2f2ee', '#f2c230', '#f2f2ee'] },
+      { n: 'Polo listrada', t: 'bermuda', loja: 1, preco: 280, e: { p: 'polo', listras: 1 }, c: ['#1f3a73', '#d8c39a', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Regata listrada', t: 'bermuda', regata: 1, loja: 1, preco: 160, e: { p: 'listrasV' }, c: ['#f2f2ee', '#3a64b8', '#3a64b8', '#3fb7b0'] },
+      { n: 'Camisa havaiana', t: 'bermuda', loja: 1, preco: 320, e: { p: 'havaiana', botoes: 1 }, c: ['#3fb7b0', '#d8c39a', '#f2c230', '#f2f2ee'] },
+      { n: 'Moletom raio', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 360, e: { p: 'moletom', d: 'raio' }, c: ['#1c1c1f', '#1c1c1f', '#f2f2ee', '#f2c230'] },
+      { n: 'Camisa social listrada', t: 'calca', m: 1, dentro: 1, loja: 1, preco: 340, e: { p: 'social', listrasV: 1 }, c: ['#f2f2ee', '#1c1c1f', '#f2f2ee', '#3a64b8'] },
+      { n: 'Agasalho retrô', t: 'calca', m: 1, solta: 1, loja: 1, preco: 400, e: { p: 'esporte', ziper: 1, faixa: 1 }, c: ['#c8352b', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta smile', t: 'bermuda', loja: 1, preco: 190, e: { d: 'smile' }, c: ['#7a4fb0', '#5b5f66', '#f2f2ee', '#f2c230'] },
+      { n: 'Regata de basquete', t: 'short', regata: 1, loja: 1, preco: 260, e: { p: 'esporte', num: '23' }, c: ['#e8742a', '#e8742a', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Camiseta estrelada', t: 'calca', loja: 1, preco: 240, e: { p: 'listrasFinas', d: 'estrela' }, c: ['#1f3a73', '#4a6fa5', '#f2f2ee', '#f2c230'] },
     ],
     F: [
-      { n: 'Camiseta e short', t: 'short', c: ['#d95fa0', '#4a6fa5', '#f2f2ee'] },
-      { n: 'Camiseta e calça jeans', t: 'calca', c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
-      { n: 'Vestido simples', t: 'vestido', c: ['#7a4fb0', '#f2f2ee', '#f2f2ee'] },
-      { n: 'Saia e camiseta', t: 'saia', c: ['#f2f2ee', '#d95fa0', '#1c1c1f'] },
-      { n: 'Moletom e legging', t: 'calca', m: 1, capuz: 1, solta: 1, c: ['#f4a6c0', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Vestido com barra', t: 'vestido', c: ['#3a64b8', '#f2f2ee', '#f2f2ee'] },
-      { n: 'Jaqueta e saia', t: 'saia', m: 1, jaqueta: 1, solta: 1, c: ['#c8352b', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Blusa de manga longa e calça', t: 'calca', m: 1, c: ['#3fb7b0', '#2a3f66', '#f2f2ee'] },
-      { n: 'Camisa social e saia', t: 'saia', c: ['#f2f2ee', '#1f3a73', '#3a64b8'] },
-      { n: 'Polo e short', t: 'short', c: ['#6cae3e', '#f2f2ee', '#f2f2ee'] },
-      { n: 'Jardineira', t: 'jardineira', c: ['#f2f2ee', '#4a6fa5', '#f2c230'] },
-      { n: 'Vestido de manga longa', t: 'vestido', m: 1, c: ['#a3162a', '#1c1c1f', '#1c1c1f'] },
-      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, c: ['#7a4fb0', '#7a4fb0', '#f2f2ee'] },
-      { n: 'Camiseta e bermuda', t: 'bermuda', c: ['#ffb199', '#d8c39a', '#f2f2ee'] },
-      { n: 'Blusa e saia longa', t: 'saia', longa: 1, c: ['#f2c230', '#1f7a4d', '#f2f2ee'] },
-      { n: 'Regata e short', t: 'short', regata: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
-      { n: 'Regata e calça jeans', t: 'calca', regata: 1, c: ['#d95fa0', '#4a6fa5', '#f2f2ee'] },
+      { n: 'Camiseta e short', t: 'short', e: { d: 'coracao' }, c: ['#d95fa0', '#4a6fa5', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta e calça jeans', t: 'calca', e: { p: 'listras' }, c: ['#f2f2ee', '#4a6fa5', '#d95fa0', '#d95fa0'] },
+      { n: 'Vestido simples', t: 'vestido', e: { g: 'v' }, c: ['#7a4fb0', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Saia e camiseta', t: 'saia', e: { d: 'flor' }, c: ['#f2f2ee', '#d95fa0', '#1c1c1f', '#d95fa0'] },
+      { n: 'Moletom e legging', t: 'calca', m: 1, capuz: 1, solta: 1, e: { p: 'moletom' }, c: ['#f4a6c0', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Vestido com barra', t: 'vestido', e: { p: 'bolinhas' }, c: ['#3a64b8', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Jaqueta e saia', t: 'saia', m: 1, jaqueta: 1, solta: 1, e: { p: 'ziper' }, c: ['#c8352b', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Blusa de manga longa e calça', t: 'calca', m: 1, e: { p: 'listrasFinas' }, c: ['#3fb7b0', '#2a3f66', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camisa social e saia', t: 'saia', e: { p: 'social' }, c: ['#f2f2ee', '#1f3a73', '#3a64b8', '#3a64b8'] },
+      { n: 'Polo e short', t: 'short', e: { p: 'polo' }, c: ['#6cae3e', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Jardineira', t: 'jardineira', e: { p: 'listrasFinas' }, c: ['#f2f2ee', '#4a6fa5', '#f2c230', '#f2c230'] },
+      { n: 'Vestido de manga longa', t: 'vestido', m: 1, e: { g: 'v' }, c: ['#a3162a', '#1c1c1f', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Agasalho esportivo', t: 'calca', m: 1, solta: 1, e: { p: 'esporte', ziper: 1 }, c: ['#7a4fb0', '#7a4fb0', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta e bermuda', t: 'bermuda', e: { d: 'sol' }, c: ['#ffb199', '#d8c39a', '#f2f2ee', '#e8742a'] },
+      { n: 'Blusa e saia longa', t: 'saia', longa: 1, e: { p: 'faixa' }, c: ['#f2c230', '#1f7a4d', '#f2f2ee', '#1f7a4d'] },
+      { n: 'Regata e short', t: 'short', regata: 1, e: { p: 'listras' }, c: ['#f2f2ee', '#4a6fa5', '#d95fa0', '#d95fa0'] },
+      { n: 'Regata e calça jeans', t: 'calca', regata: 1, e: { d: 'estrela' }, c: ['#d95fa0', '#4a6fa5', '#f2f2ee', '#f2f2ee'] },
       { n: 'Regata e saia', t: 'saia', regata: 1, c: ['#3fb7b0', '#f2f2ee', '#1c1c1f'] },
       { n: 'Top e short', t: 'short', top: 1, c: ['#e8742a', '#2a3f66', '#f2f2ee'] },
-      { n: 'Top e calça jeans', t: 'calca', top: 1, c: ['#f2f2ee', '#4a6fa5', '#d95fa0'] },
+      { n: 'Top e calça jeans', t: 'calca', top: 1, e: { p: 'listrasFinas' }, c: ['#f2f2ee', '#4a6fa5', '#d95fa0', '#d95fa0'] },
       { n: 'Top e saia', t: 'saia', top: 1, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee'] },
       { n: 'Macacão', t: 'macacao', c: ['#8a1f3d', '#f2c230', '#f2f2ee'] },       // (6.1.1) peça única, sem saia: dobra certo ao sentar (a Lúcia usa no encontro)
+      // (7.1.12) ROUPAS DA LOJA (Golaço Esportes, com a Kelly): loja: 1 + preco. Ficam SEMPRE no fim da lista (o save guarda o número)
+      //   e só aparecem no guarda-roupa depois de compradas (dados.roupasLoja = [nomes]).
+      { n: 'Camiseta marinheiro', t: 'bermuda', loja: 1, preco: 180, e: { p: 'listras' }, c: ['#f2f2ee', '#1f3a73', '#1f3a73', '#1f3a73'] },
+      { n: 'Camiseta tie-dye', t: 'short', loja: 1, preco: 240, e: { p: 'tiedye' }, c: ['#f4a6c0', '#3a64b8', '#3fb7b0', '#f2c230'] },
+      { n: 'Camiseta camuflada', t: 'calca', loja: 1, preco: 220, e: { p: 'camuflado' }, c: ['#556b2f', '#1c1c1f', '#2e3b1f', '#b9a36a'] },
+      { n: 'Camisa xadrez', t: 'calca', m: 1, solta: 1, loja: 1, preco: 300, e: { p: 'xadrez', botoes: 1 }, c: ['#a3162a', '#2a3f66', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta degradê', t: 'bermuda', loja: 1, preco: 220, e: { p: 'degrade' }, c: ['#3fb7b0', '#1c1c1f', '#f2f2ee', '#1f3a73'] },
+      { n: 'Camiseta de bolinhas', t: 'short', loja: 1, preco: 180, e: { p: 'bolinhas' }, c: ['#c8352b', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Moletom com estampa', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 380, e: { p: 'moletom', d: 'bola' }, c: ['#1f3a73', '#8c9199', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta palmeira', t: 'bermuda', loja: 1, preco: 200, e: { d: 'palmeira' }, c: ['#9bd1f0', '#d8c39a', '#f2f2ee', '#1f7a4d'] },
+      { n: 'Camiseta pôr do sol', t: 'short', loja: 1, preco: 260, e: { p: 'degrade', d: 'sol' }, c: ['#f2c230', '#1c1c1f', '#f2f2ee', '#c8352b'] },
+      { n: 'Camiseta diagonal', t: 'calca', loja: 1, preco: 200, e: { p: 'diagonal' }, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee', '#e8742a'] },
+      { n: 'Camiseta bicolor', t: 'bermuda', loja: 1, preco: 190, e: { p: 'meia' }, c: ['#f2c230', '#2a3f66', '#1c1c1f', '#1f7a4d'] },
+      { n: 'Camiseta raglan', t: 'calca', m: 1, loja: 1, preco: 210, e: { p: 'ombros' }, c: ['#f2f2ee', '#1c1c1f', '#1c1c1f', '#c8352b'] },
+      { n: 'Corta-vento', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 420, e: { p: 'faixa', ziper: 1 }, c: ['#3fb7b0', '#1c1c1f', '#f2f2ee', '#7a4fb0'] },
+      { n: 'Camiseta montanha', t: 'calca', loja: 1, preco: 210, e: { d: 'montanha' }, c: ['#2a3f66', '#5b5f66', '#f2f2ee', '#9bd1f0'] },
+      { n: 'Camiseta coroa', t: 'bermuda', loja: 1, preco: 230, e: { d: 'coroa' }, c: ['#1c1c1f', '#1c1c1f', '#c8352b', '#f2c230'] },
+      { n: 'Camiseta craque', t: 'short', loja: 1, preco: 200, e: { txt: 'CRAQUE', d: 'bola', dy: 14 }, c: ['#1f7a4d', '#f2f2ee', '#f2c230', '#f2f2ee'] },
+      { n: 'Polo listrada', t: 'bermuda', loja: 1, preco: 280, e: { p: 'polo', listras: 1 }, c: ['#1f3a73', '#d8c39a', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Regata listrada', t: 'bermuda', regata: 1, loja: 1, preco: 160, e: { p: 'listrasV' }, c: ['#f2f2ee', '#3a64b8', '#3a64b8', '#3fb7b0'] },
+      { n: 'Vestido florido', t: 'vestido', loja: 1, preco: 360, e: { p: 'havaiana', g: 'v' }, c: ['#f4a6c0', '#f2f2ee', '#f2f2ee', '#c8352b'] },
+      { n: 'Vestido listrado', t: 'vestido', loja: 1, preco: 320, e: { p: 'listras' }, c: ['#f2f2ee', '#1f3a73', '#1f3a73', '#1f3a73'] },
+      { n: 'Blusa xadrez e saia', t: 'saia', loja: 1, preco: 300, e: { p: 'xadrez' }, c: ['#3a64b8', '#1c1c1f', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Moletom coração', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 360, e: { p: 'moletom', d: 'coracao' }, c: ['#b9b6ae', '#1c1c1f', '#f2f2ee', '#c8352b'] },
+      { n: 'Top tie-dye e short', t: 'short', top: 1, loja: 1, preco: 240, e: { p: 'tiedye' }, c: ['#9bd1f0', '#f2f2ee', '#d95fa0', '#f2c230'] },
+      { n: 'Vestido degradê', t: 'vestido', m: 1, loja: 1, preco: 380, e: { p: 'degrade', g: 'v' }, c: ['#f2c230', '#c8352b', '#f2f2ee', '#d95fa0'] },
+      { n: 'Camiseta smile e saia', t: 'saia', loja: 1, preco: 220, e: { d: 'smile' }, c: ['#f2c230', '#4a6fa5', '#1c1c1f', '#1c1c1f'] },
     ],
   };
   const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
@@ -131,21 +188,133 @@
     }
     return o;
   }
-  // o emblema do peito é desenhado pelo jogo.js com borda sempre branca: aqui ele é repintado na textura da camisa com a 4ª cor
+  // (7.1.12) ESTAMPAS: cada roupa tem o SEU estilo na frente e nas costas da blusa (antes todas tinham o quadradinho de emblema no peito).
+  //   R.e = { p: padrão, d: desenho no peito, txt: texto no peito, num: número (frente e costas), g: gola ('v' | 'polo' | 'nenhuma'),
+  //   ziper / botoes / listras / listrasV / faixa: detalhes por cima }. Cores: c[0] base · c[2] detalhes (gola, linhas) · c[3] estampa.
+  //   Padrões: liso (sem p) · listras · listrasFinas · listrasV · faixa · barra · diagonal · xadrez · meia (bicolor) · ombros (raglan) ·
+  //   degrade · tiedye · camuflado · bolinhas · havaiana (flores) · social (botões e bolso) · polo · moletom (bolso canguru e cordões) ·
+  //   ziper · esporte (faixas laterais). A camisa de time continua com o escudo (pintarEmblema).
+  //   A textura da blusa tem 32x32 por lado: x cresce para a DIREITA de quem olha (o peito esquerdo do personagem fica em x 19..26),
+  //   linha 0 = gola, linha 20 = cintura; as linhas 20..31 vão na barra solta (barraRoupa) das blusas por fora da calça.
+  const DESENHOS = {
+    coracao: ['.##...##.', '####.####', '#########', '#########', '.#######.', '..#####..', '...###...', '....#....'],
+    estrela: ['....#....', '...###...', '...###...', '#########', '.#######.', '..#####..', '..##.##..', '.##...##.', '#.......#'],
+    raio: ['...####', '..####.', '..###..', '.###...', '.######', '#######', '...###.', '..###..', '..##...', '.##....', '.#.....'],
+    onda: ['......###...', '....##+++#..', '...#++##++#.', '..#++#..#+#.', '.#++#....#..', '#++#........', '############'],
+    palmeira: ['..##...##..', '.####.####.', '##..###..##', '#...+#+...#', '.....+.....', '....++.....', '....+......', '....++.....', '.....+.....', '.....++....', '....++++...', '..+++++++..'],
+    coroa: ['#....#....#', '##..###..##', '###.###.###', '###########', '#+#+#+#+#+#', '###########', '###########'],
+    montanha: ['......#......', '.....#+#.....', '....#+++#....', '...#######...', '..#########..', '.###########.', '#############'],
+    smile: ['...#####...', '.##.....##.', '.#..#.#..#.', '#...#.#...#', '#.........#', '#.#.....#.#', '#..#...#..#', '.#..###..#.', '.##.....##.', '...#####...'],
+    flor: ['...##...', '..####..', '##+##+##', '###++###', '###++###', '##+##+##', '..####..', '...##...'],
+    bola: ['..#####..', '.##+#+##.', '##+++++##', '#+#+#+#+#', '##+++++##', '#+#+#+#+#', '##+++++##', '.##+#+##.', '..#####..'],
+    sol: ['#...#...#', '.#..#..#.', '..#####..', '.#######.', '#########', '.#######.', '..#####..', '.#..#..#.', '#...#...#'],
+  };
+  const FONTE = {
+    A: '.#.#.#####.##.#', B: '##.#.###.#.###.', C: '.###..#..#...##', D: '##.#.##.##.###.', E: '####..##.#..###', F: '####..##.#..#..', G: '.###..#.##.#.##', H: '#.##.#####.##.#',
+    I: '###.#..#..#.###', J: '..#..#..##.#.#.', K: '#.##.###.#.##.#', L: '#..#..#..#..###', M: '#.########.##.#', N: '##.#.##.##.##.#', O: '.#.#.##.##.#.#.', P: '##.#.###.#..#..',
+    Q: '.#.#.##.###..##', R: '##.#.###.#.##.#', S: '.###...#...###.', T: '###.#..#..#..#.', U: '#.##.##.##.####', V: '#.##.##.##.#.#.', W: '#.##.########.#', X: '#.##.#.#.#.##.#',
+    Y: '#.##.#.#..#..#.', Z: '###..#.#.#..###', 0: '####.##.##.####', 1: '.#.##..#..#.###', 2: '##...#.#.#..###', 3: '##...#.#...###.', 4: '#.##.####..#..#', 5: '####..##...###.',
+    6: '.###..####.####', 7: '###..#.#..#..#.', 8: '####.#####.####', 9: '####.####..###.',
+  };
+  const cssCor = (h) => (typeof h === 'number' ? '#' + h.toString(16).padStart(6, '0') : h);
+  const misturaCss = (a, b, t) => { const A = hexN(a), B = hexN(b), m = (s) => Math.round(((A >> s) & 255) + (((B >> s) & 255) - ((A >> s) & 255)) * t); return '#' + ((m(16) << 16) | (m(8) << 8) | m(0)).toString(16).padStart(6, '0'); };
+  const hashR = (x, y, k) => { let h = (x * 374761393 + y * 668265263 + k * 982451653) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
+  // pinta um lado da blusa (ox = 16 frente, 48 costas) com o estilo da roupa
+  function estampar(g, ox, R, c, costas) {
+    const E = R.e || {}, P = E.p || 'liso', c0 = cssCor(c[0]), c2 = cssCor(c[2]), c3 = cssCor(c[3] || '#f2f2ee');
+    const px = (x, y, w, h, cor) => { g.fillStyle = cor; g.fillRect(ox + x, y, w || 1, h || 1); };
+    const sombraC = misturaCss(c0, '#000000', 0.16), luzC = misturaCss(c0, '#ffffff', 0.18);
+    px(0, 0, 32, 32, c0);
+    // ---- o padrão (frente e costas)
+    if (P === 'listras' || E.listras) for (let y = 3; y < 32; y += 4) px(0, y, 32, 2, c3);
+    if (P === 'listrasFinas') for (let y = 2; y < 32; y += 3) px(0, y, 32, 1, c3);
+    if (P === 'listrasV' || E.listrasV) for (let x = 1; x < 32; x += 4) px(x, 0, E.listrasV ? 1 : 2, 32, c3);
+    if (P === 'faixa' || E.faixa) { px(0, 9, 32, 5, c3); px(0, 8, 32, 1, c2); px(0, 14, 32, 1, c2); }
+    if (P === 'barra') { px(0, 25, 32, 4, c2); px(0, 29, 32, 1, c3); }
+    if (P === 'diagonal') for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) if ((x + y) % 9 < 3) px(x, y, 1, 1, c3);
+    if (P === 'xadrez') for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const v = x % 8 < 3, h = y % 8 < 3;
+      if (x % 8 === 6 || y % 8 === 6) px(x, y, 1, 1, c2); else if (v && h) px(x, y, 1, 1, misturaCss(c3, '#000000', 0.2)); else if (v || h) px(x, y, 1, 1, misturaCss(c0, c3, 0.5));
+    }
+    if (P === 'meia') px(costas ? 0 : 16, 0, 16, 32, c3);
+    if (P === 'ombros') { px(0, 0, 32, 7, c3); px(0, 7, 32, 1, c2); }
+    if (P === 'degrade') for (let y = 0; y < 32; y++) px(0, y, 32, 1, misturaCss(c0, c3, y / 31));
+    if (P === 'tiedye') for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const dx = x - 16, dy = y - 13, r = Math.hypot(dx, dy) + 2.4 * Math.sin(Math.atan2(dy, dx) * 3 + Math.hypot(dx, dy) * 0.35), k = Math.floor(r / 3.2) % 3;
+      px(x, y, 1, 1, k === 0 ? c0 : k === 1 ? c3 : c2);
+    }
+    if (P === 'camuflado') for (let y = 0; y < 32; y++) for (let x = 0; x < 32; x++) {
+      const n = Math.sin(x * 0.55 + Math.sin(y * 0.45) * 2.2 + (costas ? 3 : 0)) + Math.sin(y * 0.6 + x * 0.25);
+      if (n > 0.85) px(x, y, 1, 1, c3); else if (n < -0.9) px(x, y, 1, 1, c2);
+    }
+    if (P === 'bolinhas') for (let y = 2, l = 0; y < 32; y += 6, l++) for (let x = (l % 2) * 3 + 1; x < 32; x += 6) px(x, y, 2, 2, c3);
+    if (P === 'havaiana') for (let k = 0; k < 13; k++) {
+      const x = Math.floor(hashR(k, 1, costas ? 7 : 3) * 28) + 1, y = Math.floor(hashR(1, k, costas ? 9 : 5) * 28) + 1, cor = k % 3 ? c3 : c2;
+      px(x, y - 1, 1, 1, cor); px(x - 1, y, 3, 1, cor); px(x, y + 1, 1, 1, cor); px(x, y, 1, 1, '#f2c230'); px(x + 2, y + 2, 2, 1, misturaCss(c0, '#1f7a4d', 0.6));
+    }
+    if (P === 'esporte') for (const x of [1, 28]) { px(x, 0, 3, 32, c3); px(x === 1 ? 4 : 27, 0, 1, 32, c2); }
+    // ---- detalhes de modelagem (só na frente)
+    if (!costas) {
+      if (P === 'social' || E.botoes) { px(15, 1, 2, 31, sombraC); for (let y = 5; y < 32; y += 5) px(15, y, 1, 1, c3); }
+      if (P === 'social') { px(20, 6, 6, 1, sombraC); px(20, 6, 1, 6, sombraC); px(25, 6, 1, 6, sombraC); px(20, 11, 6, 1, sombraC); }   // o bolso
+      if (P === 'polo') { px(15, 1, 2, 8, sombraC); px(15, 4, 1, 1, c3); px(15, 7, 1, 1, c3); }
+      if (P === 'moletom') {
+        px(7, 22, 18, 1, sombraC); px(7, 22, 1, 9, sombraC); px(24, 22, 1, 9, sombraC); px(8, 23, 16, 8, luzC); px(9, 24, 1, 6, sombraC); px(22, 24, 1, 6, sombraC);   // o bolso canguru (na barra)
+        px(11, 1, 1, 5, c3); px(20, 1, 1, 5, c3); px(11, 6, 1, 1, c2); px(20, 6, 1, 1, c2);                                                                          // os cordões do capuz
+      }
+      if (P === 'ziper' || E.ziper || R.jaqueta) { px(16, 1, 1, 31, c2); px(15, 3, 3, 2, c3); if (P === 'ziper') { px(5, 20, 6, 1, sombraC); px(21, 20, 6, 1, sombraC); } }
+    }
+    // ---- a gola
+    if (!costas) {
+      const G = E.g || (P === 'polo' || P === 'social' || E.botoes ? 'polo' : 'redonda');
+      if (G === 'redonda') { px(11, 0, 10, 2, c2); px(12, 2, 8, 1, c2); }
+      else if (G === 'v') for (let r = 0; r < 6; r++) { px(10 + r, r, 2, 1, c2); px(20 - r, r, 2, 1, c2); }
+      else if (G === 'polo') { px(10, 0, 12, 2, c2); px(10, 2, 4, 2, c2); px(18, 2, 4, 2, c2); }
+    } else if ((E.g || '') !== 'nenhuma') px(11, 0, 10, 2, c2);
+    // ---- desenho e texto no peito (frente) · número (frente e costas)
+    const carimbo = (rows, x0, y0) => rows.forEach((row, y) => { for (let x = 0; x < row.length; x++) { const ch = row[x]; if (ch === '#') px(x0 + x, y0 + y, 1, 1, c3); else if (ch === '+') px(x0 + x, y0 + y, 1, 1, c2); } });
+    const texto = (s, y0, k) => {                                      // fonte 3x5 (k = tamanho do pixel)
+      s = String(s).toUpperCase(); const w = s.length * 4 * k - k, x0 = Math.round(16 - w / 2);
+      [...s].forEach((ch, i) => { const L = FONTE[ch]; if (!L) return; for (let q = 0; q < 15; q++) if (L[q] === '#') px(x0 + i * 4 * k + (q % 3) * k, y0 + Math.floor(q / 3) * k, k, k, c3); });
+    };
+    const temD = E.d && DESENHOS[E.d], D = temD ? DESENHOS[E.d] : null;
+    const kD = E.k || (D && !E.txt && D.length <= (P === 'moletom' ? 8 : R.dentro || R.t === 'saia' || R.t === 'vestido' ? 9 : 12) ? 2 : 1), dy = E.dy != null ? E.dy : (P === 'moletom' ? 5 : kD === 2 ? 3 : 5);   // o desenho em dobro quando cabe no peito
+    if (!costas) {
+      if (temD) { const rows = kD === 1 ? D : D.flatMap((r) => { const l = [...r].map((ch) => ch + ch).join(''); return [l, l]; }); carimbo(rows, Math.round(16 - rows[0].length / 2), dy); }
+      if (E.txt) texto(E.txt, temD ? 4 : (P === 'moletom' ? 9 : 7), E.txt.length <= 3 ? 2 : 1);
+    }
+    if (E.num) texto(E.num, costas ? 6 : 8, 2);
+  }
+  // o emblema do peito é desenhado pelo jogo.js: na camisa de TIME vira o escudo com a 4ª cor; nas outras a blusa inteira é repintada
+  //   com o estilo dela (estampar), frente e costas
   function pintarEmblema(m, R, c) {
     let cv = null, tex = null;
     m.raiz.traverse((o) => { if (!cv && o.material && o.material.map && o.material.map.image && o.material.map.image.getContext && o.material.map.image.width === 128) { tex = o.material.map; cv = tex.image; } });
-    if (!cv) return;
-    const g = cv.getContext('2d'), css = (h) => (typeof h === 'number' ? '#' + h.toString(16).padStart(6, '0') : h), borda = css(c[3]);
-    if (!R.time) {                                              // quadradinho do peito: borda (4ª cor) + miolo da cor de detalhe
-      g.fillStyle = borda; g.fillRect(35, 6, 7, 8); g.fillStyle = css(c[2]); g.fillRect(36, 7, 5, 6);
-    } else {                                                    // escudo do time: contorno com a 4ª cor
+    if (!cv || R.nu) return;
+    const g = cv.getContext('2d'), css = cssCor, borda = css(c[3]);
+    if (!R.time) { estampar(g, 16, R, c, false); estampar(g, 48, R, c, true); }
+    else {                                                      // escudo do time: contorno com a 4ª cor
       g.fillStyle = css(c[0]); g.fillRect(34, 4, 10, 11);
       const escudo = (x, y, w, h, cor) => { g.fillStyle = cor; g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.lineTo(x + w, y + h * 0.6); g.lineTo(x + w / 2, y + h); g.lineTo(x, y + h * 0.6); g.closePath(); g.fill(); };
       escudo(35, 5, 8, 9, borda); escudo(36, 6, 6, 7, css(c[2]));
       g.fillStyle = css(c[0]); g.fillRect(36, 9, 6, 1);
     }
     tex.needsUpdate = true;
+  }
+  // a amostra de uma roupa (frente da blusa) num canvas: a loja usa no catálogo
+  function amostraRoupa(cv, R, c) { const g = cv.getContext('2d'); estampar(g, -0, R, c4(c || R.c), false); }
+  // (7.1.12) a BARRA da blusa por fora da calça: a caixa da calça/short é maior que o tronco e subia até a cintura (0,93 m),
+  //   cortando o moletom e a blusa com uma faixa da cor da calça. Agora a barra (com o desenho das linhas 20..31 da blusa) cobre
+  //   a cintura: curta nas camisetas, comprida (com o punho de malha) nos moletons, jaquetas e blusas de manga longa.
+  //   Ficam para dentro: camisa de time, camisa social com calça (dentro: 1), top, vestido, saia, jardineira e macacão.
+  function barraRoupa(m, R, c) {
+    if (R.nu || R.time || R.dentro || R.top || R.t === 'vestido' || R.t === 'saia' || R.t === 'jardineira' || R.t === 'macacao') return;
+    let mat = null; m.raiz.traverse((o) => { if (!mat && o.material && o.material.map && o.material.map.image && o.material.map.image.width === 128) mat = o.material; });
+    if (!mat || typeof regiao !== 'function') return;
+    const longa = !!(R.m || R.solta || R.capuz || R.jaqueta), L = new Lote(UV_BRANCO);
+    L.caixa(0.352, 0.21, 0.612, hexN(c[0]), 0, 0.85, 0, (i) => (i === 0 ? regiao(16, 20, 48, 32) : i === 1 ? regiao(48, 20, 80, 32) : null));   // 0,745..0,955
+    if (longa) L.caixa(0.356, 0.11, 0.616, sombra(c[0], 0.86), 0, 0.69, 0);                                                                       // o punho: 0,635..0,745
+    m.corpo.add(L.malha(mat));
   }
   // braços de regata/top: o ombro (primeira caixa de cada malha do braço) fica da cor da pele
   function pintarBracos(m, pele) {
@@ -184,17 +353,16 @@
       if (R.longa) { F(0.54, 0.2, 0.78, cs, 0, 0.5, 0); F(0.56, 0.22, 0.8, cs, 0, 0.3, 0); }
       else if (R.t === 'vestido') F(0.54, 0.12, 0.78, c[0], 0, 0.54, 0);
     }
-    if (R.solta) {                                              // a barra da blusa/moletom cai POR CIMA da calça
-      F(0.37, 0.22, 0.63, c[0], 0, 0.72, 0); F(0.38, 0.05, 0.64, sombra(c[0], 0.88), 0, 0.615, 0);
-      if (R.capuz) F(0.03, 0.13, 0.34, sombra(c[0], 0.9), 0.185, 0.9, 0);          // bolso canguru
-    }
+    // (7.1.12) a barra por cima da calça agora é a barraRoupa (com textura); o bolso canguru e o zíper são pintados (estampar)
+    if (R.solta && R.t === 'saia') { F(0.37, 0.22, 0.63, c[0], 0, 0.72, 0); F(0.38, 0.05, 0.64, sombra(c[0], 0.88), 0, 0.615, 0); }   // jaqueta com saia: a barra cai por cima da saia
     if (R.regata || R.top) { F(0.327, 0.1, 0.24, pele, 0, 1.27, 0); }              // decote fundo (frente e costas); os braços ficam de fora
     if (R.top) F(0.327, 0.27, 0.587, pele, 0, 0.875, 0);                           // top curto: a barriga aparece
-    if (R.capuz) { F(0.2, 0.3, 0.5, sombra(c[0], 0.85), -0.2, 1.42, 0); F(0.04, 0.16, 0.42, sombra(c[0], 0.82), 0.17, 0.86, 0); }
-    if (R.jaqueta) { F(0.06, 0.12, 0.5, c[2], 0.165, 1.32, 0); F(0.03, 0.56, 0.04, c[2], 0.168, 1.03, 0); }
+    if (R.capuz) F(0.2, 0.3, 0.5, sombra(c[0], 0.85), -0.2, 1.42, 0);                 // o capuz caído nas costas
+    if (R.jaqueta) F(0.06, 0.12, 0.5, c[2], 0.165, 1.32, 0);                          // a gola alta da jaqueta
     if (R.t === 'macacao') { F(0.345, 0.06, 0.6, c[1], 0, 0.8, 0); F(0.02, 0.05, 0.07, c[1], 0.172, 0.8, 0); }   // cinto dourado na cintura
     if (R.t === 'jardineira') { F(0.04, 0.36, 0.44, c[1], 0.17, 1.0, 0); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, 0.15); F(0.04, 0.3, 0.07, c[1], 0.17, 1.28, -0.15); }
     if (tem) m.corpo.add(L.malha(MAT_CORES));
+    barraRoupa(m, R, c);
   }
 
   // ------------------------------------------------------------------ interface
@@ -492,7 +660,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   // (cidade.js) as pessoas da cidade: adultas (corpo e cabeça normais), com as mesmas roupas do guarda-roupa (menos as de time, que levam o nome do jogador)
   function modeloPessoa(o) {
-    const lista = ROUPAS[o.fem ? 'F' : 'M'].filter((R) => !R.time), R = lista[(o.roupa | 0) % lista.length], c = c4(o.cores || R.c);
+    const lista = ROUPAS[o.fem ? 'F' : 'M'].filter((R) => !R.time && !R.loja), R = lista[(o.roupa | 0) % lista.length], c = c4(o.cores || R.c);
     const ap = o.ap || {}, base = { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.corBarba || ap.cabelo, barba: o.fem ? 0 : ap.barba | 0, cabecao: o.cabecao || 1, escala: o.escala || 1 };
     return vestirModelo(base, R, c);
   }
@@ -867,6 +1035,39 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ---------------------------------------------------------------------------------------------------
   // IDIOMAS: textos novos da Fase 2 (chave = português; ordem [en, es, it, fr]). Só entra o que ainda NÃO existe na tabela I18N do jogo.js.
   const TRAD_F2 = {
+    // (7.1.12) as roupas da loja (Golaço Esportes)
+    'Camiseta marinheiro': ['Sailor tee', 'Camiseta marinera', 'Maglietta alla marinara', 'T-shirt marinière'],
+    'Camiseta tie-dye': ['Tie-dye tee', 'Camiseta tie-dye', 'Maglietta tie-dye', 'T-shirt tie-dye'],
+    'Camiseta camuflada': ['Camo tee', 'Camiseta camuflada', 'Maglietta mimetica', 'T-shirt camouflage'],
+    'Camisa xadrez': ['Plaid shirt', 'Camisa a cuadros', 'Camicia a quadri', 'Chemise à carreaux'],
+    'Camiseta degradê': ['Gradient tee', 'Camiseta degradada', 'Maglietta sfumata', 'T-shirt dégradé'],
+    'Camiseta de bolinhas': ['Polka-dot tee', 'Camiseta de lunares', 'Maglietta a pois', 'T-shirt à pois'],
+    'Moletom com estampa': ['Printed hoodie', 'Sudadera estampada', 'Felpa con stampa', 'Sweat à capuche imprimé'],
+    'Camiseta palmeira': ['Palm tree tee', 'Camiseta palmera', 'Maglietta palma', 'T-shirt palmier'],
+    'Camiseta pôr do sol': ['Sunset tee', 'Camiseta atardecer', 'Maglietta tramonto', 'T-shirt coucher de soleil'],
+    'Camiseta diagonal': ['Diagonal stripe tee', 'Camiseta diagonal', 'Maglietta a righe diagonali', 'T-shirt rayures diagonales'],
+    'Camiseta bicolor': ['Two-tone tee', 'Camiseta bicolor', 'Maglietta bicolore', 'T-shirt bicolore'],
+    'Camiseta raglan': ['Raglan tee', 'Camiseta raglán', 'Maglietta raglan', 'T-shirt raglan'],
+    'Corta-vento': ['Windbreaker', 'Cortavientos', 'Giacca a vento', 'Coupe-vent'],
+    'Camiseta montanha': ['Mountain tee', 'Camiseta montaña', 'Maglietta montagna', 'T-shirt montagne'],
+    'Camiseta coroa': ['Crown tee', 'Camiseta corona', 'Maglietta corona', 'T-shirt couronne'],
+    'Camiseta craque': ['Star player tee', 'Camiseta crack', 'Maglietta campione', 'T-shirt crack'],
+    'Polo listrada': ['Striped polo', 'Polo a rayas', 'Polo a righe', 'Polo rayé'],
+    'Regata listrada': ['Striped tank top', 'Camiseta sin mangas a rayas', 'Canottiera a righe', 'Débardeur rayé'],
+    'Camisa havaiana': ['Hawaiian shirt', 'Camisa hawaiana', 'Camicia hawaiana', 'Chemise hawaïenne'],
+    'Moletom raio': ['Lightning hoodie', 'Sudadera rayo', 'Felpa fulmine', 'Sweat à capuche éclair'],
+    'Camisa social listrada': ['Striped dress shirt', 'Camisa de vestir a rayas', 'Camicia elegante a righe', 'Chemise habillée rayée'],
+    'Agasalho retrô': ['Retro tracksuit', 'Chándal retro', 'Tuta retrò', 'Survêtement rétro'],
+    'Camiseta smile': ['Smiley tee', 'Camiseta sonrisa', 'Maglietta smile', 'T-shirt smiley'],
+    'Regata de basquete': ['Basketball jersey', 'Camiseta de baloncesto', 'Canotta da basket', 'Maillot de basket'],
+    'Camiseta estrelada': ['Starry tee', 'Camiseta estrellada', 'Maglietta stellata', 'T-shirt étoilé'],
+    'Vestido florido': ['Floral dress', 'Vestido floreado', 'Vestito a fiori', 'Robe fleurie'],
+    'Vestido listrado': ['Striped dress', 'Vestido a rayas', 'Vestito a righe', 'Robe rayée'],
+    'Blusa xadrez e saia': ['Plaid blouse and skirt', 'Blusa a cuadros y falda', 'Camicetta a quadri e gonna', 'Chemisier à carreaux et jupe'],
+    'Moletom coração': ['Heart hoodie', 'Sudadera corazón', 'Felpa cuore', 'Sweat à capuche cœur'],
+    'Top tie-dye e short': ['Tie-dye top and shorts', 'Top tie-dye y short', 'Top tie-dye e shorts', 'Top tie-dye et short'],
+    'Vestido degradê': ['Gradient dress', 'Vestido degradado', 'Vestito sfumato', 'Robe dégradée'],
+    'Camiseta smile e saia': ['Smiley tee and skirt', 'Camiseta sonrisa y falda', 'Maglietta smile e gonna', 'T-shirt smiley et jupe'],
     'Dormir': ['Sleep', 'Dormir', 'Dormi', 'Dormir'],
     'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at 5 AM?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las 5h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle 5?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à 5 h ?"],
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
@@ -914,6 +1115,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Na verdade, ela foi só o começo...': ['In fact, it was only the beginning...', 'En realidad, fue solo el comienzo...', "In realtà, è stato solo l'inizio...", "En fait, ce n'était que le début..."],
     'Cor principal': ['Main color', 'Color principal', 'Colore principale', 'Couleur principale'],
     'Cor secundária': ['Secondary color', 'Color secundario', 'Colore secondario', 'Couleur secondaire'],
+    'Cor da estampa': ['Print color', 'Color del estampado', 'Colore della stampa', 'Couleur de l’imprimé'],
+    'desenho, padrão ou escudo': ['design, pattern or crest', 'dibujo, patrón o escudo', 'disegno, motivo o stemma', 'dessin, motif ou écusson'],
     'Cor da borda do emblema': ['Emblem border color', 'Color del borde del emblema', 'Colore del bordo dello stemma', 'Couleur du contour de l\'écusson'],
     'o quadradinho ou escudo do peito': ['the little square or crest on the chest', 'el cuadradito o escudo del pecho', 'il quadratino o lo stemma sul petto', 'le petit carré ou l\'écusson sur la poitrine'],
     'Regata e bermuda': ['Tank top and bermuda shorts', 'Camiseta sin mangas y bermudas', 'Canotta e bermuda', 'Débardeur et bermuda'],
@@ -1272,12 +1475,13 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       S.camEspecial = [0.85, 1.25, 2.5, 0.85, 1.0, -1.0]; S.modo = 'roupa'; UI.ctl.hidden = true; aviso('');
       let idx = R0 ? R0.id : -1, cores = R0 ? c4(R0.cores) : c4(PIJAMA[S.fem ? 'F' : 'M'].c);
       const nomeDe = (i) => (i < 0 ? PIJAMA[S.fem ? 'F' : 'M'].n : lista[i].n);
-      const rot = [T('Cor principal'), T('Cor secundária'), T('Cor dos detalhes'), T('Cor da borda do emblema')], dica = [T('blusa, camiseta ou vestido'), T('calça, short ou saia'), T('gola, barra, listras'), T('o quadradinho ou escudo do peito')];
+      const rot = [T('Cor principal'), T('Cor secundária'), T('Cor dos detalhes'), T('Cor da estampa')], dica = [T('blusa, camiseta ou vestido'), T('calça, short ou saia'), T('gola, barra, listras'), T('desenho, padrão ou escudo')];
+      const minhas = new Set(S.dados.roupasLoja || []), mostra = (i) => !lista[i].loja || minhas.has(lista[i].n) || i === idx;   // (7.1.12) as da loja só depois de compradas
       const aplicar = () => { const R = idx < 0 ? PIJAMA[S.fem ? 'F' : 'M'] : lista[idx]; vestirRoupa(J, R, cores); S.dados.roupa = { id: idx, cores: cores.slice() }; };
       let aba = 'roupa';
       const render = (manterScroll) => {
         const corpoAntes = UI.roupa.querySelector('.rCorpo'), scrollAntes = manterScroll && corpoAntes ? corpoAntes.scrollTop : 0;   // o innerHTML abaixo recria a lista do zero; sem guardar e devolver o scroll, cada clique voltava pro topo
-        const bt = [-1].concat(lista.map((_, i) => i)).map((i) => '<button type="button" class="pxBtn' + (i === idx ? ' on' : '') + '" data-r="' + i + '">' + esc(T(nomeDe(i))) + '</button>').join('');
+        const bt = [-1].concat(lista.map((_, i) => i).filter(mostra)).map((i) => '<button type="button" class="pxBtn' + (i === idx ? ' on' : '') + '" data-r="' + i + '">' + esc(T(nomeDe(i))) + '</button>').join('');
         const sw = (n) => '<p class="rSec">' + esc(rot[n]) + ' <small>(' + esc(dica[n]) + ')</small></p><div class="rCores">' + PAL.map((h) => '<button type="button" class="rCor' + (cores[n].toLowerCase() === h ? ' on' : '') + '" data-c="' + n + '" data-v="' + h + '" style="background:' + h + '" aria-label="' + h + '"></button>').join('') + '</div>';
         const corpo = aba === 'roupa' ? '<div class="rGrade">' + bt + '</div>' : sw(0) + sw(1) + sw(2) + sw(3);
         UI.roupa.innerHTML = '<p class="rTit">' + esc(T('Guarda-roupa')) + '</p><div class="rAbas"><button type="button" class="pxBtn' + (aba === 'roupa' ? ' on' : '') + '" data-aba="roupa">' + esc(T('Roupa')) + '</button><button type="button" class="pxBtn' + (aba === 'cores' ? ' on' : '') + '" data-aba="cores">' + esc(T('Cores')) + '</button></div><div class="rCorpo">' + corpo + '</div><div class="rFim"><button type="button" class="pxBtn pxPrim" data-fim="1">' + esc(T('Pronto')) + '</button></div>';
@@ -2101,5 +2305,5 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (paraCidade) { const rc = await Fases.executar('cidade', paraCidade); if (!rc.ok) console.warn('[Cidade] não rodou:', rc); }
   }
 
-  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir, abrirPc } });   // (_estado/_fns: para testes)
+  window.FutebolJS.registrarFase({ id: 'fase2', nome: 'Fase 2', nucleoMinimo: '4.6.0', iniciar, modeloJogador, modeloPessoa, _estado: () => S, _fns: { abrirGuardaRoupa, dormir, abrirPc }, _roupas: { ROUPAS, PIJAMA, PAL, vestirModelo, c4, amostraRoupa, estampar } });   // (_estado/_fns: para testes)
 })();

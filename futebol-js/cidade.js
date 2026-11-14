@@ -112,6 +112,13 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.12
+   - ROUPAS (fase2.js): a barra da blusa agora fica POR CIMA da calça (antes a cintura da calça cortava moletons, jaquetas e
+     blusas compridas); o quadradinho de emblema do peito saiu e cada roupa ganhou o seu estilo (estampa, listras, xadrez, degradê,
+     tie-dye, bolso canguru, zíper, botões...) ou ficou lisa. A 4ª cor do guarda-roupa virou a "Cor da estampa".
+   - Golaço Esportes: a KELLY vende 25 roupas novas por gênero (catálogo, provador e manequins vestidos). refazerJogador({ roupa })
+     veste uma roupa só para provar. A comprada já é vestida e vai para o guarda-roupa de casa (historia.fase2.roupasLoja).
+
    NOVIDADES DA 7.1.10
    - CHUTEIRAS PREMIUM na Golaço Esportes (esportiva.js; desenhos no jogo.js): 20 modelos em 5 níveis (Pro, Elite, Galáctica,
      Lendária, Ícone), de 250 a 6.000 fakes. Parede premium com os pares de verdade, a mais cara girando na redoma, o Biro com o
@@ -4733,8 +4740,16 @@
   function refazerJogador(extra) {
     const J = S.jog, velho = J.m, pai = velho.raiz.parent;
     let m = null, opt = null;
-    try { const f2 = S.f2; if (f2 && typeof f2.modeloJogador === 'function') { const r = f2.modeloJogador(API.historia.ler('fase2'), extra); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
-    if (!m) { const N = criarJogador(null, null, extra); m = N.m; opt = N.opt; for (const o of [N.blob, N.anel]) { if (o.parent) o.parent.remove(o); } S.meus.delete(m); }
+    try {
+      const f2 = S.f2;
+      if (f2 && typeof f2.modeloJogador === 'function') {
+        //   (7.1.12) extra.roupa = { id, cores } → veste essa roupa só agora (provar na Golaço Esportes), sem mexer no save
+        let d2 = API.historia.ler('fase2'), ex = extra;
+        if (extra && extra.roupa) { d2 = Object.assign({}, d2 || {}, { roupa: extra.roupa }); ex = Object.assign({}, extra); delete ex.roupa; if (!Object.keys(ex).length) ex = null; }
+        const r = f2.modeloJogador(d2, ex); m = r.m; opt = r.opt;
+      }
+    } catch (e) { console.warn('[Cidade] roupa da Fase 2:', e); }
+    if (!m) { const N = criarJogador(null, null, extra && extra.chuteira != null ? { chuteira: extra.chuteira } : null); m = N.m; opt = N.opt; for (const o of [N.blob, N.anel]) { if (o.parent) o.parent.remove(o); } S.meus.delete(m); }
     m.raiz.position.copy(velho.raiz.position); m.raiz.rotation.copy(velho.raiz.rotation);
     if (pai) { pai.add(m.raiz); pai.remove(velho.raiz); }
     S.meus.delete(velho); S.meus.add(m); if (typeof ATLETAS !== 'undefined') ATLETAS.delete(velho);

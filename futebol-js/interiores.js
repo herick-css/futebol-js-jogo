@@ -779,12 +779,12 @@
         G.box(0.06, 1.5, 0.06, '#c9ced4', ax, 0, az); G.box(0.5, 0.04, 0.5, '#8c9199', ax, 0, az); G.box(1.0, 0.04, 0.04, '#c9ced4', ax, 1.5, az); G.box(0.04, 0.04, 1.0, '#c9ced4', ax, 1.5, az);
         for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, cx = ax + Math.cos(a) * 0.42, cz = az + Math.sin(a) * 0.42, c = COR_RP[(i + k0) % 10]; if (Math.abs(Math.cos(a)) > 0.7) G.box(0.07, 0.6, 0.42, c, cx, 0.86, cz); else G.box(0.42, 0.6, 0.07, c, cx, 0.86, cz); }
         bloq(ax, az, 1.05, 1.05); }
-      for (const [mx, c1, c2] of [[4.95, '#c8352b', '#1c1c1f'], [9.45, '#f2c230', '#1f7a4d']]) {   // os manequins (na base, dos dois lados da seção)
-        const mz = -3.95; G.box(0.6, 0.12, 0.6, '#f4f4ec', mx, 0, mz); for (const sx of [-1, 1]) G.box(0.15, 0.78, 0.17, '#e8e2d6', mx + sx * 0.11, 0.12, mz); G.box(0.42, 0.26, 0.24, c2, mx, 0.72, mz);
-        G.box(0.5, 0.62, 0.28, c1, mx, 0.98, mz); for (const sx of [-1, 1]) { G.box(0.15, 0.3, 0.2, c1, mx + sx * 0.325, 1.3, mz); G.box(0.12, 0.42, 0.14, '#e8e2d6', mx + sx * 0.325, 0.88, mz); } G.box(0.3, 0.32, 0.28, '#e8e2d6', mx, 1.62, mz); bloq(mx, mz, 0.6, 0.6); }
+      // (7.1.12) os MANEQUINS (só a base aqui): o esportiva.js põe em cada um um boneco sem cabeça vestindo roupas da loja (ES.manequins)
+      ES.manequins = [];
+      for (const mx of [4.95, 9.45]) { const mz = -3.95; G.box(0.6, 0.12, 0.6, '#f4f4ec', mx, 0, mz); G.box(0.64, 0.03, 0.64, SEC.roupas[0], mx, 0.12, mz); bloq(mx, mz, 0.6, 0.6); ES.manequins.push({ x: mx, y: 0.15, z: mz, yaw: -Math.PI / 2 }); }
       G.box(0.08, 2.3, 1.5, '#f4f4ec', 8.55, 0, -8.4); G.box(1.3, 0.08, 1.5, '#f4f4ec', 9.2, 2.3, -8.4); G.box(1.25, 1.9, 0.05, '#7a4fb0', 9.2, 0.25, -7.66); G.box(1.3, 0.05, 0.05, '#c9ced4', 9.2, 2.18, -7.66); bloq(9.2, -8.4, 1.4, 1.6);   // o provador (a cortina roxa)
       pend('ROUPAS', SEC.roupas[0], 7.2, -7.6);
-      ES.secoes.roupas = { x: 5.6, z: -6.9, yaw: -Math.PI / 2 };
+      ES.secoes.roupas = { x: 5.6, z: -6.9, yaw: -Math.PI / 2 }; ES.provarRoupa = { x: 6.9, z: -4.6 };   // (7.1.12) onde o jogador prova as roupas
       // ---- BOLAS (sudoeste): a prateleira da parede oeste, a pirâmide e o cestão
       const COR_BL = ['#f4f4ec', '#f2c230', '#e8742a', '#3fb7b0', '#d95fa0', '#c8352b', '#3a64b8', '#1f9a4d'];
       const geoBola = guardar(new THREE.SphereGeometry(0.15, 10, 8)), matBola = COR_BL.map((c) => guardar(new THREE.MeshLambertMaterial({ color: c })));
