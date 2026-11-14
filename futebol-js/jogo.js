@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.7';
+const VERSAO_JOGO = '7.1.8';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -1952,6 +1952,10 @@ const CORES_CABELO = [
 // na textura da cabeça (laterais e nuca): a = linha onde o cabelo começa, s = até onde ele é cheio, f = até onde vai o tom mais
 // opaco (faixa lisa, sem quadradinhos), n/nf = o mesmo para a nuca, t = linhas de testa/franja, p = patilha (cabelo na lateral
 // do rosto). Linhas vão de 0 (topo da cabeça) a 15 (queixo): cada linha tem ~3 cm. tipo 'degrade' = com pixels (fade), 'liso' = faixa.
+// Opcionais (usados nos cortes da barbearia, cosmeticos.js): cor = o corte tem cor própria (platinado, colorido: ignora a cor de cabelo
+// escolhida) · na caixa, a mistura pode ser uma cor ('#E8DFC4'): aquela caixa sai nessa cor (luzes, pontas) · desenho = 16 linhas de 16
+// letras pintadas por cima das laterais ('#' = raspado na pele, '+' = cabelo, '.' = nada; a frente fica à direita e o outro lado sai
+// espelhado) · desenhoNuca = o mesmo na nuca.
 const HC = (nome, caixas, o) => Object.assign({ nome, caixas, a: 0, s: 4, f: 4, n: 8, nf: 10, t: 1, p: 3, tipo: 'liso' }, o);
 const ESTILOS_CABELO = [
   HC('Curto', [[0.52, 0.13, 0.56, -0.01, 1.94, 0]], { s: 5, f: 6, n: 9, nf: 11, t: 1, p: 3 }),
@@ -2106,7 +2110,7 @@ function pintarChuteira(g, ox, oy, c) {
 function pintarLadosCabeca(g, ox, oy, o) {
   const e = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
   if (e.careca) return;
-  const pele = hexNum(o.pele), cab = hexNum(o.cabelo), escura = misturarCor(pele, 0x1a1008, 0.3), toque = misturarCor(cab, pele, 0.5);
+  const pele = hexNum(o.pele), cab = hexNum(e.cor || o.cabelo), escura = misturarCor(pele, 0x1a1008, 0.3), toque = misturarCor(cab, pele, 0.5);
   const css = (n) => '#' + n.toString(16).padStart(6, '0');
   for (let r = 0; r < 3; r++) {                                  // r: 0 = lado +Z, 1 = lado -Z, 2 = nuca
     const bx = ox + r * 16;
@@ -2124,6 +2128,8 @@ function pintarLadosCabeca(g, ox, oy, o) {
         } else cor = css(misturarCor(pele, cab, k < 0.34 ? 0.7 : k < 0.67 ? 0.5 : 0.3));
       }
       if (e.risco && y === e.risco && r < 2 && x > 2 && x < 14) cor = css(pele);
+      const des = r < 2 ? e.desenho : e.desenhoNuca, ch = des && des[y] ? des[y][r === 1 ? 15 - x : x] : null;   // desenho por cima (o lado -Z espelhado)
+      if (ch === '#') cor = css(pele); else if (ch === '+') cor = css(cab);
       if (cor) { g.fillStyle = cor; g.fillRect(bx + x, oy + y, 1, 1); }
     }
   }
@@ -2137,7 +2143,7 @@ function pintarRosto(g, ox, oy, pele, o) {
   g.fillStyle = pele; g.fillRect(ox, oy, 16, 16);
   // cabelo na frente: testa/franja (linhas do topo) e patilhas (cantos do rosto)
   if (!cab.careca && o.cabelo != null) {
-    const hc = corCss(o.cabelo);
+    const hc = corCss(cab.cor || o.cabelo);
     for (let y = 0; y < cab.t; y++) px(0, y, 16, 1, hc);
     for (let y = 0; y < cab.p; y++) { px(0, y, 2, 1, hc); px(14, y, 2, 1, hc); }
   }
@@ -2345,7 +2351,8 @@ function makeAthlete(o) {
   const pecasCabeca = [];
   // caixa: [w, h, d, x, y, z, mistura, giroX, giroY, giroZ, cantos] — o giro (graus) e os cantos (caixa deformada) são opcionais
   const giroDe = (gx, gy, gz) => (gx || gy || gz ? [gx || 0, gy || 0, gz || 0] : null);
-  for (const [w, h, d, x, y, z, mix, gx, gy, gz, cantos] of (ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0]).caixas) pecasCabeca.push([w, h, d, mix ? misturarCor(cabelo, pele, mix) : cabelo, x, y, z, giroDe(gx, gy, gz), cantos || null]);
+  const corteE = ESTILOS_CABELO[o.estilo] || ESTILOS_CABELO[0], corCorte = corteE.cor ? hex(corteE.cor) : cabelo;   // cor própria do corte (platinado, colorido)
+  for (const [w, h, d, x, y, z, mix, gx, gy, gz, cantos] of corteE.caixas) pecasCabeca.push([w, h, d, typeof mix === 'string' ? hex(mix) : mix ? misturarCor(corCorte, pele, mix) : corCorte, x, y, z, giroDe(gx, gy, gz), cantos || null]);
   for (const [w, h, d, x, y, z, , gx, gy, gz, cantos] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z, giroDe(gx, gy, gz), cantos || null]);
   if (kc !== 1) for (const p of pecasCabeca) { p[0] *= kc; p[1] *= kc; p[2] *= kc; p[4] *= kc; p[5] = 1.36 + (p[5] - 1.36) * kc; p[6] *= kc; }
   for (const [w, h, d, cor, x, y, z, giro, cantos] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z, null, giro, cantos);
@@ -16653,7 +16660,11 @@ function montarMenuInicial() {
 //   O corte comprado fica no personagem pelo NOME (aparencia.estiloNome): se a lista do jogo crescer, o número muda e o nome acha de novo.
 function ajustarCortePersonagem() {
   const ap = PERSONAGEM.aparencia; if (!ap) return;
-  if (ap.estiloNome) { const i = ESTILOS_CABELO.findIndex((c) => c.cosmetico && c.nome === ap.estiloNome); if (i >= 0) ap.estilo = i; }
+  if (ap.estiloNome) {
+    const i = ESTILOS_CABELO.findIndex((c) => c.cosmetico && c.nome === ap.estiloNome);
+    if (i >= 0) ap.estilo = i;
+    else if (typeof FutebolCosmeticos !== 'undefined') { ap.corteRetirado = ap.estiloNome; delete ap.estiloNome; ap.estilo = 0; }   // saiu da loja: a barbearia devolve o corte de antes e os fakes
+  }
   if (ap.barbaNome) { const i = ESTILOS_BARBA.findIndex((c) => c.cosmetico && c.nome === ap.barbaNome); if (i >= 0) ap.barba = i; }   // a barba da loja, do mesmo jeito
 }
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };

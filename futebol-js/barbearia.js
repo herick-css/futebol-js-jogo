@@ -26,9 +26,17 @@
   const PRECO_PADRAO = 50;
   // os especiais à venda (nome igual ao do cosmeticos.js) e o preço em fakes
   const CORTES_ESPECIAIS = [
-    { nome: 'Maicaninho 2', preco: 200 },
-    { nome: 'Cabelinho 3', preco: 300 },
+    { nome: 'Cascão', preco: 500 }, { nome: 'Nevou', preco: 250 }, { nome: 'Platinado disfarçado', preco: 300 }, { nome: 'Reflexo', preco: 280 },
+    { nome: 'Risco duplo', preco: 150 }, { nome: 'Raio', preco: 220 }, { nome: 'Estrela', preco: 220 }, { nome: 'Tribal', preco: 260 },
+    { nome: 'Três riscos', preco: 180 }, { nome: 'Desenho em V', preco: 200 }, { nome: 'Moicano espetado', preco: 260 }, { nome: 'Falso moicano', preco: 180 },
+    { nome: 'Moicano vermelho', preco: 350 }, { nome: 'Na régua', preco: 150 }, { nome: 'Black disfarçado', preco: 240 }, { nome: 'Flat top', preco: 260 },
+    { nome: 'Black moicano', preco: 280 }, { nome: 'Twist', preco: 300 }, { nome: 'Nudred', preco: 280 }, { nome: 'Dread disfarçado', preco: 380 },
+    { nome: 'Trança nagô', preco: 400 }, { nome: 'Samurai', preco: 260 }, { nome: 'Mullet disfarçado', preco: 220 }, { nome: 'Crop francês', preco: 200 },
+    { nome: 'Corte César', preco: 150 }, { nome: 'Surfista', preco: 240 }, { nome: 'Espetado', preco: 220 }, { nome: 'Cacheado disfarçado', preco: 240 },
+    { nome: 'Lambido', preco: 180 }, { nome: 'Cogumelo', preco: 200 },
   ];
+  // cortes que saíram da loja (e o que custaram): quem tinha recebe os fakes de volta, e quem estava com um deles volta para o corte de antes
+  const RETIRADOS = { 'Maicaninho 2': 200, 'Cabelinho 3': 300 };
   // as barbas e bigodes especiais (cosmeticos.js, grupo 'barba' ou 'bigode'): ainda não tem nenhuma pronta. Um cosmético fora das tabelas sai por PRECO_ESPECIAL
   const BARBAS_ESPECIAIS = [];
   const PRECO_ESPECIAL = 200;
@@ -38,6 +46,22 @@
   // ------------------------------------------------------------------ textos (pt → en, es, it, fr)
   const TRAD = {
     'Toninho': ['Toninho', 'Toninho', 'Toninho', 'Toninho'],
+    // os cortes especiais
+    'Cascão': ['Cascão', 'Cascão', 'Cascão', 'Cascão'], 'Nevou': ['Snowfall', 'Nevada', 'Nevicata', 'Neige'],
+    'Platinado disfarçado': ['Platinum fade', 'Platinado degradado', 'Platino sfumato', 'Platine dégradé'], 'Reflexo': ['Highlights', 'Reflejos', 'Colpi di sole', 'Mèches'],
+    'Risco duplo': ['Double line', 'Raya doble', 'Doppia riga', 'Double raie'], 'Raio': ['Lightning bolt', 'Rayo', 'Fulmine', 'Éclair'],
+    'Estrela': ['Star', 'Estrella', 'Stella', 'Étoile'], 'Tribal': ['Tribal', 'Tribal', 'Tribale', 'Tribal'],
+    'Três riscos': ['Three lines', 'Tres rayas', 'Tre righe', 'Trois raies'], 'Desenho em V': ['V design', 'Diseño en V', 'Disegno a V', 'Motif en V'],
+    'Moicano espetado': ['Spiked mohawk', 'Mohicano de pinchos', 'Moicano a punte', 'Iroquoise à pointes'], 'Falso moicano': ['Faux hawk', 'Falso mohicano', 'Finto moicano', 'Fausse iroquoise'],
+    'Moicano vermelho': ['Red mohawk', 'Mohicano rojo', 'Moicano rosso', 'Iroquoise rouge'], 'Na régua': ['Sharp line-up', 'Contorno perfecto', 'Contorno preciso', 'Contour net'],
+    'Black disfarçado': ['Afro fade', 'Afro degradado', 'Afro sfumato', 'Afro dégradé'], 'Flat top': ['Flat top', 'Flat top', 'Flat top', 'Flat top'],
+    'Black moicano': ['Afro mohawk', 'Mohicano afro', 'Moicano afro', 'Iroquoise afro'], 'Twist': ['Twists', 'Twists', 'Twist', 'Twists'],
+    'Nudred': ['Sponge twists', 'Rizos esponja', 'Ricci a spugna', 'Boucles éponge'], 'Dread disfarçado': ['Dreads with fade', 'Rastas con degradado', 'Dread sfumati', 'Dreads dégradés'],
+    'Trança nagô': ['Cornrows', 'Trenzas de raíz', 'Treccine afro', 'Tresses collées'], 'Samurai': ['Samurai', 'Samurái', 'Samurai', 'Samouraï'],
+    'Mullet disfarçado': ['Mullet fade', 'Mullet degradado', 'Mullet sfumato', 'Mulet dégradé'], 'Crop francês': ['French crop', 'Crop francés', 'Crop francese', 'Crop à la française'],
+    'Corte César': ['Caesar cut', 'Corte César', 'Taglio Cesare', 'Coupe César'], 'Surfista': ['Surfer', 'Surfista', 'Surfista', 'Surfeur'],
+    'Espetado': ['Spiky', 'De punta', 'A punte', 'En pointes'], 'Cacheado disfarçado': ['Curly fade', 'Rizado degradado', 'Ricci sfumati', 'Bouclé dégradé'],
+    'Lambido': ['Slicked side part', 'Engominado', 'Leccato', 'Gominé'], 'Cogumelo': ['Mushroom', 'Champiñón', 'Fungo', 'Champignon'],
     'Falar com o Toninho': ['Talk to Toninho', 'Hablar con Toninho', 'Parla con Toninho', 'Parler à Toninho'],
     'Fala, chefe! Bem-vindo à Barbearia do Toninho.': ['Hey, boss! Welcome to Toninho’s Barbershop.', '¡Hola, jefe! Bienvenido a la Barbería de Toninho.', 'Ciao, capo! Benvenuto dal Barbiere Toninho.', 'Salut, chef ! Bienvenue au salon de Toninho.'],
     'Aqui a navalha é afiada e o papo é de graça.': ['Here the razor is sharp and the chat is free.', 'Aquí la navaja está afilada y la charla es gratis.', 'Qui il rasoio è affilato e le chiacchiere sono gratis.', 'Ici, le rasoir est affûté et la causette est gratuite.'],
@@ -447,7 +471,17 @@
 
     // ---------------------------------------------------------------- a cada quadro: os braços do Toninho cortando e o cabelo caindo
     //   O boneco olha para +x: levantar o braço para a FRENTE é girar em z (positivo); o cotovelo dobra o antebraço para cima (az).
+    function acertarRetirados() {
+      const s = S(); if (!s || !s.dados) return false;
+      const b = dadosB(), ap = aparencia(); let volta = 0;
+      b.cortes = b.cortes.filter((n) => { if (RETIRADOS[n] == null) return true; volta += RETIRADOS[n]; return false; });
+      const usava = ap.corteRetirado || (ap.estiloNome && RETIRADOS[ap.estiloNome] != null);
+      if (usava) { ap.estilo = b.original != null ? b.original : 0; delete ap.estiloNome; delete ap.corteRetirado; try { api.refazerJogador(); } catch (e) { console.error(e); } }
+      if (volta > 0) { s.dados.fakes += volta; try { api.somDinheiro(); api.ganhoNaTela(volta); api.mostrarDinheiro(true); } catch (e) { /* sem efeito na tela */ } }
+      return true;
+    }
     function tick(dt) {
+      M.tRet = (M.tRet || 0) - dt; if (M.tRet <= 0) { M.tRet = 2; acertarRetirados(); }   // (de 2 em 2 s: vale para qualquer save carregado)
       if (!dentro()) return;
       const A = M.T; if (!A || !A.m) return;
       if (M.cortando) {
