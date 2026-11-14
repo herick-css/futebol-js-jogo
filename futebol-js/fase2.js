@@ -1750,7 +1750,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         await dizer(['jog', T('Que fedor, hein, tio. Vai fumar na sua casa.')], ['viz', PERSONAGEM.genero === 'F' ? T('Ô menina abusada! Respeita os mais velhos!') : T('Ô moleque abusado! Respeita os mais velhos!')]);
         let CD = null; try { CD = await Fases.carregar('cidade'); } catch (e) { /* sem cidade */ }
         somarAmizadeF2('vizinho', -5, CD, 'Vizinho');
-        try { if (CD && CD.encontro && CD.encontro.arrogancia) CD.encontro.arrogancia(); else if (typeof Espectros !== 'undefined') { Espectros.mover('humilde', -2.5, 'foi grosso com o vizinho'); Espectros.mover('tranquilo', -2.5, 'foi grosso com o vizinho'); } } catch (e) { console.warn('[Fase 2] espectros:', e); }
+        try { if (CD && CD.encontro && CD.encontro.arrogancia) CD.encontro.arrogancia(); else if (typeof Espectros !== 'undefined') { /* (7.1.14) grosseria não é ganância: só Problemático */ Espectros.mover('tranquilo', -2.5, 'foi grosso com o vizinho'); } } catch (e) { console.warn('[Fase 2] espectros:', e); }
         gravar('escada'); await esperar(100); continue;
       }
       if (r === 0) {

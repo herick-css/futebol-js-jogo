@@ -412,8 +412,10 @@
     function concluir() {
       const p = dados(); let txt2 = '';
       if (!rep && p.prog[Sit.tipo] === Sit.n) {
-        const at = atributos(), nome = Sit.atrib, novo = Math.min(10, Math.round(((at[nome] || 5) + 0.1) * 10) / 10);
-        at[nome] = novo; p.ganhos[nome] = Math.round(((p.ganhos[nome] || 0) + 0.1) * 10) / 10; p.prog[Sit.tipo] = Sit.n + 1;
+        let kT = 1; try { kT = Espectros.efeito('treino', true); } catch (e) { /* ok */ }   // (7.1.14) Disciplinado rende mais, Relaxado menos
+        const at = atributos(), nome = Sit.atrib, g = Math.round(0.1 * kT * 100) / 100, novo = Math.min(10, Math.round(((at[nome] || 5) + g) * 100) / 100);
+        at[nome] = novo; p.ganhos[nome] = Math.round(((p.ganhos[nome] || 0) + g) * 100) / 100; p.prog[Sit.tipo] = Sit.n + 1;
+        try { const dd = api.S().dados; dd.ultTecnico = dd.ativoDia = dd.dia; if (dd.discTreinoDia !== dd.dia) { dd.discTreinoDia = dd.dia; Espectros.mover('disciplinado', 1.5, 'treinou com o seu Nonato'); } } catch (e) { /* ok */ }
         txt2 = trf('+0,1 em {0} (agora {1})', tr(L.NOME_ATRIB[nome]), virg(novo)); gravar();
         try { if (api.ganhoNaTela) api.ganhoNaTela(txt2); } catch (e) { /* sem efeito */ }
       }

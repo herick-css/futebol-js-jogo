@@ -1507,7 +1507,7 @@
       U.fila = []; atualizarMarcas();
       const ini = Math.max(H_TURNO, U.inicio <= H_CHEIO_ATE ? H_TURNO : U.inicio), fimH = antes ? clampN(hParou, ini, H_FECHA) : H_FECHA;
       const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA + U.irritados * IRRITADO, paga = Math.max(0, bruto - desc);
-      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);   // trabalhouAlgumDia: libera a ligação do João
+      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */ api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);   // trabalhouAlgumDia: libera a ligação do João
       api.gravar('chegada');
       const espera = s.modo !== 'livre'; if (!espera) { s.modo = 'cena'; api.UI().ctl.hidden = true; }
       M.avisos = []; M.tAviso = 0; api.aviso('');

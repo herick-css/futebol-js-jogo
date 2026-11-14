@@ -333,8 +333,12 @@
     return r1(clampN(s, 3, 10));
   }
   // a faixa das propostas: Tranquilo facilita os bons; Problemático dificulta os bons (mas chama os médios)
+  // (7.1.14) GANÂNCIA (o lado Ganancioso do eixo Humilde): 0 a 1. Os clubes fogem de quem só pensa em dinheiro: as faixas ficam mais
+  //   difíceis (até +0,6 na nota) e os valores das propostas caem (até −30% no fixo, no bicho da vitória e nas luvas)
+  function ganancia() { try { return Math.max(0, -Espectros.valor('humilde')) / 100; } catch (e) { return 0; } }
   function faixaPeneira(score, pers) {
-    const L = pers === 'tranquilo' ? { bom: 7.6, medio: 6.1 } : pers === 'problematico' ? { bom: 8.7, medio: 5.6 } : { bom: 8.1, medio: 6.5 };
+    const L0 = pers === 'tranquilo' ? { bom: 7.6, medio: 6.1 } : pers === 'problematico' ? { bom: 8.7, medio: 5.6 } : { bom: 8.1, medio: 6.5 }, gg = ganancia() * 0.6;
+    const L = { bom: L0.bom + gg, medio: L0.medio + gg };
     return score >= L.bom ? 'bom' : score >= L.medio ? 'medio' : 'ruim';
   }
   function personalidade() {
@@ -348,7 +352,8 @@
       let i = cand.findIndex((t) => !taticas.has(t.tatica)); if (i < 0) i = 0;
       const t = cand.splice(i, 1)[0]; taticas.add(t.tatica);
       const S0 = SALARIOS[faixa], vit = Math.round(S0.vit[0] + r() * (S0.vit[1] - S0.vit[0])), luvas = Math.round((S0.luvas[0] + r() * (S0.luvas[1] - S0.luvas[0])) / 10) * 10;
-      out.push({ k: t.k, faixa, base: S0.base, gol: S0.gol, ass: S0.ass, vit, luvas, extra: pers === 'problematico' ? EXTRA_PROBLEMATICO : 0 });
+      const kG = 1 - 0.3 * ganancia();                                    // (7.1.14) ganancioso: propostas menores
+      out.push({ k: t.k, faixa, base: Math.round(S0.base * kG), gol: S0.gol, ass: S0.ass, vit: Math.round(vit * kG), luvas: Math.round(luvas * kG / 10) * 10, extra: pers === 'problematico' ? EXTRA_PROBLEMATICO : 0 });
     }
     return out;
   }
@@ -1124,6 +1129,12 @@
       (P.hist = P.hist || []).push({ i: pv.i, comp: v.comp, adv, casa, nos, eles, pen, nota, g: gols, a: ass, tit: esc.titular, min });
       if (P.hist.length > 60) P.hist.shift();
       try { const K = api.carreira(); K.pro = K.pro || { j: 0, g: 0, a: 0, bons: 0 }; K.pro.j++; K.pro.g += gols; K.pro.a += ass; if (nota >= 8) K.pro.bons++; } catch (e) { /* nada */ }
+      if (r) try { if (api.evoluirPartida) api.evoluirPartida(r); } catch (e) { console.warn('[Série B] evolução:', e); }   // (7.1.14) as habilidades e os espectros, como nas outras partidas
+      if (r) try {                                                          // (7.1.14) a POPULARIDADE do clube (a lotação do estádio) com os seus jogos
+        let pp = (venceu ? 2 : empate ? 0 : -1) + Math.min(3, gols) + (nota >= 8 ? 1 : 0) - (r.expulso ? 3 : 0);
+        if (pp) popularidade.somar(nosso, pp, venceu ? 'vitória' : empate ? 'empate' : 'derrota');
+        if (venceu) popularidade.somar(adv, -1, 'derrota para nós');
+      } catch (e) { console.warn('[Série B] popularidade:', e); }
       gravar();
       return { v, jn, adv, casa, nos, eles, pen, nota, gols, ass, venceu, empate, bom, c0, c1, esc, pag, pagamento: pag.total, min, expulso: !!(r && r.expulso), semJogo: !r };
     }

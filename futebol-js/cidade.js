@@ -112,6 +112,21 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.14
+   - HABILIDADES: todas sobem e descem. Depois de cada jogo da história (evoluirPartida: sintético, futsal, várzea, Série B) os
+     contadores de chutes no alvo, gols, dribles, domínios, cabeçadas, desarmes, assistências e passes viram pontos; a academia e o
+     treino do seu Nonato rendem mais com Disciplinado; a recuperação sobe dormindo bem; o Goleiro (reflexo) sobe com fisgadas rápidas
+     na pesca. DESTREINO: mais de 7 dias sem academia/jogo (físicas) ou 10 sem treino/jogo (técnicas) → −0,05 por dia (mínimo 5).
+     Efeitos novos no seu jogador: desarme (chance do bote), defesa (alcance e tempo entre botes), goleiro (levanta mais rápido),
+     recuperação (enche o fôlego mais rápido na história).
+   - ESPECTROS: Ativo x SEDENTÁRIO (dia parado −3), Humilde x GANANCIOSO (bicho, sinuca valendo, dinheiro; trabalhar deixa humilde;
+     ganância baixa as propostas da Série B e os companheiros às vezes ignoram o seu pedido de bola), Disciplinado (sono, treino,
+     expediente, porre), Confiante (resultados, gols, nota) e Tranquilo (cartões). Todos os efeitos agora valem na partida.
+   - FOME: dia sem comer conta (dados.diasSemComer). Depois de 2 dias ele avisa; no 3º, 12 h depois de acordar sem comer, DESMAIA e
+     acorda no hospital (o Doutor Paulo explica): −25 em Saudável e 3 dias DESNUTRIDO (−2 força/velocidade/resistência, −20% precisão).
+   - RESSACA: vale o dia seguinte inteiro (dados.ressacaDia) e tira 30% da precisão do chute.
+   - POPULARIDADE (Série B): os seus jogos mexem na popularidade do clube (a lotação do estádio).
+
    NOVIDADES DA 7.1.12
    - ROUPAS (fase2.js): a barra da blusa agora fica POR CIMA da calça (antes a cintura da calça cortava moletons, jaquetas e
      blusas compridas); o quadradinho de emblema do peito saiu e cada roupa ganhou o seu estilo (estampa, listras, xadrez, degradê,
@@ -211,6 +226,42 @@
 
   // ------------------------------------------------------------------ textos novos (pt → en, es, it, fr)
   const TRAD_CD = {
+    'Calma, você está no hospital. Você desmaiou na rua e trouxeram você para cá.': ['Easy, you’re in the hospital. You fainted in the street and they brought you here.', 'Tranquila, estás en el hospital. Te desmayaste en la calle y te trajeron aquí.', 'Calma, sei in ospedale. Sei svenuta per strada e ti hanno portata qui.', 'Du calme, tu es à l’hôpital. Tu t’es évanouie dans la rue et on t’a amenée ici.'],
+    // (7.1.14) fome, desmaio e hospital, condições e a evolução depois do jogo
+    'Eu tô passando mal... faz dois dias que eu não como nada.': ['I feel sick... I haven’t eaten anything in two days.', 'Me siento mal... hace dos días que no como nada.', 'Sto male... sono due giorni che non mangio niente.', 'Je me sens mal... ça fait deux jours que je n’ai rien mangé.'],
+    'Tô com muita fome. Preciso comer alguma coisa hoje, senão eu não aguento.': ['I’m starving. I need to eat something today or I won’t make it.', 'Tengo mucha hambre. Necesito comer algo hoy, si no, no aguanto.', 'Ho una fame terribile. Devo mangiare qualcosa oggi, se no non ce la faccio.', 'J’ai très faim. Je dois manger quelque chose aujourd’hui, sinon je ne tiendrai pas.'],
+    'Tô... tonto... tudo rodando...': ['I’m... dizzy... everything’s spinning...', 'Estoy... mareado... todo da vueltas...', 'Sono... stordito... gira tutto...', 'J’ai... la tête qui tourne... tout tourne...'],
+    'Tô... tonta... tudo rodando...': ['I’m... dizzy... everything’s spinning...', 'Estoy... mareada... todo da vueltas...', 'Sono... stordita... gira tutto...', 'J’ai... la tête qui tourne... tout tourne...'],
+    'Doutor Paulo': ['Doctor Paulo', 'Doctor Paulo', 'Dottor Paulo', 'Docteur Paulo'],
+    'Onde... onde eu tô?': ['Where... where am I?', '¿Dónde... dónde estoy?', 'Dove... dove sono?', 'Où... où je suis ?'],
+    'Calma, você está no hospital. Você desmaiou na rua e te trouxeram para cá.': ['Easy, you’re in the hospital. You fainted in the street and they brought you here.', 'Tranquilo, estás en el hospital. Te desmayaste en la calle y te trajeron aquí.', 'Calma, sei in ospedale. Sei svenuto per strada e ti hanno portato qui.', 'Du calme, tu es à l’hôpital. Tu t’es évanoui dans la rue et on t’a amené ici.'],
+    'Você está há dias sem comer. O soro segurou por agora, mas você PRECISA se alimentar direito.': ['You haven’t eaten in days. The IV held you for now, but you NEED to eat properly.', 'Llevas días sin comer. El suero te sostuvo por ahora, pero NECESITAS alimentarte bien.', 'Non mangi da giorni. La flebo ti ha tenuto su per ora, ma DEVI mangiare come si deve.', 'Tu n’as pas mangé depuis des jours. La perfusion t’a tenu pour l’instant, mais tu DOIS bien te nourrir.'],
+    'Sua saúde caiu bastante por falta de alimentação. Nos próximos 3 dias você vai estar mais fraco: menos força, menos velocidade, menos fôlego e menos precisão.': ['Your health dropped a lot from not eating. For the next 3 days you’ll be weaker: less strength, speed, stamina and accuracy.', 'Tu salud bajó mucho por no comer. Los próximos 3 días vas a estar más débil: menos fuerza, velocidad, aire y precisión.', 'La tua salute è calata molto per la mancanza di cibo. Nei prossimi 3 giorni sarai più debole: meno forza, velocità, fiato e precisione.', 'Ta santé a beaucoup baissé faute de manger. Pendant 3 jours tu seras plus faible : moins de force, de vitesse, de souffle et de précision.'],
+    'Sua saúde caiu bastante por falta de alimentação. Nos próximos 3 dias você vai estar mais fraca: menos força, menos velocidade, menos fôlego e menos precisão.': ['Your health dropped a lot from not eating. For the next 3 days you’ll be weaker: less strength, speed, stamina and accuracy.', 'Tu salud bajó mucho por no comer. Los próximos 3 días vas a estar más débil: menos fuerza, velocidad, aire y precisión.', 'La tua salute è calata molto per la mancanza di cibo. Nei prossimi 3 giorni sarai più debole: meno forza, velocità, fiato e precisione.', 'Ta santé a beaucoup baissé faute de manger. Pendant 3 jours tu seras plus faible : moins de force, de vitesse, de souffle et de précision.'],
+    'Come hoje ainda, viu? Três refeições por dia, nada de pular.': ['Eat something today, okay? Three meals a day, no skipping.', 'Come hoy mismo, ¿eh? Tres comidas al día, nada de saltarlas.', 'Mangia oggi stesso, eh? Tre pasti al giorno, niente salti.', 'Mange aujourd’hui même, d’accord ? Trois repas par jour, sans en sauter.'],
+    'Pode deixar, doutor. Vou comer agora mesmo.': ['Got it, doctor. I’ll eat right now.', 'Entendido, doctor. Voy a comer ahora mismo.', 'Va bene, dottore. Mangio subito.', 'D’accord, docteur. Je vais manger tout de suite.'],
+    'Ressaca: hoje você chuta 30% pior, corre menos e cansa mais rápido.': ['Hangover: today your shots are 30% worse, you run less and tire faster.', 'Resaca: hoy pateas un 30% peor, corres menos y te cansas más rápido.', 'Postumi: oggi tiri il 30% peggio, corri meno e ti stanchi prima.', 'Gueule de bois : aujourd’hui tu tires 30 % moins bien, tu cours moins et tu te fatigues plus vite.'],
+    'Desnutrido: menos força, velocidade, fôlego e precisão por 3 dias. Coma direito!': ['Malnourished: less strength, speed, stamina and accuracy for 3 days. Eat properly!', 'Desnutrido: menos fuerza, velocidad, aire y precisión por 3 días. ¡Come bien!', 'Denutrito: meno forza, velocità, fiato e precisione per 3 giorni. Mangia bene!', 'Dénutri : moins de force, vitesse, souffle et précision pendant 3 jours. Mange bien !'],
+    'Desnutrida: menos força, velocidade, fôlego e precisão por 3 dias. Coma direito!': ['Malnourished: less strength, speed, stamina and accuracy for 3 days. Eat properly!', 'Desnutrida: menos fuerza, velocidad, aire y precisión por 3 días. ¡Come bien!', 'Denutrita: meno forza, velocità, fiato e precisione per 3 giorni. Mangia bene!', 'Dénutrie : moins de force, vitesse, souffle et précision pendant 3 jours. Mange bien !'],
+    'Dias sem comer: {0}': ['Days without eating: {0}', 'Días sin comer: {0}', 'Giorni senza mangiare: {0}', 'Jours sans manger : {0}'],
+    'Desnutrido': ['Malnourished', 'Desnutrido', 'Denutrito', 'Dénutri'],
+    'Desnutrida': ['Malnourished', 'Desnutrida', 'Denutrita', 'Dénutrie'],
+    'Sinto que estou evoluindo: {0}.': ['I can feel myself improving: {0}.', 'Siento que estoy mejorando: {0}.', 'Sento che sto migliorando: {0}.', 'Je sens que je progresse : {0}.'],
+    'Chute': ['Shooting', 'Tiro', 'Tiro', 'Tir'],
+    'Efeito': ['Curve', 'Efecto', 'Effetto', 'Effet'],
+    'Força': ['Strength', 'Fuerza', 'Forza', 'Force'],
+    'Finalização': ['Finishing', 'Definición', 'Finalizzazione', 'Finition'],
+    'Drible': ['Dribbling', 'Regate', 'Dribbling', 'Dribble'],
+    'Domínio': ['Ball control', 'Control', 'Controllo', 'Contrôle'],
+    'Cabeceio': ['Heading', 'Cabezazo', 'Colpo di testa', 'Jeu de tête'],
+    'Desarme': ['Tackling', 'Quite', 'Contrasto', 'Tacle'],
+    'Defesa': ['Defending', 'Defensa', 'Difesa', 'Défense'],
+    'Cruzamento': ['Crossing', 'Centro', 'Cross', 'Centre'],
+    'Passe': ['Passing', 'Pase', 'Passaggio', 'Passe'],
+    'Recuperação': ['Recovery', 'Recuperación', 'Recupero', 'Récupération'],
+    'Goleiro': ['Goalkeeping', 'Portero', 'Portiere', 'Gardien'],
+    'Velocidade': ['Speed', 'Velocidad', 'Velocità', 'Vitesse'],
+    'Resistência': ['Stamina', 'Resistencia', 'Resistenza', 'Endurance'],
     'Use o direcional para andar e arraste a tela para girar a câmera.': ['Use the joystick to walk and drag the screen to turn the camera.', 'Usa el joystick para caminar y arrastra la pantalla para girar la cámara.', 'Usa il joystick per camminare e trascina lo schermo per ruotare la telecamera.', "Utilise le joystick pour marcher et fais glisser l'écran pour tourner la caméra."],
     'Agora você tem dinheiro: {0} fakes.': ['Now you have money: {0} fakes.', 'Ahora tienes dinero: {0} fakes.', 'Ora hai dei soldi: {0} fakes.', "Maintenant tu as de l'argent : {0} fakes."],
     'fakes': ['fakes', 'fakes', 'fakes', 'fakes'],
@@ -2418,6 +2469,7 @@
   }
   function registrarCarreira(tipo, r, montando) {
     if (!r) return;
+    if (!montando) try { evoluirPartida(r); } catch (e) { console.warn('[Cidade] evolução:', e); }   // (7.1.14)
     const C = montando ? (S.dados.carreira[tipo] = S.dados.carreira[tipo] || { j: 0, v: 0, e: 0, d: 0, g: 0, a: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, desarmes: 0, nota: 0, melhor: 0, bons: 0 }) : carreira()[tipo];
     const st = r.estatisticas || {}, pl = r.placar || [0, 0], nota = Math.round((r.nota || 0) * 10) / 10;
     C.j++; if (r.venceu) C.v++; else if (r.empate || (pl[0] === pl[1] && !r.penaltis)) C.e++; else C.d++;
@@ -2484,9 +2536,7 @@
       placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
     carreira(); registrarCarreira('sintetico', r);
     // evolução: a cada 10 chutes no alvo, +0,25 em chute, efeito e força (até 10)
-    const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
-    while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
-    PERSONAGEM.atributos = Object.assign({}, at);
+    const subiu = S.ultimaEvolucao ? S.ultimaEvolucao.txt : '';           // (7.1.14) a evolução agora é a evoluirPartida (chamada no registrarCarreira)
     A.feito = true; f.jogos = (f.jogos | 0) + 1; d.precisaBanho = true;
     tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
     f.joaoSai = d.hora;                                                // o João volta para casa a partir de agora
@@ -2503,7 +2553,7 @@
       if (r && r.bom) await fala('caio', T('Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!'));
       else await fala('caio', T('Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!'));
       if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
-      if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
+      if (subiu) await fala('jog', Tf('Sinto que estou evoluindo: {0}.', subiu));
       await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
       Dialogo.esconder();
     } catch (e) { console.error(e); }
@@ -2803,9 +2853,7 @@
     d.partidas.push({ local: 'futsal', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima, nublado: S.clima.nuv > 0.35, duracao,
       placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
     carreira(); registrarCarreira('futsal', r);
-    const at = atributosJogador(); d.chutesCertos = (d.chutesCertos | 0) + (st.noAlvo | 0); let subiu = 0;
-    while (d.chutesCertos >= 10) { d.chutesCertos -= 10; subiu++; for (const n of ['chute', 'efeito', 'forca']) at[n] = Math.min(10, Math.round((at[n] + 0.25) * 100) / 100); }
-    PERSONAGEM.atributos = Object.assign({}, at);
+    const subiu = S.ultimaEvolucao ? S.ultimaEvolucao.txt : '';           // (7.1.14) a evolução agora é a evoluirPartida (chamada no registrarCarreira)
     const primeiro = !F.convidado;
     F.jogos = (F.jogos | 0) + 1; F.jogouDia = d.dia; F.convidado = true; d.precisaBanho = true;
     tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
@@ -2824,7 +2872,7 @@
       if (primeiro) await fala('biel', T('A gente joga aqui toda terça e quinta. Cola com a gente sempre que quiser!'));
       else await fala('biel', T('Terça e quinta tem mais, hein? Te espero!'));
       if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
-      if (subiu) await fala('jog', T('Sinto que meu chute está melhorando...'));
+      if (subiu) await fala('jog', Tf('Sinto que estou evoluindo: {0}.', subiu));
       await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
       Dialogo.esconder();
     } catch (e) { console.error(e); }
@@ -4581,11 +4629,134 @@
   const cardapioHoje = () => CARDAPIO.filter((c) => !c.saudavel || !!(S.dados.pro && S.dados.pro.clube));
   const FOME_DO_DIA = 2;
   // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
+  // ---------------------------------------------------------------------------------------------------------------------- (7.1.14)
+  // EVOLUÇÃO DEPOIS DE CADA PARTIDA DA HISTÓRIA (sintético, futsal, várzea e Série B). Contadores em dados.evo.c; cada vez que um
+  //   enche, a habilidade sobe (até 10). Também mexe nos espectros (Ativo, Confiante, Tranquilo) e marca o dia do último jogo
+  //   (o destreino e o sedentarismo contam a partir dele).
+  //     10 chutes no alvo → +0,25 chute, efeito e força     3 gols → +0,25 finalização          8 dribles certos → +0,25 drible
+  //     10 domínios certos → +0,25 domínio                   3 cabeçadas no alvo → +0,25 cabeceio 6 desarmes → +0,25 desarme e +0,1 defesa
+  //     3 assistências → +0,2 cruzamento e +0,1 passe        30 passes certos → +0,1 passe        tomou 1 gol ou menos → +0,05 defesa
+  const REGRAS_EVO = [
+    ['noAlvo', 10, { chute: 0.25, efeito: 0.25, forca: 0.25 }], ['gols', 3, { finalizacao: 0.25 }], ['driblesOk', 8, { drible: 0.25 }],
+    ['dominiosOk', 10, { dominio: 0.25 }], ['cabecadasNoAlvo', 3, { cabeceio: 0.25 }], ['desarmes', 6, { desarme: 0.25, defesa: 0.1 }],
+    ['assist', 3, { cruzamento: 0.2, passe: 0.1 }], ['passesOk', 30, { passe: 0.1 }],
+  ];
+  const r2 = (v) => Math.round(v * 100) / 100;
+  function dadosEvo() { const d = S.dados; d.evo = d.evo || {}; d.evo.c = d.evo.c || {}; if (d.chutesCertos && !d.evo.c.noAlvo) { d.evo.c.noAlvo = d.chutesCertos; d.chutesCertos = 0; } return d.evo; }
+  function subirHab(at, nome, mais, ganhos) { const a0 = +at[nome] || 5, a1 = Math.min(10, r2(a0 + mais)); if (a1 > a0) { at[nome] = a1; ganhos[nome] = r2((ganhos[nome] || 0) + (a1 - a0)); } }
+  function evoluirPartida(r) {
+    if (!r || !S || !S.dados) return null;
+    const d = S.dados, E = dadosEvo(), at = atributosJogador(), st = Object.assign({}, r.estatisticas || {}), ganhos = {}, pl = r.placar || [0, 0];
+    st.gols = r.gols | 0;
+    for (const [k, n, g] of REGRAS_EVO) {
+      E.c[k] = (E.c[k] | 0) + (st[k] | 0);
+      while (E.c[k] >= n) { E.c[k] -= n; for (const [h, v] of Object.entries(g)) subirHab(at, h, v, ganhos); }
+    }
+    if ((pl[1] | 0) <= 1) subirHab(at, 'defesa', 0.05, ganhos);
+    PERSONAGEM.atributos = Object.assign({}, at);
+    d.ultFisico = d.ultTecnico = d.ativoDia = d.dia;                       // jogou: conta como atividade física e técnica
+    try {
+      Espectros.mover('ativo', 3, 'jogou bola');
+      if (r.venceu) Espectros.mover('confiante', 2, 'vitória'); else if (!r.empate) Espectros.mover('confiante', -3, 'derrota');
+      if (st.gols) Espectros.mover('confiante', Math.min(4, 1.5 * st.gols), 'fez gol');
+      if ((+r.nota || 0) >= 8) Espectros.mover('confiante', 3, 'grande jogo'); else if (r.nota && +r.nota < 5.5) Espectros.mover('confiante', -2, 'jogo ruim');
+      if (r.expulso) Espectros.mover('tranquilo', -6, 'expulso'); else if (String(st.cartoes || '').includes('amarelo')) Espectros.mover('tranquilo', -2, 'cartão amarelo');
+    } catch (e) { /* sem espectros */ }
+    const txt = Object.keys(ganhos).map((h) => T(NOME_HAB[h] || h) + ' +' + String(ganhos[h]).replace('.', ',')).join(', ');
+    S.ultimaEvolucao = { txt, ganhos };                                     // o jogador comenta depois do jogo (sintético e futsal)
+    return ganhos;
+  }
+  const NOME_HAB = { chute: 'Chute', efeito: 'Efeito', forca: 'Força', finalizacao: 'Finalização', drible: 'Drible', dominio: 'Domínio', cabeceio: 'Cabeceio', desarme: 'Desarme', defesa: 'Defesa', cruzamento: 'Cruzamento', passe: 'Passe', recuperacao: 'Recuperação', goleiro: 'Goleiro', velocidade: 'Velocidade', resistencia: 'Resistência' };
+
+  // ---------------------------------------------------------------------------------------------------------------------- (7.1.14)
+  // CADA DIA QUE PASSA (roda uma vez por dia, na virada: prepararDia)
+  //   · FOME: dia sem comer → dados.diasSemComer +1 e −4 em Saudável (o dia em que comeu zera a conta)
+  //   · SEDENTÁRIO: dia sem academia, treino nem jogo → −3 em Ativo
+  //   · DESTREINO: mais de 7 dias sem academia nem jogo → −0,05 por dia em velocidade, resistência, força e recuperação; mais de
+  //     10 dias sem treino nem jogo → −0,05 por dia nas técnicas. Nunca abaixo de 5 (o começo da história)
+  //   · SONO: noite bem dormida → +0,05 recuperação e +1,5 Disciplinado; dormiu depois da meia-noite → −2 Disciplinado
+  //   · RESSACA e DESNUTRIDO: ligam/desligam pelo dia (dados.ressacaDia, dados.desnutridoAte)
+  const FISICAS = ['velocidade', 'resistencia', 'forca', 'recuperacao'], TECNICAS = ['chute', 'efeito', 'passe', 'cruzamento', 'drible', 'dominio', 'cabeceio', 'finalizacao', 'desarme', 'defesa', 'goleiro'];
+  function processarDias(d) {
+    if (d.diaProc == null) { d.diaProc = d.dia; if (d.ultFisico == null) d.ultFisico = d.dia; if (d.ultTecnico == null) d.ultTecnico = d.dia; }
+    const at = d.atributos;
+    while (d.diaProc < d.dia) {
+      const fim = d.diaProc;                                               // o dia que acabou
+      if (d.comeuDia === fim || d.soroDia === fim) d.diasSemComer = 0;
+      else { d.diasSemComer = (d.diasSemComer | 0) + 1; try { Espectros.mover('saudavel', -4, 'dia sem comer'); } catch (e) { /* ok */ } }
+      if (d.ativoDia !== fim) try { Espectros.mover('ativo', -3, 'dia parado'); } catch (e) { /* ok */ }
+      if (at) {
+        if (fim - (d.ultFisico != null ? d.ultFisico : fim) >= 7) for (const n of FISICAS) at[n] = Math.max(5, r2((+at[n] || 5) - 0.05));
+        if (fim - (d.ultTecnico != null ? d.ultTecnico : fim) >= 10) for (const n of TECNICAS) at[n] = Math.max(5, r2((+at[n] || 5) - 0.05));
+      }
+      d.diaProc++;
+    }
+    try {                                                                  // o sono da noite que passou (Sono.registrar grava o nível)
+      const nv = Sono.nivel();
+      if (d.sonoProc !== d.dia) {
+        d.sonoProc = d.dia;
+        if (nv === 0) { if (at) at.recuperacao = Math.min(10, r2((+at.recuperacao || 5) + 0.05)); Espectros.mover('disciplinado', 1.5, 'dormiu cedo'); }
+        else if (nv >= 2) Espectros.mover('disciplinado', -2, 'dormiu tarde');
+      }
+    } catch (e) { /* sem sono */ }
+    if (at) PERSONAGEM.atributos = Object.assign({}, at);
+    try { Espectros.condicao('ressaca', d.ressacaDia === d.dia); Espectros.condicao('desnutrido', (d.desnutridoAte | 0) >= d.dia); } catch (e) { /* ok */ }
+    d.acordouHora = d.hora; d.avisoFomeDia = null;
+  }
+  // FOME: dois dias inteiros sem comer → ele avisa que está passando mal; no 3º dia, 12 h depois de acordar sem comer, DESMAIA
+  //   (acorda no hospital, o médico explica: −25 em Saudável e 3 dias desnutrido)
+  function checarFome() {
+    const d = S.dados; if (!d || S.modo !== 'livre' || S.desmaiando) return;
+    if ((d.diasSemComer | 0) < 2 || d.comeuDia === d.dia || d.soroDia === d.dia) return;
+    if (d.avisoFomeDia !== d.dia) { d.avisoFomeDia = d.dia; avisoFome(); return; }
+    const acordou = typeof d.acordouHora === 'number' ? d.acordouHora : H_ACORDAR, passou = ((d.hora - acordou) + 24) % 24;
+    if (passou >= 12 || (d.diasSemComer | 0) >= 3) desmaio();
+  }
+  async function avisoFome() {
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.jog.andando = false; S.jog.correndo = false;
+    try {
+      await fala('jog', T('Eu tô passando mal... faz dois dias que eu não como nada.'));
+      await fala('jog', T('Tô com muita fome. Preciso comer alguma coisa hoje, senão eu não aguento.'));
+      Dialogo.esconder();
+    } catch (e) { console.warn('[Cidade] fome:', e); }
+    if (S && S.ativo && S.modo === 'cena') liberar();
+  }
+  async function desmaio() {
+    S.desmaiando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog; J.andando = false; J.correndo = false;
+    const d = S.dados;
+    try {
+      await fala('jog', fem() ? T('Tô... tonta... tudo rodando...') : T('Tô... tonto... tudo rodando...')); Dialogo.esconder();
+      await preto(true, 1100);
+      if (S.dentro) { await sairDoLugar(true); await preto(true, 10); }
+      const P = PORTAS.find((p) => p.nome === 'hospital');
+      if (P) await entrarEm(P);
+      await preto(true, 10);
+      J.x = -8.5; J.z = 1.75; J.yaw = J.yawAlvo = -Math.PI / 2; J.andando = false;                // ao lado da maca
+      const ap = apFixa(8811, 'M'), M = criarNPCFixo(ap, false, 0, ['#f4f6f8', '#2f6f9a', '#f4f6f8', '#2f6f9a']);
+      M.x = -7.2; M.z = 1.2; M.yaw = M.yawAlvo = Math.atan2(-(J.z - M.z), J.x - M.x); S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.medico = { A: M, nome: T('Doutor Paulo'), voz: 2 };
+      J.yawAlvo = Math.atan2(-(M.z - J.z), M.x - J.x);
+      tickHorario(3 / H_POR_S);                                           // ficou umas 3 h no soro
+      d.soroDia = d.dia; d.diasSemComer = 0; d.desmaios = (d.desmaios | 0) + 1;
+      d.desnutridoAte = d.dia + 2;                                          // hoje e mais 2 dias
+      try { Espectros.mover('saudavel', -25, 'desmaiou de fome'); Espectros.mover('confiante', -5, 'desmaiou'); Espectros.condicao('desnutrido', true); } catch (e) { /* ok */ }
+      S.cam.snap = true; await preto(false, 900);
+      await fala('jog', T('Onde... onde eu tô?'));
+      await fala('medico', fem() ? T('Calma, você está no hospital. Você desmaiou na rua e trouxeram você para cá.') : T('Calma, você está no hospital. Você desmaiou na rua e te trouxeram para cá.'));
+      await fala('medico', T('Você está há dias sem comer. O soro segurou por agora, mas você PRECISA se alimentar direito.'));
+      await fala('medico', fem() ? T('Sua saúde caiu bastante por falta de alimentação. Nos próximos 3 dias você vai estar mais fraca: menos força, menos velocidade, menos fôlego e menos precisão.') : T('Sua saúde caiu bastante por falta de alimentação. Nos próximos 3 dias você vai estar mais fraco: menos força, menos velocidade, menos fôlego e menos precisão.'));
+      await fala('medico', T('Come hoje ainda, viu? Três refeições por dia, nada de pular.'));
+      await fala('jog', T('Pode deixar, doutor. Vou comer agora mesmo.'));
+      Dialogo.esconder();
+      gravar(d.ponto || 'chegada');
+    } catch (e) { console.error('[Cidade] desmaio:', e); try { await preto(false, 300); } catch (e2) { /* nada */ } }
+    finally { S.desmaiando = false; if (S && S.ativo && S.modo === 'cena') liberar(); }
+  }
   function prepararDia(d) {
     d.dia = d.dia || 1; d.mes = d.mes || 1;
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
     if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // libera o expediente de novo a cada dia; só num dia NOVO
+    try { processarDias(d); } catch (e) { console.warn('[Cidade] dia:', e); }   // (7.1.14) fome, sedentarismo, destreino, sono, ressaca
   }
   const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // cliente fiel: −20% em tudo
   async function atendimento() {
@@ -4722,7 +4893,7 @@
   }
   // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
   function apiVarzea() {
-    return Object.assign(apiBarbearia(), { VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao, chegarDeFora, irEmbora });
+    return Object.assign(apiBarbearia(), { evoluirPartida, VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao, chegarDeFora, irEmbora });
   }
   // o que o serieb.js (a peneira e a carreira na Série B) usa daqui: o da várzea, o ponto de ônibus, a Lúcia (cenas do presente) e a ida
   //   para o quarto com uma cena pronta (a carta da peneira)
@@ -4891,14 +5062,14 @@
   //   PROBLEMÁTICO na régua de 0 a 10 — nos Espectros (−100 a +100) isso é −2,5 em "humilde" e −2,5 em "tranquilo".
   //   grosseria(id) só conta; falaGrossa(quem, id, linha, reacao) faz o jogador falar, conta e o NPC reage.
   const GROSSO_CORACOES = -5, GROSSO_ESPECTRO = -2.5;
-  function arroganciaNaTela() {                    // "▲ Arrogante · ▲ Problemático" alaranjado, logo embaixo do coração
+  function arroganciaNaTela() {                    // "▲ Problemático" alaranjado, logo embaixo do coração
     const pai = (UI && UI.hud && UI.hud.parentNode) || document.getElementById('raizJogo') || document.body;
-    const el = document.createElement('div'); el.textContent = '▲ ' + T('Arrogante') + '  ·  ▲ ' + T('Problemático');
+    const el = document.createElement('div'); el.textContent = '▲ ' + T('Problemático');   // (7.1.14) grosseria: só Problemático (o outro lado de Humilde agora é Ganancioso)
     el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(114px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 13px/1 var(--font-display);color:#ff9a5c;text-shadow:0 2px 0 #2a1206;pointer-events:none;white-space:nowrap;transition:transform 1.4s ease,opacity 1.4s ease;';
     pai.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%,-22px)'; el.style.opacity = '0'; }, 900); setTimeout(() => el.remove(), 2500);
   }
   function marcarArrogancia(motivo) {
-    try { if (typeof Espectros !== 'undefined') { Espectros.mover('humilde', GROSSO_ESPECTRO, motivo || 'resposta arrogante'); Espectros.mover('tranquilo', GROSSO_ESPECTRO, motivo || 'resposta arrogante'); } } catch (e) { console.warn('[Cidade] espectros:', e); }
+    try { if (typeof Espectros !== 'undefined') { Espectros.mover('tranquilo', GROSSO_ESPECTRO, motivo || 'resposta arrogante');   /* (7.1.14) grosseria agora é só Problemático (o outro lado de Humilde virou Ganancioso) */ } } catch (e) { console.warn('[Cidade] espectros:', e); }
     arroganciaNaTela();
   }
   function grosseria(id) {
@@ -5198,7 +5369,7 @@
     if (UI.turno) fimPainel(UI.turno);
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
     const base = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos), aumento = d.confeitaria ? Math.round(base * 0.5) : 0, paga = base + aumento;   // (6.6.18) com a confeitaria: +50% (a venda dos bolos)
-    d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
+    d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   // (7.1.14) somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
     gravar('chegada');
     const espera = S.modo !== 'livre'; if (!espera) { S.modo = 'cena'; UI.ctl.hidden = true; }
     try {
@@ -6344,7 +6515,9 @@
     F.querySelector('.cdFrase').textContent = Espectros.frase(['saudavel', 'ativo']);
     const cond = [];
     if (Espectros.condicao('refeicaoPesada')) cond.push(T('Refeição pesada: no próximo jogo você corre menos e recupera o fôlego mais devagar.'));
-    if (Espectros.condicao('ressaca')) cond.push(T('Ressaca: no próximo jogo você corre menos, cansa mais rápido e erra mais.'));   // (7.1.5) o bar
+    if (Espectros.condicao('ressaca')) cond.push(T('Ressaca: hoje você chuta 30% pior, corre menos e cansa mais rápido.'));   // (7.1.14) vale o dia seguinte ao porre
+    if (Espectros.condicao('desnutrido')) cond.push(fem() ? T('Desnutrida: menos força, velocidade, fôlego e precisão por 3 dias. Coma direito!') : T('Desnutrido: menos força, velocidade, fôlego e precisão por 3 dias. Coma direito!'));   // (7.1.14)
+    if ((S.dados.diasSemComer | 0) >= 1) cond.push(Tf('Dias sem comer: {0}', S.dados.diasSemComer));
     if ((d.ruinsNoMes && d.ruinsNoMes.n) > 0) cond.push(Tf('Lanches não saudáveis neste mês: {0}.', d.ruinsNoMes.n));
     if (!cond.length) cond.push(T('Nenhuma observação por enquanto.'));
     F.querySelector('.cdCond').innerHTML = cond.map((c) => '<li></li>').join(''); F.querySelectorAll('.cdCond li').forEach((li, i) => { li.textContent = cond[i]; });
@@ -6548,7 +6721,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     L.push(Tf('Precisa de banho: {0}', sim(!!d.precisaBanho)));
     { const c = cafeEfeito(); L.push(c ? textoCafe(c) : T('Café: nenhum')); }
     try { L.push(Tf('Sono: nível {0} (0 = dormiu bem, 3 = pego às 2h)', Sono.nivel())); } catch (e) { /* sem sono */ }
-    try { const cond = Object.entries(Espectros._ler().cond || {}).filter(([k, v]) => v && CONDICOES[k]).map(([k]) => k === 'refeicaoPesada' ? T('Refeição pesada') : k === 'ressaca' ? T('Ressaca') : k); L.push(Tf('Condições: {0}', cond.length ? cond.join(', ') : T('nenhuma'))); } catch (e) { /* ok */ }
+    try { const cond = Object.entries(Espectros._ler().cond || {}).filter(([k, v]) => v && CONDICOES[k]).map(([k]) => k === 'refeicaoPesada' ? T('Refeição pesada') : k === 'ressaca' ? T('Ressaca') : k === 'desnutrido' ? (fem() ? T('Desnutrida') : T('Desnutrido')) : k); L.push(Tf('Condições: {0}', cond.length ? cond.join(', ') : T('nenhuma'))); } catch (e) { /* ok */ }
     L.push(Tf('Emprego: {0} · trabalhou hoje: {1}', empregoEscolhido() || '-', sim(!!d.trabalhouHoje)));
     { const a = d.academia || {}, hoje = a.treinoDia === d.dia ? (a.treinos | 0) : 0; L.push(Tf('Academia: plano até o dia {0} · personal até o dia {1} · treinos hoje {2}/3', a.acessoAte ? a.acessoAte - 1 : '-', a.personalAte ? a.personalAte - 1 : '-', hoje)); }
     L.push(Tf('Clima: {0}', S.clima ? S.clima.estado : '-'));
@@ -6846,6 +7019,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (ant < hMad && d.hora >= hMad && !S.madrugada) { S.madrugada = true; madrugada(nt); return; }     // (5.0.0) passou das 2h acordado
     const hAviso = nt ? d.hora >= 1 && d.hora < 4 : d.hora >= 21 && d.hora < 24;
     if (!d.avisouDormir && hAviso && S.modo === 'livre' && !S.dentro && !S.turnoPizza) { d.avisouDormir = true; avisoDormir(nt); }
+    else if (!S.turnoPizza && !S.trabalhando) checarFome();   // (7.1.14) dois dias sem comer: aviso; no 3º, desmaio
   }
   const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemana());   // quinta a domingo
   function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 3800); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
@@ -8177,5 +8351,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

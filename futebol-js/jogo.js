@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.13';
+const VERSAO_JOGO = '7.1.14';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -664,7 +664,7 @@ const Atributos = (() => {
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // encher a barra: recuperação
     // Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
     if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 4 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → 9 s no 10
-    if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada;
+    if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada / (1 + 0.5 * ganhoHist(a.recuperacao));   // (7.1.14) a RECUPERAÇÃO vale na história: no 10 enche 1,5x mais rápido
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
   }
@@ -729,6 +729,11 @@ function hab(p, nome) {
 }
 function fh(p, nome, exp) {
   return Math.pow(clamp(hab(p, nome) / 7, 0.15, 1.6), exp ?? HAB_EXP[nome] ?? 1);
+}
+// (7.1.14) multiplicador de uma habilidade do SEU jogador medido a partir do começo (5 na história, 7 na partida livre): 1 no começo
+function fUser(nome, exp) {
+  const ref = Atributos.entrada && Atributos.entrada._corridaSeg > 0 ? 5 : 7;
+  return Math.pow(clamp((Atributos.valor(nome) ?? ref) / ref, 0.5, 2), exp ?? 1);
 }
 
 // ---------------------------------------------------------------------
@@ -3666,7 +3671,7 @@ const G = {
   desafio: null,                                  // treino do seu Nonato (Historia.desafio): ganchos do desafio (passo, evento, chutou, barreira, toque)
 };
 function resetStats() {
-  G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '' };
+  G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '', cabecadas: 0, cabecadasNoAlvo: 0 };
   // SÚMULA DOS GOLS (quem fez e quem deu o passe): o campeonato da várzea usa para a artilharia e as assistências de todo mundo.
   //   toqueAtual / toqueAnt: quem tocou na bola por último e quem tocou antes dele (ver stepGame). A assistência é de quem tocou
   //   antes do autor do gol, se for do mesmo time e o autor tiver recebido a bola há menos de 12 s.
@@ -4547,9 +4552,14 @@ function aiCarry(p, dt) {
     return { vx: 0, vz: 0 };
   }
   if (p.team === 0 && G.userRequest > 0 && p.think <= 0 && user.stun <= 0) {
-    passTo(p, user, Math.random() < erroDePasseParaVoce(p));
-    G.userRequest = 0;
-    return { vx: 0, vz: 0 };
+    // (7.1.14) QUÍMICA (Humilde/Ganancioso): o humilde é atendido sempre e recebe melhor; o ganancioso às vezes é ignorado
+    const q = typeof Historia !== 'undefined' && Historia.emPartida() ? Espectros.efeito('quimica', true) : 1;
+    if (q < 1 && Math.random() < (1 - q) * 2.5) { G.userRequest = 0; showToast('Seu companheiro não passou'); }   // segue o lance dele
+    else {
+      passTo(p, user, Math.random() < erroDePasseParaVoce(p) / q);
+      G.userRequest = 0;
+      return { vx: 0, vz: 0 };
+    }
   }
   const goalX = p.dir * HALF_L;
   const dGoal = Math.hypot(goalX - p.x, p.z);
@@ -6125,7 +6135,7 @@ function updatePlayers(dt) {
   const holder = G.possession;
   for (const p of players) {
     if (p.out) continue;                            // expulso: anda sozinho para fora (updateExpulsos)
-    if (p.stun > 0) p.stun -= dt;
+    if (p.stun > 0) p.stun -= dt * (p.isUser ? fUser('goleiro', 1) : 1);   // (7.1.14) GOLEIRO no seu jogador = reflexo: levanta mais rápido
     if (p.controlCd > 0) p.controlCd -= dt;
     if (p.ignBolaT > 0) p.ignBolaT -= dt;
     if (p.boost > 0) p.boost -= dt;
@@ -6650,7 +6660,7 @@ function checkBallContacts() {
       const dm = Math.hypot(ball.x - M.x, ball.y - M.y, ball.z - M.z);
       if (P.pega && dm < 0.8) {
         P.pegou = P.t; ball.saveRolled = true; ball.saveOk = true;
-        if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+        if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
         const wasShot = ball.isShot;
         givePossession(gk);
         if (wasShot) { showToast(gk.team === 1 ? 'Defesa do goleiro!' : 'Nosso goleiro defendeu!'); Som.defesa(); }
@@ -6698,7 +6708,7 @@ function checkBallContacts() {
       chance *= fD;
       ball.saveOk = Math.random() < chance;
       ball.defNoCorpo = noCorpo;                     // para escolher COMO ele defende (encaixa, dois tempos, rebote...)
-      if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+      if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
       if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
       if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5 * fD))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
@@ -6723,7 +6733,7 @@ function checkBallContacts() {
         ball.vx = gk.dir * rand(2, 6); ball.vz = lado * rand(6, 10); ball.vy = rand(1.5, 4);
         ball.spinSide = 0; ball.spinVert = 0;
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
-        if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+        if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
         showToast('Espalmou!'); Som.defesa();
         return;
       }
@@ -6841,7 +6851,7 @@ function aplicarJeitoDaDefesa(gk, jeito) {
   const lado = Math.sign(ball.vz || gk.z || (Math.random() - 0.5)) || 1;
   ball.spinSide = 0; ball.spinVert = 0;
   ball.lastKicker = gk; G.lastTouch = gk; ball.isShot = false; ball.saveRolled = true; ball.saveOk = false;
-  if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+  if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
   G.passTarget = null; G.offside = null;
   if (jeito === 'doisTempos') {                     // a bola bate nas mãos, sobe um pouco na frente dele e ele agarra em seguida
     ball.vx = gk.dir * rand(0.6, 1.4); ball.vz = rand(-0.8, 0.8); ball.vy = rand(2.2, 3.2);
@@ -6870,7 +6880,7 @@ function defesaComOPe(gk, sp3) {
   ball.vx = gk.dir * rand(2.5, 6.5) + rx * rand(1, 4); ball.vz = rz * rand(1.5, 5) + rand(-1.5, 1.5); ball.vy = rand(0.6, 2.4) * Math.min(1, sp3 / 15);
   ball.spinSide = rand(-0.4, 0.4); ball.spinVert = 0;
   ball.lastKicker = gk; G.lastTouch = gk; ball.isShot = false; ball.saveRolled = true; ball.saveOk = false;
-  if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; ball.userShot = false; }
+  if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
   G.passTarget = null; G.offside = null;
   gk.controlCd = 0.8;
   showToast('Defesa com o pé!'); Som.defesa();
@@ -6949,7 +6959,7 @@ function scoreGoal(team, tGol) {
   if (G.pen) { registrarCobranca(true); G.possession = null; ball.vx *= 0.2; ball.vz *= 0.2; return; }   // disputa: não conta no placar
   const byUser = team === 0 && (ball.lastKicker === user || G.possession === user);
   G.score[team]++;
-  if (byUser) { G.stats.gols++; if (ball.userShot || G.possession === user) G.stats.noAlvo++; }
+  if (byUser) { G.stats.gols++; if (ball.userShot || G.possession === user) G.stats.noAlvo++; if (ball.userShot && ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; }
   ball.userShot = false;
   if (typeof Historia !== 'undefined' && Historia.emTreino()) { G.score[team]--; Historia.golNoTreino(); return; }   // tutorial: gol sem comemoração, replay nem bola no meio
   {                                               // súmula: autor, assistência (ou gol contra)
@@ -7925,6 +7935,11 @@ function commitFoul(off, vic, info = {}) {
   else if (info.card === 'amarelo') card = off.yellow ? 'vermelho' : 'amarelo';   // cartão do carrinho (segundo amarelo = vermelho)
   else if (off.fouls >= 5 && off.yellow) card = 'vermelho';                  // segundo amarelo
   else if (off.fouls >= 3 && !off.yellow) card = 'amarelo';
+  if (off.isUser && typeof Historia !== 'undefined' && Historia.emPartida() && !info.red && info.card !== 'vermelho') {   // (7.1.14) Tranquilo x Problemático
+    const kc = Espectros.efeito('cartao', true);
+    if (kc > 1 && !card && Math.random() < (kc - 1) * 2) card = off.yellow ? 'vermelho' : 'amarelo';   // problemático: o juiz pega no pé
+    else if (kc < 1 && card === 'amarelo' && !info.card && Math.random() < (1 - kc) * 2) card = null;   // tranquilo: escapa do amarelo
+  }
   if (card === 'amarelo') off.yellow = true;
   // Por trás: empurrão nas costas — braços esticados para a frente e um passo de impacto.
   if (info.porTras) {
@@ -8329,6 +8344,7 @@ function desvioDoToque(k, u, atributo) {
   let f = fh(u, atributo);
   if (atributo === 'chute' && !u.setPiece && Math.hypot(HALF_L - u.x, u.z) < 18 * ESC) f *= fh(u, 'finalizacao');   // perto do gol: finalização
   s *= clamp(1.4 - 0.4 * f, 0.7, 1.6);
+  if (u.isUser && typeof Historia !== 'undefined' && Historia.emPartida()) s /= Espectros.precisao(atributo);   // (7.1.14) confiança, ressaca e fome
   if (!u.setPiece && !u.throwIn && !u.bolaFixa) {
     const o = nearestOf(TEAMS[1 - u.team], u);
     if (o.p && o.d < 2.6) s *= 1 + (2.6 - o.d) * 0.22;                     // marcador em cima
@@ -8509,7 +8525,7 @@ function executeUserKick() {
   kickBall(u, vx, vy, vz, k.ox * fEf, cavadinha ? 0 : k.oy * fEf, k.throwIn);  // sai de onde a bola está
   u.angle = a;
   if (cavadinha) qualCav = qualidadeDaCavadinha(1);
-  ball.isShot = true; ball.userShot = true; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha;
+  ball.isShot = true; ball.userShot = true; ball.userCabeca = false; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha;
   if (G.ultToque) G.ultToque.cav = cavadinha;
   if (cavadinha) marcarCavadinha(1, qualCav); else prepararBloqueios(u);   // bloqueio da IA
   fim();
@@ -9380,7 +9396,7 @@ function finalizarAereo(tipo) {
   if (tipo === 'cabecada') user.angle = Math.atan2(dz, dx);
   kickBall(user, dx / D * sp, vy, dz / D * sp);
   if (tipo === 'cabecada') user.kickT = 0;
-  ball.isShot = true; ball.userShot = true; G.stats.chutes++; prepararBloqueios(user);
+  ball.isShot = true; ball.userShot = true; ball.userCabeca = tipo === 'cabecada'; G.stats.chutes++; if (ball.userCabeca) G.stats.cabecadas = (G.stats.cabecadas | 0) + 1; prepararBloqueios(user);
   showToast({ cabecada: 'Cabeçada!', voleio: 'Voleio!', bicicleta: 'Bicicleta!' }[tipo], 'good');
   if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;   // a câmera lenta segue a bola
   else checarCenaDoAngulo();
@@ -9566,13 +9582,14 @@ function tryUserTackle() {
   const h = G.possession;
   if (!h || h.team === 0) return;
   const d = dist2D(user, h);
-  if (d > 2.4) { showToast('Chegue mais perto'); return; }
+  const alcance = 2.4 * fUser('defesa', 0.35);                          // (7.1.14) DEFESA: chega no bote de mais longe
+  if (d > alcance) { showToast('Chegue mais perto'); return; }
   if ((h.role === 'GK' && !h.comPe) || h.throwIn || h.setPiece || G.sp) { showToast('Não dá para tirar agora'); return; }
-  user.tackleCd = 1.0;
+  user.tackleCd = 1.0 / fUser('defesa', 0.5);                          // (7.1.14) DEFESA: tenta de novo mais rápido
   if (porTras(user, h)) { commitFoul(user, h, { tipo: 'desarme', porTras: true }); return; }   // por trás é falta (empurrão)
   const dx = h.x - user.x, dz = h.z - user.z, l = Math.hypot(dx, dz) || 1;
   user.dash = 0.12; user.dashVX = dx / l * 9; user.dashVZ = dz / l * 9;
-  if (Math.random() < clamp(0.8 - d * 0.2, 0.25, 0.7)) {
+  if (Math.random() < clamp((0.8 - d * 0.2) * fUser('desarme', 0.5), 0.25, 0.85)) {   // (7.1.14) DESARME: mais chance de tomar a bola
     givePossession(user, { silent: true });
     perderBola(h); G.stats.desarmes++;
     showToast('Desarme!', 'good');
@@ -15949,12 +15966,16 @@ const ESPECTROS = {
   tranquilo:    { tipo: 'traco', polos: ['Tranquilo', 'Problemático'],     efeitos: { cartao: -0.15 } },
   disciplinado: { tipo: 'traco', polos: ['Disciplinado', 'Relaxado'],      efeitos: { treino: 0.15 } },
   confiante:    { tipo: 'traco', polos: ['Confiante', 'Inseguro'],         efeitos: { precisao: 0.08 } },
-  humilde:      { tipo: 'traco', polos: ['Humilde', 'Arrogante'],          efeitos: { quimica: 0.10 } },
+  humilde:      { tipo: 'traco', polos: ['Humilde', 'Ganancioso'],         efeitos: { quimica: 0.10 } },   // (7.1.14) o contrário de humilde agora é GANANCIOSO (dinheiro, bicho, apostas)
 };
 // condições temporárias: valem até serem consumidas (ex.: na próxima partida da história)
 const CONDICOES = {
   refeicaoPesada: { efeitos: { corrida: -0.15, recuperacao: -0.15 }, ate: 'proximaPartida' },
-  ressaca: { efeitos: { corrida: -0.12, recuperacao: -0.2, precisao: -0.1 }, ate: 'proximaPartida' },   // (7.1.5) bebeu demais no bar (3 doses ou mais no mesmo dia)
+  // (7.1.14) a ressaca vale o DIA SEGUINTE inteiro (a cidade liga e desliga: dados.ressacaDia) e tira 30% da precisão do chute
+  ressaca: { efeitos: { corrida: -0.12, recuperacao: -0.2 }, ate: 'dia', chute: 0.7 },
+  // (7.1.14) desmaiou de fome: 3 dias fraco (a cidade liga e desliga: dados.desnutridoAte) — −2 em força, velocidade e resistência,
+  //   −20% de precisão (chute e passe), corre e recupera menos
+  desnutrido: { efeitos: { corrida: -0.15, recuperacao: -0.15 }, ate: 'dia', atributos: { forca: -2, velocidade: -2, resistencia: -2 }, precisao: 0.8 },
 };
 const Espectros = (() => {
   let multLesao = 1;
@@ -15992,17 +16013,29 @@ const Espectros = (() => {
   // não saudável em −50 ou menos: começa no banco (quando existir time) e −20 (na régua 0–100; aqui 1–10 = −2) em velocidade, força e resistência
   const penalidadeTime = () => (ruimDeSaude() ? { banco: true, atributos: { velocidade: -20, forca: -20, resistencia: -20 }, corrida: 0.8 } : null);
   function aplicarNaPartida() {
-    const pen = penalidadeTime();
-    if (pen) { const a = Atributos.entrada; for (const k of ['velocidade', 'forca', 'resistencia']) a[k] = Math.max(1, (a[k] ?? 7) - 2); Atributos.aplicar(a); }
+    const pen = penalidadeTime(), cAt = ler().cond || {};
+    const menos = {}; if (pen) for (const k of ['velocidade', 'forca', 'resistencia']) menos[k] = (menos[k] || 0) + 2;
+    for (const [c, on] of Object.entries(cAt)) if (on && CONDICOES[c] && CONDICOES[c].atributos) for (const [k, v] of Object.entries(CONDICOES[c].atributos)) menos[k] = (menos[k] || 0) - v;   // (7.1.14) desnutrido
+    if (Object.keys(menos).length) { const a = Atributos.entrada; for (const k of Object.keys(menos)) a[k] = Math.max(1, (a[k] ?? 7) - menos[k]); Atributos.aplicar(a); }
     const corrida = efeito('corrida'), rec = efeito('recuperacao');
     CONFIG.STAMINA_RUN_TIME *= corrida * (pen ? pen.corrida : 1); CONFIG.STAMINA_REGEN_TIME /= rec;
+    const vel = efeito('velocidade', true);                                // (7.1.14) Ativo corre um pouco mais; Sedentário, um pouco menos
+    for (const k of ['USER_WALK', 'USER_RUN', 'USER_WALK_BALL', 'USER_RUN_BALL']) CONFIG[k] *= vel;
     multLesao = clamp(efeito('lesao'), 0.7, 1.3);
     const e = ler(); let mudou = false;
     for (const [c, on] of Object.entries(e.cond)) if (on && CONDICOES[c] && CONDICOES[c].ate === 'proximaPartida') { e.cond[c] = false; mudou = true; }
     if (mudou) gravar(e);
     return { corrida, rec };
   }
-  return { valor, mover, efeito, condicao, rotulo, frase, aplicarNaPartida, penalidadeTime, ruimDeSaude, _gravar: gravar, multLesao: () => (typeof Historia !== 'undefined' && Historia.emPartida() ? multLesao : 1), _ler: ler };
+  // (7.1.14) a precisão do SEU toque na partida da história (divide o desvio): Confiante/Inseguro ±8%, ressaca −30% no chute,
+  //   desnutrido −20% em tudo
+  function precisao(atributo) {
+    const c = ler().cond || {}; let k = efeito('precisao', true);
+    for (const [n, on] of Object.entries(c)) { const C = on && CONDICOES[n]; if (!C) continue; if (C.precisao) k *= C.precisao; if (C.chute && atributo === 'chute') k *= C.chute; }
+    return clamp(k, 0.5, 1.3);
+  }
+  const ganancia = (n, motivo) => mover('humilde', -Math.abs(n), motivo || 'dinheiro');   // (7.1.14) atalho: fazer coisas por dinheiro deixa ganancioso
+  return { valor, mover, efeito, condicao, rotulo, frase, aplicarNaPartida, penalidadeTime, ruimDeSaude, precisao, ganancia, _gravar: gravar, multLesao: () => (typeof Historia !== 'undefined' && Historia.emPartida() ? multLesao : 1), _ler: ler };
 })();
 // SONO — a hora em que o personagem dormiu vira um nível (0 bem dormido · 1 depois das 22h · 2 depois de 00h · 3 pego às 2h)
 // que vale até a próxima noite: faixa do domínio menor e tracinho mais rápido. Cada noite ruim soma em "não saudável".
@@ -16033,7 +16066,7 @@ Object.assign(I18N, {
   'Tranquilo': ['Calm', 'Tranquilo', 'Tranquillo', 'Calme'], 'Problemático': ['Troublemaker', 'Problemático', 'Problematico', 'Problématique'],
   'Disciplinado': ['Disciplined', 'Disciplinado', 'Disciplinato', 'Discipliné'], 'Relaxado': ['Slack', 'Relajado', 'Rilassato', 'Relâché'],
   'Confiante': ['Confident', 'Seguro', 'Sicuro', 'Confiant'], 'Inseguro': ['Insecure', 'Inseguro', 'Insicuro', 'Peu sûr'],
-  'Humilde': ['Humble', 'Humilde', 'Umile', 'Humble'], 'Arrogante': ['Arrogant', 'Arrogante', 'Arrogante', 'Arrogant'],
+  'Humilde': ['Humble', 'Humilde', 'Umile', 'Humble'], 'Arrogante': ['Arrogant', 'Arrogante', 'Arrogante', 'Arrogant'], 'Ganancioso': ['Greedy', 'Codicioso', 'Avido', 'Avide'],
   'Neutro': ['Neutral', 'Neutral', 'Neutro', 'Neutre'], 'Muito': ['Very', 'Muy', 'Molto', 'Très'],
   'Nada fora do normal por enquanto.': ['Nothing out of the ordinary for now.', 'Nada fuera de lo normal por ahora.', 'Niente di insolito per ora.', "Rien d'anormal pour l'instant."],
   'Seu personagem está {0}.': ['Your character is {0}.', 'Tu personaje está {0}.', 'Il tuo personaggio è {0}.', 'Ton personnage est {0}.'],

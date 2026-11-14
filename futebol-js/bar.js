@@ -1258,7 +1258,7 @@
           db.teor = { v: teor, t: agora };
           if (!db.doses || db.doses.dia !== d.dia) db.doses = { dia: d.dia, n: 0 }; db.doses.n += 1;
           api.gravar(d.ponto || 'chegada');
-          if (db.doses.n >= 3 && !Espectros.condicao('ressaca')) { Espectros.condicao('ressaca', true); await api.fala('jog', Tx('Acho que já bebi demais por hoje... amanhã vou sentir.')); }
+          if (db.doses.n >= 3 && d.ressacaDia !== d.dia + 1) { d.ressacaDia = d.dia + 1; try { Espectros.mover('disciplinado', -4, 'porre no bar'); } catch (e) { /* ok */ } api.gravar(d.ponto || 'chegada'); await api.fala('jog', Tx('Acho que já bebi demais por hoje... amanhã vou sentir.')); }   // (7.1.14) a ressaca vale o DIA SEGUINTE (a cidade liga: dados.ressacaDia)
           else if (teor >= 2.5) await api.fala('jog', Tx('Opa... a cabeça já tá girando.'));
           else await api.fala('jog', Tx('Ahh... desceu redondo.'));
           if (teor >= 5.5) { s.vomitoT = 6; Espectros.mover('tranquilo', -2, 'porre no bar'); await api.fala('jog', Tx('Acho que eu exagerei...')); }
@@ -1369,7 +1369,7 @@
         A.rotaP = caminho(A.x, A.z, MIRA[1][0], MIRA[1][1], true); pose(A, 'taco');
         const vaiA = (async () => { let t = 0; while (A.rotaP && A.rotaP.length && t < 8) { andarP(A, 1 / 60); t += 1 / 60; await api.esperar(16); } A.yawAlvo = Math.PI; })();
         await andarJog(MIRA[0][0], MIRA[0][1], 1.8); J.yawAlvo = 0; await vaiA;
-        if (aposta) { d.fakes -= aposta; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(aposta); api.gravar(d.ponto || 'chegada'); }
+        if (aposta) { d.fakes -= aposta; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(aposta); api.gravar(d.ponto || 'chegada'); try { Espectros.ganancia(2, 'sinuca valendo dinheiro'); } catch (e) { /* ok */ } }   // (7.1.14)
         await api.esperar(300);
         s.pausado = true;
         const quips = JSON.parse(JSON.stringify(o.quips)); if (fem()) for (const k of Object.keys(quips)) quips[k] = quips[k].map((q) => (q === 'Quarenta anos de sinuca, meu filho.' ? 'Quarenta anos de sinuca, minha filha.' : q));
@@ -1422,7 +1422,7 @@
         const esc = await bichoUI(d.fakes); if (!esc) return;
         d.fakes -= esc.valor; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(esc.valor);
         db.bicho = { dia: d.dia, animal: esc.animal, valor: esc.valor }; db.bichoN = (db.bichoN | 0) + 1;
-        try { Espectros.mover('tranquilo', -3, 'jogo do bicho'); } catch (e) { /* nada */ }
+        try { Espectros.mover('tranquilo', -3, 'jogo do bicho'); Espectros.ganancia(3, 'jogo do bicho'); } catch (e) { /* nada */ }   // (7.1.14) apostar deixa ganancioso
         api.gravar(d.ponto || 'chegada');
         await api.fala('capuz', Tfx('Tá anotado: {1}, {0} fakes.', esc.valor, Tx(BICHOS[esc.animal])));
         await api.fala('jog', Tfx('Tomara que dê {0}...', Tx(BICHOS[esc.animal])));

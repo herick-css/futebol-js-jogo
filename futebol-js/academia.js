@@ -794,10 +794,12 @@
       if (a.treinoDia !== dia()) { a.treinoDia = dia(); a.treinos = 0; }
       a.treinos = (a.treinos | 0) + 1; a.total = (a.total | 0) + 1;
       if (!ok) marcarFalha(tipo);                                       // (6.3.0)
-      const g = ok ? GANHO * (personal ? 2 : 1) : 0, depois = Math.min(10, Math.round((antes + g) * 100) / 100);
+      let kTreino = 1; try { kTreino = Espectros.efeito('treino', true); } catch (e) { /* ok */ }   // (7.1.14) Disciplinado rende mais (até +15%), Relaxado menos
+      const g = ok ? GANHO * (personal ? 2 : 1) * kTreino : 0, depois = Math.min(10, Math.round((antes + g) * 100) / 100);
       at[n] = depois; PERSONAGEM.atributos = Object.assign({}, at);
       s.dados.precisaBanho = true;
       if (ok) try { Espectros.mover('ativo', 2, 'treinou na academia'); } catch (e) { /* ok */ }
+      try { s.dados.ultFisico = s.dados.ativoDia = s.dados.dia; if (a.discDia !== dia()) { a.discDia = dia(); Espectros.mover('disciplinado', 1.5, 'treinou'); } if (!ok) Espectros.mover('confiante', -1, 'falhou no treino'); } catch (e) { /* ok */ }   // (7.1.14)
       const linhas = [];
       if (ok && depois > antes) linhas.push(Tf('+{0} em {1} ({2} → {3})', fmt1(depois - antes), T(NOME_ATRIB[n]), fmt1(antes), fmt1(depois)));
       else if (ok) linhas.push(Tf('{0} já está no máximo (10).', T(NOME_ATRIB[n])));

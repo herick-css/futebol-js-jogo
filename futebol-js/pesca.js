@@ -2530,6 +2530,7 @@
       m.ang0 = angN(Math.atan2(-(m.boiaP.z - m.oz), m.boiaP.x - m.ox) - m.yaw0);
       m.peixeP = { x: m.boiaP.x, z: m.boiaP.z }; m.e = 'fisgou'; m.t = 0; m.proxChoque = rnd(4, 7); m.corriaAntes = false; m.tVib = 0;
       SOM.ploc(); respingo(m.boiaP.x, m.boiaP.z, 6, 0.3); msgMg(tr('Fisgou!'), 1.2); vib(60, true);
+      if (bonus > 0) try { const dd = S().dados, at = api.atributosJogador(); dd.reflexo = dd.reflexo && dd.reflexo.dia === dd.dia ? dd.reflexo : { dia: dd.dia, n: 0 }; if (dd.reflexo.n < 5) { dd.reflexo.n++; at.goleiro = Math.min(10, Math.round(((+at.goleiro || 5) + 0.02) * 100) / 100); PERSONAGEM.atributos = Object.assign({}, at); } } catch (e) { /* ok */ }   // (7.1.14) fisgada rápida = REFLEXO (habilidade Goleiro): +0,02, até 5 por dia
       const r = PEIXES[b.i].r;
       if (b.duke) musicaBriga(4);                                         // (6.6.15) o Duke finge ser um lendário qualquer (sem a cena: ninguém pode ver o que é)
       else if (r >= 3) comecarFisgada(m);                                 // (6.6.15) épico / lendário: a cena da fisgada (a música entra no fim dela)

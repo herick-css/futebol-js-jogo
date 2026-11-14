@@ -1316,7 +1316,7 @@
       const hAbs = (h) => (h < 12 ? h + 24 : h);
       const ini = Math.max(H_TURNO, u.inicio <= H_CHEIO_ATE ? H_TURNO : u.inicio), fimH = antes ? clampN(hAbs(hParou), ini, H_FECHA) : H_FECHA;
       const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), base = Math.round(PAGA * frac), paga = Math.max(0, base + u.noPrazo * GORJETA - u.atrasadas * ATRASO);
-      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);
+      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */ api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);
       s.trabalhando = false; fecharPainel(); mostrarHud(false); tirarCaixaDaMao(); tirarCaixaChao(); if (M.cliRua) tirarClienteRua();
       if (montado()) descer(true);
       M.pedido = null; mostrarCaixaPronta(false); M.tarefas = M.tarefas.filter((t) => t.tipo !== 'entrega');
