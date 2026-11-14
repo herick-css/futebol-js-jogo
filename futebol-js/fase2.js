@@ -656,12 +656,13 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function modeloJogador(d, extra) {      // (7.1.10) extra = { chuteira }: a cidade usa para o jogador provar chuteira na loja
     const fem = PERSONAGEM.genero === 'F', lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
     const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
-    return vestirModelo(Object.assign(aparenciaJogador(), extra || {}), R, c);
+    return vestirModelo(Object.assign(aparenciaJogador(), { enfeites: (PERSONAGEM.aparencia || {}).enfeites || null }, extra || {}), R, c);   // brinco, colar, luva e tatuagens da Golaço Esportes
   }
   // (cidade.js) as pessoas da cidade: adultas (corpo e cabeça normais), com as mesmas roupas do guarda-roupa (menos as de time, que levam o nome do jogador)
   function modeloPessoa(o) {
     const lista = ROUPAS[o.fem ? 'F' : 'M'].filter((R) => !R.time && !R.loja), R = lista[(o.roupa | 0) % lista.length], c = c4(o.cores || R.c);
-    const ap = o.ap || {}, base = { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.corBarba || ap.cabelo, barba: o.fem ? 0 : ap.barba | 0, cabecao: o.cabecao || 1, escala: o.escala || 1 };
+    const ap = o.ap || {}, base = { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo | 0, rosto: ap.rosto | 0, labio: ap.labio == null ? 3 : ap.labio, corBarba: ap.corBarba || ap.cabelo, barba: o.fem ? 0 : ap.barba | 0, cabecao: o.cabecao || 1, escala: o.escala || 1,
+      enfeites: (o.cabecao || 1) > 1.05 ? null : ap.enfeites || null };
     return vestirModelo(base, R, c);
   }
   function fazCigarro(A) {

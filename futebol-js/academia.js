@@ -245,8 +245,9 @@
       const A = api.atorDe(m, opt, 'acadNPC'); A.poseA = 'balcao'; return A;
     }
     const PR_POS = { x: 0.40, y: 1.11, z: -0.05, rz: -0.6 };            // a prancheta no tronco da Fernanda (borda de baixo, na ponta dos dedos da mão esquerda)
-    // A FERNANDA: cabelo vermelho marsala cacheado, pele branca, rosto delicado, top e legging pretos (+ prancheta na mão)
-    const AP_FERNANDA = () => ({ pele: PELES_FITZ[1].cor, cabelo: '#6e1a2e', estilo: acha(ESTILOS_CABELO, 'Cacheado volumoso'), rosto: acha(ROSTOS, 'Delicada'), labio: 1, barba: 0, corBarba: '#6e1a2e' });
+    // A FERNANDA: cabelo vermelho marsala cacheado, pele branca, rosto delicado, top e legging pretos (+ prancheta na mão) e a tatuagem da caveira com serpentes no braço direito
+    const AP_FERNANDA = () => ({ pele: PELES_FITZ[1].cor, cabelo: '#6e1a2e', estilo: acha(ESTILOS_CABELO, 'Cacheado volumoso'), rosto: acha(ROSTOS, 'Delicada'), labio: 1, barba: 0, corBarba: '#6e1a2e',
+      enfeites: { t: { bd: 'caveira_serpentes' } } });   // a tatuagem do braço direito: a caveira com as serpentes e as rosas
     function criarFernanda() {
       const { m, opt } = modelo(AP_FERNANDA(), true, 19, ['#151517', '#151517', '#2a2a2e', '#151517']);   // "Top e calça": top preto + legging preta
       // a prancheta fica presa ao tronco, na frente do peito e inclinada para ela (a face com o papel virada para os olhos); a mão

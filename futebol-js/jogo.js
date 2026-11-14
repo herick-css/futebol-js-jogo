@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.12';
+const VERSAO_JOGO = '7.1.13';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -577,7 +577,7 @@ function gerarAparencia(semente, genero) {
   const lojaB = fem ? [] : ESTILOS_BARBA.map((b, i) => i).filter((i) => ESTILOS_BARBA[i].cosmetico);
   if (lojaB.length) { const r3 = sorteador(((semente || 1) * 6151 + 49157) | 0); if (r3() < CHANCE_CORTE_LOJA) barba = lojaB[Math.floor(r3() * lojaB.length)]; }
   const labio = clamp(Math.round(iPele * 1.3 + (r() * 2 - 1)), 0, LABIOS.length - 1);
-  return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: (() => { const L = chuteirasLivres(); return L[Math.floor(r() * L.length)]; })(),   /* (7.1.10) as premium da loja ficam de fora */ manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M' };
+  return { pele, cabelo, estilo, barba, rosto, labio: LABIOS[labio] ? labio : 3, corBarba: cabelo, chuteira: (() => { const L = chuteirasLivres(); return L[Math.floor(r() * L.length)]; })(),   /* (7.1.10) as premium da loja ficam de fora */ manga: r() < 0.15 ? 1 : 0, meiao: r() < 0.12 ? 2 : r() < 0.1 ? 0 : 1, genero: fem ? 'F' : 'M', enfeites: (() => { try { return enfeitesNPC(semente, fem); } catch (e) { return null; } })() };
 }
 
 // Seu técnico: nome e aparência sorteados na primeira vez e salvos ('futebolJs.tecnico.v1').
@@ -2248,6 +2248,403 @@ const PADS_PREMIUM = {
 };
 // Cabeça: laterais e nuca pintadas na textura. Faixa "lisa" = tons que ficam mais opacos até certa linha (sem quadradinhos);
 // "degrade" = com pixels (fade). Rostos de lado: as 3 colunas da frente só têm a patilha.
+// ACESSÓRIOS E TATUAGENS (vendidos pela Tati, na Golaço Esportes: esportiva.js). Ficam na aparência como aparencia.enfeites:
+//   { t: { bd, be, pd, pe }   a tatuagem (chave de TATUAGENS) em cada lugar: braço direito/esquerdo, perna direita/esquerda
+//     b: [chave, metal]       o brinco (os dois lados)       c: [chave, metal]  o colar       l: [chave, metal]  a luva (as duas mãos) }
+//   O metal é a chave de METAIS. Os brincos, os colares e as luvas entram nas mesmas malhas do boneco (não custam chamada de desenho);
+//   cada tatuagem é uma "película" em volta do antebraço (ou da coxa) com o desenho (traço e sombra em canvas), e só aparece com a pele à mostra
+//   (manga comprida, calça e meião por cima escondem). Os NPCs ganham alguns no gerarAparencia (enfeitesNPC, sorteio à parte).
+const METAIS = [
+  { k: 'ouro', nome: 'Ouro', cor: '#D9AA2B' }, { k: 'ouro_rose', nome: 'Ouro rosé', cor: '#D99A86' }, { k: 'ouro_branco', nome: 'Ouro branco', cor: '#E8E1C6' },
+  { k: 'prata', nome: 'Prata', cor: '#BCC2CA' }, { k: 'platina', nome: 'Platina', cor: '#E0E6EE' }, { k: 'cobre', nome: 'Cobre', cor: '#B8633A' },
+  { k: 'bronze', nome: 'Bronze', cor: '#93652C' }, { k: 'grafite', nome: 'Grafite', cor: '#4C5058' },
+];
+const ACESSORIOS = [
+  { k: 'ponto_luz', tipo: 'brinco', nome: 'Ponto de luz', preco: 180 }, { k: 'argola_p', tipo: 'brinco', nome: 'Argola pequena', preco: 220 },
+  { k: 'gota', tipo: 'brinco', nome: 'Gota', preco: 300 }, { k: 'cruz_b', tipo: 'brinco', nome: 'Cruz', preco: 340 },
+  { k: 'argola_g', tipo: 'brinco', nome: 'Argola grande', preco: 400 },
+  { k: 'corrente_fina', tipo: 'colar', nome: 'Corrente fina', preco: 250 }, { k: 'pingente_bola', tipo: 'colar', nome: 'Pingente de bola', preco: 350 },
+  { k: 'pingente_cruz', tipo: 'colar', nome: 'Pingente de cruz', preco: 380 }, { k: 'medalhao', tipo: 'colar', nome: 'Medalhão', preco: 520 },
+  { k: 'corrente_grossa', tipo: 'colar', nome: 'Corrente grossa', preco: 650 },
+  { k: 'luva_termica', tipo: 'luva', nome: 'Luva térmica', preco: 200, base: '#4A505C' }, { k: 'luva_sem_dedos', tipo: 'luva', nome: 'Luva sem dedos', preco: 240, base: null },
+  { k: 'luva_goleiro', tipo: 'luva', nome: 'Luva de goleiro', preco: 320, base: '#EEF0EA' }, { k: 'luva_couro', tipo: 'luva', nome: 'Luva de couro', preco: 420, base: '#3A271C' },
+  { k: 'luva_cravejada', tipo: 'luva', nome: 'Luva cravejada', preco: 560, base: '#151517' },
+];
+const LUGARES_TATUAGEM = [{ k: 'bd', nome: 'Braço direito' }, { k: 'be', nome: 'Braço esquerdo' }, { k: 'pd', nome: 'Perna direita' }, { k: 'pe', nome: 'Perna esquerda' }];
+// AS 20 TATUAGENS: desenhos de traço (canvas) em centímetros, w x h cm. O preto e o cinza são tinta com transparência (a pele aparece
+//   por baixo, como tatuagem de verdade, em qualquer tom de pele). faixa: true = dá a volta no membro (desenho(g, larg, alt) em cm).
+const TINTA_A = (a) => 'rgba(14,14,18,' + a + ')';
+const TINTA_C = (h, a) => { const n = parseInt(h.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + (a == null ? 0.9 : a) + ')'; };
+// pedaços de desenho reaproveitados (todos em cm)
+const TatDes = {
+  traco(g, w, cor) { g.lineWidth = w; g.strokeStyle = cor || TINTA_A(0.95); g.lineJoin = 'round'; g.lineCap = 'round'; g.stroke(); },
+  curva(g, pts) {                                                       // curva suave pelos pontos (Catmull-Rom → Bézier)
+    g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      g.bezierCurveTo(p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6, p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6, p2[0], p2[1]);
+    }
+  },
+  pontosCurva(pts, n) {                                                 // pontos ao longo da curva (para as escamas)
+    const out = [];
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i], p1 = pts[i], p2 = pts[i + 1], p3 = pts[i + 2] || p2;
+      for (let k = 0; k < n; k++) { const t = k / n, t2 = t * t, t3 = t2 * t;
+        const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+        out.push([f(p0[0], p1[0], p2[0], p3[0]), f(p0[1], p1[1], p2[1], p3[1])]); }
+    }
+    out.push(pts[pts.length - 1]); return out;
+  },
+  // o corpo da cobra: contorno, o cinza do corpo, a barriga clara num lado e as escamas
+  cobra(g, pts, larg, cor) {
+    const tinta = cor ? TINTA_C(cor, 0.85) : TINTA_A(0.42), escura = cor ? TINTA_C(cor, 1) : TINTA_A(0.7);
+    this.curva(g, pts); this.traco(g, larg + 0.5);
+    this.curva(g, pts); g.globalCompositeOperation = 'destination-out'; this.traco(g, larg - 0.1, '#000'); g.globalCompositeOperation = 'source-over';
+    this.curva(g, pts); this.traco(g, larg - 0.1, tinta);
+    const P = this.pontosCurva(pts, 14);
+    for (let i = 1; i < P.length - 1; i++) {
+      const [x0, y0] = P[i - 1], [x1, y1] = P[i + 1], dx = x1 - x0, dy = y1 - y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, [x, y] = P[i];
+      if (i % 2 === 0) { g.beginPath(); g.moveTo(x + nx * larg * 0.42, y + ny * larg * 0.42); g.lineTo(x + nx * larg * 0.1, y + ny * larg * 0.1); this.traco(g, 0.16, TINTA_A(0.6)); }   // a barriga em gomos
+      g.beginPath(); g.arc(x - nx * larg * 0.18 + (i % 3 - 1) * 0.12, y - ny * larg * 0.18, larg * 0.13, 0, Math.PI * 2); g.fillStyle = escura; g.fill();     // as escamas do dorso
+    }
+  },
+  // a naja de capuz aberto: (x, y) = a base do capuz (onde o corpo continua), a cabeça no alto olhando para a direita, boca aberta
+  cabecaNaja(g, x, y, e, cor) {
+    g.save(); g.translate(x, y); g.scale(e, e);
+    const pele = cor ? TINTA_C(cor, 0.75) : TINTA_A(0.32), escura = cor ? TINTA_C(cor, 1) : TINTA_A(0.62);
+    g.beginPath(); g.moveTo(-0.7, 0); g.bezierCurveTo(-2.6, -1.4, -2.7, -3.6, -1.0, -5.0); g.lineTo(0.9, -5.0); g.bezierCurveTo(2.5, -3.6, 2.3, -1.4, 0.7, 0); g.closePath();   // o capuz
+    g.fillStyle = pele; g.fill(); this.traco(g, 0.3);
+    for (let k = 0; k < 6; k++) { const yy = -0.6 - k * 0.72, ww = 0.45 + Math.sin((k + 1) / 7 * Math.PI) * 0.55; g.beginPath(); g.moveTo(-ww, yy); g.quadraticCurveTo(0, yy + 0.25, ww, yy); this.traco(g, 0.13, TINTA_A(0.7)); }   // as escamas da frente
+    for (const s of [-1, 1]) { g.beginPath(); g.ellipse(s * 1.45, -2.6, 0.32, 0.75, s * 0.2, 0, Math.PI * 2); g.fillStyle = escura; g.fill(); }
+    g.beginPath(); g.moveTo(-1.0, -5.0); g.bezierCurveTo(-0.9, -6.5, 1.2, -7.3, 3.0, -6.6); g.lineTo(3.4, -6.1); g.lineTo(1.6, -5.7); g.closePath();                 // a cabeça (maxilar de cima)
+    g.fillStyle = cor ? TINTA_C(cor, 0.9) : TINTA_A(0.48); g.fill(); this.traco(g, 0.26);
+    g.beginPath(); g.moveTo(1.6, -5.7); g.lineTo(3.2, -4.9); g.bezierCurveTo(2.2, -4.4, 1.0, -4.5, 0.9, -5.0); g.closePath(); g.fillStyle = cor ? TINTA_C(cor, 0.8) : TINTA_A(0.38); g.fill(); this.traco(g, 0.24);   // o de baixo
+    g.beginPath(); g.moveTo(1.7, -5.65); g.lineTo(3.35, -6.05); g.lineTo(3.15, -4.95); g.closePath(); g.fillStyle = TINTA_C('#B3202A', 0.85); g.fill();          // a boca aberta
+    for (const [x0, y0, y1] of [[3.0, -6.05, -5.55], [2.6, -5.95, -5.5]]) { g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 - 0.05, y1); this.traco(g, 0.12, '#f4f0e6'); }   // as presas
+    g.beginPath(); g.moveTo(2.2, -5.5); g.lineTo(4.4, -5.6); g.lineTo(5.0, -6.1); g.moveTo(4.4, -5.6); g.lineTo(5.1, -5.2); this.traco(g, 0.13, TINTA_C('#B3202A', 0.9));   // a língua
+    g.beginPath(); g.arc(0.8, -6.2, 0.26, 0, Math.PI * 2); g.fillStyle = TINTA_A(1); g.fill(); g.beginPath(); g.arc(0.86, -6.28, 0.08, 0, Math.PI * 2); g.fillStyle = '#f4f0e6'; g.fill();
+    g.beginPath(); g.moveTo(-0.4, -6.3); g.quadraticCurveTo(0.6, -6.9, 1.6, -6.7); this.traco(g, 0.12, TINTA_A(0.7));
+    g.restore();
+  },
+  // a caveira (preto e cinza), w ≈ 10 cm em e = 1, centro do crânio em (x, y)
+  caveira(g, x, y, e) {
+    g.save(); g.translate(x, y); g.scale(e, e);
+    g.beginPath(); g.moveTo(-4.6, -0.6); g.bezierCurveTo(-5.2, -6.2, 5.2, -6.2, 4.6, -0.6); g.bezierCurveTo(4.5, 1.2, 3.8, 1.6, 3.5, 2.6); g.lineTo(3.2, 4.4); g.lineTo(-3.2, 4.4); g.lineTo(-3.5, 2.6);
+    g.bezierCurveTo(-3.8, 1.6, -4.5, 1.2, -4.6, -0.6); g.closePath();
+    const sombra = g.createRadialGradient(0, -1.2, 1.5, 0, 0, 5.4); sombra.addColorStop(0, TINTA_A(0)); sombra.addColorStop(0.7, TINTA_A(0.12)); sombra.addColorStop(1, TINTA_A(0.5));
+    g.fillStyle = sombra; g.fill(); this.traco(g, 0.32);
+    for (const s of [-1, 1]) {                                          // as órbitas, a maçã do rosto
+      g.beginPath(); g.ellipse(s * 1.85, 0.3, 1.45, 1.3, s * 0.15, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.92); g.fill();
+      g.beginPath(); g.ellipse(s * 1.6, -0.1, 0.4, 0.35, 0, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.35); g.fill();
+      g.beginPath(); g.moveTo(s * 4.1, 1.6); g.quadraticCurveTo(s * 2.8, 2.4, s * 1.4, 2.3); this.traco(g, 0.18, TINTA_A(0.7));
+    }
+    g.beginPath(); g.moveTo(0, 1.6); g.lineTo(-0.7, 2.9); g.quadraticCurveTo(0, 3.2, 0.7, 2.9); g.closePath(); g.fillStyle = TINTA_A(0.92); g.fill();           // o nariz
+    g.beginPath(); g.rect(-2.6, 3.4, 5.2, 1.6); g.fillStyle = TINTA_A(0.12); g.fill();                                                  // os dentes
+    for (let i = 0; i <= 6; i++) { g.beginPath(); g.moveTo(-2.6 + i * 0.866, 3.4); g.lineTo(-2.6 + i * 0.866, 5.0); this.traco(g, 0.14, TINTA_A(0.8)); }
+    g.beginPath(); g.moveTo(-2.7, 4.2); g.lineTo(2.7, 4.2); this.traco(g, 0.16, TINTA_A(0.85));
+    g.beginPath(); g.moveTo(-3.2, 4.4); g.quadraticCurveTo(-3.0, 5.6, -1.8, 5.5); g.lineTo(1.8, 5.5); g.quadraticCurveTo(3.0, 5.6, 3.2, 4.4); this.traco(g, 0.3);   // o queixo
+    g.beginPath(); g.moveTo(0.6, -4.9); g.lineTo(0.2, -3.6); g.lineTo(0.8, -2.8); g.lineTo(0.4, -2.1); this.traco(g, 0.12, TINTA_A(0.75));    // a rachadura
+    g.restore();
+  },
+  // a rosa: as pétalas de fora (círculos que se juntam), o botão em espiral e a sombra do miolo (cor ou preto e cinza)
+  rosa(g, x, y, r, cor) {
+    g.save(); g.translate(x, y);
+    const fundo = cor ? TINTA_C(cor, 0.8) : TINTA_A(0.2), escuro = cor ? TINTA_C(cor, 1) : TINTA_A(0.6), N = 7, P = [];
+    for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2 + 0.3; P.push([Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.44, r * 0.5, a]); }
+    const uniao = () => { g.beginPath(); for (const [px, py, pr] of P) { g.moveTo(px + pr, py); g.arc(px, py, pr, 0, Math.PI * 2); } };
+    for (const [px, py, pr] of P) { g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); this.traco(g, r * 0.15); }                     // o contorno: só a metade de fora do traço fica
+    uniao(); g.globalCompositeOperation = 'destination-out'; g.fillStyle = '#000'; g.fill(); g.globalCompositeOperation = 'source-over';
+    uniao(); g.fillStyle = fundo; g.fill();
+    const sombra = g.createRadialGradient(0, 0, 0, 0, 0, r); sombra.addColorStop(0, cor ? TINTA_A(0.35) : TINTA_A(0.4)); sombra.addColorStop(0.55, TINTA_A(0)); uniao(); g.fillStyle = sombra; g.fill();
+    for (const [px, py, pr, a] of P) { g.beginPath(); g.arc(px * 0.55, py * 0.55, pr * 0.8, a - 0.6, a + 0.6); this.traco(g, r * 0.05, TINTA_A(0.55)); }   // as dobras das pétalas
+    for (const [a0, rr, dx] of [[3.6, 0.55, 0], [0.6, 0.42, 0.05], [2.4, 0.3, -0.04], [4.6, 0.2, 0.02]]) { g.beginPath(); g.arc(r * dx, 0, r * rr, a0, a0 + 3.4); this.traco(g, r * 0.07); }
+    g.beginPath(); g.arc(r * 0.02, -r * 0.02, r * 0.11, 0, Math.PI * 2); g.fillStyle = escuro; g.fill();
+    g.restore();
+  },
+  folha(g, x, y, ang, L, cor) {
+    g.save(); g.translate(x, y); g.rotate(ang);
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(L * 0.5, -L * 0.36, L, 0); g.quadraticCurveTo(L * 0.5, L * 0.36, 0, 0);
+    g.fillStyle = cor ? TINTA_C(cor, 0.85) : TINTA_A(0.32); g.fill(); this.traco(g, 0.22);
+    g.beginPath(); g.moveTo(L * 0.08, 0); g.lineTo(L * 0.88, 0); this.traco(g, 0.12, TINTA_A(0.7));
+    g.restore();
+  },
+  estrela(g, x, y, R, r, n, rot) { g.beginPath(); for (let i = 0; i < n * 2; i++) { const a = rot + i * Math.PI / n, rr = i % 2 ? r : R; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); },
+};
+const TATUAGENS = [
+  { k: 'infinito', nome: 'Infinito', preco: 150, w: 10, h: 5, desenho(g) {
+    g.beginPath(); for (let i = 0; i <= 80; i++) { const t = i / 80 * Math.PI * 2, d = 1 + Math.sin(t) ** 2; g.lineTo(5 + 4.4 * Math.cos(t) / d, 2.5 + 4.4 * Math.sin(t) * Math.cos(t) / d); } TatDes.traco(g, 0.5);
+  } },
+  { k: 'raio', nome: 'Raio', preco: 180, w: 6, h: 12, desenho(g) {
+    g.beginPath(); g.moveTo(3.6, 0.3); g.lineTo(0.8, 6.4); g.lineTo(2.9, 6.4); g.lineTo(1.6, 11.7); g.lineTo(5.4, 4.6); g.lineTo(3.2, 4.6); g.lineTo(5.2, 0.3); g.closePath();
+    const gr = g.createLinearGradient(0, 0, 6, 12); gr.addColorStop(0, TINTA_C('#F5D44A')); gr.addColorStop(1, TINTA_C('#D98A12')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.4);
+  } },
+  { k: 'trevo', nome: 'Trevo de quatro folhas', preco: 200, w: 10, h: 13, desenho(g) {
+    g.beginPath(); g.moveTo(5, 5); g.quadraticCurveTo(5.6, 9, 4.2, 12.6); TatDes.traco(g, 0.45);
+    for (let i = 0; i < 4; i++) { g.save(); g.translate(5, 5); g.rotate(Math.PI / 4 + i * Math.PI / 2);
+      g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(-3.2, -1.2, -2.6, -4.6, -0.9, -3.8); g.quadraticCurveTo(0, -3.2, 0.9, -3.8); g.bezierCurveTo(2.6, -4.6, 3.2, -1.2, 0, 0);
+      const gr = g.createLinearGradient(0, 0, 0, -4); gr.addColorStop(0, TINTA_C('#1E6A30')); gr.addColorStop(1, TINTA_C('#5DB04C')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.32);
+      g.beginPath(); g.moveTo(0, -0.4); g.lineTo(0, -3.2); TatDes.traco(g, 0.14, TINTA_A(0.55)); g.restore(); }
+  } },
+  { k: 'coracao', nome: 'Coração com faixa', preco: 220, w: 13, h: 11, desenho(g) {
+    g.beginPath(); g.moveTo(6.5, 10.6); g.bezierCurveTo(1, 7, -0.4, 2.6, 2.2, 1); g.bezierCurveTo(4, 0, 5.8, 0.8, 6.5, 2.4); g.bezierCurveTo(7.2, 0.8, 9, 0, 10.8, 1); g.bezierCurveTo(13.4, 2.6, 12, 7, 6.5, 10.6); g.closePath();
+    const gr = g.createRadialGradient(4.5, 3, 0.5, 6.5, 5, 7); gr.addColorStop(0, TINTA_C('#F06A5A')); gr.addColorStop(1, TINTA_C('#9A1422')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.42);
+    g.beginPath(); g.ellipse(4, 3, 1, 0.6, -0.5, 0, Math.PI * 2); g.fillStyle = 'rgba(255,245,235,0.75)'; g.fill();
+    g.beginPath(); g.moveTo(0.2, 4.6); g.lineTo(12.8, 4.6); g.lineTo(12.2, 6.2); g.lineTo(0.8, 6.2); g.closePath(); g.fillStyle = TINTA_C('#EAC64A'); g.fill(); TatDes.traco(g, 0.32);
+    for (const s of [0, 1]) { g.beginPath(); const x = s ? 12.8 : 0.2; g.moveTo(x, 4.6); g.lineTo(x + (s ? 0.9 : -0.9), 5.0); g.lineTo(x + (s ? 0.3 : -0.3), 5.4); g.lineTo(x + (s ? 0.9 : -0.9), 6.6); g.lineTo(x + (s ? -0.6 : 0.6), 6.2); TatDes.traco(g, 0.28); }
+  } },
+  { k: 'ancora', nome: 'Âncora', preco: 240, w: 10, h: 13.5, desenho(g) {
+    g.beginPath(); g.arc(5, 1.4, 1.0, 0, Math.PI * 2); TatDes.traco(g, 0.42);
+    g.beginPath(); g.rect(4.5, 2.4, 1, 9.4); g.fillStyle = TINTA_A(0.35); g.fill(); TatDes.traco(g, 0.34);
+    g.beginPath(); g.rect(2.2, 3.6, 5.6, 0.9); g.fillStyle = TINTA_A(0.35); g.fill(); TatDes.traco(g, 0.32);
+    g.beginPath(); g.moveTo(0.6, 8.2); g.quadraticCurveTo(1.4, 12.8, 5, 12.8); g.quadraticCurveTo(8.6, 12.8, 9.4, 8.2); TatDes.traco(g, 0.95); g.beginPath(); g.moveTo(0.6, 8.2); g.quadraticCurveTo(1.4, 12.8, 5, 12.8); g.quadraticCurveTo(8.6, 12.8, 9.4, 8.2); TatDes.traco(g, 0.4, TINTA_A(0.2));
+    for (const s of [-1, 1]) { g.beginPath(); const x = 5 + s * 4.4; g.moveTo(x - s * 0.9, 8.6); g.lineTo(x, 7.2); g.lineTo(x + s * 0.5, 8.9); g.closePath(); g.fillStyle = TINTA_A(0.9); g.fill(); }
+    TatDes.curva(g, [[5, 2.2], [7.4, 5], [3.4, 7.6], [6.6, 10.4], [5.4, 12.6]]); TatDes.traco(g, 0.24, TINTA_A(0.6));                    // a corda enrolada
+  } },
+  { k: 'estrela', nome: 'Estrela náutica', preco: 260, w: 11, h: 11, desenho(g) {
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5, b = a + Math.PI / 5, c = a - Math.PI / 5;
+      for (const [lado, cor] of [[b, TINTA_A(0.9)], [c, TINTA_C('#244A9C', 0.85)]]) { g.beginPath(); g.moveTo(5.5, 5.5); g.lineTo(5.5 + Math.cos(a) * 5.3, 5.5 + Math.sin(a) * 5.3); g.lineTo(5.5 + Math.cos(lado) * 2.1, 5.5 + Math.sin(lado) * 2.1); g.closePath(); g.fillStyle = cor; g.fill(); } }
+    TatDes.estrela(g, 5.5, 5.5, 5.3, 2.1, 5, -Math.PI / 2); TatDes.traco(g, 0.32);
+  } },
+  { k: 'andorinha', nome: 'Andorinha', preco: 300, w: 13, h: 9, desenho(g) {
+    g.beginPath(); g.moveTo(1.2, 3.8); g.bezierCurveTo(3, 2.6, 5, 2.8, 6.2, 3.6); g.bezierCurveTo(7.8, 0.6, 10.4, 0.2, 12.6, 0.6); g.bezierCurveTo(10.8, 1.8, 9.4, 3.2, 8.6, 4.6);
+    g.bezierCurveTo(9.6, 5.4, 10.6, 7.6, 11.6, 8.6); g.bezierCurveTo(10, 8.2, 8.6, 7, 7.6, 6.2); g.lineTo(6.8, 8.2); g.lineTo(6.2, 6.2); g.bezierCurveTo(4.2, 6.4, 2.4, 5.4, 1.2, 3.8); g.closePath();
+    g.fillStyle = TINTA_C('#244A9C', 0.88); g.fill(); TatDes.traco(g, 0.32);
+    g.beginPath(); g.moveTo(1.3, 3.9); g.bezierCurveTo(2.4, 4.8, 3.6, 5.2, 5, 5.1); g.bezierCurveTo(3.8, 4.2, 2.4, 3.9, 1.3, 3.9); g.fillStyle = TINTA_C('#C8202A'); g.fill();
+    g.beginPath(); g.arc(2.6, 3.6, 0.28, 0, Math.PI * 2); g.fillStyle = TINTA_A(1); g.fill();
+    g.beginPath(); g.moveTo(1.2, 3.8); g.lineTo(0.2, 3.9); g.lineTo(1.3, 4.2); TatDes.traco(g, 0.24);
+    for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(8 + i * 1.2, 2.2 - i * 0.4); g.lineTo(9.2 + i * 1.2, 1.4 - i * 0.3); TatDes.traco(g, 0.14, TINTA_A(0.6)); }
+  } },
+  { k: 'coroa', nome: 'Coroa', preco: 320, w: 12, h: 9, desenho(g) {
+    g.beginPath(); g.moveTo(1, 7); g.lineTo(0.4, 1.6); g.lineTo(3.4, 4.4); g.lineTo(6, 0.4); g.lineTo(8.6, 4.4); g.lineTo(11.6, 1.6); g.lineTo(11, 7); g.closePath();
+    const gr = g.createLinearGradient(0, 0, 0, 8); gr.addColorStop(0, TINTA_C('#F2D35A')); gr.addColorStop(1, TINTA_C('#B07A12')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.38);
+    g.beginPath(); g.rect(0.8, 7, 10.4, 1.6); g.fillStyle = TINTA_C('#C8921A'); g.fill(); TatDes.traco(g, 0.34);
+    for (const [x, y, c] of [[0.4, 1.4, '#C8202A'], [6, 0.2, '#244A9C'], [11.6, 1.4, '#C8202A'], [3.4, 7.8, '#1F8A4D'], [6, 7.8, '#C8202A'], [8.6, 7.8, '#1F8A4D']]) { g.beginPath(); g.arc(x, y, 0.55, 0, Math.PI * 2); g.fillStyle = TINTA_C(c); g.fill(); TatDes.traco(g, 0.18); }
+  } },
+  { k: 'rosa', nome: 'Rosa', preco: 340, w: 10, h: 13, desenho(g) {
+    g.beginPath(); g.moveTo(5, 8); g.quadraticCurveTo(4.4, 10.6, 5.2, 12.8); TatDes.traco(g, 0.4);
+    TatDes.folha(g, 4.8, 10, Math.PI * 1.15, 3.8, '#2E7A3A'); TatDes.folha(g, 5.1, 11.2, -0.35, 3.6, '#2E7A3A');
+    TatDes.rosa(g, 5, 4.6, 4.1, '#B3202A');
+  } },
+  { k: 'borboleta', nome: 'Borboleta', preco: 360, w: 12, h: 9.5, desenho(g) {
+    for (const s of [-1, 1]) {
+      g.beginPath(); g.moveTo(6, 3.6); g.bezierCurveTo(6 + s * 2, 0, 6 + s * 6.2, -0.6, 6 + s * 5.6, 2.6); g.bezierCurveTo(6 + s * 5.2, 4.6, 6 + s * 2.4, 4.8, 6, 4.6); g.closePath();
+      const gr = g.createRadialGradient(6, 3.6, 0.5, 6 + s * 3, 2, 4.5); gr.addColorStop(0, TINTA_C('#5C3494')); gr.addColorStop(1, TINTA_C('#D45A9A')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.3);
+      g.beginPath(); g.moveTo(6, 4.8); g.bezierCurveTo(6 + s * 4.4, 4.6, 6 + s * 4.8, 8.4, 6 + s * 2.4, 8.6); g.bezierCurveTo(6 + s * 1.2, 8.4, 6 + s * 0.4, 6.8, 6, 5.4); g.closePath(); g.fill(); TatDes.traco(g, 0.3);
+      for (const [x, y, r] of [[3.6, 1.8, 0.6], [2.4, 6.6, 0.45]]) { g.beginPath(); g.arc(6 + s * x, y, r, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.75); g.fill(); }
+      g.beginPath(); g.moveTo(6, 3.8); g.lineTo(6 + s * 4.6, 1.6); g.moveTo(6, 5.2); g.lineTo(6 + s * 2.6, 7.6); TatDes.traco(g, 0.12, TINTA_A(0.6));
+    }
+    g.beginPath(); g.ellipse(6, 5, 0.45, 2.6, 0, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.95); g.fill();
+    g.beginPath(); g.moveTo(5.8, 2.6); g.quadraticCurveTo(5, 1, 4.2, 0.6); g.moveTo(6.2, 2.6); g.quadraticCurveTo(7, 1, 7.8, 0.6); TatDes.traco(g, 0.14);
+  } },
+  { k: 'bussola', nome: 'Bússola', preco: 380, w: 11, h: 11, desenho(g) {
+    g.beginPath(); g.arc(5.5, 5.5, 5.1, 0, Math.PI * 2); TatDes.traco(g, 0.42); g.beginPath(); g.arc(5.5, 5.5, 4.3, 0, Math.PI * 2); TatDes.traco(g, 0.2, TINTA_A(0.7));
+    for (let i = 0; i < 32; i++) { const a = i / 32 * Math.PI * 2, r0 = i % 4 ? 4.3 : 3.8; g.beginPath(); g.moveTo(5.5 + Math.cos(a) * r0, 5.5 + Math.sin(a) * r0); g.lineTo(5.5 + Math.cos(a) * 4.9, 5.5 + Math.sin(a) * 4.9); TatDes.traco(g, 0.1, TINTA_A(0.7)); }
+    TatDes.estrela(g, 5.5, 5.5, 3.3, 0.8, 8, -Math.PI / 2); g.fillStyle = TINTA_A(0.25); g.fill(); TatDes.traco(g, 0.18);
+    g.beginPath(); g.moveTo(5.5, 1.6); g.lineTo(6.2, 5.5); g.lineTo(4.8, 5.5); g.closePath(); g.fillStyle = TINTA_C('#C8202A'); g.fill(); TatDes.traco(g, 0.16);
+    g.beginPath(); g.moveTo(5.5, 9.4); g.lineTo(6.2, 5.5); g.lineTo(4.8, 5.5); g.closePath(); g.fillStyle = TINTA_A(0.85); g.fill();
+    g.beginPath(); g.arc(5.5, 5.5, 0.4, 0, Math.PI * 2); g.fillStyle = '#e8e2d6'; g.fill(); TatDes.traco(g, 0.12);
+  } },
+  { k: 'caveira', nome: 'Caveira', preco: 400, w: 11, h: 12.5, desenho(g) { TatDes.caveira(g, 5.5, 6, 1); } },
+  { k: 'taca', nome: 'Taça', preco: 420, w: 10, h: 12.5, desenho(g) {
+    g.beginPath(); g.moveTo(1.8, 0.4); g.lineTo(8.2, 0.4); g.bezierCurveTo(8.2, 4.6, 6.6, 6.4, 5.6, 6.8); g.lineTo(5.6, 8.6); g.lineTo(4.4, 8.6); g.lineTo(4.4, 6.8); g.bezierCurveTo(3.4, 6.4, 1.8, 4.6, 1.8, 0.4); g.closePath();
+    const gr = g.createLinearGradient(1.8, 0, 8.2, 0); gr.addColorStop(0, TINTA_C('#F2D35A')); gr.addColorStop(0.5, TINTA_C('#E0A82A')); gr.addColorStop(1, TINTA_C('#A06A10')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.36);
+    for (const s of [-1, 1]) { g.beginPath(); g.moveTo(5 + s * 3.1, 1.2); g.bezierCurveTo(5 + s * 5.2, 1.2, 5 + s * 5, 4.6, 5 + s * 2.4, 4.8); TatDes.traco(g, 0.42); }
+    g.beginPath(); g.rect(3, 8.6, 4, 1.2); g.rect(2.2, 9.8, 5.6, 2.2); g.fillStyle = TINTA_C('#8A5A1A'); g.fill(); TatDes.traco(g, 0.32);
+    g.beginPath(); g.moveTo(3, 1.4); g.quadraticCurveTo(3, 4, 4.2, 5.4); TatDes.traco(g, 0.3, 'rgba(255,248,225,0.7)');
+    TatDes.estrela(g, 5, 3.2, 1.3, 0.55, 5, -Math.PI / 2); g.fillStyle = TINTA_A(0.5); g.fill();
+  } },
+  { k: 'bola_chamas', nome: 'Bola em chamas', preco: 450, w: 10, h: 13, desenho(g) {
+    g.beginPath(); g.moveTo(1.2, 9); g.bezierCurveTo(-0.6, 5.6, 1.4, 4.4, 1.6, 2.4); g.bezierCurveTo(2.6, 3.8, 2.8, 4.6, 3, 5.4); g.bezierCurveTo(3.4, 3, 4.6, 1.6, 4.8, 0.2);
+    g.bezierCurveTo(6, 1.8, 6.4, 3.4, 6.2, 5); g.bezierCurveTo(7, 4.2, 7.4, 3.2, 8, 2.6); g.bezierCurveTo(9.2, 4.6, 10.6, 6.4, 8.8, 9); g.closePath();
+    const gr = g.createLinearGradient(0, 0, 0, 10); gr.addColorStop(0, TINTA_C('#F5D44A')); gr.addColorStop(0.6, TINTA_C('#E8741A')); gr.addColorStop(1, TINTA_C('#C0301A')); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.3);
+    g.beginPath(); g.arc(5, 9.2, 3.5, 0, Math.PI * 2); g.fillStyle = 'rgba(244,240,230,0.85)'; g.fill(); TatDes.traco(g, 0.36);
+    TatDes.estrela(g, 5, 9.2, 1.25, 1.05, 5, -Math.PI / 2); g.fillStyle = TINTA_A(0.95); g.fill();
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; g.beginPath(); g.moveTo(5 + Math.cos(a) * 1.25, 9.2 + Math.sin(a) * 1.25); g.lineTo(5 + Math.cos(a) * 2.6, 9.2 + Math.sin(a) * 2.6); TatDes.traco(g, 0.18); }
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + Math.PI / 5 + i * Math.PI * 2 / 5; g.beginPath(); g.arc(5 + Math.cos(a) * 3.0, 9.2 + Math.sin(a) * 3.0, 0.62, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.9); g.fill(); }
+  } },
+  { k: 'ondas', nome: 'Ondas', preco: 480, faixa: true, desenho(g, W, H) {
+    const y0 = H / 2 - 2.6, per = W / 4;
+    g.beginPath(); g.moveTo(0, y0 + 5.2); for (let x = 0; x <= W + 0.1; x += 0.25) { const f = (x % per) / per; g.lineTo(x, y0 + 1.6 - Math.sin(f * Math.PI) * 1.8 + (f > 0.75 ? (f - 0.75) * 9 : 0)); } g.lineTo(W, y0 + 5.2); g.closePath();
+    const gr = g.createLinearGradient(0, y0, 0, y0 + 5.2); gr.addColorStop(0, TINTA_C('#4A8FD4')); gr.addColorStop(1, TINTA_C('#1C3A80')); g.fillStyle = gr; g.fill();
+    g.beginPath(); for (let x = 0; x <= W + 0.1; x += 0.25) { const f = (x % per) / per; const y = y0 + 1.6 - Math.sin(f * Math.PI) * 1.8 + (f > 0.75 ? (f - 0.75) * 9 : 0); if (x === 0 || f < 0.01) g.moveTo(x, y); else g.lineTo(x, y); } TatDes.traco(g, 0.38);
+    for (let i = 0; i < 4; i++) { const cx = per * (i + 0.62); g.beginPath(); g.arc(cx, y0 + 0.9, 0.9, Math.PI * 0.9, Math.PI * 2.3); TatDes.traco(g, 0.3); g.beginPath(); g.arc(cx + 0.2, y0 + 0.9, 0.35, 0, Math.PI * 2); g.fillStyle = 'rgba(240,240,232,0.8)'; g.fill();
+      for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(per * (i + 0.3) + k * 1.4, y0 + 3.6 + (k % 2) * 0.6, 0.9, Math.PI * 1.1, Math.PI * 1.9); TatDes.traco(g, 0.16, 'rgba(235,240,245,0.75)'); } }
+    g.beginPath(); g.moveTo(0, y0 + 5.2); g.lineTo(W, y0 + 5.2); TatDes.traco(g, 0.32);
+  } },
+  { k: 'arame', nome: 'Arame farpado', preco: 500, faixa: true, desenho(g, W, H) {
+    const c = H / 2, per = 3.1;
+    for (const f of [0, Math.PI]) { g.beginPath(); for (let x = 0; x <= W + 0.1; x += 0.2) { const y = c + 0.55 * Math.sin(x / per * Math.PI * 2 + f); if (!x) g.moveTo(x, y); else g.lineTo(x, y); } TatDes.traco(g, 0.45); }
+    for (const f of [0, Math.PI]) { g.beginPath(); for (let x = 0; x <= W + 0.1; x += 0.2) { const y = c - 0.12 + 0.55 * Math.sin(x / per * Math.PI * 2 + f); if (!x) g.moveTo(x, y); else g.lineTo(x, y); } TatDes.traco(g, 0.12, 'rgba(200,200,200,0.5)'); }
+    for (let x = per / 4; x < W; x += per * 2) { g.beginPath(); g.moveTo(x - 0.9, c - 1.1); g.lineTo(x + 0.9, c + 1.1); g.moveTo(x + 0.9, c - 1.1); g.lineTo(x - 0.9, c + 1.1); TatDes.traco(g, 0.28); }
+  } },
+  { k: 'tribal', nome: 'Tribal', preco: 550, w: 11, h: 24, desenho(g) {
+    const preto = TINTA_A(0.96);
+    const gancho = (x, y, e, s) => { g.save(); g.translate(x, y); g.scale(e * s, e);
+      g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(3, -0.6, 4.6, 2.2, 3.2, 4.2); g.bezierCurveTo(2.2, 5.6, 0.2, 5.2, 0.4, 3.6); g.bezierCurveTo(0.6, 2.6, 2, 2.8, 2, 3.6);
+      g.bezierCurveTo(2.6, 2.2, 1.6, 0.8, -0.2, 1.2); g.closePath(); g.fillStyle = preto; g.fill(); g.restore(); };
+    g.beginPath(); g.moveTo(5.5, 0.4); g.bezierCurveTo(9.6, 3.8, 1.4, 7.6, 5.6, 11.6); g.bezierCurveTo(9.4, 15.4, 1.6, 19, 5.5, 23.6);
+    g.bezierCurveTo(3.8, 19.4, 7.6, 16.4, 4.4, 12.4); g.bezierCurveTo(1.6, 8.6, 8.2, 5.2, 5.5, 0.4); g.closePath(); g.fillStyle = preto; g.fill();
+    gancho(6.2, 2.6, 0.9, 1); gancho(4.8, 8.4, 0.9, -1); gancho(6.4, 13.6, 0.95, 1); gancho(4.6, 18.6, 0.8, -1);
+    for (const [x, y, a] of [[2.2, 4.2, 0.5], [8.6, 9.6, -0.5], [2.4, 15.2, 0.6], [8.4, 20.4, -0.4]]) { g.save(); g.translate(x, y); g.rotate(a);
+      g.beginPath(); g.moveTo(0, -2.2); g.quadraticCurveTo(1, 0, 0, 2.2); g.quadraticCurveTo(-0.5, 0, 0, -2.2); g.fillStyle = preto; g.fill(); g.restore(); }
+  } },
+  { k: 'mandala', nome: 'Mandala', preco: 600, w: 12, h: 12, desenho(g) {
+    const c = 6;
+    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2; g.save(); g.translate(c, c); g.rotate(a); g.beginPath(); g.moveTo(0, -3.4); g.quadraticCurveTo(0.9, -4.6, 0, -5.8); g.quadraticCurveTo(-0.9, -4.6, 0, -3.4); g.fillStyle = TINTA_A(0.3); g.fill(); TatDes.traco(g, 0.16); g.restore(); }
+    for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * Math.PI * 2; g.save(); g.translate(c, c); g.rotate(a); g.beginPath(); g.moveTo(0, -1.4); g.quadraticCurveTo(1.3, -2.6, 0, -3.6); g.quadraticCurveTo(-1.3, -2.6, 0, -1.4); g.fillStyle = TINTA_A(0.6); g.fill(); TatDes.traco(g, 0.16); g.restore(); }
+    for (const [r, w] of [[5.9, 0.26], [3.4, 0.2], [1.3, 0.2]]) { g.beginPath(); g.arc(c, c, r, 0, Math.PI * 2); TatDes.traco(g, w); }
+    for (let i = 0; i < 32; i++) { const a = i / 32 * Math.PI * 2; g.beginPath(); g.arc(c + Math.cos(a) * 5.95 * 1.04, c + Math.sin(a) * 6.2 * 0.99, 0.15, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.9); g.fill(); }
+    g.beginPath(); g.arc(c, c, 0.6, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.95); g.fill();
+  } },
+  // a cobra enrolada num punhal (o corpo cruza a lâmina na frente e atrás)
+  { k: 'punhal', nome: 'Punhal com serpente', preco: 700, w: 10, h: 28, desenho(g) {
+    const x = 5;
+    const lamina = () => { g.beginPath(); g.moveTo(x - 0.9, 8.4); g.lineTo(x + 0.9, 8.4); g.lineTo(x + 0.7, 25); g.lineTo(x, 27.6); g.lineTo(x - 0.7, 25); g.closePath();
+      const gr = g.createLinearGradient(x - 1, 0, x + 1, 0); gr.addColorStop(0, TINTA_A(0.15)); gr.addColorStop(0.5, TINTA_A(0.02)); gr.addColorStop(1, TINTA_A(0.5)); g.fillStyle = gr; g.fill(); TatDes.traco(g, 0.3);
+      g.beginPath(); g.moveTo(x, 8.6); g.lineTo(x, 25.6); TatDes.traco(g, 0.12, TINTA_A(0.6)); };
+    lamina();
+    g.beginPath(); g.ellipse(x, 1.2, 0.9, 1.1, 0, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.85); g.fill();
+    g.beginPath(); g.rect(x - 0.65, 2.2, 1.3, 5); g.fillStyle = TINTA_A(0.9); g.fill(); for (let y = 2.8; y < 7; y += 0.8) { g.beginPath(); g.moveTo(x - 0.65, y); g.lineTo(x + 0.65, y); TatDes.traco(g, 0.12, 'rgba(220,220,220,0.5)'); }
+    g.beginPath(); g.moveTo(x - 4, 7.2); g.lineTo(x + 4, 7.2); g.lineTo(x + 3.6, 8.4); g.lineTo(x - 3.6, 8.4); g.closePath(); g.fillStyle = TINTA_A(0.9); g.fill();
+    for (const s of [-1, 1]) { g.beginPath(); g.arc(x + s * 4.1, 7.8, 0.6, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.9); g.fill(); }
+    const corpo = [[x + 1.4, 12.2], [x + 3.4, 12.8], [x + 2.6, 14.6], [x - 3.2, 15.4], [x - 3.6, 17.6], [x + 3.4, 18.8], [x + 3.2, 21], [x - 2.8, 21.8], [x - 2.4, 23.6], [x + 1.8, 24.4], [x + 0.6, 26.4]];
+    TatDes.cobra(g, corpo, 1.25);
+    for (const [ya, yb] of [[14.2, 15.9], [20.4, 21.6]]) { g.save(); g.beginPath(); g.rect(x - 1, ya, 2, yb - ya); g.clip(); g.clearRect(x - 1, ya, 2, yb - ya); lamina(); g.restore(); }   // aqui a cobra passa por trás
+    TatDes.cabecaNaja(g, x + 1.6, 12.6, 0.72);
+  } },
+  // a da Fernanda (a personal da academia): caveira em preto e cinza, a naja de capuz aberto no alto, o corpo enrolado em volta e as rosas
+  { k: 'caveira_serpentes', nome: 'Caveira com serpentes', preco: 900, w: 24, h: 30, desenho(g) {
+    TatDes.folha(g, 3.2, 10.8, Math.PI * 0.95, 3.6); TatDes.folha(g, 20.8, 10.6, 0.1, 3.6); TatDes.folha(g, 6.2, 27.4, Math.PI * 0.85, 3.8); TatDes.folha(g, 17.6, 27.2, 0.25, 3.8); TatDes.folha(g, 11.6, 28.4, Math.PI * 0.5, 2.4);
+    TatDes.rosa(g, 5.2, 7.4, 4); TatDes.rosa(g, 18.8, 7.2, 4);
+    TatDes.cobra(g, [[12, 8.4], [15.8, 10], [19.6, 12.8], [20.6, 16]], 2.1);                                                        // atrás: desce do pescoço pelo lado direito
+    TatDes.cobra(g, [[5.2, 20.6], [3.4, 16.2], [5, 12.4], [8.4, 11]], 2.1);                                                           // atrás: sobe pelo lado esquerdo
+    TatDes.caveira(g, 12, 15.4, 1.05);
+    TatDes.cobra(g, [[20.6, 15.6], [20.4, 19.4], [16.6, 22.6], [11, 23.2], [5.8, 21.6], [5, 20.4]], 2.1);                              // na frente: passa por baixo do queixo
+    TatDes.cobra(g, [[13.4, 24.4], [17, 26.4], [15.6, 29], [12.4, 28.6], [12.8, 27.2]], 1.5);                                          // a ponta do rabo, enrolada
+    TatDes.cabecaNaja(g, 11.8, 8.6, 1.05);
+  } },
+];
+const TATUAGEM_POR_K = {}, ACESSORIO_POR_K = {}, METAL_POR_K = {};
+for (const t of TATUAGENS) TATUAGEM_POR_K[t.k] = t;
+for (const a of ACESSORIOS) ACESSORIO_POR_K[a.k] = a;
+for (const m of METAIS) METAL_POR_K[m.k] = m;
+// o desenho sozinho, num canvas a 8 px/cm (as faixas não têm: são desenhadas direto na volta do membro)
+const _desTat = {}, PX_CM_DES = 8;
+function desenhoTatuagem(k) {
+  const T = TATUAGEM_POR_K[k]; if (!T || T.faixa) return null;
+  if (_desTat[k]) return _desTat[k];
+  const cv = document.createElement('canvas'); cv.width = Math.ceil(T.w * PX_CM_DES); cv.height = Math.ceil(T.h * PX_CM_DES);
+  const g = cv.getContext('2d'); g.scale(PX_CM_DES, PX_CM_DES); T.desenho(g, T.w, T.h);
+  return (_desTat[k] = cv);
+}
+// a volta do membro (as 4 faces lado a lado; o "lado de fora" fica no 2º quarto). Braço: 256x128 (o antebraço, ~4,2 px/cm);
+//   perna: 256x96 (a coxa, ~3,3 px/cm; o alto fica embaixo do calção, então o desenho desce). Desenho maior que o espaço encolhe.
+const _voltaTat = {};
+function voltaTatuagem(k, perna) {
+  const id = k + (perna ? '|p' : '|b'); if (_voltaTat[id]) return _voltaTat[id];
+  const T = TATUAGEM_POR_K[k]; if (!T) return null;
+  const W = 256, H = perna ? 96 : 128, pc = perna ? 3.3 : 4.2, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
+  if (T.faixa) {
+    g.save(); g.translate(0, perna ? 10 : 0); g.scale(pc, pc); T.desenho(g, W / pc, (H - (perna ? 10 : 0)) / pc); g.restore();
+  } else {
+    const D = desenhoTatuagem(k), maxW = 28, maxH = perna ? 19 : 29.5, e = Math.min(1, maxW / T.w, maxH / T.h);
+    const w = T.w * e * pc, h = T.h * e * pc, cy = perna ? 60 : 64;
+    g.imageSmoothingEnabled = true; g.drawImage(D, W * 0.375 - w / 2, cy - h / 2, w, h);
+  }
+  return (_voltaTat[id] = cv);
+}
+// NPCs: alguns com brinco, colar ou tatuagem (sorteio à parte, pela semente: o resto da aparência não muda)
+function enfeitesNPC(semente, fem) {
+  const r = sorteador(((semente || 1) * 2246822519 + 3266489917) | 0), pk = (l) => l[Math.floor(r() * l.length)], metal = () => pk(METAIS).k;
+  const E = {}, tipo = (t) => ACESSORIOS.filter((a) => a.tipo === t);
+  if (r() < (fem ? 0.5 : 0.12)) E.b = [pk(tipo('brinco')).k, metal()];
+  if (r() < (fem ? 0.22 : 0.18)) E.c = [pk(tipo('colar')).k, metal()];
+  if (r() < 0.04) E.l = [pk(tipo('luva')).k, metal()];
+  if (r() < 0.28) { const L = TATUAGENS.filter((t) => t.k !== 'caveira_serpentes'); E.t = {}; const n = r() < 0.25 ? 2 : 1; for (let i = 0; i < n; i++) E.t[pk(LUGARES_TATUAGEM).k] = pk(L).k; }
+  return E.b || E.c || E.l || E.t ? E : null;
+}
+// as peças de um acessório: add(w, h, d, cor, x, y, z) no espaço de cada um (brinco: a partir do lóbulo, z para fora; colar: o corpo;
+//   luva: a partir do meio da mão, z para fora). s = +1 do lado direito (+z), −1 do esquerdo.
+function pecasAcessorio(A, corMetal, add, s) {
+  const M = corMetal, z = (v) => s * v;
+  switch (A.k) {
+    case 'ponto_luz': add(0.03, 0.03, 0.014, M, 0, -0.01, z(0.007)); add(0.012, 0.012, 0.004, 0xffffff, -0.006, -0.004, z(0.016)); break;
+    case 'argola_p': case 'argola_g': { const L = A.k === 'argola_p' ? 0.05 : 0.09, t = 0.011, cy = -0.005 - L / 2;
+      add(L, t, t, M, 0, cy + L / 2 - t / 2, z(0.007)); add(L, t, t, M, 0, cy - L / 2 + t / 2, z(0.007));
+      add(t, L - t * 2, t, M, -L / 2 + t / 2, cy, z(0.007)); add(t, L - t * 2, t, M, L / 2 - t / 2, cy, z(0.007)); break; }
+    case 'gota': add(0.022, 0.022, 0.012, M, 0, -0.01, z(0.007)); add(0.006, 0.026, 0.006, M, 0, -0.032, z(0.007)); add(0.028, 0.034, 0.012, M, 0, -0.06, z(0.007)); add(0.014, 0.01, 0.012, M, 0, -0.082, z(0.007)); break;
+    case 'cruz_b': add(0.02, 0.02, 0.012, M, 0, -0.01, z(0.007)); add(0.006, 0.014, 0.006, M, 0, -0.026, z(0.007)); add(0.012, 0.06, 0.01, M, 0, -0.062, z(0.007)); add(0.036, 0.012, 0.01, M, 0, -0.05, z(0.007)); break;
+    case 'corrente_fina': case 'pingente_bola': case 'pingente_cruz': case 'medalhao': case 'corrente_grossa': {
+      const t = A.k === 'corrente_grossa' ? 0.02 : A.k === 'medalhao' ? 0.013 : 0.01, y0 = 1.32 + t / 2, fx = 0.168 + t / 2;
+      add(t, t, 0.21 + t, M, -0.095, y0, 0);                                                  // a volta no pescoço (atrás e dos lados)
+      for (const sz of [-1, 1]) add(0.26, t, t, M, 0.035, y0, sz * 0.105);
+      const desce = A.k === 'corrente_grossa' ? [[1.335, 1.28, 0.1], [1.28, 1.235, 0.08], [1.235, 1.19, 0.058], [1.19, 1.15, 0.034], [1.15, 1.12, 0.012]] : [[1.335, 1.285, 0.095], [1.285, 1.25, 0.07], [1.25, 1.22, 0.045], [1.22, 1.195, 0.022]];
+      desce.forEach(([ya, yb, zz], i) => { for (const sz of [-1, 1]) {
+        add(t, ya - yb + t, t, M, fx, (ya + yb) / 2, sz * zz);
+        if (i) { const zp = desce[i - 1][2]; add(t, t, zp - zz + t, M, fx, ya, sz * (zp + zz) / 2); }          // o degrau entre um pedaço e o outro
+      } });
+      const yb = desce[desce.length - 1][1]; add(t, t, desce[desce.length - 1][2] * 2 + t, M, fx, yb, 0);
+      if (A.k === 'pingente_bola') { add(0.014, 0.016, 0.014, M, fx, yb - 0.012, 0); add(0.048, 0.048, 0.048, 0xf2f2ee, fx + 0.02, yb - 0.044, 0); add(0.004, 0.018, 0.018, 0x151515, fx + 0.046, yb - 0.044, 0);
+        for (const [dy, dz] of [[0.016, 0.016], [0.016, -0.016], [-0.016, 0.016], [-0.016, -0.016]]) add(0.004, 0.01, 0.01, 0x151515, fx + 0.046, yb - 0.044 + dy, dz); }
+      if (A.k === 'pingente_cruz') { add(0.012, 0.012, 0.012, M, fx, yb - 0.01, 0); add(0.012, 0.075, 0.018, M, fx + 0.004, yb - 0.054, 0); add(0.012, 0.018, 0.05, M, fx + 0.004, yb - 0.038, 0); }
+      if (A.k === 'medalhao') { add(0.012, 0.012, 0.012, M, fx, yb - 0.01, 0); const cy = yb - 0.05; add(0.012, 0.06, 0.06, M, fx + 0.004, cy, 0); add(0.012, 0.074, 0.04, M, fx + 0.004, cy, 0); add(0.012, 0.04, 0.074, M, fx + 0.004, cy, 0);
+        add(0.006, 0.022, 0.022, 0xb3202a, fx + 0.012, cy, 0); }
+      break; }
+    case 'luva_termica': add(0.182, 0.07, 0.182, 0x353a44, 0, 0.07, 0); add(0.034, 0.022, 0.006, M, 0, 0.07, z(0.094)); break;
+    case 'luva_sem_dedos': add(0.178, 0.11, 0.178, 0x1c1c1f, 0, 0.032, 0); add(0.18, 0.03, 0.18, 0x2c2c30, 0, 0.074, 0); add(0.024, 0.024, 0.006, M, 0, 0.05, z(0.092)); break;
+    case 'luva_goleiro': add(0.186, 0.05, 0.186, 0x1f9a4d, 0, 0.07, 0); add(0.006, 0.12, 0.12, 0x1f9a4d, 0.088, -0.01, 0); add(0.034, 0.03, 0.006, M, 0, 0.07, z(0.096)); break;
+    case 'luva_couro': add(0.182, 0.02, 0.182, M, 0, 0.07, 0); add(0.18, 0.02, 0.18, 0x2a1b13, 0, 0.088, 0); break;
+    case 'luva_cravejada': add(0.18, 0.024, 0.18, M, 0, 0.074, 0); for (const dx of [-0.038, 0.038]) for (const dy of [-0.03, 0.025]) add(0.022, 0.022, 0.012, M, dx, dy, z(0.088)); break;
+  }
+}
+// a película da tatuagem em volta de uma caixa (cx, cy, cz, w (x), h, d (z)) do braço/perna do lado s, com a textura cv
+//   v0/v1: a parte da textura (de cima para baixo) que cobre a altura da caixa. Some sozinha quando a caixa (vértice iCor da malha
+//   "pai") não está da cor da pele: manga comprida, calça, meião.
+function peliculaTatuagem(cv, caixa, s, v0, v1, pai, iCor, pele, tinta) {
+  const [cx, cy, cz, w, h, d] = caixa, e = 0.004, hw = w / 2 + e, hd = d / 2 + e;
+  // as faces na ordem da volta (cada uma lida da esquerda para a direita vista de fora); o lado de fora fica em u 0,25..0,5
+  const F = { frente: [[1, 0, 0], hd], costas: [[-1, 0, 0], hd], fora: [[0, 0, s], hw], dentro: [[0, 0, -s], hw] };
+  const ordem = s < 0 ? ['frente', 'fora', 'costas', 'dentro'] : ['costas', 'fora', 'frente', 'dentro'];
+  const pos = [], nor = [], uv = [], idx = [];
+  ordem.forEach((nome, i) => {
+    const [n, meia] = F[nome], dist = n[0] !== 0 ? hw : hd, c = [cx + n[0] * dist, cy, cz + n[2] * dist];
+    const r = [n[2], 0, -n[0]];                                                          // a direita de quem olha de fora: (−n) × y
+    const u0 = i / 4, u1 = (i + 1) / 4, b = pos.length / 3;
+    for (const [sx, sy] of [[-1, 1], [1, 1], [-1, -1], [1, -1]]) {
+      pos.push(c[0] + r[0] * meia * sx, cy + sy * h / 2, c[2] + r[2] * meia * sx); nor.push(n[0], n[1], n[2]);
+      uv.push(sx < 0 ? u0 : u1, sy > 0 ? 1 - v0 : 1 - v1);
+    }
+    idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
+  const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearMipmapLinearFilter;   // de perto, pixelado; de longe, sem cintilar
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, transparent: true, depthWrite: false, alphaTest: 0.02, color: tinta }));
+  const pr = ((pele >> 16) & 255) / 255, pg = ((pele >> 8) & 255) / 255, pb = (pele & 255) / 255;
+  mesh.onBeforeRender = function () {                                                    // pele à mostra? (barato: 3 números da malha do membro)
+    const at = pai.geometry && pai.geometry.attributes.color, a = at && at.array, j = iCor * 3;
+    const ok = !!a && Math.abs(a[j] - pr) < 0.02 && Math.abs(a[j + 1] - pg) < 0.02 && Math.abs(a[j + 2] - pb) < 0.02;
+    geo.drawRange.count = ok ? Infinity : 0;
+  };
+  return mesh;
+}
+// põe as tatuagens do atleta (depois de montado): antebraço (braço inteiro e o do cotovelo) ou coxa (perna inteira e a da joelhada)
+function tatuarAtleta(at, t, pele) {
+  const tinta = misturarCor(0xffffff, pele, 0.25);                       // a cor da tinta fica um pouco por baixo da pele
+  for (const L of LUGARES_TATUAGEM) {
+    const k = t[L.k]; if (!k || !TATUAGEM_POR_K[k]) continue;
+    const s = L.k[1] === 'd' ? 1 : -1, perna = L.k[0] === 'p', cv = voltaTatuagem(k, perna); if (!cv) continue;
+    if (perna) {
+      const p = s > 0 ? at.pernaD : at.pernaE;
+      for (const malha of [p.inteira, p.coxa]) if (malha) malha.add(peliculaTatuagem(cv, [0, -0.14, 0, 0.2, 0.28, 0.2], s, 0, 1, malha, 0, pele, tinta));
+    } else {
+      const b = s > 0 ? at.bracoD : at.bracoE;
+      if (b.inteira) b.inteira.add(peliculaTatuagem(cv, [0, -0.36, 0, 0.16, 0.3, 0.15], s, 0, 1, b.inteira, 24, pele, tinta));
+      const la = b.cotovelo && b.cotovelo.children.find((o) => o.isMesh);
+      if (la) la.add(peliculaTatuagem(cv, [0, -0.1, 0, 0.15, 0.24, 0.14], s, 0.2, 1, la, 0, pele, tinta));
+    }
+  }
+}
 function pintarLadosCabeca(g, ox, oy, o) {
   const e = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
   if (e.careca) return;
@@ -2420,6 +2817,10 @@ function makeAthlete(o) {
   const material = new THREE.MeshLambertMaterial({ map: atlasJogador(o), vertexColors: true });
   const hex = (h) => (typeof h === 'number' ? h : parseInt(h.slice(1), 16));
   const pele = hex(o.pele), cabelo = hex(o.cabelo), camisa = hex(o.camisa);
+  // brinco, colar, luva e tatuagens (aparencia.enfeites: ver ACESSORIOS); boneco infantil (cabeção) fica sem
+  const enf = o.enfeites && (o.cabecao || 1) <= 1.2 ? o.enfeites : null;
+  const acDe = (par) => { const A = par && ACESSORIO_POR_K[par[0]]; return A ? { A, metal: hexNum((METAL_POR_K[par[1]] || METAIS[0]).cor) } : null; };
+  const acB = enf && acDe(enf.b), acC = enf && acDe(enf.c), acL = !o.luva && enf ? acDe(enf.l) : null;
   // Ordem 'ZXY' nos ombros e quadris: primeiro abre/fecha o braço para o lado (X), depois leva para a
   // frente (Z). Assim, com os braços para a frente, fechar as mãos realmente aproxima uma da outra.
   const pivo = (x, y, z) => { const g = new THREE.Group(); g.position.set(x, y, z); g.rotation.order = 'ZXY'; corpo.add(g); return g; };
@@ -2466,10 +2867,11 @@ function makeAthlete(o) {
   const longa = o.manga === 1;
   const braco = (z) => {
     const p = pivo(0, 1.27, z), L = new Lote(UV_BRANCO);
-    const corMao = o.luva ? hex(o.luva) : pele;
+    const corMao = o.luva ? hex(o.luva) : acL && acL.A.base ? hex(acL.A.base) : pele, lado = z > 0 ? 1 : -1;
+    const luva = (Lt, yMao) => { if (acL) pecasAcessorio(acL.A, acL.metal, (w, h, d, c, x, y, zz) => Lt.caixa(w, h, d, c, x, yMao + y, zz), lado); };
     L.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
     if (longa) L.caixa(0.18, 0.3, 0.17, camisa, 0, -0.36, 0); else L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
-    L.caixa(0.17, 0.16, 0.17, corMao, 0, -0.57, 0);
+    L.caixa(0.17, 0.16, 0.17, corMao, 0, -0.57, 0); luva(L, -0.57);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LO = new Lote(UV_BRANCO);
     LO.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
@@ -2479,7 +2881,7 @@ function makeAthlete(o) {
     cotovelo.position.set(0, -0.3, 0); cotovelo.rotation.order = 'ZXY'; cotovelo.visible = false;
     const LA = new Lote(UV_BRANCO);                 // antebraço e mão, medidos a partir do cotovelo
     if (longa) LA.caixa(0.17, 0.24, 0.16, camisa, 0, -0.1, 0); else LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
-    LA.caixa(0.17, 0.16, 0.17, corMao, 0, -0.27, 0);
+    LA.caixa(0.17, 0.16, 0.17, corMao, 0, -0.27, 0); luva(LA, -0.27);
     cotovelo.add(LA.malha(material)); p.add(cotovelo);
     p.cotovelo = cotovelo;
     return p;
@@ -2504,19 +2906,32 @@ function makeAthlete(o) {
   for (const [w, h, d, x, y, z, , gx, gy, gz, cantos] of (ESTILOS_BARBA[o.barba | 0] || ESTILOS_BARBA[0]).caixas) pecasCabeca.push([w, h, d, corBarba, x, y, z, giroDe(gx, gy, gz), cantos || null]);
   if (kc !== 1) for (const p of pecasCabeca) { p[0] *= kc; p[1] *= kc; p[2] *= kc; p[4] *= kc; p[5] = 1.36 + (p[5] - 1.36) * kc; p[6] *= kc; }
   for (const [w, h, d, cor, x, y, z, giro, cantos] of pecasCabeca) C.caixa(w, h, d, cor, x, y, z, null, giro, cantos);
+  // o brinco fica no lóbulo, por fora do cabelo que cobre a orelha (assim não atravessa o cabelo); o colar na base do pescoço
+  const brincos = (add) => {
+    if (!acB) return;
+    const ex = -0.03 * kc, ey = 1.36 + 0.2 * kc;
+    for (const s of [-1, 1]) {
+      let zz = 0.26 * kc;
+      for (const [w, h, d, , x, y, z] of pecasCabeca) if (Math.abs(x - ex) < w / 2 + 0.02 && y - h / 2 < ey + 0.005 && y + h / 2 > ey - 0.1) zz = Math.max(zz, s > 0 ? z + d / 2 : -(z - d / 2));
+      pecasAcessorio(acB.A, acB.metal, (w, h, d, c, x, y, z) => add(w, h, d, c, ex + x, ey + y, s * (zz + 0.002) + z), s);
+    }
+  };
+  const colar = (Lt) => { if (acC) pecasAcessorio(acC.A, acC.metal, (w, h, d, c, x, y, z) => Lt.caixa(w, h, d, c, x, y, z), 1); };
+  brincos((w, h, d, c, x, y, z) => C.caixa(w, h, d, c, x, y, z)); colar(C);
   const troncoInteiro = C.malha(material); corpo.add(troncoInteiro);
   // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
   // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
   const CT = new Lote(UV_BRANCO);
   CT.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);
   CT.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null));
-  CT.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);
+  CT.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0); colar(CT);
   const troncoSemCabeca = CT.malha(material); troncoSemCabeca.visible = false; corpo.add(troncoSemCabeca);
   const cabeca = new THREE.Group();
   cabeca.position.set(0.02, 1.36, 0); cabeca.rotation.order = 'ZXY'; cabeca.visible = false;
   const CB = new Lote(UV_BRANCO);
   CB.caixa(0.48 * kc, 0.52 * kc, 0.52 * kc, pele, -0.02, 0.26 * kc, 0, fCab);
   for (const [w, h, d, cor, x, y, z, giro, cantos] of pecasCabeca) CB.caixa(w, h, d, cor, x - 0.02, y - 1.36, z, null, giro, cantos);
+  brincos((w, h, d, c, x, y, z) => CB.caixa(w, h, d, c, x - 0.02, y - 1.36, z));
   cabeca.add(CB.malha(material)); corpo.add(cabeca);
 
   const etiqueta = new THREE.Sprite(new THREE.SpriteMaterial({ map: texNome(o.nome, o.fundoNome), depthTest: false, transparent: true }));
@@ -2530,6 +2945,7 @@ function makeAthlete(o) {
   // (6.6.15) o topo da cabeça COM o cabelo (no espaço do corpo): o jornal da chuva fica em cima dele; cabelo muito alto = só a mão
   let topoCabeca = 1.36 + 0.52 * kc; for (const p of pecasCabeca) topoCabeca = Math.max(topoCabeca, p[5] + p[1] / 2);
   const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra, topoCabeca, cabelo: topoCabeca - (1.36 + 0.52 * kc) };
+  if (enf && enf.t) tatuarAtleta(atleta, enf.t, pele);
   if (o.escala) raiz.scale.setScalar(o.escala);
   raiz.userData.atleta = atleta; ATLETAS.add(atleta);
   return atleta;
@@ -12828,7 +13244,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     cabecao: P.criancas ? P.criancas.cabecao : undefined, escala: P.criancas ? P.criancas.escala : undefined,   // partida da história: bonecos infantis
     camisa: isGK ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num,
     calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema,
-    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null,
+    pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites,
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
   scene.add(mesh.raiz);
@@ -12937,7 +13353,7 @@ function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: banco
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
-    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
+    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
   m.etiqueta.visible = false;
   scene.add(m.raiz);
   return m;
@@ -15684,7 +16100,7 @@ const Historia = (() => {
 
   // ---- partida ------------------------------------------------------
   function cfg(treino) {
-    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || 'Você', posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: Object.assign(personagemAparencia(), { barba: 0 }) };   // criança: sem barba; posição escolhida antes do jogo
+    const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || 'Você', posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: Object.assign(personagemAparencia(), { barba: 0, enfeites: null }) };   // criança: sem barba; posição escolhida antes do jogo
     const tec = { nome: 'Professor Roberto', aparencia: { pele: '#BF8159', cabelo: '#555555', estilo: 1, roupa: '#222222' } };   // (não aparece: a quadra de futsal não tem técnico)
     const t0 = { id: 'h_joao', nome: 'Time do João', sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: HIST.uni0, uniforme2: HIST.uni1,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#111111', letras: 'JP' }, tecnico: tec, elenco: [HIST.cadu, HIST.bia, HIST.joao] };

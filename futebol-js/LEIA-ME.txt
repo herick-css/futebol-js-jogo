@@ -20,7 +20,7 @@ ARQUIVOS
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
   treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
-  esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações, as 20 chuteiras, as 15 bolas premium e as 25 roupas à venda (baixado pela cidade)
+  esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações, as 20 chuteiras, as 15 bolas premium, as 25 roupas, os 15 acessórios e as 20 tatuagens (baixado pela cidade)
   treinoCampo.js ........ o campo de treino (mundo à parte, sem relógio) onde acontece o treino de chute, passe e cruzamento
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
   varzea.js ............. o campeonato de várzea: o olheiro, os 10 times (emblemas em pixel art), a torcida, o vestiário

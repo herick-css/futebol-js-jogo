@@ -27,10 +27,15 @@
      A KELLY abre o catálogo: PROVAR veste a roupa no jogador ali na seção (gira para mostrar), LEVAR põe na sacola e a Marta cobra.
      A comprada já é vestida (historia.fase2.roupa) e passa a aparecer no guarda-roupa de casa (historia.fase2.roupasLoja = [nomes]);
      VESTIR troca entre as compradas. Os dois manequins da seção vestem roupas da loja (mudam a cada dia). Sacola: 'rp:' + nome.
-   - A seção de acessórios já tem o lugar, a decoração e a vendedora; as vendas dela vêm depois.
+   - ACESSÓRIOS: com a Tati abre o catálogo em 4 abas: BRINCOS, COLARES e LUVAS (15 peças; o tom do metal, entre 8, vale para o tipo
+     inteiro) e TATUAGENS (20 desenhos; escolhe-se o lugar: braço ou perna, direito ou esquerdo). Os desenhos e as peças ficam no
+     jogo.js (ACESSORIOS, TATUAGENS, METAIS). PROVAR refaz o jogador ali na frente do painel da parede; LEVAR põe na sacola (a tatuagem
+     vai para o lugar escolhido na hora de levar); USAR / TIRAR e PÔR AQUI / TIRAR DAQUI trocam o que já é seu. O que está em uso vai
+     para aparencia.enfeites (aparece na cidade e nas partidas).
    - Salva em historia.cidade (dados): celeb = { tem: [chaves compradas], slots: [botão 1, botão 2] } · esportiva = { conheceu... } ·
      chuteiras = { tem: [nomes comprados], usando: nome ou null (a de sempre), original: a chuteira do criador } ·
-     bolas = { tem: [nomes comprados], usando: nome ou null (a bola padrão) }.
+     bolas = { tem: [nomes comprados], usando: nome ou null (a bola padrão) } ·
+     acessorios = { tem: [peças], tats: [tatuagens], uso: { b, c, l }, metal: { b, c, l }, t: { bd, be, pd, pe } }.
    ===================================================================== */
 (function () {
   'use strict';
@@ -158,7 +163,49 @@
     'Clique em PROVAR para ver a roupa em você. Você gira sozinho.': ['Tap TRY ON to see the outfit on you. You spin on your own.', 'Toca PROBAR para ver la ropa puesta. Giras solo.', 'Tocca PROVA per vedere il vestito addosso. Giri da solo.', 'Touche ESSAYER pour voir la tenue sur toi. Tu tournes tout seul.'],
     'Clique em PROVAR para ver a roupa em você. Você gira sozinha.': ['Tap TRY ON to see the outfit on you. You spin on your own.', 'Toca PROBAR para ver la ropa puesta. Giras sola.', 'Tocca PROVA per vedere il vestito addosso. Giri da sola.', 'Touche ESSAYER pour voir la tenue sur toi. Tu tournes toute seule.'],
     'A roupa "{0}" você já está vestindo. Para trocar, é com a Kelly ou no guarda-roupa de casa.': ['You’re already wearing the "{0}" outfit. To change, see Kelly or your wardrobe at home.', 'Ya llevas puesta la ropa "{0}". Para cambiarla, habla con Kelly o usa el armario de casa.', 'Stai già indossando "{0}". Per cambiare, vai da Kelly o usa l’armadio di casa.', 'Tu portes déjà la tenue « {0} ». Pour changer, vois Kelly ou ton armoire à la maison.'],
-    'A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas e o Dedé as comemorações.': ['Your bag is empty. Biro shows the boots, Kelly the clothes, Juca the balls and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Kelly la ropa, Juca las pelotas y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Kelly i vestiti, Juca i palloni e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Kelly les vêtements, Juca les ballons et Dedé les célébrations.'],
+    // os acessórios e as tatuagens (a Tati)
+    'Ver os acessórios': ['See the accessories', 'Ver los accesorios', 'Vedi gli accessori', 'Voir les accessoires'], 'ACESSÓRIOS': ['ACCESSORIES', 'ACCESORIOS', 'ACCESSORI', 'ACCESSOIRES'],
+    'BRINCOS': ['EARRINGS', 'PENDIENTES', 'ORECCHINI', 'BOUCLES'], 'COLARES': ['NECKLACES', 'COLLARES', 'COLLANE', 'COLLIERS'], 'LUVAS': ['GLOVES', 'GUANTES', 'GUANTI', 'GANTS'],
+    'TATUAGENS': ['TATTOOS', 'TATUAJES', 'TATUAGGI', 'TATOUAGES'],
+    'BRAÇO D': ['R ARM', 'BRAZO D', 'BRACCIO D', 'BRAS D'], 'BRAÇO E': ['L ARM', 'BRAZO I', 'BRACCIO S', 'BRAS G'], 'PERNA D': ['R LEG', 'PIERNA D', 'GAMBA D', 'JAMBE D'], 'PERNA E': ['L LEG', 'PIERNA I', 'GAMBA S', 'JAMBE G'],
+    'Braço direito': ['Right arm', 'Brazo derecho', 'Braccio destro', 'Bras droit'], 'Braço esquerdo': ['Left arm', 'Brazo izquierdo', 'Braccio sinistro', 'Bras gauche'],
+    'Perna direita': ['Right leg', 'Pierna derecha', 'Gamba destra', 'Jambe droite'], 'Perna esquerda': ['Left leg', 'Pierna izquierda', 'Gamba sinistra', 'Jambe gauche'],
+    'Tom do metal: {0}': ['Metal tone: {0}', 'Tono del metal: {0}', 'Tonalità del metallo: {0}', 'Teinte du métal : {0}'], 'Neste lugar: {0}': ['In this spot: {0}', 'En este lugar: {0}', 'In questo punto: {0}', 'À cet endroit : {0}'],
+    'nada': ['nothing', 'nada', 'niente', 'rien'],
+    'Com essa roupa a perna fica coberta: a tatuagem não aparece.': ['With these clothes your leg is covered: the tattoo won’t show.', 'Con esta ropa la pierna queda cubierta: el tatuaje no se ve.', 'Con questi vestiti la gamba è coperta: il tatuaggio non si vede.', 'Avec ces vêtements, la jambe est couverte : le tatouage ne se voit pas.'],
+    'Com essa roupa o braço fica coberto: a tatuagem não aparece.': ['With these clothes your arm is covered: the tattoo won’t show.', 'Con esta ropa el brazo queda cubierto: el tatuaje no se ve.', 'Con questi vestiti il braccio è coperto: il tatuaggio non si vede.', 'Avec ces vêtements, le bras est couvert : le tatouage ne se voit pas.'], 'PÔR AQUI': ['PUT HERE', 'PONER AQUÍ', 'METTI QUI', 'METTRE ICI'], 'TIRAR DAQUI': ['REMOVE', 'QUITAR', 'TOGLI', 'ENLEVER'],
+    'É seu': ['Yours', 'Es tuyo', 'È tuo', 'À toi'],
+    'PROVAR mostra no espelho, sem compromisso.': ['TRY ON shows it in the mirror, no strings attached.', 'PROBAR lo muestra en el espejo, sin compromiso.', 'PROVA lo mostra allo specchio, senza impegno.', 'ESSAYER le montre dans le miroir, sans engagement.'],
+    'Ouro': ['Gold', 'Oro', 'Oro', 'Or'], 'Ouro rosé': ['Rose gold', 'Oro rosa', 'Oro rosa', 'Or rose'], 'Ouro branco': ['White gold', 'Oro blanco', 'Oro bianco', 'Or blanc'],
+    'Prata': ['Silver', 'Plata', 'Argento', 'Argent'], 'Platina': ['Platinum', 'Platino', 'Platino', 'Platine'], 'Cobre': ['Copper', 'Cobre', 'Rame', 'Cuivre'],
+    'Bronze': ['Bronze', 'Bronce', 'Bronzo', 'Bronze'], 'Grafite': ['Graphite', 'Grafito', 'Grafite', 'Graphite'],
+    'Ponto de luz': ['Stud', 'Punto de luz', 'Punto luce', 'Puce'], 'Argola pequena': ['Small hoop', 'Aro pequeño', 'Cerchietto piccolo', 'Petit anneau'], 'Gota': ['Drop', 'Gota', 'Goccia', 'Goutte'],
+    'Cruz': ['Cross', 'Cruz', 'Croce', 'Croix'], 'Argola grande': ['Large hoop', 'Aro grande', 'Cerchio grande', 'Grand anneau'],
+    'Corrente fina': ['Thin chain', 'Cadena fina', 'Catenina sottile', 'Chaîne fine'], 'Pingente de bola': ['Ball pendant', 'Colgante de pelota', 'Ciondolo a pallone', 'Pendentif ballon'],
+    'Pingente de cruz': ['Cross pendant', 'Colgante de cruz', 'Ciondolo a croce', 'Pendentif croix'], 'Medalhão': ['Medallion', 'Medallón', 'Medaglione', 'Médaillon'],
+    'Corrente grossa': ['Thick chain', 'Cadena gruesa', 'Catena grossa', 'Grosse chaîne'],
+    'Luva térmica': ['Thermal gloves', 'Guantes térmicos', 'Guanti termici', 'Gants thermiques'], 'Luva sem dedos': ['Fingerless gloves', 'Guantes sin dedos', 'Guanti senza dita', 'Mitaines'],
+    'Luva de goleiro': ['Goalkeeper gloves', 'Guantes de portero', 'Guanti da portiere', 'Gants de gardien'], 'Luva de couro': ['Leather gloves', 'Guantes de cuero', 'Guanti di pelle', 'Gants en cuir'],
+    'Luva cravejada': ['Studded gloves', 'Guantes con tachas', 'Guanti borchiati', 'Gants cloutés'],
+    'Infinito': ['Infinity', 'Infinito', 'Infinito', 'Infini'], 'Raio': ['Lightning bolt', 'Rayo', 'Fulmine', 'Éclair'], 'Trevo de quatro folhas': ['Four-leaf clover', 'Trébol de cuatro hojas', 'Quadrifoglio', 'Trèfle à quatre feuilles'],
+    'Coração com faixa': ['Heart with banner', 'Corazón con cinta', 'Cuore con nastro', 'Cœur à banderole'], 'Âncora': ['Anchor', 'Ancla', 'Ancora', 'Ancre'],
+    'Estrela náutica': ['Nautical star', 'Estrella náutica', 'Stella nautica', 'Étoile nautique'], 'Andorinha': ['Swallow', 'Golondrina', 'Rondine', 'Hirondelle'], 'Coroa': ['Crown', 'Corona', 'Corona', 'Couronne'],
+    'Rosa': ['Rose', 'Rosa', 'Rosa', 'Rose'], 'Borboleta': ['Butterfly', 'Mariposa', 'Farfalla', 'Papillon'], 'Bússola': ['Compass', 'Brújula', 'Bussola', 'Boussole'],
+    'Caveira': ['Skull', 'Calavera', 'Teschio', 'Crâne'], 'Taça': ['Trophy', 'Copa', 'Coppa', 'Trophée'], 'Bola em chamas': ['Flaming ball', 'Pelota en llamas', 'Pallone in fiamme', 'Ballon en flammes'],
+    'Ondas': ['Waves', 'Olas', 'Onde', 'Vagues'], 'Arame farpado': ['Barbed wire', 'Alambre de púas', 'Filo spinato', 'Fil barbelé'], 'Tribal': ['Tribal', 'Tribal', 'Tribale', 'Tribal'],
+    'Mandala': ['Mandala', 'Mandala', 'Mandala', 'Mandala'], 'Punhal com serpente': ['Dagger and serpent', 'Puñal con serpiente', 'Pugnale con serpente', 'Poignard au serpent'],
+    'Caveira com serpentes': ['Skull with serpents', 'Calavera con serpientes', 'Teschio con serpenti', 'Crâne aux serpents'],
+    'Oi! Aqui é a seção de acessórios: brincos, colares, luvas e tatuagens.': ['Hi! This is the accessories section: earrings, necklaces, gloves and tattoos.', '¡Hola! Esta es la sección de accesorios: pendientes, collares, guantes y tatuajes.', 'Ciao! Questo è il reparto accessori: orecchini, collane, guanti e tatuaggi.', 'Salut ! Ici, c’est le rayon accessoires : boucles d’oreilles, colliers, gants et tatouages.'],
+    'Tudo que é de metal sai em oito tons, do ouro ao grafite. É só escolher.': ['Everything made of metal comes in eight tones, from gold to graphite. Just pick one.', 'Todo lo de metal viene en ocho tonos, del oro al grafito. Solo tienes que elegir.', 'Tutto ciò che è di metallo è disponibile in otto tonalità, dall’oro alla grafite. Basta scegliere.', 'Tout ce qui est en métal existe en huit teintes, de l’or au graphite. Il suffit de choisir.'],
+    'As tatuagens eu mesma faço, no estúdio aqui do fundo. Você escolhe o desenho e o lugar: braço ou perna, direito ou esquerdo.': ['I do the tattoos myself, in the studio at the back. You pick the design and the spot: arm or leg, right or left.', 'Los tatuajes los hago yo misma, en el estudio del fondo. Tú eliges el diseño y el lugar: brazo o pierna, derecho o izquierdo.', 'I tatuaggi li faccio io, nello studio sul retro. Scegli il disegno e il punto: braccio o gamba, destra o sinistra.', 'Les tatouages, je les fais moi-même, dans le studio au fond. Tu choisis le dessin et l’endroit : bras ou jambe, droite ou gauche.'],
+    'Pode provar tudo no espelho. O que gostar vai para a sacola e a Marta cobra.': ['You can try everything on at the mirror. What you like goes in the bag and Marta rings it up.', 'Puedes probarte todo en el espejo. Lo que te guste va a la bolsa y Marta te lo cobra.', 'Puoi provare tutto allo specchio. Quello che ti piace va nella borsa e Marta te lo fa pagare.', 'Tu peux tout essayer devant le miroir. Ce qui te plaît va dans le sac et Marta l’encaisse.'],
+    'Bora se enfeitar?': ['Ready to dress up?', '¿Nos arreglamos?', 'Ci facciamo belli?', 'On s’embellit ?'],
+    'Chegou peça nova! Quer ver?': ['New pieces just arrived! Want to see?', '¡Llegaron piezas nuevas! ¿Quieres ver?', 'Sono arrivati pezzi nuovi! Vuoi vedere?', 'Il y a de nouvelles pièces ! Tu veux voir ?'],
+    'Ficou muito bom! Passa no caixa com a Marta.': ['Looks great! Stop by the checkout with Marta.', '¡Te quedó muy bien! Pasa por la caja con Marta.', 'Ti sta benissimo! Passa alla cassa da Marta.', 'Ça te va super bien ! Passe à la caisse voir Marta.'],
+    'Volta sempre! Sempre chega coisa nova.': ['Come back anytime! New stuff arrives all the time.', '¡Vuelve cuando quieras! Siempre llega algo nuevo.', 'Torna quando vuoi! Arriva sempre roba nuova.', 'Reviens quand tu veux ! Il y a toujours du nouveau.'],
+    'Os acessórios novos são seus. Para usar ou trocar, é com a Tati.': ['The new accessories are yours. To wear or switch them, talk to Tati.', 'Los accesorios nuevos son tuyos. Para usarlos o cambiarlos, habla con Tati.', 'I nuovi accessori sono tuoi. Per usarli o cambiarli, parla con Tati.', 'Les nouveaux accessoires sont à toi. Pour les porter ou les changer, parle à Tati.'],
+    'A tatuagem "{0}" já está feita: {1}.': ['The "{0}" tattoo is done: {1}.', 'El tatuaje "{0}" ya está hecho: {1}.', 'Il tatuaggio "{0}" è fatto: {1}.', 'Le tatouage « {0} » est fait : {1}.'],
+    'A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas, a Tati os acessórios e o Dedé as comemorações.': ['Your bag is empty. Biro shows the boots, Kelly the clothes, Juca the balls, Tati the accessories and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Kelly la ropa, Juca las pelotas, Tati los accesorios y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Kelly i vestiti, Juca i palloni, Tati gli accessori e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Kelly les vêtements, Juca les ballons, Tati les accessoires et Dedé les célébrations.'],
     'Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.': ['No rush. The bag stays here while you’re in the store.', 'Sin apuro. La bolsa queda guardada aquí mientras estés en la tienda.', 'Con calma. La borsa resta qui finché sei in negozio.', 'Pas de souci. Le sac reste ici tant que tu es dans le magasin.'],
   };
   const fem = () => typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
@@ -174,7 +221,6 @@
     { k: 'juca', nome: 'Juca', sec: 'bolas', sexo: 'M', seed: 6104 }, { k: 'tati', nome: 'Tati', sec: 'acessorios', sexo: 'F', seed: 6105 }, { k: 'dede', nome: 'Dedé', sec: 'comemoracoes', sexo: 'M', seed: 6106 },
   ];
   const PAPO = {
-    tati: ['Caneleira, luva, boné, garrafinha... o detalhe que faz a diferença.', 'A máquina do cartão dessa seção quebrou. Semana que vem eu vendo!'],
   };
   const DANCAS_DEDE = ['robo', 'passinho', 'dancinha', 'coracao', 'musculoso', 'reverencia', 'piao'];
 
@@ -221,8 +267,11 @@
     const ehBola = (k) => String(k).startsWith('bola:');
     const bolaDe = (nome) => BOLAS.find((b) => b.nome === nome);
     const dadosB = () => { const d = S().dados; if (!d.bolas || !Array.isArray(d.bolas.tem)) d.bolas = { tem: [], usando: null }; return d.bolas; };
-    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : ehBola(k) ? ((bolaDe(k.slice(5)) || {}).preco || 0) : ehRp(k) ? ((listaRp()[idxRp(k.slice(3))] || {}).preco || 0) : PRECO);
-    const nomeItem = (k) => (ehCh(k) || ehRp(k) ? Tx(k.slice(3)) : ehBola(k) ? Tx(k.slice(5)) : Tx(CELS()[k].nome));
+    // e os acessórios e tatuagens da Tati: 'ac:' + chave, 'tat:' + chave
+    const precoDe = (k) => (ehCh(k) ? ((CHS()[idxCh(k.slice(3))] || {}).preco || 0) : ehBola(k) ? ((bolaDe(k.slice(5)) || {}).preco || 0) : ehRp(k) ? ((listaRp()[idxRp(k.slice(3))] || {}).preco || 0)
+      : String(k).startsWith('ac:') ? ((ACESSORIO_POR_K[k.slice(3)] || {}).preco || 0) : String(k).startsWith('tat:') ? ((TATUAGEM_POR_K[k.slice(4)] || {}).preco || 0) : PRECO);
+    const nomeItem = (k) => (ehCh(k) || ehRp(k) ? Tx(k.slice(3)) : ehBola(k) ? Tx(k.slice(5)) : String(k).startsWith('ac:') ? Tx((ACESSORIO_POR_K[k.slice(3)] || {}).nome || '')
+      : String(k).startsWith('tat:') ? Tx((TATUAGEM_POR_K[k.slice(4)] || {}).nome || '') : Tx(CELS()[k].nome));
     const totalSacola = () => M.sacola.reduce((a, k) => a + precoDe(k), 0);
     // a chuteira comprada volta para o pé se o personagem foi recarregado sem ela (o save da cidade é quem manda)
     function sincronizarChuteira() { try { const D = dadosCh(); chOriginal(); if (D.usando && apar().chuteiraNome !== D.usando && idxCh(D.usando) >= 0) calcar(D.usando); } catch (e) { /* sem dados ainda */ } }
@@ -350,7 +399,7 @@
     }
 
     // ---------------------------------------------------------------- OS PSEUDO-CLIENTES (passeiam, olham as prateleiras e vão embora)
-    const pontoLivreOlhar = (A) => { const usados = new Set(M.gente.filter((q) => q !== A && q.es).map((q) => q.es.i)), J = S().jog; const L = M.D.olhar.map((p, i) => i).filter((i) => !usados.has(i) && Math.hypot(M.D.olhar[i][0] - J.x, M.D.olhar[i][1] - J.z) > 1.0); return L.length ? pk(L) : -1; };
+    const pontoLivreOlhar = (A) => { const usados = new Set(M.gente.filter((q) => q !== A && q.es).map((q) => q.es.i)), J = S().jog; const L = M.D.olhar.map((p, i) => i).filter((i) => !usados.has(i) && Math.hypot(M.D.olhar[i][0] - J.x, M.D.olhar[i][1] - J.z) > 1.0 && !noCorredorAc(M.D.olhar[i])); return L.length ? pk(L) : -1; };
     function novoCliente(jaDentro) {
       const s = S(), A = api.criarPessoa(s.f2, Math.random, Math.random() < 0.45); A.tipo = 'clienteEsp'; A.vel = 1.0 + Math.random() * 0.25;
       const i = pontoLivreOlhar(A); if (i < 0) { api.descartarPessoa(A); return null; }
@@ -772,6 +821,194 @@
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }
     }
+    // ---------------------------------------------------------------- OS ACESSÓRIOS (a Tati): brincos, colares, luvas e as tatuagens
+    //   (os desenhos e as peças ficam no jogo.js: ACESSORIOS, TATUAGENS, METAIS). PROVAR refaz o jogador com aparencia.enfeites de prova,
+    //   ali na frente do painel da parede (ele gira devagar); o tom do metal vale para o tipo inteiro (o que está em uso muda junto).
+    const temAc = () => typeof ACESSORIOS !== 'undefined' && typeof TATUAGENS !== 'undefined';
+    const SIGLA = { brinco: 'b', colar: 'c', luva: 'l' }, ABAS_AC = [['brinco', 'BRINCOS'], ['colar', 'COLARES'], ['luva', 'LUVAS'], ['tat', 'TATUAGENS']];
+    const ROT_LUGAR = { bd: 'BRAÇO D', be: 'BRAÇO E', pd: 'PERNA D', pe: 'PERNA E' };
+    const PROV_AC = { x: 9.1, z: 6.4 };                                  // na frente do painel da parede leste (luvas, bonés, garrafas)
+    const dadosA = () => {
+      const d = S().dados; if (!d.acessorios || !Array.isArray(d.acessorios.tem)) d.acessorios = { tem: [], tats: [], uso: {}, metal: {}, t: {} };
+      const A = d.acessorios; if (!A.uso) A.uso = {}; if (!A.metal) A.metal = {}; if (!A.t) A.t = {}; if (!Array.isArray(A.tats)) A.tats = []; return A;
+    };
+    const metalDe = (tipo) => { const m = dadosA().metal[SIGLA[tipo]]; return m && METAL_POR_K[m] ? m : 'ouro'; };
+    // o que está em uso (dados da cidade) no formato da aparência
+    function enfeitesDe(DA) {
+      const E = {}, t = {};
+      for (const tipo of Object.keys(SIGLA)) { const k = DA.uso[SIGLA[tipo]]; if (k && ACESSORIO_POR_K[k]) E[SIGLA[tipo]] = [k, metalDe(tipo)]; }
+      for (const L of LUGARES_TATUAGEM) if (DA.t[L.k] && TATUAGEM_POR_K[DA.t[L.k]]) t[L.k] = DA.t[L.k];
+      if (Object.keys(t).length) E.t = t;
+      return Object.keys(E).length ? E : null;
+    }
+    function sincronizarEnfeites() { if (!temAc()) return; try { const e = enfeitesDe(dadosA()), ap = apar(); if (e) ap.enfeites = e; else delete ap.enfeites; } catch (e) { /* sem dados ainda */ } }
+    const ehAc = (k) => String(k).startsWith('ac:'), ehTat = (k) => String(k).startsWith('tat:');
+    const copiaEnf = (e) => JSON.parse(JSON.stringify(e || {}));
+    // enquanto prova, ninguém para entre a câmera e o jogador (os pontos de olhar da seção ficam bem ali)
+    function noCorredorAc(p) { return !!M.provAc && p[0] > PROV_AC.x - 3.2 && p[0] < PROV_AC.x + 0.6 && Math.abs(p[1] - PROV_AC.z) < 1.0; }
+    function provarAc(enf) {
+      const novo = !M.provAc; M.provAc = copiaEnf(enf);
+      if (novo) for (const q of M.gente) { const E = q.es; if (E && E.fase !== 'sai' && E.i >= 0 && noCorredorAc(M.D.olhar[E.i])) { E.fase = 'olha'; E.t = (E.dur || 0) + 1; q.poseFn = null; } }
+      try { api.refazerJogador({ enfeites: M.provAc }); } catch (e) { console.warn('[Esportiva] provar acessório:', e); }
+      try { api.som && api.som('pop'); } catch (e) { /* sem som */ }
+    }
+    function desprovarAc() { if (!M.provAc) return; M.provAc = null; try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] desprovar acessório:', e); } }
+    // a câmera do provador: de frente para o jogador (a oeste dele), ele à esquerda do painel. Brinco e colar: de perto; o resto: o corpo todo
+    function camAc(aba) {
+      const P = PROV_AC, perto = aba === 'brinco' || aba === 'colar', D = perto ? 1.9 : 2.6;
+      api.camCena({ px: P.x - D, py: perto ? 1.55 : 1.3, pz: P.z + 0.08, tx: P.x, ty: perto ? 1.28 : 0.88, tz: P.z + (perto ? 0.55 : 0.74) });
+    }
+    // a roupa de agora cobre o lugar da tatuagem? (manga comprida no braço, calça na perna: aí ela não aparece)
+    function cobertoAc(lug) {
+      try { const J = S().jog, m = J.m, n = parseInt(String(J.opt.pele).slice(1), 16), lado = lug[1] === 'd' ? 'D' : 'E';
+        const malha = lug[0] === 'p' ? m['perna' + lado].inteira : m['braco' + lado].inteira, a = malha.geometry.attributes.color.array, j = (lug[0] === 'p' ? 0 : 24) * 3;
+        return Math.abs(a[j] - ((n >> 16) & 255) / 255) > 0.02 || Math.abs(a[j + 1] - ((n >> 8) & 255) / 255) > 0.02 || Math.abs(a[j + 2] - (n & 255) / 255) > 0.02;
+      } catch (e) { return false; }
+    }
+    // o ícone de cada peça (16x16, na cor do metal) e da tatuagem (o próprio desenho)
+    function iconeAc(A, cor) {
+      const cv = document.createElement('canvas'); cv.width = 16; cv.height = 16; cv.style.cssText = 'width:32px;height:32px;image-rendering:pixelated;border:2px solid #0b1430;background:#e9d6c2;flex:none;';
+      const g = cv.getContext('2d'), p = (x, y, w, h, c) => { g.fillStyle = c || cor; g.fillRect(x, y, w, h); };
+      if (A.tipo === 'brinco') {
+        if (A.k === 'ponto_luz') { p(6, 6, 4, 4); p(7, 7, 1, 1, '#ffffff'); }
+        else if (A.k === 'gota') { p(7, 2, 2, 2); p(7.5, 4, 1, 3); p(6, 7, 4, 5); p(7, 12, 2, 2); }
+        else if (A.k === 'cruz_b') { p(7, 2, 2, 2); p(7, 5, 2, 9); p(5, 7, 6, 2); }
+        else { const L = A.k === 'argola_p' ? 7 : 11, o = (16 - L) / 2; p(o, o, L, 2); p(o, o + L - 2, L, 2); p(o, o, 2, L); p(o + L - 2, o, 2, L); }
+      } else if (A.tipo === 'colar') {
+        const t = A.k === 'corrente_grossa' ? 2 : 1; for (let i = 0; i < 6; i++) { p(2 + i, 2 + i, t, t); p(13 - i, 2 + i, t, t); }
+        if (A.k === 'pingente_bola') { p(6, 9, 4, 4, '#f2f2ee'); p(7, 10, 2, 2, '#151515'); }
+        else if (A.k === 'pingente_cruz') { p(7, 8, 2, 7); p(5, 10, 6, 2); }
+        else if (A.k === 'medalhao') { p(5, 8, 6, 6); p(7, 10, 2, 2, '#b3202a'); }
+        else p(7, 8, 2, 2);
+      } else {
+        const base = A.base || '#c99a77'; p(4, 6, 8, 9, base); p(3, 4, 10, 3, A.k === 'luva_goleiro' ? '#1f9a4d' : A.k === 'luva_sem_dedos' ? '#1c1c1f' : base); p(7, 4, 3, 2);
+        if (A.k === 'luva_sem_dedos') p(4, 6, 8, 5, '#1c1c1f'); if (A.k === 'luva_cravejada') { p(5, 8, 2, 2); p(9, 8, 2, 2); p(5, 11, 2, 2); p(9, 11, 2, 2); }
+      }
+      return cv;
+    }
+    function iconeTat(k) {
+      const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; cv.style.cssText = 'width:32px;height:32px;image-rendering:pixelated;border:2px solid #0b1430;background:#e9d6c2;flex:none;';
+      const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+      const D = desenhoTatuagem(k);
+      if (D) { const e = Math.min(1, 30 / D.width, 30 / D.height), w = Math.round(D.width * e), h = Math.round(D.height * e); g.drawImage(D, Math.round(16 - w / 2), Math.round(16 - h / 2), w, h); }
+      else { const V = voltaTatuagem(k, false); if (V) g.drawImage(V, 8, 0, 32, 32, 0, 0, 32, 32); }
+      return cv;
+    }
+    function abrirPainelAc() {
+      return new Promise((fim) => {
+        const d = S().dados, DA = dadosA();
+        const el = document.createElement('div'); el.id = 'espAcessorios';
+        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#2a1f08;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-shadow:-6px 6px 0 #0008;';
+        const cab = document.createElement('div'); cab.style.cssText = 'padding:7px 10px;background:#a07a12;border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:4px;';
+        const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;color:#fff6d8;'; tit.textContent = Tx('ACESSÓRIOS');
+        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.3 var(--font-body);white-space:pre-line;';
+        const abas = document.createElement('div'); abas.style.cssText = 'display:flex;gap:3px;';
+        const extra = document.createElement('div'); extra.style.cssText = 'display:flex;gap:3px;align-items:center;flex-wrap:wrap;';
+        const extraTxt = document.createElement('div'); extraTxt.style.cssText = 'font:600 11px/1.25 var(--font-body);white-space:pre-line;';
+        cab.append(tit, inf, abas, extra, extraTxt);
+        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:5px;';
+        const pe = document.createElement('div'); pe.style.cssText = 'padding:5px 8px;border-top:3px solid ' + AMAR + ';display:flex;gap:8px;align-items:center;';
+        const nota = document.createElement('div'); nota.style.cssText = 'flex:1;font:600 10.5px/1.25 var(--font-body);color:#f0dfb0;'; nota.textContent = Tx('PROVAR mostra no espelho, sem compromisso.') + ' ' + Tx('O que está na sacola você paga no caixa, com a Marta.');
+        const fechar = document.createElement('button'); fechar.type = 'button'; fechar.className = 'pxBtn'; fechar.textContent = Tx('FECHAR'); fechar.style.cssText = '--p:var(--p2,2px);height:34px;font-size:12px;padding:0 14px;flex:none;width:auto;min-width:0;';
+        pe.append(nota, fechar);
+        const bt = (txt, cor, fn, on) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'flex:1;min-width:0;height:28px;border:2px solid ' + (on ? '#fff' : '#0b1430') + ';background:' + cor + ';color:' + (cor === AMAR ? '#1a1406' : '#fff') + ';font:700 11px/1 var(--font-display);cursor:pointer;'; b.onclick = (e) => { e.stopPropagation(); fn(); }; return b; };
+        const gravar = () => { sincronizarEnfeites(); api.gravar(d.ponto || 'chegada'); };
+        function linhaAc(A) {
+          const tp = SIGLA[A.tipo], meu = DA.tem.includes(A.k), k = 'ac:' + A.k, naSac = M.sacola.includes(k), emUso = DA.uso[tp] === A.k;
+          const vendo = M.provAc && M.provAc[tp] && M.provAc[tp][0] === A.k, metal = METAL_POR_K[metalDe(A.tipo)];
+          const lin = document.createElement('div'); lin.dataset.k = A.k;
+          lin.style.cssText = 'background:' + (vendo ? '#5a4410' : '#3a2c0c') + ';border:2px solid ' + (emUso ? '#3fb76a' : naSac ? AMAR : meu ? '#2f7a55' : '#5a4410') + ';padding:5px 6px;display:flex;gap:7px;align-items:center;';
+          const dir = document.createElement('div'); dir.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;';
+          const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+          const n = document.createElement('span'); n.style.cssText = 'font:700 12.5px/1.1 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; n.textContent = Tx(A.nome);
+          const tag = document.createElement('span'); tag.style.cssText = 'font:700 10px/1 var(--font-display);padding:3px 5px;white-space:nowrap;background:' + (emUso ? '#1f7a4d' : meu ? '#2f5a45' : naSac ? '#8a6a10' : '#1a1406') + ';color:' + (meu || naSac ? '#fff' : AMAR) + ';';
+          tag.textContent = emUso ? Tx('Em uso') : meu ? Tx(A.tipo === 'luva' ? 'É sua' : 'É seu') : naSac ? Tx('Na sacola') : Tfx('{0} fakes', A.preco);
+          top.append(n, tag);
+          const bs = document.createElement('div'); bs.style.cssText = 'display:flex;gap:4px;';
+          bs.appendChild(bt(vendo ? Tx('Provando') : Tx('PROVAR'), '#3a64b8', () => { const e = copiaEnf(M.provAc); e[tp] = [A.k, metal.k]; provarAc(e); render(); }, vendo));
+          if (meu) bs.appendChild(bt(emUso ? Tx('TIRAR') : Tx('USAR'), emUso ? '#a3162a' : '#2a5a7a', () => {
+            if (emUso) delete DA.uso[tp]; else DA.uso[tp] = A.k; gravar();
+            const e = copiaEnf(M.provAc); if (emUso) delete e[tp]; else e[tp] = [A.k, metal.k]; provarAc(e); render(); }));
+          else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== k); render(); }));
+          else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push(k); try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+          dir.append(top, bs); lin.append(iconeAc(A, metal.cor), dir); return lin;
+        }
+        function linhaTat(T) {
+          const lug = M.lugarTat, meu = DA.tats.includes(T.k), k = 'tat:' + T.k, naSac = M.sacola.includes(k), aqui = DA.t[lug] === T.k;
+          const vendo = M.provAc && M.provAc.t && M.provAc.t[lug] === T.k, onde = LUGARES_TATUAGEM.filter((L) => DA.t[L.k] === T.k).map((L) => Tx(ROT_LUGAR[L.k])).join(' + ');
+          const lin = document.createElement('div'); lin.dataset.k = T.k;
+          lin.style.cssText = 'background:' + (vendo ? '#5a4410' : '#3a2c0c') + ';border:2px solid ' + (aqui ? '#3fb76a' : naSac ? AMAR : meu ? '#2f7a55' : '#5a4410') + ';padding:5px 6px;display:flex;gap:7px;align-items:center;';
+          const dir = document.createElement('div'); dir.style.cssText = 'flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;';
+          const top = document.createElement('div'); top.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:6px;';
+          const n = document.createElement('span'); n.style.cssText = 'font:700 12.5px/1.1 var(--font-display);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; n.textContent = Tx(T.nome);
+          const tag = document.createElement('span'); tag.style.cssText = 'font:700 10px/1 var(--font-display);padding:3px 5px;white-space:nowrap;background:' + (onde ? '#1f7a4d' : meu ? '#2f5a45' : naSac ? '#8a6a10' : '#1a1406') + ';color:' + (meu || naSac ? '#fff' : AMAR) + ';';
+          tag.textContent = onde || (meu ? Tx('É sua') : naSac ? Tx('Na sacola') : Tfx('{0} fakes', T.preco));
+          top.append(n, tag);
+          const bs = document.createElement('div'); bs.style.cssText = 'display:flex;gap:4px;';
+          bs.appendChild(bt(vendo ? Tx('Provando') : Tx('PROVAR'), '#3a64b8', () => { const e = copiaEnf(M.provAc); e.t = e.t || {}; e.t[lug] = T.k; provarAc(e); render(); }, vendo));
+          if (meu) bs.appendChild(bt(aqui ? Tx('TIRAR DAQUI') : Tx('PÔR AQUI'), aqui ? '#a3162a' : '#2a5a7a', () => {
+            if (aqui) delete DA.t[lug]; else DA.t[lug] = T.k; gravar();
+            const e = copiaEnf(M.provAc); e.t = e.t || {}; if (aqui) delete e.t[lug]; else e.t[lug] = T.k; provarAc(e); render(); }));
+          else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== k); delete M.tatLugar[T.k]; render(); }));
+          else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push(k); M.tatLugar[T.k] = lug; try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+          dir.append(top, bs); lin.append(iconeTat(T.k), dir); return lin;
+        }
+        function render() {
+          const aba = M.abaAc;
+          inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia'));
+          abas.innerHTML = ''; for (const [a, rot] of ABAS_AC) abas.appendChild(bt(Tx(rot), a === aba ? '#1a1406' : '#6a5010', () => { if (M.abaAc === a) return; M.abaAc = a; lista.scrollTop = 0; camAc(a); render(); }, a === aba));
+          extra.innerHTML = '';
+          if (aba === 'tat') {
+            for (const L of LUGARES_TATUAGEM) extra.appendChild(bt(Tx(ROT_LUGAR[L.k]), L.k === M.lugarTat ? '#1a1406' : '#6a5010', () => { M.lugarTat = L.k; render(); }, L.k === M.lugarTat));
+            const k = DA.t[M.lugarTat]; extraTxt.textContent = Tfx('Neste lugar: {0}', k && TATUAGEM_POR_K[k] ? Tx(TATUAGEM_POR_K[k].nome) : Tx('nada'))
+              + (cobertoAc(M.lugarTat) ? '\n' + Tx(M.lugarTat[0] === 'p' ? 'Com essa roupa a perna fica coberta: a tatuagem não aparece.' : 'Com essa roupa o braço fica coberto: a tatuagem não aparece.') : '');
+          } else {
+            const mk = metalDe(aba);
+            for (const m of METAIS) { const b = document.createElement('button'); b.type = 'button'; b.title = Tx(m.nome); b.dataset.metal = m.k;
+              b.style.cssText = 'width:26px;height:22px;flex:none;cursor:pointer;background:' + m.cor + ';border:3px solid ' + (m.k === mk ? '#ffffff' : '#1a1406') + ';';
+              b.onclick = (e) => { e.stopPropagation(); DA.metal[SIGLA[aba]] = m.k; gravar(); const tp = SIGLA[aba], en = copiaEnf(M.provAc); if (en[tp]) { en[tp][1] = m.k; provarAc(en); } render(); };
+              extra.appendChild(b); }
+            extraTxt.textContent = Tfx('Tom do metal: {0}', Tx(METAL_POR_K[mk].nome));
+          }
+          const rolagem = lista.scrollTop; lista.innerHTML = '';
+          if (aba === 'tat') for (const T of TATUAGENS) lista.appendChild(linhaTat(T));
+          else for (const A of ACESSORIOS) if (A.tipo === aba) lista.appendChild(linhaAc(A));
+          lista.scrollTop = rolagem;
+        }
+        fechar.onclick = () => { el.remove(); M.painel = null; fim(); };
+        el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
+        M.painel = { el, render }; render();
+      });
+    }
+    async function catalogoAc() {
+      const s = S(), J = s.jog, d = s.dados, E = dadosE(), A = M.eq.tati; if (!A || M.painel || !temAc()) return;
+      s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); A.falando = true;
+      const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+      try {
+        if (!E.tati) {
+          await api.fala('esp_tati', Tx('Oi! Aqui é a seção de acessórios: brincos, colares, luvas e tatuagens.'));
+          await api.fala('esp_tati', Tx('Tudo que é de metal sai em oito tons, do ouro ao grafite. É só escolher.'));
+          await api.fala('esp_tati', Tx('As tatuagens eu mesma faço, no estúdio aqui do fundo. Você escolhe o desenho e o lugar: braço ou perna, direito ou esquerdo.'));
+          await api.fala('esp_tati', Tx('Pode provar tudo no espelho. O que gostar vai para a sacola e a Marta cobra.'));
+          E.tati = true; api.gravar(d.ponto || 'chegada');
+        } else await api.fala('esp_tati', Tx(pk(['Bora se enfeitar?', 'Chegou peça nova! Quer ver?'])));
+        Dialogo.esconder();
+        await andarJog(PROV_AC.x, PROV_AC.z, 2.2); J.yaw = J.yawAlvo = Math.PI;
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        if (!M.abaAc) M.abaAc = 'brinco'; if (!M.lugarTat) M.lugarTat = 'bd';
+        sincronizarEnfeites(); camAc(M.abaAc); provarAc(enfeitesDe(dadosA()));
+        const n0 = M.sacola.filter((k) => ehAc(k) || ehTat(k)).length;
+        await abrirPainelAc();
+        desprovarAc(); api.camCena(null); s.cam.snap = true;
+        A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
+        await api.fala('esp_tati', M.sacola.filter((k) => ehAc(k) || ehTat(k)).length > n0 ? Tx('Ficou muito bom! Passa no caixa com a Marta.') : Tx('Volta sempre! Sempre chega coisa nova.'));
+      } catch (e) { console.error('[Esportiva] acessórios:', e); }
+      finally {
+        A.falando = false; A.yawAlvo = y0; if (M.painel) { M.painel.el.remove(); M.painel = null; } desprovarAc();
+        try { api.camCena(null); s.cam.snap = true; Dialogo.esconder(); } catch (e) { /* nada */ }
+        const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
+      }
+    }
     // os outros vendedores: a seção ainda não vende
     async function falarVendedor(k) {
       const A = M.eq[k], J = S().jog; if (!A) return; const y0 = A.yawAlvo; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); A.falando = true;
@@ -783,14 +1020,20 @@
       A.falando = true;
       try {
         if (!E.marta) { await api.fala('esp_marta', fem() ? Tx('Bem-vinda à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.') : Tx('Bem-vindo à Golaço Esportes! Escolhe com os vendedores e paga aqui comigo.')); E.marta = true; api.gravar(d.ponto || 'chegada'); }
-        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas e o Dedé as comemorações.')); return; }
+        if (!M.sacola.length) { await api.fala('esp_marta', Tx('A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas, a Tati os acessórios e o Dedé as comemorações.')); return; }
         const total = totalSacola(), nomes = M.sacola.map(nomeItem).join(', ');
         await api.fala('esp_marta', Tfx('Na sacola: {0}. Dá {1} fakes.', nomes, total));
         if (!d.devInfinito && d.fakes < total) { await api.fala('esp_marta', Tfx('Faltam {0} fakes. Tira alguma coisa da sacola com os vendedores ou volta depois.', total - d.fakes)); return; }
         const r = await Escolha.mostrar(Tx('Caixa da loja'), [Tfx('Pagar {0} fakes', total), Tx('Agora não')]);
         if (r !== 0) { await api.fala('esp_marta', Tx('Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.')); return; }
         d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
-        const cels = M.sacola.filter((k) => !ehCh(k) && !ehBola(k) && !ehRp(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), rps = M.sacola.filter(ehRp).map((k) => k.slice(3)), DC = dadosCh();
+        const acs = M.sacola.filter(ehAc).map((k) => k.slice(3)), tats = M.sacola.filter(ehTat).map((k) => k.slice(4)), DA = temAc() ? dadosA() : null;
+        if (DA) {                                                        // acessório novo entra em uso se o tipo estava vazio; tatuagem vai para o lugar escolhido
+          for (const k of acs) { if (!DA.tem.includes(k)) DA.tem.push(k); const Ac = ACESSORIO_POR_K[k]; if (Ac && !DA.uso[SIGLA[Ac.tipo]]) DA.uso[SIGLA[Ac.tipo]] = k; }
+          for (const k of tats) { if (!DA.tats.includes(k)) DA.tats.push(k); DA.t[M.tatLugar[k] || 'bd'] = k; }
+          sincronizarEnfeites();
+        }
+        const cels = M.sacola.filter((k) => !ehCh(k) && !ehBola(k) && !ehRp(k) && !ehAc(k) && !ehTat(k)), chs = M.sacola.filter(ehCh).map((k) => k.slice(3)), rps = M.sacola.filter(ehRp).map((k) => k.slice(3)), DC = dadosCh();
         const bolas = M.sacola.filter(ehBola).map((k) => k.slice(5)), Bd = dadosB(); M.sacola = [];
         for (const n of bolas) if (!Bd.tem.includes(n)) Bd.tem.push(n);
         const bolaNova = !Bd.usando && bolas.length ? bolas[bolas.length - 1] : null; if (bolaNova) Bd.usando = bolaNova;   // a primeira bola comprada já vai para as partidas
@@ -811,6 +1054,10 @@
         if (ultCh) await api.fala('esp_marta', Tfx('A chuteira "{0}" já ficou no seu pé para a próxima partida. Para trocar, é com o Biro.', Tx(ultCh)));
         if (bolaNova) await api.fala('esp_marta', Tfx('A bola "{0}" já é a sua bola nas partidas. Para trocar, é com o Juca.', Tx(bolaNova)));
         if (ultRp) await api.fala('esp_marta', Tfx('A roupa "{0}" você já está vestindo. Para trocar, é com a Kelly ou no guarda-roupa de casa.', Tx(ultRp)));
+        if ((acs.length || tats.length) && !rps.length) { try { api.refazerJogador(); } catch (e) { /* nada */ } }
+        if (acs.length) await api.fala('esp_marta', Tx('Os acessórios novos são seus. Para usar ou trocar, é com a Tati.'));
+        for (const k of tats) { const L = LUGARES_TATUAGEM.find((q) => q.k === (M.tatLugar[k] || 'bd')); await api.fala('esp_marta', Tfx('A tatuagem "{0}" já está feita: {1}.', Tx(TATUAGEM_POR_K[k].nome), Tx(L.nome).toLowerCase())); }
+        M.tatLugar = {};
         await api.fala('esp_marta', Tx('Agora é fazer gol para estrear!'));
       } catch (e) { console.error('[Esportiva] caixa:', e); }
       finally { A.falando = false; try { Dialogo.esconder(); } catch (e) { /* nada */ } }
@@ -820,7 +1067,7 @@
     function entrou(R, idx) {
       const s = S(); M.R = R; M.D = R.esportiva || null; if (!M.D) return; void idx;
       M.nav = null; montarNav(); M.eq = {}; M.gente = []; M.sacola = []; M.previa = null; M.painel = null; M.dede = null; M.proxDede = null; M.prox = rnd(3, 8); M.provando = null; M.destaque = null;
-      sincronizarChuteira();
+      sincronizarChuteira(); sincronizarEnfeites(); M.provAc = null; M.tatLugar = {};
       try { montarVitrine(R); } catch (e) { console.warn('[Esportiva] vitrine:', e); }
       M.provandoRp = null; M.manequins = []; try { montarManequins(R); } catch (e) { console.warn('[Esportiva] manequins:', e); }
       for (const E of EQUIPE) criarEquipe(E);
@@ -830,7 +1077,7 @@
     function saiu() {
       const s = S(), J = s.jog;
       if (M.previa && J) soltar(J); if (M.painel) M.painel.el.remove(); if (M.provando != null && J) desprovar(); M.provando = null; M.destaque = null; tirarVitrine();
-      if (M.provandoRp != null && J) desprovarRp(); M.provandoRp = null;
+      if (M.provandoRp != null && J) desprovarRp(); M.provandoRp = null; if (M.provAc && J) desprovarAc(); M.provAc = null;
       for (const m of M.manequins || []) {                               // os manequins: sai da lista da cidade e libera a memória
         try { s.meus.delete(m); if (typeof ATLETAS !== 'undefined') ATLETAS.delete(m); if (m.raiz.parent) m.raiz.parent.remove(m.raiz);
           m.raiz.traverse((o) => { if (o.geometry && (typeof SHADOW_GEO === 'undefined' || o.geometry !== SHADOW_GEO)) o.geometry.dispose(); const ms = Array.isArray(o.material) ? o.material : [o.material]; for (const q of ms) if (q && typeof MAT_CORES !== 'undefined' && q !== MAT_CORES && (typeof SHADOW_MAT === 'undefined' || q !== SHADOW_MAT) && (typeof MAT === 'undefined' || q !== MAT)) { if (q.map) q.map.dispose(); q.dispose(); } }); } catch (e) { /* nada */ }
@@ -848,6 +1095,7 @@
         else if (E.k === 'biro') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as chuteiras'), fn: catalogoCh, y: 2.4, pri: true });
         else if (E.k === 'juca') v.push({ x: A.x, z: A.z + 0.5, r: 1.8, txt: Tx('Ver as bolas'), fn: catalogoBolas, y: 2.4, pri: true });
         else if (E.k === 'kelly') v.push({ x: A.x, z: A.z + 0.3, r: 1.8, txt: Tx('Ver as roupas'), fn: catalogoRp, y: 2.4, pri: true });
+        else if (E.k === 'tati' && temAc()) v.push({ x: A.x, z: A.z + 0.5, r: 1.8, txt: Tx('Ver os acessórios'), fn: catalogoAc, y: 2.4, pri: true });
         else v.push({ x: A.x, z: A.z + 0.5, r: 1.6, txt: Tfx('Falar com {0}', Tx(E.nome)), fn: () => falarVendedor(E.k), y: 2.4 });
       }
     }
@@ -856,15 +1104,15 @@
       tickPrevia(dt); tickDede(dt); tickFluxo(dt);
       if (M.vitrine) { M.vitrine.rotation.y += dt * 0.7; M.vitrine.position.y = M.vitrine.userData.y + Math.sin(performance.now() / 600) * 0.03; }
       if (M.destaque) M.destaque.rotation.y += dt * 0.7;                // a mais cara girando na redoma
-      if (M.provando != null || M.provandoRp != null) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira (ou a roupa)
+      if (M.provando != null || M.provandoRp != null || M.provAc) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira (ou a roupa)
       for (const E of EQUIPE) { const A = M.eq[E.k]; if (A && !A.falando && E.k !== 'dede' && s.modo === 'livre') { const J = s.jog, perto = Math.hypot(J.x - A.x, J.z - A.z) < 3.2; A.yawAlvo = perto ? Math.atan2(-(J.z - A.z), J.x - A.x) : A.casa.yaw; } }   // quem está perto: o vendedor olha para o jogador
     }
     function limpar() { if (M.painel) { M.painel.el.remove(); M.painel = null; } tirarVitrine(); }
-    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira, catalogoBolas, dadosB, BOLAS, mostrarBola, catalogoRp, abrirPainelRp, provarRp, desprovarRp, vestirRp, lojaRp, listaRp, minhasRp };
+    const dbg = { M, ver, catalogo, caixa, abrirPainel, daLoja, dadosC, posar, soltar, falarVendedor, novoCliente, catalogoCh, abrirPainelCh, provar, desprovar, calcar, dadosCh, lojaCh, sincronizarChuteira, catalogoBolas, dadosB, BOLAS, mostrarBola, catalogoRp, abrirPainelRp, provarRp, desprovarRp, vestirRp, lojaRp, listaRp, minhasRp , catalogoAc, dadosA, provarAc, sincronizarEnfeites };
     if (typeof window !== 'undefined') window.__esportiva = dbg;
     return { entrou, saiu, chegou: () => false, tickCliente, tick, alvos, alvosSentado: () => null, liberarMesa() {}, limpar, _f: dbg };
   }
 
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
-  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.12', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
+  window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.13', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
 })();
