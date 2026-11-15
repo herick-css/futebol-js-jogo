@@ -340,6 +340,10 @@
     'Lanches não saudáveis neste mês: {0}.': ['Unhealthy snacks this month: {0}.', 'Comidas poco saludables este mes: {0}.', 'Spuntini poco sani questo mese: {0}.', 'Snacks pas sains ce mois-ci : {0}.'],
     'Nenhuma observação por enquanto.': ['No notes for now.', 'Ninguna observación por ahora.', 'Nessuna osservazione per ora.', "Aucune remarque pour l'instant."],
     'Missão': ['Mission', 'Misión', 'Missione', 'Mission'],
+    'Missão: trabalhar {0} hoje, das {1} às {2}.': ['Mission: work {0} today, from {1} to {2}.', 'Misión: trabajar {0} hoy, de {1} a {2}.', 'Missione: lavorare {0} oggi, dalle {1} alle {2}.', "Mission : travailler {0} aujourd'hui, de {1} à {2}."],
+    'Missão: trabalhar {0} — o turno já começou (até {1})!': ['Mission: work {0} — your shift has already started (until {1})!', 'Misión: trabajar {0} — ¡el turno ya empezó (hasta las {1})!', 'Missione: lavorare {0} — il turno è già iniziato (fino alle {1})!', 'Mission : travailler {0} — ton service a déjà commencé (jusqu\'à {1}) !'],
+    'Missão: tomar banho em casa.': ['Mission: take a shower at home.', 'Misión: ducharte en casa.', 'Missione: fare la doccia a casa.', 'Mission : prendre une douche à la maison.'],
+    'na cafeteria': ['at the coffee shop', 'en la cafetería', 'alla caffetteria', 'au café'],
     'Pausar': ['Pause', 'Pausar', 'Pausa', 'Pause'],
     'Pausado': ['Paused', 'En pausa', 'In pausa', 'En pause'],
     'Continuar': ['Continue', 'Continuar', 'Continua', 'Continuer'],
@@ -4810,6 +4814,7 @@
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
     montarRuaMercado(); montarRuaAcademia(); montarRuaPesca();          // se o mercado.js / academia.js / pesca.js chegou com o jogador lá dentro
+    try { acertarTurma(); } catch (e) { console.warn('[Cidade] turma:', e); }   // (7.2.1) a turma do treino no lugar certo pela hora, sempre
     if (S.ruaPulou || (F.t0 != null && tAbs() - F.t0 > 1.5)) { try { reorganizarRua(); } catch (e) { console.warn('[Cidade] rua depois do pulo:', e); } }   // ficou horas lá dentro (ou o relógio pulou): a rua já mudou
     voltarSaidas();                                                     // (6.6.5) quem saiu das lojas enquanto ele estava lá dentro
     { const E = encontroMarcado(); if (E && !E.feito && E.dia === (S.dados.dia || 1) && !S.marca) mostrarAgendaEncontro(); }   // (6.6.18) marcou hoje lá dentro: a marca do mapa aparece ao sair
@@ -7103,7 +7108,7 @@
 .cdQuad .cdMapaI { position: relative; width: 18px; height: 14px; background: linear-gradient(90deg, #8fd06a 0 33%, #e8d79a 33% 66%, #8fd06a 66%); border: 2px solid #fff0c8; box-sizing: border-box; }
 .cdQuad .cdMapaI::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 4px; background: #e8452f; border-radius: 50%; }
 #cdEsq { position: fixed; z-index: 9; left: max(10px, env(safe-area-inset-left, 0px)); top: calc(8px + env(safe-area-inset-top, 0px)); display: flex; gap: 6px; align-items: flex-start; max-width: min(60vw, 480px); }
-#cdEsq .cdMissao { box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px; border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
+#cdEsq .cdMissao { white-space: pre-line; box-sizing: border-box; --p: var(--p2, 2px); padding: 3px 8px; border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-madeira) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated;
   font: 700 12px/1.25 var(--font-display); letter-spacing: 0.04em; color: #fff0c8; text-shadow: 0 2px 0 #2a1206; cursor: pointer; pointer-events: auto; max-width: min(46vw, 420px); }
 #cdEsq .cdMisIco { color: #f2c230; font-size: 18px; }
 #cdEsq .cdMisIco.pisca { animation: cdPisca 0.45s steps(1) 4; }
@@ -7408,14 +7413,44 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function tickDev() { const d = S.dados; if (d.devInfinito && d.fakes < DEV_GRANA) { d.fakes = DEV_GRANA; mostrarDinheiro(false); } }
   function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; if (!p) fecharDev(); }
   let tMissao = null;
+  // (7.2.1) MISSÕES DA ROTINA: além da missão da história (S.missao), o trabalho do dia e o banho também aparecem como missão.
+  //   trabalho: dia de trabalho do seu emprego (cafeteria e mercado de segunda a sexta; pizzaria de quinta a domingo, menos no dia
+  //   do encontro com a Lúcia), a partir do 2º dia, enquanto ainda dá para começar o turno e você ainda não trabalhou hoje.
+  //   banho: depois de jogar bola (d.precisaBanho) até tomar banho em casa.
+  const NOME_LUGAR_EMPREGO = { cafeteria: 'na cafeteria', mercado: 'no Mercadinho Bom Preço', pizzaria: 'na pizzaria' };
+  const ULTIMA_HORA_TURNO = { cafeteria: 16, mercado: 21, pizzaria: 23 };   // depois disso o patrão não deixa mais começar
+  function missaoTrabalho() {
+    const d = S && S.dados, e = empregoEscolhido();
+    if (!d || !e || !TURNOS[e] || (d.dia || 1) < 2 || d.trabalhouHoje || S.turno || S.turnoMercado || S.turnoPizza) return '';
+    const ds = diaSemana(), E = d.encontroLucia;
+    const hoje = e === 'pizzaria' ? [3, 4, 5, 6].includes(ds) && !(E && E.dia === (d.dia || 1)) : ds < 5;
+    if (!hoje || d.hora >= ULTIMA_HORA_TURNO[e]) return '';
+    const [h0, h1] = TURNOS[e], lugar = T(NOME_LUGAR_EMPREGO[e]);
+    return d.hora >= h0 ? Tf('Missão: trabalhar {0} — o turno já começou (até {1})!', lugar, fmtHora(h1 % 24)) : Tf('Missão: trabalhar {0} hoje, das {1} às {2}.', lugar, fmtHora(h0), fmtHora(h1 % 24));
+  }
+  function missaoBanho() { return S && S.dados && S.dados.precisaBanho ? T('Missão: tomar banho em casa.') : ''; }
+  function textoMissoes() {
+    const L = [S.missao, missaoTrabalho(), missaoBanho()].filter(Boolean);
+    return L.length ? L.join('\n') : T('Nenhuma missão por enquanto.');
+  }
+  // mudou o trabalho ou o banho (novo dia, turno feito, jogou bola, tomou banho): mostra a lista de novo
+  function tickMissoesRotina(dt) {
+    if ((S.tRotina = (S.tRotina || 0) - dt) > 0) return;
+    S.tRotina = 0.5;
+    const k = missaoTrabalho() + '|' + missaoBanho();
+    if (k === S.rotinaK) return;
+    const antes = S.rotinaK; S.rotinaK = k;
+    if (antes !== undefined && S.modo === 'livre' && k !== '|') mostrarMissao();
+    else if (UI && !UI.missao.hidden) UI.missao.textContent = textoMissoes();
+  }
   function mostrarMissao() {
     if (!S) return;
     if (S.turnoPizza && !S.turnoPizza.fim && !UI.missao.dataset.abrir) {   // no turno da pizzaria a missão muda a toda hora: ela NÃO abre sozinha (a tela já tem muita coisa); só o "!" pisca
-      UI.missao.textContent = S.missao || T('Nenhuma missão por enquanto.');
+      UI.missao.textContent = textoMissoes();
       if (UI.missao.hidden) { UI.misIco.hidden = false; UI.misIco.classList.remove('pisca'); void UI.misIco.offsetWidth; UI.misIco.classList.add('pisca'); }
       return;
     }
-    UI.missao.textContent = S.missao || T('Nenhuma missão por enquanto.'); UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
+    UI.missao.textContent = textoMissoes(); UI.missao.hidden = false; UI.misIco.hidden = true; UI.esq.hidden = false;
     clearTimeout(tMissao); tMissao = setTimeout(recolherMissao, 5000);
   }
   // o painel do turno (cafeteria e mercado) aparece uma vez no começo e depois vira o ícone "!" vermelho no canto superior
@@ -7866,12 +7901,28 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (r.ida == null) { const c = r.casa, f = pontoPosto(r); r.ida = c ? Math.hypot(c.sx - f.x, c.sz - f.z) * 3.2 / VEL_CORRE * H_POR_S + 0.15 : TURMA_IDA; }   // (medido: com o portão, a faixa e os esbarrões, anda ~1/3 da velocidade)
     return r.ida;
   }
+  // (7.2.1) põe a turma onde a hora manda: na sessão = no campo; fora dela (depois do fim) = em casa
+  function acertarTurma() {
+    for (const r of S.moradores || []) {
+      if (r.posto.tipo !== 'treino' || (S.treino && S.treino.ocupado)) continue;
+      const A = r.A;
+      if (turmaPresente()) { if (r.estado !== 'posto') { if (A.ativ) fimAtiv(A); A.recua = null; esconderMor(r); colocarNoPosto(r); } }
+      else if (!turmaVai(idaTurma(r)) && r.estado !== 'casa') { if (A.ativ) fimAtiv(A); A.recua = null; esconderMor(r); }
+    }
+    if (S.treino) S.treino.pausa = (S.moradores || []).some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto') || !turmaPresente();
+  }
   function tickTurmaMor(r) {
     const A = r.A, J = S.jog, f = pontoPosto(r);
     if (r.ehGol) A.goleiro = !S.treinoMod && r.estado === 'posto';
     const longe = Math.hypot(J.x - f.x, J.z - f.z) > 45 && (A.oculto || Math.hypot(J.x - A.x, J.z - A.z) > 45), h = horasDaTurma();
+    // (7.2.1) OBRIGATÓRIO, como os que têm nome: deu a hora da sessão e ele não está no campo (ainda em casa — o relógio pulou, ficou
+    //   num lugar, voltou de uma partida — ou ainda longe no caminho) → aparece no posto, mesmo com você olhando o campo.
+    //   Só quem já está chegando (a menos de 30 m do posto, andando e à sua vista) termina o caminho a pé.
+    if (turmaPresente() && (r.estado === 'casa' || r.estado === 'ida' || r.estado === 'voltaPosto')) {
+      const chegando = !A.oculto && Math.hypot(A.x - f.x, A.z - f.z) < 30 && Math.hypot(J.x - A.x, J.z - A.z) < 45;
+      if (!chegando || h.desde > 0.25) { if (A.ativ) fimAtiv(A); A.recua = null; if (!A.oculto) esconderMor(r); colocarNoPosto(r); return true; }
+    }
     if (!longe) return false;
-    if (turmaPresente() && h.desde > 0.2 && (r.estado === 'casa' || r.estado === 'ida' || r.estado === 'voltaPosto')) { colocarNoPosto(r); return true; }
     if (!turmaVai(idaTurma(r)) && h.fim > 0.3 && r.estado !== 'casa') { esconderMor(r); return true; }
     return false;
   }
@@ -8826,6 +8877,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
         tickClima(dt); tickDev();                        // (6.2.3) dinheiro infinito
+        tickMissoesRotina(dt);                           // (7.2.1) trabalho e banho como missão
         tickVida(dt); tickPortas(dt); tickLojas(dt); if ((S.tAg = (S.tAg || 0) - dt) <= 0) { S.tAg = 1; tickAgendaAcad(); } tickViagens();                    // (6.6.5) quem entra e sai das lojas (registro + viagens)
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
@@ -8953,5 +9005,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

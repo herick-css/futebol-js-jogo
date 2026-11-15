@@ -61,7 +61,9 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.2.0';
+const VERSAO_JOGO = '7.2.1';
+// 7.2.1 (cidade.js): o trabalho do dia e o banho aparecem como MISSÃO (junto com a da história); a turma do treino de chute fica no
+//   campo na hora da sessão obrigatoriamente (relógio pulou, voltou de um lugar ou de uma partida: já está lá, como os que têm nome).
 // 7.2.0: cabeçada com alcance e força de cabeça (CABECA: passe de cabeça até ~9–13 m, no máximo 13 m/s; nunca mais "vira o campo");
 //   chute de longe da IA com 1–2 s ajeitando a bola (dá para roubar) e cena em câmera lenta no preparo e perto do gol (CHUTE_LONGE);
 //   carrinho sentado e suave (SLIDE_POSE); estrelinha girando para o lado certo; IA com visual da loja (cortes e barbas especiais,
