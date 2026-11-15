@@ -4290,7 +4290,7 @@
     const J = S.jog;
     for (const V of (S.viagens || []).slice()) if (V.A.length) perderBoneco(V);
     if (J.sentado) levantar();
-    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: { x: J.x, z: J.z, sai: J.yaw || 0 } };
+    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: { x: J.x, z: J.z, sai: J.yaw || 0 }, t0: tAbs() };
     S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
     S.col = R.col || []; S.circ = []; S.pisos = R.pisos || []; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
     S.dentro = Object.assign({ saida: { x: 9999, z: 9999 }, extras: [], lim: { x0: -40, x1: 40, z0: -40, z1: 40 } }, R, { extra: true });
@@ -4308,7 +4308,7 @@
     const R = I.construir(P.nome, { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro });
     if (!R) { await preto(false, 300); return; }
     for (const V of (S.viagens || []).slice()) if (V.A.length) perderBoneco(V);   // (6.6.6) quem vinha andando pela rua continua só na conta enquanto ele está lá dentro
-    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P };
+    S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P, t0: tAbs() };
     S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
     S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
     S.dentro = Object.assign({ nome: P.nome }, R);
@@ -4507,6 +4507,7 @@
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
     UI.btnMapa.hidden = false; UI.seta.hidden = !S.marca;
     montarRuaMercado(); montarRuaAcademia(); montarRuaPesca();          // se o mercado.js / academia.js / pesca.js chegou com o jogador lá dentro
+    if (S.ruaPulou || (F.t0 != null && tAbs() - F.t0 > 1.5)) { try { reorganizarRua(); } catch (e) { console.warn('[Cidade] rua depois do pulo:', e); } }   // ficou horas lá dentro (ou o relógio pulou): a rua já mudou
     voltarSaidas();                                                     // (6.6.5) quem saiu das lojas enquanto ele estava lá dentro
     { const E = encontroMarcado(); if (E && !E.feito && E.dia === (S.dados.dia || 1) && !S.marca) mostrarAgendaEncontro(); }   // (6.6.18) marcou hoje lá dentro: a marca do mapa aparece ao sair
     if (semClarear !== true) await preto(false, 380);
@@ -6824,7 +6825,60 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     S.madrugada = false; d.avisouDormir = d.hora >= 21 || d.hora < H_ACORDAR ? d.avisouDormir : false;
     if (mudouDia) { prepararDia(d); try { agendarHoje(); } catch (e) { console.warn('[Cidade] agenda:', e); } }
     try { if (S.valdemar && !S.dentro) snapValdemar(); } catch (e) { /* ok */ }
+    try { reorganizarRua(); } catch (e) { console.warn('[Cidade] rua depois do pulo:', e); }
     relUlt = ''; S.cam.snap = true;
+  }
+  // O RELÓGIO PULOU (privilégio do desenvolvedor, ou horas lá dentro de um lugar): ninguém fica onde estava. Atrás da tela de carregamento,
+  //   quem passeia vira OUTRA pessoa num ponto qualquer da rede (mesma quantidade, os esportivos continuam esportivos), as rodas de bola
+  //   terminam (a bola some com elas e, se a roda estiver aberta, às vezes já tem outra acontecendo), as viagens das lojas voltam a ser só
+  //   conta (o boneco reaparece onde a hora manda), os moradores vão direto para o posto ou para casa, conforme a hora, e o Biel já está na
+  //   quadra (ou não está). Os que andam pela hora (Cadu, Rosa, Diego, Fernanda, Lúcia, João, seu Valdemar) já se acertam sozinhos.
+  // quem ocupa o posto (banco, roda de conversa) passa a ser outra pessoa: o posto e a casa continuam os mesmos
+  function trocarMorador(r) {
+    const A = r.A, B = criarPessoa(S.f2, Math.random, Math.random() < 0.5, false);
+    for (const C of S.conversas) { if (C.a === A) C.a = B; if (C.b === A) C.b = B; }
+    const i = S.npcs.indexOf(A); if (i >= 0) S.npcs[i] = B; else S.npcs.push(B);
+    const conv = S.conversas; S.conversas = []; descartarPessoa(A); S.conversas = conv;
+    r.A = B; B.tipo = 'morador'; esconderMor(r);
+  }
+  function reorganizarRua() {
+    if (!S || !S.rede || !S.rede.length) return;
+    if (S.dentro) { S.ruaPulou = true; return; }
+    S.ruaPulou = false;
+    const J = S.jog, d = S.dados, molhado = !!(S.clima && S.clima.molhado);
+    for (const V of (S.viagens || []).slice()) if (V.A && V.A.length) perderBoneco(V);
+    const velhos = S.npcs.filter((A) => A.tipo === 'anda' && !(A.dest && (A.dest.tipo === 'visita' || A.dest.tipo === 'parDe')));
+    const livres = [];
+    for (let i = 0; i < S.rede.length; i++) { const N = S.rede[i], dj = Math.hypot(N.x - J.x, N.z - J.z); if (!N.faixa && dj > 6 && dj < 95 && livreNPC(N.x, N.z, null, true)) livres.push(i); }
+    for (let i = livres.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [livres[i], livres[j]] = [livres[j], livres[i]]; }
+    const novos = [];
+    velhos.forEach((A, n) => {
+      if (A.dest && A.dest.a && A.dest.a.ocupado === A) A.dest.a.ocupado = null;          // a banqueta do lanche
+      const esporte = !!A.esporte; descartarPessoa(A);
+      const k = livres.length ? livres[n % livres.length] : noMaisPerto(J.x + 40, J.z), N = S.rede[k];
+      const B = criarPessoa(S.f2, Math.random, Math.random() < 0.5, esporte);
+      B.x = N.x; B.z = N.z; B.y = altura(N.x, N.z); B.ant = null; B.alvo = N.viz[Math.floor(Math.random() * N.viz.length)]; B.cool = 5 + Math.random() * 25;
+      if (molhado) correrNaChuva(B);
+      S.npcs.push(B); novos.push(B);
+    });
+    for (const R of S.rodas || []) { R.jog = []; R.vindo = 0; R.dono = null; R.busca = null; R.jogNaRoda = 0; if (R.bola) { R.bola.voa = R.bola.rola = false; R.bola.vx = R.bola.vy = R.bola.vz = 0; R.bola.mesh.visible = R.bola.sombra.visible = false; } }
+    const doPovo = novos.filter((B) => !B.esporte || Math.random() < 0.6);
+    semearRodas(S.f2, () => { const B = doPovo.pop(); if (B) { B.ant = null; B.alvo = null; B.chuva = null; removerProp(B); } return B || null; });
+    S.pedestres = [J, ...S.npcs.filter((A) => A.tipo === 'anda')];
+    for (const r of S.moradores || []) {
+      const A = r.A;
+      if (r.posto.tipo === 'treino') {
+        if (S.treino && S.treino.ocupado) continue;
+        if (A.ativ) fimAtiv(A); A.recua = null;
+        if (turmaVai(idaTurma(r))) { esconderMor(r); colocarNoPosto(r); } else esconderMor(r);
+        continue;
+      }
+      if (A.ativ) fimAtiv(A); A.recua = null; esconderMor(r); r.reagiu = false;
+      if (noHorario(r) && r.folga !== (d.dia || 1)) { if (molhado) r.reagiu = true; trocarMorador(r); colocarNoPosto(r); }
+    }
+    if (S.treino) S.treino.pausa = (S.moradores || []).some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto') || !turmaPresente();
+    if (S.biel && !S.biel.indoEmbora) { removerBiel(); const F = fsal(); if (bielNaHora() && F.jogouDia !== d.dia) criarBiel(false); }
+    for (const A of S.npcs) { A.tQuieto = 0; if (A.congelado) descongelar(A); }
   }
   function tickDev() { const d = S.dados; if (d.devInfinito && d.fakes < DEV_GRANA) { d.fakes = DEV_GRANA; mostrarDinheiro(false); } }
   function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; if (!p) fecharDev(); }
@@ -7819,16 +7873,18 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
   }
   // a cidade acabou de abrir (de dia, sem chuva): às vezes já tem uma roda acontecendo (como os pedestres, que já começam espalhados)
-  function semearRodas(f2) {
+  function semearRodas(f2, pegar) {                                    // pegar: tira a pessoa de quem já está na rua (o relógio pulou), em vez de criar outra
     for (const R of rodas()) {
       if (!rodaAberta(R) || Math.random() > (R.nome === 'sintetico' ? 0.6 : 0.45)) continue;
       const n = 2 + Math.floor(Math.random() * 2);
       for (let i = 0; i < n; i++) {
-        const A = criarPessoa(f2, Math.random, Math.random() < 0.35, true); A.tipo = 'anda'; A.correndo = false; A.vel = 1.3 + Math.random() * 0.3;
+        const A = pegar ? pegar() : criarPessoa(f2, Math.random, Math.random() < 0.35, true); if (!A) break;
+        A.tipo = 'anda'; A.correndo = false; A.vel = 1.3 + Math.random() * 0.3;
         R.jog.push(A); const v = vagaNaRoda(R, i); A.x = v.x; A.z = v.z; A.y = R.y; A.yaw = A.yawAlvo = Math.atan2(-(R.cz - v.z), R.cx - v.x);
-        A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 60 + Math.random() * 200, ang: (i / Math.max(2, n)) * Math.PI * 2 }; S.npcs.push(A);
+        A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 60 + Math.random() * 200, ang: (i / Math.max(2, n)) * Math.PI * 2 }; if (!pegar) S.npcs.push(A);
       }
-      const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0;
+      if (!R.jog.length) continue;
+      const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0; B.voa = B.rola = false; B.mesh.visible = B.sombra.visible = true;
     }
   }
   // termina o que estava fazendo (e o par, junto)
@@ -8137,6 +8193,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       }
       if (!R.jog.length) { if (R.bola && R.bola.mesh.visible) { R.bola.mesh.visible = R.bola.sombra.visible = false; R.bola.voa = R.bola.rola = false; } continue; }
       if (!R.bola) continue;
+      if (R.lim) {                                                        // a bola da roda nunca sai do campo dela (nem no pé de quem foi parar fora)
+        const L = R.lim, fora = (x, z, m) => x < L.x0 - m || x > L.x1 + m || z < L.z0 - m || z > L.z1 + m, B0 = R.bola;
+        if (R.dono && fora(R.dono.x, R.dono.z, 0.6)) R.dono = null;
+        if (fora(B0.x, B0.z, 0.2)) { B0.voa = B0.rola = false; B0.vx = B0.vy = B0.vz = 0; B0.x = clamp(B0.x, L.x0 + 0.4, L.x1 - 0.4); B0.z = clamp(B0.z, L.z0 + 0.4, L.z1 - 0.4); B0.y = R.y + 0.15; R.dono = null; R.busca = null; }
+      }
       if (!R.dono && !R.busca && !R.bola.voa && !R.bola.rola) R.busca = R.jog[0];   // a bola ficou sem ninguém: o primeiro vai buscar
       const B = R.bola, chao = R.y + 0.15, g = 9.8; R.t = (R.t || 0) + dt;
       { const J = S.jog; R.jogNaRoda = J && Math.hypot(J.x - R.cx, J.z - R.cz) < R.raio + 1.2 ? (R.jogNaRoda || 0) + dt : 0; }   // (6.6.15) o jogador no meio da roda: depois de 3 s eles param
@@ -8351,5 +8412,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

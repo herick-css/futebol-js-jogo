@@ -7,6 +7,10 @@
    - A MESA é desenhada pixel a pixel (300 x 164): madeira com os losangos, o pano verde com textura, as 6 caçapas e as 16 bolas
      (lisas 1–7, a 8 preta, listradas 9–15 e a branca), com brilho e sombra.
    - FÍSICA: atrito, choque elástico entre as bolas, tabelas (com a "boca" das caçapas do meio) e caçapas. Passos fixos de 1/240 s.
+     O EFEITO na branca (onde o taco bate): em cima ela gira para a frente e, depois de acertar a bola, SEGUE; embaixo gira para trás
+     e VOLTA (puxada); no meio ela para no lugar do toque. O giro vira velocidade pelo atrito do pano enquanto a branca desliza
+     (2/7 vai para a velocidade, 5/7 sai do giro, como numa bola de verdade). De lado: a volta na tabela abre para o lado do efeito,
+     a branca desvia um pouco para o outro lado na tacada e a bola acertada sai um tiquinho para o lado oposto ao efeito.
    - REGRAS (bola 8, como na mesa de verdade, sem cantar a caçapa):
      · SAÍDA: a mesa continua aberta mesmo que caia bola (quem saiu e encaçapou joga de novo). A 8 na saída volta para o pé da mesa.
        A branca caiu na saída: falta, e o outro põe a branca só ATRÁS DA LINHA DE SAÍDA (a "cozinha").
@@ -17,9 +21,12 @@
      · FALTA (a branca caiu, não tocou em nada, tocou primeiro na bola errada, nenhuma bola na tabela depois do toque) = o outro
        ganha a BOLA NA MÃO e põe a branca em qualquer lugar livre da mesa.
      · A 8: com o grupo todo encaçapado, a 8 numa tacada válida ganha. A 8 antes da hora, junto com a última do grupo ou com falta perde.
-   - A MIRA começa sempre no mesmo lugar (o taco reto, apontando para o lado mais longe da mesa): quem mira é o jogador.
-   - CONTROLES: mira arrastando/movendo o dedo ou o mouse na mesa (◀ ▶ e as setas para o ajuste fino); SEGURE o botão TACAR (ou o
-     espaço) e solte na força certa (a barra vai e volta). Com a bola na mão: toque onde quer pôr a branca e confirme.
+   - A MIRA começa sempre reta na horizontal (ou na vertical, se a horizontal já pegasse uma bola), numa direção que só bate na
+     tabela: nunca começa numa tacada pronta. Quem acha a jogada é o jogador.
+   - CONTROLES: mira arrastando/movendo o dedo ou o mouse na mesa (a mira vai para o dedo); arrastando EM CIMA DO TACO, o taco gira
+     em volta da branca (a mira fica do lado oposto); ◀ ▶ e as setas para o ajuste fino; a bolinha EFEITO escolhe onde bater na
+     branca (volta para o meio a cada vez); SEGURE o botão TACAR (ou o espaço) e solte na força certa (a barra vai e volta).
+     Com a bola na mão: toque onde quer pôr a branca e confirme. Desistir pergunta antes (na própria tela da sinuca).
    - A IA: procura as jogadas (a bola, a caçapa, o ângulo de corte, o caminho livre), SIMULA as melhores e escolhe; erra a mira de
      acordo com a habilidade (graus). O Valdemar ainda pensa na posição da branca para a próxima (o mais difícil).
    ===================================================================== */
@@ -65,6 +72,9 @@
     'Habilidade': ['Skill', 'Habilidad', 'Abilità', 'Niveau'],
     'Desistir da partida? Conta como derrota.': ['Give up the match? It counts as a loss.', '¿Rendirse? Cuenta como derrota.', 'Arrendersi? Conta come sconfitta.', 'Abandonner ? Ça compte comme une défaite.'],
     'Sim': ['Yes', 'Sí', 'Sì', 'Oui'], 'Não': ['No', 'No', 'No', 'Non'],
+    'Efeito': ['Spin', 'Efecto', 'Effetto', 'Effet'],
+    'Onde bater na branca': ['Where to hit the cue ball', 'Dónde golpear la blanca', 'Dove colpire la bianca', 'Où frapper la blanche'],
+    'Arraste no taco para girar o taco. A bolinha EFEITO escolhe onde bater na branca.': ['Drag the cue to swing it. The SPIN ball picks where to hit the cue ball.', 'Arrastra el taco para girarlo. La bolita EFECTO elige dónde golpear la blanca.', 'Trascina la stecca per ruotarla. La pallina EFFETTO sceglie dove colpire la bianca.', 'Glisse sur la queue pour la tourner. La bille EFFET choisit où frapper la blanche.'],
     'pensando...': ['thinking...', 'pensando...', 'sta pensando...', 'réfléchit...'],
   };
   const tr = (k) => (typeof T === 'function' ? T(k) : k);
@@ -78,7 +88,8 @@
   ];
   const MIRA_C = CACAPAS.map((p) => ({ x: p.meio ? p.x : p.x < XM ? p.x + 3.5 : p.x - 3.5, y: p.meio ? (p.y < YM ? Y0 + 1 : Y1 - 1) : p.y < YM ? p.y + 3.5 : p.y - 3.5 }));   // para onde mirar (a boca)
   const CABECA = { x: X0 + (X1 - X0) * 0.25, y: YM }, PE = { x: X0 + (X1 - X0) * 0.74, y: YM };
-  const VMAX = 560, DEC = 62, KF = 0.32, E_BOLA = 0.95, E_TABELA = 0.74;
+  const VMAX = 560, DEC = 52, KF = 0.27, E_BOLA = 0.95, E_TABELA = 0.74;   // o pano deixa as bolas correrem uns 20% mais
+  const MU_DESL = 210;                                                   // o atrito do pano com a bola deslizando (px/s²): troca o efeito por velocidade
   const CORES = ['#f8f6ee', '#f2c230', '#2f6ad8', '#d8302a', '#7a3fb0', '#e8742a', '#1f9a4d', '#8a2a20', '#1c1c1f'];
   const corDe = (id) => CORES[id <= 8 ? id : id - 8];
   const grupoDe = (id) => (id >= 1 && id <= 7 ? 'lisas' : id >= 9 ? 'listradas' : id === 8 ? 'oito' : 'branca');
@@ -95,8 +106,9 @@
     for (let p = 0; p < 15; p++) { const id = p === 4 ? 8 : p === 10 ? lisa : p === 14 ? lis : resto[k++]; B.push({ id, x: pos[p].x + (Math.random() - 0.5) * 0.2, y: pos[p].y + (Math.random() - 0.5) * 0.2, vx: 0, vy: 0, fora: false }); }
     void ordem; return B;
   }
-  const clonar = (B) => B.map((b) => ({ id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, fora: b.fora }));
-  const parado = (B) => B.every((b) => b.fora || (b.vx === 0 && b.vy === 0));
+  const clonar = (B) => B.map((b) => ({ id: b.id, x: b.x, y: b.y, vx: b.vx, vy: b.vy, fora: b.fora, rx: b.rx, ry: b.ry, se: b.se }));
+  // (a branca guarda o efeito: rx, ry = a velocidade que o giro dela "quer" (rolando normal = a própria velocidade); se = o efeito de lado)
+  const parado = (B) => B.every((b) => b.fora || (b.vx === 0 && b.vy === 0 && !b.rx && !b.ry));
   function passo(B, h, ev) {
     const n = B.length;
     for (let i = 0; i < n; i++) { const b = B[i]; if (!b.fora && (b.vx || b.vy)) { b.x += b.vx * h; b.y += b.vy * h; } }
@@ -112,7 +124,9 @@
         if (tau < 0) { a.x += a.vx * tau; a.y += a.vy * tau; c.x += c.vx * tau; c.y += c.vy * tau; }
         let ex = c.x - a.x, ey = c.y - a.y, d = Math.hypot(ex, ey) || 1e-6; const nx = ex / d, ny = ey / d;
         const vn = (a.vx - c.vx) * nx + (a.vy - c.vy) * ny;
-        if (vn > 0) { const j2 = vn * (1 + E_BOLA) / 2; a.vx -= j2 * nx; a.vy -= j2 * ny; c.vx += j2 * nx; c.vy += j2 * ny; }
+        if (vn > 0) { const j2 = vn * (1 + E_BOLA) / 2; a.vx -= j2 * nx; a.vy -= j2 * ny; c.vx += j2 * nx; c.vy += j2 * ny;
+          const br = a.id === 0 ? a : c.id === 0 ? c : null, ob = br === a ? c : a;      // efeito de lado: a bola acertada sai um pouquinho para o outro lado
+          if (br && br.se) { const t = -br.se * 0.035, co = Math.cos(t), si = Math.sin(t), vx = ob.vx, vy = ob.vy; ob.vx = vx * co - vy * si; ob.vy = vx * si + vy * co; } }
         if (tau < 0) { a.x -= a.vx * tau; a.y -= a.vy * tau; c.x -= c.vx * tau; c.y -= c.vy * tau; }
         ex = c.x - a.x; ey = c.y - a.y; d = Math.hypot(ex, ey) || 1e-6;
         if (d < 2 * R) { const sobra = 2 * R - d; a.x -= ex / d * sobra / 2; a.y -= ey / d * sobra / 2; c.x += ex / d * sobra / 2; c.y += ey / d * sobra / 2; }
@@ -127,20 +141,42 @@
       for (const p of CACAPAS) if ((b.x - p.x) * (b.x - p.x) + (b.y - p.y) * (b.y - p.y) < p.r * p.r) { caiu = true; break; }
       if (!caiu && (b.x < X0 - 7 || b.x > X1 + 7 || b.y < Y0 - 7 || b.y > Y1 + 7)) caiu = true;   // escapou pela boca: caiu
       if (caiu) { b.fora = true; b.vx = b.vy = 0; if (ev) ev.caiu.push(b.id); continue; }
-      const boca = Math.abs(b.x - XM) < 7, nT = ev ? ev.tabela.length : 0;
+      const boca = Math.abs(b.x - XM) < 7, nT = ev ? ev.tabela.length : 0, v0x = b.vx, v0y = b.vy;
       if (b.x < X0 + R) { b.x = X0 + R; if (b.vx < 0) { b.vx = -b.vx * E_TABELA; b.vy *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vx)); } }
       if (b.x > X1 - R) { b.x = X1 - R; if (b.vx > 0) { b.vx = -b.vx * E_TABELA; b.vy *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vx)); } }
       if (!boca && b.y < Y0 + R) { b.y = Y0 + R; if (b.vy < 0) { b.vy = -b.vy * E_TABELA; b.vx *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vy)); } }
       if (!boca && b.y > Y1 - R) { b.y = Y1 - R; if (b.vy > 0) { b.vy = -b.vy * E_TABELA; b.vx *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vy)); } }
       if (ev && ev.tabela.length > nT && ev.primeira != null) ev.trilho = true;          // alguma bola bateu na tabela depois do 1.º toque
+      if (b.id === 0 && (b.vx !== v0x || b.vy !== v0y) && (ev ? ev.tabela.length > nT : true)) {   // a branca bateu na tabela
+        const s0 = Math.hypot(v0x, v0y) || 1, vn = Math.abs(v0x !== b.vx ? v0x : v0y);
+        if (b.se) { b.vx += (-v0y / s0) * b.se * 0.35 * vn; b.vy += (v0x / s0) * b.se * 0.35 * vn; b.se *= 0.5; }   // o efeito "abre" ou "fecha" a volta
+        if (b.rx != null) { b.rx = b.vx; b.ry = b.vy; }
+      }
       // atrito do pano
-      const sp = Math.hypot(b.vx, b.vy); if (!sp) continue;
-      const ns = sp - (DEC + sp * KF) * h; if (ns < 2.5) { b.vx = b.vy = 0; } else { b.vx *= ns / sp; b.vy *= ns / sp; }
+      if (b.id === 0 && b.rx != null) {
+        const slx = b.rx - b.vx, sly = b.ry - b.vy, sl = Math.hypot(slx, sly);
+        if (sl > 3) {                                                     // deslizando (efeito alto ou baixo): o pano troca o giro por velocidade
+          const k = Math.min(sl, MU_DESL * 3.5 * h), ux = slx / sl, uy = sly / sl;   // a diferença cai a 7/2 do atrito: 2/7 vira velocidade, 5/7 sai do giro
+          b.vx += ux * k * 2 / 7; b.vy += uy * k * 2 / 7; b.rx -= ux * k * 5 / 7; b.ry -= uy * k * 5 / 7;
+          if (b.se) b.se *= Math.exp(-0.4 * h);
+          continue;
+        }
+        b.rx = b.vx; b.ry = b.vy; if (b.se) b.se *= Math.exp(-0.4 * h);   // rolando normal
+      }
+      const sp = Math.hypot(b.vx, b.vy); if (!sp) { if (b.id === 0) { b.rx = b.ry = 0; b.se = 0; } continue; }
+      const ns = sp - (DEC + sp * KF) * h; if (ns < 2.5) { b.vx = b.vy = 0; if (b.id === 0) { b.rx = b.ry = 0; b.se = 0; } } else { b.vx *= ns / sp; b.vy *= ns / sp; if (b.id === 0 && b.rx != null) { b.rx = b.vx; b.ry = b.vy; } }
     }
   }
   const novoEv = () => ({ primeira: null, caiu: [], choques: [], tabela: [], trilho: false });
-  function simular(B0, ang, forca, h) {                                  // roda a tacada até tudo parar (para a IA)
-    const B = clonar(B0), ev = novoEv(), c = B[0]; c.vx = Math.cos(ang) * forca * VMAX; c.vy = Math.sin(ang) * forca * VMAX;
+  // a tacada com efeito: ef = { x: lado (−1 esquerda … 1 direita), y: altura (−1 embaixo = puxa, 1 em cima = segue) }
+  function bater(c, ang, forca, ef) {
+    const ex = ef ? ef.x || 0 : 0, ey = ef ? ef.y || 0 : 0, a = ang - ex * 0.014, v = forca * VMAX;   // efeito de lado desvia um pouco a branca
+    c.vx = Math.cos(a) * v; c.vy = Math.sin(a) * v;
+    const f = ey >= 0 ? 1 + 0.75 * ey : 1 + 2.6 * ey;                   // em cima: gira mais para a frente (segue); embaixo: gira para trás (volta)
+    c.rx = c.vx * f; c.ry = c.vy * f; c.se = ex;
+  }
+  function simular(B0, ang, forca, h, ef) {                              // roda a tacada até tudo parar (para a IA)
+    const B = clonar(B0), ev = novoEv(), c = B[0]; bater(c, ang, forca, ef);
     for (let k = 0; k < 4000 && !parado(B); k++) passo(B, h || 1 / 150, ev);
     return { B, ev };
   }
@@ -209,7 +245,7 @@
       if (!caminhoLivre(B, c.x, c.y, gx, gy, [0, b.id])) continue;
       if (!caminhoLivre(B, b.x, b.y, P.x, P.y, [0, b.id])) continue;
       const valor = cos * cos / (1 + d1 / 260 + d2 / 200);
-      const forca = Math.max(0.28, Math.min(0.95, 0.2 + (d1 + d2 * 1.6 / Math.max(0.35, cos)) / 520));
+      const forca = Math.max(0.26, Math.min(0.92, (0.2 + (d1 + d2 * 1.6 / Math.max(0.35, cos)) / 520) / 1.1));   // (o pano agora corre mais)
       L.push({ b: b.id, k, ang: Math.atan2(cy, cx), forca, valor, d1, d2, cos });
     }
     return L.sort((a, b) => b.valor - a.valor);
@@ -354,8 +390,32 @@
       const botao = (txt, w) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'pxBtn'; b.textContent = txt; b.style.cssText = '--p:var(--p2,2px);height:44px;width:auto;flex:0 0 auto;min-width:' + (w || 52) + 'px;padding:0 12px;font-size:14px;touch-action:none;'; return b; };
       const bE = botao('◀'), bTacar = botao(tr('TACAR'), 130), bD = botao('▶'), bOk = botao(tr('Confirmar a branca'), 150), bSair = botao(tr('Desistir'), 90);
       bSair.style.fontSize = '11px'; bSair.style.marginLeft = '14px'; bOk.hidden = true;
+      // ONDE BATER NA BRANCA: a bolinha branca com o ponto vermelho (arrasta/toca o ponto). Em cima = a branca segue depois do toque;
+      //   embaixo = ela volta (puxada); dos lados = efeito de lado (muda a volta na tabela e desvia um pouco a branca e a bola acertada)
+      const efEl = document.createElement('div'); efEl.title = tr('Onde bater na branca');
+      efEl.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:1px;flex:0 0 auto;touch-action:none;cursor:pointer;';
+      const efCv = document.createElement('canvas'); efCv.width = efCv.height = 21; efCv.style.cssText = 'width:42px;height:42px;image-rendering:pixelated;touch-action:none;';
+      const efTx = document.createElement('div'); efTx.style.cssText = 'font:700 8.5px/1 var(--font-display);letter-spacing:.06em;color:#c8b898;text-transform:uppercase;'; efTx.textContent = tr('Efeito');
+      efEl.append(efCv, efTx);
+      const efeito = { x: 0, y: 0 };
+      function desenharEfeito() {
+        const q = efCv.getContext('2d'); q.clearRect(0, 0, 21, 21);
+        for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) { const d = Math.hypot(x - 10, y - 10); if (d > 10.2) continue; q.fillStyle = d > 9.2 ? '#8c8678' : (x + y < 12 && d < 7 ? '#ffffff' : '#ece8dc'); q.fillRect(x, y, 1, 1); }
+        q.fillStyle = 'rgba(0,0,0,0.25)'; q.fillRect(10, 2, 1, 17); q.fillRect(2, 10, 17, 1);
+        const px = Math.round(10 + efeito.x * 8), py = Math.round(10 - efeito.y * 8); q.fillStyle = '#d8302a'; q.fillRect(px - 1, py - 1, 3, 3); q.fillStyle = '#7a1010'; q.fillRect(px - 1, py + 1, 3, 1);
+      }
+      function poeEfeito(e) {
+        const r = efCv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e; let x = ((t.clientX - r.left) / r.width - 0.5) * 2, y = -((t.clientY - r.top) / r.height - 0.5) * 2;
+        const d = Math.hypot(x, y); if (d > 0.85) { x *= 0.85 / d; y *= 0.85 / d; }                       // mais para a borda o taco escorrega
+        if (Math.hypot(x, y) < 0.12) { x = 0; y = 0; } efeito.x = x; efeito.y = y; desenharEfeito();
+      }
+      let efArr = false;
+      efEl.addEventListener('pointerdown', (e) => { e.preventDefault(); if (!minhaVez() || fase !== 'mirar') return; efArr = true; efEl.setPointerCapture && efEl.setPointerCapture(e.pointerId); poeEfeito(e); });
+      efEl.addEventListener('pointermove', (e) => { if (efArr) poeEfeito(e); });
+      for (const n of ['pointerup', 'pointercancel']) efEl.addEventListener(n, () => { efArr = false; });
+      desenharEfeito();
       ctl.append(bE, bTacar, bOk, bD);
-      ctl.append(bSair);
+      ctl.append(efEl, bSair);
       // celular deitado (tela baixa): a mesa à esquerda e o placar, o aviso, a força e os botões numa coluna à direita;
       //   nas outras telas tudo em coluna. A mesa ocupa o espaço que sobra (pixels inteiros quando dá).
       const painel = document.createElement('div'); painel.style.cssText = 'display:flex;flex-direction:column;gap:8px;align-items:stretch;justify-content:center;flex:0 0 auto;';
@@ -398,7 +458,14 @@
       // ---- o estado da tela
       let fase = 'intro', ang = 0, forca = 0, carregando = false, tCarga = 0, fim = null, ev = null, antesB = null, rafId = 0, tUlt = 0, mao = false, iaT = 0, iaPlano = null, quipT = 0, tPuxa = 0;
       let angIA = 0, cozinha = false;
-      const miraPadrao = () => { const c = est.B[0]; ang = c.x <= XM ? 0 : Math.PI; };   // o taco reto, apontando para o lado mais longe
+      // a mira de começo: o taco RETO, na horizontal, para o lado mais longe da mesa. Se por acaso essa reta já pega alguma bola,
+      //   o taco vai para a vertical (ou gira de 5 em 5 graus) até uma direção que só bate na tabela: nunca começa numa tacada pronta
+      const miraPadrao = () => {
+        const c = est.B[0], base = c.x <= XM ? 0 : Math.PI, livre = (a) => { const h = primeiroToque(c.x, c.y, Math.cos(a), Math.sin(a)); return !h.b; };
+        const cand = [base, c.y <= YM ? Math.PI / 2 : -Math.PI / 2, base + Math.PI, c.y <= YM ? -Math.PI / 2 : Math.PI / 2];
+        for (let k = 1; k <= 36; k++) cand.push(base + k * Math.PI / 36, base - k * Math.PI / 36);
+        ang = cand.find(livre); if (ang == null) ang = base;
+      };
       const fala = (t, dur) => { msg.textContent = t; msg.dataset.t = String(performance.now() + (dur || 2600)); };
       const quip = (tipo) => { const L = O.quips && O.quips[tipo]; if (L && L.length && Math.random() < 0.7) { quipT = performance.now() + 2600; fala(O.nome + ': ' + tr(L[Math.floor(Math.random() * L.length)]), 2600); return true; } return false; };
       function mirarPara(x, y) { const c = est.B[0]; ang = Math.atan2(y - c.y, x - c.x); }
@@ -408,13 +475,25 @@
       const onMove = (e) => {
         if (!minhaVez()) return; const p = ptMesa(e);
         if (fase === 'mao') { e.preventDefault && e.preventDefault(); colocarBranca(p); return; }
-        if (fase === 'mirar' && !carregando) mirarPara(p.x, p.y);
+        if (fase === 'mirar' && !carregando) { if (arrTaco) { const c = est.B[0]; if (Math.hypot(p.x - c.x, p.y - c.y) > 3) ang = Math.atan2(c.y - p.y, c.x - p.x); } else mirarPara(p.x, p.y); }
       };
-      const onDown = (e) => { if (!minhaVez()) return; arrastando = true; onMove(e); };
+      // tocou em cima do TACO: arrastar gira o taco em volta da branca (a mira fica do lado oposto ao dedo); fora dele, a mira vai para o dedo
+      function noTaco(p) {
+        const c = est.B[0]; if (c.fora) return false;
+        const ux = Math.cos(ang), uy = Math.sin(ang), wx = c.x - p.x, wy = c.y - p.y, atras = wx * ux + wy * uy, lado = Math.abs(wx * uy - wy * ux);
+        return atras > 5 && atras < 130 && lado < 8;
+      }
+      let arrTaco = false;
+      const onDown = (e) => { if (!minhaVez()) return; arrastando = true; arrTaco = fase === 'mirar' && !carregando && noTaco(ptMesa(e)); onMove(e); };
       let arrastando = false;
       cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture && cv.setPointerCapture(e.pointerId); onDown(e); });
-      cv.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' || arrastando) onMove(e); });
-      cv.addEventListener('pointerup', () => { arrastando = false; });
+      cv.addEventListener('pointermove', (e) => {
+        if (e.pointerType === 'mouse' && !arrastando && fase === 'mirar' && minhaVez()) {   // com o mouse, passar por cima do taco não mexe na mira (dá para pegar nele)
+          const sobre = noTaco(ptMesa(e)); cv.style.cursor = sobre ? 'grab' : 'crosshair'; if (sobre) return;
+        }
+        if (e.pointerType === 'mouse' || arrastando) onMove(e);
+      });
+      cv.addEventListener('pointerup', () => { arrastando = false; arrTaco = false; });
       function colocarBranca(p) { const x = Math.max(X0 + R, Math.min(cozinha ? CABECA.x : X1 - R, p.x)), y = Math.max(Y0 + R, Math.min(Y1 - R, p.y)); if (posicaoLivre(est.B, x, y)) { const c = est.B[0]; c.x = x; c.y = y; c.fora = false; } }
       const girar = (d) => { if (fase === 'mirar' && minhaVez() && !carregando) ang += d; };
       let girando = 0, tGiro = 0;
@@ -423,14 +502,14 @@
         for (const ev2 of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev2, () => { girando = 0; });
       }
       function comecarCarga() { if (fase !== 'mirar' || !minhaVez() || carregando) return; carregando = true; tCarga = 0; }
-      function soltarCarga() { if (!carregando) return; carregando = false; if (forca < 0.03) { forca = 0; return; } tacar(ang, forca); }
+      function soltarCarga() { if (!carregando) return; carregando = false; if (forca < 0.03) { forca = 0; return; } tacar(ang, forca, efeito); }
       bTacar.addEventListener('pointerdown', (e) => { e.preventDefault(); comecarCarga(); });
       bTacar.addEventListener('pointerup', (e) => { e.preventDefault(); soltarCarga(); });
       bTacar.addEventListener('pointerleave', () => soltarCarga());
       bOk.addEventListener('click', () => { if (fase === 'mao' && minhaVez()) { fase = 'mirar'; cozinha = false; miraPadrao(); bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false; fala(tr('Sua vez')); } });
       bSair.addEventListener('click', async () => {
         if (fim) return;
-        const ok = typeof Escolha !== 'undefined' ? (await Escolha.mostrar(tr('Desistir da partida? Conta como derrota.'), [tr('Não'), tr('Sim')])) === 1 : true;
+        const ok = await confirmar(tr('Desistir da partida? Conta como derrota.'));
         if (ok && !fim) terminar(false, true);
       });
       const teclas = (e) => {
@@ -441,9 +520,9 @@
       };
       window.addEventListener('keydown', teclas, true); window.addEventListener('keyup', teclas, true);
       // ---- a tacada
-      function tacar(a, f) {
+      function tacar(a, f, ef) {
         antesB = clonar(est.B); ev = novoEv(); const c = est.B[0];
-        c.vx = Math.cos(a) * f * VMAX; c.vy = Math.sin(a) * f * VMAX; SOM.tacada(f);
+        bater(c, a, f, ef); SOM.tacada(f);
         fase = 'rolando'; forca = 0; forcaEl.style.width = '0'; bTacar.hidden = false; nSom = 0;
       }
       let nSom = 0;
@@ -474,6 +553,7 @@
           if (mao) { fase = 'mao'; bOk.hidden = false; bTacar.hidden = true; bE.hidden = bD.hidden = true; if (performance.now() > +(msg.dataset.t || 0)) fala(tr(cozinha ? 'Bola na mão atrás da linha: toque na mesa para pôr a branca.' : 'Bola na mão: toque na mesa para pôr a branca.')); mao = false; }
           else { fase = 'mirar'; bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false; if (performance.now() > +(msg.dataset.t || 0)) fala(tr('Sua vez')); }
           miraPadrao();                                                   // a mira começa sempre no mesmo lugar: quem acha a jogada é o jogador
+          efeito.x = 0; efeito.y = 0; desenharEfeito();
         } else {
           fase = 'ia'; iaT = 0; bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false;
           if (mao) { maoIA(est, O, cozinha); mao = false; cozinha = false; }
@@ -489,6 +569,18 @@
       function sair() {
         cancelAnimationFrame(rafId); window.removeEventListener('keydown', teclas, true); window.removeEventListener('keyup', teclas, true); window.removeEventListener('resize', ajustar); if (obsTam) obsTam.disconnect();
         el.remove(); resolve({ venceu: !!(fim && fim.venceu), desistiu: !!(fim && fim.desistiu) });
+      }
+      // a pergunta de sim ou não, por cima da mesa
+      function confirmar(txt) {
+        return new Promise((ok) => {
+          const k = document.createElement('div'); k.style.cssText = 'position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);z-index:3;';
+          const c = document.createElement('div'); c.style.cssText = 'background:#2a1a10;border:4px solid #c8952a;padding:14px 18px;display:flex;flex-direction:column;gap:12px;align-items:center;max-width:min(380px,90%);text-align:center;box-shadow:0 6px 0 #000a;';
+          const h = document.createElement('div'); h.style.cssText = 'font:700 15px/1.35 var(--font-display);color:#f4ead8;'; h.textContent = txt;
+          const L = document.createElement('div'); L.style.cssText = 'display:flex;gap:12px;';
+          const bN = botao(tr('Não'), 90), bS = botao(tr('Sim'), 90); bS.style.marginLeft = '0';
+          const fecha = (v) => { k.remove(); ok(v); }; bN.addEventListener('click', () => fecha(false)); bS.addEventListener('click', () => fecha(true));
+          L.append(bN, bS); c.append(h, L); k.appendChild(c); el.appendChild(k);
+        });
       }
       // o cartaz no meio (o começo e o fim)
       function cartaz(tit, sub, txtBotao, fn) {
@@ -520,9 +612,9 @@
             }
           }
           // o taco (puxado para trás pela força)
-          const puxa = 8 + (fase === 'ia' ? tPuxa : forca) * 22, comp = 120;
+          const puxa = 8 + (fase === 'ia' ? tPuxa : forca) * 22, comp = 120, lx = fase === 'mirar' ? efeito.x * R * 0.7 : 0;
           for (let s = 0; s < comp; s += 0.7) {
-            const x = Math.round(c.x - ux * (puxa + s)), y = Math.round(c.y - uy * (puxa + s));
+            const x = Math.round(c.x - ux * (puxa + s) - uy * lx), y = Math.round(c.y - uy * (puxa + s) + ux * lx);
             const cor = s < 2 ? '#3a64b8' : s < 5 ? '#f4f2ea' : s < 78 ? (s % 9 < 1 ? '#c8a070' : '#e8c890') : s < 82 ? '#c8952a' : '#5b3a22';
             g.fillStyle = cor; g.fillRect(x, y, s < 78 ? 1 : 2, s < 78 ? 1 : 2);
           }
@@ -572,9 +664,9 @@
         desenhar();
       }
       placar(); desenhar();
-      cartaz(O.nome, (O.estrelas ? tr('Habilidade') + ' ' + '★'.repeat(O.estrelas) + '☆'.repeat(5 - O.estrelas) + '\n' : '') + (op.aposta ? trf('Valendo {0} fakes', op.aposta) : tr('Só por diversão')) + '\n' + tr('Você sai jogando.') + '\n\n' + tr('Mire arrastando na mesa. Segure TACAR e solte na força certa.'), tr('Começar'), () => { fase = 'mirar'; ang = 0; fala(tr('Sua vez')); placar(); });
+      cartaz(O.nome, (O.estrelas ? tr('Habilidade') + ' ' + '★'.repeat(O.estrelas) + '☆'.repeat(5 - O.estrelas) + '\n' : '') + (op.aposta ? trf('Valendo {0} fakes', op.aposta) : tr('Só por diversão')) + '\n' + tr('Você sai jogando.') + '\n\n' + tr('Mire arrastando na mesa. Segure TACAR e solte na força certa.') + '\n' + tr('Arraste no taco para girar o taco. A bolinha EFEITO escolhe onde bater na branca.'), tr('Começar'), () => { fase = 'mirar'; ang = 0; fala(tr('Sua vez')); placar(); });
       rafId = requestAnimationFrame(quadro);
-      if (typeof window !== 'undefined') window.__sinucaJogo = { est, terminar, tacar: (a, f) => tacar(a, f), get fase() { return fase; }, O };
+      if (typeof window !== 'undefined') window.__sinucaJogo = { est, terminar, tacar: (a, f) => tacar(a, f), get fase() { return fase; }, get ang() { return ang; }, primeiroToque, O };
     });
   }
 
