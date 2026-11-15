@@ -339,24 +339,27 @@
       el.append(topo, cv, msg, barra, ctl);
       (document.getElementById('raizJogo') || document.body).appendChild(el);
       let lateral = null;
+      // o tamanho que vale é o da TELA DO JOGO (#raizJogo, onde esta camada fica), não o da janela: dentro do Canva a janela (o iframe)
+      //   pode ser maior que a tela do celular, e aí a mesa crescia e empurrava os botões para fora da tela
       function ajustar() {
-        const W = window.innerWidth, H = window.innerHeight, lat = H < 520 && W > H * 1.3;
+        const W = el.clientWidth || window.innerWidth, H = el.clientHeight || window.innerHeight, lat = W > H * 1.5 || (H < 520 && W > H * 1.3);   // tela larga (celular deitado): mesa e coluna lado a lado
         if (lat !== lateral) {
           lateral = lat;
           if (lat) { painel.append(topo, msg, barra, ctl); el.replaceChildren(cv, painel); el.style.flexDirection = 'row'; el.style.gap = '10px';
             topo.style.gridTemplateColumns = '1fr'; topo.style.width = '100%'; LO.d.style.alignItems = 'flex-start'; barra.style.width = '100%';
-            bTacar.style.minWidth = '96px'; ctl.style.justifyContent = 'center'; }
+            bTacar.style.minWidth = '76px'; for (const q of [bE, bD]) q.style.minWidth = '44px'; for (const q of [bE, bTacar, bD]) q.style.padding = '0 8px'; bSair.style.marginLeft = '0'; ctl.style.justifyContent = 'center'; }
           else { el.replaceChildren(topo, cv, msg, barra, ctl); el.style.flexDirection = 'column'; el.style.gap = '6px';
             topo.style.gridTemplateColumns = '1fr auto 1fr'; topo.style.width = 'min(100%,920px)'; LO.d.style.alignItems = 'flex-end'; barra.style.width = 'min(320px,80%)';
-            bTacar.style.minWidth = '130px'; }
+            bTacar.style.minWidth = '130px'; for (const q of [bE, bD]) q.style.minWidth = '52px'; for (const q of [bE, bTacar, bD]) q.style.padding = '0 12px'; bSair.style.marginLeft = '14px'; }
         }
         let wMax, hMax;
-        if (lat) { const pw = Math.min(250, Math.max(200, W * 0.28)); painel.style.width = pw + 'px'; wMax = W - pw - 36; hMax = H - 22; }
+        if (lat) { const pw = Math.min(250, Math.max(214, W * 0.28)); painel.style.width = pw + 'px'; wMax = W - pw - 36; hMax = H - 22; }
         else { const resto = topo.offsetHeight + msg.offsetHeight + barra.offsetHeight + ctl.offsetHeight + 6 * 4 + 22; wMax = Math.min(W - 20, 1100); hMax = H - resto; }
         let k = Math.min(wMax / CW, hMax / CH); if (k >= 2) k = Math.floor(k); k = Math.max(0.3, k);
         cv.style.width = Math.round(CW * k) + 'px'; cv.style.height = Math.round(CH * k) + 'px';
       }
       ajustar(); window.addEventListener('resize', ajustar);
+      const obsTam = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(() => ajustar()) : null; if (obsTam) obsTam.observe(el);
       // ---- o placar (as bolas de cada um)
       function iconeBola(id, apagada) { const c = document.createElement('canvas'); c.width = c.height = 11; c.getContext('2d').drawImage(spr[id], 0, 0); c.style.cssText = 'width:16px;height:16px;image-rendering:pixelated;opacity:' + (apagada ? 0.22 : 1); return c; }
       function placar() {
@@ -458,7 +461,7 @@
         setTimeout(() => cartaz(venceu ? tr('Você venceu!') : tr('Você perdeu...'), venceu ? (r && r.fim === 'perde' ? tr('A 8 caiu antes da hora!') : '') : (r && r.fim === 'perde' && est.vez === 0 ? tr('A 8 caiu antes da hora!') : trf('{0} venceu.', O.nome)), tr('Continuar'), () => sair()), desistiu ? 0 : 1400);
       }
       function sair() {
-        cancelAnimationFrame(rafId); window.removeEventListener('keydown', teclas, true); window.removeEventListener('keyup', teclas, true); window.removeEventListener('resize', ajustar);
+        cancelAnimationFrame(rafId); window.removeEventListener('keydown', teclas, true); window.removeEventListener('keyup', teclas, true); window.removeEventListener('resize', ajustar); if (obsTam) obsTam.disconnect();
         el.remove(); resolve({ venceu: !!(fim && fim.venceu), desistiu: !!(fim && fim.desistiu) });
       }
       // o cartaz no meio (o começo e o fim)

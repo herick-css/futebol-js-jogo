@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.15';
+const VERSAO_JOGO = '7.1.16';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -17199,7 +17199,7 @@ function montarMenuInicial() {
 
 /* ---------- menu inicial ---------- */
 .mxMenu { position: relative; width: min(680px, 100%); margin: auto; display: flex; flex-direction: column; align-items: center; gap: clamp(12px, calc(3.2 * var(--avh, 1vh)), 28px); padding-bottom: 28px; }
-.mxLogo { display: block; width: auto; height: auto; max-width: min(560px, 92%); max-height: calc(30 * var(--avh, 1vh)); pointer-events: none; -webkit-user-drag: none; animation: mxFlutua 1.8s steps(1) infinite alternate; }
+.mxLogo { display: block; width: auto; height: auto; aspect-ratio: 960 / 398; object-fit: contain; flex: none; max-width: min(560px, 92%); max-height: calc(30 * var(--avh, 1vh)); pointer-events: none; -webkit-user-drag: none; animation: mxFlutua 1.8s steps(1) infinite alternate; }
 @keyframes mxFlutua { from { transform: translateY(0); } to { transform: translateY(-4px); } }
 @media (prefers-reduced-motion: reduce) { .mxLogo { animation: none; } }
 .mxBotoes { width: min(340px, 86%); display: flex; flex-direction: column; gap: clamp(8px, calc(2 * var(--avh, 1vh)), 16px); }
@@ -17572,7 +17572,7 @@ function montarTelasPixel() {
 #carregando { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; }
 #carregando[hidden] { display: none; }
 .carCaixa { --p: var(--p4, 4px); width: min(420px, 100%); display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
-.carLogo { width: min(300px, 72%); height: auto; image-rendering: pixelated; }
+.carLogo { width: min(300px, 72%); height: auto; aspect-ratio: 960 / 398; object-fit: contain; flex: none; image-rendering: pixelated; }   /* sem esticar em nenhum navegador */
 .carTexto { font: 700 18px/1 var(--font-display); letter-spacing: 0.14em; text-transform: uppercase; text-shadow: 0 2px 0 var(--mx-ink); }
 .carPontos::after { content: ''; animation: carPontos 1.2s steps(1) infinite; }
 @keyframes carPontos { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
