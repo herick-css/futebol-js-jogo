@@ -407,6 +407,8 @@
     'Racha no sintético: 4 contra 4!': ['Pickup game on the turf: 4 vs 4!', 'Partido en la sintética: ¡4 contra 4!', 'Partitella sul sintetico: 4 contro 4!', 'Match sur le synthétique : 4 contre 4 !'],
     'Sinto que meu chute está melhorando...': ['I feel like my shooting is getting better...', 'Siento que mi tiro está mejorando...', 'Sento che il mio tiro sta migliorando...', 'J\'ai l\'impression que ma frappe s\'améliore...'],
     'Te mandei a localização.': ['I sent you the location.', 'Te mandé la ubicación.', 'Ti ho mandato la posizione.', 'Je t\'ai envoyé la localisation.'],
+    'Você não apareceu no racha! A galera ficou te esperando.': ['You didn’t show up for the pickup game! Everyone was waiting for you.', '¡No apareciste al partido! La banda te estuvo esperando.', 'Non ti sei fatto vedere alla partita! Ti stavano tutti aspettando.', 'Tu n’es pas venu au match ! Tout le monde t’attendait.'],
+    'Mas tranquilo: tem de novo toda segunda e quarta, às {0}. Te espero lá!': ['But no worries: we play again every Monday and Wednesday at {0}. See you there!', 'Pero tranquilo: hay de nuevo todos los lunes y miércoles, a las {0}. ¡Te espero allá!', 'Ma tranquillo: si gioca di nuovo ogni lunedì e mercoledì, alle {0}. Ti aspetto lì!', 'Mais t’inquiète : on rejoue tous les lundis et mercredis, à {0}. Je t’attends là-bas !'],
     'Tentei te ligar e você não atendeu. Bora jogar bola! Lá no campo sintético Doutor Bryan. Te espero lá {0}.': ["I tried to call you and you didn't pick up. Let's play ball! At Doctor Bryan's turf field. See you there {0}.", 'Te llamé y no contestaste. ¡Vamos a jugar! En la cancha sintética Doctor Bryan. Te espero allí {0}.', 'Ti ho chiamato e non hai risposto. Andiamo a giocare! Al campo sintetico Dottor Bryan. Ti aspetto lì {0}.', 'J\'ai essayé de t\'appeler et tu n\'as pas répondu. On va jouer ! Au terrain synthétique Docteur Bryan. Je t\'attends là-bas {0}.'],
     'Time do João': ["João's Team", 'Equipo de João', 'Squadra di João', 'Équipe de João'],
     'Ufa... depois dessa eu preciso tomar um banho.': ['Phew... after that I need a shower.', 'Uf... después de esto necesito una ducha.', 'Uff... dopo questa mi serve una doccia.', 'Ouf... après ça, il me faut une douche.'],
@@ -971,6 +973,8 @@
   };
   for (const k of Object.keys(TRAD_SB_CD)) if (!I18N[k]) I18N[k] = TRAD_SB_CD[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
+    'Você não apareceu no racha! A galera ficou te esperando.': [null, null, 'Non ti sei fatta vedere alla partita! Ti stavano tutti aspettando.', 'Tu n’es pas venue au match ! Tout le monde t’attendait.'],
+    'Mas tranquilo: tem de novo toda segunda e quarta, às {0}. Te espero lá!': [null, 'Pero tranquila: hay de nuevo todos los lunes y miércoles, a las {0}. ¡Te espero allá!', 'Ma tranquilla: si gioca di nuovo ogni lunedì e mercoledì, alle {0}. Ti aspetto lì!', null],
     'Acabei de me mudar pra cidade.': [null, null, 'Mi sono appena trasferita in città.', null],
     'Prazer, Lúcia! Eu sou {0}.': [null, null, null, 'Enchantée, Lucie ! Moi, c’est {0}.'],
     'Prazer, Cadu! Eu sou {0}.': [null, null, null, 'Enchantée, Cadu ! Moi, c’est {0}.'],
@@ -2244,10 +2248,8 @@
     }
     return best;
   }
-  // (6.6.19) o "dia" do jogo vira às 5h (quando ele acorda), não à meia-noite: depois da meia-noite ainda é o mesmo dia do jogo, mas o
-  //   calendário (o dia sim, dia não da turma e as janelas de 12 h, que passam da meia-noite) já é o seguinte. Antes a sessão das
-  //   16h30 às 4h30 acabava à meia-noite (a conta achava que era "a de ontem", que não existia) e a turma ia embora mais cedo.
-  const diaCal = () => (S.dados.dia || 1) + (S.dados.hora < H_ACORDAR ? 1 : 0);
+  // o dia do jogo é o do calendário (vira à meia-noite); as janelas de 12 h da turma passam da meia-noite, por isso a de ontem também é olhada
+  const diaCal = () => S.dados.dia || 1;
   function turmaAgora() {                                               // a sessão que está valendo agora (do dia de hoje ou a de ontem que passou da meia-noite)
     const d = S.dados, dia = diaCal(), H = d.hora;
     for (const k of [0, -1]) { const J = janelaTurma(dia + k); if (J && H - k * 24 >= J[0] && H - k * 24 < J[1]) return { dia: dia + k, ini: J[0], fim: J[1] }; }
@@ -2428,7 +2430,7 @@
     return new Promise((ok) => {
       const el = document.createElement('div');
       el.style.cssText = 'position:fixed;z-index:14;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(460px,calc(100% - 32px));box-sizing:border-box;background:#f4f6f8;border:4px solid #2a1206;color:#1c2a36;padding:8px 10px;font:600 13px/1.35 var(--font-body);display:flex;flex-direction:column;gap:5px;cursor:pointer;';
-      el.innerHTML = '<div style="font:700 11px/1 var(--font-display);color:#1f7a4d;letter-spacing:.06em">✉ ' + de + '</div>';
+      el.innerHTML = '<div style="font:700 11px/1 var(--font-display);color:#1f7a4d;letter-spacing:.06em"></div>'; el.firstChild.textContent = de;
       for (const t of [txt, txt2]) { if (!t) continue; const p = document.createElement('div'); p.style.cssText = 'background:#dcf3d4;border:2px solid #9ccf8e;padding:5px 8px;align-self:flex-start;max-width:92%;'; p.textContent = t; el.appendChild(p); }
       const fim = () => { clearTimeout(tm); el.remove(); ok(); };
       el.addEventListener('click', fim); const tm = setTimeout(fim, 7000);
@@ -2730,6 +2732,65 @@
     A.x = P.x; A.z = P.z; A.andando = false; A.correndo = false; A.estado = E.modo;
     if (S.modo === 'livre' && !A.fala) A.yawAlvo = Math.hypot(S.jog.x - A.x, S.jog.z - A.z) < 4 ? Math.atan2(-(S.jog.z - A.z), S.jog.x - A.x) : P.yaw;   // olha para quem chega perto
     void d; void f;
+  }
+  // ================================================================== A GALERA DO RACHA (o time do Caio: Caio, Júlia, Marcos, Dani e Vitinho)
+  //   Nos dias de racha no sintético, enquanto o João espera na entrada, os cinco vão chegando um a um de fora da cidade (o primeiro uns
+  //   40 min antes do jogo, o último quase na hora) e ficam batendo uma bolinha na roda do sintético. Se o jogador não aparece, quando o
+  //   João vai embora (1h30 depois do horário) eles saem do campo e vão embora andando. Se o jogo acontece, eles estavam na partida: somem
+  //   no preto. Como o João, a escala sai da hora: ao carregar ou sair de um lugar no meio da janela, quem já chegou já está jogando.
+  const RACHA_GALERA = [
+    { ap: () => AP_CAIO, fem: false }, { ap: () => apJulia(), fem: true }, { ap: () => apFixa(8181, 'M'), fem: false },
+    { ap: () => apFixa(9191, 'F'), fem: true }, { ap: () => apFixa(3131, 'M'), fem: false },
+  ];
+  const CORES_RACHA = ['#3a64b8', '#f2f2ee', '#f2f2ee', '#3a64b8'];      // o uniforme azul do time do Caio
+  function rachaHoje() { const f = fut(), A = f.agenda; return f.ligou && A && A.dia === (S.dados.dia || 1) ? A : null; }
+  function tirarGalera(andando) {
+    const K = S.racha; if (!K) return; S.racha = null;
+    const R = rodas().find((q) => q.nome === 'sintetico');
+    for (const m of K.m) {
+      const A = m.A; if (!A || m.e === 3) continue;
+      if (A.dest && A.dest.tipo === 'bola' && A.dest.R) { if (A.dest.fase === 'ir') A.dest.R.vindo = Math.max(0, (A.dest.R.vindo || 1) - 1); A.dest.R.jog = A.dest.R.jog.filter((q) => q !== A); if (A.dest.R.dono === A) A.dest.R.dono = null; if (A.dest.R.busca === A) A.dest.R.busca = null; }
+      A.dest = null; A.chuteT = -1;
+      if (andando && !A.oculto && S.npcs.includes(A)) irEmbora(A, null, 1.8); else if (S.npcs.includes(A)) descartarPessoa(A);
+    }
+    if (R && !R.jog.length && R.bola) R.bola.mesh.visible = R.bola.sombra.visible = false;
+  }
+  function membroRacha(i) {
+    const g = RACHA_GALERA[i], A = criarNPCFixo(g.ap(), g.fem, 7, CORES_RACHA);
+    A.tipo = 'racha'; A.vel = 1.5 + (i % 3) * 0.12; A.racha = true; return A;
+  }
+  function naRodaRacha(A, R, i, n) {                                     // já está jogando (carregou no meio da janela)
+    const v = vagaNaRoda(R, i); A.x = v.x; A.z = v.z; A.y = R.y; A.yaw = A.yawAlvo = Math.atan2(-(R.cz - v.z), R.cx - v.x);
+    A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: Infinity, ang: (i / Math.max(2, n)) * Math.PI * 2 }; R.jog.push(A);
+    if (R.jog.length === 1 || !R.bola || !R.bola.mesh.visible) { const B = bolaDaRoda(R); B.x = A.x + Math.cos(A.yaw) * 0.42; B.z = A.z - Math.sin(A.yaw) * 0.42; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
+  }
+  function tickRacha() {
+    if (S.dentro || !S.rede || !S.casas) return;
+    const Ag = rachaHoje(), R = rodas().find((q) => q.nome === 'sintetico'), h = S.dados.hora;
+    if (!R || !Ag) { if (S.racha) tirarGalera(false); return; }
+    if (Ag.feito) { if (S.racha) tirarGalera(false); return; }            // jogaram com a gente (o preto da partida esconde)
+    const fim = Ag.hora + 1.5;
+    if (h >= fim || h < Ag.hora - 3) { if (S.racha) tirarGalera(h >= fim && h < fim + 1); return; }
+    let K = S.racha;
+    if (!K || K.dia !== Ag.dia) {
+      if (K) tirarGalera(false);
+      K = S.racha = { dia: Ag.dia, m: RACHA_GALERA.map(() => ({ A: null, e: 0 })), dur: 0 };
+      const P = sintetico(); let E = null; try { E = P ? pontaPara(P.x, P.z) : null; } catch (e) { E = null; }
+      K.dur = E ? rotaPts(caminhoRede(E.x, E.z, P.x, P.z)).L / 1.6 * H_POR_S * 1.15 : 0.3;   // quanto (em horas do jogo) leva para chegar andando
+    }
+    const ja = K.m.filter((m) => m.e === 2).length;
+    K.m.forEach((m, i) => {
+      if (m.e) return;
+      const chega = Ag.hora - 0.7 + i * 0.14;
+      if (h < chega - K.dur) return;
+      const A = m.A = membroRacha(i);
+      if (h >= chega) { m.e = 2; naRodaRacha(A, R, ja + i, RACHA_GALERA.length); arrumarRoda(R); return; }
+      m.e = 1;
+      chegarDeFora(A, R.ent.fora.x, R.ent.fora.z, 0, A.vel, () => {
+        if (!S.racha || S.racha !== K) return;
+        m.e = 2; A.dest = { tipo: 'bola', R, fase: 'ir', rota: [{ x: R.ent.dentro.x, z: R.ent.dentro.z }], t: 0 }; R.vindo = (R.vindo || 0) + 1;
+      });
+    });
   }
   function alvosJoao(v) {
     const A = S.joao; if (!A || A.oculto || S.dentro || (A.estado !== 'espera' && A.estado !== 'casa')) return;
@@ -3868,6 +3929,7 @@
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       else if (A.tipo === 'cena') passoCena(A, dt);
       else if (A.tipo === 'viajante') tickViajante(A, dt);
+      else if (A.tipo === 'racha') { if (A.dest && A.dest.tipo === 'bola') tickBolaNPC(A, dt); else A.andando = false; }
       else if (A === S.lucia && A.tipo === 'parado' && S.dentro && S.dentro.nome === 'cafeteria') tickGarcom(A, dt);   // (6.6.18) a Lúcia atende as mesas
       if (A === S.valdemar && S.loja) tickLoja(dt);
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
@@ -4282,6 +4344,14 @@
     S.portasA = {};
     for (const P of PORTAS) { const D = PORTAS_ANIM[P.nome]; if (D) { const A = criarPortaAnim(P.nome, P.x, D.zf, D.s, D); if (A) S.portasA[P.nome] = A; } }
     for (const C of S.casas || []) if (C.especial && C.porta) { const A = criarPortaAnim('casa:' + C.especial, C.x, C.z, C.porta.s, { w: C.porta.w, h: C.porta.h, cor: C.porta.cor, tipo: 'gira' }); if (A) S.portasA['casa:' + C.especial] = A; }
+  }
+  // a porta de uma casa QUALQUER vira peça que abre (na primeira vez que alguém precisa entrar nela) e fica aberta por "seg" segundos
+  function portaCasa(C, seg) {
+    if (!C || !C.porta || S.dentro) return null;
+    if (!S.portasA) { if (!S.grupoCidade || !S.casas) return null; criarPortasAnim(); }
+    const id = C.especial ? 'casa:' + C.especial : 'casa@' + C.x.toFixed(2) + ',' + C.z.toFixed(2);
+    if (!S.portasA[id]) { const P = criarPortaAnim(id, C.x, C.z, C.porta.s, { w: C.porta.w, h: C.porta.h, cor: C.porta.cor, tipo: 'gira' }); if (!P) return null; S.portasA[id] = P; }
+    abrirPorta(id, seg || 1.5); return id;
   }
   // pede para a porta ficar aberta por "seg" segundos (quem entra/sai chama)
   function abrirPorta(id, seg) { const P = S.portasA && S.portasA[id]; if (P) P.segura = Math.max(P.segura, S.t + (seg || 1)); }
@@ -4754,6 +4824,7 @@
   }
   async function avisoFome() {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.jog.andando = false; S.jog.correndo = false;
+    mariposa();                                                          // não comer: dois dias sem comida
     try {
       await fala('jog', T('Eu tô passando mal... faz dois dias que eu não como nada.'));
       await fala('jog', T('Tô com muita fome. Preciso comer alguma coisa hoje, senão eu não aguento.'));
@@ -4765,7 +4836,7 @@
     S.desmaiando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog; J.andando = false; J.correndo = false;
     const d = S.dados;
     try {
-      await fala('jog', fem() ? T('Tô... tonta... tudo rodando...') : T('Tô... tonto... tudo rodando...')); Dialogo.esconder();
+      mariposa(); await fala('jog', fem() ? T('Tô... tonta... tudo rodando...') : T('Tô... tonto... tudo rodando...')); Dialogo.esconder();
       await preto(true, 1100);
       if (S.dentro) { await sairDoLugar(true); await preto(true, 10); }
       const P = PORTAS.find((p) => p.nome === 'hospital');
@@ -5033,12 +5104,14 @@
       painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
       grosseria, falaGrossa,                                             // a grosseria nas conversas (−5 corações, +arrogância)
       lojaGente, lojaSaiu, lojaRestam, semente,                         // (6.6.5) o registro de quem está nas lojas
+      mariposa,                                                          // a mariposa: o que acabou de acontecer muda a história
     };
   }
   // (6.1.0) o que o pizzaria.js (Forno a Lenha + entregas de bicicleta) usa daqui: o mesmo do mercado e mais o mapa/missão e a física da rua
   function apiPizzaria() {
     return Object.assign(apiMercado(), {
       definirMarca, mostrarMissao, recolherMissao, altura, livre, gastoNaTela, caminhoRede, PORTAS, entrarNoPredio,
+      portaCasa, abrirPorta, mensagemCelular, andar,                     // a porta de qualquer casa abre (o cliente entra com a pizza) · o celular
     });
   }
   // (6.2.0) o que o academia.js (recepção, catracas, Fernanda e os treinos) usa daqui
@@ -5222,10 +5295,11 @@
     definir(id, v) { const A = this.tabela(); A[id] = clamp(Math.round(v), 0, 100); return A[id]; },
     somar(id, n, mostrar = true) { const ant = this.valor(id), v = this.definir(id, ant + n); if (mostrar && v !== ant) amizadeNaTela(id, v - ant); return v; },
   };
+  const desceMariposa = () => { try { return typeof Mariposa !== 'undefined' && Mariposa.comTexto() ? 46 : 0; } catch (e) { return 0; } };   // a explicação da mariposa ocupa o alto
   function amizadeNaTela(id, n) {                  // "♥ +2 Lúcia" rosa subindo
     const pai = (UI && UI.hud && UI.hud.parentNode) || document.getElementById('raizJogo') || document.body;   // (também na fase2.js, sem a tela da cidade)
     const el = document.createElement('div'); el.textContent = '♥ ' + (n > 0 ? '+' : '') + n + ' ' + (NOME_AMIGO[id] || id);
-    el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(92px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 15px/1 var(--font-display);color:#ff8fc0;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.4s ease,opacity 1.4s ease;';
+    el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(' + (92 + desceMariposa()) + 'px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 15px/1 var(--font-display);color:#ff8fc0;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.4s ease,opacity 1.4s ease;';
     pai.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%,-26px)'; el.style.opacity = '0'; }, 700); setTimeout(() => el.remove(), 2300);
   }
   // ================================================================== GROSSERIA: nas conversas dá para dizer uma coisa ruim
@@ -5236,14 +5310,17 @@
   function arroganciaNaTela() {                    // "▲ Problemático" alaranjado, logo embaixo do coração
     const pai = (UI && UI.hud && UI.hud.parentNode) || document.getElementById('raizJogo') || document.body;
     const el = document.createElement('div'); el.textContent = '▲ ' + T('Problemático');   // (7.1.14) grosseria: só Problemático (o outro lado de Humilde agora é Ganancioso)
-    el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(114px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 13px/1 var(--font-display);color:#ff9a5c;text-shadow:0 2px 0 #2a1206;pointer-events:none;white-space:nowrap;transition:transform 1.4s ease,opacity 1.4s ease;';
+    el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(' + (114 + desceMariposa()) + 'px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 13px/1 var(--font-display);color:#ff9a5c;text-shadow:0 2px 0 #2a1206;pointer-events:none;white-space:nowrap;transition:transform 1.4s ease,opacity 1.4s ease;';
     pai.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%,-22px)'; el.style.opacity = '0'; }, 900); setTimeout(() => el.remove(), 2500);
   }
   function marcarArrogancia(motivo) {
     try { if (typeof Espectros !== 'undefined') { Espectros.mover('tranquilo', GROSSO_ESPECTRO, motivo || 'resposta arrogante');   /* (7.1.14) grosseria agora é só Problemático (o outro lado de Humilde virou Ganancioso) */ } } catch (e) { console.warn('[Cidade] espectros:', e); }
     arroganciaNaTela();
   }
+  // a mariposa (jogo.js): o que acabou de acontecer muda alguma coisa na história (não trava a cena)
+  function mariposa() { try { return typeof Mariposa !== 'undefined' ? Mariposa.mostrar() : Promise.resolve(); } catch (e) { return Promise.resolve(); } }
   function grosseria(id) {
+    mariposa();                                                          // falar mal de alguém marca a história (corações e Problemático)
     if (S && S.dados) Amizade.somar(id, GROSSO_CORACOES); else amizadeNaTela(id, GROSSO_CORACOES);
     marcarArrogancia('foi grosso com ' + (NOME_AMIGO[id] || id));
     if (S && S.dados) gravar(S.dados.ponto || 'chegada');
@@ -5691,7 +5768,7 @@
           await fala('jog', T('Acabei de me mudar para a cidade.'));
           await fala('lucia', T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'));
           const r = await Escolha.mostrar(T('Que ótimo, vamos trabalhar juntos então! Quer dizer... vai ser bom ter companhia aqui, isso sim.'), [T('Eu também fico feliz de ver você'), T('Como funciona o trabalho?'), T('Você não mudou nada... continua a mesma certinha da escola.')]);   // uma caixa só, embaixo
-          if (r === 0) { await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); Amizade.somar('lucia', 5); }   // ela fica com vergonha: +5
+          if (r === 0) { mariposa(); await fala('lucia', T('A-ah... é... deixa eu te explicar como funciona por aqui.')); Amizade.somar('lucia', 5); }   // ela fica com vergonha: +5
           else if (r === 2) { await falaGrossa('lucia', 'lucia', T('Você não mudou nada... continua a mesma certinha da escola.'), T('C-certinha? Hunf... deixa eu te explicar como funciona por aqui, então.')); }
           else await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
         } else if (falou) {
@@ -5756,7 +5833,7 @@
       const r = await Escolha.mostrar(T('Que ótimo! Agora você já tem onde tomar um café, né? Vem me visitar sempre!'), [T('Eu também fico feliz de ver você'), T('Você trabalha aqui faz tempo?'), T('Você não mudou nada... continua a mesma certinha da escola.')]);
       if (r === 2) await falaGrossa('lucia', 'lucia', T('Você não mudou nada... continua a mesma certinha da escola.'), T('C-certinha? Hunf... e você continua do mesmo jeito, pelo visto.'));
       else await fala('lucia', r === 0 ? T('A-ah... é... eu também, viu?') : T('Faz uns dois anos. O cheiro de café nem sai mais de mim, haha.'));
-      if (r === 0) Amizade.somar('lucia', 5);                        // ela fica com vergonha: +5
+      if (r === 0) { Amizade.somar('lucia', 5); mariposa(); }         // ela fica com vergonha: +5
     } else if (falou) {
       const r0 = await Escolha.mostrar(T('Ei, você não estudou lá na escola comigo? A gente se conhece. Você lembra de mim?'), [T('Sim, me lembro'), T('Não, não lembro'), T('Lembro sim, a CDF da sala.')]);
       if (r0 === 2) await falaGrossa('lucia', 'lucia', T('Lembro sim, a CDF da sala.'), T('CDF?! Hunf. Pelo menos eu prestava atenção.'));
@@ -5843,7 +5920,7 @@
     if (am >= 50 && !jaChamou) await fala('lucia', T('Haha, achei que você ia me chamar para um encontro... mas isso também serve!'));
     else await fala('lucia', T('Sério? Eu topo! Faz tempo que eu não jogo.'));
     const dia = proximoDiaDeJogo(J.dias);
-    d.luciaJogo = { tipo: J.id, dia };
+    d.luciaJogo = { tipo: J.id, dia }; mariposa();                     // convidar a Lúcia para jogar
     await fala('lucia', T('Pode deixar: no dia eu fecho o café no horário e vou direto pra lá!'));
     Dialogo.esconder(); gravar(d.ponto || 'chegada');
   }
@@ -5859,7 +5936,7 @@
       S.faltouMsg = true; d.encontroFaltou = false;
       S.missao = ''; recolherMissao(); definirMarca(null);
       Amizade.somar('lucia', -25);
-      mensagemCelular(T('Lúcia Alves'), T('Eu esperei por você... Estou me sentindo uma idiota.'), T('Não quero ver a sua cara mais.')).finally(() => { if (S) S.faltouMsg = false; });
+      mensagemCelular(T('Lúcia Alves'), T('Eu esperei por você... Estou me sentindo uma idiota.'), T('Não quero ver a sua cara mais.')).finally(() => { if (S) S.faltouMsg = false; mariposa(); });   // faltar ao encontro
       gravar(d.ponto || 'chegada');
     }
   }
@@ -5882,7 +5959,7 @@
     await fala('lucia', quando === 'hoje' ? T('Então hoje, às 19h. Combinado!') : quando === 'proximo' ? T('Então domingo que vem, às 19h. Combinado!') : T('Então domingo, às 19h. Combinado!'));
     if (L[0] === 'casa') await fala('lucia', T('Eu te espero na frente do seu prédio, tá?'));
     d.encontroLucia = { lugar: L[0], dia: hoje + k, hora: 19, liberado: pizzaiolo };
-    d.chamouSair = true;                                                // (6.6.18) já chamou para um encontro (o convite do futebol não brinca mais com isso)
+    d.chamouSair = true; mariposa();                                    // chamar a Lúcia para sair                                                // (6.6.18) já chamou para um encontro (o convite do futebol não brinca mais com isso)
     Dialogo.esconder(); gravar(d.ponto || 'chegada');
     mostrarAgendaEncontro();                                            // (6.6.18) vira MISSÃO na hora (hoje: com a marca no mapa; outro dia: "domingo às 19h")
   }
@@ -5923,7 +6000,7 @@
     await fala('jog', r === 0 ? T('Eu não quero volta nenhuma.') : T('Prometo cuidar muito bem de você.'));
     await fala('lucia', r === 0 ? (fem() ? T('Haha, boba... Agora deixa eu voltar pro caixa antes que os clientes reclamem!') : T('Haha, bobo... Agora deixa eu voltar pro caixa antes que os clientes reclamem!')) : T('Eu sei que vai. Agora deixa eu voltar pro caixa antes que os clientes reclamem!'));
     Dialogo.esconder();
-    d.namorando = { dia: d.dia || 1 }; d.chamouSair = true; gravar(d.ponto || 'chegada');
+    d.namorando = { dia: d.dia || 1 }; d.chamouSair = true; gravar(d.ponto || 'chegada'); mariposa();   // começar a namorar
     await preto(true, 700);
     L.x = LUCIA_CAIXA.x; L.z = LUCIA_CAIXA.z; L.yaw = L.yawAlvo = LUCIA_CAIXA.yaw; if (L.gc) L.gc.onde = 'caixa';
     J.x = 0.4; J.z = -4.15; J.yaw = J.yawAlvo = Math.PI / 2;
@@ -6014,7 +6091,7 @@
     return R;
   }
   function ioEncontroCidade() {
-    return { nome: nomeJog(), fala, escolha: (t, o) => Escolha.mostrar(t, o), somar: async (n) => { Amizade.somar('lucia', n); },
+    return { nome: nomeJog(), fala, escolha: (t, o) => Escolha.mostrar(t, o), somar: async (n) => { Amizade.somar('lucia', n); mariposa(); },
       trabalha: empregoEscolhido() === 'cafeteria', emprego: empregoEscolhido() === 'cafeteria' ? null : empregoEscolhido(), lugar: S.dentro ? S.dentro.nome : 'casa' };
   }
   function criarLuciaEncontro() {
@@ -6140,7 +6217,7 @@
         await fala('lucia', Tf('Boa noite, {0}!', nomeJog()));
         await fala('jog', T('Boa noite, Lúcia!'));
       } else if (Amizade.valor('lucia') >= BEIJO_MIN) {
-        L.x = fx - BEIJO_D / 2; J.x = fx + BEIJO_D / 2; L.z = fz; J.z = fz; L.gesto = J.gesto = 'beijo'; coracoes(fx, 1.75, fz); await esperar(2600); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42; J.z = fz + sg * 0.05;
+        L.x = fx - BEIJO_D / 2; J.x = fx + BEIJO_D / 2; L.z = fz; J.z = fz; L.gesto = J.gesto = 'beijo'; coracoes(fx, 1.75, fz); mariposa(); await esperar(2600); L.gesto = J.gesto = null; L.x = fx - 0.42; J.x = fx + 0.42; J.z = fz + sg * 0.05;
         await fala('lucia', Tf('Boa noite, {0}.', nomeJog()));
       } else {
         await fala('lucia', T('Eu quero... mas ainda não.'));
@@ -6159,10 +6236,10 @@
     const antigo = empregoEscolhido();
     if (R.demissao && antigo && antigo !== 'cafeteria') {
       try { const h2 = API.historia.ler('fase2') || {}; API.historia.gravar('fase2', Object.assign({}, h2, { emprego: 'cafeteria' })); } catch (e) { console.warn('[Cidade] demissão:', e); }
-      d.luciaContratou = { de: antigo, dia: (d.dia || 1) + 1 }; d.luciaApresentou = false; d.luciaConheceu = true;
+      d.luciaContratou = { de: antigo, dia: (d.dia || 1) + (d.hora >= 12 ? 1 : 0) }; d.luciaApresentou = false; d.luciaConheceu = true;
     }
     d.encontros = (d.encontros | 0) + 1; d.encontroLucia = null;
-    d.dia = (d.dia || 1) + 1; d.hora = H_ACORDAR; d.avisouDormir = false; prepararDia(d);
+    if (d.hora >= 12) d.dia = (d.dia || 1) + 1; d.hora = H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // depois da meia-noite o dia já virou
     gravar('predio');
     S.paraFase2 = { acordar: 'encontro', demissao: R.demissao && antigo !== 'cafeteria' ? antigo : null };
     S.modo = 'saindo'; S.encontroRodando = false;
@@ -6198,10 +6275,10 @@
     { tier: 3, mult: 1.5, horas: 8, preco: 350 }, { tier: 4, mult: 1.5, horas: 12, preco: 400 }, { tier: 5, mult: 2, horas: 8, preco: 450 },
     { tier: 6, mult: 2, horas: 12, preco: 500 }, { tier: 7, mult: 2, horas: 0, preco: 600 },
   ];
-  const tempoAbs = () => { const d = S.dados; return (d.dia || 1) * 24 + (d.hora < H_ACORDAR ? d.hora + 24 : d.hora); };   // relógio contínuo (a madrugada ainda é "hoje")
+  const tempoAbs = () => { const d = S.dados; return (d.dia || 1) * 24 + d.hora; };   // relógio contínuo (o dia vira à meia-noite)
   function cafeEfeito() {
     const d = S.dados, c = d.cafe; if (!c) return null;
-    const ok = c.horas ? tempoAbs() < c.ate : c.dia === (d.dia || 1);
+    const ok = c.horas ? tempoAbs() < c.ate : c.dia === (d.dia || 1) || (c.dia === (d.dia || 1) - 1 && d.hora < H_ACORDAR);   // o dia inteiro: vale pela madrugada, até ele dormir
     if (!ok) { d.cafe = null; if (S.modo === 'livre') { aviso(T('O efeito do café passou.')); setTimeout(() => { if (S && UI) aviso(''); }, 2400); } return null; }
     return c;
   }
@@ -6991,7 +7068,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // muda o dia e a hora de uma vez (sem as cutscenes do caminho): o dia novo prepara a fome, o expediente e a agenda
   function aplicarDiaHora(dia, hora) {
     const d = S.dados, mudouDia = dia !== (d.dia || 1);
-    d.dia = dia; d.hora = Math.max(0, Math.min(23.99, hora));
+    d.dia = dia; d.hora = Math.max(0, Math.min(23.99, hora)); S.hRel = d.hora;
     S.madrugada = false; d.avisouDormir = d.hora >= 21 || d.hora < H_ACORDAR ? d.avisouDormir : false;
     if (mudouDia) { prepararDia(d); try { agendarHoje(); } catch (e) { console.warn('[Cidade] agenda:', e); } }
     try { if (S.valdemar && !S.dentro) snapValdemar(); } catch (e) { /* ok */ }
@@ -7017,6 +7094,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     S.ruaPulou = false;
     const J = S.jog, d = S.dados, molhado = !!(S.clima && S.clima.molhado);
     for (const V of (S.viagens || []).slice()) if (V.A && V.A.length) perderBoneco(V);
+    tirarGalera(false);                                                  // a galera do racha volta pela hora (tickRacha)
     const velhos = S.npcs.filter((A) => A.tipo === 'anda' && !(A.dest && (A.dest.tipo === 'visita' || A.dest.tipo === 'parDe')));
     const livres = [];
     for (let i = 0; i < S.rede.length; i++) { const N = S.rede[i], dj = Math.hypot(N.x - J.x, N.z - J.z); if (!N.faixa && dj > 6 && dj < 95 && livreNPC(N.x, N.z, null, true)) livres.push(i); }
@@ -7236,7 +7314,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function tickHorario(dt) {
     const d = S.dados, ant = d.hora;
     d.hora += dt * H_POR_S; if (d.hora >= 24) d.hora -= 24;
-    if (ant < H_ACORDAR && d.hora >= H_ACORDAR) novoDia();
+    if (S.hRel != null && S.hRel >= 20 && d.hora < 4) virarDia();          // passou da meia-noite (andando o relógio ou pulando uns minutos: a sinuca do bar)
+    S.hRel = d.hora;
+    if (ant < H_ACORDAR && d.hora >= H_ACORDAR) amanheceu();
     // (6.1.0) NOITE DE TRABALHO (pizzaria, quinta a domingo): sem o aviso das 21h (dormir às 22h); o aviso vem à 1h (dormir até as 2h)
     //   e às 4h ele vai sozinho para casa (acorda às 9h). Nas outras noites: aviso às 21h e cutscene às 2h, como antes.
     const nt = noiteDeTrabalho(), hMad = nt ? 4 : 2;
@@ -7244,15 +7324,28 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const hAviso = nt ? d.hora >= 1 && d.hora < 4 : d.hora >= 21 && d.hora < 24;
     if (!d.avisouDormir && hAviso && S.modo === 'livre' && !S.dentro && !S.turnoPizza) { d.avisouDormir = true; avisoDormir(nt); }
     else if (!S.turnoPizza && !S.trabalhando) checarFome();   // (7.1.14) dois dias sem comer: aviso; no 3º, desmaio
+    checarRachaPerdido();
   }
-  const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemana());   // quinta a domingo
-  function novoDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 3800); aviso(Tf('Amanheceu: dia {0}.', d.dia)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
+  // o PRIMEIRO racha (o do convite, depois do trabalho) passou e ele não apareceu: o João manda mensagem lembrando dos dias de jogo
+  function checarRachaPerdido() {
+    const f = fut(), A = f.agenda, d = S.dados; if (!A || !A.primeiro || A.feito || f.avisouPerdeu || S.ligando || S.modo !== 'livre') return;
+    if ((d.dia || 1) * 24 + d.hora < A.dia * 24 + A.hora + 1.5) return;
+    f.avisouPerdeu = true; A.primeiro = false;
+    mensagemCelular(T('João'), Tg('Você não apareceu no racha! A galera ficou te esperando.'), Tgf('Mas tranquilo: tem de novo toda segunda e quarta, às {0}. Te espero lá!', fmtHora(horaDoFutebol())));
+  }
+  // a noite pertence ao dia em que começou: de madrugada (antes do meio-dia) ainda é a noite de ontem (quinta 1h = noite de quinta)
+  const diaDaNoite = () => { const d = S.dados; return (d.dia || 1) - (d.hora < 12 ? 1 : 0); };
+  const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemanaDe(diaDaNoite()));   // quinta a domingo
+  // O DIA VIRA À MEIA-NOITE (como no calendário). Quem ainda não dormiu continua no mesmo dia depois das 5h: dormir de madrugada só adianta as horas.
+  function virarDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 600); }
+  function amanheceu() { aviso(Tf('Amanheceu: dia {0}.', S.dados.dia || 1)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
   // 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
   async function madrugada(nt) {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
     J.andando = false; J.correndo = false;             // a cutscene das 2h cortava mesmo se ele estivesse correndo na hora
     if (J.sentado) levantar();
     if (S.pizzaria && S.pizzaria.montado()) try { S.pizzaria._f.descer(true); } catch (e) { /* já desceu */ }
+    mariposa();                                                          // não dormir: a noite em claro pesa no dia seguinte
     try { await fala('jog', nt ? T('Já são 4h?! Chega por hoje, vou pra casa dormir.') : T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (!S.dentro) {
       S.camParada = true;
@@ -7260,7 +7353,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       await Promise.race([andar(J, pts, 5.2), esperar(2600)]);
     }
     await preto(true, 900);
-    const d = S.dados; d.dia = (d.dia || 1) + 1; d.hora = nt ? 9 : H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // (6.1.0) noite de trabalho: acorda às 9h
+    const d = S.dados; if (d.hora >= 12) d.dia = (d.dia || 1) + 1; d.hora = nt ? 9 : H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // (6.1.0) noite de trabalho: acorda às 9h (a meia-noite já virou o dia)
     try { Sono.registrar(3, nt ? 'acordado até as 4h' : 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
     gravar('predio'); S.paraFase2 = 'acordar';
     if (S.fimRes) S.fimRes();
@@ -8311,8 +8404,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (D.fase === 'ir') {
       if (!seguir(A, D.rota, A.vel, dt)) return;
       R.vindo = Math.max(0, (R.vindo || 1) - 1);
-      if (!rodaSegue(R) || R.jog.length >= MAX_RODA) { sairDaRoda(A); return; }
-      D.fase = 'joga'; D.fim = S.t + 150 + Math.random() * 270; R.jog.push(A); A.correndo = false;   // (6.6.15) fica de 2,5 a 7 minutos (antes 1 a 2,5: era só chegar e já ir)
+      if (!A.racha && (!rodaSegue(R) || R.jog.length >= MAX_RODA)) { sairDaRoda(A); return; }
+      D.fase = 'joga'; D.fim = A.racha ? Infinity : S.t + 150 + Math.random() * 270; R.jog.push(A); A.correndo = false;   // (6.6.15) fica de 2,5 a 7 minutos (antes 1 a 2,5: era só chegar e já ir)
       arrumarRoda(R);
       if (R.jog.length === 1) { const B = bolaDaRoda(R); B.x = A.x; B.z = A.z + 0.4; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
       return;
@@ -8322,7 +8415,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       A.dest = null; A.ant = null; A.alvo = noMaisPerto(A.x, A.z); A.cool = 25 + Math.random() * 30; return;
     }
     // jogando: vai para a vaga dele na roda (quem não está com a bola); o dono fica com ela no pé
-    if (!rodaSegue(R)) { sairDaRoda(A); return; }
+    if (!A.racha && !rodaSegue(R)) { sairDaRoda(A); return; }        // a galera do racha fica até a hora de ir embora (tickRacha)
     if (S.t > D.fim) {                                                  // (6.6.15) cansou: sai na próxima vez que estiver sem a bola (não larga a roda no meio do lance)
       if (R.dono !== A && R.busca !== A && !(R.bola && R.bola.alvo === A && (R.bola.voa || R.bola.rola))) { sairDaRoda(A); return; }
     }
@@ -8451,7 +8544,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.turno) tickTurno(dt);
         if (S.comeBoloJog) tickBoloJogador(dt);                          // (6.6.18) a fatia que a Lúcia levou na mesa dele
         checarFaltaEncontro();
-        tickCelular(dt); tickConvite(dt); tickBiel(); tickJoao();    // ; o Biel na quadra de futsal
+        tickCelular(dt); tickConvite(dt); tickBiel(); tickJoao(); tickRacha();    // ; o Biel na quadra de futsal
         if (!S.dentro || S.luciaPredio) tickEncontroPredio();
         if (S.dentro && MESA_ENC[S.dentro.nome] && S.modo === 'livre' && !S.encontroRodando && encontroAgora(S.dentro.nome)) encontroComecaDentro().catch((e) => console.error(e));
         if (S.dentro && S.dentro.nome === 'cafeteria' && !S.turno && !luciaNoCafe() && S.modo === 'livre' && !S.fechandoCafe) { S.fechandoCafe = true; fecharCafe().finally(() => { if (S) S.fechandoCafe = false; }); }
@@ -8582,5 +8675,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

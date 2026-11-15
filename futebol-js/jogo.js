@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.19';
+const VERSAO_JOGO = '7.1.20';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -7596,8 +7596,8 @@ function startRestart(kind, team, spot, motivo) {
   setLetterbox(true);                              // câmera de cinema enquanto o cobrador busca a bola
   $('skipBtn').hidden = false;
   const rotulo = T(kind === 'falta' && S.motivo === 'impedimento' ? 'Tiro livre (impedimento)' : SP_LABEL[kind]);
-  $('cineLabel').textContent = rotulo.toUpperCase() + (S.taker.isUser ? ' · ' + T('SUA COBRANÇA') : ' · ' + T(team === 0 ? 'AZUL' : 'VERMELHO'));
-  if (kind !== 'falta') showToast(SP_LABEL[kind] + (S.taker.isUser ? ': sua cobrança' : team === 0 ? ' para o azul' : ' para o vermelho'));
+  $('cineLabel').textContent = rotulo.toUpperCase() + ' · ' + (S.taker.isUser ? T('SUA COBRANÇA') : nomeDoTime(team).toUpperCase());
+  if (kind !== 'falta') showToast(SP_LABEL[kind] + (S.taker.isUser ? ': sua cobrança' : ' para o ' + nomeDoTime(team)));
   else if (S.wall.length) showToast('Barreira com ' + S.wall.length + (S.taker.isUser ? ' · sua cobrança' : ''));
 }
 
@@ -7976,10 +7976,14 @@ function commitFoul(off, vic, info = {}) {
 //   Goleiro: como a cena (startRestart) só começa em fn, ele só vai buscar a bola depois do apito e
 //   as animações dele (mergulho, queda, levantar) terminam normalmente antes.
 // ---------------------------------------------------------------------
-const APITO_ATRASO = 1.0;          // falta, impedimento, pênalti...
-const APITO_ATRASO_BOLA = 0.5;     // tiro de meta, lateral e escanteio
+const APITO_ATRASO = 0.5;          // falta, impedimento, pênalti...
+const APITO_ATRASO_BOLA = 0.25;    // tiro de meta, lateral e escanteio
 // O atraso NÃO é cumulativo: só existe um agendamento por vez (G.apito); enquanto ele corre,
 // nenhuma outra marcação é agendada, então os tempos nunca se somam.
+function nomeDoTime(team) {                       // nome do time na marcação do juiz (sem time cadastrado: a cor do uniforme)
+  const t = PARTIDA && PARTIDA.timesObj && PARTIDA.timesObj[team];
+  return t && t.nome ? t.nome : T(team === 0 ? 'Azul' : 'Vermelho');
+}
 function marcarComAtraso(fn, tempo) {
   if (G.desafio) return;                           // treino: sem juiz (falta, lateral, escanteio)
   if (G.apito) return;
@@ -8021,9 +8025,9 @@ function updateFoul(rdt) {
   const F = G.foul;
   if (!F || G.state !== 'foul') return;
   F.t += rdt;
-  if (F.t > 0.6) G.targetScale = 1;
-  if (F.card && !F.cardShown && F.t > 1.3) mostrarCartao(F);
-  if (F.t > (F.card ? 3.6 : 2.0)) iniciarCobrancaFalta(F);
+  if (F.t > 0.3) G.targetScale = 1;
+  if (F.card && !F.cardShown && F.t > 0.65) mostrarCartao(F);
+  if (F.t > (F.card ? 2.5 : 1.0)) iniciarCobrancaFalta(F);
 }
 
 function mostrarCartao(F) {
@@ -15441,6 +15445,45 @@ const Cena = (() => {
     if (btn && btn.hidden === mostra) btn.hidden = !mostra;
   }
   return { esperar, congelar, pular, interativo, marcar, entrar, sair, rodar, tick, passos: () => (pulando ? 25 : 1), get pulando() { return pulando; } };
+})();
+
+// A MARIPOSA (a mesma da Fase 1): aparece no alto da tela, por uns segundos, sempre que o que acabou de acontecer muda alguma coisa na
+//   história (uma escolha, um hábito, uma resposta grossa...). Não trava o jogo: Mariposa.mostrar() devolve uma Promise que resolve quando
+//   ela some, para quem quiser esperar. O texto explicativo só aparece na primeira vez (PERSONAGEM.mothTexto, o mesmo da Fase 1).
+const Mariposa = (() => {
+  let el = null, tm = 0, fimEm = 0, texto = false;
+  function desenho() {
+    const half = ['......a..', '.......a.', 'kk.....eo', 'kkkk..bbo', 'kbbkkkbwo', 'kbbbbkwkw', 'kkbbbkwwo', 'ykkbbkowo', 'yyykkkoyo', '.yyykkooy', '.yyyk.ooo', '..yy...oy'];
+    const cor = { a: '#1b1410', e: '#c43a20', o: '#2a1c12', k: '#4a3320', b: '#8a6a3c', w: '#f0e2b8', y: '#e8a820' };
+    const cv = document.createElement('canvas'); cv.width = 17; cv.height = 12; const g = cv.getContext('2d');
+    half.forEach((row, y) => { for (let x = 0; x < 9; x++) { const c = cor[row[x]]; if (!c) continue; g.fillStyle = c; g.fillRect(x, y, 1, 1); g.fillRect(16 - x, y, 1, 1); } });
+    return cv;
+  }
+  function montar() {
+    if (el && el.isConnected) return;
+    if (!document.getElementById('mariposaCss')) {
+      const st = document.createElement('style'); st.id = 'mariposaCss';
+      st.textContent = '#mariposaHist{position:fixed;z-index:60;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;opacity:0;transition:opacity .7s ease;pointer-events:none;}'
+        + '#mariposaHist.on{opacity:1;}#mariposaHist canvas{width:85px;height:60px;image-rendering:pixelated;filter:drop-shadow(0 2px 0 #2a1206);}'
+        + '#mariposaHist p{margin:0;max-width:84vw;text-align:center;font:700 12px/1.25 var(--font-display);letter-spacing:.04em;color:#fff0c8;text-shadow:0 2px 0 #2a1206,0 0 6px #000;}';
+      document.head.appendChild(st);
+    }
+    el = document.createElement('div'); el.id = 'mariposaHist'; el.append(desenho(), document.createElement('p'));
+    (document.getElementById('raizJogo') || document.body).appendChild(el);
+  }
+  function mostrar() {
+    try {
+      montar();
+      const primeira = !PERSONAGEM.mothTexto; PERSONAGEM.mothTexto = true;
+      const p = el.querySelector('p'); p.textContent = primeira ? T('Quando a mariposa aparece, é porque aquilo que acabou de acontecer vai afetar a história...') : ''; p.style.display = primeira ? '' : 'none';
+      const dur = primeira ? 5200 : 2600; fimEm = Date.now() + dur; texto = primeira;
+      void el.offsetWidth; el.classList.add('on'); clearTimeout(tm); tm = setTimeout(() => { if (el) el.classList.remove('on'); }, dur);
+      return new Promise((ok) => setTimeout(ok, dur + 700));
+    } catch (e) { console.warn('[Mariposa]', e); return Promise.resolve(); }
+  }
+  const visivel = () => Date.now() < fimEm;
+  const comTexto = () => visivel() && texto;                           // com a explicação embaixo (quem escreve no alto da tela desce um pouco)
+  return { mostrar, visivel, comTexto };
 })();
 
 const Escolha = (() => {                              // caixa de ESCOLHAS (reutilizável): Escolha.mostrar(titulo, ['op1', 'op2']) → Promise(índice)

@@ -979,8 +979,8 @@
       const A = T_.bat[0]; if (!A || A.oculto) return;
       v.push({ x: A.x, z: A.z, r: 2.3, txt: tr('Treinar com a turma do Nonato'), fn: conversar, y: 2.5 });
     }
-    function quandoTxt(dia, ini) {                                       // dia: o do calendário (a agenda); o dia do jogo vira às 5h
-      const d = S().dados.dia || 1, k = (ini != null && ini < 5 ? dia - 1 : dia) - d;
+    function quandoTxt(dia, ini) {                                       // dia: o do calendário (a agenda), que é o mesmo do jogo (vira à meia-noite)
+      const d = S().dados.dia || 1, k = dia - d;
       return k <= 0 ? tr('hoje') : k === 1 ? tr('amanhã') : k === 2 ? tr('depois de amanhã') : trf('daqui a {0} dias', k);
     }
     const fmtH = (h) => api.fmtHora(((h % 24) + 24) % 24);

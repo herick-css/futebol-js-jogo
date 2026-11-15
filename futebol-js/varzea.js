@@ -394,7 +394,7 @@
       }
       if (r !== 0) { await api.fala('jog', T('Agora não, valeu.')); await api.fala('rafa', T('Tranquilo! Se mudar de ideia, é só me procurar aqui na frente do campo.')); C.etapa = 'recusou'; Dialogo.esconder(); api.gravar('chegada'); return; }
       await api.fala('jog', T('Fechado! Tô dentro!'));
-      iniciarCampeonato();
+      iniciarCampeonato(); if (api.mariposa) api.mariposa();            // entrar para o time da várzea
       const k0 = diaDa(C, 0);
       await api.fala('rafa', Tf('Aí sim! O primeiro jogo é no sábado, dia {0}, às {1}, contra o {2}.', k0, fmt(H_SAB), nomeT(adversario(proxNosso(C)))));
       await api.fala('rafa', T('Chega uma hora antes. O vestiário fica embaixo do campo: é só descer a escada da casinha, perto do banco. O Seu Damião, nosso técnico, vai estar te esperando.'));

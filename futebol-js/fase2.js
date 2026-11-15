@@ -1597,7 +1597,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         if (a === 'inicio') { etapa = 'lo'; render(); return; }
         if (a === 'vaga') { sel = b.dataset.v; etapa = 'vaga'; render(); return; }
         if (a === 'aceitar') { etapa = 'conf'; render(); return; }
-        if (a === 'sim') { D.emprego = sel; D.tranquilo += PONTOS_TRANQUILO; etapa = 'feito'; render(); return; }
+        if (a === 'sim') { D.emprego = sel; D.tranquilo += PONTOS_TRANQUILO; etapa = 'feito'; render(); mariposa(); return; }   // escolher o emprego
       };
       render();
     });
@@ -1839,7 +1839,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await Dialogo.mostrar([texto], { nome: T('Lúcia Alves'), voz: 0, manter: true });
     if (A) A.fala = false;
   }
+  // a mariposa (jogo.js): o que acabou de acontecer muda alguma coisa na história
+  function mariposa() { try { return typeof Mariposa !== 'undefined' ? Mariposa.mostrar() : Promise.resolve(); } catch (e) { return Promise.resolve(); } }
   function somarAmizadeF2(id, n, CD) {
+    if (n) mariposa();                                                   // as escolhas que aproximam (ou afastam) alguém
     try {
       const c = API.historia.ler('cidade') || {}, am = Object.assign({}, c.amizade || {}), v0 = am[id] != null ? am[id] : (id === 'lucia' ? 0 : 50), v = Math.max(0, Math.min(100, Math.round(v0 + n)));   // quem não tem coração começa no meio
       am[id] = v; API.historia.gravar('cidade', Object.assign({}, c, { amizade: am }));
@@ -1929,7 +1932,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const i = await SB.carta.mostrar(ofertas, nomeJog()), o = ofertas[i] || ofertas[0];
     // grava o contrato no save da cidade (clube, temporada, luvas) e troca o emprego pelo clube
     try { const c = API.historia.ler('cidade') || {}; SB.aceitarOferta(c, ofertas.indexOf(o)); API.historia.gravar('cidade', c); } catch (e) { console.warn('[Fase 2] contrato:', e); }
-    const antigo = S.dados.emprego; S.dados.emprego = 'clube'; gravar('fim');
+    const antigo = S.dados.emprego; S.dados.emprego = 'clube'; gravar('fim'); mariposa();   // assinar com o clube
     await dizer(['jog', SB.fraseOferta(o)]);
     if (L) {
       if (E.trabalhaComLucia || antigo === 'cafeteria') {
@@ -2007,7 +2010,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // (6.1.0) NOITE DE TRABALHO (quem trabalha na pizzaria, de quinta a domingo): acorda às 9h; dormir até as 2h é dormir bem; às 4h ele
   //   apaga de sono (aqui) ou vai sozinho para casa (na cidade). Numa noite normal: dormir até as 22h é dormir bem; às 2h apaga.
   //   Dormiu MAL (nível do Sono > 0): reclama ao acordar e perde 5 de Saudável (Sono.registrar; vale toda noite, soma dia após dia).
-  //   Dormir sempre leva para o DIA SEGUINTE (antes, quem dormia depois da meia-noite acordava no mesmo dia).
+  //   O dia vira à MEIA-NOITE: quem dorme antes dela acorda no dia seguinte; quem dorme de madrugada acorda no MESMO dia (só adiantam as
+  //   horas). A noite pertence ao dia em que começou (quinta 1h = noite de quinta: noiteDeTrabalho/horaAcordar recebem esse dia).
   const diaSem = (dia) => ((((dia || 1) - 1) % 7) + 7) % 7;
   const noiteDeTrabalho = (dia) => !!(S && S.dados && S.dados.emprego === 'pizzaria' && [3, 4, 5, 6].includes(diaSem(dia)));
   const horaAcordar = (dia) => (noiteDeTrabalho(dia) ? 9 : H_ACORDA);
@@ -2018,25 +2022,29 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     return typeof Sono !== 'undefined' ? Sono.nivelPelaHora(h) : (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
   }
   function registrarSono(nivel, motivo) { try { if (typeof Sono !== 'undefined') Sono.registrar(nivel, motivo); } catch (e) { console.warn('[Fase 2] sono:', e); } }
+  const diaDaNoite = (dia, h) => (dia || 1) - (h < 12 ? 1 : 0);
   async function dormir() {
     salvarRelogio();
-    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5, acorda = horaAcordar(c.dia);
+    const J = S.jog, c = (API.historia.ler('cidade') || {}), h = typeof c.hora === 'number' ? c.hora : 8.5, dia = c.dia || 1, nd = diaDaNoite(dia, h);
+    const cochilo = h < 12 ? h >= horaAcordar(nd) : h < 20;               // já amanheceu e ainda não é noite: cochilo (pula o resto do dia)
+    const amanha = cochilo || h >= 12, acorda = amanha ? horaAcordar(dia) : horaAcordar(nd), diaAc = amanha ? dia + 1 : dia;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
-    if (h >= acorda && h < 20) {                                       // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
+    if (cochilo) {                                                     // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
       const txt = acorda === H_ACORDA ? T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?') : Tf('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?', acorda);
       const r = await Escolha.mostrar(txt, [T('Dormir'), T('Agora não')], { centro: true });
       Dialogo.esconder(); if (r !== 0) return;
     }
     await preto(true, 900); const sujo = dormiuSujo();
-    const nivel = nivelDoSono(h, c.dia), horas = h >= acorda ? 24 - h + acorda : acorda - h;
+    const nivel = nivelDoSono(h, nd), horas = diaAc > dia ? 24 - h + acorda : acorda - h;
     registrarSono(nivel, nivel ? 'dormiu tarde' : 'dormiu bem');
-    const novo = Object.assign({}, c, { hora: acorda, dia: (c.dia || 1) + 1, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0, dia: (c.dia || 1) + 1 } });   // sono.dia = o dia em que acordou (a missão "dormir cedo" do clube)
+    const novo = Object.assign({}, c, { hora: acorda, dia: diaAc, avisouDormir: false, sono: { horas: Math.round(horas * 10) / 10, ok: nivel === 0, dia: diaAc } });   // sono.dia = o dia em que acordou (a missão "dormir cedo" do clube)
     if (S.relogio) { S.relogio.hora = novo.hora; S.relogio.dia = novo.dia; }
     try { API.historia.gravar('cidade', novo); } catch (e) { console.warn('[Fase 2] hora do sono:', e); }
     gravar('fim');
     aparecerNaCama(); await esperar(1600); await preto(false, 1400); await esperar(900);
     J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true; await esperar(200);
     await dizer(['jog', T('Bom dia! Hora de começar o dia.')]);
+    if (nivel > 0 || sujo) mariposa();                                  // dormiu tarde ou sem banho: pesa no dia
     if (nivel > 0) await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);   // (6.1.0) só reclama se dormiu mal
     if (sujo) await dizer(['jog', T('Dormi fedendo, estou me sentindo meio mal.')]);
     if (typeof Sono !== 'undefined' && Sono.deveAvisarSaude()) await dizer(['jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....')]);
@@ -2100,9 +2108,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   //   volta ao sair do prédio (e de 20 em 20 s). Passou das 2h acordado aqui dentro: apaga de sono e acorda às 5h na cama.
   const H_POR_S_F2 = 24 / 1200, H_ACORDA = 5;
   function relogioTick(dt) {
-    const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) R.hora -= 24;
+    const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) { R.hora -= 24; R.dia = (R.dia || 1) + 1; salvarRelogio(); }   // meia-noite: vira o dia
     R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }
-    const hAp = horaApagar(R.dia);                                     // (6.1.0) noite de trabalho: 4h
+    const hAp = horaApagar(diaDaNoite(R.dia, R.hora));                                     // (6.1.0) noite de trabalho: 4h
     if (ant < hAp && R.hora >= hAp && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
     mostrarRelogio();
   }
@@ -2126,12 +2134,13 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     } catch (e) { console.warn('[Fase 2] sujo:', e); return false; }
   }
   async function apagarDeSono() {
-    const sujo = dormiuSujo(), nt = noiteDeTrabalho(S.relogio.dia), acorda = horaAcordar(S.relogio.dia);
+    const nd = diaDaNoite(S.relogio.dia, S.relogio.hora), sujo = dormiuSujo(), nt = noiteDeTrabalho(nd), acorda = horaAcordar(nd);
+    mariposa();                                                          // não dormir: a noite em claro pesa no dia seguinte
     await dizer(['jog', nt ? T('Nossa, já são 4h da manhã... não aguento mais de sono.') : T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
     await preto(true, 900);
     registrarSono(3, nt ? 'acordado até as 4h' : 'acordado até as 2h');   // (6.1.0) apagar de sono também é noite mal dormida
-    mudarLugar('quarto', 0, 0, 0, 0); S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = acorda;
-    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? 4 : 2), ok: false } })); } catch (e) { console.warn(e); }
+    mudarLugar('quarto', 0, 0, 0, 0); if (S.relogio.hora >= 12) S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = acorda;   // de madrugada: o dia já virou à meia-noite
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? 4 : 2), ok: false, dia: S.relogio.dia } })); } catch (e) { console.warn(e); }
     aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
     const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
     await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);

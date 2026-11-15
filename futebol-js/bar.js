@@ -548,8 +548,8 @@
     const hx = () => { const h = hora(); return h < 6 ? h + 24 : h; };
     const aberto = () => { const h = hx(); return h >= H_ABRE && h < H_FECHA; };
     const jairoLa = () => { const h = hx(); return h >= H_JAIRO && h < H_FECHA + 0.15; };
-    const tAbs = () => { const d = S().dados; return (d.dia || 1) * 24 + hx(); };
-    const fimDeSemana = () => api.diaSemana() >= 5;
+    const tAbs = () => { const d = S().dados; return (d.dia || 1) * 24 + hora(); };   // o dia vira à meia-noite: o relógio contínuo é só dia + hora
+    const fimDeSemana = () => { const d = S().dados, n = (d.dia || 1) - (hora() < 6 ? 1 : 0); return ((((n - 1) % 7) + 7) % 7) >= 5; };   // a madrugada é da noite de ontem
     const capuzLa = () => fimDeSemana() && hx() >= CAPUZ_H[0] && hx() < CAPUZ_H[1];
     const faseVal = () => { const h = hx(); for (const F of VAL) if (h >= F.a && h < F.b) return F.f; return null; };
     const nomeJ = () => api.nomeJog();
@@ -1275,9 +1275,10 @@
           Espectros.mover('saudavel', p.saude, 'bebeu ' + p.nome);
           const agora = tAbs(), teor0 = db.teor ? Math.max(0, db.teor.v - (agora - db.teor.t) * 0.7) : 0, teor = teor0 + p.dose;
           db.teor = { v: teor, t: agora };
-          if (!db.doses || db.doses.dia !== d.dia) db.doses = { dia: d.dia, n: 0 }; db.doses.n += 1;
+          const noite = (d.dia || 1) - (d.hora < 12 ? 1 : 0), ressaca = noite + 1;   // a noite de bebedeira é a do dia em que começou; a ressaca é na manhã seguinte
+          if (!db.doses || db.doses.dia !== noite) db.doses = { dia: noite, n: 0 }; db.doses.n += 1;
           api.gravar(d.ponto || 'chegada');
-          if (db.doses.n >= 3 && d.ressacaDia !== d.dia + 1) { d.ressacaDia = d.dia + 1; try { Espectros.mover('disciplinado', -4, 'porre no bar'); } catch (e) { /* ok */ } api.gravar(d.ponto || 'chegada'); await api.fala('jog', Tx('Acho que já bebi demais por hoje... amanhã vou sentir.')); }   // (7.1.14) a ressaca vale o DIA SEGUINTE (a cidade liga: dados.ressacaDia)
+          if (db.doses.n >= 3 && d.ressacaDia !== ressaca) { d.ressacaDia = ressaca; if (api.mariposa) api.mariposa(); /* o porre: ressaca amanhã */ try { Espectros.mover('disciplinado', -4, 'porre no bar'); } catch (e) { /* ok */ } api.gravar(d.ponto || 'chegada'); await api.fala('jog', Tx('Acho que já bebi demais por hoje... amanhã vou sentir.')); }   // (7.1.14) a ressaca vale o DIA SEGUINTE (a cidade liga: dados.ressacaDia)
           else if (teor >= 2.5) await api.fala('jog', Tx('Opa... a cabeça já tá girando.'));
           else await api.fala('jog', Tx('Ahh... desceu redondo.'));
           if (teor >= 5.5) { s.vomitoT = 6; Espectros.mover('tranquilo', -2, 'porre no bar'); await api.fala('jog', Tx('Acho que eu exagerei...')); }
@@ -1388,6 +1389,7 @@
         A.rotaP = caminho(A.x, A.z, MIRA[1][0], MIRA[1][1], true); pose(A, 'taco');
         const vaiA = (async () => { let t = 0; while (A.rotaP && A.rotaP.length && t < 8) { andarP(A, 1 / 60); t += 1 / 60; await api.esperar(16); } A.yawAlvo = Math.PI; })();
         await andarJog(MIRA[0][0], MIRA[0][1], 1.8); J.yawAlvo = 0; await vaiA;
+        if (aposta && api.mariposa) api.mariposa();                       // apostar dinheiro na sinuca
         if (aposta) { d.fakes -= aposta; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(aposta); api.gravar(d.ponto || 'chegada'); try { Espectros.ganancia(2, 'sinuca valendo dinheiro'); } catch (e) { /* ok */ } }   // (7.1.14)
         await api.esperar(300);
         s.pausado = true;
@@ -1442,6 +1444,7 @@
         d.fakes -= esc.valor; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(esc.valor);
         db.bicho = { dia: d.dia, animal: esc.animal, valor: esc.valor }; db.bichoN = (db.bichoN | 0) + 1;
         try { Espectros.mover('tranquilo', -3, 'jogo do bicho'); Espectros.ganancia(3, 'jogo do bicho'); } catch (e) { /* nada */ }   // (7.1.14) apostar deixa ganancioso
+        if (api.mariposa) api.mariposa();                                // apostar no bicho
         api.gravar(d.ponto || 'chegada');
         await api.fala('capuz', Tfx('Tá anotado: {1}, {0} fakes.', esc.valor, Tx(BICHOS[esc.animal])));
         await api.fala('jog', Tfx('Tomara que dê {0}...', Tx(BICHOS[esc.animal])));

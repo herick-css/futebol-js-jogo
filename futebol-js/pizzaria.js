@@ -100,6 +100,16 @@
     'Bem-vindo à Forno a Lenha! Senta aí que a Carla já te atende.': ['Welcome to Forno a Lenha! Take a seat, Carla will be right with you.', '¡Bienvenido a Forno a Lenha! Siéntate, que Carla ya te atiende.', 'Benvenuto al Forno a Lenha! Siediti, Carla arriva subito.', 'Bienvenue au Forno a Lenha ! Assieds-toi, Carla arrive.'],
     'Deu meia-noite! Fechou por hoje.': ['It’s midnight! That’s it for today.', '¡Ya es medianoche! Cerramos por hoy.', 'È mezzanotte! Per oggi abbiamo chiuso.', 'Il est minuit ! C’est fini pour aujourd’hui.'],
     'Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Toma: {4} fakes.': ['You made {0} deliveries: {1} on time, {2} squashed and {3} late. Here: {4} fakes.', 'Hiciste {0} entrega(s): {1} a tiempo, {2} aplastada(s) y {3} atrasada(s). Toma: {4} fakes.', 'Hai fatto {0} consegne: {1} in tempo, {2} schiacciate e {3} in ritardo. Tieni: {4} fakes.', 'Tu as fait {0} livraison(s) : {1} à l’heure, {2} écrasée(s) et {3} en retard. Tiens : {4} fakes.'],
+    'Fechou por hoje! Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s).': ['That’s it for today! You made {0} delivery(ies): {1} on time, {2} squashed and {3} late.', '¡Cerramos por hoy! Hiciste {0} entrega(s): {1} a tiempo, {2} aplastada(s) y {3} atrasada(s).', 'Per oggi abbiamo chiuso! Hai fatto {0} consegna/e: {1} in tempo, {2} schiacciata/e e {3} in ritardo.', 'C’est fini pour aujourd’hui ! Tu as fait {0} livraison(s) : {1} à l’heure, {2} écrasée(s) et {3} en retard.'],
+    'Deu {0} fakes. Já vou te mandar no Pix!': ['That’s {0} fakes. I’ll send it to you by Pix right now!', 'Son {0} fakes. ¡Ya te los mando por Pix!', 'Sono {0} fakes. Te li mando subito con il Pix!', 'Ça fait {0} fakes. Je te les envoie tout de suite par Pix !'],
+    'Deu meia-noite! Fechou por hoje. Vou te mandar no Pix.': ['It’s midnight! We’re closed for today. I’ll send your pay by Pix.', '¡Ya es medianoche! Cerramos por hoy. Te mando por Pix.', 'È mezzanotte! Per oggi abbiamo chiuso. Te li mando con il Pix.', 'Il est minuit ! C’est fermé pour aujourd’hui. Je t’envoie ça par Pix.'],
+    'Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Deu {4} fakes.': ['You made {0} delivery(ies): {1} on time, {2} squashed and {3} late. That’s {4} fakes.', 'Hiciste {0} entrega(s): {1} a tiempo, {2} aplastada(s) y {3} atrasada(s). Son {4} fakes.', 'Hai fatto {0} consegna/e: {1} in tempo, {2} schiacciata/e e {3} in ritardo. Sono {4} fakes.', 'Tu as fait {0} livraison(s) : {1} à l’heure, {2} écrasée(s) et {3} en retard. Ça fait {4} fakes.'],
+    'Comprovante de Pix': ['Pix receipt', 'Comprobante de Pix', 'Ricevuta del Pix', 'Reçu du Pix'],
+    'Transferência concluída': ['Transfer completed', 'Transferencia realizada', 'Bonifico completato', 'Virement effectué'],
+    'Valor': ['Amount', 'Monto', 'Importo', 'Montant'], 'De': ['From', 'De', 'Da', 'De'], 'Para': ['To', 'Para', 'A', 'À'], 'Quando': ['When', 'Cuándo', 'Quando', 'Quand'], 'Código': ['Code', 'Código', 'Codice', 'Code'],
+    'Dia {0} · {1}': ['Day {0} · {1}', 'Día {0} · {1}', 'Giorno {0} · {1}', 'Jour {0} · {1}'],
+    '{0} fakes': ['{0} fakes', '{0} fakes', '{0} fakes', '{0} fakes'],
+    'Mário · Forno a Lenha': ['Mário · Forno a Lenha', 'Mário · Forno a Lenha', 'Mario · Forno a Lenha', 'Mário · Forno a Lenha'],
     'Turno encerrado: +{0} fakes': ['Shift over: +{0} fakes', 'Turno terminado: +{0} fakes', 'Turno finito: +{0} fakes', 'Service terminé : +{0} fakes'],
     'Deu meia-noite! Termina essa entrega e o turno acaba.': ['It’s midnight! Finish this delivery and the shift is over.', '¡Es medianoche! Termina esta entrega y se acaba el turno.', 'È mezzanotte! Finisci questa consegna e il turno è finito.', 'Il est minuit ! Termine cette livraison et le service est fini.'],
     'Vamos fechar! Boa noite!': ['We’re closing! Good night!', '¡Vamos a cerrar! ¡Buenas noches!', 'Chiudiamo! Buonanotte!', 'On ferme ! Bonne nuit !'],
@@ -927,7 +937,7 @@
     // ================================================================ O TURNO (entregas de bicicleta)
     function iniciarTurno() {
       const s = S();
-      s.turnoPizza = { entregas: 0, noPrazo: 0, amassadas: 0, atrasadas: 0, inicio: s.dados.hora, fim: false };
+      s.turnoPizza = { entregas: 0, noPrazo: 0, amassadas: 0, atrasadas: 0, inicio: s.dados.hora, fim: false, dia: s.dados.dia || 1 };   // dia: o do turno (à meia-noite o calendário já virou)
       s.trabalhando = true;
       mostrarCaixaPronta(true);
       montarPainel(); atualizarPainel();
@@ -1174,23 +1184,33 @@
         Dialogo.esconder();
       } catch (e) { console.error(e); }
       // o cliente entra em casa com a pizza
-      if (A && P.casa) { A.rotaRua = [{ x: P.casa.x, z: P.casa.z }]; A.entrando = true; M.entrandoRua.push(A); M.cliRua = null; if (s.falantesExtra) delete s.falantesExtra.clientePz; }
+      if (A && P.casa) { A.casaPz = P.casa; A.passoPz = 0; A.tEntra = 0; A.entrando = true; M.entrandoRua.push(A); M.cliRua = null; if (s.falantesExtra) delete s.falantesExtra.clientePz; }
       M.pedido = null; atualizarPainel();
       if (s.turnoPizza && s.turnoPizza.fechando) { await encerrar(false); }
       else { s.missao = T('Volte para a pizzaria e pegue o próximo pedido.'); api.mostrarMissao(); const Pt = (api.PORTAS || []).find((q) => q.nome === 'pizzaria'); if (Pt) api.definirMarca(Pt.x, Pt.z); }
       const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
     }
     // quem já recebeu a pizza: anda até a porta de casa segurando a caixa e some
+    // quem recebeu a pizza entra em casa: anda RETO até a porta (sem a colisão da fachada, que fazia ele se esfregar nela), a porta abre
+    //   para dentro e ele passa pelo vão; do lado de dentro a própria parede esconde, e aí ele sai da lista
     function tickEntrandoRua(dt) {
       const s = S();
       for (const A of M.entrandoRua.slice()) {
         A.tEntra = (A.tEntra || 0) + dt;
         segurarCaixa(A.m);
-        if (api.seguir(A, A.rotaRua, 1.2, dt) || A.tEntra > 6 || !s.npcs.includes(A)) {
-          if (A.pzIcone && A.pzIcone.parent) A.pzIcone.parent.remove(A.pzIcone);
-          if (s.npcs.includes(A)) api.descartarPessoa(A);
-          M.entrandoRua = M.entrandoRua.filter((q) => q !== A);
-        }
+        const C = A.casaPz, fim = () => { if (A.pzIcone && A.pzIcone.parent) A.pzIcone.parent.remove(A.pzIcone); if (s.npcs.includes(A)) api.descartarPessoa(A); M.entrandoRua = M.entrandoRua.filter((q) => q !== A); };
+        if (!C || !C.porta || !s.npcs.includes(A) || A.tEntra > 12 || s.dentro) { fim(); continue; }
+        const sg = C.porta.s, pid = api.portaCasa(C, 0.8);
+        const alvo = A.passoPz === 0 ? { x: C.x, z: C.z + sg * 0.45 } : { x: C.x, z: C.z - sg * 0.75 };   // 1) na frente da porta 2) lá dentro
+        const dx = alvo.x - A.x, dz = alvo.z - A.z, d = Math.hypot(dx, dz), v = 1.15 * dt;
+        if (A.passoPz === 1 && !pid) { fim(); continue; }
+        if (A.passoPz === 1 && A.esperaPorta > 0) { A.esperaPorta -= dt; A.andando = false; continue; }   // espera a folha abrir
+        if (d > 1e-3) A.yawAlvo = Math.atan2(-dz, dx);
+        if (d <= v) {
+          A.x = alvo.x; A.z = alvo.z;
+          if (A.passoPz === 0) { A.passoPz = 1; A.esperaPorta = 0.35; } else { fim(); continue; }
+        } else { A.x += dx / d * v; A.z += dz / d * v; }
+        A.andando = true; A.correndo = false; A.vel = 1.15;
       }
     }
     function tickClienteRua(dt) {
@@ -1302,21 +1322,21 @@
     async function acelerar() {
       const r = await Escolha.mostrar(T('Acelerar até a meia-noite? Você recebe só pelas horas trabalhadas até agora.'), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
       Dialogo.esconder(); const s = S(); if (r !== 0 || !U() || M.pedido) return;
-      const h = s.dados.hora; await api.preto(true, 450); s.dados.hora = 0.0; await encerrar(true, h, true); await api.preto(false, 450);
+      const h = s.dados.hora; await api.preto(true, 450); s.dados.hora = 0.0; await encerrar(true, h, !!s.dentro); await api.preto(false, 450);   // na rua: a cena da bicicleta e o Pix do Mário
     }
     // (cidade: "Entrar no prédio" no meio do turno) encerra antes, pagando o que trabalhou
     async function encerrarAntes() {
       const r = await Escolha.mostrar(T('Encerrar o turno agora? Você recebe só pelas horas trabalhadas.'), [T('Encerrar o turno'), T('Continuar trabalhando')], { centro: true });
       Dialogo.esconder(); if (r !== 0 || !U()) return false;
-      await encerrar(true, hora(), true); return true;
+      await encerrar(true, hora(), true, true); return true;           // vai entrar no prédio: sem a cena da bicicleta
     }
     // ---- FIM DO TURNO: paga e conta como dia trabalhado
-    async function encerrar(antes, hParou, semConversa) {
+    async function encerrar(antes, hParou, semConversa, semCena) {
       const s = S(), u = s.turnoPizza, d = s.dados; if (!u || u.fim) return; u.fim = true;
       const hAbs = (h) => (h < 12 ? h + 24 : h);
       const ini = Math.max(H_TURNO, u.inicio <= H_CHEIO_ATE ? H_TURNO : u.inicio), fimH = antes ? clampN(hAbs(hParou), ini, H_FECHA) : H_FECHA;
       const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), base = Math.round(PAGA * frac), paga = Math.max(0, base + u.noPrazo * GORJETA - u.atrasadas * ATRASO);
-      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */ api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);
+      d.trabalhouDia = u.dia || d.dia; d.trabalhouHoje = d.trabalhouDia === d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */
       s.trabalhando = false; fecharPainel(); mostrarHud(false); tirarCaixaDaMao(); tirarCaixaChao(); if (M.cliRua) tirarClienteRua();
       if (montado()) descer(true);
       M.pedido = null; mostrarCaixaPronta(false); M.tarefas = M.tarefas.filter((t) => t.tipo !== 'entrega');
@@ -1325,16 +1345,72 @@
       api.gravar('chegada');
       const espera = s.modo !== 'livre'; if (!espera) { s.modo = 'cena'; api.UI().ctl.hidden = true; }
       M.avisos = []; M.tAviso = 0; api.aviso('');
+      const recebeu = () => { api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true); };
       try {
         if (M.mario && s.dentro && !semConversa) {
-          await api.fala('mario', T('Deu meia-noite! Fechou por hoje.'));
-          await api.fala('mario', Tf('Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Toma: {4} fakes.', u.entregas, u.noPrazo, u.amassadas, u.atrasadas, paga));
+          await api.fala('mario', T('Deu meia-noite! Fechou por hoje. Vou te mandar no Pix.'));
+          await api.fala('mario', Tf('Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Deu {4} fakes.', u.entregas, u.noPrazo, u.amassadas, u.atrasadas, paga));
           Dialogo.esconder();
-        } else avisoRapido(Tf('Turno encerrado: +{0} fakes', paga), 3600);
-      } catch (e) { console.error(e); }
+          await comprovantePix(paga); recebeu();
+        } else if (!s.dentro && !semCena) {
+          await cenaDevolverBike();
+          await api.mensagemCelular(T('Mário'), Tf('Fechou por hoje! Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s).', u.entregas, u.noPrazo, u.amassadas, u.atrasadas), Tf('Deu {0} fakes. Já vou te mandar no Pix!', paga));
+          await comprovantePix(paga); recebeu();
+          fimCenaBike();
+        } else { recebeu(); avisoRapido(Tf('Turno encerrado: +{0} fakes', paga), 3600); }
+      } catch (e) { console.error(e); fimCenaBike(); }
       s.turnoPizza = null;
       if (!espera && s.ativo && s.modo === 'cena') api.liberar();
       return paga;
+    }
+    // FIM DO TURNO NA RUA: corte preto e ele chega empurrando a bicicleta pela calçada até a vaga dela na frente da pizzaria
+    async function cenaDevolverBike() {
+      const s = S(), J = s.jog, B = garantirBike();
+      await api.preto(true, 600);
+      if (J.sentado) api.levantar();
+      if (montado()) descer(true);
+      s.veiculo = null; soltarPoseBike(J); M.bikeFantasma = true; colBike();
+      const z = BIKE_PARADA.z - 0.55, x0 = BIKE_PARADA.x - 5.4, x1 = BIKE_PARADA.x - 0.3;
+      J.x = x0; J.z = z; J.y = api.altura(x0, z); J.yaw = J.yawAlvo = 0; J.rota = null; J.andando = false; J.correndo = false; J.ySnap = true;
+      B.estado = 'parada'; B.tomba = 0; M.empurra = { ux: J.x }; tickEmpurra();
+      s.camCena = { px: (x0 + x1) / 2 - 1.4, py: 3.0, pz: z - 6.2, tx: (x0 + x1) / 2 + 0.3, ty: 2.0, tz: z + 0.4 };   // mira acima dele: o celular (no alto da tela) não o cobre s.cam.snap = true;
+      await api.esperar(150); await api.preto(false, 700);
+      await Promise.race([api.andar(J, [[x1, z]], 1.35), api.esperar(6000)]);
+      J.rota = null; J.andando = false; M.empurra = null; guardarBike();
+      await api.esperar(350);
+      J.yawAlvo = Math.PI / 2; await api.esperar(500);                 // vira para a rua e olha o celular
+    }
+    function fimCenaBike() { const s = S(); M.empurra = null; if (s) { s.camCena = null; s.cam.snap = true; } }
+    // a bicicleta ao lado dele (do lado da parede), com a mão direita no guidão e as rodas girando conforme ele anda
+    function tickEmpurra() {
+      const E = M.empurra, s = S(); if (!E || !M.bike) return;
+      const J = s.jog, B = M.bike, ds = J.x - E.ux; E.ux = J.x;
+      B.x = J.x + 0.35; B.z = J.z + 0.55; B.yaw = 0; B.giro = (B.giro || 0) + ds / BK.r; posBike();
+      const m = J.m; m.bracoD.rotation.z = 0.55; m.bracoD.rotation.x = -0.35; usarCotovelo(m.bracoD, 0, 0.35);
+    }
+    // o comprovante do Pix chega no celular logo depois da mensagem do Mário (um balão de chat com o recibo dentro)
+    function comprovantePix(valor) {
+      return new Promise((ok) => {
+        const s = S(), d = s.dados, el = document.createElement('div');
+        el.style.cssText = 'position:fixed;z-index:14;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(320px,calc(100% - 32px));box-sizing:border-box;background:#f4f6f8;border:4px solid #2a1206;color:#1c2a36;padding:8px 10px;font:600 12px/1.3 var(--font-body);display:flex;flex-direction:column;gap:6px;box-shadow:0 6px 0 rgba(0,0,0,.35);cursor:pointer;';
+        const de = document.createElement('div'); de.style.cssText = 'font:700 11px/1 var(--font-display);color:#1f7a4d;letter-spacing:.06em'; de.textContent = T('Mário');
+        const rec = document.createElement('div'); rec.style.cssText = 'background:#ffffff;border:2px solid #c9d3db;padding:8px 10px;display:flex;flex-direction:column;gap:4px;';
+        const topo = document.createElement('div'); topo.style.cssText = 'display:flex;align-items:center;gap:8px;font:700 12px/1.1 var(--font-display);color:#1c2a36;';
+        const ic = document.createElement('canvas'); ic.width = ic.height = 12; ic.style.cssText = 'width:24px;height:24px;image-rendering:pixelated;flex:none;';
+        { const g = ic.getContext('2d'), px = (x, y, c) => { g.fillStyle = c; g.fillRect(x, y, 1, 1); };   // o círculo verde com o "certo" (pixel art)
+          for (let y = 0; y < 12; y++) for (let x = 0; x < 12; x++) { const r = Math.hypot(x - 5.5, y - 5.5); if (r < 5.6) px(x, y, r > 4.6 ? '#167a3c' : '#2fae5a'); }
+          for (const [x, y] of [[3, 6], [4, 7], [5, 8], [6, 7], [7, 6], [8, 5], [9, 4]]) { px(x, y, '#ffffff'); px(x, y - 1, '#ffffff'); } }
+        const tt = document.createElement('span'); tt.textContent = T('Comprovante de Pix'); topo.append(ic, tt);
+        const linha = (k, v, forte) => { const L = document.createElement('div'); L.style.cssText = 'display:flex;justify-content:space-between;gap:10px;border-top:1px dashed #c9d3db;padding-top:3px;'; const a = document.createElement('span'); a.style.color = '#5b6b78'; a.textContent = k; const b = document.createElement('span'); b.style.cssText = 'text-align:right;' + (forte ? 'font:700 14px/1.1 var(--font-display);color:#167a3c;' : ''); b.textContent = v; L.append(a, b); return L; };
+        let cod = 'E'; for (let i = 0; i < 14; i++) cod += '0123456789ABCDEF'[Math.floor(Math.random() * 16)];
+        const ok_ = document.createElement('div'); ok_.style.cssText = 'font:700 11px/1 var(--font-display);color:#167a3c;text-align:center;padding-top:4px;'; ok_.textContent = T('Transferência concluída');
+        rec.append(topo, linha(T('Valor'), Tf('{0} fakes', valor), true), linha(T('De'), T('Mário · Forno a Lenha')), linha(T('Para'), api.nomeJog()), linha(T('Quando'), Tf('Dia {0} · {1}', d.dia || 1, api.fmtHora(d.hora))), linha(T('Código'), cod), ok_);
+        el.append(de, rec);
+        const fim = () => { clearTimeout(tm); el.remove(); ok(); };
+        el.addEventListener('click', fim); const tm = setTimeout(fim, 6500);
+        (document.getElementById('raizJogo') || document.body).appendChild(el);
+        try { SOM.caixa(); } catch (e) { /* sem som */ }
+      });
     }
     function tickTurno(dt) {
       const s = S(), u = s.turnoPizza; if (!u || u.fim) return;
@@ -1360,7 +1436,7 @@
     function tick(dt) {
       const s = S(); if (!s) return;
       const dentro = s.dentro && s.dentro.nome === 'pizzaria' && M.D;
-      tickTurno(dt); tickAvisos(dt);
+      tickTurno(dt); tickAvisos(dt); tickEmpurra();
       if (M.bikeFantasma && M.bike && !s.dentro) {                       // saiu de cima da bicicleta: ela volta a ser sólida
         const B = M.bike, J = s.jog; if (Math.hypot(J.x - B.x, J.z - B.z) > 1.4) { M.bikeFantasma = false; colBike(); }
       }
