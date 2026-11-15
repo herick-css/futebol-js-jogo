@@ -7,9 +7,17 @@
    - A MESA é desenhada pixel a pixel (300 x 164): madeira com os losangos, o pano verde com textura, as 6 caçapas e as 16 bolas
      (lisas 1–7, a 8 preta, listradas 9–15 e a branca), com brilho e sombra.
    - FÍSICA: atrito, choque elástico entre as bolas, tabelas (com a "boca" das caçapas do meio) e caçapas. Passos fixos de 1/240 s.
-   - REGRAS (bola 8 simplificada): quem encaçapa primeiro fica com o grupo (lisas ou listradas); encaçapou uma sua, joga de novo;
-     FALTA (a branca caiu, não tocou em nada, tocou primeiro numa bola do outro ou na 8 antes da hora) = bola na mão para o outro;
-     a 8 por último ganha; a 8 antes da hora (ou com falta) perde.
+   - REGRAS (bola 8, como na mesa de verdade, sem cantar a caçapa):
+     · SAÍDA: a mesa continua aberta mesmo que caia bola (quem saiu e encaçapou joga de novo). A 8 na saída volta para o pé da mesa.
+       A branca caiu na saída: falta, e o outro põe a branca só ATRÁS DA LINHA DE SAÍDA (a "cozinha").
+     · MESA ABERTA: a primeira bola encaçapada depois da saída decide o grupo (lisas ou listradas). Caíram uma lisa e uma listrada
+       na mesma tacada: a mesa continua aberta e quem tacou joga de novo. Com a mesa aberta, tocar primeiro na 8 é falta.
+     · TACADA VÁLIDA: a branca toca primeiro numa bola do seu grupo (ou na 8, quando só falta ela) e, depois do toque, alguma bola
+       cai ou bate na tabela. Encaçapou uma sua: joga de novo. Bola do outro que cair fica caída (ajuda o outro).
+     · FALTA (a branca caiu, não tocou em nada, tocou primeiro na bola errada, nenhuma bola na tabela depois do toque) = o outro
+       ganha a BOLA NA MÃO e põe a branca em qualquer lugar livre da mesa.
+     · A 8: com o grupo todo encaçapado, a 8 numa tacada válida ganha. A 8 antes da hora, junto com a última do grupo ou com falta perde.
+   - A MIRA começa sempre no mesmo lugar (o taco reto, apontando para o lado mais longe da mesa): quem mira é o jogador.
    - CONTROLES: mira arrastando/movendo o dedo ou o mouse na mesa (◀ ▶ e as setas para o ajuste fino); SEGURE o botão TACAR (ou o
      espaço) e solte na força certa (a barra vai e volta). Com a bola na mão: toque onde quer pôr a branca e confirme.
    - A IA: procura as jogadas (a bola, a caçapa, o ângulo de corte, o caminho livre), SIMULA as melhores e escolhe; erra a mira de
@@ -39,6 +47,12 @@
     'Tocou primeiro na bola errada.': ['Hit the wrong ball first.', 'Tocó primero la bola equivocada.', 'Ha toccato prima la palla sbagliata.', 'A touché la mauvaise bille en premier.'],
     'A 8 caiu antes da hora!': ['The 8 went in too early!', '¡La 8 cayó antes de tiempo!', 'L’8 è caduta troppo presto!', 'La 8 est tombée trop tôt !'],
     'A 8 voltou para a mesa.': ['The 8 is back on the table.', 'La 8 volvió a la mesa.', 'L’8 torna sul tavolo.', 'La 8 revient sur la table.'],
+    'A branca caiu junto com a 8.': ['The cue ball went in with the 8.', 'La blanca cayó junto con la 8.', 'La bianca è caduta insieme all’8.', 'La blanche est tombée avec la 8.'],
+    'Falta na tacada da 8.': ['Foul on the 8-ball shot.', 'Falta en la tirada de la 8.', 'Fallo sul tiro dell’8.', 'Faute sur le tir de la 8.'],
+    'Nenhuma bola bateu na tabela.': ['No ball hit a cushion.', 'Ninguna bola tocó la banda.', 'Nessuna palla ha toccato la sponda.', 'Aucune bille n’a touché la bande.'],
+    'Caiu lisa e listrada: a mesa continua aberta.': ['A solid and a stripe went in: the table stays open.', 'Cayeron una lisa y una rayada: la mesa sigue abierta.', 'Sono entrate una piena e una spezzata: il tavolo resta aperto.', 'Une pleine et une rayée sont tombées : la table reste ouverte.'],
+    'Na saída a mesa continua aberta. Joga de novo.': ['After the break the table stays open. Shoot again.', 'En la salida la mesa sigue abierta. Tira de nuevo.', 'Dopo lo spacco il tavolo resta aperto. Tira ancora.', 'Après la casse, la table reste ouverte. Rejoue.'],
+    'Bola na mão atrás da linha: toque na mesa para pôr a branca.': ['Ball in hand behind the line: tap the table to place the cue ball.', 'Bola en mano detrás de la línea: toca la mesa para poner la blanca.', 'Palla in mano dietro la linea: tocca il tavolo per mettere la bianca.', 'Bille en main derrière la ligne : touche la table pour placer la blanche.'],
     'Encaçapou! Joga de novo.': ['Potted! Shoot again.', '¡Embocada! Tira de nuevo.', 'Imbucata! Tira ancora.', 'Empochée ! Rejoue.'],
     'Agora é a 8!': ['Now it’s the 8!', '¡Ahora va la 8!', 'Adesso tocca all’8!', 'Maintenant, la 8 !'],
     'Você venceu!': ['You won!', '¡Ganaste!', 'Hai vinto!', 'Tu as gagné !'],
@@ -113,17 +127,18 @@
       for (const p of CACAPAS) if ((b.x - p.x) * (b.x - p.x) + (b.y - p.y) * (b.y - p.y) < p.r * p.r) { caiu = true; break; }
       if (!caiu && (b.x < X0 - 7 || b.x > X1 + 7 || b.y < Y0 - 7 || b.y > Y1 + 7)) caiu = true;   // escapou pela boca: caiu
       if (caiu) { b.fora = true; b.vx = b.vy = 0; if (ev) ev.caiu.push(b.id); continue; }
-      const boca = Math.abs(b.x - XM) < 7;
+      const boca = Math.abs(b.x - XM) < 7, nT = ev ? ev.tabela.length : 0;
       if (b.x < X0 + R) { b.x = X0 + R; if (b.vx < 0) { b.vx = -b.vx * E_TABELA; b.vy *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vx)); } }
       if (b.x > X1 - R) { b.x = X1 - R; if (b.vx > 0) { b.vx = -b.vx * E_TABELA; b.vy *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vx)); } }
       if (!boca && b.y < Y0 + R) { b.y = Y0 + R; if (b.vy < 0) { b.vy = -b.vy * E_TABELA; b.vx *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vy)); } }
       if (!boca && b.y > Y1 - R) { b.y = Y1 - R; if (b.vy > 0) { b.vy = -b.vy * E_TABELA; b.vx *= 0.94; if (ev) ev.tabela.push(Math.abs(b.vy)); } }
+      if (ev && ev.tabela.length > nT && ev.primeira != null) ev.trilho = true;          // alguma bola bateu na tabela depois do 1.º toque
       // atrito do pano
       const sp = Math.hypot(b.vx, b.vy); if (!sp) continue;
       const ns = sp - (DEC + sp * KF) * h; if (ns < 2.5) { b.vx = b.vy = 0; } else { b.vx *= ns / sp; b.vy *= ns / sp; }
     }
   }
-  const novoEv = () => ({ primeira: null, caiu: [], choques: [], tabela: [] });
+  const novoEv = () => ({ primeira: null, caiu: [], choques: [], tabela: [], trilho: false });
   function simular(B0, ang, forca, h) {                                  // roda a tacada até tudo parar (para a IA)
     const B = clonar(B0), ev = novoEv(), c = B[0]; c.vx = Math.cos(ang) * forca * VMAX; c.vy = Math.sin(ang) * forca * VMAX;
     for (let k = 0; k < 4000 && !parado(B); k++) passo(B, h || 1 / 150, ev);
@@ -139,10 +154,11 @@
     if (!restam(est.B, g)) return est.B.filter((b) => !b.fora && b.id === 8);
     return est.B.filter((b) => !b.fora && grupoDe(b.id) === g);
   }
-  // avalia a tacada que acabou: devolve { falta, motivo, continua, fim: null | 'vence' | 'perde', grupoNovo, oitoVolta }
+  // avalia a tacada que acabou: devolve { falta, motivo, continua, fim: null | 'vence' | 'perde', grupoNovo, oitoVolta, mesaAberta, cozinha }
   function avaliar(est, ev, antesB) {
     const q = est.vez, g = est.grupo[q], caiuBranca = ev.caiu.includes(0), caiuOito = ev.caiu.includes(8);
     const tinhaGrupo = !!g, limpo = tinhaGrupo && restam(antesB, g) === 0;   // antes da tacada: só faltava a 8
+    const caidas = ev.caiu.filter((id) => id !== 0);
     let falta = false, motivo = '';
     if (caiuBranca) { falta = true; motivo = 'A branca caiu!'; }
     else if (ev.primeira == null) { falta = true; motivo = 'Não tocou em nenhuma bola.'; }
@@ -151,16 +167,23 @@
       if (limpo) { if (ev.primeira !== 8) { falta = true; motivo = 'Tocou primeiro na bola errada.'; } }
       else if (gp === 'oito') { falta = true; motivo = 'Tocou primeiro na bola errada.'; }
       else if (tinhaGrupo && gp !== g) { falta = true; motivo = 'Tocou primeiro na bola errada.'; }
+      if (!falta && !caidas.length && !ev.trilho) { falta = true; motivo = 'Nenhuma bola bateu na tabela.'; }
     }
-    const r = { falta, motivo, continua: false, fim: null, grupoNovo: null, oitoVolta: false };
+    const r = { falta, motivo, continua: false, fim: null, grupoNovo: null, oitoVolta: false, mesaAberta: false, cozinha: est.saida && caiuBranca };
     if (caiuOito) {
-      if (est.saida && !caiuBranca) { r.oitoVolta = true; }             // a 8 na saída: volta para o pé da mesa
-      else { r.fim = limpo && !falta ? 'vence' : 'perde'; return r; }
+      if (est.saida) r.oitoVolta = true;                                // a 8 na saída: volta para o pé da mesa (com ou sem falta)
+      else { r.fim = limpo && !falta ? 'vence' : 'perde'; r.motivo8 = r.fim === 'vence' ? '' : !limpo ? 'A 8 caiu antes da hora!' : caiuBranca ? 'A branca caiu junto com a 8.' : 'Falta na tacada da 8.'; return r; }
     }
-    const minhas = ev.caiu.filter((id) => id !== 0 && id !== 8);
-    if (!tinhaGrupo && !falta && minhas.length) { r.grupoNovo = grupoDe(minhas[0]); }
+    const minhas = caidas.filter((id) => id !== 8);
+    if (falta || !minhas.length) return r;
+    if (est.saida) { r.continua = true; r.mesaAberta = true; return r; }  // na saída a mesa continua aberta: quem encaçapou joga de novo
+    if (!tinhaGrupo) {
+      const gs = new Set(minhas.map(grupoDe));
+      if (gs.size > 1) { r.mesaAberta = true; r.continua = true; return r; }   // caíram lisa e listrada: a mesa continua aberta
+      r.grupoNovo = minhas.map(grupoDe)[0];
+    }
     const gAgora = g || r.grupoNovo;
-    if (!falta && minhas.some((id) => grupoDe(id) === gAgora)) r.continua = true;
+    if (minhas.some((id) => grupoDe(id) === gAgora)) r.continua = true;
     return r;
   }
 
@@ -218,11 +241,11 @@
     if (x < X0 + R || x > X1 - R || y < Y0 + R || y > Y1 - R) return false;
     return B.every((b) => b.fora || b.id === 0 || Math.hypot(b.x - x, b.y - y) > 2 * R + 0.5);
   }
-  function maoIA(est, O) {                                               // bola na mão: testa lugares e fica com o que dá a melhor jogada
+  function maoIA(est, O, cozinha) {                                      // bola na mão: testa lugares e fica com o que dá a melhor jogada
     const B = est.B, c = B[0]; let melhor = null;
-    const tent = O.sim ? 40 : 8;
+    const tent = O.sim ? 40 : 8, xMax = cozinha ? CABECA.x : X1 - R;
     for (let k = 0; k < tent; k++) {
-      const x = X0 + R + Math.random() * (X1 - X0 - 2 * R), y = Y0 + R + Math.random() * (Y1 - Y0 - 2 * R); if (!posicaoLivre(B, x, y)) continue;
+      const x = X0 + R + Math.random() * (xMax - X0 - R), y = Y0 + R + Math.random() * (Y1 - Y0 - 2 * R); if (!posicaoLivre(B, x, y)) continue;
       c.x = x; c.y = y; c.fora = false; const L = jogadas(est, 1), v = L.length ? L[0].valor : -1;
       if (!melhor || v > melhor.v) melhor = { x, y, v };
     }
@@ -374,7 +397,8 @@
       }
       // ---- o estado da tela
       let fase = 'intro', ang = 0, forca = 0, carregando = false, tCarga = 0, fim = null, ev = null, antesB = null, rafId = 0, tUlt = 0, mao = false, iaT = 0, iaPlano = null, quipT = 0, tPuxa = 0;
-      let angIA = 0;
+      let angIA = 0, cozinha = false;
+      const miraPadrao = () => { const c = est.B[0]; ang = c.x <= XM ? 0 : Math.PI; };   // o taco reto, apontando para o lado mais longe
       const fala = (t, dur) => { msg.textContent = t; msg.dataset.t = String(performance.now() + (dur || 2600)); };
       const quip = (tipo) => { const L = O.quips && O.quips[tipo]; if (L && L.length && Math.random() < 0.7) { quipT = performance.now() + 2600; fala(O.nome + ': ' + tr(L[Math.floor(Math.random() * L.length)]), 2600); return true; } return false; };
       function mirarPara(x, y) { const c = est.B[0]; ang = Math.atan2(y - c.y, x - c.x); }
@@ -391,7 +415,7 @@
       cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture && cv.setPointerCapture(e.pointerId); onDown(e); });
       cv.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse' || arrastando) onMove(e); });
       cv.addEventListener('pointerup', () => { arrastando = false; });
-      function colocarBranca(p) { const x = Math.max(X0 + R, Math.min(X1 - R, p.x)), y = Math.max(Y0 + R, Math.min(Y1 - R, p.y)); if (posicaoLivre(est.B, x, y)) { const c = est.B[0]; c.x = x; c.y = y; c.fora = false; } }
+      function colocarBranca(p) { const x = Math.max(X0 + R, Math.min(cozinha ? CABECA.x : X1 - R, p.x)), y = Math.max(Y0 + R, Math.min(Y1 - R, p.y)); if (posicaoLivre(est.B, x, y)) { const c = est.B[0]; c.x = x; c.y = y; c.fora = false; } }
       const girar = (d) => { if (fase === 'mirar' && minhaVez() && !carregando) ang += d; };
       let girando = 0, tGiro = 0;
       for (const [b, s] of [[bE, -1], [bD, 1]]) {
@@ -403,7 +427,7 @@
       bTacar.addEventListener('pointerdown', (e) => { e.preventDefault(); comecarCarga(); });
       bTacar.addEventListener('pointerup', (e) => { e.preventDefault(); soltarCarga(); });
       bTacar.addEventListener('pointerleave', () => soltarCarga());
-      bOk.addEventListener('click', () => { if (fase === 'mao' && minhaVez()) { fase = 'mirar'; bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false; fala(tr('Sua vez')); } });
+      bOk.addEventListener('click', () => { if (fase === 'mao' && minhaVez()) { fase = 'mirar'; cozinha = false; miraPadrao(); bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false; fala(tr('Sua vez')); } });
       bSair.addEventListener('click', async () => {
         if (fim) return;
         const ok = typeof Escolha !== 'undefined' ? (await Escolha.mostrar(tr('Desistir da partida? Conta como derrota.'), [tr('Não'), tr('Sim')])) === 1 : true;
@@ -424,19 +448,21 @@
       }
       let nSom = 0;
       function depoisDaTacada() {
-        const quem = est.vez, r = avaliar(est, ev, antesB), nomeQ = quem === 0 ? nomeJ : O.nome;
+        const quem = est.vez, r = avaliar(est, ev, antesB), nomeQ = quem === 0 ? nomeJ : O.nome, antesSaida = est.saida;
         est.saida = false;
         if (r.fim) { terminar(r.fim === 'vence' ? quem === 0 : quem !== 0, false, r); return; }
         if (r.oitoVolta) { const o = est.B.find((b) => b.id === 8); o.fora = false; o.x = PE.x; o.y = PE.y; while (!posicaoLivre(est.B, o.x, o.y) && o.x < X1 - R) o.x += 1; fala(tr('A 8 voltou para a mesa.')); }
         if (r.grupoNovo) { est.grupo[quem] = r.grupoNovo; est.grupo[1 - quem] = r.grupoNovo === 'lisas' ? 'listradas' : 'lisas'; if (est.grupo[0]) fala(tr(est.grupo[0] === 'lisas' ? 'Você ficou com as lisas.' : 'Você ficou com as listradas.')); }
         if (r.falta) {
           est.vez = 1 - quem; const c = est.B[0]; c.vx = c.vy = 0;
-          if (c.fora) { c.fora = false; c.x = CABECA.x; c.y = CABECA.y; while (!posicaoLivre(est.B, c.x, c.y)) c.x -= 2; }
+          if (c.fora) { c.fora = false; c.x = CABECA.x; c.y = CABECA.y; while (!posicaoLivre(est.B, c.x, c.y) && c.x > X0 + R + 2) c.x -= 2; }
+          cozinha = !!r.cozinha;
           fala(tr(r.motivo) + ' ' + (est.vez === 0 ? tr('Falta! Bola na mão para você.') : trf('Falta! Bola na mão para {0}.', O.nome)), 3200);
           if (quem === 1) quip('erra');
           mao = true;
         } else if (r.continua) {
-          if (!r.grupoNovo) fala(quem === 0 ? tr('Encaçapou! Joga de novo.') : trf('Vez de {0}', nomeQ));
+          if (r.mesaAberta) fala(tr(antesSaida ? 'Na saída a mesa continua aberta. Joga de novo.' : 'Caiu lisa e listrada: a mesa continua aberta.') + (quem === 0 ? '' : ' · ' + trf('Vez de {0}', nomeQ)), 3200);
+          else if (!r.grupoNovo) fala(quem === 0 ? tr('Encaçapou! Joga de novo.') : trf('Vez de {0}', nomeQ));
           if (quem === 1) quip('acerta');
           if (est.grupo[quem] && !restam(est.B, est.grupo[quem])) fala(tr('Agora é a 8!'));
         } else { est.vez = 1 - quem; if (quem === 1) { if (!quip('erra')) fala(tr('Sua vez')); } else fala(trf('Vez de {0}', O.nome)); }
@@ -445,12 +471,12 @@
       function proximaVez() {
         placar();
         if (est.vez === 0) {
-          if (mao) { fase = 'mao'; bOk.hidden = false; bTacar.hidden = true; bE.hidden = bD.hidden = true; if (performance.now() > +(msg.dataset.t || 0)) fala(tr('Bola na mão: toque na mesa para pôr a branca.')); mao = false; }
+          if (mao) { fase = 'mao'; bOk.hidden = false; bTacar.hidden = true; bE.hidden = bD.hidden = true; if (performance.now() > +(msg.dataset.t || 0)) fala(tr(cozinha ? 'Bola na mão atrás da linha: toque na mesa para pôr a branca.' : 'Bola na mão: toque na mesa para pôr a branca.')); mao = false; }
           else { fase = 'mirar'; bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false; if (performance.now() > +(msg.dataset.t || 0)) fala(tr('Sua vez')); }
-          const L = jogadas(est, 0); if (L.length && !est.saida) ang = L[0].ang;   // a mira começa numa jogada boa (como quem olha a mesa)
+          miraPadrao();                                                   // a mira começa sempre no mesmo lugar: quem acha a jogada é o jogador
         } else {
           fase = 'ia'; iaT = 0; bOk.hidden = true; bTacar.hidden = false; bE.hidden = bD.hidden = false;
-          if (mao) { maoIA(est, O); mao = false; }
+          if (mao) { maoIA(est, O, cozinha); mao = false; cozinha = false; }
           iaPlano = decidirIA(est, O); angIA = ang;
           if (performance.now() > +(msg.dataset.t || 0)) fala(trf('Vez de {0}', O.nome) + ' · ' + tr('pensando...'));
         }
@@ -458,7 +484,7 @@
       function terminar(venceu, desistiu, r) {
         if (fim) return; fim = { venceu, desistiu }; fase = 'resultado'; SOM.fim(venceu); placar();
         if (!desistiu) quip(venceu ? 'perde' : 'ganha');
-        setTimeout(() => cartaz(venceu ? tr('Você venceu!') : tr('Você perdeu...'), venceu ? (r && r.fim === 'perde' ? tr('A 8 caiu antes da hora!') : '') : (r && r.fim === 'perde' && est.vez === 0 ? tr('A 8 caiu antes da hora!') : trf('{0} venceu.', O.nome)), tr('Continuar'), () => sair()), desistiu ? 0 : 1400);
+        setTimeout(() => cartaz(venceu ? tr('Você venceu!') : tr('Você perdeu...'), venceu ? (r && r.motivo8 ? tr(r.motivo8) : '') : (r && r.motivo8 && est.vez === 0 ? tr(r.motivo8) : trf('{0} venceu.', O.nome)), tr('Continuar'), () => sair()), desistiu ? 0 : 1400);
       }
       function sair() {
         cancelAnimationFrame(rafId); window.removeEventListener('keydown', teclas, true); window.removeEventListener('keyup', teclas, true); window.removeEventListener('resize', ajustar); if (obsTam) obsTam.disconnect();
@@ -501,6 +527,7 @@
             g.fillStyle = cor; g.fillRect(x, y, s < 78 ? 1 : 2, s < 78 ? 1 : 2);
           }
         }
+        if (fase === 'mao' && est.vez === 0 && cozinha) { g.fillStyle = 'rgba(242,194,48,0.12)'; g.fillRect(X0, Y0, Math.round(CABECA.x) - X0 + 1, Y1 - Y0); g.fillStyle = 'rgba(242,194,48,0.7)'; for (let y = Y0; y < Y1; y += 3) g.fillRect(Math.round(CABECA.x), y, 1, 2); }   // a cozinha
         if (fase === 'mao' && est.vez === 0) { g.strokeStyle = 'rgba(242,194,48,0.9)'; g.beginPath(); g.arc(Math.round(c.x) + 0.5, Math.round(c.y) + 0.5, R + 2.5, 0, Math.PI * 2); g.stroke(); }
       }
       // o 1.º toque da branca andando em linha reta (para a mira): t = distância percorrida; b = a bola (ou null = tabela)
