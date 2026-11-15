@@ -35,7 +35,25 @@
   }
   function trofeu(tipo, cores) {
     const L = new Lote(); let base = 0.09, baseH = 0.05, extra = null;
-    if (tipo === 'serieb') {
+    if (tipo === 'seriea') {                                                     // (7.3.0) a taça da Série A: maior, toda dourada, base preta de mármore
+      L.caixa(0.32, 0.1, 0.32, COR.preto, 0, 0.05, 0); L.caixa(0.325, 0.016, 0.325, COR.ouro, 0, 0.1, 0);
+      L.caixa(0.006, 0.05, 0.16, COR.ouro3, 0.161, 0.05, 0);
+      L.caixa(0.22, 0.07, 0.22, COR.ouro2, 0, 0.143, 0); L.caixa(0.15, 0.05, 0.15, COR.ouro, 0, 0.203, 0);
+      L.caixa(0.08, 0.18, 0.08, COR.ouro, 0, 0.318, 0); L.caixa(0.14, 0.04, 0.14, COR.ouro2, 0, 0.428, 0);
+      L.caixa(0.2, 0.05, 0.2, COR.ouro, 0, 0.473, 0); L.caixa(0.34, 0.2, 0.34, COR.ouro, 0, 0.598, 0); L.caixa(0.36, 0.03, 0.36, COR.ouro3, 0, 0.713, 0);
+      L.caixa(0.22, 0.03, 0.22, COR.ouro2, 0, 0.743, 0); L.caixa(0.09, 0.07, 0.09, COR.ouro3, 0, 0.793, 0);
+      alcas(L, 0.17, 0.26, 0.52, 0.68, COR.ouro2, 0.04);
+      const c1 = hexN((cores && cores[0]) || '#2a72d6'), c2 = hexN((cores && cores[1]) || '#f4f4f0');
+      for (const s of [-1, 1]) { L.caixa(0.012, 0.24, 0.05, c1, 0.02, 0.42, s * 0.262); L.caixa(0.012, 0.22, 0.05, c2, -0.02, 0.43, s * 0.262); }
+      base = 0.16; baseH = 0.1;
+    } else if (tipo === 'cdb') {                                                 // (7.3.0) a Copa do Brasil: dourada, com as fitas verde e amarela
+      L.caixa(0.24, 0.09, 0.24, COR.marmore, 0, 0.045, 0); L.caixa(0.006, 0.04, 0.13, COR.ouro3, 0.121, 0.045, 0);
+      L.caixa(0.17, 0.05, 0.17, COR.ouro2, 0, 0.115, 0); L.caixa(0.065, 0.17, 0.065, COR.ouro, 0, 0.225, 0); L.caixa(0.12, 0.035, 0.12, COR.ouro2, 0, 0.327, 0);
+      L.caixa(0.17, 0.05, 0.17, COR.ouro, 0, 0.37, 0); L.caixa(0.28, 0.17, 0.28, COR.ouro, 0, 0.48, 0); L.caixa(0.3, 0.025, 0.3, COR.ouro3, 0, 0.577, 0);
+      alcas(L, 0.14, 0.22, 0.42, 0.56, COR.ouro2, 0.032);
+      for (const s of [-1, 1]) { L.caixa(0.012, 0.2, 0.045, 0x1f8a3a, 0.02, 0.36, s * 0.225); L.caixa(0.012, 0.18, 0.045, 0xf2c230, -0.02, 0.37, s * 0.225); }
+      base = 0.12; baseH = 0.09;
+    } else if (tipo === 'serieb') {
       L.caixa(0.28, 0.09, 0.28, COR.marmore, 0, 0.045, 0); L.caixa(0.285, 0.016, 0.285, COR.ouro, 0, 0.09, 0);
       L.caixa(0.006, 0.04, 0.14, COR.ouro3, 0.141, 0.045, 0);
       L.caixa(0.2, 0.06, 0.2, COR.prata2, 0, 0.128, 0); L.caixa(0.14, 0.05, 0.14, COR.ouro, 0, 0.183, 0);
@@ -70,7 +88,7 @@
   }
   // os prêmios individuais: bola de ouro (art), chuteira de ouro (ass) e jogadorzinho de ouro (melhor)
   function premio(tipo, nivel) {
-    const L = new Lote(), grande = nivel === 'serieb', k = grande ? 1.3 : 1, extra = [];
+    const L = new Lote(), grande = nivel === 'serieb' || nivel === 'seriea', k = grande ? 1.3 : 1, extra = [];
     const bw = (grande ? 0.16 : 0.12), bh = grande ? 0.08 : 0.05;
     L.caixa(bw, bh, bw, grande ? COR.marmore : COR.preto, 0, bh / 2, 0);
     if (grande) { L.caixa(bw + 0.006, 0.014, bw + 0.006, COR.ouro, 0, bh, 0); L.caixa(0.005, 0.03, bw * 0.6, COR.ouro3, bw / 2 + 0.003, bh / 2, 0); L.caixa(bw * 0.7, 0.04, bw * 0.7, COR.marmore2, 0, bh + 0.02, 0); }
@@ -356,7 +374,7 @@
   const NOME_OBJ = { art: 'a bola de ouro', ass: 'a chuteira de ouro', melhor: 'o jogadorzinho de ouro' };
   function texCanvas2(w, h, fn) { const c = document.createElement('canvas'); c.width = w; c.height = h; fn(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.userData = { c }; return t; }
   function montarPalco(nivel, titulo) {
-    const g = new THREE.Group(), grande = nivel === 'serieb', fundo1 = grande ? '#0a1838' : '#2a1206', fundo2 = grande ? '#1d3a7a' : '#6a3a12', destaque = grande ? '#f2c230' : '#f0a020';
+    const g = new THREE.Group(), grande = nivel === 'serieb' || nivel === 'seriea', fundo1 = grande ? '#0a1838' : '#2a1206', fundo2 = grande ? '#1d3a7a' : '#6a3a12', destaque = grande ? '#f2c230' : '#f0a020';
     const L = new Lote();
     L.caixa(9, 0.3, 4.2, 0x14141a, 0, 0.15, 0);                                   // o palco
     L.caixa(9.02, 0.04, 0.04, hexN(destaque), 0, 0.3, 2.1);                      // a borda acesa
@@ -416,7 +434,7 @@
     try {
       corta({ p: [0, 1.35, 6.4], p2: [0, 1.35, 5.7], t: [0, 1.35, -0.5], dur: 4 });   // reto, na altura do peito: o título lá em cima e a apresentadora acima da caixa de fala
       await io.preto(false, 700);
-      await fala(apr, T('Apresentadora'), o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação da Série B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
+      await fala(apr, T('Apresentadora'), o.nivel === 'seriea' ? T('Boa noite! Bem-vindos à festa de premiação da Série A!') : o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação da Série B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
       await fala(apr, T('Apresentadora'), T('Chegou a hora dos prêmios individuais. Vamos lá!'), 0);
       for (const P of o.premios) {
         if (!P) continue;
@@ -467,6 +485,7 @@
   // ============================================================================================ TEXTOS (pt → en, es, it, fr)
   const TRAD = {
     "Apresentadora": ["Host", "Presentadora", "Presentatrice", "Présentatrice"],
+    "Boa noite! Bem-vindos à festa de premiação da Série A!": ["Good evening! Welcome to the Série A awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série A!", "Buonasera! Benvenuti alla serata di premiazione della Série A!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série A !"],
     "Boa noite! Bem-vindos à festa de premiação da Série B!": ["Good evening! Welcome to the Série B awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série B!", "Buonasera! Benvenuti alla serata di premiazione della Série B!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série B !"],
     "Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!": ["Good evening! Welcome to the Amateur Tournament awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios del Campeonato de Barrio!", "Buonasera! Benvenuti alla serata di premiazione del Torneo dei Dilettanti!", "Bonsoir ! Bienvenue à la soirée des trophées du Championnat Amateur !"],
     "Chegou a hora dos prêmios individuais. Vamos lá!": ["It's time for the individual awards. Here we go!", "Llegó la hora de los premios individuales. ¡Vamos allá!", "È arrivato il momento dei premi individuali. Si comincia!", "C'est l'heure des trophées individuels. C'est parti !"],

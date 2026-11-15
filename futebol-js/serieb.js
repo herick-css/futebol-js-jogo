@@ -19,8 +19,14 @@
    - A CONFIANÇA DO TÉCNICO (0 a 100, começa em 20): +1 por hábito cumprido e −1 por hábito não cumprido; jogo bom (nota 7+; 6,5+ para quem entrou com menos de 45 minutos) +3,
      jogo ruim ou faltar −3. Abaixo de 50: começa no banco (assiste e entra no 2º tempo; mais confiança = entra mais cedo). Ao chegar
      em 50: a primeira chance de titular (nota 8+ mantém, senão volta para o banco). De 80 para cima: sempre titular.
-   - A TEMPORADA: Série B de 38 rodadas (todos contra todos, ida e volta), Copa Estadual (4 times) e Copa Regional (8 times),
-     mata-mata em jogo único. Sobem 4; ninguém cai. Tudo fica em historia.cidade.pro.
+   - A TEMPORADA: Série B de 38 rodadas (todos contra todos, ida e volta; vitória 3, empate 1, derrota 0), Copa Estadual (4 times)
+     e Copa Regional (8 times), mata-mata em jogo único. Tudo fica em historia.cidade.pro.
+   - (7.3.0) A SÉRIE A: 20 paródias dos clubes da Série A de 2026 (TIMES_A, escudos 32x32 em EMB_A), com a força tirada dos últimos
+     10 anos (2016 a 2025: posição, gols e a tendência). A Série A é simulada junto (mesmas rodadas, gols, assistências e notas).
+     No fim da temporada sobem os 4 primeiros da B (nivelados com 3★ ou 2★ na A) e caem os 4 últimos da A, e começa a próxima
+     temporada (o time do jogador pode subir e cair). A Copa do Brasil (32 times: os 20 da A e os 12 mais fortes da B) entra no
+     calendário; Estadual e Regional passam a misturar as duas séries. Nos jogos entre séries as estrelas da A valem o dobro na tela.
+     A classificação (Série A, Série B, copas e artilharia) abre antes de cada jogo e no app Carreira do computador.
    ===================================================================================================================== */
 (() => {
   'use strict';
@@ -110,8 +116,73 @@
       uni: ['#3a9ad8', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#3a9ad8', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#3a9ad8', '#3a9ad8', '#3a9ad8', '#f4f4f0', '#3a9ad8', '#1c1c1f'],
       hist: [['B', 19, 31, 58, 38], ['C', 7, 24, 21, 19], ['C', 4, 27, 19, 19]] },
   ];
+  // ============================================================================================ (7.3.0) OS 20 TIMES DA SÉRIE A (paródias)
+  //   hist: os últimos 10 anos (2016 a 2025), no mesmo formato da Série B: [divisão, posição, gols feitos, gols sofridos, jogos]
+  //   (Séries C e D: só a posição). Fonte: as tabelas finais dos Brasileirões A e B de 2016 a 2025.
+  const TIMES_A = [
+    { k: 'urubu', nome: 'Urubu da Gávea FC', sigla: 'UGF', uf: 'RJ', reg: 'SE', tecnico: 'Mister Anacleto', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Elenco caro: troca passes no campo do rival e sufoca com pressão alta.',
+      uni: ['#c8202e', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#c8202e', '#1c1c1f', '#2a72d6'], uni2: ['#f4f4f0', '#c8202e', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#c8202e', '#1c1c1f'],
+      hist: [['A', 3, 52, 35, 38], ['A', 6, 49, 38, 38], ['A', 2, 59, 29, 38], ['A', 1, 86, 37, 38], ['A', 1, 68, 48, 38], ['A', 2, 69, 36, 38], ['A', 5, 60, 39, 38], ['A', 4, 56, 42, 38], ['A', 3, 61, 42, 38], ['A', 1, 78, 27, 38]] },
+    { k: 'periquito', nome: 'Periquito da Pompeia', sigla: 'PDP', uf: 'SP', reg: 'SE', tecnico: 'Mister Arnaldo', formacao: '4-2-3-1', tatica: 'contra', estilo: 'Compacto e frio: defende bem, rouba no meio e mata na transição.',
+      uni: ['#0b6b3a', '#0b6b3a', '#f4f4f0', '#f4f4f0', '#0b6b3a', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#0b6b3a', '#0b6b3a', '#0b6b3a', '#f4f4f0', '#0b6b3a', '#1c1c1f'],
+      hist: [['A', 1, 62, 32, 38], ['A', 2, 61, 45, 38], ['A', 1, 64, 26, 38], ['A', 3, 61, 32, 38], ['A', 7, 51, 37, 38], ['A', 3, 58, 43, 38], ['A', 1, 66, 27, 38], ['A', 1, 64, 33, 38], ['A', 2, 60, 33, 38], ['A', 2, 66, 33, 38]] },
+    { k: 'raposa', nome: 'Raposa Celeste EC', sigla: 'RCE', uf: 'MG', reg: 'SE', tecnico: 'Professor Tadeu', formacao: '4-4-2', tatica: 'contra', estilo: 'Defesa sólida e meio-campo paciente: decide nos detalhes.',
+      uni: ['#1d4fb0', '#1d4fb0', '#f4f4f0', '#f4f4f0', '#1d4fb0', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1d4fb0', '#1d4fb0', '#1d4fb0', '#f4f4f0', '#1d4fb0', '#f2c230'],
+      hist: [['A', 12, 48, 49, 38], ['A', 5, 47, 39, 38], ['A', 8, 34, 34, 38], ['A', 17, 27, 46, 38], ['B', 11, 39, 32, 38], ['B', 14, 42, 44, 38], ['B', 1, 57, 26, 38], ['A', 14, 35, 32, 38], ['A', 9, 43, 41, 38], ['A', 3, 55, 31, 38]] },
+    { k: 'leaocaipira', nome: 'Leão Caipira FC', sigla: 'LCF', uf: 'SP', reg: 'SE', tecnico: 'Professor Belarmino', formacao: '4-3-3', tatica: 'aerea', estilo: 'Intenso: jogo direto, muita bola parada e força pelo alto.',
+      uni: ['#f2c230', '#127a3a', '#127a3a', '#127a3a', '#f2c230', '#127a3a', '#1d4fa0'], uni2: ['#127a3a', '#f2c230', '#f2c230', '#f4f4f0', '#127a3a', '#f2c230', '#1d4fa0'],
+      hist: [['D', 20, 0, 0, 0], ['D', 20, 0, 0, 0], ['D', 12, 0, 0, 0], ['D', 20, 0, 0, 0], ['D', 1, 0, 0, 0], ['C', 16, 0, 0, 0], ['C', 1, 0, 0, 0], ['B', 6, 42, 31, 38], ['B', 2, 42, 26, 38], ['A', 4, 63, 39, 38]] },
+    { k: 'laranjeiras', nome: 'Tricolor das Laranjeiras FC', sigla: 'TDL', uf: 'RJ', reg: 'SE', tecnico: 'Dona Heloísa', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Toque curto e aproximação: o famoso jogo apoiado.',
+      uni: ['#7a1f2b', '#0f6b3a', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#7a1f2b', '#1c1c1f'], uni2: ['#f4f4f0', '#7a1f2b', '#0f6b3a', '#7a1f2b', '#f4f4f0', '#0f6b3a', '#1c1c1f'],
+      hist: [['A', 13, 45, 45, 38], ['A', 14, 50, 53, 38], ['A', 12, 32, 46, 38], ['A', 14, 38, 46, 38], ['A', 5, 55, 42, 38], ['A', 7, 38, 38, 38], ['A', 3, 63, 41, 38], ['A', 7, 51, 47, 38], ['A', 13, 33, 39, 38], ['A', 5, 50, 39, 38]] },
+    { k: 'glorioso', nome: 'Glorioso da Estrela FR', sigla: 'GEF', uf: 'RJ', reg: 'SE', tecnico: 'Seu Artur', formacao: '4-3-3', tatica: 'contra', estilo: 'Vertical e rápido: rouba a bola e acelera pelas pontas.',
+      uni: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#f2c230'],
+      hist: [['A', 5, 43, 39, 38], ['A', 10, 45, 42, 38], ['A', 9, 38, 46, 38], ['A', 15, 31, 45, 38], ['A', 20, 32, 62, 38], ['B', 1, 56, 31, 38], ['A', 11, 41, 43, 38], ['A', 5, 58, 37, 38], ['A', 1, 59, 29, 38], ['A', 6, 58, 38, 38]] },
+    { k: 'esquadrao', nome: 'Esquadrão da Boa Terra', sigla: 'EBT', uf: 'BA', reg: 'NE', tecnico: 'Mestre Caetano', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Gosta da bola: posse longa no campo de ataque.',
+      uni: ['#f4f4f0', '#1f5bc4', '#c8202e', '#1f5bc4', '#f4f4f0', '#c8202e', '#1c1c1f'], uni2: ['#1f5bc4', '#c8202e', '#f4f4f0', '#1f5bc4', '#1f5bc4', '#f4f4f0', '#1c1c1f'],
+      hist: [['B', 4, 57, 34, 38], ['A', 12, 50, 48, 38], ['A', 11, 39, 41, 38], ['A', 11, 44, 43, 38], ['A', 14, 48, 59, 38], ['A', 18, 42, 51, 38], ['B', 3, 43, 29, 38], ['A', 16, 50, 53, 38], ['A', 8, 49, 49, 38], ['A', 7, 50, 47, 38]] },
+    { k: 'morumbi', nome: 'Tricolor do Morumbi', sigla: 'TDM', uf: 'SP', reg: 'SE', tecnico: 'Seu Hernani', formacao: '3-5-2', tatica: 'falso9', estilo: 'Meio-campo cheio e um 9 que volta para armar.',
+      uni: ['#f4f4f0', '#c8202e', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#c8202e', '#1d4fa0'], uni2: ['#c8202e', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#c8202e', '#f4f4f0', '#1d4fa0'],
+      hist: [['A', 10, 44, 36, 38], ['A', 13, 48, 49, 38], ['A', 5, 46, 34, 38], ['A', 6, 39, 30, 38], ['A', 4, 59, 41, 38], ['A', 13, 31, 39, 38], ['A', 9, 55, 42, 38], ['A', 11, 40, 38, 38], ['A', 6, 53, 43, 38], ['A', 8, 43, 47, 38]] },
+    { k: 'imortal', nome: 'Imortal Tricolor FBPA', sigla: 'ITG', uf: 'RS', reg: 'S', tecnico: 'Mister Osório', formacao: '4-2-3-1', tatica: 'contra', estilo: 'Raça e transição rápida: cresce nos jogos grandes.',
+      uni: ['#2a7fd6', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#f4f4f0', '#2a7fd6', '#f2c230'], uni2: ['#f4f4f0', '#2a7fd6', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#2a7fd6', '#f2c230'],
+      hist: [['A', 9, 41, 44, 38], ['A', 4, 55, 36, 38], ['A', 4, 48, 27, 38], ['A', 4, 64, 39, 38], ['A', 6, 53, 40, 38], ['A', 17, 44, 51, 38], ['B', 2, 50, 26, 38], ['A', 2, 63, 56, 38], ['A', 14, 44, 50, 38], ['A', 9, 47, 50, 38]] },
+    { k: 'touro', nome: 'Touro de Bragança EC', sigla: 'TBR', uf: 'SP', reg: 'SE', tecnico: 'Professor Hans', formacao: '4-3-3', tatica: 'contra', estilo: 'Pressão alta e jogo vertical, sem medo de ninguém.',
+      uni: ['#f4f4f0', '#d01c2a', '#d01c2a', '#d01c2a', '#f4f4f0', '#d01c2a', '#1c1c1f'], uni2: ['#d01c2a', '#f4f4f0', '#f4f4f0', '#d01c2a', '#d01c2a', '#f4f4f0', '#1c1c1f'],
+      hist: [['B', 19, 30, 54, 38], ['C', 8, 0, 0, 0], ['C', 3, 0, 0, 0], ['B', 1, 64, 27, 38], ['A', 10, 50, 40, 38], ['A', 6, 55, 46, 38], ['A', 14, 49, 59, 38], ['A', 6, 49, 35, 38], ['A', 16, 44, 48, 38], ['A', 10, 45, 57, 38]] },
+    { k: 'galo', nome: 'Galo Alvinegro de Minas', sigla: 'GAM', uf: 'MG', reg: 'SE', tecnico: 'Seu Juscelino', formacao: '4-4-2', tatica: 'aerea', estilo: 'Muita força pelo alto e um centroavante matador.',
+      uni: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#f2c230'], uni2: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'],
+      hist: [['A', 4, 61, 53, 38], ['A', 9, 52, 49, 38], ['A', 6, 56, 43, 38], ['A', 13, 45, 49, 38], ['A', 3, 64, 45, 38], ['A', 1, 67, 34, 38], ['A', 7, 45, 37, 38], ['A', 3, 52, 32, 38], ['A', 12, 47, 54, 38], ['A', 11, 43, 44, 38]] },
+    { k: 'peixe', nome: 'Peixe da Vila FC', sigla: 'PVF', uf: 'SP', reg: 'SE', tecnico: 'Seu Afonso', formacao: '4-3-3', tatica: 'falso9', estilo: 'Ataque leve e driblador; a defesa sofre.',
+      uni: ['#f4f4f0', '#f4f4f0', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1d4fa0'], uni2: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1d4fa0'],
+      hist: [['A', 2, 59, 35, 38], ['A', 3, 42, 32, 38], ['A', 10, 46, 40, 38], ['A', 2, 60, 33, 38], ['A', 8, 52, 51, 38], ['A', 10, 35, 40, 38], ['A', 12, 44, 41, 38], ['A', 17, 39, 64, 38], ['B', 1, 57, 32, 38], ['A', 12, 45, 50, 38]] },
+    { k: 'timao', nome: 'Timão do Povo SC', sigla: 'TPS', uf: 'SP', reg: 'SE', tecnico: 'Seu Brandão', formacao: '4-4-2', tatica: 'retranca', estilo: 'Muita marcação e jogo de raça: vence apertado.',
+      uni: ['#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#c8352b'], uni2: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#c8352b'],
+      hist: [['A', 7, 48, 42, 38], ['A', 1, 50, 30, 38], ['A', 13, 34, 35, 38], ['A', 8, 42, 34, 38], ['A', 12, 45, 45, 38], ['A', 5, 40, 36, 38], ['A', 4, 44, 36, 38], ['A', 13, 47, 48, 38], ['A', 7, 54, 45, 38], ['A', 13, 42, 47, 38]] },
+    { k: 'colina', nome: 'Gigante da Colina CR', sigla: 'GCR', uf: 'RJ', reg: 'SE', tecnico: 'Professor Fernão', formacao: '4-2-3-1', tatica: 'aerea', estilo: 'Faz muitos gols, mas leva muitos também.',
+      uni: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#2a72d6'], uni2: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#2a72d6'],
+      hist: [['B', 3, 54, 41, 38], ['A', 7, 40, 47, 38], ['A', 16, 41, 48, 38], ['A', 12, 39, 45, 38], ['A', 17, 37, 56, 38], ['B', 10, 43, 52, 38], ['B', 4, 48, 36, 38], ['A', 15, 41, 51, 38], ['A', 10, 43, 56, 38], ['A', 14, 55, 60, 38]] },
+    { k: 'leaodabarra', nome: 'Leão da Barra EC', sigla: 'LDB', uf: 'BA', reg: 'NE', tecnico: 'Mestre Gilberto', formacao: '5-3-2', tatica: 'retranca', estilo: 'Fecha atrás e luta por cada bola.',
+      uni: ['#c8202e', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#c8202e', '#f2c230'], uni2: ['#f4f4f0', '#c8202e', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#c8202e', '#f2c230'],
+      hist: [['A', 16, 51, 53, 38], ['A', 16, 50, 58, 38], ['A', 19, 36, 63, 38], ['B', 12, 42, 48, 38], ['B', 14, 45, 45, 38], ['B', 18, 31, 32, 38], ['C', 2, 0, 0, 0], ['B', 1, 50, 31, 38], ['A', 11, 45, 52, 38], ['A', 15, 35, 52, 38]] },
+    { k: 'saci', nome: 'Saci Colorado SC', sigla: 'SCS', uf: 'RS', reg: 'S', tecnico: 'Professor Abelardo', formacao: '4-2-3-1', tatica: 'contra', estilo: 'Equilibrado, mas oscila: alterna grandes jogos e tropeços.',
+      uni: ['#d0181f', '#d0181f', '#f4f4f0', '#f4f4f0', '#d0181f', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#d0181f', '#d0181f', '#d0181f', '#f4f4f0', '#d0181f', '#1c1c1f'],
+      hist: [['A', 17, 35, 41, 38], ['B', 2, 54, 26, 38], ['A', 3, 51, 29, 38], ['A', 7, 44, 39, 38], ['A', 2, 61, 35, 38], ['A', 12, 44, 42, 38], ['A', 2, 58, 31, 38], ['A', 9, 46, 45, 38], ['A', 5, 53, 36, 38], ['A', 16, 44, 57, 38]] },
+    { k: 'coxa', nome: 'Coxa do Alto da Glória', sigla: 'CAG', uf: 'PR', reg: 'S', tecnico: 'Seu Moacir', formacao: '4-4-2', tatica: 'retranca', estilo: 'Defesa forte: subiu sofrendo pouquíssimos gols.',
+      uni: ['#f4f4f0', '#0a6b34', '#0a6b34', '#1c1c1f', '#f4f4f0', '#0a6b34', '#f2c230'], uni2: ['#0a6b34', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#0a6b34', '#f4f4f0', '#f2c230'],
+      hist: [['A', 15, 41, 42, 38], ['A', 17, 42, 51, 38], ['B', 10, 40, 44, 38], ['B', 3, 48, 34, 38], ['A', 19, 31, 54, 38], ['B', 3, 49, 35, 38], ['A', 15, 39, 60, 38], ['A', 19, 41, 73, 38], ['B', 12, 41, 44, 38], ['B', 1, 39, 23, 38]] },
+    { k: 'furacao', nome: 'Furacão da Baixada', sigla: 'FDB', uf: 'PR', reg: 'S', tecnico: 'Mister Augusto', formacao: '4-3-3', tatica: 'contra', estilo: 'Intenso e vertical, joga com o estádio fervendo.',
+      uni: ['#c8202e', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#c8202e', '#1c1c1f', '#f4f4f0'], uni2: ['#f4f4f0', '#c8202e', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#c8202e', '#1c1c1f'],
+      hist: [['A', 6, 38, 32, 38], ['A', 11, 45, 43, 38], ['A', 7, 54, 37, 38], ['A', 5, 51, 32, 38], ['A', 9, 38, 36, 38], ['A', 14, 41, 45, 38], ['A', 6, 48, 48, 38], ['A', 8, 51, 43, 38], ['A', 17, 40, 46, 38], ['B', 2, 53, 43, 38]] },
+    { k: 'verdaooeste', nome: 'Verdão do Oeste AF', sigla: 'VDO', uf: 'SC', reg: 'S', tecnico: 'Seu Ivanor', formacao: '4-4-2', tatica: 'contra', estilo: 'Unido e aguerrido: compete com o coração.',
+      uni: ['#0e7a3e', '#0e7a3e', '#f4f4f0', '#f4f4f0', '#0e7a3e', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#0e7a3e', '#0e7a3e', '#0e7a3e', '#f4f4f0', '#0e7a3e', '#1c1c1f'],
+      hist: [['A', 11, 49, 56, 38], ['A', 8, 47, 49, 38], ['A', 14, 34, 50, 38], ['A', 19, 31, 52, 38], ['B', 1, 42, 21, 38], ['A', 20, 27, 67, 38], ['B', 14, 37, 39, 38], ['B', 16, 38, 43, 38], ['B', 15, 34, 45, 38], ['B', 3, 52, 35, 38]] },
+    { k: 'leaoazul', nome: 'Leão Azul da Amazônia', sigla: 'LAA', uf: 'PA', reg: 'N', tecnico: 'Professor Sabino', formacao: '4-3-3', tatica: 'aerea', estilo: 'Torcida gigante empurra; aposta no cruzamento.',
+      uni: ['#14234a', '#14234a', '#f4f4f0', '#14234a', '#14234a', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#14234a', '#14234a', '#f4f4f0', '#f4f4f0', '#14234a', '#f2c230'],
+      hist: [['C', 10, 0, 0, 0], ['C', 9, 0, 0, 0], ['C', 11, 0, 0, 0], ['C', 9, 0, 0, 0], ['C', 3, 0, 0, 0], ['B', 17, 31, 42, 38], ['C', 10, 0, 0, 0], ['C', 6, 0, 0, 0], ['C', 3, 0, 0, 0], ['B', 4, 51, 39, 38]] },
+  ];
   const IDX = {}; TIMES_B.forEach((t, i) => { IDX[t.k] = i; });
-  const NOME_REG = { NE: 'Nordeste', SE: 'Sudeste', S: 'Sul', CO: 'Centro-Oeste' };
+  const NOME_REG = { NE: 'Nordeste', SE: 'Sudeste', S: 'Sul', CO: 'Centro-Oeste', N: 'Norte' };
   const NOME_TATICA = { tikitaka: 'Toque de bola', falso9: 'Falso 9', retranca: 'Retranca', contra: 'Contra-ataque', aerea: 'Bola aérea' };
 
   // ---- A FORÇA PELOS 3 ANOS: posição na escada das divisões (A 1–20, B 21–40, C 41–60, D 61+), gols por jogo com o peso da
@@ -140,6 +211,42 @@
     ord.forEach((ti, pos) => { TIMES_B[ti].forcaPos = pos + 1; TIMES_B[ti].faixa = pos < 7 ? 'bom' : pos < 14 ? 'medio' : 'ruim'; });
   })();
   const timesDaFaixa = (f) => TIMES_B.filter((t) => t.faixa === f);
+  TIMES_B.forEach((t) => { t.div0 = 'B'; });
+
+  // ---- (7.3.0) A FORÇA DA SÉRIE A PELOS ÚLTIMOS 10 ANOS. O padrão que aparece nas tabelas de 2016 a 2025:
+  //   · a posição na escada das divisões (A 1–20, B 21–40, C 41–60, D 61–80) é o que mais pesa, com os anos recentes valendo mais
+  //     (pesos de 2016 a 2025: 3, 4, 5, 6, 8, 9, 11, 13, 17 e 24%): quem foi campeão há 8 anos e caiu depois não é favorito hoje;
+  //   · gols feitos e sofridos por jogo, com o peso da divisão (fazer gol na A vale mais; sofrer na B/C pesa mais);
+  //   · a TENDÊNCIA (média dos 3 últimos anos menos a dos 7 anteriores): quem vem subindo forte (o Leão Caipira saiu da Série D
+  //     para o 4º lugar da A) ganha um empurrão, quem vem caindo perde.
+  //   ov = 0,45 × posição + 0,2 × ataque + 0,2 × defesa + 0,15 × tendência (tudo normalizado entre os 20).
+  //   A escala de habilidade da Série A fica ACIMA da da B: setores de 8,0 a 9,4 (Série B: 6,05 a 7,8).
+  const BASE_A = [8.0, 1.4], BASE_B = [6.05, 1.75];
+  const estrelasA = (ov) => (ov >= 0.85 ? 5 : ov >= 0.6 ? 4 : ov >= 0.42 ? 3 : ov >= 0.2 ? 2 : 1);
+  (function calcularForcaA() {
+    const W = [0.03, 0.04, 0.05, 0.06, 0.08, 0.09, 0.11, 0.13, 0.17, 0.24], OFF = { A: 0, B: 20, C: 40, D: 60 }, AJ = { A: [1.2, 0.85], B: [1, 1], C: [0.82, 1.2], D: [0.7, 1.3] };
+    const raw = TIMES_A.map((t) => {
+      let r = 0, a = 0, d = 0, wa = 0; const esc = [];
+      t.hist.forEach(([div, p, gf, ga, n], i) => {
+        const e = 1 - (OFF[div] + p - 1) / 79; esc.push(e); r += W[i] * e;
+        if (n) { const [fa, fd] = AJ[div]; a += W[i] * gf / n * fa; d += W[i] * ga / n * fd; wa += W[i]; }
+      });
+      const tend = esc.slice(-3).reduce((s, x) => s + x, 0) / 3 - esc.slice(0, 7).reduce((s, x) => s + x, 0) / 7;
+      return { r, a: a / wa, d: d / wa, tend };
+    });
+    const norm = (k, inv) => { const v = raw.map((x) => x[k]), lo = Math.min(...v), hi = Math.max(...v); return v.map((x) => (inv ? hi - x : x - lo) / (hi - lo)); };
+    const R = norm('r'), A = norm('a'), D = norm('d', true), TD = norm('tend');
+    const ov0 = TIMES_A.map((t, i) => 0.45 * R[i] + 0.2 * A[i] + 0.2 * D[i] + 0.15 * TD[i]), lo = Math.min(...ov0), hi = Math.max(...ov0);
+    TIMES_A.forEach((t, i) => {
+      t.div0 = 'A'; t.ov = (ov0[i] - lo) / (hi - lo); t.atk = A[i]; t.def = D[i]; t.rank = R[i]; t.tend = TD[i];
+      t.gpj = r1(raw[i].a * 100) / 100; t.gsj = r1(raw[i].d * 100) / 100;
+      const base = BASE_A[0] + t.ov * BASE_A[1];
+      t.setores = { gk: r1(base + (D[i] - 0.5) * 0.7), def: r1(base + (D[i] - 0.5) * 0.9), mid: r1(base + (R[i] - 0.5) * 0.5), fwd: r1(base + (A[i] - 0.5) * 0.9) };
+      t.estrelas = estrelasA(t.ov); t.faixa = 'A';
+    });
+  })();
+  // o nível de fábrica de cada time (para voltar a ele numa temporada nova)
+  for (const t of TIMES_B.concat(TIMES_A)) { t.setores0 = Object.assign({}, t.setores); t.estrelas0 = t.estrelas; }
 
   // ============================================================================================ OS EMBLEMAS (pixel art 32x32)
   const EMB_B = {
@@ -184,6 +291,50 @@
     tubarao: { pal: ['#1a1208', '#f4f4f0', '#71b6e3', '#3a9ad8', '#8c9aa8', '#2b72a0', '#ffffff', '#e8eef2', '#1d5fb0', '#5c8cc6', '#154682', '#f7f7f4', '#979795', '#d2d2ce'],
       px: '................................|................................|...aaaaaaaaaaaaaaaaaaaaaaaaaa...|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccccccccacccccccccccdba...|...abcdddddddaeaddddddddddfba...|...abcddddddaeeaddddddddddfba...|...abcdddddaeeeaaaadddddddfba...|...abcddaaaeeeeeeeeaaaddddfba...|...abcdaeeeeeeeeeeeeeeaaddfba...|...abcaeaeeeeeeeeeeeeeeeaafba...|...abcaeeeeeeeeeeeeeeeeeeafba...|...abcdagagaghhhhhhhhhhaadfba...|...abcddaaaaaaaaaaaaaaadddfba...|...abcddddddddddddddddddddfba...|...abggiiggiiggiiggiiggiiggba...|...abjiiiiiiiiiiiiiiiiiiiikba...|...abjiggiiggiiggiiggiiggikba...|...abjiiiiiiiiiiiiiiiiiiiikba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..allllllliiililliliiillllllla..|aaabbbbbbbbibbiibibibbbbbbbbbaaa|amabbbbbbbbibbiiiibiibbbbbbbbama|amabbbbbbbbibbibiibibbbbbbbbbama|.aannnnnnnninninnininnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbiiiiiiiiiibbaaa...ama|aaa.....aabbbkkiikkbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
   };
+  // (7.3.0) os escudos da Série A (pixel art 32x32, mesmo padrão: contorno, faixa com a sigla e a ponta)
+  const EMB_A = {
+    urubu: { pal: ['#1a1208', '#f4f4f0', '#d65862', '#c8202e', '#9c1924', '#505051', '#151517', '#101012', '#55555c', '#d8d0c8', '#f2c230', '#d8636d', '#74131b', '#a01a25'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccccccaaaaaaaacccccccba...|...abcddddaabbbbbbbbaaddddeba...|...abfgggabbbbbbbbbbbbaggghba...|...abfggabbbbbbiibbbbbbagghba...|...abcdabbbbbbiiijbbbbbbadeba...|...abcdabbgbbbikijjbbgbbadeba...|...abfgabgggbbgiibjbgggbaghba...|...abfgabggggggggggggggbaghba...|...abcdabbggggggggggggbbadeba...|...abcdabbbggggggggggbbbadeba...|...abfggabbbbggggggbbbbagghba...|...abfgggabbbbgbbgbbbbaggghba...|...abcddddaabbbbbbbbaaddddeba...|...abcddddddaaaaaaaaddddddeba...|...abfgggggggggggggggggggghba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..alllllllblbllbblbbblllllllla..|aaadddddddbdbdbdddbddddddddddaaa|amadddddddbdbdbdbdbbdddddddddama|amadddddddbdbdbdbdbddddddddddama|.aannnnnnnbbbnnbbnbnnnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbggggggggggbbaaa...ama|aaa.....aabbbddggddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    periquito: { pal: ['#1a1208', '#f4f4f0', '#48906b', '#0b6b3a', '#3cc46a', '#09532d', '#151517', '#f2c230', '#1f8a3a', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#084b29'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbccccbbbaa.........|........abbcccddddcccbba........|.......abccdaaaaaaaadccba.......|......abcdaabbbbbbbbaadcba......|.....abcdabbbbeeebbbbbadcba.....|....abcdabbbbeeeeeebbbbadcba....|....abcabbbbeeeeeeeebbbbafba....|...abcdabbbeeeeebgeehhbbadcba...|...abcdabbeeeeeeggeehhhbadfba...|...abcdabbeeeeeeeeeebhhbadfba...|...abcdabbeiiieeeeeebbhbadfba...|...abcdabbiiiiieeeebbbbbadfba...|...abcddabbiiiiieeebbbbaddfba...|...abcdddabbbiiiiebbbbadddfba...|...abcddddaabbbbbbbbaaddddfba...|...abcddddddaaaaaaaaddddddfba...|...abcddddddddddddddddddddfba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ajjjjjjjddjjddjjddjjjjjjjjja..|aaabbbbbbbdbdbdbdbdbdbbbbbbbbaaa|akabbbbbbbddbbdbdbddbbbbbbbbbaka|akabbbbbbbdbbbdbdbdbbbbbbbbbbaka|.aallllllldlllddlldllllllllllaa.|akaaaaaaaaaaaaaaaaaaaaaaaaaaaaka|aka...aaabbddddddddddbbaaa...aka|aaa.....aabbbmmddmmbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    raposa: { pal: ['#1a1208', '#f4f4f0', '#567bc4', '#1d4fb0', '#f0a0b0', '#173e89', '#151517', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#14377b'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbccccbbbaa.........|........abbcccddddcccbba........|.......abccddddddddddccba.......|......abcaddddddddddddacbb......|.....abbbbaddddddddddababbb.....|....abcbabbaddddddddabbadbba....|....abcdabebaddddddabebadfba....|...abcddabeebaaaaaabeebaddcba...|...abcddabbbbbbbbbbbbbbaddfba...|...abcdddabbbbbbbbbbbbadddfba...|...abcdddabbggbbbbggbbadddfba...|...abcddddabbbbbbbbbbaddddfba...|...abcdddddabbbbbbbbadddddfba...|...abcddbdddabbbbbbaddddbdfba...|...abcdbbbdddabggbaddddbbbfba...|...abcddbdddddabbaddddddbdfba...|...abcdddddddddaadddddddddfba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ahhhhhhhddhhhddhdddhhhhhhhha..|aaabbbbbbbdbdbdbbbdbbbbbbbbbbaaa|aiabbbbbbbddbbdbbbddbbbbbbbbbaia|aiabbbbbbbdbdbdbbbdbbbbbbbbbbaia|.aajjjjjjjdjdjjddjdddjjjjjjjjaa.|aiaaaaaaaaaaaaaaaaaaaaaaaaaaaaia|aia...aaabbddddddddddbbaaa...aia|aaa.....aabbbkkddkkbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    leaocaipira: { pal: ['#1a1208', '#127a3a', '#f5d164', '#f2c230', '#bd9725', '#f29a1e', '#d99a1a', '#ffe066', '#151517', '#5a3a22', '#59a275', '#0a4722', '#0e622e'],
+      px: '................................|....aaaaa....aaaaaa....aaaaa....|...abbbbba..abbbbbba..abbbbba...|...abcccba..abccccba..abcccba...|...abcdebaaaabcddebaaaabcdeba...|...abcddcbbbbadaadabbbbcddeba...|...abcdddccaafaffafaaccdddeba...|...abcddddafaffffffafaddddeba...|...abcddddaaffggggffaaddddeba...|...abcdddafffggggggfffadddeba...|...abcddddaffgghhggffaddddeba...|...abcdddaffggiggiggffadddeba...|...abcddddaffggggggffaddddeba...|...abbbbbbfffggjjggfffbbbbbba...|...abbbbbbbbffggggffbbbbbbbba...|...abbbbbbbfbffffffbfbbbbbbba...|...abbbbbbbbbfbffbfbbbbbbbbba...|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abbbbbbbbbbbbbbbbbbbbbbbba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..akkkkkkkdkkkkddkdddkkkkkkkka..|aaabbbbbbbdbbbdbbbdbbbbbbbbbbaaa|alabbbbbbbdbbbdbbbddbbbbbbbbbala|alabbbbbbbdbbbdbbbdbbbbbbbbbbala|.aammmmmmmdddmmddmdmmmmmmmmmmaa.|alaaaaaaaaaaaaaaaaaaaaaaaaaaaala|ala...aaabbddddddddddbbaaa...ala|aaa.....aabbbbbddbbbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    laranjeiras: { pal: ['#1a1208', '#f4f4f0', '#9b5760', '#4b906b', '#7a1f2b', '#5f1822', '#0f6b3a', '#0c532d', '#2a9a50', '#f29a1e', '#ffd27a', '#a2626b', '#471219', '#621922'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccbdddbcccbdddbcccbddba...|...abcefbdghbcaabdghbcefbdhba...|...abcefbdghbaiibdghbcefbdhba...|...abcefbdghbiiiiaahbcefbdhba...|...abcefbdgabbibbbbabcefbdhba...|...abcefbdabbjjjjjbbbaefbdhba...|...abcefbabbjjjjjjjbbaefbdhba...|...abcefbabjjjkjjjjjbaefbdhba...|...abcefbabjjjjjjjjjbbafbdhba...|...abcefbabjjjjjjjjjbaefbdhba...|...abcefbabbjjjjjjjbbbafbdhba...|...abcefbdabbjjjjjbbbaefbdhba...|...abcefbdgabbbbbbbabcefbdhba...|...abcefbdghbaaabaahbcefbdhba...|...abcefbdghbcefbdghbcefbdhba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..alllllllbbblbbllblllllllllla..|aaaeeeeeeeebeebebebeeeeeeeeeeaaa|amaeeeeeeeebeebebebeeeeeeeeeeama|amaeeeeeeeebeebebebeeeeeeeeeeama|.aannnnnnnnbnnbbnnbbbnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbggggggggggbbaaa...ama|aaa.....aabbbeeggeebbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    glorioso: { pal: ['#1a1208', '#f4f4f0', '#505051', '#151517', '#101012', '#8c9199', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#0f0f10'],
+      px: '................................|................................|......aaaaaaaaaaaaaaaaaaaa......|.....abbbbbbbbbbbbbbbbbbbba.....|....abccccccccccccccccccccba....|...abcddddddddddddddddddddcba...|...abcddddddddddddddddddddeba...|...abcddddddddddddbdddddddeba...|...abcdddddddddddbbbddddddeba...|...abcdddddddddddbbbddddddeba...|...abcddffdddddbbbbbbbbdddeba...|...abcdddfffffddbbbbbbbdddeba...|...abcddffdddddddbbbbbddddeba...|...abcdddffffdddbbbbbbddddeba...|...abcddddddddddbbbdbbbdddeba...|...abcdddddddddbbdddddbdddeba...|...abcddddddddddddddddddddeba...|...abcddddddddddddddddddddeba...|...abcddddddddddddddddddddeba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..aggggggggddgdddgdddgggggggga..|aaabbbbbbbdbbbdbbbdbbbbbbbbbbaaa|ahabbbbbbbdbdbddbbddbbbbbbbbbaha|ahabbbbbbbdbdbdbbbdbbbbbbbbbbaha|.aaiiiiiiiiddidddidiiiiiiiiiiaa.|ahaaaaaaaaaaaaaaaaaaaaaaaaaaaaha|aha...aaabbddddddddddbbaaa...aha|aaa.....aabbbjjddjjbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    esquadrao: { pal: ['#1a1208', '#f4f4f0', '#5784d3', '#1f5bc4', '#184799', '#c8202e', '#55595f', '#d65862', '#9aa1ab', '#9c1924', '#2a2a30', '#628cd6', '#123572', '#19499d'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abccccccccccccccccccccccba...|...abcdddddddddaddddddddddeba...|...abcddddddddabadddddddddeba...|...abcddddddddabfaddddddddeba...|...abcdddddddabbbaddddddddeba...|...abcddddddabbbbbadddddddeba...|...abcdddddabbbbbbbaddddddeba...|...abcdddaaaaaaagaaaaaadddeba...|...abcddaggggggggggggggaddeba...|...abhffagiiiiiiiiiiiigaffjba...|...abbbbbbgiikiikiikigbbbbbba...|...abbbbbbbgiiiiiiiigbbbbbbba...|...abhhhhhhaaaaaaaaaahhhhhhba...|...abhffffffffffffffffffffjba...|...abbbbbbbbbbbbbbbbbbbbbbbba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..alllllllbbblbbllbbblllllllla..|aaadddddddbdddbdbddbdddddddddaaa|amadddddddbbddbbdddbdddddddddama|amadddddddbdddbdbddbdddddddddama|.aannnnnnnbbbnbbnnnbnnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbffffffffffbbaaa...ama|aaa.....aabbbddffddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    morumbi: { pal: ['#1a1208', '#f4f4f0', '#d65862', '#c8202e', '#9c1924', '#505051', '#151517', '#f2c230', '#101012', '#1d4fa0', '#d99a1a', '#f7f7f4', '#8e8e8b', '#c3c3c0'],
+      px: '...............aa...............|.............aabbaa.............|............abbccbba............|..........aabccddcbbaa..........|........aabbcdddebbbbbaa........|......aabbccaaaabbbbbbbbaa......|.....abbccaabbbbbbbbbbbfbba.....|....abccdabbbbbbbbbbbbagffba....|...abcddabbbbbbbbbbbbbbaggfba...|...abcdabbbhbbbhbbbhbbbbagiba...|...abcdabbbhhbhhhbhhbbbbagiba...|...abcdabbbhhhhhhhhhbbbbagiba...|...abcdabbbhdhhjhhdhhbbbagiba...|...abcdabbbhhhhhhhhhbbbbagiba...|...abcebbbbbkkkkkkkbbbbbagiba...|...abcbbbbbbbbbbbbbbbbbaggiba...|...abbbbbbbbbbbbbbbbbbagggiba...|...abbbbbbbbbbbbbbbbaaggggiba...|...abbbbbbbfaaaaaaaaggggggiba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..allllllldddlddlldldlllllllla..|aaabbbbbbbbdbbdbdbdddbbbbbbbbaaa|amabbbbbbbbdbbdbdbdddbbbbbbbbama|amabbbbbbbbdbbdbdbdbdbbbbbbbbama|.aannnnnnnndnnddnndndnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbggggggggggbbaaa...ama|aaa.....aabbbddggddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    imortal: { pal: ['#1a1208', '#f4f4f0', '#5f9fe0', '#505051', '#2a7fd6', '#101012', '#0f3f7a', '#151517', '#2163a7', '#6aa5e2', '#184a7c', '#2266ab'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbcdbcbbbaa.........|........abbdbcefbccdbbba........|.......abccfbaaabaaabccba.......|......abbcaaggggggggbaedba......|.....abdbaggggggbbggggafbba.....|....abcfbggggggbbbbggggabcba....|....abcagggggbbbggbbggggbcba....|...abceaggggbbgghhhhggggbccba...|...abceaggggghhhhhhhhgggbciba...|...abceagggghhhhhhhhhhggbciba...|...abceagghhheeeeeehhhggbciba...|...abceaghhhhhhhhhhhhhhgbciba...|...abcefbhhhhhhhhhhhhhhabciba...|...abcefbaggggggggggggafbciba...|...abcefbcaaggggggggbaefbciba...|...abcefbcefbaaabaaabcefbciba...|...abcefbcefbcefbcefbcefbciba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ajjjjjjjbbbjbbbjjbbjjjjjjjja..|aaaeeeeeeeebeeebeebeeeeeeeeeeaaa|akaeeeeeeeebeeebeebebeeeeeeeeaka|akaeeeeeeeebeeebeebebeeeeeeeeaka|.aalllllllbbbllblllbbllllllllaa.|akaaaaaaaaaaaaaaaaaaaaaaaaaaaaka|aka...aaabbhhhhhhhhhhbbaaa...aka|aaa.....aabbbeehheebbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    touro: { pal: ['#1a1208', '#d01c2a', '#f7f7f4', '#f4f4f0', '#bebebb', '#e8d8b0', '#151517', '#f0a0b0', '#de606a', '#791018', '#a61622', '#92141d'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abccccccccccccccccccccccba...|...abcddddaaddddddddaaddddeba...|...abcdddaffaddddddaffadddeba...|...abcddddaffaaaaaaffaddddeba...|...abcdddddafbbbbbbfadddddeba...|...abcdddddabbbbbbbbadddddeba...|...abcddddabbgbbbbgbbaddddeba...|...abcdddddabbbbbbbbadddddeba...|...abcddddddabbbbbbaddddddeba...|...abcddddddabhhhhbaddddddeba...|...abcddddddahghhghaddddddeba...|...abcdddddddahhhhadddddddeba...|...abcddddddddaaaaddddddddeba...|...abcddddddddddddddddddddeba...|...abcddddddddddddddddddddeba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..aiiiiiiidddiddiiddiiiiiiiiia..|aaabbbbbbbbdbbdbdbdbdbbbbbbbbaaa|ajabbbbbbbbdbbddbbddbbbbbbbbbaja|ajabbbbbbbbdbbdbdbdbdbbbbbbbbaja|.aakkkkkkkkdkkddkkdkdkkkkkkkkaa.|ajaaaaaaaaaaaaaaaaaaaaaaaaaaaaja|aja...aaabbbbbbbbbbbbbbaaa...aja|aaa.....aabbbllbbllbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    galo: { pal: ['#1a1208', '#f4f4f0', '#505051', '#101012', '#c8202e', '#3a3a40', '#f2c230', '#5b5b5d', '#151517', '#0c0c0d', '#111112'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abccbbccbbccbbccbbccbbccba...|...abcdbbcdbbcabbcdbbcdbbcdba...|...abcdbbcdbeaebeadbbcdbbcdba...|...abcdbbcaeeeeeeeabbcdbbcdba...|...abcdbbcabbbbbbbabbcdbbcdba...|...abcdbbabbbbbfbbgbbcdbbcdba...|...abcdbbabbbbbbbbgggadbbcdba...|...abcdbbcabbbbbbeebbcdbbcdba...|...abcdbbcdbbbbbbeebbcdbbcdba...|...abcdbbcaffbbbbbbbbcdbbcdba...|...abcdbbaffffbbbbbbbcdbbcdba...|...abcdbbffffffbbbbbbadbbcdba...|...abcdbbaffffffbbbbbcdbbcdba...|...abcdbbcabbaabbaabbcdbbcdba...|...abcdbbcdbbcdbbcdbbcdbbcdba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ahhhhhhhhbbhhbhhbhbhhhhhhhha..|aaaiiiiiiibiiibibibbbiiiiiiiiaaa|ajaiiiiiiibibibbbibbbiiiiiiiiaja|ajaiiiiiiibibibibibibiiiiiiiiaja|.aakkkkkkkkbbkbkbkbkbkkkkkkkkaa.|ajaaaaaaaaaaaaaaaaaaaaaaaaaaaaja|aja...aaabbbbbbbbbbbbbbaaa...aja|aaa.....aabbbiibbiibbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    peixe: { pal: ['#1a1208', '#151517', '#f7f7f4', '#bebebb', '#f4f4f0', '#c9ced6', '#5b5b5d', '#0c0c0d', '#111112'],
+      px: '................................|................................|......aaaaaaaaaaaaaaaaaaaa......|.....abbbbbbbbbbbbbbbbbbbba.....|....abbccbbccbbccbbccbbccbba....|...abbbcdbbcdbbcdbbcdbbcdbbba...|...abbbcdbbcdbbcdbbcdbbcdbbba...|...abbbcdbbcdbbcdbbcdbbcdbbba...|...abbbcdbbcdbbcdbbcdbbcdbbba...|...abbbcdbbcdbbcdbbcdbbcdbbba...|...abcceecceecceecceecceeccba...|...abceeeeeeeebbbbeeeeeeeedba...|...abceeeeeebbffffbbeebeeedba...|...abceeeebbffffffffbbbeeedba...|...abceeebfbbfffffffffbeeedba...|...abceeebffffffffffbbbeeedba...|...abceeeebbffffffffbebeeedba...|...abceeeeeebbbbbbbbeeeeeedba...|...abceeeeeeeeeeeeeeeeeeeedba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..agggggggeeggegegeeegggggggga..|aaabbbbbbbebebebebebbbbbbbbbbaaa|ahabbbbbbbeebbebebeebbbbbbbbbaha|ahabbbbbbbebbbebebebbbbbbbbbbaha|.aaiiiiiiieiiiieiieiiiiiiiiiiaa.|ahaaaaaaaaaaaaaaaaaaaaaaaaaaaaha|aha...aaabbeeeeeeeeeebbaaa...aha|aaa.....aabbbbbeebbbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    timao: { pal: ['#1a1208', '#151517', '#f7f7f4', '#f4f4f0', '#bebebb', '#c8202e', '#5b5b5d', '#0c0c0d', '#111112'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbccccbbbaa.........|........abbcccddddcccbba........|.......abccddddbbddddccba.......|......abcddbdddbbdddbddcba......|.....abcddbbbdbbbbdbbbddcba.....|....abcddddbbbbbbbbbbddddcba....|....abcddddbbbddddbbbddddeba....|...abcddddbbbddffddbbbddddcba...|...abcdddbbbbdffffdbbbbdddeba...|...abcdddbbbbdffffdbbbbdddeba...|...abcddddbbbddffddbbbddddeba...|...abcdddddbbbddddbbbdddddeba...|...abcdddddbbbbbbbbbbdddddeba...|...abcddddbbbdbbbbdbbbddddeba...|...abcdddddbdddbbdddbdddddeba...|...abcdddddddddbbdddddddddeba...|...abcddddddddddddddddddddeba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..agggggggdddgddgggddgggggggga..|aaabbbbbbbbdbbdbdbdbbbbbbbbbbaaa|ahabbbbbbbbdbbddbbbdbbbbbbbbbaha|ahabbbbbbbbdbbdbbbbbdbbbbbbbbaha|.aaiiiiiiiidiidiiiddiiiiiiiiiaa.|ahaaaaaaaaaaaaaaaaaaaaaaaaaaaaha|aha...aaabbbbbbbbbbbbbbaaa...aha|aaa.....aabbbddbbddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    colina: { pal: ['#1a1208', '#f4f4f0', '#505051', '#151517', '#101012', '#c8202e', '#5b5b5d', '#0c0c0d', '#111112'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abbbbbbbccccccccccccccccba...|...abbbbbbbbbcddddddddddddeba...|...abcbbbbbbbbcddddaadddddeba...|...abccbbbbbffbbcdaffaddddeba...|...abcdcbbbbfffbbafffaddddeba...|...abcddccbbbfffffffadddddeba...|...abcddddcbbbffbffbcdddddeba...|...abcdddddccbfbbbfbbbcdddeba...|...abcdddddddaffbffbbbbcddeba...|...abcddddddafffffffbbbbbceba...|...abcdddddafffaabfffbbbbbcba...|...abcdddddaffaddcaffbbbbbbba...|...abcddddddaadddddabbbbbbbba...|...abcddddddddddddddccbbbbbba...|...abcddddddddddddddddcbbbbba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..aggggggggbbggbbgbbggggggggga..|aaadddddddbdddbdddbdbddddddddaaa|ahadddddddbdbdbdddbbdddddddddaha|ahadddddddbdbdbdddbdbddddddddaha|.aaiiiiiiiibbiibbibibiiiiiiiiaa.|ahaaaaaaaaaaaaaaaaaaaaaaaaaaaaha|aha...aaabbddddddddddbbaaa...aha|aaa.....aabbbbbddbbbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    leaodabarra: { pal: ['#1a1208', '#f2c230', '#d65862', '#505051', '#c8202e', '#101012', '#151517', '#9c1924', '#d99a1a', '#f4f4f0', '#5b5b5d', '#0c0c0d', '#111112'],
+      px: '................................|....aaaaa....aaaaaa....aaaaa....|...abbbbba..abbbbbba..abbbbba...|...abccdba..abcddcba..abdccba...|...abcefbaaaabcgghbaaaabdehba...|...abcegdbbbbceggecbbbbdgehba...|...abceggccddeeggeeddccggehba...|...abceggeeaaaaggeeggeeggehba...|...abceggeaiiiiageeggeeggehba...|...abceggaiiiiiiaaeggeeggehba...|...abcegaiiiibbbbbaageeggehba...|...abcegaiiibbbbjgbbaeeggehba...|...abcegaiiibbbbbbbbaeeggehba...|...abcegaiiiibbbggbageeggehba...|...abceggaiiiibbbaaggeeggehba...|...abceggeaiiiibbaeggeeggehba...|...abceggeeaiiiiaeeggeeggehba...|...abceggeegaaaageeggeeggehba...|...abceggeeggeeggeeggeeggehba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..akkkkkkkbkkkbbkkbbkkkkkkkkka..|aaagggggggbgggbgbgbgbggggggggaaa|alagggggggbgggbgbgbbgggggggggala|alagggggggbgggbgbgbgbggggggggala|.aammmmmmmbbbmbbmmbbmmmmmmmmmaa.|alaaaaaaaaaaaaaaaaaaaaaaaaaaaala|ala...aaabbeeeeeeeeeebbaaa...ala|aaa.....aabbbggeeggbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    saci: { pal: ['#1a1208', '#f4f4f0', '#dc5257', '#d0181f', '#ff5a4a', '#a21318', '#151517', '#8a5a2b', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#921116'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbccccbbbaa.........|........abbcccddddcccbba........|.......abccdddddaaaddccba.......|......abcddddddaeeeadddcba......|.....abcddddddaeeeeeadddcba.....|....abcddddddaeeeeeeeadddcba....|....abcdddddaeeeeeaaeeaddfba....|...abcdddddddaaggggaaaddddcba...|...abcddddddddagbgghadddddfba...|...abcddddddddaggggahaddddfba...|...abcdddddddaggggggadddddfba...|...abcddddddaggaggaggaddddfba...|...abcdddddaggaaggaaggadddfba...|...abcddddddaadaggadaaddddfba...|...abcdddddddddaggadddddddfba...|...abcdddddddddagggaddddddfba...|...abcddddddddddaaadddddddfba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..aiiiiiiiiddiiddiiddiiiiiiiia..|aaabbbbbbbdbbbdbbbdbbbbbbbbbbaaa|ajabbbbbbbbdbbdbbbbdbbbbbbbbbaja|ajabbbbbbbbbdbdbbbbbdbbbbbbbbaja|.aakkkkkkkddkkkddkddkkkkkkkkkaa.|ajaaaaaaaaaaaaaaaaaaaaaaaaaaaaja|aja...aaabbddddddddddbbaaa...aja|aaa.....aabbbllddllbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    coxa: { pal: ['#1a1208', '#0a6b34', '#f7f7f4', '#f4f4f0', '#1f8a3a', '#bebebb', '#8a5a2b', '#549771', '#063e1e', '#08562a'],
+      px: '..............aaaa..............|...........aaabbbbaaa...........|.........aabbbbbbbbbbaa.........|........abbbbbbbbbbbbbba........|.......abbbbbbbbbbbbbbbba.......|......abbbbbbbbbbbbbbbbbba......|.....abccaacaaaccaaacaaccba.....|....abcdaeeaeeeaaeeeaeeadcba....|....abcdaeeeeeeeeeeeeeeadfba....|...abcdddaeeeeeeeeeeeeadddcba...|...abcddddagaaeeeeaagaddddfba...|...abcdddaaagaaggaagaaadddfba...|...abcddaeeeagaggagaeeeaddfba...|...abcdddaeeeeggggeeeeadddfba...|...abcddddaaaaaggaaaaaddddfba...|...abcddddddddaggaddddddddfba...|...abcddddddddaggaddddddddfba...|...abcdddddddaggggadddddddfba...|...abcddddddddaaaaddddddddfba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ahhhhhhhhddhhdhhhddhhhhhhhha..|aaabbbbbbbdbbbdbdbdbbbbbbbbbbaaa|aiabbbbbbbdbbbdddbdbdbbbbbbbbaia|aiabbbbbbbdbbbdbdbdbdbbbbbbbbaia|.aajjjjjjjjddjdjdjjddjjjjjjjjaa.|aiaaaaaaaaaaaaaaaaaaaaaaaaaaaaia|aia...aaabbddddddddddbbaaa...aia|aaa.....aabbbbbddbbbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    furacao: { pal: ['#1a1208', '#f4f4f0', '#505051', '#d65862', '#151517', '#c8202e', '#9c1924', '#101012', '#5b5b5d', '#0c0c0d', '#111112'],
+      px: '................................|................................|....aaaaaa............aaaaaa....|...abbbbbbaaa......aaabbbbbba...|...abcccddbbbaaaaaabbbdcccdba...|...abcefffcccbbbbbbdddeeefgba...|...abcfffeeaaeeeeeeaaeeeffgba...|...abdffeeaeeebbbbbeeaefffhba...|...abdfeeaeebbeeeeebeeaffehba...|...abdeeeaebeeebbbeebeafeehba...|...abceeaeebeebeeebebeeaeegba...|...abcefaeebeebebebebeeaefgba...|...abcffaeebeebeebbebeeaffgba...|...abdffeaebeeebeeeebeafffhba...|...abdfeeaeebeeebbbbeeaffehba...|...abdeeefaeebbeeeeeeaffeehba...|...abceefffaaeeeeeeaaffeeegba...|...abcefffeeeaaaaaafffeeefgba...|...abcfffeeefffeeefffeeeffgba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..aiiiiiiifffiffiiffiiiiiiiiia..|aaaeeeeeeefeeefefefefeeeeeeeeaaa|ajaeeeeeeeffeefefeffeeeeeeeeeaja|ajaeeeeeeefeeefefefefeeeeeeeeaja|.aakkkkkkkfkkkffkkffkkkkkkkkkaa.|ajaaaaaaaaaaaaaaaaaaaaaaaaaaaaja|aja...aaabbffffffffffbbaaa...aja|aaa.....aabbbeeffeebbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    verdaooeste: { pal: ['#1a1208', '#f4f4f0', '#4a9b6e', '#0e7a3e', '#7fd09a', '#0b5f30', '#f2c230', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#0a552b'],
+      px: '...............aa...............|.............aabbaa.............|............abbccbba............|..........aabccddccbaa..........|........aabbcddddddcbbaa........|......aabbccddddddddccbbaa......|.....abbccdddddddddaadccbba.....|....abccddddddddddabbaddccba....|...abcdddddddddddabbbaddddcba...|...abcddddddddddabbeadddddfba...|...abcdddddddddabbebadddddfba...|...abcddddddddabbebbadddddfba...|...abcdddddddabbebbaddddddfba...|...abcddddddabbebbadddddddfba...|...abcddddddabebbaddddddddfba...|...abcddddddaebbadddddddddfba...|...abcdddddaeaaaddddddddddfba...|...abcdddddagaddddddddddddfba...|...abcddddddadddddddddddddfba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ahhhhhhhdhdhddhhhdhhhhhhhhha..|aaabbbbbbbdbdbdbdbdbdbbbbbbbbaaa|aiabbbbbbbdbdbdbdbdbdbbbbbbbbaia|aiabbbbbbbdbdbdbdbdbdbbbbbbbbaia|.aajjjjjjjjdjjddjjjdjjjjjjjjjaa.|aiaaaaaaaaaaaaaaaaaaaaaaaaaaaaia|aia...aaabbddddddddddbbaaa...aia|aaa.....aabbbkkddkkbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+    leaoazul: { pal: ['#1a1208', '#f4f4f0', '#4f5a77', '#14234a', '#101b3a', '#c9a26a', '#f7f7f4', '#8e8e8b', '#c3c3c0', '#0e1834'],
+      px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccaaccccccccccccaacccba...|...abcdabbaddddadddddabbadeba...|...abcdabbbaddabadddabbbadeba...|...abcddabbbaabbbaaabbbaddeba...|...abcdddafffaaaaafffaadddeba...|...abcddddafffadafffadddddeba...|...abcdddddafffafffaddddddeba...|...abcddddddafffffadddddddeba...|...abcdddddafffafffaddddddeba...|...abcddddafffadafffadddddeba...|...abcdddafffadddafffaddddeba...|...abcddafffadddddafffadddeba...|...abcdafffadddddddafffaddeba...|...abcddaaadddddddddaaadddeba...|...abcddddddddddddddddddddeba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..agggggggdggggdgggdggggggggga..|aaabbbbbbbdbbbdbdbdbdbbbbbbbbaaa|ahabbbbbbbdbbbdddbdddbbbbbbbbaha|ahabbbbbbbdbbbdbdbdbdbbbbbbbbaha|.aaiiiiiiidddididididiiiiiiiiaa.|ahaaaaaaaaaaaaaaaaaaaaaaaaaaaaha|aha...aaabbddddddddddbbaaa...aha|aaa.....aabbbjjddjjbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
+  };
+  Object.assign(EMB_B, EMB_A);
   const ARTES = {};
   function arte(k) {                                                       // o canvas 32x32 do emblema (desenhado uma vez só)
     if (ARTES[k]) return ARTES[k];
@@ -212,7 +363,7 @@
       uni: [c1, c2, c2, c1, c1, c2, '#f2c230'], uni2: [c2, c1, c1, c2, c2, c1, '#1c1c1f'], setores: { gk: forca, def: forca, mid: forca, fwd: forca - 0.1 },
       emblemaSimples: { forma: ['escudo', 'circulo', 'losango'][i % 3], cor1: c1, cor2: c2, letras: sigla.slice(0, 2) } };
   });
-  const TIME_DE = {}; for (const t of TIMES_B.concat(PEQUENOS)) TIME_DE[t.k] = t;
+  const TIME_DE = {}; for (const t of TIMES_B.concat(TIMES_A, PEQUENOS)) TIME_DE[t.k] = t;
 
   // ============================================================================================ HABILIDADES E ELENCOS
   const HABS = ['defesa', 'desarme', 'forca', 'resistencia', 'recuperacao', 'velocidade', 'chute', 'efeito', 'passe', 'cruzamento', 'drible', 'dominio', 'cabeceio', 'finalizacao', 'goleiro'];
@@ -260,18 +411,24 @@
   }
   // o elenco de um time: 11 titulares (na ordem dos lugares da formação) e 7 reservas
   const ELENCOS = {};
+  const setorDe = (t, pos) => (pos === 'GK' ? t.setores.gk : pos === 'DEF' ? t.setores.def : pos === 'MID' ? t.setores.mid : t.setores.fwd);
   function elencoB(t) {
-    if (ELENCOS[t.k]) return ELENCOS[t.k];
+    const chave = JSON.stringify(t.setores), E0 = ELENCOS[t.k];
+    if (E0 && E0._chave === chave) return E0;
+    if (E0) {                                       // (7.3.0) o nível do time mudou (subiu, caiu...): os MESMOS jogadores, com as habilidades novas
+      for (const j of E0) { j.hab = gerarHab(clampN(setorDe(t, j.pos) + j._off, 3, 9.8), j.pos, j.semente); j.media = r1(mediaPos(j.hab, j.pos)); }
+      E0._chave = chave; return E0;
+    }
     const pap = papeis11(t.formacao), lista = pap.concat(['GK', 'DEF', 'DEF', 'MID', 'MID', 'FWD', 'FWD']);
     const r = rndDe(semDe('sb-time|' + t.k)), out = [];
     lista.forEach((pos, i) => {
-      const set = pos === 'GK' ? t.setores.gk : pos === 'DEF' ? t.setores.def : pos === 'MID' ? t.setores.mid : t.setores.fwd;
-      const titular = i < 11, alvo = clampN(set + (r() - 0.5) * 0.9 - (titular ? 0 : 0.55), 3, 9.6);
+      const titular = i < 11, off = (r() - 0.5) * 0.9 - (titular ? 0 : 0.55), alvo = clampN(setorDe(t, pos) + off, 3, 9.8);
       const nome = nomeNovo(r), sem = semDe('sb|' + t.k + '|' + nome);
       const ap = typeof gerarAparencia === 'function' ? gerarAparencia(sem, 'M') : {};
-      const j = Object.assign({ nome, genero: 'M', semente: sem, pos, titular, hab: gerarHab(alvo, pos, sem) }, ap);
+      const j = Object.assign({ nome, genero: 'M', semente: sem, pos, titular, _off: off, hab: gerarHab(alvo, pos, sem) }, ap);
       j.media = r1(mediaPos(j.hab, pos)); out.push(j);
     });
+    out._chave = chave;
     return (ELENCOS[t.k] = out);
   }
   function forcaTime(t) {
@@ -280,7 +437,7 @@
     const set = (p) => { const l = E.filter((j) => j.pos === p); return l.length ? l.reduce((s, j) => s + j.media, 0) / l.length : m; };
     return { media: r1(m), gk: r1(set('GK')), def: r1(set('DEF')), mid: r1(set('MID')), fwd: r1(set('FWD')) };
   }
-  const estrelasTxt = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+  const estrelasTxt = (n, max) => { max = max || 5; n = clampN(n | 0, 0, max); return '★'.repeat(n) + '☆'.repeat(max - n); };
   const uniDe = (u) => ({ camisa: u[0], listra: u[1], gola: u[2], calcao: u[3], meia: u[4], sola: u[5], goleiro: u[6] });
   function apTecnico(t) { return typeof gerarAparencia === 'function' ? gerarAparencia(semDe('sb-tec|' + t.k), /^Dona /.test(t.tecnico) ? 'F' : 'M') : {}; }
   // o time no formato do motor. voce: o time do jogador (o elenco sai sem o titular da posição dele: o motor põe o jogador no lugar)
@@ -358,11 +515,17 @@
     return out;
   }
 
-  // ============================================================================================ A TEMPORADA
-  //   Série B: 20 times, ida e volta (38 rodadas de 10 jogos, método do círculo; o returno inverte o mando).
-  //   Cada jogo fica salvo compacto: [casa, fora, gols casa, gols fora] (−1 = ainda não jogado).
-  function tabelaLiga(sem) {
-    const n = TIMES_B.length, r = rndDe(sem), arr = TIMES_B.map((t, i) => i).sort(() => r() - 0.5), ida = [];
+  // ============================================================================================ A TEMPORADA (7.3.0: Série A e Série B)
+  //   Cada temporada guarda os 20 times de cada divisão (T.times.A / T.times.B, pelas chaves) e as duas tabelas de 38 rodadas
+  //   (T.ligaA e T.liga, a da Série B com o nome antigo). Cada jogo fica compacto: [casa, fora, gols casa, gols fora], com o ÍNDICE
+  //   do time na lista da divisão (−1 = ainda não jogado). Pontos: vitória 3, empate 1, derrota 0. Desempate: vitórias, saldo, gols
+  //   feitos. As duas divisões andam juntas: cada vaga de liga do calendário fecha a mesma rodada na A e na B (tudo simulado, menos
+  //   o jogo do jogador). No fim: os 4 primeiros da B sobem, os 4 últimos da A caem e começa outra temporada.
+  //   Temporadas salvas antes da 7.3.0 (só com a Série B): garantirLiga cria a Série A e simula as rodadas que já passaram.
+  const DIVS = ['A', 'B'];
+  function tabelaLiga(sem, n) {
+    n = n || 20; const r = rndDe(sem), arr = []; for (let i = 0; i < n; i++) arr.push(i); arr.sort(() => r() - 0.5);
+    const ida = [];
     for (let k = 0; k < n - 1; k++) {
       const rod = [];
       for (let i = 0; i < n / 2; i++) { const a = arr[i], b = arr[n - 1 - i], casaA = (k + i) % 2 === 0; rod.push([casaA ? a : b, casaA ? b : a, -1, -1]); }
@@ -370,15 +533,33 @@
     }
     return ida.concat(ida.map((rod) => rod.map(([c, f]) => [f, c, -1, -1])));
   }
-  function classificacao(T) {
-    const L = TIMES_B.map((t, i) => ({ i, k: t.k, j: 0, p: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }));
-    for (const rod of T.liga) for (const [c, f, a, b] of rod) {
+  const ligaDe = (T, div) => (div === 'A' ? T.ligaA : T.liga);
+  const estDe = (T, div) => (div === 'A' ? (T.estA = T.estA || {}) : (T.est = T.est || {}));
+  const divPadrao = () => ({ A: TIMES_A.map((t) => t.k), B: TIMES_B.map((t) => t.k) });
+  function garantirLiga(T) {
+    if (!T) return T;
+    if (!T.times) T.times = divPadrao();
+    if (!T.divNosso) T.divNosso = T.times.A.includes(T.nosso) ? 'A' : 'B';
+    if (!T.estA) T.estA = {};
+    if (!T.ligaA) {
+      T.ligaA = tabelaLiga(semDe('ligaA|' + T.n + '|' + T.nosso), T.times.A.length);
+      for (const v of T.vagas) if (v.comp === 'liga' && v.feito) simularRodada(T, 'A', v.r);   // o que a Série A jogou até aqui
+    }
+    return T;
+  }
+  const divDe = (T, k) => (T.times.A.includes(k) ? 'A' : T.times.B.includes(k) ? 'B' : null);
+  function classificacao(T, div) {
+    div = div || 'B'; garantirLiga(T);
+    const K = T.times[div], L = K.map((k, i) => ({ i, k, j: 0, p: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }));
+    for (const rod of ligaDe(T, div)) for (const [c, f, a, b] of rod) {
       if (a < 0) continue;
       const A = L[c], B = L[f]; A.j++; B.j++; A.gp += a; A.gc += b; B.gp += b; B.gc += a;
       if (a > b) { A.v++; A.p += 3; B.d++; } else if (a < b) { B.v++; B.p += 3; A.d++; } else { A.e++; B.e++; A.p++; B.p++; }
     }
     return L.sort((x, y) => y.p - x.p || y.v - x.v || (y.gp - y.gc) - (x.gp - x.gc) || y.gp - x.gp || x.i - y.i);
   }
+  // a força de um time num número (a média dos titulares): compara times de divisões diferentes
+  const forcaNum = (k) => { const t = TIME_DE[k]; return t ? forcaTime(t).media : 5; };
   // força de ataque e de defesa para a simulação (o nosso time sem o jogador: um pouco mais fraco)
   function poder(k, fator) {
     const f = forcaTime(TIME_DE[k]), at = f.fwd * 0.6 + f.mid * 0.4, df = f.def * 0.55 + f.gk * 0.45, x = fator || 1;
@@ -394,21 +575,44 @@
     const ga = forcaTime(TIME_DE[kc]).gk, gb = forcaTime(TIME_DE[kf]).gk, ganhaA = Math.random() < 0.5 + (ga - gb) * 0.04, base = 3 + Math.floor(Math.random() * 3);
     return ganhaA ? [base, base - 1 - Math.floor(Math.random() * 2)] : [base - 1 - Math.floor(Math.random() * 2), base];
   }
-  // AS COPAS (mata-mata, jogo único, empate = pênaltis; o melhor colocado manda o jogo)
-  //   Estadual: os times da Série B do mesmo estado + pequenos do interior até 4 (semifinal e final).
-  //   Regional: os da mesma região + pequenos até 8 (quartas, semifinal e final).
-  function montarCopa(tipo, nosso, sem) {
-    const t0 = TIME_DE[nosso], r = rndDe(sem), N = tipo === 'est' ? 4 : 8;
-    let ks = TIMES_B.filter((t) => (tipo === 'est' ? t.uf === t0.uf : t.reg === t0.reg)).map((t) => t.k);
-    ks.sort((a, b) => TIME_DE[b].ov - TIME_DE[a].ov);
-    if (ks.length > N) { ks = ks.filter((k) => k !== nosso).slice(0, N - 1); ks.push(nosso); ks.sort((a, b) => TIME_DE[b].ov - TIME_DE[a].ov); }
+  // fecha uma rodada inteira de uma divisão (sem o jogo do jogador: esse vem de fecharVaga)
+  function simularRodada(T, div, r, pula) {
+    const K = T.times[div], E = estDe(T, div);
+    for (const g of ligaDe(T, div)[r]) {
+      if (g[2] >= 0 || (pula && pula(g))) continue;
+      const kc = K[g[0]], kf = K[g[1]], p = simularPlacar(kc, kf, 1, 1); g[2] = p[0]; g[3] = p[1];
+      marcarJogo(E, kc, g[2], g[3]); marcarJogo(E, kf, g[3], g[2]);
+    }
+  }
+  // AS COPAS (mata-mata, jogo único, empate = pênaltis; o mais forte manda o jogo)
+  //   Estadual (4): os times do mesmo estado, das DUAS séries (o nosso e os 3 mais fortes) + pequenos do interior até 4.
+  //   Regional (8): os da mesma região, das duas séries (o nosso e os 7 mais fortes) + pequenos até 8.
+  //   (7.3.0) Copa do Brasil (32): os 20 da Série A e os 12 mais fortes da Série B (o nosso sempre entra). Na 1ª fase os 16 mais
+  //   fortes pegam os 16 mais fracos (sorteio dentro de cada pote), como os cabeças de chave de verdade.
+  const N_COPA = { est: 4, reg: 8, cdb: 32 };
+  function montarCopa(tipo, nosso, sem, times) {
+    times = times || divPadrao();
+    const t0 = TIME_DE[nosso], r = rndDe(sem), N = N_COPA[tipo], todos = times.A.concat(times.B);
+    const forte = (a, b) => forcaNum(b) - forcaNum(a);
+    let ks;
+    if (tipo === 'cdb') {
+      const B = times.B.slice().sort(forte); ks = times.A.slice().concat(B.slice(0, 12));
+      if (!ks.includes(nosso)) { ks.pop(); ks.push(nosso); }
+    } else {
+      ks = todos.filter((k) => (tipo === 'est' ? TIME_DE[k].uf === t0.uf : TIME_DE[k].reg === t0.reg) && k !== nosso).sort(forte).slice(0, N - 1);
+      ks.push(nosso);
+    }
+    ks.sort(forte);
     const peq = PEQUENOS.map((p) => p.k).sort(() => r() - 0.5);
     while (ks.length < N) ks.push(peq.shift());
-    const pares = N === 4 ? [[0, 3], [1, 2]] : [[0, 7], [3, 4], [1, 6], [2, 5]];
+    let pares;
+    if (N === 4) pares = [[0, 3], [1, 2]];
+    else if (N === 8) pares = [[0, 7], [3, 4], [1, 6], [2, 5]];
+    else { const fortes = [], fracos = []; for (let i = 0; i < N / 2; i++) { fortes.push(i); fracos.push(N - 1 - i); } fortes.sort(() => r() - 0.5); fracos.sort(() => r() - 0.5); pares = fortes.map((a, i) => [a, fracos[i]]); }
     return { tipo, times: ks, fases: [pares.map(([a, b]) => ({ c: ks[a], f: ks[b], gc: -1, gf: -1, pen: null }))], campeao: null };
   }
-  const NOME_FASE = { 2: ['Semifinal', 'Final'], 3: ['Quartas de final', 'Semifinal', 'Final'] };
-  const nFases = (C) => (C.tipo === 'est' ? 2 : 3);
+  const NOME_FASE = { 2: ['Semifinal', 'Final'], 3: ['Quartas de final', 'Semifinal', 'Final'], 5: ['Primeira fase', 'Oitavas de final', 'Quartas de final', 'Semifinal', 'Final'] };
+  const nFases = (C) => (C.tipo === 'est' ? 2 : C.tipo === 'cdb' ? 5 : 3);
   const vencedorJogo = (g) => (g.pen ? (g.pen[0] > g.pen[1] ? g.c : g.f) : g.gc > g.gf ? g.c : g.gc < g.gf ? g.f : g.c);
   function proximaFase(C) {
     const F = C.fases[C.fases.length - 1]; if (F.some((g) => g.gc < 0)) return;
@@ -418,39 +622,49 @@
     const prox = []; for (let i = 0; i < w.length; i += 2) { const [c, f] = ordem(w[i], w[i + 1]); prox.push({ c, f, gc: -1, gf: -1, pen: null }); }
     C.fases.push(prox);
   }
-  // O CALENDÁRIO: terça, quinta e sábado a partir da primeira terça depois de dia0. Os jogos das copas caem em vagas fixas
-  //   (Estadual: 1ª e 4ª; Regional: 7ª, 13ª e 19ª) e a Série B ocupa o resto (38 vagas). 43 vagas no total.
+  // O CALENDÁRIO: terça, quinta e sábado a partir da primeira terça depois de dia0. Os jogos das copas caem em vagas fixas e a liga
+  //   ocupa o resto (38 vagas). Temporada antiga (v1): 43 vagas (Estadual 1ª e 4ª; Regional 7ª, 13ª e 19ª).
+  //   (7.3.0) v2: 48 vagas, com a Copa do Brasil (5 fases) espalhada pela temporada.
   const VAGAS_COPA = { 0: ['est', 0], 3: ['est', 1], 6: ['reg', 0], 12: ['reg', 1], 18: ['reg', 2] };
-  function montarCalendario(dia0) {
+  const VAGAS_COPA2 = { 0: ['est', 0], 3: ['est', 1], 6: ['cdb', 0], 9: ['reg', 0], 14: ['cdb', 1], 18: ['reg', 1], 23: ['cdb', 2], 28: ['reg', 2], 33: ['cdb', 3], 41: ['cdb', 4] };
+  function montarCalendario(dia0, v2) {
+    const VC = v2 ? VAGAS_COPA2 : VAGAS_COPA, N = 38 + Object.keys(VC).length;
     let d = dia0; while (semanaDe(d) !== 1) d++;
-    const dias = []; while (dias.length < 43) { if ([1, 3, 5].includes(semanaDe(d))) dias.push(d); d++; }
+    const dias = []; while (dias.length < N) { if ([1, 3, 5].includes(semanaDe(d))) dias.push(d); d++; }
     let rod = 0;
     return dias.map((dia, i) => {
       const h = HORAS_JOGO[(i * 3 + Math.floor(i / 5)) % HORAS_JOGO.length];
-      const cp = VAGAS_COPA[i];
+      const cp = VC[i];
       return cp ? { dia, h, comp: cp[0], fase: cp[1], feito: false } : { dia, h, comp: 'liga', r: rod++, feito: false };
     });
   }
-  function novaTemporada(nosso, dia0, n) {
+  function novaTemporada(nosso, dia0, n, times) {
+    times = times || divPadrao();
     const sem = semDe('temporada|' + nosso + '|' + n + '|' + dia0);
-    return { n, nosso, vagas: montarCalendario(dia0), liga: tabelaLiga(sem), copas: { est: montarCopa('est', nosso, sem + 1), reg: montarCopa('reg', nosso, sem + 2) }, fechadas: 0, est: {} };
+    return { n, v: 2, nosso, times, divNosso: times.A.includes(nosso) ? 'A' : 'B', vagas: montarCalendario(dia0, true),
+      liga: tabelaLiga(sem, times.B.length), ligaA: tabelaLiga(sem + 3, times.A.length),
+      copas: { est: montarCopa('est', nosso, sem + 1, times), reg: montarCopa('reg', nosso, sem + 2, times), cdb: montarCopa('cdb', nosso, sem + 4, times) },
+      fechadas: 0, est: {}, estA: {} };
   }
   // o jogo do nosso time numa vaga (ou null: folga, eliminado da copa)
   function jogoNosso(T, v) {
-    if (v.comp === 'liga') { const g = T.liga[v.r].find((x) => x[0] === IDX[T.nosso] || x[1] === IDX[T.nosso]); return g ? { liga: true, g, c: TIMES_B[g[0]].k, f: TIMES_B[g[1]].k } : null; }
-    const C = T.copas[v.comp], F = C.fases[v.fase]; if (!F) return null;
+    if (v.comp === 'liga') {
+      garantirLiga(T); const div = T.divNosso, K = T.times[div], i = K.indexOf(T.nosso);
+      const g = ligaDe(T, div)[v.r].find((x) => x[0] === i || x[1] === i); return g ? { liga: true, div, g, c: K[g[0]], f: K[g[1]] } : null;
+    }
+    const C = T.copas[v.comp]; if (!C) return null; const F = C.fases[v.fase]; if (!F) return null;
     const g = F.find((x) => x.c === T.nosso || x.f === T.nosso); return g ? { copa: v.comp, g, c: g.c, f: g.f } : null;
   }
-  // os artilheiros e garçons simulados (só a Série B; o jogador entra como __voce)
+  // os artilheiros e garçons simulados (das duas séries; o jogador entra como __voce)
   const PESO_GOL = { GK: 0.02, DEF: 0.7, MID: 2.2, FWD: 5 }, PESO_ASS = { GK: 0.1, DEF: 1, MID: 4, FWD: 2 };
   function sorteiaPeso(lista, peso) { const tot = lista.reduce((s, x) => s + peso(x), 0); let v = Math.random() * tot; for (const x of lista) { v -= peso(x); if (v <= 0) return x; } return lista[lista.length - 1]; }
-  // os 11 titulares de um time num jogo da Série B: gols, assistências, jogos e a soma das notas ([g, a, j, notas])
+  // os 11 titulares de um time num jogo de liga: gols, assistências, jogos e a soma das notas ([g, a, j, notas])
   function notaB(x, g, a, res, sofr) {
     let n = 6 + res * 0.45 + g * 0.9 + a * 0.5 + ((x.media || 6) - 6) * 0.25 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.7;
     if (x.pos === 'GK' || x.pos === 'DEF') n += sofr === 0 ? 0.7 : -0.18 * (sofr - 1);
     return r1(clampN(n, 3, 10));
   }
-  function marcarJogo(T, k, gols, sofr) {
+  function marcarJogo(E, k, gols, sofr) {
     const t = TIME_DE[k]; if (!t || t.pequeno) return;
     const L = elencoB(t).slice(0, 11), G = new Map(), A = new Map();
     for (let i = 0; i < gols; i++) {
@@ -459,26 +673,132 @@
     }
     const res = Math.sign(gols - sofr);
     for (const x of L) {
-      const e = (T.est[k + '|' + x.nome] = T.est[k + '|' + x.nome] || [0, 0, 0, 0]), g = G.get(x) | 0, a = A.get(x) | 0;
+      const e = (E[k + '|' + x.nome] = E[k + '|' + x.nome] || [0, 0, 0, 0]), g = G.get(x) | 0, a = A.get(x) | 0;
       e[0] += g; e[1] += a; e[2] = (e[2] | 0) + 1; e[3] = r1((e[3] || 0) + notaB(x, g, a, res, sofr));
     }
   }
-  // os prêmios individuais da temporada: artilheiro, líder de assistências e o melhor jogador (nota média, com pelo menos metade dos jogos)
-  function premiosSerieB(T) {
-    const L = Object.entries(T.est || {}).map(([key, e]) => { const i = key.indexOf('|'); return { k: key.slice(0, i), n: key.slice(i + 1), g: e[0] | 0, a: e[1] | 0, j: e[2] | 0, nota: e[3] || 0 }; });
+  // os prêmios individuais da temporada de uma divisão: artilheiro, líder de assistências e o melhor jogador (nota média, com pelo menos metade dos jogos)
+  function premiosSerieB(T, div) {
+    const L = Object.entries(estDe(T, div || 'B')).map(([key, e]) => { const i = key.indexOf('|'); return { k: key.slice(0, i), n: key.slice(i + 1), g: e[0] | 0, a: e[1] | 0, j: e[2] | 0, nota: e[3] || 0 }; });
     const melhor = L.filter((x) => x.j >= 19).sort((a, b) => b.nota / b.j - a.nota / a.j || b.j - a.j)[0];
     const art = L.slice().sort((a, b) => b.g - a.g || b.a - a.a || a.j - b.j)[0], ass = L.slice().sort((a, b) => b.a - a.a || b.g - a.g || a.j - b.j)[0];
     const pk = (x, v) => (x && v > 0 ? { k: x.k, n: x.n, v } : null);
     return { art: pk(art, art ? art.g : 0), ass: pk(ass, ass ? ass.a : 0), melhor: melhor ? { k: melhor.k, n: melhor.n, v: r1(melhor.nota / melhor.j) } : null };
   }
-  function artilheiros(T, n) {
-    return Object.entries(T.est).map(([key, [g, a]]) => { const [k, nome] = key.split('|'); return { k, nome, g, a }; }).filter((x) => x.g > 0 || x.a > 0).sort((x, y) => y.g - x.g || y.a - x.a).slice(0, n || 5);
+  function artilheiros(T, n, div, campo) {
+    const c = campo === 'a' ? 1 : 0;
+    return Object.entries(estDe(T, div || 'B')).map(([key, e]) => { const i = key.indexOf('|'); return { k: key.slice(0, i), nome: key.slice(i + 1), g: e[0] | 0, a: e[1] | 0, j: e[2] | 0 }; })
+      .filter((x) => (c ? x.a : x.g) > 0).sort((x, y) => (c ? y.a - x.a || y.g - x.g : y.g - x.g || y.a - x.a) || x.j - y.j).slice(0, n || 5);
+  }
+
+  // ============================================================================================ (7.3.0) O NÍVEL DOS TIMES ENTRE AS TEMPORADAS
+  //   P.niveis[k] = { setores, estrelas, temp }: o nível de um time que mudou (subiu, caiu, foi melhor ou pior do que prometia).
+  //   · quem SOBE é nivelado com a Série A: 3 estrelas (campeão e vice da B) ou 2 (3º e 4º) na primeira temporada lá, com os setores
+  //     no nível de Série A dessas estrelas (o clube se reforça); o jeito do time (ataque melhor que defesa etc.) continua o mesmo;
+  //   · quem CAI perde parte do elenco e cai para o nível dos melhores da Série B (4 ou 5 estrelas lá): volta a ser favorito, mas
+  //     não um gigante — sem isso os rebaixados voltavam todos no ano seguinte (nos testes, quase 100%);
+  //   · todo mundo: terminou acima do que a força prometia → +0,02 por posição (até +0,25); abaixo → o contrário.
+  //   As estrelas de cada temporada saem do ranking de força dentro da própria divisão, na mesma proporção das de fábrica
+  //   (Série A: 2 de 5★, 7 de 4★, 6 de 3★, 3 de 2★, 2 de 1★; Série B: 1, 6, 7, 4, 2). Na 1ª temporada valem as de fábrica.
+  const mediaSet = (s) => (s.gk + s.def + s.mid + s.fwd) / 4;
+  const COTA_ESTRELAS = { A: [2, 7, 6, 3, 2], B: [1, 6, 7, 4, 2] };
+  function estrelasPorCota(div, n, pos) { const C = COTA_ESTRELAS[div], tot = C.reduce((a, b) => a + b, 0); let acc = 0; for (let i = 0; i < 5; i++) { acc += C[i] * n / tot; if (pos < acc - 1e-9) return 5 - i; } return 1; }
+  let nivelAplicado = null;
+  function aplicarNiveis(P) {
+    const N = (P && P.niveis) || {}, T = P && P.temporada ? garantirLiga(P.temporada) : null, chave = JSON.stringify(N) + '|' + (T ? T.n + JSON.stringify(T.times) : '');
+    if (chave === nivelAplicado) return; nivelAplicado = chave;
+    for (const t of TIMES_A.concat(TIMES_B)) {
+      const set = N[t.k] && N[t.k].setores ? N[t.k].setores : t.setores0;
+      if (JSON.stringify(set) !== JSON.stringify(t.setores)) t.setores = Object.assign({}, set);   // (o elenco se ajusta sozinho: elencoB)
+      t.estrelas = t.estrelas0;
+    }
+    if (!T || !P.niveis) return;
+    for (const div of DIVS) {
+      const K = T.times[div].slice().sort((a, b) => mediaSet(TIME_DE[b].setores) - mediaSet(TIME_DE[a].setores));
+      K.forEach((k, pos) => { const n = N[k]; TIME_DE[k].estrelas = n && n.estrelas && n.temp === T.n ? n.estrelas : estrelasPorCota(div, K.length, pos); });
+    }
+  }
+  // a virada de temporada: sobe/cai, os níveis novos e a temporada seguinte (devolve o resumo da que acabou)
+  function virarTemporada(P, dia0) {
+    const T = garantirLiga(P.temporada), clA = classificacao(T, 'A'), clB = classificacao(T, 'B');
+    const caem = clA.slice(-4).map((x) => x.k), sobem = clB.slice(0, 4).map((x) => x.k);
+    const N = (P.niveis = P.niveis || {}), setDe = (k) => Object.assign({}, (N[k] && N[k].setores) || TIME_DE[k].setores0);
+    const mexe = (k, d) => { const s = setDe(k); for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(s[x] + d, 4.5, 9.8)); N[k] = Object.assign({}, N[k], { setores: s }); };
+    for (const div of DIVS) {
+      const cl = classificacao(T, div), pelaForca = cl.map((x) => x.k).sort((a, b) => mediaSet(setDe(b)) - mediaSet(setDe(a)));
+      cl.forEach((x, pos) => mexe(x.k, clampN((pelaForca.indexOf(x.k) - pos) * 0.02, -0.25, 0.25)));
+    }
+    caem.forEach((k, i) => {                                             // rebaixados: no nível dos melhores da Série B (ov 0,95 a 0,8)
+      const s = setDe(k), m = mediaSet(s), alvo = BASE_B[0] + (0.95 - i * 0.05) * BASE_B[1];
+      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), 4.5, 9.8));
+      N[k] = { setores: s };
+    });
+    sobem.forEach((k, i) => {                                            // nivelados com a Série A: 3 estrelas (1º e 2º) ou 2 (3º e 4º)
+      const s = setDe(k), m = mediaSet(s), alvo = BASE_A[0] + (i < 2 ? 0.5 : 0.3) * BASE_A[1], est = i < 2 ? 3 : 2;
+      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), 4.5, 9.8));
+      N[k] = { setores: s, estrelas: est, temp: T.n + 1 };
+    });
+    const times = { A: T.times.A.filter((k) => !caem.includes(k)).concat(sobem), B: T.times.B.filter((k) => !sobem.includes(k)).concat(caem) };
+    const pos = classificacao(T, T.divNosso).findIndex((x) => x.k === T.nosso) + 1;
+    const resumo = { n: T.n, campA: clA[0].k, campB: clB[0].k, sobem, caem, div: T.divNosso, pos, copas: { est: T.copas.est && T.copas.est.campeao, reg: T.copas.reg && T.copas.reg.campeao, cdb: T.copas.cdb ? T.copas.cdb.campeao : null } };
+    (P.temporadas = P.temporadas || []).push(resumo); if (P.temporadas.length > 30) P.temporadas.shift();
+    nivelAplicado = null; aplicarNiveis(P);                              // os setores novos já valem para montar as copas
+    P.temporada = novaTemporada(T.nosso, dia0, T.n + 1, times);
+    nivelAplicado = null; aplicarNiveis(P);
+    return resumo;
   }
 
   // a partida acabou no meio de um replay (o apito final chegou junto do gol): nada da tela do replay sobra por cima da cena seguinte
   function limparHudPartida() {
     try { if (typeof G !== 'undefined' && G.replay) G.replay = null; if (typeof setLetterbox === 'function') setLetterbox(false); const sk = document.getElementById('skipBtn'), cl = document.getElementById('cineLabel'); if (sk) sk.hidden = true; if (cl) cl.textContent = ''; } catch (e) { /* nada */ }
   }
+
+  // ============================================================================================ (7.3.0) AS TABELAS (antes do jogo e no computador)
+  //   Times de divisões diferentes frente a frente (copas): as estrelas vão para a régua de 10, com as da Série A em dobro —
+  //   uma Série B de 4 estrelas mostra 4/10; uma Série A de 3 estrelas, 6/10. Assim a diferença entre os campeonatos aparece.
+  function estrelasNoJogo(TT, k, outro) {
+    const t = TIME_DE[k]; if (!t) return '';
+    const dA = TT ? divDe(garantirLiga(TT), k) : t.div0, dB = TT ? divDe(TT, outro) : (TIME_DE[outro] || {}).div0;
+    if (dA === dB || (dA !== 'A' && dB !== 'A')) return estrelasTxt(t.estrelas || 1);   // (pequeno do interior x Série B: a régua normal)
+    return estrelasTxt((t.estrelas || 1) * (dA === 'A' ? 2 : 1), 10);
+  }
+  function htmlTabela(TT, div, nosso, esc) {
+    garantirLiga(TT);
+    const cl = classificacao(TT, div), rod = TT.vagas.filter((v) => v.comp === 'liga' && v.feito).length;
+    const marca = (i) => (div === 'B' && i < 4 ? '<i class="tbSobe">▲</i>' : div === 'A' && i >= 16 ? '<i class="tbCai">▼</i>' : '');
+    return '<p class="tbSub">' + esc(Tf('{0} de 38 rodadas', rod)) + ' · ' + esc(div === 'B' ? T('Os 4 primeiros sobem para a Série A.') : T('Os 4 últimos caem para a Série B.')) + '</p>'
+      + '<table class="crTab tbTab"><tr><th>#</th><th>' + esc(T('Time')) + '</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr>'
+      + cl.map((x, i) => '<tr class="' + (x.k === nosso ? 'nos' : '') + (div === 'B' && i < 4 ? ' sobe' : div === 'A' && i >= 16 ? ' cai' : '') + '"><td>' + (i + 1) + marca(i) + '</td><td><img src="' + urlArte(x.k) + '" alt="">' + esc(TIME_DE[x.k].nome)
+        + ' <span class="tbEst">' + estrelasTxt(TIME_DE[x.k].estrelas || 1) + '</span></td><td><b>' + x.p + '</b></td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + x.gp + '</td><td>' + x.gc + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('')
+      + '</table>';
+  }
+  function htmlCopas(TT, nosso, esc) {
+    const t0 = TIME_DE[nosso] || {}, out = [];
+    for (const tipo of ['cdb', 'est', 'reg']) {
+      const C = TT.copas[tipo]; if (!C) continue;
+      const nm = tipo === 'est' ? Tf('Copa Estadual ({0})', t0.uf) : tipo === 'cdb' ? T('Copa do Brasil') : Tf('Copa Regional {0}', T(NOME_REG[t0.reg] || ''));
+      const linhas = C.fases.map((F, fi) => '<p><b>' + esc(T(NOME_FASE[nFases(C)][fi])) + ':</b> ' + F.map((g) => '<span class="' + (g.c === nosso || g.f === nosso ? 'tbNos' : '') + '">' + esc(TIME_DE[g.c].sigla + ' ' + (g.gc < 0 ? '–' : g.gc) + ' x ' + (g.gf < 0 ? '–' : g.gf) + ' ' + TIME_DE[g.f].sigla) + (g.pen ? ' (' + g.pen[0] + '-' + g.pen[1] + ')' : '') + '</span>').join(' · ') + '</p>').join('');
+      out.push('<div class="crCard"><h4>🏆 ' + esc(nm) + (C.campeao ? ' · ' + esc(Tf('Campeão: {0}', TIME_DE[C.campeao].nome)) : '') + '</h4>' + linhas + '</div>');
+    }
+    return out.join('') || '<p>—</p>';
+  }
+  function htmlArtilharia(TT, nosso, esc, nomeJog) {
+    garantirLiga(TT);
+    const nome = (x) => (x.nome === '__voce' ? nomeJog() : x.nome) + ' (' + TIME_DE[x.k].sigla + ')';
+    const lista = (div, campo) => { const l = artilheiros(TT, 8, div, campo); return l.length ? l.map((x, i) => '<p class="' + (x.nome === '__voce' ? 'tbNos' : '') + '">' + (i + 1) + '. ' + esc(nome(x)) + ' · ' + esc(campo === 'a' ? Tf('{0} assistências', x.a) : Tf('{0} gols', x.g)) + '</p>').join('') : '<p>—</p>'; };
+    let h = '';
+    for (const div of [TT.divNosso, TT.divNosso === 'A' ? 'B' : 'A'])
+      h += '<div class="crCard"><h4>⚽ ' + esc(Tf('Artilharia da Série {0}', div)) + '</h4>' + lista(div, 'g') + '</div><div class="crCard"><h4>🎯 ' + esc(Tf('Assistências da Série {0}', div)) + '</h4>' + lista(div, 'a') + '</div>';
+    return h;
+  }
+  function htmlHistorico(P, esc) {
+    const L = (P.temporadas || []).slice().reverse(); if (!L.length) return '';
+    return '<div class="crCard"><h4>📜 ' + esc(T('Temporadas anteriores')) + '</h4>' + L.map((x) => '<p><b>' + esc(Tf('Temporada {0}', x.n)) + ':</b> ' + esc(Tf('{0}º na Série {1}', x.pos, x.div)) + ' · '
+      + esc(Tf('Campeão da A: {0} · da B: {1}', TIME_DE[x.campA].sigla, TIME_DE[x.campB].sigla)) + ' · ' + esc(Tf('Subiram: {0} · Caíram: {1}', x.sobem.map((k) => TIME_DE[k].sigla).join(', '), x.caem.map((k) => TIME_DE[k].sigla).join(', '))) + '</p>').join('') + '</div>';
+  }
+  const CSS_TABELAS = `.tbTab td,.tbTab th{white-space:nowrap}.tbTab td img{width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px}
+.tbTab tr.sobe td:first-child{box-shadow:inset 3px 0 0 #3fbf5a}.tbTab tr.cai td:first-child{box-shadow:inset 3px 0 0 #d8443a}.tbSobe{color:#3fbf5a;font-style:normal;margin-left:2px}.tbCai{color:#d8443a;font-style:normal;margin-left:2px}
+.tbEst{color:#f2c230;font-size:9px;letter-spacing:0}.tbSub{margin:0 0 4px;font-size:10px;opacity:.8}.tbNos{color:#f2c230;font-weight:700}`;
 
   // ============================================================================================ POPULARIDADE (15 a 100, 5 faixas)
   //   A torcida no estádio da Série B sai daqui (ocupação de 0 a 1). O sistema que faz ela subir ainda vai ser feito: por enquanto
@@ -506,7 +826,7 @@
     const DIAS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
 
     const popularidade = {
-      valor(k) { const P = pro(); P.pop = P.pop || {}; return P.pop[k] != null ? P.pop[k] : POP0; },
+      valor(k) { const P = pro(); P.pop = P.pop || {}; if (P.pop[k] != null) return P.pop[k]; const t = TIME_DE[k]; return t && t.div0 === 'A' ? clampN(42 + 9 * (t.estrelas0 || 1), 15, 95) : POP0; },   // (7.3.0) os da Série A já começam com torcida grande
       somar(k, n, motivo) {
         const P = pro(); P.pop = P.pop || {}; const v0 = this.valor(k), v = clampN(Math.round(v0 + n), 0, 100);
         P.pop[k] = v; (P.popLog = P.popLog || []).push([dados().dia | 0, k, v - v0, String(motivo || '')]); if (P.popLog.length > 60) P.popLog.shift();
@@ -692,10 +1012,11 @@
     const contratado = () => pro().etapa === 'contratado' && !!temp();
     const nomeT = (k) => (TIME_DE[k] ? TIME_DE[k].nome : k);
     function nomeComp(T0, v) {
-      if (v.comp === 'liga') return Tf('Série B · Rodada {0} de 38', v.r + 1);
+      if (v.comp === 'liga') return garantirLiga(T0).divNosso === 'A' ? Tf('Série A · Rodada {0} de 38', v.r + 1) : Tf('Série B · Rodada {0} de 38', v.r + 1);
       const C = T0.copas[v.comp], fase = T(NOME_FASE[nFases(C)][v.fase]);
-      return (v.comp === 'est' ? Tf('Copa Estadual ({0})', clube().uf) : Tf('Copa Regional {0}', T(NOME_REG[clube().reg]))) + ' · ' + fase;
+      return nomeCopa(v.comp) + ' · ' + fase;
     }
+    const nomeCopa = (comp) => (comp === 'est' ? Tf('Copa Estadual ({0})', clube().uf) : comp === 'cdb' ? T('Copa do Brasil') : Tf('Copa Regional {0}', T(NOME_REG[clube().reg])));
     function proximaVaga() {
       const T0 = temp(); if (!T0) return null;
       for (let i = T0.fechadas; i < T0.vagas.length; i++) { const v = T0.vagas[i]; if (!v.feito && jogoNosso(T0, v)) return { i, v }; }
@@ -793,12 +1114,16 @@
       if (v.feito) return;
       const sem = jn && !R ? 0.93 : 1;                                  // sem o jogador: o reserva entra no lugar
       if (v.comp === 'liga') {
-        for (const g of T0.liga[v.r]) {
-          if (g[2] >= 0) continue;
-          const kc = TIMES_B[g[0]].k, kf = TIMES_B[g[1]].k, eNosso = kc === nosso || kf === nosso;
-          if (eNosso && R) { g[2] = R.gc; g[3] = R.gf; }
-          else { const p = simularPlacar(kc, kf, kc === nosso ? sem : 1, kf === nosso ? sem : 1); g[2] = p[0]; g[3] = p[1]; }
-          marcarJogo(T0, kc, eNosso && R && kc === nosso ? R.golsNPC : g[2], g[3]); marcarJogo(T0, kf, eNosso && R && kf === nosso ? R.golsNPC : g[3], g[2]);
+        garantirLiga(T0);
+        for (const div of DIVS) {                                       // (7.3.0) a mesma rodada nas duas divisões
+          const K = T0.times[div], E = estDe(T0, div);
+          for (const g of ligaDe(T0, div)[v.r]) {
+            if (g[2] >= 0) continue;
+            const kc = K[g[0]], kf = K[g[1]], eNosso = kc === nosso || kf === nosso;
+            if (eNosso && R) { g[2] = R.gc; g[3] = R.gf; }
+            else { const p = simularPlacar(kc, kf, kc === nosso ? sem : 1, kf === nosso ? sem : 1); g[2] = p[0]; g[3] = p[1]; }
+            marcarJogo(E, kc, eNosso && R && kc === nosso ? R.golsNPC : g[2], g[3]); marcarJogo(E, kf, eNosso && R && kf === nosso ? R.golsNPC : g[3], g[2]);
+          }
         }
       } else {
         const C = T0.copas[v.comp], F = C.fases[v.fase];
@@ -813,7 +1138,8 @@
       }
       v.feito = true; T0.fechadas = Math.max(T0.fechadas, i + 1);
       if (jn && !R) {
-        const g = jn.g, nos = jn.liga ? (g[0] === IDX[nosso] ? g[2] : g[3]) : (g.c === nosso ? g.gc : g.gf), eles = jn.liga ? (g[0] === IDX[nosso] ? g[3] : g[2]) : (g.c === nosso ? g.gf : g.gc);
+        const ci = jn.liga ? T0.times[jn.div].indexOf(nosso) : -1;
+        const g = jn.g, nos = jn.liga ? (g[0] === ci ? g[2] : g[3]) : (g.c === nosso ? g.gc : g.gf), eles = jn.liga ? (g[0] === ci ? g[3] : g[2]) : (g.c === nosso ? g.gf : g.gc);
         const fora = foraDoJogo(), adv = jn.c === nosso ? jn.f : jn.c;
         if (fora) { cumprirFora(); M.filaMsg.push(['fora', { adv, nos, eles, fora }]); }   // suspenso/machucado: cumpriu o jogo
         else {                                                           // faltou: o técnico não gostou
@@ -836,10 +1162,16 @@
             Tf('Confiança do técnico: {0} → {1} ({2}{3})', x.c0, x.c1, x.n >= 0 ? '+' : '', x.n));
         } else if (tipo === 'faltou') await api.mensagemCelular(tec, Tgf('Você não apareceu no ônibus do jogo contra o {0}.', nomeT(x.adv)), Tf('Jogamos sem você: {0} x {1}. Confiança do técnico: {2} → {3}.', x.nos, x.eles, x.c0, x.c1));
         else if (tipo === 'fora') await api.mensagemCelular(tec, Tf('Você estava {0} e não jogou contra o {1}.', x.fora, nomeT(x.adv)), Tf('Resultado: {0} x {1}. Cuida de você, que a vaga te espera.', x.nos, x.eles));
-        else if (tipo === 'copa') await api.mensagemCelular(clube().nome, x.campeao === pro().clube ? Tf('SOMOS CAMPEÕES DA {0}!', (x.comp === 'est' ? T('Copa Estadual') : T('Copa Regional')).toUpperCase()) : Tf('O campeão da {0} foi o {1}.', x.comp === 'est' ? T('Copa Estadual') : T('Copa Regional'), nomeT(x.campeao)), '');
+        else if (tipo === 'copa') await api.mensagemCelular(clube().nome, x.campeao === pro().clube ? Tf('SOMOS CAMPEÕES DA {0}!', (x.comp === 'est' ? T('Copa Estadual') : x.comp === 'cdb' ? T('Copa do Brasil') : T('Copa Regional')).toUpperCase()) : Tf('O campeão da {0} foi o {1}.', x.comp === 'est' ? T('Copa Estadual') : x.comp === 'cdb' ? T('Copa do Brasil') : T('Copa Regional'), nomeT(x.campeao)), '');
         else if (tipo === 'fim') {
-          const T0 = temp(), cl = classificacao(T0), pos = cl.findIndex((y) => y.k === T0.nosso) + 1;
-          await api.mensagemCelular(clube().nome, pos <= 4 ? Tf('ACESSO! Terminamos a Série B em {0}º lugar e subimos para a Série A!', pos) : Tf('Fim da Série B: terminamos em {0}º lugar.', pos), T('A próxima temporada ainda vai chegar. Descansa, que você merece!'));
+          const T0 = garantirLiga(temp()), div = T0.divNosso, cl = classificacao(T0, div), pos = cl.findIndex((y) => y.k === T0.nosso) + 1;
+          const txt = div === 'A' ? (pos === 1 ? T('CAMPEÕES DA SÉRIE A! O título mais importante do país é nosso!') : pos >= 17 ? Tf('Terminamos a Série A em {0}º lugar e fomos rebaixados. Ano que vem é Série B.', pos) : Tf('Fim da Série A: terminamos em {0}º lugar.', pos))
+            : (pos === 1 ? T('CAMPEÕES DA SÉRIE B! E com o acesso para a Série A!') : pos <= 4 ? Tf('ACESSO! Terminamos a Série B em {0}º lugar e subimos para a Série A!', pos) : Tf('Fim da Série B: terminamos em {0}º lugar.', pos));
+          await api.mensagemCelular(clube().nome, txt, T('Depois da festa de premiação começa a próxima temporada. Descansa, que você merece!'));
+        } else if (tipo === 'nova') {
+          const nomes = (l) => l.map((k) => TIME_DE[k].sigla).join(', ');
+          await api.mensagemCelular(clube().nome, Tf('Temporada {0} começando! Subiram para a Série A: {1}. Caíram para a Série B: {2}.', x.n, nomes(x.sobem), nomes(x.caem)),
+            x.subimos ? Tf('Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.', x.base) : x.caimos ? T('Agora é Série B de novo. Vamos voltar mais fortes!') : x.div === 'A' ? T('Mais um ano na Série A. Bora!') : T('Mais um ano na Série B: dessa vez é o acesso!'));
         } else if (tipo === 'hoje') await api.mensagemCelular(clube().nome, Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', x.comp, nomeT(x.adv), fmt(x.h)), Tf('O ônibus do clube passa no ponto da avenida às {0}. Não se atrase!', fmt(x.h - ANTES_ONIBUS)));
       } catch (e) { console.warn('[Série B] mensagem:', e); }
       M.lendo = false; M.tMsg = 2.5; gravar();
@@ -1016,12 +1348,14 @@
       const P = pro(), nosso = P.clube, adv = jn.c === nosso ? jn.f : jn.c, casa = jn.c === nosso;
       const eu = { nome: nomeJ(), posicao: posJ(), numero: (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9, aparencia: api.aparenciaNaPartida() };
       const tA = timeMotor(TIME_DE[nosso], { voce: posJ() }), tB = timeMotor(TIME_DE[adv]);
-      const mand = casa ? nosso : adv; (casa ? tA : tB).torcidaB = popularidade.ocupacao(mand);
+      const mand = casa ? nosso : adv, T0 = garantirLiga(temp()), estadioA = divDe(T0, mand) === 'A';   // (7.3.0) mandante da Série A: o estádio grande
+      if (!estadioA) (casa ? tA : tB).torcidaB = popularidade.ocupacao(mand);
       tA.popularidade = popularidade.valor(nosso) / 100; tB.popularidade = popularidade.valor(adv) / 100;
       const h = v.h, horario = h < 15.5 ? 'dia' : h < 18.4 ? 'tarde' : 'noite';
       const copa = v.comp !== 'liga';
-      return { campo: 'serieB', times: [tA, tB], mandante: casa ? 0 : 1,
-        competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T('Série B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
+      const campoA = () => Object.assign({}, CAMPOS.serieA, { modelo: window.EstadiosA ? window.EstadiosA.modeloDoClube(mand) : '' });   // os estádios do estadiosA.js
+      return { campo: estadioA ? (typeof CAMPOS !== 'undefined' && CAMPOS.serieA ? campoA() : 'oficial') : 'serieB', times: [tA, tB], mandante: casa ? 0 : 1,
+        competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T(T0.divNosso === 'A' ? 'Série A' : 'Série B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
         dificuldade: 'normal', clima: Math.random() < 0.15 ? 'chuva' : 'seco', gramado: 'baixo', horario, duracao: o.duracao, usuario: eu, atributos: api.atributosJogador(), taticas: [null, null], formacoes: [null, null] };
     }
     // ---- A FESTA: o título no gramado (copas e Série B) e a noite dos prêmios da Série B
@@ -1040,7 +1374,7 @@
       } catch (e) { console.error('[Série B] festa do título:', e); }
     }
     function premiosDaFesta(T0) {
-      const P = premiosSerieB(T0), out = [];
+      const P = premiosSerieB(T0, garantirLiga(T0).divNosso), out = [];
       for (const tipo of ['art', 'ass', 'melhor']) {
         const x = P[tipo]; if (!x || !TIME_DE[x.k]) continue;
         const voce = x.n === '__voce', t = TIME_DE[x.k];
@@ -1049,31 +1383,43 @@
       }
       return out;
     }
-    async function cenaFimTemporada() {                                 // fim da Série B: a festa do título (se não teve no último jogo) e a noite dos prêmios
-      const s = S(), P = pro(), T0 = temp(), d = dados(); if (M.cena || !T0) return;
+    async function cenaFimTemporada() {                                 // fim da liga: a festa do título (se não teve no último jogo), a noite dos prêmios e a temporada seguinte
+      const s = S(), P = pro(), T0 = garantirLiga(temp()), d = dados(); if (M.cena || !T0) return;
+      const div = T0.divNosso;
       M.cena = true; const trava = travar(); P.galaVista = true;
       try {
         await api.preto(true, 700);
         api.sairParaPartida();
-        if (classificacao(T0)[0].k === T0.nosso && !P.comemorou) {
+        if (classificacao(T0, div)[0].k === T0.nosso && !P.comemorou) {
           P.comemorou = true;
           const v = T0.vagas.filter((x) => x.comp === 'liga').pop(), jn = v && jogoNosso(T0, v);
-          if (jn) await festaTitulo('serieb', cfgJogo(v, jn, {}));
+          if (jn) await festaTitulo(div === 'A' ? 'seriea' : 'serieb', cfgJogo(v, jn, {}));
         }
         const lista = premiosDaFesta(T0), meus = lista.filter((x) => x.voce).length;
-        if (meus && !P.pagoPremios) { P.pagoPremios = true; d.fakes = (d.fakes | 0) + meus * PREMIO_IND_B; }
+        const valor = div === 'A' ? PREMIO_IND_B * 2 : PREMIO_IND_B;
+        if (meus && !P.pagoPremios) { P.pagoPremios = true; d.fakes = (d.fakes | 0) + meus * valor; }
         if (lista.length) {
           const F = await Fases.carregar('festa');
-          await F.gala({ nivel: 'serieb', titulo: T('PRÊMIOS DA SÉRIE B'), premios: lista,
-            io: { preto: api.preto, esperar: api.esperar, ganho: () => { try { api.somDinheiro(); api.ganhoNaTela(PREMIO_IND_B); } catch (e) { /* nada */ } } } });
+          await F.gala({ nivel: div === 'A' ? 'seriea' : 'serieb', titulo: div === 'A' ? T('PRÊMIOS DA SÉRIE A') : T('PRÊMIOS DA SÉRIE B'), premios: lista,
+            io: { preto: api.preto, esperar: api.esperar, ganho: () => { try { api.somDinheiro(); api.ganhoNaTela(valor); } catch (e) { /* nada */ } } } });
         }
       } catch (e) { console.error('[Série B] fim da temporada:', e); }
       finally {
         try { api.voltarDaPartida(); if (P.pagoPremios) api.mostrarDinheiro(); } catch (e) { /* nada */ }
+        try { novaTemporadaDoClube(); } catch (e) { console.error('[Série B] temporada nova:', e); }
         clearInterval(trava); M.cena = false; try { Dialogo.esconder(); } catch (e) { /* nada */ }
         gravar();
         await api.preto(false, 700); if (s.ativo && s.modo === 'cena') api.liberar();
       }
+    }
+    // (7.3.0) A TEMPORADA SEGUINTE: sobem 4, caem 4, os níveis novos; o contrato continua (subiu para a Série A: +50% em tudo)
+    function novaTemporadaDoClube() {
+      const P = pro(), d = dados(), T0 = garantirLiga(temp()); if (!T0 || P.etapa !== 'fimTemporada') return;
+      const R = virarTemporada(P, (d.dia | 0) + 3), T1 = temp(), C = P.contrato || {};
+      const subimos = R.div === 'B' && T1.divNosso === 'A', caimos = R.div === 'A' && T1.divNosso === 'B';
+      if (subimos) { for (const k of ['base', 'gol', 'ass', 'vit']) C[k] = Math.round((C[k] | 0) * 1.5); }
+      Object.assign(P, { etapa: 'contratado', galaVista: false, comemorou: false, pagoPremios: false });
+      M.filaMsg.push(['nova', { n: T1.n, sobem: R.sobem, caem: R.caem, subimos, caimos, div: T1.divNosso, base: (C.base | 0) + (C.extra | 0) }]);
     }
     async function partidaDoDia(pv) {
       const v = pv.v, T0 = temp(), jn = jogoNosso(T0, v), P = pro(), d = dados(), nosso = P.clube, adv = jn.c === nosso ? jn.f : jn.c;
@@ -1097,8 +1443,8 @@
       const res = registrarJogo(pv, jn, esc, sim, r);
       if (r) {                                                           // título decidido neste jogo: a festa no gramado antes da tela do pós-jogo
         const T1 = temp(), C = v.comp !== 'liga' ? T1.copas[v.comp] : null;
-        if (C && C.campeao === nosso && v.fase === nFases(C) - 1) await festaTitulo(v.comp === 'est' ? 'estadual' : 'regional', cfgJogo(v, jn, {}));
-        else if (!C && T1.fechadas >= T1.vagas.length && classificacao(T1)[0].k === nosso && !P.comemorou) { P.comemorou = true; await festaTitulo('serieb', cfgJogo(v, jn, {})); }
+        if (C && C.campeao === nosso && v.fase === nFases(C) - 1) await festaTitulo(v.comp === 'est' ? 'estadual' : v.comp === 'cdb' ? 'cdb' : 'regional', cfgJogo(v, jn, {}));
+        else if (!C && T1.fechadas >= T1.vagas.length && classificacao(T1, T1.divNosso)[0].k === nosso && !P.comemorou) { P.comemorou = true; await festaTitulo(T1.divNosso === 'A' ? 'seriea' : 'serieb', cfgJogo(v, jn, {})); }
         limparHudPartida();
       }
       await telaPosJogo(res);
@@ -1114,7 +1460,7 @@
       const R = { gc: casa ? nos : eles, gf: casa ? eles : nos, pen: pen ? (casa ? pen : [pen[1], pen[0]]) : null, golsNPC: Math.max(0, nos - gols) };
       for (let k0 = T0.fechadas; k0 < pv.i; k0++) fecharVaga(T0, k0, null);   // vagas de antes sem jogo nosso (copa em que já caímos)
       fecharVaga(T0, pv.i, R);
-      const k = nosso + '|__voce', ek = (T0.est[k] = T0.est[k] || [0, 0, 0, 0]);
+      const EV = estDe(garantirLiga(T0), T0.divNosso), k = nosso + '|__voce', ek = (EV[k] = EV[k] || [0, 0, 0, 0]);   // (7.3.0) na estatística da série em que o time joga
       if (v.comp === 'liga') { ek[0] += gols; ek[1] += ass; if (r) { ek[2] = (ek[2] | 0) + 1; ek[3] = r1((ek[3] || 0) + nota); } }
       const venceu = pen ? pen[0] > pen[1] : nos > eles, empate = !pen && nos === eles;
       const minJogados = esc.titular ? 90 : 90 - esc.entra, bom = nota >= (minJogados >= 45 ? 7 : 6.5) && !(r && r.expulso);   // quem entrou no fim tem pouco tempo: 6,5 já é um jogo bom
@@ -1164,6 +1510,14 @@
 .sbLista{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:1px;font-size:10.5px}
 .sbLista.duas{display:grid;grid-template-columns:1fr 1fr;column-gap:10px}.sbLista li{display:flex;justify-content:space-between;gap:6px}
 .sbLista li.nos{color:#f2c230;font-weight:700}
+.sbBtns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.sbBtns .sbBtn{align-self:auto}.sbBtn.sec{background:#3a2c1e;color:#f4efe2;border-color:#000}
+.sbAbas{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}.sbAba{font:700 11px/1 var(--font-display,monospace);padding:7px 10px;background:#241b12;color:#f4efe2;border:2px solid #4a3622;cursor:pointer;text-transform:uppercase}
+.sbAba.on{background:#f2c230;color:#2a1206;border-color:#2a1206}.sbClass{width:min(820px,100%)}.sbClCorpo{overflow:auto;max-height:calc(var(--avh,1vh)*100 - 170px);min-height:0}
+.sbClCorpo .crTab{width:100%;border-collapse:collapse;font-size:10.5px}.sbClCorpo .crTab th{color:#f2c230;text-align:left;padding:2px 4px;border-bottom:2px solid #4a3622}
+.sbClCorpo .crTab td{padding:2px 4px;border-bottom:1px solid #2e2318}.sbClCorpo .crTab tr.nos td{color:#f2c230;font-weight:700}
+.sbClCorpo .crCard{background:#241b12;border:2px solid #4a3622;padding:6px 9px;margin-bottom:6px}.sbClCorpo .crCard h4{margin:0 0 4px;font:700 11px/1.1 var(--font-display,monospace);color:#f2c230;text-transform:uppercase}
+.sbClCorpo .crCard p{margin:1px 0;font-size:10.5px}
+` + CSS_TABELAS + `
 .sbTicker{position:fixed;z-index:39;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(520px,calc(100% - 28px));background:rgba(20,16,12,.9);border:3px solid #f2c230;color:#f4efe2;padding:7px 10px;box-sizing:border-box;font:600 12px/1.3 var(--font-body,monospace)}
 .sbTicker .t1{display:flex;justify-content:space-between;align-items:center;font:700 13px/1 var(--font-display,monospace)}
 .sbTicker .t1 img{width:22px;height:22px;image-rendering:pixelated;vertical-align:middle}
@@ -1175,7 +1529,24 @@
     function barraConf(c) {
       return '<div class="sbBarra"><b style="width:' + c + '%"></b><i style="left:50%"></i><i style="left:80%"></i></div><div class="sbLeg"><span>0</span><span>' + escH(T('50: chance de titular')) + '</span><span>' + escH(T('80: sempre titular')) + '</span></div>';
     }
-    const ladoHtml = (k, etq, casa) => '<div class="sbLado"><img src="' + urlArte(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="sbEst">' + estrelasTxt(TIME_DE[k].estrelas || 1) + '</span><small>' + escH(etq) + '</small></div>';
+    const ladoHtml = (k, etq, outro) => '<div class="sbLado"><img src="' + urlArte(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="sbEst">' + (outro ? estrelasNoJogo(temp(), k, outro) : estrelasTxt(TIME_DE[k].estrelas || 1)) + '</span><small>' + escH(etq) + (outro && TIME_DE[k] && !TIME_DE[k].pequeno ? ' · ' + escH(Tf('Série {0}', divDe(garantirLiga(temp()), k) || '-')) : '') + '</small></div>';
+    // (7.3.0) A CLASSIFICAÇÃO: Série A, Série B, as copas e a artilharia (antes do jogo; o computador tem a mesma coisa)
+    function telaClassificacao(aba) {
+      cssSb();
+      return new Promise((ok) => {
+        const T0 = garantirLiga(temp()), nosso = pro().clube, el = document.createElement('div'); el.className = 'sbTela'; el.style.zIndex = '41';
+        let a = aba || T0.divNosso;
+        const ABAS = [['A', T('Série A')], ['B', T('Série B')], ['copas', T('Copas')], ['art', T('Artilharia')]];
+        const pinta = () => {
+          const corpo = a === 'A' || a === 'B' ? htmlTabela(T0, a, nosso, escH) : a === 'copas' ? htmlCopas(T0, nosso, escH) : htmlArtilharia(T0, nosso, escH, nomeJ);
+          el.innerHTML = '<div class="sbCaixa sbClass"><div class="sbComp">' + escH(Tf('Temporada {0} · Classificação', T0.n)) + '</div><div class="sbAbas">'
+            + ABAS.map(([k, t]) => '<button type="button" class="sbAba' + (k === a ? ' on' : '') + '" data-a="' + k + '">' + escH(t) + '</button>').join('') + '</div><div class="sbClCorpo">' + corpo + '</div>'
+            + '<button type="button" class="sbBtn" data-fechar="1">' + escH(T('Voltar')) + '</button></div>';
+        };
+        el.onclick = (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.fechar) { el.remove(); ok(); return; } if (b.dataset.a) { a = b.dataset.a; pinta(); } };
+        pinta(); (document.getElementById('raizJogo') || document.body).appendChild(el);
+      });
+    }
     function telaPreJogo(v, jn, esc) {
       cssSb();
       return new Promise((ok) => {
@@ -1184,15 +1555,16 @@
           : c < 35 ? T('Fica no banco e presta atenção no jogo. Se precisar, eu te chamo no fim.') : T('Começa no banco. No segundo tempo eu vou precisar de você.');
         const el = document.createElement('div'); el.className = 'sbTela';
         el.innerHTML = '<div class="sbCaixa"><div class="sbComp">' + escH(nomeComp(T0, v)) + ' · ' + escH(T(DIAS[semanaDe(v.dia)])) + ' ' + escH(fmt(v.h)) + '</div>'
-          + '<div class="sbVs">' + ladoHtml(jn.c, T('CASA')) + '<span class="sbX">X</span>' + ladoHtml(jn.f, T('FORA')) + '</div>'
+          + '<div class="sbVs">' + ladoHtml(jn.c, T('CASA'), jn.f) + '<span class="sbX">X</span>' + ladoHtml(jn.f, T('FORA'), jn.c) + '</div>'
           + '<div class="sbInfo"><div class="sbCard"><h4>' + escH(T('Você')) + '</h4><p><span class="sbTag' + (esc.titular ? '' : ' banco') + '">' + escH(esc.titular ? T('TITULAR') : T('NO BANCO')) + '</span></p>'
           + '<p>' + escH(esc.titular ? T('Você joga os 90 minutos.') : Tf('O técnico deve te colocar por volta dos {0} minutos.', esc.entra)) + '</p></div>'
           + '<div class="sbCard"><h4>' + escH(Tf('Confiança do técnico: {0}/100', c)) + '</h4>' + barraConf(c) + '</div></div>'
           + '<div class="sbCard"><h4>' + escH(tec) + '</h4><p>“' + escH(fala) + '”</p></div>'
-          + '<button type="button" class="sbBtn">' + escH(esc.titular ? T('Jogar ▶') : T('Ir para o banco ▶')) + '</button></div>';
+          + '<div class="sbBtns"><button type="button" class="sbBtn sec" data-cl="1">' + escH(T('Classificação')) + '</button><button type="button" class="sbBtn" data-ir="1">' + escH(esc.titular ? T('Jogar ▶') : T('Ir para o banco ▶')) + '</button></div></div>';
         (document.getElementById('raizJogo') || document.body).appendChild(el);
         api.preto(false, 300);
-        el.querySelector('button').onclick = async () => { el.querySelector('button').disabled = true; await api.preto(true, 400); el.remove(); ok(); };
+        el.querySelector('[data-cl]').onclick = () => telaClassificacao();
+        el.querySelector('[data-ir]').onclick = async () => { el.querySelector('[data-ir]').disabled = true; await api.preto(true, 400); el.remove(); ok(); };
       });
     }
     // ---- O BANCO: o estádio de verdade, a câmera nos reservas (o jogador sentado entre eles) e o placar correndo em cima
@@ -1255,8 +1627,9 @@
         const gc = R.casa ? R.nos : R.eles, gf = R.casa ? R.eles : R.nos;
         let outros = '';
         if (v.comp === 'liga') {
-          outros = T0.liga[v.r].filter((g) => !(TIMES_B[g[0]].k === nosso || TIMES_B[g[1]].k === nosso)).map((g) => '<li><span>' + escH(TIMES_B[g[0]].sigla + ' ' + g[2] + ' x ' + g[3] + ' ' + TIMES_B[g[1]].sigla) + '</span></li>').join('');
-          const cl = classificacao(T0), pos = cl.findIndex((x) => x.k === nosso) + 1, me = cl[pos - 1];
+          const div = garantirLiga(T0).divNosso, K = T0.times[div];
+          outros = ligaDe(T0, div)[v.r].filter((g) => !(K[g[0]] === nosso || K[g[1]] === nosso)).map((g) => '<li><span>' + escH(TIME_DE[K[g[0]]].sigla + ' ' + g[2] + ' x ' + g[3] + ' ' + TIME_DE[K[g[1]]].sigla) + '</span></li>').join('');
+          const cl = classificacao(T0, div), pos = cl.findIndex((x) => x.k === nosso) + 1, me = cl[pos - 1];
           outros = '<div class="sbCard"><h4>' + escH(Tf('A rodada · {0}º lugar ({1} pts)', pos, me.p)) + '</h4><ul class="sbLista duas">' + outros + '</ul></div>';
         } else {
           const C = T0.copas[v.comp];
@@ -1267,7 +1640,7 @@
         const fala = R.semJogo ? T('O jogo não aconteceu como devia...') : R.bom ? (R.nota >= 8 ? T('Que jogo! É disso que eu preciso.') : T('Bom jogo. Continua assim.')) : R.expulso ? Tg('Expulso?! Assim você complica o time inteiro.') : Tg('Hoje não foi o seu dia. Treina, cuida do corpo e volta melhor.');
         const el = document.createElement('div'); el.className = 'sbTela';
         el.innerHTML = '<div class="sbCaixa"><div class="sbComp">' + escH(nomeComp(T0, v)) + ' · ' + escH(res) + (R.pen ? ' · ' + escH(Tf('Pênaltis: {0} x {1}', R.casa ? R.pen[0] : R.pen[1], R.casa ? R.pen[1] : R.pen[0])) : '') + '</div>'
-          + '<div class="sbVs">' + ladoHtml(R.jn.c, R.jn.c === nosso ? T('NÓS') : '') + '<span class="sbPlacar">' + gc + ' x ' + gf + '</span>' + ladoHtml(R.jn.f, R.jn.f === nosso ? T('NÓS') : '') + '</div>'
+          + '<div class="sbVs">' + ladoHtml(R.jn.c, R.jn.c === nosso ? T('NÓS') : '', R.jn.f) + '<span class="sbPlacar">' + gc + ' x ' + gf + '</span>' + ladoHtml(R.jn.f, R.jn.f === nosso ? T('NÓS') : '', R.jn.c) + '</div>'
           + '<div class="sbInfo"><div class="sbCard"><h4>' + escH(T('Sua partida')) + '</h4><p>' + escH(Tf('Nota {0} · {1} gol(s) · {2} assistência(s)', R.nota.toFixed(1), R.gols, R.ass)) + '</p><p>' + escH(R.esc.titular ? T('Titular, 90 minutos') : Tf('Entrou aos {0}\' ({1} minutos)', R.esc.entra, R.min)) + '</p>'
           + '<p>' + escH(Tf('{0}: confiança {1} → {2}', R.bom ? T('Jogo bom') : T('Jogo abaixo'), R.c0, R.c1)) + '</p>' + barraConf(R.c1) + '</div>'
           + '<div class="sbCard"><h4>' + escH(T('Pagamento')) + '</h4><ul class="sbLista"><li><span>' + escH(T('Por jogo')) + '</span><span>' + R.pag.base + '</span></li>'
@@ -1294,14 +1667,16 @@
           else if (P.etapa === 'carta') { M.cena = true; api.irParaFase2({ cartaPeneira: true, ap: api.apLucia(), namorando: namorando(), trabalhaComLucia: api.empregoEscolhido() === 'cafeteria' && !!s.dados.confeitaria }); }
         }
         if (contratado() || P.etapa === 'fimTemporada') {
+          try { aplicarNiveis(P); garantirLiga(temp()); } catch (e) { console.warn('[Série B] liga:', e); }   // (7.3.0) os níveis da temporada e a Série A (saves antigos)
           if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); }
           if (P.etapa === 'fimTemporada' && !P.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaFimTemporada();
+          else if (P.etapa === 'fimTemporada' && P.galaVista && !M.cena) novaTemporadaDoClube();   // (7.3.0) save que acabou a temporada antes da 7.3.0 (a festa já foi): a próxima começa agora
         }
       }
       tickMensagens(dt);
     }
     return { tick, alvos, popularidade, presente, _M: M,
-      _fns: { escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo, festaTitulo, cenaFimTemporada, premiosDaFesta, jogadoresDaFesta } };
+      _fns: { cfgJogo, telaClassificacao, cenaFimTemporada, novaTemporadaDoClube, escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo, festaTitulo, cenaFimTemporada, premiosDaFesta, jogadoresDaFesta } };
   }
 
   // ============================================================================================ A CARTA (o quarto, fase2.js)
@@ -1374,22 +1749,74 @@
     let h = '<div class="crCard"><h4><img src="' + urlArte(t.k) + '" alt="">' + esc(t.nome) + '</h4><p>' + esc(Tf('Confiança do técnico: {0}/100', P.conf | 0)) + ' · ' + esc(Tf('Contrato: {0} fakes por jogo', (P.contrato.base | 0) + (P.contrato.extra | 0))) + '</p><p>' + esc(Tf('Ganhos no clube: {0} fakes', P.ganhos | 0)) + '</p></div>';
     const j = E.j | 0;
     h += '<div class="crNums">' + num(j, 'Jogos') + num((E.tit | 0) + ' / ' + j, 'Como titular') + num(E.g | 0, 'Gols') + num(E.a | 0, 'Assistências') + num(j ? (Math.round(E.nota / j * 10) / 10).toFixed(1) : '—', 'Nota média') + num(E.min | 0, 'Minutos') + '</div>';
-    const cl = classificacao(T0);
-    h += '<div class="crCard"><h4>' + esc(T('Série B')) + ' · ' + esc(Tf('{0} de 38 rodadas', T0.vagas.filter((v) => v.comp === 'liga' && v.feito).length)) + '</h4><table class="crTab"><tr><th>#</th><th>' + esc(T('Time')) + '</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>SG</th></tr>'
-      + cl.map((x, i) => '<tr' + (x.k === P.clube ? ' class="nos"' : '') + '><td>' + (i + 1) + (i < 4 ? '↑' : '') + '</td><td><img src="' + urlArte(x.k) + '" alt="">' + esc(TIME_DE[x.k].nome) + '</td><td>' + x.p + '</td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('')
-      + '</table><p><small>' + esc(T('Os 4 primeiros sobem para a Série A. Ninguém cai.')) + '</small></p></div>';
-    const art = artilheiros(T0, 6);
-    h += '<div class="crCard"><h4>' + esc(T('Artilharia')) + '</h4>' + (art.length ? art.map((x, i) => '<p>' + (i + 1) + '. ' + esc((x.nome === '__voce' ? nomeJog() : x.nome) + ' (' + TIME_DE[x.k].sigla + ')') + ' · ' + esc(Tf('{0} gols', x.g)) + '</p>').join('') : '<p>—</p>') + '</div>';
-    for (const tipo of ['est', 'reg']) {
-      const C = T0.copas[tipo], nm = tipo === 'est' ? Tf('Copa Estadual ({0})', t.uf) : Tf('Copa Regional {0}', T(NOME_REG[t.reg]));
-      const linhas = C.fases.map((F, fi) => '<p><b>' + esc(T(NOME_FASE[nFases(C)][fi])) + ':</b> ' + F.map((g) => esc(TIME_DE[g.c].sigla + ' ' + (g.gc < 0 ? '–' : g.gc) + ' x ' + (g.gf < 0 ? '–' : g.gf) + ' ' + TIME_DE[g.f].sigla) + (g.pen ? ' (' + g.pen[0] + '-' + g.pen[1] + ')' : '')).join(' · ') + '</p>').join('');
-      h += '<div class="crCard"><h4>🏆 ' + esc(nm) + (C.campeao ? ' · ' + esc(Tf('Campeão: {0}', TIME_DE[C.campeao].nome)) : '') + '</h4>' + linhas + '</div>';
-    }
+    // (7.3.0) a temporada inteira: as duas séries, as copas, a artilharia e as temporadas passadas (seções que abrem e fecham)
+    aplicarNiveis(P); garantirLiga(T0);
+    const sec = (titulo, corpo, aberto) => '<details class="crSec"' + (aberto ? ' open' : '') + '><summary>' + esc(titulo) + '</summary>' + corpo + '</details>';
+    const div = T0.divNosso, outra = div === 'A' ? 'B' : 'A';
+    h += '<style>' + CSS_TABELAS + '.crSec{margin:0}.crSec>summary{cursor:pointer;font:800 13px/1.2 system-ui;padding:8px 10px;background:#1f2a44;color:#fff;border-radius:6px}.crSec[open]>summary{margin-bottom:8px}'
+      + '#f2Pc .tbEst{color:#c8902a}#f2Pc .tbNos{color:#c8642a}#f2Pc .tbTab tr.sobe td:first-child{box-shadow:inset 3px 0 0 #2f9a48}#f2Pc .tbTab tr.cai td:first-child{box-shadow:inset 3px 0 0 #c8352b}#f2Pc .tbSub{color:#556}</style>';
+    h += sec(Tf('Temporada {0} · Série {1}', T0.n, div), '<div class="crCard">' + htmlTabela(T0, div, P.clube, esc) + '</div>', true);
+    h += sec(Tf('Série {0}', outra), '<div class="crCard">' + htmlTabela(T0, outra, P.clube, esc) + '</div>', false);
+    h += sec(T('Copas'), htmlCopas(T0, P.clube, esc), false);
+    h += sec(T('Artilharia'), htmlArtilharia(T0, P.clube, esc, nomeJog), false);
+    const hist = htmlHistorico(P, esc); if (hist) h += sec(T('Temporadas anteriores'), hist, false);
     return h;
   }
 
   // ============================================================================================ TEXTOS (pt → en, es, it, fr)
   const TRAD = {
+    "Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.": ["We're Série A now! Your contract went up to {0} fakes per game.", "¡Ahora somos Série A! Tu contrato subió a {0} fakes por partido.", "Ora siamo in Série A! Il tuo contratto è salito a {0} fakes a partita.", "On est en Série A ! Ton contrat passe à {0} fakes par match."],
+    "Agora é Série B de novo. Vamos voltar mais fortes!": ["It's Série B again now. We'll come back stronger!", "Ahora es Série B otra vez. ¡Volveremos más fuertes!", "Ora è di nuovo Série B. Torneremo più forti!", "C'est de nouveau la Série B. On reviendra plus forts !"],
+    "Artilharia da Série {0}": ["Série {0} top scorers", "Goleadores de la Série {0}", "Capocannonieri della Série {0}", "Meilleurs buteurs de la Série {0}"],
+    "Assistências da Série {0}": ["Série {0} assists", "Asistencias de la Série {0}", "Assist della Série {0}", "Passes décisives de la Série {0}"],
+    "CAMPEÕES DA SÉRIE A! O título mais importante do país é nosso!": ["SÉRIE A CHAMPIONS! The biggest title in the country is ours!", "¡CAMPEONES DE LA SÉRIE A! ¡El título más importante del país es nuestro!", "CAMPIONI DELLA SÉRIE A! Il titolo più importante del paese è nostro!", "CHAMPIONS DE LA SÉRIE A ! Le plus grand titre du pays est à nous !"],
+    "CAMPEÕES DA SÉRIE B! E com o acesso para a Série A!": ["SÉRIE B CHAMPIONS! And promoted to Série A!", "¡CAMPEONES DE LA SÉRIE B! ¡Y con el ascenso a la Série A!", "CAMPIONI DELLA SÉRIE B! E promossi in Série A!", "CHAMPIONS DE LA SÉRIE B ! Et promus en Série A !"],
+    "Campeão da A: {0} · da B: {1}": ["A champion: {0} · B: {1}", "Campeón de la A: {0} · de la B: {1}", "Campione della A: {0} · della B: {1}", "Champion de la A : {0} · de la B : {1}"],
+    "Classificação": ["Standings", "Clasificación", "Classifica", "Classement"],
+    "Copa do Brasil": ["Brazilian Cup", "Copa de Brasil", "Coppa del Brasile", "Coupe du Brésil"],
+    "Copas": ["Cups", "Copas", "Coppe", "Coupes"],
+    "Depois da festa de premiação começa a próxima temporada. Descansa, que você merece!": ["After the awards night the next season starts. Rest, you deserve it!", "Después de la gala de premios empieza la próxima temporada. ¡Descansa, que te lo mereces!", "Dopo la serata di premiazione inizia la prossima stagione. Riposati, te lo meriti!", "Après la soirée des trophées, la saison suivante commence. Repose-toi, tu le mérites !"],
+    "Fim da Série A: terminamos em {0}º lugar.": ["End of Série A: we finished {0}th.", "Fin de la Série A: terminamos en el {0}º lugar.", "Fine della Série A: siamo arrivati {0}º.", "Fin de la Série A : on termine {0}e."],
+    "Mais um ano na Série A. Bora!": ["Another year in Série A. Let's go!", "Un año más en la Série A. ¡Vamos!", "Un altro anno in Série A. Forza!", "Encore une année en Série A. Allez !"],
+    "Mais um ano na Série B: dessa vez é o acesso!": ["Another year in Série B: this time we go up!", "Un año más en la Série B: ¡esta vez es el ascenso!", "Un altro anno in Série B: stavolta è promozione!", "Encore une année en Série B : cette fois, c'est la montée !"],
+    "Os 4 primeiros sobem para a Série A.": ["The top 4 are promoted to Série A.", "Los 4 primeros suben a la Série A.", "I primi 4 salgono in Série A.", "Les 4 premiers montent en Série A."],
+    "Os 4 últimos caem para a Série B.": ["The bottom 4 are relegated to Série B.", "Los 4 últimos bajan a la Série B.", "Gli ultimi 4 retrocedono in Série B.", "Les 4 derniers descendent en Série B."],
+    "PRÊMIOS DA SÉRIE A": ["SÉRIE A AWARDS", "PREMIOS DE LA SÉRIE A", "PREMI DELLA SÉRIE A", "TROPHÉES DE LA SÉRIE A"],
+    "Subiram: {0} · Caíram: {1}": ["Promoted: {0} · Relegated: {1}", "Subieron: {0} · Bajaron: {1}", "Promosse: {0} · Retrocesse: {1}", "Promus : {0} · Relégués : {1}"],
+    "Série A": ["Série A", "Série A", "Série A", "Série A"],
+    "Série A · Rodada {0} de 38": ["Série A · Round {0} of 38", "Série A · Jornada {0} de 38", "Série A · Giornata {0} di 38", "Série A · Journée {0} sur 38"],
+    "Série {0}": ["Série {0}", "Série {0}", "Série {0}", "Série {0}"],
+    "Temporada {0}": ["Season {0}", "Temporada {0}", "Stagione {0}", "Saison {0}"],
+    "Temporada {0} começando! Subiram para a Série A: {1}. Caíram para a Série B: {2}.": ["Season {0} is starting! Promoted to Série A: {1}. Relegated to Série B: {2}.", "¡Empieza la temporada {0}! Subieron a la Série A: {1}. Bajaron a la Série B: {2}.", "Inizia la stagione {0}! Promosse in Série A: {1}. Retrocesse in Série B: {2}.", "La saison {0} commence ! Promus en Série A : {1}. Relégués en Série B : {2}."],
+    "Temporada {0} · Classificação": ["Season {0} · Standings", "Temporada {0} · Clasificación", "Stagione {0} · Classifica", "Saison {0} · Classement"],
+    "Temporada {0} · Série {1}": ["Season {0} · Série {1}", "Temporada {0} · Série {1}", "Stagione {0} · Série {1}", "Saison {0} · Série {1}"],
+    "Temporadas anteriores": ["Previous seasons", "Temporadas anteriores", "Stagioni precedenti", "Saisons précédentes"],
+    "Terminamos a Série A em {0}º lugar e fomos rebaixados. Ano que vem é Série B.": ["We finished Série A in {0}th place and were relegated. Next year it's Série B.", "Terminamos la Série A en el {0}º lugar y descendimos. El año que viene es Série B.", "Abbiamo chiuso la Série A al {0}º posto e siamo retrocessi. L'anno prossimo è Série B.", "On termine la Série A à la {0}e place et on descend. L'an prochain, c'est la Série B."],
+    "{0}º na Série {1}": ["{0}th in Série {1}", "{0}º en la Série {1}", "{0}º in Série {1}", "{0}e en Série {1}"],
+    "Primeira fase": ["First round", "Primera fase", "Primo turno", "Premier tour"],
+    "Oitavas de final": ["Round of 16", "Octavos de final", "Ottavi di finale", "Huitièmes de finale"],
+    "Norte": ["North", "Norte", "Nord", "Nord"],
+    "Profissional": ["Pro career", "Profesional", "Professionista", "Professionnel"],
+    "Elenco caro: troca passes no campo do rival e sufoca com pressão alta.": ["Expensive squad: passes in the opponent's half and smothers with a high press.", "Plantel caro: toca en campo rival y asfixia con presión alta.", "Rosa costosa: palleggia nella metà avversaria e soffoca con il pressing alto.", "Effectif cher : fait tourner dans le camp adverse et étouffe avec un pressing haut."],
+    "Compacto e frio: defende bem, rouba no meio e mata na transição.": ["Compact and cold: defends well, wins it in midfield and kills you on the break.", "Compacto y frío: defiende bien, roba en el medio y mata en la transición.", "Compatto e freddo: difende bene, ruba a centrocampo e colpisce in transizione.", "Compact et froid : défend bien, récupère au milieu et tue en transition."],
+    "Defesa sólida e meio-campo paciente: decide nos detalhes.": ["Solid defense and patient midfield: wins on the details.", "Defensa sólida y medio paciente: decide en los detalles.", "Difesa solida e centrocampo paziente: decide nei dettagli.", "Défense solide et milieu patient : fait la différence sur les détails."],
+    "Intenso: jogo direto, muita bola parada e força pelo alto.": ["Intense: direct play, lots of set pieces and power in the air.", "Intenso: juego directo, mucha pelota parada y fuerza por arriba.", "Intenso: gioco diretto, tanti calci piazzati e forza nel gioco aereo.", "Intense : jeu direct, beaucoup de coups de pied arrêtés et de puissance dans les airs."],
+    "Toque curto e aproximação: o famoso jogo apoiado.": ["Short passing and close support: the famous supported game.", "Toque corto y aproximación: el famoso juego apoyado.", "Passaggi corti e appoggi vicini: il famoso gioco di sostegno.", "Jeu court et rapprochement : le fameux jeu en appui."],
+    "Vertical e rápido: rouba a bola e acelera pelas pontas.": ["Vertical and fast: wins the ball and speeds down the wings.", "Vertical y rápido: roba el balón y acelera por las bandas.", "Verticale e veloce: ruba palla e accelera sulle fasce.", "Vertical et rapide : récupère le ballon et accélère sur les ailes."],
+    "Gosta da bola: posse longa no campo de ataque.": ["Loves the ball: long possession in the attacking half.", "Le gusta el balón: posesión larga en campo de ataque.", "Ama il pallone: lungo possesso nella metà offensiva.", "Aime le ballon : longue possession dans le camp adverse."],
+    "Meio-campo cheio e um 9 que volta para armar.": ["A crowded midfield and a 9 who drops back to build play.", "Mediocampo lleno y un 9 que baja a armar.", "Centrocampo affollato e un 9 che arretra a costruire.", "Milieu bien garni et un 9 qui décroche pour construire."],
+    "Raça e transição rápida: cresce nos jogos grandes.": ["Grit and fast transitions: rises to the big games.", "Garra y transición rápida: crece en los partidos grandes.", "Grinta e transizioni rapide: si esalta nelle grandi partite.", "Hargne et transitions rapides : se sublime dans les grands matchs."],
+    "Pressão alta e jogo vertical, sem medo de ninguém.": ["High press and vertical play, afraid of no one.", "Presión alta y juego vertical, sin miedo a nadie.", "Pressing alto e gioco verticale, senza paura di nessuno.", "Pressing haut et jeu vertical, sans peur de personne."],
+    "Muita força pelo alto e um centroavante matador.": ["Strong in the air with a lethal center-forward.", "Mucha fuerza por arriba y un delantero letal.", "Forte nel gioco aereo e con un centravanti letale.", "Très fort dans les airs avec un avant-centre redoutable."],
+    "Ataque leve e driblador; a defesa sofre.": ["Light, dribbling attack; the defense suffers.", "Ataque liviano y gambeteador; la defensa sufre.", "Attacco leggero e dribblatore; la difesa soffre.", "Attaque légère et dribbleuse ; la défense souffre."],
+    "Muita marcação e jogo de raça: vence apertado.": ["Tight marking and grit: wins narrowly.", "Mucha marca y juego de garra: gana ajustado.", "Tanta marcatura e grinta: vince di misura.", "Beaucoup de marquage et de hargne : gagne de peu."],
+    "Faz muitos gols, mas leva muitos também.": ["Scores a lot, but concedes a lot too.", "Hace muchos goles, pero recibe muchos también.", "Segna tanto, ma subisce anche tanto.", "Marque beaucoup, mais encaisse beaucoup aussi."],
+    "Fecha atrás e luta por cada bola.": ["Shuts up shop and fights for every ball.", "Se cierra atrás y pelea cada pelota.", "Si chiude dietro e lotta su ogni pallone.", "Ferme derrière et se bat pour chaque ballon."],
+    "Equilibrado, mas oscila: alterna grandes jogos e tropeços.": ["Balanced but inconsistent: alternates great games and slip-ups.", "Equilibrado, pero oscila: alterna grandes partidos y tropiezos.", "Equilibrato ma altalenante: alterna grandi partite e passi falsi.", "Équilibré mais irrégulier : alterne grands matchs et faux pas."],
+    "Defesa forte: subiu sofrendo pouquíssimos gols.": ["Strong defense: went up conceding very few goals.", "Defensa fuerte: subió recibiendo poquísimos goles.", "Difesa forte: è salita subendo pochissimi gol.", "Défense solide : montée en encaissant très peu de buts."],
+    "Intenso e vertical, joga com o estádio fervendo.": ["Intense and vertical, plays with the stadium boiling.", "Intenso y vertical, juega con el estadio hirviendo.", "Intenso e verticale, gioca con lo stadio in ebollizione.", "Intense et vertical, joue avec un stade en ébullition."],
+    "Unido e aguerrido: compete com o coração.": ["United and battling: competes with heart.", "Unido y aguerrido: compite con el corazón.", "Unito e combattivo: gioca col cuore.", "Uni et combatif : joue avec le cœur."],
+    "Torcida gigante empurra; aposta no cruzamento.": ["A huge crowd pushes them on; they rely on crosses.", "La hinchada gigante empuja; apuesta por el centro.", "Un tifo enorme spinge; punta sui cross.", "Un public immense pousse ; mise sur les centres."],
     "Time 1": ["Team 1", "Equipo 1", "Squadra 1", "Équipe 1"],
     "PRÊMIOS DA SÉRIE B": ["SÉRIE B AWARDS", "PREMIOS DE LA SÉRIE B", "PREMI DELLA SÉRIE B", "TROPHÉES DE LA SÉRIE B"],
     "Time 2": ["Team 2", "Equipo 2", "Squadra 2", "Équipe 2"],
@@ -1576,5 +2003,5 @@
 
 
   window.FutebolJS.registrarFase({ id: 'serieb', nome: 'Série B', nucleoMinimo: '7.1', iniciar: async () => {}, criar, carta, aceitarOferta, fraseOferta,
-    dados: { TIMES_B, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
+    dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet }, TIMES_B, TIMES_A, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
 })();

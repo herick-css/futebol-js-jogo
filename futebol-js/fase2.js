@@ -1515,7 +1515,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function telaCarreira(aba) {
     let c = null; try { c = API.historia.ler('cidade') || {}; } catch (e) { c = {}; }
     const K = (c.carreira || {})[aba] || {}, n = (k) => K[k] | 0;
-    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']].concat(c.pro && c.pro.clube ? [['serieb', 'Série B']] : []);
+    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']].concat(c.pro && c.pro.clube ? [['serieb', 'Profissional']] : []);   // (7.3.0) Série A ou B: a aba é a carreira profissional
     const abas = '<div class="crAbas">' + ABAS.map(([k, t]) => '<button type="button" class="crAba' + (k === aba ? ' on' : '') + '" data-a="abaCr" data-v="' + k + '">' + esc(T(t)) + '</button>').join('') + '</div>';
     const num = (v, t) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(t)) + '</span></div>';
     const j = n('j'), media = j ? (Math.round(K.nota / j * 10) / 10).toFixed(1) : '—';

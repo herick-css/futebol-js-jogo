@@ -29,17 +29,23 @@ ARQUIVOS
                           subterrâneo, a pré-partida e as estatísticas/prêmios (baixado pela cidade; o app Carreira usa a tabela)
   serieb.js ............. a peneira e a carreira profissional: o presente (18 anos), a peneira "Time 1 x Time 2", a carta com
                           as 3 propostas, os 20 times da Série B (paródias com emblemas em pixel art e força dos últimos 3 anos),
-                          o ônibus do clube, a confiança do técnico, as missões do clube, a Série B de 38 rodadas e as copas
+                          os 20 times da Série A (7.3.0: paródias, escudos em pixel art, força dos últimos 10 anos), o ônibus do
+                          clube, a confiança do técnico, as missões do clube, as Séries A e B de 38 rodadas (sobem 4, caem 4,
+                          temporadas seguidas), a Copa do Brasil, a Estadual e a Regional, e a classificação antes de cada jogo
                           (baixado pela cidade; o quarto usa a carta e o app Carreira usa a tabela). Popularidade dos times:
                           serieb.criar(api).popularidade.somar(time, pontos, motivo) — de 15 a 100, 5 faixas de torcida
   festa.js .............. as festas de título e a noite dos prêmios: a comemoração no gramado (roda, joelhos, aviãozinho,
                           a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
-                          copas e Série B), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno
+                          copas, Copa do Brasil, Série B e Série A), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno
                           (baixado pela várzea e pela Série B)
   imprensa.js ........... a imprensa e a popularidade na Série B: um jogo sim, um jogo não, o ônibus chega ao estádio e uma
                           das 5 repórteres (Esfera, TBS, Band-Aid, TV Recordação, TV Agricultura) entrevista o jogador na
                           entrada; a pergunta é montada (time + jogador + jogo de hoje) e a resposta tranquila ou arrogante é
                           uma aposta de popularidade conferida depois do jogo (baixado pela Série B)
+  estadiosA.js .......... os 8 estádios da Série A (campo 'serieA' do jogo.js, campo.modelo: anel, caldeirao, fachada, listras,
+                          floresta, petalas, ferradura, concha; sem modelo, sai do mandante; nos jogos da Série A do serieb.js,
+                          cada clube joga no modelo mais parecido com a casa dele). Torcida maior, cobertura, telões e
+                          o escudo e as cores do time da casa nas faixas, nos telões, nas bandeiras e nas cadeiras (baixado na abertura)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

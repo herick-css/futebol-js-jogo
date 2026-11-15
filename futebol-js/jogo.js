@@ -61,7 +61,13 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.2.1';
+const VERSAO_JOGO = '7.3.1';
+// 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
+//   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
+//   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
+//   de cada jogo e no app Carreira (aba Profissional).
+// 7.2.2 (cidade.js): a agenda da turma do treino respeita os dias de trabalho de cada emprego (pizzaria: quinta a domingo).
+//   Estrelinha: indo para a direita, o lado direito vai na frente (antes ele virava o corpo para o outro lado e rolava para a esquerda).
 // 7.2.1 (cidade.js): o trabalho do dia e o banho aparecem como MISSÃO (junto com a da história); a turma do treino de chute fica no
 //   campo na hora da sessão obrigatoriamente (relógio pulou, voltou de um lugar ou de uma partida: já está lá, como os que têm nome).
 // 7.2.0: cabeçada com alcance e força de cabeça (CABECA: passe de cabeça até ~9–13 m, no máximo 13 m/s; nunca mais "vira o campo");
@@ -398,8 +404,13 @@ const CAMPOS = {
   serieB: { nome: 'Estádio da Série B (11 x 11)', comprimento: 100, largura: 64, jogadores: 11, estadio: 'arenaB',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#3a7330', gramaB: '#427e36', fundo: '#3a6630', padrao: 'faixas', faixas: 12, linhas: '#dfe2d2', gasto: true } },
+  // ESTÁDIOS DA SÉRIE A (estadio 'arenaA'): os 8 modelos do estadiosA.js (campo.modelo: 'anel', 'caldeirao', 'fachada', 'listras',
+  // 'floresta', 'petalas', 'ferradura', 'concha'; sem modelo, sai do mandante). Gramado impecável e névoa mais longe (o estádio é maior).
+  serieA: { nome: 'Estádio da Série A (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arenaA', nevoaLonge: 1.35,
+    regras: { substituicoes: 5 },
+    aparencia: { gramaA: '#2e7d34', gramaB: '#38903d', fundo: '#2b6e30', padrao: 'faixas', faixas: 18, linhas: '#f1f3ea' } },
 };
-const ehArena = (t) => (t || 'arena') === 'arena' || t === 'arenaB';   // os dois estádios com placas (a bola bate na placa de 0,9 m)
+const ehArena = (t) => (t || 'arena') === 'arena' || t === 'arenaB' || t === 'arenaA';   // os estádios com placas (a bola bate na placa de 0,9 m)
 
 // ---- Formações. "linhas" = quantos jogadores em cada linha, da defesa para o ataque, por
 // número de jogadores de LINHA (sem o goleiro). Se o número não estiver na lista, o jogo divide
@@ -1413,6 +1424,10 @@ const BANDEIRAS = [];
 // placas do estádio da Série B: o comércio do bairro (o último é escuro: as faces de cima e das pontas usam um pedaço dele)
 const ANUNCIOS_B = [['PADARIA PÃO QUENTINHO', '#e8c27a', '#5a2a10'], ['AUTO PEÇAS 2 IRMÃOS', '#1f4a8a', '#f2c230'], ['AÇOUGUE BOI GORDO', '#a8201a', '#ffffff'],
   ['FUTEBOL JS', '#F7941D', '#071430'], ['MATERIAIS SÃO JORGE', '#2f7a3a', '#ffffff'], ['BAR DO TIÃO', '#111111', '#f2c230']];
+// placas da Série A (LED): marcas grandes de mentira e os projetos de sempre
+const ANUNCIOS_A = [['BANCO FAKES', '#101820', '#2fe08a'], ['FUTEBOL JS', '#F7941D', '#071430'], ['TV AGRICULTURA', '#0d3b1e', '#f2c230'], ['SUPER LAN MASTER', '#0B4F9C', '#ffffff'],
+  ['GOLAÇO ESPORTES', '#c8202e', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['ESFERA', '#1d2a6b', '#ffffff'], ['CACHOLA', '#111111', '#6bf08e']];
+let ESTADIO_A = null;                              // o último estádio da Série A montado ({ modelo, nome, torcedores })
 function buildBoards(lista) {
   const ADS = lista || [['SUPER LAN MASTER', '#0B4F9C', '#F7941D'], ['FUTEBOL JS', '#F7941D', '#071430'], ['PONTO COMUNITÁRIO', '#1f9e5c', '#ffffff'],
     ['ATALIBA', '#d8443a', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['CACHOLA', '#111111', '#6bf08e']];
@@ -3401,15 +3416,16 @@ const CELEBRACOES = {
     [1.9, { y: 0, pit: 6.2832, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
     [2.7, { y: 0, pit: 6.2832, aLz: 2.9, aRz: 2.9, aLx: 0.5, aRx: -0.5, cab: 0.2 }],
     [3.0, { pit: 6.2832 }]] },
-  // (7.2.0) roll NEGATIVO: as mãos vão para o chão do lado para onde ele anda (antes girava ao contrário, cabeça para trás)
+  // (7.2.2) o corpo vira para o OUTRO lado (yaw −90°): indo para a direita, o lado DIREITO vai na frente e a mão direita toca o chão
+  //   primeiro (estrela para a direita); roll positivo = a cabeça vai para o lado em que ele anda. (7.2.0 deixava o lado esquerdo na frente.)
   estrela: { nome: 'Estrelinha', loja: true, dur: 3.2, giro: 0, swing: 0.3, pivo: 0.95, vel: [[0, 5], [0.3, 4], [2.1, 4], [2.4, 0], [3.2, 0]], keys: [
     [0, {}],
-    [0.3, { yaw: 1.5708, aLz: 3.1, aRz: 3.1, aLx: 0.4, aRx: -0.4 }],
-    [1.2, { yaw: 1.5708, roll: -6.2832, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
-    [2.1, { yaw: 1.5708, roll: -12.5664, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
-    [2.4, { yaw: 0, roll: -12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
-    [3.0, { yaw: 0, roll: -12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
-    [3.2, { roll: -12.5664 }]] },
+    [0.3, { yaw: -1.5708, aLz: 3.1, aRz: 3.1, aLx: 0.4, aRx: -0.4 }],
+    [1.2, { yaw: -1.5708, roll: 6.2832, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
+    [2.1, { yaw: -1.5708, roll: 12.5664, aLz: 3.1, aRz: 3.1, aLx: 0.5, aRx: -0.5, lLx: -0.6, lRx: 0.6 }],
+    [2.4, { yaw: 0, roll: 12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
+    [3.0, { yaw: 0, roll: 12.5664, aLx: 1.5, aRx: -1.5, cab: 0.15 }],
+    [3.2, { roll: 12.5664 }]] },
   robo: { nome: 'Robô', loja: true, dur: 3.6, giro: 0, swing: 0, vel: [[0, 0], [3.6, 0]], keys: [
     [0, {}],
     [0.25, { aLz: 1.5708, cL: 1.5708, aRx: -0.1, cab: 0 }], [0.6, { aLz: 1.5708, cL: 1.5708 }],
@@ -7175,6 +7191,7 @@ function startCelebration(name) {
 const CELEB_POR_CAMPO = {
   arena: ['tecnico', 'bandeira', 'placa', 'bola'],
   arenaB: ['tecnico', 'bandeira', 'placa', 'bola'],
+  arenaA: ['tecnico', 'bandeira', 'placa', 'bola'],
   varzea: ['tecnico', 'bandeira', 'grade', 'bola'],   // a várzea tem alambrado: dá para pular na grade
   society: ['grade', 'bola'],
 };
@@ -12982,7 +12999,13 @@ function montarEstadio() {
   crowd.pintarAtlas(PARTIDA.uniformes[0].camisa, PARTIDA.uniformes[1].camisa);
   const tipo = PARTIDA.campo.estadio || 'arena';
   buildPitch();
-  if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); } else buildArredores(tipo);
+  if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); }
+  else if (tipo === 'arenaA') {                    // Série A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
+    buildBoards(ANUNCIOS_A);
+    let ok = false;
+    if (window.EstadiosA) try { ESTADIO_A = window.EstadiosA.construir(PARTIDA); ok = true; } catch (e) { console.warn('[Estádio A]', e); crowd.limpar(); }
+    if (!ok) buildStands();
+  } else buildArredores(tipo);
   buildGoal(-1); buildGoal(1);
   if (PARTIDA.campo.visual === 'futsal') BANCOS.length = 0; else construirBancos();   // quadra de futsal: sem banco
   montarCones();
@@ -13409,7 +13432,8 @@ function aplicarAmbiente(P) {
   const ceu = new THREE.Color(H.ceu).lerp(new THREE.Color(0x4a5058), C.escurece);
   scene.background = ceu;
   scene.fog.color.copy(ceu);
-  scene.fog.near = H.nevoa[0] * C.nevoaPerto; scene.fog.far = H.nevoa[1] * C.nevoaPerto;
+  const longe = (P.campo && P.campo.nevoaLonge) || 1;   // estádio grande: a névoa começa mais longe
+  scene.fog.near = H.nevoa[0] * C.nevoaPerto * longe; scene.fog.far = H.nevoa[1] * C.nevoaPerto * longe;
   luzCeu.color.setHex(H.luzCeu[0]); luzCeu.groundColor.setHex(H.luzCeu[1]); luzCeu.intensity = H.luzCeu[2] * (1 - C.escurece * 0.35);
   sun.color.setHex(H.sol[0]); sun.intensity = H.sol[1] * (1 - C.escurece * 0.5); sun.position.set(...H.solPos);
   if (lampadasMat) lampadasMat.color.setHex(H.lampadas);
@@ -17855,6 +17879,7 @@ function ajustarCortePersonagem() {
   if (ap.barbaNome) { const i = ESTILOS_BARBA.findIndex((c) => c.cosmetico && c.nome === ap.barbaNome); if (i >= 0) ap.barba = i; }   // a barba da loja, do mesmo jeito
   if (ap.chuteiraNome) { const i = CHUTEIRAS.findIndex((c) => (c.loja || c.cosmetico) && c.nome === ap.chuteiraNome); if (i >= 0) ap.chuteira = i; }   // (7.1.10) a chuteira premium da Golaço Esportes, pelo nome
 }
+Fases.carregar('estadiosA').catch((e) => console.warn('[Estádio A] estadiosA.js não veio:', e));   // os estádios da Série A (antes da 1ª partida de lá)
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 
 montarTelaDeConfig();

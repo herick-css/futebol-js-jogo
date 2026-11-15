@@ -2368,14 +2368,18 @@
   //   Os três do treino (dois batedores e o goleiro) vão ao society DIA SIM, DIA NÃO (dias ímpares: 1, 3, 5...) e ficam 12 HORAS
   //   seguidas, sempre fora do turno do jogador (com meia hora de folga antes e depois), para ele sempre poder treinar com eles.
   //   Entre todas as janelas de 12 h que cabem fora do trabalho (o de hoje e o de amanhã), fica a que pega MAIS LUZ DO DIA (7h–19h):
-  //     sem emprego / fim de semana: 7h–19h · cafeteria (8–16): 16h30–4h30 · mercado (14–22): 1h30–13h30 · pizzaria (17–24): 4h30–16h30
+  //     sem emprego / folga: 7h–19h · cafeteria (8–16): 16h30–4h30 · mercado (14–22): 1h30–13h30 · pizzaria (17–24, quinta a domingo): 4h30–16h30
+  //     (7.2.1) a folga é pelos dias do emprego: antes todo emprego contava de segunda a sexta e, no sábado/domingo, a turma da pizzaria ia
+  //     das 7h às 19h (2 h dentro do turno). Agora: pizzaria de quinta a domingo = 4h30–16h30; segunda a quarta (folga) = 7h–19h.
   //     (sexta da cafeteria: 23h30–11h30 do sábado). De noite o society acende os refletores (treino.js).
   const TURMA_H = 12, TURMA_LUZ = [7, 19];
+  const DIAS_UTEIS = [0, 1, 2, 3, 4], DIAS_TRABALHO_EMPREGO = { cafeteria: DIAS_UTEIS, mercado: DIAS_UTEIS, pizzaria: [3, 4, 5, 6] };   // diaSemana: 0 = segunda
   const diaSemanaDe = (dia) => ((((dia || 1) - 1) % 7) + 7) % 7;
   function janelaTurma(dia) {                                           // [início, fim] em horas a partir da 0h do 'dia' (o fim pode passar de 24), ou null
     if ((((dia | 0) % 2) + 2) % 2 !== 1) return null;                    // dia sim (ímpar), dia não (par)
     const T0 = TURNOS[empregoEscolhido()], ocup = [];
-    for (const k of [-1, 0, 1]) if (T0 && diaSemanaDe(dia + k) < 5) ocup.push([k * 24 + T0[0] - 0.5, k * 24 + T0[1] + 0.5]);
+    const DT = DIAS_TRABALHO_EMPREGO[empregoEscolhido()] || DIAS_UTEIS;   // (7.2.1) os dias de trabalho do SEU emprego (a pizzaria é de quinta a domingo)
+    for (const k of [-1, 0, 1]) if (T0 && DT.includes(diaSemanaDe(dia + k))) ocup.push([k * 24 + T0[0] - 0.5, k * 24 + T0[1] + 0.5]);
     let best = null, bs = -1;
     for (let s0 = 0; s0 < 24; s0 += 0.5) {
       const s1 = s0 + TURMA_H; if (ocup.some(([a, b]) => s0 < b && s1 > a)) continue;
@@ -7423,7 +7427,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const d = S && S.dados, e = empregoEscolhido();
     if (!d || !e || !TURNOS[e] || (d.dia || 1) < 2 || d.trabalhouHoje || S.turno || S.turnoMercado || S.turnoPizza) return '';
     const ds = diaSemana(), E = d.encontroLucia;
-    const hoje = e === 'pizzaria' ? [3, 4, 5, 6].includes(ds) && !(E && E.dia === (d.dia || 1)) : ds < 5;
+    const hoje = (DIAS_TRABALHO_EMPREGO[e] || DIAS_UTEIS).includes(ds) && !(e === 'pizzaria' && E && E.dia === (d.dia || 1));
     if (!hoje || d.hora >= ULTIMA_HORA_TURNO[e]) return '';
     const [h0, h1] = TURNOS[e], lugar = T(NOME_LUGAR_EMPREGO[e]);
     return d.hora >= h0 ? Tf('Missão: trabalhar {0} — o turno já começou (até {1})!', lugar, fmtHora(h1 % 24)) : Tf('Missão: trabalhar {0} hoje, das {1} às {2}.', lugar, fmtHora(h0), fmtHora(h1 % 24));
