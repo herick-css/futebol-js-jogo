@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.1';
+const VERSAO_JOGO = '7.4.2';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -4468,7 +4468,7 @@ function aiDecide(p, dt) {
       const tx = clamp(user.x + (-dz / l) * lado * dist - dx / l * 0.6, -BOARD_X + 0.8, BOARD_X - 0.8), tz = clamp(user.z + (dx / l) * lado * dist - dz / l * 0.6, -BOARD_ZN + 0.8, BOARD_Z - 0.8);
       return seek(p, tx, tz, p.role === 'GK' ? 0 : CONFIG.AI_SPEED);
     }
-    if (p.team === 0) { const a = p.id * 1.3; return seek(p, user.x + Math.cos(a) * 1.6, user.z + Math.sin(a) * 1.6, G.celebT < 8.5 ? CONFIG.AI_SPEED : 0); }
+    if (p.team === 0) { const a = p.id * 1.3, r = user.celeb ? 3.6 : 1.6; return seek(p, user.x + Math.cos(a) * r, user.z + Math.sin(a) * r, G.celebT < 8.5 ? CONFIG.AI_SPEED : 0); }   // (7.4.1) você comemorando: a turma abre espaço (e quem entrou junto aparece)
     const t = formationTarget(p, false);
     return seek(p, t.x, t.z, CONFIG.AI_WALK * 0.55);
   }
@@ -4476,7 +4476,15 @@ function aiDecide(p, dt) {
   if (G.apito && !p.isUser && !(p.stun > 0)) { const t = formationTarget(p, false); return seek(p, t.x, t.z, CONFIG.AI_WALK * 0.5); }   // juiz marcando, o jogo "afrouxa"
   if (G.desarmeLimpo && G.desarmeLimpo.p === p) { corrida(p, 3); return seek(p, user.x, user.z, CONFIG.AI_SPEED * 1.1); }
   if (G.state === 'goal' && G.golAutor) {
-    const a = G.golAutor;
+    const a = G.golAutor, Gp = G.golGrupo;
+    if (Gp && Gp.juntos && !Gp.ok && Gp.membros.includes(p)) { const v = vagaNoGrupo(Gp, p); corrida(p, 2); return seek(p, v.x, v.z, CONFIG.AI_SPEED * (p === a ? 0.8 : 1.1)); }   // indo para o lado de quem fez
+    if (Gp && Gp.cada && Gp.membros.includes(p) && !p.celeb && !p.celebFeita && (dist2D(p, a) < 3 || G.goalT > 1.8)) {   // chegou: faz a dele
+      p.celebFeita = true; const L = p.celebsIA || CELEB_IA(); p.celeb = { name: L[Math.floor(Math.random() * L.length)], t: 0 }; p.angle = Math.atan2(p.z - a.z, p.x - a.x) + rand(-0.5, 0.5); return { vx: 0, vz: 0 };
+    }
+    if (Gp && p.team === a.team && p.role !== 'GK' && G.goalT > 0.6 && !Gp.membros.includes(p) && p !== a) {   // os outros chegam, mas ficam atrás da turma (sem tapar a câmera)
+      const ang = Gp.juntos ? Gp.ang : a.angle, bx = (Gp.juntos ? Gp.x : a.x) - Math.cos(ang) * 3.6, bz = (Gp.juntos ? Gp.z : a.z) - Math.sin(ang) * 3.6, o = ((p.id % 5) - 2) * 1.3;
+      return seek(p, bx - Math.sin(ang) * o, bz + Math.cos(ang) * o, CONFIG.AI_SPEED * 0.85);
+    }
     if (p.team === a.team && G.goalT > 0.6 && p.role !== 'GK') { const ang = p.id * 1.3; return seek(p, a.x + Math.cos(ang) * 1.8, a.z + Math.sin(ang) * 1.8, CONFIG.AI_SPEED); }
     const t = formationTarget(p, false);
     return seek(p, t.x, t.z, CONFIG.AI_WALK * 0.5);
@@ -6166,6 +6174,8 @@ function userDesired(u, dt) {
   if (G.state === 'goal' && G.golAutor && G.golAutor !== u) {   // gol de outro: a IA controla você
     const a = G.golAutor;
     if (lamentandoNoChao(u)) return { vx: 0, vz: 0 };
+    const Gp = G.golGrupo;
+    if (Gp && a.team === u.team && G.goalT > 0.5) { const ang = Gp.juntos ? Gp.ang : a.angle; return seek(u, (Gp.juntos ? Gp.x : a.x) - Math.cos(ang) * 3.6 + Math.sin(ang) * 3.2, (Gp.juntos ? Gp.z : a.z) - Math.sin(ang) * 3.6 - Math.cos(ang) * 3.2, CONFIG.USER_RUN * 0.8); }   // (7.4.1) a turma comemorando: você chega por trás
     if (a.team === u.team && G.goalT > 0.5) return seek(u, a.x - Math.cos(a.angle) * 1.6, a.z - Math.sin(a.angle) * 1.6, CONFIG.USER_RUN * 0.9);
     const t = formationTarget(u, false);
     return seek(u, t.x, t.z, CONFIG.USER_WALK * 0.6);
@@ -7211,6 +7221,7 @@ function scoreGoal(team, tGol) {
     if (autor) { clearFlags(autor); autor.celeb = { name: autor.celebsIA ? autor.celebsIA[Math.random() < 0.5 ? 0 : 1] : (Math.random() < 0.5 ? 'aviao' : 'joelhada'), t: 0 }; autor.angle = Math.atan2(-autor.z, -autor.x * 0.3); }
     user.celeb = null; user.scripted = false;
     G.state = 'goal'; G.goalTimer = 5; G.goalT = 0; G.targetScale = 0.4;
+    G.golGrupo = autor ? montarGrupoDoGol(autor, team) : null;
     if (autor) showToast('Gol de ' + autor.name + '!', team === 0 ? 'good' : 'bad');
   }
 }
@@ -7219,6 +7230,41 @@ function startCelebration(name) {
   if (G.state !== 'celebrate' || user.celeb || G.celebAuto) return;
   user.celeb = { name, t: 0 };
   showToast(T(CELEBRACOES[name].nome) + '!', 'good');
+  // (7.4.1) às vezes 1 ou 2 companheiros que já chegaram perto fazem a MESMA comemoração junto com você (no mesmo ritmo e direção)
+  const perto = TEAMS[user.team].filter((p) => p !== user && !p.out && p.role !== 'GK' && !p.celeb && dist2D(p, user) < 5.5).sort((a, b) => dist2D(a, user) - dist2D(b, user));
+  if (perto.length && Math.random() < 0.6) for (const p of perto.slice(0, perto.length > 1 && Math.random() < 0.5 ? 2 : 1)) { clearFlags(p); p.celeb = { name, t: 0 }; p.angle = user.angle; }
+}
+
+// (7.4.1) GOL DA IA: além de quem fez comemorar sozinho, às vezes os companheiros entram na festa:
+//   juntos ... 1 ou 2 correm para o lado de quem fez e os 2 ou 3 fazem a MESMA comemoração, lado a lado e no mesmo ritmo
+//   cada um .. 1 ou 2 chegam perto e cada um faz a sua (as duas comemorações de cada jogador, ou uma das 30)
+const CELEB_IA = () => Object.keys(CELEBRACOES).filter((k) => CELEBRACOES[k].loja || CELEB_BASE.includes(k));
+function montarGrupoDoGol(autor, team) {
+  const comp = TEAMS[team].filter((p) => p !== autor && !p.out && p.role !== 'GK' && !p.isUser && dist2D(p, autor) < 18).sort((a, b) => dist2D(a, autor) - dist2D(b, autor));
+  if (!comp.length) return null;
+  const r = Math.random(), n = comp.length > 1 && Math.random() < 0.5 ? 2 : 1;
+  if (r < 0.42) {
+    const nome = autor.celeb ? autor.celeb.name : 'joelhada', ang = Math.atan2(-autor.z, -autor.x * 0.3);
+    autor.celeb = null;
+    const x = clamp(autor.x, -(HALF_L - 3.5), HALF_L - 3.5), z = clamp(autor.z, -(HALF_W - 3), HALF_W - 3);
+    G.goalTimer += 1.3;
+    return { juntos: true, lider: autor, membros: [autor].concat(comp.slice(0, n)), nome, ang, x, z, t: 0, ok: false };
+  }
+  if (r < 0.72) return { cada: true, lider: autor, membros: comp.slice(0, n), t: 0 };
+  return null;
+}
+function vagaNoGrupo(Gp, p) {                       // lado a lado, de frente para o mesmo lugar: quem fez no meio
+  const i = Gp.membros.indexOf(p), o = i === 0 ? 0 : i === 1 ? 1.45 : -1.45;
+  return { x: Gp.x - Math.sin(Gp.ang) * o, z: Gp.z + Math.cos(Gp.ang) * o };
+}
+function atualizarGrupoDoGol(dt) {
+  const Gp = G.golGrupo; if (!Gp || !Gp.juntos || Gp.ok) return;
+  Gp.t += dt;
+  const prontos = Gp.membros.every((p) => { const v = vagaNoGrupo(Gp, p); return Math.hypot(v.x - p.x, v.z - p.z) < 0.55; });
+  if (prontos || Gp.t > 2.3) {
+    Gp.ok = true;
+    for (const p of Gp.membros) { clearFlags(p); p.celeb = { name: Gp.nome, t: 0 }; p.angle = Gp.ang; p.vx = p.vz = 0; }
+  }
 }
 
 // ---------------------------------------------------------------------
@@ -7674,7 +7720,7 @@ function clearFlags(p) {
 function kickoff(team) {
   Som.fimGol();                                    // a torcida do gol baixa quando volta para o meio
   if (G.fimPendente) { apitoFinal(); return; }     // gol no último lance: em vez da saída, o apito final
-  G.golAutor = null;
+  G.golAutor = null; G.golGrupo = null; for (const p of players) p.celebFeita = false;
   if (G.celebAuto) { user.scripted = false; G.celebAuto = null; }
   G.abracoFeito = false;
   for (const t of tecnicos) t.abraco = null;
@@ -11305,8 +11351,16 @@ function apitoFinal() {
       if (nG) {
         const a = W[0], grupo = [a].concat(perto(a, W.slice(1)).slice(0, nG - 1));
         const cx = grupo.reduce((s, p) => s + p.x, 0) / nG, cz = grupo.reduce((s, p) => s + p.z, 0) / nG;
-        grupo.forEach((p, i) => { const ang = i / nG * Math.PI * 2; p.fim = { tipo: 'grupo', membros: grupo, centro: { x: cx, z: cz }, alvo: { x: cx + Math.cos(ang) * 0.5, z: cz + Math.sin(ang) * 0.5 }, t0: rand(1.3, 1.8), junto: false }; usa(p); });
-        G.fimTomadas.push({ tipo: 'grupo', quem: grupo });
+        // (7.4.1) a roda pulando OU os 2-3 lado a lado fazendo a MESMA comemoração (uma das 30), no mesmo ritmo; aí são duas tomadas
+        const sinc = Math.random() < 0.6, nome = sinc ? CELEB_FIM[Math.floor(Math.random() * CELEB_FIM.length)] : null;
+        const bx = clamp(cx, -(HALF_L - 4), HALF_L - 4), bz = clamp(cz, -(HALF_W - 3.5), HALF_W - 3.5), face = Math.atan2(-bz, -bx * 0.3) + rand(-0.3, 0.3);
+        grupo.forEach((p, i) => {
+          const ang = i / nG * Math.PI * 2, o = i === 0 ? 0 : i === 1 ? 1.45 : -1.45;
+          const alvo = sinc ? { x: bx - Math.sin(face) * o, z: bz + Math.cos(face) * o } : { x: cx + Math.cos(ang) * 0.5, z: cz + Math.sin(ang) * 0.5 };
+          p.fim = { tipo: 'grupo', membros: grupo, centro: sinc ? { x: bx, z: bz } : { x: cx, z: cz }, alvo, t0: sinc ? rand(0.5, 0.7) : rand(1.3, 1.8), junto: false, nome, face }; usa(p);
+        });
+        G.fimTomadas.push({ tipo: 'grupo', quem: grupo, face: sinc ? face : null });
+        if (sinc) G.fimTomadas.push({ tipo: 'grupo', quem: grupo, face, outra: true, tipo2: 1.5 });
       }
       // as comemorações sozinho
       const sol = W.filter((p) => !usados.has(p)).slice(0, W.length >= 8 ? 2 : 1);
@@ -11338,7 +11392,7 @@ function apitoFinal() {
     for (const p of players) if (vivo(p) && !p.fim && !(venc >= 0 && p.team !== venc)) p.fim = { tipo: 'tchau', t0: rand(1.6, 2.6) };
     // a ordem das tomadas (a roda, uma comemoração, você perdendo, o aperto de mão, a outra comemoração, o "toca aqui") e, no fim, o plano aberto;
     //   cada um começa a comemoração / o cumprimento perto da hora da tomada dele (antes a câmera chegava com tudo já acabado)
-    const ordem = { grupo: 0, solo: 1, perdeu: 2, aperto: 3, toca: 5 };
+    const ordem = { solo: 0.5, grupo: 1, perdeu: 2, aperto: 3, toca: 5 };   // (7.4.1) a turma lado a lado precisa de um tempo para se juntar: entra depois da primeira comemoração
     let ns = 0; for (const t of G.fimTomadas) if (t.tipo === 'solo' && ns++ > 0) t.tipo2 = 4;
     G.fimTomadas.sort((x, y) => (x.tipo2 || ordem[x.tipo]) - (y.tipo2 || ordem[y.tipo]));
     G.fimTomadas = G.fimTomadas.slice(0, 4).concat([{ tipo: 'aberto', quem: [] }]);
@@ -11392,14 +11446,16 @@ function updateFimDeJogo(dt) {
       if (G.fimT - F.t0 > 6) p.fim = { tipo: 'tchau', t0: G.fimT };
     } else if (F.tipo === 'grupo') {
       if (!F.junto) {
-        const chegou = anda(p, F.alvo);
+        const chegou = anda(p, F.alvo, F.nome ? 6.2 : 4.6);
+        if (chegou && F.nome) p.angle = turnToward(p.angle, F.face, 8 * dt);
         if (chegou && F.membros.every((q) => q.fim && q.fim.tipo === 'grupo' && Math.hypot(q.fim.alvo.x - q.x, q.fim.alvo.z - q.z) <= 0.12)) for (const q of F.membros) q.fim.junto = G.fimT;
-        if (G.fimT - F.t0 > 5) F.junto = G.fimT;
-      } else p.angle = turnToward(p.angle, Math.atan2(F.centro.z - p.z, F.centro.x - p.x), 8 * dt);
+        if (G.fimT - F.t0 > (F.nome ? 3.0 : 5)) F.junto = G.fimT;
+      } else if (F.nome) p.fim = { tipo: 'celeb', nome: F.nome, t0: G.fimT, ct: 0, ang: F.face };   // todos no mesmo quadro: começam juntos
+      else p.angle = turnToward(p.angle, Math.atan2(F.centro.z - p.z, F.centro.x - p.x), 8 * dt);
     } else if (F.tipo === 'celeb') {
       const c = CELEBRACOES[F.nome];
       if (!c) { p.fim = { tipo: 'tchau', t0: G.fimT }; continue; }
-      if (F.ct === 0) p.angle = Math.atan2(p.z >= 0 ? 1 : -1, 0) + rand(-0.6, 0.6);   // corre para a torcida mais perto (a câmera vai na frente dele)
+      if (F.ct === 0) p.angle = F.ang != null ? F.ang : Math.atan2(p.z >= 0 ? 1 : -1, 0) + rand(-0.6, 0.6);   // corre para a torcida mais perto (a câmera vai na frente dele)
       F.ct += dt; p.celeb = { name: F.nome, t: F.ct };
       p.angle += c.giro * dt;
       const v = celebVel(c, F.ct) * 0.85;
@@ -11429,7 +11485,7 @@ function cameraFim() {
   if (S.ang == null) {
     // (7.4.1) o melhor lado para a câmera: na frente de quem comemora (ou de lado no aperto de mão), dentro do campo e sem ninguém
     //   no meio do caminho (antes a cabeça de um jogador perto tapava a cena). Escolhido uma vez por tomada.
-    const pref = S.tipo === 'solo' ? Q[0].angle : S.tipo === 'aperto' && Q.length > 1 ? Math.atan2(Q[1].z - Q[0].z, Q[1].x - Q[0].x) + Math.PI / 2 : Math.atan2(-meio.z, -meio.x * 0.2);
+    const pref = S.tipo === 'grupo' && S.face != null ? S.face + (S.outra ? 1.1 : 0.25) : S.tipo === 'solo' ? Q[0].angle : S.tipo === 'aperto' && Q.length > 1 ? Math.atan2(Q[1].z - Q[0].z, Q[1].x - Q[0].x) + Math.PI / 2 : Math.atan2(-meio.z, -meio.x * 0.2);
     let melhor = pref, nota = 1e9;
     for (let k = 0; k < 12; k++) {
       const ang = pref + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 6;
@@ -11867,7 +11923,13 @@ function cameraGoal() {
   if (G.camOvo) return G.camOvo;                   // cena do ovo de páscoa
   if (G.celebAuto) return cameraCelebAuto();
   if (G.state === 'goal' && G.golAutor) {         // gol de outro: câmera na comemoração de quem fez
-    const a = G.golAutor, ang = a.angle + 0.6;
+    const a = G.golAutor, Gp = G.golGrupo;
+    if (Gp && Gp.membros.length) {                   // (7.4.1) em grupo: a câmera abre e mira o meio da turma
+      const L = [a].concat(Gp.membros.filter((q) => q !== a && !q.out)), mx = L.reduce((s2, q) => s2 + q.x, 0) / L.length, mz = L.reduce((s2, q) => s2 + q.z, 0) / L.length;
+      const ang = (Gp.juntos ? Gp.ang : a.angle) + 0.45, d = Gp.juntos ? 7.6 : 7;
+      return { px: mx + Math.cos(ang) * d, py: 2.5, pz: mz + Math.sin(ang) * d, tx: mx, ty: 1.0, tz: mz };
+    }
+    const ang = a.angle + 0.6;
     return { px: a.x + Math.cos(ang) * 6, py: 2.3, pz: a.z + Math.sin(ang) * 6, tx: a.x, ty: 1.0, tz: a.z };
   }
   if (G.state === 'foul' && G.foul && G.foul.ar) {  // impedimento: de dentro do campo, olhando o bandeirinha
@@ -12697,6 +12759,7 @@ function stepGame(dt, rdt) {
   if (G.state === 'goal') {
     G.goalTimer -= rdt;
     G.goalT = (G.goalT || 0) + rdt;
+    atualizarGrupoDoGol(rdt);
     if (G.goalT > 0.8) G.targetScale = 1;          // câmera lenta só no comecinho
     if (G.goalTimer <= 0 && !G.fading && !G.replayFeito) { G.replayFeito = true; iniciarReplayGol(() => {}); return; }   // replay antes da saída
     if (G.goalTimer <= 0 && !G.fading) {
