@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.21';
+const VERSAO_JOGO = '7.1.22';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -424,6 +424,59 @@ const TATICAS = {
   aerea:      { nome: 'Bola aérea',    passe: 0.12, pressao: 0.6, chute: 0.9, distIdeal: 16, bloco: 1, largura: 1.35, apoio: 1, corridas: 0.3, cruzar: 0.55 },
 };
 
+// ---- (7.1.22) TÁTICA EM DUAS PARTES: uma COM A BOLA e uma SEM A BOLA. O técnico escolhe as duas (e troca durante o jogo:
+//   tecnicoPensa) e você pode escolher no pause da partida livre. taticaDe(time) junta as duas num objeto só, com os mesmos
+//   campos de antes (por isso o resto da IA não mudou de nome) e mais os novos:
+//   COM A BOLA
+//     planos ...... peso de cada jogada ensaiada (tabela, lado, enfiada, paciencia)        longe ..... chance de arriscar de fora da área
+//     chegada ..... quantos metros os meias sobem a mais para pisar na área                lateral ... quanto o lateral apoia (0 fica, 1 vai ao fundo)
+//     lanca ....... lança longo para quem está na frente mesmo sem ser contra-ataque       frenteFica  o 9 não volta para marcar
+//   SEM A BOLA
+//     blocoDef .... sobe/recua o time inteiro (m)        larguraDef . abre/fecha         linha ....... sobe/recua a linha de zaga (m)
+//     pressAte .... até onde vai o bote em quem conduz (m no sentido do ataque, 0 = meio-campo; depois disso só cerca)
+//     pressers .... quantos vão no bote (1 ou 2)         bote ....... chance de se atirar no bote em vez de cercar
+//     marcRaio .... tamanho da zona de marcação          colado ..... marca encostado      voltaTodos .. até o 9 volta para trás da bola
+// As 5 táticas antigas continuam valendo como PARES (PAR_TATICA): os times, as fases e os saves não mudam.
+const TATICAS_COM = {
+  posse:  { nome: 'Toque de bola',  dica: 'Passes curtos e pacientes; perde pouco a bola, chuta menos.',
+            passe: 0.35, pressao: 0.85, chute: 0.75, distIdeal: 10, bloco: 2, largura: 0.95, apoio: 0.7, corridas: 0.25, drible: 0.85, longe: 0.15, chegada: 0, lateral: 0.6,
+            planos: { tabela: 1.8, lado: 0.7, enfiada: 0.6, paciencia: 1.7 } },
+  direto: { nome: 'Jogo direto',    dica: 'Bola longa nas costas da zaga; chega rápido, mas erra mais passe.',
+            passe: 0.16, pressao: 0.7, chute: 1.15, distIdeal: 24, bloco: 0, largura: 1.0, apoio: 1.1, corridas: 0.6, drible: 1, longe: 0.4, chegada: 2, lateral: 0.45, lanca: true,
+            planos: { tabela: 0.5, lado: 0.7, enfiada: 2.4, paciencia: 0.3 } },
+  pontas: { nome: 'Pelas pontas',   dica: 'Abre o campo, lateral apoia e cruza para a área cheia.',
+            passe: 0.14, pressao: 0.65, chute: 0.9, distIdeal: 16, bloco: 1, largura: 1.35, apoio: 1, corridas: 0.3, drible: 1, longe: 0.2, chegada: 4, lateral: 1, cruzar: 0.55,
+            planos: { tabela: 0.6, lado: 2.6, enfiada: 0.6, paciencia: 0.5 } },
+  centro: { nome: 'Por dentro',     dica: 'Tabelas pelo meio, o 9 sai da área e os meias infiltram.',
+            passe: 0.26, pressao: 0.75, chute: 1.05, distIdeal: 13, bloco: 1, largura: 0.88, apoio: 0.85, corridas: 0.6, drible: 1.05, longe: 0.45, chegada: 4, lateral: 0.3, falso9: true,
+            planos: { tabela: 1.8, lado: 0.4, enfiada: 1.2, paciencia: 1.0 } },
+  contra: { nome: 'Contra-ataque',  dica: 'Roubou, lançou: poucos sobem, mas sobem rápido.',
+            passe: 0.1, pressao: 0.6, chute: 1.1, distIdeal: 22, bloco: -2, largura: 0.95, apoio: 1, corridas: 0.4, drible: 1, longe: 0.3, chegada: -2, lateral: 0.25, contra: true, zagaFica: true, frenteFica: true,
+            planos: { tabela: 0.6, lado: 0.8, enfiada: 2.0, paciencia: 0.3 } },
+};
+const TATICAS_SEM = {
+  alta:  { nome: 'Pressão alta',        dica: 'Dois no bote lá na frente; rouba perto do gol, cansa e deixa espaço atrás.',
+           blocoDef: 4, larguraDef: 1.0, linha: 2, pressAte: 45, pressers: 2, bote: 0.68, marcRaio: 1.1 },
+  media: { nome: 'Bloco médio',         dica: 'Espera no meio-campo e marca por zona: o equilíbrio.',
+           blocoDef: 0, larguraDef: 0.9, linha: 0, pressAte: 10, pressers: 1, bote: 0.55, marcRaio: 1 },
+  baixa: { nome: 'Retranca',            dica: 'Todos atrás da bola, fechados; difícil de furar, mas entrega o campo.',
+           blocoDef: -8, larguraDef: 0.72, linha: -5, pressAte: -6, pressers: 1, bote: 0.45, marcRaio: 0.9, voltaTodos: true },
+  homem: { nome: 'Marcação individual', dica: 'Cada um cola no seu; sufoca o passe, mas um drible desmonta tudo.',
+           blocoDef: 1, larguraDef: 1.0, linha: 0, pressAte: 22, pressers: 1, bote: 0.65, marcRaio: 1.5, colado: true },
+};
+// as 5 de antes → [com a bola, sem a bola]
+const PAR_TATICA = { tikitaka: ['posse', 'media'], falso9: ['centro', 'media'], retranca: ['direto', 'baixa'], contra: ['contra', 'media'], aerea: ['pontas', 'media'] };
+const _tatCache = new Map();
+function juntarTatica(com, sem) {
+  const k = com + '|' + sem; let T = _tatCache.get(k);
+  if (!T) { T = Object.assign({ com, sem }, TATICAS_COM[com] || TATICAS_COM.posse, TATICAS_SEM[sem] || TATICAS_SEM.media); T.nome = (TATICAS_COM[com] || TATICAS_COM.posse).nome; _tatCache.set(k, T); }
+  return T;
+}
+function parDaTatica(chave, time) {                                       // do time (taticaCom/taticaSem) ou da tática antiga
+  const P = PAR_TATICA[chave] || PAR_TATICA.tikitaka;
+  return { com: time && TATICAS_COM[time.taticaCom] ? time.taticaCom : P[0], sem: time && TATICAS_SEM[time.taticaSem] ? time.taticaSem : P[1] };
+}
+
 // ---- Dificuldade. nivel entra na conta junto com a diferença de força dos times (ver
 // calcularAjuste). Quanto mais "pesado" o jogo, melhor a IA adversária e pior a sua, mas tudo com
 // TETO: você (o seu jogador, os minigames, o tempo) nunca muda, então sempre dá para ganhar.
@@ -699,7 +752,9 @@ const Atributos = (() => {
 // meio: passe/drible; goleiro: goleiro). O seu jogador usa os Atributos (história) — na partida livre, tudo 7.
 // ---------------------------------------------------------------------
 const HABILIDADES = ['defesa', 'desarme', 'forca', 'resistencia', 'recuperacao', 'velocidade', 'chute', 'efeito', 'passe', 'cruzamento', 'drible', 'dominio', 'cabeceio', 'finalizacao', 'goleiro'];
-const HAB_EXP = { velocidade: 0.35, resistencia: 1.0, recuperacao: 1.0, forca: 0.6, chute: 1, efeito: 1, passe: 1, cruzamento: 1, drible: 1, dominio: 1, cabeceio: 1, finalizacao: 1, defesa: 1, desarme: 1, goleiro: 1 };
+// (7.1.22) HAB_PESO achata a curva: 5 fica ~0,82 e 10 fica ~1,24 do nível 7 (antes 0,71 e 1,43) — 5 é ruim sem ser horrível, 10 é muito bom sem ser roubado.
+const HAB_PESO = 0.6;
+const HAB_EXP = { velocidade: 0.22, resistencia: 1.0, recuperacao: 1.0, forca: 0.6, chute: 1, efeito: 1, passe: 1, cruzamento: 1, drible: 1, dominio: 1, cabeceio: 1, finalizacao: 1, defesa: 1, desarme: 1, goleiro: 1 };
 const FAIXA_NIVEL = { muito_facil: [2, 3], facil: [3, 4], normal: [5, 6], dificil: [6, 8], muito_dificil: [8, 10] };
 const VIES_POSICAO = {
   GK: { goleiro: 2, defesa: 0, drible: -2, finalizacao: -3, chute: -1, cabeceio: -1 },
@@ -728,7 +783,7 @@ function hab(p, nome) {
   return (p.hab && p.hab[nome]) ?? 7;
 }
 function fh(p, nome, exp) {
-  return Math.pow(clamp(hab(p, nome) / 7, 0.15, 1.6), exp ?? HAB_EXP[nome] ?? 1);
+  return Math.pow(clamp(hab(p, nome) / 7, 0.15, 1.6), (exp ?? HAB_EXP[nome] ?? 1) * (nome === 'velocidade' ? 1 : HAB_PESO));
 }
 // (7.1.14) multiplicador de uma habilidade do SEU jogador medido a partir do começo (5 na história, 7 na partida livre): 1 no começo
 function fUser(nome, exp) {
@@ -3880,11 +3935,12 @@ function papeisSemBola(t, holder, live, oppHas) {
     const gx = ownGx - holder.x, gz = -holder.z, gl = Math.hypot(gx, gz) || 1;
     const deFrente = (Math.cos(holder.angle) * gx + Math.sin(holder.angle) * gz) / gl > 0.3;
     const recuo = pressao ? 9 : deFrente ? 15 : 11;
-    G.linhaDef[t] = clamp(hRel - recuo, -40, -6);
+    const TTd = taticaDe(t), lin = TTd.linha || 0;                          // (7.1.22) a tática sem a bola sobe ou recua a linha
+    G.linhaDef[t] = clamp(hRel - recuo + lin, -40 + Math.max(0, lin) * 0.5, -6 + lin);
     if (!campoPequeno()) {
       const livres = TEAMS[t].filter((p) => p.role !== 'GK' && !p.isUser && !p.out && p.stun <= 0 && !p.scripted && p !== G.pressers[t] && p !== G.covers[t]);
       const alvos = TEAMS[1 - t].filter((q) => q.role !== 'GK' && !q.out && q !== holder && Math.abs(q.x - ownGx) < 52 * ESC);
-      const raio = 13 * Math.max(0.75, ESC), pares = [];
+      const raio = 13 * Math.max(0.75, ESC) * (TTd.marcRaio || 1), pares = [];
       for (const p of livres) {
         const f = formationTarget(p, false);
         for (const q of alvos) {
@@ -3978,9 +4034,10 @@ function procurarEspaco(p, base, holder, dt, escala = 1) {
 function posicaoDeMarcacao(p, q, holder) {
   const ownGx = -p.dir * HALF_L, gx = ownGx - q.x, gz = -q.z * 0.5, gl = Math.hypot(gx, gz) || 1;
   const perigo = Math.abs(q.x - ownGx) < HALF_L * 0.5, recebe = G.passTarget && G.passTarget.p === q;
+  const colado = !!taticaDe(p.team).colado;                              // (7.1.22) marcação individual: encostado o tempo todo
   let dist = (q.profT > 0 || q.runT > 0) ? 0.95 : perigo ? 1.05 : 1.4;
-  if (recebe || (perigo && gl < BOX.depth * 1.6)) dist = 0.74;            // vai receber / dentro da nossa zona: cola (encosta)
-  if (!recebe && holder && dist2D(q, holder) > 25) dist += 1.4;          // longe da jogada: mais solto
+  if (recebe || (perigo && gl < BOX.depth * 1.6) || colado) dist = 0.74;  // vai receber / dentro da nossa zona: cola (encosta)
+  if (!recebe && !colado && holder && dist2D(q, holder) > 25) dist += 1.4;   // longe da jogada: mais solto
   let x = q.x + gx / gl * dist, z = q.z + gz / gl * dist;
   if (holder) { x = lerp(x, holder.x, 0.05); z = lerp(z, holder.z, 0.06); }
   return { x: clamp(x, -HALF_L + 1.2, HALF_L - 1.2), z: clamp(z, -HALF_W + 1.2, HALF_W - 1.2) };
@@ -4116,7 +4173,7 @@ function formationTarget(p, attacking) {
   const bx0 = p.base.x / ESC, bz0 = p.base.z / ESC_W;
   const phase = attacking ? 'ataque' : (G.possession || G.sp || (G.dono && !G.dono.out && G.state === 'play') ? 'defesa' : 'neutro');
   const wide = Math.abs(bz0) > 5;
-  const larg = TT.largura || 1, bloco = TT.bloco || 0;
+  const larg = phase === 'ataque' ? (TT.largura || 1) : (TT.larguraDef ?? TT.largura ?? 1), bloco = phase === 'ataque' ? (TT.bloco || 0) : (TT.blocoDef ?? TT.bloco ?? 0);   // (7.1.22) a tática com a bola abre/sobe no ataque; a sem a bola, na defesa
   let rx, rz;
   const hC = G.possession;
   const cruz = attacking && hC && hC !== p && hC.team === p.team ? posicaoParaCruzamento(p, hC, TT, bz0) : null;
@@ -4131,21 +4188,26 @@ function formationTarget(p, attacking) {
     rx = phase === 'ataque' ? clamp(bRel + (wide ? 6 : -1), -20, 48 - 12)
       : phase === 'defesa' ? clamp(bRel - (wide ? 3 : 6), -34, 12) : clamp(bRel - 2, -28, 20);
     if (bx0 > -14 && TT.falso9 && phase === 'ataque') rx += 4;      // falso 9: os meias pisam na área no lugar dele
+    if (phase === 'ataque') rx = Math.min(rx + (TT.chegada || 0), 48 - 9);   // (7.1.22) a tática manda os meias mais (ou menos) para a frente
     rz = bz0 * (phase === 'ataque' ? 1.25 : 0.65) * larg + bz * (phase === 'ataque' ? 0.2 : 0.45);
   } else {
     rx = phase === 'ataque' ? clamp(bRel + 14, 0, 48 - 9) : clamp(bRel + 16, -2, 18);
     if (TT.falso9 && phase === 'ataque') rx = clamp(bRel + 2, -6, 48 - 18);   // falso 9: recua para receber (pivô)
-    if (TT.contra && phase !== 'ataque') rx = Math.max(rx, 6);           // contra-ataque: o 9 fica lá na frente esperando
+    if (TT.voltaTodos && phase !== 'ataque') rx = clamp(bRel + 4, -16, 8);   // (7.1.22) retranca: até o 9 volta para trás da bola
+    if (TT.frenteFica && phase !== 'ataque') rx = Math.max(rx, 6);       // contra-ataque: o 9 fica lá na frente esperando
     if (TT.cruzar && phase === 'ataque') rx = clamp(bRel + 16, 0, 48 - 6); // bola aérea: o 9 vive dentro da área
     rz = bz * 0.4 + bz0 * 0.6;
   }
+  // (7.1.22) CHEGADA NA ÁREA: a bola do time entrou no terço final pelo MEIO → quem é de frente ataca a área (ver chegadaNaArea)
+  if (!cruz && phase === 'ataque' && hC && hC !== p && hC.team === p.team && G.state === 'play' && !G.sp) { const ch = chegadaNaArea(p, hC, TT, bRel, bz, bz0); if (ch) ({ rx, rz } = ch); }
   // CAMPO MÉDIO (7 x 7, várzea): o bloco se espremia na faixa da bola (todo mundo puxado para o lado dela). Metade do
   // caminho volta para a largura da posição de cada um: quem é do lado de lá fica lá, aberto, como opção de inversão.
   if (!cruz && !campoPequeno() && !campoGrande()) rz = lerp(rz, bz0 * (phase === 'ataque' ? 1.3 : 0.95) * larg, 0.5);
   // Linha de defesa: os zagueiros (e laterais) defendendo andam juntos na linha calculada em papeisSemBola.
   const LD = G.linhaDef && G.linhaDef[p.team];
   if (LD != null && phase === 'defesa' && G.state === 'play' && !G.sp && (p.funcao ? (p.funcao === 'zagueiro' || p.funcao === 'lateral') : p.role === 'DEF')) rx = lerp(rx, LD, 0.65);
-  rx += bloco * (phase === 'ataque' ? 0.5 : 1);
+  const zagaB = p.funcao ? (p.funcao === 'zagueiro' || p.funcao === 'lateral') : p.role === 'DEF';
+  rx += bloco * (phase === 'ataque' ? 0.5 : (bloco > 0 && zagaB ? 0.45 : 1));   // (7.1.22) pressão alta: quem sobe é a frente; a zaga sobe menos da metade
   rx += p.drift.x * 0.6 + (p.runT > 0 && !(campoGrande() && p.funcao) ? 8 : 0);
   rz += p.drift.z * 0.6;
   rx *= ESC; rz *= ESC_W;
@@ -4166,6 +4228,24 @@ function formationTarget(p, attacking) {
 // No time de BOLA AÉREA (TT.cruzar) um jogador a mais vai ao primeiro pau e todos entram mais fundo.
 // Funciona em todos os campos (7x7, society, 11x11). Valores no campo de referência 96 x 62.
 // ---------------------------------------------------------------------
+// (7.1.22) CHEGADA NA ÁREA pelo meio (a de cruzamento é a posicaoParaCruzamento). Quem conduz está no terço final, por dentro:
+//   o 9 ............................ na área, saindo para o lado cego do zagueiro (longe da bola)
+//   quem joga aberto do OUTRO lado . fecha no segundo pau                    do lado DA BOLA: fica aberto (opção para abrir o jogo)
+//   um meia por dentro ............. chega na meia-lua para a tabela / o rebote (só se a tática manda gente: chegada >= 2)
+//   volantes e zagueiros ........... ficam (cobrem o contra-ataque)
+// Quantos chegam depende da tática com a bola: contra-ataque manda só o 9; pelas pontas e por dentro enchem a área.
+function chegadaNaArea(p, h, TT, bRel, bz, bz0) {
+  if (p.role === 'GK' || p.isUser || campoPequeno() || bRel < 22 || Math.abs(bz) > 16) return null;
+  const f = p.funcao, lado = Math.sign(bz0) || (p.id % 2 ? 1 : -1), ladoBola = Math.sign(bz) || lado, ch = TT.chegada || 0;
+  const nove = f === 'centroavante' || (!f && p.role === 'FWD');
+  const aberto = f === 'ponta' || f === 'aberto' || (!f && p.role === 'MID' && Math.abs(bz0) > 5);
+  const meia = f === 'meia' || (!f && p.role === 'MID' && !aberto);
+  if (nove) return TT.falso9 ? null : { rx: Math.max(bRel + 6, 39), rz: -ladoBola * 4 };
+  if (ch < 0) return null;                                                // contra-ataque: só o 9
+  if (aberto) return lado !== ladoBola || Math.abs(bz) < 4 ? { rx: Math.max(bRel + 3, 38), rz: lado * 9 } : (ch >= 4 ? { rx: Math.max(bRel + 2, 37), rz: lado * 13 } : null);
+  if (meia && ch >= 2 && (p.id % 2 === 0 || ch >= 4)) return { rx: clamp(bRel + 1, 30, 36), rz: lado * 4 + bz * 0.2 };
+  return null;
+}
 function ladoComBola(h) {
   return h.role !== 'GK' && Math.abs(h.z) > HALF_W * 0.4 && h.x * h.dir > 6 && Math.abs(h.dir * HALF_L - h.x) / ESC < 36;
 }
@@ -4203,8 +4283,9 @@ function posicaoParaCruzamento(p, h, TT, bz0) {
 // ---------------------------------------------------------------------
 const campoGrande = () => !!PARTIDA && PARTIDA.campo.jogadores >= 9;
 function posicaoCampoGrande(p, phase, bRel, bz, bz0, TT) {
-  const f = p.funcao, lado = Math.sign(bz0) || (p.id % 2 ? 1 : -1), larg = TT.largura || 1;
-  const at = phase === 'ataque', df = phase === 'defesa';
+  const f = p.funcao, lado = Math.sign(bz0) || (p.id % 2 ? 1 : -1);
+  const at = phase === 'ataque', df = phase === 'defesa', larg = at ? (TT.largura || 1) : (TT.larguraDef ?? TT.largura ?? 1), cheg = at ? (TT.chegada || 0) : 0;
+  const hB = G.possession, apoia = TT.lateral ?? 0.6;
   let rx, rz;
   switch (f) {
     case 'zagueiro':
@@ -4212,15 +4293,19 @@ function posicaoCampoGrande(p, phase, bRel, bz, bz0, TT) {
       rz = bz0 * (at ? 1.1 : 0.8) + bz * 0.18;
       break;
     case 'lateral':
-      rx = at ? clamp(bRel - 9, -34, TT.zagaFica ? 4 : 24) : df ? clamp(bRel - 9, -42, -10) : clamp(bRel - 14, -38, 0);
+      rx = at ? clamp(bRel - 9, -34, TT.zagaFica ? 4 : lerp(2, 30, apoia)) : df ? clamp(bRel - 9, -42, -10) : clamp(bRel - 14, -38, 0);
       rz = at ? lado * 26 * larg : bz0 * 0.85 + bz * 0.22;
+      // (7.1.22) ULTRAPASSAGEM: o ponta/meia do lado DELE está com a bola → o lateral passa por fora, na frente, pedindo no corredor
+      if (at && apoia >= 0.6 && !TT.zagaFica && hB && hB !== p && hB.team === p.team && hB.role !== 'DEF' && hB.role !== 'GK' && Math.sign(hB.z * p.dir) === lado && Math.abs(bz) > 9 && bRel > -6 && bRel < 34) {
+        rx = Math.min(bRel + 5 + apoia * 3, 40); rz = lado * 29; p.ultrapassa = G.time;
+      }
       break;
     case 'volante':
-      rx = at ? clamp(bRel - 14, -26, 8) : df ? clamp(bRel - 7, -34, -4) : clamp(bRel - 10, -30, 2);
+      rx = at ? clamp(bRel - 14 + cheg * 0.5, -26, 8 + Math.max(0, cheg)) : df ? clamp(bRel - 7, -34, -4) : clamp(bRel - 10, -30, 2);
       rz = bz0 * 0.8 + bz * 0.35;
       break;
     case 'meia':
-      rx = at ? clamp(bRel - 3, -16, 32) : df ? clamp(bRel - 5, -30, 8) : clamp(bRel - 3, -24, 18);
+      rx = at ? clamp(bRel - 3 + cheg, -16, 32 + Math.max(0, cheg)) : df ? clamp(bRel - 5, -30, 8) : clamp(bRel - 3, -24, 18);
       rz = bz0 * (at ? 1.2 : 0.7) * larg + bz * 0.3;
       break;
     case 'aberto':
@@ -4234,7 +4319,8 @@ function posicaoCampoGrande(p, phase, bRel, bz, bz0, TT) {
     default:                                       // centroavante
       rx = at ? clamp(bRel + 16, 6, 42) : clamp(bRel + 14, -2, 16);
       if (TT.falso9 && at) rx = clamp(bRel + 2, -4, 30);
-      if (TT.contra && !at) rx = Math.max(rx, 8);
+      if (TT.voltaTodos && !at) rx = clamp(bRel + 5, -14, 8);                  // (7.1.22) retranca: o 9 também volta
+      if (TT.frenteFica && !at) rx = Math.max(rx, 8);
       rz = bz * 0.3 + bz0 * 0.5;
   }
   // Ala chegando no fundo para cruzar: o 9, o meia e o ponta do outro lado ATACAM a área.
@@ -4415,7 +4501,19 @@ function aiSemBola(p, dt, holder) {
       }
     }
   }
-  if (oppHolds && real && G.pressers[p.team] === p) return aiPressiona(p, holder, dt);
+  // (7.1.22) ZONA DE PRESSÃO (tática sem a bola): o bote só vai até a linha pressAte (no sentido do nosso ataque; 0 = meio-campo).
+  //   Além dela quem seria o do bote só CERCA (fica entre a bola e o gol, sem passar da linha). Perto da nossa área vale sempre.
+  const TTd = oppHolds && real ? taticaDe(p.team) : null;
+  const hAv = TTd ? holder.x * p.dir / ESC : 0, naZona = TTd ? (hAv <= (TTd.pressAte ?? 10) || hAv < -18) : false;
+  if (TTd && G.pressers[p.team] === p) {
+    if (naZona || holder.role === 'GK' && TTd.pressers >= 2) return aiPressiona(p, holder, dt);
+    const ownGx = -p.dir * HALF_L, gx = ownGx - holder.x, gz = -holder.z * 0.6, gl = Math.hypot(gx, gz) || 1, lim = (TTd.pressAte ?? 10) * ESC;
+    let tx = holder.x + gx / gl * 7, tz = holder.z + gz / gl * 7;
+    if (tx * p.dir > lim) tx = lim * p.dir;                              // não passa da linha de pressão
+    if (Math.hypot(tx - p.x, tz - p.z) > 7) corrida(p, 1);
+    return seek(p, tx, tz, CONFIG.AI_SPEED * 0.85 * p.speedMul);
+  }
+  if (TTd && G.covers[p.team] === p && TTd.pressers >= 2 && hAv > -2 && dist2D(p, holder) < 16 * Math.max(0.7, ESC) && holder.role !== 'GK' && p.role !== 'DEF') return aiPressiona(p, holder, dt);   // pressão alta: no campo DELES o segundo também vai no bote (no nosso campo ele volta a cobrir)
   if (oppHolds && real && G.covers[p.team] === p) {
     const ownGx = -p.dir * HALF_L, tx = lerp(ball.x, ownGx, 0.3), tz = lerp(ball.z, 0, 0.3);
     if (Math.hypot(tx - p.x, tz - p.z) > 6) corrida(p, 2);
@@ -4457,7 +4555,7 @@ function aiSemBola(p, dt, holder) {
 function aiPressiona(p, holder, dt) {
   // Contenção: fica entre o atacante e o gol, a ~1,9 m, e de vez em quando dá o bote.
   p.commitT -= dt;
-  if (p.commitT <= 0) { p.commitT = rand(1.2, 2.8); p.committing = Math.random() < 0.55 ? 0.7 : 0; }
+  if (p.commitT <= 0) { p.commitT = rand(1.2, 2.8); p.committing = Math.random() < (taticaDe(p.team).bote ?? 0.55) ? 0.7 : 0; }   // (7.1.22) a tática sem a bola diz o quanto ele se atira
   if (holder === user && KICK_STATES.includes(G.state)) p.committing = 0.5;   // você parou para chutar: ele vem no bote
   // Você vindo para cima dele devagar (sem driblar, sem arrancar): ele NÃO recua mais —
   // fica e dá o bote. Antes ele ia andando de costas e você passava sem perder a bola.
@@ -4613,7 +4711,7 @@ function aiCarry(p, dt) {
   }
   // CHUTE DE LONGE: passou do meio com a bola → decide UMA vez nessa posse (30%) se vai arriscar de fora da área.
   // Arrisca quando estiver de frente para o gol, fora da área e a até ~3/4 do meio-campo, sem ninguém colado.
-  if (p.role !== 'GK' && p.longe === undefined && p.x * p.dir > 0) p.longe = Math.random() < 0.3;
+  if (p.role !== 'GK' && p.longe === undefined && p.x * p.dir > 0) p.longe = Math.random() < (TT.longe ?? 0.3);
   if (p.longe && !G.kickoffPending && p.chutePrep <= 0 && dGoal > BOX.depth + 1 && dGoal < HALF_L * 0.78 && Math.abs(p.z) < HALF_W * 0.55 && near.d > 1.5) {
     p.longe = false; p.chuteDeLonge = true;
     p.chutePrep = p.chutePrepDur = 0.35;
@@ -4639,6 +4737,12 @@ function aiCarry(p, dt) {
       const alvo = teamOf(p).filter((t) => t !== p && t.role !== 'GK' && t.stun <= 0 && !t.out && (t.x - p.x) * p.dir > 14 * ESC)
         .sort((a, b) => (b.x - a.x) * p.dir)[0];
       if (alvo && margemPasse(p, planoDePasse(p, alvo, 'lob'), alvo) > -0.1) { passTo(p, alvo, false, 'lob'); return { vx: 0, vz: 0 }; }   // só se ele ganhar a bola
+    }
+    // (7.1.22) JOGO DIRETO: no nosso campo, com alguém bem na frente → bola longa nas costas da zaga (mesmo sem ser contra-ataque)
+    if (TT.lanca && !campoPequeno() && (p.x * p.dir) < 8 * ESC && near.d > 1.6 && Math.random() < 0.3) {
+      const alvo = teamOf(p).filter((t) => t !== p && t.role !== 'GK' && t.stun <= 0 && !t.out && (t.x - p.x) * p.dir > 18 * ESC)
+        .sort((a, b) => (b.x - a.x) * p.dir)[0];
+      if (alvo && margemPasse(p, planoDePasse(p, alvo, 'lob'), alvo) > -0.05) { passTo(p, alvo, false, 'lob'); return { vx: 0, vz: 0 }; }
     }
     // BOLA AÉREA: pelos lados e perto da área → cruza para quem estiver na área.
     if (TT.cruzar && Math.abs(p.z) > HALF_W * 0.4 && dG < 34 && Math.random() < TT.cruzar) {
@@ -4718,7 +4822,8 @@ function jogadaDoTime(p) {
   let J = G.jogada[p.team];
   if (J && (J.de !== G.recuperouEm || G.time > J.ate)) J = null;
   if (!J) {
-    const TT = taticaDe(p.team), w = { tabela: 1.1 * (TT.distIdeal && TT.distIdeal < 14 ? 1.5 : 1), lado: 0.9 + (TT.cruzar || 0) * 2, enfiada: 0.9 + (TT.contra ? 1 : 0) + (campoPequeno() ? 0.3 : 0), paciencia: 0.8 };
+    const TT = taticaDe(p.team), PL = TT.planos || { tabela: 1.1, lado: 0.9, enfiada: 0.9, paciencia: 0.8 };   // (7.1.22) o peso vem da tática com a bola
+    const w = { tabela: PL.tabela, lado: PL.lado, enfiada: PL.enfiada + (campoPequeno() ? 0.3 : 0), paciencia: PL.paciencia };
     let tot = 0; for (const k in w) tot += w[k];
     let r = Math.random() * tot, tipo = 'paciencia';
     for (const k in w) { r -= w[k]; if (r <= 0) { tipo = k; break; } }
@@ -5140,7 +5245,9 @@ function passTo(from, to, broken, style) {
     // a IA também erra um pouco: mais com o marcador em cima e nos passes longos (e conforme a dificuldade)
     const o = nearestOf(opponentsOf(from), from), ajuste = 1 / fh(from, style === 'cross' || style === 'long' || style === 'lob' ? 'cruzamento' : 'passe');   // habilidade
     // mais humano: o passe da IA não cai sempre no ponto exato (erro de direção e de força maiores, menos para quem passa bem)
-    const sd = (0.02 + (o.p && o.d < 2.2 ? (2.2 - o.d) * 0.025 : 0) + P.d * 0.0007) * ajuste;
+    // (7.1.22) SUFOCADO: cada adversário a mais em cima dele (até 3,5 m) piora o passe — é o que a pressão alta (dois no bote) ganha
+    let aperto = 0; for (const q of opponentsOf(from)) if (q !== o.p && !q.out && q.role !== 'GK' && dist2D(q, from) < 3.5) aperto++;
+    const sd = (0.02 + (o.p && o.d < 2.2 ? (2.2 - o.d) * 0.025 : 0) + Math.min(2, aperto) * 0.028 + P.d * 0.0007) * ajuste;
     const err = gauss() * sd, c = Math.cos(err), s = Math.sin(err);
     [dx, dz] = [dx * c - dz * s, dx * s + dz * c];
     speed *= 1 + gauss() * 0.06 * ajuste;
@@ -6095,7 +6202,7 @@ function detectarDribleDeCorpo(u, dt) {
 
 // Chance de o passe de um companheiro chegar torto para você: sai da habilidade de passe dele (o nível do SEU time). Passe 5,5 = a base (45%).
 function erroDePasseParaVoce(p) {
-  return clamp(CONFIG.BROKEN_PASS_CHANCE * Math.pow(5.5 / Math.max(1, hab(p, 'passe')), 1.2), 0.08, 0.8);
+  return clamp(CONFIG.BROKEN_PASS_CHANCE * Math.pow(5.5 / Math.max(1, hab(p, 'passe')), 0.8), 0.08, 0.8);
 }
 
 // PARTIDA LIVRE e FADIGA. A barra (stamina 0–1) vale T segundos de corrida; T começa em LIVRE_CORRIDA e cai FADIGA_PERDA
@@ -11289,7 +11396,7 @@ function ajAbrirFormacao() {
   const bloco = (t, rotulo) => {
     const reservas = (P.reservas[t] || []).map((j) => esc(j.nome)).join(', ') || T('sem reservas');
     const tec = P.tecnicos[t] && P.tecnicos[t].nome ? esc(P.tecnicos[t].nome) : '—';
-    const tat = TATICAS[P.taticas[t]] ? TATICAS[P.taticas[t]].nome : '—';
+    const tat = nomeTatica(t);
     return '<div style="flex:1 1 280px;min-width:0"><b style="color:' + esc(P.uniformes[t].camisa) + ';text-shadow:0 0 2px #000,0 0 2px #000">' + esc(rotulo) + ' · ' + esc(P.timesObj[t].nome) + '</b>' + (t === 0 ? ' <span style="color:#f7941d">(' + T('Meu time') + ')</span>' : '') + '<br>' +
       T('Técnico') + ': <b>' + tec + '</b><br>' + T('Estratégia') + ': <b>' + esc(tat) + '</b> · ' + T('formação') + ' <b>' + esc(P.formacoes[t]) + '</b><br>' + T('Banco') + ': ' + reservas + '</div>';
   };
@@ -12617,6 +12724,10 @@ function resolverPartida(cfg = {}) {
   if (parecido) { const fora = P.mandante === 0 ? 1 : 0; P.uniformes[fora] = P.timesObj[fora].uniforme2 || P.uniformes[fora]; }
   P.formacoes = [0, 1].map((i) => (cfg.formacoes && cfg.formacoes[i]) || P.timesObj[i].formacao || '4-4-2');
   P.taticas = [0, 1].map((i) => (cfg.taticas && cfg.taticas[i]) || P.timesObj[i].tatica || 'tikitaka');
+  // (7.1.22) o par com bola / sem bola: cfg.taticasCom / cfg.taticasSem mandam; senão o do time; senão o par da tática antiga
+  P.tat = [0, 1].map((i) => { const par = parDaTatica(P.taticas[i], cfg.taticas && cfg.taticas[i] ? null : P.timesObj[i]);
+    if (cfg.taticasCom && TATICAS_COM[cfg.taticasCom[i]]) par.com = cfg.taticasCom[i]; if (cfg.taticasSem && TATICAS_SEM[cfg.taticasSem[i]]) par.sem = cfg.taticasSem[i]; return par; });
+  P.tatPref = P.tat.map((t) => Object.assign({}, t));                     // a identidade do time (o técnico volta para ela)
   P.genero = cfg.genero === 'F' || cfg.genero === 'X' ? cfg.genero : 'M';   // partida masculina, feminina ou mista
   P.elencos = P.timesObj.map((t) => elencoDoTime(t, P.genero));
   P.tecnicos = [P.timesObj[0].tecnicoFixo && P.timesObj[0].tecnico ? P.timesObj[0].tecnico : tecnicoDoUsuario(), P.timesObj[1].tecnico || { nome: 'Técnico', aparencia: { pele: '#BF8159', cabelo: '#1C140F', estilo: 0, roupa: '#222222' } }];
@@ -13064,31 +13175,73 @@ function escolherAcaoTecnico(t) {
   let soma = op.reduce((a, o) => a + o[1], 0), r = Math.random() * soma;
   for (const [a, w] of op) { r -= w; if (r <= 0) { mudar(a, a === 'aplaude' ? rand(1.2, 2) : a === 'chama' ? rand(1.5, 2.5) : rand(3, 6.5)); return; } }
 }
-function trocarTatica(team, chave, porQuem) {
-  if (!TATICAS[chave] || !PARTIDA || PARTIDA.taticas[team] === chave) return;
-  PARTIDA.taticas[team] = chave;
-  const t = tecnicos[team]; if (t) t.gestoT = 2.2;
-  showToast((porQuem || (t ? t.nome : 'Técnico')) + ': ' + TATICAS[chave].nome + '!', team === 0 ? 'good' : '');
+function trocarTatica(team, chave, porQuem) {                          // a tática antiga inteira (vira o par com/sem)
+  if (!TATICAS[chave] || !PARTIDA) return;
+  const par = parDaTatica(chave); PARTIDA.taticas[team] = chave;
+  trocarTaticaFase(team, 'com', par.com, porQuem, true); trocarTaticaFase(team, 'sem', par.sem, porQuem, true);
   atualizarInfoTatica();
 }
-// IA dos técnicos: olha o placar e o relógio a cada 15 s de jogo.
+// (7.1.22) troca UMA das duas (fase 'com' | 'sem'). O técnico levanta o braço e sai o aviso na tela (o seu time em destaque).
+function trocarTaticaFase(team, fase, chave, porQuem, quieto) {
+  const L = fase === 'com' ? TATICAS_COM : TATICAS_SEM;
+  if (!L[chave] || !PARTIDA || !PARTIDA.tat || PARTIDA.tat[team][fase] === chave) return false;
+  PARTIDA.tat[team][fase] = chave; G.tatMudou = G.tatMudou || [0, 0]; G.tatMudou[team] = G.time;
+  const t = tecnicos[team]; if (t) t.gestoT = 2.2;
+  if (!quieto && G.state === 'play' && !G.pulando) {
+    const quem = team === 0 ? (porQuem || (t && t.nome) || T('Técnico')) : T(PARTIDA.timesObj[1].sigla || 'Adversário');
+    showBanner(quem + ': ' + T(fase === 'com' ? 'com a bola' : 'sem a bola') + ' → ' + T(L[chave].nome).toUpperCase(), team, 2.6, true);
+  }
+  atualizarInfoTatica();
+  return true;
+}
+// IA DOS TÉCNICOS (7.1.22): a cada 15 s de jogo cada técnico olha o placar, o relógio, o cansaço do time, a força dos dois e o
+//   que o outro está fazendo, e escolhe a tática COM a bola e a SEM a bola. Parte sempre da identidade do time (tatPref):
+//     perdendo, 2º tempo ......... vai para cima: pressão alta; com a bola ataca o ponto fraco da defesa do outro
+//                                  (retranca → pelas pontas; pressão alta → jogo direto; senão por dentro / pelas pontas)
+//     perdendo por 2+, no fim .... tudo ou nada: jogo direto + pressão alta
+//     ganhando, reta final ....... segura: retranca + contra-ataque
+//     ganhando por 2+ ............ esfria o jogo: toque de bola + bloco médio
+//     time cansado ............... larga a pressão alta (bloco médio); bem mais fraco que o outro: retranca + contra-ataque
+//     o outro pressiona alto ..... sai jogando longo (jogo direto) se não tem passe para sair tocando
+//   Não troca a mesma fase duas vezes em menos de 45 s (senão vira pisca-pisca).
+function mediaDoTime(team, f) { let s = 0, n = 0; for (const p of TEAMS[team]) if (!p.out && p.role !== 'GK') { s += f(p); n++; } return n ? s / n : 0; }
+function tecnicoEscolhe(team) {
+  const P = PARTIDA, decorrido = 1 - G.clock / P.duracao, pref = P.tatPref[team], outro = P.tat[1 - team];
+  const saldo = G.score[team] - G.score[1 - team] + (P.competicao.placarIda && P.competicao.jogo === 'volta' ? (team === 0 ? 1 : -1) * (P.competicao.placarIda[0] - P.competicao.placarIda[1]) : 0);
+  const forca = (P.timesObj[team].forca || 60) - (P.timesObj[1 - team].forca || 60);
+  const folego = mediaDoTime(team, (p) => (p.isUser ? 1 : p.folego ?? 1)), passe = mediaDoTime(team, (p) => hab(p, 'passe'));
+  let com = pref.com, sem = pref.sem;
+  if (forca <= -15 && saldo >= 0) { com = 'contra'; sem = 'baixa'; }           // azarão: fecha e sai no contra-ataque
+  if (outro.sem === 'alta' && passe < 6.5 && com === 'posse') com = 'direto';   // pressionado e sem passe: bola longa
+  if (outro.sem === 'baixa' && (com === 'centro' || com === 'direto')) com = 'pontas';   // retranca se fura pelos lados
+  if (saldo < 0 && decorrido > 0.5) {
+    sem = 'alta';
+    com = outro.sem === 'baixa' ? 'pontas' : outro.sem === 'alta' ? 'direto' : (forca >= 0 ? 'centro' : 'pontas');
+    if (saldo <= -2 && decorrido > 0.72) com = 'direto';
+  } else if (saldo > 0 && decorrido > 0.7) { sem = 'baixa'; com = 'contra'; }
+  else if (saldo >= 2 && decorrido > 0.35) { com = 'posse'; sem = 'media'; }
+  else if (saldo === 0 && decorrido > 0.8 && P.competicao.mataMata) { com = 'contra'; sem = 'media'; }
+  if (sem === 'alta' && folego < 0.55) sem = saldo < 0 && decorrido > 0.8 ? 'alta' : 'media';   // cansou: só segura a pressão no desespero
+  return { com, sem };
+}
 function tecnicoPensa() {
-  if (!PARTIDA || !(G.state === 'play') || G.pen || (G.tecnicoT || 0) > G.time) return;
+  if (!PARTIDA || !PARTIDA.tat || !(G.state === 'play') || G.pen || (G.tecnicoT || 0) > G.time) return;
   G.tecnicoT = G.time + 15;
   tecnicoOlhaCansaco();
-  const decorrido = 1 - G.clock / PARTIDA.duracao;
+  if (G.simFixaTatica) return;
+  G.tatFase = G.tatFase || [{ com: -99, sem: -99 }, { com: -99, sem: -99 }];
+  const M = G.taticaManual || {};
   for (const team of [0, 1]) {
-    if (team === 0 && G.taticaManual) continue;    // você escolheu a do seu time: o técnico respeita
-    const saldo = G.score[team] - G.score[1 - team] + (PARTIDA.competicao.placarIda && PARTIDA.competicao.jogo === 'volta' ? (team === 0 ? 1 : -1) * (PARTIDA.competicao.placarIda[0] - PARTIDA.competicao.placarIda[1]) : 0);
-    const pref = PARTIDA.timesObj[team].tatica;
-    let nova = pref;
-    if (decorrido > 0.55 && saldo < 0) nova = PARTIDA.timesObj[team].forca >= 65 ? 'falso9' : 'aerea';
-    else if (decorrido > 0.7 && saldo > 0) nova = 'retranca';
-    else if (decorrido > 0.8 && saldo === 0 && PARTIDA.competicao.mataMata) nova = 'contra';
-    if (nova !== PARTIDA.taticas[team]) trocarTatica(team, nova);
+    const nova = tecnicoEscolhe(team);
+    for (const fase of ['com', 'sem']) {
+      if (team === 0 && (M === true || M[fase])) continue;          // você escolheu essa: o técnico respeita
+      if (nova[fase] === PARTIDA.tat[team][fase] || G.time - G.tatFase[team][fase] < 45) continue;
+      if (trocarTaticaFase(team, fase, nova[fase])) G.tatFase[team][fase] = G.time;
+    }
   }
 }
-const taticaDe = (team) => TATICAS[(PARTIDA && PARTIDA.taticas[team]) || 'tikitaka'];
+const taticaDe = (team) => { const t = PARTIDA && PARTIDA.tat ? PARTIDA.tat[team] : null; return t ? juntarTatica(t.com, t.sem) : juntarTatica('posse', 'media'); };
+const nomeTatica = (team) => { const t = PARTIDA && PARTIDA.tat ? PARTIDA.tat[team] : null; return t ? T(TATICAS_COM[t.com].nome) + ' + ' + T(TATICAS_SEM[t.sem].nome) : '—'; };
 
 // ---------------------------------------------------------------------
 // CLIMA E HORÁRIO
@@ -13209,8 +13362,8 @@ function atualizarAgregado() {}              // a caixinha de texto embaixo do p
 function atualizarInfoTatica() {
   const el = $('taticaInfo');
   if (!el || !PARTIDA) return;
-  el.textContent = Tf('{0}: {1} ({2}) · {3}: {4} ({5})', PARTIDA.timesObj[0].nome, T(TATICAS[PARTIDA.taticas[0]].nome), PARTIDA.formacoes[0],
-    PARTIDA.timesObj[1].nome, T(TATICAS[PARTIDA.taticas[1]].nome), PARTIDA.formacoes[1]);
+  el.textContent = Tf('{0}: {1} ({2}) · {3}: {4} ({5})', PARTIDA.timesObj[0].nome, nomeTatica(0), PARTIDA.formacoes[0],
+    PARTIDA.timesObj[1].nome, nomeTatica(1), PARTIDA.formacoes[1]);
 }
 
 // ---------------------------------------------------------------------
@@ -14183,12 +14336,26 @@ function atualizarTelaDeTatica() {
   $('tecnicoInfo').textContent = Tf('Técnico: {0} · Formação {1}', PARTIDA.tecnicos[0].nome, PARTIDA.formacoes[0]);
   const B = $('taticaBtns');
   B.innerHTML = '';
-  for (const [k, T] of Object.entries(TATICAS)) {
-    const b = document.createElement('button');
-    b.textContent = Tf(T.nome); b.className = PARTIDA.taticas[0] === k ? 'big' : 'ghost';
-    b.style.cssText = 'font-size:11px;padding:6px 8px;min-height:0';
-    b.addEventListener('click', () => { G.taticaManual = true; trocarTatica(0, k); atualizarTelaDeTatica(); });
-    B.appendChild(b);
+  // (7.1.22) duas linhas: COM A BOLA e SEM A BOLA. O que você escolher o técnico não mexe mais; "Deixar com o técnico" devolve.
+  const M = G.taticaManual && G.taticaManual !== true ? G.taticaManual : (G.taticaManual === true ? { com: true, sem: true } : {});
+  for (const [fase, L, rot] of [['com', TATICAS_COM, 'COM A BOLA'], ['sem', TATICAS_SEM, 'SEM A BOLA']]) {
+    const lin = document.createElement('div'); lin.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px;align-items:center;width:100%;margin-bottom:3px';
+    const r = document.createElement('span'); r.textContent = T(rot) + (M[fase] ? '' : ' (' + T('técnico') + ')'); r.style.cssText = 'font-size:10px;font-family:var(--font-display);min-width:96px;opacity:.9';
+    lin.appendChild(r);
+    for (const [k, X] of Object.entries(L)) {
+      const b = document.createElement('button');
+      b.textContent = T(X.nome); b.title = T(X.dica); b.className = PARTIDA.tat[0][fase] === k ? 'big' : 'ghost';
+      b.style.cssText = 'font-size:11px;padding:6px 8px;min-height:0';
+      b.addEventListener('click', () => { G.taticaManual = Object.assign({}, M, { [fase]: true }); trocarTaticaFase(0, fase, k, null, true); atualizarTelaDeTatica(); });
+      lin.appendChild(b);
+    }
+    B.appendChild(lin);
+    const d = document.createElement('div'); d.textContent = T(L[PARTIDA.tat[0][fase]].dica); d.style.cssText = 'font-size:10.5px;opacity:.8;width:100%;margin:-1px 0 5px 100px';
+    B.appendChild(d);
+  }
+  if (M.com || M.sem) {
+    const b = document.createElement('button'); b.textContent = T('Deixar com o técnico'); b.className = 'ghost'; b.style.cssText = 'font-size:11px;padding:6px 8px;min-height:0';
+    b.addEventListener('click', () => { G.taticaManual = false; G.tecnicoT = 0; atualizarTelaDeTatica(); }); B.appendChild(b);
   }
   atualizarInfoTatica();
 }
@@ -14780,6 +14947,29 @@ const Idioma = {
   'Falso 9': ['False 9', 'Falso 9', 'Falso 9', 'Faux 9'],
   'Retranca': ['Park the bus', 'Cerrojo', 'Catenaccio', 'Verrou'],
   'Contra-ataque': ['Counter-attack', 'Contraataque', 'Contropiede', 'Contre-attaque'],
+  'Toque de bola': ['Possession', 'Toque', 'Possesso palla', 'Jeu de possession'],
+  'Jogo direto': ['Direct play', 'Juego directo', 'Gioco diretto', 'Jeu direct'],
+  'Pelas pontas': ['Down the wings', 'Por las bandas', 'Sulle fasce', 'Par les ailes'],
+  'Por dentro': ['Through the middle', 'Por dentro', 'Per vie centrali', "Par l'axe"],
+  'Pressão alta': ['High press', 'Presión alta', 'Pressing alto', 'Pressing haut'],
+  'Bloco médio': ['Mid block', 'Bloque medio', 'Blocco medio', 'Bloc médian'],
+  'Marcação individual': ['Man marking', 'Marcaje individual', 'Marcatura a uomo', 'Marquage individuel'],
+  'Passes curtos e pacientes; perde pouco a bola, chuta menos.': ['Short, patient passes; rarely loses the ball, shoots less.', 'Pases cortos y pacientes; pierde poco el balón, remata menos.', 'Passaggi corti e pazienti; perde poco la palla, tira meno.', 'Passes courtes et patientes ; perd peu le ballon, tire moins.'],
+  'Bola longa nas costas da zaga; chega rápido, mas erra mais passe.': ['Long ball behind the defence; gets there fast, but misplaces more passes.', 'Balón largo a la espalda de la defensa; llega rápido, pero falla más pases.', 'Palla lunga alle spalle della difesa; arriva in fretta, ma sbaglia più passaggi.', 'Long ballon dans le dos de la défense ; arrive vite, mais rate plus de passes.'],
+  'Abre o campo, lateral apoia e cruza para a área cheia.': ['Stretches the pitch, full-backs overlap and cross into a crowded box.', 'Abre el campo, el lateral sube y centra al área llena.', 'Allarga il campo, il terzino sale e crossa in area piena.', 'Écarte le jeu, le latéral monte et centre dans une surface pleine.'],
+  'Tabelas pelo meio, o 9 sai da área e os meias infiltram.': ['One-twos through the middle, the 9 drops off and the midfielders run in.', 'Paredes por el centro, el 9 sale del área y los medios se infiltran.', "Triangoli per vie centrali, il 9 esce dall'area e le mezzali si inseriscono.", 'Une-deux dans l\'axe, le 9 décroche et les milieux s\'infiltrent.'],
+  'Roubou, lançou: poucos sobem, mas sobem rápido.': ['Win it, launch it: few go forward, but they go fast.', 'Robó, lanzó: suben pocos, pero suben rápido.', 'Rubata, lanciata: salgono in pochi, ma veloci.', 'Récupéré, lancé : peu montent, mais ils montent vite.'],
+  'Dois no bote lá na frente; rouba perto do gol, cansa e deixa espaço atrás.': ['Two pressing up front; wins it near goal, tires the team and leaves space behind.', 'Dos presionando arriba; roba cerca del gol, cansa y deja espacio atrás.', 'Due in pressing là davanti; ruba vicino alla porta, stanca e lascia spazio dietro.', 'Deux au pressing devant ; récupère près du but, fatigue et laisse de l\'espace derrière.'],
+  'Espera no meio-campo e marca por zona: o equilíbrio.': ['Waits at midfield and marks zonally: the balance.', 'Espera en el mediocampo y marca en zona: el equilibrio.', "Aspetta a centrocampo e marca a zona: l'equilibrio.", "Attend au milieu et défend en zone : l'équilibre."],
+  'Todos atrás da bola, fechados; difícil de furar, mas entrega o campo.': ['Everyone behind the ball, compact; hard to break down, but gives up the pitch.', 'Todos detrás del balón, cerrados; difícil de romper, pero cede el campo.', 'Tutti dietro la palla, chiusi; difficile da superare, ma concede il campo.', 'Tous derrière le ballon, compacts ; dur à percer, mais cède le terrain.'],
+  'Cada um cola no seu; sufoca o passe, mas um drible desmonta tudo.': ['Everyone sticks to his man; chokes the pass, but one dribble breaks it all.', 'Cada uno se pega al suyo; ahoga el pase, pero un regate lo desarma todo.', 'Ognuno si incolla al suo; soffoca il passaggio, ma un dribbling smonta tutto.', 'Chacun colle au sien ; étouffe la passe, mais un dribble casse tout.'],
+  'Técnico': ['Coach', 'Entrenador', 'Allenatore', 'Entraîneur'],
+  'técnico': ['coach', 'entrenador', 'allenatore', 'entraîneur'],
+  'com a bola': ['with the ball', 'con balón', 'con la palla', 'avec le ballon'],
+  'sem a bola': ['without the ball', 'sin balón', 'senza palla', 'sans le ballon'],
+  'COM A BOLA': ['WITH THE BALL', 'CON BALÓN', 'CON LA PALLA', 'AVEC LE BALLON'],
+  'SEM A BOLA': ['WITHOUT THE BALL', 'SIN BALÓN', 'SENZA PALLA', 'SANS LE BALLON'],
+  'Deixar com o técnico': ['Leave it to the coach', 'Dejarlo al entrenador', "Lasciare all'allenatore", "Laisser l'entraîneur décider"],
   'Bola aérea': ['Aerial ball', 'Balón aéreo', 'Palla alta', 'Jeu aérien'],
   'Muito fácil': ['Very easy', 'Muy fácil', 'Molto facile', 'Très facile'],
   'Fácil': ['Easy', 'Fácil', 'Facile', 'Facile'],
@@ -17829,6 +18019,7 @@ window.FutebolJS = {
   cadastrarTime(t) { TIMES[t.id] = t; return t; },
   salvarTecnico(t) { salvo.gravar('futebolJs.tecnico.v1', t); return t; },
   trocarTatica: (team, chave) => { if (team === 0) G.taticaManual = true; trocarTatica(team, chave); },
+  trocarTaticaFase: (team, fase, chave) => { if (team === 0) G.taticaManual = Object.assign({}, G.taticaManual && G.taticaManual !== true ? G.taticaManual : {}, { [fase]: true }); return trocarTaticaFase(team, fase, chave); },
   elencoDoTime: (id) => elencoDoTime(TIMES[id]),
   TIMES, CAMPOS, FORMACOES, TATICAS, DIFICULDADES, CLIMAS, HORARIOS, NOMES, DURACOES,
 };
