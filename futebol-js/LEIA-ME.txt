@@ -53,6 +53,17 @@ ARQUIVOS
                           última rodada) mostra a cena antes do apito, fogos nos gols do mandante e na festa do título.
                           Torcida maior, cobertura, telões e o escudo e as cores do time da casa nas faixas, nos telões, nas
                           bandeiras e nas cadeiras (baixado na abertura)
+  livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
+                          varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
+                          com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,
+                          Fachada ou Concha; se não der, a Floresta), amistoso, várzea, sintético e futsal. Campeonato e copa
+                          ficam salvos (futebolJs.livre.v1) com tabela, artilharia, cartões (3 amarelos ou 1 vermelho = 1 jogo
+                          de suspensão) e lesões; suspenso, você acompanha o placar do jogo simulado. A tela do confronto (os
+                          dois se encarando com os técnicos atrás, os times, as escalações e os desfalques), as configurações
+                          da partida (horário, clima, duração, estádio no amistoso, dificuldade, posição, personagem e
+                          abertura), a abertura antes do apito (o estádio por fora, o ônibus na garagem, o vestiário, a
+                          torcida e a entrada em campo), a festa do título e a noite dos prêmios (festa.js) no fim. As
+                          Configurações do menu agora têm só som, idioma, como jogar e a versão
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

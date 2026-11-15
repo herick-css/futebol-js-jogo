@@ -1385,5 +1385,5 @@
     'Então você é o tal de {0} que o Rafa tanto falou! Eu sou o Damião, técnico do Peladão faz quinze anos.': 'Então você é a tal de {0} que o Rafa tanto falou! Eu sou o Damião, técnico do Peladão faz quinze anos.' });
 
   window.FutebolJS.registrarFase({ id: 'varzea', nome: 'Campeonato de Várzea', nucleoMinimo: '7.0', iniciar: async () => {}, criar,
-    dados: { TIMES_VZ, NOSSO_I, classificacao, premios, urlArte, estrelas } });   // o app Carreira do computador (fase2.js) usa a tabela e os emblemas
+    dados: { TIMES_VZ, NOSSO_I, classificacao, premios, urlArte, estrelas, timeMotor, elencoVz, forcaTime } });   // (7.4.1) timeMotor/elencoVz/forcaTime: a várzea da partida livre (livre.js)   // o app Carreira do computador (fase2.js) usa a tabela e os emblemas
 })();

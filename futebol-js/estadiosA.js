@@ -1712,6 +1712,7 @@
         const a = a0 + 0.75 * e, r = R * (1 - 0.12 * e), y = h * (1 - 0.25 * e);
         const pose = { px: Math.cos(a) * r, py: y, pz: Math.sin(a) * r, tx: 0, ty, tz: 0 };
         G.camOvo = pose; Object.assign(cam, pose);
+        if (op.parar && op.parar()) pulou = true;                       // (7.4.1) quem chamou pode cortar a cena (o "Pular" da abertura)
         if (pulou || t >= 1) return res();
         requestAnimationFrame(passo);
       };

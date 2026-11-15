@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.0';
+const VERSAO_JOGO = '7.4.1';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -2856,12 +2856,46 @@ function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCam
     else { g.fillStyle = '#FFFFFF'; g.fillRect(ox + 19, 6, 7, 8); g.fillStyle = listra; g.fillRect(ox + 20, 7, 5, 6); }
   }
 }
+// (7.4.1) O TRAJE DOS TÉCNICOS (a frente e as costas do tronco, 32 x 32): o terno com a camisa branca em V, a gravata e os botões;
+//   a camisa social com a carcela e o bolso; o agasalho com o zíper e as faixas; a polo com a gola e os botões; a jaqueta acolchoada.
+function pintarTraje(g, ox, o, costas) {
+  const V = o.traje, base = o.camisa, esc = (c, k) => '#' + misturarCor(hexNum(c), 0x000000, k).toString(16).padStart(6, '0'), clr = (c, k) => '#' + misturarCor(hexNum(c), 0xffffff, k).toString(16).padStart(6, '0');
+  const px = (c, x, y, w, h) => { g.fillStyle = c; g.fillRect(ox + x, y, w, h); };
+  px(base, 0, 0, 32, 32);
+  if (costas) {
+    if (V.tipo === 'agasalho') { px(o.listra, 0, 0, 32, 3); px(o.listra, 0, 14, 32, 3); }
+    else if (V.tipo === 'jaqueta') for (let y = 4; y < 32; y += 5) px(esc(base, 0.25), 0, y, 32, 1);
+    else if (V.tipo === 'terno') px(esc(base, 0.18), 15, 8, 2, 24);                               // a costura das costas
+    else if (V.tipo === 'polo') px(o.gola, 9, 0, 14, 2);
+    return;
+  }
+  if (V.tipo === 'terno' || V.tipo === 'social') {
+    const camisa = V.tipo === 'terno' ? (V.camisaInt || '#f2f2ee') : base;
+    if (V.tipo === 'terno') for (let y = 0; y < 15; y++) { const w = Math.max(2, 12 - Math.floor(y * 0.75)); px(camisa, 16 - w / 2, y, w, 1); }   // o V da camisa
+    if (V.tipo === 'terno') { for (let y = 0; y < 15; y++) { const w = Math.max(2, 12 - Math.floor(y * 0.75)); px(esc(base, 0.3), 16 - w / 2 - 1, y, 1, 1); px(esc(base, 0.3), 16 + w / 2, y, 1, 1); } }   // as lapelas
+    else { px(esc(camisa, 0.12), 15, 3, 2, 29); px(esc(camisa, 0.15), 5, 8, 6, 5); px(esc(camisa, 0.25), 5, 8, 6, 1); }   // a carcela e o bolso
+    px(V.tipo === 'terno' ? camisa : esc(camisa, 0.08), 11, 0, 10, 2);                            // o colarinho
+    if (V.gravata) { px(V.gravata, 15, 1, 2, 2); px(V.gravata, 15, 3, 3, 15); px(esc(V.gravata, 0.3), 15, 17, 3, 2); }
+    if (V.tipo === 'terno') { px(esc(base, 0.35), 15, 20, 2, 2); px(esc(base, 0.35), 15, 26, 2, 2); px(clr(base, 0.15), 5, 9, 5, 1); }   // os botões e o lenço do bolso
+  } else if (V.tipo === 'agasalho') {
+    px(o.listra, 0, 0, 32, 3); px(clr(base, 0.35), 15, 3, 2, 29); px(esc(base, 0.2), 14, 3, 1, 29);   // a gola, o zíper
+    px(o.listra, 0, 22, 32, 2);
+  } else if (V.tipo === 'polo') {
+    px(o.gola, 9, 0, 14, 3); px(esc(base, 0.18), 15, 3, 2, 9); px(o.gola, 15, 5, 2, 1); px(o.gola, 15, 8, 2, 1);
+  } else if (V.tipo === 'jaqueta') {
+    for (let y = 4; y < 32; y += 5) px(esc(base, 0.25), 0, y, 32, 1);
+    px(o.listra, 0, 0, 32, 3); px('#c9ccd1', 15, 2, 2, 30);
+  }
+  if (o.emblema && (V.tipo === 'agasalho' || V.tipo === 'polo' || V.tipo === 'jaqueta')) desenharEmblema(g, ox + 19, 6, 8, 9, o.emblema);
+  else if (o.emblema && V.tipo === 'terno') desenharEmblema(g, ox + 20, 7, 6, 7, o.emblema);
+}
 function atlasJogador(o) {
   return drawTexture(ATLAS_W, ATLAS_H, (g) => {
     g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, ATLAS_W, ATLAS_H);
     pintarRosto(g, 0, 0, o.pele, o);
     pintarCamisa(g, 16, o.camisa, o.listra, o.gola, o.numero, false, o.emblema);
     pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
+    if (o.traje) { pintarTraje(g, 16, o, false); pintarTraje(g, 48, o, true); }   // (7.4.1) técnico: terno, agasalho, polo...
     pintarLadosCabeca(g, 80, 0, o);
     if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
   });
@@ -2930,9 +2964,10 @@ function makeAthlete(o) {
     if (chut.solaDet) L.caixa(0.336, 0.012, 0.256, hex(chut.solaDet), 0.04, -0.703 + dy, 0);
     if (chut.cano) { L.caixa(0.236, 0.06, 0.236, hex(chut.cano), 0, -0.572 + dy, 0); L.caixa(0.24, 0.014, 0.24, misturarCor(hex(chut.cano), 0xffffff, 0.35), 0, -0.545 + dy, 0); }
   };
+  const coxa = o.calca != null ? hex(o.calca) : pele;           // (7.4.1) calça comprida (técnicos): a coxa na cor da calça (o meião longo faz a canela)
   const perna = (z) => {
     const p = pivo(0, 0.74, z), L = new Lote(UV_BRANCO);
-    L.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
+    L.caixa(0.2, 0.28, 0.2, coxa, 0, -0.14, 0);
     if (meiao === 0) { L.caixa(0.2, 0.2, 0.2, pele, 0, -0.38, 0); L.caixa(0.22, 0.14, 0.22, hex(o.meia), 0, -0.55, 0); }          // curto: só no tornozelo
     else if (meiao === 2) L.caixa(0.225, 0.46, 0.225, hex(o.meia), 0, -0.39, 0);                                                    // longo: sobe pela coxa
     else L.caixa(0.22, 0.34, 0.22, hex(o.meia), 0, -0.45, 0);
@@ -2940,7 +2975,7 @@ function makeAthlete(o) {
     L.caixa(0.33, 0.03, 0.25, corSola, 0.04, -0.715, 0); extrasBota(L, 0);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LC = new Lote(UV_BRANCO);
-    LC.caixa(0.2, 0.28, 0.2, pele, 0, -0.14, 0);
+    LC.caixa(0.2, 0.28, 0.2, coxa, 0, -0.14, 0);
     if (meiao === 2) LC.caixa(0.225, 0.12, 0.225, hex(o.meia), 0, -0.22, 0);
     p.coxa = LC.malha(material); p.coxa.visible = false; p.add(p.coxa);
     const joelho = new THREE.Group();
@@ -11234,6 +11269,7 @@ function apitoFinal() {
   G.vaiPenaltis = vaiPenaltis;
   const venc = vaiPenaltis ? -1 : G.score[0] > G.score[1] ? 0 : G.score[1] > G.score[0] ? 1 : -1;
   G.fimVencedor = venc;
+  const vivo = (p) => !p.out && !p.red;
   for (const p of players) {
     if (p.out) continue;
     Object.assign(p, { scripted: true, vx: 0, vz: 0, stun: 0, fall: 0, falling: false, slideT: 0, slidePose: 0, jumpT: 0, diveT: 0, carretel: 0, celeb: null, lamento: null, lamentoK: 0, recvPose: null, tackle: 0, guard: 0, kickT: 0, chutePrep: 0, ajeita: null, disputaK: 0, fim: null, embalo: null, bolaFixa: null });
@@ -11241,23 +11277,78 @@ function apitoFinal() {
       const r2 = Math.random();
       p.lamento = r2 < 0.5 ? 'cintura' : r2 < 0.8 ? 'sentado' : 'deitado';
       p.lamentoAtraso = rand(1.2, 2.2);
-    } else if (!vaiPenaltis) p.fim = { tipo: 'tchau', t0: rand(1.6, 2.6) };
-  }
-  // Duplas do "toca aqui": jogadores de linha do vencedor, cada um com o companheiro mais perto.
-  if (venc >= 0 && !vaiPenaltis) {
-    const livres = TEAMS[venc].filter((p) => !p.out && p.role !== 'GK');
-    while (livres.length >= 2) {
-      const a = livres.shift();
-      let bi = 0;
-      for (let i = 1; i < livres.length; i++) if (dist2D(a, livres[i]) < dist2D(a, livres[bi])) bi = i;
-      if (!livres.length || dist2D(a, livres[bi]) > 14) continue;   // longe demais de todos: só dá tchau
-      const b = livres.splice(bi, 1)[0];
-      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
-      let ux = b.x - a.x, uz = b.z - a.z; const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
-      a.fim = { tipo: 'toca', par: b, alvo: { x: mx - ux * 0.45, z: mz - uz * 0.45 }, batida: 0, t0: 1.3 };
-      b.fim = { tipo: 'toca', par: a, alvo: { x: mx + ux * 0.45, z: mz + uz * 0.45 }, batida: 0, t0: 1.3 };
     }
   }
+  // (7.4.1) A FESTA DO APITO FINAL, variada: quem ganhou se divide em uma RODA (2 ou 3 abraçados pulando), 1 ou 2 com uma COMEMORAÇÃO
+  //   sozinhos (as da loja e as de sempre), duplas do "toca aqui" e o resto dá tchau para a torcida; quem perdeu fica nas poses de derrota
+  //   e, depois, alguns vão APERTAR A MÃO de um adversário. Empate: os dois times se cumprimentam. A câmera vai cortando entre eles
+  //   (G.fimTomadas) e fecha num plano aberto. Pênaltis: só o apito (a disputa vem logo depois).
+  G.fimTomadas = [];
+  if (!vaiPenaltis) {
+    const linha = (t) => TEAMS[t].filter((p) => vivo(p) && p.role !== 'GK');
+    const usados = new Set(), usa = (p) => usados.add(p);
+    const livresDe = (t) => linha(t).filter((p) => !usados.has(p));
+    const perto = (a, L) => L.slice().sort((x, y) => dist2D(x, a) - dist2D(y, a));
+    const CELEB_FIM = Object.keys(CELEBRACOES).filter((k) => !CELEBRACOES[k].controlado);
+    const aperto = (a, b, t0) => {                                      // a e b vão um até o outro e apertam a mão (cada um um pouco para a esquerda: as mãos direitas se encontram)
+      for (const q of [a, b]) if (q.lamento) q.lamento = 'cintura';     // quem vai cumprimentar fica de pé (mão na cintura) até a hora
+      const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2; let ux = b.x - a.x, uz = b.z - a.z; const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+      a.fim = { tipo: 'aperto', par: b, alvo: { x: mx - ux * 0.45 + uz * 0.2, z: mz - uz * 0.45 - ux * 0.2 }, ap: 0, t0 };
+      b.fim = { tipo: 'aperto', par: a, alvo: { x: mx + ux * 0.45 - uz * 0.2, z: mz + uz * 0.45 + ux * 0.2 }, ap: 0, t0 };
+      usa(a); usa(b); G.fimTomadas.push({ tipo: 'aperto', quem: [a, b] });
+    };
+    if (venc >= 0) {
+      const W = linha(venc);
+      if (W.includes(user)) { W.splice(W.indexOf(user), 1); W.unshift(user); } else W.sort(() => Math.random() - 0.5);
+      // a roda
+      const nG = W.length >= 6 ? 3 : W.length >= 3 ? 2 : 0;
+      if (nG) {
+        const a = W[0], grupo = [a].concat(perto(a, W.slice(1)).slice(0, nG - 1));
+        const cx = grupo.reduce((s, p) => s + p.x, 0) / nG, cz = grupo.reduce((s, p) => s + p.z, 0) / nG;
+        grupo.forEach((p, i) => { const ang = i / nG * Math.PI * 2; p.fim = { tipo: 'grupo', membros: grupo, centro: { x: cx, z: cz }, alvo: { x: cx + Math.cos(ang) * 0.5, z: cz + Math.sin(ang) * 0.5 }, t0: rand(1.3, 1.8), junto: false }; usa(p); });
+        G.fimTomadas.push({ tipo: 'grupo', quem: grupo });
+      }
+      // as comemorações sozinho
+      const sol = W.filter((p) => !usados.has(p)).slice(0, W.length >= 8 ? 2 : 1);
+      sol.forEach((p, i) => { p.fim = { tipo: 'celeb', nome: CELEB_FIM[Math.floor(Math.random() * CELEB_FIM.length)], t0: 1.9 + i * 0.6 + rand(0, 0.4), ct: 0 }; usa(p); G.fimTomadas.push({ tipo: 'solo', quem: [p] }); });
+      if (venc !== 0 && user && vivo(user)) G.fimTomadas.splice(1, 0, { tipo: 'perdeu', quem: [user] });   // perdemos: a câmera passa por você
+      // o aperto de mão: 1 ou 2 de quem perdeu vão até um adversário
+      const L = livresDe(1 - venc).sort(() => Math.random() - 0.5).slice(0, 2);
+      for (const a of L) { const b = perto(a, livresDe(venc))[0]; if (b && dist2D(a, b) < 26) aperto(a, b, rand(3.4, 4.4)); }
+      // as duplas do "toca aqui"
+      const livres = livresDe(venc);
+      while (livres.length >= 2) {
+        const a = livres.shift();
+        let bi = 0;
+        for (let i = 1; i < livres.length; i++) if (dist2D(a, livres[i]) < dist2D(a, livres[bi])) bi = i;
+        if (dist2D(a, livres[bi]) > 14) continue;
+        const b = livres.splice(bi, 1)[0];
+        const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+        let ux = b.x - a.x, uz = b.z - a.z; const ul = Math.hypot(ux, uz) || 1; ux /= ul; uz /= ul;
+        a.fim = { tipo: 'toca', par: b, alvo: { x: mx - ux * 0.45, z: mz - uz * 0.45 }, batida: 0, t0: 1.3 };
+        b.fim = { tipo: 'toca', par: a, alvo: { x: mx + ux * 0.45, z: mz + uz * 0.45 }, batida: 0, t0: 1.3 };
+        usa(a); usa(b);
+        if (G.fimTomadas.length < 4) G.fimTomadas.push({ tipo: 'toca', quem: [a, b] });
+      }
+    } else {
+      // empate: duplas dos dois times se cumprimentam
+      const A = livresDe(0).sort(() => Math.random() - 0.5);
+      for (const a of A.slice(0, 4)) { const b = perto(a, livresDe(1))[0]; if (b && dist2D(a, b) < 30) aperto(a, b, rand(1.6, 2.6)); }
+    }
+    for (const p of players) if (vivo(p) && !p.fim && !(venc >= 0 && p.team !== venc)) p.fim = { tipo: 'tchau', t0: rand(1.6, 2.6) };
+    // a ordem das tomadas (a roda, uma comemoração, você perdendo, o aperto de mão, a outra comemoração, o "toca aqui") e, no fim, o plano aberto;
+    //   cada um começa a comemoração / o cumprimento perto da hora da tomada dele (antes a câmera chegava com tudo já acabado)
+    const ordem = { grupo: 0, solo: 1, perdeu: 2, aperto: 3, toca: 5 };
+    let ns = 0; for (const t of G.fimTomadas) if (t.tipo === 'solo' && ns++ > 0) t.tipo2 = 4;
+    G.fimTomadas.sort((x, y) => (x.tipo2 || ordem[x.tipo]) - (y.tipo2 || ordem[y.tipo]));
+    G.fimTomadas = G.fimTomadas.slice(0, 4).concat([{ tipo: 'aberto', quem: [] }]);
+    G.fimTomadas.forEach((t, i) => {
+      const ini = 1.7 + i * 2.3;
+      if (t.tipo === 'solo') t.quem[0].fim.t0 = Math.max(1.8, ini - 0.4);
+      if (t.tipo === 'aperto') { const [a, b] = t.quem, d = dist2D(a, b) / 2; a.fim.t0 = b.fim.t0 = Math.max(1.9, ini - d / 3.2 - 0.6); }
+    });
+  }
+  G.fimDur = vaiPenaltis ? 2.8 : Math.max(8.5, 1.7 + G.fimTomadas.length * 2.3);
 }
 
 function updateFimDeJogo(dt) {
@@ -11266,19 +11357,21 @@ function updateFimDeJogo(dt) {
   r.x = R.x; r.z = R.z; r.vx = r.vz = 0; r.angle = R.angle;
   if (G.fimT > 0.15 && !G.fimBanner) { G.fimBanner = true; showBanner('FIM DE JOGO', 0); }
   if (G.fimT > 2.6 && G.fimBanner === true) { G.fimBanner = 'saiu'; $('banner').className = ''; }
+  const anda = (p, alvo, vmax) => {                                    // trotando até o ponto; devolve true quando chegou
+    const dx = alvo.x - p.x, dz = alvo.z - p.z, d = Math.hypot(dx, dz);
+    if (d <= 0.08) return true;
+    const v = Math.min(vmax || 4.6, d * 3), passo = Math.min(d, v * dt);
+    p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * v; p.vz = dz / d * v;
+    p.anim += v * 2.6 * dt; p.angle = turnToward(p.angle, Math.atan2(dz, dx), 8 * dt);
+    return false;
+  };
   for (const p of players) {
     if (p.out) continue;
     p.vx = p.vz = 0;
     const F = p.fim;
     if (!F || G.fimT < F.t0) continue;
     if (F.tipo === 'toca') {
-      const dx = F.alvo.x - p.x, dz = F.alvo.z - p.z, d = Math.hypot(dx, dz);
-      if (d > 0.08 && F.batida === 0) {
-        const v = Math.min(4.6, d * 3), passo = Math.min(d, v * dt);   // trotando
-        p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * v; p.vz = dz / d * v;
-        p.anim += v * 2.6 * dt;
-        p.angle = turnToward(p.angle, Math.atan2(dz, dx), 8 * dt);
-      } else {
+      if (F.batida === 0 && !anda(p, F.alvo)) { /* indo */ } else {
         const q = F.par;
         p.angle = turnToward(p.angle, Math.atan2(q.z - p.z, q.x - p.x), 10 * dt);
         const parChegou = !q.fim || q.fim.tipo !== 'toca' || Math.hypot(q.fim.alvo.x - q.x, q.fim.alvo.z - q.z) <= 0.1;
@@ -11287,36 +11380,73 @@ function updateFimDeJogo(dt) {
         if (F.batida >= 1) p.fim = { tipo: 'tchau', t0: G.fimT + rand(0, 0.3) };
       }
       if (G.fimT - F.t0 > 4) p.fim = { tipo: 'tchau', t0: G.fimT };   // não se encontraram: só dá tchau
+    } else if (F.tipo === 'aperto') {
+      if (p.lamento) { p.lamento = null; p.lamentoK = 0; p.raizReset = true; }
+      if (F.ap === 0 && !anda(p, F.alvo, 3.2)) { /* indo */ } else {
+        const q = F.par;
+        p.angle = turnToward(p.angle, Math.atan2(q.z - p.z, q.x - p.x), 10 * dt);
+        const parChegou = !q.fim || q.fim.tipo !== 'aperto' || Math.hypot(q.fim.alvo.x - q.x, q.fim.alvo.z - q.z) <= 0.1;
+        if (parChegou) F.ap += dt;
+        if (F.ap >= 1.8) p.fim = { tipo: 'tchau', t0: G.fimT + rand(0.2, 0.6), aplaude: p.team !== G.fimVencedor };
+      }
+      if (G.fimT - F.t0 > 6) p.fim = { tipo: 'tchau', t0: G.fimT };
+    } else if (F.tipo === 'grupo') {
+      if (!F.junto) {
+        const chegou = anda(p, F.alvo);
+        if (chegou && F.membros.every((q) => q.fim && q.fim.tipo === 'grupo' && Math.hypot(q.fim.alvo.x - q.x, q.fim.alvo.z - q.z) <= 0.12)) for (const q of F.membros) q.fim.junto = G.fimT;
+        if (G.fimT - F.t0 > 5) F.junto = G.fimT;
+      } else p.angle = turnToward(p.angle, Math.atan2(F.centro.z - p.z, F.centro.x - p.x), 8 * dt);
+    } else if (F.tipo === 'celeb') {
+      const c = CELEBRACOES[F.nome];
+      if (!c) { p.fim = { tipo: 'tchau', t0: G.fimT }; continue; }
+      if (F.ct === 0) p.angle = Math.atan2(p.z >= 0 ? 1 : -1, 0) + rand(-0.6, 0.6);   // corre para a torcida mais perto (a câmera vai na frente dele)
+      F.ct += dt; p.celeb = { name: F.nome, t: F.ct };
+      p.angle += c.giro * dt;
+      const v = celebVel(c, F.ct) * 0.85;
+      p.x = clamp(p.x + Math.cos(p.angle) * v * dt, -HALF_L + 1.5, HALF_L - 1.5); p.z = clamp(p.z + Math.sin(p.angle) * v * dt, -HALF_W + 1.5, HALF_W - 1.5);
+      p.vx = Math.cos(p.angle) * v; p.vz = Math.sin(p.angle) * v; p.anim += v * 2.6 * dt;
+      if (F.ct >= c.dur) { p.celeb = null; p.fim = { tipo: 'tchau', t0: G.fimT + 0.2 }; }
     } else {
       // Tchau: vira para a arquibancada mais perto (as laterais).
       p.angle = turnToward(p.angle, Math.atan2(p.z >= 0 ? 1 : -1, 0), 4 * dt);
     }
   }
-  if (G.fimT > (G.vaiPenaltis ? 2.8 : 8.5)) terminarCenaFinal();
+  if (G.fimT > (G.fimDur || (G.vaiPenaltis ? 2.8 : 8.5))) terminarCenaFinal();
 }
 
 function cameraFim() {
-  const r = referee, fase = G.fimT < 1.7 ? 0 : G.fimT < 5.4 || G.fimVencedor < 0 ? 1 : 2;
-  if (fase !== G.fimFase) { G.fimFase = fase; G.fimCorte = true; }   // corte seco entre as partes
-  if (fase === 0) {                                // o juiz apitando, de frente
+  const r = referee, TOM = 2.3, Ts = G.fimTomadas || [];
+  const idx = G.fimT < 1.7 || !Ts.length ? -1 : Math.min(Ts.length - 1, Math.floor((G.fimT - 1.7) / TOM));
+  if (idx + 1 !== G.fimFase) { G.fimFase = idx + 1; G.fimCorte = true; }   // corte seco entre as partes
+  if (idx < 0) {                                   // o juiz apitando, de frente
     const a = G.fimRef.angle;
     return { px: r.x + Math.cos(a) * 4.2, py: 1.9, pz: r.z + Math.sin(a) * 4.2, tx: r.x, ty: 1.5, tz: r.z };
   }
-  const perto = (alvo, dist, alt) => {             // câmera do lado de dentro do campo, torcida ao fundo
-    const lado = alvo.z > 0 ? -1 : 1;
-    return { px: alvo.x + dist * 0.35, py: alt, pz: alvo.z + lado * dist, tx: alvo.x, ty: 1.0, tz: alvo.z };
-  };
-  const venc = G.fimVencedor;
-  if (fase === 1) {
-    // Quem ganhou: você (se foi o seu time ou empate) ou a dupla vencedora; mostra a dupla junta.
-    let W = venc === 1 ? TEAMS[1].find((p) => p.fim && p.fim.par) || TEAMS[1][1] : user;
-    const par = W.fim && W.fim.par;
-    const alvo = par ? { x: (W.x + par.x) / 2, z: (W.z + par.z) / 2 } : W;
-    return perto(alvo, 7.5, 2.6);
+  const S = Ts[idx], Q = S.quem.filter((p) => p && !p.out);
+  if (S.tipo === 'aberto' || !Q.length) return { px: Math.sin(G.fimT * 0.12) * 12, py: 15, pz: -(HALF_W + 16), tx: 0, ty: 0, tz: 0 };
+  const meio = { x: Q.reduce((s, p) => s + p.x, 0) / Q.length, z: Q.reduce((s, p) => s + p.z, 0) / Q.length };
+  const dist = S.tipo === 'grupo' ? 6.4 : S.tipo === 'solo' ? 5.2 : S.tipo === 'aperto' ? 4.3 : 5.6, alt = S.tipo === 'grupo' ? 2.4 : S.tipo === 'aperto' ? 1.75 : 1.9;
+  if (S.ang == null) {
+    // (7.4.1) o melhor lado para a câmera: na frente de quem comemora (ou de lado no aperto de mão), dentro do campo e sem ninguém
+    //   no meio do caminho (antes a cabeça de um jogador perto tapava a cena). Escolhido uma vez por tomada.
+    const pref = S.tipo === 'solo' ? Q[0].angle : S.tipo === 'aperto' && Q.length > 1 ? Math.atan2(Q[1].z - Q[0].z, Q[1].x - Q[0].x) + Math.PI / 2 : Math.atan2(-meio.z, -meio.x * 0.2);
+    let melhor = pref, nota = 1e9;
+    for (let k = 0; k < 12; k++) {
+      const ang = pref + (k % 2 ? 1 : -1) * Math.ceil(k / 2) * Math.PI / 6;
+      const cx = meio.x + Math.cos(ang) * dist, cz = meio.z + Math.sin(ang) * dist;
+      let n = Math.abs(cx) > HALF_L - 0.5 || Math.abs(cz) > HALF_W + 1.5 ? 6 : 0;
+      for (const p of players) {
+        if (p.out || Q.includes(p)) continue;
+        const vx = meio.x - cx, vz = meio.z - cz, L2 = vx * vx + vz * vz, t = clamp(((p.x - cx) * vx + (p.z - cz) * vz) / L2, 0, 1);
+        if (Math.hypot(cx + vx * t - p.x, cz + vz * t - p.z) < 1.1) n += 3;
+      }
+      n += Math.ceil(k / 2) * 0.4;                                   // quanto mais longe do lado preferido, pior
+      if (n < nota) { nota = n; melhor = ang; }
+    }
+    S.ang = melhor;
   }
-  // Quem perdeu: você (se foi o seu time) ou o adversário mais perto de você, nas poses de derrota.
-  const L = venc === 1 ? user : TEAMS[1].filter((p) => !p.out && p.role !== 'GK').sort((x, y) => dist2D(x, user) - dist2D(y, user))[0] || user;
-  return perto(L, 5.5, 2.0);
+  const alvo = S.tipo === 'solo' ? Q[0] : meio;
+  return { px: alvo.x + Math.cos(S.ang) * dist, py: alt, pz: alvo.z + Math.sin(S.ang) * dist, tx: alvo.x, ty: S.tipo === 'aperto' ? 1.15 : 1.0, tz: alvo.z };
 }
 
 function terminarCenaFinal() {
@@ -12332,9 +12462,17 @@ function syncMeshes(dt) {
     if (G.substToque && G.substToque.includes(p)) { aZR = 2.5; aXR = -0.1; }   // substituição: "toca aqui"
     if (G.state === 'fim' && p.fim) {               // cena final: tchau para a torcida e "toca aqui"
       const F = p.fim, tt = G.fimT;
-      if (F.tipo === 'tchau' && tt > F.t0 && !G.fimPula) {
+      if (F.tipo === 'tchau' && tt > F.t0 && !G.fimPula && F.aplaude) {   // (7.4.1) quem perdeu e cumprimentou: aplaude a torcida
+        const c = 0.66 + Math.max(0, Math.sin(tt * 15 + p.id)) * 0.1; aZL = 1.25; aXL = -c; aZR = 1.25; aXR = c;
+      } else if (F.tipo === 'tchau' && tt > F.t0 && !G.fimPula) {
         aZR = 2.85; aXR = -0.35 + Math.sin(tt * 9 + p.id) * 0.4;      // braço direito no alto balançando
         aZL = -bal * 0.5; aXL = 0.1;
+      } else if (F.tipo === 'aperto' && F.ap > 0) {                     // (7.4.1) o aperto de mão: o braço direito para a frente, um pouco para dentro, sacudindo
+        const k2 = Math.min(1, F.ap / 0.35), sac = F.ap < 1.3 ? Math.sin(F.ap * 16) * 0.09 : 0;
+        aZR = lerp(aZR, 1.3 + sac, k2); aXR = lerp(aXR, 0.45, k2);
+        if (F.ap > 1.1 && F.ap < 1.7) { aZL = 1.6; aXL = -0.35; }       // e a outra mão no ombro dele
+      } else if (F.tipo === 'grupo' && F.junto) {                       // (7.4.1) a roda: abraçados (braços nos ombros dos outros) e pulando
+        aZL = 1.95; aXL = 0.75; aZR = 1.95; aXR = -0.75;
       } else if (F.tipo === 'toca' && F.batida > 0) {
         const b = Math.sin(Math.min(1, F.batida) * Math.PI);           // sobe, bate e desce
         aZR = lerp(aZR, 2.45, b); aXR = lerp(aXR, 0.15, b);            // mão um pouco para dentro, na direção do outro
@@ -12373,6 +12511,7 @@ function syncMeshes(dt) {
     if (p.diveT > 0) y = alturaMergulho(p);
     else if (p.jumpT > 0) y = Math.sin((1 - p.jumpT / 0.5) * Math.PI) * (p.jumpAlt || 0.7);   // barreira pula mais baixo
     else if (pose === 'up' && (G.state === 'goal' || G.state === 'celebrate' || (G.state === 'end' && G.fimFesta) || (G.state === 'fim' && G.fimPula))) y = Math.abs(Math.sin(agora / 160 + p.id)) * 0.25;
+    else if (G.state === 'fim' && p.fim && p.fim.tipo === 'grupo' && p.fim.junto) y = Math.abs(Math.sin((G.fimT - p.fim.junto) * 7.5)) * 0.22;   // (7.4.1) a roda pula no mesmo ritmo
     m.raiz.position.y = y;
     // Tombos: mergulho do goleiro (de lado) ou marcador driblado (cai de frente, meio de lado).
     let tomb = 0, frente = 0;
@@ -12463,7 +12602,7 @@ function syncMeshes(dt) {
     // passada, o braço no aviãozinho, o corpo no mergulho...), ele sobe o quanto entrou.
     if (m.raiz.visible && G.state !== 'replay') naoEntrarNoChao(m);
     if (p.role === 'GK') medirMaos(p, m);
-    m.etiqueta.visible = G.state !== 'fim' && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
+    m.etiqueta.visible = G.state !== 'fim' && !G.semNomes && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
   bracosSemAtravessar();
@@ -12482,7 +12621,7 @@ function syncMeshes(dt) {
   ball.shadow.position.set(ball.mesh.position.x, 0.02, ball.mesh.position.z);
   ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.mesh.position.y - CONFIG.BALL_R) * 0.12));
   userRing.position.set(user.x, 0.03, user.z);
-  userRing.visible = !G.cine && !G.espectador && G.state !== 'replay' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
+  userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
   aimArrow.visible = !!kk;
   if (kk) { aimArrow.position.set(ball.x, kk.throwIn ? 0.06 : 0.06, ball.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX); }
@@ -12831,7 +12970,7 @@ function frame(now) {
   if (typeof Historia !== 'undefined') Historia.atualizar(rdt);       // tutorial / partida da história
   ajustarSombras();
   if (GANCHO_RENDER) GANCHO_RENDER(rdt);                    // o criador de personagem usa a câmera e o campo do jogo
-  Som.torcida((GANCHO_RENDER || G.state === 'menu' || (PARTIDA && PARTIDA.campo.semTorcida)) ? -1 : nivelTorcida());   // quadra de futsal: sem torcida
+  Som.torcida(G.torcidaCena != null ? G.torcidaCena : (GANCHO_RENDER || G.state === 'menu' || (PARTIDA && PARTIDA.campo.semTorcida)) ? -1 : nivelTorcida());   // (7.4.1) G.torcidaCena: as cenas de abertura ligam a torcida   // quadra de futsal: sem torcida
   Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);         // criador/fase: sem barulho de torcida
   // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
@@ -13239,16 +13378,81 @@ function construirBancos() {
 // ele levanta o braço e aparece um aviso. trocarTatica() vale para você (menu de pausa) e para a
 // IA dos dois técnicos (tecnicoPensa: perdendo no fim vai para o ataque, ganhando fecha a casinha).
 // ---------------------------------------------------------------------
+// (7.4.1) O VISUAL DE CADA TÉCNICO: sai do time e do nome (sempre o mesmo): o traje (terno, camisa social com ou sem gravata,
+//   agasalho do clube, polo do clube, jaqueta acolchoada), as cores do time no agasalho, na polo e na gravata, o cabelo (muitos
+//   grisalhos, carecas e calvos), a barba, o rosto sério e os acessórios: óculos (de grau ou escuros), boné do clube e cachecol.
+//   T.aparencia.traje (string) força um traje; os outros campos da aparência (pele...) continuam valendo.
+const TEC_CORTES = [0, 2, 3, 4, 5, 8, 9, 17, 19, 25, 26, 0, 9, 25, 26, 3];
+const TEC_BARBAS = [0, 0, 0, 0, 1, 2, 3, 4, 5, 7, 8, 13, 14, 15];
+const TEC_ROSTOS = [0, 1, 1, 1, 3, 2, 13];
+const TEC_TERNOS = ['#1b2333', '#23262d', '#2f3540', '#141518', '#3b3f47', '#2c2430', '#1f2a24'];
+function visualTecnico(T, timeObj) {
+  T = T || {}; const A = T.aparencia || {}, U = (timeObj && (timeObj.uniforme || timeObj.uniformes)) || {};
+  const id = (timeObj && (timeObj.id || timeObj.nome)) || 'time', r = sorteador(sementeDe('tec741|' + id + '|' + (T.nome || '')));
+  const pick = (l) => l[Math.floor(r() * l.length)];
+  const fem = A.genero === 'F' || /^(Dona|Profa\.?|Professora) /.test(T.nome || '');
+  const c1 = U.camisa || '#2b2f36', c2 = U.listra && U.listra !== c1 ? U.listra : U.calcao && U.calcao !== c1 ? U.calcao : (((hexNum(c1) >> 16) * 0.3 + ((hexNum(c1) >> 8) & 255) * 0.59 + (hexNum(c1) & 255) * 0.11) > 140 ? '#1b1d22' : '#f2f2ee');
+  const escuro = (c, k) => '#' + misturarCor(hexNum(c), 0x000000, k).toString(16).padStart(6, '0');
+  const x = r(), tipo = A.traje || (x < 0.24 ? 'terno' : x < 0.5 ? 'agasalho' : x < 0.68 ? 'polo' : x < 0.84 ? 'social' : 'jaqueta');
+  const V = { tipo };
+  let camisa, listra, gola, calca, manga = 1, sola = '#1d1f24';
+  if (tipo === 'terno') { camisa = r() < 0.3 ? escuro(c1, 0.55) : pick(TEC_TERNOS); listra = camisa; gola = '#f2f2ee'; calca = camisa; V.camisaInt = r() < 0.75 ? '#f2f2ee' : '#cfe0f2'; V.gravata = r() < 0.8 ? (r() < 0.6 ? c1 : c2) : null; }
+  else if (tipo === 'social') { camisa = r() < 0.6 ? '#f2f2ee' : r() < 0.5 ? '#cfe0f2' : '#e9e2d0'; listra = camisa; gola = camisa; calca = pick(['#23262d', '#2f3540', '#4a4134', '#1b2333']); V.gravata = r() < 0.45 ? c1 : null; manga = r() < 0.6 ? 1 : 0; }
+  else if (tipo === 'agasalho') { camisa = c1; listra = c2; gola = c2; calca = r() < 0.5 ? c1 : escuro(c1, 0.5); sola = '#f2f2ee'; }
+  else if (tipo === 'polo') { camisa = c1; listra = c1; gola = c2; calca = pick(['#2f3540', '#c9b48a', '#23262d', '#4a4134']); manga = 0; sola = r() < 0.5 ? '#f2f2ee' : '#1d1f24'; }
+  else { camisa = r() < 0.5 ? '#1f2328' : escuro(c1, 0.4); listra = c1; gola = c1; calca = pick(['#23262d', '#2f3540', '#1b2333']); }
+  let estilo = A.estilo != null ? A.estilo : 0, barba = fem ? 0 : (A.barba | 0), cabelo = A.cabelo || '#2a1d14';
+  if (!fem) { estilo = pick(TEC_CORTES); barba = pick(TEC_BARBAS); }
+  const idade = r();
+  if (idade < 0.45) cabelo = idade < 0.18 ? '#d6d6d2' : '#8d8f93';                      // grisalhos e de cabelo branco
+  V.oculos = r() < 0.38 ? (r() < 0.3 ? 'escuro' : 'grau') : null;
+  if ((tipo === 'agasalho' || tipo === 'polo') && r() < 0.32) { V.bone = c1; V.boneAba = c2; if (![0, 3, 4, 5, 19, 25, 26].includes(estilo)) estilo = 4; }
+  if ((tipo === 'terno' || tipo === 'jaqueta') && r() < 0.22) V.cachecol = [c1, c2];
+  return { camisa, listra, gola, calcao: calca, meia: calca, calca, meiao: 2, manga, sola, pele: A.pele || '#BF8159', cabelo, corBarba: cabelo, estilo, barba,
+    rosto: fem ? (A.rosto | 0) : pick(TEC_ROSTOS), labio: A.labio, traje: V, fem };
+}
+// os acessórios por cima do boneco: na malha do corpo inteiro e, os da cabeça, também na cabeça que abaixa (cabeca);
+//   os do corpo também no tronco sem cabeça (pose de cabeça baixa)
+function vestirTecnico(m, V) {
+  const T = V.traje || {}, mat = m.troncoInteiro.material, Lc = new Lote(UV_BRANCO), Lh = new Lote(UV_BRANCO), Lb = new Lote(UV_BRANCO), Lb2 = new Lote(UV_BRANCO);
+  const h = hexNum, cab = (w, hh, d, c, x, y, z) => { Lc.caixa(w, hh, d, h(c), x, y, z); Lh.caixa(w, hh, d, h(c), x - 0.02, y - 1.36, z); };
+  const corpo = (w, hh, d, c, x, y, z) => { Lc.caixa(w, hh, d, h(c), x, y, z); Lb2.caixa(w, hh, d, h(c), x, y, z); };
+  let n = 0;
+  if (T.oculos) {
+    const aro = T.oculos === 'escuro' ? '#141414' : '#2a2a2a', lente = T.oculos === 'escuro' ? '#101418' : '#5d7286';
+    cab(0.025, 0.03, 0.46, aro, 0.258, 1.695, 0);
+    for (const s of [-1, 1]) { cab(0.022, 0.085, 0.16, lente, 0.262, 1.65, s * 0.11); cab(0.26, 0.02, 0.02, aro, 0.13, 1.69, s * 0.252); }
+    n++;
+  }
+  if (T.bone) { cab(0.56, 0.13, 0.6, T.bone, -0.01, 1.955, 0); cab(0.22, 0.035, 0.46, T.boneAba || T.bone, 0.32, 1.9, 0); cab(0.07, 0.03, 0.07, T.boneAba || T.bone, -0.01, 2.03, 0); n++; }
+  if (T.gravata && T.tipo === 'social') { corpo(0.02, 0.34, 0.075, T.gravata, 0.166, 1.13, 0); corpo(0.03, 0.05, 0.09, T.gravata, 0.168, 1.3, 0); n++; }
+  if (T.cachecol) { corpo(0.36, 0.09, 0.62, T.cachecol[0], 0, 1.31, 0); corpo(0.03, 0.42, 0.1, T.cachecol[0], 0.172, 1.1, 0.12); corpo(0.032, 0.06, 0.1, T.cachecol[1], 0.173, 0.98, 0.12); corpo(0.032, 0.06, 0.1, T.cachecol[1], 0.173, 1.16, 0.12); n++; }
+  // (7.4.1) os jogadores chegando ao estádio: o fone de ouvido grande e a mochila
+  if (T.fone) { cab(0.12, 0.05, 0.58, T.fone, -0.01, 1.985, 0); for (const s of [-1, 1]) { cab(0.07, 0.3, 0.04, T.fone, -0.01, 1.83, s * 0.285); cab(0.17, 0.19, 0.07, T.fone, -0.01, 1.66, s * 0.29); } n++; }
+  if (T.mochila) { corpo(0.2, 0.42, 0.4, T.mochila, -0.28, 1.08, 0); corpo(0.025, 0.34, 0.06, '#1b1d22', 0.17, 1.2, 0.15); corpo(0.025, 0.34, 0.06, '#1b1d22', 0.17, 1.2, -0.15); corpo(0.36, 0.04, 0.06, '#1b1d22', 0, 1.37, 0.15); corpo(0.36, 0.04, 0.06, '#1b1d22', 0, 1.37, -0.15); n++; }
+  if (!n) return m;
+  m.troncoInteiro.add(Lc.malha(mat));
+  if (Lh.pos && Lh.pos.length) m.cabeca.add(Lh.malha(mat));
+  if (Lb2.pos && Lb2.pos.length) m.troncoSemCabeca.add(Lb2.malha(mat));
+  return m;
+}
+function bonecoTecnico(T, timeObj, op) {
+  op = op || {};
+  const V = visualTecnico(T, timeObj), semEmb = V.traje.tipo === 'social';
+  const m = makeAthlete({ camisa: V.camisa, listra: V.listra, gola: V.gola, numero: '', calcao: V.calcao, meia: V.meia, calca: V.calca, meiao: 2, manga: V.manga, sola: V.sola,
+    pele: V.pele, cabelo: V.cabelo, estilo: V.estilo, barba: V.barba, corBarba: V.corBarba, rosto: V.rosto, labio: V.labio, traje: V.traje,
+    nome: (T && T.nome) || ' ', fundoNome: op.fundoNome || 'rgba(20,20,20,0.85)', emblema: semEmb ? null : timeObj && timeObj.emblema });
+  vestirTecnico(m, V); m.visualTec = V;
+  return m;
+}
 const tecnicos = [];
 function montarTecnicos(P) {
   for (const t of tecnicos) descartarBoneco(t.mesh.raiz);
   tecnicos.length = 0;
   if (!temBanco(P)) return;                        // society: sem técnico nem banco à vista (por enquanto)
   [0, 1].forEach((team) => {
-    const T = P.tecnicos[team], A = T.aparencia || {};
-    const roupa = A.roupa || '#222222';
-    const mesh = makeAthlete({ camisa: roupa, listra: roupa, gola: '#111111', numero: '', calcao: roupa, meia: roupa, sola: '#1a1a1a',
-      pele: A.pele || '#BF8159', cabelo: A.cabelo || '#1C140F', estilo: A.estilo || 0, nome: T.nome, fundoNome: 'rgba(20,20,20,0.85)', emblema: P.timesObj[team].emblema });
+    const T = P.tecnicos[team];
+    const mesh = bonecoTecnico(T, Object.assign({}, P.timesObj[team], { uniforme: P.uniformes ? P.uniformes[team] : P.timesObj[team].uniforme }));   // (7.4.1) o visual próprio do técnico de cada time
     mesh.etiqueta.visible = false;
     scene.add(mesh.raiz);
     const x = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25) + (team === 0 ? 3.2 : -3.2), z = -(HALF_W + LADO_BANCO.tecnico);
@@ -14932,6 +15136,7 @@ const Idioma = {
   'SOM': ['SOUND', 'SONIDO', 'SUONO', 'SON'],
   'MUDO': ['MUTE', 'MUDO', 'MUTO', 'MUET'],
   'Som': ['Sound', 'Sonido', 'Suono', 'Son'],
+  'Ligado': ['On', 'Activado', 'Attivo', 'Activé'], 'Desligado': ['Off', 'Desactivado', 'Disattivo', 'Désactivé'],
   'CHUTAR / CRUZAR': ['SHOOT / CROSS', 'TIRAR / CENTRAR', 'TIRA / CROSS', 'TIRER / CENTRER'],
   'PASSAR': ['PASS', 'PASAR', 'PASSA', 'PASSER'],
   'DRIBLAR': ['DRIBBLE', 'REGATEAR', 'DRIBBLA', 'DRIBBLER'],
@@ -17044,7 +17249,7 @@ const Historia = (() => {
     const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
     const pen = G.penaltisPlacar ? G.penaltisPlacar.slice() : null;      // mata-mata empatado: quem passou nos pênaltis
     const out = { placar: G.score.slice(), gols, nota, venceu: pen ? pen[0] > pen[1] : G.score[0] > G.score[1], empate: !pen && G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s),
-      penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.isUser ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red })) };
+      penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.isUser ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red, lesao: p.lesao ? (p.lesao.jogos | 0) : 0, pos: p.role })) };   // (7.4.1) a lesão e a posição: o campeonato da partida livre controla os desfalques
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), G.fimFesta ? 3600 : 1800); }   // com a festa do apito final, fica um pouco mais
   }
   // ---- DESAFIO: o treino do seu Nonato (treinoCampo.js) dentro da partida de verdade ----------------------------------------------
@@ -17813,11 +18018,21 @@ function montarMenuInicial() {
     e.preventDefault(); SLOT_HISTORIA = Number(e.detail.slot) || SLOT_HISTORIA; criador.retomar(sv);
   });
   const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
+  // (7.4.1) CONFIGURAÇÕES: só o que vale para o jogo inteiro (som, idioma, como jogar e a versão). O horário, o clima, a duração, o
+  //   estádio, a dificuldade, a posição e o personagem de cada partida são escolhidos na tela do confronto da partida livre.
+  const abrirConfigGerais = () => {
+    const como = document.querySelector('#startScreen .howto'), v = $('versaoInfo');
+    abrirPainel(T('Configurações'), '<div class="mxBotoes mxEscolha" style="margin:0 auto">' +
+      '<button type="button" class="pxBtn" data-acao="somCfg">' + T('Som') + ': ' + T(Som.mudo ? 'Desligado' : 'Ligado') + '</button>' +
+      '<button type="button" class="pxBtn" data-acao="idiomaCfg">' + T('Mudar idioma') + '</button></div>' +
+      (como ? '<details class="mxComo" style="margin-top:12px;text-align:left;font-size:12px"><summary style="cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em">' + T('COMO JOGAR') + '</summary>' + como.outerHTML + '</details>' : '') +
+      '<p class="mxMsg" style="opacity:.7;font-size:11px;margin-top:10px">' + esc(v ? v.textContent : '') + '</p>');
+  };
   const MENU_ACOES = {
     jogar: () => abrirPainel(T('Jogar'), '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="modoHistoria">' + T('Modo história') + '</button>' +
       '<button type="button" class="pxBtn" data-acao="partidaLivre">' + T('Partida livre') + '</button></div>'),
     carregar: () => abrirCarregar(),
-    config: () => $('selBtn').click(),                      // abre OPÇÕES DA PARTIDA
+    config: () => abrirConfigGerais(),                      // (7.4.1) som, idioma, como jogar e versão (as opções da partida agora ficam no confronto da partida livre)
     creditos: () => abrirPainel(T('Créditos'), '<p class="mxCredPeq">' + T('Feito por') + '</p><p class="mxCredNome">Herick</p>'),
     sair: () => { /* por enquanto não faz nada */ },
   };
@@ -17834,7 +18049,13 @@ function montarMenuInicial() {
     if (!b || b.disabled) return;
     if (Som.clique) Som.clique();
     if (b.dataset.acao === 'fechar') { fecharPainel(); return; }
-    if (b.dataset.acao === 'partidaLivre') { PERSONAGEM.ativo = false; telaFecharVeu(); $('startBtn').click(); return; }   // jogo de sempre, com o que está nas configurações
+    if (b.dataset.acao === 'partidaLivre') {                // (7.4.1) a partida livre nova (livre.js): campeonato, copa, amistoso, várzea, sintético e futsal
+      PERSONAGEM.ativo = false; telaFecharVeu(); Som.ligar();
+      Fases.carregar('livre').then((m) => m.abrir()).catch((e) => { console.error('[Partida livre]', e); $('startBtn').click(); });   // sem o arquivo: o jogo de sempre
+      return;
+    }
+    if (b.dataset.acao === 'somCfg') { Som.ligar(); Som.alternarMudo(); abrirConfigGerais(); return; }
+    if (b.dataset.acao === 'idiomaCfg') { telaFecharVeu(); telaIdioma(); return; }
     if (b.dataset.acao === 'modoHistoria') { abrirSlotsNovo(); return; }
     if (b.dataset.acao === 'outroSlot') { abrirSlotsNovo(); return; }
     if (b.dataset.novo) {

@@ -435,13 +435,13 @@
     GANCHO_RENDER = quadro;
     const fala = async (A, nome, txt, voz) => { if (A) A.fala = true; await Dialogo.mostrar([txt], { nome, voz }); if (A) A.fala = false; };
     const faixa = document.createElement('div');
-    faixa.style.cssText = 'position:fixed;z-index:30;left:50%;top:calc(10px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:calc(100% - 28px);box-sizing:border-box;padding:6px 14px;background:rgba(10,10,16,.86);border:3px solid ' + (o.nivel === 'serieb' ? '#f2c230' : '#f0a020') + ';color:#fff;font:700 13px/1.25 var(--font-display,monospace);letter-spacing:.06em;text-align:center;opacity:0;transition:opacity .4s';
+    faixa.style.cssText = 'position:fixed;z-index:30;right:calc(14px + env(safe-area-inset-right,0px));top:calc(46px + env(safe-area-inset-top,0px));max-width:min(46%, 420px);box-sizing:border-box;padding:6px 14px;background:rgba(10,10,16,.86);border:3px solid ' + (o.nivel === 'serieb' ? '#f2c230' : '#f0a020') + ';color:#fff;font:700 13px/1.25 var(--font-display,monospace);letter-spacing:.06em;text-align:right;opacity:0;transition:opacity .4s';   // (7.4.1) no canto direito, embaixo do PULAR: no meio cobria o telão do palco
     (document.getElementById('raizJogo') || document.body).appendChild(faixa);
     const mostraFaixa = (t) => { faixa.textContent = t; faixa.style.opacity = t ? '1' : '0'; };
     try {
       corta({ p: [0, 1.35, 6.4], p2: [0, 1.35, 5.7], t: [0, 1.35, -0.5], dur: 4 });   // reto, na altura do peito: o título lá em cima e a apresentadora acima da caixa de fala
       await io.preto(false, 700);
-      await fala(apr, T('Apresentadora'), o.nivel === 'seriea' ? T('Boa noite! Bem-vindos à festa de premiação da Série A!') : o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação da Série B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
+      await fala(apr, T('Apresentadora'), o.saudacao ? o.saudacao : o.nivel === 'seriea' ? T('Boa noite! Bem-vindos à festa de premiação da Série A!') : o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação da Série B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
       await fala(apr, T('Apresentadora'), T('Chegou a hora dos prêmios individuais. Vamos lá!'), 0);
       for (const P of o.premios) {
         if (!P) continue;
