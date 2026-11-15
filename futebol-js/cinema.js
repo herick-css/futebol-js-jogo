@@ -111,7 +111,18 @@
     'Quanto mais você assiste, mais rápido sai a próxima atualização. Pressão nenhuma, hein?',
     'Bem-vindo de volta ao único cinema que paga você para ver filme ruim.',
   ];
-  const JOANA_PAPOS = ['Olá! Bem-vindo ao cinema.', 'Qual sessão vai ser hoje?', 'As poltronas estão bem confortáveis hoje, viu?'];
+  // a Joana: cinéfila, quer escrever roteiros, ia ao cinema com a avó toda sexta
+  const JOANA_PAPOS = ['Oi! Hoje a sessão tá boa, viu? Escolhi as poltronas do meio pra você ver melhor.', 'Sabia que o primeiro filme que eu vi foi aqui? Minha avó me trouxe numa sexta, eu tinha seis anos.',
+    'Tô escrevendo um roteiro nas horas vagas. Um suspense que se passa numa cidade pequena igual a essa...', 'Se o filme de hoje tiver final triste, eu já aviso: a culpa não é minha, é do roteirista.',
+    'Pipoca a gente ainda não tem. O Herick diz que um dia vai ter. Eu digo que ele fala isso desde o começo, haha.', 'Qual sessão vai ser hoje? Quinze ou trinta segundos de pura emoção?'];
+  for (const [k, v] of Object.entries({
+    'Oi! Hoje a sessão tá boa, viu? Escolhi as poltronas do meio pra você ver melhor.': ['Hi! Today’s showing is good, you know? I picked the middle seats so you can see better.', '¡Hola! Hoy la función está buena, ¿eh? Elegí las butacas del medio para que veas mejor.', 'Ciao! Oggi lo spettacolo è bello, sai? Ho scelto le poltrone centrali così vedi meglio.', 'Coucou ! La séance d’aujourd’hui est bien, tu sais ? J’ai choisi les fauteuils du milieu pour que tu voies mieux.'],
+    'Sabia que o primeiro filme que eu vi foi aqui? Minha avó me trouxe numa sexta, eu tinha seis anos.': ['Did you know the first movie I ever saw was here? My grandma brought me on a Friday, I was six.', '¿Sabías que la primera película que vi fue aquí? Mi abuela me trajo un viernes, yo tenía seis años.', 'Sai che il primo film che ho visto è stato qui? Mia nonna mi ci ha portata un venerdì, avevo sei anni.', 'Tu savais que le premier film que j’ai vu, c’était ici ? Ma grand-mère m’a emmenée un vendredi, j’avais six ans.'],
+    'Tô escrevendo um roteiro nas horas vagas. Um suspense que se passa numa cidade pequena igual a essa...': ['I’m writing a script in my spare time. A thriller set in a small town just like this one...', 'Estoy escribiendo un guion en mis ratos libres. Un suspenso que pasa en una ciudad pequeña igual a esta...', 'Sto scrivendo una sceneggiatura nel tempo libero. Un thriller ambientato in una piccola città proprio come questa...', 'J’écris un scénario à mes heures perdues. Un suspense qui se passe dans une petite ville comme celle-ci...'],
+    'Se o filme de hoje tiver final triste, eu já aviso: a culpa não é minha, é do roteirista.': ['If today’s movie has a sad ending, I’m warning you: it’s not my fault, it’s the screenwriter’s.', 'Si la película de hoy tiene final triste, ya te aviso: la culpa no es mía, es del guionista.', 'Se il film di oggi ha un finale triste, ti avviso: non è colpa mia, è dello sceneggiatore.', 'Si le film d’aujourd’hui finit mal, je te préviens : ce n’est pas ma faute, c’est celle du scénariste.'],
+    'Pipoca a gente ainda não tem. O Herick diz que um dia vai ter. Eu digo que ele fala isso desde o começo, haha.': ['We don’t have popcorn yet. Herick says we will someday. I say he’s been saying that since the beginning, haha.', 'Palomitas todavía no tenemos. Herick dice que algún día va a haber. Yo digo que lo dice desde el principio, jaja.', 'Il popcorn ancora non ce l’abbiamo. Herick dice che un giorno ci sarà. Io dico che lo ripete dall’inizio, haha.', 'On n’a pas encore de pop-corn. Herick dit qu’un jour, il y en aura. Moi, je dis qu’il répète ça depuis le début, haha.'],
+    'Qual sessão vai ser hoje? Quinze ou trinta segundos de pura emoção?': ['Which showing will it be today? Fifteen or thirty seconds of pure excitement?', '¿Qué función va a ser hoy? ¿Quince o treinta segundos de pura emoción?', 'Quale spettacolo oggi? Quindici o trenta secondi di pura emozione?', 'Quelle séance aujourd’hui ? Quinze ou trente secondes de pure émotion ?'],
+  })) if (typeof I18N !== 'undefined' && !I18N[k]) I18N[k] = v;
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
   const dAng = (a, b) => ((b - a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
 
@@ -403,14 +414,18 @@
       api.camCena(camConversa(H, J));
       let seg = 0;
       try {
-        const p = T(HERICK_PAPOS[(c.papoH | 0) % HERICK_PAPOS.length]); c.papoH = (c.papoH | 0) + 1;
+        const ab = api.falaAmizade ? api.falaAmizade('herick') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('herick', ab.l); throw 'fim'; }   // -80: o Herick não perde mais tempo com você
+        if (api.recusaAmizade && api.recusaAmizade('herick')) { if (ab && ab.l) await api.fala('herick', ab.l); const l = api.linhaAmizade('*', 'recusa'); if (l) await api.fala('herick', l); throw 'fim'; }   // -50: sem bilhete
+        const p = ab && ab.l ? ab.l : T(HERICK_PAPOS[(c.papoH | 0) % HERICK_PAPOS.length]); c.papoH = (c.papoH | 0) + 1;
         await api.fala('herick', p);
         const r = await Escolha.mostrar(p, opcoesBilhete().concat([T('Esse seu jogo tá cheio de bug, hein.')]));
+        if ((r === 0 || r === 1 || r === 2) && api.papoAmizade) api.papoAmizade('herick', 2);
         if (r === 0 || r === 1) { seg = r ? 30 : 15; await api.fala('herick', r ? T('Trinta segundos! Assim que eu gosto.') : T('Quinze segundinhos. Já ajuda!')); }
         else if (r === 3) await api.falaGrossa('herick', 'herick', T('Esse seu jogo tá cheio de bug, hein.'), T('Bug? Me manda um print que eu arrumo... mas precisava falar assim?'));
         else await api.fala('herick', T('Tranquilo. O cinema não vai fugir.'));
         Dialogo.esconder();
-      } catch (e) { console.error(e); }
+      } catch (e) { if (e !== 'fim') console.error(e); Dialogo.esconder(); }
       if (M.H) M.H.olha = true;
       api.camCena(null);
       if (seg) await sessao(seg); else { const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar(); }
@@ -421,14 +436,18 @@
       if (Jo) { Jo.yawAlvo = Math.atan2(-(J.z - Jo.z), J.x - Jo.x); api.camCena(camConversa(Jo, J)); J.yawAlvo = Math.atan2(-(Jo.z - J.z), Jo.x - J.x); }
       let seg = 0;
       try {
-        const p = T(JOANA_PAPOS[(c.papoJ | 0) % JOANA_PAPOS.length]); c.papoJ = (c.papoJ | 0) + 1;
+        const ab = api.falaAmizade ? api.falaAmizade('joana') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('joana', ab.l); throw 'fim'; }   // -80: a Joana não perde mais tempo com você
+        if (api.recusaAmizade && api.recusaAmizade('joana')) { if (ab && ab.l) await api.fala('joana', ab.l); const l = api.linhaAmizade('*', 'recusa'); if (l) await api.fala('joana', l); throw 'fim'; }   // -50: sem bilhete
+        const p = ab && ab.l ? ab.l : T(JOANA_PAPOS[(c.papoJ | 0) % JOANA_PAPOS.length]); c.papoJ = (c.papoJ | 0) + 1;
         await api.fala('joana', p);
         const r = await Escolha.mostrar(p, opcoesBilhete().concat([T('Anda logo, que demora.')]));
+        if ((r === 0 || r === 1 || r === 2) && api.papoAmizade) api.papoAmizade('joana', 2);
         if (r === 3) { await api.falaGrossa('joana', 'joana', T('Anda logo, que demora.'), T('Nossa, calma... eu só tava sendo educada.')); }
         else if (r === 0 || r === 1) { seg = r ? 30 : 15; await api.fala('joana', T('Aqui está o seu bilhete. Bom filme!')); }
         else await api.fala('joana', T('Tudo bem! Volte quando quiser.'));
         Dialogo.esconder();
-      } catch (e) { console.error(e); }
+      } catch (e) { if (e !== 'fim') console.error(e); Dialogo.esconder(); }
       if (Jo && M.C) Jo.yawAlvo = M.C.bilheteria.yaw;
       api.camCena(null);
       if (seg) await sessao(seg); else { const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar(); }

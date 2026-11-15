@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.1.20';
+const VERSAO_JOGO = '7.1.21';
 // 6.6.19: treinoCampo.js (arquivo novo) — o treino de chute, passe e cruzamento num mundo à parte (como a partida: a cidade e o
 //   relógio param), com campo próprio (gramado com faixas, gol com rede, alambrado, refletores, banco, a placa do CT). treino.js: a
 //   turma chega na hora e fica as 12 h (o dia do jogo vira às 5h; mora perto do campo; não para com a chuva), o goleiro anda e mergulha
@@ -561,7 +561,7 @@ function gerarAparencia(semente, genero) {
   const r = sorteador(semente || 1), pick = (lst) => lst[Math.floor(r() * lst.length)];
   const pesado = (pesos) => { let t = 0; for (const w of pesos) t += w; let x = r() * t; for (let i = 0; i < pesos.length; i++) { x -= pesos[i]; if (x <= 0) return i; } return pesos.length - 1; };
   const fem = genero === 'F';
-  const iPele = pesado([1, 2, 3, 3, 2.5, 2]), pele = PELES_FITZ[Math.min(iPele, PELES_FITZ.length - 1)].cor;
+  const iPele = pesado([1, 1.5, 2.5, 3, 3, 2.5]), pele = PELES_FITZ[Math.min(iPele, PELES_FITZ.length - 1)].cor;
   const iCor = pesado([30, 24, 18, 9, 7, 3, 2, 1].slice(0, CORES_CABELO.length)), cabelo = CORES_CABELO[iCor].cor;
   const cortes = [], loja = [], ok = fem ? 'F' : 'M';
   ESTILOS_CABELO.forEach((h, i) => { const g = generoDoCabelo(i); if (h.cosmetico) { if (g === ok || g === 'U') loja.push(i); return; } if (g === ok) cortes.push(i, i); else if (g === 'U') cortes.push(i); });   // do próprio gênero vale em dobro

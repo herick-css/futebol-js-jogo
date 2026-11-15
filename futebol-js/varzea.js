@@ -376,7 +376,9 @@
     async function conversarRafa() {
       const A = M.rafa, J = S().jog, C = camp(), d = dados(); if (!A) return;
       A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
-      const nome = api.nomeJog();
+      const nome = api.nomeJog(), ab = api.falaAmizade ? api.falaAmizade('rafa') : null;
+      if (ab && ab.est === 'corte') { if (ab.l) await api.fala('rafa', ab.l); Dialogo.esconder(); return; }   // -80: o Rafa não quer mais você no time
+      if (ab && ab.est === 'neg' && ab.l) await api.fala('rafa', ab.l);
       if (C.etapa === 'recusou') await api.fala('rafa', Tf('E aí, {0}! Pensou melhor no campeonato?', nome));
       else {
         await api.fala('rafa', ondeViu() === 'sintetico' ? Tf('Ei, {0}! Lembra de mim? Sou o Rafa, já joguei umas vezes no seu time lá no racha do sintético.', nome) : Tf('Ei, {0}! Sou o Rafa. Já te vi jogando na quadra e até bati uma bola com vocês umas vezes.', nome));
@@ -869,7 +871,10 @@
         C.conheceDamiao = true;
         await api.fala('damiao', Tgf('Então você é o tal de {0} que o Rafa tanto falou! Eu sou o Damião, técnico do Peladão faz quinze anos.', nome));
         await api.fala('damiao', T('Aqui embaixo é a nossa casa. Lá em cima pode ser guerra; aqui dentro todo mundo é família.'));
-      } else await api.fala('damiao', pk([T('Chegou na hora! Bota a chuteira que hoje tem trabalho.'), T('Bom te ver! O time tá concentrado, hein.'), T('Senta aí um minuto que eu vou passar o jogo.')]));
+      } else {
+        const ab = api.falaAmizade ? api.falaAmizade('damiao') : null;   // no vestiário o jogo vem primeiro: mesmo no corte ele passa a partida
+        await api.fala('damiao', ab && ab.l ? ab.l : pk([T('Chegou na hora! Bota a chuteira que hoje tem trabalho.'), T('Bom te ver! O time tá concentrado, hein.'), T('Senta aí um minuto que eu vou passar o jogo.')]));
+      }
       const casa = g.c === NOSSO_I;
       await api.fala('damiao', Tf('Hoje é {0}: {1} contra o {2}, {3}.', faseNome(g.r), TIMES_VZ[NOSSO_I].nome, A.nome, casa ? T('com a gente jogando em casa') : T('com eles jogando em casa')));
       await api.fala('damiao', Tf('O técnico deles é {0}. {1}', A.tecnico, T(A.nota)));
@@ -879,7 +884,7 @@
       const r = await Escolha.mostrar(q, [T('Pode deixar, professor!'), Tg('Tô um pouco nervoso...'), T('Eu sei jogar, não preciso de lição.')]);
       if (r === 2) await api.falaGrossa('damiao', 'damiao', T('Eu sei jogar, não preciso de lição.'), T('Lição todo mundo precisa. Lá em cima a gente vê quem sabe.'));
       else if (r === 1) { await api.fala('jog', Tg('Tô um pouco nervoso...')); await api.fala('damiao', T('Nervoso é bom: mostra que você se importa. Respira e joga o simples.')); await api.fala('rafa', T('Relaxa, a gente tá junto!')); }
-      else { await api.fala('jog', T('Pode deixar, professor!')); await api.fala('damiao', T('É assim que se fala!')); }
+      else { await api.fala('jog', T('Pode deixar, professor!')); await api.fala('damiao', T('É assim que se fala!')); if (api.papoAmizade) api.papoAmizade('damiao', 2); }
       await api.fala('rafa', g.r > 8 ? T('Hoje é tudo ou nada! Bora, Peladão!') : pk([T('Bora, Peladão!'), T('Hoje a gente sai daqui com os três pontos!'), T('Vamo que vamo!')]));
     }
 

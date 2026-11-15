@@ -406,6 +406,7 @@
     }
 
     // ---------------------------------------------------------------- dinheiro
+    const precoA = (id, v) => (api.precoAmizade ? api.precoAmizade(id, v) : v);   // amizade -25 ou menos: +25%
     function pagar(v) { const d = S().dados; if (d.fakes < v) return false; d.fakes -= v; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(v); return true; }
 
     // ---------------------------------------------------------------- DIEGO (recepção)
@@ -421,20 +422,24 @@
         await api.fala('diego', Tf('Para treinar aqui é {0} fakes por semana. Pagou, a catraca libera por 7 dias.', PRECO_ACESSO));
         a.conheceuDiego = true;
       }
+      const ab = api.falaAmizade ? api.falaAmizade('diego') : null;
+      if (ab && ab.est === 'corte') { if (ab.l) await api.fala('diego', ab.l); return; }   // -80: o Diego não perde mais tempo com você
+      if (ab && ab.l) await api.fala('diego', ab.l);
       if (temAcesso()) {
         await api.fala('diego', Tf('Seu plano vale até o dia {0}. Bom treino!', a.acessoAte - 1));
         const r = await Escolha.mostrar(T('Ver minha ficha de treino'), [T('Ver minha ficha de treino'), T('Tchau')]);
         if (r === 0) await ficha();
         return;
       }
-      const venceu = (a.acessoAte || 0) > 0;
-      if (venceu) await api.fala('diego', Tf('Seu plano venceu. Quer renovar por mais uma semana? São {0} fakes.', PRECO_ACESSO));
-      const r = await Escolha.mostrar(T('Quer pagar a semana?'), [Tf('Pagar {0} fakes', PRECO_ACESSO), T('Ver minha ficha de treino'), T('Agora não'), T('Que academia cara, hein. Isso é um assalto.')]);
+      if (api.checarAtendimento && await api.checarAtendimento('diego', 'diego')) return;   // -50: não vende o plano · -25: avisa que ficou mais caro
+      const venceu = (a.acessoAte || 0) > 0, PRECO = precoA('diego', PRECO_ACESSO);
+      if (venceu) await api.fala('diego', Tf('Seu plano venceu. Quer renovar por mais uma semana? São {0} fakes.', PRECO));
+      const r = await Escolha.mostrar(T('Quer pagar a semana?'), [Tf('Pagar {0} fakes', PRECO), T('Ver minha ficha de treino'), T('Agora não'), T('Que academia cara, hein. Isso é um assalto.')]);
       if (r === 3) { await api.falaGrossa('diego', 'diego', T('Que academia cara, hein. Isso é um assalto.'), (PERSONAGEM.genero === 'F' ? T('É o preço, parceira. Se não quiser, a rua é de graça.') : T('É o preço, parceiro. Se não quiser, a rua é de graça.'))); return; }   // a grosseria
       if (r === 1) { await ficha(); return; }
       if (r !== 0) return;
-      if (!pagar(PRECO_ACESSO)) { await api.fala('diego', Tf('Ih, tá faltando grana aí... São {0} fakes.', PRECO_ACESSO)); return; }
-      a.acessoAte = dia() + DIAS_PLANO; a.pagouVezes = (a.pagouVezes | 0) + 1;
+      if (!pagar(PRECO)) { await api.fala('diego', Tf('Ih, tá faltando grana aí... São {0} fakes.', PRECO)); return; }
+      a.acessoAte = dia() + DIAS_PLANO; a.pagouVezes = (a.pagouVezes | 0) + 1; if (api.papoAmizade) api.papoAmizade('diego', 2);
       api.gravar(S().dados.ponto || 'chegada');
       await api.fala('diego', Tf('Fechado! Seu plano vale até o dia {0}.', a.acessoAte - 1));
       if (!venceu) {
@@ -460,18 +465,25 @@
     async function conversaFernanda() {
       const a = dadosA();
       if (!a.conheceuFernanda) { await api.fala('fernanda', T('Oi! Eu sou a Fernanda, personal trainer aqui da academia.')); a.conheceuFernanda = true; }
+      else {
+        const ab = api.falaAmizade ? api.falaAmizade('fernanda') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('fernanda', ab.l); return; }   // -80: a Fernanda não treina mais você
+        if (ab && ab.l) await api.fala('fernanda', ab.l);
+      }
       if (temPersonal()) {
         await api.fala('fernanda', Tf('Nosso combinado vale até o dia {0}. Bora treinar!', a.personalAte - 1));
         await api.fala('fernanda', T(DICA_FER[pk(Object.keys(DICA_FER))]));
         return;
       }
-      await api.fala('fernanda', Tf('Treinando comigo, cada treino bem feito vale o dobro. São {0} fakes pela semana.', PRECO_PERSONAL));
+      if (api.checarAtendimento && await api.checarAtendimento('fernanda', 'fernanda')) return;   // -50: não vende o personal
+      const PRECO = precoA('fernanda', PRECO_PERSONAL);
+      await api.fala('fernanda', Tf('Treinando comigo, cada treino bem feito vale o dobro. São {0} fakes pela semana.', PRECO));
       const grossa = PERSONAGEM.genero === 'F' ? T('Personal? Eu treino melhor sozinha.') : T('Personal? Eu treino melhor sozinho.');
-      const r = await Escolha.mostrar(T('Quer treinar comigo esta semana?'), [Tf('Contratar ({0} fakes)', PRECO_PERSONAL), T('Agora não'), grossa]);
+      const r = await Escolha.mostrar(T('Quer treinar comigo esta semana?'), [Tf('Contratar ({0} fakes)', PRECO), T('Agora não'), grossa]);
       if (r === 2) { await api.falaGrossa('fernanda', 'fernanda', grossa, T('Tá bom, então. Boa sorte com essa postura aí.')); return; }   // a grosseria
       if (r !== 0) { await api.fala('fernanda', T('Tranquilo! Se mudar de ideia, eu tô por aqui.')); return; }
-      if (!pagar(PRECO_PERSONAL)) { await api.fala('fernanda', T('Sem grana agora? Tranquilo, quando quiser é só me chamar.')); return; }
-      a.personalAte = dia() + DIAS_PLANO; a.personalVezes = (a.personalVezes | 0) + 1;
+      if (!pagar(PRECO)) { await api.fala('fernanda', T('Sem grana agora? Tranquilo, quando quiser é só me chamar.')); return; }
+      a.personalAte = dia() + DIAS_PLANO; a.personalVezes = (a.personalVezes | 0) + 1; if (api.papoAmizade) api.papoAmizade('fernanda', 2);
       api.gravar(S().dados.ponto || 'chegada');
       await api.fala('fernanda', Tf('Combinado! Até o dia {0} eu acompanho os seus treinos.', a.personalAte - 1));
       await api.fala('fernanda', T('É só ir para um aparelho que eu chego do seu lado.'));

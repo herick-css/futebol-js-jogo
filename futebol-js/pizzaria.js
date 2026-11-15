@@ -537,7 +537,7 @@
       for (const A of s.npcs) tirarFatia(A);
       if (M.tAviso > 0 || M.avisos.length) api.aviso('');
       if (s.jog) { s.jog.esperaPedido = false; tirarFatia(s.jog); }
-      if (M.pedJog && M.pedJog.fase !== 'come') { s.dados.fakes += PRECO_PIZZA; api.mostrarDinheiro(true); }   // saiu (a pizzaria fechou) antes da pizza chegar: devolve o dinheiro
+      if (M.pedJog && M.pedJog.fase !== 'come') { s.dados.fakes += M.pagouPizza || PRECO_PIZZA; api.mostrarDinheiro(true); }   // saiu (a pizzaria fechou) antes da pizza chegar: devolve o dinheiro
       M.pedJog = null;
       M.R = null; M.D = null; M.mario = null; M.carla = null; M.nav = null; M.grupos = []; M.tarefas = []; M.mesas = null; M.caixaM = null; M.avisos = []; M.tAviso = 0;
     }
@@ -812,10 +812,14 @@
     const mesaDoAssento = (a) => (M.mesas || []).find((T0) => T0.assentos.includes(a)) || null;
     async function pedirPizza() {
       const s = S(), d = s.dados, J = s.jog, a = s.sentadoEm, mesa = mesaDoAssento(a); if (!mesa) return;
+      if (api.checarAtendimento && await api.checarAtendimento('carla', 'carla')) { Dialogo.esconder(); return; }   // -50: a Carla não te atende · -25: avisa que ficou mais caro
+      Dialogo.esconder();
       const i = await cardapioUI(d.fakes);
       const sb = SABORES[i]; if (!sb) return;
-      if (d.fakes < PRECO_PIZZA) { await api.fala('carla', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
-      d.fakes -= PRECO_PIZZA; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(PRECO_PIZZA);
+      const preco = precoPizza();
+      if (d.fakes < preco) { await api.fala('carla', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      d.fakes -= preco; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(preco); if (api.papoAmizade) api.papoAmizade('carla', 1);
+      M.pagouPizza = preco;
       M.pedJog = { sabor: sb.id, mesa, fase: 'espera', t: 0, estado: 0 }; J.esperaPedido = true;
       if (mesa.grupo == null) mesa.grupo = { jogador: true, membros: [], fase: 'jogador' };
       M.tarefas.push({ tipo: 'jogador' });
@@ -846,6 +850,7 @@
       } catch (e) { console.error(e); }
       const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
     }
+    const precoPizza = () => (api.precoAmizade ? api.precoAmizade('carla', PRECO_PIZZA) : PRECO_PIZZA);   // amizade com a Carla -25 ou menos: +25%
     // o cardápio (8 sabores com a pixel art), como o do seu Valdemar
     function cardapioUI(fakes) {
       return new Promise((res) => {
@@ -862,7 +867,7 @@
           const b = document.createElement('button'); b.type = 'button'; b.dataset.i = i;
           b.style.cssText = 'flex:0 0 118px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;';
           b.appendChild(iconePizza(sb.id, 8, 72));
-          const n = document.createElement('span'); n.textContent = T(sb.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = PRECO_PIZZA + ' ' + T('fakes');
+          const n = document.createElement('span'); n.textContent = T(sb.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = precoPizza() + ' ' + T('fakes');
           b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
         });
         const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(-1);
@@ -885,11 +890,15 @@
       const s = S(), d = s.dados, dp = dadosP();
       if (!ehMeuEmprego()) {
         if (!dp.conheceu) { await api.fala('mario', T('Bem-vindo à Forno a Lenha! Senta aí que a Carla já te atende.')); dp.conheceu = true; api.gravar(d.ponto || 'chegada'); return; }
+        const ab = api.falaAmizade ? api.falaAmizade('mario') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('mario', ab.l); return; }   // -80: o Mário não perde mais tempo com você
+        if (ab && ab.l) await api.fala('mario', ab.l);
         const Q = PAPOS_MARIO[(dp.papo | 0) % PAPOS_MARIO.length]; dp.papo = (dp.papo | 0) + 1;
         await api.fala('mario', T(Q.p));
         const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);
         if (r === 2) { const re = PERSONAGEM.genero === 'F' && Q.c[1].includes('Rapaz') ? Q.c[1].replace('Rapaz', 'Menina') : Q.c[1]; await api.falaGrossa('mario', 'mario', T(Q.c[0]), T(re)); return; }   // a grosseria
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('mario', T(R[1]));
+        if (api.papoAmizade) api.papoAmizade('mario', 2);
         return;
       }
       if (!dp.apresentou) {
@@ -902,6 +911,9 @@
         dp.apresentou = true; dp.conheceu = true; api.gravar('chegada');
       }
       if (U()) { await api.fala('mario', T('Bom trabalho! O próximo pedido tá saindo.')); return; }
+      { const ab = api.falaAmizade ? api.falaAmizade('mario') : null;   // o chefe: com a amizade lá embaixo ele fala o mínimo (o turno começa pelo balcão)
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('mario', ab.l); return; }
+        if (ab && ab.l) await api.fala('mario', ab.l); }
       if (!diaDeTrabalho()) { await api.fala('mario', T('Hoje não é seu dia! Você trabalha de quinta a domingo, a partir das 17h.')); return; }
       if (folgaEncontro()) { await api.fala('mario', T('Hoje você tá de folga, lembra? Eu te liberei. Vai lá no seu encontro!')); return; }
       if (d.trabalhouHoje) { await api.fala('mario', T('Seu turno de hoje já acabou. Bom descanso!')); return; }
@@ -913,10 +925,13 @@
       const s = S(), C = M.carla, J = s.jog; if (!C) return;
       C.conversando = true; C.yawAlvo = Math.atan2(-(J.z - C.z), J.x - C.x);
       try {
-        const q = T(pk(['Oi! Tô com as mãos na massa, literalmente!', 'O segredo é o forno bem quente!', U() ? 'Corre que essa tá quentinha!' : 'Tô no forno, já já sai mais uma!']));
+        const ab = api.falaAmizade ? api.falaAmizade('carla') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('carla', ab.l); return; }   // -80: a Carla não perde mais tempo com você
+        const q = ab && ab.l ? ab.l : T(pk(['Oi! Tô com as mãos na massa, literalmente!', 'O segredo é o forno bem quente!', U() ? 'Corre que essa tá quentinha!' : 'Tô no forno, já já sai mais uma!']));
         await api.fala('carla', q);
         const r = await Escolha.mostrar(q, [T('Valeu, Carla!'), T('Fala menos e faz a pizza mais rápido.')]);   // a grosseria
         if (r === 1) await api.falaGrossa('carla', 'carla', T('Fala menos e faz a pizza mais rápido.'), T('Nossa... tá bom, chefe. Nem precisava disso.'));
+        else if (api.papoAmizade) api.papoAmizade('carla', 2);
       }
       finally { if (M.carla) M.carla.conversando = false; Dialogo.esconder(); }
     }

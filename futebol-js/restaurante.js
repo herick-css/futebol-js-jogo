@@ -722,14 +722,14 @@
           const t = document.createElement('div'); t.style.cssText = 'font:700 11px/1 var(--font-display);letter-spacing:.1em;color:#9fe3a8;text-transform:uppercase;margin-top:2px;'; t.textContent = T(tit); card.appendChild(t);
           const grade = document.createElement('div'); grade.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px;';
           PRATOS.filter(f).forEach((p) => {
-            const b = document.createElement('button'); b.type = 'button'; b.dataset.id = p.id; const pode = fakes >= p.preco;
+            const b = document.createElement('button'); b.type = 'button'; b.dataset.id = p.id; const pode = fakes >= precoR(p);
             b.style.cssText = 'display:flex;flex-direction:column;gap:3px;align-items:center;padding:7px 4px;background:#21402b;border:3px solid ' + (p.saude > 0 ? '#4a8a3a' : p.tipo === 'sobremesa' ? '#c8708e' : '#c8883a') + ';color:#eef6e2;cursor:pointer;font:700 10.5px/1.2 var(--font-display);text-align:center;opacity:' + (pode ? 1 : 0.55) + ';';
             b.appendChild(iconePrato(p.id, 64));
             const n = document.createElement('span'); n.textContent = T(p.nome);
             const etq = document.createElement('span'); const sau = p.saude > 0, doce = p.tipo === 'sobremesa' && !sau;
             etq.style.cssText = 'font:600 9.5px/1 var(--font-body);padding:2px 5px;background:' + (sau ? '#2f6a2a' : doce ? '#8a3a5a' : '#8a5a1a') + ';';
             etq.textContent = sau ? T('Saudável') : doce ? T('Doce') : T('Pesado');
-            const pr = document.createElement('span'); pr.style.color = '#f2c230'; pr.textContent = p.preco + ' ' + T('fakes');
+            const pr = document.createElement('span'); pr.style.color = '#f2c230'; pr.textContent = precoR(p) + ' ' + T('fakes');
             b.append(n, etq, pr); b.onclick = () => fim(p.id); grade.appendChild(b);
           });
           card.appendChild(grade);
@@ -738,11 +738,15 @@
         card.appendChild(nada); el.appendChild(card); (document.getElementById('raizJogo') || document.body).appendChild(el);
       });
     }
+    // amizade: a comida é da Dona Cida e quem cobra é o Renan; vale a pior das duas (-25 ou menos: +25% · -50 ou menos: não atendem)
+    const piorR = () => { const A = api.Amizade; return A && A.valor('cida') < A.valor('renan') ? 'cida' : 'renan'; };
+    const precoR = (p) => (api.precoAmizade ? api.precoAmizade(piorR(), p.preco) : p.preco);
     async function escolher(filtro) {
       const s = S(), d = s.dados; if (M.servindo) return;
+      if (api.checarAtendimento) { const q = piorR(); if (await api.checarAtendimento(q, q)) { Dialogo.esconder(); return; } Dialogo.esconder(); }
       const id = await cardapioUI(d.fakes, filtro); if (!id) return;
       const p = PRATO[id];
-      if (d.fakes < p.preco) { if (M.renan) { await api.fala('renan', T('Ih... com esse dinheiro não dá esse prato, hein?')); Dialogo.esconder(); } return; }
+      if (d.fakes < precoR(p)) { if (M.renan) { await api.fala('renan', T('Ih... com esse dinheiro não dá esse prato, hein?')); Dialogo.esconder(); } return; }
       await servir(p);
     }
     // ================================================================ A CENA DO JOGADOR: pega o prato → serve-se → senta → come → paga
@@ -781,10 +785,10 @@
         if (M.renan) {
           M.jogPagando = true; tickFila();
           await andarJog(D.pagar.x, D.pagar.z, 2.4);   // (7.1.6) 1,5x mais rápido e pelo caminho dos corredores (as cadeiras entram na navegação) J.yawAlvo = 0; await api.esperar(300);
-          pose(M.renan, 'cobra'); await api.fala('renan', Tf('{0}: {1} fakes.', T(p.nome), p.preco));
-          d.fakes = Math.max(0, d.fakes - p.preco); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(p.preco);
+          pose(M.renan, 'cobra'); await api.fala('renan', Tf('{0}: {1} fakes.', T(p.nome), precoR(p)));
+          const pr = precoR(p); d.fakes = Math.max(0, d.fakes - pr); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(pr); if (api.papoAmizade) { api.papoAmizade('renan', 1); api.papoAmizade('cida', 1); }
           pose(M.renan, 'balcao'); await api.fala('renan', T('Obrigado! Volte sempre!')); Dialogo.esconder();
-        } else { d.fakes = Math.max(0, d.fakes - p.preco); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(p.preco); }
+        } else { const pr = precoR(p); d.fakes = Math.max(0, d.fakes - pr); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(pr); }
         const dr = dadosR(); dr.pratos = dr.pratos || {}; dr.pratos[p.id] = (dr.pratos[p.id] | 0) + 1; api.gravar(d.ponto || 'chegada');
       } catch (e) { console.error('[Restaurante] servir:', e); }
       finally {
@@ -839,11 +843,15 @@
           await api.fala('renan', T('A comida é toda da Dona Cida. Ela chega às nove pra deixar tudo pronto antes de abrir.'));
           dr.conheceu = true; api.gravar(s.dados.ponto || 'chegada'); return;
         }
+        const ab = api.falaAmizade ? api.falaAmizade('renan') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('renan', ab.l); return; }   // -80: o Renan não perde mais tempo com você
+        if (ab && ab.l) await api.fala('renan', ab.l);
         const Q = PAPOS_RENAN[(dr.papoR | 0) % PAPOS_RENAN.length]; dr.papoR = (dr.papoR | 0) + 1;
         await api.fala('renan', T(Q.p));
         const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);
         if (r === 2) { await api.falaGrossa('renan', 'renan', T(Q.c[0]), T(Q.c[1])); return; }   // a grosseria
         const Rr = r === 1 ? Q.b : Q.a; await api.fala('jog', T(Rr[0])); await api.fala('renan', T(Rr[1]));
+        if (api.papoAmizade) api.papoAmizade('renan', 2);
       } finally { if (M.renan && M.D) M.renan.yawAlvo = M.D.caixa.yaw; Dialogo.esconder(); }
     }
     async function falarComCida() {
@@ -851,9 +859,12 @@
       const K = M.cozinha; if (K) K.t = -99;                            // ela espera a conversa acabar para voltar
       const ant = K ? K.fase : null; if (K) K.fase = 'conversa';
       try {
-        const q = T(pk(['Olha a comida quentinha saindo!', 'Tem salada fresquinha, viu? Faz bem pra quem joga bola!', 'Hoje a lasanha tá daquele jeito, hein!']));
+        const ab = api.falaAmizade ? api.falaAmizade('cida') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cida', ab.l); return; }   // -80: a Dona Cida não perde mais tempo com você
+        const q = ab && ab.l ? ab.l : T(pk(['Olha a comida quentinha saindo!', 'Tem salada fresquinha, viu? Faz bem pra quem joga bola!', 'Hoje a lasanha tá daquele jeito, hein!']));
         await api.fala('cida', q);
         const r = await Escolha.mostrar(q, [T('Valeu, Dona Cida!'), T('Anda logo, a cuba do arroz tá vazia.')]);
+        if (r === 0 && api.papoAmizade) api.papoAmizade('cida', 2);
         if (r === 1) await api.falaGrossa('cida', 'cida', T('Anda logo, a cuba do arroz tá vazia.'), fem() ? T('Ô, minha filha... calma que eu só tenho duas mãos.') : T('Ô, meu filho... calma que eu só tenho duas mãos.'));
       } finally { if (K && K.fase === 'conversa') { K.fase = ant === 'poe' ? 'poe' : ant; K.t = 1.0; } Dialogo.esconder(); }
     }

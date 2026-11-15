@@ -223,10 +223,11 @@
     // os cortes à venda: { i (índice na lista do jogo), nome, preco, especial }
     // CABELO e BARBA com a mesma lógica: a lista do jogo, os preços especiais e a lista do que já é dele (pelo nome)
     //   padroes: os do criador (PRECO_PADRAO) · especiais: os cosméticos (preço da tabela; fora dela, PRECO_ESPECIAL) · meus: os que já são dele
+    const precoT = (v) => (api.precoAmizade ? api.precoAmizade('toninho', v) : v);   // amizade com o Toninho -25 ou menos: +25%
     const tipoDe = (lista, tabela, donos) => {
-      const padroes = () => lista().map((c, i) => ({ i, nome: c.nome, preco: PRECO_PADRAO })).filter((c) => !lista()[c.i].cosmetico);
+      const padroes = () => lista().map((c, i) => ({ i, nome: c.nome, preco: precoT(PRECO_PADRAO) })).filter((c) => !lista()[c.i].cosmetico);
       const especiais = () => lista().map((c, i) => ({ i, nome: c.nome })).filter((c) => lista()[c.i].cosmetico)
-        .map((c) => { const t = tabela.find((x) => x.nome === c.nome); return Object.assign(c, { preco: t ? t.preco : PRECO_ESPECIAL, ord: t ? tabela.indexOf(t) : 99 }); }).sort((a, b) => a.ord - b.ord);
+        .map((c) => { const t = tabela.find((x) => x.nome === c.nome); return Object.assign(c, { preco: precoT(t ? t.preco : PRECO_ESPECIAL), ord: t ? tabela.indexOf(t) : 99 }); }).sort((a, b) => a.ord - b.ord);
       return { padroes, especiais, donos, meus: () => padroes().concat(especiais()).filter((c) => donos().includes(c.nome)), nome: (i) => (lista()[i] ? lista()[i].nome : '') };
     };
     const TIPOS = {
@@ -306,7 +307,12 @@
           await api.fala('toninho', T_('Fala, chefe! Bem-vindo à Barbearia do Toninho.'));
           await api.fala('toninho', T_('Aqui a navalha é afiada e o papo é de graça.'));
           b.conheceu = true;
-        } else await api.fala('toninho', T_(pk(['Opa! Senta aí que hoje tem corte bom.', 'Voltou! Vai dar um tapa no visual?', 'Chega mais, a cadeira tá livre!'])));
+        } else {
+          const ab = api.falaAmizade ? api.falaAmizade('toninho') : null;
+          if (ab && ab.est === 'corte') { if (ab.l) await api.fala('toninho', ab.l); Dialogo.esconder(); return; }   // -80: o Toninho não perde mais tempo com você
+          await api.fala('toninho', ab && ab.l ? ab.l : T_(pk(['Opa! Senta aí que hoje tem corte bom.', 'Voltou! Vai dar um tapa no visual?', 'Chega mais, a cadeira tá livre!'])));
+          if (api.checarAtendimento && await api.checarAtendimento('toninho', 'toninho')) { Dialogo.esconder(); return; }   // -50: não corta mais o seu cabelo
+        }
         const q = T_('Senta aí que a gente escolhe com calma.');
         await api.fala('toninho', q);
         const rg = await Escolha.mostrar(q, [T_('Bora!'), T_('Espero que você corte melhor do que fala.'), T_('Agora não')]);   // a grosseria (−5 e arrogância)
@@ -330,7 +336,7 @@
         // paga o que ainda não era dele; o visual de antes volta para a cena (o novo só entra na 3ª parte)
         let total = 0;
         for (const k of ['cabelo', 'barba']) { const c = sel[k]; if (c && c.i !== antes[k] && !TIPOS[k].donos().includes(c.nome)) { total += c.preco; TIPOS[k].donos().push(c.nome); } }
-        if (total > 0) { const d = s.dados; d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(total); }
+        if (total > 0) { const d = s.dados; d.fakes -= total; if (d.devInfinito && d.fakes < 0) d.fakes = 0; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(total); if (api.papoAmizade) api.papoAmizade('toninho', 2); }
         fecharPainel();
         await api.fala('toninho', T_('Fechou! Bora pro trampo.')); Dialogo.esconder();
         const depois = { cabelo: sel.cabelo ? sel.cabelo.i : antes.cabelo, barba: sel.barba ? sel.barba.i : antes.barba };

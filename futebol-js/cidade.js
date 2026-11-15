@@ -779,7 +779,7 @@
     'Dia e horário': ['Day and time', 'Día y hora', 'Giorno e ora', 'Jour et heure'],
     'Dia': ['Day', 'Día', 'Giorno', 'Jour'],
     'Horário': ['Time', 'Hora', 'Ora', 'Heure'],
-    'Corações (amizade, 0 a 100)': ['Hearts (friendship, 0 to 100)', 'Corazones (amistad, 0 a 100)', 'Cuori (amicizia, da 0 a 100)', 'Cœurs (amitié, de 0 à 100)'],
+    'Corações (amizade, -100 a 100)': ['Hearts (friendship, -100 to 100)', 'Corazones (amistad, -100 a 100)', 'Cuori (amicizia, da -100 a 100)', 'Cœurs (amitié, de -100 à 100)'],
     'Status e efeitos atuais': ['Current status and effects', 'Estado y efectos actuales', 'Stato ed effetti attuali', 'Statut et effets actuels'],
     'Salvar mudanças': ['Save changes', 'Guardar cambios', 'Salva modifiche', 'Enregistrer'],
     'Fechar': ['Close', 'Cerrar', 'Chiudi', 'Fermer'],
@@ -801,6 +801,135 @@
     'Atributos': ['Attributes', 'Atributos', 'Attributi', 'Attributs'],
     'Espectros (−100 a +100)': ['Spectrums (−100 to +100)', 'Espectros (−100 a +100)', 'Spettri (da −100 a +100)', 'Spectres (−100 à +100)'],
     'Use o pause da cidade para abrir de novo.': ['Use the town pause menu to open it again.', 'Usa la pausa de la ciudad para abrirlo de nuevo.', 'Usa la pausa del paese per riaprirlo.', 'Utilise la pause de la ville pour le rouvrir.'],
+  });
+  Object.assign(TRAD_CD, {                                              // a amizade (falas.js), os papos novos da Lúcia e a galera do racha (Júlia e Caio)
+    "E aí, já deu uma volta pela cidade? Qual lugar você mais gostou até agora?": ["So, have you looked around town yet? Which place have you liked the most so far?", "¿Y? ¿Ya diste una vuelta por la ciudad? ¿Qué lugar te gustó más hasta ahora?", "Allora, hai già fatto un giro in città? Quale posto ti è piaciuto di più finora?", "Alors, tu as déjà fait un tour en ville ? Quel endroit tu as préféré jusqu’ici ?"],
+    "A lanchonete do seu Valdemar.": ["Mr. Valdemar’s snack bar.", "La cafetería de don Valdemar.", "La paninoteca del signor Valdemar.", "Le snack de M. Valdemar."],
+    "O seu Valdemar reclama de tudo, mas guarda o último pão de queijo pra quem ele gosta. Se ele te guardar um, é sinal de amizade!": ["Mr. Valdemar complains about everything, but he saves the last cheese bread for people he likes. If he saves you one, that means friendship!", "Don Valdemar se queja de todo, pero guarda el último pan de queso para quien le cae bien. ¡Si te guarda uno, es señal de amistad!", "Il signor Valdemar si lamenta di tutto, ma tiene l’ultimo pão de queijo per chi gli sta simpatico. Se ne tiene uno per te, è segno di amicizia!", "M. Valdemar se plaint de tout, mais il garde le dernier pain au fromage pour ceux qu’il aime bien. S’il t’en garde un, c’est signe d’amitié !"],
+    "O lago do Sapo Cururu.": ["The Cururu Toad Lake.", "El lago del Sapo Cururú.", "Il lago del Rospo Cururu.", "Le lac du Crapaud Cururu."],
+    "Lá é lindo no fim da tarde! O seu Bené jura que tem um pirarucu gigante lá. Eu nunca vi, mas também nunca duvidei.": ["It’s beautiful there in the late afternoon! Mr. Bené swears there’s a giant pirarucu in it. I’ve never seen it, but I’ve never doubted it either.", "¡Allá es lindo al atardecer! Don Bené jura que hay un pirarucú gigante. Nunca lo vi, pero tampoco lo dudé nunca.", "È bellissimo al tramonto! Il signor Bené giura che c’è un pirarucu gigante. Non l’ho mai visto, ma non ho mai dubitato.", "C’est magnifique en fin d’après-midi ! M. Bené jure qu’il y a un pirarucu géant. Je ne l’ai jamais vu, mais je n’en ai jamais douté non plus."],
+    "O cinema do Herick.": ["Herick’s cinema.", "El cine de Herick.", "Il cinema di Herick.", "Le cinéma de Herick."],
+    "O cinema que paga a gente pra ver filme! A Joana da bilheteria é um amor, ela quer escrever roteiro, sabia?": ["The cinema that pays us to watch movies! Joana at the ticket booth is a sweetheart, she wants to write screenplays, did you know?", "¡El cine que nos paga por ver películas! Joana, la de la boletería, es un amor, quiere escribir guiones, ¿sabías?", "Il cinema che ci paga per guardare i film! Joana della biglietteria è un tesoro, vuole scrivere sceneggiature, lo sapevi?", "Le cinéma qui nous paie pour regarder des films ! Joana, à la billetterie, est adorable, elle veut écrire des scénarios, tu savais ?"],
+    "A pizzaria Forno a Lenha.": ["The Wood Oven pizzeria.", "La pizzería Horno a Leña.", "La pizzeria Forno a Legna.", "La pizzeria Feu de Bois."],
+    "A massa é receita da avó do Mário! A Carla é que faz hoje, e ela sonha em ir pra Itália.": ["The dough is Mário’s grandma’s recipe! Carla is the one who makes it now, and she dreams of going to Italy.", "¡La masa es receta de la abuela de Mário! Ahora la hace Carla, y ella sueña con ir a Italia.", "L’impasto è la ricetta della nonna di Mário! Adesso lo fa Carla, che sogna di andare in Italia.", "La pâte, c’est la recette de la grand-mère de Mário ! C’est Carla qui la fait maintenant, et elle rêve d’aller en Italie."],
+    "Nenhum. Essa cidade não tem nada.": ["None. This town has nothing.", "Ninguno. Esta ciudad no tiene nada.", "Nessuno. Questa città non ha niente.", "Aucun. Cette ville n’a rien."],
+    "Nada? Tem um monte de gente boa aqui... você só não deu chance ainda.": ["Nothing? There are lots of good people here... you just haven’t given them a chance yet.", "¿Nada? Hay un montón de gente buena aquí... solo que todavía no le diste una oportunidad.", "Niente? Qui c’è un sacco di brava gente... solo che non le hai ancora dato una possibilità.", "Rien ? Il y a plein de gens bien ici... tu ne leur as juste pas encore laissé une chance."],
+    "Você já conheceu a Rosa, do mercado? Ela sabe de tudo que acontece na cidade antes de todo mundo!": ["Have you met Rosa from the market? She knows everything that happens in town before anyone else!", "¿Ya conociste a Rosa, la del mercado? ¡Se entera de todo lo que pasa en la ciudad antes que nadie!", "Hai già conosciuto Rosa del supermercato? Sa tutto quello che succede in città prima di tutti!", "Tu as déjà rencontré Rosa, du supermarché ? Elle sait tout ce qui se passe en ville avant tout le monde !"],
+    "Já! Ela fala muito, né?": ["I have! She talks a lot, right?", "¡Sí! Habla mucho, ¿no?", "Sì! Parla tanto, eh?", "Oui ! Elle parle beaucoup, hein ?"],
+    "Fala! Mas ela é um doce. Estuda enfermagem de noite e ainda chega sorrindo no caixa.": ["She does! But she’s a sweetheart. She studies nursing at night and still shows up smiling at the register.", "¡Habla! Pero es un amor. Estudia enfermería de noche y aun así llega sonriendo a la caja.", "Parla! Ma è un tesoro. Studia infermieristica la sera e arriva comunque sorridente alla cassa.", "Oui ! Mais elle est adorable. Elle étudie pour être infirmière le soir et arrive quand même en souriant à la caisse."],
+    "Ainda não.": ["Not yet.", "Todavía no.", "Non ancora.", "Pas encore."],
+    "Passa lá! Em cinco minutos ela te conta a vida da cidade inteira, haha.": ["Stop by! In five minutes she’ll tell you the whole town’s life story, haha.", "¡Pasa por ahí! En cinco minutos te cuenta la vida de toda la ciudad, jaja.", "Passa da lei! In cinque minuti ti racconta la vita di tutta la città, haha.", "Passe la voir ! En cinq minutes, elle te raconte la vie de toute la ville, haha."],
+    "Fofoqueira desse jeito? Prefiro distância.": ["That much of a gossip? I’d rather keep my distance.", "¿Tan chismosa? Prefiero distancia.", "Così pettegola? Preferisco starle lontano.", "Aussi commère ? Je préfère garder mes distances."],
+    "Ela não é fofoqueira, ela é... bem informada. Hunf.": ["She’s not a gossip, she’s... well informed. Hmph.", "No es chismosa, es... bien informada. Hmpf.", "Non è pettegola, è... ben informata. Uff.", "Ce n’est pas une commère, elle est... bien informée. Pff."],
+    "Sabia que eu moro sozinha? Minha família ficou no interior. Às vezes bate uma saudade...": ["Did you know I live alone? My family stayed in the countryside. Sometimes I miss them...", "¿Sabías que vivo sola? Mi familia se quedó en el interior. A veces los extraño...", "Sapevi che vivo da sola? La mia famiglia è rimasta in campagna. A volte mi mancano...", "Tu savais que je vis seule ? Ma famille est restée à la campagne. Parfois, ils me manquent..."],
+    "Deve ser difícil.": ["That must be hard.", "Debe ser difícil.", "Dev’essere difficile.", "Ça doit être dur."],
+    "É... mas aí eu ligo pra minha mãe e ela me manda receita de bolo pelo telefone. Ajuda!": ["Yeah... but then I call my mom and she gives me cake recipes over the phone. It helps!", "Sí... pero llamo a mi mamá y me pasa recetas de bizcocho por teléfono. ¡Ayuda!", "Già... ma poi chiamo mia madre e mi detta ricette di torte al telefono. Aiuta!", "Oui... mais j’appelle ma mère et elle me donne des recettes de gâteau au téléphone. Ça aide !"],
+    "Você é corajosa.": ["You’re brave.", "Eres valiente.", "Sei coraggiosa.", "Tu es courageuse."],
+    "Você acha? Eu vim pra cá com uma mala e um sonho. Ainda tô construindo o resto.": ["You think so? I came here with a suitcase and a dream. I’m still building the rest.", "¿Tú crees? Vine con una maleta y un sueño. Todavía estoy construyendo el resto.", "Dici? Sono venuta qui con una valigia e un sogno. Il resto lo sto ancora costruendo.", "Tu trouves ? Je suis venue avec une valise et un rêve. Je construis encore le reste."],
+    "Ninguém mandou sair de casa.": ["Nobody told you to leave home.", "Nadie te mandó irte de casa.", "Nessuno ti ha detto di andartene di casa.", "Personne ne t’a obligée à quitter la maison."],
+    "Eu sei... mas eu quis tentar. Não precisava falar assim.": ["I know... but I wanted to try. You didn’t have to say it like that.", "Lo sé... pero quise intentarlo. No hacía falta decirlo así.", "Lo so... ma volevo provarci. Non c’era bisogno di dirlo così.", "Je sais... mais je voulais essayer. Pas besoin de le dire comme ça."],
+    "Posso te contar um sonho meu? Um dia eu quero ter a minha própria cafeteria, com o meu nome na fachada.": ["Can I tell you a dream of mine? One day I want to have my own coffee shop, with my name on the front.", "¿Te cuento un sueño mío? Un día quiero tener mi propia cafetería, con mi nombre en la fachada.", "Posso raccontarti un mio sogno? Un giorno voglio avere una caffetteria tutta mia, con il mio nome sull’insegna.", "Je peux te confier un rêve ? Un jour, je veux avoir mon propre café, avec mon nom sur la façade."],
+    "Você vai conseguir!": ["You’ll make it!", "¡Lo vas a lograr!", "Ce la farai!", "Tu vas y arriver !"],
+    "Ai, obrigada! Já até desenhei o cardápio num caderninho. Tem um café com o nome do Grão, haha.": ["Aw, thank you! I’ve even drawn the menu in a little notebook. There’s a coffee named after Grão, haha.", "¡Ay, gracias! Ya dibujé el menú en un cuadernito. Hay un café con el nombre de Grão, jaja.", "Oh, grazie! Ho già disegnato il menù su un quadernino. C’è un caffè con il nome di Grão, haha.", "Oh, merci ! J’ai même dessiné le menu dans un petit carnet. Il y a un café qui porte le nom de Grão, haha."],
+    "Qual vai ser o nome?": ["What will it be called?", "¿Cómo se va a llamar?", "Come si chiamerà?", "Comment il va s’appeler ?"],
+    "\"Café da Lúcia\" é muito óbvio, né? Tô pensando em \"Grão de Afeto\". Gostou?": ["\"Lúcia’s Café\" is too obvious, right? I’m thinking \"Bean of Affection\". Do you like it?", "\"Café de Lúcia\" es muy obvio, ¿no? Estoy pensando en \"Grano de Cariño\". ¿Te gusta?", "\"Caffè di Lúcia\" è troppo ovvio, no? Pensavo a \"Chicco d’Affetto\". Ti piace?", "« Le Café de Lúcia », c’est trop évident, non ? Je pense à « Grain de Tendresse ». Ça te plaît ?"],
+    "Com esse salário? Vai sonhando.": ["On that salary? Keep dreaming.", "¿Con ese sueldo? Sigue soñando.", "Con quello stipendio? Continua a sognare.", "Avec ce salaire ? Continue de rêver."],
+    "É por isso que se chama sonho. Mas eu vou chegar lá, você vai ver.": ["That’s why it’s called a dream. But I’ll get there, you’ll see.", "Por eso se llama sueño. Pero voy a llegar, ya vas a ver.", "Per questo si chiama sogno. Ma ci arriverò, vedrai.", "C’est pour ça qu’on appelle ça un rêve. Mais j’y arriverai, tu verras."],
+    "Domingo tem feira na praça. Você vai? Eu sempre passo lá cedinho.": ["There’s a market in the square on Sunday. Are you going? I always stop by early.", "El domingo hay feria en la plaza. ¿Vas a ir? Yo siempre paso tempranito.", "Domenica c’è il mercato in piazza. Ci vai? Io ci passo sempre presto.", "Dimanche, il y a le marché sur la place. Tu y vas ? J’y passe toujours de bonne heure."],
+    "Vou sim! O que tem de bom?": ["I will! What’s good there?", "¡Sí! ¿Qué hay de bueno?", "Sì! Cosa c’è di buono?", "Oui ! Qu’est-ce qu’il y a de bon ?"],
+    "Pastel de queijo, caldo de cana e a barraca de flores da Dona Zefa. Eu sempre levo uma margarida.": ["Cheese pastel, sugarcane juice and Mrs. Zefa’s flower stall. I always take a daisy.", "Pastel de queso, jugo de caña y el puesto de flores de doña Zefa. Siempre me llevo una margarita.", "Pastel al formaggio, succo di canna e la bancarella di fiori della signora Zefa. Prendo sempre una margherita.", "Pastel au fromage, jus de canne et le stand de fleurs de Mme Zefa. Je prends toujours une marguerite."],
+    "Eu durmo até tarde no domingo.": ["I sleep in on Sundays.", "El domingo duermo hasta tarde.", "La domenica dormo fino a tardi.", "Le dimanche, je fais la grasse matinée."],
+    "Haha, então você perde o melhor pastel! Ele acaba antes das nove.": ["Haha, then you miss the best pastel! It sells out before nine.", "¡Jaja, entonces te pierdes el mejor pastel! Se acaba antes de las nueve.", "Haha, allora ti perdi il pastel migliore! Finisce prima delle nove.", "Haha, alors tu rates le meilleur pastel ! Il n’y en a plus avant neuf heures."],
+    "Feira é coisa de velho.": ["Markets are for old people.", "La feria es cosa de viejos.", "Il mercato è roba da vecchi.", "Le marché, c’est pour les vieux."],
+    "Velho? Metade da cidade vai lá! Tudo bem, mais pastel pra mim.": ["Old? Half the town goes! That’s fine, more pastel for me.", "¿Viejos? ¡Media ciudad va! Está bien, más pastel para mí.", "Vecchi? Mezza città ci va! Va bene, più pastel per me.", "Les vieux ? La moitié de la ville y va ! Tant mieux, plus de pastel pour moi."],
+    "O Toninho, da barbearia, cortou o meu cabelo uma vez. Ficou torto, mas ele jurou que era moda!": ["Toninho from the barbershop cut my hair once. It came out crooked, but he swore it was the fashion!", "Toninho, el de la barbería, me cortó el pelo una vez. Quedó torcido, ¡pero juró que era moda!", "Toninho, il barbiere, mi ha tagliato i capelli una volta. È venuto storto, ma ha giurato che era di moda!", "Toninho, du salon de barbier, m’a coupé les cheveux une fois. C’était de travers, mais il a juré que c’était la mode !"],
+    "Haha, e era?": ["Haha, and was it?", "Jaja, ¿y lo era?", "Haha, e lo era?", "Haha, et c’était le cas ?"],
+    "Era nada! Mas ele é tão simpático que eu nem fiquei brava.": ["Not at all! But he’s so nice I didn’t even get mad.", "¡Para nada! Pero es tan simpático que ni me enojé.", "Per niente! Ma è così simpatico che non mi sono nemmeno arrabbiata.", "Pas du tout ! Mais il est tellement sympa que je ne me suis même pas fâchée."],
+    "O seu cabelo tá lindo agora.": ["Your hair looks lovely now.", "Tu pelo está precioso ahora.", "I tuoi capelli adesso sono bellissimi.", "Tes cheveux sont très jolis maintenant."],
+    "Para... assim eu fico vermelha. Mas obrigada!": ["Stop... you’re making me blush. But thank you!", "Basta... así me pongo roja. ¡Pero gracias!", "Smettila... così divento rossa. Ma grazie!", "Arrête... tu me fais rougir. Mais merci !"],
+    "Por isso que ele tá torto até hoje.": ["That’s why it’s still crooked today.", "Por eso sigue torcido hasta hoy.", "Ecco perché è ancora storto.", "C’est pour ça qu’il est encore de travers."],
+    "Ei! Não tá torto... tá? Hunf.": ["Hey! It’s not crooked... is it? Hmph.", "¡Oye! No está torcido... ¿o sí? Hmpf.", "Ehi! Non è storto... vero? Uff.", "Hé ! Ils ne sont pas de travers... si ? Pff."],
+    "Antes de trabalhar aqui eu queria ser jogadora, sabia? Joguei até os dezesseis.": ["Before working here I wanted to be a football player, did you know? I played until I was sixteen.", "Antes de trabajar aquí quería ser jugadora, ¿sabías? Jugué hasta los dieciséis.", "Prima di lavorare qui volevo fare la calciatrice, lo sapevi? Ho giocato fino ai sedici anni.", "Avant de travailler ici, je voulais être footballeuse, tu savais ? J’ai joué jusqu’à seize ans."],
+    "Por que parou?": ["Why did you stop?", "¿Por qué dejaste?", "Perché hai smesso?", "Pourquoi tu as arrêté ?"],
+    "Machuquei o tornozelo e tive que trabalhar. Mas a bola ainda mora no meu coração.": ["I hurt my ankle and had to work. But the ball still lives in my heart.", "Me lastimé el tobillo y tuve que trabajar. Pero la pelota todavía vive en mi corazón.", "Mi sono fatta male alla caviglia e ho dovuto lavorare. Ma il pallone abita ancora nel mio cuore.", "Je me suis blessée à la cheville et j’ai dû travailler. Mais le ballon vit toujours dans mon cœur."],
+    "Ainda dá tempo!": ["There’s still time!", "¡Todavía hay tiempo!", "Sei ancora in tempo!", "Il est encore temps !"],
+    "Você acha? Quem sabe eu apareço num racha qualquer dia desses...": ["You think so? Maybe I’ll show up at a pickup game one of these days...", "¿Tú crees? A lo mejor aparezco en un picadito un día de estos...", "Dici? Magari un giorno di questi mi presento a una partitella...", "Tu crois ? Peut-être que je viendrai à un match un de ces jours..."],
+    "Ainda bem que parou.": ["Good thing you stopped.", "Menos mal que dejaste.", "Meno male che hai smesso.", "Heureusement que tu as arrêté."],
+    "Nossa... você nem me viu jogar.": ["Wow... you’ve never even seen me play.", "Vaya... ni siquiera me viste jugar.", "Accidenti... non mi hai nemmeno vista giocare.", "Waouh... tu ne m’as même jamais vue jouer."],
+    "Falar com a Júlia": ["Talk to Júlia", "Hablar con Júlia", "Parla con Júlia", "Parler à Júlia"],
+    "Falar com o Caio": ["Talk to Caio", "Hablar con Caio", "Parla con Caio", "Parler à Caio"],
+    "Júlia": ["Júlia", "Júlia", "Júlia", "Júlia"],
+    "Oi! Eu sou a Júlia, jogo no time do Caio. E sou a melhor da roda, só pra você saber.": ["Hi! I’m Júlia, I play on Caio’s team. And I’m the best in the circle, just so you know.", "¡Hola! Soy Júlia, juego en el equipo de Caio. Y soy la mejor de la ronda, para que sepas.", "Ciao! Sono Júlia, gioco nella squadra di Caio. E sono la migliore del cerchio, giusto perché tu lo sappia.", "Salut ! Moi c’est Júlia, je joue dans l’équipe de Caio. Et je suis la meilleure du cercle, pour que tu saches."],
+    "Prazer, Júlia! Eu sou {0}.": ["Nice to meet you, Júlia! I’m {0}.", "¡Un gusto, Júlia! Soy {0}.", "Piacere, Júlia! Sono {0}.", "Enchanté, Júlia ! Moi, c’est {0}."],
+    "Melhor da roda? Quero ver isso.": ["Best in the circle? I want to see that.", "¿La mejor de la ronda? Quiero ver eso.", "La migliore del cerchio? Voglio vederlo.", "La meilleure du cercle ? Je veux voir ça."],
+    "Tá, tá. Sai da frente que eu quero passar.": ["Yeah, yeah. Get out of the way, I want to get through.", "Sí, sí. Sal del medio que quiero pasar.", "Sì, sì. Togliti di mezzo che devo passare.", "Ouais, ouais. Pousse-toi, je veux passer."],
+    "Prazer, {0}! Aparece no racha, que eu te mostro como se joga.": ["Nice to meet you, {0}! Come to the pickup game and I’ll show you how it’s played.", "¡Un gusto, {0}! Ven al picadito que te muestro cómo se juega.", "Piacere, {0}! Vieni alla partitella che ti faccio vedere come si gioca.", "Enchantée, {0} ! Viens au match, je te montrerai comment on joue."],
+    "Vai ver no jogo. E não chora depois, hein.": ["You’ll see in the game. And don’t cry afterwards, okay?", "Vas a ver en el partido. Y después no llores, ¿eh?", "Lo vedrai in partita. E poi non piangere, eh.", "Tu verras pendant le match. Et ne pleure pas après, hein."],
+    "Nossa, que simpatia. Passa, então.": ["Wow, how charming. Go ahead, then.", "Vaya, qué simpatía. Pasa, entonces.", "Wow, che simpatia. Passa, allora.", "Waouh, quelle amabilité. Passe, alors."],
+    "Ei, você chegou faz pouco tempo, né? Já descobriu onde a galera se encontra depois do racha?": ["Hey, you got here not long ago, right? Have you figured out where everyone hangs out after the game?", "Ey, llegaste hace poco, ¿no? ¿Ya descubriste dónde se junta la banda después del picadito?", "Ehi, sei arrivato da poco, vero? Hai già scoperto dove si ritrovano tutti dopo la partitella?", "Hé, tu es arrivé il y a peu, non ? Tu sais déjà où tout le monde se retrouve après le match ?"],
+    "Na pizzaria?": ["At the pizzeria?", "¿En la pizzería?", "In pizzeria?", "À la pizzeria ?"],
+    "Isso! O Caio sempre pede a de calabresa e reclama que eu como mais que ele. Eu como mesmo.": ["That’s it! Caio always orders the calabresa and complains that I eat more than him. I do.", "¡Eso! Caio siempre pide la de calabresa y se queja de que yo como más que él. Y sí, como más.", "Esatto! Caio ordina sempre quella alla calabrese e si lamenta che mangio più di lui. E infatti è vero.", "C’est ça ! Caio commande toujours la calabresa et se plaint que je mange plus que lui. C’est vrai."],
+    "No bar do Jairo?": ["At Jairo’s bar?", "¿En el bar de Jairo?", "Al bar di Jairo?", "Au bar de Jairo ?"],
+    "Às vezes! O Jairo provoca todo mundo por causa de time. Comigo ele não ganha uma discussão.": ["Sometimes! Jairo teases everyone about their team. With me he never wins an argument.", "¡A veces! Jairo provoca a todos por el equipo. Conmigo no gana ni una discusión.", "A volte! Jairo provoca tutti per la squadra. Con me non vince mai una discussione.", "Parfois ! Jairo taquine tout le monde sur leur équipe. Avec moi, il ne gagne jamais une dispute."],
+    "No lago?": ["At the lake?", "¿En el lago?", "Al lago?", "Au lac ?"],
+    "O lago é meu lugar de correr. Dez voltas no domingo. A Fernanda da academia vai junto e quase me mata, haha.": ["The lake is where I run. Ten laps on Sunday. Fernanda from the gym comes along and almost kills me, haha.", "El lago es mi lugar para correr. Diez vueltas el domingo. Fernanda, la del gimnasio, viene conmigo y casi me mata, jaja.", "Il lago è il mio posto per correre. Dieci giri la domenica. Fernanda della palestra viene con me e quasi mi uccide, haha.", "Le lac, c’est là où je cours. Dix tours le dimanche. Fernanda, de la salle, vient avec moi et me tue presque, haha."],
+    "Não quero saber de sair com vocês.": ["I don’t want anything to do with hanging out with you guys.", "No quiero saber nada de salir con ustedes.", "Non voglio saperne di uscire con voi.", "Je ne veux pas sortir avec vous."],
+    "Beleza. Mas não reclama quando ninguém te passar a bola.": ["Fine. But don’t complain when nobody passes you the ball.", "Bueno. Pero no te quejes cuando nadie te pase la pelota.", "Va bene. Ma non lamentarti quando nessuno ti passa la palla.", "D’accord. Mais ne te plains pas quand personne ne te passera le ballon."],
+    "Você já reparou que o João fala sem parar no racha? Ele narra o próprio lance!": ["Have you noticed João talks nonstop during the game? He narrates his own plays!", "¿Te diste cuenta de que João habla sin parar en el picadito? ¡Narra su propia jugada!", "Hai notato che João parla senza sosta durante la partitella? Fa la telecronaca delle sue azioni!", "Tu as remarqué que João parle sans arrêt pendant le match ? Il commente ses propres actions !"],
+    "Haha, ele é demais!": ["Haha, he’s awesome!", "¡Jaja, es lo más!", "Haha, è un mito!", "Haha, il est génial !"],
+    "É o melhor amigo de todo mundo. Mas se ele narrar meu drible errado de novo, eu juro que...": ["He’s everyone’s best friend. But if he narrates my dribble wrong one more time, I swear...", "Es el mejor amigo de todos. Pero si vuelve a narrar mal mi gambeta, te juro que...", "È il migliore amico di tutti. Ma se racconta di nuovo male il mio dribbling, giuro che...", "C’est le meilleur ami de tout le monde. Mais s’il commente encore mal mon dribble, je te jure que..."],
+    "O Caio também fala bastante.": ["Caio talks a lot too.", "Caio también habla bastante.", "Anche Caio parla parecchio.", "Caio aussi parle beaucoup."],
+    "O Caio fala, mas organiza tudo. Sem ele não tinha racha. Só não conta que eu elogiei.": ["Caio talks, but he organizes everything. Without him there’d be no game. Just don’t tell him I praised him.", "Caio habla, pero organiza todo. Sin él no habría picadito. Solo no le cuentes que lo elogié.", "Caio parla, ma organizza tutto. Senza di lui non ci sarebbe la partitella. Solo non dirgli che l’ho lodato.", "Caio parle, mais il organise tout. Sans lui, il n’y aurait pas de match. Ne lui dis pas que je l’ai complimenté."],
+    "Vocês todos falam demais.": ["You all talk too much.", "Todos ustedes hablan demasiado.", "Parlate tutti troppo.", "Vous parlez tous trop."],
+    "E você fala de menos e joga de menos. Empate.": ["And you talk too little and play too little. A draw.", "Y tú hablas poco y juegas poco. Empate.", "E tu parli poco e giochi poco. Pareggio.", "Et toi, tu parles peu et tu joues peu. Match nul."],
+    "Eu moro com a minha avó. Ela vê todo racha da janela e no fim me diz tudo que eu errei.": ["I live with my grandma. She watches every game from the window and afterwards tells me everything I did wrong.", "Vivo con mi abuela. Mira todos los picaditos desde la ventana y al final me dice todo lo que hice mal.", "Vivo con mia nonna. Guarda ogni partitella dalla finestra e alla fine mi dice tutto quello che ho sbagliato.", "J’habite avec ma grand-mère. Elle regarde chaque match depuis la fenêtre et à la fin, elle me dit tout ce que j’ai raté."],
+    "Ela entende de futebol?": ["Does she know football?", "¿Ella entiende de fútbol?", "Se ne intende di calcio?", "Elle s’y connaît en foot ?"],
+    "Mais que muito técnico! Ela jogava descalça no campinho quando era menina.": ["More than a lot of coaches! She played barefoot on the little pitch when she was a girl.", "¡Más que muchos técnicos! Jugaba descalza en la canchita cuando era chica.", "Più di tanti allenatori! Giocava scalza nel campetto quando era bambina.", "Plus que beaucoup d’entraîneurs ! Elle jouait pieds nus sur le petit terrain quand elle était petite."],
+    "Que avó incrível.": ["What an amazing grandma.", "Qué abuela increíble.", "Che nonna incredibile.", "Quelle grand-mère incroyable."],
+    "É a melhor. Ela que pagou minha primeira chuteira, vendendo bolo de puba.": ["She’s the best. She paid for my first football boots by selling cassava cake.", "Es la mejor. Ella pagó mis primeros botines vendiendo bizcocho de mandioca.", "È la migliore. Mi ha pagato le prime scarpe da calcio vendendo torte di manioca.", "C’est la meilleure. C’est elle qui m’a payé mes premiers crampons en vendant des gâteaux de manioc."],
+    "Que vergonha, sua avó te vigiando.": ["How embarrassing, your grandma watching you.", "Qué vergüenza, tu abuela vigilándote.", "Che vergogna, tua nonna che ti controlla.", "La honte, ta grand-mère qui te surveille."],
+    "Vergonha nenhuma. Pena que ninguém te assiste.": ["No shame at all. Too bad nobody watches you.", "Ninguna vergüenza. Lástima que nadie te mire a ti.", "Nessuna vergogna. Peccato che nessuno guardi te.", "Aucune honte. Dommage que personne ne te regarde, toi."],
+    "Sabe qual é o meu sonho? Jogar num time grande. E depois abrir uma escolinha só pra meninas aqui na cidade.": ["Know what my dream is? To play for a big team. And then open a football school just for girls here in town.", "¿Sabes cuál es mi sueño? Jugar en un equipo grande. Y después abrir una escuelita solo para chicas aquí en la ciudad.", "Sai qual è il mio sogno? Giocare in una grande squadra. E poi aprire una scuola calcio solo per ragazze qui in città.", "Tu sais quel est mon rêve ? Jouer dans un grand club. Et ensuite ouvrir une école de foot rien que pour les filles ici, en ville."],
+    "Vou mesmo. E quando eu conseguir, a primeira turma vai treinar no sintético, igual eu.": ["I really will. And when I do, the first class will train on the artificial pitch, just like I did.", "Seguro que sí. Y cuando lo logre, el primer grupo va a entrenar en el sintético, igual que yo.", "Proprio così. E quando ce la farò, la prima classe si allenerà sul sintetico, come me.", "Oh que oui. Et quand j’y arriverai, la première classe s’entraînera sur le synthétique, comme moi."],
+    "Por que só pra meninas?": ["Why just for girls?", "¿Por qué solo para chicas?", "Perché solo per ragazze?", "Pourquoi seulement pour les filles ?"],
+    "Porque quando eu era pequena, os meninos não me deixavam jogar. Eu quero que nenhuma menina passe por isso.": ["Because when I was little, the boys wouldn’t let me play. I want no girl to go through that.", "Porque cuando era chica, los chicos no me dejaban jugar. Quiero que ninguna chica pase por eso.", "Perché quando ero piccola i ragazzi non mi lasciavano giocare. Voglio che nessuna ragazza passi questo.", "Parce que quand j’étais petite, les garçons ne me laissaient pas jouer. Je veux qu’aucune fille ne vive ça."],
+    "Futebol feminino não dá dinheiro.": ["Women’s football doesn’t make money.", "El fútbol femenino no da plata.", "Il calcio femminile non fa soldi.", "Le foot féminin, ça ne rapporte rien."],
+    "Ainda. E você vai ver quem vai mudar isso.": ["Yet. And you’ll see who’s going to change that.", "Todavía. Y vas a ver quién va a cambiar eso.", "Ancora. E vedrai chi lo cambierà.", "Pas encore. Et tu verras qui va changer ça."],
+    "Hoje eu tive prova de anatomia na faculdade de Educação Física. Acho que fui bem!": ["I had an anatomy exam today in my Physical Education course. I think I did well!", "Hoy tuve examen de anatomía en la facultad de Educación Física. ¡Creo que me fue bien!", "Oggi ho avuto l’esame di anatomia a Scienze Motorie. Credo di essere andata bene!", "J’ai eu un examen d’anatomie aujourd’hui à la fac de sport. Je crois que j’ai réussi !"],
+    "Que bom! Qual é a matéria mais difícil?": ["Nice! What’s the hardest subject?", "¡Qué bien! ¿Cuál es la materia más difícil?", "Bene! Qual è la materia più difficile?", "Super ! C’est quoi la matière la plus dure ?"],
+    "Fisiologia! Mas o Diego da academia me empresta os resumos de fisioterapia. Ajuda demais.": ["Physiology! But Diego from the gym lends me his physiotherapy notes. They help a ton.", "¡Fisiología! Pero Diego, el del gimnasio, me presta sus resúmenes de fisioterapia. Ayudan muchísimo.", "Fisiologia! Ma Diego della palestra mi presta i suoi riassunti di fisioterapia. Aiutano tantissimo.", "La physiologie ! Mais Diego, de la salle, me prête ses fiches de kiné. Ça aide énormément."],
+    "Você estuda e joga? Que pique!": ["You study and play? What energy!", "¿Estudias y juegas? ¡Qué energía!", "Studi e giochi? Che energia!", "Tu étudies et tu joues ? Quelle énergie !"],
+    "Durmo pouco e como muito, haha. É o segredo.": ["I sleep little and eat a lot, haha. That’s the secret.", "Duermo poco y como mucho, jaja. Es el secreto.", "Dormo poco e mangio tanto, haha. È il segreto.", "Je dors peu et je mange beaucoup, haha. C’est le secret."],
+    "Educação Física? Isso é faculdade?": ["Physical Education? Is that even a degree?", "¿Educación Física? ¿Eso es carrera?", "Scienze Motorie? Quella è una laurea?", "Le sport ? C’est des études, ça ?"],
+    "É sim. E dá mais trabalho do que você imagina.": ["It is. And it’s more work than you think.", "Sí, lo es. Y da más trabajo de lo que te imaginas.", "Sì. Ed è più impegnativa di quanto immagini.", "Oui. Et c’est plus de travail que tu ne l’imagines."],
+    "Tô pensando em fazer um torneio no sintético. Com tabela, troféu e tudo. Você jogaria?": ["I’m thinking of organizing a tournament on the artificial pitch. With standings, a trophy and everything. Would you play?", "Estoy pensando en hacer un torneo en el sintético. Con tabla, trofeo y todo. ¿Jugarías?", "Sto pensando di organizzare un torneo sul sintetico. Con classifica, trofeo e tutto. Giocheresti?", "Je pense organiser un tournoi sur le synthétique. Avec classement, trophée et tout. Tu jouerais ?"],
+    "Com certeza!": ["Definitely!", "¡Seguro!", "Certo!", "Carrément !"],
+    "Aí sim! Vou falar com o João pra ver os times. Você já tá na lista.": ["That’s what I like to hear! I’ll talk to João about the teams. You’re already on the list.", "¡Así sí! Voy a hablar con João para ver los equipos. Ya estás en la lista.", "Così mi piace! Parlo con João per le squadre. Sei già nella lista.", "Ça, c’est parlé ! Je vais voir avec João pour les équipes. Tu es déjà sur la liste."],
+    "Quem ia participar?": ["Who would take part?", "¿Quién participaría?", "Chi parteciperebbe?", "Qui participerait ?"],
+    "O nosso time, o do João, o pessoal da quadra do Biel... dá uns seis times fácil.": ["Our team, João’s, Biel’s court crew... that’s easily six teams.", "Nuestro equipo, el de João, la banda de la cancha de Biel... salen unos seis equipos fácil.", "La nostra squadra, quella di João, quelli del campetto di Biel... sei squadre facili.", "Notre équipe, celle de João, la bande du terrain de Biel... ça fait six équipes facilement."],
+    "Torneio de racha? Que coisa amadora.": ["A pickup game tournament? How amateur.", "¿Torneo de picadito? Qué cosa amateur.", "Un torneo di partitelle? Che roba da dilettanti.", "Un tournoi de matchs entre potes ? C’est amateur."],
+    "Amadora é sua educação. Mas beleza.": ["The only amateur thing here is your manners. But fine.", "Lo amateur es tu educación. Pero bueno.", "Da dilettanti è la tua educazione. Ma va bene.", "C’est ta politesse qui est amateur. Mais bon."],
+    "Hoje eu fiz quarenta entregas de moto. Conheço cada rua dessa cidade, até as sem nome.": ["I did forty deliveries on my bike today. I know every street in this town, even the nameless ones.", "Hoy hice cuarenta repartos en moto. Conozco cada calle de esta ciudad, hasta las que no tienen nombre.", "Oggi ho fatto quaranta consegne in moto. Conosco ogni strada di questa città, anche quelle senza nome.", "J’ai fait quarante livraisons en moto aujourd’hui. Je connais chaque rue de cette ville, même celles sans nom."],
+    "Qual a rua mais difícil?": ["Which street is the hardest?", "¿Cuál es la calle más difícil?", "Qual è la strada più difficile?", "Quelle est la rue la plus difficile ?"],
+    "A ladeira atrás do mercado! No dia de chuva parece sabão.": ["The slope behind the market! On rainy days it’s like soap.", "¡La subida detrás del mercado! Los días de lluvia parece jabón.", "La salita dietro il supermercato! Quando piove sembra sapone.", "La pente derrière le supermarché ! Les jours de pluie, on dirait du savon."],
+    "Deve ser cansativo.": ["That must be tiring.", "Debe ser cansador.", "Dev’essere stancante.", "Ça doit être fatigant."],
+    "É, mas no fim do dia tem racha. Aí passa tudo.": ["Yeah, but at the end of the day there’s the game. Then it all goes away.", "Sí, pero al final del día hay picadito. Ahí se pasa todo.", "Sì, ma alla fine della giornata c’è la partitella. Allora passa tutto.", "Oui, mais en fin de journée, il y a le match. Alors tout passe."],
+    "Motoboy, né? Bem que eu desconfiei pela pressa.": ["A delivery rider, huh? I figured from the rush.", "Motoboy, ¿eh? Ya me lo imaginaba por el apuro.", "Fattorino in moto, eh? L’avevo capito dalla fretta.", "Livreur en moto, hein ? Je m’en doutais, vu la hâte."],
+    "Pressa paga as minhas contas. E as suas pizzas.": ["Rushing pays my bills. And your pizzas.", "El apuro paga mis cuentas. Y tus pizzas.", "La fretta paga le mie bollette. E le tue pizze.", "La hâte paie mes factures. Et tes pizzas."],
+    "A Júlia é a melhor do nosso time. Não fala pra ela que eu disse, senão ela não para de se achar.": ["Júlia is the best on our team. Don’t tell her I said so, or she’ll never stop showing off.", "Júlia es la mejor de nuestro equipo. No le digas que lo dije, si no no para de creérsela.", "Júlia è la migliore della nostra squadra. Non dirle che l’ho detto, sennò non smette più di tirarsela.", "Júlia est la meilleure de notre équipe. Ne lui dis pas que je l’ai dit, sinon elle n’arrêtera plus de frimer."],
+    "Ela joga muito mesmo.": ["She really plays great.", "Juega muchísimo.", "Gioca davvero benissimo.", "Elle joue vraiment super bien."],
+    "Joga! Já tomei cada caneta dela que nem gosto de lembrar.": ["She does! She’s nutmegged me so many times I’d rather not remember.", "¡Juega! Me hizo cada caño que ni me gusta acordarme.", "Eccome! Mi ha fatto certi tunnel che preferisco non ricordare.", "Oh oui ! Elle m’a fait des petits ponts dont je préfère ne pas me souvenir."],
+    "E você é o quê, o segundo?": ["And what are you, second best?", "¿Y tú qué eres, el segundo?", "E tu cosa sei, il secondo?", "Et toi, tu es quoi, le deuxième ?"],
+    "Eu sou o organizador. Quem organiza não precisa ser o melhor, haha.": ["I’m the organizer. The organizer doesn’t need to be the best, haha.", "Yo soy el organizador. Quien organiza no necesita ser el mejor, jaja.", "Io sono l’organizzatore. Chi organizza non deve essere il migliore, haha.", "Moi, je suis l’organisateur. Celui qui organise n’a pas besoin d’être le meilleur, haha."],
+    "Duvido. Ela não é tudo isso.": ["I doubt it. She’s not all that.", "Lo dudo. No es para tanto.", "Ne dubito. Non è poi così brava.", "J’en doute. Elle n’est pas si forte."],
+    "Fala isso pra ela na roda. Quero ver.": ["Say that to her face in the circle. I want to see it.", "Díselo a ella en la ronda. Quiero ver.", "Diglielo in faccia nel cerchio. Voglio vedere.", "Dis-lui ça dans le cercle. Je veux voir."],
+    "E aí! Eu sou o Caio, eu organizo o racha aqui. Fala com o João ali na entrada, que hoje tem jogo!": ["Hey! I’m Caio, I organize the pickup game here. Talk to João over at the entrance, there’s a game today!", "¡Qué tal! Soy Caio, organizo el picadito aquí. Habla con João ahí en la entrada, ¡que hoy hay partido!", "Ehi! Sono Caio, organizzo la partitella qui. Parla con João lì all’ingresso, oggi si gioca!", "Salut ! Moi c’est Caio, j’organise le match ici. Parle à João à l’entrée, il y a match aujourd’hui !"],
+    "Seu Damião": ["Mr. Damião", "Don Damião", "Signor Damião", "M. Damião"],
+    "Seu Bené": ["Mr. Bené", "Don Bené", "Signor Bené", "M. Bené"],
+    "Hm. Tá bom, então.": ["Hm. Fine, then.", "Hm. Está bien, entonces.", "Mh. Va bene, allora.", "Hm. D’accord, alors."],
+    "Jogo acabou. Até.": ["Game’s over. Bye.", "Se terminó el partido. Chau.", "La partita è finita. Ciao.", "Le match est fini. Salut."],
+    "Vai querer o quê?": ["What do you want?", "¿Qué vas a querer?", "Cosa prendi?", "Tu veux quoi ?"],
+    "O que você quer?": ["What do you want?", "¿Qué quieres?", "Cosa vuoi?", "Qu’est-ce que tu veux ?"],
   });
   for (const k of Object.keys(TRAD_CD)) if (!I18N[k]) I18N[k] = TRAD_CD[k];
   // a Lúcia e o Cadu se apresentam para quem nunca os viu · as grosserias (Lúcia, João, Biel, seu Valdemar)
@@ -981,6 +1110,9 @@
     'Ruins, é? Então fica aí de fora, tranquilo.': [null, '¿Malos, eh? Entonces quédate afuera, tranquila.', 'Scarsi, eh? Allora resta fuori, tranquilla.', null],
     'Ih, chegou azedo, hein, chefe? Senta aí que eu te dou um trato mesmo assim.': [null, 'Uy, llegaste amargada, ¿eh, jefa? Siéntate que igual te dejo bien.', 'Eh, arrivi acida, eh, capo? Siediti che ti sistemo lo stesso.', null],
     'Lago sujo desse, nem sei por que eu vim.': [null, null, 'Un lago così sporco, non so nemmeno perché sono venuta.', 'Un lac aussi sale, je sais même pas pourquoi je suis venue.'],
+    'Ei, você chegou faz pouco tempo, né? Já descobriu onde a galera se encontra depois do racha?': [null, null, 'Ehi, sei arrivata da poco, vero? Hai già scoperto dove si ritrovano tutti dopo la partitella?', 'Hé, tu es arrivée il y a peu, non ? Tu sais déjà où tout le monde se retrouve après le match ?'],
+    'Prazer, Júlia! Eu sou {0}.': [null, null, null, 'Enchantée, Júlia ! Moi, c’est {0}.'],
+    'Prazer, Rosa! Eu sou {0}.': [null, null, null, 'Enchantée, Rosa ! Moi, c’est {0}.'],
     'Fraco? Nossa, acordou de mau humor, hein... Quando quiser jogar, a gente tá aqui.': [null, null, 'Scarsa? Wow, ti sei svegliata male, eh... Quando vuoi giocare, siamo qui.', 'Nul ? Waouh, t’es mal réveillée, hein... Quand tu voudras jouer, on est là.'],
   });
   const nomeJog = () => PERSONAGEM.apelido || PERSONAGEM.nome || T('Você');
@@ -2792,6 +2924,64 @@
       });
     });
   }
+  // ---- dá para conversar com o Caio e com a Júlia enquanto eles batem bola na roda (eles param, viram e voltam a jogar depois)
+  const PAPOS_JULIA = [
+    { p: 'Ei, você chegou faz pouco tempo, né? Já descobriu onde a galera se encontra depois do racha?', g: true, ops: [['Na pizzaria?', 'Isso! O Caio sempre pede a de calabresa e reclama que eu como mais que ele. Eu como mesmo.'],
+      ['No bar do Jairo?', 'Às vezes! O Jairo provoca todo mundo por causa de time. Comigo ele não ganha uma discussão.'], ['No lago?', 'O lago é meu lugar de correr. Dez voltas no domingo. A Fernanda da academia vai junto e quase me mata, haha.']],
+      c: ['Não quero saber de sair com vocês.', 'Beleza. Mas não reclama quando ninguém te passar a bola.'] },
+    { p: 'Você já reparou que o João fala sem parar no racha? Ele narra o próprio lance!', ops: [['Haha, ele é demais!', 'É o melhor amigo de todo mundo. Mas se ele narrar meu drible errado de novo, eu juro que...'], ['O Caio também fala bastante.', 'O Caio fala, mas organiza tudo. Sem ele não tinha racha. Só não conta que eu elogiei.']], c: ['Vocês todos falam demais.', 'E você fala de menos e joga de menos. Empate.'] },
+    { p: 'Eu moro com a minha avó. Ela vê todo racha da janela e no fim me diz tudo que eu errei.', ops: [['Ela entende de futebol?', 'Mais que muito técnico! Ela jogava descalça no campinho quando era menina.'], ['Que avó incrível.', 'É a melhor. Ela que pagou minha primeira chuteira, vendendo bolo de puba.']], c: ['Que vergonha, sua avó te vigiando.', 'Vergonha nenhuma. Pena que ninguém te assiste.'] },
+    { p: 'Sabe qual é o meu sonho? Jogar num time grande. E depois abrir uma escolinha só pra meninas aqui na cidade.', ops: [['Você vai conseguir!', 'Vou mesmo. E quando eu conseguir, a primeira turma vai treinar no sintético, igual eu.'], ['Por que só pra meninas?', 'Porque quando eu era pequena, os meninos não me deixavam jogar. Eu quero que nenhuma menina passe por isso.']], c: ['Futebol feminino não dá dinheiro.', 'Ainda. E você vai ver quem vai mudar isso.'] },
+    { p: 'Hoje eu tive prova de anatomia na faculdade de Educação Física. Acho que fui bem!', ops: [['Que bom! Qual é a matéria mais difícil?', 'Fisiologia! Mas o Diego da academia me empresta os resumos de fisioterapia. Ajuda demais.'], ['Você estuda e joga? Que pique!', 'Durmo pouco e como muito, haha. É o segredo.']], c: ['Educação Física? Isso é faculdade?', 'É sim. E dá mais trabalho do que você imagina.'] },
+  ];
+  const PAPOS_CAIO = [
+    { p: 'Tô pensando em fazer um torneio no sintético. Com tabela, troféu e tudo. Você jogaria?', ops: [['Com certeza!', 'Aí sim! Vou falar com o João pra ver os times. Você já tá na lista.'], ['Quem ia participar?', 'O nosso time, o do João, o pessoal da quadra do Biel... dá uns seis times fácil.']], c: ['Torneio de racha? Que coisa amadora.', 'Amadora é sua educação. Mas beleza.'] },
+    { p: 'Hoje eu fiz quarenta entregas de moto. Conheço cada rua dessa cidade, até as sem nome.', ops: [['Qual a rua mais difícil?', 'A ladeira atrás do mercado! No dia de chuva parece sabão.'], ['Deve ser cansativo.', 'É, mas no fim do dia tem racha. Aí passa tudo.']], c: ['Motoboy, né? Bem que eu desconfiei pela pressa.', 'Pressa paga as minhas contas. E as suas pizzas.'] },
+    { p: 'A Júlia é a melhor do nosso time. Não fala pra ela que eu disse, senão ela não para de se achar.', ops: [['Ela joga muito mesmo.', 'Joga! Já tomei cada caneta dela que nem gosto de lembrar.'], ['E você é o quê, o segundo?', 'Eu sou o organizador. Quem organiza não precisa ser o melhor, haha.']], c: ['Duvido. Ela não é tudo isso.', 'Fala isso pra ela na roda. Quero ver.'] },
+  ];
+  function alvosRacha(v) {
+    const K = S.racha; if (!K || S.dentro) return;
+    for (const i of [0, 1]) {
+      const m = K.m[i], A = m && m.A; if (!A || m.e !== 2 || A.oculto || A.saindo) continue;
+      v.push({ x: A.x, z: A.z, r: 2.0, txt: i ? T('Falar com a Júlia') : T('Falar com o Caio'), fn: () => conversarRacha(i), y: 2.8, pri: true });
+    }
+  }
+  async function conversarRacha(i) {
+    const K = S.racha, m = K && K.m[i], A = m && m.A, J = S.jog; if (!A) return;
+    const id = i ? 'julia' : 'caio', f = fut(), nome = nomeJog();
+    S.falantesExtra = S.falantesExtra || {}; S.falantesExtra[id] = { A, nome: i ? T('Júlia') : 'Caio', voz: i ? 0 : 4 };
+    A.conversa = true; A.andando = false; A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
+    try {
+      if (i === 1 && !f.conheceJulia) {                                 // a Júlia se apresenta (debochada, do jeito dela)
+        const oi = T('Oi! Eu sou a Júlia, jogo no time do Caio. E sou a melhor da roda, só pra você saber.');
+        await fala(id, oi);
+        const r0 = await Escolha.mostrar(oi, [Tgf('Prazer, Júlia! Eu sou {0}.', nome), T('Melhor da roda? Quero ver isso.'), T('Tá, tá. Sai da frente que eu quero passar.')]);
+        f.conheceJulia = true; gravar(S.dados.ponto || 'chegada');
+        if (r0 === 2) { await falaGrossa(id, id, T('Tá, tá. Sai da frente que eu quero passar.'), T('Nossa, que simpatia. Passa, então.')); return; }
+        if (r0 === 1) { await fala('jog', T('Melhor da roda? Quero ver isso.')); await fala(id, T('Vai ver no jogo. E não chora depois, hein.')); }
+        else { await fala('jog', Tgf('Prazer, Júlia! Eu sou {0}.', nome)); await fala(id, Tf('Prazer, {0}! Aparece no racha, que eu te mostro como se joga.', nome)); }
+        papoAmizade(id, 2); return;
+      }
+      if (i === 0 && !f.conheceCaio) {                                  // o Caio se apresenta e manda falar com o João
+        await fala(id, T('E aí! Eu sou o Caio, eu organizo o racha aqui. Fala com o João ali na entrada, que hoje tem jogo!'));
+        f.conheceCaio = true; gravar(S.dados.ponto || 'chegada'); papoAmizade(id, 2); return;
+      }
+      const ab = falaAmizade(id);
+      if (ab && ab.est === 'corte') { if (ab.l) await fala(id, ab.l); return; }   // -80: não perde mais tempo com você
+      if (ab && ab.l) await fala(id, ab.l);
+      const L = i ? PAPOS_JULIA : PAPOS_CAIO, chave = i ? 'papoJulia' : 'papoCaio', Q = L[(f[chave] | 0) % L.length]; f[chave] = (f[chave] | 0) + 1;
+      const p = Q.g ? Tg(Q.p) : T(Q.p);
+      await fala(id, p);
+      const r = await Escolha.mostrar(p, Q.ops.map((o) => T(o[0])).concat([T(Q.c[0])]));
+      if (r === Q.ops.length) { await falaGrossa(id, id, T(Q.c[0]), T(Q.c[1])); return; }
+      const R = Q.ops[r] || Q.ops[0]; await fala('jog', T(R[0])); await fala(id, T(R[1]));
+      papoAmizade(id, 2);
+    } finally {
+      Dialogo.esconder(); A.conversa = false;
+      if (S.falantesExtra) delete S.falantesExtra[id];
+      gravar(S.dados.ponto || 'chegada');
+    }
+  }
   function alvosJoao(v) {
     const A = S.joao; if (!A || A.oculto || S.dentro || (A.estado !== 'espera' && A.estado !== 'casa')) return;
     v.push({ x: A.x, z: A.z, r: 2.1, txt: T('Falar com o João'), fn: conversarJoao, y: 2.9, pri: true });
@@ -2799,21 +2989,23 @@
   async function conversarJoao() {
     const A = S.joao, J = S.jog, f = fut(); if (!A) return;
     A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x); J.yawAlvo = Math.atan2(-(A.z - J.z), A.x - J.x);
-    const nome = nomeJog();
+    const nome = nomeJog(), ab = falaAmizade('joao');
+    if (ab && ab.est === 'corte') { if (ab.l) await fala('joao', ab.l); Dialogo.esconder(); return; }   // -80: o João não perde mais tempo com você
     if (A.estado === 'espera') {
-      const p = Tf(JOAO_ESPERA[(f.papoJoao | 0) % JOAO_ESPERA.length], nome); f.papoJoao = (f.papoJoao | 0) + 1;
+      const p = ab && ab.l ? ab.l : Tf(JOAO_ESPERA[(f.papoJoao | 0) % JOAO_ESPERA.length], nome); f.papoJoao = (f.papoJoao | 0) + 1;
       await fala('joao', p);
       const r = await Escolha.mostrar(p, [T('Bora jogar!'), T('Vou dar uma volta e já volto.'), T('Esse racha de vocês é muito fraco.')]);
       if (r === 2) { await falaGrossa('joao', 'joao', T('Esse racha de vocês é muito fraco.'), Tg('Fraco? Nossa, acordou de mau humor, hein... Quando quiser jogar, a gente tá aqui.')); Dialogo.esconder(); return; }
       await fala('jog', r === 0 ? T('Bora jogar!') : T('Vou dar uma volta e já volto.'));
+      papoAmizade('joao');
       if (r === 0) { await fala('joao', T('Olha a galera chegando aí! Bora!')); Dialogo.esconder(); await jogarSintetico(); return; }
       await fala('joao', T('Beleza, mas não demora!'));
     } else {
-      const p = Tf(JOAO_PAPOS[(f.papoJoaoCasa | 0) % JOAO_PAPOS.length], nome); f.papoJoaoCasa = (f.papoJoaoCasa | 0) + 1;
+      const p = ab && ab.l ? ab.l : Tf(JOAO_PAPOS[(f.papoJoaoCasa | 0) % JOAO_PAPOS.length], nome); f.papoJoaoCasa = (f.papoJoaoCasa | 0) + 1;
       await fala('joao', p);
       const r = await Escolha.mostrar(p, [T('Tudo certo, João!'), T('Tá, tá... você não cansa de falar, não?')]);   // dá para ser grosso até com o melhor amigo
       if (r === 1) await falaGrossa('joao', 'joao', T('Tá, tá... você não cansa de falar, não?'), T('Ih... beleza, não te encho mais. Que bicho te mordeu?'));
-      else { await fala('jog', T('Tudo certo, João!')); await fala('joao', T('É isso aí! Aparece mais.')); }
+      else { await fala('jog', T('Tudo certo, João!')); await fala('joao', ab && ab.est === 'neg' ? T('Hm. Tá bom, então.') : T('É isso aí! Aparece mais.')); papoAmizade('joao'); }
     }
     Dialogo.esconder();
   }
@@ -2881,7 +3073,9 @@
     const B = S.biel, J = S.jog, F = fsal(), d = S.dados; if (!B) return;
     B.yawAlvo = Math.atan2(-(J.z - B.z), J.x - B.x); J.yawAlvo = Math.atan2(-(B.z - J.z), B.x - J.x);
     const nome = nomeJog(); let joga = false;
-    if (F.jogouDia === d.dia) { await fala('biel', Tf('Valeu pelo jogo, {0}! Até a próxima.', nome)); Dialogo.esconder(); return; }
+    const ab = F.conheceu ? falaAmizade('biel') : null;
+    if (ab && ab.est === 'corte') { if (ab.l) await fala('biel', ab.l); Dialogo.esconder(); return; }   // -80: sem vaga no futsal, nunca mais
+    if (F.jogouDia === d.dia) { await fala('biel', ab && ab.est === 'neg' ? T('Jogo acabou. Até.') : Tf('Valeu pelo jogo, {0}! Até a próxima.', nome)); Dialogo.esconder(); return; }
     if (!F.conheceu) {
       const p0 = T('E aí! Tô esperando uns amigos chegarem pra jogar um futsal ali na quadra.');
       await fala('biel', p0);
@@ -2905,11 +3099,11 @@
       }
       F.conheceu = true; gravar(d.ponto || 'chegada');
     } else {
-      const p = Tf(BIEL_PAPOS[(F.papo | 0) % BIEL_PAPOS.length], nome); F.papo = (F.papo | 0) + 1;
+      const p = ab && ab.l ? ab.l : Tf(BIEL_PAPOS[(F.papo | 0) % BIEL_PAPOS.length], nome); F.papo = (F.papo | 0) + 1;
       await fala('biel', p);
       const r = await Escolha.mostrar(p, [T('Bora jogar!'), T('Hoje não, valeu!'), T('Jogar com vocês? Vocês são muito ruins.')]);
       if (r === 2) { await falaGrossa('biel', 'biel', T('Jogar com vocês? Vocês são muito ruins.'), Tg('Ruins, é? Então fica aí de fora, tranquilo.')); Dialogo.esconder(); return; }
-      await fala('jog', r === 0 ? T('Bora jogar!') : T('Hoje não, valeu!'));
+      await fala('jog', r === 0 ? T('Bora jogar!') : T('Hoje não, valeu!')); papoAmizade('biel');
       if (r === 0) { await fala('biel', T('Isso! Vamos lá.')); joga = true; }
       else await fala('biel', F.convidado ? T('Beleza! Terça e quinta a gente tá aqui.') : T('Beleza, fica pra próxima!'));
     }
@@ -3929,7 +4123,7 @@
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
       else if (A.tipo === 'cena') passoCena(A, dt);
       else if (A.tipo === 'viajante') tickViajante(A, dt);
-      else if (A.tipo === 'racha') { if (A.dest && A.dest.tipo === 'bola') tickBolaNPC(A, dt); else A.andando = false; }
+      else if (A.tipo === 'racha') { if (A.conversa) A.andando = false; else if (A.dest && A.dest.tipo === 'bola') tickBolaNPC(A, dt); else A.andando = false; }   // conversando: para de bater bola
       else if (A === S.lucia && A.tipo === 'parado' && S.dentro && S.dentro.nome === 'cafeteria') tickGarcom(A, dt);   // (6.6.18) a Lúcia atende as mesas
       if (A === S.valdemar && S.loja) tickLoja(dt);
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
@@ -4658,7 +4852,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'farmacia' ? abrirFarmacia : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); alvosRacha(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
@@ -5000,12 +5194,16 @@
     if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // libera o expediente de novo a cada dia; só num dia NOVO
     try { processarDias(d); } catch (e) { console.warn('[Cidade] dia:', e); }   // (7.1.14) fome, sedentarismo, destreino, sono, ressaca
   }
-  const precoDe = (c) => (S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);      // cliente fiel: −20% em tudo
+  const precoDe = (c) => precoAmizade('val', S.dados.clienteFiel ? Math.round(c.preco * 0.8) : c.preco);   // cliente fiel: −20% em tudo · amizade -25 ou menos: +25%
   async function atendimento() {
     const d = S.dados, V = S.valdemar, J = S.jog;
     V.yawAlvo = Math.atan2(-(J.z - V.z), J.x - V.x);
     if (!d.conheceValdemar) { await fala('val', T('Opa, freguês novo! Eu sou o Valdemar, prazer. Aqui é o melhor lanche da cidade!')); d.conheceValdemar = true; }
-    await fala('val', T('E aí, o que vai ser hoje?'));
+    const ab = falaAmizade('val');
+    if (ab && ab.est === 'corte') { if (ab.l) await fala('val', ab.l); Dialogo.esconder(); return; }   // -80: nem atende mais
+    if (ab && ab.est === 'neg' && ab.l) await fala('val', ab.l);
+    if (await checarAtendimento('val', 'val')) { Dialogo.esconder(); return; }   // -50: não vende · -25: avisa que ficou mais caro
+    await fala('val', ab && ab.est === 'amigo' && ab.l ? ab.l : ab && ab.est === 'neg' ? T('Vai querer o quê?') : T('E aí, o que vai ser hoje?'));
     const cheio = (d.fome || 0) <= 0;                                // satisfeito ainda pode pedir (e aí exagera)
     if (cheio) await fala('jog', T('Eu já tô satisfeito... mas bem que cabia mais um.'));
     Dialogo.esconder();
@@ -5017,7 +5215,7 @@
     const preco = precoDe(c);
     if (d.fakes < preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
     d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
-    await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder();
+    await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder(); papoAmizade('val', 1);
     await esperar(1400);
     darLanche(J, c.id);                                              // o lanche aparece entre as mãos
     J.comendo = 3.6; await esperar(3700);
@@ -5103,6 +5301,7 @@
       fimDeSemana, fut,                                                  // regras: sem trabalho no fim de semana; futebol
       painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
       grosseria, falaGrossa,                                             // a grosseria nas conversas (−5 corações, +arrogância)
+      aberturaAmizade, falaAmizade, linhaAmizade, precoAmizade, recusaAmizade, checarAtendimento, papoAmizade,   // amizade negativa, corte e amigos (falas.js)
       lojaGente, lojaSaiu, lojaRestam, semente,                         // (6.6.5) o registro de quem está nas lojas
       mariposa,                                                          // a mariposa: o que acabou de acontecer muda a história
     };
@@ -5279,26 +5478,81 @@
     cv.style.cssText = 'width:' + (px || '84%') + ';height:auto;aspect-ratio:1;image-rendering:pixelated;display:block;margin:0 auto;pointer-events:none;';
     return cv;
   }
-  // ================================================================== AMIZADE (0 a 100) com os personagens da cidade
+  // ================================================================== AMIZADE (-100 a 100) com os personagens da cidade
   //   Fica em S.dados.amizade = { lucia: 12, ... }. Amizade.valor(id) / somar(id, n) / definir(id, v) — qualquer NPC usa o mesmo sistema.
-  //   O ponto de partida de cada um vem de BASE_AMIZADE (a Lúcia: +5 por cada interação boa na escola, na Fase 1).
-  //   O Cadu começa com 10 (+15 se você o tirou do armário na Fase 1, +5 se ainda conversou com ele). Quem não tem um coração "de verdade"
-  //   (Herick, Toninho, seu Valdemar, Biel...) começa no meio (50): a escala existe para a grosseria tirar dela (ver grosseria()).
+  //   Todo mundo começa em 0; BASE_AMIZADE dá o ponto de partida de quem já conhecemos na Fase 1 (a Lúcia: +5 por cada interação boa
+  //   na escola; o Cadu: +15 se você o tirou do armário, +5 se ainda conversou com ele). Grosseria tira 5 e a amizade pode ficar negativa:
+  //     -25 ou menos: quem vende ou atende cobra 25% a mais (precoAmizade) · -50 ou menos: não vende nem atende (recusaAmizade)
+  //     -80 ou menos: não dá mais para ser amigo (fica marcado em S.dados.amizadeCorte e não sobe nunca mais); ele só dá um corte
+  //     50 ou mais: amigos próximos, falam mais alegres (as falas ficam no falas.js)
+  //   COM_CORACAO: quem ainda pode virar um relacionamento.
+  const AMIZADE_CARO = -25, AMIZADE_RECUSA = -50, AMIZADE_CORTE = -80, AMIZADE_AMIGO = 50;
   const BASE_AMIZADE = { lucia: () => { const f = fase1Lucia(); return (f.mariposa ? 5 : 0) + (f.falou ? 5 : 0); },
-    cadu: () => { const c = ((API && API.historia.ler('fase1')) || {}).cadu; return 10 + (c && c.salvou ? 15 : 0) + (c && c.conversou ? 5 : 0); } };
-  const BASE_NEUTRA = 50;
-  const NOME_AMIGO = { rafa: 'Rafa', damiao: 'Seu Damião', lucia: 'Lúcia', cadu: 'Cadu', herick: 'Herick', toninho: 'Toninho', val: 'Seu Valdemar', joao: 'João', biel: 'Biel', bene: 'Seu Bené', pai: 'Seu Raimundo', rosa: 'Rosa', fernanda: 'Fernanda', diego: 'Diego', mario: 'Mário', carla: 'Carla', joana: 'Joana', vizinho: 'Vizinho', caio: 'Caio' };
-  const COM_CORACAO = { lucia: 1, cadu: 1 };
+    cadu: () => { const c = ((API && API.historia.ler('fase1')) || {}).cadu; return (c && c.salvou ? 15 : 0) + (c && c.conversou ? 5 : 0); } };
+  const NOME_AMIGO = { rafa: 'Rafa', damiao: 'Seu Damião', lucia: 'Lúcia', cadu: 'Cadu', herick: 'Herick', toninho: 'Toninho', val: 'Seu Valdemar', joao: 'João', biel: 'Biel', bene: 'Seu Bené', pai: 'Seu Raimundo', rosa: 'Rosa', fernanda: 'Fernanda', diego: 'Diego', mario: 'Mário', carla: 'Carla', joana: 'Joana', vizinho: 'Vizinho', caio: 'Caio', julia: 'Júlia', jairo: 'Jairo', cida: 'Dona Cida', renan: 'Renan' };
+  const COM_CORACAO = { lucia: 1, cadu: 1, joao: 1, val: 1, toninho: 1, carla: 1, rosa: 1, julia: 1 };
+  // saves da escala antiga (0 a 100, quem não tinha coração começava em 50; o Cadu, em 10): passa para a nova sem perder o que mudou
+  function migrarAmizade(d) {
+    if (!d || d.amizadeEscala === 2) return;
+    const A = d.amizade || {};
+    for (const id in A) { if (id === 'lucia') continue; A[id] = Math.max(-100, Math.min(100, A[id] - (id === 'cadu' ? 10 : 50))); }
+    d.amizadeEscala = 2;
+  }
   const Amizade = {
-    tabela() { const d = S.dados; return d.amizade || (d.amizade = {}); },
-    valor(id) { const A = this.tabela(); if (A[id] == null) A[id] = clamp(BASE_AMIZADE[id] ? BASE_AMIZADE[id]() : COM_CORACAO[id] ? 0 : BASE_NEUTRA, 0, 100); return A[id]; },
-    definir(id, v) { const A = this.tabela(); A[id] = clamp(Math.round(v), 0, 100); return A[id]; },
+    tabela() { const d = S.dados; migrarAmizade(d); return d.amizade || (d.amizade = {}); },
+    valor(id) { const A = this.tabela(); if (A[id] == null) A[id] = clamp(BASE_AMIZADE[id] ? BASE_AMIZADE[id]() : 0, -100, 100); return A[id]; },
+    cortado(id) { const c = S.dados.amizadeCorte; return !!(c && c[id]); },
+    definir(id, v) {
+      const A = this.tabela(), ant = this.valor(id); let n = clamp(Math.round(v), -100, 100);
+      if (this.cortado(id) && n > ant) n = ant;                        // depois do corte não sobe mais
+      A[id] = n;
+      if (n <= AMIZADE_CORTE) (S.dados.amizadeCorte || (S.dados.amizadeCorte = {}))[id] = true;
+      return n;
+    },
     somar(id, n, mostrar = true) { const ant = this.valor(id), v = this.definir(id, ant + n); if (mostrar && v !== ant) amizadeNaTela(id, v - ant); return v; },
+    // 'corte' | 'neg' | 'amigo' | null (do meio, sem fala especial)
+    estado(id) { const v = this.valor(id); return this.cortado(id) || v <= AMIZADE_CORTE ? 'corte' : v < 0 ? 'neg' : v >= AMIZADE_AMIGO ? 'amigo' : null; },
   };
+  // as falas de amizade (falas.js): a chave sorteada passa por Tgf (gênero de quem joga e o nome)
+  function linhaAmizade(id, tipo) {
+    const F = S && S.falas; if (!F || !F.fala) return null;
+    const k = F.fala(id, tipo, fem()); return k ? Tgf(k, nomeJog()) : null;
+  }
+  // no começo de uma conversa: fala o corte, a fala de amizade negativa ou a de amigo; devolve o estado (quem chama encerra no 'corte')
+  //   falar(texto) é opcional, para quem tem a própria função de fala (os outros arquivos)
+  async function aberturaAmizade(id, quem, falar) {
+    const e = Amizade.estado(id); if (!e) return null;
+    const l = linhaAmizade(id, e);
+    if (l) { if (falar) await falar(l); else await fala(quem, l); }
+    return e;
+  }
+  // sem falar: { est, l } para quem usa a fala como a pergunta do menu (com 50 ou mais, metade das vezes fica o papo normal, para variar)
+  function falaAmizade(id) {
+    const est = Amizade.estado(id); if (!est) return null;
+    return { est, l: est === 'amigo' && Math.random() < 0.5 ? null : linhaAmizade(id, est) };
+  }
+  const precoAmizade = (id, v) => (Amizade.valor(id) <= AMIZADE_CARO ? Math.ceil(v * 1.25) : v);
+  const recusaAmizade = (id) => Amizade.valor(id) <= AMIZADE_RECUSA;
+  // atendimento: se recusa, fala e devolve true; se cobra mais caro, avisa (uma vez por dia com cada um) e devolve false
+  async function checarAtendimento(id, quem, falar) {
+    const dz = (l) => (l ? (falar ? falar(l) : fala(quem, l)) : Promise.resolve());
+    if (recusaAmizade(id)) { await dz(linhaAmizade('*', 'recusa')); return true; }
+    if (Amizade.valor(id) <= AMIZADE_CARO) {
+      const d = S.dados, cd = d.caroDia || (d.caroDia = {});
+      if (cd[id] !== (d.dia || 1)) { cd[id] = d.dia || 1; await dz(linhaAmizade('*', 'caro')); }
+    }
+    return false;
+  }
+  // conversar de boa aproxima: +n uma vez por dia com cada um (e não vale depois do corte)
+  function papoAmizade(id, n = 2) {
+    const d = S.dados, pd = d.papoAmizade || (d.papoAmizade = {});
+    if (pd[id] === (d.dia || 1) || Amizade.cortado(id)) return;
+    pd[id] = d.dia || 1; Amizade.somar(id, n);
+  }
   const desceMariposa = () => { try { return typeof Mariposa !== 'undefined' && Mariposa.comTexto() ? 46 : 0; } catch (e) { return 0; } };   // a explicação da mariposa ocupa o alto
   function amizadeNaTela(id, n) {                  // "♥ +2 Lúcia" rosa subindo
     const pai = (UI && UI.hud && UI.hud.parentNode) || document.getElementById('raizJogo') || document.body;   // (também na fase2.js, sem a tela da cidade)
-    const el = document.createElement('div'); el.textContent = '♥ ' + (n > 0 ? '+' : '') + n + ' ' + (NOME_AMIGO[id] || id);
+    const el = document.createElement('div'); el.textContent = '♥ ' + (n > 0 ? '+' : '') + n + ' ' + T(NOME_AMIGO[id] || id);
     el.style.cssText = 'position:fixed;z-index:40;left:50%;top:calc(' + (92 + desceMariposa()) + 'px + env(safe-area-inset-top,0px));transform:translateX(-50%);font:700 15px/1 var(--font-display);color:#ff8fc0;text-shadow:0 2px 0 #2a1206;pointer-events:none;transition:transform 1.4s ease,opacity 1.4s ease;';
     pai.appendChild(el); setTimeout(() => { el.style.transform = 'translate(-50%,-26px)'; el.style.opacity = '0'; }, 700); setTimeout(() => el.remove(), 2300);
   }
@@ -5792,6 +6046,8 @@
     Dialogo.esconder();
     if (S.turno) { await fala('lucia', T('Bom trabalho! Anote os pedidos nas mesas e prepare na bancada.')); Dialogo.esconder(); return; }
     if (d.hora >= cafeFecha() && d.hora < luciaSai()) { await fala('lucia', T('Agora eu preciso fechar o caixa... Só saio daqui mais tarde. Até amanhã!')); Dialogo.esconder(); return; }
+    const ab = d.luciaConheceu ? falaAmizade('lucia') : null;
+    if (ab && ab.est === 'corte') { if (ab.l) await fala('lucia', ab.l); Dialogo.esconder(); return; }   // -80: ela não perde mais tempo com você
     // o que fazer com a Lúcia: comprar café, o trabalho (só para quem trabalha lá), conversar, convidar para jogar, chamar para sair
     const ops = [['cafe', T('Comprar um café')]]; if (d.confeitaria) ops.push(['bolo', T('Comprar um bolo')]); if (funcionario) ops.push(['trab', T('Sobre o trabalho')]);   // (6.6.17) os bolos da confeitaria
     ops.push(['papo', T('Conversar')]);
@@ -5799,7 +6055,8 @@
     if (Amizade.valor('lucia') >= 50 && !encontroMarcado()) ops.push(['sair', T('Chamar para sair')]);
     if (Amizade.valor('lucia') >= 100 && !d.namorando) ops.push(['namoro', T('Pedir em namoro')]);   // (6.6.18) 100 corações
     ops.push(['tchau', T('Tchau')]);
-    const r = await Escolha.mostrar(T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]));
+    if (ab && ab.l) await fala('lucia', ab.l);
+    const r = await Escolha.mostrar(ab && ab.l ? ab.l : ab && ab.est === 'neg' ? T('O que você quer?') : T('Oi! O que vai ser hoje?'), ops.map((o) => o[1]));
     Dialogo.esconder();
     const op = (ops[r] || [])[0];
     if (op === 'cafe') await comprarCafe();
@@ -5867,7 +6124,19 @@
     ['Você já reparou na bola gigante em cima da loja de esportes?', ['Aquela bola é demais!', 'Um dia eu subo lá só pra ver se ela gira de verdade.'], ['Acho meio exagerada.', 'Exagerada, mas todo mundo olha, né? Haha.'], ['Essa loja é ridícula.', 'Haha... tá de mau humor hoje, hein?']],
     ['Se você pudesse morar em qualquer lugar do mundo, onde seria?', ['Perto da praia.', 'Ai, praia... eu ia abrir um quiosque de café gelado.'], ['Aqui mesmo.', 'Sério? Que fofo... eu também gosto daqui.'], ['Qualquer lugar longe dessa cidade.', 'Ah... entendi. Espero que você mude de ideia um dia.']],
     ['Hoje de manhã eu vi um passarinho tomando banho na fonte da praça.', ['Que cena bonita!', 'Fiquei uns cinco minutos olhando. Quase cheguei atrasada!'], ['Você presta atenção em tudo.', 'Haha, é que eu chego cedo... a cidade fica tão calma.'], ['Que papo de velha.', 'Hunf. Eu gosto de reparar nas coisas, tá?']],
+    // a cidade de verdade (os lugares e quem está neles), a vida dela e os sonhos: { p, ops: [[resposta, ela]...], c: [GROSSERIA, ela] }
+    { p: 'E aí, já deu uma volta pela cidade? Qual lugar você mais gostou até agora?', ops: [['A lanchonete do seu Valdemar.', 'O seu Valdemar reclama de tudo, mas guarda o último pão de queijo pra quem ele gosta. Se ele te guardar um, é sinal de amizade!'],
+      ['O lago do Sapo Cururu.', 'Lá é lindo no fim da tarde! O seu Bené jura que tem um pirarucu gigante lá. Eu nunca vi, mas também nunca duvidei.'], ['O cinema do Herick.', 'O cinema que paga a gente pra ver filme! A Joana da bilheteria é um amor, ela quer escrever roteiro, sabia?'],
+      ['A pizzaria Forno a Lenha.', 'A massa é receita da avó do Mário! A Carla é que faz hoje, e ela sonha em ir pra Itália.']], c: ['Nenhum. Essa cidade não tem nada.', 'Nada? Tem um monte de gente boa aqui... você só não deu chance ainda.'] },
+    { p: 'Você já conheceu a Rosa, do mercado? Ela sabe de tudo que acontece na cidade antes de todo mundo!', ops: [['Já! Ela fala muito, né?', 'Fala! Mas ela é um doce. Estuda enfermagem de noite e ainda chega sorrindo no caixa.'], ['Ainda não.', 'Passa lá! Em cinco minutos ela te conta a vida da cidade inteira, haha.']], c: ['Fofoqueira desse jeito? Prefiro distância.', 'Ela não é fofoqueira, ela é... bem informada. Hunf.'] },
+    { p: 'Sabia que eu moro sozinha? Minha família ficou no interior. Às vezes bate uma saudade...', ops: [['Deve ser difícil.', 'É... mas aí eu ligo pra minha mãe e ela me manda receita de bolo pelo telefone. Ajuda!'], ['Você é corajosa.', 'Você acha? Eu vim pra cá com uma mala e um sonho. Ainda tô construindo o resto.']], c: ['Ninguém mandou sair de casa.', 'Eu sei... mas eu quis tentar. Não precisava falar assim.'] },
+    { p: 'Posso te contar um sonho meu? Um dia eu quero ter a minha própria cafeteria, com o meu nome na fachada.', ops: [['Você vai conseguir!', 'Ai, obrigada! Já até desenhei o cardápio num caderninho. Tem um café com o nome do Grão, haha.'], ['Qual vai ser o nome?', '"Café da Lúcia" é muito óbvio, né? Tô pensando em "Grão de Afeto". Gostou?']], c: ['Com esse salário? Vai sonhando.', 'É por isso que se chama sonho. Mas eu vou chegar lá, você vai ver.'] },
+    { p: 'Domingo tem feira na praça. Você vai? Eu sempre passo lá cedinho.', ops: [['Vou sim! O que tem de bom?', 'Pastel de queijo, caldo de cana e a barraca de flores da Dona Zefa. Eu sempre levo uma margarida.'], ['Eu durmo até tarde no domingo.', 'Haha, então você perde o melhor pastel! Ele acaba antes das nove.']], c: ['Feira é coisa de velho.', 'Velho? Metade da cidade vai lá! Tudo bem, mais pastel pra mim.'] },
+    { p: 'O Toninho, da barbearia, cortou o meu cabelo uma vez. Ficou torto, mas ele jurou que era moda!', ops: [['Haha, e era?', 'Era nada! Mas ele é tão simpático que eu nem fiquei brava.'], ['O seu cabelo tá lindo agora.', 'Para... assim eu fico vermelha. Mas obrigada!']], c: ['Por isso que ele tá torto até hoje.', 'Ei! Não tá torto... tá? Hunf.'] },
+    { p: 'Antes de trabalhar aqui eu queria ser jogadora, sabia? Joguei até os dezesseis.', ops: [['Por que parou?', 'Machuquei o tornozelo e tive que trabalhar. Mas a bola ainda mora no meu coração.'], ['Ainda dá tempo!', 'Você acha? Quem sabe eu apareço num racha qualquer dia desses...']], c: ['Ainda bem que parou.', 'Nossa... você nem me viu jogar.'], so: 'estranho' },
   ];
+  // os dois formatos de papo da Lúcia no mesmo jeito: { p, ops, c, so }
+  const papoLucia = (Q) => (Array.isArray(Q) ? { p: Q[0], ops: [Q[1], Q[2]], c: Q[3], so: Q[4] } : Q);
   // com 30 de amizade ela recebe com mais carinho (uma destas antes do assunto)
   const OI_LUCIA = ['Que bom ver você hoje!', 'Achei que você não ia vir falar comigo hoje...', 'Já estava com saudades!', 'Oiii, {0}! É tão bom te ver!'];
   const OI_NAMORO = ['Oi, amor! Já tava com saudade.', 'Oi, meu bem! Senta que eu já te dou atenção.', 'Olha quem chegou! O meu dia ficou melhor agora.', 'Oiii, {0}! Vem cá, me dá um oi direito!'];
@@ -5876,17 +6145,19 @@
     const P = d.luciaPapoDia && d.luciaPapoDia.dia === hoje ? d.luciaPapoDia : (d.luciaPapoDia = { dia: hoje, n: 0, usados: [] });
     if (P.n >= 2) { await fala('lucia', T('Foi muito bom conversar com você! Mas agora eu preciso trabalhar.')); Dialogo.esconder(); return; }   // só 2 conversas por dia
     P.n++;
-    if (Amizade.valor('lucia') >= 30) { const oi = d.namorando ? OI_NAMORO : OI_LUCIA; await fala('lucia', Tf(oi[Math.floor(Math.random() * oi.length)], nomeJog())); }   // (6.6.18) namorando: oi de namorada
-    const ok = (i) => { const so = PAPOS_LUCIA[i][4]; return !so || (so === 'conhece') === conheceLucia(); };
+    const ab = falaAmizade('lucia');                                  // a amizade negativa (ou de amigo) entra antes do assunto
+    if (ab && ab.l && ab.est !== 'corte') await fala('lucia', ab.l);
+    else if (Amizade.valor('lucia') >= 30) { const oi = d.namorando ? OI_NAMORO : OI_LUCIA; await fala('lucia', Tf(oi[Math.floor(Math.random() * oi.length)], nomeJog())); }   // (6.6.18) namorando: oi de namorada
+    const ok = (i) => { const so = papoLucia(PAPOS_LUCIA[i]).so; return !so || (so === 'conhece') === conheceLucia(); };
     const livres = PAPOS_LUCIA.map((_, i) => i).filter((i) => ok(i) && !P.usados.includes(i) && i !== d.luciaUltimoPapo);
     const todos = PAPOS_LUCIA.map((_, i) => i).filter(ok);
     const i = livres.length ? livres[Math.floor(Math.random() * livres.length)] : todos[Math.floor(Math.random() * todos.length)];
     P.usados.push(i); d.luciaUltimoPapo = i;
-    const Q = PAPOS_LUCIA[i];
-    await fala('lucia', T(Q[0]));
-    const r = await Escolha.mostrar(T(Q[0]), [T(Q[1][0]), T(Q[2][0]), T(Q[3][0])]);
-    if (r === 2) { await falaGrossa('lucia', 'lucia', T(Q[3][0]), T(Q[3][1])); Dialogo.esconder(); gravar(d.ponto || 'chegada'); return; }   // grosseria: nada de +2
-    await fala('jog', T(Q[r === 1 ? 2 : 1][0])); await fala('lucia', T(Q[r === 1 ? 2 : 1][1]));
+    const Q = papoLucia(PAPOS_LUCIA[i]);
+    await fala('lucia', T(Q.p));
+    const r = await Escolha.mostrar(T(Q.p), Q.ops.map((o) => T(o[0])).concat([T(Q.c[0])]));
+    if (r === Q.ops.length) { await falaGrossa('lucia', 'lucia', T(Q.c[0]), T(Q.c[1])); Dialogo.esconder(); gravar(d.ponto || 'chegada'); return; }   // grosseria: nada de +2
+    const R = Q.ops[r] || Q.ops[0]; await fala('jog', T(R[0])); await fala('lucia', T(R[1]));
     Amizade.somar('lucia', 2);                                       // conversar (não só interagir) aproxima: +2
     if (P.n >= 2) await fala('lucia', T('Foi muito bom conversar com você! Mas agora eu preciso trabalhar.'));
     Dialogo.esconder(); gravar(d.ponto || 'chegada');
@@ -6290,6 +6561,8 @@
   function comprarCafe() {
     const d = S.dados;
     if (!cafeAberto()) { aviso(T('A cafeteria está fechada agora.')); setTimeout(() => aviso(''), 2200); return Promise.resolve(); }
+    if (recusaAmizade('lucia')) return checarAtendimento('lucia', 'lucia').then(() => Dialogo.esconder());   // -50: ela não vende para você
+    const pc = (c) => precoAmizade('lucia', c.preco);
     return new Promise((res) => {
       const el = document.createElement('div'); el.id = 'cdCafes';
       el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
@@ -6302,20 +6575,21 @@
       const fim = (c) => { el.remove(); res(c); };
       CAFES_VENDA.forEach((c) => {
         const b = document.createElement('button'); b.type = 'button';
-        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < c.preco ? 'opacity:.55;' : '');
+        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < pc(c) ? 'opacity:.55;' : '');
         b.appendChild(iconeCafezinho(c.tier, '56px'));
         const n = document.createElement('span'); n.textContent = T(TIERS[c.tier].nome);
         const ef = document.createElement('span'); ef.style.cssText = 'color:#8fe04a;font-size:10px;'; ef.textContent = Tf('Velocidade {0}x · {1}', String(c.mult).replace('.', ','), c.horas ? Tf('{0}h', c.horas) : T('o dia todo'));
-        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = c.preco + ' ' + T('fakes');
+        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = pc(c) + ' ' + T('fakes');
         b.append(n, ef, p); b.onclick = () => fim(c); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Deixa pra depois'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(null);
       card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);
     }).then(async (c) => {
       if (!c) return;
-      if (d.fakes < c.preco) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      await checarAtendimento('lucia', 'lucia');
+      if (d.fakes < pc(c)) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
       if (cafeEfeito()) { const r = await Escolha.mostrar(T('Você já está no efeito de um café. Tomar este no lugar?'), [T('Tomar este'), T('Deixa como está')], { centro: true }); Dialogo.esconder(); if (r !== 0) return; }
-      d.fakes -= c.preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(c.preco);
+      const preco = pc(c); d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco); papoAmizade('lucia', 1);
       await fala('lucia', Tf('Saindo um {0}!', T(TIERS[c.tier].nome))); Dialogo.esconder();
       copoNaMao(c.tier); await esperar(2600); copoNaMao(-1);
       d.cafe = { tier: c.tier, mult: c.mult, horas: c.horas, ate: tempoAbs() + c.horas, dia: d.dia || 1 };
@@ -6448,7 +6722,7 @@
       await fala('lucia', r === 0 ? T('Torceu mais do que todo mundo. Isso conta muito pra mim.') : T('Para... assim eu choro aqui na frente dos clientes, haha.'));
       coracoes(L.x, 1.85, L.z);
     }
-    await fala('lucia', Tf('Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.', PRECO_BOLO));
+    await fala('lucia', Tf('Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.', precoAmizade('lucia', PRECO_BOLO)));
     await fala('lucia', T('Quando quiser um bolo, é só vir na vitrine ou falar comigo no caixa!'));
     if (empregoEscolhido() === 'cafeteria') await fala('lucia', T('E com a venda dos bolos eu vou aumentar o seu salário: 50% a mais no fim de cada expediente!'));   // (6.6.18)
     Dialogo.esconder();
@@ -6471,6 +6745,8 @@
     if (!d.confeitaria) return Promise.resolve();
     if (S.turno) { aviso(T('No seu turno não dá para comprar bolo.')); setTimeout(() => aviso(''), 2200); return Promise.resolve(); }
     if (!cafeAberto() || !S.lucia) return fala('lucia', T('A confeitaria fecha junto com o café. Volta amanhã!')).then(() => Dialogo.esconder());
+    if (recusaAmizade('lucia')) return checarAtendimento('lucia', 'lucia').then(() => Dialogo.esconder());
+    const PRECO = precoAmizade('lucia', PRECO_BOLO);
     return new Promise((res) => {
       const el = document.createElement('div'); el.id = 'cdBolos';
       el.style.cssText = 'position:fixed;inset:0;z-index:22;display:grid;place-items:center;background:rgba(6,4,2,.6);padding:10px;box-sizing:border-box;';
@@ -6483,20 +6759,21 @@
       const fim = (b) => { el.remove(); res(b); };
       BOLOS.forEach((B) => {
         const b = document.createElement('button'); b.type = 'button'; b.dataset.bolo = B.id;
-        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#4a1c30;border:3px solid #c8708e;color:#fff0f4;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < PRECO_BOLO ? 'opacity:.55;' : '');
+        b.style.cssText = 'flex:0 0 128px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#4a1c30;border:3px solid #c8708e;color:#fff0f4;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;' + (d.fakes < PRECO ? 'opacity:.55;' : '');
         b.appendChild(iconeBolo(B.id, '56px'));
         const n = document.createElement('span'); n.textContent = T(B.nome);
         const ds = document.createElement('span'); ds.style.cssText = 'color:#f8d8e2;font-size:10px;font-weight:400;'; ds.textContent = T(B.desc);
         const ef = document.createElement('span'); ef.style.cssText = 'color:#8fe04a;font-size:10px;'; ef.textContent = T('Mata a fome · doce');
-        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = PRECO_BOLO + ' ' + T('fakes');
+        const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = PRECO + ' ' + T('fakes');
         b.append(n, ds, ef, p); b.onclick = () => fim(B); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Deixa pra depois'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(null);
       card.append(h, grade, nada); el.appendChild(card); ($('raizJogo') || document.body).appendChild(el);
     }).then(async (B) => {
       if (!B) return;
-      if (d.fakes < PRECO_BOLO) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
-      d.fakes -= PRECO_BOLO; somDinheiro(); mostrarDinheiro(false); gastoNaTela(PRECO_BOLO);
+      await checarAtendimento('lucia', 'lucia');
+      if (d.fakes < PRECO) { await fala('lucia', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      d.fakes -= PRECO; somDinheiro(); mostrarDinheiro(false); gastoNaTela(PRECO); papoAmizade('lucia', 1);
       await fala('lucia', T(B.fala));
       const J = S.jog, cheio = (d.fome || 0) <= 0;
       const a = J.sentado && S.sentadoEm && !S.sentadoEm.lanche ? S.sentadoEm : J.sentado ? null : lugarParaBolo();
@@ -6981,8 +7258,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   function painelDev() {
     const d = S.dados, el = document.createElement('div'); el.id = 'cdDev';
-    const am = Amizade.tabela(); if (am.lucia == null) Amizade.valor('lucia');
-    const ids = Object.keys(am);
+    const am = Amizade.tabela();
+    const ids = [...new Set([...Object.keys(NOME_AMIGO), ...Object.keys(am)])];   // todo mundo que tem amizade (mesmo quem ainda não conhecemos)
     const hh = Math.floor(d.hora), mm = Math.floor((d.hora - hh) * 60 / 10) * 10;
     el.innerHTML = '<div class="cdCard"><h3 class="t0"></h3>' +
       '<h4 class="t1"></h4><div class="lin"><button type="button" class="pxBtn dvGrana"></button></div>' +
@@ -6994,7 +7271,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       '<h4 class="t6"></h4><div class="st dvSt"></div></div>';
     const q = (s) => el.querySelector(s);
     q('.t0').textContent = T('Privilégios do desenvolvedor'); q('.t1').textContent = T('Dinheiro infinito'); q('.t2').textContent = T('Dia e horário');
-    q('.t3').textContent = T('Dia'); q('.t4').textContent = T('Horário'); q('.t5').textContent = T('Corações (amizade, 0 a 100)'); q('.t6').textContent = T('Status e efeitos atuais'); q('.t7').textContent = T('Clima'); q('.t8').textContent = T('Pesca do Duke');
+    q('.t3').textContent = T('Dia'); q('.t4').textContent = T('Horário'); q('.t5').textContent = T('Corações (amizade, -100 a 100)'); q('.t6').textContent = T('Status e efeitos atuais'); q('.t7').textContent = T('Clima'); q('.t8').textContent = T('Pesca do Duke');
     q('.dvSalvar').textContent = T('Salvar mudanças'); q('.dvFechar').textContent = T('Fechar');
     q('.dvDia').value = d.dia || 1; q('.dvHora').value = (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm;
     for (const inp of el.querySelectorAll('input')) { inp.addEventListener('keydown', (e) => e.stopPropagation()); inp.addEventListener('keyup', (e) => e.stopPropagation()); }
@@ -7022,7 +7299,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const box = q('.dvAm');
     for (const id of ids) {
       const l = document.createElement('div'); l.className = 'lin';
-      l.innerHTML = '<span style="min-width:90px">♥ </span><input type="number" min="0" max="100" style="width:80px">';
+      l.innerHTML = '<span style="min-width:90px">♥ </span><input type="number" min="-100" max="100" style="width:80px">';
       l.firstChild.textContent = '♥ ' + T(NOME_AMIGO[id] || id); const inp = l.querySelector('input'); inp.value = Amizade.valor(id); inp.dataset.id = id;
       inp.addEventListener('keydown', (e) => e.stopPropagation()); inp.addEventListener('keyup', (e) => e.stopPropagation());
       box.appendChild(l);
@@ -7037,7 +7314,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const coracoes = [...box.querySelectorAll('input')].map((i) => [i.dataset.id, parseInt(i.value, 10)]).filter(([, v]) => Number.isFinite(v));
       const mudouTempo = dia !== (d.dia || 1) || Math.abs(hora - d.hora) > 1 / 120;
       const aplicar = () => {
-        for (const [id, v] of coracoes) Amizade.definir(id, v);
+        for (const [id, v] of coracoes) { if (v > AMIZADE_CORTE && d.amizadeCorte) delete d.amizadeCorte[id]; Amizade.definir(id, v); }   // no dev dá para desfazer o corte
         if (mudouTempo) aplicarDiaHora(dia, hora);
         gravar(d.ponto || 'chegada');
         q('.dvSt').textContent = textoStatus(); q('.dvMsg').textContent = T('Mudanças salvas.');
@@ -8620,6 +8897,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       let f2 = null; try { f2 = await Fases.carregar('fase2'); } catch (e) { console.warn('[Cidade] fase2.js não veio (roupa padrão):', e); }
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
+      Fases.carregar('falas').then((m) => { if (S) S.falas = m; }, (e) => console.warn('[Cidade] falas.js não veio:', e));   // as falas de amizade
       Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
       Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
       Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
@@ -8675,5 +8953,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

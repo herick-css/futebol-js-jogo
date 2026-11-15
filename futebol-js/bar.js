@@ -1172,14 +1172,14 @@
           const t = document.createElement('div'); t.style.cssText = 'font:700 11px/1 var(--font-display);letter-spacing:.1em;color:#f2c230;text-transform:uppercase;margin-top:2px;'; t.textContent = Tx(tit) + (tipo === 'alcool' ? '  · +18' : ''); card.appendChild(t);
           const grade = document.createElement('div'); grade.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:7px;';
           PRODUTOS.filter((p) => p.tipo === tipo).forEach((p) => {
-            const proib = p.tipo === 'alcool' && !adulto, pode = fakes >= p.preco && !proib;
+            const proib = p.tipo === 'alcool' && !adulto, pode = fakes >= precoJ(p) && !proib;
             const b = document.createElement('button'); b.type = 'button'; b.dataset.id = p.id;
             b.style.cssText = 'position:relative;display:flex;flex-direction:column;gap:3px;align-items:center;padding:7px 4px;background:#3a2418;border:3px solid ' + (p.tipo === 'alcool' ? '#c8952a' : p.tipo === 'bebida' ? '#3fb7b0' : '#d8742a') + ';color:#f4ead8;cursor:pointer;font:700 10.5px/1.2 var(--font-display);text-align:center;opacity:' + (pode ? 1 : 0.5) + ';';
             b.appendChild(icone(canvasProduto(p.id), 64));
             const n = document.createElement('span'); n.textContent = Tx(p.nome);
             const etq = document.createElement('span'); etq.style.cssText = 'font:600 9.5px/1 var(--font-body);padding:2px 5px;background:' + (proib ? '#a3162a' : p.tipo === 'alcool' ? '#8a5a1a' : p.tipo === 'bebida' ? '#1f6a66' : '#8a3a1a') + ';';
             etq.textContent = proib ? Tx('Proibido para menores') : p.tipo === 'alcool' ? Tx('Álcool') + ' +18' : p.tipo === 'bebida' ? Tx('Bebida') : Tx('Petisco');
-            const pr = document.createElement('span'); pr.style.color = '#f2c230'; pr.textContent = p.preco + ' ' + Tx('fakes');
+            const pr = document.createElement('span'); pr.style.color = '#f2c230'; pr.textContent = precoJ(p) + ' ' + Tx('fakes');
             b.append(n, etq, pr);
             if (proib) { const x = document.createElement('span'); x.textContent = '18'; x.style.cssText = 'position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:2px solid #d8302a;color:#d8302a;font:700 10px/18px var(--font-display);background:#fff4e8;'; b.appendChild(x); }
             b.onclick = () => fim(p.id); grade.appendChild(b);
@@ -1190,12 +1190,15 @@
         card.appendChild(nada); el.appendChild(card); (document.getElementById('raizJogo') || document.body).appendChild(el);
       });
     }
+    const precoJ = (p) => (api.precoAmizade ? api.precoAmizade('jairo', p.preco) : p.preco);   // amizade com o Jairo -25 ou menos: +25%
     async function escolherProduto() {
       const s = S(), d = s.dados; if (M.servindo) return;
+      if (api.checarAtendimento && await api.checarAtendimento('jairo', 'jairo')) { Dialogo.esconder(); return; }   // -50: o Jairo não te serve
+      Dialogo.esconder();
       const adulto = api.adulto(), id = await cardapioUI(d.fakes, adulto); if (!id) return;
       const p = PROD[id];
       if (p.tipo === 'alcool' && !adulto) { await api.fala('jairo', fem() ? Tx('Bebida alcoólica só pra maior de idade, campeã. Posso te servir um refri, um suco ou um petisco.') : Tx('Bebida alcoólica só pra maior de idade, campeão. Posso te servir um refri, um suco ou um petisco.')); Dialogo.esconder(); return; }
-      if (d.fakes < p.preco) { await api.fala('jairo', Tx('Tá faltando grana aí, hein?')); Dialogo.esconder(); return; }
+      if (d.fakes < precoJ(p)) { await api.fala('jairo', Tx('Tá faltando grana aí, hein?')); Dialogo.esconder(); return; }
       await servir(p);
     }
     // ================================================================ A CENA DO PEDIDO: o Jairo vem, prepara, entrega, cobra; o jogador bebe/come
@@ -1229,8 +1232,9 @@
         if (p.tipo === 'petisco') { prato = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.42), new THREE.MeshLambertMaterial({ map: texDe(canvasProduto(p.id), 'p:' + p.id), transparent: true, alphaTest: 0.1 })); prato.rotation.x = -Math.PI / 2; prato.position.set(xs, 1.125, -5.3); M.R.grupo.add(prato); }
         else copoNoBalcao(J, p.id, xs, 1.12, -5.25);
         await api.esperar(400); Jr.poseJ = null; Jr.poseFn = null;
-        await api.fala('jairo', Tfx('Taí: {0}. São {1} fakes.', Tx(p.nome), p.preco));
-        d.fakes = Math.max(0, d.fakes - p.preco); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(p.preco);
+        const preco = precoJ(p);
+        await api.fala('jairo', Tfx('Taí: {0}. São {1} fakes.', Tx(p.nome), preco));
+        d.fakes = Math.max(0, d.fakes - preco); api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(preco); if (api.papoAmizade) api.papoAmizade('jairo', 1);
         Dialogo.esconder(); Jr.servindoJog = false;
         // consumindo
         if (p.tipo === 'petisco') {
@@ -1326,23 +1330,30 @@
           await api.fala('jairo', Tx('No fim de semana isso aqui lota. Durante a semana é mais sossegado.'));
           db.conheceu = true; api.gravar(s.dados.ponto || 'chegada'); return;
         }
+        const ab = api.falaAmizade ? api.falaAmizade('jairo') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('jairo', ab.l); return; }   // -80: o Jairo não perde mais tempo com você
+        if (ab && ab.l) await api.fala('jairo', ab.l);
         const Q = PAPOS_JAIRO[(db.papoJ | 0) % PAPOS_JAIRO.length]; db.papoJ = (db.papoJ | 0) + 1;
         if (Q.vazio) {                                                  // o papo do movimento: depende de como está a casa
           const cheio = M.gente.length >= 8, R0 = cheio ? Q.a : Q.vazio;
           const r = await Escolha.mostrar(Tx(R0[0]), [Tx(R0[0]), Tx(Q.c[0])]);
           if (r === 1) { await api.falaGrossa('jairo', 'jairo', Tx(Q.c[0]), Tx(Q.c[1])); return; }
-          await api.fala('jog', Tx(R0[0])); await api.fala('jairo', Tx(R0[1])); return;
+          await api.fala('jog', Tx(R0[0])); await api.fala('jairo', Tx(R0[1])); if (api.papoAmizade) api.papoAmizade('jairo', 2); return;
         }
         await api.fala('jairo', Tx(Q.p));
         const r = await Escolha.mostrar(Tx(Q.p), [Tx(Q.a[0]), Tx(Q.b[0]), Tx(Q.c[0])]);
         if (r === 2) { await api.falaGrossa('jairo', 'jairo', Tx(Q.c[0]), Tx(Q.c[1])); return; }
         const Rr = r === 1 ? Q.b : Q.a; await api.fala('jog', Tx(Rr[0])); await api.fala('jairo', Tx(Rr[1]));
+        if (api.papoAmizade) api.papoAmizade('jairo', 2);
       } finally { Dialogo.esconder(); }
     }
     async function falarVal() {
       const V = M.val; if (!V) return; const f = V.fv, nome = nomeJ();
       const yv = V.yawAlvo; if (!V.sentado && f !== 'sinuca') V.yawAlvo = Math.atan2(-(S().jog.z - V.z), S().jog.x - V.x);
       try {
+        const ab = api.falaAmizade ? api.falaAmizade('val') : null;   // de folga, com a amizade negativa ele nem convida para nada
+        if (ab && (ab.est === 'corte' || ab.est === 'neg')) { const l = ab.l || api.linhaAmizade('val', ab.est); if (l) await api.fala('valb', l); return; }
+        if (ab && ab.l) await api.fala('valb', ab.l);
         if (f === 'bebe') await api.fala('valb', Tfx('Ô, {0}! Depois de doze horas na chapa, eu mereço uma gelada, né?', nome));
         else if (f === 'danca') await api.fala('valb', Tfx('Isso aqui é que é vida! Bora dançar, {0}!', nome));
         else if (f === 'fuma') await api.fala('valb', Tx('Só um cigarrinho e eu vou pra casa. Não conta pra ninguém que eu fumo, hein?'));

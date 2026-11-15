@@ -7,6 +7,8 @@ ARQUIVOS
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
+  falas.js .............. as falas de amizade dos personagens: 15 de amizade negativa, 15 de amigos (50 ou mais) e 3 de corte
+                          (-80) para cada um, e as gerais de preço mais caro (-25) e recusa (-50), nos 5 idiomas (baixado pela cidade)
   mercado.js ............ o trabalho no mercado (caixa, troco, reposição; baixado pela cidade)
   pizzaria.js ........... a pizzaria Forno a Lenha e o trabalho de entregador de bicicleta (baixado pela cidade)
   restaurante.js ........ o restaurante self-service: 20 pratos em pixel art (a maioria saudável, com saladas e sobremesas), o

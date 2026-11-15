@@ -1742,6 +1742,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const dx = J.x - V.x, dz = J.z - V.z, d = Math.hypot(dx, dz) || 1;
     if (d > 1.35) await andar(J, [[V.x + dx / d * 1.2, V.z + dz / d * 1.2]], 2.0);
     olhar(J, V.x, V.z); olhar(V, J.x, J.z); V.pose = 'pe'; await esperar(250);
+    if (await aberturaAmizadeF2('vizinho', 'viz') === 'corte') { Dialogo.esconder(); V.pose = 'fuma'; return; }   // -80: ele nem conversa mais
     for (;;) {
       Dialogo.esconder();
       const r = await Escolha.mostrar(T('O que você vai fazer?'), [T('Pedir um cigarro'), T('Pedir para ir fumar em outro lugar'), T('Perguntar sobre um lugar para comer'), T('Reclamar da fumaça dele'), T('Deixar para lá')]);
@@ -1841,13 +1842,38 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   // a mariposa (jogo.js): o que acabou de acontecer muda alguma coisa na história
   function mariposa() { try { return typeof Mariposa !== 'undefined' ? Mariposa.mostrar() : Promise.resolve(); } catch (e) { return Promise.resolve(); } }
+  // a amizade fica no save da cidade (cidade.js: Amizade, de -100 a 100, todo mundo começa em 0; -80 ou menos é o corte)
+  function migrarAmizadeF2(c) {                                          // saves da escala antiga (0 a 100, quem não tinha coração começava em 50)
+    if (c.amizadeEscala === 2) return c;
+    const am = Object.assign({}, c.amizade || {});
+    for (const id in am) if (id !== 'lucia') am[id] = Math.max(-100, Math.min(100, am[id] - (id === 'cadu' ? 10 : 50)));
+    return Object.assign({}, c, { amizade: am, amizadeEscala: 2 });
+  }
+  function amizadeF2(id) {
+    const c = migrarAmizadeF2(API.historia.ler('cidade') || {}), v = c.amizade[id] != null ? c.amizade[id] : 0;
+    return { v, corte: !!(c.amizadeCorte && c.amizadeCorte[id]) || v <= -80 };
+  }
   function somarAmizadeF2(id, n, CD) {
     if (n) mariposa();                                                   // as escolhas que aproximam (ou afastam) alguém
     try {
-      const c = API.historia.ler('cidade') || {}, am = Object.assign({}, c.amizade || {}), v0 = am[id] != null ? am[id] : (id === 'lucia' ? 0 : 50), v = Math.max(0, Math.min(100, Math.round(v0 + n)));   // quem não tem coração começa no meio
-      am[id] = v; API.historia.gravar('cidade', Object.assign({}, c, { amizade: am }));
+      const c = migrarAmizadeF2(API.historia.ler('cidade') || {}), am = Object.assign({}, c.amizade), corte = Object.assign({}, c.amizadeCorte || {});
+      const v0 = am[id] != null ? am[id] : 0;
+      let v = Math.max(-100, Math.min(100, Math.round(v0 + n)));
+      if (corte[id] && v > v0) v = v0;                                   // depois do corte não sobe mais
+      if (v <= -80) corte[id] = true;
+      am[id] = v; API.historia.gravar('cidade', Object.assign({}, c, { amizade: am, amizadeCorte: corte }));
       if (v !== v0 && CD && CD.encontro) (CD.encontro.coracaoDe ? CD.encontro.coracaoDe(id, v - v0) : CD.encontro.coracao(v - v0));
     } catch (e) { console.warn('[Fase 2] amizade:', e); }
+  }
+  // a fala de amizade (falas.js) quando começa uma conversa: 'corte' | 'neg' | 'amigo' | null
+  let FALAS_F2 = null;
+  async function aberturaAmizadeF2(id, quem) {
+    const a = amizadeF2(id), est = a.corte ? 'corte' : a.v < 0 ? 'neg' : a.v >= 50 ? 'amigo' : null;
+    if (!est) return null;
+    if (!FALAS_F2) { try { FALAS_F2 = await Fases.carregar('falas'); } catch (e) { console.warn('[Fase 2] falas.js:', e); } }
+    const k = FALAS_F2 && FALAS_F2.fala ? FALAS_F2.fala(id, est, PERSONAGEM.genero === 'F') : null;
+    if (k) await dizer([quem, Tgf(k, nomeJog())]);
+    return est;
   }
   async function encontroNoQuarto(E) {
     let CD = null; try { CD = await Fases.carregar('cidade'); } catch (e) { console.warn('[Fase 2] cidade.js:', e); }

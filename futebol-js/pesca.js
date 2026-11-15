@@ -1873,6 +1873,9 @@
           if (api.empregoEscolhido() === 'mercado') await api.fala('cadu', tr('Hoje é fim de semana, o mercado fica com o meu pai. Descansa e volta segunda!'));
           p.caduLago = true; gravar();
         }
+        const ab = api.falaAmizade ? api.falaAmizade('cadu') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cadu', ab.l); Dialogo.esconder(); return; }   // -80: o Cadu não conversa mais (nem empresta vara)
+        if (ab && ab.l && ab.est === 'neg') await api.fala('cadu', ab.l);
         if (!temVara()) {
           const r = await Escolha.mostrar(tr('O que você diz?'), [tr('Me empresta uma varinha?'), tr('Só vim dar um oi!'), tr('Pescar é coisa de quem não tem o que fazer.')]);
           if (r === 2) { await api.fala('jog', tr('Pescar é coisa de quem não tem o que fazer.')); grosso(); await api.fala('cadu', tr('Cada um com o seu jeito de descansar, né... beleza.')); Dialogo.esconder(); return; }
@@ -1893,12 +1896,12 @@
         if (diaDeTrabalho()) { await semPescaHoje(); return; }
         const r = await Escolha.mostrar(tr('Você quer pescar agora?'), [tr('Sim'), tr('Conversar'), tr('Agora não')]);
         if (r === 1) {
-          const Q = PAPOS_LAGO[(p.papo | 0) % PAPOS_LAGO.length]; p.papo = (p.papo | 0) + 1;
-          await api.fala('cadu', tr(Q));
-          const rq = await Escolha.mostrar(tr(Q), [tr('Valeu pela dica!'), tr('Já sei disso, não precisa me ensinar.')]);   // a grosseria
+          const Q = ab && ab.l && ab.est === 'amigo' ? ab.l : tr(PAPOS_LAGO[(p.papo | 0) % PAPOS_LAGO.length]); p.papo = (p.papo | 0) + 1;
+          await api.fala('cadu', Q);
+          const rq = await Escolha.mostrar(Q, [tr('Valeu pela dica!'), tr('Já sei disso, não precisa me ensinar.')]);   // a grosseria
           if (rq === 1) { await api.fala('jog', tr('Já sei disso, não precisa me ensinar.')); grosso(); await api.fala('cadu', tr('Foi mal... só queria ajudar.')); Dialogo.esconder(); return; }
           await api.fala('jog', tr('Valeu pela dica!')); await api.fala('cadu', tr('Tamo junto!'));
-          if (dm.papoDia !== d.dia && api.Amizade) { dm.papoDia = d.dia; api.Amizade.somar('cadu', 2); }   // conversar aproxima (uma vez por dia; vale para o mercado também)
+          if (api.papoAmizade) api.papoAmizade('cadu', 2);             // conversar aproxima (uma vez por dia; vale para o mercado também)
           const n = descobertos(); if (n >= 5 && (p.papo % 3) === 0) await api.fala('cadu', trf('Você já pescou {0} tipos de peixe! Tá ficando craque.', n));
           Dialogo.esconder(); return;
         }
@@ -1920,7 +1923,11 @@
           if (!temVara()) await api.fala('bene', tr('Tá sem vara? O Cadu, filho do seu Raimundo do mercado, pesca aqui sábado e domingo. Ele sempre empresta uma. Ou compra aqui comigo, ué!'));
           p.conheceBene = true; gravar();
         } else if (!p.bagre || p.bagre.fim) {
-          const oi = tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.']));
+          const ab = api.falaAmizade ? api.falaAmizade('bene') : null;
+          if (ab && ab.est === 'corte') { if (ab.l) await api.fala('bene', ab.l); Dialogo.esconder(); return; }   // -80: o Bené não perde mais tempo com você
+          if (ab && ab.est === 'neg' && ab.l) await api.fala('bene', ab.l);
+          if (api.checarAtendimento && await api.checarAtendimento('bene', 'bene')) { Dialogo.esconder(); return; }   // -50: não vende nem compra peixe
+          const oi = ab && ab.est === 'amigo' && ab.l ? ab.l : ab && ab.est === 'neg' ? tr('Vai querer o quê?') : tr(pk(['E aí, vai querer o quê hoje?', 'Opa! Que bom te ver!', 'Fala! O lago tá bom hoje.']));
           await api.fala('bene', oi);
           const rb = await Escolha.mostrar(oi, [tr('Ver a loja'), tr('Sua casinha cheira a peixe podre, hein.')]);   // a grosseria
           if (rb === 1) { await api.fala('jog', tr('Sua casinha cheira a peixe podre, hein.')); grosso('bene'); await api.fala('bene', tr(PERSONAGEM.genero === 'F' ? 'É cheiro de trabalho, menina. Volta quando aprender a falar direito.' : 'É cheiro de trabalho, menino. Volta quando aprender a falar direito.')); Dialogo.esconder(); return; }
@@ -2084,6 +2091,7 @@
     const valorCaixa = () => dadosP().caixa.reduce((s, f) => s + precoPeixe(f.i, f.c), 0);
 
     // ---------------------------------------------------------------- A LOJA DO BENÉ: iscas, varas e venda dos peixes
+    const prB = (v) => (api.precoAmizade ? api.precoAmizade('bene', v) : v);   // amizade -25 ou menos: +25%
     function abrirLoja(aba) {
       return new Promise((ok) => {
         let trocando = false;                                              // indo para o catálogo: a loja volta quando ele fechar
@@ -2094,9 +2102,9 @@
           const C = Pn.corpo; C.innerHTML = ''; const p = dadosP(), d = S().dados;
           if (atual === 0) {
             ISCAS.forEach((I, k) => {
-              const L = linha(imgDe(iconeIsca(k), 32, 32, 'pcIcoP'), tr(I.nome) + '  ×' + nIsca(k), trf('{0} fakes cada', I.preco) + (p.isca === k ? ' · ' + tr('em uso') : ''));
+              const L = linha(imgDe(iconeIsca(k), 32, 32, 'pcIcoP'), tr(I.nome) + '  ×' + nIsca(k), trf('{0} fakes cada', prB(I.preco)) + (p.isca === k ? ' · ' + tr('em uso') : ''));
               if (p.isca === k) L.classList.add('on');
-              for (const n of [1, 5, 10]) { const b = botao('+' + n + ' (' + (I.preco * n) + ')'); b.disabled = !d.devInfinito && d.fakes < I.preco * n; b.onclick = () => comprarIsca(k, n, Pn, desenha); L.bts.appendChild(b); }
+              for (const n of [1, 5, 10]) { const b = botao('+' + n + ' (' + prB(I.preco * n) + ')'); b.disabled = !d.devInfinito && d.fakes < prB(I.preco * n); b.onclick = () => comprarIsca(k, n, Pn, desenha); L.bts.appendChild(b); }
               if (nIsca(k) > 0 && p.isca !== k) { const b = botao(tr('Usar')); b.onclick = () => { p.isca = k; gravar(); desenha(); }; L.bts.appendChild(b); }
               C.appendChild(L);
             });
@@ -2107,7 +2115,7 @@
               if (p.vara === v) L.classList.add('on');
               if (tem) { const b = botao(p.vara === v ? tr('Em uso') : tr('Usar'), p.vara !== v); b.disabled = p.vara === v; b.onclick = () => { p.vara = v; gravar(); desenha(); }; L.bts.appendChild(b); }
               else if (v === 0) { const s = document.createElement('span'); s.className = 'pcSub'; s.textContent = tr('Presente do Cadu'); L.bts.appendChild(s); }
-              else { const b = botao(trf('Comprar ({0})', V.preco), true); b.disabled = !d.devInfinito && d.fakes < V.preco; b.onclick = () => comprarVara(v, Pn, desenha); L.bts.appendChild(b); }
+              else { const b = botao(trf('Comprar ({0})', prB(V.preco)), true); b.disabled = !d.devInfinito && d.fakes < prB(V.preco); b.onclick = () => comprarVara(v, Pn, desenha); L.bts.appendChild(b); }
               C.appendChild(L);
             });
           } else {
@@ -2124,12 +2132,12 @@
     }
     function pagar(v) { const d = S().dados; if (!d.devInfinito && d.fakes < v) return false; d.fakes -= v; if (d.devInfinito && d.fakes < 0) d.fakes = 0; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(v); return true; }
     function comprarIsca(k, n, Pn, desenha) {
-      const I = ISCAS[k]; if (!pagar(I.preco * n)) { Pn.msg.textContent = tr('Sem dinheiro suficiente.'); SOM.erro(); return; }
-      const p = dadosP(); p.iscas[k] = nIsca(k) + n; if (nIsca(p.isca) <= 0) p.isca = k; gravar();
+      const I = ISCAS[k]; if (!pagar(prB(I.preco * n))) { Pn.msg.textContent = tr('Sem dinheiro suficiente.'); SOM.erro(); return; }
+      const p = dadosP(); p.iscas[k] = nIsca(k) + n; if (nIsca(p.isca) <= 0) p.isca = k; gravar(); if (api.papoAmizade) api.papoAmizade('bene', 1);
       Pn.msg.textContent = tr('Seu Bené') + ': ' + trf('Tá aqui: {0} × {1}. Boa pescaria!', n, tr(I.nome)); desenha();
     }
     function comprarVara(v, Pn, desenha) {
-      const V = VARAS[v]; if (!pagar(V.preco)) { Pn.msg.textContent = tr('Sem dinheiro suficiente.'); SOM.erro(); return; }
+      const V = VARAS[v]; if (!pagar(prB(V.preco))) { Pn.msg.textContent = tr('Sem dinheiro suficiente.'); SOM.erro(); return; }
       const p = dadosP(), primeira = !p.varas.length; if (p.varas.indexOf(v) < 0) p.varas.push(v); p.varas.sort((a, b) => a - b); p.vara = v; gravar(); SOM.raro();
       Pn.msg.textContent = tr('Seu Bené') + ': ' + (primeira ? tr('Taí a sua primeira vara! Leva essa caixa de isopor também, cabem 30 peixes.') : v === 4 ? tr('A de titânio! Com essa você segura até pirarucu, rapaz.') : tr('Vara nova! Agora é só escolher a isca certa.'));
       desenha();

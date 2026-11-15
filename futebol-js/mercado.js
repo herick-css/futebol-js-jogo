@@ -867,6 +867,7 @@
     function alvos(v) {
       const s = S(), J = s.jog, U = s.turnoMercado, D = M.D; if (!D) return;
       const C = M.cadu; if (C && C.estM !== 'sai') v.push({ x: C.x, z: C.z, r: 2.6, txt: T('Falar com o Cadu'), fn: falarComCadu, y: 2.5 });   // dá do outro lado do balcão
+      const Ro = M.rosa; if (Ro && Ro.estM !== 'sai' && !(U && !U.fim)) v.push({ x: Ro.x, z: Ro.z, r: 2.6, txt: T('Falar com a Rosa'), fn: falarComRosa, y: 2.5 });   // do outro lado do caixa
       const Pa = M.pai; if (Pa && Pa.estM !== 'sai') v.push({ x: Pa.x, z: Pa.z, r: 2.6, txt: T('Falar com o seu Raimundo'), fn: falarComPai, y: 2.5 });   // (6.4.0)
       if ((!U || U.fim) && podeComecar()) for (const q of [{ x: D.caixa.x, z: D.caixa.z }, { x: D.cadu.x - 0.95, z: D.caixa.z }]) v.push({ x: q.x, z: q.z, r: 2.1, txt: T('Começar o turno'), fn: comecarTurno, y: 2.3, pri: true });
       if (!U || U.fim) return;
@@ -996,12 +997,15 @@
           await api.fala('cadu', T('Passa aqui sempre que precisar de alguma coisa!'));
           dm.conheceu = true; dm.reconheceu = true; api.gravar(d.ponto || 'chegada'); fim(); return;
         }
+        const ab = api.falaAmizade ? api.falaAmizade('cadu') : null;
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cadu', ab.l); fim(); return; }   // -80: ele não conversa mais com você
         const P = PAPOS_CADU.filter((q) => (!q.salvou || salvou) && (!q.novo || !salvou)), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
+        if (ab && ab.l) await api.fala('cadu', ab.l);
         await api.fala('cadu', T(Q.p));
         const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);   // uma caixa só, embaixo: a pergunta com as respostas
         if (r === 2) { await api.fala('jog', T(Q.c[0])); grosso('cadu'); await api.fala('cadu', T(Q.c[1])); fim(); return; }
         const R = r === 1 ? Q.b : Q.a; await api.fala('jog', T(R[0])); await api.fala('cadu', T(R[1]));
-        if (dm.papoDia !== d.dia && api.Amizade) { dm.papoDia = d.dia; api.Amizade.somar('cadu', 2); }   // conversar com ele aproxima (uma vez por dia)
+        if (api.papoAmizade) api.papoAmizade('cadu', 2);               // conversar com ele aproxima (uma vez por dia)
         fim(); return;
       }
       if (!dm.apresentou) {
@@ -1029,6 +1033,9 @@
       }
       fim();
       if (s.turnoMercado) { await api.fala('cadu', T('Bom trabalho! O caixa é seu.')); fim(); return; }
+      { const ab = api.falaAmizade ? api.falaAmizade('cadu') : null;   // o chefe: com a amizade lá embaixo ele fala o mínimo (o turno começa pelo caixa)
+        if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cadu', ab.l); fim(); return; }
+        if (ab && ab.l) await api.fala('cadu', ab.l); }
       if ((d.dia || 1) < 2) { await api.fala('cadu', T('Você começa amanhã! O expediente é das 14h às 22h.')); fim(); return; }
       if (fimDeSemana()) { await api.fala('cadu', T('Hoje é fim de semana, o mercado fica com o meu pai. Descansa e volta segunda!')); fim(); return; }
       if (d.trabalhouHoje) { await api.fala('cadu', T('Seu turno de hoje já acabou. Até amanhã!')); fim(); return; }
@@ -1061,13 +1068,108 @@
         if (ehMeuEmprego()) await api.fala('pai', T('E fim de semana não tem turno, viu? Descansa, que segunda o caixa te espera.'));
         dm.paiConheceu = true; api.gravar(d.ponto || 'chegada'); Dialogo.esconder(); return;
       }
-      const Q = PAPOS_PAI[(dm.papoPai | 0) % PAPOS_PAI.length]; dm.papoPai = (dm.papoPai | 0) + 1;
-      await api.fala('pai', T(Q));
-      const r = await Escolha.mostrar(T(Q), [T('Haha, verdade!'), T('Tá, seu Raimundo... o senhor fala demais.')]);
+      const ab = api.falaAmizade ? api.falaAmizade('pai') : null;
+      if (ab && ab.est === 'corte') { if (ab.l) await api.fala('pai', ab.l); Dialogo.esconder(); return; }   // -80: o seu Raimundo não perde mais tempo
+      const Q = ab && ab.l ? ab.l : T(PAPOS_PAI[(dm.papoPai | 0) % PAPOS_PAI.length]); dm.papoPai = (dm.papoPai | 0) + 1;
+      await api.fala('pai', Q);
+      const r = await Escolha.mostrar(Q, [ab && ab.est === 'neg' ? T('Desculpa, seu Raimundo.') : T('Haha, verdade!'), T('Tá, seu Raimundo... o senhor fala demais.')]);
       if (r === 1) { await api.fala('jog', T('Tá, seu Raimundo... o senhor fala demais.')); grosso('pai'); await api.fala('pai', PERSONAGEM.genero === 'F' ? T('Ih, moça... tá bom, não te atrapalho mais.') : T('Ih, rapaz... tá bom, não te atrapalho mais.')); Dialogo.esconder(); return; }
-      await api.fala('jog', T('Haha, verdade!')); await api.fala('pai', T('É isso aí!'));
+      if (ab && ab.est === 'neg') { await api.fala('jog', T('Desculpa, seu Raimundo.')); await api.fala('pai', T('Hm. Vamos ver, né.')); }
+      else { await api.fala('jog', T('Haha, verdade!')); await api.fala('pai', T('É isso aí!')); }
+      if (api.papoAmizade) api.papoAmizade('pai', 2);
       if (ehMeuEmprego() && (dm.papoPai % 3) === 0) await api.fala('pai', T('E segunda tem turno, hein! Hoje é dia de descansar.'));
       Dialogo.esconder();
+    }
+    // ---- a ROSA, a outra caixa: falante, sabe de tudo que acontece na cidade e estuda enfermagem à noite
+    const PAPOS_ROSA = [
+      { p: 'Ai, você não sabe da última! O Toninho cortou o cabelo do seu Valdemar e ele saiu achando que tava dez anos mais novo.', a: ['Haha, e tava?', 'Tava nada! Mas deixa ele sonhar, né?'], b: ['Você sabe de tudo, hein?', 'Quem fica no caixa ouve a cidade inteira, meu bem.'], c: ['Que fofoca mais sem graça.', 'Nossa... tá bom, não te conto mais nada.'] },
+      { p: 'Hoje tem prova de farmacologia na faculdade. Tô com o nome dos remédios escrito até na mão!', a: ['Você vai arrasar!', 'Ai, Deus te ouça! Depois te conto a nota.'], b: ['Enfermagem deve ser puxado.', 'Muito! Mas quando eu vestir o branco, vai valer cada noite sem dormir.'], c: ['Colando na prova? Que feio.', 'Colando? É pra estudar no ônibus! Credo.'] },
+      { p: 'Você já foi no forró da praça no sábado? Aquilo é a coisa mais animada da cidade!', a: ['Ainda não, mas quero ir!', 'Vai sim! Eu te ensino o passo, é fácil.'], b: ['Não sei dançar.', 'Ninguém sabe no começo! É só seguir o sanfoneiro.'], c: ['Forró é coisa de gente velha.', 'Velha? A pista lota de gente jovem! Você que não sabe o que perde.'] },
+      { p: 'Quando eu me formar, quero trazer minha mãe do interior pra morar comigo aqui. Ela nunca viu uma cidade com cinema!', a: ['Que sonho bonito!', 'Né? Vou levar ela no cinema do Herick no primeiro dia.'], b: ['Ela vai estranhar no começo.', 'Vai sim! Ela acorda às quatro pra tirar leite. Aqui vai acordar e ir pra padaria, haha.'], c: ['Sua mãe vai odiar isso aqui.', 'Hm. Você não conhece a minha mãe.'] },
+      { p: 'Sabe quem leva mais coisa daqui? A Dona Cida. Uma vez levou trinta ovos de uma vez pra fazer pudim!', a: ['Trinta?! Que pudim é esse?', 'O de cupuaçu! Se você provar, nunca mais esquece.'], b: ['Ela cozinha pro restaurante, né?', 'É! E ainda leva marmita pra metade da cidade.'], c: ['E eu com isso?', 'Nada, ué. Só tava puxando assunto.'] },
+      { p: 'O Cadu fica todo vermelho quando alguém elogia ele. Já reparou? É a coisa mais fofa.', a: ['Ele é gente boa demais.', 'É o melhor chefe que eu já tive. E olha que ele nem é o dono!'], b: ['Ele é tímido mesmo.', 'Tímido, mas quando o assunto é peixe, ninguém faz ele calar a boca!'], c: ['Ele é meio bobão.', 'Bobão nada! Respeita o meu chefe, hein.'] },
+    ];
+    for (const [k, v] of Object.entries({
+      'Falar com a Rosa': ['Talk to Rosa', 'Hablar con Rosa', 'Parla con Rosa', 'Parler à Rosa'],
+      'Oi! Eu sou a Rosa, a outra caixa daqui. Qualquer coisa que você quiser saber da cidade, é só perguntar pra mim!': ['Hi! I’m Rosa, the other cashier here. Anything you want to know about the town, just ask me!', '¡Hola! Soy Rosa, la otra cajera de aquí. ¡Cualquier cosa que quieras saber de la ciudad, pregúntame!', 'Ciao! Sono Rosa, l’altra cassiera. Qualsiasi cosa tu voglia sapere sulla città, chiedi a me!', 'Coucou ! Moi c’est Rosa, l’autre caissière. Tout ce que tu veux savoir sur la ville, demande-moi !'],
+      'Prazer, Rosa! Eu sou {0}.': ['Nice to meet you, Rosa! I’m {0}.', '¡Un gusto, Rosa! Soy {0}.', 'Piacere, Rosa! Sono {0}.', 'Enchanté, Rosa ! Moi, c’est {0}.'],
+      'Ai, que nome bonito! Bem-vindo à cidade!': ['Oh, what a nice name! Welcome to town!', '¡Ay, qué nombre bonito! ¡Bienvenido a la ciudad!', 'Oh, che bel nome! Benvenuto in città!', 'Oh, quel joli prénom ! Bienvenue en ville !'],
+      'Ai, que nome bonito! Bem-vinda à cidade!': ['Oh, what a nice name! Welcome to town!', '¡Ay, qué nombre bonito! ¡Bienvenida a la ciudad!', 'Oh, che bel nome! Benvenuta in città!', 'Oh, quel joli prénom ! Bienvenue en ville !'],
+      'Tá, tá. Só passa minhas compras.': ['Yeah, yeah. Just ring up my stuff.', 'Sí, sí. Solo pasa mis compras.', 'Sì, sì. Passa solo la mia spesa.', 'Ouais, ouais. Passe juste mes courses.'],
+      'Nossa, que pressa... tá bom.': ['Wow, what a rush... fine.', 'Vaya, qué apuro... está bien.', 'Accidenti, che fretta... va bene.', 'Ouah, quelle hâte... d’accord.'],
+      'Agora não dá, tô no meio de uma conta aqui!': ['Not now, I’m in the middle of a sale!', '¡Ahora no puedo, estoy en medio de una cuenta!', 'Adesso no, sto facendo un conto!', 'Pas maintenant, je suis en plein encaissement !'],
+      'Desculpa, seu Raimundo.': ['Sorry, Mr. Raimundo.', 'Perdón, don Raimundo.', 'Mi scusi, signor Raimundo.', 'Pardon, M. Raimundo.'],
+      'Hm. Vamos ver, né.': ['Hm. We’ll see.', 'Hm. Ya veremos.', 'Mh. Vedremo.', 'Hm. On verra.'],
+      'Ai, você não sabe da última! O Toninho cortou o cabelo do seu Valdemar e ele saiu achando que tava dez anos mais novo.': ['Oh, you haven’t heard the latest! Toninho cut Mr. Valdemar’s hair and he walked out thinking he looked ten years younger.', '¡Ay, no sabes la última! Toninho le cortó el pelo a don Valdemar y salió creyendo que tenía diez años menos.', 'Oh, non sai l’ultima! Toninho ha tagliato i capelli al signor Valdemar ed è uscito convinto di avere dieci anni di meno.', 'Oh, tu ne connais pas la dernière ! Toninho a coupé les cheveux de M. Valdemar et il est reparti persuadé d’avoir dix ans de moins.'],
+      'Haha, e tava?': ['Haha, and did he?', 'Jaja, ¿y los tenía?', 'Haha, e ce li aveva?', 'Haha, et c’était le cas ?'],
+      'Tava nada! Mas deixa ele sonhar, né?': ['Not at all! But let him dream, right?', '¡Para nada! Pero déjalo soñar, ¿no?', 'Per niente! Ma lascialo sognare, no?', 'Pas du tout ! Mais laisse-le rêver, non ?'],
+      'Você sabe de tudo, hein?': ['You know everything, huh?', 'Sabes de todo, ¿eh?', 'Sai proprio tutto, eh?', 'Tu sais tout, hein ?'],
+      'Quem fica no caixa ouve a cidade inteira, meu bem.': ['Whoever works the register hears the whole town, sweetie.', 'Quien está en la caja escucha a toda la ciudad, cariño.', 'Chi sta alla cassa sente tutta la città, tesoro.', 'Celle qui tient la caisse entend toute la ville, mon chou.'],
+      'Que fofoca mais sem graça.': ['What boring gossip.', 'Qué chisme más aburrido.', 'Che pettegolezzo noioso.', 'Quel ragot sans intérêt.'],
+      'Nossa... tá bom, não te conto mais nada.': ['Wow... fine, I won’t tell you anything else.', 'Vaya... está bien, no te cuento nada más.', 'Accidenti... va bene, non ti racconto più niente.', 'Ouah... d’accord, je ne te raconte plus rien.'],
+      'Hoje tem prova de farmacologia na faculdade. Tô com o nome dos remédios escrito até na mão!': ['I have a pharmacology exam at college today. I’ve got drug names written even on my hand!', 'Hoy tengo examen de farmacología en la facultad. ¡Tengo el nombre de los remedios escrito hasta en la mano!', 'Oggi ho l’esame di farmacologia all’università. Ho i nomi dei farmaci scritti perfino sulla mano!', 'J’ai un examen de pharmacologie à la fac aujourd’hui. J’ai le nom des médicaments écrit jusque sur la main !'],
+      'Você vai arrasar!': ['You’re going to crush it!', '¡Te va a ir genial!', 'Spaccherai!', 'Tu vas tout déchirer !'],
+      'Ai, Deus te ouça! Depois te conto a nota.': ['Oh, from your lips to God’s ears! I’ll tell you my grade later.', '¡Ay, Dios te oiga! Después te cuento la nota.', 'Oh, Dio ti ascolti! Poi ti dico il voto.', 'Oh, que Dieu t’entende ! Je te dirai ma note après.'],
+      'Enfermagem deve ser puxado.': ['Nursing must be tough.', 'Enfermería debe ser pesado.', 'Infermieristica dev’essere tosta.', 'Les études d’infirmière, ça doit être dur.'],
+      'Muito! Mas quando eu vestir o branco, vai valer cada noite sem dormir.': ['Very! But when I put on the white uniform, every sleepless night will be worth it.', '¡Mucho! Pero cuando me ponga el uniforme blanco, va a valer cada noche sin dormir.', 'Tantissimo! Ma quando indosserò il camice bianco, varrà ogni notte insonne.', 'Très ! Mais quand je porterai la blouse blanche, chaque nuit blanche en aura valu la peine.'],
+      'Colando na prova? Que feio.': ['Cheating on the exam? Shame on you.', '¿Copiando en el examen? Qué feo.', 'Copi all’esame? Che brutto.', 'Tu triches à l’examen ? C’est moche.'],
+      'Colando? É pra estudar no ônibus! Credo.': ['Cheating? It’s to study on the bus! Geez.', '¿Copiando? ¡Es para estudiar en el colectivo! Dios mío.', 'Copiare? È per studiare sull’autobus! Ma dai.', 'Tricher ? C’est pour réviser dans le bus ! Franchement.'],
+      'Você já foi no forró da praça no sábado? Aquilo é a coisa mais animada da cidade!': ['Have you been to the forró dance in the square on Saturday? It’s the liveliest thing in town!', '¿Ya fuiste al forró de la plaza el sábado? ¡Es lo más animado de la ciudad!', 'Sei mai stato al forró della piazza il sabato? È la cosa più vivace della città!', 'Tu es déjà allé au forró de la place le samedi ? C’est le truc le plus animé de la ville !'],
+      'Ainda não, mas quero ir!': ['Not yet, but I want to go!', 'Todavía no, ¡pero quiero ir!', 'Non ancora, ma voglio andarci!', 'Pas encore, mais je veux y aller !'],
+      'Vai sim! Eu te ensino o passo, é fácil.': ['You should! I’ll teach you the steps, it’s easy.', '¡Ve! Te enseño el paso, es fácil.', 'Vai! Ti insegno il passo, è facile.', 'Viens ! Je t’apprends le pas, c’est facile.'],
+      'Não sei dançar.': ['I can’t dance.', 'No sé bailar.', 'Non so ballare.', 'Je ne sais pas danser.'],
+      'Ninguém sabe no começo! É só seguir o sanfoneiro.': ['Nobody can at first! Just follow the accordion player.', '¡Nadie sabe al principio! Solo sigue al acordeonista.', 'Nessuno sa farlo all’inizio! Basta seguire il fisarmonicista.', 'Personne ne sait au début ! Il suffit de suivre l’accordéoniste.'],
+      'Forró é coisa de gente velha.': ['Forró is for old people.', 'El forró es cosa de viejos.', 'Il forró è roba da vecchi.', 'Le forró, c’est pour les vieux.'],
+      'Velha? A pista lota de gente jovem! Você que não sabe o que perde.': ['Old? The dance floor is packed with young people! You don’t know what you’re missing.', '¿Viejos? ¡La pista se llena de gente joven! Tú no sabes lo que te pierdes.', 'Vecchi? La pista è piena di giovani! Sei tu che non sai cosa ti perdi.', 'Vieux ? La piste est pleine de jeunes ! C’est toi qui ne sais pas ce que tu rates.'],
+      'Quando eu me formar, quero trazer minha mãe do interior pra morar comigo aqui. Ela nunca viu uma cidade com cinema!': ['When I graduate, I want to bring my mom from the countryside to live with me here. She’s never seen a town with a cinema!', 'Cuando me reciba, quiero traer a mi mamá del interior a vivir conmigo aquí. ¡Nunca vio una ciudad con cine!', 'Quando mi laureo, voglio portare mia madre dalla campagna a vivere con me qui. Non ha mai visto una città con un cinema!', 'Quand j’aurai mon diplôme, je veux faire venir ma mère de la campagne pour vivre avec moi ici. Elle n’a jamais vu une ville avec un cinéma !'],
+      'Que sonho bonito!': ['What a beautiful dream!', '¡Qué sueño tan lindo!', 'Che bel sogno!', 'Quel beau rêve !'],
+      'Né? Vou levar ela no cinema do Herick no primeiro dia.': ['Right? I’ll take her to Herick’s cinema on day one.', '¿Verdad? La voy a llevar al cine de Herick el primer día.', 'Vero? La porterò al cinema di Herick il primo giorno.', 'Hein ? Je l’emmènerai au cinéma de Herick dès le premier jour.'],
+      'Ela vai estranhar no começo.': ['She’ll find it strange at first.', 'Le va a costar al principio.', 'All’inizio le sembrerà strano.', 'Elle va trouver ça bizarre au début.'],
+      'Vai sim! Ela acorda às quatro pra tirar leite. Aqui vai acordar e ir pra padaria, haha.': ['She will! She wakes up at four to milk the cows. Here she’ll wake up and go to the bakery, haha.', '¡Sí! Se levanta a las cuatro para ordeñar. Aquí se va a levantar e ir a la panadería, jaja.', 'Sì! Si sveglia alle quattro per mungere. Qui si sveglierà e andrà al forno, haha.', 'Oui ! Elle se lève à quatre heures pour traire. Ici, elle se lèvera pour aller à la boulangerie, haha.'],
+      'Sua mãe vai odiar isso aqui.': ['Your mom is going to hate it here.', 'Tu mamá va a odiar esto.', 'Tua madre odierà questo posto.', 'Ta mère va détester cet endroit.'],
+      'Hm. Você não conhece a minha mãe.': ['Hm. You don’t know my mom.', 'Hm. No conoces a mi mamá.', 'Mh. Non conosci mia madre.', 'Hm. Tu ne connais pas ma mère.'],
+      'Sabe quem leva mais coisa daqui? A Dona Cida. Uma vez levou trinta ovos de uma vez pra fazer pudim!': ['Know who buys the most here? Mrs. Cida. Once she took thirty eggs at once to make pudding!', '¿Sabes quién compra más aquí? Doña Cida. ¡Una vez se llevó treinta huevos de una para hacer flan!', 'Sai chi compra di più qui? La signora Cida. Una volta ha preso trenta uova in un colpo per fare il budino!', 'Tu sais qui achète le plus ici ? Mme Cida. Une fois, elle a pris trente œufs d’un coup pour faire un flan !'],
+      'Trinta?! Que pudim é esse?': ['Thirty?! What pudding is that?', '¿Treinta?! ¿Qué flan es ese?', 'Trenta?! Che budino è?', 'Trente ?! C’est quoi ce flan ?'],
+      'O de cupuaçu! Se você provar, nunca mais esquece.': ['The cupuaçu one! Once you try it, you’ll never forget it.', '¡El de cupuazú! Si lo pruebas, no lo olvidas nunca.', 'Quello al cupuaçu! Se lo assaggi, non lo dimentichi più.', 'Celui au cupuaçu ! Si tu y goûtes, tu ne l’oublies jamais.'],
+      'Ela cozinha pro restaurante, né?': ['She cooks for the restaurant, right?', 'Ella cocina para el restaurante, ¿no?', 'Cucina per il ristorante, vero?', 'Elle cuisine pour le restaurant, non ?'],
+      'É! E ainda leva marmita pra metade da cidade.': ['Yes! And she still brings lunchboxes to half the town.', '¡Sí! Y encima le lleva viandas a media ciudad.', 'Sì! E porta pure la schiscetta a mezza città.', 'Oui ! Et en plus, elle apporte des gamelles à la moitié de la ville.'],
+      'E eu com isso?': ['What’s that got to do with me?', '¿Y a mí qué?', 'E a me che importa?', 'Et alors, qu’est-ce que ça peut me faire ?'],
+      'Nada, ué. Só tava puxando assunto.': ['Nothing. I was just making conversation.', 'Nada. Solo estaba sacando tema.', 'Niente. Stavo solo facendo conversazione.', 'Rien. Je faisais juste la conversation.'],
+      'O Cadu fica todo vermelho quando alguém elogia ele. Já reparou? É a coisa mais fofa.': ['Cadu turns all red when someone compliments him. Have you noticed? It’s the cutest thing.', 'Cadu se pone todo rojo cuando alguien lo elogia. ¿Te diste cuenta? Es lo más tierno.', 'Cadu diventa tutto rosso quando qualcuno gli fa un complimento. Ci hai fatto caso? È la cosa più tenera.', 'Cadu devient tout rouge quand on lui fait un compliment. Tu as remarqué ? C’est trop mignon.'],
+      'Ele é gente boa demais.': ['He’s such a good guy.', 'Es buenísima gente.', 'È proprio una brava persona.', 'C’est vraiment quelqu’un de bien.'],
+      'É o melhor chefe que eu já tive. E olha que ele nem é o dono!': ['He’s the best boss I’ve ever had. And he’s not even the owner!', 'Es el mejor jefe que tuve. ¡Y eso que ni es el dueño!', 'È il miglior capo che abbia mai avuto. E non è nemmeno il proprietario!', 'C’est le meilleur chef que j’aie eu. Et il n’est même pas le patron !'],
+      'Ele é tímido mesmo.': ['He really is shy.', 'Es tímido, sí.', 'È proprio timido.', 'Il est vraiment timide.'],
+      'Tímido, mas quando o assunto é peixe, ninguém faz ele calar a boca!': ['Shy, but when it comes to fish, nobody can shut him up!', 'Tímido, ¡pero cuando el tema es pescar, nadie lo hace callar!', 'Timido, ma quando si parla di pesci, nessuno lo fa stare zitto!', 'Timide, mais quand on parle de poissons, personne ne peut le faire taire !'],
+      'Ele é meio bobão.': ['He’s kind of a dork.', 'Es medio bobo.', 'È un po’ tontolone.', 'Il est un peu niais.'],
+      'Bobão nada! Respeita o meu chefe, hein.': ['Dork nothing! Respect my boss, okay?', '¡Nada de bobo! Respeta a mi jefe, ¿eh?', 'Tontolone un corno! Rispetta il mio capo, eh.', 'Niais, mon œil ! Respecte mon chef, hein.'],
+    })) if (!I18N[k]) I18N[k] = v;
+    async function falarComRosa() {
+      const s = S(), R = M.rosa, J = s.jog; if (!R) return;
+      R.yawAlvo = Math.atan2(-(J.z - R.z), J.x - R.x); R.conversando = true;
+      try { await conversaRosa(); } finally { if (M.rosa) M.rosa.conversando = false; Dialogo.esconder(); }
+    }
+    async function conversaRosa() {
+      const d = S().dados, dm = dadosM(), fem = PERSONAGEM.genero === 'F';
+      if (M.vende) { await api.fala('rosa', T('Agora não dá, tô no meio de uma conta aqui!')); return; }
+      if (!dm.rosaConheceu) {
+        const oi = T('Oi! Eu sou a Rosa, a outra caixa daqui. Qualquer coisa que você quiser saber da cidade, é só perguntar pra mim!');
+        await api.fala('rosa', oi);
+        const r0 = await Escolha.mostrar(oi, [Tgf('Prazer, Rosa! Eu sou {0}.', api.nomeJog()), T('Tá, tá. Só passa minhas compras.')]);
+        dm.rosaConheceu = true; api.gravar(d.ponto || 'chegada');
+        if (r0 === 1) { await api.fala('jog', T('Tá, tá. Só passa minhas compras.')); grosso('rosa'); await api.fala('rosa', T('Nossa, que pressa... tá bom.')); return; }
+        await api.fala('jog', Tgf('Prazer, Rosa! Eu sou {0}.', api.nomeJog())); await api.fala('rosa', fem ? T('Ai, que nome bonito! Bem-vinda à cidade!') : T('Ai, que nome bonito! Bem-vindo à cidade!'));
+        if (api.papoAmizade) api.papoAmizade('rosa', 2);
+        return;
+      }
+      const ab = api.falaAmizade ? api.falaAmizade('rosa') : null;
+      if (ab && ab.est === 'corte') { if (ab.l) await api.fala('rosa', ab.l); return; }   // -80: ela não perde mais tempo com você
+      if (ab && ab.l) await api.fala('rosa', ab.l);
+      const Q = PAPOS_ROSA[(dm.papoRosa | 0) % PAPOS_ROSA.length]; dm.papoRosa = (dm.papoRosa | 0) + 1;
+      await api.fala('rosa', T(Q.p));
+      const r = await Escolha.mostrar(T(Q.p), [T(Q.a[0]), T(Q.b[0]), T(Q.c[0])]);
+      if (r === 2) { await api.fala('jog', T(Q.c[0])); grosso('rosa'); await api.fala('rosa', T(Q.c[1])); return; }
+      const Rr = r === 1 ? Q.b : Q.a; await api.fala('jog', T(Rr[0])); await api.fala('rosa', T(Rr[1]));
+      if (api.papoAmizade) api.papoAmizade('rosa', 2);
     }
     // dá para começar tocando no caixa (ou no 2º caixa), sem precisar encostar no Cadu
     function podeComecar() {
