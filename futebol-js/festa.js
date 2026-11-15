@@ -302,6 +302,12 @@
     const virar = (A, x, z) => { A.olha = Math.atan2(z - A.z, x - A.x); A.yaw = A.olha; };
     const torcida = () => { try { crowd.comemorar(0); } catch (e) { /* nada */ } };
     try {
+      // 0) (7.4.0) jogo grande num estádio da Série A: o estádio por fora com a queima de fogos
+      if (o.cfg && o.cfg.fogos && window.EstadiosA && typeof ESTADIO_A !== 'undefined' && ESTADIO_A) {
+        await io.preto(false, 500);
+        await window.EstadiosA.cena({ fogos: true, dur: 6.5, texto: window.T('É CAMPEÃO!') });   // (aqui dentro o T é o troféu: a tradução é a do jogo, window.T)
+        await io.preto(true, 450);
+      }
       // 1) comemorando em roda, pulando (câmera baixa girando)
       const N = outros.length + 1, roda = [voce].concat(outros);
       roda.forEach((A, i) => { const a = i / N * Math.PI * 2; A.x = Math.cos(a) * 1.5; A.z = ZC + Math.sin(a) * 1.5; A.pose = 'pula'; virar(A, 0, ZC); });
@@ -342,6 +348,7 @@
       pegaDuasMaos(voce, T); voce.pose = 'levanta'; pedestal.visible = false;   // o troféu saiu do pedestal
       for (const A of outros) A.pose = 'pula'; org.pose = 'palmas';
       conf = confete(260, 0, ZC, o.cores); extras.push(conf); torcida();
+      if (o.cfg && o.cfg.fogos && window.EstadiosA && typeof ESTADIO_A !== 'undefined' && ESTADIO_A) try { window.EstadiosA.fogos({ dur: 9, ritmo: 2.4 }); } catch (e) { /* sem fogos */ }   // (7.4.0) fogos em cima do estádio
       corta({ p: [0.6, 0.55, ZC - s * 4.6], p2: [0.2, 0.8, ZC - s * 3.4], t: [0, 1.6, ZC], dur: 4.2 });
       await io.esperar(4300);
       await io.preto(true, 450);
@@ -507,6 +514,7 @@
     "{0} gols": ["{0} goals", "{0} goles", "{0} gol", "{0} buts"],
     "{0} assistências": ["{0} assists", "{0} asistencias", "{0} assist", "{0} passes décisives"],
     "nota média {0}": ["average rating {0}", "nota media {0}", "voto medio {0}", "note moyenne {0}"],
+    "É CAMPEÃO!": ["CHAMPIONS!", "¡CAMPEÓN!", "CAMPIONI!", "CHAMPION !"],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 

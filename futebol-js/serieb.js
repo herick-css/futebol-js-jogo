@@ -1353,8 +1353,13 @@
       tA.popularidade = popularidade.valor(nosso) / 100; tB.popularidade = popularidade.valor(adv) / 100;
       const h = v.h, horario = h < 15.5 ? 'dia' : h < 18.4 ? 'tarde' : 'noite';
       const copa = v.comp !== 'liga';
-      const campoA = () => Object.assign({}, CAMPOS.serieA, { modelo: window.EstadiosA ? window.EstadiosA.modeloDoClube(mand) : '' });   // os estádios do estadiosA.js
-      return { campo: estadioA ? (typeof CAMPOS !== 'undefined' && CAMPOS.serieA ? campoA() : 'oficial') : 'serieB', times: [tA, tB], mandante: casa ? 0 : 1,
+      // (7.4.0) jogo GRANDE (a final de uma copa ou a última rodada da liga): a cena do estádio por fora com os fogos antes de começar,
+      //   fogos nos gols do mandante e na festa do título. A final da Copa do Brasil é no campo neutro: a Arena da Floresta.
+      const final = copa && v.fase === nFases(temp().copas[v.comp]) - 1, grande = final || (!copa && v.r >= 37);
+      const neutro = final && v.comp === 'cdb' && window.EstadiosA && window.EstadiosA.modelos().includes('floresta');
+      const campoA = () => Object.assign({}, CAMPOS.serieA, { modelo: neutro ? 'floresta' : window.EstadiosA ? window.EstadiosA.modeloDoClube(mand) : '' });   // os estádios do estadiosA.js
+      const temA = typeof CAMPOS !== 'undefined' && CAMPOS.serieA;
+      return { campo: (estadioA || neutro) ? (temA ? campoA() : 'oficial') : 'serieB', fogos: grande && !!temA && (estadioA || neutro), times: [tA, tB], mandante: casa ? 0 : 1,
         competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T(T0.divNosso === 'A' ? 'Série A' : 'Série B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
         dificuldade: 'normal', clima: Math.random() < 0.15 ? 'chuva' : 'seco', gramado: 'baixo', horario, duracao: o.duracao, usuario: eu, atributos: api.atributosJogador(), taticas: [null, null], formacoes: [null, null] };
     }
@@ -1435,7 +1440,14 @@
       let r = null;
       try {
         r = await Historia.partida({ cfg, aviso: esc.titular ? Tf('{0} x {1}: você começa jogando!', TIME_DE[jn.c].sigla, TIME_DE[jn.f].sigla) : Tf('Substituição: você entra aos {0}\'!', esc.entra),
-          aoPronto: () => { if (!esc.titular) { G.score[0] = sim.placar[0]; G.score[1] = sim.placar[1]; } return api.preto(false, 800); } });
+          aoPronto: async () => {
+            if (!esc.titular) { G.score[0] = sim.placar[0]; G.score[1] = sim.placar[1]; }
+            // (7.4.0) jogo grande: o estádio por fora, com a queima de fogos, antes do apito inicial (um toque pula)
+            const EA = window.EstadiosA, A = cfg.fogos && esc.titular && EA && EA.atual && EA.atual();
+            if (!A) return api.preto(false, 800);
+            const c = EA.cena({ fogos: true, dur: 7.5, texto: A.nome + ' · ' + (cfg.competicao.fase ? cfg.competicao.nome + ' · ' + cfg.competicao.fase : cfg.competicao.nome) });
+            await api.preto(false, 800); await c;
+          } });
       } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
       await api.preto(true, 800);
       try { Historia.confirmarResultado(); } catch (e) { /* nada */ }

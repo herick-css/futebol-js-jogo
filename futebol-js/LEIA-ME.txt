@@ -42,10 +42,17 @@ ARQUIVOS
                           das 5 repórteres (Esfera, TBS, Band-Aid, TV Recordação, TV Agricultura) entrevista o jogador na
                           entrada; a pergunta é montada (time + jogador + jogo de hoje) e a resposta tranquila ou arrogante é
                           uma aposta de popularidade conferida depois do jogo (baixado pela Série B)
-  estadiosA.js .......... os 8 estádios da Série A (campo 'serieA' do jogo.js, campo.modelo: anel, caldeirao, fachada, listras,
-                          floresta, petalas, ferradura, concha; sem modelo, sai do mandante; nos jogos da Série A do serieb.js,
-                          cada clube joga no modelo mais parecido com a casa dele). Torcida maior, cobertura, telões e
-                          o escudo e as cores do time da casa nas faixas, nos telões, nas bandeiras e nas cadeiras (baixado na abertura)
+  estadiosA.js .......... os 20 estádios da Série A (campo 'serieA' do jogo.js, campo.modelo: anel, caldeirao, fachada, listras,
+                          floresta, petalas, ferradura, concha e, desde a 7.4.0, lagoa, humaita, vila, arcos, caipira, taboao,
+                          oeste, colinaE, toca, alto, baixada, mangueiral; sem modelo, sai do mandante). Nos jogos do serieb.js
+                          cada clube joga na sua casa (as Laranjeiras dividem o Anel; quem sobe da Série B joga num estádio do
+                          interior; a final da Copa do Brasil é na Arena da Floresta). Em volta de todos, a cidade: esplanada,
+                          avenida com calçadas, postes e carros, quarteirões de casas, prédios e torres (as janelas acendem à
+                          noite), praças, lago, rio ou mata. EstadiosA.fogos(op) e EstadiosA.cena(op) (o estádio por fora, com
+                          a câmera girando e os fogos) ficam reservados para os jogos grandes: cfg.fogos = true (finais e a
+                          última rodada) mostra a cena antes do apito, fogos nos gols do mandante e na festa do título.
+                          Torcida maior, cobertura, telões e o escudo e as cores do time da casa nas faixas, nos telões, nas
+                          bandeiras e nas cadeiras (baixado na abertura)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

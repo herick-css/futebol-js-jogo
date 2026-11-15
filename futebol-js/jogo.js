@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.3.1';
+const VERSAO_JOGO = '7.4.0';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -1690,6 +1690,15 @@ const Som = (() => {
 
   return {
     ligar, torcida,
+    // (7.4.0) os fogos da cena do estádio: 'sobe' (o assovio do rojão subindo) e 'estouro' (o estrondo e o chiado das faíscas);
+    // longe = 0..1 (o estádio visto de fora fica mais abafado)
+    fogo(tipo, longe) {
+      if (!pronto() || !vaga(tipo === 'sobe' ? 1.2 : 1.6)) return;
+      const t = ctx.currentTime, k = 1 - 0.55 * clamp(longe || 0, 0, 1);
+      if (tipo === 'sobe') { tom('sine', 900 + Math.random() * 300, 2400 + Math.random() * 600, t, 0.9, 0.035 * k); estalo(t, 0.9, 'highpass', 3000, 0.02 * k); return; }
+      tom('sine', 95, 38, t, 0.7, 0.5 * k); estalo(t, 0.35, 'lowpass', 900, 0.55 * k);
+      for (let i = 0; i < 7; i++) estalo(t + 0.18 + Math.random() * 0.9, 0.05, 'highpass', 2500 + Math.random() * 2500, (0.08 + Math.random() * 0.08) * k);   // o chiado
+    },
     get mudo() { return mudo; },
     get audio() { return ctx ? { ctx, mestre } : null; },        // para o Mumble (fala) usar o mesmo áudio
 
@@ -7144,6 +7153,7 @@ function scoreGoal(team, tGol) {
   G.tGol = tGol != null ? tGol : G.time; G.ladoGol = Math.sign(ball.x) || 1; G.replayFeito = false;   // para o replay
   crowd.comemorar(team);
   if (!PARTIDA.campo.semTorcida) Som.gol();
+  if (PARTIDA.fogos && ESTADIO_A && team === PARTIDA.mandante && window.EstadiosA && window.EstadiosA.fogos) try { window.EstadiosA.fogos({ dur: 6, ritmo: 2.2 }); } catch (e) { /* sem fogos */ }   // (7.4.0) jogo grande: gol do mandante = fogos
   // Quem tomou o gol reage de um jeito: mão na cintura (metade), senta no chão ou se joga de costas.
   for (const p of TEAMS[1 - team]) {
     const r = Math.random();
@@ -12998,7 +13008,8 @@ function montarEstadio() {
   crowd.limpar();
   crowd.pintarAtlas(PARTIDA.uniformes[0].camisa, PARTIDA.uniformes[1].camisa);
   const tipo = PARTIDA.campo.estadio || 'arena';
-  buildPitch();
+  ESTADIO_A = null;                                // (7.4.0) só vale para a partida montada agora (os fogos e a cena de fora dependem dele)
+  buildPitch(tipo === 'arenaA' && window.EstadiosA ? { semFundo: true } : undefined);   // (7.4.0) na Série A o chão de fora é o do estadiosA.js (o pátio e a cidade)
   if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); }
   else if (tipo === 'arenaA') {                    // Série A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
     buildBoards(ANUNCIOS_A);
