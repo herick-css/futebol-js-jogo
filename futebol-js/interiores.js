@@ -664,16 +664,65 @@
       const todos = C.fileiras.flatMap((L) => L.assentos);
       for (const i of [2, 7, 11, 14, 22, 27, 33, 38, 45, 51, 58, 64]) if (todos[i] != null) R.pessoas.push({ tipo: 'senta', assento: todos[i], fem: rnd() < 0.5 });
     } else if (nome === 'hospital') {
+      // HOSPITAL (7.1.19, refeito): RECEPÇÃO ao norte (a enfermeira abre a ficha), ESPERA no meio com a TV, CONSULTÓRIOS no fundo,
+      //   ENFERMARIA a oeste (2 macas com cortina, soro e monitor: o desmaio de fome acorda aqui, ao lado da 1ª maca) e a FARMÁCIA a
+      //   leste (balcão, a farmacêutica e as prateleiras: R.extras acao 'farmacia' abre os remédios da cidade.js). Faixas no chão levam
+      //   da porta à recepção (azul) e à farmácia (verde).
       sala(22, 16, 3.6, '#f4f6f8', '#e8eef4', '#d8e2ea', 0.6);
-      placa('RECEPÇÃO', '#2f6f9a', '#f4f6f8', 4, 0.6, -4, 2.9, -7.96);
-      balcao(-4, -5.4, 5, 1.0, '#2f6f9a', '#f4f6f8'); G.box(0.6, 0.4, 0.4, '#1c1c1f', -3.5, 1.06, -5.6);
+      const AZ = '#2f6f9a', VD = '#1f9a4d', BR = '#f4f6f8';
+      G.box(22 - 0.1, 0.9, 0.04, '#dbe7ef', 0, 0.14, -7.97); G.box(0.04, 0.9, 16 - 0.1, '#dbe7ef', -10.97, 0.14, 0); G.box(0.04, 0.9, 16 - 0.1, '#dbe7ef', 10.97, 0.14, 0);   // barrado azulzinho
+      // ---- recepção
+      placa('RECEPÇÃO', AZ, BR, 4, 0.6, -4, 2.9, -7.96);
+      balcao(-4, -5.4, 5, 1.0, AZ, BR); G.box(0.6, 0.4, 0.4, '#1c1c1f', -3.5, 1.06, -5.6); G.box(0.5, 0.04, 0.32, '#3a3a3e', -4.6, 1.06, -5.5);   // monitor e teclado
       R.pessoas.push({ tipo: 'parado', x: -4, z: -6.3, yaw: -Math.PI / 2, fem: true });                      // enfermeira da recepção
       R.extras.push({ x: -4, z: -4.3, r: 1.6, txt: 'Falar com a enfermeira', acao: 'ficha' });
-      const esp = []; for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) { const x = 1.5 + i * 0.8, z = 0.5 + r * 2.2; G.box(0.6, 0.05, 0.55, '#3a8ac8', x, 0.45, z); G.box(0.6, 0.5, 0.06, '#3a8ac8', x, 0.5, z + 0.25); G.box(0.05, 0.45, 0.45, '#8c9199', x, 0, z); esp.push(sentar(x, z - 0.05, 0, -1, 0.5, 'cadeira')); bloq(x, z, 0.6, 0.6); }
+      placa('LAVE AS MÃOS', '#ffffff', AZ, 1.6, 0.36, -0.6, 1.7, -7.95);
+      G.box(0.4, 0.5, 0.15, '#e8eef4', -0.6, 1.0, -7.9); G.box(0.12, 0.12, 0.08, '#9ec7dd', -0.6, 1.2, -7.8);     // o álcool em gel
+      // ---- espera (as cadeiras azuis viradas para a TV) e os consultórios
+      const esp = []; for (let r = 0; r < 2; r++) for (let i = 0; i < 6; i++) { const x = 1.2 + i * 0.8, z = 0.4 + r * 2.2; G.box(0.6, 0.05, 0.55, '#3a8ac8', x, 0.45, z); G.box(0.6, 0.5, 0.06, '#3a8ac8', x, 0.5, z + 0.25); G.box(0.05, 0.45, 0.45, '#8c9199', x, 0, z); esp.push(sentar(x, z - 0.05, 0, -1, 0.5, 'cadeira')); bloq(x, z, 0.6, 0.6); }
       for (const i of [1, 4, 8]) R.pessoas.push({ tipo: 'senta', assento: esp[i], fem: rnd() < 0.5 });
-      for (const x of [3, 7]) { G.box(1.2, 2.2, 0.08, '#c9d8e4', x, 0, -7.94); G.box(0.08, 0.08, 0.06, '#8c9199', x + 0.45, 1.05, -7.88); }   // portas dos consultórios
-      G.box(2.0, 0.6, 0.8, '#f4f4f0', -8.5, 0.3, 2.5); for (const s of [-0.85, 0.85]) G.box(0.06, 0.3, 0.06, '#8c9199', -8.5 + s, 0, 2.5); bloq(-8.5, 2.5, 2.0, 0.8);   // maca
-      R.pessoas.push({ tipo: 'vaga', area: { x0: -9, x1: 9, z0: -3, z1: 5 }, fem: false });                   // médico andando
+      G.box(1.6, 0.95, 0.08, '#1c1c1f', 3.2, 2.0, -7.92); G.box(1.45, 0.8, 0.02, '#4a90c8', 3.2, 2.075, -7.87); G.box(1.0, 0.12, 0.02, '#f4f6f8', 3.2, 2.5, -7.86);   // a TV (programa de saúde)
+      for (const x of [6.4, 8.6]) { G.box(1.2, 2.2, 0.08, '#c9d8e4', x, 0, -7.94); G.box(0.08, 0.08, 0.06, '#8c9199', x + 0.45, 1.05, -7.88); }   // portas dos consultórios
+      placa('CONSULTÓRIOS', AZ, BR, 3.4, 0.5, 7.5, 2.85, -7.95);
+      // ---- enfermaria (oeste): 2 macas com a cortina entre elas, o soro e o monitor
+      placa('ENFERMARIA', VD, BR, 3.2, 0.5, -8.6, 2.85, -7.95);
+      for (const mz of [2.5, 5.6]) {
+        G.box(2.0, 0.08, 0.8, '#f4f4f0', -8.5, 0.62, mz); G.box(2.0, 0.12, 0.8, '#9ec7dd', -8.5, 0.5, mz); for (const sx of [-0.85, 0.85]) G.box(0.06, 0.5, 0.06, '#8c9199', -8.5 + sx, 0, mz);   // a maca
+        G.box(0.45, 0.1, 0.6, '#ffffff', -9.25, 0.7, mz);                                                        // o travesseiro
+        G.box(0.04, 1.75, 0.04, '#c9ced4', -9.8, 0, mz - 0.55); G.box(0.24, 0.3, 0.06, '#d8f0ff', -9.8, 1.5, mz - 0.55); G.box(0.02, 0.6, 0.02, '#d8f0ff', -9.62, 0.9, mz - 0.55);   // o soro
+        G.box(0.08, 0.36, 0.5, '#1c1c1f', -10.9, 1.35, mz); G.box(0.02, 0.26, 0.4, '#2a8a4a', -10.85, 1.4, mz); G.box(0.02, 0.02, 0.3, '#9dffb0', -10.84, 1.5, mz);   // o monitor (com a linha do batimento)
+        bloq(-8.5, mz, 2.0, 0.8);
+      }
+      G.box(2.4, 1.7, 0.04, '#dff1f8', -8.6, 0.15, 4.05); for (let k = 0; k < 6; k++) G.box(0.02, 1.7, 0.05, '#c3e2ee', -9.6 + k * 0.4, 0.15, 4.06); G.box(2.5, 0.04, 0.06, '#c9ced4', -8.6, 2.08, 4.05); bloq(-8.6, 4.05, 2.4, 0.15);   // a cortina
+      G.box(1.0, 0.75, 0.5, '#e8eef4', -9.9, 0, -1.2); G.box(1.04, 0.04, 0.54, AZ, -9.9, 0.75, -1.2); G.box(0.3, 0.2, 0.2, '#ffffff', -9.7, 0.79, -1.2); bloq(-9.9, -1.2, 1.0, 0.5);   // armário de curativos
+      // ---- farmácia (leste): balcão branco com tampo verde, a farmacêutica, as prateleiras e a cruz verde
+      balcao(8.3, 0.7, 0.9, 3.8, BR, VD);
+      G.box(0.04, 0.9, 3.6, VD, 7.83, 0.05, 0.7);                                                               // a faixa verde na frente do balcão
+      for (let n = 0; n < 4; n++) {
+        const y = 0.35 + n * 0.55; G.box(0.42, 0.04, 4.4, '#f4f4ec', 10.72, y, 0.7);
+        for (let k = 0; k < 12; k++) { const cor = ['#c8352b', '#3a64b8', '#f2c230', '#1f9a4d', '#ffffff', '#e8742a', '#7a4fb0', '#3fb7b0'][(k * 3 + n * 5) % 8]; G.box(0.28, 0.2 + ((k + n) % 3) * 0.05, 0.26, cor, 10.72, y + 0.04, -1.2 + k * 0.345); G.box(0.285, 0.05, 0.27, '#ffffff', 10.72, y + 0.12, -1.2 + k * 0.345); }
+      }
+      bloq(10.72, 0.7, 0.5, 4.5);
+      G.box(0.06, 0.9, 0.3, VD, 10.93, 2.55, 0.7); G.box(0.06, 0.3, 0.9, VD, 10.93, 2.85, 0.7);                // a cruz verde na parede
+      placa('FARMÁCIA', VD, BR, 2.6, 0.55, 9.3, 3.0, -1.65); G.box(2.7, 0.65, 0.05, '#0e3a20', 9.3, 2.67, -1.68); for (const sx of [-1, 1]) G.box(0.025, 0.35, 0.025, '#c9ced4', 9.3 + sx * 1.1, 3.25, -1.68);
+      if (api.remedios) {                                                                                      // (7.1.19) o EXPOSITOR no balcão: os remédios em pixel art virados para o cliente
+        const L = api.remedios.lista, passo = 3.2 / L.length;
+        G.box(0.32, 0.06, 3.5, '#d8f0ff', 8.1, 1.06, 0.7); G.box(0.04, 0.42, 3.5, '#c3e2ee', 8.24, 1.06, 0.7);   // a base e o fundo de acrílico
+        L.forEach((Rm, k) => {
+          const tex = guardar(texCanvas(20, 20, (g) => { g.clearRect(0, 0, 20, 20); api.remedios.desenhar(g, 0, 0, Rm.id); }, false));
+          const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(0.52, 0.52)), guardar(new THREE.MeshLambertMaterial({ map: tex, transparent: true, alphaTest: 0.5, side: THREE.DoubleSide })));
+          m.position.set(8.12, 1.36, 0.7 - 1.6 + passo * (k + 0.5)); m.rotation.y = -Math.PI / 4; grupo.add(m);   // na diagonal: o cliente (oeste) e a câmera (sul) veem
+        });
+      }
+      R.pessoas.push({ tipo: 'parado', x: 9.45, z: 0.7, yaw: Math.PI, fem: true, marca: 'farma' });            // a farmacêutica
+      R.extras.push({ x: 7.3, z: 0.7, r: 1.7, txt: 'Comprar remédios', acao: 'farmacia' });
+      G.box(0.5, 0.25, 0.5, '#e8eef4', 7.0, 0, 3.9); G.box(0.36, 0.9, 0.36, '#f4f6f8', 7.0, 0.25, 3.9); G.box(0.24, 0.32, 0.24, '#9ec7dd', 7.0, 1.15, 3.9); bloq(7.0, 3.9, 0.5, 0.5);   // o bebedouro
+      // ---- plantas nos cantos e as faixas no chão (da porta: azul para a recepção, verde para a farmácia)
+      for (const [px, pz] of [[-10.3, 7.3], [10.3, 7.3], [-1.8, -7.3], [10.3, -7.3]]) { G.box(0.5, 0.45, 0.5, '#8a5a2b', px, 0, pz); G.box(0.7, 0.6, 0.7, '#3f8f3a', px, 0.45, pz); G.box(0.4, 0.4, 0.4, '#4a9a42', px, 1.05, pz); bloq(px, pz, 0.6, 0.6); }
+      for (const [x0, z0, x1, z1, cor] of [[-0.3, 7.0, -0.3, -3.6, AZ], [-0.3, -3.6, -4, -3.6, AZ], [0.3, 7.0, 0.3, 5.6, VD], [0.3, 5.6, 6.9, 5.6, VD], [6.9, 5.6, 6.9, 0.7, VD]]) {
+        const w = Math.abs(x1 - x0) || 0.12, d = Math.abs(z1 - z0) || 0.12; G.box(w + (x1 !== x0 ? 0.12 : 0), 0.012, d + (z1 !== z0 ? 0.12 : 0), cor, (x0 + x1) / 2, 0.003, (z0 + z1) / 2);
+      }
+      R.pessoas.push({ tipo: 'vaga', area: { x0: -6, x1: 6, z0: -3, z1: 5 }, fem: false });                   // médico andando
     } else if (nome === 'lanche') {
       sala(12, 9, 3.2, '#f2b33a', '#c8c4bc', '#b8b4ac', 0.5);
       placa('LANCHE DO SEU VALDEMAR', '#a8202a', '#ffe9a8', 6, 0.6, 0, 2.6, -4.46);

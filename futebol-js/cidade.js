@@ -112,6 +112,14 @@
    NOVIDADES DA 6.1.1
      - Lúcia: ABRACO_D/BEIJO_D (distâncias) e cabeças lado a lado no abraço · ROUPA_ENC = macacão (fase2.js ROUPAS.F[21]) · checarFaltaEncontro()
        (20h sem ir: mensagem + -25 de amizade; também se o dia virar) · quadro de missões: ícone sempre visível (recolherMissao/mostrarMissao).
+   NOVIDADES DA 7.1.19
+   - HOSPITAL refeito (interiores.js): recepção, espera com TV, consultórios, ENFERMARIA (2 macas com cortina, soro e monitor; o
+     desmaio de fome acorda ao lado da 1ª) e a FARMÁCIA com a Dra. Rita, o balcão, as prateleiras e o expositor com os remédios.
+   - FARMÁCIA: 5 remédios pelo nome do composto (REMEDIOS), 500 fakes cada, +25 no lado bom do espectro deles SÓ se estiver
+     negativo (no máximo até 0): polivitamínico e poliminerais (Saudável), extrato seco de Panax ginseng (Ativo), extrato seco de
+     Passiflora incarnata (Tranquilo), melatonina (Disciplinado) e extrato seco de Ginkgo biloba (Confiante). Pixel art de cada um
+     (desenharRemedio, 20 x 20) no painel e no balcão. Humilde/Ganancioso não tem remédio.
+
    NOVIDADES DA 7.1.14
    - HABILIDADES: todas sobem e descem. Depois de cada jogo da história (evoluirPartida: sintético, futsal, várzea, Série B) os
      contadores de chutes no alvo, gols, dribles, domínios, cabeçadas, desarmes, assistências e passes viram pontos; a academia e o
@@ -226,6 +234,36 @@
 
   // ------------------------------------------------------------------ textos novos (pt → en, es, it, fr)
   const TRAD_CD = {
+    'FECHAR': ['CLOSE', 'CERRAR', 'CHIUDI', 'FERMER'], 'Você tem {0} fakes': ['You have {0} fakes', 'Tienes {0} fakes', 'Hai {0} fakes', 'Tu as {0} fakes'],
+    // (7.1.19) a farmácia do hospital
+    'Dra. Rita': ['Dr. Rita', 'Dra. Rita', 'Dott.ssa Rita', 'Dr Rita'],
+    'Comprar remédios': ['Buy medicine', 'Comprar remedios', 'Compra medicine', 'Acheter des médicaments'],
+    'FARMÁCIA': ['PHARMACY', 'FARMACIA', 'FARMACIA', 'PHARMACIE'],
+    'Cada remédio custa {0} fakes e soma +{1} no lado bom, só se ele estiver negativo (no máximo até o neutro).': ['Each medicine costs {0} fakes and adds +{1} to the good side, only if it is negative (up to neutral at most).', 'Cada remedio cuesta {0} fakes y suma +{1} al lado bueno, solo si está negativo (como máximo hasta neutro).', 'Ogni medicina costa {0} fakes e aggiunge +{1} al lato buono, solo se è negativo (al massimo fino a neutro).', 'Chaque médicament coûte {0} fakes et ajoute +{1} au bon côté, seulement s’il est négatif (au plus jusqu’au neutre).'],
+    'Remédios tomados agora: {0}': ['Medicines taken now: {0}', 'Remedios tomados ahora: {0}', 'Medicine prese ora: {0}', 'Médicaments pris maintenant : {0}'],
+    'Você está bem nisso': ['You’re fine on this', 'Estás bien en esto', 'Stai bene in questo', 'Tu vas bien là-dessus'],
+    'Faltam {0} fakes': ['{0} fakes short', 'Faltan {0} fakes', 'Mancano {0} fakes', 'Il manque {0} fakes'],
+    'TOMAR · {0} fakes': ['TAKE · {0} fakes', 'TOMAR · {0} fakes', 'PRENDI · {0} fakes', 'PRENDRE · {0} fakes'],
+    'Polivitamínico e poliminerais': ['Multivitamin and multimineral', 'Polivitamínico y poliminerales', 'Multivitaminico e multiminerale', 'Multivitamines et multiminéraux'],
+    'Extrato seco de Panax ginseng': ['Panax ginseng dry extract', 'Extracto seco de Panax ginseng', 'Estratto secco di Panax ginseng', 'Extrait sec de Panax ginseng'],
+    'Extrato seco de Passiflora incarnata': ['Passiflora incarnata dry extract', 'Extracto seco de Passiflora incarnata', 'Estratto secco di Passiflora incarnata', 'Extrait sec de Passiflora incarnata'],
+    'Melatonina': ['Melatonin', 'Melatonina', 'Melatonina', 'Mélatonine'],
+    'Extrato seco de Ginkgo biloba': ['Ginkgo biloba dry extract', 'Extracto seco de Ginkgo biloba', 'Estratto secco di Ginkgo biloba', 'Extrait sec de Ginkgo biloba'],
+    'comprimido': ['tablet', 'comprimido', 'compressa', 'comprimé'],
+    'cápsula': ['capsule', 'cápsula', 'capsula', 'gélule'],
+    'gotas': ['drops', 'gotas', 'gocce', 'gouttes'],
+    'Vitaminas e minerais para quem anda se cuidando mal.': ['Vitamins and minerals for those not taking care of themselves.', 'Vitaminas y minerales para quien no se está cuidando.', 'Vitamine e minerali per chi si trascura.', 'Vitamines et minéraux pour qui se néglige.'],
+    'Contra o cansaço e a falta de disposição.': ['For tiredness and lack of energy.', 'Contra el cansancio y la falta de ánimo.', 'Contro la stanchezza e la mancanza di energia.', 'Contre la fatigue et le manque d’énergie.'],
+    'Calmante fitoterápico, feito do maracujá.': ['Herbal calmative, made from passion fruit.', 'Calmante fitoterápico, hecho de maracuyá.', 'Calmante fitoterapico, a base di passiflora.', 'Calmant à base de plantes, fait de fruit de la passion.'],
+    'Ajuda a acertar a hora de dormir e a rotina.': ['Helps fix your bedtime and routine.', 'Ayuda a ajustar la hora de dormir y la rutina.', 'Aiuta a sistemare l’ora di dormire e la routine.', 'Aide à régler l’heure du coucher et la routine.'],
+    'Concentração e foco para não tremer na hora H.': ['Concentration and focus so you don’t choke at the big moment.', 'Concentración y foco para no temblar en el momento clave.', 'Concentrazione e focus per non tremare nel momento decisivo.', 'Concentration et focus pour ne pas trembler au moment clé.'],
+    'Olá! Eu sou a Rita, a farmacêutica do hospital.': ['Hello! I’m Rita, the hospital pharmacist.', '¡Hola! Soy Rita, la farmacéutica del hospital.', 'Ciao! Sono Rita, la farmacista dell’ospedale.', 'Bonjour ! Je suis Rita, la pharmacienne de l’hôpital.'],
+    'Aqui tem remédio para quando a saúde ou o seu jeito estão em baixa: cansaço, nervoso, sono bagunçado, insegurança...': ['Here we have medicine for when your health or your mood is down: tiredness, nerves, messy sleep, insecurity...', 'Aquí hay remedios para cuando la salud o tu ánimo están bajos: cansancio, nervios, sueño desordenado, inseguridad...', 'Qui ci sono medicine per quando la salute o l’umore sono giù: stanchezza, nervosismo, sonno disordinato, insicurezza...', 'Ici il y a des médicaments pour quand la santé ou le moral sont bas : fatigue, nerfs, sommeil déréglé, insécurité...'],
+    'Cada um custa {0} fakes. Mas só faz efeito se aquilo estiver ruim mesmo, e ajuda só até o normal.': ['Each one costs {0} fakes. But it only works if that thing is really bad, and only helps up to normal.', 'Cada uno cuesta {0} fakes. Pero solo hace efecto si eso está mal de verdad, y ayuda solo hasta lo normal.', 'Ognuna costa {0} fakes. Ma funziona solo se la cosa va davvero male, e aiuta solo fino al normale.', 'Chacun coûte {0} fakes. Mais il n’agit que si ça va vraiment mal, et seulement jusqu’à la normale.'],
+    'Oi de novo! Do que você está precisando hoje?': ['Hi again! What do you need today?', '¡Hola de nuevo! ¿Qué necesitas hoy?', 'Ciao di nuovo! Di cosa hai bisogno oggi?', 'Re-bonjour ! De quoi as-tu besoin aujourd’hui ?'],
+    'Toma direitinho, viu? E não esquece: remédio ajuda, mas o que resolve é dormir, comer e treinar direito.': ['Take it properly, okay? And remember: medicine helps, but what fixes things is sleeping, eating and training well.', 'Tómalo bien, ¿eh? Y no olvides: el remedio ayuda, pero lo que resuelve es dormir, comer y entrenar bien.', 'Prendila bene, eh? E ricorda: la medicina aiuta, ma quello che risolve è dormire, mangiare e allenarsi bene.', 'Prends-le bien, d’accord ? Et n’oublie pas : le médicament aide, mais ce qui règle tout, c’est bien dormir, manger et s’entraîner.'],
+    'Qualquer coisa, é só passar aqui.': ['If you need anything, just stop by.', 'Cualquier cosa, pasa por aquí.', 'Per qualsiasi cosa, passa di qui.', 'Si besoin, passe ici.'],
+    '{0}: +{1}': ['{0}: +{1}', '{0}: +{1}', '{0}: +{1}', '{0} : +{1}'],
     'Calma, você está no hospital. Você desmaiou na rua e trouxeram você para cá.': ['Easy, you’re in the hospital. You fainted in the street and they brought you here.', 'Tranquila, estás en el hospital. Te desmayaste en la calle y te trajeron aquí.', 'Calma, sei in ospedale. Sei svenuta per strada e ti hanno portata qui.', 'Du calme, tu es à l’hôpital. Tu t’es évanouie dans la rue et on t’a amenée ici.'],
     // (7.1.14) fome, desmaio e hospital, condições e a evolução depois do jogo
     'Eu tô passando mal... faz dois dias que eu não como nada.': ['I feel sick... I haven’t eaten anything in two days.', 'Me siento mal... hace dos días que no como nada.', 'Sto male... sono due giorni che non mangio niente.', 'Je me sens mal... ça fait deux jours que je n’ai rien mangé.'],
@@ -4305,7 +4343,7 @@
   async function entrarEm(P) {
     const I = S.interiores, J = S.jog; if (!I) return;
     await preto(true, 380);
-    const R = I.construir(P.nome, { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro });
+    const R = I.construir(P.nome, { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro, remedios: { lista: REMEDIOS, desenhar: desenharRemedio } });
     if (!R) { await preto(false, 300); return; }
     for (const V of (S.viagens || []).slice()) if (V.A.length) perderBoneco(V);   // (6.6.6) quem vinha andando pela rua continua só na conta enquanto ele está lá dentro
     S.fora = { seta: S.setaAlvo, col: S.col, circ: S.circ, pisos: S.pisos, assentos: S.assentos, npcs: S.npcs, conversas: S.conversas, camBox: S.camBox, oclusores: S.oclusores, grupo: S.grupo, x: J.x, z: J.z, cam: { yaw: S.cam.yaw, dist: S.cam.dist, pitch: S.cam.pitch }, porta: P, t0: tAbs() };
@@ -4331,7 +4369,8 @@
       if (mercadoJs && p.tipo === 'vaga') continue;
       if (comFluxo && (p.tipo === 'senta' || (P.nome === 'supermercado' && p.tipo === 'vaga'))) { if (p.area) areaCli.push(p.area); continue; }
       if (p.marca === 'lucia' && !luciaNoCafe()) continue;              // a Lúcia só está lá das 7h50 às 20h
-      const A = p.marca === 'lucia' ? criarLucia(S.f2) : criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
+      const A = p.marca === 'lucia' ? criarLucia(S.f2) : p.marca === 'farma' ? criarNPCFixo(apFixa(9123, 'F'), true, 0, ['#f4f6f8', '#2f6f9a', '#f4f6f8', '#1f9a4d']) : criarPessoa(S.f2, rnd, !!p.fem); A.tipo = p.tipo; A.area = p.area;
+      if (p.marca === 'farma') { S.farma = A; S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.farma = { A, nome: T('Dra. Rita'), voz: 0 }; }   // (7.1.19) a farmacêutica do hospital
       if (p.tipo === 'senta') { const a = idx[p.assento]; if (!a) continue; A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; a.ocupado = A; }
       else if (p.tipo === 'vaga') { const a = p.area; A.x = (a.x0 + a.x1) / 2 + (rnd() - 0.5) * 2; A.z = (a.z0 + a.z1) / 2 + (rnd() - 0.5) * 2; }
       else { A.x = p.x; A.z = p.z; A.yaw = A.yawAlvo = p.yaw || 0; }
@@ -4546,7 +4585,7 @@
         if (e.acao === 'caixa' && !S.turno && !luciaLivreNoCaixa()) { v.push({ x: e.x, z: e.z, r: e.r, txt: T('A Lúcia está atendendo as mesas...'), fn: async () => {}, y: 2.4 }); continue; }   // (6.6.18)
         if (e.acao === 'bolo') { if (S.turno && !S.turno.fim) { const b = bolosAnotados(); v.push({ x: e.x, z: e.z, r: e.r, txt: b.length ? T('Pegar o bolo do pedido') : T(e.txt), fn: pegarBoloTurno, y: 2.4, pri: b.length > 0 && !S.turno.boloMao }); } else if (S.lucia && cafeAberto()) v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: comprarBolo, y: 2.4 }); continue; }   // (6.6.17) a vitrine da confeitaria · (6.6.18) no turno: pegar o bolo dos pedidos
         if (e.acao === 'bancada') { v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: S.turno ? abrirBancada : async () => { aviso(T('A bancada é usada no seu turno.')); setTimeout(() => aviso(''), 2200); }, y: 2.4 }); continue; }
-        v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
+        v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'farmacia' ? abrirFarmacia : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
     } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
@@ -4751,6 +4790,137 @@
       gravar(d.ponto || 'chegada');
     } catch (e) { console.error('[Cidade] desmaio:', e); try { await preto(false, 300); } catch (e2) { /* nada */ } }
     finally { S.desmaiando = false; if (S && S.ativo && S.modo === 'cena') liberar(); }
+  }
+  // ---------------------------------------------------------------------------------------------------------------------- (7.1.19)
+  // A FARMÁCIA DO HOSPITAL: remédios (pelo nome do composto, como na receita) que ajudam um espectro que está NEGATIVO.
+  //   Cada um custa PRECO_REMEDIO e soma +25 no lado bom do eixo dele, mas só se o eixo estiver abaixo de 0, e no máximo até 0
+  //   (o remédio tira do buraco; quem deixa o personagem "bom" de verdade são os hábitos). Humilde/Ganancioso não tem remédio.
+  const PRECO_REMEDIO = 500, DOSE_REMEDIO = 25;
+  const REMEDIOS = [
+    { id: 'polivitaminico', nome: 'Polivitamínico e poliminerais', forma: 'comprimido', eixo: 'saudavel', desc: 'Vitaminas e minerais para quem anda se cuidando mal.' },
+    { id: 'ginseng', nome: 'Extrato seco de Panax ginseng', forma: 'cápsula', eixo: 'ativo', desc: 'Contra o cansaço e a falta de disposição.' },
+    { id: 'passiflora', nome: 'Extrato seco de Passiflora incarnata', forma: 'comprimido', eixo: 'tranquilo', desc: 'Calmante fitoterápico, feito do maracujá.' },
+    { id: 'melatonina', nome: 'Melatonina', forma: 'gotas', eixo: 'disciplinado', desc: 'Ajuda a acertar a hora de dormir e a rotina.' },
+    { id: 'ginkgo', nome: 'Extrato seco de Ginkgo biloba', forma: 'comprimido', eixo: 'confiante', desc: 'Concentração e foco para não tremer na hora H.' },
+  ];
+  // (7.1.19) PIXEL ART DOS REMÉDIOS (20 x 20): o pote do polivitamínico, a caixa do ginseng com a raiz, a da passiflora com a flor do
+  //   maracujá, o frasco âmbar de gotas da melatonina com a lua e a caixa do ginkgo com a folha em leque. O painel da farmácia usa e o
+  //   interiores.js põe no expositor em cima do balcão (api.remedios).
+  function desenharRemedio(g, ox, oy, id) {
+    const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(ox + x, oy + y, w || 1, h || 1); };
+    const K = '#1c2a33';
+    const caixa = (frente, topo, lado) => {                                 // caixinha em perspectiva: frente, tampa e lateral
+      px(2, 5, 13, 13, K); px(3, 6, 11, 11, frente); px(4, 2, 13, 3, K); px(5, 3, 11, 2, topo); px(15, 3, 3, 15, K); px(16, 4, 1, 13, lado); px(3, 5, 12, 1, topo);
+      px(3, 14, 11, 1, 'rgba(0,0,0,0.12)');
+    };
+    if (id === 'polivitaminico') {                                            // pote branco, tampa laranja, rótulo vermelho com comprimidos coloridos
+      px(5, 1, 10, 5, K); px(6, 2, 8, 3, '#e8742a'); px(6, 2, 8, 1, '#f7a25a'); px(4, 5, 12, 14, K); px(5, 6, 10, 12, '#f4f6f8'); px(5, 6, 1, 12, '#ffffff'); px(14, 6, 1, 12, '#c9d3db');
+      px(5, 9, 10, 6, '#c8352b'); px(6, 10, 8, 4, '#ffffff');
+      px(7, 11, 2, 2, '#f2c230'); px(10, 11, 2, 2, '#3a64b8'); px(12, 12, 1, 1, '#1f9a4d'); px(9, 13, 1, 1, '#e8742a');
+      px(4, 18, 12, 1, K);
+    } else if (id === 'ginseng') {                                            // caixa creme com faixa vermelha, a raiz do ginseng e uma cápsula
+      caixa('#f4ecd8', '#fff8e6', '#d8cdb0'); px(3, 6, 11, 2, '#a3162a');
+      px(8, 9, 2, 2, '#9a6a3a'); px(7, 11, 3, 2, '#b07a44'); px(6, 13, 2, 2, '#b07a44'); px(9, 13, 2, 1, '#b07a44'); px(5, 15, 1, 1, '#9a6a3a'); px(11, 14, 1, 2, '#9a6a3a');   // a raiz
+      px(9, 8, 1, 1, '#1f9a4d'); px(10, 7, 1, 1, '#1f9a4d');                   // as folhinhas
+      px(15, 16, 4, 3, K); px(16, 17, 1, 1, '#c8352b'); px(17, 17, 1, 1, '#f4f6f8');   // a cápsula solta (vermelha e branca)
+    } else if (id === 'passiflora') {                                         // caixa verde-clara com a flor do maracujá (roxa, miolo amarelo)
+      caixa('#dff3d6', '#f0fbea', '#bfdcb2'); px(3, 6, 11, 2, '#6a2b8a');
+      for (const [x, y] of [[8, 9], [6, 11], [10, 11], [8, 13], [6, 9], [10, 9], [6, 13], [10, 13]]) px(x, y, 2, 2, '#9a5ac8');
+      px(7, 10, 4, 4, '#ffffff'); px(8, 11, 2, 2, '#f2c230'); px(7, 10, 1, 1, '#6a2b8a'); px(10, 13, 1, 1, '#6a2b8a');
+      px(4, 15, 3, 1, '#2f8a3a'); px(5, 14, 1, 1, '#2f8a3a');                  // a folhinha
+    } else if (id === 'melatonina') {                                         // frasco âmbar conta-gotas, rótulo azul-noite com a lua
+      px(8, 0, 4, 4, K); px(9, 1, 2, 2, '#f4f6f8'); px(7, 3, 6, 3, K); px(8, 4, 4, 1, '#3a3a3e');
+      px(5, 6, 10, 13, K); px(6, 7, 8, 11, '#b8641e'); px(6, 7, 1, 11, '#e09040'); px(13, 7, 1, 11, '#8a4410');
+      px(6, 10, 8, 6, '#1f3a73'); px(8, 11, 3, 3, '#f2c230'); px(9, 11, 2, 2, '#1f3a73'); px(12, 11, 1, 1, '#ffffff'); px(11, 14, 1, 1, '#ffffff');
+      px(5, 18, 10, 1, K);
+    } else if (id === 'ginkgo') {                                             // caixa branca com a folha de ginkgo em leque e uma cartela
+      caixa('#f7f7f2', '#ffffff', '#d8dcd2'); px(3, 6, 11, 2, '#c8a62a');
+      px(6, 9, 6, 1, '#7ab83a'); px(5, 10, 8, 1, '#8ac84a'); px(5, 11, 8, 1, '#9ad85a'); px(6, 12, 6, 1, '#8ac84a'); px(8, 12, 1, 1, '#f7f7f2'); px(7, 13, 4, 1, '#7ab83a');
+      px(9, 14, 1, 2, '#5a8a2a');                                                 // o cabinho
+      px(15, 15, 5, 4, K); px(16, 16, 3, 2, '#c9d3db'); px(16, 16, 1, 1, '#ffffff'); px(18, 17, 1, 1, '#ffffff');   // a cartela (blíster)
+    }
+  }
+  function tomarRemedio(R) {                                              // devolve o quanto subiu (0 = não fez efeito)
+    const d = S.dados, v = Espectros.valor(R.eixo); if (v >= 0) return 0;
+    const sobe = Math.min(DOSE_REMEDIO, -v);
+    d.fakes -= PRECO_REMEDIO; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
+    Espectros.mover(R.eixo, sobe, 'remédio: ' + R.nome);
+    (d.remedios = d.remedios || []).push([d.dia | 0, R.id]); if (d.remedios.length > 40) d.remedios.shift();
+    somDinheiro(); mostrarDinheiro(false); gastoNaTela(PRECO_REMEDIO); som();
+    gravar(d.ponto || 'chegada');
+    return sobe;
+  }
+  function painelFarmacia() {
+    return new Promise((fim) => {
+      const d = S.dados, VD = '#1f9a4d', AZ = '#2f6f9a';
+      const el = document.createElement('div'); el.id = 'cdFarmacia';
+      el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(360px,50vw);background:#f4f6f8;border:4px solid ' + VD + ';color:#1c2a33;display:flex;flex-direction:column;font-family:var(--font-body);box-shadow:-6px 6px 0 #0006;';
+      const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:' + VD + ';color:#fff;display:flex;flex-direction:column;gap:3px;';
+      const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;'; tit.textContent = '✚ ' + T('FARMÁCIA');
+      const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);white-space:pre-line;';
+      cab.append(tit, inf);
+      const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:flex;flex-direction:column;gap:6px;';
+      const pe = document.createElement('div'); pe.style.cssText = 'padding:6px 8px;border-top:3px solid ' + VD + ';display:flex;flex-direction:column;gap:5px;';
+      const nota = document.createElement('div'); nota.style.cssText = 'font:600 10.5px/1.3 var(--font-body);color:#4a5a66;'; nota.textContent = Tf('Cada remédio custa {0} fakes e soma +{1} no lado bom, só se ele estiver negativo (no máximo até o neutro).', PRECO_REMEDIO, DOSE_REMEDIO);
+      const fechar = document.createElement('button'); fechar.type = 'button'; fechar.className = 'pxBtn'; fechar.textContent = T('FECHAR'); fechar.style.cssText = '--p:var(--p2,2px);height:38px;font-size:12px;';
+      pe.append(nota, fechar);
+      let tomou = 0;
+      function render() {
+        inf.textContent = Tf('Você tem {0} fakes', d.fakes) + (tomou ? '\n' + Tf('Remédios tomados agora: {0}', tomou) : '');
+        const rol = lista.scrollTop; lista.innerHTML = '';
+        for (const R of REMEDIOS) {
+          const D = ESPECTROS[R.eixo], v = Espectros.valor(R.eixo), neg = v < 0, falta = !d.devInfinito && d.fakes < PRECO_REMEDIO;
+          const lin = document.createElement('div'); lin.dataset.k = R.id;
+          lin.style.cssText = 'background:#fff;border:2px solid ' + (neg ? VD : '#c9d3db') + ';padding:6px 7px;display:flex;flex-direction:column;gap:4px;';
+          const n = document.createElement('div'); n.style.cssText = 'font:700 12.5px/1.15 var(--font-display);color:#12303f;display:flex;align-items:center;gap:8px;';
+          const fig = document.createElement('canvas'); fig.width = 20; fig.height = 20; fig.style.cssText = 'width:40px;height:40px;image-rendering:pixelated;flex:none;background:#eef3f6;border:2px solid #c9d3db;'; try { desenharRemedio(fig.getContext('2d'), 0, 0, R.id); } catch (e) { /* nada */ }
+          const nt = document.createElement('span'); nt.textContent = T(R.nome); n.append(fig, nt);
+          const sub = document.createElement('div'); sub.style.cssText = 'font:600 10.5px/1.3 var(--font-body);color:#4a5a66;'; sub.textContent = T(R.forma) + ' · ' + T(R.desc);
+          const eixo = document.createElement('div'); eixo.style.cssText = 'display:flex;align-items:center;gap:6px;font:700 10.5px/1 var(--font-body);';
+          const barra = document.createElement('div'); barra.style.cssText = 'position:relative;flex:1;height:8px;background:#e1e7ec;border:1px solid #b9c4cc;';
+          const meio = document.createElement('div'); meio.style.cssText = 'position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:#6a7a86;';
+          const enc = document.createElement('div'); const p = Math.abs(v) / 2; enc.style.cssText = 'position:absolute;top:0;bottom:0;' + (v >= 0 ? 'left:50%;' : 'right:50%;') + 'width:' + p + '%;background:' + (v >= 0 ? VD : '#c8352b') + ';';
+          barra.append(enc, meio);
+          const rot = document.createElement('span'); rot.style.cssText = 'white-space:nowrap;color:' + (neg ? '#a3162a' : '#1f6a3d') + ';'; { const t0 = Espectros.rotulo(R.eixo, v); rot.textContent = t0.charAt(0).toUpperCase() + t0.slice(1); }
+          const alvo = document.createElement('span'); alvo.style.cssText = 'white-space:nowrap;color:#4a5a66;'; alvo.textContent = '→ ' + T(D.polos[0]);
+          eixo.append(rot, barra, alvo);
+          const b = document.createElement('button'); b.type = 'button';
+          const ok = neg && !falta;
+          b.textContent = !neg ? T('Você está bem nisso') : falta ? Tf('Faltam {0} fakes', PRECO_REMEDIO - d.fakes) : Tf('TOMAR · {0} fakes', PRECO_REMEDIO);
+          b.style.cssText = 'height:30px;border:2px solid ' + (ok ? '#0e3a20' : '#b9c4cc') + ';background:' + (ok ? VD : '#e1e7ec') + ';color:' + (ok ? '#fff' : '#6a7a86') + ';font:700 10.5px/1 var(--font-display);letter-spacing:.03em;cursor:' + (ok ? 'pointer' : 'default') + ';';
+          b.disabled = !ok;
+          b.onclick = () => { const sobe = tomarRemedio(R); if (sobe > 0) { tomou++; aviso(Tf('{0}: +{1}', T(D.polos[0]), Math.round(sobe))); setTimeout(() => aviso(''), 1800); } render(); };
+          lin.append(n, sub, eixo, b); lista.appendChild(lin);
+        }
+        lista.scrollTop = rol;
+      }
+      fechar.onclick = () => { el.remove(); S.painelFarma = null; fim(tomou); };
+      el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
+      S.painelFarma = { el, render }; render();
+    });
+  }
+  async function abrirFarmacia() {
+    const d = S.dados, J = S.jog, F = S.farma && S.npcs.includes(S.farma) ? S.farma : null;
+    S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
+    if (F) { F.falando = true; F.yawAlvo = Math.atan2(-(J.z - F.z), J.x - F.x); J.yawAlvo = Math.atan2(-(F.z - J.z), F.x - J.x); }
+    const quem = F ? 'farma' : 'jog';
+    try {
+      if (!d.conheceFarma) {
+        await fala(quem, T('Olá! Eu sou a Rita, a farmacêutica do hospital.'));
+        await fala(quem, T('Aqui tem remédio para quando a saúde ou o seu jeito estão em baixa: cansaço, nervoso, sono bagunçado, insegurança...'));
+        await fala(quem, Tf('Cada um custa {0} fakes. Mas só faz efeito se aquilo estiver ruim mesmo, e ajuda só até o normal.', PRECO_REMEDIO));
+        d.conheceFarma = true;
+      } else await fala(quem, T('Oi de novo! Do que você está precisando hoje?'));
+      Dialogo.esconder();
+      const tomou = await painelFarmacia();
+      await fala(quem, tomou ? T('Toma direitinho, viu? E não esquece: remédio ajuda, mas o que resolve é dormir, comer e treinar direito.') : T('Qualquer coisa, é só passar aqui.'));
+      Dialogo.esconder();
+    } catch (e) { console.error('[Cidade] farmácia:', e); }
+    finally {
+      if (S.painelFarma) { S.painelFarma.el.remove(); S.painelFarma = null; }
+      if (F) F.falando = false;
+      if (S && S.ativo && S.modo === 'cena') liberar();
+    }
   }
   function prepararDia(d) {
     d.dia = d.dia || 1; d.mes = d.mes || 1;
@@ -8412,5 +8582,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, novoDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();
