@@ -185,6 +185,10 @@
   const NOME_REG = { NE: 'Nordeste', SE: 'Sudeste', S: 'Sul', CO: 'Centro-Oeste', N: 'Norte' };
   const NOME_TATICA = { tikitaka: 'Toque de bola', falso9: 'Falso 9', retranca: 'Retranca', contra: 'Contra-ataque', aerea: 'Bola aérea' };
 
+  // ---- (7.4.4) O NIVELAMENTO ENTRE OS CAMPEONATOS (habilidade de 0 a 100 = setor × 10). As estrelas são relativas ao campeonato
+  //   (um 5 estrelas da várzea é mais fraco que um 5 estrelas da Série B, que é mais fraco que um da Série A), mas a habilidade não:
+  //   várzea 30–60 (varzea.js) · times pequenos do interior 46–53 · Série B 50–70 · Série A 65–85 · (depois: Europa 85–100).
+  const FAIXA = { B: [5.0, 7.0], A: [6.5, 8.4] }, BASE_B0 = [5.1, 1.8];
   // ---- A FORÇA PELOS 3 ANOS: posição na escada das divisões (A 1–20, B 21–40, C 41–60, D 61+), gols por jogo com o peso da
   //   divisão (gol na Série A vale mais; sofrer na Série C pesa mais). Pesos dos anos: 2023 = 0,2 · 2024 = 0,3 · 2025 = 0,5.
   //   ov (0 a 1) = 0,5 × posição + 0,25 × ataque + 0,25 × defesa, normalizados entre os 20.
@@ -203,8 +207,8 @@
     TIMES_B.forEach((t, i) => {
       t.ov = 0.5 * R[i] + 0.25 * A[i] + 0.25 * D[i]; t.atk = A[i]; t.def = D[i]; t.rank = R[i];
       t.gpj = r1(raw[i].a * 100) / 100; t.gsj = r1(raw[i].d * 100) / 100;
-      const base = 6.05 + t.ov * 1.75;
-      t.setores = { gk: r1(base + (D[i] - 0.5) * 0.9), def: r1(base + (D[i] - 0.5) * 1.1), mid: r1(base + (R[i] - 0.5) * 0.6), fwd: r1(base + (A[i] - 0.5) * 1.1) };
+      const base = BASE_B0[0] + t.ov * BASE_B0[1], fx = (v) => r1(clampN(v, FAIXA.B[0], FAIXA.B[1]));   // (7.4.4) Série B: habilidade de 50 a 70
+      t.setores = { gk: fx(base + (D[i] - 0.5) * 0.9), def: fx(base + (D[i] - 0.5) * 1.1), mid: fx(base + (R[i] - 0.5) * 0.6), fwd: fx(base + (A[i] - 0.5) * 1.1) };
       t.estrelas = t.ov >= 0.75 ? 5 : t.ov >= 0.55 ? 4 : t.ov >= 0.42 ? 3 : t.ov >= 0.2 ? 2 : 1;
     });
     const ord = TIMES_B.map((t, i) => i).sort((a, b) => TIMES_B[b].ov - TIMES_B[a].ov);
@@ -220,8 +224,8 @@
   //   · a TENDÊNCIA (média dos 3 últimos anos menos a dos 7 anteriores): quem vem subindo forte (o Leão Caipira saiu da Série D
   //     para o 4º lugar da A) ganha um empurrão, quem vem caindo perde.
   //   ov = 0,45 × posição + 0,2 × ataque + 0,2 × defesa + 0,15 × tendência (tudo normalizado entre os 20).
-  //   A escala de habilidade da Série A fica ACIMA da da B: setores de 8,0 a 9,4 (Série B: 6,05 a 7,8).
-  const BASE_A = [8.0, 1.4], BASE_B = [6.05, 1.75];
+  //   A escala de habilidade da Série A fica ACIMA da da B: setores de 6,6 a 8,4 (Série B: 5,1 a 6,9) — (7.4.4) antes 8,0–9,4 e 6,05–7,8.
+  const BASE_A = [6.6, 1.75], BASE_B = BASE_B0;
   const estrelasA = (ov) => (ov >= 0.85 ? 5 : ov >= 0.6 ? 4 : ov >= 0.42 ? 3 : ov >= 0.2 ? 2 : 1);
   (function calcularForcaA() {
     const W = [0.03, 0.04, 0.05, 0.06, 0.08, 0.09, 0.11, 0.13, 0.17, 0.24], OFF = { A: 0, B: 20, C: 40, D: 60 }, AJ = { A: [1.2, 0.85], B: [1, 1], C: [0.82, 1.2], D: [0.7, 1.3] };
@@ -240,8 +244,8 @@
     TIMES_A.forEach((t, i) => {
       t.div0 = 'A'; t.ov = (ov0[i] - lo) / (hi - lo); t.atk = A[i]; t.def = D[i]; t.rank = R[i]; t.tend = TD[i];
       t.gpj = r1(raw[i].a * 100) / 100; t.gsj = r1(raw[i].d * 100) / 100;
-      const base = BASE_A[0] + t.ov * BASE_A[1];
-      t.setores = { gk: r1(base + (D[i] - 0.5) * 0.7), def: r1(base + (D[i] - 0.5) * 0.9), mid: r1(base + (R[i] - 0.5) * 0.5), fwd: r1(base + (A[i] - 0.5) * 0.9) };
+      const base = BASE_A[0] + t.ov * BASE_A[1], fx = (v) => r1(clampN(v, FAIXA.A[0], FAIXA.A[1]));   // (7.4.4) Série A: habilidade de 65 a 85
+      t.setores = { gk: fx(base + (D[i] - 0.5) * 0.7), def: fx(base + (D[i] - 0.5) * 0.9), mid: fx(base + (R[i] - 0.5) * 0.5), fwd: fx(base + (A[i] - 0.5) * 0.9) };
       t.estrelas = estrelasA(t.ov); t.faixa = 'A';
     });
   })();
@@ -357,7 +361,7 @@
     ['Cruzeirinho do Sul', 'CDS', '#1d4fa0', '#f4f4f0'], ['Tupi das Águas', 'TDA', '#2a8a8a', '#f4f4f0'], ['Comercial da Serra', 'CMS', '#7a1f2b', '#e8c27a'],
     ['Palmeirinha do Brejo', 'PDB', '#1f8a3a', '#f4f4f0'], ['Vasquinho da Praia', 'VDP', '#f4f4f0', '#1c1c1f'], ['Botinha FC', 'BFC', '#1c1c1f', '#f4f4f0'],
   ].map(([nome, sigla, c1, c2], i) => {
-    const forca = 5.55 + ((i * 7) % 9) * 0.09;                               // de 5,6 a 6,3
+    const forca = 4.6 + ((i * 7) % 9) * 0.09;                                // (7.4.4) de 4,6 a 5,3 (antes 5,6 a 6,3): abaixo da Série B
     return { k: 'pq' + i, nome, sigla, pequeno: true, formacao: ['4-4-2', '5-3-2', '4-3-3'][i % 3], tatica: ['contra', 'retranca', 'aerea'][i % 3], estilo: 'Time do interior: muita vontade e pouca técnica.',
       tecnico: ['Seu Juca', 'Professor Didi', 'Seu Tonico', 'Dona Lurdes', 'Mister Peixoto', 'Seu Zequinha'][i % 6], estrelas: 1,
       uni: [c1, c2, c2, c1, c1, c2, '#f2c230'], uni2: [c2, c1, c1, c2, c2, c1, '#1c1c1f'], setores: { gk: forca, def: forca, mid: forca, fwd: forca - 0.1 },
@@ -704,7 +708,15 @@
   const COTA_ESTRELAS = { A: [2, 7, 6, 3, 2], B: [1, 6, 7, 4, 2] };
   function estrelasPorCota(div, n, pos) { const C = COTA_ESTRELAS[div], tot = C.reduce((a, b) => a + b, 0); let acc = 0; for (let i = 0; i < 5; i++) { acc += C[i] * n / tot; if (pos < acc - 1e-9) return 5 - i; } return 1; }
   let nivelAplicado = null;
+  // (7.4.4) saves de antes do nivelamento: os setores guardados em P.niveis estavam na régua antiga (B 6,05–7,8 · A 8,0–9,4)
+  function migrarNiveis(P) {
+    if (!P || !P.niveis || P.niveisV2) return;
+    const conv = (v) => r1(v < 7.9 ? 5.1 + (v - 6.05) * (1.8 / 1.75) : 6.6 + (v - 8.0) * (1.8 / 1.4));
+    for (const k in P.niveis) { const n = P.niveis[k]; if (n && n.setores) for (const x of ['gk', 'def', 'mid', 'fwd']) if (n.setores[x] != null) n.setores[x] = clampN(conv(n.setores[x]), FAIXA.B[0] - 0.5, FAIXA.A[1]); }
+    P.niveisV2 = true;
+  }
   function aplicarNiveis(P) {
+    migrarNiveis(P);
     const N = (P && P.niveis) || {}, T = P && P.temporada ? garantirLiga(P.temporada) : null, chave = JSON.stringify(N) + '|' + (T ? T.n + JSON.stringify(T.times) : '');
     if (chave === nivelAplicado) return; nivelAplicado = chave;
     for (const t of TIMES_A.concat(TIMES_B)) {
@@ -722,20 +734,21 @@
   function virarTemporada(P, dia0) {
     const T = garantirLiga(P.temporada), clA = classificacao(T, 'A'), clB = classificacao(T, 'B');
     const caem = clA.slice(-4).map((x) => x.k), sobem = clB.slice(0, 4).map((x) => x.k);
+    migrarNiveis(P); P.niveisV2 = true;
     const N = (P.niveis = P.niveis || {}), setDe = (k) => Object.assign({}, (N[k] && N[k].setores) || TIME_DE[k].setores0);
-    const mexe = (k, d) => { const s = setDe(k); for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(s[x] + d, 4.5, 9.8)); N[k] = Object.assign({}, N[k], { setores: s }); };
+    const mexe = (k, d) => { const s = setDe(k); for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(s[x] + d, FAIXA.B[0] - 0.5, FAIXA.A[1])); N[k] = Object.assign({}, N[k], { setores: s }); };
     for (const div of DIVS) {
       const cl = classificacao(T, div), pelaForca = cl.map((x) => x.k).sort((a, b) => mediaSet(setDe(b)) - mediaSet(setDe(a)));
       cl.forEach((x, pos) => mexe(x.k, clampN((pelaForca.indexOf(x.k) - pos) * 0.02, -0.25, 0.25)));
     }
     caem.forEach((k, i) => {                                             // rebaixados: no nível dos melhores da Série B (ov 0,95 a 0,8)
       const s = setDe(k), m = mediaSet(s), alvo = BASE_B[0] + (0.95 - i * 0.05) * BASE_B[1];
-      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), 4.5, 9.8));
+      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), FAIXA.B[0], FAIXA.B[1]));
       N[k] = { setores: s };
     });
     sobem.forEach((k, i) => {                                            // nivelados com a Série A: 3 estrelas (1º e 2º) ou 2 (3º e 4º)
       const s = setDe(k), m = mediaSet(s), alvo = BASE_A[0] + (i < 2 ? 0.5 : 0.3) * BASE_A[1], est = i < 2 ? 3 : 2;
-      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), 4.5, 9.8));
+      for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), FAIXA.A[0], FAIXA.A[1]));
       N[k] = { setores: s, estrelas: est, temp: T.n + 1 };
     });
     const times = { A: T.times.A.filter((k) => !caem.includes(k)).concat(sobem), B: T.times.B.filter((k) => !sobem.includes(k)).concat(caem) };

@@ -138,6 +138,7 @@
 #livre .lvJ.voce i { border-color: #f0a020; box-shadow: 0 0 0 2px #f0a020; } #livre .lvJ.fora i { opacity: .3; }
 #livre .lvTicker { text-align: center; }
 #livre .lvTicker .pl { font: 700 40px/1 var(--font-display); margin: 8px 0; }
+#livre .lvMed { display: block; font: 600 10px/1.2 var(--font-body); opacity: .8; text-shadow: none; letter-spacing: .02em; }
 #lvPreto { position: fixed; inset: 0; z-index: 45; background: #000; opacity: 0; pointer-events: none; transition: opacity .4s linear; }
 #lvPreto.on { opacity: 1; pointer-events: auto; }
 #lvPular { position: fixed; z-index: 46; right: max(14px, env(safe-area-inset-right, 0px)); bottom: calc(14px + env(safe-area-inset-bottom, 0px)); width: auto !important; min-width: 110px; --p: var(--p2, 2px) !important; min-height: 40px !important; font-size: 12px !important; }
@@ -218,7 +219,7 @@
   // ============================================================================================ ESCOLHER O TIME
   //   grupos: [{ id, nome, times: [k] }]; tira = [k] (os que não podem: o próprio time na escolha do adversário)
   function cartaoTime(k, off) {
-    return '<button type="button" class="pxBtn lvTime' + (off ? ' off' : '') + '" data-k="' + escH(k) + '"><img src="' + urlT(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(k), 10 - estrelasT(k)) + '</span></button>';
+    return '<button type="button" class="pxBtn lvTime' + (off ? ' off' : '') + '" data-k="' + escH(k) + '"><img src="' + urlT(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(k), 10 - estrelasT(k)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(k).media * 10))) + '</small></button>';
   }
   async function escolherTime(titulo, grupos, tira, sub) {
     let g = 0;
@@ -562,8 +563,8 @@
       const el = tela('<div class="lvCaixa">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
         '<div class="lvAbas">' + ABAS.map((x, i) => '<button type="button" class="pxBtn' + (i ? '' : ' on') + '" data-a="aba' + i + '">' + escH(x) + '</button>').join('') + '</div>' +
         '<div data-pag="0"><div class="lvPalco" style="--c1:' + ta.uni[0] + ';--c2:' + tb.uni[0] + '"><canvas></canvas>' +
-        '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span></div>' +
-        '<div class="lado b"><img src="' + urlT(kf) + '" alt=""><b>' + escH(tb.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kf), 10 - estrelasT(kf)) + '</span><span class="lvTag fora' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'FORA')) + '</span></div>' +
+        '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kc).media * 10))) + '</small><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span></div>' +
+        '<div class="lado b"><img src="' + urlT(kf) + '" alt=""><b>' + escH(tb.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kf), 10 - estrelasT(kf)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kf).media * 10))) + '</small><span class="lvTag fora' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'FORA')) + '</span></div>' +
         '<div class="xx">' + escH(ta.sigla + '  ×  ' + tb.sigla) + '</div></div></div>' +
         '<div data-pag="1" hidden><div class="lvOpc">' + cardTime(kc, m.S) + cardTime(kf, m.S) + '</div></div>' +
         '<div data-pag="2" hidden><div class="lvOpc">' + campoTime(kc, m.S, false, kc === a, cfg.pos) + campoTime(kf, m.S, true, kf === a, cfg.pos) + '</div></div>' +

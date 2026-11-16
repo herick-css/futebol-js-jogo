@@ -74,6 +74,10 @@
       uni: ['#8c9199', '#e8742a', '#e8742a', '#2a2e36', '#8c9199', '#e8742a', '#1f7a4d'], uni2: ['#e8742a', '#2a2e36', '#2a2e36', '#2a2e36', '#e8742a', '#2a2e36', '#1f7a4d'],
       elenco: ['Furado', 'Murchinho', 'Remendo', 'Zé Vazio', 'Bexiga', 'Fole', 'Pneu', 'Calibra', 'Chiado', 'Soprinho', 'Esvazia', 'Bombinha'] },
   ];
+  // (7.4.4) O NIVELAMENTO: a várzea vai de 30 a 60 de habilidade (setor × 10). Os números acima são o "desenho" de cada time (quem é
+  //   forte no quê); aqui eles entram na régua da várzea: o menor setor (3,9) vira 3,0 e o maior (8,7) vira 6,0. Assim um 5 estrelas da
+  //   várzea fica abaixo de qualquer time da Série B (50–70), que fica abaixo da Série A (65–85).
+  for (const t of TIMES_VZ) for (const x of ['gk', 'def', 'mid', 'fwd']) t.setores[x] = Math.round((3.0 + (t.setores[x] - 3.9) * 0.625) * 10) / 10;
   const IDX = {}; TIMES_VZ.forEach((t, i) => { IDX[t.k] = i; });
   const NOSSO_I = IDX[NOSSO];
   // as linhas de cada formação com 6 jogadores de linha (as mesmas do motor, montarFormacao)
@@ -163,7 +167,7 @@
     const set = (p) => { const l = tt.filter((j) => j.pos === p); return l.length ? l.reduce((s, j) => s + j.media, 0) / l.length : m; };
     return { media: r1(m), gk: r1(set('GK')), def: r1(set('DEF')), mid: r1(set('MID')), fwd: r1(set('FWD')) };
   }
-  const estrelasDe = (m) => (m >= 7.2 ? 5 : m >= 6.4 ? 4 : m >= 5.4 ? 3 : m >= 4.4 ? 2 : 1);
+  const estrelasDe = (m) => (m >= 5.06 ? 5 : m >= 4.56 ? 4 : m >= 3.94 ? 3 : m >= 3.31 ? 2 : 1);   // (7.4.4) as mesmas estrelas de antes, na régua nova (relativas à várzea)
   const estrelas = (t) => estrelasDe(forcaTime(t).media);
   let nomeJogV = () => 'Você';
 

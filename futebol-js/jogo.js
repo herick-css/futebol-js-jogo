@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.3';
+const VERSAO_JOGO = '7.4.4';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -5943,7 +5943,10 @@ function gkThink(p, dt) {
       if (p.vaiSair && dH > 4) {
         const dist = clamp(dH * 0.55, 2.5, 11), ux = (holder.x - ownGx) / dH, uz = holder.z / dH;
         if (dist2D(p, holder) < 2.2) tryTackle(p, holder, dt);
-        return seek(p, ownGx + ux * dist, uz * dist, CONFIG.GK_SPEED * 1.25);
+        // (7.4.4) atacante vindo de lado: perto da linha do gol ele não passa dos 15% da trave (o lado de lá ficava aberto);
+        //   adiantado, já fora da pequena área, pode abrir um pouco mais para fechar o ângulo
+        const adX = Math.abs(ux * dist), limZ = LIM_GK() + Math.max(0, adX - 1.5) * 0.6;
+        return seek(p, ownGx + ux * dist, clamp(uz * dist, -limZ, limZ), CONFIG.GK_SPEED * 1.25);
       }
     } else p.saidaDe = null;
   }
@@ -6004,7 +6007,7 @@ function gkThink(p, dt) {
         if (!noAlvo || !alcanca) {
           // Bola para fora ou longe demais (na trave do outro lado): o corpo fica PARADO e só a cabeça acompanha a bola.
           if (ball.isShot || ballSpeed() > 12) { p.olhaT = Math.max(p.olhaT || 0, 0.8); return { vx: 0, vz: 0 }; }
-          return seek(p, lineX, clamp(p.z, -GOAL_HALF + 0.4, GOAL_HALF - 0.4), CONFIG.GK_SPEED);
+          return seek(p, lineX, clamp(p.z, -LIM_GK(), LIM_GK()), CONFIG.GK_SPEED);
         }
         // CAVADINHA / bola por cima: adiantado (ou com a bola passando por cima da cabeça), ele pula PARA TRÁS e cai de costas.
         const adiant = Math.abs(p.x - ownGx);
@@ -6064,8 +6067,11 @@ function gkThink(p, dt) {
   }
   const F = G.focus || ball;
   const depth = 1.0 + clamp((50 - Math.abs(F.x - ownGx)) * 0.06, 0, 3);
-  return seek(p, ownGx + p.dir * depth, clamp(F.z * 0.3, -GOAL_HALF + 0.5, GOAL_HALF - 0.5), CONFIG.GK_SPEED);
+  // (7.4.4) acompanhando a bola ele anda de um lado para o outro, mas para a 15% da largura do gol de cada trave (com a trave
+  //   de 0 a 100%, ele fica entre 15% e 85%): antes chegava quase na trave e deixava o outro lado todo aberto
+  return seek(p, ownGx + p.dir * depth, clamp(F.z * 0.3, -LIM_GK(), LIM_GK()), CONFIG.GK_SPEED);
 }
+const LIM_GK = () => GOAL_HALF * 0.7;                // meia largura do gol menos 15% da largura inteira
 
 // ---------------------------------------------------------------------
 // PERDER A BOLA: três reações, para você e para a IA.
