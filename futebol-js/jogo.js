@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.5';
+const VERSAO_JOGO = '7.4.6';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -2905,6 +2905,287 @@ function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCam
     else { g.fillStyle = '#FFFFFF'; g.fillRect(ox + 19, 6, 7, 8); g.fillStyle = listra; g.fillRect(ox + 20, 7, 5, 6); }
   }
 }
+// CAMISAS COM DESENHO: o uniforme pode trazer um "modelo" (os dos times da Série A e da Série B ficam no uniformes.js).
+//   Com modelo, o atlas do jogador é feito em dobro (256 x 64, as mesmas UVs): cada face da camisa ganha 64 x 64 pixels,
+//   as laterais do tronco e as mangas ganham o desenho (UV_LADO_CAMISA e UV_MANGA, na parte livre do atlas) e o peito
+//   ganha o espaço da pixel art do time (PEITO: 8 x 8 do atlas = 16 x 16 pixels de arte, sem suavizar).
+//   modelo: { base, camadas: [...], tex: { t, k }, lateral, lateralFrente, manga, mangaPadrao, punho, punho2, gola, golaCor, golaCor2, numero }
+//   cores: '#rrggbb' ou 'c' (camisa), 'l' (listra), 'g' (gola), 'k' (calção) do próprio uniforme.
+//   camadas (pintadas em ordem, uma por cima da outra; x e y vão de 0 a 1 na frente da camisa, y = 0 na gola):
+//     listras  { c: [cores], n: quantas listras na largura da frente, p: [larguras], risca: cor do filete entre elas, rw, funde, off }
+//     aros     { c: [cores], n: quantas na altura, p, risca, rw, y0, y1, off }   (listras horizontais, continuam nas mangas)
+//     banda    { y: onde começa, f: [[cor, altura], ...] }                          (faixas horizontais no peito)
+//     faixa    { c, w: largura, dir: 1 (ombro direito ao quadril esquerdo) ou -1, borda, bw, costas }   (a faixa diagonal)
+//     vfaixa   { c, x, w, borda, bw }                                                (faixa vertical)
+//     metade   { c, lado: 0 (direita de quem veste) ou 1 }
+//     degrade  { c, de, ate, k }                                                     (de cima para baixo, até a cor c)
+//     ombros   { c, h }                                                              (a parte de cima, perto da gola)
+//   tex (textura sutil, clareia ou escurece): linhas, riscas, pontos, xadrez, estrelas, ondas, tigre, curvas, diagonais
+const UV_LADO_CAMISA = regiao(96, 16, 112, 32), UV_TOPO_CAMISA = regiao(97, 16.25, 111, 17.25);
+const UV_MANGA = regiao(112, 16, 128, 32), UV_MANGA_TOPO = regiao(113, 16.25, 127, 17.25), UV_PUNHO = regiao(113, 30.75, 127, 31.75);
+const PEITO = { x: 19, y: 4, w: 8, h: 8 };
+const MODELO_GOLEIRO = { camadas: [{ t: 'degrade', c: '#000000', de: 0.5, ate: 1.15, k: 0.4 }], tex: { t: 'diagonais', k: 0.1 }, gola: 'v', golaCor: '#1c1c1f', punho: '#1c1c1f' };
+// o modelo que o boneco veste (o goleiro do time com modelo usa o desenho de goleiro, na cor dele)
+const modeloDaCamisa = (U, gk) => (U && U.modelo ? (gk ? MODELO_GOLEIRO : U.modelo) : null);
+const _rgbCache = new Map();
+function rgbCor(c) {
+  if (typeof c === 'number') return [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+  let v = _rgbCache.get(c);
+  if (!v) {
+    let s = String(c || '#000').replace('#', ''); if (s.length === 3) s = s.replace(/./g, '$&$&');
+    const n = parseInt(s, 16) || 0; v = [(n >> 16) & 255, (n >> 8) & 255, n & 255]; _rgbCache.set(c, v);
+  }
+  return v;
+}
+const misturaRGB = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+const RGB_BRANCO = [255, 255, 255], RGB_PRETO = [0, 0, 0];
+const lumaRGB = (c) => 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+const hexDeRGB = (c) => (Math.round(c[0]) << 16) | (Math.round(c[1]) << 8) | Math.round(c[2]);
+const fracao = (v) => v - Math.floor(v);
+// devolve f(x, y, parte): a cor [r, g, b] da camisa naquele ponto. parte: 'f' frente, 'b' costas,
+//   's' lateral (x = distância do meio da lateral, em larguras da frente: 0 a 0,28) e 'm' manga (x em volta, y do ombro ao punho)
+function compilarModelo(M, o) {
+  const C = (t) => (t == null ? null : rgbCor(t === 'c' ? o.camisa : t === 'l' ? o.listra : t === 'g' ? o.gola : t === 'k' ? o.calcao : t));
+  const base = C(M.base || 'c');
+  const camadas = (M.camadas || []).map((L) => {
+    const c = Array.isArray(L.c) ? L.c.map(C) : L.c != null ? C(L.c) : null;
+    const R = Object.assign({}, L, { c, f: L.f ? L.f.map(([cc, h]) => [C(cc), h]) : null, risca: L.risca ? C(L.risca) : null, borda: L.borda ? C(L.borda) : null });
+    if (Array.isArray(c)) {                          // listras e aros: onde cada cor termina dentro de um ciclo (0..1)
+      const p = L.p && L.p.length === c.length ? L.p : c.map(() => 1), tot = p.reduce((s, v) => s + v, 0);
+      let a = 0; R.acc = p.map((v) => (a += v / tot)); R.k = c.length;
+      R.ciclos = (L.n || 8) / c.length;              // ciclos de cor por largura (listras) ou altura (aros) da frente
+    }
+    return R;
+  });
+  const lateral = C(M.lateral), lf = M.lateralFrente != null ? M.lateralFrente : 0.045, manga = C(M.manga);
+  // listras/aros: a cor da posição u (em ciclos) e o filete entre elas
+  const faixaDe = (L, u) => {
+    const pos = fracao(u); let j = 0; while (j < L.k - 1 && pos >= L.acc[j]) j++;
+    const ini = j ? L.acc[j - 1] : 0, t = (pos - ini) / (L.acc[j] - ini);
+    if (L.risca && (t < (L.rw || 0.15) / 2 || t > 1 - (L.rw || 0.15) / 2)) return L.risca;
+    let cor = L.c[j];
+    if (L.funde) {                                   // as listras se fundem com a vizinha (degradê)
+      const fd = L.funde;
+      if (t > 1 - fd) cor = misturaRGB(cor, L.c[(j + 1) % L.k], (t - (1 - fd)) / fd * 0.5);
+      else if (t < fd) cor = misturaRGB(cor, L.c[(j + L.k - 1) % L.k], (fd - t) / fd * 0.5);
+    }
+    return cor;
+  };
+  const yManga = (y) => 0.03 + y * 0.4;             // a manga (0,24 m) cobre o y 0,03..0,43 da frente
+  function camada(L, x, y, parte, cor) {
+    const m = parte === 'm', s = parte === 's';
+    switch (L.t) {
+      case 'listras': {
+        if (m && manga) return cor;
+        const yy = m ? yManga(y) : y; if ((L.y0 != null && yy < L.y0) || (L.y1 != null && yy > L.y1)) return cor;
+        const xx = m ? (x - 0.5) * 0.36 : s ? x : Math.abs(x - 0.5);
+        return faixaDe(L, L.acc[0] / 2 + xx * L.ciclos + (L.off || 0));
+      }
+      case 'aros': {
+        if (m && manga) return cor;
+        const yy = m ? yManga(y) : y, y0 = L.y0 || 0, y1 = L.y1 != null ? L.y1 : 1;
+        if (yy < y0 || yy > y1) return cor;
+        return faixaDe(L, (yy - y0) * L.ciclos + (L.off || 0));
+      }
+      case 'banda': {
+        if (m && !L.manga) return cor;
+        let yy = L.y || 0; const ym = m ? yManga(y) : y;
+        for (const [c, h] of L.f) { if (ym >= yy && ym < yy + h) return c; yy += h; }
+        return cor;
+      }
+      case 'faixa': {
+        if (m || s || (parte === 'b' && !L.costas)) return cor;               // a faixa diagonal fica só na frente (costas: true leva para trás)
+        let xx = parte === 'b' ? 1 - x : x; if (L.dir === -1) xx = 1 - xx;
+        const d = Math.abs(y - (-0.1 + xx * 1.2)) / 1.56, w = (L.w || 0.18) / 2;
+        return d < w ? L.c : L.borda && d < w + (L.bw || 0.03) ? L.borda : cor;
+      }
+      case 'vfaixa': {
+        if (m || s) return cor;
+        const d = Math.abs(x - (L.x != null ? L.x : 0.5)), w = (L.w || 0.14) / 2;
+        return d < w ? L.c : L.borda && d < w + (L.bw || 0.025) ? L.borda : cor;
+      }
+      case 'metade': {
+        if (m || s) return cor;
+        const xx = parte === 'b' ? 1 - x : x;
+        return (L.lado ? xx >= 0.5 : xx < 0.5) ? L.c : cor;
+      }
+      case 'degrade': {
+        const yy = m ? yManga(y) : y, a = Math.min(1, Math.max(0, (yy - (L.de || 0)) / ((L.ate != null ? L.ate : 1) - (L.de || 0))));
+        return misturaRGB(cor, L.c, a * (L.k != null ? L.k : 1));
+      }
+      case 'ombros':
+        if (m) return y < (L.hm != null ? L.hm : 0.3) ? L.c : cor;
+        return y < (L.h || 0.1) ? L.c : cor;
+    }
+    return cor;
+  }
+  return function (x, y, parte) {
+    let cor = parte === 'm' && manga ? manga : base;
+    for (const L of camadas) cor = camada(L, x, y, parte, cor);
+    if (lateral && (parte === 's' || (parte !== 'm' && (x < lf || x > 1 - lf)))) cor = lateral;
+    return cor;
+  };
+}
+// a textura sutil: -1..1 em cada pixel (px, py: pixels do atlas em dobro; a frente tem 64 x 64)
+const _hashTex = (i, j) => fracao(Math.sin(i * 127.1 + j * 311.7) * 43758.5453);
+const ESTRELA5 = ['..#..', '.###.', '#####', '.###.', '.#.#.'];
+function texturaModelo(T) {
+  if (!T || !T.t) return null;
+  const k = T.k != null ? T.k : 0.07;
+  const fn = {
+    linhas: (x, y) => (((Math.floor(x) + Math.floor(y)) % 5) === 0 ? 1 : 0),
+    riscas: (x) => (Math.floor(x) % 4 === 0 ? -1 : 0),
+    pontos: (x, y) => (Math.floor(x) % 4 === 1 && Math.floor(y) % 4 === 1 ? 1 : 0),
+    xadrez: (x, y) => ((Math.floor(x / 3) + Math.floor(y / 3)) % 2 ? 0.6 : -0.6),
+    diagonais: (x, y) => Math.sin((x - y) * 0.32),
+    ondas: (x, y) => (Math.sin(y * 0.42 + Math.sin(x * 0.18) * 2.2) > 0.82 ? 1 : 0),
+    tigre: (x, y) => { const v = Math.sin(y * 0.34 + Math.sin(x * 0.09 + y * 0.05) * 3) + Math.sin(x * 0.21) * 0.35; return v > 1.05 ? -1 : 0; },
+    curvas: (x, y) => { const d = Math.min(x, 64 - x); return d < 16 && Math.abs(Math.sin(y * 0.16 + d * 0.22)) < 0.12 ? -1 : 0; },
+    estrelas: (x, y) => {                          // estrelinhas espalhadas (5 x 5 pixels em células de 10 x 10)
+      const i = Math.floor(x / 10), j = Math.floor(y / 10);
+      if (_hashTex(i, j) > 0.42) return 0;
+      const ox = Math.floor(_hashTex(j, i) * 5), oy = Math.floor(_hashTex(i + 7, j + 3) * 5), lx = Math.floor(x) - i * 10 - ox, ly = Math.floor(y) - j * 10 - oy;
+      return lx >= 0 && lx < 5 && ly >= 0 && ly < 5 && ESTRELA5[ly][lx] === '#' ? 1 : 0;
+    },
+  }[T.t];
+  return fn ? { fn, k } : null;
+}
+// a pixel art do peito: o uniforme pode trazer a sua (peito: { pal: [cores], px: '16 linhas de 16 letras, a = pal[0]' } ou um canvas);
+//   sem ela vai o escudo do time em pixel art, reduzido para 16 x 16 pela cor que mais aparece em cada 2 x 2 (fica nítido).
+const _peitoCache = new WeakMap();
+const LETRAS_PAL = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+function canvasPeito(p) {
+  if (!p) return null;
+  if (p.getContext) return p;
+  if (_peitoCache.has(p)) return _peitoCache.get(p);
+  const L = String(p.px || '').split('|'), cv = document.createElement('canvas');
+  cv.width = Math.max(1, ...L.map((l) => l.length)); cv.height = Math.max(1, L.length);
+  const g = cv.getContext('2d');
+  L.forEach((ln, y) => { for (let x = 0; x < ln.length; x++) { const i = LETRAS_PAL.indexOf(ln[x]); if (i >= 0 && p.pal[i]) { g.fillStyle = p.pal[i]; g.fillRect(x, y, 1, 1); } } });
+  _peitoCache.set(p, cv); return cv;
+}
+function peitoDaArte(arte) {
+  if (_peitoCache.has(arte)) return _peitoCache.get(arte);
+  let cv = null;
+  try {
+    const W = arte.width, H = arte.height, d = arte.getContext('2d').getImageData(0, 0, W, H).data, w = Math.ceil(W / 2), h = Math.ceil(H / 2);
+    cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'), img = g.createImageData(w, h), o = img.data;
+    for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) {
+      const cont = new Map(); let opacos = 0;
+      for (let b = 0; b < 2; b++) for (let a = 0; a < 2; a++) {
+        const x = i * 2 + a, y = j * 2 + b; if (x >= W || y >= H) continue;
+        const p = (y * W + x) * 4; if (d[p + 3] < 128) continue;
+        opacos++; const key = (d[p] << 16) | (d[p + 1] << 8) | d[p + 2]; cont.set(key, (cont.get(key) || 0) + 1);
+      }
+      if (opacos < 2) continue;
+      let melhor = -1, n = 0;
+      for (const [key, c] of cont) if (c > n || (c === n && lumaRGB(rgbCor(key)) < lumaRGB(rgbCor(melhor)))) { melhor = key; n = c; }
+      const q = (j * w + i) * 4; o[q] = (melhor >> 16) & 255; o[q + 1] = (melhor >> 8) & 255; o[q + 2] = melhor & 255; o[q + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+  } catch (e) { cv = arte; }
+  _peitoCache.set(arte, cv); return cv;
+}
+function desenharPeito(g, x, y, w, h, o) {
+  const cv = canvasPeito(o.peito) || (o.emblema && o.emblema.arte ? peitoDaArte(o.emblema.arte) : null);
+  if (cv) { const s0 = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false; g.drawImage(cv, x, y, w, h); g.imageSmoothingEnabled = s0; }
+  else if (o.emblema) desenharEmblema(g, x, y, w, h + 1, o.emblema);
+}
+// as cores que aparecem na camisa e quanto de cada uma (para ver se dois uniformes se confundem)
+function coresDoUniforme(U) {
+  if (!U.modelo) return [[rgbCor(U.camisa), 1]];
+  const f = compilarModelo(U.modelo, U), cont = new Map();
+  for (let j = 0; j < 10; j++) for (let i = 0; i < 10; i++) {                       // só a parte que aparece (o calção cobre o pé da camisa)
+    const c = f((i + 0.5) / 10, (j + 0.5) / 10 * 0.67, 'f'), key = (c[0] >> 4) + ',' + (c[1] >> 4) + ',' + (c[2] >> 4), e = cont.get(key);
+    if (e) e[1]++; else cont.set(key, [c, 1]);
+  }
+  return [...cont.values()].map(([c, n]) => [c, n / 100]);
+}
+function semelhancaUniformes(A, B) {              // 0 (nada a ver) a 1 (iguais)
+  const a = coresDoUniforme(A), b = coresDoUniforme(B);
+  // quanto de cada cor de X também existe em Y (cores parecidas contam em parte): a interseção das duas misturas de cores
+  const lado = (X, Y) => X.reduce((s, [c, p]) => s + Math.min(p, Y.reduce((t, [d, q]) => t + q * Math.max(0, 1 - Math.hypot(c[0] - d[0], c[1] - d[1], c[2] - d[2]) / 120), 0)), 0);
+  return (lado(a, b) + lado(b, a)) / 2;
+}
+// pinta a camisa com modelo no atlas em dobro: frente, costas, laterais e mangas pixel a pixel; depois a gola, o número e o peito
+//   O desenho (frente, costas, laterais, mangas e gola) é feito uma vez por uniforme e guardado; cada boneco só copia e põe o número e o peito.
+const _camisasProntas = new WeakMap();
+function pintarCamisaModelo(g, o) {
+  const M = o.modelo, S = g.canvas.width / ATLAS_W, longa = o.manga === 1;
+  let porCor = _camisasProntas.get(M); if (!porCor) _camisasProntas.set(M, (porCor = new Map()));
+  const chave = [o.camisa, o.listra, o.gola, o.calcao, longa ? 1 : 0, S].join('|');
+  let pronta = porCor.get(chave);
+  if (!pronta) {
+    pronta = document.createElement('canvas'); pronta.width = g.canvas.width; pronta.height = g.canvas.height;
+    const g2 = pronta.getContext('2d'); g2.imageSmoothingEnabled = false; g2.scale(S, S);
+    desenhoCamisaModelo(g2, o, S);
+    if (porCor.size > 24) porCor.clear();
+    porCor.set(chave, pronta);
+  }
+  const s0 = g.imageSmoothingEnabled; g.imageSmoothingEnabled = false;
+  for (const [x, y, w, h] of [[16, 0, 64, 32], [96, 16, 32, 16]]) g.drawImage(pronta, x * S, y * S, w * S, h * S, x, y, w, h);
+  g.imageSmoothingEnabled = s0;
+  const f = compilarModelo(M, o), C = (t, pad) => rgbCor(t == null ? pad : t === 'c' ? o.camisa : t === 'l' ? o.listra : t === 'g' ? o.gola : t === 'k' ? o.calcao : t);
+  numeroEPeitoModelo(g, o, M, f, C);
+}
+function desenhoCamisaModelo(g, o, S) {
+  const M = o.modelo, f = compilarModelo(M, o), tex = texturaModelo(M.tex);
+  const C = (t, pad) => rgbCor(t == null ? pad : t === 'c' ? o.camisa : t === 'l' ? o.listra : t === 'g' ? o.gola : t === 'k' ? o.calcao : t);
+  const comTex = (c, px, py) => {
+    if (!tex) return c; const s = tex.fn(px, py); if (!s) return c;
+    return s > 0 ? misturaRGB(c, RGB_BRANCO, Math.min(1, tex.k * s * (lumaRGB(c) > 200 ? 0.6 : 1))) : misturaRGB(c, RGB_PRETO, Math.min(1, -tex.k * s * 1.4));
+  };
+  const pintar = (x0, y0, w, h, fn) => {
+    const X = Math.round(x0 * S), Y = Math.round(y0 * S), W = Math.round(w * S), H = Math.round(h * S), img = g.getImageData(X, Y, W, H), d = img.data;
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) { const c = fn((i + 0.5) / W, (j + 0.5) / H, i, j), p = (j * W + i) * 4; d[p] = c[0]; d[p + 1] = c[1]; d[p + 2] = c[2]; d[p + 3] = 255; }
+    g.putImageData(img, X, Y);
+  };
+  const longa = o.manga === 1;
+  const punho = C(M.punho, o.gola), punho2 = M.punho2 ? C(M.punho2) : null;
+  pintar(16, 0, 32, 32, (x, y, i, j) => comTex(f(x, y, 'f'), i, j));
+  pintar(48, 0, 32, 32, (x, y, i, j) => comTex(f(x, y, 'b'), i, j));
+  pintar(96, 16, 16, 16, (x, y, i, j) => comTex(f(Math.abs(x - 0.5) * 0.55, y, 's'), i * 1.1, j * 2));
+  pintar(112, 16, 16, 16, (x, y, i, j) => {
+    if (!longa && y > 0.86) return punho2 && y < 0.905 ? punho2 : punho;           // o punho da manga curta (e o filete)
+    return comTex(f(x, y, 'm'), i * 1.4, j * 1.6);
+  });
+  // a gola (frente e costas), em pixels do atlas em dobro
+  const gola = C(M.golaCor, o.gola), gola2 = M.golaCor2 ? C(M.golaCor2) : null, dentro = misturaRGB(f(0.5, 0.02, 'f'), RGB_PRETO, 0.55);
+  const px = (x, y, c) => { g.fillStyle = 'rgb(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ')'; g.fillRect(x, y, 1 / S, 1 / S); };
+  const tipo = M.gola || 'redonda', ox = 16;
+  for (let yy = 0; yy < 8; yy += 1 / S) for (let xx = 9; xx < 23; xx += 1 / S) {
+    const dx = Math.abs(xx + 0.5 / S - 16), dy = yy + 0.5 / S;
+    let c = null;
+    if (tipo === 'v') {
+      const prof = 6.2, wi = 4.2 * (1 - dy / prof), wo = wi + 1.15;
+      if (dy < 0.75 && dx < 6) c = gola;
+      else if (dy < prof + 1 && dx < wo && dy < prof + 1.15 - dx * 0.2) c = dx < wi - (gola2 ? 0.5 : 0) ? dentro : (gola2 && dx < wi ? gola2 : gola);
+    } else {
+      const ex = (a, b) => (dx * dx) / (a * a) + (dy * dy) / (b * b);
+      if (ex(5.6, 3.3) < 1) c = ex(4.4, 2.2) < 1 ? dentro : gola2 && ex(4.9, 2.6) < 1 ? gola2 : gola;
+      if (tipo === 'polo') {
+        if (dy < 2.8 && dx > 2.2 && dx < 6.2 - dy * 0.55) c = gola;                   // as pontas da gola
+        if (dx < 1 && dy >= 2.2 && dy < 7.5) c = gola;                                  // a carcela com os botões
+        if (dx < 0.5 && (Math.abs(dy - 4) < 0.5 || Math.abs(dy - 6.2) < 0.5)) c = misturaRGB(gola, RGB_PRETO, 0.45);
+      }
+    }
+    if (c) px(ox + xx, yy, c);
+  }
+  for (let xx = 10; xx < 22; xx += 1 / S) for (let yy = 0; yy < 1.5; yy += 1 / S) px(48 + xx, yy, gola2 && yy >= 1 ? gola2 : gola);   // a gola nas costas
+}
+function numeroEPeitoModelo(g, o, M, f, C) {
+  const ox = 16;
+  // o número (e o nome) nas costas, com contorno para aparecer em cima das listras
+  const fundo = f(0.5, 0.42, 'b'), corN = M.numero ? C(M.numero) : lumaRGB(fundo) > 150 ? [28, 28, 31] : [244, 244, 240];
+  const corC = lumaRGB(corN) > 150 ? 'rgba(20,20,24,0.85)' : 'rgba(250,250,246,0.85)';
+  const corT = 'rgb(' + corN.join(',') + ')';
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round'; g.strokeStyle = corC; g.lineWidth = (M.camadas || []).some((L) => L.t === 'listras' || L.t === 'aros') ? 1.5 : 1.1;
+  const texto = (t, x, y, fonte) => { g.font = fonte; g.strokeText(t, x, y); g.fillStyle = corT; g.fillText(t, x, y); };
+  if (o.nomeCamisa) { texto(String(o.nomeCamisa).toUpperCase().slice(0, 10), 64, 6.5, 'bold 6px Arial'); texto(String(o.numero), 64, 16.5, 'bold 13px Arial'); }
+  else if (o.numero !== '' && o.numero != null) texto(String(o.numero), 64, 13, 'bold 15px Arial');
+  desenharPeito(g, ox + PEITO.x, PEITO.y, PEITO.w, PEITO.h, o);
+}
 // (7.4.1) O TRAJE DOS TÉCNICOS (a frente e as costas do tronco, 32 x 32): o terno com a camisa branca em V, a gravata e os botões;
 //   a camisa social com a carcela e o bolso; o agasalho com o zíper e as faixas; a polo com a gola e os botões; a jaqueta acolchoada.
 function pintarTraje(g, ox, o, costas) {
@@ -2939,15 +3220,22 @@ function pintarTraje(g, ox, o, costas) {
   else if (o.emblema && V.tipo === 'terno') desenharEmblema(g, ox + 20, 7, 6, 7, o.emblema);
 }
 function atlasJogador(o) {
-  return drawTexture(ATLAS_W, ATLAS_H, (g) => {
+  const hd = o.modelo && !o.traje ? 2 : 1;          // camisa com desenho: o atlas em dobro (ver pintarCamisaModelo)
+  const t = drawTexture(ATLAS_W * hd, ATLAS_H * hd, (g) => {
+    if (hd > 1) { g.imageSmoothingEnabled = false; g.scale(hd, hd); }
     g.fillStyle = '#FFFFFF'; g.fillRect(0, 0, ATLAS_W, ATLAS_H);
     pintarRosto(g, 0, 0, o.pele, o);
-    pintarCamisa(g, 16, o.camisa, o.listra, o.gola, o.numero, false, o.emblema);
-    pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
+    if (hd > 1) pintarCamisaModelo(g, o);
+    else {
+      pintarCamisa(g, 16, o.camisa, o.listra, o.gola, o.numero, false, o.emblema);
+      pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
+    }
     if (o.traje) { pintarTraje(g, 16, o, false); pintarTraje(g, 48, o, true); }   // (7.4.1) técnico: terno, agasalho, polo...
     pintarLadosCabeca(g, 80, 0, o);
     if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
   });
+  if (hd > 1) { t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; }   // de longe as listras não "piscam"
+  return t;
 }
 function texNome(nome, fundo) {
   return drawTexture(128, 20, (g, w) => {
@@ -2993,6 +3281,10 @@ function makeAthlete(o) {
   const material = new THREE.MeshLambertMaterial({ map: atlasJogador(o), vertexColors: true });
   const hex = (h) => (typeof h === 'number' ? h : parseInt(h.slice(1), 16));
   const pele = hex(o.pele), cabelo = hex(o.cabelo), camisa = hex(o.camisa);
+  // camisa com modelo: as laterais, o topo e as mangas também vêm do atlas (com o desenho); a manga longa usa a cor da manga
+  const uvTronco = o.modelo ? (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : i === 2 ? UV_TOPO_CAMISA : i >= 4 ? UV_LADO_CAMISA : null) : (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null);
+  const uvManga = o.modelo ? (i) => (i === 2 ? UV_MANGA_TOPO : i === 3 ? UV_PUNHO : UV_MANGA) : null;
+  const corManga = o.modelo ? hexDeRGB(compilarModelo(o.modelo, o)(0.5, 0.5, 'm')) : camisa;
   // brinco, colar, luva e tatuagens (aparencia.enfeites: ver ACESSORIOS); boneco infantil (cabeção) fica sem
   const enf = o.enfeites && (o.cabecao || 1) <= 1.2 ? o.enfeites : null;
   const acDe = (par) => { const A = par && ACESSORIO_POR_K[par[0]]; return A ? { A, metal: hexNum((METAL_POR_K[par[1]] || METAIS[0]).cor) } : null; };
@@ -3046,18 +3338,18 @@ function makeAthlete(o) {
     const p = pivo(0, 1.27, z), L = new Lote(UV_BRANCO);
     const corMao = o.luva ? hex(o.luva) : acL && acL.A.base ? hex(acL.A.base) : pele, lado = z > 0 ? 1 : -1;
     const luva = (Lt, yMao) => { if (acL) pecasAcessorio(acL.A, acL.metal, (w, h, d, c, x, y, zz) => Lt.caixa(w, h, d, c, x, yMao + y, zz), lado); };
-    L.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
-    if (longa) L.caixa(0.18, 0.3, 0.17, camisa, 0, -0.36, 0); else L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
+    L.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0, uvManga);
+    if (longa) L.caixa(0.18, 0.3, 0.17, corManga, 0, -0.36, 0); else L.caixa(0.16, 0.3, 0.15, pele, 0, -0.36, 0);
     L.caixa(0.17, 0.16, 0.17, corMao, 0, -0.57, 0); luva(L, -0.57);
     p.inteira = L.malha(material); p.add(p.inteira);
     const LO = new Lote(UV_BRANCO);
-    LO.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0);
-    if (longa) LO.caixa(0.18, 0.17, 0.17, camisa, 0, -0.295, 0); else LO.caixa(0.16, 0.17, 0.15, pele, 0, -0.295, 0);       // até um pouco depois do cotovelo (tapa a "dobra")
+    LO.caixa(0.21, 0.24, 0.19, camisa, 0, -0.1, 0, uvManga);
+    if (longa) LO.caixa(0.18, 0.17, 0.17, corManga, 0, -0.295, 0); else LO.caixa(0.16, 0.17, 0.15, pele, 0, -0.295, 0);       // até um pouco depois do cotovelo (tapa a "dobra")
     p.ombro = LO.malha(material); p.ombro.visible = false; p.add(p.ombro);
     const cotovelo = new THREE.Group();
     cotovelo.position.set(0, -0.3, 0); cotovelo.rotation.order = 'ZXY'; cotovelo.visible = false;
     const LA = new Lote(UV_BRANCO);                 // antebraço e mão, medidos a partir do cotovelo
-    if (longa) LA.caixa(0.17, 0.24, 0.16, camisa, 0, -0.1, 0); else LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
+    if (longa) LA.caixa(0.17, 0.24, 0.16, corManga, 0, -0.1, 0); else LA.caixa(0.15, 0.24, 0.14, pele, 0, -0.1, 0);
     LA.caixa(0.17, 0.16, 0.17, corMao, 0, -0.27, 0); luva(LA, -0.27);
     cotovelo.add(LA.malha(material)); p.add(cotovelo);
     p.cotovelo = cotovelo;
@@ -3068,7 +3360,7 @@ function makeAthlete(o) {
 
   const C = new Lote(UV_BRANCO);
   C.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);   // 0,6: as laterais não ficam no mesmo plano da camisa (piscava)
-  C.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null)); // tronco
+  C.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, uvTronco); // tronco
   C.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);                                                              // pescoço
   const fCab = faceCabeca(o);
   const kc = o.cabecao || 1;                       // "bebê": cabeça maior (kc) + corpo menor (o.escala)
@@ -3100,7 +3392,7 @@ function makeAthlete(o) {
   // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
   const CT = new Lote(UV_BRANCO);
   CT.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);
-  CT.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, (i) => (i === 0 ? UV_FRENTE : i === 1 ? UV_COSTAS : null));
+  CT.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, uvTronco);
   CT.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0); colar(CT);
   const troncoSemCabeca = CT.malha(material); troncoSemCabeca.visible = false; corpo.add(troncoSemCabeca);
   const cabeca = new THREE.Group();
@@ -13145,9 +13437,22 @@ function resolverPartida(cfg = {}) {
   P.timesObj = P.times.map((t) => (typeof t === 'string' ? TIMES[t] : t));
   // Uniformes: se as camisas forem parecidas, o visitante (ou o time 1) usa o reserva.
   const U0 = P.timesObj[0].uniforme, U1 = P.timesObj[1].uniforme;
-  const parecido = corDist(U0.camisa, U1.camisa) < 110;
+  //   Com desenho (modelo), conta o desenho todo: listrada alvinegra x listrada alvinegra também se confunde. O reserva só entra se ajudar.
+  const comModelo = !!(U0.modelo || U1.modelo);
+  const parecido = comModelo ? semelhancaUniformes(U0, U1) > 0.42 : corDist(U0.camisa, U1.camisa) < 110;
   P.uniformes = [U0, U1];
-  if (parecido) { const fora = P.mandante === 0 ? 1 : 0; P.uniformes[fora] = P.timesObj[fora].uniforme2 || P.uniformes[fora]; }
+  if (parecido && !comModelo) { const fora = P.mandante === 0 ? 1 : 0; P.uniformes[fora] = P.timesObj[fora].uniforme2 || P.uniformes[fora]; }
+  else if (parecido) {
+    // na ordem: o visitante com o 2; o mandante com o 2; os dois com o 2. Fica a primeira que não se confunde (ou a que menos se confunde).
+    const casa = P.mandante === 0 ? 0 : 1, fora = 1 - casa, T = P.timesObj, kits = (t, n) => (n ? T[t].uniforme2 || T[t].uniforme : T[t].uniforme);
+    let melhor = null;
+    for (const [nc, nf] of [[0, 1], [1, 0], [1, 1]]) {
+      const Uc = kits(casa, nc), Uf = kits(fora, nf), sim = semelhancaUniformes(Uc, Uf);
+      if (!melhor || sim < melhor.sim - 0.05) melhor = { Uc, Uf, sim };
+      if (sim <= 0.42) break;
+    }
+    P.uniformes[casa] = melhor.Uc; P.uniformes[fora] = melhor.Uf;
+  }
   P.formacoes = [0, 1].map((i) => (cfg.formacoes && cfg.formacoes[i]) || P.timesObj[i].formacao || '4-4-2');
   P.taticas = [0, 1].map((i) => (cfg.taticas && cfg.taticas[i]) || P.timesObj[i].tatica || 'tikitaka');
   // (7.1.22) o par com bola / sem bola: cfg.taticasCom / cfg.taticasSem mandam; senão o do time; senão o par da tática antiga
@@ -13947,7 +14252,7 @@ function criarJogador(P, team, f, j, num, isUser) {
   const mesh = makeAthlete({
     cabecao: P.criancas ? P.criancas.cabecao : undefined, escala: P.criancas ? P.criancas.escala : undefined,   // partida da história: bonecos infantis
     camisa: isGK ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num,
-    calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema,
+    calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema, modelo: modeloDaCamisa(U, isGK), peito: U.peito,
     pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites,
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
@@ -14057,7 +14362,7 @@ function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: banco
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
-    emblema: T.emblema, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
+    emblema: T.emblema, modelo: modeloDaCamisa(U, gk), peito: U.peito, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
   m.etiqueta.visible = false;
   scene.add(m.raiz);
   return m;
@@ -18231,6 +18536,7 @@ function ajustarCortePersonagem() {
   if (ap.chuteiraNome) { const i = CHUTEIRAS.findIndex((c) => (c.loja || c.cosmetico) && c.nome === ap.chuteiraNome); if (i >= 0) ap.chuteira = i; }   // (7.1.10) a chuteira premium da Golaço Esportes, pelo nome
 }
 Fases.carregar('estadiosA').catch((e) => console.warn('[Estádio A] estadiosA.js não veio:', e));   // os estádios da Série A (antes da 1ª partida de lá)
+Fases.carregar('uniformes').catch((e) => console.warn('[Uniformes] uniformes.js não veio:', e));   // o desenho das camisas dos times da Série A e B
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 
 montarTelaDeConfig();

@@ -132,7 +132,8 @@
     const gk = !!j.gk && !!uni.goleiro;                                          // o goleiro com a camisa e as luvas dele
     return novoAtor(L, { camisa: gk ? uni.goleiro : uni.camisa, listra: uni.listra, gola: uni.gola, numero: j.numero || '', calcao: hexN(uni.calcao), meia: gk ? uni.goleiro : uni.meia, sola: uni.sola, corTexto: j.corTexto || '#F2F2EE', luva: gk ? 0xf2f2ee : null,
       pele: j.pele, cabelo: j.cabelo, estilo: j.estilo | 0, barba: j.barba | 0, rosto: j.rosto | 0, labio: j.labio, corBarba: j.corBarba, manga: j.manga | 0, meiao: j.meiao == null ? 1 : j.meiao, chuteira: j.chuteira | 0,
-      nomeCamisa: j.nomeCamisa || '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', emblema: uni.emblema || null });
+      nomeCamisa: j.nomeCamisa || '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', emblema: uni.emblema || null,
+      modelo: typeof modeloDaCamisa === 'function' ? modeloDaCamisa(uni, gk) : null, peito: uni.peito });
   }
   // de terno (ou de vestido vinho, se for uma jogadora): camisa branca e gravata por cima do peito
   function deTerno(L, j, cor) {

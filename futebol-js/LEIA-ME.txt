@@ -57,6 +57,11 @@ ARQUIVOS
                           última rodada) mostra a cena antes do apito, fogos nos gols do mandante e na festa do título.
                           Torcida maior, cobertura, telões e o escudo e as cores do time da casa nas faixas, nos telões, nas
                           bandeiras e nas cadeiras (baixado na abertura)
+  uniformes.js .......... o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B (listras verticais e horizontais,
+                          faixa diagonal, faixas no peito, laterais, degradê, texturas de estrelas, ondas, tigre...), seguindo
+                          o padrão dos clubes parodiados, e a pixel art do peito (PEITO: 16 x 16 por time; sem ela vai o escudo
+                          do time reduzido). O motor do desenho fica no jogo.js (compilarModelo / pintarCamisaModelo); o
+                          serieb.js pega o modelo de cada time com Uniformes.kit(chave, 0 ou 1) (baixado na abertura)
   livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
                           varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
                           com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,

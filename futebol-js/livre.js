@@ -479,6 +479,7 @@
   function boneco(k, j, num, uniforme) {
     const tm = TD(k) ? SBD.timeMotor(TD(k)) : VZD.timeMotor(TV(k)), U = uniforme || tm.uniforme, gk = j.pos === 'GK';
     const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num, calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola, emblema: tm.emblema,
+      modelo: typeof modeloDaCamisa === 'function' ? modeloDaCamisa(U, gk) : null, peito: U.peito,
       pele: j.pele || '#946042', cabelo: j.cabelo || '#1C140F', estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira,
       luva: gk ? 0xf2f2ee : null, enfeites: j.enfeites, nome: ' ', fundoNome: 'rgba(0,0,0,0)' });
     if (m.etiqueta) m.etiqueta.visible = false;

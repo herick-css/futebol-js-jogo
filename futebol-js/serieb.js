@@ -442,7 +442,8 @@
     return { media: r1(m), gk: r1(set('GK')), def: r1(set('DEF')), mid: r1(set('MID')), fwd: r1(set('FWD')) };
   }
   const estrelasTxt = (n, max) => { max = max || 5; n = clampN(n | 0, 0, max); return '★'.repeat(n) + '☆'.repeat(max - n); };
-  const uniDe = (u) => ({ camisa: u[0], listra: u[1], gola: u[2], calcao: u[3], meia: u[4], sola: u[5], goleiro: u[6] });
+  // o desenho da camisa (modelo) e a pixel art do peito vêm do uniformes.js (Uniformes.kit(k, 0 = uniforme 1, 1 = uniforme 2))
+  const uniDe = (u, k, n) => Object.assign({ camisa: u[0], listra: u[1], gola: u[2], calcao: u[3], meia: u[4], sola: u[5], goleiro: u[6] }, (k && window.Uniformes && window.Uniformes.kit(k, n)) || null);
   function apTecnico(t) { return typeof gerarAparencia === 'function' ? gerarAparencia(semDe('sb-tec|' + t.k), /^Dona /.test(t.tecnico) ? 'F' : 'M') : {}; }
   // o time no formato do motor. voce: o time do jogador (o elenco sai sem o titular da posição dele: o motor põe o jogador no lugar)
   function timeMotor(t, o) {
@@ -463,7 +464,7 @@
     }
     return {
       id: 'sb_' + t.k, nome: t.nome, sigla: t.sigla, forca: Math.round(fz.media * 10), popularidade: 0.4, formacao: t.formacao, tatica: t.tatica,
-      uniforme: uniDe(t.uni), uniforme2: uniDe(t.uni2), tecnicoFixo: true,
+      uniforme: uniDe(t.uni, t.k, 0), uniforme2: uniDe(t.uni2, t.k, 1), tecnicoFixo: true,
       emblema: t.pequeno ? Object.assign({}, t.emblemaSimples) : { forma: 'escudo', cor1: t.uni[0], cor2: t.uni[1], letras: t.sigla.slice(0, 2), arte: arte(t.k) },
       tecnico: { nome: t.tecnico, aparencia: { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, roupa: t.uni[3] } },
       elenco,
