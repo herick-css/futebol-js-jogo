@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.10';
+const VERSAO_JOGO = '7.4.11';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -1239,6 +1239,7 @@ class Lote {
     FACES.forEach(([u, v, ww, udir, vdir, Wk, Hk, Dk, sinal], i) => {
       const W = tam[Wk], H = tam[Hk], D = tam[Dk] * sinal;
       const reg = faceUV ? faceUV(i) : null;
+      if (reg === false) return;                     // (7.4.11) faceUV devolvendo false: essa face não existe (fica escondida dentro de outra peça)
       const area = reg || this.uvPadrao;
       const base = this.pos.length / 3;
       const vs = [];                                 // os 4 cantos da face: [posição, normal, ix, iy]
@@ -1803,13 +1804,18 @@ const Som = (() => {
         ruido = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
         const d = ruido.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-        montarPalmas();
+        montarPalmas(); montarBateria();
         montarTorcida();
       }
-      if (ctx.state === 'suspended') ctx.resume();
+      // (7.4.11) acorda de 'suspended' e também de 'interrupted' (o Safari do iPhone interrompe o áudio numa ligação, num
+      //   alarme, ao trocar de app...). Fechado de vez: monta outro.
+      if (ctx.state === 'closed') { ctx = null; vozes = 0; golAtivo = null; nivelAtual = -1; return ligar(); }
+      if (ctx.state !== 'running') { const p = ctx.resume(); if (p && p.catch) p.catch(() => {}); }
     } catch (e) { ctx = null; }
   }
-  const pronto = () => ctx && ctx.state !== 'closed' && !mudo && G.state !== 'paused';   // logo depois de ligar ele ainda pode estar 'suspended': o som sai assim que ele acorda
+  // (7.4.11) só toca com o áudio RODANDO: parado ('suspended'/'interrupted') o relógio do áudio congela e tudo o que fosse
+  //   agendado tocaria junto quando ele voltasse — um estouro de sons sobrepostos (o chiado) que às vezes travava o som de vez
+  const pronto = () => ctx && ctx.state === 'running' && !mudo && G.state !== 'paused';
   // Limite de sons curtos ao mesmo tempo (cada um se "desconta" quando termina).
   function vaga(dur) {
     if (vozes >= 14) return false;
@@ -1912,14 +1918,51 @@ const Som = (() => {
     g.gain.setValueAtTime(pico, t0 + Math.max(ataque || 0.3, dur - 0.3)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.5);
     s.connect(bp); bp.connect(g); g.connect(mestre);
   }
-  // Bateria da organizada: bumbo nos tempos e caixa nos contratempos (k = volume, longe = abafado).
+  // (7.4.11) A BATERIA COM AMOSTRAS: o bumbo e a caixa são sintetizados UMA vez em buffers (montarBateria); cada batida é só
+  //   um BufferSource + um ganho. Antes cada batida criava osciladores, ruído e filtros — com o gol, as palmas e a torcida
+  //   juntos eram centenas de nós de áudio ao mesmo tempo, o som chiava e às vezes parava de sair.
+  let bumboBuf = null, caixaBuf = null;
+  function montarBateria() {
+    const sr = ctx.sampleRate;
+    const nb = Math.floor(sr * 0.32); bumboBuf = ctx.createBuffer(1, nb, sr);
+    const b = bumboBuf.getChannelData(0); let fase = 0;
+    for (let i = 0; i < nb; i++) { const t = i / sr, f = 46 + 50 * Math.exp(-t / 0.05); fase += 2 * Math.PI * f / sr; b[i] = Math.sin(fase) * Math.exp(-t / 0.1) * 0.95 + (i < sr * 0.004 ? (Math.random() * 2 - 1) * 0.3 * (1 - i / (sr * 0.004)) : 0); }
+    const nc = Math.floor(sr * 0.16); caixaBuf = ctx.createBuffer(1, nc, sr);
+    const c = caixaBuf.getChannelData(0); let ant = 0;
+    for (let i = 0; i < nc; i++) { const t = i / sr, x = (Math.random() * 2 - 1) * Math.exp(-t / 0.035) * 0.8 + Math.sin(2 * Math.PI * 195 * t) * Math.exp(-t / 0.03) * 0.35; c[i] = x - ant * 0.55; ant = x; }
+  }
+  function batida(buf, t, v, dest, taxa) {
+    if (!buf) return;
+    const s2 = ctx.createBufferSource(), g = ganho(); s2.buffer = buf; if (taxa) s2.playbackRate.value = taxa;
+    g.gain.value = clamp(v, 0, 1.2); s2.connect(g); g.connect(dest); s2.start(t);
+  }
+  function barramento(longe) { const g = ganho(), lp = filtro('lowpass', 6000 - 4000 * (longe || 0), 0.6); g.connect(lp); lp.connect(mestre); return g; }
+  // bateria da organizada: bumbo nos tempos e caixa nos contratempos (k = volume, longe = abafado)
   function bateria(t0, dur, k, bpm, longe) {
-    const b = 60 / (bpm || 124), kl = 1 - 0.5 * (longe || 0);
+    const b = 60 / (bpm || 124), bus = barramento(longe); bus.gain.value = 1 - 0.5 * (longe || 0);
     for (let i = 0; i * b / 2 < dur; i++) {
       const t = t0 + i * b / 2;
-      if (i % 2 === 0) { tom('sine', 92, 48, t, 0.22, (i % 4 === 0 ? 0.42 : 0.3) * k * kl); estalo(t, 0.03, 'lowpass', 380, 0.16 * k * kl); }
-      else estalo(t, 0.06, 'bandpass', 1700, (i % 4 === 3 ? 0.13 : 0.08) * k * kl);
+      if (i % 2 === 0) batida(bumboBuf, t, (i % 4 === 0 ? 0.5 : 0.36) * k, bus);
+      else batida(caixaBuf, t, (i % 4 === 3 ? 0.2 : 0.12) * k, bus);
     }
+  }
+  // batucada de samba (a festa): surdo marcando, caixa e o tamborim agudo (a caixa tocada mais rápido)
+  function batucada(t0, dur, k) {
+    const passo = 60 / 104 / 4, bus = barramento(0);
+    const SURDO = 'X.......x.......', CAIXA = 'x.xx.xx.x.xx.xx.', TAMB = 'x.xx.x.xx.xx.x.x';
+    for (let i = 0; i * passo < dur; i++) {
+      const s2 = i % 16, t = t0 + i * passo, fade = Math.min(1, (dur - i * passo) / 1.2);
+      if (SURDO[s2] !== '.') batida(bumboBuf, t, (SURDO[s2] === 'X' ? 0.55 : 0.4) * k * fade, bus, 0.78);
+      if (CAIXA[s2] !== '.') batida(caixaBuf, t, 0.16 * k * fade, bus);
+      if (TAMB[s2] !== '.') batida(caixaBuf, t, 0.1 * k * fade, bus, 2.2);
+    }
+  }
+  // (7.4.11) os sons "pesados" (coro de vozes, bateria, batuque) têm um limite próprio: no máximo 3 ao mesmo tempo
+  let pesados = 0;
+  function pesado(dur) {
+    if (pesados >= 3) return false;
+    pesados++; setTimeout(() => { pesados = Math.max(0, pesados - 1); }, dur * 1000 + 100);
+    return true;
   }
   function tocarPalmas(t0, dur, k) {
     if (!palmasBuf) return;
@@ -1930,119 +1973,6 @@ const Som = (() => {
     s.connect(bp); bp.connect(g); g.connect(mestre);
     s.start(t0, Math.random() * 2.5); s.stop(t0 + dur + 0.05);
   }
-  // ---- (7.4.10) OS 12 CÂNTICOS DA TORCIDA ----------------------------------------------------------------------------
-  // Cada cântico: bpm, o RITMO (instrumentos em compassos de 16 semicolcheias: 'X' acento, 'x' batida, '.' nada; o agogô
-  //   usa 'h'/'l' = sino agudo/grave), quantos compassos e, se tiver, a VOZ (o coro: [semitom, tempos, vogal]; vogais a, e, i,
-  //   o, u) e a CORNETA ([semitom, tempos]) — as duas repetem até o fim; 'subir' sobe a voz a cada repetição.
-  //   grito: em quais semicolcheias de cada compasso a torcida grita "ÊI!". Tudo passa por um "barramento" com o filtro de
-  //   longe (a torcida do outro lado soa mais abafada) e o volume k.
-  const PERC = {
-    bumbo: (d, t, v) => { tomD(d, 'sine', 96, 46, t, 0.24, 0.44 * v); estaloD(d, t, 0.03, 'lowpass', 380, 0.16 * v); },
-    surdo: (d, t, v) => { tomD(d, 'sine', 72, 40, t, 0.45, 0.55 * v); estaloD(d, t, 0.025, 'lowpass', 300, 0.1 * v); },
-    caixa: (d, t, v) => { estaloD(d, t, 0.07, 'bandpass', 1750, 0.11 * v); tomD(d, 'triangle', 230, 180, t, 0.05, 0.05 * v); },
-    repique: (d, t, v) => { tomD(d, 'triangle', 340, 260, t, 0.09, 0.12 * v); estaloD(d, t, 0.03, 'bandpass', 2600, 0.07 * v); },
-    tamborim: (d, t, v) => { estaloD(d, t, 0.035, 'highpass', 3600, 0.09 * v); tomD(d, 'square', 920, 860, t, 0.03, 0.025 * v); },
-    chocalho: (d, t, v) => estaloD(d, t, 0.05, 'highpass', 6500, 0.05 * v),
-    palma: (d, t, v) => { for (let i = 0; i < 3; i++) estaloD(d, t + i * 0.006 + Math.random() * 0.006, 0.03, 'bandpass', 1100 + i * 350, 0.09 * v); },
-    agogo: (d, t, v, c) => tomD(d, 'sine', c === 'l' ? 660 : 880, c === 'l' ? 655 : 875, t, 0.2, 0.07 * v),
-    apito: (d, t, v) => apitoSamba(d, t, 0.11, 0.05 * v),
-  };
-  function tomD(d, tipo, f0, f1, t0, dur, pico) {
-    const o = ctx.createOscillator(), g = ganho();
-    o.type = tipo; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
-    env(g, t0, 0.005, pico, dur);
-    o.connect(g); g.connect(d); o.start(t0); o.stop(t0 + dur + 0.05);
-  }
-  function estaloD(d, t0, dur, tipo, freq, pico) {
-    const s = fonteRuido(t0, dur), f = filtro(tipo, freq, 0.8), g = ganho();
-    env(g, t0, 0.003, pico, dur);
-    s.connect(f); f.connect(g); g.connect(d);
-  }
-  function apitoSamba(d, t0, dur, pico) {                          // o apito do mestre de bateria (trinado agudo)
-    const o = ctx.createOscillator(), g = ganho(), lfo = ctx.createOscillator(), lg = ganho();
-    o.type = 'sine'; o.frequency.value = 2750; lfo.frequency.value = 26; lg.gain.value = 260; lfo.connect(lg); lg.connect(o.frequency);
-    env(g, t0, 0.01, pico, dur);
-    o.connect(g); g.connect(d); o.start(t0); o.stop(t0 + dur + 0.05); lfo.start(t0); lfo.stop(t0 + dur + 0.05);
-  }
-  // a corneta (o trompete da charanga): duas dentes de serra com o filtro abrindo em cada nota
-  function corneta(d, t0, notas, spb, base, pico, ate) {
-    let t = t0;
-    while (t < ate - 0.05) {
-      for (const [semi, b] of notas) {
-        const dur = b * spb;
-        if (t >= ate - 0.05) break;
-        if (semi != null) {
-          const f = base * Math.pow(2, semi / 12), g = ganho(), lp = filtro('lowpass', 900, 1.2);
-          lp.frequency.setValueAtTime(700, t); lp.frequency.linearRampToValueAtTime(2600, t + 0.05); lp.frequency.setTargetAtTime(1500, t + 0.06, 0.08);
-          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pico, t + 0.025); g.gain.setValueAtTime(pico * 0.8, t + Math.max(0.03, dur * 0.75)); g.gain.linearRampToValueAtTime(0.0001, t + dur * 0.95);
-          for (const dt of [-6, 7]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + dur); }
-          lp.connect(g); g.connect(d);
-        }
-        t += dur;
-      }
-    }
-  }
-  // o grito curto da torcida ("ÊI!")
-  function grito(d, t, k) { coro(t, [[5, 0.2, 'e']], { base: 230, vozes: 7, ganho: 0.12 * k, desafina: 45, ataque: 0.012, solta: 0.08, dest: d }); estaloD(d, t, 0.18, 'bandpass', 1300, 0.06 * k); }
-  const BUMBO_MARCHA = 'X...x...X...x...', CAIXA_MARCHA = '....x.......x.x.';
-  const CANTICOS = [
-    { nome: 'Vamos, vamos', bpm: 128, comp: 8, ritmo: { bumbo: BUMBO_MARCHA, caixa: CAIXA_MARCHA },
-      voz: [[4, 1, 'a'], [4, 1, 'o'], [7, 2, 'a'], [4, 1, 'a'], [4, 1, 'o'], [7, 2, 'a'], [9, 1, 'a'], [7, 1, 'e'], [4, 1, 'a'], [2, 1, 'e'], [0, 3, 'a'], [null, 1]] },
-    { nome: 'Olê, olê, olê', bpm: 120, comp: 6, ritmo: { bumbo: 'X.......X.......', caixa: '....x..x....x...' },
-      voz: [[7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 0.5, 'e'], [2, 0.5, 'e'], [0, 2, 'a'], [null, 0]] },
-    { nome: 'Ô, ô, ô, vamos', bpm: 116, comp: 8, ritmo: { bumbo: 'X...X...X...X...', caixa: '..x...x...x...xx' },
-      voz: [[0, 0.5, 'o'], [4, 0.5, 'o'], [7, 1, 'a'], [null, 0.5], [7, 0.5, 'a'], [9, 0.5, 'e'], [7, 0.5, 'a'], [4, 1, 'a'], [null, 0.5], [5, 0.5, 'a'], [4, 0.5, 'a'], [2, 0.5, 'e'], [0, 1.5, 'a'], [null, 0.5]] },
-    { nome: 'Batucada', bpm: 102, comp: 6, intro: { apito: 'X.X.X.X.X.......' },
-      ritmo: { surdo: 'x.......X.......', bumbo: '....x.......x...', caixa: 'x.xxx.xxx.xxx.xx', tamborim: 'x.xx.x.xx.xx.x.x', chocalho: 'XxxxXxxxXxxxXxxx', repique: 'x..x..x...x..x..', agogo: 'h.l.h.l.hh.l.l..' },
-      grito: [14] },
-    { nome: 'Palmas ritmadas', bpm: 112, comp: 8, ritmo: { palma: 'X...X...X.X.X...', bumbo: 'X.......X.......' }, grito: [14] },
-    { nome: 'A carga da corneta', bpm: 140, comp: 6, ritmo: { caixa: 'xxxxxxxxxxxxxxxx', bumbo: 'X.......X...X...' },
-      corneta: [[7, 0.5], [12, 0.5], [16, 0.5], [19, 1], [16, 0.5], [19, 2], [null, 3]], grito: [12, 14] },
-    { nome: 'UH!', especial: 'uh' },
-    { nome: 'Dale, dale', bpm: 136, comp: 8, ritmo: { bumbo: 'X..x..X.X..x..X.', caixa: '....x.......x...', repique: '..x...x...x...x.' },
-      voz: [[7, 1, 'a'], [7, 1, 'e'], [7, 1, 'a'], [7, 1, 'e'], [9, 0.5, 'a'], [7, 0.5, 'a'], [5, 1, 'a'], [4, 2, 'e'], [5, 1, 'a'], [5, 1, 'e'], [5, 1, 'a'], [5, 1, 'e'], [7, 0.5, 'a'], [5, 0.5, 'a'], [4, 1, 'a'], [2, 2, 'e']] },
-    { nome: 'Eu acredito', bpm: 112, comp: 8, ritmo: { bumbo: 'X...x...X...x...', palma: '....X.......X...' }, subir: 1,
-      voz: [[0, 1, 'e'], [2, 1, 'a'], [4, 1, 'e'], [5, 1, 'a'], [7, 2, 'e'], [null, 2]] },
-    { nome: 'Lá, lá, lá', bpm: 96, comp: 6, ritmo: { bumbo: 'X.......x.......', palma: '....X.......X...' },
-      voz: [[4, 1, 'a'], [5, 1, 'a'], [7, 2, 'a'], [9, 1, 'a'], [7, 1, 'a'], [5, 2, 'a'], [4, 1, 'a'], [2, 1, 'a'], [0, 3, 'a'], [null, 1]] },
-    { nome: 'Marchinha da charanga', bpm: 132, comp: 8, ritmo: { bumbo: BUMBO_MARCHA, caixa: 'x.x.x.x.x.x.x.xx', agogo: 'h...l...h...l...' },
-      corneta: [[0, 0.5], [4, 0.5], [7, 0.5], [12, 1], [11, 0.5], [9, 0.5], [7, 1], [5, 0.5], [4, 0.5], [2, 0.5], [0, 1.5]] },
-    { nome: 'A bateria da organizada', bpm: 144, comp: 8, ritmo: { bumbo: 'X.X.X..XX.X.X..X', caixa: 'xxXxxxXxxxXxxxXx', repique: 'X...X...X...XX.X', palma: '....X.......X...' }, grito: [15] },
-  ];
-  // toca o cântico i no barramento d (de t0 em diante); devolve a duração
-  function tocarCantico(i, t0, k, longe) {
-    const C = CANTICOS[i], bus = ganho(), lp = filtro('lowpass', 7000 - 4800 * longe, 0.6);
-    bus.gain.value = 1 - 0.35 * longe; bus.connect(lp); lp.connect(mestre);
-    const kk = clamp(k, 0, 1);
-    if (C.especial === 'uh') {                                     // "UH!": a pancada do bumbo, as palmas e o grito juntos, cada vez mais rápido
-      let t = t0, gap = 1.9;
-      for (let n = 0; n < 16; n++) {
-        PERC.bumbo(bus, t, kk * 1.2); PERC.palma(bus, t + 0.01, kk * 1.3);
-        coro(t, [[0, 0.22, 'a']], { base: 165, vozes: 8, ganho: 0.13 * kk, desafina: 50, ataque: 0.01, solta: 0.1, dest: bus });
-        t += gap; gap = Math.max(0.32, gap * 0.8);
-      }
-      arDaTorcida(t, 2.2, 0.12 * kk, 1100, 0.15);                 // e a explosão no fim
-      coro(t, [[0, 0.4, 'a'], [5, 1.6, 'e']], { base: 210, vozes: 8, ganho: 0.09 * kk, desafina: 45, deslize: 0.2, ataque: 0.05, solta: 0.4, dest: bus });
-      return t + 2.2 - t0;
-    }
-    const spb = 60 / C.bpm, passo = spb / 4, dur = C.comp * 16 * passo;
-    for (let c = 0; c < C.comp; c++) for (let s = 0; s < 16; s++) {
-      const t = t0 + (c * 16 + s) * passo, R = c === 0 && C.intro ? Object.assign({}, C.ritmo, C.intro) : C.ritmo;
-      for (const ins in R) { const ch = R[ins][s]; if (ch && ch !== '.') PERC[ins](bus, t, (ch === 'X' ? 1 : 0.7) * kk, ch); }
-      if (C.grito && C.grito.includes(s) && c % 2 === 1) grito(bus, t, kk);
-    }
-    if (C.voz) {
-      const lenB = C.voz.reduce((a, n) => a + n[1], 0) || 1, reps = Math.max(1, Math.floor(C.comp * 4 / lenB)), base = rand(188, 210);
-      for (let r = 0; r < reps; r++) {
-        const notas = C.voz.map(([s, b, v]) => [s == null ? null : s + (C.subir || 0) * r, b * spb, v]);
-        coro(t0 + r * lenB * spb, notas, { base, vozes: 7, ganho: 0.085 * kk, desafina: 30, longe, dest: bus });
-      }
-    }
-    if (C.corneta) corneta(bus, t0, C.corneta, spb, 466, 0.045 * kk, t0 + dur);
-    arDaTorcida(t0, dur, 0.035 * kk, 650, 0.6);
-    return dur;
-  }
-
   // nivel 0..1 (chamado todo quadro; só mexe no som quando muda de verdade)
   function torcida(nivel) {
     if (!ctx || !torcidaGain) return;
@@ -2159,10 +2089,10 @@ const Som = (() => {
       const s = fonteRuido(t, MAX), bp = filtro('bandpass', 900, 0.5), lp = filtro('lowpass', 3000, 0.5), g = ganho();
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3 * kk, t + 1.1);
       s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(mestre);
-      if (kk > 0.45) {
+      if (kk > 0.45 && pesado(8)) {
         arDaTorcida(t, 1.2, 0.32 * kk, 1400, 0.08);                                  // o estouro
         coro(t + 0.05, [[0, 0.9, 'a'], [5, 2.6, 'e'], [7, 0.9, 'e']], { base: 205, vozes: 8, ganho: 0.08 * kk, desafina: 45, deslize: 0.3, ataque: 0.1, solta: 0.5 });   // (7.4.10) "AAAAA-ÊÊÊÊÊ!" (o "GOOOL" com o ô fechado soava triste)
-        bateria(t + 2.2, 9, 0.9 * kk, 132);
+        bateria(t + 2.2, 7, 0.9 * kk, 132);
       }
       const vog = filtro('bandpass', 700, 0.9), gv = ganho();
       gv.gain.setValueAtTime(0.0001, t); gv.gain.linearRampToValueAtTime(0.07 * kk, t + 1.0);
@@ -2187,17 +2117,14 @@ const Som = (() => {
     },
     // (7.4.9) CANTO da torcida: um dos CANTOS (qual: -1 = sorteado), duas vezes, com a bateria. k = 0..1 (quanta gente),
     //   longe = 0..1 (a torcida do outro lado soa mais abafada). Devolve quanto tempo dura (0 se não tocou).
-    // (7.4.10) um dos 12 CÂNTICOS (qual: o índice; -1 = sorteado). Devolve a duração (0 se não tocou).
-    canto(k = 0.6, qual = -1, longe = 0) {
-      if (!pronto() || !vaga(12) || k < 0.05) return 0;
-      const i = qual >= 0 ? qual % CANTICOS.length : Math.floor(Math.random() * CANTICOS.length);
-      return tocarCantico(i, ctx.currentTime + 0.05, k, longe);
+    // (7.4.11) BATUQUE (a festa da torcida: surdo, caixa e tamborim), dur segundos, depois de "atraso" segundos
+    batuque(k = 0.6, dur = 5, atraso = 0) {
+      if (!pronto() || k < 0.05 || !pesado(dur + atraso)) return;
+      batucada(ctx.currentTime + atraso, dur, clamp(k, 0, 1));
     },
-    nCanticos: () => CANTICOS.length,
-    nomeCantico: (i) => CANTICOS[i % CANTICOS.length].nome,
     // VAIA: "uuuuu" grave e desafinado (muita gente), subindo devagar, com ASSOBIOS agudos espalhados.
     vaia(k = 0.6, dur = 2.5) {
-      if (!pronto() || !vaga(dur + 1) || k < 0.05) return;
+      if (!pronto() || k < 0.05 || !pesado(dur + 1) || !vaga(dur + 1)) return;
       const t = ctx.currentTime, kk = clamp(k, 0, 1);
       coro(t, [[0, dur * 0.6, 'u'], [-2, dur * 0.4, 'u']], { base: 132, vozes: 8, ganho: 0.075 * kk, desafina: 90, deslize: 0.5, ataque: 0.35, solta: 0.45 });
       arDaTorcida(t, dur, 0.06 * kk, 380, 0.4);
@@ -2211,14 +2138,14 @@ const Som = (() => {
     },
     // OLÉ! (drible): "o" curto e o "LÉ" lá em cima, todo mundo junto.
     ole(k = 0.6) {
-      if (!pronto() || !vaga(1.2) || k < 0.05) return;
+      if (!pronto() || k < 0.05 || !pesado(1.0) || !vaga(1.2)) return;
       const t = ctx.currentTime, kk = clamp(k, 0, 1);
       coro(t, [[0, 0.17, 'o'], [5, 0.6, 'e']], { base: 228, vozes: 8, ganho: 0.14 * kk, desafina: 35, ataque: 0.015, solta: 0.18 });
       arDaTorcida(t + 0.12, 0.5, 0.07 * kk, 1100, 0.05);
     },
     // UUUUH (bola na trave): sobe e cai devagar, "u" fechado — todo o estádio.
     uuh(k = 0.8) {
-      if (!pronto() || !vaga(2.4)) return;
+      if (!pronto() || !pesado(2.2) || !vaga(2.4)) return;
       const t = ctx.currentTime, kk = clamp(k, 0.2, 1);
       coro(t, [[0, 0.35, 'u'], [4, 0.75, 'u'], [-3, 0.9, 'o']], { base: 188, vozes: 9, ganho: 0.1 * kk, desafina: 45, deslize: 0.22, ataque: 0.1, solta: 0.4 });
       arDaTorcida(t, 1.7, 0.12 * kk, 420, 0.2);
@@ -2230,7 +2157,7 @@ const Som = (() => {
     },
     // VIBRA (defesa do goleiro): "êêêh!" curto da torcida dele + palmas.
     vibra(k = 0.6) {
-      if (!pronto() || !vaga(2.5) || k < 0.05) return;
+      if (!pronto() || k < 0.05 || !pesado(2.2) || !vaga(2.5)) return;
       const t = ctx.currentTime + 0.25, kk = clamp(k, 0, 1);
       coro(t, [[0, 0.3, 'e'], [3, 1.1, 'e']], { base: 236, vozes: 8, ganho: 0.085 * kk, desafina: 40, deslize: 0.15, ataque: 0.06, solta: 0.35 });
       arDaTorcida(t, 1.3, 0.1 * kk, 900, 0.1);
@@ -2264,7 +2191,9 @@ const Som = (() => {
 })();
 // O som só pode ligar depois de um toque/clique do jogador (regra dos navegadores).
 window.addEventListener('pointerdown', () => Som.ligar(), { passive: true, capture: true });
+window.addEventListener('touchend', () => Som.ligar(), { passive: true, capture: true });   // (7.4.11) o iPhone só deixa acordar o áudio num toque
 window.addEventListener('keydown', () => Som.ligar());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) Som.ligar(); });
 
 // Quão "quente" está o jogo para a torcida de fundo (0 a 1): bola perto de um gol, chute no ar.
 // (7.4.9) Gol do visitante: a casa fica quieta (só a torcida dele, menor, faz barulho). Ataque do visitante: a casa
@@ -2293,43 +2222,16 @@ function nivelTorcida() {
 //   palmas ..... o ataque acabou num chute para fora ou defendido (a torcida de quem atacou aplaude mesmo assim)
 //   defesa ..... a torcida do goleiro vibra ("êêê" e palmas)
 // ---------------------------------------------------------------------
-// (7.4.10) OS CÂNTICOS: 12 (Som.canto), sem repetir até tocar todos. Cada torcida canta UMA vez por tempo (a da casa no
-//   começo/meio do tempo, a de fora mais para o fim) e depois de cada gol do time (uns 4,5 s depois); na cena antes dos
-//   pênaltis e na festa do apito final, a torcida de quem ganhou canta também.
+// (7.4.11) Sem os cânticos (pesavam no áudio e o som chiava/sumia): a torcida faz festa no gol (o grito e a bateria),
+//   olé, uuuh, palmas, vaia e a vibração da defesa.
 const Torcida = (() => {
-  let cantoT = 99, vaiaCd = 10, posseT = 0, quietaT = 0, oleT = 0, cantando = 0, proximo = -1, defT = -9, fila = [], plano = null;
+  let vaiaCd = 10, posseT = 0, quietaT = 0, oleT = 0, defT = -9;
   const casa = () => (PARTIDA ? PARTIDA.mandante : 0);
-  const ligada = () => !!PARTIDA && !PARTIDA.campo.semTorcida && !GANCHO_RENDER && G.state !== 'menu' && G.state !== 'end' && G.state !== 'paused' && !G.pulando && G.torcidaCena == null && crowd.total() > 20;   // treino / campo sem arquibancada: sem cantos
+  const ligada = () => !!PARTIDA && !PARTIDA.campo.semTorcida && !GANCHO_RENDER && G.state !== 'menu' && G.state !== 'end' && G.state !== 'paused' && !G.pulando && G.torcidaCena == null && crowd.total() > 20;   // treino / campo sem arquibancada: nada
   const kDe = (t) => crowd.lotacao() * Math.min(1, crowd.parte(t) * 1.4);   // 0..1: quanto barulho a torcida do time t faz
-  function proximoCantico() {
-    if (!fila.length) { const n = Som.nCanticos ? Som.nCanticos() : 3; fila = Array.from({ length: n }, (_, i) => i).sort(() => Math.random() - 0.5); }
-    return fila.shift();
-  }
-  function cantar(t, qual) {
-    if (crowd.parte(t) < 0.12) return;                               // quase ninguém daquele time no estádio
-    const d = Som.canto(kDe(t), qual == null ? proximoCantico() : qual, t === casa() ? 0 : 0.3);
-    if (d) { cantando = d; crowd.cantar(t, d); }
-  }
-  // o plano do tempo: em que ponto (fração do tempo) cada torcida canta
-  function planoDoTempo() {
-    const k = (G.tempo || 1) + (G.pen ? 10 : 0);
-    if (!plano || plano.k !== k) plano = { k, casa: rand(0.12, 0.45), fora: rand(0.55, 0.85), feito: [false, false] };
-    return plano;
-  }
   function atualizar(dt) {
     if (!ligada()) return;
     quietaT = Math.max(0, quietaT - dt); oleT = Math.max(0, oleT - dt); vaiaCd -= dt;
-    if (cantando > 0) cantando -= dt;
-    else if (G.state === 'play' || G.state === 'restart' || G.state === 'foul' || G.state === 'fim' || G.state === 'goal' || G.state === 'celebrate') {
-      if (proximo >= 0) {                                             // depois do gol / na festa: a torcida de quem fez
-        if ((cantoT -= dt) <= 0) { const t = proximo; proximo = -1; cantar(t); }
-      } else if (!G.pen && G.state !== 'fim' && typeof duracaoTempo === 'function') {
-        const P = planoDoTempo(), fr = 1 - clamp(G.clock / duracaoTempo(), 0, 1);
-        const c = casa();
-        if (!P.feito[0] && fr >= P.casa && !(quietaT > 0)) { P.feito[0] = true; cantar(c); }
-        else if (!P.feito[1] && fr >= P.fora) { P.feito[1] = true; cantar(1 - c); }
-      }
-    }
     const h = G.possession;
     if (G.state === 'play' && h && h.team !== casa() && !G.pen && crowd.parte(casa()) > 0.5) {
       posseT += dt;
@@ -2347,7 +2249,7 @@ const Torcida = (() => {
       if (pen) setTimeout(() => Som.fimGol(), 1600);
       if (t !== casa() && crowd.parte(casa()) > 0.5) quietaT = pen ? 3 : 9;      // a casa fica quieta
       else quietaT = 0;
-      if (!pen) { proximo = t; cantoT = 4.5; cantando = 0; }                      // depois do gol, a torcida de quem fez canta (um cântico)
+      crowd.cantar(t, pen ? 2 : 7);                                                 // a torcida de quem fez pula junto com a bateria
     },
     ole(t, forte) {
       if (!ligada() || oleT > 0) return;
@@ -2380,13 +2282,12 @@ const Torcida = (() => {
     // cena do apito final / da disputa: a torcida de quem ganhou canta (e as duas aplaudem)
     festa(venc) {
       if (!PARTIDA || PARTIDA.campo.semTorcida || GANCHO_RENDER || crowd.total() <= 20) return;
-      if (venc >= 0) { proximo = venc; cantoT = 1.2; cantando = 0; Som.palmas(kDe(venc), 3, 0.2); }
-      else { cantoT = 1.5; Som.palmas(crowd.lotacao() * 0.7, 3, 0.3); }
+      if (venc >= 0) { Som.palmas(kDe(venc), 3, 0.2); Som.batuque(kDe(venc), 5, 0.8); crowd.cantar(venc, 5); }   // palmas e o batuque de quem ganhou
+      else Som.palmas(crowd.lotacao() * 0.7, 3, 0.3);
     },
-    cantar,
-    reiniciar() { cantoT = 99; vaiaCd = 10; posseT = 0; quietaT = 0; oleT = 0; cantando = 0; proximo = -1; defT = -9; plano = null; },
+    reiniciar() { vaiaCd = 10; posseT = 0; quietaT = 0; oleT = 0; defT = -9; },
     // antes da disputa de pênaltis: a torcida da casa canta
-    prePenaltis() { proximo = casa(); cantoT = 1.0; cantando = 0; },
+    prePenaltis() { if (ligada()) { Som.batuque(kDe(casa()) * 0.8, 6, 1.0); crowd.cantar(casa(), 6); } },   // o batuque da casa enquanto os times se preparam
   };
 })();
 
@@ -2700,11 +2601,14 @@ function misturarCor(a, b, t) {      // t = 0 → a, t = 1 → b (cores 0xRRGGBB
 //   x 0–16, y 0–16: rosto   |  x 0–16, y 16–32: branco  |  x 16–48: camisa (frente)  |  x 48–80: camisa (costas)
 const ATLAS_W = 128, ATLAS_H = 32;
 const regiao = (x0, y0, x1, y1) => [x0 / ATLAS_W, 1 - y1 / ATLAS_H, x1 / ATLAS_W, 1 - y0 / ATLAS_H];
-const UV_ROSTO = regiao(0, 0, 16, 16), UV_BRANCO = regiao(4, 20, 12, 28);
-const UV_FRENTE = regiao(16, 0, 48, 32), UV_COSTAS = regiao(48, 0, 80, 32);
+// (7.4.11) as faces desenhadas pegam o pedaço com MEIO PIXEL de folga em cada borda: na borda exata, a placa de vídeo às vezes
+//   lia o pixel do vizinho no atlas — o branco do quadrado das cores — e aparecia uma linha branca na aresta do boneco
+const regiaoF = (x0, y0, x1, y1) => regiao(x0 + 0.5, y0 + 0.5, x1 - 0.5, y1 - 0.5);
+const UV_ROSTO = regiaoF(0, 0, 16, 16), UV_BRANCO = regiao(4, 20, 12, 28);
+const UV_FRENTE = regiaoF(16, 0, 48, 32), UV_COSTAS = regiaoF(48, 0, 80, 32);
 // pedaços novos do atlas (a parte livre, x 80..128): laterais e nuca da cabeça (degradê/fade pintado em
 // pixels) e o desenho da chuteira. Só são desenhados para quem usa (personagem); os outros jogadores seguem como antes.
-const UV_LADO_Z1 = regiao(80, 0, 96, 16), UV_LADO_Z2 = regiao(96, 0, 112, 16), UV_NUCA = regiao(112, 0, 128, 16), UV_BOTA = regiao(80, 16, 96, 32);
+const UV_LADO_Z1 = regiaoF(80, 0, 96, 16), UV_LADO_Z2 = regiaoF(96, 0, 112, 16), UV_NUCA = regiaoF(112, 0, 128, 16), UV_BOTA = regiaoF(80, 16, 96, 32);
 const faceCabeca = (o) => {
   const e = ESTILOS_CABELO[o.estilo | 0] || ESTILOS_CABELO[0];
   return !e.careca ? (i) => (i === 0 ? UV_ROSTO : i === 4 ? UV_LADO_Z1 : i === 5 ? UV_LADO_Z2 : i === 1 ? UV_NUCA : null) : (i) => (i === 0 ? UV_ROSTO : null);
@@ -3410,8 +3314,8 @@ function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCam
 //     degrade  { c, de, ate, k }                                                     (de cima para baixo, até a cor c)
 //     ombros   { c, h }                                                              (a parte de cima, perto da gola)
 //   tex (textura sutil, clareia ou escurece): linhas, riscas, pontos, xadrez, estrelas, ondas, tigre, curvas, diagonais
-const UV_LADO_CAMISA = regiao(96, 16, 112, 32), UV_TOPO_CAMISA = regiao(97, 16.25, 111, 17.25);
-const UV_MANGA = regiao(112, 16, 128, 32), UV_MANGA_TOPO = regiao(113, 16.25, 127, 17.25), UV_PUNHO = regiao(113, 30.75, 127, 31.75);
+const UV_LADO_CAMISA = regiaoF(96, 16, 112, 32), UV_TOPO_CAMISA = regiao(97, 16.25, 111, 17.25);
+const UV_MANGA = regiaoF(112, 16, 128, 32), UV_MANGA_TOPO = regiao(113, 16.25, 127, 17.25), UV_PUNHO = regiao(113, 30.75, 127, 31.75);
 const PEITO = { x: 19, y: 4, w: 8, h: 8 };
 const MODELO_GOLEIRO = { camadas: [{ t: 'degrade', c: '#000000', de: 0.5, ate: 1.15, k: 0.4 }], tex: { t: 'diagonais', k: 0.1 }, gola: 'v', golaCor: '#1c1c1f', punho: '#1c1c1f' };
 // o modelo que o boneco veste (o goleiro do time com modelo usa o desenho de goleiro, na cor dele)
@@ -3722,6 +3626,9 @@ function atlasJogador(o) {
     if (o.traje) { pintarTraje(g, 16, o, false); pintarTraje(g, 48, o, true); }   // (7.4.1) técnico: terno, agasalho, polo...
     pintarLadosCabeca(g, 80, 0, o);
     if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
+    // (7.4.11) o quadrado das cores (x 0–16, y 16–32) só precisa de branco no meio (UV_BRANCO): a volta fica na cor da camisa,
+    //   para a frente da camisa (que encosta nele) não puxar branco de longe (mipmap) — era a linha branca na beira da camisa
+    if (o.camisa != null) { const [r, gg, b] = rgbCor(o.camisa); g.fillStyle = 'rgb(' + r + ',' + gg + ',' + b + ')'; g.fillRect(0, 16, 3, 16); g.fillRect(13, 16, 3, 16); g.fillRect(3, 16, 10, 3); g.fillRect(3, 29, 10, 3); }
   });
   if (hd > 1) { t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; }   // de longe as listras não "piscam"
   return t;
@@ -3946,7 +3853,10 @@ function makeAthlete(o) {
   const bracoE = braco(-0.39), bracoD = braco(0.39);
 
   const C = new Lote(UV_BRANCO);
-  C.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);   // 0,6: as laterais não ficam no mesmo plano da camisa (piscava)
+  // (7.4.11) o calção sem a tampa de cima: a beirada de 1 cm em volta da camisa aparecia como uma LINHA CLARA (a face de cima
+  //   pega toda a luz); sem ela, olhando de cima vê-se a camisa entrando no calção
+  const semTampa = (i) => (i === 2 ? false : null);
+  C.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0, semTampa);   // 0,6: as laterais não ficam no mesmo plano da camisa (piscava)
   C.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, uvTronco); // tronco
   C.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0);                                                              // pescoço
   const fCab = faceCabeca(o);
@@ -3978,7 +3888,7 @@ function makeAthlete(o) {
   // Cabeça que abaixa (tristeza): corpo SEM cabeça + cabeça num pivô no pescoço (y 1,36).
   // Mesmo truque do joelho: escondidos, não custam nada; só aparecem na pose de cabeça baixa.
   const CT = new Lote(UV_BRANCO);
-  CT.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0);
+  CT.caixa(0.34, 0.26, 0.6, hex(o.calcao), 0, 0.8, 0, semTampa);
   CT.caixa(0.32, 0.58, 0.58, camisa, 0, 1.03, 0, uvTronco);
   CT.caixa(0.16, 0.06, 0.18, pele, 0, 1.34, 0); colar(CT);
   const troncoSemCabeca = CT.malha(material); troncoSemCabeca.visible = false; corpo.add(troncoSemCabeca);
@@ -7474,7 +7384,7 @@ function updatePlayers(dt) {
     // Postura agachada: marcando perto de quem conduz, ou goleiro com a bola no campo dele.
     let gw = 0;
     if (G.state === 'play' && !G.sp && holder && holder.team !== p.team && !p.isUser && dist2D(p, holder) < 6) gw = 0.8;
-    if (p.role === 'GK' && holder !== p) {
+    if (p.role === 'GK' && holder !== p && G.state !== 'fim' && G.state !== 'intervalo' && !p.celeb) {   // (7.4.11) nas cenas, nada de postura de defesa
       // Goleiro: posição de defesa (agachado, braços abertos) quando o ataque chega perto.
       const dBall = Math.abs(ball.x - (-p.dir * HALF_L));
       const ameaca = holder && holder.team !== p.team && dist2D(holder, { x: -p.dir * HALF_L, z: 0 }) < 30;
@@ -13845,11 +13755,17 @@ function alvoDoBoneco(m) {
   m.raiz.updateMatrixWorld(true);
   return malhasVisiveis(m.raiz, []).map((q) => ({ mw: q.matrixWorld, inv: q.matrixWorld.clone().invert(), caixas: caixasDaGeometria(q.geometry) }));
 }
+// (7.4.11) Nas cenas (fim de jogo, pênaltis, intervalo) e em quem está comemorando, os braços ficam NA POSE: a roda, o
+//   montinho, o aperto de mão e o abraço encostam de propósito. Antes este ajuste encolhia os braços a cada quadro em que
+//   tocavam alguém e a pose voltava no quadro seguinte — as mãos ficavam tremendo/mudando de lugar.
+const emCena = (p) => !!(p.fim || p.celeb || p.lamento || p.intS);
 function bracosSemAtravessar() {
+  if (G.state === 'fim' || G.state === 'intervalo') return;
   const n = players.length;
   for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
     const a = players[i], b = players[j];
     if (a.out || b.out || !a.mesh.raiz.visible || !b.mesh.raiz.visible) continue;
+    if ((G.state === 'goal' || G.state === 'celebrate') && (emCena(a) || emCena(b))) continue;
     if ((a.x - b.x) * (a.x - b.x) + (a.z - b.z) * (a.z - b.z) > 2.9) continue;   // braço aberto alcança ~0,85 m
     for (const [p, q] of [[a, b], [b, a]]) {
       let alvo = null;
@@ -15540,7 +15456,8 @@ function esperaDe(d, k) {                          // onde o reserva "d" espera 
   if (ehSociety()) { const a = assentoBanco(d.team, d.assento); return { x: a.x, z: a.z + 1.3 }; }
   return esperaBanco(d.team, k);
 }
-function esperaBanco(team, k) { const s = team === 0 ? 1 : -1; return { x: bancoX(team) - s * (0.6 + k * 0.8), z: -(HALF_W + LADO_BANCO.espera) }; }
+// (7.4.11) quem vai entrar espera no MEIO-CAMPO, fora do campo, do lado do 4º árbitro (cada time do seu lado), lado a lado
+function esperaBanco(team, k) { const s = team === 0 ? -1 : 1; return { x: s * (0.95 + k * 0.85), z: -(HALF_W + LADO_BANCO.espera) }; }
 function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const T = P.timesObj[team], U = P.uniformes[team], gk = role === 'GK';
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
@@ -15579,7 +15496,9 @@ function sentarNoBanco(sai, team, direto) {
 function atualizarBanco(dt) {
   if (!PARTIDA || !reservasBanco.length) return;
   // Quem está na fila de troca (por time, na ordem) vai para a linha esperar.
+  // (7.4.11) quem já está na cena da troca ocupa as primeiras vagas da linha: os próximos esperam do lado, não dentro deles
   const fila = [0, 0], chamados = new Map();
+  if (G.subst && G.subst.pares) fila[G.subst.team] = G.subst.pares.length;
   for (const it of G.subsFila) {
     const k = fila[it.team]++;
     const j = PARTIDA.reservas[it.team][k];
@@ -15617,12 +15536,34 @@ function atualizarBanco(dt) {
     if (espera && alvo === final && dist < 0.3) alguemEsperando = true;
     posarBoneco(d, andando, espera && alvo === final && dist <= 0.04, dt);
   }
-  // Quarto árbitro aparece na linha enquanto alguém espera para entrar (a placa só na cena da troca).
-  if (alguemEsperando && G.state !== 'subst' && !ehSociety()) {
-    const it = G.subsFila[0];
-    if (it) { const q = garantirQuartoArbitro(), s = it.team === 0 ? 1 : -1; q.raiz.visible = true; q.raiz.position.set(bancoX(it.team) + s * 1.8, 0, -(HALF_W + LADO_BANCO.quarto)); q.raiz.rotation.y = -Math.PI / 2;
-      q.bracoD.rotation.z = q.bracoE.rotation.z = 0.15; q.bracoD.rotation.x = -0.1; q.bracoE.rotation.x = 0.1; }
-  } else if (quartoArbitro && G.state !== 'subst') quartoArbitro.raiz.visible = false;   // (society: nunca aparece)
+  atualizarQuarto(dt, alguemEsperando);
+}
+// (7.4.11) O QUARTO ÁRBITRO fica SEMPRE ali, do lado do túnel (entre os bancos, fora do campo, sem atravessar ninguém). Quando
+//   alguém vai entrar, ele anda até o meio-campo (ainda fora do campo, onde quem entra espera) e, na cena da troca, levanta a
+//   placa; acabou a troca, volta para o lugar dele. Society: não tem. Com o túnel aberto (entrada, intervalo), ele some.
+const Q4 = { x: 0, z: 0, ang: Math.PI / 2, anim: 0, placa: 0 };
+const postoDoQuarto = () => ({ x: 3.4, z: -(HALF_W + 2.7) });
+const meioDoQuarto = () => ({ x: 0, z: -(HALF_W + LADO_BANCO.placaTroca) });
+function atualizarQuarto(dt, alguemEsperando) {
+  const some = !PARTIDA || ehSociety() || G.state === 'menu' || (TUNEL.grupo && TUNEL.grupo.visible) || !!GANCHO_RENDER;
+  if (some) { if (quartoArbitro) quartoArbitro.raiz.visible = false; Q4.pronto = false; return; }
+  const q = garantirQuartoArbitro();
+  if (!Q4.pronto || Q4.campo !== PARTIDA) { const P0 = postoDoQuarto(); Q4.x = P0.x; Q4.z = P0.z; Q4.ang = Math.PI / 2; Q4.pronto = true; Q4.campo = PARTIDA; }
+  const naTroca = G.state === 'subst' && G.subst && !G.subst.soc;
+  const alvo = naTroca || alguemEsperando || G.subsFila.length ? meioDoQuarto() : postoDoQuarto();   // alguém chamado para entrar: já vai para o meio
+  const dx = alvo.x - Q4.x, dz = alvo.z - Q4.z, d = Math.hypot(dx, dz);
+  let anda = false;
+  if (d > 0.04) { const v = 1.7, st = Math.min(d, v * dt); Q4.x += dx / d * st; Q4.z += dz / d * st; Q4.anim += v * 2.6 * dt; Q4.ang = turnToward(Q4.ang, Math.atan2(dz, dx), 8 * dt); anda = true; }
+  else Q4.ang = turnToward(Q4.ang, Math.PI / 2, 6 * dt);                                  // parado: de frente para o campo
+  const levanta = naTroca && !anda && G.subst.fase !== 'troca';
+  Q4.placa += ((levanta ? 1 : 0) - Q4.placa) * Math.min(1, dt * 6);
+  q.raiz.visible = true;
+  q.raiz.position.set(Q4.x, 0, Q4.z); q.raiz.rotation.y = -Q4.ang;
+  const bal = anda ? Math.sin(Q4.anim) * 0.5 : 0, a = Q4.placa;
+  q.pernaE.rotation.z = bal; q.pernaD.rotation.z = -bal;
+  q.bracoE.rotation.z = lerp(-bal * 0.6, 2.5, a); q.bracoD.rotation.z = lerp(bal * 0.6, 2.5, a);
+  q.bracoE.rotation.x = lerp(0.1, -0.2, a); q.bracoD.rotation.x = lerp(-0.1, 0.2, a);
+  if (naTroca && a > 0.6) placaTroca.mostrar(Q4.x, Q4.z + 0.45, G.subst.pares); else placaTroca.esconder();
 }
 // Pose do boneco do banco: mistura "em pé" e "sentado" (d.sentado de 0 a 1).
 function posarBoneco(d, andando, aquecendo, dt) {
@@ -15748,8 +15689,16 @@ function verificarSubstituicoes() {
   const item = G.subsFila[0];
   if (item.sai.out || !players.includes(item.sai) || !podeTrocar(item.team)) { G.subsFila.shift(); return; }
   if (S && S.taker === item.sai) return;           // é o cobrador: espera a próxima
-  G.subsFila.shift();
-  iniciarSubstituicao(item);
+  // (7.4.11) as outras trocas do MESMO time que estão na fila saem juntas (até 3): os que entram ficam lado a lado
+  const itens = [G.subsFila.shift()];
+  while (itens.length < 3 && G.subsFila.length && !ehSociety()) {
+    const x = G.subsFila[0];
+    if (x.team !== item.team) break;
+    if (x.sai.out || !players.includes(x.sai) || (S && S.taker === x.sai)) break;
+    if (PARTIDA.reservas[x.team].length < itens.length + 1 || PARTIDA.subsUsadas[x.team] + itens.length >= PARTIDA.regras.substituicoes) break;
+    itens.push(G.subsFila.shift());
+  }
+  iniciarSubstituicao(itens);
 }
 // Troca o jogador nas listas (mesma posição da formação) e devolve quem entrou.
 function trocarNasListas(item) {
@@ -15786,64 +15735,74 @@ function executarTrocaDireto(item) {
 }
 
 // Placa eletrônica do quarto árbitro (sprite com canvas): vermelho sai, verde entra.
+// (7.4.11) com mais de uma troca de uma vez, a placa mostra todas (uma coluna por troca: o que sai em cima, o que entra embaixo)
 const placaTroca = (() => {
-  const c = document.createElement('canvas'); c.width = 64; c.height = 40;
+  const c = document.createElement('canvas'); c.width = 64 * 3; c.height = 40;
   const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, depthTest: true }));
   sp.scale.set(1.0, 0.62, 1); sp.visible = false; scene.add(sp);
+  let chave = '';
   return {
-    mostrar(x, z, numSai, numEntra) {
-      const g = c.getContext('2d');
-      g.fillStyle = '#111'; g.fillRect(0, 0, 64, 40);
-      g.font = 'bold 17px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillStyle = '#ff3b30'; g.fillText('▼' + numSai, 32, 11);
-      g.fillStyle = '#4cd964'; g.fillText('▲' + numEntra, 32, 29);
-      tex.needsUpdate = true; sp.position.set(x, 2.3, z); sp.visible = true;
+    mostrar(x, z, pares) {
+      const n = Math.max(1, Math.min(3, pares.length)), k = pares.map((P) => P.sai.numero + '>' + P.entra.numero).join(',');
+      if (k !== chave) {
+        chave = k;
+        const g = c.getContext('2d');
+        g.clearRect(0, 0, c.width, c.height);
+        g.fillStyle = '#111'; g.fillRect(0, 0, 64 * n, 40);
+        g.font = 'bold 17px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        pares.slice(0, 3).forEach((P, i) => {
+          g.fillStyle = '#ff3b30'; g.fillText('▼' + P.sai.numero, 32 + 64 * i, 11);
+          g.fillStyle = '#4cd964'; g.fillText('▲' + P.entra.numero, 32 + 64 * i, 29);
+        });
+        tex.repeat.set(n / 3, 1); tex.offset.set(0, 0); tex.needsUpdate = true;
+        sp.scale.set(1.0 * n, 0.62, 1);
+      }
+      sp.position.set(x, 2.3, z); sp.visible = true;
     },
-    esconder() { sp.visible = false; },
+    esconder() { sp.visible = false; chave = ''; },
   };
 })();
 // Quarto árbitro segurando a placa (um boneco simples, criado uma vez).
 let quartoArbitro = null;
-function iniciarSubstituicao(item) {
-  const sai = item.sai, team = item.team;
-  const soc = ehSociety();
+// (7.4.11) A CENA DA TROCA recebe uma lista de trocas do mesmo time (1 a 3): quem entra espera lado a lado no meio-campo
+//   (fora do campo, do lado do 4º árbitro), cada um que sai vem até a frente do seu, todos batem as mãos juntos e trocam.
+function iniciarSubstituicao(itens) {
+  if (!Array.isArray(itens)) itens = [itens];
+  const team = itens[0].team, soc = ehSociety();
   let bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + LADO_BANCO.espera - 0.9);
-  const dEntra = soc ? reservasBanco.find((d) => !d.saiu && d.team === team && d.j === PARTIDA.reservas[team][0]) : null;   // o reserva que está levantado
-  const entra = trocarNasListas(item);
-  const ep = soc ? (dEntra ? esperaDe(dEntra, 0) : { x: bx, z: assentoBanco(team, 1).z + 1.3 }) : esperaBanco(team, 0);   // é onde o reserva estava esperando
-  entra.x = ep.x; entra.z = ep.z; entra.angle = Math.PI / 2; entra.scripted = true;
-  sai.scripted = true; sai.stun = 0; sai.fall = 0; sai.falling = false; sai.perda = null;
-  let qx = bx + (team === 0 ? 1.8 : -1.8);         // o quarto árbitro fica do lado, sem tapar o "toca aqui"
-  if (soc) { linhaZ = ep.z + 0.9; bx = ep.x; qx = ep.x; }   // society: sem 4º árbitro nem placa, só o texto
-  else {
-    garantirQuartoArbitro();
-    quartoArbitro.raiz.visible = true;
-    quartoArbitro.raiz.position.set(qx, 0, -(HALF_W + LADO_BANCO.quarto)); quartoArbitro.raiz.rotation.y = -Math.PI / 2;
-    quartoArbitro.bracoD.rotation.z = 2.5; quartoArbitro.bracoE.rotation.z = 2.5; quartoArbitro.bracoD.rotation.x = 0.2; quartoArbitro.bracoE.rotation.x = -0.2;
-    placaTroca.mostrar(qx, -(HALF_W + LADO_BANCO.placaTroca), sai.numero, entra.numero);
-  }
-  // Quem sai vai até a frente de quem entra (0,9 m mais para o campo), SEM limite de tempo.
-  G.subst = { t: 0, fase: soc ? 'sai' : 'placa', soc, item, sai, entra, bx, qx, linhaZ, alvoSai: { x: entra.x, z: linhaZ }, estadoAntes: G.state, tocou: false };
-  if (soc) G.subst.corredorZ = assentoBanco(team, dEntra ? dEntra.assento : 1).z + 1.1;
-  CORPOS = players.concat(officials, [sai]);       // quem sai continua sendo desenhado até sumir
+  const pares = [];
+  itens.forEach((item, i) => {
+    const sai = item.sai;
+    const dEntra = soc ? reservasBanco.find((d) => !d.saiu && d.team === team && d.j === PARTIDA.reservas[team][0]) : null;   // o reserva que está levantado
+    const entra = trocarNasListas(item);
+    const ep = soc ? (dEntra ? esperaDe(dEntra, 0) : { x: bx, z: assentoBanco(team, 1).z + 1.3 }) : esperaBanco(team, i);   // é onde o reserva estava esperando
+    entra.x = ep.x; entra.z = ep.z; entra.angle = Math.PI / 2; entra.scripted = true;
+    sai.scripted = true; sai.stun = 0; sai.fall = 0; sai.falling = false; sai.perda = null;
+    if (soc) { linhaZ = ep.z + 0.9; bx = ep.x; }
+    pares.push({ item, sai, entra, alvoSai: { x: entra.x, z: linhaZ }, chegou: false, dEntra });
+  });
+  const M = meioDoQuarto(), qx = soc ? pares[0].entra.x : M.x;
+  G.subst = { t: 0, fase: soc ? 'sai' : 'placa', soc, team, pares, item: pares[0].item, sai: pares[0].sai, entra: pares[0].entra, bx, qx, linhaZ, estadoAntes: G.state, tocou: false };
+  if (soc) G.subst.corredorZ = assentoBanco(team, pares[0].dEntra ? pares[0].dEntra.assento : 1).z + 1.1;
+  CORPOS = players.concat(officials, pares.map((P) => P.sai));   // quem sai continua sendo desenhado até sumir
   G.state = 'subst'; G.targetScale = 1;
   setLetterbox(true);
   $('skipBtn').hidden = false;
-  $('cineLabel').textContent = Tf('SUBSTITUIÇÃO · {0} · sai {1} ({2}), entra {3} ({4})', PARTIDA.timesObj[team].sigla, sai.isUser ? T('você') : sai.name, sai.numero, entra.name, entra.numero) + (item.motivo === 'lesão' ? T(' · lesão') : '');
+  const txt = pares.length > 1 ? pares.map((P) => (P.sai.isUser ? T('você') : P.sai.name) + ' ▸ ' + P.entra.name).join(' · ')   // várias: curto, para caber
+    : Tf('sai {0} ({1}), entra {2} ({3})', pares[0].sai.isUser ? T('você') : pares[0].sai.name, pares[0].sai.numero, pares[0].entra.name, pares[0].entra.numero);
+  $('cineLabel').textContent = (pares.length > 1 ? Tf('SUBSTITUIÇÕES · {0}', PARTIDA.timesObj[team].sigla) : Tf('SUBSTITUIÇÃO · {0}', PARTIDA.timesObj[team].sigla)) + ' · ' + txt + (pares.some((P) => P.item.motivo === 'lesão') ? T(' · lesão') : '');
   Som.apito(0.25);
 }
 // Cena da troca, em fases — cada uma só acaba quando a anterior aconteceu DE VERDADE:
 //   'placa' (1,3 s) .. câmera na placa do quarto árbitro; quem sai já começa a andar
-//   'sai' ............ câmera acompanha quem sai até ele chegar na frente de quem entra (sem
-//                      tempo limite: se ele estava longe, a câmera vai junto; dá para pular)
-//   'toque' (0,6 s) .. os dois de frente batem as mãos
+//   'sai' ............ câmera acompanha quem sai até TODOS chegarem na frente de quem entra (sem tempo limite; dá para pular)
+//   'toque' (0,6 s) .. de frente, batem as mãos
 //   'troca' (1,4 s) .. quem entra corre para o lugar dele; quem sai vai para o banco (e senta)
 function atualizarSubstituicao(rdt) {
   const S = G.subst;
   if (!S) return;
   S.t += rdt; S.tf = (S.tf || 0) + rdt;
-  const sai = S.sai, entra = S.entra;
   const andar = (p, alvo, v, dt) => {
     const dx = alvo.x - p.x, dz = alvo.z - p.z, d = Math.hypot(dx, dz);
     if (d < 0.05) { p.vx = p.vz = 0; return true; }
@@ -15853,22 +15812,32 @@ function atualizarSubstituicao(rdt) {
     return d < 0.1;
   };
   const mudar = (f) => { S.fase = f; S.tf = 0; };
-  entra.vx = entra.vz = 0;
+  for (const P of S.pares) P.entra.vx = P.entra.vz = 0;
   if (S.fase === 'placa' || S.fase === 'sai') {
-    const longe = dist2D(sai, S.alvoSai) > 12;
-    const chegou = andar(sai, S.alvoSai, sai.mancando ? (longe ? 3.0 : 2.0) : longe ? 6.5 : 4.2, rdt);   // longe: vem trotando (machucado, mancando)
-    entra.angle = turnToward(entra.angle, Math.atan2(sai.z - entra.z, sai.x - entra.x), 6 * rdt);
+    for (const P of S.pares) {
+      const sai = P.sai, longe = dist2D(sai, P.alvoSai) > 12;
+      P.chegou = andar(sai, P.alvoSai, sai.mancando ? (longe ? 3.0 : 2.0) : longe ? 6.5 : 4.2, rdt) || P.chegou;   // longe: vem trotando (machucado, mancando)
+      P.entra.angle = turnToward(P.entra.angle, Math.atan2(sai.z - P.entra.z, sai.x - P.entra.x), 6 * rdt);
+    }
     if (S.fase === 'placa' && S.tf > 1.3) mudar('sai');
-    if (S.fase === 'sai' && chegou) { mudar('toque'); S.tocou = true; Som.toque(0.5); }
+    if (S.fase === 'sai' && S.pares.every((P) => P.chegou)) { mudar('toque'); S.tocou = true; Som.toque(0.5); }
   } else if (S.fase === 'toque') {
-    sai.vx = sai.vz = 0;
-    sai.angle = Math.atan2(entra.z - sai.z, entra.x - sai.x); entra.angle = Math.atan2(sai.z - entra.z, sai.x - entra.x);
-    sai.jumpT = 0; G.substToque = [sai, entra];
+    const toque = [];
+    for (const P of S.pares) {
+      const sai = P.sai, entra = P.entra;
+      sai.vx = sai.vz = 0;
+      sai.angle = Math.atan2(entra.z - sai.z, entra.x - sai.x); entra.angle = Math.atan2(sai.z - entra.z, sai.x - entra.x);
+      sai.jumpT = 0; toque.push(sai, entra);
+    }
+    G.substToque = toque;
     if (S.tf > 0.6) { G.substToque = null; mudar('troca'); }
   } else {
-    andar(entra, { x: entra.slotF ? entra.base.x * entra.dir : entra.x, z: entra.base.z * entra.dir }, 6, rdt);
-    if (S.soc) andar(sai, { x: S.bx, z: S.corredorZ }, sai.mancando ? 1.6 : 2.4, rdt);      // society: vai para o lugar onde o outro estava sentado
-    else andar(sai, { x: sai.x + (S.bx - sai.x) * 0.2, z: -(HALF_W + LADO_BANCO.espera + 0.6) }, sai.mancando ? 1.6 : 2.4, rdt);
+    S.pares.forEach((P, i) => {
+      const sai = P.sai, entra = P.entra;
+      andar(entra, { x: entra.slotF ? entra.base.x * entra.dir : entra.x, z: entra.base.z * entra.dir }, 6, rdt);
+      if (S.soc) andar(sai, { x: S.bx, z: S.corredorZ }, sai.mancando ? 1.6 : 2.4, rdt);      // society: vai para o lugar onde o outro estava sentado
+      else andar(sai, { x: sai.x + (S.bx - sai.x) * 0.2 + (S.team === 0 ? -1 : 1) * i * 0.9, z: -(HALF_W + LADO_BANCO.espera + 0.6) }, sai.mancando ? 1.6 : 2.4, rdt);
+    });
     if (S.tf > 1.4) terminarSubstituicao();
   }
 }
@@ -15876,34 +15845,36 @@ function terminarSubstituicao() {
   const S = G.subst;
   if (!S) return;
   G.subst = null; G.substToque = null;
-  descartarBoneco(S.sai.mesh.raiz);
   const pulouCena = S.fase !== 'troca';
-  sentarNoBanco(S.sai, S.item.team, pulouCena);    // quem saiu vai sentar no banco (pulou a cena: já sentado)
-  if (S.sai.isUser) { S.sai.x = 999; S.sai.z = 999; }
-  S.entra.scripted = false;
-  const pulou = S.fase !== 'troca';
-  if (pulou) { S.entra.z = -(HALF_W - 1); S.entra.angle = Math.PI / 2; }   // pulou: já entra em campo
+  for (const P of S.pares) {
+    descartarBoneco(P.sai.mesh.raiz);
+    sentarNoBanco(P.sai, P.item.team, pulouCena);    // quem saiu vai sentar no banco (pulou a cena: já sentado)
+    if (P.sai.isUser) { P.sai.x = 999; P.sai.z = 999; }
+    P.entra.scripted = false;
+    if (pulouCena) { P.entra.z = -(HALF_W - 1); P.entra.angle = Math.PI / 2; }   // pulou: já entra em campo
+  }
   CORPOS = players.concat(officials);
   placaTroca.esconder();
-  if (quartoArbitro) quartoArbitro.raiz.visible = false;
   setLetterbox(G.state === 'foul' || S.estadoAntes === 'foul');
   $('cineLabel').textContent = '';
   $('skipBtn').hidden = !(S.estadoAntes === 'foul' || S.estadoAntes === 'restart');
   G.state = S.estadoAntes;
-  if (S.item.sai.isUser) mostrarAvisoEspectador();
+  if (S.pares.some((P) => P.item.sai.isUser)) mostrarAvisoEspectador();
 }
-// Câmera da troca: na placa; depois acompanha quem sai; no "toca aqui", os dois com o banco atrás.
+// Câmera da troca: na placa; depois acompanha quem sai; no "toca aqui", todos com o banco atrás.
 function cameraSubstituicao() {
-  const S = G.subst, sai = S.sai;
+  const S = G.subst;
   if (S.fase === 'placa') return { px: S.qx + 2.6, py: 2.0, pz: -(HALF_W) + 3.5, tx: S.qx, ty: 1.9, tz: -(HALF_W + LADO_BANCO.quarto) };
+  const media = (L, f) => L.reduce((a, P) => a + f(P), 0) / L.length;
   if (S.fase === 'sai') {
-    // Atrás e um pouco acima de quem sai, olhando para onde ele vai (o banco e quem entra ao fundo).
-    const dx = S.alvoSai.x - sai.x, dz = S.alvoSai.z - sai.z, d = Math.hypot(dx, dz) || 1, k = Math.min(1, d / 6);
+    // Atrás e um pouco acima de quem ainda está vindo (o mais longe), olhando para onde ele vai (quem entra ao fundo).
+    const P = S.pares.filter((x) => !x.chegou).sort((a, b) => dist2D(b.sai, b.alvoSai) - dist2D(a.sai, a.alvoSai))[0] || S.pares[0], sai = P.sai;
+    const dx = P.alvoSai.x - sai.x, dz = P.alvoSai.z - sai.z, d = Math.hypot(dx, dz) || 1, k = Math.min(1, d / 6);
     return { px: sai.x - dx / d * 5.5 * k + 2.5, py: 3.6, pz: sai.z - dz / d * 5.5 * k + 5 * (1 - k) + 1.5, tx: sai.x + dx / d * 2 * k, ty: 1.0, tz: sai.z + dz / d * 2 * k };
   }
-  const mx = (S.entra.x + sai.x) / 2;
+  const mx = media(S.pares, (P) => (P.entra.x + P.sai.x) / 2), larg = S.pares.length > 1 ? 1.2 * (S.pares.length - 1) : 0;
   if (S.soc) return { px: mx + 3.0, py: 2.0, pz: S.linhaZ + 5.0, tx: mx, ty: 1.2, tz: S.linhaZ - 0.45 };
-  return { px: mx + 3.2, py: 2.1, pz: -(HALF_W) + 5.5, tx: mx, ty: 1.2, tz: -(HALF_W + LADO_BANCO.espera - 0.4) };
+  return { px: mx + 3.2 + larg * 0.4, py: 2.1 + larg * 0.3, pz: -(HALF_W) + 5.5 + larg, tx: mx, ty: 1.2, tz: -(HALF_W + LADO_BANCO.espera - 0.4) };
 }
 
 // ---------------------------------------------------------------------
@@ -16842,6 +16813,9 @@ const Idioma = {
   'SUA COBRANÇA': ['YOUR KICK', 'TU COBRO', 'TOCCA A TE', 'À TOI DE TIRER'],
   'AZUL': ['BLUE', 'AZUL', 'BLU', 'BLEU'],
   'VERMELHO': ['RED', 'ROJO', 'ROSSO', 'ROUGE'],
+  'sai {0} ({1}), entra {2} ({3})': ['{0} off ({1}), {2} on ({3})', 'sale {0} ({1}), entra {2} ({3})', 'esce {0} ({1}), entra {2} ({3})', 'sort {0} ({1}), entre {2} ({3})'],
+  'SUBSTITUIÇÃO · {0}': ['SUBSTITUTION · {0}', 'SUSTITUCIÓN · {0}', 'SOSTITUZIONE · {0}', 'REMPLACEMENT · {0}'],
+  'SUBSTITUIÇÕES · {0}': ['SUBSTITUTIONS · {0}', 'SUSTITUCIONES · {0}', 'SOSTITUZIONI · {0}', 'REMPLACEMENTS · {0}'],
   'SUBSTITUIÇÃO · {0} · sai {1} ({2}), entra {3} ({4})': ['SUBSTITUTION · {0} · {1} off ({2}), {3} on ({4})', 'SUSTITUCIÓN · {0} · sale {1} ({2}), entra {3} ({4})', 'SOSTITUZIONE · {0} · esce {1} ({2}), entra {3} ({4})', 'REMPLACEMENT · {0} · sort {1} ({2}), entre {3} ({4})'],
   ' · lesão': [' · injury', ' · lesión', ' · infortunio', ' · blessure'],
   'você': ['you', 'tú', 'tu', 'toi'],

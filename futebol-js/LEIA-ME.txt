@@ -9,11 +9,15 @@ ARQUIVOS
                           TORCIDA que reage (Torcida, no jogo.js): cantos com bumbo e caixa (mais da casa), vaia com assobios
                           quando o visitante tem a bola e no pênalti dele, a casa quieta no gol do visitante, gol mais festivo,
                           olé no drible, "uuuh" na trave, palmas depois do ataque, vibração na defesa do goleiro
-                          (7.4.10) 12 CÂNTICOS (Som.canto: marcha, olê, batucada, palmas ritmadas, corneta, "UH!", dale, eu
-                          acredito, lá-lá-lá, charanga, bateria): cada torcida canta uma vez por tempo e depois de cada gol do
-                          time, sem repetir até tocar todos; no gol, o grito é "AAAA-ÊÊÊ". INTERVALO: os jogadores saem pelo
+                          (7.4.10) No gol, o grito é "AAAA-ÊÊÊ". (7.4.11) Sem os cânticos: a torcida faz o batuque e a festa no
+                          gol, no fim e antes dos pênaltis; a bateria usa amostras (bumbo e caixa num buffer) e os sons pesados têm
+                          limite próprio; o áudio só toca rodando e acorda sozinho (o som chiava e às vezes parava). INTERVALO: os jogadores saem pelo
                           túnel e a tela pergunta se começa o 2º tempo ou "Salvar e sair" (só na partida livre: continua depois
                           em "Continuar o 2º tempo"). Avisos de tática: um "!" do lado do radar, só com as mudanças do seu técnico
+                          (7.4.11) Substituições do mesmo time saem juntas (até 3, lado a lado, a placa com todas); o 4º árbitro
+                          fica sempre do lado do túnel, vai ao meio-campo mostrar a placa e volta. Nas cenas, os braços ficam na
+                          pose (sem o ajuste que encolhia o braço ao encostar em alguém). Sem a linha branca nas arestas: meio
+                          pixel de folga no atlas dos bonecos e o calção sem a tampa de cima
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -94,7 +98,7 @@ ARQUIVOS
                           torcida e a entrada em campo), a festa do título e a noite dos prêmios (festa.js) no fim. As
                           Configurações do menu agora têm só som, idioma, como jogar e a versão
                           (7.4.10) Configurações com a bola (as 15 premium) e as duas comemorações; no confronto, os
-                          quadradinhos do uniforme 1 e 2 de cada time; a partida salva no intervalo fica em futebolJs.livre.v1.pausa
+                          quadradinhos do uniforme 1 e 2 de cada time; a partida salva no intervalo fica em futebolJs.livre.v1.pausa; (7.4.11) o escudo da garagem no meio das colunas
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

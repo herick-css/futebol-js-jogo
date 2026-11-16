@@ -754,7 +754,7 @@
     g.add(caixaM(3.2, 3.0, 0.05, 0x0d0f12, 9.5, 1.5, -4.37, true));                                // a porta do vestiário
     g.add(caixaM(3.6, 0.25, 0.3, 0x6d7178, 9.5, 3.1, -4.3));
     const placa = texTexto(T('Vestiário') + ' · ' + nomeT(k), 512, 64, '#1b1d22', '#ffffff'); g.add(plano(3.4, 0.42, placa, 9.5, 3.55, -4.36, 0));
-    g.add(plano(2.2, 2.2, texImg(urlT(k)), -2.5, 3.6, -4.36, 0));
+    g.add(plano(2.2, 2.2, texImg(urlT(k)), 0, 3.6, -4.36, 0));   // (7.4.11) o escudo no meio das duas colunas (x = -4 e 4)
     const nE = texTexto(nomeEst || '', 1024, 64, 'rgba(0,0,0,0)', '#f2f2ee'); g.add(plano(13, 0.8, nE, -12, 3.6, -4.36, 0));
     g.add(caixaM(70, 0.4, 22, 0x7d7b75, -10, 6.2, 0));                                             // a laje e as luzes
     for (let x = -40; x < 22; x += 6) g.add(caixaM(2.4, 0.06, 0.3, 0xffffff, x, 5.97, 0, true));
