@@ -703,6 +703,13 @@
     return g;
   }
   // a pose andando (pernas e braços balançando) e a sentada
+  // (7.4.2) os passos de um jogador do jogo (a malha dele) andando na cena: o syncMeshes não anima com o jogo parado (deslizavam)
+  function passos(p, fase) {
+    const m = p.mesh; if (!m || !m.pernaE) return;
+    const b = Math.sin(fase) * 0.55;
+    m.pernaE.rotation.z = b; m.pernaD.rotation.z = -b; m.bracoE.rotation.z = -b * 0.75; m.bracoD.rotation.z = b * 0.75;
+    m.raiz.position.y = Math.abs(Math.sin(fase)) * 0.035;
+  }
   function andar(m, fase, v) { const b = Math.sin(fase) * 0.5 * Math.min(1, v / 1.4); m.pernaE.rotation.z = b; m.pernaD.rotation.z = -b; m.bracoE.rotation.z = -b * 0.7; m.bracoD.rotation.z = b * 0.7; m.bracoE.rotation.x = 0.12; m.bracoD.rotation.x = -0.12; m.corpo.position.y = Math.abs(Math.sin(fase)) * 0.04; }
   function sentar(m) { m.raiz.position.y = -0.27; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5); m.bracoE.rotation.z = m.bracoD.rotation.z = 0.75; m.bracoE.rotation.x = 0.15; m.bracoD.rotation.x = -0.15; }
   const virar = (m, dx, dz) => { m.raiz.rotation.y = -Math.atan2(dz, dx); };
@@ -718,23 +725,36 @@
     setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ }
     let pular = false;
     if (!pularEl) { pularEl = document.createElement('button'); pularEl.type = 'button'; pularEl.id = 'lvPular'; pularEl.className = 'pxBtn'; document.body.appendChild(pularEl); }
-    pularEl.textContent = T('Pular') + ' ▶'; pularEl.hidden = false; pularEl.onclick = () => { clique(); pular = true; };
+    pularEl.textContent = T('Pular') + ' ▶'; pularEl.hidden = false; pularEl.onclick = () => { clique(); pular = true; preto(true, 160); };
     const lixo = [], ctx = { J, A, pular: () => pular };
     const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada'] : ['estadio', 'onibus', 'vestiario', 'torcida', 'entrada']) : (modo === 'curta' ? ['entrada'] : ['vestiario', 'entrada']);
     const rodar = (dur, fn) => new Promise((ok) => {           // um plano: fn(t, rdt) a cada quadro até dur segundos (ou o pular)
       const t0 = performance.now(); let tl = t0;
-      GANCHO_RENDER = () => { const agora = performance.now(), t = (agora - t0) / 1000, rdt = Math.min(0.05, (agora - tl) / 1000); tl = agora; fn(Math.min(t, dur), rdt); if (t >= dur || pular) { GANCHO_RENDER = null; ok(); } };
+      let feito = false;
+      GANCHO_RENDER = () => {
+        const agora = performance.now(), t = (agora - t0) / 1000, rdt = Math.min(0.05, (agora - tl) / 1000); tl = agora;
+        fn(Math.min(t, dur), feito ? 0 : rdt);
+        if (!feito && (t >= dur || pular)) { feito = true; ok(); }   // (7.4.2) o plano fica congelado no último quadro até o preto cobrir (antes o jogo aparecia no corte)
+      };
     });
-    const corte = async (setup) => { await preto(true, 220); setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ } setup(); };
+    const corte = async (setup) => { await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220); setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ } setup(); };
     const plano1 = async (dur, fn) => { const p = rodar(dur, fn); await preto(false, 260); await p; };   // o plano começa ainda no preto (a câmera já no lugar)
     const kM = J.casa ? J.a : J.b, nM = nomeT(kM);
     try {
       for (const c of cenas) {
         if (pular) break;
         if (c === 'estadio') {
+          // (7.4.2) a cena começa ainda no preto (a câmera já lá fora) e volta para o preto um pouco antes de acabar: o campo com os
+          //   jogadores posicionados nunca aparece entre um plano e outro (nem se tocar na tela para cortar a cena)
           G.torcidaCena = 0.3;
-          await preto(false, 450);
-          await E.cena({ fogos: !!J.fogos, dur: J.fogos ? 6 : 4.6, texto: A.nome + ' · ' + (J.comp && J.comp.nome ? J.comp.nome : T('Amistoso')), parar: () => pular });
+          const durE = J.fogos ? 6 : 4.6;
+          const cortaTapa = () => preto(true, 140);
+          window.addEventListener('pointerdown', cortaTapa, true);
+          const fimE = setTimeout(() => preto(true, 320), durE * 1000 - 380);
+          const pc = E.cena({ fogos: !!J.fogos, dur: durE, texto: A.nome + ' · ' + (J.comp && J.comp.nome ? J.comp.nome : T('Amistoso')), parar: () => pular });
+          await esperar(90); await preto(false, 450);
+          try { await pc; } finally { clearTimeout(fimE); window.removeEventListener('pointerdown', cortaTapa, true); }
+          await preto(true, 0);
           setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ }
         } else if (c === 'onibus') {
           // a garagem do estádio: o ônibus entra, o técnico desce na frente e os jogadores (de agasalho, fone e mochila) vão para o vestiário
@@ -818,12 +838,12 @@
           await corte(() => { G.torcidaCena = 1; legenda(Tf('{0} x {1}: os times entram em campo', nomeT(PARTIDA.mandante === 1 ? J.b : J.a), nomeT(PARTIDA.mandante === 1 ? J.a : J.b))); });
           await plano1(5.2, (tt, rdt) => {
             const frente = z0 + v * tt;
-            juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = frente + 1.6; o.vx = 0; o.vz = v; o.angle = Math.PI / 2; });
-            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 0.75 : -0.75); p.z = frente - i * esp; p.vx = 0; p.vz = v; p.angle = Math.PI / 2; p.anim += v * 2.6 * rdt; }));
+            juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = frente + 1.6; o.vx = 0; o.vz = v; o.angle = Math.PI / 2; passos(o, tt * 6.4 + i * 1.3); });
+            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 0.75 : -0.75); p.z = frente - i * esp; p.vx = 0; p.vz = v; p.angle = Math.PI / 2; passos(p, tt * 6.4 + i * 0.9 + s * 2.1); }));
             camOlha(2.6, 1.45, -HALF_W + 7.5 + tt * 0.3, -0.2, 1.25, frente - 1.5);
           });
           if (pular) break;
-          // perfilados no meio de campo, de frente para a tribuna (a câmera passa por eles)
+          // perfilados no meio de campo (parados: a pose de pé de novo), de frente para a tribuna (a câmera passa por eles)
           await corte(() => {
             filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.6 + i * 0.95); p.z = -2.6; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
             juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = -2.6; o.vx = o.vz = 0; o.angle = -Math.PI / 2; });
@@ -835,13 +855,14 @@
         }
       }
     } finally {
+      await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220);   // (7.4.2) arruma tudo no escuro
       GANCHO_RENDER = null; G.camOvo = null; G.torcidaCena = null; G.semNomes = false; legenda(''); if (pularEl) pularEl.hidden = true;
       for (const x of lixo) { if (x.boneco) { try { descartarBoneco(x.boneco.raiz); } catch (e) { /* nada */ } } else descartar(x); }
       for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; }
       ball.mesh.visible = bolaV; ball.shadow.visible = bolaV;
       if (G.state === 'menu') G.state = est0;
       setLetterbox(false); snapCamera();
-      await preto(true, 200); await preto(false, 450);
+      await esperar(120); await preto(false, 450);
     }
   }
 
