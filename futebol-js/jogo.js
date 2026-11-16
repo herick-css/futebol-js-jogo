@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.7';
+const VERSAO_JOGO = '7.4.8';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -369,7 +369,7 @@ function walkTo(p, tx, tz, speed, dt) {
 //                           arquibancada e bancos de madeira, a boca dos vestiários subterrâneos entre os bancos, a avenida de um lado
 // regras (o que faltar vem de REGRAS_PADRAO): impedimento, acréscimos, lateral 'mao' ou 'pe',
 //          substituições por time (99 = à vontade) e se os amarelos acumulam para suspensão.
-const REGRAS_PADRAO = { impedimento: true, acrescimos: true, lateral: 'mao', substituicoes: 3, cartoesAcumulam: true };
+const REGRAS_PADRAO = { impedimento: true, acrescimos: true, lateral: 'mao', substituicoes: 3, cartoesAcumulam: true, tempos: 2 };   // tempos: a partida em dois tempos (a duração escolhida dividida em dois)
 const CAMPOS = {
   estadio: { nome: 'Estádio (7 x 7)', comprimento: 96, largura: 62, jogadores: 7, estadio: 'arena',
     regras: { substituicoes: 3 },
@@ -1545,11 +1545,90 @@ function buildBoards(lista) {
     const mesh = L.malha(m);
     mesh.position.set(x, H / 2, z);
     ESTADIO.add(mesh); freeze(mesh);
+    return mesh;
   };
-  add(BOARD_X * 2, 0, -BOARD_ZN, true);
+  // a placa do lado dos bancos vai em três pedaços: o do meio sai do lugar quando os times entram pelo túnel (mostrarTunel)
+  const G2 = TUNEL_LARG / 2 + 0.2;
+  add(BOARD_X - G2, -(BOARD_X + G2) / 2, -BOARD_ZN, true);
+  TUNEL.placa = add(G2 * 2, 0, -BOARD_ZN, true);
+  add(BOARD_X - G2, (BOARD_X + G2) / 2, -BOARD_ZN, true);
   add(BOARD_X * 2, 0, BOARD_Z, true);
   add(BOARD_Z + BOARD_ZN, -BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
   add(BOARD_Z + BOARD_ZN, BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
+}
+// O TÚNEL DA ENTRADA DOS TIMES: o túnel inflável nas cores do mandante (com o escudo e o nome dos lados), do meio da linha lateral
+//   dos bancos até dentro da arquibancada. Fica escondido no jogo; mostrarTunel(true) o põe no lugar e tira a placa do meio
+//   (a cena de entrada da partida livre). Os times saem pela boca dele, a TUNEL_BOCA metros da linha lateral.
+const TUNEL_LARG = 3.4, TUNEL_BOCA = 2.9;
+const TUNEL = { placa: null, grupo: null };
+function montarTunel() {
+  TUNEL.grupo = null;
+  const P = PARTIDA; if (!P) return;
+  const casa = P.mandante === 1 ? 1 : 0, U = P.uniformes[casa], T = P.timesObj[casa];
+  const c1 = hexNum(U.camisa), c2raw = hexNum(U.listra && U.listra !== U.camisa ? U.listra : U.gola || '#f2f2ee');
+  const lum = (c) => ((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11;
+  const c2 = Math.abs(lum(c1) - lum(c2raw)) < 40 ? (lum(c1) > 128 ? 0x1b1d22 : 0xf2f2ee) : c2raw;
+  // o fundo: logo depois da placa, sem entrar na arquibancada (a frente dela no meio do lado dos bancos vem do estadiosA.js)
+  const frente = ESTADIO_A && window.EstadiosA && EstadiosA.atual && EstadiosA.atual() ? EstadiosA.atual().frenteZ : null;
+  let fundo = BOARD_ZN + 1.6; if (frente) fundo = Math.max(BOARD_ZN + 0.5, Math.min(fundo, frente - 0.3));
+  const z0 = -(HALF_W + TUNEL_BOCA), z1 = -fundo, W = TUNEL_LARG / 2, YL = 1.55, RY = 1.2, NA = 7, PASSO = 1.5;
+  TUNEL.fundoZ = z1;
+  // a seção: as duas paredes retas e o arco de cima (pontos de baixo à esquerda, pelo alto, até baixo à direita)
+  const S = [[-W, 0]]; for (let k = 0; k <= NA; k++) { const a = Math.PI - Math.PI * k / NA; S.push([W * Math.cos(a), YL + RY * Math.sin(a)]); } S.push([W, 0]);
+  const L = new Lote(), quad = (A, B, C, D, cor, nx, ny, nz) => {
+    const base = L.pos.length / 3, r = ((cor >> 16) & 255) / 255, g = ((cor >> 8) & 255) / 255, b = (cor & 255) / 255;
+    for (const q of [A, B, C, D]) { L.pos.push(q[0], q[1], q[2]); L.nor.push(nx, ny, nz); L.uv.push(0.3, 0.6); L.cor.push(r, g, b); }
+    L.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+  };
+  const dentro = misturarCor(c1, 0x000000, 0.72), dentro2 = misturarCor(c2, 0x000000, 0.75);
+  for (let z = z0, k = 0; z > z1 + 0.01; z -= PASSO, k++) {
+    const za = z, zb = Math.max(z1, z - PASSO), anel = k % 2 === 0;
+    for (let i = 0; i < S.length - 1; i++) {
+      const [xa, ya] = S[i], [xb, yb] = S[i + 1];
+      let nx = -(yb - ya), ny = xb - xa; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl;   // a normal para fora do túnel
+      const corF = anel ? c1 : (i === 0 || i === S.length - 2 ? c1 : c2), corD = anel ? dentro : dentro2;
+      quad([xa, ya, za], [xb, yb, za], [xb, yb, zb], [xa, ya, zb], corF, nx, ny, 0);       // por fora
+      quad([xa, ya, za], [xa, ya, zb], [xb, yb, zb], [xb, yb, za], corD, -nx, -ny, 0);     // por dentro (escuro)
+    }
+  }
+  // o fundo fechado (escuro): de dentro não se vê a arquibancada nem quem ainda está esperando
+  for (let i = 0; i < S.length - 1; i++) { const [xa, ya] = S[i], [xb, yb] = S[i + 1]; quad([xb, yb, z1], [xa, ya, z1], [0, YL * 0.5, z1], [0, YL * 0.5, z1], 0x0c0d10, 0, 0, 1); }
+  // a boca: um anel mais gordo (a moldura) na ponta do campo, com a frente e o contorno
+  const esp = 0.28, borda = c1, filete = c2;
+  for (let i = 0; i < S.length - 1; i++) {
+    const [xa, ya] = S[i], [xb, yb] = S[i + 1];
+    const out = (x, y) => { const d = Math.hypot(x, y - YL * 0.5) || 1; return [x + (x / d) * esp, y + ((y - YL * 0.5) / d) * esp]; };
+    const [xa2, ya2] = i === 0 ? [xa - esp, 0] : out(xa, ya), [xb2, yb2] = i === S.length - 2 ? [xb + esp, 0] : out(xb, yb);
+    quad([xa, ya, z0], [xb, yb, z0], [xb2, yb2, z0], [xa2, ya2, z0], borda, 0, 0, 1);
+    // o filete na cor 2, no meio da moldura
+    const fa = [xa + (xa2 - xa) * 0.4, ya + (ya2 - ya) * 0.4], fb = [xb + (xb2 - xb) * 0.4, yb + (yb2 - yb) * 0.4], ga = [xa + (xa2 - xa) * 0.62, ya + (ya2 - ya) * 0.62], gb = [xb + (xb2 - xb) * 0.62, yb + (yb2 - yb) * 0.62];
+    quad([fa[0], fa[1], z0 + 0.01], [fb[0], fb[1], z0 + 0.01], [gb[0], gb[1], z0 + 0.01], [ga[0], ga[1], z0 + 0.01], filete, 0, 0, 1);
+    quad([xa2, ya2, z0], [xb2, yb2, z0], [xb2, yb2, z0 - 0.5], [xa2, ya2, z0 - 0.5], borda, (xa2 + xb2) / 2 / (W + esp), Math.max(0, (ya2 + yb2) / 2 - YL) / RY, 0);
+  }
+  const grupo = new THREE.Group(); grupo.name = 'tunel';
+  const corpo = L.malha(MAT_CORES); grupo.add(corpo);
+  // a faixa dos lados: o escudo e o nome do mandante, repetidos
+  const nome = String(T.nome || '').toUpperCase(), emb = T.emblema;
+  const tex = drawTexture(256, 32, (g) => {
+    g.fillStyle = '#' + c1.toString(16).padStart(6, '0'); g.fillRect(0, 0, 256, 32);
+    try { desenharEmblema(g, 6, 3, 24, 26, emb); } catch (e) { /* sem escudo */ }
+    g.fillStyle = '#' + c2.toString(16).padStart(6, '0'); g.font = 'bold 15px Arial'; g.textAlign = 'left'; g.textBaseline = 'middle';
+    g.fillText(nome.slice(0, 22), 36, 17, 214);
+  });
+  tex.wrapS = THREE.RepeatWrapping; const comp = Math.abs(z1 - z0); tex.repeat.set(Math.max(1, Math.round(comp / 6)), 1);
+  const matF = new THREE.MeshLambertMaterial({ map: tex });
+  for (const s of [-1, 1]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(comp, 0.75), matF);
+    m.position.set(s * (W + 0.025), 1.0, (z0 + z1) / 2); m.rotation.y = s * Math.PI / 2;
+    grupo.add(m);
+  }
+  grupo.visible = false;
+  ESTADIO.add(grupo);
+  TUNEL.grupo = grupo;
+}
+function mostrarTunel(on) {
+  if (TUNEL.grupo) TUNEL.grupo.visible = !!on;
+  if (TUNEL.placa) TUNEL.placa.visible = !on;
 }
 
 // ---------------------------------------------------------------------
@@ -3317,6 +3396,104 @@ function ajustarSombras() {
     _somI.decompose(s.position, s.quaternion, s.scale);
   }
 }
+// DESEMPENHO (CHAMADAS DE DESENHO): cada boneco eram ~15 malhas com o mesmo material (tronco, cabeça, pernas e braços com as
+//   versões de joelho e cotovelo) + a sombra: numa partida com banco, técnicos e arbitragem isso dá mais de 250 desenhos. Os bonecos da
+//   partida (marcarFusao) viram UMA malha só: as peças continuam no lugar (as animações mexem nelas como sempre, e o .visible delas
+//   vale), só que não são mais desenhadas (camada 31); a malha fundida tem todas as peças e, no shader, cada vértice usa a matriz da
+//   sua peça (partes[i] = peça no espaço do boneco, atualizada a cada quadro; peça escondida = matriz zero). E as sombras de todos
+//   esses bonecos são UMA malha instanciada. Resultado: 1 desenho por boneco + 1 para todas as sombras.
+const FUSAO_MAX = 20, CAMADA_OCULTA = 31;
+const _fuInv = new THREE.Matrix4(), _fuZero = new THREE.Matrix4().makeScale(0, 0, 0);
+let SOMBRAS_INST = null;
+function marcarFusao(A) {
+  if (!A) return A;
+  A.fundir = true;
+  if (!SOMBRAS_INST) {
+    SOMBRAS_INST = new THREE.InstancedMesh(SHADOW_GEO, SHADOW_MAT, 96);
+    SOMBRAS_INST.frustumCulled = false; SOMBRAS_INST.count = 0; SOMBRAS_INST.name = 'sombrasDosBonecos';
+    SOMBRAS_INST.onBeforeRender = atualizarSombrasFundidas;
+  }
+  if (SOMBRAS_INST.parent !== scene) scene.add(SOMBRAS_INST);
+  return A;
+}
+const visivelAte = (o, raiz) => { for (let q = o; q && q !== raiz; q = q.parent) if (!q.visible) return false; return true; };
+function naCenaVisivel(o) { for (let q = o; q; q = q.parent) { if (!q.visible) return false; if (q === scene) return true; } return false; }
+function materialFundido(base) {
+  const m = base.clone();
+  const partes = []; for (let i = 0; i < FUSAO_MAX; i++) partes.push(new THREE.Matrix4());
+  m.userData = { partes: { value: partes } };
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.partes = m.userData.partes;
+    sh.vertexShader = 'attribute float parte;\nuniform mat4 partes[' + FUSAO_MAX + '];\n' + sh.vertexShader
+      .replace('#include <beginnormal_vertex>', '#include <beginnormal_vertex>\n\tmat4 pM = partes[int(parte + 0.5)];\n\tobjectNormal = mat3(pM) * objectNormal;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\n\ttransformed = (pM * vec4(transformed, 1.0)).xyz;');
+  };
+  m.customProgramCacheKey = () => 'atletaFundido' + FUSAO_MAX;
+  return m;
+}
+function fundirAtleta(A) {
+  A.fundir = false;
+  const base = A.troncoInteiro && A.troncoInteiro.material;
+  if (!base || !base.isMeshLambertMaterial) return;
+  const partes = [];
+  A.raiz.traverse((o) => {
+    if (!o.isMesh || o.material !== base || partes.length >= FUSAO_MAX) return;
+    const g = o.geometry, a = g && g.attributes;
+    if (g.index && a.position && a.normal && a.uv && a.color) partes.push(o);
+  });
+  if (partes.length < 2) return;
+  let nv = 0, ni = 0;
+  for (const p of partes) { nv += p.geometry.attributes.position.count; ni += p.geometry.index.count; }
+  const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), uv = new Float32Array(nv * 2), cor = new Float32Array(nv * 3), qual = new Float32Array(nv);
+  const idx = nv > 65535 ? new Uint32Array(ni) : new Uint16Array(ni);
+  let v0 = 0, i0 = 0;
+  partes.forEach((p, k) => {
+    const a = p.geometry.attributes, n = a.position.count, I = p.geometry.index.array;
+    pos.set(a.position.array, v0 * 3); nor.set(a.normal.array, v0 * 3); uv.set(a.uv.array, v0 * 2); cor.set(a.color.array, v0 * 3);
+    qual.fill(k, v0, v0 + n);
+    for (let j = 0; j < I.length; j++) idx[i0 + j] = I[j] + v0;
+    v0 += n; i0 += I.length;
+  });
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); geo.setAttribute('color', new THREE.BufferAttribute(cor, 3));
+  geo.setAttribute('parte', new THREE.BufferAttribute(qual, 1)); geo.setIndex(new THREE.BufferAttribute(idx, 1));
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 1, 0), 2.4);      // cabe o boneco em qualquer pose (deitado, mergulhando, braços para cima)
+  const mat = materialFundido(base), M = new THREE.Mesh(geo, mat), arr = mat.userData.partes.value;
+  M.name = 'atletaFundido';
+  M.onBeforeRender = () => {
+    _fuInv.copy(A.raiz.matrixWorld).invert();
+    for (let i = 0; i < partes.length; i++) { const p = partes[i]; if (visivelAte(p, A.raiz)) arr[i].multiplyMatrices(_fuInv, p.matrixWorld); else arr[i].copy(_fuZero); }
+  };
+  for (const p of partes) p.layers.set(CAMADA_OCULTA);
+  // o resto que tem textura própria (as tatuagens): só é desenhado de perto (de longe nem dá para ver)
+  A.detalhes = []; A.raiz.traverse((o) => { if (o.isMesh && o.material !== base && o.material !== SHADOW_MAT && o.material.map && o.parent !== A.raiz) A.detalhes.push(o); });
+  A.raiz.add(M);
+  A.sombra.layers.set(CAMADA_OCULTA);
+  A.fundido = M;
+}
+// as sombras dos bonecos fundidos (e a fusão dos que acabaram de entrar na cena), a cada quadro em que a cena é desenhada
+function atualizarSombrasFundidas() {
+  let n = 0;
+  for (const A of ATLETAS) {
+    if (!A.fundir && !A.fundido) continue;
+    const r = A.raiz;
+    if (!naCenaVisivel(r)) continue;
+    if (A.fundir) fundirAtleta(A);
+    if (A.detalhes && A.detalhes.length) {
+      const perto = camera.position.distanceToSquared(r.position) < 24 * 24;
+      if (A.detalhesPerto !== perto) { A.detalhesPerto = perto; for (const o of A.detalhes) o.layers.set(perto ? 0 : CAMADA_OCULTA); }
+    }
+    if (!A.fundido || !A.sombra.visible || n >= SOMBRAS_INST.instanceMatrix.count) continue;
+    const h = Math.max(0, r.position.y), k = clamp(1 - h * 0.35, 0.55, 1);
+    _somP.set(0, 0.9, 0).applyMatrix4(r.matrixWorld); _somP.y = 0.02;
+    _somS.set(k, k, k);
+    _somM.compose(_somP, _somQ, _somS);
+    SOMBRAS_INST.setMatrixAt(n++, _somM);
+  }
+  SOMBRAS_INST.count = n;
+  SOMBRAS_INST.instanceMatrix.needsUpdate = true;
+}
 function makeAthlete(o) {
   const raiz = new THREE.Group();
   raiz.rotation.order = 'YXZ';                    // primeiro gira (Y), depois inclina/cai
@@ -3592,7 +3769,7 @@ function criarArbitragem() {
     { role: 'AR', nome: 'Assistente', x: -10, z: HALF_W + 1.3, pele: '#946042', cabelo: '#0E0E0E', cobre: 1 },
   ];
   dados.forEach((d, i) => {
-    const mesh = makeAthlete(Object.assign({}, base, { pele: d.pele, cabelo: d.cabelo, nome: d.nome, fundoNome: 'rgba(30,30,30,0.9)' }));
+    const mesh = marcarFusao(makeAthlete(Object.assign({}, base, { pele: d.pele, cabelo: d.cabelo, nome: d.nome, fundoNome: 'rgba(30,30,30,0.9)' })));
     scene.add(mesh.raiz);
     const o = {
       id: 200 + i, role: d.role, team: 2, x: d.x, z: d.z, vx: 0, vz: 0, angle: Math.PI / 2, anim: 0,
@@ -3626,7 +3803,7 @@ function aplicarArbitro(look) {
   o.modeloChave = chave;
   const base = { camisa: '#161616', listra: '#E8C547', gola: '#3a3a3a', numero: '', calcao: 0x161616, meia: 0x161616, sola: 0xE8C547, estilo: 2 };
   const dados = look ? Object.assign({}, base, look, { nome: look.nome || 'Árbitro' }) : Object.assign({}, base, { pele: '#BF8159', cabelo: '#1C140F', nome: 'Árbitro' });
-  const velho = o.mesh, mesh = makeAthlete(Object.assign(dados, { fundoNome: 'rgba(30,30,30,0.9)' }));
+  const velho = o.mesh, mesh = marcarFusao(makeAthlete(Object.assign(dados, { fundoNome: 'rgba(30,30,30,0.9)' })));
   scene.add(mesh.raiz);
   mesh.raiz.position.copy(velho.raiz.position); mesh.raiz.rotation.copy(velho.raiz.rotation); mesh.raiz.visible = velho.raiz.visible;
   if (o.cartao) { o.cartao.parent && o.cartao.parent.remove(o.cartao); mesh.bracoD.add(o.cartao); }
@@ -8110,7 +8287,7 @@ function clearFlags(p) {
 // Ninguém sai do lugar até o primeiro toque, que é sempre um passe curto para o meia.
 function kickoff(team) {
   Som.fimGol();                                    // a torcida do gol baixa quando volta para o meio
-  if (G.fimPendente) { apitoFinal(); return; }     // gol no último lance: em vez da saída, o apito final
+  if (G.fimPendente) { fimDoTempo(); return; }     // gol no último lance: em vez da saída, o apito (do intervalo ou o final)
   G.golAutor = null; G.golGrupo = null; for (const p of players) p.celebFeita = false;
   if (G.celebAuto) { user.scripted = false; G.celebAuto = null; }
   G.abracoFeito = false;
@@ -11311,7 +11488,7 @@ $('spinBall').addEventListener('pointerdown', (e) => {
 $('hamTrack').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(null); });
 $('timingLayer').addEventListener('pointerdown', (e) => { e.preventDefault(); tapTiming(e.clientX, e.clientY - AREA.topo); });
 $('cancelKick').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cancelKick(); });
-$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
+$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') fimDoIntervalo(); else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
 function toggleCamera() {
   cam.mode = cam.mode === 'bola' ? 'frente' : 'bola';
@@ -11503,7 +11680,7 @@ function updateHUD() {
   setText('scoreA', String(G.score[0]));
   setText('scoreB', String(G.score[1]));
   atualizarAgregado();
-  setText('clock', (G.acrescimoDado && G.acrescimo > 0 ? '+' : '') + fmtClock(G.clock));
+  setText('clock', (nTempos() > 1 ? T(G.tempo === 2 ? '2T' : '1T') + ' ' : '') + (G.acrescimoDado && G.acrescimo > 0 ? '+' : '') + fmtClock(G.clock));
   const mode = computeMode();
   if (mode !== G.mode) { G.mode = mode; renderButtons(mode); }
   const req = $('reqBtn');
@@ -11603,7 +11780,8 @@ function resetMatch() {
   $('skipBtn').textContent = T('Pular ▶'); painelPenaltis();
   if (PARTIDA.usuarioIndisponivel) setTimeout(() => showToast('Atenção: você está ' + PARTIDA.usuarioIndisponivel + ' (no teste, joga assim mesmo)', 'bad'), 400);
   G.fimFesta = null; G.ovoBola = false; G.ovoFeito = false; G.camOvo = null;
-  G.score = [0, 0]; G.clock = CONFIG.MATCH_SECONDS; G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
+  G.tempo = 1; G.trocasPlano = null;
+  G.score = [0, 0]; G.clock = duracaoTempo(); G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false; G.kick = null; G.timing = null; G.foul = null; G.offside = null;
   resetStats();
   // Volta todo mundo (inclusive expulsos) e zera faltas e cartões.
   TEAMS[0].length = 0; TEAMS[1].length = 0;
@@ -11637,6 +11815,96 @@ function relogioCorre() {
   return ESTADOS_DE_BOLA_ROLANDO.includes(G.state) && !G.kickoffPending && !G.sp && !G.fimPendente;
 }
 function acrescimoPorParadas(n) { return n <= 1 ? 0 : n <= 4 ? 30 : n <= 8 ? 45 : 60; }
+// OS DOIS TEMPOS: a duração escolhida (PARTIDA.duracao) é dividida em dois tempos (regras.tempos = 2: todas as partidas,
+//   menos as que mudam isso). O relógio de cada tempo vai da metade a zero; cada tempo tem os seus acréscimos. No fim do 1º tempo:
+//   o apito, a cena do INTERVALO (o placar; os técnicos fazem as trocas do intervalo; todo mundo recupera um pouco do fôlego) e o
+//   2º tempo começa com a saída do outro time. No 2º tempo os técnicos fazem as trocas (tecnicoPlanejaTrocas).
+const nTempos = () => (PARTIDA && PARTIDA.regras && PARTIDA.regras.tempos > 1 ? 2 : 1);
+const duracaoTempo = () => CONFIG.MATCH_SECONDS / nTempos();
+// quanto da partida já foi (0 a 1), contando os dois tempos
+function decorridoPartida() {
+  const n = nTempos(), d = duracaoTempo();
+  const f = G.acrescimoDado ? 1 : 1 - clamp(G.clock, 0, d) / d;          // nos acréscimos, o tempo já acabou
+  return clamp(((G.tempo || 1) - 1) / n + f / n, 0, 1);
+}
+function fimDoTempo() {
+  if ((G.tempo || 1) < nTempos()) intervalo(); else apitoFinal();
+}
+function intervalo() {
+  G.fimPendente = false;
+  G.state = 'intervalo'; G.intT = 0; G.intBanner = false; G.intCorte = true; G.intFase = 0;
+  G.targetScale = G.timeScale = 1;
+  if (G.kick) G.kick = null;
+  hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
+  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.possession = null; ball.vx *= 0.3; ball.vz *= 0.3;
+  for (const p of players) if (!p.out) Object.assign(p, { scripted: true, vx: 0, vz: 0, stun: 0, fall: 0, falling: false, slideT: 0, slidePose: 0, jumpT: 0, diveT: 0, tackle: 0, guard: 0, kickT: 0, celeb: null, lamento: null });
+  const r = referee; r.angle = Math.atan2(-r.z, -r.x); r.refPose = 'apito'; r.refPoseT = 1.6;
+  G.intRef = { x: r.x, z: r.z, angle: r.angle };
+  Som.apito(0.4); setTimeout(() => { try { Som.apito(1.0); } catch (e) { /* nada */ } }, 420);
+  if (G.pulando) { fimDoIntervalo(); return; }
+  setLetterbox(true);
+  $('skipBtn').hidden = false; $('cineLabel').textContent = '';
+}
+function updateIntervalo(dt) {
+  G.intT += dt;
+  const r = referee, R = G.intRef;
+  if (R) { r.x = R.x; r.z = R.z; r.vx = r.vz = 0; r.angle = R.angle; }
+  for (const p of players) if (!p.out) { p.vx = p.vz = 0; }
+  if (G.intT > 0.2 && !G.intBanner) { G.intBanner = true; showBanner('INTERVALO', 0, 3.4); $('cineLabel').textContent = Tf('Fim do 1º tempo · {0} {1} x {2} {3}', PARTIDA.timesObj[0].sigla || '', G.score[0], G.score[1], PARTIDA.timesObj[1].sigla || ''); }
+  if (G.intT > 4.2) fimDoIntervalo();
+}
+function cameraIntervalo() {
+  const r = referee, R = G.intRef || { angle: 0 };
+  if (G.intT >= 1.6 && G.intFase === 0) { G.intFase = 1; G.intCorte = true; }   // corte seco do juiz para o alto
+  if (G.intT < 1.6) return { px: r.x + Math.cos(R.angle) * 4.2, py: 1.9, pz: r.z + Math.sin(R.angle) * 4.2, tx: r.x, ty: 1.5, tz: r.z };   // o juiz apitando
+  const k = Math.min(1, (G.intT - 1.6) / 2.6);
+  return { px: -10 + 20 * k, py: 22, pz: HALF_W + 30, tx: 0, ty: 0, tz: 0 };                                                              // o estádio do alto
+}
+function fimDoIntervalo() {
+  if (G.state !== 'intervalo') return;
+  $('banner').className = ''; $('cineLabel').textContent = ''; $('skipBtn').hidden = true;
+  G.tempo = 2; G.clock = duracaoTempo(); G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false;
+  for (const p of players) if (!p.out) { p.folego = Math.min(1, (p.folego ?? 1) + 0.3); p.cansadoT = 0; }
+  user.stamina = Math.max(user.stamina || 0, Math.min(user.staminaMax || 1, 0.85)); user.exhausted = false;
+  trocasDoIntervalo();
+  showToast(T('Começa o 2º tempo'));
+  kickoff(1);
+  snapCamera();
+}
+// AS TROCAS DOS TÉCNICOS. Além de trocar quem estoura o fôlego (< 38%) ou se machuca (o que quase nunca acontece numa partida
+//   curta), o técnico troca por conta própria: no intervalo cada técnico faz 0 a 2 trocas (quem está pior:
+//   o mais cansado, o amarelado); no 2º tempo há três janelas (por volta de 62%, 75% e 86% da partida) em que ele pede 1 ou 2
+//   trocas (o time que perde troca mais; o que ganha bem, menos). As trocas pedidas acontecem na próxima bola parada (com a cena).
+//   Você nunca é tirado pelo técnico (só sai machucado).
+function candidatosTroca(team) {
+  return TEAMS[team].filter((p) => !p.isUser && !p.out && !p.red && p.role !== 'GK' && !p.entrouNoJogo && !G.subsFila.some((s) => s.sai === p))   // quem entrou não sai de novo
+    .map((p) => ({ p, nota: (p.folego ?? 1) - (p.yellow ? 0.25 : 0) - (p.lesao ? 0.5 : 0) + Math.random() * 0.25 }))
+    .sort((a, b) => a.nota - b.nota).map((x) => x.p);
+}
+function trocasRestantes(team) { const P = PARTIDA, fila = G.subsFila.filter((s) => s.team === team).length; return Math.min(P.reservas[team].length - fila, P.regras.substituicoes - P.subsUsadas[team] - fila); }
+function trocasDoIntervalo() {
+  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio) return;
+  for (const team of [0, 1]) {
+    const r = Math.random(), n = Math.min(trocasRestantes(team), r < 0.35 ? 0 : r < 0.8 ? 1 : 2);
+    for (const sai of candidatosTroca(team).slice(0, n)) executarTrocaDireto({ team, sai, motivo: 'intervalo' });
+  }
+}
+function tecnicoPlanejaTrocas() {
+  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio || nTempos() < 2 || (G.tempo || 1) < 2) return;
+  if (!G.trocasPlano) G.trocasPlano = [0.62, 0.75, 0.86].map((m) => [m + rand(-0.03, 0.03), m + rand(-0.03, 0.03)]);   // [time 0, time 1]
+  const agora = decorridoPartida();
+  for (const team of [0, 1]) {
+    for (const J of G.trocasPlano) {
+      if (J[team] == null || agora < J[team]) continue;
+      J[team] = null;
+      const saldo = G.score[team] - G.score[1 - team], r = Math.random();
+      let n = saldo < 0 ? (r < 0.5 ? 2 : 1) : saldo >= 2 ? (r < 0.5 ? 0 : 1) : (r < 0.25 ? 2 : r < 0.85 ? 1 : 0);
+      n = Math.min(n, trocasRestantes(team));
+      for (const sai of candidatosTroca(team).slice(0, n)) pedirSubstituicao(team, sai, saldo < 0 ? 'tática' : 'cansaço', false);
+    }
+  }
+}
 
 function verificarFimDeTempo(dt) {
   if (G.pen) return;
@@ -11645,7 +11913,7 @@ function verificarFimDeTempo(dt) {
     // Segurança: um time trocando passes lá na frente para sempre — depois de 20 s, acaba
     // no primeiro momento sem chute/mira/drible em andamento.
     const travou = G.fimEspera > 20 && G.state === 'play' && !ball.isShot && !G.recvFx && !G.corrida;
-    if (lanceAcabou() || travou) apitoFinal();
+    if (lanceAcabou() || travou) fimDoTempo();
     return;
   }
   if (G.clock > 0 || !relogioCorre()) return;
@@ -11659,7 +11927,7 @@ function verificarFimDeTempo(dt) {
     }
   }
   G.clock = 0; G.fimPendente = true; G.fimEspera = 0;
-  if (lanceAcabou()) apitoFinal();
+  if (lanceAcabou()) fimDoTempo();
 }
 
 // O lance acabou? (ver regras acima)
@@ -12293,6 +12561,7 @@ function updateYaw(rdt) {
 function cameraGoal() {
   const c = CONFIG.CAM;
   if (G.state === 'fim') return cameraFim();
+  if (G.state === 'intervalo') return cameraIntervalo();
   if (G.state === 'subst' && G.subst) return cameraSubstituicao();
   if (G.pen) return cameraPenaltis();
   if (G.espectador) return { px: ball.x * 0.9, py: 13, pz: -(HALF_W + 9), tx: ball.x, ty: 0, tz: ball.z * 0.8 };   // sem você: câmera de TV
@@ -12379,8 +12648,8 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   const g = cameraGoal();
   let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
-  const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.chuteCine && G.chuteCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte);   // corte seco de câmera
-  if (corte) { k = 1; G.fimCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.chuteCine) G.chuteCine.cut = false; if (G.foul) G.foul.cut = false; }
+  const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.chuteCine && G.chuteCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte) || (G.state === 'intervalo' && G.intCorte);   // corte seco de câmera
+  if (corte) { k = 1; G.fimCorte = false; G.intCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.chuteCine) G.chuteCine.cut = false; if (G.foul) G.foul.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
   cam.tx = lerp(cam.tx, g.tx, k); cam.ty = lerp(cam.ty, g.ty, k); cam.tz = lerp(cam.tz, g.tz, k);
   const sp = Math.hypot(user.vx, user.vz);
@@ -12500,7 +12769,7 @@ function lerPose(m) {
 }
 // Ponto mais baixo do boneco (só as peças visíveis), em metros.
 function pisoDoBoneco(o, min) {
-  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO) return min;
+  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO || o.name === 'atletaFundido') return min;
   if (o.isMesh) {
     const a = o.geometry.attributes.position, e = o.matrixWorld.elements;
     for (let i = 0; i < a.count; i++) { const y = e[1] * a.getX(i) + e[5] * a.getY(i) + e[9] * a.getZ(i) + e[13]; if (y < min) min = y; }
@@ -12774,7 +13043,7 @@ function caixasDaGeometria(g) {
   return out;
 }
 function malhasVisiveis(o, lista) {
-  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO) return lista;
+  if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO || o.name === 'atletaFundido') return lista;
   if (o.isMesh) lista.push(o);
   for (const c of o.children) malhasVisiveis(c, lista);
   return lista;
@@ -13131,6 +13400,7 @@ function stepGame(dt, rdt) {
   updateFoul(rdt);
   updateApito(rdt);
   if (G.state === 'fim') updateFimDeJogo(rdt);
+  if (G.state === 'intervalo') updateIntervalo(rdt);
   if (G.passTarget) { G.passTarget.t -= dt; if (G.passTarget.t <= 0 || G.state !== 'play') G.passTarget = null; }
   if (G.state === 'play') {
     handleBallOut();
@@ -13487,13 +13757,13 @@ function resolverPartida(cfg = {}) {
   P.uniformes = [U0, U1];
   if (parecido && !comModelo) { const fora = P.mandante === 0 ? 1 : 0; P.uniformes[fora] = P.timesObj[fora].uniforme2 || P.uniformes[fora]; }
   else if (parecido) {
-    // na ordem: o visitante com o 2; o mandante com o 2; os dois com o 2. Fica a primeira que não se confunde (ou a que menos se confunde).
+    // o visitante com o 2; o mandante com o 2; os dois com o 2. O mandante trocar "custa" mais (ele quase sempre joga com o 1):
+    //   fica a combinação de menor semelhança + custo (empate: a primeira).
     const casa = P.mandante === 0 ? 0 : 1, fora = 1 - casa, T = P.timesObj, kits = (t, n) => (n ? T[t].uniforme2 || T[t].uniforme : T[t].uniforme);
     let melhor = null;
-    for (const [nc, nf] of [[0, 1], [1, 0], [1, 1]]) {
-      const Uc = kits(casa, nc), Uf = kits(fora, nf), sim = semelhancaUniformes(Uc, Uf);
-      if (!melhor || sim < melhor.sim - 0.05) melhor = { Uc, Uf, sim };
-      if (sim <= 0.42) break;
+    for (const [nc, nf, custo] of [[0, 1, 0], [1, 0, 0.25], [1, 1, 0.4]]) {
+      const Uc = kits(casa, nc), Uf = kits(fora, nf), nota = semelhancaUniformes(Uc, Uf) + custo;
+      if (!melhor || nota < melhor.nota - 1e-6) melhor = { Uc, Uf, nota };
     }
     P.uniformes[casa] = melhor.Uc; P.uniformes[fora] = melhor.Uf;
   }
@@ -13617,6 +13887,7 @@ function montarEstadio() {
   const tipo = PARTIDA.campo.estadio || 'arena';
   ESTADIO_A = null;                                // (7.4.0) só vale para a partida montada agora (os fogos e a cena de fora dependem dele)
   buildPitch(tipo === 'arenaA' && window.EstadiosA ? { semFundo: true } : undefined);   // (7.4.0) na Série A o chão de fora é o do estadiosA.js (o pátio e a cidade)
+  TUNEL.placa = null; TUNEL.grupo = null;
   if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); }
   else if (tipo === 'arenaA') {                    // Série A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
     buildBoards(ANUNCIOS_A);
@@ -13624,6 +13895,7 @@ function montarEstadio() {
     if (window.EstadiosA) try { ESTADIO_A = window.EstadiosA.construir(PARTIDA); ok = true; } catch (e) { console.warn('[Estádio A]', e); crowd.limpar(); }
     if (!ok) buildStands();
   } else buildArredores(tipo);
+  if (ehArena(tipo)) montarTunel();
   buildGoal(-1); buildGoal(1);
   if (PARTIDA.campo.visual === 'futsal') BANCOS.length = 0; else construirBancos();   // quadra de futsal: sem banco
   montarCones();
@@ -13676,13 +13948,18 @@ function buildArredores(tipo, op) {
     R.idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
   };
   const X = BOARD_X, Z = BOARD_Z, Zn = BOARD_ZN, Zs = (s) => (s < 0 ? Zn : Z);   // lado do banco mais largo
-  parede(-X, -Zn, X, -Zn); parede(-X, -Zn, -X, Z, -1); parede(X, -Zn, X, Z, 1);
+  // o lado dos bancos tem o PORTÃO no meio (a tela e a mureta desse pedaço numa malha própria): ele abre quando os times entram (mostrarTunel)
+  const GP = 1.6, portaoL = new Lote([0, 0, 1, 1]), portaoM = new Lote();
+  parede(-X, -Zn, -GP, -Zn); parede(GP, -Zn, X, -Zn); parede(-X, -Zn, -X, Z, -1); parede(X, -Zn, X, Z, 1);
+  { const R = portaoL, len = GP * 2, rep = len / 1.2, rv = ALT / 1.2, b = 0; R.pos.push(-GP, ALT, -Zn, GP, ALT, -Zn, -GP, 0, -Zn, GP, 0, -Zn); for (let i = 0; i < 4; i++) { R.nor.push(0, 0, 1); R.cor.push(1, 1, 1); } R.uv.push(0, rv, rep, rv, 0, 0, rep, 0); R.idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1); }
   if (portao) { parede(-X, Z, -portao, Z); parede(portao, Z, X, Z); } else parede(-X, Z, X, Z);
   const tela = R0.malha(telaMat); ESTADIO.add(tela); freeze(tela); TELA_MESH = tela;
+  const portaoG = new THREE.Group(); portaoG.name = 'portao'; portaoG.add(portaoL.malha(telaMat)); ESTADIO.add(portaoG); TUNEL.placa = portaoG;
   for (const s of [-1, 1]) { const m = RF[s].malha(telaMat); ESTADIO.add(m); freeze(m); FUNDO_GRADE[s].tela = m; }
   // Postes do alambrado e cano de cima.
   const corPoste = varzea ? 0x8a9096 : futsal ? 0x20242c : 0x2b3a2e;
-  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) { if (portao && s > 0 && Math.abs(x) < portao + 0.4) continue; Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s)); }
+  for (let x = -X; x <= X + 0.01; x += 3.2) for (const s of [-1, 1]) { if (portao && s > 0 && Math.abs(x) < portao + 0.4) continue; if (s < 0 && Math.abs(x) < GP + 0.3) continue; Ep.caixa(0.09, ALT, 0.09, corPoste, x, ALT / 2, s * Zs(s)); }
+  for (const sx of [-1, 1]) Ep.caixa(0.12, ALT, 0.12, corPoste, sx * GP, ALT / 2, -Zn);   // os postes do portão do lado dos bancos
   if (portao) for (const sx of [-1, 1]) Ep.caixa(0.12, ALT, 0.12, corPoste, sx * portao, ALT / 2, Z);   // postes do portão
   for (let z = -Zn; z <= Z + 0.01; z += 3.2) for (const s of [-1, 1]) EpF[s].caixa(0.09, ALT, 0.09, corPoste, s * X, ALT / 2, z);
   for (const s of [-1, 1]) {
@@ -13698,6 +13975,10 @@ function buildArredores(tipo, op) {
       if (portao && sz > 0) {                       // lado do portão: dois pedaços de mureta, com a abertura no meio
         const w = X + 0.15 - portao, cx = (X + 0.15 + portao) / 2;
         for (const m of [-1, 1]) { E.caixa(w, MH, 0.3, C1, m * cx, MH / 2, Z); E.caixa(w, 0.08, 0.4, C2, m * cx, MH + 0.04, Z); }
+      } else if (sz < 0) {                          // lado dos bancos: o pedaço do meio vai com o portão
+        const w = X + 0.15 - GP, cx = (X + 0.15 + GP) / 2;
+        for (const m of [-1, 1]) { E.caixa(w, MH, 0.3, C1, m * cx, MH / 2, -Zn); E.caixa(w + 0.05, 0.08, 0.4, C2, m * (cx + 0.025), MH + 0.04, -Zn); }
+        portaoM.caixa(GP * 2, MH, 0.3, C1, 0, MH / 2, -Zn); portaoM.caixa(GP * 2, 0.08, 0.4, C2, 0, MH + 0.04, -Zn);
       } else { E.caixa(X * 2 + 0.3, MH, 0.3, C1, 0, MH / 2, sz * Zs(sz)); E.caixa(X * 2 + 0.4, 0.08, 0.4, C2, 0, MH + 0.04, sz * Zs(sz)); }
     }
     for (const sx of [-1, 1]) { E.caixa(0.3, MH, Z + Zn, C1, sx * X, MH / 2, (Z - Zn) / 2); E.caixa(0.4, 0.08, Z + Zn + 0.3, C2, sx * X, MH + 0.04, (Z - Zn) / 2); }
@@ -13775,6 +14056,7 @@ function buildArredores(tipo, op) {
     }
   }
   const est = E.malha(MAT_CORES); ESTADIO.add(est); freeze(est);
+  if (portaoM.pos.length) TUNEL.placa.add(portaoM.malha(MAT_CORES));
   const postesM = Ep.malha(MAT_CORES); ESTADIO.add(postesM); freeze(postesM); POSTES_MESH = postesM;
   for (const s of [-1, 1]) { const m = EpF[s].malha(MAT_CORES); ESTADIO.add(m); freeze(m); FUNDO_GRADE[s].postes = m; }
   lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -13911,7 +14193,7 @@ function bonecoTecnico(T, timeObj, op) {
     pele: V.pele, cabelo: V.cabelo, estilo: V.estilo, barba: V.barba, corBarba: V.corBarba, rosto: V.rosto, labio: V.labio, traje: V.traje,
     nome: (T && T.nome) || ' ', fundoNome: op.fundoNome || 'rgba(20,20,20,0.85)', emblema: semEmb ? null : timeObj && timeObj.emblema });
   vestirTecnico(m, V); m.visualTec = V;
-  return m;
+  return marcarFusao(m);
 }
 const tecnicos = [];
 function montarTecnicos(P) {
@@ -14053,7 +14335,7 @@ function trocarTaticaFase(team, fase, chave, porQuem, quieto) {
 //   Não troca a mesma fase duas vezes em menos de 45 s (senão vira pisca-pisca).
 function mediaDoTime(team, f) { let s = 0, n = 0; for (const p of TEAMS[team]) if (!p.out && p.role !== 'GK') { s += f(p); n++; } return n ? s / n : 0; }
 function tecnicoEscolhe(team) {
-  const P = PARTIDA, decorrido = 1 - G.clock / P.duracao, pref = P.tatPref[team], outro = P.tat[1 - team];
+  const P = PARTIDA, decorrido = decorridoPartida(), pref = P.tatPref[team], outro = P.tat[1 - team];
   const saldo = G.score[team] - G.score[1 - team] + (P.competicao.placarIda && P.competicao.jogo === 'volta' ? (team === 0 ? 1 : -1) * (P.competicao.placarIda[0] - P.competicao.placarIda[1]) : 0);
   const forca = (P.timesObj[team].forca || 60) - (P.timesObj[1 - team].forca || 60);
   const folego = mediaDoTime(team, (p) => (p.isUser ? 1 : p.folego ?? 1)), passe = mediaDoTime(team, (p) => hab(p, 'passe'));
@@ -14075,6 +14357,7 @@ function tecnicoPensa() {
   if (!PARTIDA || !PARTIDA.tat || !(G.state === 'play') || G.pen || (G.tecnicoT || 0) > G.time) return;
   G.tecnicoT = G.time + 15;
   tecnicoOlhaCansaco();
+  tecnicoPlanejaTrocas();                          // as trocas do 2º tempo
   if (G.simFixaTatica) return;
   G.tatFase = G.tatFase || [{ com: -99, sem: -99 }, { com: -99, sem: -99 }];
   const M = G.taticaManual || {};
@@ -14300,6 +14583,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites,
     nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
   });
+  marcarFusao(mesh);
   scene.add(mesh.raiz);
   // crianças: velocidade CRIANCA_VEL (4) na MESMA régua do seu personagem (que corre com a velocidade dele, 5): 5,76 × (4/7)^0,35 ≈ 4,7 m/s.
   //   Antes era 3 só para a IA (~3,3 m/s) e você corria a 5,1: elas pareciam paradas. Todas iguais (só uma variação pequena).
@@ -14408,6 +14692,7 @@ function bonecoDoBanco(P, team, j, role, numero, isUser) {
   const m = makeAthlete({ camisa: gk ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: numero || '', calcao: U.calcao, meia: gk ? U.goleiro : U.meia, sola: U.sola,
     emblema: T.emblema, modelo: modeloDaCamisa(U, gk), peito: U.peito, pele: j.pele, cabelo: j.cabelo, estilo: j.estilo || 0, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: gk ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites, nome: isUser ? 'VOCÊ' : j.nome, fundoNome: corFundoNome(U.camisa) });
   m.etiqueta.visible = false;
+  marcarFusao(m);
   scene.add(m.raiz);
   return m;
 }
@@ -14518,7 +14803,7 @@ function posarBoneco(d, andando, aquecendo, dt) {
 function garantirQuartoArbitro() {
   if (!quartoArbitro) {
     quartoArbitro = makeAthlete({ camisa: '#161616', listra: '#E8C547', gola: '#3a3a3a', numero: '', calcao: 0x161616, meia: 0x161616, sola: 0xE8C547, pele: '#DDA67E', cabelo: '#1C140F', estilo: 2, nome: '4º árbitro', fundoNome: 'rgba(30,30,30,0.9)' });
-    quartoArbitro.etiqueta.visible = false; scene.add(quartoArbitro.raiz);
+    quartoArbitro.etiqueta.visible = false; marcarFusao(quartoArbitro); scene.add(quartoArbitro.raiz);
   }
   return quartoArbitro;
 }
@@ -14600,14 +14885,14 @@ function tecnicoOlhaCansaco() {
 // Momento de trocar: bola fora (busca da bola) ou falta (depois do apito).
 function verificarSubstituicoes() {
   if (!G.subsFila.length || G.subst || G.pulando) {
-    if (G.pulando && G.subsFila.length && (G.state === 'restart' || G.state === 'foul')) executarTrocaDireto(G.subsFila.shift());
+    if (G.pulando && G.subsFila.length && (G.state === 'restart' || G.state === 'foul' || G.state === 'play')) executarTrocaDireto(G.subsFila.shift());   // pulando: a troca sai na hora (o pulo quase nunca para num 'restart')
     return;
   }
   const S = G.sp, F = G.foul;
   const parado = (G.state === 'restart' && S && (S.phase === 'fetch' || S.phase === 'carry')) || (G.state === 'foul' && F && F.t > 1.0);
   if (!parado) return;
   const item = G.subsFila[0];
-  if (item.sai.out || !players.includes(item.sai)) { G.subsFila.shift(); return; }
+  if (item.sai.out || !players.includes(item.sai) || !podeTrocar(item.team)) { G.subsFila.shift(); return; }
   if (S && S.taker === item.sai) return;           // é o cobrador: espera a próxima
   G.subsFila.shift();
   iniciarSubstituicao(item);
@@ -14620,7 +14905,7 @@ function trocarNasListas(item) {
   const usados = P.numerosUsados[team];
   const num = NUMEROS[f.role].find((v) => !usados.has(v)) || (20 + usados.size); usados.add(num);
   const entra = criarJogador(P, team, f, j, num, false);
-  entra.folego = 1; entra.stamina = 1; entra.exhausted = false; entra.cansadoT = 0;
+  entra.folego = 1; entra.stamina = 1; entra.exhausted = false; entra.cansadoT = 0; entra.entrouNoJogo = true;
   const i = players.indexOf(sai), t = TEAMS[team].indexOf(sai);
   if (i >= 0) players[i] = entra;
   if (t >= 0) TEAMS[team][t] = entra;
@@ -14635,8 +14920,9 @@ function trocarNasListas(item) {
   return entra;
 }
 // Sem cena (quando está pulando para o resultado).
+function podeTrocar(team) { const P = PARTIDA; return P.reservas[team].length > 0 && P.subsUsadas[team] < P.regras.substituicoes; }   // (a fila pode ter pedido mais do que sobrou)
 function executarTrocaDireto(item) {
-  if (!players.includes(item.sai)) return;
+  if (!players.includes(item.sai) || item.sai.out || !podeTrocar(item.team)) return;
   const entra = trocarNasListas(item);
   descartarBoneco(item.sai.mesh.raiz);
   sentarNoBanco(item.sai, item.team, true);
@@ -14789,6 +15075,7 @@ function avancarRapido() {
     if (G.state === 'replay') { terminarReplay(); continue; }
     if (G.state === 'subst') { terminarSubstituicao(); continue; }
     if (G.state === 'fim') { terminarCenaFinal(); continue; }
+    if (G.state === 'intervalo') { fimDoIntervalo(); continue; }
     if (G.state === 'penaltis') { simularPenaltisRestantes(); continue; }
     if (G.state === 'goal' || G.state === 'celebrate') { G.replayFeito = true; G.fading = false; kickoff(G.lastConceded); continue; }
     if (G.state === 'foul') { pularParalisacao(); continue; }
@@ -15599,6 +15886,11 @@ const Idioma = {
   'Mostrar FPS e chamadas de desenho': ['Show FPS and draw calls', 'Mostrar FPS y llamadas de dibujo', 'Mostra FPS e chiamate di disegno', 'Afficher les FPS et les appels de dessin'],
   'desligada': ['off', 'desactivada', 'disattivata', 'désactivé'],
   'FIM DE JOGO': ['FULL TIME', 'FIN DEL PARTIDO', 'FINE PARTITA', 'FIN DU MATCH'],
+  'INTERVALO': ['HALF TIME', 'DESCANSO', 'INTERVALLO', 'MI-TEMPS'],
+  '1T': ['1H', '1T', '1T', '1MT'],
+  '2T': ['2H', '2T', '2T', '2MT'],
+  'Fim do 1º tempo · {0} {1} x {2} {3}': ['End of the first half · {0} {1} x {2} {3}', 'Fin del primer tiempo · {0} {1} x {2} {3}', 'Fine del primo tempo · {0} {1} x {2} {3}', 'Fin de la première mi-temps · {0} {1} x {2} {3}'],
+  'Começa o 2º tempo': ['The second half begins', 'Empieza el segundo tiempo', 'Inizia il secondo tempo', 'La deuxième mi-temps commence'],
   'Sua nota na partida. No modo história ela vai pesar nas propostas dos clubes.': ['Your match rating. In story mode it will weigh on the clubs’ offers.', 'Tu nota en el partido. En el modo historia influirá en las ofertas de los clubes.', 'Il tuo voto nella partita. Nella modalità storia peserà sulle offerte dei club.', 'Ta note du match. En mode histoire, elle pèsera sur les offres des clubs.'],
   'Jogar de novo': ['Play again', 'Jugar otra vez', 'Gioca ancora', 'Rejouer'],
   'SOM': ['SOUND', 'SONIDO', 'SUONO', 'SON'],
@@ -17255,6 +17547,7 @@ const Historia = (() => {
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'TB' }, tecnico: tec, elenco: [HIST.tadeu, HIST.duda, HIST.nando, HIST.leo] };
     return { campo: 'futsalEscola', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: treino ? 'Treino' : 'Racha da escola', rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario: 'dia', duracao: treino ? 600 : DURACOES.rapida, usuario: eu, criancas: HIST.crianca, arbitro: HIST.professor,   // quem apita é o Professor Roberto: o juiz usa o modelo dele
+      regras: { tempos: 1 },                                                     // o racha da escola é um tempo só
        atributos: PERSONAGEM.atributos && PERSONAGEM.atributos._ini ? PERSONAGEM.atributos : Atributos.iniciante(PERSONAGEM.posicaoHist), taticas: [null, null], formacoes: [null, null] };   // (7.4.5) com a posição escolhida: o iniciante dela
   }
   function entrar(c) {

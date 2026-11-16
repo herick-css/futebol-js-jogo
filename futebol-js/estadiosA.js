@@ -204,6 +204,7 @@
       if (!inc(i)) continue;
       const a = C.N[i], b = C.N[i + 1];
       const p0 = ponto(a, rb, A.o0), p1 = ponto(b, rb, A.o0), q0 = ponto(a, rb, oT), q1 = ponto(b, rb, oT);
+      const f0 = ponto(a, rb, A.o0 - 0.04), f1 = ponto(b, rb, A.o0 - 0.04);   // a fáscia 4 cm para a frente (não divide o plano com o degrau)
       // o forro de baixo (inclinado)
       face(E.Lr, [p0[0], yF - hF + 0.3, p0[1]], [p1[0], yF - hF + 0.3, p1[1]], [q1[0], yT, q1[1]], [q0[0], yT, q0[1]], [(p0[0] + q0[0]) / 2, yF + 10, (p0[1] + q0[1]) / 2], op.forro || 0x5a5e66);
       // a fáscia (a faixa da frente do anel): textura do escudo ou cor lisa
@@ -211,8 +212,8 @@
       const lado = [(p0[0] + p1[0]) / 2 - a.nx * 5, yA, (p0[1] + p1[1]) / 2 - a.nz * 5];
       if (op.tex && E.Lf) {
         const u0 = -a.s / op.periodo, u1 = -b.s / op.periodo;
-        face(E.Lf, [p0[0], yA, p0[1]], [p1[0], yA, p1[1]], [p1[0], yB, p1[1]], [p0[0], yB, p0[1]], [lado[0] + a.nx * 10, yA, lado[2] + a.nz * 10], null, [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
-      } else face(E.L, [p0[0], yA, p0[1]], [p1[0], yA, p1[1]], [p1[0], yB, p1[1]], [p0[0], yB, p0[1]], [lado[0] + a.nx * 10, yA, lado[2] + a.nz * 10], op.corFascia || 0x30343c);
+        face(E.Lf, [f0[0], yA, f0[1]], [f1[0], yA, f1[1]], [f1[0], yB, f1[1]], [f0[0], yB, f0[1]], [lado[0] + a.nx * 10, yA, lado[2] + a.nz * 10], null, [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
+      } else face(E.L, [f0[0], yA, f0[1]], [f1[0], yA, f1[1]], [f1[0], yB, f1[1]], [f0[0], yB, f0[1]], [lado[0] + a.nx * 10, yA, lado[2] + a.nz * 10], op.corFascia || 0x30343c);
       // a parede do fundo, até o alto (fecha o anel)
       if (op.fundo !== false) {
         const yTop = R.yTopo + (op.muro || 1.6);
@@ -363,8 +364,8 @@
     caixa(L, x + 0.4 * s, h + 2.4 * s, z - 0.3 * s, 2 * s, 1.4 * s, 2 * s, tom(cor || 0x3f7a35, 1.12));
   }
   function palmeira(L, x, z, h) {
-    for (let i = 0; i < 6; i++) caixa(L, x + Math.sin(i * 0.7) * 0.15, (i + 0.5) * h / 6, z, 0.45, h / 6 + 0.05, 0.45, i % 2 ? 0x7a5a36 : 0x6b4e2e);
-    for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; caixa(L, x + Math.cos(a) * 1.4, h + 0.1 - 0.35, z + Math.sin(a) * 1.4, 3.2, 0.25, 0.9, k % 2 ? 0x2f7a35 : 0x3a8a3c, -a); }
+    for (let i = 0; i < 6; i++) { const w = i % 2 ? 0.42 : 0.47; caixa(L, x + Math.sin(i * 0.7) * 0.15, (i + 0.5) * h / 6, z, w, h / 6 + 0.05, w, i % 2 ? 0x7a5a36 : 0x6b4e2e); }   // gomos alternando a grossura (as faces não se encontram no mesmo plano)
+    for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; caixa(L, x + Math.cos(a) * 1.4, h + 0.1 - 0.35 + k * 0.03, z + Math.sin(a) * 1.4, 3.2, 0.25, 0.9, k % 2 ? 0x2f7a35 : 0x3a8a3c, -a); }
   }
 
   // ============================================================================================ CONTEXTO DA PARTIDA
@@ -465,7 +466,8 @@
     for (let i = 0; i < C.N.length - 1; i++) {
       if (filtro && !filtro(i, ladoDo(C, i))) continue;
       const a = C.N[i], b = C.N[i + 1], p0 = ponto(a, C.rb, o), p1 = ponto(b, C.rb, o), q0 = ponto(a, C.rb, o + 0.3), q1 = ponto(b, C.rb, o + 0.3);
-      hexa(E.L, [[p0[0], 0, p0[1]], [p1[0], 0, p1[1]], [p0[0], h, p0[1]], [p1[0], h, p1[1]], [q0[0], 0, q0[1]], [q1[0], 0, q1[1]], [q0[0], h, q0[1]], [q1[0], h, q1[1]]], 0x2a2d33, ['y0', 'x0', 'x1', 'z0']);
+      const hm = h + 0.03;                                                  // 3 cm acima do 1º degrau (o topo não divide o plano com ele)
+      hexa(E.L, [[p0[0], 0, p0[1]], [p1[0], 0, p1[1]], [p0[0], hm, p0[1]], [p1[0], hm, p1[1]], [q0[0], 0, q0[1]], [q1[0], 0, q1[1]], [q0[0], hm, q0[1]], [q1[0], hm, q1[1]]], 0x2a2d33, ['y0', 'x0', 'x1', 'z0']);
       const u0 = -a.s / periodo, u1 = -b.s / periodo;
       const f0 = ponto(a, C.rb, o - 0.02), f1 = ponto(b, C.rb, o - 0.02);
       face(E.Lf, [f0[0], 0.05, f0[1]], [f1[0], 0.05, f1[1]], [f1[0], h - 0.05, f1[1]], [f0[0], h - 0.05, f0[1]], [f0[0] + a.nx * 3, 0.5, f0[1] + a.nz * 3], null, [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
@@ -578,7 +580,7 @@
     luzesNoAnel(E, C, 4.4, yO + 0.4, 3.4, so('z-')); luzesNoAnel(E, C, 6.4, yL + 0.1, 3.4, so('z+'));
     // o prédio de vidro atrás da oeste (andares marcados) e o telão gigante na fachada de fora da leste
     const zO = -(HW + 9.5 + RO.oFim + 9), lw = 2 * HL + 6;
-    caixa(E.L, 0, (yO + 1.5) / 2, zO + 2.2, lw, yO + 1.5, 4.4, { todo: 0x2f4a62, y1: 0x30333a }, 0, ['y0']);
+    caixa(E.L, 0, (yO + 1.5) / 2, zO + 2.185, lw, yO + 1.5, 4.43, { todo: 0x2f4a62, y1: 0x30333a }, 0, ['y0']);   // 3 cm atrás da borda da cobertura
     for (let y = 4; y < yO; y += 4) caixa(E.Lp, 0, y, zO - 0.05, lw + 0.1, 0.25, 0.2, 0x9fb2c2);
     for (let x = -lw / 2; x <= lw / 2; x += 6) caixa(E.L, x, (yO + 1.5) / 2, zO - 0.08, 0.25, yO + 1.5, 0.2, 0x8597a8);
     const zL = HW + 9.5 + RL.oFim + 0.6;
@@ -652,8 +654,8 @@
     teto(E, C, 5, oT1, yT + 0.6, yT, 0.25, (i) => (i % 2 ? 0xd9e1e4 : 0xcbd4d8), null, (i) => (i % 2 ? 0xaab5ba : 0x9eaab0));
     laje(E, C, 4.4, 5.8, yT + 0.8, yT + 0.8, 2.4, 0x23262b);
     for (let i = 0; i < C.N.length - 1; i += 2) {
-      radial(E, C, i, 5, yT + 2.4, oT1, yT + 1.4, 0.3, 0.4, 0x2a2d32);      // a tesoura (banzo de cima)
-      radial(E, C, i, 5, yT + 0.6, oT1, yT, 0.3, 0.35, 0x2a2d32);
+      radial(E, C, i, 5, yT + 2.4, oT1 - 0.03, yT + 1.4, 0.3, 0.4, 0x2a2d32);      // a tesoura (banzo de cima)
+      radial(E, C, i, 5, yT + 0.55, oT1 - 0.03, yT - 0.05, 0.3, 0.3, 0x2a2d32);          // o banzo de baixo, encostado por baixo das placas
       for (let k = 1; k < 5; k++) { const o = 5 + (oT1 - 5) * k / 5, yy = yT + 0.6 - 0.6 * k / 5; radial(E, C, i, o, yy + 1.7 - 1 * k / 5, o + 0.2, yy + 0.1, 0.18, 0.18, 0x2a2d32); }
     }
     luzesNoAnel(E, C, 4.5, yT - 0.65, 3);
@@ -813,7 +815,9 @@
     for (const [j, jd] of pontas) {
       const n = C.N[j], nd = C.N[jd];
       for (let o = -0.3; o < oF - 0.01; o += 0.9) {
-        const o2 = Math.min(oF, o + 0.9), h = perfil(Math.max(0, o + 0.45)) + 0.25, p = ponto(n, C.rb, o), q = ponto(n, C.rb, o2), d = ponto(nd, C.rb, (o + o2) / 2);
+        const o2 = Math.min(oF, o + 0.9), h = perfil(Math.max(0, o + 0.45)) + 0.25, d = ponto(nd, C.rb, (o + o2) / 2), m = ponto(n, C.rb, (o + o2) / 2);
+        const tl = Math.hypot(m[0] - d[0], m[1] - d[1]) || 1, ex = (m[0] - d[0]) / tl * 0.03, ez = (m[1] - d[1]) / tl * 0.03;   // 3 cm para fora do corte dos degraus
+        const p0 = ponto(n, C.rb, o), q0 = ponto(n, C.rb, o2), p = [p0[0] + ex, p0[1] + ez], q = [q0[0] + ex, q0[1] + ez];
         face(E.L, [p[0], 0, p[1]], [q[0], 0, q[1]], [q[0], h, q[1]], [p[0], h, p[1]], [d[0], h / 2, d[1]], o2 > R2.oFim ? 0xd7dadc : 0x8c8f94);
       }
       radial(E, C, j, oT0, yT0 + 0.6, oT1, yT1 + 0.6, 0.6, 1.4, 0xd9dcdf);   // a viga da ponta da cobertura
@@ -887,7 +891,7 @@
     const oB = R2.oFim, yB = R2.yTopo + 2.4;
     laje(E, C, oB - 0.2, oB + 3.2, yB + 0.4, yB, 1.2, 0xb5b3ac);
     for (let i = 0; i < NN; i += 2) radial(E, C, i, oB + 0.5, yB - 0.4, oB + 9, 0.6, 1.0, 1.4, i % 4 ? 0xa9a7a0 : 0xb2b0a9);
-    pele(E, C, oB + 0.3, 0, yB - 1, (i) => (i % 2 ? 0x8f8e88 : 0x878680));
+    pele(E, C, oB + 0.34, 0, yB - 1, (i) => (i % 2 ? 0x8f8e88 : 0x878680));
     // a marquise da tribuna (só na lateral dos bancos)
     teto(E, C, A2.o0 + 6, oB + 2, yB + 5.5, yB + 4.5, 0.4, 0xc4c2bb, (i, lado) => lado === 'z-', 0x8a8984);
     for (let i = 0; i < NN; i++) if (ladoDo(C, i) === 'z-' && i % 3 === 0) radial(E, C, i, oB + 1.6, yB + 4.6, oB + 2, yB, 0.5, 4.6, 0xa9a7a0);
@@ -929,7 +933,7 @@
   function vao(E, C, o, y0, y1, cor, filtro) {
     for (let i = 0; i < C.N.length - 1; i++) {
       if (filtro && !filtro(i, ladoDo(C, i))) continue;
-      const a = C.N[i], b = C.N[i + 1], p = ponto(a, C.rb, o), q = ponto(b, C.rb, o);
+      const a = C.N[i], b = C.N[i + 1], p = ponto(a, C.rb, o + 0.03), q = ponto(b, C.rb, o + 0.03);   // 3 cm atrás (o espelho dos degraus fica na frente)
       face(E.L, [p[0], y0, p[1]], [q[0], y0, q[1]], [q[0], y1, q[1]], [p[0], y1, p[1]], [p[0] * 2, y0 + 2, p[1] * 2], cor);
     }
   }
@@ -1131,7 +1135,7 @@
     const oT0 = 4, oT1 = R2.oFim + 2, yT = R2.yTopo + 7;
     teto(E, C, oT0, oT1, yT + 0.6, yT, 0.35, (i) => (i % 2 ? 0xe9ebec : 0xe1e4e6), null, 0xa9aeb3);
     laje(E, C, oT0 - 0.4, oT0 + 0.8, yT + 0.7, yT + 0.7, 1.2, 0xd5d8db, null, E.Lr);
-    luzesNoAnel(E, C, oT0 + 0.4, yT - 0.4, 3.4);
+    luzesNoAnel(E, C, oT0 + 0.4, yT - 0.7, 3.4);                                        // as luzes penduradas logo abaixo da borda (não entram nela)
     for (const s of [-1, 1]) telao(E, s * (HL + 16), yT - 4.5, 0, 14, 7, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 3.6 });
     // a fachada: concreto com os rasgos verticais escuros
     const oF = oT1 + 0.3;
@@ -1233,7 +1237,7 @@
     // a marquise da social (concreto com as costelas por cima)
     const yM = R.yTopo + 5;
     teto(E, C, 4, R.oFim + 0.5, yM + 0.9, yM, 0.4, 0xd2cfc6, soc, 0x96938b);
-    for (let i = 0; i < NN; i++) if (soc(i, ladoDo(C, i))) { if (i % 2 === 0) radial(E, C, i, 4.2, yM + 1.9, R.oFim + 0.5, yM + 1.2, 0.35, 1.2, 0xc4c1b8); if (i % 4 === 0) radial(E, C, i, R.oFim, yM, R.oFim + 0.45, yM, 0.45, yM, 0xd6d3ca); }
+    for (let i = 0; i < NN; i++) if (soc(i, ladoDo(C, i))) { if (i % 2 === 0) radial(E, C, i, 4.2, yM + 1.9, R.oFim + 0.5, yM + 1.2, 0.35, 1.2, 0xc4c1b8); if (i % 4 === 0) radial(E, C, i, R.oFim + 0.02, yM, R.oFim + 0.45, yM, 0.45, yM, 0xd6d3ca); }
     luzesNoAnel(E, C, 4.4, yM - 0.3, 3.5, soc);
     // A FACHADA HISTÓRICA atrás da social: dois andares de arcos e janelas, a cornija, a torre do meio com o escudo
     const zF = -(HW + 8 + R.oFim + 7), wF = 2 * HL + 12, hF = 13, creme = 0xeadfc4, friso = 0xf6f2e6;
@@ -1245,7 +1249,7 @@
       caixa(E.Lp, x, 8.2, zFr, 1.5, 2.4, 0.1, 0xeed9a0); caixa(E.L, x, 9.6, zFr - 0.05, 2, 0.35, 0.18, friso);   // a janela de cima com o frontão
       caixa(E.L, x + 2.5, hF / 2, zFr - 0.05, 0.5, hF, 0.25, friso);                                         // as pilastras
     }
-    caixa(E.L, 0, hF - 0.3, zFr - 0.1, wF + 0.4, 0.6, 0.4, friso); caixa(E.L, 0, 5.4, zFr - 0.08, wF, 0.35, 0.3, friso);
+    caixa(E.L, 0, hF - 0.28, zFr - 0.1, wF + 0.4, 0.64, 0.4, friso); caixa(E.L, 0, 5.4, zFr - 0.08, wF + 0.2, 0.35, 0.3, friso);   // a cornija passa 4 cm do telhado; o friso, 10 cm das pontas
     const hT = hF + 9;                                                    // a torre do meio
     caixa(E.L, 0, hT / 2, zF - 1.5, 14, hT, 10, { todo: creme, y1: 0xb98a5a }, 0, ['y0']);
     caixa(E.L, 0, hT + 1.2, zF - 1.5, 9, 2.4, 6, friso);
@@ -1256,7 +1260,7 @@
     const xM = E.pegada[0] + 30;
     for (let k = 0; k < 7; k++) {
       const x0 = xM + k * 9, h = 3 + k * 3.2;
-      caixa(E.L, x0 + 4.5, h / 2, 0, 9.5, h, 220, k % 2 ? 0x6f7f4a : 0x667645, 0, ['y0']);
+      caixa(E.L, x0 + 4.5, h / 2, 0, 9.5, h, 220 - k * 0.2, k % 2 ? 0x6f7f4a : 0x667645, 0, ['y0']);   // cada patamar 10 cm mais curto nas pontas (as frentes não se sobrepõem)
       for (let z = -104; z <= 104; z += 6.5) {
         if (hash(k, z, 4) < 0.18) { arvore(E.L, x0 + 4.5, z, h + 0.2, 1, 0x3f7a35); continue; }
         const hc = 3 + (hash(k, z, 5) < 0.4 ? 3 : 0), c = CASAS[Math.floor(hash(k, z, 6) * CASAS.length)];
@@ -1287,7 +1291,7 @@
     // a marquise da tribuna
     const yM = R.yTopo + 4.6;
     teto(E, C, 6, R.oFim + 0.6, yM + 0.7, yM, 0.35, 0xc7c9cc, trib, 0x8f9398);
-    for (let i = 0; i < NN; i++) if (trib(i, ladoDo(C, i)) && i % 3 === 0) radial(E, C, i, R.oFim, yM, R.oFim + 0.4, yM, 0.4, yM - R.yTopo + 1, 0x8c9198);
+    for (let i = 0; i < NN; i++) if (trib(i, ladoDo(C, i)) && i % 3 === 0) radial(E, C, i, R.oFim + 0.02, yM, R.oFim + 0.38, yM, 0.4, yM - R.yTopo + 1, 0x8c9198);
     luzesNoAnel(E, C, 6.4, yM - 0.3, 3.5, trib);
     telao(E, 0, R.yTopo + 5.5, HW + 8 + R.oFim + 1, 14, 6, Math.PI, { pernas: true });
     // o barranco: patamares de grama descendo da borda até o chão (e a terra vermelha nos degraus)
@@ -1334,7 +1338,7 @@
     // A MARQUISE da social: a laje de concreto em balanço e as vigas grossas por cima
     const soc = so('z-'), yM = R2.yTopo + 5.5;
     teto(E, C, 6, R2.oFim + 0.6, yM + 0.6, yM, 0.5, 0xc9c8c2, soc, 0x8e8d88);
-    for (let i = 0; i < NN; i++) if (soc(i, ladoDo(C, i)) && i % 2 === 0) { aleta(E, C, i, [6, yM + 0.5], [6, yM + 0.8], [R2.oFim + 0.6, yM + 0.6], [R2.oFim + 0.6, yM + 3.6], 0.6, 0xbdbcb6); radial(E, C, i, R2.oFim + 0.3, yM, R2.oFim + 0.7, yM, 0.6, yM - R2.yTopo, 0xbdbcb6); }
+    for (let i = 0; i < NN; i++) if (soc(i, ladoDo(C, i)) && i % 2 === 0) { aleta(E, C, i, [6, yM + 0.5], [6, yM + 0.8], [R2.oFim + 0.6, yM + 0.6], [R2.oFim + 0.6, yM + 3.6], 0.6, 0xbdbcb6); radial(E, C, i, R2.oFim + 0.32, yM, R2.oFim + 0.68, yM, 0.6, yM - R2.yTopo, 0xbdbcb6); }
     luzesNoAnel(E, C, 6.4, yM - 0.4, 3.5, soc);
     telao(E, -(HL + 8 + RU.oFim + 1.5), RU.yTopo + 6, 0, 13, 6, -Math.PI / 2, { pernas: true });
     for (const sx of [-1, 1]) for (const sz of [-1, 1]) torreLuz(E, sx * (HL + 21), sz * (HW + 21), 40, { concreto: true, cor: 0xc4c4be, cabeca: 8 });
@@ -1412,7 +1416,7 @@
     const lat = (i, lado) => lado === 'z+' || lado === 'z-';
     const yL = yB + 9;
     teto(E, C, A2.o0 + 4, oB + 2, yL, yL - 3.5, 0.3, (i) => (i % 2 ? 0xf6f6f3 : 0xecece8), lat, 0xb7b9b6);
-    for (let i = 0; i < NN; i++) if (lat(i, ladoDo(C, i)) && i % 3 === 0) { radial(E, C, i, oB + 1.4, yL + 5, oB + 2.2, yL + 5, 0.4, yL + 5, 0xd9dcdf); viga(E.L, ponto3(C.N[i], C.rb, oB + 1.8, yL + 5), ponto3(C.N[i], C.rb, A2.o0 + 4.2, yL + 0.2), 0.12, 0x50555c); }
+    for (let i = 0; i < NN; i++) if (lat(i, ladoDo(C, i)) && i % 3 === 0) { radial(E, C, i, oB + 1.43, yL + 5, oB + 2.2, yL + 5, 0.4, yL + 5, 0xd9dcdf); viga(E.L, ponto3(C.N[i], C.rb, oB + 1.8, yL + 5), ponto3(C.N[i], C.rb, A2.o0 + 4.2, yL + 0.2), 0.12, 0x50555c); }
     luzesNoAnel(E, C, A2.o0 + 4.4, yL - 0.4, 3.4, lat);
     // nas cabeceiras: as luzes em postes em cima da borda
     for (let i = 0; i < NN; i += 4) { if (lat(i, ladoDo(C, i))) continue; const n = C.N[i], p = ponto(n, C.rb, oB + 0.8), a = Math.atan2(n.nx, n.nz) + Math.PI / 2; caixa(E.L, p[0], yB + 4, p[1], 0.5, 8, 0.5, 0x8d9096); caixa(E.L, p[0], yB + 8.4, p[1], 4.4, 1.6, 0.6, 0x3a3f46, a); caixa(E.Lp, p[0] - n.nx * 0.35, yB + 8.4, p[1] - n.nz * 0.35, 4, 1.2, 0.3, 0xffffff, a); }
@@ -1463,7 +1467,7 @@
       piso(ax + o0, -(az + o0), ax + o1, az + o0, y, cor, passo); piso(-(ax + o1), -(az + o0), -(ax + o0), az + o0, y, cor, passo);
     };
     const P = E.esplanada != null ? E.esplanada : 16, AV = 12, CAL = 4;           // esplanada (o modelo pode apertar: E.esplanada), avenida e calçada (metros)
-    anel(-3, P, 0.1, (x, z) => ((Math.floor(x / 12) + Math.floor(z / 12)) & 1 ? 0xa39e93 : 0x9c978c), 12);
+    anel(-3, P - 0.6, 0.1, (x, z) => ((Math.floor(x / 12) + Math.floor(z / 12)) & 1 ? 0xa39e93 : 0x9c978c), 12);   // até o meio-fio (sem dividir a parede com ele)
     anel(P, P + AV, 0.06, 0x3b3e43, 24);
     anel(P + AV, P + AV + CAL, 0.2, 0xa8a294, 12);
     anel(P - 0.6, P, 0.22, 0x9b968c, 24);                                         // o meio-fio do lado da esplanada
@@ -1570,7 +1574,9 @@
     MODELOS[k](E);
     if (!E.pegada) E.pegada = medir(E);
     let yMax = 20; for (let i = 1; i < E.L.pos.length; i += 3) if (E.L.pos[i] > yMax && Math.abs(E.L.pos[i - 1]) < E.pegada[0] && Math.abs(E.L.pos[i + 1]) < E.pegada[1]) yMax = E.L.pos[i];
-    ULT = { modelo: k, nome: NOMES[k], pegada: E.pegada.slice(), yMax, c1: E.c1, c2: E.c2 };
+    // a frente da arquibancada no meio do lado dos bancos (z-): até onde o túnel da entrada pode ir sem entrar nela
+    let frenteZ = null; for (let i = 0; i < E.L.pos.length; i += 3) { const x = E.L.pos[i], y = E.L.pos[i + 1], z = E.L.pos[i + 2]; if (Math.abs(x) < 2.4 && z < -E.HW && y > 0.2 && y < 3.2 && (frenteZ == null || -z < frenteZ)) frenteZ = -z; }
+    ULT = { modelo: k, nome: NOMES[k], pegada: E.pegada.slice(), yMax, c1: E.c1, c2: E.c2, frenteZ };
     entorno(E);                                                          // (7.4.0) a cidade em volta
     const add = (m) => { ESTADIO.add(m); freeze(m); };
     // o chão em volta do campo (fosso / pista / grama sintética) e, por fora, o gramado até o horizonte
@@ -1580,6 +1586,8 @@
     patio.rotation.x = -Math.PI / 2; patio.position.y = -0.05; add(patio);
     const longe = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshLambertMaterial({ color: E.corLonge || 0x5a8a45 }));
     longe.rotation.x = -Math.PI / 2; longe.position.y = -0.1; add(longe);
+    // os três chãos se sobrepõem (de longe e de raspão, a diferença de poucos cm não basta): cada um mais "para trás" na profundidade
+    for (const [m, k] of [[chao, 1], [patio, 3], [longe, 6]]) { m.material.polygonOffset = true; m.material.polygonOffsetFactor = k; m.material.polygonOffsetUnits = k * 2; }
     if (E.L.pos.length) add(E.L.malha(MAT_CORES));
     if (E.Lf.pos.length) add(E.Lf.malha(new THREE.MeshLambertMaterial({ map: texFaixa(E), vertexColors: true })));
     if (E.Lt.pos.length) add(E.Lt.malha(new THREE.MeshBasicMaterial({ map: texTelao(E, E.txtTelao), vertexColors: true })));
