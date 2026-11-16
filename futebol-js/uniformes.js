@@ -21,9 +21,9 @@
       { camadas: [{ t: 'aros', c: ['c', 'l'], n: 9 }], manga: PR, punho: 'c', gola: 'polo', golaCor: PR, tex: { t: 'pontos', k: 0.05 } },
       { camadas: [{ t: 'banda', y: 0.3, f: [['#c8202e', 0.065], [PR, 0.065], ['#c8202e', 0.065], [PR, 0.065]] }], gola: 'redonda', golaCor: PR, punho: PR, punho2: '#c8202e', tex: { t: 'linhas', k: 0.03 } },
     ],
-    periquito: [        // Palmeiras 2026: verde com as laterais vermelhas e a gola branca com filete; a 2 é branca com gola verde e vermelha
-      { lateral: '#c8202e', lateralFrente: 0.035, gola: 'redonda', golaCor: BR, golaCor2: '#c8202e', punho: BR, punho2: '#c8202e', tex: { t: 'riscas', k: 0.05 } },
-      { gola: 'redonda', golaCor: '#0b6b3a', golaCor2: '#c8202e', punho: '#0b6b3a', punho2: '#c8202e', tex: { t: 'xadrez', k: 0.035 } },
+    periquito: [        // Palmeiras 2026 (o Porco da Pompeia): verde com as laterais e a gola brancas; a 2 é branca com gola verde (7.4.10: sem o vermelho)
+      { lateral: BR, lateralFrente: 0.035, gola: 'redonda', golaCor: BR, golaCor2: BR, punho: BR, punho2: BR, tex: { t: 'riscas', k: 0.05 } },
+      { gola: 'redonda', golaCor: '#0b6b3a', golaCor2: BR, punho: '#0b6b3a', punho2: BR, tex: { t: 'xadrez', k: 0.035 } },
     ],
     raposa: [           // Cruzeiro 2026: azul com textura de estrelas sutis; a 2 é branca
       { gola: 'redonda', golaCor: BR, punho: BR, tex: { t: 'estrelas', k: 0.13 } },

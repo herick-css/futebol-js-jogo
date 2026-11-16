@@ -114,6 +114,8 @@
 #livre .lvOpc { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
 #livre .lvOpc .lvCard { margin: 0; }
 #livre .lvChips { display: flex; flex-wrap: wrap; gap: 6px; }
+#livre .lvChips.lvMuitos { max-height: 132px; overflow-y: auto; padding-right: 4px; }
+#livre .lvChips.lvMuitos .pxBtn { font-size: 11px; padding: 4px 7px; }
 #livre .lvChips .pxBtn { width: auto; min-width: 0; min-height: 34px; font-size: 11.5px; padding: 2px 8px; letter-spacing: .04em; text-transform: none; flex: 0 0 auto; }
 #livre .lvMsg { font: 600 13px/1.4 var(--font-body); margin: 4px 0 10px; }
 #livre .lvLista { margin: 0; padding: 0; list-style: none; font: 600 12px/1.35 var(--font-body); }
@@ -126,6 +128,12 @@
 #livre .lvPalco .lado.a { left: 6px; } #livre .lvPalco .lado.b { right: 6px; }
 #livre .lvPalco .lado img { width: clamp(40px, 9vh, 64px); height: auto; image-rendering: pixelated; }
 #livre .lvPalco .lado b { font: 700 clamp(11px, 2.2vh, 15px)/1.15 var(--font-display); letter-spacing: .05em; }
+#livre .lvPausa { border-color: var(--mx-laranja); margin-bottom: 10px; }
+#livre .lvPausa h3 { justify-content: center; font-size: 15px; }
+#livre .lvKits { display: flex; gap: 6px; margin-top: 4px; }
+#livre .lvKit { position: relative; width: 40px; height: 40px; padding: 2px; display: grid; place-items: center; background: rgba(0,0,0,.45); border: 2px solid rgba(255,255,255,.35); cursor: pointer; }
+#livre .lvKit.on { border-color: var(--mx-laranja); background: rgba(247,148,29,.25); box-shadow: 0 0 0 2px #000; }
+#livre .lvKit small { position: absolute; right: 1px; bottom: 0; font: 700 9px/1 var(--font-display); color: #fff; text-shadow: 0 1px 0 #000; }
 #livre .lvPalco .xx { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); font: 700 clamp(16px, 4vh, 26px)/1 var(--font-display); color: #fff; text-shadow: 0 3px 0 #000; z-index: 1; white-space: nowrap; }
 #livre .lvBarra { display: grid; grid-template-columns: 62px 1fr 32px; gap: 6px; align-items: center; font: 600 11px/1 var(--font-body); margin: 3px 0; }
 #livre .lvBarra i { display: block; height: 8px; background: rgba(255,255,255,.12); }
@@ -181,7 +189,7 @@
   }
 
   // ============================================================================================ AS CONFIGURAÇÕES DA PARTIDA
-  const CFG0 = { horario: 'auto', clima: 'seco', dur: 300, dif: 'normal', pos: 'FWD', pers: '', abertura: 'completa' };
+  const CFG0 = { horario: 'auto', clima: 'seco', dur: 300, dif: 'normal', pos: 'FWD', pers: '', abertura: 'completa', bola: '', celeb1: 'aviao', celeb2: 'joelhada' };
   const cfgSalva = () => Object.assign({}, CFG0, ler(CHAVE_CFG, {}));
   const OPC = {
     horario: [['auto', 'Automático'], ['dia', 'Dia'], ['tarde', 'Tarde'], ['noite', 'Noite']],
@@ -191,19 +199,28 @@
     pos: [['FWD', 'Atacante'], ['MID', 'Meia'], ['DEF', 'Zagueiro']],
     abertura: [['completa', 'Completa'], ['curta', 'Curta'], ['nenhuma', 'Sem abertura']],
   };
-  const NOME_OPC = { horario: 'Horário', clima: 'Clima', dur: 'Duração', estadio: 'Estádio', dif: 'Dificuldade', pos: 'Sua posição', pers: 'Personagem', abertura: 'Abertura' };
-  const DICA_OPC = { horario: 'Automático: o horário do jogo (o campeonato varia entre dia, tarde e noite).', abertura: 'A cena antes do jogo: o estádio, o ônibus, o vestiário, a torcida e a entrada em campo.', estadio: 'Só no amistoso: nos campeonatos o jogo é no estádio do mandante.' };
+  const NOME_OPC = { horario: 'Horário', clima: 'Clima', dur: 'Duração', estadio: 'Estádio', dif: 'Dificuldade', pos: 'Sua posição', pers: 'Personagem', abertura: 'Abertura', bola: 'Bola', celeb1: 'Comemoração 1', celeb2: 'Comemoração 2' };
+  const DICA_OPC = { celeb1: 'As duas comemorações do gol (os dois botões que aparecem depois de marcar).', bola: 'A bola da partida (as bolas premium da loja também).', horario: 'Automático: o horário do jogo (o campeonato varia entre dia, tarde e noite).', abertura: 'A cena antes do jogo: o estádio, o ônibus, o vestiário, a torcida e a entrada em campo.', estadio: 'Só no amistoso: nos campeonatos o jogo é no estádio do mandante.' };
+  // (7.4.10) as bolas (a padrão e as 15 premium do cosmeticos.js) e as comemorações (todas as do jogo)
+  function bolasLista() {
+    const L = (window.FutebolCosmeticos && FutebolCosmeticos.dados && FutebolCosmeticos.dados.bolas) || [];
+    return [['', 'Bola padrão']].concat(L.map((b) => [b.nome, b.nome]));
+  }
+  function celebsLista() {
+    return typeof CELEBRACOES === 'undefined' ? [] : Object.keys(CELEBRACOES).map((k) => [k, CELEBRACOES[k].nome]);
+  }
   function estadiosLista() {
     const EA = window.EstadiosA, L = EA ? EA.modelos().map((k) => [k, EA.nome(k)]) : [];
     return [['casa', 'Do time da casa']].concat(L);
   }
   function telaConfig(op) {
     const c = Object.assign({}, op.cfg);
-    const linha = (k, lista) => '<div class="lvCard"><h3>' + escH(T(NOME_OPC[k])) + '</h3><div class="lvChips">' + lista.map(([v, n]) => '<button type="button" class="pxBtn' + (String(c[k]) === String(v) ? ' on' : '') + '" data-k="' + k + '" data-v="' + escH(v) + '">' + escH(k === 'estadio' && v !== 'casa' ? n : T(n)) + '</button>').join('') + '</div>' + (DICA_OPC[k] ? '<p style="opacity:.75;font-size:11px">' + escH(T(DICA_OPC[k])) + '</p>' : '') + '</div>';
+    const linha = (k, lista) => '<div class="lvCard"><h3>' + escH(T(NOME_OPC[k])) + '</h3><div class="lvChips' + (lista.length > 12 ? ' lvMuitos' : '') + '">' + lista.map(([v, n]) => '<button type="button" class="pxBtn' + (String(c[k]) === String(v) ? ' on' : '') + '" data-k="' + k + '" data-v="' + escH(v) + '">' + escH(k === 'estadio' && v !== 'casa' ? n : T(n)) + '</button>').join('') + '</div>' + (DICA_OPC[k] ? '<p style="opacity:.75;font-size:11px">' + escH(T(DICA_OPC[k])) + '</p>' : '') + '</div>';
     const pers = [['', 'Nenhum (você)']].concat((typeof personagensSalvos === 'function' ? personagensSalvos() : []).map((x) => [x.slot, x.nome]));
     const el = tela('<div class="lvCaixa">' + topo(T('Configurações da partida')) + '<div class="lvOpc">' +
       linha('horario', OPC.horario) + linha('clima', OPC.clima) + linha('dur', OPC.dur) + (op.estadio ? linha('estadio', estadiosLista()) : '') +
-      linha('dif', OPC.dif) + linha('pos', OPC.pos) + linha('pers', pers) + linha('abertura', OPC.abertura) + '</div>' +
+      linha('dif', OPC.dif) + linha('pos', OPC.pos) + linha('pers', pers) + linha('abertura', OPC.abertura) +
+      linha('bola', bolasLista()) + linha('celeb1', celebsLista()) + linha('celeb2', celebsLista()) + '</div>' +
       '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="ok">' + escH(T('Pronto')) + '</button></div></div>');
     return new Promise((ok) => {
       el.onclick = (e) => {
@@ -511,7 +528,7 @@
       const cam = new THREE.PerspectiveCamera(24, w / h, 0.1, 60); cam.position.set(0, 1.25, 8.6); cam.lookAt(0, 1.05, 0);
       const ladoNosso = m.casa ? -1 : 1;                                 // a casa fica do lado esquerdo da tela
       const vc = voceDe(m.cfg), jN = vc.aparencia ? Object.assign({ pos: m.cfg.pos }, vc.aparencia) : estrela(m.a, m.S), jA = estrela(m.b, m.S);
-      const mN = boneco(m.a, jN, vc.aparencia ? vc.numero : 10, null), mA = boneco(m.b, jA, 10, null);
+      const mN = boneco(m.a, jN, vc.aparencia ? vc.numero : 10, m.uni ? m.uni.a : null), mA = boneco(m.b, jA, 10, m.uni ? m.uni.b : null);
       const tN = tecnicoDe(m.a), tA = tecnicoDe(m.b);
       for (const x of [mN, mA, tN, tA]) { feitos.push(x); cena.add(x.raiz); if (x.sombra) x.sombra.visible = false; }
       const pN = Math.floor(Math.random() * POSES_ENC.length); let pA = Math.floor(Math.random() * POSES_ENC.length); if (pA === pN) pA = (pA + 3) % POSES_ENC.length;
@@ -563,32 +580,59 @@
     return '<div class="lvCard"><h3><img src="' + urlT(k) + '" alt="">' + escH(nomeT(k)) + '</h3>' + (L.length ? '<ul class="lvLista">' + L.map((x) => '<li' + (x.n === VOCE ? ' class="nos"' : '') + '><span>' + escH(nomeJog(S, x.n)) + '</span><span>' + escH(motivoTxt(x)) + '</span></li>').join('') + '</ul>' : '<p>' + escH(T('Nenhum desfalque.')) + '</p>') +
       (pend.length ? '<p style="opacity:.8">' + escH(Tf('Pendurados (2 amarelos): {0}', pend.map((n) => nomeJog(S, n)).join(', '))) + '</p>' : '') + '</div>';
   }
+  // (7.4.10) OS UNIFORMES NO CONFRONTO: dois quadradinhos para cada time (a camisa 1 e a 2 desenhadas nas cores delas); o
+  //   marcado é o que entra em campo. Começa com o que o jogo escolheria sozinho (o visitante troca se as camisas forem parecidas).
+  const tmDe = (k) => (TD(k) ? SBD.timeMotor(TD(k)) : VZD.timeMotor(TV(k)));
+  const unisDe = (k) => { const tm = tmDe(k); return [tm.uniforme, tm.uniforme2 || tm.uniforme]; };
+  function kitsAuto(a, b, casa) {
+    try {
+      const tA = tmDe(a), tB = tmDe(b), P = resolverPartida({ times: [tA, tB], mandante: casa ? 0 : 1 });
+      return { [a]: P.uniformes[0] === tA.uniforme2 && tA.uniforme2 !== tA.uniforme ? 1 : 0, [b]: P.uniformes[1] === tB.uniforme2 && tB.uniforme2 !== tB.uniforme ? 1 : 0 };
+    } catch (e) { return { [a]: 0, [b]: 0 }; }
+  }
+  function svgCamisa(U) {
+    const c = U.camisa || '#888', l = U.listra && U.listra !== U.camisa ? U.listra : null, g = U.gola || c, k = U.calcao || '#222';
+    return '<svg viewBox="0 0 28 30" width="28" height="30" aria-hidden="true"><path d="M8 2 L2 7 L5 12 L8 10 L8 22 L20 22 L20 10 L23 12 L26 7 L20 2 Q14 6 8 2 Z" fill="' + c + '" stroke="#0b0b0b" stroke-width="1.2"/>' +
+      (l ? '<rect x="12" y="4" width="4" height="18" fill="' + l + '"/>' : '') + '<path d="M10.5 2.6 Q14 5.4 17.5 2.6" stroke="' + g + '" stroke-width="1.8" fill="none"/>' +
+      '<rect x="8.5" y="23" width="11" height="6" fill="' + k + '" stroke="#0b0b0b" stroke-width="1"/></svg>';
+  }
+  const htmlKits = (k, kits) => '<div class="lvKits">' + unisDe(k).map((U, i) => '<button type="button" class="lvKit' + (kits[k] === i ? ' on' : '') + '" data-a="kit:' + escH(k) + ':' + i + '" title="' + escH(Tf('Uniforme {0}', i + 1)) + '">' + svgCamisa(U) + '<small>' + (i + 1) + '</small></button>').join('') + '</div>';
   async function confronto(m) {
     let cfg = Object.assign({}, m.cfg);
+    const kits = m.kits || kitsAuto(m.a, m.b, m.casa);
     for (;;) {
       const a = m.a, b = m.b, kc = m.casa ? a : b, kf = m.casa ? b : a, ta = TD(kc) || TV(kc), tb = TD(kf) || TV(kf);
       const ABAS = [T('Confronto'), T('Os times'), T('Escalações'), T('Desfalques')];
       const el = tela('<div class="lvCaixa">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
         '<div class="lvAbas">' + ABAS.map((x, i) => '<button type="button" class="pxBtn' + (i ? '' : ' on') + '" data-a="aba' + i + '">' + escH(x) + '</button>').join('') + '</div>' +
         '<div data-pag="0"><div class="lvPalco" style="--c1:' + ta.uni[0] + ';--c2:' + tb.uni[0] + '"><canvas></canvas>' +
-        '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kc).media * 10))) + '</small><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span></div>' +
-        '<div class="lado b"><img src="' + urlT(kf) + '" alt=""><b>' + escH(tb.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kf), 10 - estrelasT(kf)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kf).media * 10))) + '</small><span class="lvTag fora' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'FORA')) + '</span></div>' +
+        '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kc).media * 10))) + '</small><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span>' + htmlKits(kc, kits) + '</div>' +
+        '<div class="lado b"><img src="' + urlT(kf) + '" alt=""><b>' + escH(tb.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kf), 10 - estrelasT(kf)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kf).media * 10))) + '</small><span class="lvTag fora' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'FORA')) + '</span>' + htmlKits(kf, kits) + '</div>' +
         '<div class="xx">' + escH(ta.sigla + '  ×  ' + tb.sigla) + '</div></div></div>' +
         '<div data-pag="1" hidden><div class="lvOpc">' + cardTime(kc, m.S) + cardTime(kf, m.S) + '</div></div>' +
         '<div data-pag="2" hidden><div class="lvOpc">' + campoTime(kc, m.S, false, kc === a, cfg.pos) + campoTime(kf, m.S, true, kf === a, cfg.pos) + '</div></div>' +
         '<div data-pag="3" hidden><div class="lvOpc">' + cardDesfalques(kc, m.S) + cardDesfalques(kf, m.S) + '</div></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn" data-a="cfg">' + escH(T('Configurações')) + '</button>' + (m.tabela ? '<button type="button" class="pxBtn" data-a="tab">' + escH(T(m.tabelaNome || 'Classificação')) + '</button>' : '') +
         '<button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T('JOGAR')) + ' ▶</button></div></div>');
-      const palco = encarada(el.querySelector('.lvPalco canvas'), Object.assign({}, m, { cfg }));
+      const uniDe = () => ({ a: unisDe(m.a)[kits[m.a]], b: unisDe(m.b)[kits[m.b]] });
+      let palco = encarada(el.querySelector('.lvPalco canvas'), Object.assign({}, m, { cfg, uni: uniDe() }));
       let r;
       for (;;) {
         r = await escolha(el);
         if (r.a.startsWith('aba')) { const i = r.a.slice(3); for (const p of el.querySelectorAll('[data-pag]')) p.hidden = p.dataset.pag !== i; for (const x of el.querySelectorAll('.lvAbas .pxBtn')) x.classList.toggle('on', x.dataset.a === r.a); continue; }
+        if (r.a.startsWith('kit:')) {                                    // trocou o uniforme: o quadradinho marcado e os bonecos do palco
+          const [, k, n] = r.a.split(':'); kits[k] = Number(n);
+          for (const x of el.querySelectorAll('.lvKit')) { const [, k2, n2] = x.dataset.a.split(':'); x.classList.toggle('on', kits[k2] === Number(n2)); }
+          palco.parar(); const cv = el.querySelector('.lvPalco canvas'), novo = cv.cloneNode(); cv.replaceWith(novo);
+          palco = encarada(novo, Object.assign({}, m, { cfg, uni: uniDe() }));
+          continue;
+        }
         break;
       }
       palco.parar();
+      m.kits = kits;
       if (r.a === 'voltar') return null;
-      if (r.a === 'jogar') return { cfg };
+      if (r.a === 'jogar') return { cfg, kits: [kits[m.a], kits[m.b]] };
       if (r.a === 'cfg') { const c = await telaConfig({ cfg, estadio: m.podeEstadio }); if (c) cfg = c; continue; }
       if (r.a === 'tab') { await m.tabela(); continue; }
     }
@@ -607,16 +651,24 @@
     const usuario = Object.assign({ posicao: c.pos || 'FWD' }, vc.aparencia ? { nome: vc.nome, numero: vc.numero, aparencia: vc.aparencia } : {});
     return { campo, times: [tA, tB], mandante: J.casa ? 0 : 1, fogos: !!J.fogos && typeof campo === 'object',
       competicao: Object.assign({ tipo: 'amistoso', nome: T('Amistoso'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null }, J.comp || {}),
-      dificuldade: c.dif || 'normal', clima: climaDe(c), gramado: 'baixo', horario: horarioDe(c, J.rodada), duracao: Number(c.dur) || 300, genero: 'M', usuario, taticas: [null, null], formacoes: [null, null] };
+      dificuldade: c.dif || 'normal', clima: climaDe(c), gramado: 'baixo', horario: horarioDe(c, J.rodada), duracao: Number(c.dur) || 300, genero: 'M', usuario, taticas: [null, null], formacoes: [null, null],
+      comemoracoes: [c.celeb1 || 'aviao', c.celeb2 || 'joelhada'], bola: c.bola || '', kits: J.kits || null };   // (7.4.10) as comemorações, a bola e os uniformes escolhidos
   }
-  async function jogar(J) {
+  // (7.4.10) retomar = { estado, clima, horario }: a partida salva no intervalo (começa no 2º tempo, sem a abertura). A partida
+  //   pode ser salva no intervalo ("Salvar e sair"): aí volta { salvo: estado } e quem chamou guarda (guardarPausa).
+  async function jogar(J, retomar) {
     const cfgE = montarCfg(J);
+    if (retomar) { if (retomar.clima) cfgE.clima = retomar.clima; if (retomar.horario) cfgE.horario = retomar.horario; }
     jogouNaSessao = true;
     await preto(true, 350); esconder();
     let r = null;
+    const bola = (on) => { try { if (window.FutebolCosmeticos && FutebolCosmeticos.usarBola) FutebolCosmeticos.usarBola(on && cfgE.bola ? cfgE.bola : null); } catch (e) { /* bola padrão */ } };   // (7.4.10)
     try {
-      r = await Historia.partida({ cfg: cfgE, aviso: '', aoPronto: () => abertura(J, cfgE).catch((e) => { console.error('[Livre] abertura:', e); return preto(false, 400); }) });
+      r = await Historia.partida({ cfg: cfgE, aviso: '', podeSalvar: !retomar, retomar: retomar ? retomar.estado : null,
+        aoPronto: () => { bola(true); if (retomar) return preto(false, 450); return abertura(J, cfgE).catch((e) => { console.error('[Livre] abertura:', e); return preto(false, 400); }); } });
+      if (r && r.salvo) r.salvo = { estado: r.salvo, clima: cfgE.clima, horario: cfgE.horario };
     } catch (e) { console.error('[Livre] partida:', e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    bola(false);
     try { Historia.descartarResultado(); } catch (e) { /* nada */ }   // as fichas e o histórico daqui são do campeonato (não mexem nas outras partidas)
     await preto(true, 500);
     return r;
@@ -660,8 +712,9 @@
     g.add(caixaM(1.1, 0.18, 0.5, 0x6d7178, 4.45, 0.2, 1.5));              // o degrau
     const nome = texTexto(t.nome, 512, 48, k2, lumH(k2) > 0.6 ? '#1a1a1a' : '#ffffff');
     for (const s of [-1, 1]) {
-      g.add(plano(8.4, 0.62, nome, -1.2, 1.5, s * 1.3, s > 0 ? 0 : Math.PI));
-      g.add(plano(1.1, 1.1, texImg(urlT(k)), -5.0, 1.6, s * 1.31, s > 0 ? 0 : Math.PI));
+      // (7.4.10) o nome e o escudo um pouco para fora da lataria e da faixa (antes ficavam no mesmo plano e piscavam)
+      g.add(plano(8.4, 0.62, nome, -1.2, 1.5, s * 1.345, s > 0 ? 0 : Math.PI));
+      g.add(plano(1.1, 1.1, texImg(urlT(k)), -5.0, 1.6, s * 1.35, s > 0 ? 0 : Math.PI));
     }
     return g;
   }
@@ -705,7 +758,7 @@
     const nE = texTexto(nomeEst || '', 1024, 64, 'rgba(0,0,0,0)', '#f2f2ee'); g.add(plano(13, 0.8, nE, -12, 3.6, -4.36, 0));
     g.add(caixaM(70, 0.4, 22, 0x7d7b75, -10, 6.2, 0));                                             // a laje e as luzes
     for (let x = -40; x < 22; x += 6) g.add(caixaM(2.4, 0.06, 0.3, 0xffffff, x, 5.97, 0, true));
-    for (let x = -36; x < 22; x += 8) g.add(caixaM(0.7, 6, 0.7, 0x8f8d86, x, 3, -3.9));             // os pilares (encostados na parede)
+    for (let x = -36; x < 22; x += 8) if (x < -19.5 || x > -4.5) g.add(caixaM(0.7, 6, 0.7, 0x8f8d86, x, 3, -3.9));   // os pilares (encostados na parede; 7.4.10: nenhum na frente do nome do estádio)
     for (let z = -3.6; z <= 4.0; z += 0.6) g.add(caixaM(0.06, 1.05, 0.06, 0xb9bec6, 12.6, 0.52, z));
     g.add(caixaM(0.08, 0.08, 8.2, 0xb9bec6, 12.6, 1.05, 0.15)); g.add(caixaM(0.08, 0.08, 8.2, 0xb9bec6, 12.6, 0.3, 0.15));   // o gradil
     g.add(caixaM(0.4, 6, 22, 0x9a9890, 23, 3, 0));
@@ -743,6 +796,7 @@
   function sentar(m) { m.raiz.position.y = -0.27; m.pernaE.rotation.z = m.pernaD.rotation.z = 1.5; usarJoelhos(m, -1.5, -1.5); m.bracoE.rotation.z = m.bracoD.rotation.z = 0.75; m.bracoE.rotation.x = 0.15; m.bracoD.rotation.x = -0.15; }
   const virar = (m, dx, dz) => { m.raiz.rotation.y = -Math.atan2(dz, dx); };
   function camOlha(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); camera.lookAt(tx, ty, tz); }
+  const ESP_HINO = 1.3;                                                // (7.4.10) a distância entre os jogadores perfilados no hino (era 0,95)
 
   async function abertura(J, cfgE) {
     const modo = J.cfg.abertura || 'completa';
@@ -756,6 +810,7 @@
     if (!pularEl) { pularEl = document.createElement('button'); pularEl.type = 'button'; pularEl.id = 'lvPular'; pularEl.className = 'pxBtn'; document.body.appendChild(pularEl); }
     pularEl.textContent = T('Pular') + ' ▶'; pularEl.hidden = false; pularEl.onclick = () => { clique(); pular = true; preto(true, 160); };
     const lixo = [], ctx = { J, A, pular: () => pular };
+    let ocultosEntrada = [];                                           // quem a entrada esconde dentro do túnel (volta a aparecer no fim)
     const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada'] : ['estadio', 'onibus', 'vestiario', 'torcida', 'entrada']) : (modo === 'curta' ? ['entrada'] : ['vestiario', 'entrada']);
     const rodar = (dur, fn) => new Promise((ok) => {           // um plano: fn(t, rdt) a cada quadro até dur segundos (ou o pular)
       const t0 = performance.now(); let tl = t0;
@@ -766,7 +821,7 @@
         if (!feito && (t >= dur || pular)) { feito = true; ok(); }   // (7.4.2) o plano fica congelado no último quadro até o preto cobrir (antes o jogo aparecia no corte)
       };
     });
-    const corte = async (setup) => { await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220); setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ } setup(); };
+    const corte = async (setup) => { await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220); await esperar(70); setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ } setup(); };
     const plano1 = async (dur, fn) => { const p = rodar(dur, fn); await preto(false, 260); await p; };   // o plano começa ainda no preto (a câmera já no lugar)
     const kM = J.casa ? J.a : J.b, nM = nomeT(kM);
     try {
@@ -870,6 +925,7 @@
           const fundo = tunel ? TUNEL.fundoZ + 0.4 : -Infinity;
           const z0 = tunel ? -(HALF_W + TUNEL_BOCA) + 0.6 : -(HALF_W + 3.2), v = 1.45, esp = 1.15;
           const surge = (p) => { if (p.mesh) p.mesh.raiz.visible = p.z > fundo; };
+          ocultosEntrada = juizes.concat(filas[0], filas[1]);
           await corte(() => { if (abre) mostrarTunel(true); G.torcidaCena = 1; legenda(Tf('{0} x {1}: os times entram em campo', nomeT(PARTIDA.mandante === 1 ? J.b : J.a), nomeT(PARTIDA.mandante === 1 ? J.a : J.b))); });
           await plano1(5.2, (tt, rdt) => {
             const frente = z0 + v * tt;
@@ -877,20 +933,21 @@
             filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 0.75 : -0.75); p.z = frente - i * esp; p.vx = 0; p.vz = v; p.angle = Math.PI / 2; passos(p, tt * 6.4 + i * 0.9 + s * 2.1); surge(p); }));
             camOlha(2.6, 1.45, -HALF_W + 7.5 + tt * 0.3, -0.2, 1.25, frente - 1.5);
           });
-          for (const p of juizes.concat(filas[0], filas[1])) if (p.mesh) p.mesh.raiz.visible = true;
-          if (abre) mostrarTunel(false);
           if (pular) break;
           // perfilados no meio de campo (parados: a pose de pé de novo), de frente para a tribuna (a câmera passa por eles)
           // parados DE VERDADE no hino: as pernas juntas, o corpo reto, os braços para trás (as mãos juntas nas costas) ou,
           //   em alguns, a mão direita no peito; os juízes com os braços para baixo. Cada um respira no seu ritmo.
           const perfil = filas[0].concat(filas[1]);
           await corte(() => {
-            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.6 + i * 0.95); p.z = -2.6; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
+            // (7.4.10) o túnel some e quem estava dentro dele reaparece só com a tela já preta (antes sumia com o plano ainda na tela)
+            for (const p of juizes.concat(filas[0], filas[1])) if (p.mesh) p.mesh.raiz.visible = true;
+            if (abre) mostrarTunel(false);
+            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.7 + i * ESP_HINO); p.z = -2.6; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
             juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = -2.6; o.vx = o.vz = 0; o.angle = -Math.PI / 2; });
             perfil.forEach((p, i) => hino(p, i, 0)); juizes.forEach((o, i) => hino(o, i, 0, true));
             legenda(T('O hino e a foto: os times perfilados'));
           });
-          const L = 1.6 + 10 * 0.95;
+          const L = 1.7 + 10 * ESP_HINO;
           await plano1(4.4, (tt) => {
             perfil.forEach((p, i) => hino(p, i, tt)); juizes.forEach((o, i) => hino(o, i, tt, true));
             const x = -L + (2 * L) * (tt / 4.4); camOlha(x * 0.85, 1.55, -8.4, x, 1.2, -2.6);
@@ -901,6 +958,7 @@
     } finally {
       await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220);   // (7.4.2) arruma tudo no escuro
       GANCHO_RENDER = null; G.camOvo = null; G.torcidaCena = null; G.semNomes = false; legenda(''); if (pularEl) pularEl.hidden = true;
+      try { if (typeof mostrarTunel === 'function') mostrarTunel(false); for (const p of ocultosEntrada) if (p.mesh) p.mesh.raiz.visible = true; } catch (e) { /* nada */ }   // (7.4.10) pulou no meio da entrada
       for (const x of lixo) { if (x.boneco) { try { descartarBoneco(x.boneco.raiz); } catch (e) { /* nada */ } } else descartar(x); }
       for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; }
       ball.mesh.visible = bolaV; ball.shadow.visible = bolaV;
@@ -971,8 +1029,9 @@
         if (!res) { b = null; break; }
         Object.assign(cfg, res.cfg);
         const modelo = campo === 'serieA' ? (res.cfg.estadio && res.cfg.estadio !== 'casa' ? res.cfg.estadio : modeloCasa(a)) : null;
-        const J = { a, b, casa: true, campo, modelo, comp: { tipo: 'amistoso', nome: T(NOME_TIPO[tipo]) }, S: null, cfg: res.cfg, rodada: Math.floor(Math.random() * 7) };
+        const J = { a, b, casa: true, campo, modelo, comp: { tipo: 'amistoso', nome: T(NOME_TIPO[tipo]) }, S: null, cfg: res.cfg, kits: res.kits, rodada: Math.floor(Math.random() * 7) };
         const r = await jogar(J);
+        if (r && r.salvo) { guardarPausa(tipo, J, r.salvo); await avisoSalvo(); return; }   // (7.4.10) salvou no intervalo
         const pl = r ? r.placar : [0, 0];
         const acao = await telaResultado(J, pl, r, '', [['denovo', 'Jogar de novo', true], ['trocar', 'Trocar os times'], ['menu', 'Menu da partida livre']]);
         if (acao === 'menu') return;
@@ -984,6 +1043,15 @@
   // ============================================================================================ O CAMPEONATO E A COPA (com o jogo salvo)
   const salvos = () => ler(CHAVE, {});
   const salvar = (tipo, S) => { const D0 = salvos(); if (S) D0[tipo] = S; else delete D0[tipo]; gravar(CHAVE, D0); };
+  // (7.4.10) A PARTIDA SALVA NO INTERVALO: uma só (futebolJs.livre.v1.pausa). tipo: 'camp' | 'copa' | o tipo avulso
+  //   ('amistoso', 'varzea', 'sintetico', 'futsal'); J: o jogo (sem o campeonato, que já está salvo à parte); ret: o estado do 2º tempo
+  const pausa = () => salvos().pausa || null;
+  function guardarPausa(tipo, J, ret, placar) {
+    const D0 = salvos(), Jl = Object.assign({}, J); delete Jl.S; delete Jl.g;
+    D0.pausa = { tipo, J: Jl, ret, placar: placar || [0, 0], quando: Date.now() }; gravar(CHAVE, D0);
+  }
+  function apagarPausa() { const D0 = salvos(); delete D0.pausa; gravar(CHAVE, D0); }
+  const placarPausa = (P) => { const pl = (P.ret && P.ret.estado && P.ret.estado.placar) || [0, 0]; return P.J.casa ? pl : [pl[1], pl[0]]; };   // [casa, fora]
   async function modoTorneio(tipo) {
     let S = salvos()[tipo];
     if (S && S.v === 1) {
@@ -1044,11 +1112,13 @@
   }
   async function jogarDoTorneio(S, tipo) {
     const J0 = jogoDeHoje(S); if (!J0) return;
-    const fora = foraDe(S, S.nosso).find((x) => x.n === VOCE);
+    const PZ = pausa(), retoma = PZ && PZ.tipo === tipo && PZ.J && PZ.J.a === J0.a && PZ.J.b === J0.b ? PZ : null;   // (7.4.10) o jogo salvo no intervalo
+    if (PZ && PZ.tipo === tipo && !retoma) apagarPausa();                     // (o jogo salvo não é mais o de hoje)
+    const fora = retoma ? null : foraDe(S, S.nosso).find((x) => x.n === VOCE);
     const cfg = Object.assign(cfgSalva(), { estadio: 'casa' });
-    const res = await confronto(Object.assign({}, J0, { cfg, comp: J0.comp.nome + (J0.comp.fase ? ' · ' + J0.comp.fase : ''), estadio: nomeEstadio(J0.modelo) + (J0.neutro ? ' (' + T('neutro') + ')' : ''), tabela: () => verTabela(S), tabelaNome: tipo === 'camp' ? 'Classificação' : 'Chave' }));
+    const res = retoma ? { cfg: retoma.J.cfg, kits: retoma.J.kits } : await confronto(Object.assign({}, J0, { cfg, comp: J0.comp.nome + (J0.comp.fase ? ' · ' + J0.comp.fase : ''), estadio: nomeEstadio(J0.modelo) + (J0.neutro ? ' (' + T('neutro') + ')' : ''), tabela: () => verTabela(S), tabelaNome: tipo === 'camp' ? 'Classificação' : 'Chave' }));
     if (!res) return;
-    const J = Object.assign({}, J0, { cfg: res.cfg }); S.voceNome = voceDe(res.cfg).nome;
+    const J = Object.assign({}, J0, { cfg: res.cfg, kits: res.kits }); S.voceNome = voceDe(res.cfg).nome;
     let placarCF, r = null;
     if (fora) {
       await preto(true, 300);
@@ -1060,7 +1130,9 @@
       if (tipo === 'camp') { const i = S.times.indexOf(S.nosso), g = S.rod[S.r].find((x) => x[0] === i || x[1] === i); g[2] = placarCF[0]; g[3] = placarCF[1]; fecharRodada(S, S.r, null); }
       else { const g = J.g; g.gc = placarCF[0]; g.gf = placarCF[1]; if (g.gc === g.gf) g.pen = SBD._t.penaltis(g.c, g.f); J.pen = g.pen; fecharFaseCopa(S); }
     } else {
-      r = await jogar(J);
+      if (retoma) apagarPausa();
+      r = await jogar(J, retoma ? retoma.ret : null);
+      if (r && r.salvo) { guardarPausa(tipo, J, r.salvo); await avisoSalvo(); return; }   // (7.4.10) salvou no intervalo: o campeonato fica parado neste jogo
       if (!r) { placarCF = SBD._t.simularPlacar(J.casa ? J.a : J.b, J.casa ? J.b : J.a, 1, 1); }
       else placarCF = J.casa ? [r.placar[0], r.placar[1]] : [r.placar[1], r.placar[0]];
       if (r) {
@@ -1093,7 +1165,7 @@
       const el = tela('<div class="lvCaixa">' + topo(T(S.div === 'A' ? 'Série A' : 'Série B') + ' · ' + nomeT(S.nosso)) +
         '<p class="lvSub">' + escH(Tf('Rodada {0} de {1} · {2}º lugar · {3} pts', S.r + 1, S.rod.length, pos, cl[pos - 1].p)) + '</p>' +
         (J ? '<div class="lvCard"><h3>' + escH(T('Próximo jogo')) + '</h3><div class="lvVs"><div><img src="' + urlT(J.casa ? J.a : J.b) + '" alt=""><b>' + escH(nomeT(J.casa ? J.a : J.b)) + '</b><span class="lvTag">' + escH(T('CASA')) + '</span></div><div class="x">x</div><div><img src="' + urlT(J.casa ? J.b : J.a) + '" alt=""><b>' + escH(nomeT(J.casa ? J.b : J.a)) + '</b><span class="lvTag fora">' + escH(T('FORA')) + '</span></div></div><p style="text-align:center">' + escH(nomeEstadio(J.modelo)) + '</p></div>' : '') +
-        '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T('Próximo jogo')) + ' ▶</button></div>' +
+        '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T(pausa() && pausa().tipo === 'camp' ? 'Continuar o 2º tempo' : 'Próximo jogo')) + ' ▶</button></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn" data-a="tab">' + escH(T('Classificação')) + '</button><button type="button" class="pxBtn" data-a="rod">' + escH(T('Última rodada')) + '</button>' +
         '<button type="button" class="pxBtn" data-a="art">' + escH(T('Artilharia')) + '</button><button type="button" class="pxBtn" data-a="des">' + escH(T('Cartões e desfalques')) + '</button></div></div>');
       const r = await escolha(el);
@@ -1111,7 +1183,7 @@
       const J = jogoDeHoje(S);
       const el = tela('<div class="lvCaixa">' + topo(T('Copa do Brasil') + ' · ' + nomeT(S.nosso)) + '<p class="lvSub">' + escH(faseNome(S)) + '</p>' +
         (J ? '<div class="lvCard"><h3>' + escH(T('Próximo jogo')) + '</h3><div class="lvVs"><div><img src="' + urlT(J.g.c) + '" alt=""><b>' + escH(nomeT(J.g.c)) + '</b><span class="lvTag' + (J.neutro ? ' neutro' : '') + '">' + escH(T(J.neutro ? 'NEUTRO' : 'CASA')) + '</span></div><div class="x">x</div><div><img src="' + urlT(J.g.f) + '" alt=""><b>' + escH(nomeT(J.g.f)) + '</b><span class="lvTag fora' + (J.neutro ? ' neutro' : '') + '">' + escH(T(J.neutro ? 'NEUTRO' : 'FORA')) + '</span></div></div><p style="text-align:center">' + escH(nomeEstadio(J.modelo)) + (J.neutro ? ' · ' + escH(T('final em campo neutro')) : '') + '</p></div>' : '') +
-        '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T('Próximo jogo')) + ' ▶</button></div>' +
+        '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T(pausa() && pausa().tipo === 'copa' ? 'Continuar o 2º tempo' : 'Próximo jogo')) + ' ▶</button></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn" data-a="tab">' + escH(T('Chave da copa')) + '</button><button type="button" class="pxBtn" data-a="art">' + escH(T('Artilharia')) + '</button><button type="button" class="pxBtn" data-a="des">' + escH(T('Cartões e desfalques')) + '</button></div></div>');
       const r = await escolha(el);
       if (r.a === 'voltar') return;
@@ -1186,11 +1258,38 @@
     }
   }
 
+  // ============================================================================================ (7.4.10) A PARTIDA SALVA NO INTERVALO
+  async function avisoSalvo() {
+    const el = tela('<div class="lvCaixa">' + topo(T('Partida salva'), false) + '<p class="lvMsg">' + escH(T('A partida ficou salva no intervalo. Para jogar o 2º tempo, abra a partida livre e toque em "Continuar o 2º tempo".')) + '</p>' +
+      '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="ok">' + escH(T('Entendi')) + '</button></div></div>');
+    await preto(false, 400);
+    await escolha(el);
+  }
+  async function retomarPausa() {
+    const PZ = pausa(); if (!PZ || !PZ.J) return;
+    if (PZ.tipo === 'camp' || PZ.tipo === 'copa') {                        // o campeonato/a copa: o hub joga o jogo salvo
+      const S = salvos()[PZ.tipo]; if (!S) { apagarPausa(); return; }
+      return PZ.tipo === 'camp' ? hubCamp(S) : hubCopa(S);
+    }
+    const J = Object.assign({}, PZ.J, { S: null });
+    apagarPausa();
+    const r = await jogar(J, PZ.ret);
+    if (r && r.salvo) { guardarPausa(PZ.tipo, J, r.salvo); return avisoSalvo(); }
+    await telaResultado(J, r ? r.placar : [0, 0], r, '', [['ok', 'Menu da partida livre', true]]);
+  }
+
   // ============================================================================================ O MENU DA PARTIDA LIVRE
   async function menuTipos() {
-    const D0 = salvos();
+    const D0 = salvos(), PZ = D0.pausa;
     const item = (a, nome, desc, selo) => '<button type="button" class="pxBtn lvTipo" data-a="' + a + '">' + (selo ? '<span class="lvSelo">' + escH(T('SALVO')) + '</span>' : '') + '<b>' + escH(T(nome)) + '</b><small>' + escH(T(desc)) + '</small></button>';
-    const el = tela('<div class="lvCaixa">' + topo(T('Partida livre')) + '<p class="lvSub">' + escH(T('Escolha o tipo de jogo.')) + '</p><div class="lvGrade">' +
+    let cont = '';
+    if (PZ && PZ.J) {                                                    // (7.4.10) a partida salva no intervalo
+      const kc = PZ.J.casa ? PZ.J.a : PZ.J.b, kf = PZ.J.casa ? PZ.J.b : PZ.J.a, pl = placarPausa(PZ);
+      cont = '<div class="lvCard lvPausa"><h3><img src="' + urlT(kc) + '" alt="">' + escH(siglaT(kc) + ' ' + pl[0] + ' x ' + pl[1] + ' ' + siglaT(kf)) + '<img src="' + urlT(kf) + '" alt=""></h3>' +
+        '<p>' + escH(Tf('Partida salva no intervalo · {0}', T(NOME_TIPO[PZ.tipo] || PZ.tipo))) + '</p><div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="retomar">' + escH(T('Continuar o 2º tempo')) + ' ▶</button>' +
+        '<button type="button" class="pxBtn" data-a="descartar">' + escH(T('Descartar')) + '</button></div></div>';
+    }
+    const el = tela('<div class="lvCaixa">' + topo(T('Partida livre')) + cont + '<p class="lvSub">' + escH(T('Escolha o tipo de jogo.')) + '</p><div class="lvGrade">' +
       item('camp', 'Campeonato', 'Série A ou B: rápido (19 rodadas) ou padrão (38). Fica salvo.', !!D0.camp) +
       item('copa', 'Copa', 'Copa do Brasil: 32 times, mata-mata e a final num estádio grande. Fica salva.', !!D0.copa) +
       item('amistoso', 'Amistoso', 'Um jogo entre quaisquer times da A e da B, no estádio que você quiser.') +
@@ -1209,7 +1308,8 @@
       for (;;) {
         const a = await menuTipos();
         if (a === 'voltar') break;
-        try { if (a === 'camp' || a === 'copa') await modoTorneio(a); else await modoAvulso(a); }
+        if (a === 'descartar') { if (await confirmar(T('Descartar a partida salva?'), T('O 2º tempo dela não vai poder ser jogado.'), T('Sim, descartar'), T('Não'))) apagarPausa(); continue; }
+        try { if (a === 'retomar') await retomarPausa(); else if (a === 'camp' || a === 'copa') await modoTorneio(a); else await modoAvulso(a); }
         catch (e) { console.error('[Livre]', e); try { await preto(false, 200); } catch (e2) { /* nada */ } }
       }
     } finally { aberto = false; }
@@ -1219,6 +1319,24 @@
 
   // ============================================================================================ OS TEXTOS (en, es, it, fr)
   const TRAD = {
+    // (7.4.10) a bola, as comemorações, os uniformes no confronto e a partida salva no intervalo
+    'Bola': ['Ball', 'Pelota', 'Pallone', 'Ballon'], 'Comemoração 1': ['Celebration 1', 'Celebración 1', 'Esultanza 1', 'Célébration 1'], 'Comemoração 2': ['Celebration 2', 'Celebración 2', 'Esultanza 2', 'Célébration 2'],
+    'Bola padrão': ['Standard ball', 'Pelota estándar', 'Pallone standard', 'Ballon standard'],
+    'As duas comemorações do gol (os dois botões que aparecem depois de marcar).': ['Your two goal celebrations (the two buttons that show up after you score).', 'Tus dos celebraciones de gol (los dos botones que aparecen después de marcar).', 'Le tue due esultanze (i due pulsanti che compaiono dopo il gol).', 'Tes deux célébrations de but (les deux boutons qui apparaissent après avoir marqué).'],
+    'A bola da partida (as bolas premium da loja também).': ['The match ball (the premium balls from the shop too).', 'La pelota del partido (también las premium de la tienda).', 'Il pallone della partita (anche quelli premium del negozio).', 'Le ballon du match (les ballons premium de la boutique aussi).'],
+    'Uniforme {0}': ['Kit {0}', 'Uniforme {0}', 'Divisa {0}', 'Maillot {0}'],
+    'Continuar o 2º tempo': ['Play the 2nd half', 'Jugar el 2.º tiempo', 'Gioca il 2º tempo', 'Jouer la 2e mi-temps'],
+    'Partida salva no intervalo · {0}': ['Match saved at half-time · {0}', 'Partido guardado en el descanso · {0}', "Partita salvata all'intervallo · {0}", 'Match sauvegardé à la mi-temps · {0}'],
+    'Descartar': ['Discard', 'Descartar', 'Scarta', 'Abandonner'], 'Descartar a partida salva?': ['Discard the saved match?', '¿Descartar el partido guardado?', 'Scartare la partita salvata?', 'Abandonner le match sauvegardé ?'],
+    'O 2º tempo dela não vai poder ser jogado.': ['Its 2nd half will not be playable.', 'Su 2.º tiempo no se podrá jugar.', 'Il suo 2º tempo non potrà essere giocato.', 'Sa 2e mi-temps ne pourra pas être jouée.'],
+    'Sim, descartar': ['Yes, discard', 'Sí, descartar', 'Sì, scarta', 'Oui, abandonner'], 'Partida salva': ['Match saved', 'Partido guardado', 'Partita salvata', 'Match sauvegardé'],
+    'A partida ficou salva no intervalo. Para jogar o 2º tempo, abra a partida livre e toque em "Continuar o 2º tempo".': ['The match was saved at half-time. To play the 2nd half, open the quick match and tap "Play the 2nd half".', 'El partido quedó guardado en el descanso. Para jugar el 2.º tiempo, abre el partido libre y toca "Jugar el 2.º tiempo".', 'La partita è stata salvata all\'intervallo. Per giocare il 2º tempo, apri la partita libera e tocca "Gioca il 2º tempo".', 'Le match a été sauvegardé à la mi-temps. Pour jouer la 2e mi-temps, ouvre le match libre et touche « Jouer la 2e mi-temps ».'],
+    'Entendi': ['Got it', 'Entendido', 'Ho capito', "J'ai compris"],
+    'Clássica Ouro': ['Gold Classic', 'Clásica Oro', 'Classica Oro', 'Classique Or'], 'Hélice Tricolor': ['Tricolor Helix', 'Hélice Tricolor', 'Elica Tricolore', 'Hélice Tricolore'],
+    'Oceano Profundo': ['Deep Ocean', 'Océano Profundo', 'Oceano Profondo', 'Océan Profond'], 'Raio Neon': ['Neon Bolt', 'Rayo Neón', 'Fulmine Neon', 'Éclair Néon'],
+    'Chamas': ['Flames', 'Llamas', 'Fiamme', 'Flammes'], 'Carnaval': ['Carnival', 'Carnaval', 'Carnevale', 'Carnaval'], 'Mármore Real': ['Royal Marble', 'Mármol Real', 'Marmo Reale', 'Marbre Royal'], 'Galáxia': ['Galaxy', 'Galaxia', 'Galassia', 'Galaxie'],
+    'Onça Pintada': ['Jaguar', 'Jaguar', 'Giaguaro', 'Jaguar'], 'Diamante Azul': ['Blue Diamond', 'Diamante Azul', 'Diamante Blu', 'Diamant Bleu'],
+    'Rubi Imperial': ['Imperial Ruby', 'Rubí Imperial', 'Rubino Imperiale', 'Rubis Impérial'], 'Lenda Negra': ['Black Legend', 'Leyenda Negra', 'Leggenda Nera', 'Légende Noire'],
     "Vestiário": ["Locker room", "Vestuario", "Spogliatoio", "Vestiaire"],
     "19 rodadas: todos se enfrentam uma vez": ["19 rounds: everyone plays each other once", "19 jornadas: todos se enfrentan una vez", "19 giornate: tutti si affrontano una volta", "19 journées : tout le monde s'affronte une fois"],
     "20 times brigando pelo acesso": ["20 teams fighting for promotion", "20 equipos luchando por el ascenso", "20 squadre in lotta per la promozione", "20 équipes qui luttent pour la montée"],

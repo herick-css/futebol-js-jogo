@@ -9,6 +9,11 @@ ARQUIVOS
                           TORCIDA que reage (Torcida, no jogo.js): cantos com bumbo e caixa (mais da casa), vaia com assobios
                           quando o visitante tem a bola e no pênalti dele, a casa quieta no gol do visitante, gol mais festivo,
                           olé no drible, "uuuh" na trave, palmas depois do ataque, vibração na defesa do goleiro
+                          (7.4.10) 12 CÂNTICOS (Som.canto: marcha, olê, batucada, palmas ritmadas, corneta, "UH!", dale, eu
+                          acredito, lá-lá-lá, charanga, bateria): cada torcida canta uma vez por tempo e depois de cada gol do
+                          time, sem repetir até tocar todos; no gol, o grito é "AAAA-ÊÊÊ". INTERVALO: os jogadores saem pelo
+                          túnel e a tela pergunta se começa o 2º tempo ou "Salvar e sair" (só na partida livre: continua depois
+                          em "Continuar o 2º tempo"). Avisos de tática: um "!" do lado do radar, só com as mudanças do seu técnico
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -75,6 +80,8 @@ ARQUIVOS
                           o padrão dos clubes parodiados, e a pixel art do peito (PEITO: 16 x 16 por time; sem ela vai o escudo
                           do time reduzido). O motor do desenho fica no jogo.js (compilarModelo / pintarCamisaModelo); o
                           serieb.js pega o modelo de cada time com Uniformes.kit(chave, 0 ou 1) (baixado na abertura)
+                          (7.4.10) O Periquito da Pompeia virou PORCO DA POMPEIA (o porco verde no escudo do serieb.js; a chave
+                          continua 'periquito') e o vermelho das camisas dele virou branco
   livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
                           varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
                           com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,
@@ -86,6 +93,8 @@ ARQUIVOS
                           abertura), a abertura antes do apito (o estádio por fora, o ônibus na garagem, o vestiário, a
                           torcida e a entrada em campo), a festa do título e a noite dos prêmios (festa.js) no fim. As
                           Configurações do menu agora têm só som, idioma, como jogar e a versão
+                          (7.4.10) Configurações com a bola (as 15 premium) e as duas comemorações; no confronto, os
+                          quadradinhos do uniforme 1 e 2 de cada time; a partida salva no intervalo fica em futebolJs.livre.v1.pausa
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

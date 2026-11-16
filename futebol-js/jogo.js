@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.9';
+const VERSAO_JOGO = '7.4.10';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -1877,12 +1877,12 @@ const Som = (() => {
   //   que fazem a vogal (ô, é, á, u). notas = [[semitom, duração, vogal], ...] (semitom null = pausa). Cada sílaba tem
   //   ataque e uma caidinha no fim, para notas repetidas soarem separadas. op: base (Hz), vozes, ganho, desafina (cents),
   //   deslize (s: a voz escorrega de uma nota para outra), ataque (s), longe (0..1: mais abafado, a torcida do outro lado).
-  const VOGAIS = { o: [480, 880], e: [430, 1850], a: [720, 1180], u: [320, 720] };
+  const VOGAIS = { o: [480, 880], e: [430, 1850], a: [720, 1180], u: [320, 720], i: [300, 2250] };
   function coro(t0, notas, op) {
     const nV = op.vozes || 6, f1 = filtro('bandpass', 500, 2.5), f2 = filtro('bandpass', 1000, 3.5), g2 = ganho();
     const lp = filtro('lowpass', 3400 - 2200 * (op.longe || 0), 0.6), saida = ganho();
     g2.gain.value = 0.5; saida.gain.value = op.ganho;
-    f1.connect(lp); f2.connect(g2); g2.connect(lp); lp.connect(saida); saida.connect(mestre);
+    f1.connect(lp); f2.connect(g2); g2.connect(lp); lp.connect(saida); saida.connect(op.dest || mestre);
     let t = t0;
     for (const [, dur, vog] of notas) { const V = VOGAIS[vog || 'o']; f1.frequency.setTargetAtTime(V[0], t, 0.03); f2.frequency.setTargetAtTime(V[1], t, 0.03); t += dur; }
     const fim = t, at = op.ataque || 0.02, primeira = notas.find((n) => n[0] != null);
@@ -1930,12 +1930,118 @@ const Som = (() => {
     s.connect(bp); bp.connect(g); g.connect(mestre);
     s.start(t0, Math.random() * 2.5); s.stop(t0 + dur + 0.05);
   }
-  // Os cantos (cada um tocado duas vezes): "ô-ô-ô... vamos!", "olê, olê, olê" e "vamos, vamos, vamos".
-  const CANTOS = [
-    [[0, 0.3, 'o'], [4, 0.3, 'o'], [7, 0.6, 'o'], [null, 0.15], [7, 0.3, 'a'], [9, 0.3, 'o'], [7, 0.3, 'a'], [4, 0.6, 'o'], [null, 0.3], [5, 0.3, 'a'], [4, 0.3, 'a'], [2, 0.3, 'e'], [0, 0.9, 'o'], [null, 0.35]],
-    [[7, 0.25, 'o'], [4, 0.5, 'e'], [7, 0.25, 'o'], [4, 0.5, 'e'], [7, 0.25, 'o'], [4, 0.5, 'e'], [7, 0.25, 'o'], [4, 0.25, 'e'], [2, 0.25, 'e'], [0, 0.75, 'a'], [null, 0.5]],
-    [[4, 0.25, 'a'], [4, 0.25, 'o'], [7, 0.5, 'o'], [null, 0.25], [4, 0.25, 'a'], [4, 0.25, 'o'], [7, 0.5, 'o'], [null, 0.25], [9, 0.25, 'a'], [7, 0.25, 'o'], [4, 0.25, 'a'], [2, 0.25, 'o'], [0, 0.75, 'e'], [null, 0.5]],
+  // ---- (7.4.10) OS 12 CÂNTICOS DA TORCIDA ----------------------------------------------------------------------------
+  // Cada cântico: bpm, o RITMO (instrumentos em compassos de 16 semicolcheias: 'X' acento, 'x' batida, '.' nada; o agogô
+  //   usa 'h'/'l' = sino agudo/grave), quantos compassos e, se tiver, a VOZ (o coro: [semitom, tempos, vogal]; vogais a, e, i,
+  //   o, u) e a CORNETA ([semitom, tempos]) — as duas repetem até o fim; 'subir' sobe a voz a cada repetição.
+  //   grito: em quais semicolcheias de cada compasso a torcida grita "ÊI!". Tudo passa por um "barramento" com o filtro de
+  //   longe (a torcida do outro lado soa mais abafada) e o volume k.
+  const PERC = {
+    bumbo: (d, t, v) => { tomD(d, 'sine', 96, 46, t, 0.24, 0.44 * v); estaloD(d, t, 0.03, 'lowpass', 380, 0.16 * v); },
+    surdo: (d, t, v) => { tomD(d, 'sine', 72, 40, t, 0.45, 0.55 * v); estaloD(d, t, 0.025, 'lowpass', 300, 0.1 * v); },
+    caixa: (d, t, v) => { estaloD(d, t, 0.07, 'bandpass', 1750, 0.11 * v); tomD(d, 'triangle', 230, 180, t, 0.05, 0.05 * v); },
+    repique: (d, t, v) => { tomD(d, 'triangle', 340, 260, t, 0.09, 0.12 * v); estaloD(d, t, 0.03, 'bandpass', 2600, 0.07 * v); },
+    tamborim: (d, t, v) => { estaloD(d, t, 0.035, 'highpass', 3600, 0.09 * v); tomD(d, 'square', 920, 860, t, 0.03, 0.025 * v); },
+    chocalho: (d, t, v) => estaloD(d, t, 0.05, 'highpass', 6500, 0.05 * v),
+    palma: (d, t, v) => { for (let i = 0; i < 3; i++) estaloD(d, t + i * 0.006 + Math.random() * 0.006, 0.03, 'bandpass', 1100 + i * 350, 0.09 * v); },
+    agogo: (d, t, v, c) => tomD(d, 'sine', c === 'l' ? 660 : 880, c === 'l' ? 655 : 875, t, 0.2, 0.07 * v),
+    apito: (d, t, v) => apitoSamba(d, t, 0.11, 0.05 * v),
+  };
+  function tomD(d, tipo, f0, f1, t0, dur, pico) {
+    const o = ctx.createOscillator(), g = ganho();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    env(g, t0, 0.005, pico, dur);
+    o.connect(g); g.connect(d); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function estaloD(d, t0, dur, tipo, freq, pico) {
+    const s = fonteRuido(t0, dur), f = filtro(tipo, freq, 0.8), g = ganho();
+    env(g, t0, 0.003, pico, dur);
+    s.connect(f); f.connect(g); g.connect(d);
+  }
+  function apitoSamba(d, t0, dur, pico) {                          // o apito do mestre de bateria (trinado agudo)
+    const o = ctx.createOscillator(), g = ganho(), lfo = ctx.createOscillator(), lg = ganho();
+    o.type = 'sine'; o.frequency.value = 2750; lfo.frequency.value = 26; lg.gain.value = 260; lfo.connect(lg); lg.connect(o.frequency);
+    env(g, t0, 0.01, pico, dur);
+    o.connect(g); g.connect(d); o.start(t0); o.stop(t0 + dur + 0.05); lfo.start(t0); lfo.stop(t0 + dur + 0.05);
+  }
+  // a corneta (o trompete da charanga): duas dentes de serra com o filtro abrindo em cada nota
+  function corneta(d, t0, notas, spb, base, pico, ate) {
+    let t = t0;
+    while (t < ate - 0.05) {
+      for (const [semi, b] of notas) {
+        const dur = b * spb;
+        if (t >= ate - 0.05) break;
+        if (semi != null) {
+          const f = base * Math.pow(2, semi / 12), g = ganho(), lp = filtro('lowpass', 900, 1.2);
+          lp.frequency.setValueAtTime(700, t); lp.frequency.linearRampToValueAtTime(2600, t + 0.05); lp.frequency.setTargetAtTime(1500, t + 0.06, 0.08);
+          g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(pico, t + 0.025); g.gain.setValueAtTime(pico * 0.8, t + Math.max(0.03, dur * 0.75)); g.gain.linearRampToValueAtTime(0.0001, t + dur * 0.95);
+          for (const dt of [-6, 7]) { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); o.stop(t + dur); }
+          lp.connect(g); g.connect(d);
+        }
+        t += dur;
+      }
+    }
+  }
+  // o grito curto da torcida ("ÊI!")
+  function grito(d, t, k) { coro(t, [[5, 0.2, 'e']], { base: 230, vozes: 7, ganho: 0.12 * k, desafina: 45, ataque: 0.012, solta: 0.08, dest: d }); estaloD(d, t, 0.18, 'bandpass', 1300, 0.06 * k); }
+  const BUMBO_MARCHA = 'X...x...X...x...', CAIXA_MARCHA = '....x.......x.x.';
+  const CANTICOS = [
+    { nome: 'Vamos, vamos', bpm: 128, comp: 8, ritmo: { bumbo: BUMBO_MARCHA, caixa: CAIXA_MARCHA },
+      voz: [[4, 1, 'a'], [4, 1, 'o'], [7, 2, 'a'], [4, 1, 'a'], [4, 1, 'o'], [7, 2, 'a'], [9, 1, 'a'], [7, 1, 'e'], [4, 1, 'a'], [2, 1, 'e'], [0, 3, 'a'], [null, 1]] },
+    { nome: 'Olê, olê, olê', bpm: 120, comp: 6, ritmo: { bumbo: 'X.......X.......', caixa: '....x..x....x...' },
+      voz: [[7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 1, 'e'], [7, 0.5, 'o'], [4, 0.5, 'e'], [2, 0.5, 'e'], [0, 2, 'a'], [null, 0]] },
+    { nome: 'Ô, ô, ô, vamos', bpm: 116, comp: 8, ritmo: { bumbo: 'X...X...X...X...', caixa: '..x...x...x...xx' },
+      voz: [[0, 0.5, 'o'], [4, 0.5, 'o'], [7, 1, 'a'], [null, 0.5], [7, 0.5, 'a'], [9, 0.5, 'e'], [7, 0.5, 'a'], [4, 1, 'a'], [null, 0.5], [5, 0.5, 'a'], [4, 0.5, 'a'], [2, 0.5, 'e'], [0, 1.5, 'a'], [null, 0.5]] },
+    { nome: 'Batucada', bpm: 102, comp: 6, intro: { apito: 'X.X.X.X.X.......' },
+      ritmo: { surdo: 'x.......X.......', bumbo: '....x.......x...', caixa: 'x.xxx.xxx.xxx.xx', tamborim: 'x.xx.x.xx.xx.x.x', chocalho: 'XxxxXxxxXxxxXxxx', repique: 'x..x..x...x..x..', agogo: 'h.l.h.l.hh.l.l..' },
+      grito: [14] },
+    { nome: 'Palmas ritmadas', bpm: 112, comp: 8, ritmo: { palma: 'X...X...X.X.X...', bumbo: 'X.......X.......' }, grito: [14] },
+    { nome: 'A carga da corneta', bpm: 140, comp: 6, ritmo: { caixa: 'xxxxxxxxxxxxxxxx', bumbo: 'X.......X...X...' },
+      corneta: [[7, 0.5], [12, 0.5], [16, 0.5], [19, 1], [16, 0.5], [19, 2], [null, 3]], grito: [12, 14] },
+    { nome: 'UH!', especial: 'uh' },
+    { nome: 'Dale, dale', bpm: 136, comp: 8, ritmo: { bumbo: 'X..x..X.X..x..X.', caixa: '....x.......x...', repique: '..x...x...x...x.' },
+      voz: [[7, 1, 'a'], [7, 1, 'e'], [7, 1, 'a'], [7, 1, 'e'], [9, 0.5, 'a'], [7, 0.5, 'a'], [5, 1, 'a'], [4, 2, 'e'], [5, 1, 'a'], [5, 1, 'e'], [5, 1, 'a'], [5, 1, 'e'], [7, 0.5, 'a'], [5, 0.5, 'a'], [4, 1, 'a'], [2, 2, 'e']] },
+    { nome: 'Eu acredito', bpm: 112, comp: 8, ritmo: { bumbo: 'X...x...X...x...', palma: '....X.......X...' }, subir: 1,
+      voz: [[0, 1, 'e'], [2, 1, 'a'], [4, 1, 'e'], [5, 1, 'a'], [7, 2, 'e'], [null, 2]] },
+    { nome: 'Lá, lá, lá', bpm: 96, comp: 6, ritmo: { bumbo: 'X.......x.......', palma: '....X.......X...' },
+      voz: [[4, 1, 'a'], [5, 1, 'a'], [7, 2, 'a'], [9, 1, 'a'], [7, 1, 'a'], [5, 2, 'a'], [4, 1, 'a'], [2, 1, 'a'], [0, 3, 'a'], [null, 1]] },
+    { nome: 'Marchinha da charanga', bpm: 132, comp: 8, ritmo: { bumbo: BUMBO_MARCHA, caixa: 'x.x.x.x.x.x.x.xx', agogo: 'h...l...h...l...' },
+      corneta: [[0, 0.5], [4, 0.5], [7, 0.5], [12, 1], [11, 0.5], [9, 0.5], [7, 1], [5, 0.5], [4, 0.5], [2, 0.5], [0, 1.5]] },
+    { nome: 'A bateria da organizada', bpm: 144, comp: 8, ritmo: { bumbo: 'X.X.X..XX.X.X..X', caixa: 'xxXxxxXxxxXxxxXx', repique: 'X...X...X...XX.X', palma: '....X.......X...' }, grito: [15] },
   ];
+  // toca o cântico i no barramento d (de t0 em diante); devolve a duração
+  function tocarCantico(i, t0, k, longe) {
+    const C = CANTICOS[i], bus = ganho(), lp = filtro('lowpass', 7000 - 4800 * longe, 0.6);
+    bus.gain.value = 1 - 0.35 * longe; bus.connect(lp); lp.connect(mestre);
+    const kk = clamp(k, 0, 1);
+    if (C.especial === 'uh') {                                     // "UH!": a pancada do bumbo, as palmas e o grito juntos, cada vez mais rápido
+      let t = t0, gap = 1.9;
+      for (let n = 0; n < 16; n++) {
+        PERC.bumbo(bus, t, kk * 1.2); PERC.palma(bus, t + 0.01, kk * 1.3);
+        coro(t, [[0, 0.22, 'a']], { base: 165, vozes: 8, ganho: 0.13 * kk, desafina: 50, ataque: 0.01, solta: 0.1, dest: bus });
+        t += gap; gap = Math.max(0.32, gap * 0.8);
+      }
+      arDaTorcida(t, 2.2, 0.12 * kk, 1100, 0.15);                 // e a explosão no fim
+      coro(t, [[0, 0.4, 'a'], [5, 1.6, 'e']], { base: 210, vozes: 8, ganho: 0.09 * kk, desafina: 45, deslize: 0.2, ataque: 0.05, solta: 0.4, dest: bus });
+      return t + 2.2 - t0;
+    }
+    const spb = 60 / C.bpm, passo = spb / 4, dur = C.comp * 16 * passo;
+    for (let c = 0; c < C.comp; c++) for (let s = 0; s < 16; s++) {
+      const t = t0 + (c * 16 + s) * passo, R = c === 0 && C.intro ? Object.assign({}, C.ritmo, C.intro) : C.ritmo;
+      for (const ins in R) { const ch = R[ins][s]; if (ch && ch !== '.') PERC[ins](bus, t, (ch === 'X' ? 1 : 0.7) * kk, ch); }
+      if (C.grito && C.grito.includes(s) && c % 2 === 1) grito(bus, t, kk);
+    }
+    if (C.voz) {
+      const lenB = C.voz.reduce((a, n) => a + n[1], 0) || 1, reps = Math.max(1, Math.floor(C.comp * 4 / lenB)), base = rand(188, 210);
+      for (let r = 0; r < reps; r++) {
+        const notas = C.voz.map(([s, b, v]) => [s == null ? null : s + (C.subir || 0) * r, b * spb, v]);
+        coro(t0 + r * lenB * spb, notas, { base, vozes: 7, ganho: 0.085 * kk, desafina: 30, longe, dest: bus });
+      }
+    }
+    if (C.corneta) corneta(bus, t0, C.corneta, spb, 466, 0.045 * kk, t0 + dur);
+    arDaTorcida(t0, dur, 0.035 * kk, 650, 0.6);
+    return dur;
+  }
 
   // nivel 0..1 (chamado todo quadro; só mexe no som quando muda de verdade)
   function torcida(nivel) {
@@ -2055,7 +2161,7 @@ const Som = (() => {
       s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(mestre);
       if (kk > 0.45) {
         arDaTorcida(t, 1.2, 0.32 * kk, 1400, 0.08);                                  // o estouro
-        coro(t + 0.05, [[0, 0.5, 'o'], [5, 3.2, 'o'], [3, 0.6, 'o']], { base: 205, vozes: 8, ganho: 0.075 * kk, desafina: 45, deslize: 0.35, ataque: 0.12, solta: 0.5 });   // "GOOOOOL"
+        coro(t + 0.05, [[0, 0.9, 'a'], [5, 2.6, 'e'], [7, 0.9, 'e']], { base: 205, vozes: 8, ganho: 0.08 * kk, desafina: 45, deslize: 0.3, ataque: 0.1, solta: 0.5 });   // (7.4.10) "AAAAA-ÊÊÊÊÊ!" (o "GOOOL" com o ô fechado soava triste)
         bateria(t + 2.2, 9, 0.9 * kk, 132);
       }
       const vog = filtro('bandpass', 700, 0.9), gv = ganho();
@@ -2081,15 +2187,14 @@ const Som = (() => {
     },
     // (7.4.9) CANTO da torcida: um dos CANTOS (qual: -1 = sorteado), duas vezes, com a bateria. k = 0..1 (quanta gente),
     //   longe = 0..1 (a torcida do outro lado soa mais abafada). Devolve quanto tempo dura (0 se não tocou).
+    // (7.4.10) um dos 12 CÂNTICOS (qual: o índice; -1 = sorteado). Devolve a duração (0 se não tocou).
     canto(k = 0.6, qual = -1, longe = 0) {
-      if (!pronto() || !vaga(9) || k < 0.05) return 0;
-      const t = ctx.currentTime, N = CANTOS[qual >= 0 ? qual % CANTOS.length : Math.floor(Math.random() * CANTOS.length)], base = rand(185, 215);
-      const notas = N.concat(N), dur = notas.reduce((s, n) => s + n[1], 0), kk = clamp(k, 0, 1);
-      coro(t, notas, { base, vozes: 7, ganho: 0.085 * kk * (1 - 0.35 * longe), desafina: 30, longe });
-      arDaTorcida(t, dur, 0.035 * kk, 650, 0.6);
-      bateria(t, dur, 0.75 * kk, 124, longe);
-      return dur;
+      if (!pronto() || !vaga(12) || k < 0.05) return 0;
+      const i = qual >= 0 ? qual % CANTICOS.length : Math.floor(Math.random() * CANTICOS.length);
+      return tocarCantico(i, ctx.currentTime + 0.05, k, longe);
     },
+    nCanticos: () => CANTICOS.length,
+    nomeCantico: (i) => CANTICOS[i % CANTICOS.length].nome,
     // VAIA: "uuuuu" grave e desafinado (muita gente), subindo devagar, com ASSOBIOS agudos espalhados.
     vaia(k = 0.6, dur = 2.5) {
       if (!pronto() || !vaga(dur + 1) || k < 0.05) return;
@@ -2188,26 +2293,41 @@ function nivelTorcida() {
 //   palmas ..... o ataque acabou num chute para fora ou defendido (a torcida de quem atacou aplaude mesmo assim)
 //   defesa ..... a torcida do goleiro vibra ("êêê" e palmas)
 // ---------------------------------------------------------------------
+// (7.4.10) OS CÂNTICOS: 12 (Som.canto), sem repetir até tocar todos. Cada torcida canta UMA vez por tempo (a da casa no
+//   começo/meio do tempo, a de fora mais para o fim) e depois de cada gol do time (uns 4,5 s depois); na cena antes dos
+//   pênaltis e na festa do apito final, a torcida de quem ganhou canta também.
 const Torcida = (() => {
-  let cantoT = 6, vaiaCd = 10, posseT = 0, quietaT = 0, oleT = 0, cantando = 0, proximo = -1, defT = -9;
+  let cantoT = 99, vaiaCd = 10, posseT = 0, quietaT = 0, oleT = 0, cantando = 0, proximo = -1, defT = -9, fila = [], plano = null;
   const casa = () => (PARTIDA ? PARTIDA.mandante : 0);
   const ligada = () => !!PARTIDA && !PARTIDA.campo.semTorcida && !GANCHO_RENDER && G.state !== 'menu' && G.state !== 'end' && G.state !== 'paused' && !G.pulando && G.torcidaCena == null && crowd.total() > 20;   // treino / campo sem arquibancada: sem cantos
   const kDe = (t) => crowd.lotacao() * Math.min(1, crowd.parte(t) * 1.4);   // 0..1: quanto barulho a torcida do time t faz
+  function proximoCantico() {
+    if (!fila.length) { const n = Som.nCanticos ? Som.nCanticos() : 3; fila = Array.from({ length: n }, (_, i) => i).sort(() => Math.random() - 0.5); }
+    return fila.shift();
+  }
   function cantar(t, qual) {
-    const d = Som.canto(kDe(t), qual == null ? -1 : qual, t === casa() ? 0 : 0.3);
+    if (crowd.parte(t) < 0.12) return;                               // quase ninguém daquele time no estádio
+    const d = Som.canto(kDe(t), qual == null ? proximoCantico() : qual, t === casa() ? 0 : 0.3);
     if (d) { cantando = d; crowd.cantar(t, d); }
-    cantoT = rand(6, 14);
+  }
+  // o plano do tempo: em que ponto (fração do tempo) cada torcida canta
+  function planoDoTempo() {
+    const k = (G.tempo || 1) + (G.pen ? 10 : 0);
+    if (!plano || plano.k !== k) plano = { k, casa: rand(0.12, 0.45), fora: rand(0.55, 0.85), feito: [false, false] };
+    return plano;
   }
   function atualizar(dt) {
     if (!ligada()) return;
     quietaT = Math.max(0, quietaT - dt); oleT = Math.max(0, oleT - dt); vaiaCd -= dt;
     if (cantando > 0) cantando -= dt;
     else if (G.state === 'play' || G.state === 'restart' || G.state === 'foul' || G.state === 'fim' || G.state === 'goal' || G.state === 'celebrate') {
-      if ((cantoT -= dt) <= 0) {
-        const t = proximo >= 0 ? proximo : Math.random() < 0.72 ? casa() : 1 - casa();
-        proximo = -1;
-        if (!(quietaT > 0 && t === casa())) cantar(t);
-        else cantoT = 2;
+      if (proximo >= 0) {                                             // depois do gol / na festa: a torcida de quem fez
+        if ((cantoT -= dt) <= 0) { const t = proximo; proximo = -1; cantar(t); }
+      } else if (!G.pen && G.state !== 'fim' && typeof duracaoTempo === 'function') {
+        const P = planoDoTempo(), fr = 1 - clamp(G.clock / duracaoTempo(), 0, 1);
+        const c = casa();
+        if (!P.feito[0] && fr >= P.casa && !(quietaT > 0)) { P.feito[0] = true; cantar(c); }
+        else if (!P.feito[1] && fr >= P.fora) { P.feito[1] = true; cantar(1 - c); }
       }
     }
     const h = G.possession;
@@ -2227,7 +2347,7 @@ const Torcida = (() => {
       if (pen) setTimeout(() => Som.fimGol(), 1600);
       if (t !== casa() && crowd.parte(casa()) > 0.5) quietaT = pen ? 3 : 9;      // a casa fica quieta
       else quietaT = 0;
-      proximo = t; cantoT = pen ? 99 : 4.5; cantando = 0;                        // depois do gol, a torcida de quem fez canta
+      if (!pen) { proximo = t; cantoT = 4.5; cantando = 0; }                      // depois do gol, a torcida de quem fez canta (um cântico)
     },
     ole(t, forte) {
       if (!ligada() || oleT > 0) return;
@@ -2264,7 +2384,9 @@ const Torcida = (() => {
       else { cantoT = 1.5; Som.palmas(crowd.lotacao() * 0.7, 3, 0.3); }
     },
     cantar,
-    reiniciar() { cantoT = rand(5, 9); vaiaCd = 10; posseT = 0; quietaT = 0; oleT = 0; cantando = 0; proximo = -1; defT = -9; },
+    reiniciar() { cantoT = 99; vaiaCd = 10; posseT = 0; quietaT = 0; oleT = 0; cantando = 0; proximo = -1; defT = -9; plano = null; },
+    // antes da disputa de pênaltis: a torcida da casa canta
+    prePenaltis() { proximo = casa(); cantoT = 1.0; cantando = 0; },
   };
 })();
 
@@ -4423,6 +4545,9 @@ function aplicarPoseCelebExtras(m, P) {                                // cotove
 // (7.1.9) as comemorações do jogador: as duas de sempre + as compradas na loja; os 2 botões da partida usam os "slots" escolhidos lá.
 const CELEB_BASE = ['aviao', 'joelhada'];
 function celebDoJogador() {
+  // (7.4.10) a partida livre escolhe as duas comemorações (PARTIDA.comemoracoes = [k1, k2])
+  const PC = typeof PARTIDA !== 'undefined' && PARTIDA && Array.isArray(PARTIDA.comemoracoes) ? PARTIDA.comemoracoes : null;
+  if (PC && PC.length === 2 && PC.every((k) => CELEBRACOES[k])) return { tem: Object.keys(CELEBRACOES), slots: PC.slice() };
   let c = null; try { const h = (PERSONAGEM.historia && PERSONAGEM.historia.cidade) || HistoriaSave.ler('cidade'); c = h && h.celeb; } catch (e) { /* sem história */ }
   const tem = CELEB_BASE.concat(c && Array.isArray(c.tem) ? c.tem.filter((k) => CELEBRACOES[k] && CELEBRACOES[k].loja) : []);
   const slots = [0, 1].map((i) => { const k = c && Array.isArray(c.slots) ? c.slots[i] : null; return k && tem.includes(k) ? k : CELEB_BASE[i]; });
@@ -11736,7 +11861,7 @@ $('spinBall').addEventListener('pointerdown', (e) => {
 $('hamTrack').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(null); });
 $('timingLayer').addEventListener('pointerdown', (e) => { e.preventDefault(); tapTiming(e.clientX, e.clientY - AREA.topo); });
 $('cancelKick').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cancelKick(); });
-$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') fimDoIntervalo(); else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
+$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') { if (!G.intTela) mostrarTelaIntervalo(); } else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
 function toggleCamera() {
   cam.mode = cam.mode === 'bola' ? 'frente' : 'bola';
@@ -12022,7 +12147,7 @@ function matchRating() {
 }
 
 function resetMatch() {
-  Torcida.reiniciar();                             // (7.4.9)
+  Torcida.reiniciar(); AvisoTatica.limpar();                             // (7.4.9)
   G.fimModo = null; G.fimIni = null; G.fimTom = null;
   montarTimes(PARTIDA);                            // escalação nova (tira suspensos/lesionados, banco cheio)
   limparReplay();
@@ -12080,9 +12205,13 @@ function decorridoPartida() {
 function fimDoTempo() {
   if ((G.tempo || 1) < nTempos()) intervalo(); else apitoFinal();
 }
+// (7.4.10) O INTERVALO: o apito, os jogadores SAINDO DE CAMPO (vão para o túnel do estádio; sem túnel, para a lateral dos
+//   bancos e somem) com a câmera na boca do túnel e depois o estádio do alto; aí a TELA DO INTERVALO: o placar, os seus números
+//   no 1º tempo e os botões "Começar o 2º tempo" e, quando quem abriu a partida deixa (a partida livre: Historia.partida com
+//   podeSalvar), "Salvar e sair" — guarda a partida (estadoDoIntervalo) para continuar o 2º tempo depois.
 function intervalo() {
   G.fimPendente = false;
-  G.state = 'intervalo'; G.intT = 0; G.intBanner = false; G.intCorte = true; G.intFase = 0;
+  G.state = 'intervalo'; G.intT = 0; G.intBanner = false; G.intCorte = true; G.intFase = 0; G.intTela = false;
   G.targetScale = G.timeScale = 1;
   if (G.kick) G.kick = null;
   hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
@@ -12093,27 +12222,88 @@ function intervalo() {
   G.intRef = { x: r.x, z: r.z, angle: r.angle };
   Som.apito(0.4); setTimeout(() => { try { Som.apito(1.0); } catch (e) { /* nada */ } }, 420);
   if (G.pulando) { fimDoIntervalo(); return; }
+  // a saída: cada um vai para a boca do túnel (ou para a lateral dos bancos), uns andando, outros trotando, sem pressa
+  const tunel = !!TUNEL.grupo, abre = tunel || !!TUNEL.placa;      // sem túnel: o portão do alambrado abre (como na entrada)
+  if (abre) mostrarTunel(true);
+  const boca = -(HALF_W + (tunel ? TUNEL_BOCA : 2.6));
+  G.intSaida = { tunel: abre, boca, fundo: tunel ? TUNEL.fundoZ + 0.4 : boca - 0.6 };
+  for (const p of players) if (!p.out) p.intS = { t0: 1.2 + rand(0, 0.8), v: rand(3.0, 4.3), lado: rand(-0.7, 0.7), foi: false };
   setLetterbox(true);
   $('skipBtn').hidden = false; $('cineLabel').textContent = '';
 }
 function updateIntervalo(dt) {
   G.intT += dt;
-  const r = referee, R = G.intRef;
+  const r = referee, R = G.intRef, S = G.intSaida;
   if (R) { r.x = R.x; r.z = R.z; r.vx = r.vz = 0; r.angle = R.angle; }
-  for (const p of players) if (!p.out) { p.vx = p.vz = 0; }
+  for (const p of players) {
+    if (p.out) continue;
+    p.vx = p.vz = 0;
+    const I = p.intS; if (!I || !S || I.foi || G.intT < I.t0) continue;
+    // primeiro até a frente da boca (cada um na sua faixa), depois para dentro (some depois do fundo do túnel)
+    const naBoca = Math.abs(p.z - (S.boca + 1.2)) < 0.6 && Math.abs(p.x - I.lado) < 0.6;
+    const alvo = I.entrando || naBoca ? { x: I.lado * 0.6, z: S.fundo - 1 } : { x: I.lado, z: S.boca + 1.2 };
+    if (naBoca) I.entrando = true;
+    const dx = alvo.x - p.x, dz = alvo.z - p.z, d = Math.hypot(dx, dz) || 1, v = I.entrando ? 1.8 : I.v, passo = Math.min(d, v * dt);
+    p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * v; p.vz = dz / d * v;
+    p.anim = (p.anim || 0) + v * 2.6 * dt; p.angle = turnToward(p.angle, Math.atan2(dz, dx), 6 * dt);
+    if (p.z < S.fundo) { I.foi = true; p.mesh.raiz.visible = false; p.vx = p.vz = 0; }
+  }
   if (G.intT > 0.2 && !G.intBanner) { G.intBanner = true; showBanner('INTERVALO', 0, 3.4); $('cineLabel').textContent = Tf('Fim do 1º tempo · {0} {1} x {2} {3}', PARTIDA.timesObj[0].sigla || '', G.score[0], G.score[1], PARTIDA.timesObj[1].sigla || ''); }
-  if (G.intT > 4.2) fimDoIntervalo();
+  if (G.intT > 9.8 && !G.intTela) mostrarTelaIntervalo();
 }
 function cameraIntervalo() {
-  const r = referee, R = G.intRef || { angle: 0 };
-  if (G.intT >= 1.6 && G.intFase === 0) { G.intFase = 1; G.intCorte = true; }   // corte seco do juiz para o alto
-  if (G.intT < 1.6) return { px: r.x + Math.cos(R.angle) * 4.2, py: 1.9, pz: r.z + Math.sin(R.angle) * 4.2, tx: r.x, ty: 1.5, tz: r.z };   // o juiz apitando
-  const k = Math.min(1, (G.intT - 1.6) / 2.6);
+  const r = referee, R = G.intRef || { angle: 0 }, S = G.intSaida;
+  const F = G.intT < 1.6 ? 0 : G.intT < 4.7 ? 1 : G.intT < 7.6 ? 2 : 3;
+  if (F !== G.intFase) { G.intFase = F; G.intCorte = true; }                    // cortes secos: o juiz, os jogadores vindo, a boca do túnel, o alto
+  if (F === 0) return { px: r.x + Math.cos(R.angle) * 4.2, py: 1.9, pz: r.z + Math.sin(R.angle) * 4.2, tx: r.x, ty: 1.5, tz: r.z };   // o juiz apitando
+  if (F === 1 && S) {                                                            // da beira do campo, perto da saída: o time vem andando na direção da câmera
+    const k = (G.intT - 1.6) / 3.1, L = players.filter((p) => !p.out && p.intS && !p.intS.foi);
+    const mx = L.length ? L.reduce((a, p) => a + p.x, 0) / L.length : 0, mz = L.length ? L.reduce((a, p) => a + p.z, 0) / L.length : 0;
+    return { px: 4.5 - k, py: 1.7, pz: S.boca + 4.2, tx: mx * 0.6, ty: 1.2, tz: Math.max(S.boca + 8, mz) };
+  }
+  if (F === 2 && S) {                                                            // a boca do túnel: eles entram
+    const k = (G.intT - 4.7) / 2.9;
+    return { px: 6.5 - 1.5 * k, py: 2.3, pz: S.boca + 8.5 - k, tx: 0, ty: 1.3, tz: S.boca + 1.2 };
+  }
+  const k = Math.min(1, (G.intT - 7.6) / 6);
   return { px: -10 + 20 * k, py: 22, pz: HALF_W + 30, tx: 0, ty: 0, tz: 0 };                                                              // o estádio do alto
 }
+// a tela do intervalo (por cima do estádio)
+function mostrarTelaIntervalo() {
+  G.intTela = true;
+  $('banner').className = ''; $('cineLabel').textContent = ''; $('skipBtn').hidden = true;
+  let el = document.getElementById('intervaloTela');
+  if (!el) {
+    el = document.createElement('div'); el.id = 'intervaloTela'; el.className = 'screen';
+    (document.getElementById('raizJogo') || document.body).appendChild(el);
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-int]'); if (!b) return;
+      try { Som.clique && Som.clique(); } catch (e2) { /* sem som */ }
+      if (b.dataset.int === 'seguir') fimDoIntervalo();
+      else if (b.dataset.int === 'salvar') salvarNoIntervalo();
+    });
+  }
+  const P = PARTIDA, s = G.stats, pode = !!G.podeSalvarIntervalo && !G.espectador;
+  const linha = (n, v) => '<div><dt>' + escHtml(T(n)) + '</dt><dd>' + v + '</dd></div>';
+  el.innerHTML = '<div class="card" style="grid-template-columns:minmax(0,1fr)"><div class="side">' +
+    '<p class="eyebrow">' + escHtml(T('INTERVALO')) + '</p><h2>' + escHtml(T('Fim do 1º tempo')) + '</h2>' +
+    '<div class="finalScore" style="justify-content:center"><span>' + escHtml(P.timesObj[0].sigla || '') + '</span><span>' + G.score[0] + '</span><span>:</span><span>' + G.score[1] + '</span><span>' + escHtml(P.timesObj[1].sigla || '') + '</span></div>' +
+    '<dl class="stats">' + linha('Gols', s.gols) + linha('Chutes', s.chutes) + linha('Passes certos', s.passesOk + '/' + s.passes) + linha('Dribles', s.driblesOk + '/' + s.dribles) + '</dl>' +
+    '<div class="btnRow" style="justify-content:center"><button type="button" class="big" data-int="seguir">' + escHtml(T('Começar o 2º tempo')) + ' ▶</button>' +
+    (pode ? '<button type="button" class="ghost" data-int="salvar">' + escHtml(T('Salvar e sair')) + '</button>' : '') + '</div>' +
+    (pode ? '<p style="text-align:center">' + escHtml(T('Salvando, a partida fica guardada e você continua o 2º tempo depois, no menu da partida livre.')) + '</p>' : '') +
+    '</div></div>';
+  el.hidden = false;
+}
+function esconderTelaIntervalo() { const el = document.getElementById('intervaloTela'); if (el) el.hidden = true; }
 function fimDoIntervalo() {
   if (G.state !== 'intervalo') return;
+  esconderTelaIntervalo();
+  if (G.intSaida && G.intSaida.tunel) mostrarTunel(false);
+  for (const p of players) { if (p.intS) { p.intS = null; if (!p.out) p.mesh.raiz.visible = true; } }
+  G.intSaida = null; G.intTela = false;
   $('banner').className = ''; $('cineLabel').textContent = ''; $('skipBtn').hidden = true;
+  setLetterbox(false);
   G.tempo = 2; G.clock = duracaoTempo(); G.paradas = 0; G.acrescimo = 0; G.acrescimoDado = false; G.fimPendente = false;
   for (const p of players) if (!p.out) { p.folego = Math.min(1, (p.folego ?? 1) + 0.3); p.cansadoT = 0; }
   user.stamina = Math.max(user.stamina || 0, Math.min(user.staminaMax || 1, 0.85)); user.exhausted = false;
@@ -12121,6 +12311,53 @@ function fimDoIntervalo() {
   showToast(T('Começa o 2º tempo'));
   kickoff(1);
   snapCamera();
+}
+// ---- SALVAR NO INTERVALO (7.4.10): o que precisa para recomeçar a MESMA partida no 2º tempo (o resto vem da configuração)
+const CHAVE_VOCE_INT = '__voce';
+const chaveJog = (p) => (p.isUser ? CHAVE_VOCE_INT : p.ficha || p.name);
+function estadoDoIntervalo() {
+  const P = PARTIDA;
+  return {
+    v: 1, placar: G.score.slice(), golsLog: (G.golsLog || []).slice(), stats: Object.assign({}, G.stats),
+    trocas: G.trocas.map((t) => Object.assign({}, t)),
+    jogadores: P.participantes.map((p) => ({ team: p.team, k: chaveJog(p), nome: p.isUser ? 'Você' : p.name, am: !!p.yellow, vm: !!p.red, faltas: p.fouls | 0, folego: p.folego ?? 1, lesao: p.lesao || null })),
+    tat: P.tat ? JSON.parse(JSON.stringify(P.tat)) : null, taticaManual: G.taticaManual || null,
+  };
+}
+function salvarNoIntervalo() {
+  const snap = estadoDoIntervalo();
+  esconderTelaIntervalo();
+  if (G.intSaida && G.intSaida.tunel) mostrarTunel(false);
+  setLetterbox(false); $('skipBtn').hidden = true; $('banner').className = ''; $('cineLabel').textContent = '';
+  G.state = 'end'; G.intSaida = null;
+  try { Som.fimGol(); } catch (e) { /* nada */ }
+  if (typeof Historia !== 'undefined' && Historia.sairSalvando) Historia.sairSalvando(snap);
+}
+// recomeça a partida salva: a partida já foi montada com a mesma configuração (entrar); aqui volta o placar, as trocas, os
+//   cartões, o fôlego e a tática, e o 2º tempo começa com a saída do outro time
+function retomarNoIntervalo(S) {
+  if (!S || S.v !== 1) return;
+  const P = PARTIDA;
+  for (const t of S.trocas || []) {
+    const sai = TEAMS[t.team].find((p) => !p.out && (p.isUser ? 'Você' : p.name) === t.sai);
+    const R = P.reservas[t.team], i = R.findIndex((j) => j.nome === t.entra);
+    if (!sai || i < 0 || !podeTrocar(t.team)) continue;
+    R.unshift(R.splice(i, 1)[0]);
+    executarTrocaDireto({ team: t.team, sai, motivo: t.motivo });
+  }
+  for (const J of S.jogadores || []) {
+    const p = players.find((q) => q.team === J.team && chaveJog(q) === J.k && !q.substituido);
+    if (!p) continue;
+    p.yellow = J.am; p.fouls = J.faltas; p.folego = J.folego; if (J.lesao) p.lesao = J.lesao;
+    if (J.vm && !p.red) { p.out = true; p.red = true; const L = TEAMS[p.team], i = L.indexOf(p); if (i >= 0) L.splice(i, 1); p.mesh.raiz.visible = false; p.x = 999; p.z = 999; }
+  }
+  G.score = S.placar.slice(); G.golsLog = (S.golsLog || []).slice(); Object.assign(G.stats, S.stats || {});
+  if (S.tat && P.tat) P.tat = S.tat;
+  G.taticaManual = S.taticaManual || null;
+  atualizarInfoTatica();
+  G.state = 'intervalo'; G.intSaida = null;
+  fimDoIntervalo();
+  showToast(T('Partida retomada: começa o 2º tempo'));
 }
 // AS TROCAS DOS TÉCNICOS. Além de trocar quem estoura o fôlego (< 38%) ou se machuca (o que quase nunca acontece numa partida
 //   curta), o técnico troca por conta própria: no intervalo cada técnico faz 0 a 2 trocas (quem está pior:
@@ -12564,6 +12801,7 @@ function iniciarCenaPrePenaltis() {
   abrirCena('prePen', 2.35);
   G.fimVencedor = -1;
   showBanner('DECISÃO NOS PÊNALTIS', 0, 2.3);
+  Torcida.prePenaltis();                          // (7.4.10) a casa canta enquanto os times se preparam
   const vivo = (p) => !p.out && !p.red;
   for (const p of players) if (!p.out) limparParaCena(p);
   // o juiz espera no meio-campo, com a bola no chão do lado
@@ -13862,7 +14100,7 @@ function syncMeshes(dt) {
     // passada, o braço no aviãozinho, o corpo no mergulho...), ele sobe o quanto entrou.
     if (m.raiz.visible && G.state !== 'replay') naoEntrarNoChao(m);
     if (p.role === 'GK') medirMaos(p, m);
-    m.etiqueta.visible = G.state !== 'fim' && !G.semNomes && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
+    m.etiqueta.visible = G.state !== 'fim' && G.state !== 'intervalo' && !G.semNomes && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
   ball.mesh.visible = ball.shadow.visible = !ball.hidden;
   bracosSemAtravessar();
@@ -13881,7 +14119,7 @@ function syncMeshes(dt) {
   ball.shadow.position.set(ball.mesh.position.x, 0.02, ball.mesh.position.z);
   ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.mesh.position.y - CONFIG.BALL_R) * 0.12));
   userRing.position.set(user.x, 0.03, user.z);
-  userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
+  userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && G.state !== 'intervalo' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
   aimArrow.visible = !!kk;
   if (kk) { aimArrow.position.set(ball.x, kk.throwIn ? 0.06 : 0.06, ball.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX); }
@@ -14305,6 +14543,8 @@ function resolverPartida(cfg = {}) {
     }
     P.uniformes[casa] = melhor.Uc; P.uniformes[fora] = melhor.Uf;
   }
+  // (7.4.10) cfg.kits = [0|1|null, 0|1|null]: o uniforme escolhido para cada time (0 = o 1, 1 = o 2; null = automático)
+  if (Array.isArray(cfg.kits)) for (const i of [0, 1]) { const n = cfg.kits[i]; if (n === 0 || n === 1) P.uniformes[i] = n ? P.timesObj[i].uniforme2 || P.timesObj[i].uniforme : P.timesObj[i].uniforme; }
   P.formacoes = [0, 1].map((i) => (cfg.formacoes && cfg.formacoes[i]) || P.timesObj[i].formacao || '4-4-2');
   P.taticas = [0, 1].map((i) => (cfg.taticas && cfg.taticas[i]) || P.timesObj[i].tatica || 'tikitaka');
   // (7.1.22) o par com bola / sem bola: cfg.taticasCom / cfg.taticasSem mandam; senão o do time; senão o par da tática antiga
@@ -14873,15 +15113,70 @@ function trocarTatica(team, chave, porQuem) {                          // a tát
 function trocarTaticaFase(team, fase, chave, porQuem, quieto) {
   const L = fase === 'com' ? TATICAS_COM : TATICAS_SEM;
   if (!L[chave] || !PARTIDA || !PARTIDA.tat || PARTIDA.tat[team][fase] === chave) return false;
+  const antes = PARTIDA.tat[team][fase];
   PARTIDA.tat[team][fase] = chave; G.tatMudou = G.tatMudou || [0, 0]; G.tatMudou[team] = G.time;
   const t = tecnicos[team]; if (t) t.gestoT = 2.2;
-  if (!quieto && G.state === 'play' && !G.pulando) {
-    const quem = team === 0 ? (porQuem || (t && t.nome) || T('Técnico')) : T(PARTIDA.timesObj[1].sigla || 'Adversário');
-    showBanner(quem + ': ' + T(fase === 'com' ? 'com a bola' : 'sem a bola') + ' → ' + T(L[chave].nome).toUpperCase(), team, 2.6, true);
-  }
+  // (7.4.10) o aviso agora é o "!" do canto da tela (AvisoTatica) e SÓ do seu time: as mudanças do outro técnico você não vê
+  if (!quieto && !G.pulando && user && team === user.team) AvisoTatica.anotar(fase, L[antes] ? L[antes].nome : '', L[chave].nome, porQuem || (t && t.nome) || T('Técnico'));
   atualizarInfoTatica();
   return true;
 }
+// ---------------------------------------------------------------------
+// (7.4.10) O AVISO DE TÁTICA: quando o técnico do SEU time muda a tática, aparece um "!" pequeno do lado do radar (pulsando,
+//   com quantas mudanças você ainda não viu). Tocando nele abre a listinha: o minuto, com a bola / sem a bola, de qual para qual
+//   e quem mudou. Tocando de novo (ou no X), fecha. As mudanças do técnico adversário não aparecem.
+// ---------------------------------------------------------------------
+const AvisoTatica = (() => {
+  let btn = null, painel = null, lista = [], novas = 0;
+  function montar() {
+    if (btn) return;
+    const st = document.createElement('style');
+    st.textContent = '#tatAviso{pointer-events:auto;position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:calc(86px + env(safe-area-inset-right,0px));width:34px;height:34px;padding:0;' +
+      'background:var(--panel);border:2px solid var(--flood);color:var(--flood);font-family:var(--font-display);font-size:18px;line-height:1}' +
+      '#tatAviso.novo{animation:tatPulsa 0.9s ease-in-out infinite}#tatAviso i{position:absolute;right:-7px;top:-7px;min-width:16px;height:16px;border-radius:8px;background:var(--red);color:#fff;font-size:10px;font-style:normal;line-height:16px;text-align:center;padding:0 3px;box-sizing:border-box}' +
+      '@keyframes tatPulsa{50%{transform:scale(1.18);background:var(--flood);color:#071430}}' +
+      '#tatPainel{pointer-events:auto;position:absolute;top:calc(50px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:min(300px,calc(100vw - 24px));max-height:46vh;overflow-y:auto;' +
+      'background:var(--panel-solid);border:2px solid var(--flood);padding:8px 10px;font-size:12px;box-sizing:border-box}' +
+      '#tatPainel h4{margin:0 0 6px;font-family:var(--font-display);font-size:11px;color:var(--flood);display:flex;justify-content:space-between;align-items:center}' +
+      '#tatPainel h4 button{background:none;border:0;color:var(--chalk);font-size:14px;padding:0 2px}#tatPainel ul{list-style:none;margin:0;padding:0}' +
+      '#tatPainel li{border-left:3px solid var(--line);padding:3px 0 3px 7px;margin-bottom:5px;line-height:1.35}#tatPainel li b{color:var(--good);font-weight:700}#tatPainel li small{color:var(--muted)}' +
+      '@media (max-height:500px){#tatAviso{top:calc(6px + env(safe-area-inset-top,0px));right:calc(64px + env(safe-area-inset-right,0px));width:30px;height:30px;font-size:15px}#tatPainel{top:calc(42px + env(safe-area-inset-top,0px))}}';
+    document.head.appendChild(st);
+    const hud = document.getElementById('hud') || document.body;
+    btn = document.createElement('button'); btn.type = 'button'; btn.id = 'tatAviso'; btn.hidden = true; btn.setAttribute('aria-label', T('Mudanças de tática do seu técnico'));
+    painel = document.createElement('div'); painel.id = 'tatPainel'; painel.hidden = true;
+    hud.appendChild(btn); hud.appendChild(painel);
+    const parar = (e) => { e.stopPropagation(); };
+    for (const el of [btn, painel]) { el.addEventListener('pointerdown', parar); el.addEventListener('touchstart', parar, { passive: true }); }
+    btn.addEventListener('click', (e) => { e.stopPropagation(); alternar(); });
+    painel.addEventListener('click', (e) => { e.stopPropagation(); if (e.target.closest('[data-fechar]')) alternar(false); });
+  }
+  function desenhar() {
+    if (!btn) return;
+    btn.innerHTML = '!' + (novas ? '<i>' + novas + '</i>' : '');
+    btn.classList.toggle('novo', novas > 0);
+    btn.hidden = !lista.length;
+    painel.innerHTML = '<h4><span>' + escHtml(T('Táticas do seu time')) + '</span><button type="button" data-fechar aria-label="' + escHtml(T('Fechar')) + '">✕</button></h4><ul>' +
+      lista.slice().reverse().map((x) => '<li><small>' + x.min + '\' · ' + escHtml(T(x.fase === 'com' ? 'Com a bola' : 'Sem a bola')) + '</small><br>' + (x.de ? escHtml(T(x.de)) + ' → ' : '') + '<b>' + escHtml(T(x.para)) + '</b><br><small>' + escHtml(x.quem) + '</small></li>').join('') + '</ul>';
+  }
+  function alternar(on) {
+    if (!painel) return;
+    painel.hidden = on == null ? !painel.hidden : !on;
+    if (!painel.hidden) { novas = 0; desenhar(); }
+  }
+  return {
+    anotar(fase, de, para, quem) {
+      montar();
+      const min = Math.max(1, Math.round((typeof decorridoPartida === 'function' ? decorridoPartida() : 0) * 90));
+      lista.push({ fase, de, para, quem, min }); if (lista.length > 12) lista.shift();
+      if (painel.hidden) novas++;
+      desenhar();
+    },
+    limpar() { lista = []; novas = 0; if (painel) painel.hidden = true; desenhar(); },
+    _lista: () => lista,
+  };
+})();
+const escHtml = (t) => String(t == null ? '' : t).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 // IA DOS TÉCNICOS (7.1.22): a cada 15 s de jogo cada técnico olha o placar, o relógio, o cansaço do time, a força dos dois e o
 //   que o outro está fazendo, e escolhe a tática COM a bola e a SEM a bola. Parte sempre da identidade do time (tatPref):
 //     perdendo, 2º tempo ......... vai para cima: pressão alta; com a bola ataca o ponto fraco da defesa do outro
@@ -16525,6 +16820,15 @@ const Idioma = {
   'VOCÊ SAIU': ['YOU WENT OFF', 'SALISTE', 'SEI USCITO', 'TU ES SORTI'],
   'PÊNALTIS': ['PENALTIES', 'PENALES', 'RIGORI', 'TIRS AU BUT'],
   'DECISÃO NOS PÊNALTIS': ['DECIDED ON PENALTIES', 'DEFINICIÓN POR PENALES', 'SI DECIDE AI RIGORI', 'SÉANCE DE TIRS AU BUT'],
+  // (7.4.10) o aviso de tática, o intervalo com salvar
+  'Mudanças de tática do seu técnico': ["Your coach's tactical changes", 'Cambios tácticos de tu entrenador', 'Cambi tattici del tuo allenatore', 'Changements tactiques de ton entraîneur'],
+  'Táticas do seu time': ["Your team's tactics", 'Tácticas de tu equipo', 'Tattiche della tua squadra', 'Tactiques de ton équipe'],
+  'Fechar': ['Close', 'Cerrar', 'Chiudi', 'Fermer'], 'Com a bola': ['With the ball', 'Con el balón', 'Con la palla', 'Avec le ballon'], 'Sem a bola': ['Without the ball', 'Sin el balón', 'Senza palla', 'Sans le ballon'],
+  'Fim do 1º tempo': ['End of the 1st half', 'Fin del 1.er tiempo', 'Fine del 1º tempo', 'Fin de la 1re mi-temps'],
+  'Começar o 2º tempo': ['Start the 2nd half', 'Empezar el 2.º tiempo', 'Inizia il 2º tempo', 'Commencer la 2e mi-temps'],
+  'Salvar e sair': ['Save and quit', 'Guardar y salir', 'Salva ed esci', 'Sauvegarder et quitter'],
+  'Salvando, a partida fica guardada e você continua o 2º tempo depois, no menu da partida livre.': ['If you save, the match is kept and you can play the 2nd half later, from the quick match menu.', 'Si guardas, el partido queda guardado y juegas el 2.º tiempo después, en el menú del partido libre.', 'Salvando, la partita resta salvata e giochi il 2º tempo più tardi, dal menu della partita libera.', 'En sauvegardant, le match est gardé et tu joues la 2e mi-temps plus tard, depuis le menu du match libre.'],
+  'Partida retomada: começa o 2º tempo': ['Match resumed: the 2nd half begins', 'Partido retomado: empieza el 2.º tiempo', 'Partita ripresa: inizia il 2º tempo', 'Match repris : la 2e mi-temps commence'],
   '{0} VENCE NOS PÊNALTIS': ['{0} WIN ON PENALTIES', '{0} GANA EN LOS PENALES', '{0} VINCE AI RIGORI', '{0} GAGNE AUX TIRS AU BUT'],
   'IMPEDIMENTO': ['OFFSIDE', 'FUERA DE JUEGO', 'FUORIGIOCO', 'HORS-JEU'],
   'ATENDIMENTO': ['TREATMENT', 'ATENCIÓN MÉDICA', 'ASSISTENZA', 'SOINS'],
@@ -18550,6 +18854,7 @@ const Historia = (() => {
     montarUI();
     modo = 'jogo';
     pendente = null;                        // partida nova (ou refeita): começa sem nada pendente
+    G.podeSalvarIntervalo = !!(op && op.podeSalvar);   // (7.4.10) a tela do intervalo mostra "Salvar e sair"
     const r = await new Promise((res) => {
       fimResolve = res;
       // op.cfg: outra partida da história (ex.: o racha do sintético na cidade.js) com a configuração completa
@@ -18557,11 +18862,17 @@ const Historia = (() => {
       const outra = !!(op && op.cfg);
       partidaEscola = !outra;
       entrar(outra ? op.cfg : cfg(false)); bolaDoJoao(!outra); Espectros.aplicarNaPartida();   // espectros e condições (ex.: refeição pesada) valem nesta partida
+      if (op && op.retomar) retomarNoIntervalo(op.retomar);                                       // (7.4.10) a partida salva no intervalo: começa no 2º tempo
       if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // a tela só clareia com a quadra pronta
       setTimeout(() => showToast(outra ? (op.aviso || '') : T('Racha da escola: 4 contra 4!')), 900);
     });
-    modo = null; sair();
+    modo = null; sair(); G.podeSalvarIntervalo = false;
     return r;
+  }
+  // (7.4.10) "Salvar e sair" no intervalo: a partida acaba aqui e quem chamou recebe { salvo: estado } (para retomar depois)
+  function sairSalvando(estado) {
+    pendente = null;
+    if (fimResolve) { const r = fimResolve; fimResolve = null; r({ salvo: estado }); }
   }
   function fimDaPartida() {
     const s = G.stats, gols = s.gols, nota = Number(matchRating());
@@ -18658,7 +18969,7 @@ const Historia = (() => {
   function golNoTreino() {
     G.treinoGol = 1.4; G.possession = null; hideKickUI(); showBanner('GOL!', 0, 1.4);
   }
-  return { emTreino, golNoTreino, treino, partida, desafio, emPartida, emJogo, ovoPode, ovoBola, ovoFim, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
+  return { emTreino, golNoTreino, treino, partida, desafio, emPartida, emJogo, ovoPode, ovoBola, ovoFim, atualizar, fimDaPartida, abortar, guardarPendente, confirmarResultado, descartarResultado, sairSalvando, _pendente: () => pendente, _estado: () => ({ modo, TT }) };
 })();
 
 // ---------------------------------------------------------------------
