@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.4';
+const VERSAO_JOGO = '7.4.5';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -708,6 +708,16 @@ const Atributos = (() => {
   const COPIA = { forca: 'chute', recuperacao: 'resistencia', cruzamento: 'passe', finalizacao: 'chute' };
   const tudo = (n) => { const o = {}; for (const k of NOMES) o[k] = n; return o; };
   let atual = tudo(7);
+  // (7.4.5) as habilidades de cada posição (as que começam mais altas no iniciante da história)
+  const HAB_DA_POSICAO = {
+    FWD: ['chute', 'finalizacao', 'velocidade', 'resistencia', 'efeito', 'drible', 'dominio'],
+    MID: ['passe', 'cruzamento', 'resistencia', 'efeito', 'dominio', 'drible', 'recuperacao'],
+    DEF: ['defesa', 'desarme', 'cabeceio', 'cruzamento', 'passe', 'forca', 'resistencia'],
+    GK: ['goleiro', 'dominio', 'passe', 'forca', 'defesa', 'recuperacao'],
+  };
+  // (7.4.5) PISO DA HISTÓRIA: abaixo de 5 cada ponto pesa a METADE no jeito de jogar (3 joga como 4; 4 como 4,5). Os números do
+  //   personagem continuam os de verdade (30, 40...): é só para o começo ficar fraco, mas jogável (correr, chutar e passar).
+  const pisoHist = (n) => (n >= 5 ? n : 5 - (5 - n) * 0.5);
   // (6.2.0) CURVA DA HISTÓRIA para FORÇA, VELOCIDADE e RESISTÊNCIA (as três que a academia treina, de 5 a 10). O personagem da
   //   história (marcado por _corridaSeg, o fôlego do iniciante) começa em 5 e cada ponto a mais rende MENOS que o anterior:
   //   ganho(n) = 1 − (1 − k)^1,5, com k = (n − 5) / 5. O 5 é exatamente o jogo de antes (nada piora); no 10:
@@ -727,6 +737,7 @@ const Atributos = (() => {
     atual = Object.assign(tudo(7), a); entrada = Object.assign({}, atual);   // entrada: os números como vieram (antes da curva)
     const hist = a._corridaSeg > 0;                                       // (6.2.0) personagem da história: curva de 5 a 10
     posseK = hist ? 1 + 0.35 * ganhoHist(a.forca) : 1;
+    if (hist) for (const n of NOMES) atual[n] = pisoHist(+atual[n] || 5);
     if (hist) for (const n of ['velocidade', 'forca']) atual[n] = efetivoHist(atual[n]);
     const vel = razao('velocidade'), res = razao('resistencia'), dri = razao('drible');
     CONFIG.USER_WALK = BASE.USER_WALK * vel; CONFIG.USER_RUN = BASE.USER_RUN * vel;
@@ -741,7 +752,18 @@ const Atributos = (() => {
   }
   return {
     NOMES, aplicar,
-    padrao: () => tudo(7), iniciante: () => Object.assign(tudo(5), { _corridaSeg: 5, _recuperaCada: 1.5 }),   // iniciante: TUDO 5; o fôlego curto do iniciante continua
+    padrao: () => tudo(7),
+    // (7.4.5) o INICIANTE da história: tudo 3 (30 na régua de 0 a 100, a mesma dos times: várzea 30–60, Série B 50–70, Série A 65–85)
+    //   e as habilidades da posição escolhida no começo do modo história sorteadas entre 4,0 e 5,0 (40 a 50). Sem posição (o treino
+    //   do tutorial, antes da escolha): tudo 5, como antes. O fôlego curto do iniciante continua.
+    iniciante: (pos) => {
+      const ini = { _corridaSeg: 5, _recuperaCada: 1.5 };
+      if (!HAB_DA_POSICAO[pos]) return Object.assign(tudo(5), ini);
+      const o = Object.assign(tudo(3), ini, { _ini: pos });
+      for (const n of HAB_DA_POSICAO[pos]) o[n] = Math.round((4 + Math.random()) * 10) / 10;
+      return o;
+    },
+    HAB_DA_POSICAO: () => HAB_DA_POSICAO,
     valor: (nome) => atual[nome],
     fator: (nome) => razao(nome),
     posse: () => posseK,                                                  // (6.2.0) divide a chance do bote do adversário em você (força)
@@ -846,7 +868,9 @@ scene.add(sun);
 const raizJogo = $('raizJogo');
 const AREA = { topo: 0, w: window.innerWidth, h: window.innerHeight, visivel: null };
 function ajustarArea() {
-  const hPagina = window.innerHeight, v = AREA.visivel;
+  const vvp = window.visualViewport, topoSo = window.top === window.self;
+  // (7.4.5) aberto direto no Safari: a altura de verdade é a do visualViewport (a da janela pode contar a parte sob as barras)
+  const hPagina = topoSo && vvp && Math.abs(vvp.scale - 1) < 0.01 && vvp.height > 100 ? Math.min(window.innerHeight, Math.round(vvp.height)) : window.innerHeight, v = AREA.visivel;
   const cheio = document.fullscreenElement || document.webkitFullscreenElement;
   let topo = 0, altura = hPagina;
   if (v && !cheio && v.altura >= 120 && v.altura < hPagina - 2) { topo = Math.max(0, Math.round(v.topo)); altura = Math.round(v.altura); }
@@ -861,19 +885,44 @@ function ajustarArea() {
 }
 (function () {
   const sentinela = document.createElement('div');
-  sentinela.style.cssText = 'position:absolute;top:0;left:0;width:1px;height:100%;pointer-events:none;visibility:hidden';
+  sentinela.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;visibility:hidden';
   document.body.appendChild(sentinela);
   if (window.IntersectionObserver) {
     const limiares = [];
     for (let i = 0; i <= 50; i++) limiares.push(i / 50);
     new IntersectionObserver((entradas) => {
-      const r = entradas[entradas.length - 1].intersectionRect;
-      AREA.visivel = { topo: r.top, altura: r.height };
+      // (7.4.5) o Safari do iPhone/iPad pode dar os retângulos noutra escala (a do site de fora, quando o Canva encolhe o iframe):
+      //   a conta é feita em relação ao retângulo do próprio sentinela, que tem o tamanho da página. Assim a parte visível sai
+      //   certa nos dois casos (antes, no Safari, o jogo podia ser encaixado numa faixa menor que a tela).
+      const E = entradas[entradas.length - 1], r = E.intersectionRect, b = E.boundingClientRect;
+      const k = b && b.height > 0 ? window.innerHeight / b.height : 1;
+      AREA.visivel = k > 0.2 && k < 5 ? { topo: (r.top - b.top) * k, altura: r.height * k } : { topo: r.top, altura: r.height };
       ajustarArea();
     }, { threshold: limiares }).observe(sentinela);
   }
   window.addEventListener('resize', ajustarArea);
   document.addEventListener('fullscreenchange', ajustarArea);
+  // (7.4.5) Safari (iOS): as barras do navegador entram e saem sem disparar o resize da janela; o visualViewport avisa.
+  //   Depois do teclado (o nome no criador) o iOS 26 pode deixar a área desencontrada: confere de novo quando o teclado fecha.
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', ajustarArea);
+  window.addEventListener('orientationchange', () => { setTimeout(ajustarArea, 120); setTimeout(ajustarArea, 500); });
+  document.addEventListener('focusout', () => { setTimeout(ajustarArea, 80); setTimeout(ajustarArea, 400); });
+})();
+// (7.4.5) ZOOM DO SAFARI: o iPhone dá zoom sozinho ao tocar num campo de texto com letra menor que 16 px (o nome no criador
+//   de personagem tinha 15) e o zoom NÃO volta: daí em diante o jogo inteiro ficava maior que a tela, em todos os modos. Agora os
+//   campos têm 16 px; e, aberto direto (fora do Canva), a página não aceita zoom (maximum-scale=1) e, se ficou com zoom, volta.
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '@supports (-webkit-touch-callout: none) { input, textarea, select { font-size: max(16px, 1em) !important; } }';
+  document.head.appendChild(st);
+  if (window.top !== window.self) return;              // dentro do iframe do Canva a meta de fora é que manda
+  let meta = document.querySelector('meta[name=viewport]');
+  if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
+  const BASE = 'width=device-width, initial-scale=1, viewport-fit=cover';
+  meta.setAttribute('content', BASE + ', maximum-scale=1');
+  const desfazZoom = () => { if (window.visualViewport && window.visualViewport.scale > 1.01) { meta.setAttribute('content', BASE + ', minimum-scale=1, maximum-scale=1'); setTimeout(() => meta.setAttribute('content', BASE + ', maximum-scale=1'), 300); } };
+  document.addEventListener('focusout', () => setTimeout(desfazZoom, 150));
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(desfazZoom, 200));
 })();
 
 // ---------------------------------------------------------------------
@@ -11814,6 +11863,7 @@ $('againBtn').addEventListener('click', resetMatch);
     painel.innerHTML = 'versão ' + VERSAO_JOGO + ' · ' + (window.__FUTEBOL_ORIGEM || 'direto') +
       '<br>janela (iframe): ' + innerWidth + ' × ' + innerHeight +
       '<br>área visível usada: ' + AREA.w + ' × ' + AREA.h + ' (topo ' + AREA.topo + ')' +
+      '<br>sentinela (parte visível): ' + (AREA.visivel ? Math.round(AREA.visivel.topo) + ' / ' + Math.round(AREA.visivel.altura) : '-') +
       '<br>tela do aparelho: ' + screen.width + ' × ' + screen.height + ' · dpr ' + devicePixelRatio +
       '<br>visualViewport: ' + (vv ? Math.round(vv.width) + ' × ' + Math.round(vv.height) + ' · zoom ' + vv.scale.toFixed(2) : '-') +
       '<br>dentro de iframe: ' + (window.top !== window.self ? 'sim' : 'não') +
@@ -16855,7 +16905,7 @@ const Historia = (() => {
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'TB' }, tecnico: tec, elenco: [HIST.tadeu, HIST.duda, HIST.nando, HIST.leo] };
     return { campo: 'futsalEscola', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: treino ? 'Treino' : 'Racha da escola', rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima: 'seco', gramado: 'baixo', horario: 'dia', duracao: treino ? 600 : DURACOES.rapida, usuario: eu, criancas: HIST.crianca, arbitro: HIST.professor,   // quem apita é o Professor Roberto: o juiz usa o modelo dele
-       atributos: Atributos.iniciante(), taticas: [null, null], formacoes: [null, null] };
+       atributos: PERSONAGEM.atributos && PERSONAGEM.atributos._ini ? PERSONAGEM.atributos : Atributos.iniciante(PERSONAGEM.posicaoHist), taticas: [null, null], formacoes: [null, null] };   // (7.4.5) com a posição escolhida: o iniciante dela
   }
   function entrar(c) {
     document.body.classList.remove('criadorAberto');
@@ -17462,7 +17512,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
 #criador .crDica { margin: 0; font: 600 11px/1.25 var(--font-body); color: #dcc08c; }
 #criador input[type=text], #criador input[type=number] { --p: var(--p2, 2px); appearance: none; -webkit-appearance: none; -moz-appearance: textfield; box-sizing: border-box; width: 100%; height: calc(var(--p) * 13); margin: 0; padding: 0 4px;
   border: solid transparent; border-width: calc(var(--p) * 4); border-image: var(--sp-slot) 4 fill / calc(var(--p) * 4) stretch; image-rendering: pixelated; background: none; color: var(--mx-ink);
-  font: 700 15px/1 var(--font-body); outline: none; -webkit-user-select: text; user-select: text; touch-action: manipulation; border-radius: 0; }
+  font: 700 16px/1 var(--font-body); outline: none; -webkit-user-select: text; user-select: text; touch-action: manipulation; border-radius: 0; }
 #criador input:focus { border-image-source: var(--sp-creme); }
 #criador input::placeholder { color: #9a7a4a; font-weight: 600; }
 #criador .crNum { display: grid; grid-template-columns: 44px 1fr 44px; gap: 6px; align-items: center; max-width: 220px; }

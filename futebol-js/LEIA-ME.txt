@@ -35,7 +35,9 @@ ARQUIVOS
                           (baixado pela cidade; o quarto usa a carta e o app Carreira usa a tabela). Popularidade dos times:
                           serieb.criar(api).popularidade.somar(time, pontos, motivo) — de 15 a 100, 5 faixas de torcida
                           (7.4.4) Habilidade dos times (0 a 100): várzea 30–60, times pequenos do interior 46–53, Série B 50–70,
-                          Série A 65–85 (Europa, quando vier: 85–100). As estrelas são relativas ao campeonato de cada um
+                          Série A 65–85 (Europa, quando vier: 85–100). As estrelas são relativas ao campeonato de cada um.
+                          (7.4.5) O personagem da história começa com tudo 30 e as habilidades da posição escolhida (atacante,
+                          meia ou zagueiro) sorteadas entre 40 e 50
   festa.js .............. as festas de título e a noite dos prêmios: a comemoração no gramado (roda, joelhos, aviãozinho,
                           a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
                           copas, Copa do Brasil, Série B e Série A), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno

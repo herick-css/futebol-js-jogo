@@ -1095,6 +1095,7 @@ const Fase1 = (() => {
     await fala('joao', T('Antes de começar: em qual posição você quer jogar?'), 'dupla');
     const posR = await escolher(T('Em qual posição você quer jogar?'), [Tg('Zagueiro: defender o nosso gol'), T('Meia: armar o jogo'), T('Atacante: fazer gols')]);
     PERSONAGEM.posicaoHist = ['DEF', 'MID', 'FWD'][posR] || 'FWD';
+    PERSONAGEM.atributos = Atributos.iniciante(PERSONAGEM.posicaoHist);   // (7.4.5) tudo 30 e as habilidades da posição entre 40 e 50 (sorteadas)
     Dialogo.esconder();
     await mariposa();
     await fala('joao', [T('Boa! Você fica lá atrás, protegendo o nosso gol.'), T('Boa! Você fica no meio, distribuindo o jogo.'), T('Boa! Você fica lá na frente, atrás do gol deles.')][posR] || '', 'dupla');
@@ -1131,7 +1132,7 @@ const Fase1 = (() => {
     S.falantes = {}; S.parA = J; S.parB = Jo; S.bolaDono = Jo; S.modo = 'cena';
     const traco = r.bom ? 'talento' : 'forca';
     S.traco = traco;
-    PERSONAGEM.atributos = Atributos.iniciante();
+    if (!(PERSONAGEM.atributos && PERSONAGEM.atributos._ini === PERSONAGEM.posicaoHist)) PERSONAGEM.atributos = Atributos.iniciante(PERSONAGEM.posicaoHist);   // (7.4.5) as da escolha da posição
     salvarHistoria();
     camPara('dupla', true);
     await preto(false, 1000);

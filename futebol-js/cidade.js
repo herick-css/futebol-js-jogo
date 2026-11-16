@@ -2616,8 +2616,11 @@
   const AP_CAIO = { pele: '#a8693f', cabelo: '#1c140f', estilo: 2, rosto: 0, labio: 3, barba: 1, corBarba: '#1c140f' };
   function atributosJogador() {
     const d = S.dados;
-    if (!d.atributos) d.atributos = Object.assign({}, (PERSONAGEM.atributos && Object.keys(PERSONAGEM.atributos).length ? PERSONAGEM.atributos : Atributos.iniciante()));
-    for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number' || d.atributos[n] < 5) d.atributos[n] = Math.max(5, d.atributos[n] || 5);   // começa com tudo 5
+    if (!d.atributos) d.atributos = Object.assign({}, (PERSONAGEM.atributos && Object.keys(PERSONAGEM.atributos).length ? PERSONAGEM.atributos : Atributos.iniciante(PERSONAGEM.posicaoHist)));
+    // (7.4.5) o começo agora é 30 (e 40–50 nas habilidades da posição): nada é empurrado para 5. O PISO de cada habilidade (o destreino
+    //   nunca leva abaixo dele) é o número do começo; nos saves de antes (tudo 5) o piso continua 5.
+    for (const n of Atributos.NOMES) if (typeof d.atributos[n] !== 'number') d.atributos[n] = d.atributos._ini ? 3 : 5;
+    if (!d.atribPiso) { d.atribPiso = {}; for (const n of Atributos.NOMES) d.atribPiso[n] = Math.min(5, d.atributos[n]); }
     return d.atributos;
   }
   // o jogador na partida da cidade tem 16 anos, como na cidade e na Fase 2: sem barba (antes vinha a aparência do criador, com a barba)
@@ -4999,8 +5002,9 @@
       else { d.diasSemComer = (d.diasSemComer | 0) + 1; try { Espectros.mover('saudavel', -4, 'dia sem comer'); } catch (e) { /* ok */ } }
       if (d.ativoDia !== fim) try { Espectros.mover('ativo', -3, 'dia parado'); } catch (e) { /* ok */ }
       if (at) {
-        if (fim - (d.ultFisico != null ? d.ultFisico : fim) >= 7) for (const n of FISICAS) at[n] = Math.max(5, r2((+at[n] || 5) - 0.05));
-        if (fim - (d.ultTecnico != null ? d.ultTecnico : fim) >= 10) for (const n of TECNICAS) at[n] = Math.max(5, r2((+at[n] || 5) - 0.05));
+        const piso = (n) => (d.atribPiso && d.atribPiso[n] != null ? d.atribPiso[n] : 5);   // (7.4.5) nunca abaixo do começo
+        if (fim - (d.ultFisico != null ? d.ultFisico : fim) >= 7) for (const n of FISICAS) at[n] = Math.max(Math.min(piso(n), +at[n] || 5), r2((+at[n] || 5) - 0.05));
+        if (fim - (d.ultTecnico != null ? d.ultTecnico : fim) >= 10) for (const n of TECNICAS) at[n] = Math.max(Math.min(piso(n), +at[n] || 5), r2((+at[n] || 5) - 0.05));
       }
       d.diaProc++;
     }
