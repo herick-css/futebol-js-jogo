@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.11';
+const VERSAO_JOGO = '7.4.12';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -3659,8 +3659,8 @@ const _somM = new THREE.Matrix4(), _somI = new THREE.Matrix4(), _somQ = new THRE
 function ajustarSombras() {
   for (const A of ATLETAS) {
     const r = A.raiz, s = A.sombra;
-    if (!r.parent || !r.visible || !s.visible) continue;
-    r.updateMatrixWorld(true);
+    if (A.fundido || !r.parent || !r.visible || !s.visible) continue;    // a sombra do boneco fundido é a instanciada (atualizarSombrasFundidas)
+    r.updateWorldMatrix(true, false);                                  // só a matriz da raiz (o corpo inteiro a renderização atualiza)
     const h = Math.max(0, r.position.y), k = clamp(1 - h * 0.35, 0.55, 1);
     _somP.set(0, 0.9, 0).applyMatrix4(r.matrixWorld); _somP.y = 0.02;   // embaixo do quadril (deitado/mergulhando: embaixo do corpo)
     _somS.set(k, k, k);
@@ -12081,6 +12081,23 @@ function resetMatch() {
   user.stamina = 1; user.exhausted = false; user.dribbleCd = 0;
   kickoff(0);
   snapCamera();
+  preaquecerCena();
+}
+// PRÉ-AQUECIMENTO: um quadro desenhado com TUDO da cena (sem cortar o que está fora da câmera), já com os bonecos fundidos:
+//   todas as texturas, geometrias e shaders vão para a placa de vídeo agora, no carregamento. Sem isso, cada coisa que aparece
+//   pela primeira vez no meio do jogo (o banco, o outro lado do estádio, uma tatuagem de perto) trava um quadro ao subir.
+function preaquecerCena() {
+  try {
+    for (const A of ATLETAS) if (A.fundir && naCenaVisivel(A.raiz)) fundirAtleta(A);
+    const soltos = [], detalhes = [];
+    scene.traverse((o) => { if ((o.isMesh || o.isSprite || o.isPoints) && o.frustumCulled) { o.frustumCulled = false; soltos.push(o); } });
+    for (const A of ATLETAS) if (A.detalhes) for (const o of A.detalhes) if (o.layers.mask !== 1) { o.layers.set(0); detalhes.push(o); }
+    renderer.compile(scene, camera);
+    renderer.render(scene, camera);
+    for (const o of soltos) o.frustumCulled = true;
+    for (const o of detalhes) o.layers.set(CAMADA_OCULTA);
+    for (const A of ATLETAS) A.detalhesPerto = undefined;
+  } catch (e) { console.warn('[pré-aquecimento]', e); }
 }
 
 // ---------------------------------------------------------------------
@@ -13447,12 +13464,26 @@ function lerPose(m) {
     jE: m.joelhosLigados ? m.pernaE.joelho.rotation.z : 0, jD: m.joelhosLigados ? m.pernaD.joelho.rotation.z : 0,
     aE: m.bracoE.rotation.z, xE: m.bracoE.rotation.x, aD: m.bracoD.rotation.z, xD: m.bracoD.rotation.x, cab: m.cabecaLigada ? m.cabeca.rotation.z : 0 };
 }
-// Ponto mais baixo do boneco (só as peças visíveis), em metros.
+// Ponto mais baixo do boneco (só as peças visíveis), em metros. Usa só os cantos distintos de cada peça (as caixas repetem cada
+//   canto em 3 faces: a conta cai para um terço) e eles ficam guardados por geometria.
+const _cantosDaGeo = new WeakMap();
+function cantosDe(geo) {
+  let c = _cantosDaGeo.get(geo);
+  if (!c) {
+    const a = geo.attributes.position, vistos = new Set(), lista = [];
+    for (let i = 0; i < a.count; i++) {
+      const x = a.getX(i), y = a.getY(i), z = a.getZ(i), k = Math.round(x * 1e4) + ',' + Math.round(y * 1e4) + ',' + Math.round(z * 1e4);
+      if (!vistos.has(k)) { vistos.add(k); lista.push(x, y, z); }
+    }
+    c = new Float32Array(lista); _cantosDaGeo.set(geo, c);
+  }
+  return c;
+}
 function pisoDoBoneco(o, min) {
   if (!o.visible || o.isSprite || o.geometry === SHADOW_GEO || o.name === 'atletaFundido') return min;
   if (o.isMesh) {
-    const a = o.geometry.attributes.position, e = o.matrixWorld.elements;
-    for (let i = 0; i < a.count; i++) { const y = e[1] * a.getX(i) + e[5] * a.getY(i) + e[9] * a.getZ(i) + e[13]; if (y < min) min = y; }
+    const c = cantosDe(o.geometry), e = o.matrixWorld.elements, e1 = e[1], e5 = e[5], e9 = e[9], e13 = e[13];
+    for (let i = 0; i < c.length; i += 3) { const y = e1 * c[i] + e5 * c[i + 1] + e9 * c[i + 2] + e13; if (y < min) min = y; }
   }
   for (const c of o.children) min = pisoDoBoneco(c, min);
   return min;
@@ -14014,7 +14045,14 @@ function syncMeshes(dt) {
     if (G.state === 'fim' && p.fim && p.fim.pose && !p.out) aplicarPoseCena(p, m);   // (7.4.9) as cenas dos pênaltis (água, aquecimento, roda...)
     // NADA ABAIXO DO GRAMADO: depois de todas as poses, se alguma parte do boneco entrou no chão (a ponta do pé na
     // passada, o braço no aviãozinho, o corpo no mergulho...), ele sobe o quanto entrou.
-    if (m.raiz.visible && G.state !== 'replay') naoEntrarNoChao(m);
+    // A conta é pesada (o boneco inteiro): para quem só anda/corre ela é feita a cada 3 quadros (a correção do último cálculo vale
+    //   nos outros dois); quem cai, pula, chuta, comemora, se joga, levanta... e você: todo quadro.
+    if (m.raiz.visible && G.state !== 'replay') {
+      const pose = p.isUser || p.role === 'GK' || p.fall > 0 || p.falling || p.slidePose > 0 || p.diveT > 0 || p.jumpT > 0 || p.kickT > 0 || p.celeb || p.lamento || p.levanta || p.recvPose || p.impacto || p.perda || p.driblePose || p.bloqueio || p.scripted || G.state !== 'play';
+      p._chaoN = ((p._chaoN ?? Math.floor(Math.random() * 3)) + 1) % 3;
+      if (pose || p._chaoN === 0) { const y0 = m.raiz.position.y; naoEntrarNoChao(m); p._chao = m.raiz.position.y - y0; }
+      else if (p._chao > 0) m.raiz.position.y += p._chao;
+    }
     if (p.role === 'GK') medirMaos(p, m);
     m.etiqueta.visible = G.state !== 'fim' && G.state !== 'intervalo' && !G.semNomes && (p.isUser || dist2D(p, user) < CONFIG.LABEL_RANGE);   // na cena final, sem nomes
   }
@@ -14328,7 +14366,7 @@ function iniciarReplayImpedimento(reg, depois) {
   iniciarReplay({ tipo: 'imped', quadros: trechoReplay(reg.t - 2, reg.t + 0.01), reg, depois });
 }
 
-let last = performance.now(), radarT = 0, fpsT = 0, fpsN = 0;
+let last = performance.now(), radarT = 0, fpsT = 0, fpsN = 0, fpsCpu = 0, fpsPior = 0;
 let GANCHO_RENDER = null;
 // PAUSA GLOBAL: "gire o celular" (em pé) e segundo plano param o jogo inteiro (partida, fases, cidade), o som e as esperas das cenas
 const PausaGlobal = (() => {
@@ -14357,6 +14395,7 @@ const PausaGlobal = (() => {
 function frame(now) {
   requestAnimationFrame(frame);
   if (PausaGlobal.ativa) { last = now; return; }             // celular em pé ou app em segundo plano: tudo parado
+  const tCpu0 = performance.now(), quadroMs = now - last;
   const rdt = Math.min(0.05, (now - last) / 1000);
   last = now;
   let dt = 0;
@@ -14394,10 +14433,12 @@ function frame(now) {
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
   updateHUD();
-  fpsT += rdt; fpsN++;
+  // o painel de FPS (ajustes): quadros por segundo, desenhos, triângulos, o tempo do processador por quadro (o jogo + mandar
+  //   desenhar) e o PIOR quadro do meio segundo (os trancos aparecem aqui, mesmo com a média boa)
+  fpsT += rdt; fpsN++; fpsCpu += performance.now() - tCpu0; if (quadroMs > fpsPior && quadroMs < 1000) fpsPior = quadroMs;
   if (fpsT >= 0.5) {
-    if (!$('fps').hidden) $('fps').textContent = Math.round(fpsN / fpsT) + ' FPS · ' + renderer.info.render.calls + ' desenhos';
-    fpsT = 0; fpsN = 0;
+    if (!$('fps').hidden) $('fps').textContent = Math.round(fpsN / fpsT) + ' FPS · ' + renderer.info.render.calls + ' ' + T('desenhos') + ' · ' + Math.round(renderer.info.render.triangles / 1000) + Tf('k triângulos · CPU {0} ms · pior quadro {1} ms', (fpsCpu / fpsN).toFixed(1), Math.round(fpsPior));
+    fpsT = 0; fpsN = 0; fpsCpu = 0; fpsPior = 0;
   }
 }
 
@@ -16712,6 +16753,8 @@ const Idioma = {
   'desligada': ['off', 'desactivada', 'disattivata', 'désactivé'],
   'FIM DE JOGO': ['FULL TIME', 'FIN DEL PARTIDO', 'FINE PARTITA', 'FIN DU MATCH'],
   'INTERVALO': ['HALF TIME', 'DESCANSO', 'INTERVALLO', 'MI-TEMPS'],
+  'desenhos': ['draws', 'dibujos', 'disegni', 'dessins'],
+  'k triângulos · CPU {0} ms · pior quadro {1} ms': ['k triangles · CPU {0} ms · worst frame {1} ms', 'k triángulos · CPU {0} ms · peor cuadro {1} ms', 'k triangoli · CPU {0} ms · frame peggiore {1} ms', 'k triangles · CPU {0} ms · pire image {1} ms'],
   '1T': ['1H', '1T', '1T', '1MT'],
   '2T': ['2H', '2T', '2T', '2MT'],
   'Fim do 1º tempo · {0} {1} x {2} {3}': ['End of the first half · {0} {1} x {2} {3}', 'Fin del primer tiempo · {0} {1} x {2} {3}', 'Fine del primo tempo · {0} {1} x {2} {3}', 'Fin de la première mi-temps · {0} {1} x {2} {3}'],
@@ -18837,7 +18880,11 @@ const Historia = (() => {
       partidaEscola = !outra;
       entrar(outra ? op.cfg : cfg(false)); bolaDoJoao(!outra); Espectros.aplicarNaPartida();   // espectros e condições (ex.: refeição pesada) valem nesta partida
       if (op && op.retomar) retomarNoIntervalo(op.retomar);                                       // (7.4.10) a partida salva no intervalo: começa no 2º tempo
-      if (op && op.aoPronto) Promise.resolve(op.aoPronto()).catch((e) => console.error(e));   // a tela só clareia com a quadra pronta
+      // o apito da saída de bola: o entrar() monta a partida em silêncio (o kickoff guarda o apito); ele toca quando a tela já
+      //   mostra o jogo (depois da abertura da partida livre, ou logo depois de clarear)
+      const apitoSaida = () => { try { if (G.kickoffPending && !G.pulando && modo === 'jogo') Som.apito(0.5); } catch (e) { /* sem som */ } };
+      if (op && op.aoPronto) Promise.resolve(op.aoPronto()).then(apitoSaida, (e) => { console.error(e); apitoSaida(); });   // a tela só clareia com a quadra pronta
+      else setTimeout(apitoSaida, 650);
       setTimeout(() => showToast(outra ? (op.aviso || '') : T('Racha da escola: 4 contra 4!')), 900);
     });
     modo = null; sair(); G.podeSalvarIntervalo = false;

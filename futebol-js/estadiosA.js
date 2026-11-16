@@ -153,18 +153,31 @@
         }
       }
     }
+    // as cadeiras (faixa fina na frente do degrau): nos lados retos, os pedaços seguidos da mesma cor viram uma faixa só; sem a face
+    //   de trás (virada para fora do campo: não aparece). Corta mais da metade dos triângulos das cadeiras.
+    const cadeira = (a, b, r, ca) => {
+      const o = oF(r), y = yTopo(r), f0 = o + 0.12, f1 = o + 0.58, s0 = ponto(a, rb, f0), s1 = ponto(b, rb, f0), t0 = ponto(a, rb, f1), t1 = ponto(b, rb, f1), h = 0.16;
+      const Q = [[s0[0], y, s0[1]], [s1[0], y, s1[1]], [s0[0], y + h, s0[1]], [s1[0], y + h, s1[1]], [t0[0], y, t0[1]], [t1[0], y, t1[1]], [t0[0], y + h + 0.22, t0[1]], [t1[0], y + h + 0.22, t1[1]]];
+      hexa(L, Q, { todo: tom(ca, 0.8), y1: ca, z0: tom(ca, 0.9) }, ['y0', 'x0', 'x1', 'z1']);
+    };
+    if (A.assento) for (let r = 0; r < n; r++) {
+      let run = null;
+      const fecha = () => { if (run) cadeira(C.N[run.i0], C.N[run.i1 + 1], r, run.ca); run = null; };
+      for (let i = 0; i < NS; i++) {
+        if (!inc(i)) { fecha(); continue; }
+        const a = C.N[i], b = C.N[i + 1], o = oF(r), p0 = ponto(a, rb, o), p1 = ponto(b, rb, o);
+        const ca = A.assento(r, i, { lado: ladoDo(C, i), a, b, s: (a.s + b.s) / 2, x: (p0[0] + p1[0]) / 2, z: (p0[1] + p1[1]) / 2 });
+        if (ca == null) { fecha(); continue; }
+        if (run && reto(i) && run.reto && trechoDe[i] === run.t && ca === run.ca && i === run.i1 + 1) { run.i1 = i; continue; }
+        fecha(); run = { i0: i, i1: i, ca, reto: reto(i), t: trechoDe[i] };
+      }
+      fecha();
+    }
     for (let i = 0; i < NS; i++) {
       if (!inc(i)) continue;
       const a = C.N[i], b = C.N[i + 1], lado = ladoDo(C, i);
       for (let r = 0; r < n; r++) {
         const o = oF(r), y = yTopo(r), p0 = ponto(a, rb, o), p1 = ponto(b, rb, o);
-        // a cadeira (faixa fina na frente do degrau)
-        const ca = A.assento ? A.assento(r, i, { lado, a, b, s: (a.s + b.s) / 2, x: (p0[0] + p1[0]) / 2, z: (p0[1] + p1[1]) / 2 }) : null;
-        if (ca != null) {
-          const f0 = o + 0.12, f1 = o + 0.58, s0 = ponto(a, rb, f0), s1 = ponto(b, rb, f0), t0 = ponto(a, rb, f1), t1 = ponto(b, rb, f1), h = 0.16;
-          const Q = [[s0[0], y, s0[1]], [s1[0], y, s1[1]], [s0[0], y + h, s0[1]], [s1[0], y + h, s1[1]], [t0[0], y, t0[1]], [t1[0], y, t1[1]], [t0[0], y + h + 0.22, t0[1]], [t1[0], y + h + 0.22, t1[1]]];
-          hexa(L, Q, { todo: tom(ca, 0.8), y1: ca, z0: tom(ca, 0.9) }, ['y0', 'x0', 'x1']);
-        }
         // a torcida
         if (A.torcida && E.torcida !== false) torcidaNoPedaco(E, A, p0, p1, a, b, o, y, r, i, lado);
       }
@@ -294,6 +307,16 @@
   // ============================================================================================ TEXTURAS DO MANDANTE
   //   faixa: o escudo + o nome, repetido ao longo das fáscias · telão: o escudo grande com o nome e "SÉRIE A" · bandeira: listras + escudo
   function canvas(w, h, f) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; f(g, w, h); return c; }
+  // as faixas de janela dos prédios da cidade: 16 andares de 16 px (a faixa embaixo de cada andar, o resto transparente), cada um
+  //   com uma cor (vidro, luz acesa, apagada); cada prédio começa num andar sorteado da textura
+  function texJanelas() {
+    const t = pixelTexture(canvas(4, 256, (g) => {
+      g.clearRect(0, 0, 4, 256);
+      for (let k = 0; k < 16; k++) { const r = rnd(); g.fillStyle = r < 0.45 ? '#c6d2de' : r < 0.83 ? '#eed9a0' : '#6d7884'; g.fillRect(0, 256 - k * 16 - 5, 4, 5); }
+    }));
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  }
   function texFaixa(E) {
     const M = E.M, c1 = css(E.c1), c2 = css(E.c2), fundo = luma(E.c1) > 200 ? '#1c1c22' : c1;
     const cnv = canvas(256, 32, (g) => {
@@ -1519,7 +1542,17 @@
       op = op || {};
       caixa(L, x, h / 2 + 0.2, z, w, h, d, { todo: cor, y1: op.teto || tom(cor, 0.82) }, 0, ['y0']);
       const passo = op.andar || 3.1;
-      for (let y = 2.3; y < h - 0.6; y += passo) caixa(Lp, x, y + 0.2, z, w + 0.08, op.janela || 1.0, d + 0.08, rnd() < 0.45 ? 0xc6d2de : rnd() < 0.7 ? 0xeed9a0 : 0x6d7884, 0, ['y0', 'y1']);   // só os 4 lados
+      // as janelas: uma placa por lado do prédio com a textura das faixas de janela (cada andar com a sua cor: vidro, luz acesa ou
+      //   apagada), em vez de uma caixa por andar: de ~20 mil triângulos na cidade para ~2 mil
+      let nA = 0; for (let y = 2.3; y < h - 0.6; y += passo) nA++;
+      if (nA > 0) {
+        const j = op.janela || 1.0, y0 = 2.5 - j / 2, y1 = y0 + nA * passo, v0 = Math.floor(rnd() * 16) / 16, v1 = v0 + nA / 16, hx = w / 2 + 0.04, hz = d / 2 + 0.04, c = [x, y0, z];
+        const uv = [[0, v0], [1, v0], [1, v1], [0, v1]];
+        face(E.Lj, [x - hx, y0, z + hz], [x + hx, y0, z + hz], [x + hx, y1, z + hz], [x - hx, y1, z + hz], c, null, uv);
+        face(E.Lj, [x - hx, y0, z - hz], [x + hx, y0, z - hz], [x + hx, y1, z - hz], [x - hx, y1, z - hz], c, null, uv);
+        face(E.Lj, [x + hx, y0, z - hz], [x + hx, y0, z + hz], [x + hx, y1, z + hz], [x + hx, y1, z - hz], c, null, uv);
+        face(E.Lj, [x - hx, y0, z - hz], [x - hx, y0, z + hz], [x - hx, y1, z + hz], [x - hx, y1, z - hz], c, null, uv);
+      }
       if (op.toldo) caixa(L, x, 2.9, z + d / 2 + 0.55, w * 0.85, 0.18, 1.1, op.toldo);
       if (op.caixa) caixa(L, x + w * 0.2, h + 1.0, z - d * 0.15, 2.2, 1.6, 2.2, 0x6b7a8a);
       if (op.antena) caixa(L, x, h + 3.2, z, 0.25, 6, 0.25, 0x8a8f96);
@@ -1568,7 +1601,7 @@
   // ============================================================================================ MONTAGEM
   function construir(P) {
     const E = contexto(P);
-    E.L = new Lote(); E.Lf = new Lote(); E.Lt = new Lote(); E.Lp = new Lote(); E.Lb = new Lote(); E.Lr = new Lote();
+    E.L = new Lote(); E.Lf = new Lote(); E.Lt = new Lote(); E.Lp = new Lote(); E.Lb = new Lote(); E.Lr = new Lote(); E.Lj = new Lote();
     const k = MODELOS[P.campo.modelo] ? P.campo.modelo : modeloDoTime(E.M);
     E.modelo = k;
     MODELOS[k](E);
@@ -1596,6 +1629,7 @@
     if (E.extras) for (const m of E.extras) add(m);
     lampadasMat = new THREE.MeshBasicMaterial({ vertexColors: true });
     if (E.Lp.pos.length) add(E.Lp.malha(lampadasMat));
+    if (E.Lj.pos.length) { const mj = new THREE.MeshBasicMaterial({ map: texJanelas(), alphaTest: 0.5 }); mj.color = lampadasMat.color; add(E.Lj.malha(mj)); }   // as janelas da cidade (acendem junto com as lâmpadas)
     add(crowd.malha());
     return { modelo: k, nome: NOMES[k], torcedores: E.nTorcida };
   }
