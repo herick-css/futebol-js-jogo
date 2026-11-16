@@ -353,6 +353,7 @@
   };
   Object.assign(TRAD_CD, {
     'Amanheceu: dia {0}.': ['Dawn: day {0}.', 'Amaneció: día {0}.', 'Alba: giorno {0}.', 'Le jour se lève : jour {0}.'],
+    'Amanheceu: {0}.': ['Dawn: {0}.', 'Amaneció: {0}.', 'Alba: {0}.', 'Le jour se lève : {0}.'],
     'É melhor eu voltar para casa, tenho que dormir até as 2h para descansar bem, ou isso pode afetar meu desempenho.': ["I'd better head home. I have to be asleep by 2 AM to rest well, or it could affect my performance.", 'Mejor vuelvo a casa, tengo que dormir antes de las 2h para descansar bien, o eso puede afectar mi rendimiento.', 'Meglio tornare a casa, devo dormire entro le 2 per riposare bene, o potrebbe influire sulle mie prestazioni.', "Je ferais mieux de rentrer, je dois dormir avant 2 h pour bien me reposer, sinon ça peut affecter mes performances."],
     'Já são 4h?! Chega por hoje, vou pra casa dormir.': ["It's already 4 AM?! That's enough for today, I'm going home to sleep.", '¡¿Ya son las 4?! Basta por hoy, me voy a casa a dormir.', 'Sono già le 4?! Basta per oggi, vado a casa a dormire.', "Il est déjà 4 h ?! Ça suffit pour aujourd'hui, je rentre dormir."],
     'É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.': ["I'd better head home. I have to sleep by 10 PM to get my 8 hours of sleep, or it could hurt my performance.", 'Mejor vuelvo a casa. Tengo que dormir a las 22h para tener mis 8 horas de sueño, o puede afectar mi rendimiento.', 'Meglio tornare a casa. Devo dormire alle 22 per fare le mie 8 ore di sonno, altrimenti può influire sulle mie prestazioni.', "Je ferais mieux de rentrer. Je dois dormir à 22 h pour avoir mes 8 heures de sommeil, sinon ça peut affecter mes performances."],
@@ -5201,7 +5202,7 @@
     }
   }
   function prepararDia(d) {
-    d.dia = d.dia || 1; d.mes = d.mes || 1;
+    d.dia = d.dia || 1; { const cd = Calendario.data(d); d.mes = cd.ano * 12 + cd.mes; }   // (7.4.6) o mês de verdade do calendário (antes ficava sempre 1)
     if (d.fomeDia !== d.dia) { d.fome = FOME_DO_DIA; d.fomeDia = d.dia; }
     if (!d.ruinsNoMes || d.ruinsNoMes.mes !== d.mes) d.ruinsNoMes = { mes: d.mes, n: 0 };
     if (d.trabalhouDia !== d.dia) d.trabalhouHoje = false;   // libera o expediente de novo a cada dia; só num dia NOVO
@@ -7253,7 +7254,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   function textoStatus() {
     const d = S.dados, sim = (b) => T(b ? 'sim' : 'não'), L = [];
-    L.push(Tf('Dia {0} ({1}), {2}', d.dia || 1, T(DIAS_SEM[diaSemana()]), fmtHora(d.hora)));
+    L.push(Tf('Dia {0} ({1}), {2}', d.dia || 1, T(DIAS_SEM[diaSemana()]), fmtHora(d.hora)) + ' · ' + Calendario.longo(d) + ' ' + Calendario.data(d).ano);
     L.push(Tf('Dinheiro: {0} fakes', d.fakes) + (d.devInfinito ? ' (∞)' : ''));
     L.push(Tf('Comeu hoje: {0} · fome do dia: {1}', sim(d.comeuDia === (d.dia || 1)), d.fome == null ? '-' : d.fome));
     L.push(Tf('Precisa de banho: {0}', sim(!!d.precisaBanho)));
@@ -7486,7 +7487,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.pausa.querySelector('.cdTit').textContent = T('Pausado'); UI.cont.textContent = T('Continuar'); UI.menu.textContent = T('Voltar ao menu'); UI.pausa.querySelector('.cdDevBtn').textContent = T('Privilégios do desenvolvedor');
   }
   function mostrarDinheiro(pop) {
-    const v = String(S.dados.fakes); if (UI.valor.textContent !== v) { if (UI.valor.textContent !== '0' || v !== '0') abrirHud(); UI.valor.textContent = v; }
+    const v = String(S.dados.fakes); if (UI.valor.textContent !== v) { if (UI.valor.textContent !== '0' || v !== '0') abrirHud(); UI.valor.textContent = v; UI.valor.style.color = (S.dados.fakes | 0) < 0 ? '#ff6a5a' : ''; }   // (7.4.6) no vermelho: o saldo fica vermelho
     UI.hud.hidden = false; if (pop) { UI.grana.classList.remove('pop'); void UI.grana.offsetWidth; UI.grana.classList.add('pop'); }
   }
   function liberar() { S.modo = 'livre'; UI.ctl.hidden = false; UI.arrasto.hidden = false; UI.esq.hidden = false; }
@@ -7658,7 +7659,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemanaDe(diaDaNoite()));   // quinta a domingo
   // O DIA VIRA À MEIA-NOITE (como no calendário). Quem ainda não dormiu continua no mesmo dia depois das 5h: dormir de madrugada só adianta as horas.
   function virarDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 600); }
-  function amanheceu() { aviso(Tf('Amanheceu: dia {0}.', S.dados.dia || 1)); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }
+  function amanheceu() { aviso(Tf('Amanheceu: {0}.', Calendario.longo(S.dados))); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }   // (7.4.6) a data do calendário
   // 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
   async function madrugada(nt) {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); const J = S.jog;
@@ -7697,7 +7698,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const DIAS_SEM = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];             // o dia 1 é uma segunda-feira
   const diaSemana = () => ((((S.dados.dia || 1) - 1) % 7) + 7) % 7;
   function atualizarRelogioUI() {
-    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // ⚽ = dia de futebol
+    const d = S.dados, C = S.clima, t = T(DIAS_SEM[diaSemana()]) + ' ' + Calendario.curto(d) + (diaDeFutebol() ? ' ⚽' : '') + ' ' + fmtHora(d.hora); if (t !== relUlt) { relUlt = t; UI.hora.textContent = t; }   // ⚽ = dia de futebol · (7.4.6) com a data: "Ter 14 mar 15:30"
     const noite = d.hora < 6.2 || d.hora >= 19.5, ic = C.chuva > 0.3 ? 'chuva' : C.nuv > 0.35 ? 'nuvem' : noite ? 'lua' : 'sol';
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
     { const hh = fmtHora(d.hora); if (UI.resumo.textContent !== hh) UI.resumo.textContent = hh; }   // (6.6.1) recolhido, o quadradinho mostra o HORÁRIO (não mais o ícone do clima)

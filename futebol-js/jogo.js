@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.6';
+const VERSAO_JOGO = '7.4.7';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -681,6 +681,50 @@ const PARTIDA_PADRAO = {
 };
 let PARTIDA = null;                // a partida em andamento (montada por montarPartida)
 const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e partida rápida (3 min)
+
+// ---------------------------------------------------------------------
+// (7.4.6) CALENDÁRIO DA HISTÓRIA: o dia do save (dados.dia, que só cresce: 1, 2, 3...) vira DIA E MÊS. Todo mês tem 30 dias e o
+//   ano tem 12 meses (360 dias). O dia da semana continua o de sempre (o dia 1 é uma segunda). Guardado no save da cidade:
+//   calJan = o dia (do save) que é 1º de janeiro do ano calAno.
+//   · Antes da peneira (o passado da história) o dia 1 é 1º de fevereiro de dois anos atrás.
+//   · "Dois anos depois", na peneira, o calendário é acertado: a peneira é em 8 de janeiro do ano de hoje, a carta chega dias
+//     depois e a temporada começa no fim de janeiro (como a Série A de 2026: de 28 de janeiro a 2 de dezembro).
+//   · Saves de antes da 7.4.6 que já estão na carreira: o 1º jogo da temporada atual vira 28 de janeiro.
+//   A TEMPORADA (serieb.js): janeiro a maio jogando, JUNHO livre (a janela de transferências do meio do ano), julho a novembro
+//   jogando e DEZEMBRO de férias (a outra janela); em janeiro começa a próxima.
+// ---------------------------------------------------------------------
+const Calendario = (() => {
+  const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const CURTOS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const anoHoje = () => new Date().getFullYear();
+  function garantir(d) {
+    if (!d || d.calJan != null) return d;
+    const P = d.pro, T0 = P && P.temporada, v0 = T0 && T0.vagas && T0.vagas[0];
+    if (v0 && v0.dia) { d.calJan = (v0.dia | 0) - 27; d.calAno = anoHoje(); }                  // já na carreira: o 1º jogo é 28/01
+    else if (P && P.presente) { d.calJan = (P.presenteDia | 0) - 7; d.calAno = anoHoje(); }     // já fez a peneira: ela foi em 08/01
+    else { d.calJan = 1 - 30; d.calAno = anoHoje() - 2; }                                        // o passado: o dia 1 é 1º de fevereiro
+    return d;
+  }
+  // a data de um dia do save: { dia (1–30), mes (1–12), ano, doAno (0–359), jan1 (o dia do save que é 1º de janeiro desse ano) }
+  function data(d, dia) {
+    garantir(d); dia = dia == null ? (d.dia || 1) : dia;
+    const k = dia - d.calJan, a = Math.floor(k / 360), y = k - a * 360;
+    return { dia: y % 30 + 1, mes: Math.floor(y / 30) + 1, ano: d.calAno + a, doAno: y, jan1: d.calJan + a * 360 };
+  }
+  const jan1 = (d, dia) => data(d, dia).jan1;
+  // o dia do save de uma data (mes 1–12, diaMes 1–30) no ano que começa em j1
+  const diaDe = (j1, mes, diaMes) => j1 + (mes - 1) * 30 + (diaMes - 1);
+  // acerta o calendário para que o dia `dia` do save seja diaMes/mes/ano
+  function acertar(d, dia, mes, diaMes, ano) { d.calJan = dia - ((mes - 1) * 30 + diaMes - 1); d.calAno = ano == null ? anoHoje() : ano; return d; }
+  const tr = (s) => (typeof T === 'function' ? T(s) : s);
+  const curto = (d, dia) => { const x = data(d, dia); return x.dia + ' ' + tr(CURTOS[x.mes - 1]); };                      // "14 mar"
+  const longo = (d, dia) => { const x = data(d, dia); return (typeof Tf === 'function' ? Tf('{0} de {1}', x.dia, tr(MESES[x.mes - 1])) : x.dia + ' de ' + MESES[x.mes - 1]); };   // "14 de março"
+  const nomeMes = (m) => tr(MESES[m - 1]);
+  // "1 de dezembro de 2027" (o ano só aparece quando não é o ano de hoje, a não ser que sempreAno)
+  const comAno = (d, dia, sempreAno) => { const x = data(d, dia), h = data(d); if (!sempreAno && x.ano === h.ano) return longo(d, dia);
+    return typeof Tf === 'function' ? Tf('{0} de {1} de {2}', x.dia, tr(MESES[x.mes - 1]), x.ano) : x.dia + ' de ' + MESES[x.mes - 1] + ' de ' + x.ano; };
+  return { MESES, CURTOS, garantir, data, jan1, diaDe, acertar, curto, longo, comAno, nomeMes };
+})();
 
 // ---------------------------------------------------------------------
 // ATRIBUTOS DO JOGADOR — sistema separado para ser reaproveitado no modo história.
@@ -15561,6 +15605,7 @@ const Idioma = {
   'MUDO': ['MUTE', 'MUDO', 'MUTO', 'MUET'],
   'Som': ['Sound', 'Sonido', 'Suono', 'Son'],
   'Ligado': ['On', 'Activado', 'Attivo', 'Activé'], 'Desligado': ['Off', 'Desactivado', 'Disattivo', 'Désactivé'],
+  'janeiro': ['January', 'enero', 'gennaio', 'janvier'], 'fevereiro': ['February', 'febrero', 'febbraio', 'février'], 'março': ['March', 'marzo', 'marzo', 'mars'], 'abril': ['April', 'abril', 'aprile', 'avril'], 'maio': ['May', 'mayo', 'maggio', 'mai'], 'junho': ['June', 'junio', 'giugno', 'juin'], 'julho': ['July', 'julio', 'luglio', 'juillet'], 'agosto': ['August', 'agosto', 'agosto', 'août'], 'setembro': ['September', 'septiembre', 'settembre', 'septembre'], 'outubro': ['October', 'octubre', 'ottobre', 'octobre'], 'novembro': ['November', 'noviembre', 'novembre', 'novembre'], 'dezembro': ['December', 'diciembre', 'dicembre', 'décembre'], 'jan': ['Jan', 'ene', 'gen', 'janv'], 'fev': ['Feb', 'feb', 'feb', 'févr'], 'mar': ['Mar', 'mar', 'mar', 'mars'], 'abr': ['Apr', 'abr', 'apr', 'avr'], 'mai': ['May', 'may', 'mag', 'mai'], 'jun': ['Jun', 'jun', 'giu', 'juin'], 'jul': ['Jul', 'jul', 'lug', 'juil'], 'ago': ['Aug', 'ago', 'ago', 'août'], 'set': ['Sep', 'sep', 'set', 'sept'], 'out': ['Oct', 'oct', 'ott', 'oct'], 'nov': ['Nov', 'nov', 'nov', 'nov'], 'dez': ['Dec', 'dic', 'dic', 'déc'], '{0} de {1}': ['{1} {0}', '{0} de {1}', '{0} {1}', '{0} {1}'], '{0} de {1} de {2}': ['{1} {0}, {2}', '{0} de {1} de {2}', '{0} {1} {2}', '{0} {1} {2}'],   // (7.4.6) o calendário
   'CHUTAR / CRUZAR': ['SHOOT / CROSS', 'TIRAR / CENTRAR', 'TIRA / CROSS', 'TIRER / CENTRER'],
   'PASSAR': ['PASS', 'PASAR', 'PASSA', 'PASSER'],
   'DRIBLAR': ['DRIBBLE', 'REGATEAR', 'DRIBBLA', 'DRIBBLER'],

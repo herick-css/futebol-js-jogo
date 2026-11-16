@@ -515,7 +515,7 @@
       const t = cand.splice(i, 1)[0]; taticas.add(t.tatica);
       const S0 = SALARIOS[faixa], vit = Math.round(S0.vit[0] + r() * (S0.vit[1] - S0.vit[0])), luvas = Math.round((S0.luvas[0] + r() * (S0.luvas[1] - S0.luvas[0])) / 10) * 10;
       const kG = 1 - 0.3 * ganancia();                                    // (7.1.14) ganancioso: propostas menores
-      out.push({ k: t.k, faixa, base: Math.round(S0.base * kG), gol: S0.gol, ass: S0.ass, vit: Math.round(vit * kG), luvas: Math.round(luvas * kG / 10) * 10, extra: pers === 'problematico' ? EXTRA_PROBLEMATICO : 0 });
+      out.push({ k: t.k, faixa, base: Math.round(S0.base * kG), gol: S0.gol, ass: S0.ass, vit: Math.round(vit * kG), luvas: Math.round(luvas * kG / 10) * 10, extra: pers === 'problematico' ? EXTRA_PROBLEMATICO : 0, meses: 12 });   // (7.4.6) o 1º contrato: 1 ano
     }
     return out;
   }
@@ -643,10 +643,30 @@
       return cp ? { dia, h, comp: cp[0], fase: cp[1], feito: false } : { dia, h, comp: 'liga', r: rod++, feito: false };
     });
   }
-  function novaTemporada(nosso, dia0, n, times) {
+  // (7.4.6) v3: A TEMPORADA NO CALENDÁRIO (meses de 30 dias; j1 = o dia do save que é 1º de janeiro do ano da temporada).
+  //   1ª metade: de 28 de janeiro a 30 de maio · JUNHO livre (pausa e janela de transferências) · 2ª metade: de 1º de julho a
+  //   30 de novembro · DEZEMBRO de férias (a outra janela). As 48 vagas (38 rodadas + 10 de copa) ficam 24 em cada metade
+  //   (19 rodadas da liga + 5 de copa = um turno inteiro em cada), nas quintas e nos sábados: escolhidas espalhadas, dá semanas
+  //   com 2 jogos e semanas com 1 (como na vida real: 1 a 2 jogos por semana).
+  const VAGAS_COPA3 = { 0: ['est', 0], 3: ['est', 1], 8: ['cdb', 0], 13: ['reg', 0], 19: ['cdb', 1], 27: ['reg', 1], 32: ['cdb', 2], 37: ['reg', 2], 42: ['cdb', 3], 46: ['cdb', 4] };
+  const METADES = [[27, 149], [180, 329]];                                   // dias do ano (0 = 1º de janeiro): 28/01–30/05 e 01/07–30/11
+  const DIAS_JOGO3 = [3, 5];                                                 // quinta e sábado (os hábitos são seg, qua, sex e dom)
+  function montarCalendario3(j1) {
+    const dias = [];
+    for (const [a, b] of METADES) {
+      const cand = []; for (let d = j1 + a; d <= j1 + b; d++) if (DIAS_JOGO3.includes(semanaDe(d))) cand.push(d);
+      for (let i = 0; i < 24; i++) dias.push(cand[Math.round(i * (cand.length - 1) / 23)]);
+    }
+    let rod = 0;
+    return dias.map((dia, i) => {
+      const h = HORAS_JOGO[(i * 3 + Math.floor(i / 5)) % HORAS_JOGO.length], cp = VAGAS_COPA3[i];
+      return cp ? { dia, h, comp: cp[0], fase: cp[1], feito: false } : { dia, h, comp: 'liga', r: rod++, feito: false };
+    });
+  }
+  function novaTemporada(nosso, j1, n, times) {
     times = times || divPadrao();
-    const sem = semDe('temporada|' + nosso + '|' + n + '|' + dia0);
-    return { n, v: 2, nosso, times, divNosso: times.A.includes(nosso) ? 'A' : 'B', vagas: montarCalendario(dia0, true),
+    const sem = semDe('temporada|' + nosso + '|' + n + '|' + j1);
+    return { n, v: 3, j1, nosso, times, divNosso: times.A.includes(nosso) ? 'A' : 'B', vagas: montarCalendario3(j1),
       liga: tabelaLiga(sem, times.B.length), ligaA: tabelaLiga(sem + 3, times.A.length),
       copas: { est: montarCopa('est', nosso, sem + 1, times), reg: montarCopa('reg', nosso, sem + 2, times), cdb: montarCopa('cdb', nosso, sem + 4, times) },
       fechadas: 0, est: {}, estA: {} };
@@ -732,7 +752,7 @@
     }
   }
   // a virada de temporada: sobe/cai, os níveis novos e a temporada seguinte (devolve o resumo da que acabou)
-  function virarTemporada(P, dia0) {
+  function virarTemporada(P, j1) {                                            // (7.4.6) j1 = 1º de janeiro da temporada nova
     const T = garantirLiga(P.temporada), clA = classificacao(T, 'A'), clB = classificacao(T, 'B');
     const caem = clA.slice(-4).map((x) => x.k), sobem = clB.slice(0, 4).map((x) => x.k);
     migrarNiveis(P); P.niveisV2 = true;
@@ -757,7 +777,7 @@
     const resumo = { n: T.n, campA: clA[0].k, campB: clB[0].k, sobem, caem, div: T.divNosso, pos, copas: { est: T.copas.est && T.copas.est.campeao, reg: T.copas.reg && T.copas.reg.campeao, cdb: T.copas.cdb ? T.copas.cdb.campeao : null } };
     (P.temporadas = P.temporadas || []).push(resumo); if (P.temporadas.length > 30) P.temporadas.shift();
     nivelAplicado = null; aplicarNiveis(P);                              // os setores novos já valem para montar as copas
-    P.temporada = novaTemporada(T.nosso, dia0, T.n + 1, times);
+    P.temporada = novaTemporada(P.clube || T.nosso, j1, T.n + 1, times);       // (7.4.6) o clube pode ter mudado na janela de dezembro
     nivelAplicado = null; aplicarNiveis(P);
     return resumo;
   }
@@ -824,6 +844,37 @@
   const faixaPop = (v) => { let i = 0; FAIXAS_POP.forEach((f, k) => { if (v >= f.min) i = k; }); return i; };
 
   // ============================================================================================ O MÓDULO NA CIDADE
+  // ============================================================================================ (7.4.6) EMPRESÁRIOS E CONTRATOS
+  //   O técnico (de qualquer clube) recomenda um empresário logo depois da contratação e passa 5 contatos. O pacote é sempre de 5
+  //   meses (metade do campeonato, que tem 10), pago todo mês: a 1ª mensalidade na assinatura e as outras a cada 30 dias. Ela é
+  //   descontada MESMO SEM SALDO (fica no vermelho), porque ele já começa a procurar clubes desde o contrato.
+  //   times = propostas que ele leva para a janela · melhor = chance de cada uma ser de um time melhor que o atual
+  //   sal = salário a mais · meses = durações de contrato que ele consegue (sem empresário: 6 ou 12 meses)
+  const EMPRESARIOS = [
+    { id: 1, nome: 'Juca Barbosa', preco: 200, times: 1, melhor: 0, sal: 0, meses: [12, 18], txt: 'Começou levando garoto da várzea para teste. Conhece gente em todo clube.' },
+    { id: 2, nome: 'Rosângela Prado', preco: 250, times: 1, melhor: 0.1, sal: 0, meses: [12, 18], txt: 'Ex-jogadora de futsal. Tem bons contatos com os diretores.' },
+    { id: 3, nome: 'Valdir Matos', preco: 350, times: 2, melhor: 0, sal: 0.15, meses: [12, 18, 24], txt: 'Negociador duro: não sai da mesa sem um salário melhor.' },
+    { id: 4, nome: 'Helena Bastos', preco: 500, times: 2, melhor: 0.25, sal: 0.25, meses: [18, 24], txt: 'Advogada esportiva. Cuida de jogadores da Série A.' },
+    { id: 5, nome: 'Marcão Vilela', preco: 1000, times: 3, melhor: 0.8, sal: 0.5, meses: [24, 36], txt: 'O empresário mais famoso do país. Se ele liga, os grandes atendem.' },
+  ];
+  const EMP_DE = (id) => EMPRESARIOS.find((e) => e.id === id) || null;
+  const PACOTE_MESES = 5;
+  // o fim de um contrato de `meses` assinado no dia `dia`: o começo da janela (1º de junho ou 1º de dezembro) depois de `meses/6`
+  //   metades de temporada (a metade em que ele assina conta como a 1ª)
+  function fimDoContrato(c, dia, meses) {
+    if (typeof Calendario === 'undefined') return dia + meses * 30;
+    const j1 = Calendario.jan1(c, dia), h = Math.max(1, Math.round((meses || 12) / 6)), W = [];
+    for (let a = 0; W.length < h; a++) for (const w of [150, 330]) { const dW = j1 + a * 360 + w; if (dW > dia + 10 && W.length < h) W.push(dW); }
+    return W[h - 1];
+  }
+  // os 40 times das duas séries, do mais forte para o mais fraco (a força da temporada atual)
+  function rankingTimes(T0) {
+    const K = T0 && T0.times ? T0.times.A.concat(T0.times.B) : TIMES_A.concat(TIMES_B).map((t) => t.k);
+    return K.slice().sort((a, b) => forcaTime(TIME_DE[b]).media - forcaTime(TIME_DE[a]).media);
+  }
+  // o salário de um clube pela posição dele entre os 40 (o melhor da A paga uns 450 por jogo; o pior da B, 100)
+  function salarioDoClube(rank) { return 100 + (39 - clampN(rank, 0, 39)) * 9; }
+
   function criar(api) {
     const S = () => api.S();
     const M = { cena: false, onibus: null, tLento: 0, filaMsg: [], tMsg: 0, lendo: false };
@@ -956,7 +1007,9 @@
     async function presente() {
       if (M.cena) return; M.cena = true;
       const P = pro(), d = dados(), trava = travar();
-      P.etapa = 'peneira'; P.presente = true; P.presenteDia = d.dia | 0; gravar();
+      P.etapa = 'peneira'; P.presente = true; P.presenteDia = d.dia | 0;
+      if (typeof Calendario !== 'undefined') Calendario.acertar(d, d.dia | 0, 1, 8);   // (7.4.6) "dois anos depois": a peneira é em 8 de janeiro
+      gravar();
       let C = null, r = null;
       try {
         await api.preto(true, 900); api.aviso('');
@@ -1051,7 +1104,7 @@
       return { titular: false, entra: Math.round(c < 35 ? 72 + r * 10 : c < 50 ? 62 + r * 10 : 55 + r * 9) };
     }
     // ---- os HÁBITOS (segunda, quarta, sexta e domingo): treinar, comer saudável, dormir cedo
-    const diaDeHabito = (dia) => { const P = pro(); return contratado() && dia > (P.contratoDia | 0) && [0, 2, 4, 6].includes(semanaDe(dia)); };
+    const diaDeHabito = (dia) => { const P = pro(); return contratado() && dia > (P.contratoDia | 0) && [0, 2, 4, 6].includes(semanaDe(dia)) && !janelaDe(dia); };   // (7.4.6) junho (pausa) e dezembro (férias): sem missões
     function treinouHoje() {
       const d = dados();
       return !!((d.academia && d.academia.treinoDia === d.dia && (d.academia.treinos | 0) > 0) || (d.treinoNonato && d.treinoNonato.hoje && d.treinoNonato.hoje.dia === d.dia && (d.treinoNonato.hoje.n | 0) > 0));
@@ -1098,7 +1151,8 @@
       } else if (diaDeHabito(d.dia)) {
         const h = (pro().hab && pro().hab[d.dia]) || { t: 0, c: 0 };
         txt = !h.t ? T('Missão do clube (1/3): treinar hoje (academia ou CT do Seu Nonato).') : !h.c ? T('Missão do clube (2/3): comer comida saudável (o wrap integral do seu Valdemar).') : T('Missão do clube (3/3): dormir cedo, até as 22h.');
-      }
+      } else if (janelaDe(d.dia) === 'meio') txt = T('Junho livre: sem jogos nem missões do clube. A janela de transferências está aberta.');
+      else if (janelaDe(d.dia) === 'fim' && temp().j1 > d.dia) txt = Tf('Férias! Dezembro é seu. A próxima temporada começa em {0}.', dataTxt(temp().vagas[0].dia));
       if (txt && txt !== ultMissao && nossa()) { s.missao = txt; ultMissao = txt; api.mostrarMissao(); }
       else if (!txt && ultMissao && s.missao === ultMissao) { s.missao = ''; ultMissao = ''; try { api.recolherMissao(); } catch (e) { /* nada */ } }
     }
@@ -1186,7 +1240,8 @@
           const nomes = (l) => l.map((k) => TIME_DE[k].sigla).join(', ');
           await api.mensagemCelular(clube().nome, Tf('Temporada {0} começando! Subiram para a Série A: {1}. Caíram para a Série B: {2}.', x.n, nomes(x.sobem), nomes(x.caem)),
             x.subimos ? Tf('Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.', x.base) : x.caimos ? T('Agora é Série B de novo. Vamos voltar mais fortes!') : x.div === 'A' ? T('Mais um ano na Série A. Bora!') : T('Mais um ano na Série B: dessa vez é o acesso!'));
-        } else if (tipo === 'hoje') await api.mensagemCelular(clube().nome, Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', x.comp, nomeT(x.adv), fmt(x.h)), Tf('O ônibus do clube passa no ponto da avenida às {0}. Não se atrase!', fmt(x.h - ANTES_ONIBUS)));
+        } else if (['empRec', 'empOk', 'empCobra', 'empFim', 'janelaAbre', 'janelaOfertas'].includes(tipo)) await mensagemCarreira(tipo, x);   // (7.4.6)
+        else if (tipo === 'hoje') await api.mensagemCelular(clube().nome, Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', x.comp, nomeT(x.adv), fmt(x.h)), Tf('O ônibus do clube passa no ponto da avenida às {0}. Não se atrase!', fmt(x.h - ANTES_ONIBUS)));
       } catch (e) { console.warn('[Série B] mensagem:', e); }
       M.lendo = false; M.tMsg = 2.5; gravar();
     }
@@ -1434,7 +1489,14 @@
     // (7.3.0) A TEMPORADA SEGUINTE: sobem 4, caem 4, os níveis novos; o contrato continua (subiu para a Série A: +50% em tudo)
     function novaTemporadaDoClube() {
       const P = pro(), d = dados(), T0 = garantirLiga(temp()); if (!T0 || P.etapa !== 'fimTemporada') return;
-      const R = virarTemporada(P, (d.dia | 0) + 3), T1 = temp(), C = P.contrato || {};
+      // (7.4.6) a próxima temporada começa no 1º de janeiro seguinte (dezembro é de férias). Saves de antes da 7.4.6 (a temporada
+      //   antiga acabava lá por maio): o calendário é acertado para hoje ser 1º de dezembro, sem 7 meses de espera.
+      let j1 = (d.dia | 0) + 3;
+      if (typeof Calendario !== 'undefined') {
+        const x = Calendario.data(d); j1 = x.jan1 + 360;
+        if (j1 - (d.dia | 0) > 40) { Calendario.acertar(d, d.dia | 0, 12, 1, x.ano); j1 = (d.dia | 0) + 30; }
+      }
+      const R = virarTemporada(P, j1), T1 = temp(), C = P.contrato || {};
       const subimos = R.div === 'B' && T1.divNosso === 'A', caimos = R.div === 'A' && T1.divNosso === 'B';
       if (subimos) { for (const k of ['base', 'gol', 'ass', 'vit']) C[k] = Math.round((C[k] | 0) * 1.5); }
       Object.assign(P, { etapa: 'contratado', galaVista: false, comemorou: false, pagoPremios: false });
@@ -1681,6 +1743,255 @@
     }
 
     // ================================================================ tick, alvos e o que os outros arquivos usam
+    // ================================================================ (7.4.6) EMPRESÁRIO, CALENDÁRIO DA TEMPORADA E AS JANELAS
+    const hoje = () => dados().dia | 0;
+    const dataTxt = (dia) => (typeof Calendario !== 'undefined' ? Calendario.comAno(dados(), dia) : String(dia));
+    // a janela de transferências de um dia: 'meio' (junho, a pausa) ou 'fim' (dezembro, as férias) ou null
+    const janelaDe = (dia) => { if (typeof Calendario === 'undefined') return null; const m = Calendario.data(dados(), dia).mes; return m === 6 ? 'meio' : m === 12 ? 'fim' : null; };
+    const empAtivo = () => { const E = pro().emp; return E && hoje() < E.desde + PACOTE_MESES * 30 ? E : null; };
+    // o começo (1º de junho ou 1º de dezembro) da janela de um dia, ou da próxima
+    function inicioJanela(dia, proxima) {
+      const x = Calendario.data(dados(), dia);
+      const cands = [x.jan1 - 30, x.jan1 + 150, x.jan1 + 330, x.jan1 + 510];
+      if (!proxima) for (const w of cands) if (dia >= w && dia < w + 30) return w;
+      return cands.find((w) => w > dia);
+    }
+    // a janela que o empresário "trabalha": a próxima depois da contratação (ou a de agora, se as propostas ainda não chegaram).
+    //   Vale mesmo que o pacote de 5 meses acabe antes dela: ele procurou clubes durante o pacote.
+    function alvoDoEmpresario() {
+      const J = pro().janela, w = janelaDe(hoje()) ? inicioJanela(hoje()) : null;
+      if (w != null && (!J || J.ini == null || inicioJanela(J.ini) !== w || J.etapa === 'aberta')) return w;
+      return inicioJanela(hoje(), true);
+    }
+    const empDaJanela = (w) => { const E = pro().emp; if (!E) return null; return (hoje() < E.desde + PACOTE_MESES * 30 || E.alvo === w) ? EMP_DE(E.id) : null; };
+    async function comTrava(fn) {
+      const s = S(), trava = travar();
+      try { return await fn(); } finally { clearInterval(trava); if (s.ativo && s.modo === 'cena') api.liberar(); }
+    }
+    // o contrato de saves antigos (sem fim): vai até a próxima janela de dezembro
+    function garantirContrato() {
+      const P = pro(), C = P.contrato; if (!C || C.fim) return;
+      const x = Calendario.data(dados()); let f = x.jan1 + 330; if (hoje() >= f) f += 360;
+      C.fim = f; C.desde = C.desde || (P.contratoDia | 0); C.meses = C.meses || 12;
+    }
+    // ---- a mensalidade do empresário (mesmo sem dinheiro: fica no vermelho)
+    function cobrarEmpresario() {
+      const P = pro(), E = P.emp, d = dados(); if (!E) return;
+      while (E.pagas < PACOTE_MESES && hoje() >= E.prox) {
+        const e = EMP_DE(E.id); d.fakes = (d.fakes | 0) - e.preco; E.pagas++; E.prox += 30; E.total = (E.total | 0) + e.preco;
+        M.filaMsg.push(['empCobra', { nome: e.nome, preco: e.preco, k: E.pagas, saldo: d.fakes | 0 }]);
+        try { api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(e.preco); } catch (er) { /* sem hud */ }
+      }
+      if (!E.avisouFim && hoje() >= E.desde + PACOTE_MESES * 30) { E.avisouFim = true; M.filaMsg.push(['empFim', { nome: EMP_DE(E.id).nome }]); }
+    }
+    function contratarEmpresario(id) {
+      const P = pro(), e = EMP_DE(id); if (!e) return;
+      if (P.emp) (P.empHist = P.empHist || []).push({ id: P.emp.id, desde: P.emp.desde, pagas: P.emp.pagas });
+      P.emp = { id, desde: hoje(), pagas: 0, prox: hoje(), alvo: alvoDoEmpresario() };
+      cobrarEmpresario(); gravar();
+    }
+    // ---- o desempenho desde a última janela (ou desde a contratação): a nota média mais um pouco pelos gols e assistências
+    function desempenhoJanela() {
+      const P = pro(), E = P.est || {}, B = P.estJ || {}, j = (E.j | 0) - (B.j | 0);
+      if (j < 3) return r1(6 + clampN(((P.conf == null ? CONF0 : P.conf) - 50) / 100, -0.5, 0.5));
+      const nota = (E.nota || 0) - (B.nota || 0), g = (E.g | 0) - (B.g | 0), a = (E.a | 0) - (B.a | 0);
+      return r1(clampN(nota / j + Math.min(1.2, g * 0.06 + a * 0.04), 4, 10));
+    }
+    // ---- as PROPOSTAS de uma janela: as que os clubes mandam sozinhos (0 a 2, pelo desempenho e pela personalidade), as que o
+    //   empresário consegue (1 a 3) e, se o contrato acaba nesta janela, a renovação com o clube atual
+    function gerarPropostasJanela(tipo) {
+      const P = pro(), T0 = temp(), d = dados(), e = empDaJanela(inicioJanela(hoje())), score = desempenhoJanela(), pers = personalidade();
+      const R = rankingTimes(T0), pos0 = Math.max(0, R.indexOf(P.clube)), usados = new Set([P.clube]), out = [];
+      const pega = (l) => l[Math.floor(Math.random() * l.length)];
+      const escolher = (pMelhor) => {
+        let pool = [];
+        if (pMelhor > 0 && Math.random() < pMelhor) { const melhores = R.slice(0, pos0).filter((k) => !usados.has(k)); pool = melhores.slice(-8); }
+        if (!pool.length) {
+          const off = score >= 8 ? [-4, 2] : score >= 7 ? [-2, 4] : score >= 6 ? [0, 6] : [2, 9], sh = pers === 'problematico' ? 3 : pers === 'tranquilo' ? -1 : 0;
+          pool = R.filter((k, i) => !usados.has(k) && i >= pos0 + off[0] + sh && i <= pos0 + off[1] + sh);
+          if (!pool.length) pool = R.filter((k) => !usados.has(k)).slice(-10);
+        }
+        const k = pega(pool); usados.add(k); return k;
+      };
+      const oferta = (k, emp) => {
+        const r = R.indexOf(k), m = clampN(0.85 + (score - 6) * 0.12, 0.8, 1.25), kG = 1 - 0.3 * ganancia(), sb = emp ? emp.sal : 0;
+        const base = Math.round(salarioDoClube(r) * m * (1 + sb) * kG / 5) * 5;
+        return { k, base, gol: Math.round(base * 0.04), ass: Math.round(base * 0.02), vit: Math.round(base * 0.12), luvas: Math.round(base * 1.8 / 10) * 10,
+          extra: pers === 'problematico' ? EXTRA_PROBLEMATICO : 0, meses: emp ? pega(emp.meses) : pega([6, 12]), emp: emp ? emp.id : 0, melhor: r < pos0 };
+      };
+      const lim = pers === 'tranquilo' ? 6.8 : pers === 'problematico' ? 7.8 : 7.2, nNat = score >= lim + 1 ? 2 : score >= lim ? 1 : 0;
+      for (let i = 0; i < nNat; i++) out.push(oferta(escolher(0), null));
+      if (e) for (let i = 0; i < e.times; i++) out.push(oferta(escolher(e.melhor), e));
+      if ((P.contrato.fim | 0) <= hoje() + 31) {                          // o contrato acaba nesta janela: o clube oferece renovar
+        const C = P.contrato, mR = score >= 7.5 ? 1.15 : score >= 6.5 ? 1.05 : 0.97, sb = e ? e.sal : 0, base = Math.round((C.base | 0) * mR * (1 + sb) / 5) * 5;
+        out.unshift({ k: P.clube, renova: true, base, gol: Math.round((C.gol | 0) * mR), ass: Math.round((C.ass | 0) * mR), vit: Math.round((C.vit | 0) * mR), luvas: Math.round(base * 0.8 / 10) * 10,
+          extra: C.extra | 0, meses: e ? pega(e.meses) : 12, emp: e ? e.id : 0 });
+      }
+      return { score, pers, ofertas: out, vence: (P.contrato.fim | 0) <= hoje() + 31, emp: e ? e.id : 0 };
+    }
+    // ---- trocar de clube: no meio da temporada (junho) o jogador passa a jogar pelo novo já em julho (as copas em que o clube novo
+    //   não está ficam para trás); em dezembro a temporada seguinte é montada de novo com o clube novo
+    function trocarTimeNaTemporada(k) {
+      const T0 = temp(); if (!T0) return;
+      if (T0.j1 != null && T0.j1 > hoje() && !T0.vagas.some((v) => v.feito)) { P0().temporada = novaTemporada(k, T0.j1, T0.n, T0.times); return; }
+      T0.nosso = k; T0.divNosso = T0.times.A.includes(k) ? 'A' : 'B';
+    }
+    const P0 = () => pro();
+    function aceitarProposta(o, tipo) {
+      const P = pro(), d = dados(), antigo = P.clube;
+      const novo = { base: o.base, gol: o.gol, ass: o.ass, vit: o.vit, extra: o.extra | 0, luvas: o.luvas, meses: o.meses, desde: hoje(), fim: fimDoContrato(d, hoje(), o.meses), emp: o.emp | 0 };
+      if (o.renova) P.contrato = Object.assign({}, P.contrato, novo);
+      else {
+        const quebrou = (P.contrato.fim | 0) > hoje() + 31;                 // ainda tinha contrato: saiu antes do fim
+        if (tipo === 'meio') try { Espectros.mover('tranquilo', quebrou ? -20 : -12, 'trocou de clube no meio da temporada'); } catch (e) { /* nada */ }
+        (P.clubes = P.clubes || []).push({ k: antigo, ate: hoje(), quebrou });
+        Object.assign(P, { clube: o.k, contrato: Object.assign({ faixa: 'medio' }, novo), conf: CONF0, chance: false, manter: false, habAval: hoje(), contratoDia: hoje() });
+        trocarTimeNaTemporada(o.k);
+      }
+      d.fakes = (d.fakes | 0) + (o.luvas | 0);
+      try { api.somDinheiro(); api.ganhoNaTela(o.luvas | 0); api.mostrarDinheiro(true); } catch (e) { /* sem hud */ }
+    }
+    // ---- a janela do dia (junho ou dezembro): abre, as propostas chegam 2 dias depois e o jogador decide
+    function tickJanela() {
+      const P = pro(), T0 = temp(); if (!contratado() || !T0 || !P.contrato) return;
+      garantirContrato();
+      const tipo = janelaDe(hoje()); if (!tipo) return;
+      if (tipo === 'fim' && !(T0.j1 > hoje())) return;                      // dezembro: só depois da festa (a temporada nova já existe)
+      const x = Calendario.data(dados()), id = x.ano + '-' + tipo;
+      let J = P.janela;
+      if (!J || J.id !== id) { J = P.janela = { id, tipo, ini: hoje(), etapa: 'aberta' }; M.filaMsg.push(['janelaAbre', { tipo }]); }
+      if (J.etapa === 'aberta' && hoje() >= J.ini + 2) { J.etapa = 'ofertas'; J.res = gerarPropostasJanela(tipo); M.filaMsg.push(['janelaOfertas', null]); }
+    }
+    // ---- a recomendação do técnico (uma vez, no dia seguinte à contratação)
+    function tickEmpresario() {
+      const P = pro(); if (!contratado()) return;
+      if (!P.empRec && hoje() > (P.contratoDia | 0) && (dados().hora || 0) >= 9) { P.empRec = true; M.filaMsg.push(['empRec', null]); }
+      cobrarEmpresario();
+    }
+
+    // ---- as telas: a lista dos empresários e as propostas da janela (no estilo da carta da peneira)
+    function telaEmpresarios(motivo) {
+      cssCarta();
+      return new Promise((ok) => {
+        const d = dados(), P = pro(), atual = empAtivo(), el = document.createElement('div'); el.className = 'sbCarta';
+        const efeitos = (e) => [Tf(e.times === 1 ? 'Leva a sua proposta para {0} clube' : 'Leva a sua proposta para {0} clubes', e.times),
+          e.melhor ? Tf('+{0}% de chance de ser um time melhor que o atual', Math.round(e.melhor * 100)) : '', e.sal ? Tf('Salário +{0}%', Math.round(e.sal * 100)) : '',
+          Tf('Contratos mais longos: {0} meses', e.meses.join(' / '))].filter(Boolean);
+        const card = (e) => '<div class="sbOf"><div class="cab"><div style="font-size:30px">💼</div><div><b>' + escH(e.nome) + '</b><span class="est">' + escH(Tf('{0} fakes por mês', e.preco)) + '</span></div></div>'
+          + '<p><i>' + escH(T(e.txt)) + '</i></p><h5>' + escH(T('O que faz')) + '</h5>' + efeitos(e).map((t) => '<p>· ' + escH(t) + '</p>').join('')
+          + '<h5>' + escH(T('Pacote de 5 meses')) + '</h5><p class="din">' + escH(Tf('{0} fakes no total', e.preco * PACOTE_MESES)) + '</p>'
+          + '<button type="button" data-i="' + e.id + '">' + escH(atual && atual.id === e.id ? T('Renovar') : T('Contratar')) + '</button></div>';
+        const sub = motivo === 'rec' ? T('O técnico te passou o contato destes empresários. Eles levam você para outros clubes, conseguem salários maiores e contratos mais longos.')
+          : motivo === 'fim' ? T('O pacote do seu empresário acabou. Você pode renovar, trocar de empresário ou ficar sem.')
+          : T('Com um empresário chegam mais propostas na próxima janela de transferências.');
+        const lista = () => {
+          el.innerHTML = '<div class="sbFolha"><h2>' + escH(T('EMPRESÁRIOS')) + '</h2><p class="sub">' + escH(sub) + '</p><p class="sub">' + escH(Tf('Seu saldo: {0} fakes', d.fakes | 0)) + '</p>'
+            + '<div class="sbOfs">' + EMPRESARIOS.map(card).join('') + '</div><div class="sbConf"><button type="button" class="nao" data-c="x">' + escH(T('Agora não')) + '</button></div></div>';
+        };
+        const confirmar = (id) => {
+          const e = EMP_DE(id), tot = e.preco * PACOTE_MESES, sobra = (d.fakes | 0) - tot;
+          el.innerHTML = '<div class="sbFolha" style="width:min(520px,100%)"><h2>' + escH(Tf('Contratar {0}?', e.nome)) + '</h2>'
+            + '<p class="sub">' + escH(Tf('{0} fakes por mês durante 5 meses ({1} no total). A 1ª mensalidade é descontada hoje.', e.preco, tot)) + '</p>'
+            + '<p class="sub" style="color:#a8321e;opacity:1"><b>' + escH(T('Atenção: as mensalidades são descontadas mesmo sem dinheiro, e o seu saldo pode ficar negativo. Ele começa a procurar clubes já na assinatura.')) + '</b></p>'
+            + '<p class="sub">' + escH(Tf('Ele traz as propostas na janela de transferências de {0}.', dataTxt(alvoDoEmpresario()))) + '</p>'
+            + (sobra < 0 ? '<p class="sub" style="color:#a8321e;opacity:1">' + escH(Tf('Com o seu saldo de hoje, você termina o pacote com {0} fakes.', sobra)) + '</p>' : '')
+            + '<div class="sbConf"><button type="button" class="sim" data-c="1">' + escH(T('Contratar')) + '</button><button type="button" class="nao" data-c="0">' + escH(T('Voltar')) + '</button></div></div>';
+          el.dataset.sel = id;
+        };
+        el.onclick = (ev) => {
+          const b = ev.target.closest('button'); if (!b) return;
+          if (b.dataset.i != null) { confirmar(+b.dataset.i); return; }
+          if (b.dataset.c === '1') { el.remove(); ok(+el.dataset.sel); return; }
+          if (b.dataset.c === '0') { lista(); return; }
+          if (b.dataset.c === 'x') { el.remove(); ok(null); }
+        };
+        lista(); (document.getElementById('raizJogo') || document.body).appendChild(el);
+      });
+    }
+    function telaPropostas(J) {
+      cssCarta();
+      return new Promise((ok) => {
+        const P = pro(), R = J.res, el = document.createElement('div'); el.className = 'sbCarta';
+        const card = (o, i) => {
+          const t = TIME_DE[o.k], div = temp().times.A.includes(o.k) ? 'A' : 'B';
+          const tag = o.renova ? T('Renovação') : o.emp ? Tf('Pelo empresário ({0})', EMP_DE(o.emp).nome) : T('Proposta direta do clube');
+          return '<div class="sbOf"><div class="cab"><img src="' + urlArte(t.k) + '" alt=""><div><b>' + escH(t.nome) + '</b><span class="est">' + estrelasTxt(t.estrelas) + '</span> <small>' + escH(Tf('Série {0}', div)) + '</small></div></div>'
+            + '<p><b>' + escH(tag) + '</b>' + (o.melhor ? ' · <span style="color:#1f6a2a">' + escH(T('time melhor que o seu')) + '</span>' : '') + '</p>'
+            + '<h5>' + escH(T('Contrato')) + '</h5><p class="din">' + escH(Tf('{0} fakes por jogo', o.base + (o.extra | 0))) + '</p>'
+            + '<p>' + escH(Tf('+{0} por gol · +{1} por assistência', o.gol, o.ass)) + '</p><p>' + escH(Tf('Bônus por vitória: {0} fakes', o.vit)) + '</p><p>' + escH(Tf('Luvas (na assinatura): {0} fakes', o.luvas)) + '</p>'
+            + '<p>' + escH(Tf('Duração: {0} meses (até {1})', o.meses, dataTxt(fimDoContrato(dados(), hoje(), o.meses)))) + '</p>'
+            + '<p>' + escH(Tf('Técnico: {0}', t.tecnico)) + ' · ' + escH(t.formacao) + '</p>'
+            + '<button type="button" data-i="' + i + '">' + escH(o.renova ? T('Renovar') : T('Aceitar')) + '</button></div>';
+        };
+        const ficar = () => (R.vence ? '' : '<div class="sbOf"><div class="cab"><img src="' + urlArte(P.clube) + '" alt=""><div><b>' + escH(TIME_DE[P.clube].nome) + '</b></div></div>'
+          + '<p>' + escH(Tf('Seu contrato atual vai até {0}.', dataTxt(P.contrato.fim))) + '</p><p>' + escH(Tf('{0} fakes por jogo', (P.contrato.base | 0) + (P.contrato.extra | 0))) + '</p>'
+          + '<button type="button" data-i="-1">' + escH(T('Ficar no clube')) + '</button></div>');
+        const aviso = J.tipo === 'meio' ? '<p class="sub" style="color:#a8321e;opacity:1">' + escH(T('Trocar de clube no meio da temporada deixa você mais Problemático, e aí fica mais difícil receber propostas de times bons.')) + '</p>' : '';
+        const lista = () => {
+          el.innerHTML = '<div class="sbFolha"><h2>' + escH(J.tipo === 'meio' ? T('JANELA DO MEIO DA TEMPORADA') : T('JANELA DE FIM DE TEMPORADA')) + '</h2>'
+            + '<p class="sub">' + escH(R.ofertas.filter((o) => !o.renova).length ? T('Chegaram propostas de outros clubes. Escolha o seu futuro:') : T('Nenhum outro clube mandou proposta desta vez.')) + '</p>' + aviso
+            + '<div class="sbOfs">' + R.ofertas.map(card).join('') + ficar() + '</div></div>';
+        };
+        const confirmar = (i) => {
+          const o = R.ofertas[i], t = TIME_DE[o.k];
+          el.innerHTML = '<div class="sbFolha" style="width:min(460px,100%)"><h2>' + escH(o.renova ? Tf('Renovar com o {0}?', t.nome) : Tf('Aceitar a proposta do {0}?', t.nome)) + '</h2><div style="text-align:center"><img src="' + urlArte(t.k) + '" alt="" style="width:72px;height:72px;image-rendering:pixelated"></div>'
+            + '<div class="sbConf"><button type="button" class="sim" data-c="1">' + escH(o.renova ? T('Renovar') : T('Aceitar')) + '</button><button type="button" class="nao" data-c="0">' + escH(T('Ver as outras')) + '</button></div></div>';
+          el.dataset.sel = i;
+        };
+        el.onclick = (ev) => {
+          const b = ev.target.closest('button'); if (!b) return;
+          if (b.dataset.i === '-1') { el.remove(); ok(-1); return; }
+          if (b.dataset.i != null) { confirmar(+b.dataset.i); return; }
+          if (b.dataset.c === '1') { el.remove(); ok(+el.dataset.sel); return; }
+          if (b.dataset.c === '0') lista();
+        };
+        lista(); (document.getElementById('raizJogo') || document.body).appendChild(el);
+      });
+    }
+    // ---- as mensagens novas (chamadas pelo tickMensagens)
+    async function mensagemCarreira(tipo, x) {
+      const P = pro(), tec = clube() ? clube().tecnico : T('Técnico');
+      if (tipo === 'empRec') {
+        await api.mensagemCelular(tec, T('Agora que você é profissional, precisa de um empresário. Ele leva o seu nome para outros clubes e consegue salários maiores e contratos mais longos.'),
+          T('Vou te passar o contato de alguns que eu conheço. O pacote deles é de 5 meses, metade do campeonato.'));
+        const id = await comTrava(() => telaEmpresarios('rec')); if (id) { contratarEmpresario(id); M.filaMsg.unshift(['empOk', { id }]); }
+      } else if (tipo === 'empOk') {
+        const e = EMP_DE(x.id), d = dados();
+        await api.mensagemCelular(e.nome, T('Fechado! Já estou ligando para os clubes. Na próxima janela de transferências eu te trago as propostas.'),
+          (d.fakes | 0) < 0 ? Tf('A 1ª mensalidade ({0} fakes) já foi descontada. Seu saldo ficou negativo: {1} fakes.', e.preco, d.fakes | 0) : Tf('A 1ª mensalidade ({0} fakes) já foi descontada.', e.preco));
+      } else if (tipo === 'empCobra') {
+        if (x.k === 1) return;                                              // a 1ª já foi avisada na contratação
+        await api.mensagemCelular(x.nome, Tf('Mensalidade do empresário: {0} fakes ({1} de 5).', x.preco, x.k), x.saldo < 0 ? Tf('Atenção: o seu saldo está negativo ({0} fakes).', x.saldo) : '');
+      } else if (tipo === 'empFim') {
+        await api.mensagemCelular(x.nome, T('O nosso pacote de 5 meses terminou. Se quiser continuar comigo (ou com outro empresário), é só escolher.'), '');
+        const id = await comTrava(() => telaEmpresarios('fim')); if (id) { contratarEmpresario(id); M.filaMsg.unshift(['empOk', { id }]); }
+      } else if (tipo === 'janelaAbre') {
+        const C = P.contrato, vence = (C.fim | 0) <= hoje() + 31;
+        const t1 = x.tipo === 'meio' ? T('Pausa do meio da temporada! Junho é livre: sem jogos e sem as missões do clube. A janela de transferências está aberta até 30 de junho.')
+          : Tf('Férias! Dezembro é todo seu. A janela de transferências está aberta e a próxima temporada começa em {0}.', dataTxt(temp().vagas[0].dia));
+        await api.mensagemCelular(clube().nome, t1, vence ? T('O seu contrato termina nesta janela: renove ou escolha outro clube.') : Tf('O seu contrato vai até {0}.', dataTxt(C.fim)));
+      } else if (tipo === 'janelaOfertas') {
+        const J = P.janela; if (!J || !J.res) return;
+        const n = J.res.ofertas.filter((o) => !o.renova).length, e = J.res.emp ? EMP_DE(J.res.emp) : null;
+        await api.mensagemCelular(e ? e.nome : clube().nome, n ? Tf(n === 1 ? 'Chegou {0} proposta de outro clube!' : 'Chegaram {0} propostas de outros clubes!', n) : T('Nenhum clube mandou proposta nesta janela.'),
+          e ? '' : T('Sem empresário, só chegam as propostas que os clubes mandam direto (e só para quem está jogando muito bem).'));
+        if (!n && !J.res.vence) { J.etapa = 'decidido'; P.estJ = Object.assign({}, P.est || {}); }
+        else {
+          const i = await comTrava(() => telaPropostas(J));
+          if (i >= 0) {
+            const o = J.res.ofertas[i]; aceitarProposta(o, J.tipo);
+            await api.mensagemCelular(TIME_DE[o.k].nome, o.renova ? Tf('Contrato renovado até {0}!', dataTxt(P.contrato.fim)) : Tgf('Bem-vindo ao {0}! O seu contrato vai até {1}.', TIME_DE[o.k].nome, dataTxt(P.contrato.fim)),
+              !o.renova && J.tipo === 'meio' ? T('Você já joga pelo clube novo depois da pausa.') : '');
+          }
+          J.etapa = 'decidido'; P.estJ = Object.assign({}, P.est || {}); J.escolha = i >= 0 ? J.res.ofertas[i].k : P.clube;
+        }
+        if (!empDaJanela(inicioJanela(hoje(), true))) {                    // sem empresário para a próxima janela: a lista de novo
+          const id = await comTrava(() => telaEmpresarios('janela')); if (id) { contratarEmpresario(id); M.filaMsg.unshift(['empOk', { id }]); }
+        }
+      }
+      gravar();
+    }
+
     function tick(dt) {
       const s = S(); if (!s || !s.dados) return;
       tickOnibus(dt);
@@ -1694,7 +2005,7 @@
         }
         if (contratado() || P.etapa === 'fimTemporada') {
           try { aplicarNiveis(P); garantirLiga(temp()); } catch (e) { console.warn('[Série B] liga:', e); }   // (7.3.0) os níveis da temporada e a Série A (saves antigos)
-          if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); }
+          if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); try { tickEmpresario(); tickJanela(); } catch (e) { console.warn('[Série B] empresário/janela:', e); } }
           if (P.etapa === 'fimTemporada' && !P.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaFimTemporada();
           else if (P.etapa === 'fimTemporada' && P.galaVista && !M.cena) novaTemporadaDoClube();   // (7.3.0) save que acabou a temporada antes da 7.3.0 (a festa já foi): a próxima começa agora
         }
@@ -1702,7 +2013,7 @@
       tickMensagens(dt);
     }
     return { tick, alvos, popularidade, presente, _M: M,
-      _fns: { cfgJogo, telaClassificacao, cenaFimTemporada, novaTemporadaDoClube, escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo, festaTitulo, cenaFimTemporada, premiosDaFesta, jogadoresDaFesta } };
+      _fns: { tickJanela, tickEmpresario, gerarPropostasJanela, telaEmpresarios, telaPropostas, contratarEmpresario, aceitarProposta, desempenhoJanela, cobrarEmpresario, janelaDe, mensagemCarreira, cfgJogo, telaClassificacao, cenaFimTemporada, novaTemporadaDoClube, escalacao, mudarConf, fecharVagas, fecharVaga, proximaVaga, jogoNosso: (v) => jogoNosso(temp(), v), criarOnibus, tirarOnibus, embarcar, partidaDoDia, assistirDoBanco, telaPreJogo, telaPosJogo, registrarJogo, avaliarHabitos, registrarHabitos, missaoDoDia, montarAquecimento, desmontarAquecimento, ganchoAquecimento, anosAvancando, cfgJogo, festaTitulo, cenaFimTemporada, premiosDaFesta, jogadoresDaFesta } };
   }
 
   // ============================================================================================ A CARTA (o quarto, fase2.js)
@@ -1740,6 +2051,7 @@
             + '<h5>' + escH(T('Contrato')) + '</h5><p class="din">' + escH(Tf('{0} fakes por jogo', o.base + (o.extra | 0))) + '</p>'
             + '<p>' + escH(Tf('+{0} por gol · +{1} por assistência', o.gol, o.ass)) + '</p><p>' + escH(Tf('Bônus por vitória: {0} fakes', o.vit)) + '</p><p>' + escH(Tf('Luvas (na assinatura): {0} fakes', o.luvas)) + '</p>'
             + (o.extra ? '<p>' + escH(Tf('Inclui +{0} por jogo pela sua personalidade.', o.extra)) + '</p>' : '')
+            + '<p>' + escH(Tf('Duração: {0} meses', o.meses || 12)) + '</p>'
             + '<h5>' + escH(T('Como o time joga')) + '</h5><p>' + escH(Tf('{0} · {1}', t.formacao, T(NOME_TATICA[t.tatica] || t.tatica))) + '</p><p>' + escH(T(t.estilo)) + '</p><p>' + escH(Tf('Técnico: {0}', t.tecnico)) + '</p>'
             + '<button type="button" data-i="' + i + '">' + escH(T('Escolher')) + '</button></div>';
         };
@@ -1761,8 +2073,11 @@
   };
   function aceitarOferta(c, i) {
     const P = (c.pro = c.pro || { etapa: 'carta' }), o = (P.ofertas || [])[i]; if (!o) return null;
-    Object.assign(P, { clube: o.k, contrato: o, etapa: 'contratado', contratoDia: c.dia | 0, conf: CONF0, chance: false, manter: false, habAval: c.dia | 0, est: { j: 0, tit: 0, g: 0, a: 0, nota: 0, bons: 0, min: 0, v: 0 }, hist: [], ganhos: 0 });
-    P.temporada = novaTemporada(o.k, (c.dia | 0) + 1, 1);
+    Object.assign(P, { clube: o.k, contrato: o, etapa: 'contratado', contratoDia: c.dia | 0, conf: CONF0, chance: false, manter: false, habAval: c.dia | 0, est: { j: 0, tit: 0, g: 0, a: 0, nota: 0, bons: 0, min: 0, v: 0 }, hist: [], ganhos: 0, estJ: {} });
+    // (7.4.6) a 1ª temporada: a do ano da carta (a peneira foi em 8 de janeiro; a liga começa no fim do mês). Se por algum motivo a
+    //   carta chegou depois do começo, o calendário é acertado para a carta ser em 11 de janeiro.
+    if (typeof Calendario !== 'undefined') { if (Calendario.data(c, c.dia | 0).doAno > 20) Calendario.acertar(c, c.dia | 0, 1, 11); P.contrato.desde = c.dia | 0; P.contrato.fim = fimDoContrato(c, c.dia | 0, o.meses || 12); }
+    P.temporada = novaTemporada(o.k, typeof Calendario !== 'undefined' ? Calendario.jan1(c, c.dia | 0) : (c.dia | 0) + 1, 1);
     c.fakes = (c.fakes | 0) + (o.luvas | 0);
     return o;
   }
@@ -1773,6 +2088,13 @@
     const P = c.pro || {}, T0 = P.temporada; if (!T0 || !P.clube) return '<p class="crVazio">' + esc(Tg('Você ainda não é jogador profissional.')) + '</p>';
     const t = TIME_DE[P.clube], E = P.est || {}, num = (v, tt) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(tt)) + '</span></div>';
     let h = '<div class="crCard"><h4><img src="' + urlArte(t.k) + '" alt="">' + esc(t.nome) + '</h4><p>' + esc(Tf('Confiança do técnico: {0}/100', P.conf | 0)) + ' · ' + esc(Tf('Contrato: {0} fakes por jogo', (P.contrato.base | 0) + (P.contrato.extra | 0))) + '</p><p>' + esc(Tf('Ganhos no clube: {0} fakes', P.ganhos | 0)) + '</p></div>';
+    {                                                                     // (7.4.6) a data, o contrato e o empresário
+      const Cn = P.contrato || {}, temCal = typeof Calendario !== 'undefined', dt = (x) => (temCal ? Calendario.comAno(c, x, true) : String(x));
+      const Em = P.emp && (c.dia | 0) < P.emp.desde + PACOTE_MESES * 30 ? P.emp : null, e = Em && EMP_DE(Em.id);
+      h += '<div class="crCard"><p>' + esc(Tf('Hoje: {0}', temCal ? Calendario.longo(c) + ' ' + Calendario.data(c).ano : '')) + '</p>'
+        + (Cn.fim ? '<p>' + esc(Tf('Contrato até {0} ({1} meses)', dt(Cn.fim), Cn.meses || 12)) + '</p>' : '')
+        + '<p>' + esc(e ? Tf('Empresário: {0} · {1} fakes por mês · mensalidades pagas: {2} de 5 · até {3}', e.nome, e.preco, Em.pagas, dt(Em.desde + PACOTE_MESES * 30)) : T('Sem empresário.')) + '</p></div>';
+    }
     const j = E.j | 0;
     h += '<div class="crNums">' + num(j, 'Jogos') + num((E.tit | 0) + ' / ' + j, 'Como titular') + num(E.g | 0, 'Gols') + num(E.a | 0, 'Assistências') + num(j ? (Math.round(E.nota / j * 10) / 10).toFixed(1) : '—', 'Nota média') + num(E.min | 0, 'Minutos') + '</div>';
     // (7.3.0) a temporada inteira: as duas séries, as copas, a artilharia e as temporadas passadas (seções que abrem e fecham)
@@ -1791,6 +2113,72 @@
 
   // ============================================================================================ TEXTOS (pt → en, es, it, fr)
   const TRAD = {
+    // (7.4.6) empresários, contratos, janelas e o calendário
+    "Ele traz as propostas na janela de transferências de {0}.": ["The offers arrive in the transfer window starting on {0}.", "Trae las ofertas en el mercado de fichajes que empieza el {0}.", "Porta le offerte nella finestra di mercato che inizia il {0}.", "Les offres arrivent au mercato qui commence le {0}."],
+    "Junho livre: sem jogos nem missões do clube. A janela de transferências está aberta.": ["June is free: no games and no club missions. The transfer window is open.", "Junio libre: sin partidos ni misiones del club. El mercado de fichajes está abierto.", "Giugno libero: niente partite né missioni del club. La finestra di mercato è aperta.", "Juin est libre : pas de matchs ni de missions du club. Le mercato est ouvert."],
+    "Férias! Dezembro é seu. A próxima temporada começa em {0}.": ["Holidays! December is yours. The next season starts on {0}.", "¡Vacaciones! Diciembre es tuyo. La próxima temporada empieza el {0}.", "Ferie! Dicembre è tuo. La prossima stagione inizia il {0}.", "Vacances ! Décembre est à toi. La prochaine saison commence le {0}."],
+    "Leva a sua proposta para {0} clube": ["Takes your name to {0} club", "Lleva tu nombre a {0} club", "Porta il tuo nome a {0} club", "Propose ton nom à {0} club"],
+    "Leva a sua proposta para {0} clubes": ["Takes your name to {0} clubs", "Lleva tu nombre a {0} clubes", "Porta il tuo nome a {0} club", "Propose ton nom à {0} clubs"],
+    "+{0}% de chance de ser um time melhor que o atual": ["+{0}% chance of a better team than your current one", "+{0}% de probabilidad de un equipo mejor que el actual", "+{0}% di probabilità di una squadra migliore di quella attuale", "+{0} % de chances d'une équipe meilleure que l'actuelle"],
+    "Salário +{0}%": ["Salary +{0}%", "Salario +{0}%", "Stipendio +{0}%", "Salaire +{0} %"],
+    "Contratos mais longos: {0} meses": ["Longer contracts: {0} months", "Contratos más largos: {0} meses", "Contratti più lunghi: {0} mesi", "Contrats plus longs : {0} mois"],
+    "{0} fakes por mês": ["{0} fakes a month", "{0} fakes al mes", "{0} fakes al mese", "{0} fakes par mois"],
+    "O que faz": ["What they do", "Qué hace", "Cosa fa", "Ce qu'il fait"],
+    "Pacote de 5 meses": ["5-month package", "Paquete de 5 meses", "Pacchetto di 5 mesi", "Forfait de 5 mois"],
+    "{0} fakes no total": ["{0} fakes in total", "{0} fakes en total", "{0} fakes in totale", "{0} fakes au total"],
+    "Renovar": ["Renew", "Renovar", "Rinnovare", "Renouveler"],
+    "Contratar": ["Hire", "Contratar", "Assumere", "Engager"],
+    "O técnico te passou o contato destes empresários. Eles levam você para outros clubes, conseguem salários maiores e contratos mais longos.": ["The coach gave you these agents' contacts. They take you to other clubs and get you higher salaries and longer contracts.", "El entrenador te pasó el contacto de estos representantes. Te llevan a otros clubes y consiguen salarios más altos y contratos más largos.", "L'allenatore ti ha dato il contatto di questi procuratori. Ti portano in altri club e ottengono stipendi più alti e contratti più lunghi.", "L'entraîneur t'a donné le contact de ces agents. Ils t'emmènent dans d'autres clubs et obtiennent de meilleurs salaires et des contrats plus longs."],
+    "O pacote do seu empresário acabou. Você pode renovar, trocar de empresário ou ficar sem.": ["Your agent's package is over. You can renew, change agents or go without one.", "El paquete de tu representante terminó. Puedes renovar, cambiar de representante o quedarte sin.", "Il pacchetto del tuo procuratore è finito. Puoi rinnovare, cambiare procuratore o restare senza.", "Le forfait de ton agent est terminé. Tu peux renouveler, changer d'agent ou rester sans."],
+    "Com um empresário chegam mais propostas na próxima janela de transferências.": ["With an agent, more offers arrive in the next transfer window.", "Con un representante llegan más ofertas en el próximo mercado de fichajes.", "Con un procuratore arrivano più offerte nella prossima finestra di mercato.", "Avec un agent, plus d'offres arrivent au prochain mercato."],
+    "EMPRESÁRIOS": ["AGENTS", "REPRESENTANTES", "PROCURATORI", "AGENTS"],
+    "Seu saldo: {0} fakes": ["Your balance: {0} fakes", "Tu saldo: {0} fakes", "Il tuo saldo: {0} fakes", "Ton solde : {0} fakes"],
+    "Contratar {0}?": ["Hire {0}?", "¿Contratar a {0}?", "Assumere {0}?", "Engager {0} ?"],
+    "{0} fakes por mês durante 5 meses ({1} no total). A 1ª mensalidade é descontada hoje.": ["{0} fakes a month for 5 months ({1} in total). The 1st payment is taken today.", "{0} fakes al mes durante 5 meses ({1} en total). La 1.ª cuota se descuenta hoy.", "{0} fakes al mese per 5 mesi ({1} in totale). La 1ª rata viene addebitata oggi.", "{0} fakes par mois pendant 5 mois ({1} au total). La 1re mensualité est prélevée aujourd'hui."],
+    "Atenção: as mensalidades são descontadas mesmo sem dinheiro, e o seu saldo pode ficar negativo. Ele começa a procurar clubes já na assinatura.": ["Warning: the payments are taken even if you have no money, and your balance can go negative. The search for clubs starts as soon as you sign.", "Atención: las cuotas se descuentan aunque no tengas dinero, y tu saldo puede quedar en negativo. La búsqueda de clubes empieza en cuanto firmas.", "Attenzione: le rate vengono addebitate anche senza soldi e il tuo saldo può andare in rosso. La ricerca dei club inizia subito dopo la firma.", "Attention : les mensualités sont prélevées même sans argent, et ton solde peut devenir négatif. La recherche de clubs commence dès la signature."],
+    "Com o seu saldo de hoje, você termina o pacote com {0} fakes.": ["With today's balance, you finish the package with {0} fakes.", "Con tu saldo de hoy, terminas el paquete con {0} fakes.", "Con il saldo di oggi, finisci il pacchetto con {0} fakes.", "Avec ton solde d'aujourd'hui, tu termines le forfait avec {0} fakes."],
+    "Renovação": ["Renewal", "Renovación", "Rinnovo", "Renouvellement"],
+    "Pelo empresário ({0})": ["Through your agent ({0})", "Por tu representante ({0})", "Tramite il procuratore ({0})", "Par ton agent ({0})"],
+    "Proposta direta do clube": ["Direct offer from the club", "Oferta directa del club", "Offerta diretta del club", "Offre directe du club"],
+    "time melhor que o seu": ["better team than yours", "equipo mejor que el tuyo", "squadra migliore della tua", "équipe meilleure que la tienne"],
+    "Duração: {0} meses (até {1})": ["Length: {0} months (until {1})", "Duración: {0} meses (hasta el {1})", "Durata: {0} mesi (fino al {1})", "Durée : {0} mois (jusqu'au {1})"],
+    "Seu contrato atual vai até {0}.": ["Your current contract runs until {0}.", "Tu contrato actual dura hasta el {0}.", "Il tuo contratto attuale dura fino al {0}.", "Ton contrat actuel court jusqu'au {0}."],
+    "Ficar no clube": ["Stay at the club", "Quedarse en el club", "Restare nel club", "Rester au club"],
+    "Trocar de clube no meio da temporada deixa você mais Problemático, e aí fica mais difícil receber propostas de times bons.": ["Changing clubs in the middle of the season makes you more Troublesome, and then it gets harder to get offers from good teams.", "Cambiar de club a mitad de temporada te vuelve más Problemático, y luego cuesta más recibir ofertas de buenos equipos.", "Cambiare club a metà stagione ti rende più Problematico, e poi è più difficile ricevere offerte da buone squadre.", "Changer de club en milieu de saison te rend plus Problématique, et ensuite il est plus difficile de recevoir des offres de bonnes équipes."],
+    "JANELA DO MEIO DA TEMPORADA": ["MID-SEASON TRANSFER WINDOW", "MERCADO DE MITAD DE TEMPORADA", "MERCATO DI METÀ STAGIONE", "MERCATO DE MI-SAISON"],
+    "JANELA DE FIM DE TEMPORADA": ["END-OF-SEASON TRANSFER WINDOW", "MERCADO DE FIN DE TEMPORADA", "MERCATO DI FINE STAGIONE", "MERCATO DE FIN DE SAISON"],
+    "Chegaram propostas de outros clubes. Escolha o seu futuro:": ["Offers from other clubs have arrived. Choose your future:", "Llegaron ofertas de otros clubes. Elige tu futuro:", "Sono arrivate offerte da altri club. Scegli il tuo futuro:", "Des offres d'autres clubs sont arrivées. Choisis ton avenir :"],
+    "Nenhum outro clube mandou proposta desta vez.": ["No other club made an offer this time.", "Ningún otro club hizo una oferta esta vez.", "Nessun altro club ha fatto un'offerta questa volta.", "Aucun autre club n'a fait d'offre cette fois."],
+    "Renovar com o {0}?": ["Renew with {0}?", "¿Renovar con {0}?", "Rinnovare con {0}?", "Renouveler avec {0} ?"],
+    "Agora que você é profissional, precisa de um empresário. Ele leva o seu nome para outros clubes e consegue salários maiores e contratos mais longos.": ["Now that you're a pro, you need an agent. An agent takes your name to other clubs and gets you higher salaries and longer contracts.", "Ahora que eres profesional, necesitas un representante. Lleva tu nombre a otros clubes y consigue salarios más altos y contratos más largos.", "Ora che sei professionista, ti serve un procuratore. Porta il tuo nome ad altri club e ottiene stipendi più alti e contratti più lunghi.", "Maintenant que tu es pro, il te faut un agent. Il propose ton nom à d'autres clubs et obtient de meilleurs salaires et des contrats plus longs."],
+    "Vou te passar o contato de alguns que eu conheço. O pacote deles é de 5 meses, metade do campeonato.": ["I'll give you the contacts of some I know. Their package lasts 5 months, half of the championship.", "Te paso el contacto de algunos que conozco. Su paquete es de 5 meses, la mitad del campeonato.", "Ti passo il contatto di alcuni che conosco. Il loro pacchetto dura 5 mesi, metà del campionato.", "Je te donne le contact de quelques-uns que je connais. Leur forfait dure 5 mois, la moitié du championnat."],
+    "Fechado! Já estou ligando para os clubes. Na próxima janela de transferências eu te trago as propostas.": ["Deal! I'm already calling the clubs. In the next transfer window I'll bring you the offers.", "¡Trato hecho! Ya estoy llamando a los clubes. En el próximo mercado de fichajes te traigo las ofertas.", "Affare fatto! Sto già chiamando i club. Nella prossima finestra di mercato ti porto le offerte.", "Marché conclu ! J'appelle déjà les clubs. Au prochain mercato, je t'apporte les offres."],
+    "A 1ª mensalidade ({0} fakes) já foi descontada. Seu saldo ficou negativo: {1} fakes.": ["The 1st payment ({0} fakes) has been taken. Your balance is now negative: {1} fakes.", "La 1.ª cuota ({0} fakes) ya se descontó. Tu saldo quedó en negativo: {1} fakes.", "La 1ª rata ({0} fakes) è già stata addebitata. Il tuo saldo è in rosso: {1} fakes.", "La 1re mensualité ({0} fakes) a été prélevée. Ton solde est négatif : {1} fakes."],
+    "A 1ª mensalidade ({0} fakes) já foi descontada.": ["The 1st payment ({0} fakes) has been taken.", "La 1.ª cuota ({0} fakes) ya se descontó.", "La 1ª rata ({0} fakes) è già stata addebitata.", "La 1re mensualité ({0} fakes) a été prélevée."],
+    "Mensalidade do empresário: {0} fakes ({1} de 5).": ["Agent's monthly fee: {0} fakes ({1} of 5).", "Cuota del representante: {0} fakes ({1} de 5).", "Rata del procuratore: {0} fakes ({1} di 5).", "Mensualité de l'agent : {0} fakes ({1} sur 5)."],
+    "Atenção: o seu saldo está negativo ({0} fakes).": ["Warning: your balance is negative ({0} fakes).", "Atención: tu saldo está en negativo ({0} fakes).", "Attenzione: il tuo saldo è in rosso ({0} fakes).", "Attention : ton solde est négatif ({0} fakes)."],
+    "O nosso pacote de 5 meses terminou. Se quiser continuar comigo (ou com outro empresário), é só escolher.": ["Our 5-month package is over. If you want to keep working with me (or with another agent), just choose.", "Nuestro paquete de 5 meses terminó. Si quieres seguir conmigo (o con otro representante), solo elige.", "Il nostro pacchetto di 5 mesi è finito. Se vuoi continuare con me (o con un altro procuratore), basta scegliere.", "Notre forfait de 5 mois est terminé. Si tu veux continuer avec moi (ou avec un autre agent), il suffit de choisir."],
+    "Pausa do meio da temporada! Junho é livre: sem jogos e sem as missões do clube. A janela de transferências está aberta até 30 de junho.": ["Mid-season break! June is free: no games and no club missions. The transfer window is open until June 30.", "¡Pausa de mitad de temporada! Junio es libre: sin partidos ni misiones del club. El mercado de fichajes está abierto hasta el 30 de junio.", "Pausa di metà stagione! Giugno è libero: niente partite né missioni del club. La finestra di mercato è aperta fino al 30 giugno.", "Trêve de mi-saison ! Juin est libre : pas de matchs ni de missions du club. Le mercato est ouvert jusqu'au 30 juin."],
+    "Férias! Dezembro é todo seu. A janela de transferências está aberta e a próxima temporada começa em {0}.": ["Holidays! December is all yours. The transfer window is open and the next season starts on {0}.", "¡Vacaciones! Diciembre es todo tuyo. El mercado de fichajes está abierto y la próxima temporada empieza el {0}.", "Ferie! Dicembre è tutto tuo. La finestra di mercato è aperta e la prossima stagione inizia il {0}.", "Vacances ! Décembre est tout à toi. Le mercato est ouvert et la prochaine saison commence le {0}."],
+    "O seu contrato termina nesta janela: renove ou escolha outro clube.": ["Your contract ends in this window: renew or choose another club.", "Tu contrato termina en este mercado: renueva o elige otro club.", "Il tuo contratto scade in questa finestra: rinnova o scegli un altro club.", "Ton contrat se termine pendant ce mercato : renouvelle ou choisis un autre club."],
+    "O seu contrato vai até {0}.": ["Your contract runs until {0}.", "Tu contrato dura hasta el {0}.", "Il tuo contratto dura fino al {0}.", "Ton contrat court jusqu'au {0}."],
+    "Chegou {0} proposta de outro clube!": ["{0} offer from another club has arrived!", "¡Llegó {0} oferta de otro club!", "È arrivata {0} offerta da un altro club!", "{0} offre d'un autre club est arrivée !"],
+    "Chegaram {0} propostas de outros clubes!": ["{0} offers from other clubs have arrived!", "¡Llegaron {0} ofertas de otros clubes!", "Sono arrivate {0} offerte da altri club!", "{0} offres d'autres clubs sont arrivées !"],
+    "Nenhum clube mandou proposta nesta janela.": ["No club made an offer in this window.", "Ningún club hizo una oferta en este mercado.", "Nessun club ha fatto un'offerta in questa finestra.", "Aucun club n'a fait d'offre pendant ce mercato."],
+    "Sem empresário, só chegam as propostas que os clubes mandam direto (e só para quem está jogando muito bem).": ["Without an agent, only the offers clubs send directly arrive (and only for players doing really well).", "Sin representante, solo llegan las ofertas que los clubes mandan directamente (y solo para quien juega muy bien).", "Senza procuratore arrivano solo le offerte che i club mandano direttamente (e solo a chi gioca molto bene).", "Sans agent, seules les offres envoyées directement par les clubs arrivent (et seulement pour ceux qui jouent très bien)."],
+    "Contrato renovado até {0}!": ["Contract renewed until {0}!", "¡Contrato renovado hasta el {0}!", "Contratto rinnovato fino al {0}!", "Contrat renouvelé jusqu'au {0} !"],
+    "Bem-vindo ao {0}! O seu contrato vai até {1}.": ["Welcome to {0}! Your contract runs until {1}.", "¡Bienvenido a {0}! Tu contrato dura hasta el {1}.", "Benvenuto al {0}! Il tuo contratto dura fino al {1}.", "Bienvenue à {0} ! Ton contrat court jusqu'au {1}."],
+    "Você já joga pelo clube novo depois da pausa.": ["You'll play for your new club right after the break.", "Ya juegas por el club nuevo después de la pausa.", "Giochi già per il nuovo club dopo la pausa.", "Tu joues pour ton nouveau club dès la fin de la trêve."],
+    "Duração: {0} meses": ["Length: {0} months", "Duración: {0} meses", "Durata: {0} mesi", "Durée : {0} mois"],
+    "Hoje: {0}": ["Today: {0}", "Hoy: {0}", "Oggi: {0}", "Aujourd'hui : {0}"],
+    "Contrato até {0} ({1} meses)": ["Contract until {0} ({1} months)", "Contrato hasta el {0} ({1} meses)", "Contratto fino al {0} ({1} mesi)", "Contrat jusqu'au {0} ({1} mois)"],
+    "Empresário: {0} · {1} fakes por mês · mensalidades pagas: {2} de 5 · até {3}": ["Agent: {0} · {1} fakes a month · payments made: {2} of 5 · until {3}", "Representante: {0} · {1} fakes al mes · cuotas pagadas: {2} de 5 · hasta el {3}", "Procuratore: {0} · {1} fakes al mese · rate pagate: {2} di 5 · fino al {3}", "Agent : {0} · {1} fakes par mois · mensualités payées : {2} sur 5 · jusqu'au {3}"],
+    "Sem empresário.": ["No agent.", "Sin representante.", "Senza procuratore.", "Sans agent."],
+    "Começou levando garoto da várzea para teste. Conhece gente em todo clube.": ["Started out taking amateur kids to trials. Knows people at every club.", "Empezó llevando chicos del fútbol de barrio a pruebas. Conoce gente en todos los clubes.", "Ha iniziato portando ragazzi dei campetti ai provini. Conosce gente in ogni club.", "Il a commencé en emmenant des gamins du foot de quartier aux essais. Il connaît du monde dans tous les clubs."],
+    "Ex-jogadora de futsal. Tem bons contatos com os diretores.": ["Former futsal player. Has good contacts with club directors.", "Exjugadora de fútbol sala. Tiene buenos contactos con los directivos.", "Ex giocatrice di calcio a 5. Ha buoni contatti con i dirigenti.", "Ancienne joueuse de futsal. A de bons contacts avec les dirigeants."],
+    "Negociador duro: não sai da mesa sem um salário melhor.": ["Tough negotiator: never leaves the table without a better salary.", "Negociador duro: no se levanta de la mesa sin un salario mejor.", "Negoziatore duro: non si alza dal tavolo senza uno stipendio migliore.", "Négociateur coriace : il ne quitte pas la table sans un meilleur salaire."],
+    "Advogada esportiva. Cuida de jogadores da Série A.": ["Sports lawyer. Represents Série A players.", "Abogada deportiva. Representa a jugadores de la Série A.", "Avvocata sportiva. Segue giocatori della Série A.", "Avocate du sport. Elle s'occupe de joueurs de Série A."],
+    "O empresário mais famoso do país. Se ele liga, os grandes atendem.": ["The most famous agent in the country. When he calls, the big clubs answer.", "El representante más famoso del país. Si él llama, los grandes contestan.", "Il procuratore più famoso del paese. Se chiama lui, i grandi rispondono.", "L'agent le plus célèbre du pays. Quand il appelle, les grands clubs répondent."],
     "Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.": ["We're Série A now! Your contract went up to {0} fakes per game.", "¡Ahora somos Série A! Tu contrato subió a {0} fakes por partido.", "Ora siamo in Série A! Il tuo contratto è salito a {0} fakes a partita.", "On est en Série A ! Ton contrat passe à {0} fakes par match."],
     "Agora é Série B de novo. Vamos voltar mais fortes!": ["It's Série B again now. We'll come back stronger!", "Ahora es Série B otra vez. ¡Volveremos más fuertes!", "Ora è di nuovo Série B. Torneremo più forti!", "C'est de nouveau la Série B. On reviendra plus forts !"],
     "Artilharia da Série {0}": ["Série {0} top scorers", "Goleadores de la Série {0}", "Capocannonieri della Série {0}", "Meilleurs buteurs de la Série {0}"],
@@ -2016,8 +2404,9 @@
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
   // o que muda quando a personagem é feminina (o português muda: FEM_PT; só outro idioma muda: FEM_TRAD)
-  if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, {"machucado por {0} jogo(s)": "machucada por {0} jogo(s)", "Expulso?! Assim você complica o time inteiro.": "Expulsa?! Assim você complica o time inteiro.", "Você ainda não é jogador profissional.": "Você ainda não é jogadora profissional."});
+  if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, {"Bem-vindo ao {0}! O seu contrato vai até {1}.": "Bem-vinda ao {0}! O seu contrato vai até {1}.", "machucado por {0} jogo(s)": "machucada por {0} jogo(s)", "Expulso?! Assim você complica o time inteiro.": "Expulsa?! Assim você complica o time inteiro.", "Você ainda não é jogador profissional.": "Você ainda não é jogadora profissional."});
   const FEM = {
+    "Bem-vindo ao {0}! O seu contrato vai até {1}.": [null, "¡Bienvenida a {0}! Tu contrato dura hasta el {1}.", "Benvenuta al {0}! Il tuo contratto dura fino al {1}.", null],
     "suspenso por {0} jogo(s)": [null, "suspendida por {0} partido(s)", "squalificata per {0} partita/e", "suspendue pour {0} match(s)"],
     "Você não apareceu no ônibus do jogo contra o {0}.": [null, null, "Non ti sei presentata al pullman per la partita contro {0}.", "Tu n'es pas venue prendre le bus du match contre {0}."],
     "Você foi muito bem no último jogo: continua no time titular.": [null, null, "Sei andata molto bene nell'ultima partita: resti titolare.", "Tu as très bien joué au dernier match : tu restes titulaire."],
@@ -2029,5 +2418,5 @@
 
 
   window.FutebolJS.registrarFase({ id: 'serieb', nome: 'Série B', nucleoMinimo: '7.1', iniciar: async () => {}, criar, carta, aceitarOferta, fraseOferta,
-    dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet }, TIMES_B, TIMES_A, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
+    dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet, EMPRESARIOS, fimDoContrato, montarCalendario3, novaTemporada, rankingTimes }, TIMES_B, TIMES_A, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
 })();

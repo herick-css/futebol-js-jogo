@@ -37,7 +37,14 @@ ARQUIVOS
                           (7.4.4) Habilidade dos times (0 a 100): várzea 30–60, times pequenos do interior 46–53, Série B 50–70,
                           Série A 65–85 (Europa, quando vier: 85–100). As estrelas são relativas ao campeonato de cada um.
                           (7.4.5) O personagem da história começa com tudo 30 e as habilidades da posição escolhida (atacante,
-                          meia ou zagueiro) sorteadas entre 40 e 50
+                          meia ou zagueiro) sorteadas entre 40 e 50.
+                          (7.4.7) CALENDÁRIO: meses de 30 dias (Calendario, no jogo.js; o HUD mostra "Ter 14 mar 15:30"). A peneira
+                          é em 8 de janeiro; a temporada vai de 28 de janeiro a 30 de maio e de 1º de julho a 30 de novembro
+                          (48 jogos, 1 ou 2 por semana, quintas e sábados), com JUNHO livre e DEZEMBRO de férias (as duas
+                          janelas de transferências). Contratos com duração (6 a 36 meses). EMPRESÁRIOS: o técnico recomenda
+                          logo depois da contratação; 5 opções (200 a 1000 fakes por mês, pacote obrigatório de 5 meses,
+                          cobrado mesmo no vermelho), que trazem 1 a 3 propostas na janela, chance de time melhor, salário a
+                          mais e contratos mais longos. Trocar de clube em junho deixa o jogador mais Problemático
   festa.js .............. as festas de título e a noite dos prêmios: a comemoração no gramado (roda, joelhos, aviãozinho,
                           a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
                           copas, Copa do Brasil, Série B e Série A), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno

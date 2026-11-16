@@ -48,29 +48,29 @@
     'Ver minha ficha de treino': ['See my training sheet', 'Ver mi ficha de entrenamiento', 'Vedi la mia scheda', 'Voir ma fiche d’entraînement'],
     'Tchau': ['Bye', 'Chao', 'Ciao', 'Salut'],
     'Ih, tá faltando grana aí... São {0} fakes.': ['Oops, you’re short on cash... It’s {0} fakes.', 'Uy, te falta plata... Son {0} fakes.', 'Ops, ti mancano soldi... Sono {0} fakes.', 'Oups, il te manque des sous... C’est {0} fakes.'],
-    'Fechado! Seu plano vale até o dia {0}.': ['Deal! Your plan is valid until day {0}.', '¡Listo! Tu plan vale hasta el día {0}.', 'Fatto! Il tuo abbonamento vale fino al giorno {0}.', 'C’est bon ! Ton abonnement est valable jusqu’au jour {0}.'],
+    'Fechado! Seu plano vale até o dia {0}.': ['Deal! Your plan is valid until {0}.', '¡Listo! Tu plan vale hasta el {0}.', 'Fatto! Il tuo abbonamento vale fino al {0}.', 'C’est bon ! Ton abonnement est valable jusqu’au {0}.'],
     'A catraca da esquerda é a entrada. Para sair, use a da direita.': ['The turnstile on the left is the entrance. To leave, use the one on the right.', 'El torniquete de la izquierda es la entrada. Para salir, usa el de la derecha.', 'Il tornello a sinistra è l’entrata. Per uscire, usa quello a destra.', 'Le tourniquet de gauche, c’est l’entrée. Pour sortir, prends celui de droite.'],
     'Lá dentro tem esteira, abdominal e supino. Dá para fazer até 3 treinos por dia, beleza?': ['Inside there’s a treadmill, sit-ups and bench press. You can do up to 3 workouts a day, okay?', 'Adentro hay cinta, abdominales y press de banca. Puedes hacer hasta 3 entrenamientos por día, ¿vale?', 'Dentro ci sono tapis, addominali e panca. Puoi fare fino a 3 allenamenti al giorno, ok?', 'Dedans il y a le tapis, les abdos et le développé couché. Tu peux faire jusqu’à 3 entraînements par jour, ok ?'],
     'E se quiser evoluir mais rápido, fala com a Fernanda, a nossa personal.': ['And if you want to improve faster, talk to Fernanda, our personal trainer.', 'Y si quieres mejorar más rápido, habla con Fernanda, nuestra entrenadora personal.', 'E se vuoi migliorare più in fretta, parla con Fernanda, la nostra personal trainer.', 'Et si tu veux progresser plus vite, parle à Fernanda, notre coach personnelle.'],
-    'Seu plano vale até o dia {0}. Bom treino!': ['Your plan is valid until day {0}. Have a good workout!', 'Tu plan vale hasta el día {0}. ¡Buen entrenamiento!', 'Il tuo abbonamento vale fino al giorno {0}. Buon allenamento!', 'Ton abonnement est valable jusqu’au jour {0}. Bon entraînement !'],
+    'Seu plano vale até o dia {0}. Bom treino!': ['Your plan is valid until {0}. Have a good workout!', 'Tu plan vale hasta el {0}. ¡Buen entrenamiento!', 'Il tuo abbonamento vale fino al {0}. Buon allenamento!', 'Ton abonnement est valable jusqu’au {0}. Bon entraînement !'],
     'Seu plano venceu. Quer renovar por mais uma semana? São {0} fakes.': ['Your plan has expired. Want to renew it for another week? It’s {0} fakes.', 'Tu plan venció. ¿Quieres renovarlo por otra semana? Son {0} fakes.', 'Il tuo abbonamento è scaduto. Vuoi rinnovarlo per un’altra settimana? Sono {0} fakes.', 'Ton abonnement a expiré. Tu veux le renouveler pour une semaine ? C’est {0} fakes.'],
     'Precisa pagar o plano aqui no balcão primeiro!': ['You need to pay for the plan here at the desk first!', '¡Primero tienes que pagar el plan aquí en el mostrador!', 'Prima devi pagare l’abbonamento qui al bancone!', 'Il faut d’abord payer l’abonnement ici au comptoir !'],
     'Sua ficha: Velocidade {0} · Resistência {1} · Força {2}.': ['Your sheet: Speed {0} · Stamina {1} · Strength {2}.', 'Tu ficha: Velocidad {0} · Resistencia {1} · Fuerza {2}.', 'La tua scheda: Velocità {0} · Resistenza {1} · Forza {2}.', 'Ta fiche : Vitesse {0} · Endurance {1} · Force {2}.'],
     'Treinos de hoje: {0} de {1}. Treinos no total: {2}.': ['Workouts today: {0} of {1}. Total workouts: {2}.', 'Entrenamientos de hoy: {0} de {1}. Entrenamientos en total: {2}.', 'Allenamenti di oggi: {0} su {1}. Allenamenti in totale: {2}.', 'Entraînements du jour : {0} sur {1}. Entraînements au total : {2}.'],
-    'Com a Fernanda até o dia {0}: cada treino vale o dobro.': ['With Fernanda until day {0}: each workout counts double.', 'Con Fernanda hasta el día {0}: cada entrenamiento vale el doble.', 'Con Fernanda fino al giorno {0}: ogni allenamento vale il doppio.', 'Avec Fernanda jusqu’au jour {0} : chaque entraînement compte double.'],
+    'Com a Fernanda até o dia {0}: cada treino vale o dobro.': ['With Fernanda until {0}: each workout counts double.', 'Con Fernanda hasta el {0}: cada entrenamiento vale el doble.', 'Con Fernanda fino al {0}: ogni allenamento vale il doppio.', 'Avec Fernanda jusqu’au {0} : chaque entraînement compte double.'],
     // Fernanda
     'Oi! Eu sou a Fernanda, personal trainer aqui da academia.': ['Hi! I’m Fernanda, the personal trainer here at the gym.', '¡Hola! Soy Fernanda, entrenadora personal del gimnasio.', 'Ciao! Sono Fernanda, la personal trainer della palestra.', 'Salut ! Je suis Fernanda, la coach personnelle de la salle.'],
     'Treinando comigo, cada treino bem feito vale o dobro. São {0} fakes pela semana.': ['Training with me, every well-done workout counts double. It’s {0} fakes for the week.', 'Entrenando conmigo, cada entrenamiento bien hecho vale el doble. Son {0} fakes por la semana.', 'Allenandoti con me, ogni allenamento fatto bene vale il doppio. Sono {0} fakes per la settimana.', 'Avec moi, chaque entraînement bien fait compte double. C’est {0} fakes la semaine.'],
     'Quer treinar comigo esta semana?': ['Want to train with me this week?', '¿Quieres entrenar conmigo esta semana?', 'Vuoi allenarti con me questa settimana?', 'Tu veux t’entraîner avec moi cette semaine ?'],
     'Contratar ({0} fakes)': ['Hire her ({0} fakes)', 'Contratar ({0} fakes)', 'Ingaggiala ({0} fakes)', 'L’engager ({0} fakes)'],
     'Sem grana agora? Tranquilo, quando quiser é só me chamar.': ['No cash right now? No problem, just call me whenever you want.', '¿Sin plata ahora? Tranquilo, cuando quieras me llamas.', 'Niente soldi adesso? Tranquillo, quando vuoi chiamami.', 'Pas d’argent maintenant ? Pas de souci, appelle-moi quand tu veux.'],
-    'Combinado! Até o dia {0} eu acompanho os seus treinos.': ['Deal! Until day {0} I’ll be with you in your workouts.', '¡Trato hecho! Hasta el día {0} te acompaño en los entrenamientos.', 'Affare fatto! Fino al giorno {0} ti seguo negli allenamenti.', 'Marché conclu ! Jusqu’au jour {0}, je suis tes entraînements.'],
+    'Combinado! Até o dia {0} eu acompanho os seus treinos.': ['Deal! Until {0} I’ll be with you in your workouts.', '¡Trato hecho! Hasta el {0} te acompaño en los entrenamientos.', 'Affare fatto! Fino al {0} ti seguo negli allenamenti.', 'Marché conclu ! Jusqu’au {0}, je suis tes entraînements.'],
     'É só ir para um aparelho que eu chego do seu lado.': ['Just go to a machine and I’ll come over.', 'Ve a un aparato y yo voy a tu lado.', 'Vai a un attrezzo e io arrivo al tuo fianco.', 'Va sur un appareil et j’arrive à côté de toi.'],
     'Tranquilo! Se mudar de ideia, eu tô por aqui.': ['No problem! If you change your mind, I’m around.', '¡Tranquilo! Si cambias de idea, estoy por aquí.', 'Tranquillo! Se cambi idea, sono qui.', 'Pas de souci ! Si tu changes d’avis, je suis là.'],
     'Na esteira, o segredo é o ritmo: não deixe a lona te levar para trás.': ['On the treadmill, rhythm is everything: don’t let the belt pull you back.', 'En la cinta, el secreto es el ritmo: no dejes que la cinta te lleve hacia atrás.', 'Sul tapis, il segreto è il ritmo: non farti trascinare indietro.', 'Sur le tapis, tout est dans le rythme : ne te laisse pas emporter vers l’arrière.'],
     'No abdominal, sobe só quando o marcador estiver no verde. Sem pressa!': ['For sit-ups, only go up when the marker is in the green. No rush!', 'En los abdominales, sube solo cuando el marcador esté en el verde. ¡Sin prisa!', 'Negli addominali, sali solo quando l’indicatore è nel verde. Senza fretta!', 'Pour les abdos, remonte seulement quand le curseur est dans le vert. Sans te presser !'],
     'No supino, não deixa a barra parar no peito. Empurra sem dó!': ['On the bench press, don’t let the bar rest on your chest. Push hard!', 'En el press, no dejes que la barra se quede en el pecho. ¡Empuja con todo!', 'Sulla panca, non lasciare la barra ferma sul petto. Spingi forte!', 'Au développé, ne laisse pas la barre sur la poitrine. Pousse fort !'],
-    'Nosso combinado vale até o dia {0}. Bora treinar!': ['Our deal is valid until day {0}. Let’s train!', 'Nuestro trato vale hasta el día {0}. ¡A entrenar!', 'Il nostro accordo vale fino al giorno {0}. Allenamoci!', 'Notre accord est valable jusqu’au jour {0}. Allez, on s’entraîne !'],
+    'Nosso combinado vale até o dia {0}. Bora treinar!': ['Our deal is valid until {0}. Let’s train!', 'Nuestro trato vale hasta el {0}. ¡A entrenar!', 'Il nostro accordo vale fino al {0}. Allenamoci!', 'Notre accord est valable jusqu’au {0}. Allez, on s’entraîne !'],
     'Bora! Eu tô aqui do seu lado.': ['Let’s go! I’m right here with you.', '¡Vamos! Estoy aquí a tu lado.', 'Forza! Sono qui accanto a te.', 'Allez ! Je suis juste à côté.'],
     'Isso aí! Mandou bem demais!': ['That’s it! Awesome job!', '¡Eso es! ¡Lo hiciste genial!', 'Così! Bravissimo!', 'C’est ça ! Super boulot !'],
     // (6.3.0) o que a Fernanda diz quando o treino dá errado (cada motivo tem as suas falas)
@@ -214,6 +214,8 @@
   function criar(api) {
     const S = () => api.S();
     const M = { R: null, A: null, diego: null, fer: null, npcs: [], mg: null, halteres: [], toqueTravada: 0, beltOff: 0 };
+    // (7.4.6) as datas no calendário ("14 de março") em vez do número do dia
+    const dataAc = (dia) => (typeof Calendario !== 'undefined' ? Calendario.comAno(S().dados, dia) : dia);
     const dadosA = () => { const d = S().dados; if (!d.academia) d.academia = {}; return d.academia; };
     const dia = () => S().dados.dia || 1;
     const temAcesso = () => (dadosA().acessoAte || 0) > dia();
@@ -426,7 +428,7 @@
       if (ab && ab.est === 'corte') { if (ab.l) await api.fala('diego', ab.l); return; }   // -80: o Diego não perde mais tempo com você
       if (ab && ab.l) await api.fala('diego', ab.l);
       if (temAcesso()) {
-        await api.fala('diego', Tf('Seu plano vale até o dia {0}. Bom treino!', a.acessoAte - 1));
+        await api.fala('diego', Tf('Seu plano vale até o dia {0}. Bom treino!', dataAc(a.acessoAte - 1)));
         const r = await Escolha.mostrar(T('Ver minha ficha de treino'), [T('Ver minha ficha de treino'), T('Tchau')]);
         if (r === 0) await ficha();
         return;
@@ -441,7 +443,7 @@
       if (!pagar(PRECO)) { await api.fala('diego', Tf('Ih, tá faltando grana aí... São {0} fakes.', PRECO)); return; }
       a.acessoAte = dia() + DIAS_PLANO; a.pagouVezes = (a.pagouVezes | 0) + 1; if (api.papoAmizade) api.papoAmizade('diego', 2);
       api.gravar(S().dados.ponto || 'chegada');
-      await api.fala('diego', Tf('Fechado! Seu plano vale até o dia {0}.', a.acessoAte - 1));
+      await api.fala('diego', Tf('Fechado! Seu plano vale até o dia {0}.', dataAc(a.acessoAte - 1)));
       if (!venceu) {
         await api.fala('diego', T('A catraca da esquerda é a entrada. Para sair, use a da direita.'));
         await api.fala('diego', T('Lá dentro tem esteira, abdominal e supino. Dá para fazer até 3 treinos por dia, beleza?'));
@@ -452,7 +454,7 @@
       const at = api.atributosJogador(), a = dadosA();
       await api.fala('diego', Tf('Sua ficha: Velocidade {0} · Resistência {1} · Força {2}.', fmt1(at.velocidade), fmt1(at.resistencia), fmt1(at.forca)));
       await api.fala('diego', Tf('Treinos de hoje: {0} de {1}. Treinos no total: {2}.', treinosHoje(), TREINOS_DIA, a.total | 0));
-      if (temPersonal()) await api.fala('diego', Tf('Com a Fernanda até o dia {0}: cada treino vale o dobro.', a.personalAte - 1));
+      if (temPersonal()) await api.fala('diego', Tf('Com a Fernanda até o dia {0}: cada treino vale o dobro.', dataAc(a.personalAte - 1)));
     }
 
     // ---------------------------------------------------------------- FERNANDA (personal)
@@ -471,7 +473,7 @@
         if (ab && ab.l) await api.fala('fernanda', ab.l);
       }
       if (temPersonal()) {
-        await api.fala('fernanda', Tf('Nosso combinado vale até o dia {0}. Bora treinar!', a.personalAte - 1));
+        await api.fala('fernanda', Tf('Nosso combinado vale até o dia {0}. Bora treinar!', dataAc(a.personalAte - 1)));
         await api.fala('fernanda', T(DICA_FER[pk(Object.keys(DICA_FER))]));
         return;
       }
@@ -485,7 +487,7 @@
       if (!pagar(PRECO)) { await api.fala('fernanda', T('Sem grana agora? Tranquilo, quando quiser é só me chamar.')); return; }
       a.personalAte = dia() + DIAS_PLANO; a.personalVezes = (a.personalVezes | 0) + 1; if (api.papoAmizade) api.papoAmizade('fernanda', 2);
       api.gravar(S().dados.ponto || 'chegada');
-      await api.fala('fernanda', Tf('Combinado! Até o dia {0} eu acompanho os seus treinos.', a.personalAte - 1));
+      await api.fala('fernanda', Tf('Combinado! Até o dia {0} eu acompanho os seus treinos.', dataAc(a.personalAte - 1)));
       await api.fala('fernanda', T('É só ir para um aparelho que eu chego do seu lado.'));
     }
 
