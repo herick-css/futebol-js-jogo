@@ -3,6 +3,12 @@ FUTEBOL JS — protótipo do sistema de partida
 
 ARQUIVOS
   jogo.js ............... o jogo: motor, partida, menus, textos nos 5 idiomas (código comentado em português)
+                          (7.4.9) DISPUTA DE PÊNALTIS com cenas: antes, os times no gramado (a roda abraçada em volta do
+                          técnico, água em pé e sentado, aquecimento, alongamento, meião, conversa, o goleiro aquecendo);
+                          depois, o herói comemora, o montinho pulando em volta dele, quem errou de joelhos sendo consolado.
+                          TORCIDA que reage (Torcida, no jogo.js): cantos com bumbo e caixa (mais da casa), vaia com assobios
+                          quando o visitante tem a bola e no pênalti dele, a casa quieta no gol do visitante, gol mais festivo,
+                          olé no drible, "uuuh" na trave, palmas depois do ataque, vibração na defesa do goleiro
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
