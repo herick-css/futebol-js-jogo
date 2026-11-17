@@ -68,6 +68,9 @@ ARQUIVOS
                           arremesso com a mão e BOLA LONGA é o bate-pronto (joga a bola para cima e chuta, G.punt); passou o tempo
                           ou saiu da área, ele larga a bola no pé (largarNoPe) e sai jogando como jogador de linha (câmera lenta
                           na mira, pode ser pressionado, desarmado e bloqueado)
+                          (7.4.18) PLACAR e textos da HUD com cor branca explícita, e o jogo avisa o navegador que é escuro
+                          (meta color-scheme "only dark"): o modo escuro automático do Android/WebView (e de apps como o do Canva)
+                          recolore páginas que não declaram o esquema — o carregador 1.2 é branco — e os textos brancos viravam pretos
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
