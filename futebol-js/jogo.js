@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.15';
+const VERSAO_JOGO = '7.4.16';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -786,8 +786,8 @@ const Atributos = (() => {
     const vel = razao('velocidade'), res = razao('resistencia'), dri = razao('drible');
     CONFIG.USER_WALK = BASE.USER_WALK * vel; CONFIG.USER_RUN = BASE.USER_RUN * vel;
     CONFIG.USER_WALK_BALL = BASE.USER_WALK_BALL * vel; CONFIG.USER_RUN_BALL = BASE.USER_RUN_BALL * vel;
-    // (7.4.15) acima de 7 o fôlego soma até +5 s no 10 (antes multiplicava); abaixo de 7 continua caindo como antes
-    CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * Math.min(1, res) + 5 * clampA(((+atual.resistencia || 7) - 7) / 3, 0, 1);
+    // (7.4.15) o fôlego soma segundos (antes multiplicava); (7.4.16) GRADUAL na escala toda: cada ponto vale ~0,56 s, do 1 (0 s) ao 10 (+5 s)
+    CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * Math.min(1, res) + 5 * clampA(((+atual.resistencia || 7) - 1) / 9, 0, 1);
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // encher a barra: recuperação
     // Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
     if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 5 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → (7.4.15) 10 s no 10 (+ os 6 s de CORRIDA_EXTRA na partida)
@@ -1258,7 +1258,9 @@ const Abertura = (() => {
     espera(0); raf = requestAnimationFrame(laco);
   }
   espera(0);
-  return { tocar, el };
+  // (7.4.16) enquanto a vinheta está na tela (até a tampa sumir), a música do menu espera: o rock começava no primeiro toque (que
+  //   também liga o som do jogo) e cobria o "bu-úp" e o brilho da piscadela.
+  return { tocar, el, get ativa() { return !feito || el.isConnected; } };
 })();
 
 function resize() {
@@ -4298,7 +4300,7 @@ function nomeDe(p) { return p.voce ? 'você' : p.name; }
 
 function callOffside(p) {
   const r0 = G.offside && G.offside.reg;
-  const replayImp = r0 ? { t: r0.t, linhaX: r0.linhaX, atacX: r0.pos.has(p) ? r0.pos.get(p) : p.x } : null;
+  const replayImp = r0 ? { t: r0.t, linhaX: r0.linhaX, dir: r0.dir || (p.team === 0 ? 1 : -1), atacX: r0.pos.has(p) ? r0.pos.get(p) : p.x } : null;
   G.offside = null;
   if (G.apito) return;
   const ar = officials.find((o) => o.role === 'AR' && o.cobre === p.team);
@@ -6905,6 +6907,7 @@ function gkThink(p, dt) {
     if (G.sp && G.sp.taker === p) return aiSetPiece(p, dt);    // tiro de meta
     if (p.caidoComBola > 0) { p.caidoComBola -= dt; return { vx: 0, vz: 0 }; }   // deitado com a bola: não toca nem lança
     p.hold -= dt;
+    if (controleDoTime() && p.team === 0 && p.hold > -4) return { vx: 0, vz: 0 };   // (7.4.16) time inteiro: quem repõe é você (a troca vem no atualizarControleTime; 4 s de segurança)
     if (p.comPe) {
       // Recuo: com a bola no pé ele NÃO pode pegar com a mão. Domina e toca rápido (ou dá um
       // chutão se tiver adversário chegando perto).
@@ -7188,10 +7191,15 @@ function screenToWorld(up, right, yaw = cam.yaw) {
 //     • bola com o adversário ou solta ............................ o mais perto da bola (com folga, para não ficar pulando)
 //     • cobrança do seu time (falta, escanteio, lateral) .......... quem cobra
 //     • o controlado foi expulso ou substituído ................... o mais perto da bola
-//   E o botão TROCAR (tecla R) passa para o companheiro mais perto da bola. O goleiro fica sempre com a IA.
+//   E o botão TROCAR (tecla R) passa para o companheiro mais perto da bola.
+//   (7.4.16) O GOLEIRO: defender é sempre da IA. Mas com a bola dele (nas mãos ou no pé, já de pé) e no tiro de meta,
+//   o controle passa para ele: você anda com a bola (nas mãos não sai da área) e escolhe PASSAR (rasteiro) ou LANÇAR
+//   (bola longa). Soltou a bola: o controle vai para quem vai receber (ou o mais perto dela) e ele volta para a IA.
 // ---------------------------------------------------------------------
 const controleDoTime = () => !!(PARTIDA && PARTIDA.controleTime) && !G.espectador && !G.desafio;   // só a partida livre manda controleTime (o modo história nunca)
 const controlavel = (p) => !!p && p.team === 0 && p.role !== 'GK' && !p.out && !p.red && !p.scripted;
+// (7.4.16) o goleiro do seu time já está com a bola e de pé (terminou o mergulho / levantou do chão)
+const goleiroProntoParaVoce = (p) => !!p && p.team === 0 && p.role === 'GK' && !p.out && !p.red && !p.scripted && G.possession === p && !(p.diveT > 0) && !p.pulaTras && !(p.caidoComBola > 0) && !p.levanta && !(p.fall > 0) && !p.falling;
 function proximoControlavel(sai, excluir) {
   let best = null, bd = Infinity;
   for (const p of TEAMS[0]) {
@@ -7201,8 +7209,8 @@ function proximoControlavel(sai, excluir) {
   }
   return best;
 }
-function trocarControle(p, forcar) {
-  if (!controlavel(p) && !(forcar && p && p.team === 0 && p.role !== 'GK' && !p.out)) return false;
+function trocarControle(p, forcar, goleiro) {
+  if (!controlavel(p) && !(forcar && p && p.team === 0 && (p.role !== 'GK' || goleiro) && !p.out)) return false;
   if (p === user) return false;
   if (!forcar && (G.kick || G.recv || G.recvFx || G.cine)) return false;
   const old = user;
@@ -7222,8 +7230,14 @@ function trocarJogadorManual() {
 function atualizarControleTime(dt) {
   if (!controleDoTime() || !user) return;
   G.ctlCd = Math.max(0, (G.ctlCd || 0) - dt);
-  if (G.state !== 'play' || G.kick || G.recv || G.recvFx || G.cine || G.celebAuto || G.sp) return;
   const h = G.possession, pt = G.passTarget, lk = ball.lastKicker;
+  // (7.4.16) você estava no goleiro e a bola saiu dele: volta para um jogador de linha (quem vai receber, ou o mais perto da bola)
+  if (user.role === 'GK' && h !== user && !(G.sp && G.sp.taker === user) && !G.kick && !G.cine && !G.celebAuto && G.state !== 'goal' && G.state !== 'celebrate') {
+    const alvo = h && h.team === 0 && controlavel(h) ? h : pt && pt.p && controlavel(pt.p) ? pt.p : proximoControlavel(user);
+    if (alvo && trocarControle(alvo, true)) return;
+  }
+  if (G.state !== 'play' || G.kick || G.recv || G.recvFx || G.cine || G.celebAuto || G.sp) return;
+  if (h && h !== user && goleiroProntoParaVoce(h)) { trocarControle(h, true, true); return; }               // (7.4.16) o goleiro pegou: você repõe
   if (h && h !== user && controlavel(h) && !h.domIA) { trocarControle(h); return; }                         // companheiro com a bola
   if (!h && pt && pt.p && pt.p !== user && controlavel(pt.p) && lk && lk.team === 0) { trocarControle(pt.p); return; }   // passe para ele
   if (!user.out && !user.red && (h ? h.team === 1 : !(lk && lk.team === 0 && pt)) && G.ctlCd <= 0) {
@@ -7331,18 +7345,18 @@ function afastarDe(t, c, raio) {
   return t;
 }
 
-// (7.4.15) FÔLEGO MAIOR: todo mundo ganha CORRIDA_EXTRA segundos de corrida (o padrão acabava rápido) e quem tem resistência acima
-//   de 7 ganha mais, até +5 s no 10 (extraFolego). No "time inteiro", quem você controla corre com a resistência e a velocidade DELE
+// (7.4.15) FÔLEGO MAIOR: todo mundo ganha CORRIDA_EXTRA segundos de corrida (o padrão acabava rápido) e a resistência soma mais
+//   (extraFolego). (7.4.16) Gradual na escala toda: quanto mais alto, mais segundos — 1 → 0 s, 4 → +1,7 s, 7 → +3,3 s, 10 → +5 s. No "time inteiro", quem você controla corre com a resistência e a velocidade DELE
 //   (antes usava as do seu personagem).
 const CORRIDA_EXTRA = 6, CORRIDA_FOLEGO_10 = 5;
-const extraFolego = (r) => CORRIDA_FOLEGO_10 * clamp(((+r || 7) - 7) / 3, 0, 1);
+const extraFolego = (r) => CORRIDA_FOLEGO_10 * clamp(((+r || 7) - 1) / 9, 0, 1);
 function segundosDeCorrida(u) {
   const livre = partidaLivre();
   if (!u.voce && u.hab) {
     const r = u.hab.resistencia ?? 7, base = (livre ? CONFIG.LIVRE_CORRIDA : 10) + CORRIDA_EXTRA;
     return base * Math.min(1, Math.pow(clamp(r / 7, 0.15, 1.6), 1.24)) + extraFolego(r);
   }
-  if (livre) {                                      // a partida livre escala a barra (15 s no 7), mas os +5 s do fôlego 10 entram inteiros
+  if (livre) {                                      // a partida livre escala a barra (15 s no 7), mas os segundos do fôlego (extraFolego) entram inteiros
     const ex = extraFolego(Atributos.valor('resistencia'));
     return CONFIG.LIVRE_CORRIDA * Math.max(0.15, (CONFIG.STAMINA_RUN_TIME - ex) / 10) + ex + CORRIDA_EXTRA;
   }
@@ -7431,7 +7445,7 @@ function atualizarFolegoIA(p, dt, spd, des) {
   const andar = andarIA(p);
   const corre = !G.sp && !G.kickoffPending && spd > andar * 1.08 && Math.hypot(des.vx, des.vz) > andar * 1.05;
   const livre = partidaLivre();
-  // (7.4.15) +6 s para todos; resistência acima de 7 soma até +5 s no 10; quem é mais rápido cansa um pouco antes
+  // (7.4.15) +6 s para todos; (7.4.16) a resistência soma aos poucos, até +5 s no 10; quem é mais rápido cansa um pouco antes
   const base = (PARTIDA.criancas ? CONFIG.CRIANCA_CORRIDA : livre ? CONFIG.LIVRE_CORRIDA : CONFIG.AI_RUN_TIME) + CORRIDA_EXTRA;
   const T = tempoCorrida(p, (base * Math.min(1, fh(p, 'resistencia')) + extraFolego(hab(p, 'resistencia'))) / Math.max(0.6, fh(p, 'velocidade')));
   if (corre) {
@@ -7702,7 +7716,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   G.offside = semImpedimento || !PARTIDA.regras.impedimento ? null : calcOffside(from);
   if (G.offside) {                                 // guarda o momento do passe para o replay do impedimento
     const T = G.offside.team, dir = T === 0 ? 1 : -1;
-    G.offside.reg = { t: G.time, linhaX: G.offLine[T] * dir, pos: new Map([...G.offside.set].map((q) => [q, q.x])) };
+    G.offside.reg = { t: G.time, linhaX: G.offLine[T] * dir, dir, pos: new Map([...G.offside.set].map((q) => [q, q.x])) };
   }
   G.possession = null;
   ball.vx = vx; ball.vy = vy; ball.vz = vz;
@@ -7711,7 +7725,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   ball.lastKicker = from; G.lastTouch = from;
   from.controlCd = 0.45;
   if (!isThrow) { const v = Math.hypot(vx, vy, vz); if (v > 17) Som.chute((v - 17) / 14); else Som.toque(v / 17); }
-  if (!isThrow && !(from.role === 'GK' && !from.goalKick)) from.kickT = 0.35; // animação do chute
+  if (!isThrow && !(from.role === 'GK' && !from.goalKick && !from.comPe)) from.kickT = 0.35; // animação do chute (goleiro: no tiro de meta e com a bola no pé)
   if (isThrow) from.throwAnim = 0.3;               // lateral: braços jogam a bola para a frente
   from.throwIn = false; from.goalKick = false; from.setPiece = null; from.carry = false; from.comPe = false;
   if (G.sp && G.sp.taker === from && G.sp.kind === 'falta') {
@@ -8938,7 +8952,7 @@ function startRestart(kind, team, spot, motivo) {
   }
   if (G.forcaCobrador) S.taker = G.forcaCobrador;  // disputa de pênaltis: a ordem decide
   if (!S.taker) { G.state = 'play'; return; }        // ninguém para cobrar: segue o jogo
-  if (controleDoTime() && team === 0 && S.taker.team === 0 && S.taker.role !== 'GK' && !G.forcaCobrador && S.taker !== user) trocarControle(S.taker, true);   // (7.4.13) time inteiro: você cobra
+  if (controleDoTime() && team === 0 && S.taker.team === 0 && (S.taker.role !== 'GK' || kind === 'tiro de meta') && !G.forcaCobrador && S.taker !== user) trocarControle(S.taker, true, kind === 'tiro de meta');   // (7.4.13) time inteiro: você cobra; (7.4.16) o tiro de meta também
   S.taker.scripted = true;
   let ai = 0, di = 0, pi = 0;                      // vagas na área (escanteio) / fora da área (pênalti)
   for (const p of players) {
@@ -9166,7 +9180,7 @@ function startSetPieceWait() {
   // companheiro para tocar/cruzar. Lateral já é o arremesso. Sem relógio e sem câmera lenta.
   // Falta e pênalti: você se afasta uns passos da bola para a corrida (ver updateCobrador).
   if (p.isUser && (S.kind === 'falta' || S.kind === 'penalti')) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z };
-  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : (G.desafio && G.desafio.toque) || 'shot');   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
+  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : S.kind === 'tiro de meta' ? 'lancar' : (G.desafio && G.desafio.toque) || 'shot');   // (7.4.16) tiro de meta: começa no LANÇAR   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
 }
 
 // ---------------------------------------------------------------------
@@ -9622,17 +9636,20 @@ function startKick(kind) {
   if (G.state !== 'play' || G.possession !== user) return;
   // Bola parada: a câmera começa atrás de você, na direção da cobrança.
   if (user.setPiece || user.throwIn) cam.yaw = user.angle;
+  const lancar = kind === 'lancar';               // (7.4.16) goleiro: LANÇAR = bola longa pelo alto (o PASSAR é rasteiro)
+  if (lancar) kind = 'pass';
+  const goleiro = user.role === 'GK';
   const a0 = kind === 'shot' ? Math.atan2(-user.z, HALF_L - user.x) : user.angle;
   G.kick = {
-    kind, throwIn: user.throwIn, dirX: Math.cos(a0), dirZ: Math.sin(a0), aimed: false,
+    kind, lancar, podeVoltar: goleiro, throwIn: user.throwIn, dirX: Math.cos(a0), dirZ: Math.sin(a0), aimed: false,
     target: null, dist: 0, power: 0, over: 0, miss: 0, zone: [0, 1],
     ox: 0, oy: 0, spinT: 0, spinChosen: false, powerLabel: '',
     timer: CONFIG.KICK_TIME_LIMIT,                 // tempo para decidir (real, não sofre a câmera lenta)
-    semLimite: !!user.setPiece || !!user.throwIn,   // bola parada (falta, escanteio, lateral): sem relógio
+    semLimite: !!user.setPiece || !!user.throwIn || goleiro,   // bola parada (falta, escanteio, lateral) e goleiro com a bola: sem relógio
     yawRef: cam.yaw,                               // a mira usa a câmera do começo (a câmera gira depois)
     windup: 0,                                     // 0→1: preparação do chute em câmera lenta
   };
-  G.kick.alto = kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio');   // escanteio: PASSAR é cruzar
+  G.kick.alto = lancar || (kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));   // escanteio: PASSAR é cruzar
   if (kind === 'shot') G.kick.cruzar = !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
   G.state = 'aim'; G.targetScale = G.kick.semLimite ? 1 : CONFIG.SLOWMO_AIM;   // só a seta gira; bola parada não precisa de câmera lenta
   if (joy.id !== null) {
@@ -9667,12 +9684,13 @@ function rotuloDoToque(k) {
   if (k.primeira) return T(k.kind === 'shot' ? (k.cruzar ? 'CRUZAMENTO DE PRIMEIRA' : 'CHUTE DE PRIMEIRA') : 'PASSE DE PRIMEIRA');   // (7.4.13)
   if (k.kind === 'shot') return T(k.cruzar ? 'CRUZAMENTO' : (user.setPiece === 'penalti' ? 'PÊNALTI' : 'CHUTE'));
   if (k.throwIn) return T('LATERAL');
+  if (k.lancar) return T('LANÇAMENTO');
   return T(k.alto ? 'CRUZAMENTO' : 'PASSE');
 }
 function setAimDir(dirX, dirZ) {
   const k = G.kick;
   k.dirX = dirX; k.dirZ = dirZ; k.aimed = true; k.target = null;
-  k.alto = k.kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio');        // escanteio: o "PASSAR" é o cruzamento
+  k.alto = k.lancar || (k.kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));        // escanteio: o "PASSAR" é o cruzamento
   if (k.kind === 'shot') k.cruzar = !mirandoNoGol(dirX, dirZ);
   $('stageKind').textContent = rotuloDoToque(k);
 }
@@ -9851,7 +9869,7 @@ function executeUserKick() {
     ball.userPass = true; G.stats.passes++;
     const Q = quedaDaBola();
     const rec = designarRecebedor(u, Q.x, Q.z, Q.t);
-    if (!k.throwIn) ball.cruzamento = { team: u.team, alvo: rec };
+    if (!k.throwIn && !k.lancar) ball.cruzamento = { team: u.team, alvo: rec };
     fim();
     return;
   }
@@ -10203,7 +10221,7 @@ function cameraFurao() {
 
 function cancelKick() {
   if (!['aim', 'power', 'spin'].includes(G.state)) return;
-  if (G.kick && G.kick.semLimite) return;          // bola parada: não tem para onde voltar
+  if (G.kick && G.kick.semLimite && !G.kick.podeVoltar) return;          // bola parada: não tem para onde voltar (o goleiro pode trocar PASSAR/LANÇAR)
   if (G.kick && G.kick.primeira) return;           // (7.4.13) de primeira: a bola já está chegando
   // A finta vale quando o chute está ARMADO: já escolheu a força, ou está enchendo a barra (perna lá atrás). Cancelar só na mira é desistir.
   const k = G.kick, armado = G.state === 'spin' || (G.state === 'power' && (power.holding && power.value > 0.12 || (k && k.windup > 0.6)));
@@ -12223,8 +12241,10 @@ const camArrasto = { id: null, x: 0, y: 0 };
 const yawTV = () => -Math.PI / 2;
 // (7.4.15) na falta, no lateral, no escanteio e no pênalti a câmera de TV dá lugar à de 3ª pessoa (atrás de quem vai bater, como no
 //   Winning Eleven): de longe, com a bola na beirada do campo, não dava para ver nada. Volta para a TV quando a bola rola.
-const SP_TERCEIRA = ['falta', 'lateral', 'escanteio', 'penalti'];
-const tvEmTerceira = () => !!((G.sp && SP_TERCEIRA.includes(G.sp.kind)) || (user && (user.throwIn || user.setPiece)));
+// (7.4.16) só quando a cobrança é SUA (do seu time, com você na bola): a do adversário fica na câmera de TV mesmo.
+//   Cobrou: volta para a TV (o G.sp some no chute).
+const SP_TERCEIRA = ['falta', 'lateral', 'escanteio', 'penalti', 'tiro de meta'];
+const tvEmTerceira = () => !!(user && ((G.sp && G.sp.taker === user && G.sp.team === user.team && SP_TERCEIRA.includes(G.sp.kind)) || user.throwIn || user.setPiece));
 function cameraTV() {
   const D = clamp(HALF_W * 0.5 + 15, 17, 30) * AJ.camDist, H = D * 0.6 * AJ.camAlt + (AJ.camH || 0);
   const ax = user && !user.out ? ball.x + (user.x - ball.x) * 0.2 : ball.x;
@@ -12283,8 +12303,9 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'Enter') endCelebration();
   }
   if (K('chutar') && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
+  if (K('chutar') && mode === 'goleiro') startKick('lancar');   // (7.4.16)
   if (K('passar') && mode === 'kickoff') kickoffPass();
-  else if (K('passar') && (mode === 'ball' || mode === 'setpiece' || mode === 'throw')) startKick('pass');
+  else if (K('passar') && (mode === 'ball' || mode === 'setpiece' || mode === 'throw' || mode === 'goleiro')) startKick('pass');
   if (K('driblar') && mode === 'ball') startDribble();   // só funciona com a janela de drible aberta
   if (K('pedir')) { if (mode === 'team') requestBall(); else if (mode === 'defend') tryUserTackle(); }
   if (K('carrinho') && (mode === 'defend' || mode === 'loose')) userCarrinho();
@@ -12370,7 +12391,7 @@ function showStage(stage) {
   $('stageKind').textContent = rotuloDoToque(G.kick);
   $('stepSpin').hidden = G.kick.kind !== 'shot' || !!G.kick.primeira;   // de primeira: sem o efeito
   $('kickTimer').hidden = !!G.kick.semLimite;            // bola parada: sem relógio
-  $('cancelKick').hidden = !!G.kick.semLimite || !!G.kick.primeira;
+  $('cancelKick').hidden = (!!G.kick.semLimite && !G.kick.podeVoltar) || !!G.kick.primeira;
   document.querySelectorAll('.step[data-step]').forEach((el) => {
     const i = order.indexOf(el.dataset.step), cur = order.indexOf(stage);
     el.classList.toggle('on', i === cur);
@@ -12393,7 +12414,7 @@ function hideKickUI() {
 function computeMode() {
   if (G.state === 'celebrate') return G.celebAuto ? 'none' : 'celebrate';
   if (G.state !== 'play' || G.espectador) return 'none';
-  if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : (G.sp ? 'setpiece' : 'ball');
+  if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : user.role === 'GK' ? 'goleiro' : (G.sp ? 'setpiece' : 'ball');   // (7.4.16) goleiro: PASSAR / LANÇAR
   if (G.possession && G.possession.team === 0) return 'team';
   if (G.possession && G.possession.team === 1) return 'defend';
   if (bolaVindoPraVoce()) return pertoParaChuteDePrimeira() ? 'primeiraC' : 'primeira';   // (7.4.13) dá para bater de primeira
@@ -12451,6 +12472,9 @@ function renderButtons(mode) {
     mk(G.sp && G.sp.kind === 'falta' ? 'PASSAR' : 'CRUZAR', 's2', () => startKick('pass'));
   } else if (mode === 'throw') {
     mk('LANÇAR', 's1', () => startKick('pass'), 'primary');
+  } else if (mode === 'goleiro') {                         // (7.4.16) você com o goleiro: bola longa ou rasteira
+    mk('BOLA LONGA', 's1', () => startKick('lancar'), 'primary');
+    mk('PASSAR', 's2', () => startKick('pass'));
   } else if (mode === 'team') {
     mk('PEDIR BOLA', 's1', requestBall, 'primary', 'reqBtn');
     if (controleDoTime()) mk('TROCAR', 's3', trocarJogadorManual);
@@ -13491,7 +13515,7 @@ function ajAbrirLayout(aoFechar) {
   const L = ajLayout(); let sel = 's1', aba = 'jogo';
   // (7.4.14) cada botão mostra TUDO o que ele vira (o mesmo lugar muda de função conforme a jogada); a aba "Ao receber" mostra os
   //   botões da recepção (dominar, passe e chute de primeira, cabecear, finalizar)
-  const nomes = { joy: T('JOYSTICK'), s1: [T('CHUTAR'), T('DESARMAR'), T('PEDIR BOLA'), T('LANÇAR'), T('PASSE DE 1ª')].join(' · '), s2: [T('PASSAR'), T('CARRINHO'), T('CHUTE DE 1ª')].join(' · '),
+  const nomes = { joy: T('JOYSTICK'), s1: [T('CHUTAR'), T('DESARMAR'), T('PEDIR BOLA'), T('LANÇAR'), T('BOLA LONGA'), T('PASSE DE 1ª')].join(' · '), s2: [T('PASSAR'), T('CARRINHO'), T('CHUTE DE 1ª')].join(' · '),
     s3: [T('DRIBLAR'), T('TROCAR'), T('PULAR')].join(' · '), r1: [T('DOMINAR'), T('FINALIZAR'), T('CABECEAR')].join(' · '), r2: [T('PASSE DE 1ª'), T('CABECEAR'), T('CHUTE DE 1ª')].join(' · '), r3: [T('CHUTE DE 1ª'), T('DOMINAR')].join(' · ') };
   const ABAS_ED = { jogo: ['joy', 's1', 's2', 's3'], recv: ['joy', 'r1', 'r2', 'r3'] };
   const els = {};
@@ -13566,7 +13590,7 @@ const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação']
   st.textContent = '.cfgSec{display:flex;flex-direction:column;gap:8px;text-align:left}.cfgSec summary{cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em;padding:4px 0}' +
     '.cfgLin{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,1.2fr) 40px auto;gap:8px;align-items:center;font:600 13px/1.2 var(--font-body)}' +
     '.cfgLin input[type=range]{width:100%;accent-color:#f7941d}.cfgLin output{font:700 11px var(--font-display);text-align:right}' +
-    '.cfgMudo,.cfgTecla,.cfgBtn{font:700 11px var(--font-display);padding:6px 8px;background:#4a2c14;color:#fff0c8;border:2px solid #c8964a;box-shadow:0 2px 0 rgba(0,0,0,.45);cursor:pointer;min-width:56px}' +
+    '.cfgMudo,.cfgTecla,.cfgBtn{font:700 11px var(--font-display);padding:6px 8px;background:#4a2c14;color:#fff;border:2px solid #c8964a;box-shadow:0 2px 0 rgba(0,0,0,.45);cursor:pointer;min-width:56px}' +
     '.cfgMudo:active,.cfgTecla:active,.cfgBtn:active{transform:translateY(2px);box-shadow:none}' +
     '.cfgMudo[aria-pressed=true]{background:#7a1f16;border-color:#ff8a70}.cfgTecla.espera{background:#f7941d;color:#2a1206;border-color:#2a1206}' +
     '.cfgSec .ajCores{display:flex;flex-wrap:wrap;gap:6px}.cfgSec .ajCor{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.45);padding:0;cursor:pointer;box-sizing:border-box}' +
@@ -14898,20 +14922,29 @@ function aplicarQuadro(A, B, f) {
   return { x: ball.mesh.position.x, y: ball.mesh.position.y, z: ball.mesh.position.z };
 }
 
-// Linhas do impedimento (só aparecem no replay).
+// Linhas do impedimento (só aparecem no replay). (7.4.16) Como no VAR da TV: todo o lado impedido (da linha do penúltimo defensor até a
+//   linha de fundo) fica VERMELHO, a linha do penúltimo defensor em AZUL e a do atacante (o último, o mais adiantado) em VERMELHO.
 const linhasImped = (() => {
   const g = new THREE.Group(); g.visible = false; scene.add(g);
   const faixa = (cor) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 1), new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.9 }));
-    const parede = new THREE.Mesh(new THREE.PlaneGeometry(1, 2.2), new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 1), new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.95, depthWrite: false }));
+    const parede = new THREE.Mesh(new THREE.PlaneGeometry(1, 2.2), new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.16, side: THREE.DoubleSide, depthWrite: false }));
+    m.renderOrder = 3; parede.renderOrder = 3;
     g.add(m); g.add(parede);
     return { m, parede };
   };
-  return { g, def: faixa(0xffd400), atk: faixa(0xff3b30) };
+  const zona = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color: 0xff1010, transparent: true, opacity: 0.5, depthWrite: false }));
+  zona.rotation.x = -Math.PI / 2; zona.renderOrder = 2; g.add(zona);
+  return { g, zona, def: faixa(0x1e6bff), atk: faixa(0xff2a1e) };
 })();
 function posicionarLinha(L, x) {
-  L.m.scale.z = CONFIG.FIELD_W; L.m.position.set(x, 0.03, 0);
+  L.m.scale.z = CONFIG.FIELD_W; L.m.position.set(x, 0.035, 0);
   L.parede.scale.x = CONFIG.FIELD_W; L.parede.position.set(x, 1.1, 0); L.parede.rotation.y = Math.PI / 2;
+}
+// o lado impedido: da linha do penúltimo defensor (x) até a linha de fundo do lado do ataque (dir)
+function posicionarZonaImped(x, dir) {
+  const fim = (dir || 1) * HALF_L, larg = Math.max(0.01, Math.abs(fim - x));
+  linhasImped.zona.scale.set(larg, CONFIG.FIELD_W, 1); linhasImped.zona.position.set((x + fim) / 2, 0.025, 0);
 }
 
 function iniciarReplay(R) {
@@ -14927,7 +14960,7 @@ function iniciarReplay(R) {
 function rotuloReplay() {
   const R = G.replay;
   const nomes = [T('TV'), T('ATRÁS DO GOL'), T('PERTO DO LANCE')];
-  $('cineLabel').textContent = R.tipo === 'gol' ? Tf('REPLAY · {0} ({1}/3) · toque para trocar de câmera', nomes[R.cam], R.cam + 1) : T(R.congelado ? 'IMPEDIMENTO · amarela: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
+  $('cineLabel').textContent = R.tipo === 'gol' ? Tf('REPLAY · {0} ({1}/3) · toque para trocar de câmera', nomes[R.cam], R.cam + 1) : T(R.congelado ? 'IMPEDIMENTO · azul: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
 }
 function terminarReplay() {
   const R = G.replay;
@@ -15004,6 +15037,7 @@ function cameraReplay(R, bola, rdt) {
 function mostrarLinhas(R) {
   posicionarLinha(linhasImped.def, R.reg.linhaX);
   posicionarLinha(linhasImped.atk, R.reg.atacX);
+  posicionarZonaImped(R.reg.linhaX, R.reg.dir || Math.sign(R.reg.atacX - R.reg.linhaX) || 1);
   linhasImped.g.visible = true;
 }
 
@@ -15087,7 +15121,7 @@ function frame(now) {
   if (GANCHO_RENDER) GANCHO_RENDER(rdt);                    // o criador de personagem usa a câmera e o campo do jogo
   Som.torcida(G.torcidaCena != null ? G.torcidaCena : (GANCHO_RENDER || G.state === 'menu' || (PARTIDA && PARTIDA.campo.semTorcida)) ? -1 : nivelTorcida());   // (7.4.1) G.torcidaCena: as cenas de abertura ligam a torcida   // quadra de futsal: sem torcida
   Torcida.atualizar(rdt);                                   // (7.4.9) cantos, vaias (a torcida reage ao jogo)
-  Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);         // criador/fase: sem barulho de torcida
+  Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !Abertura.ativa && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);   // (7.4.16) não por cima da vinheta do Harbor         // criador/fase: sem barulho de torcida
   // torcida: só o relógio do shader (o resto é na placa de vídeo)
   renderer.render(scene, camera);
   radarT += rdt;
@@ -17511,6 +17545,7 @@ const Idioma = {
   'PULAR': ['SKIP', 'SALTAR', 'SALTA', 'PASSER'],
   'CRUZAR': ['CROSS', 'CENTRAR', 'CROSS', 'CENTRER'],
   'LANÇAR': ['THROW', 'LANZAR', 'LANCIA', 'LANCER'],
+  'LANÇAMENTO': ['LONG BALL', 'PASE LARGO', 'LANCIO LUNGO', 'PASSE LONGUE'], 'BOLA LONGA': ['LONG BALL', 'BALÓN LARGO', 'PALLA LUNGA', 'LONG BALLON'],   // (7.4.16) goleiro
   'PEDIR BOLA': ['CALL FOR BALL', 'PEDIR BALÓN', 'CHIEDI PALLA', 'DEMANDER LE BALLON'],
   'PEDINDO...': ['CALLING...', 'PIDIENDO...', 'CHIEDENDO...', 'JE DEMANDE...'],
   'DESARMAR': ['TACKLE', 'QUITAR', 'CONTRASTA', 'TACLER'],
@@ -17604,7 +17639,7 @@ const Idioma = {
   'TV': ['TV', 'TV', 'TV', 'TV'],
   'ATRÁS DO GOL': ['BEHIND THE GOAL', 'DETRÁS DE LA PORTERÍA', 'DIETRO LA PORTA', 'DERRIÈRE LE BUT'],
   'PERTO DO LANCE': ['CLOSE TO THE PLAY', 'CERCA DE LA JUGADA', 'VICINO ALL’AZIONE', 'PRÈS DE L’ACTION'],
-  'IMPEDIMENTO · amarela: penúltimo defensor · vermelha: atacante': ['OFFSIDE · yellow: second-last defender · red: attacker', 'FUERA DE JUEGO · amarilla: penúltimo defensor · roja: atacante', 'FUORIGIOCO · gialla: penultimo difensore · rossa: attaccante', 'HORS-JEU · jaune : avant-dernier défenseur · rouge : attaquant'],
+  'IMPEDIMENTO · azul: penúltimo defensor · vermelha: atacante': ['OFFSIDE · blue: second-last defender · red: attacker', 'FUERA DE JUEGO · azul: penúltimo defensor · roja: atacante', 'FUORIGIOCO · blu: penultimo difensore · rossa: attaccante', 'HORS-JEU · bleue : avant-dernier défenseur · rouge : attaquant'],
   'REPLAY DO IMPEDIMENTO': ['OFFSIDE REPLAY', 'REPETICIÓN DEL FUERA DE JUEGO', 'REPLAY DEL FUORIGIOCO', 'REPLAY DU HORS-JEU'],
   'veio pingando': ['came in bouncing', 'llegó botando', 'è arrivata rimbalzando', 'est arrivé en rebondissant'],
   'veio alta demais': ['came in too high', 'llegó demasiado alto', 'è arrivata troppo alta', 'est arrivé trop haut'],
@@ -20643,7 +20678,8 @@ function montarTelasPixel() {
     repeating-conic-gradient(rgba(0, 0, 0, 0.24) 0 25%, rgba(0, 0, 0, 0) 0 50%);
   background-size: auto, auto, 8px 8px;
 }
-#pauseScreen, #endScreen { background-color: rgba(21, 13, 6, 0.94); }
+#pauseScreen, #endScreen { background-color: rgba(21, 13, 6, 0.94); --mx-creme: #ffffff; --chalk: #ffffff; --muted: #ffffff; color: #ffffff; }   /* (7.4.16) menus da partida: texto branco (o creme sumia no marrom) */
+#intervaloTela, #tatPainel, #ajForm { --chalk: #ffffff; --muted: #ffffff; color: #ffffff; }   /* (7.4.16) idem: intervalo, táticas e formação */
 /* ---------- carregando ---------- */
 #carregando { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; }
 #carregando[hidden] { display: none; }

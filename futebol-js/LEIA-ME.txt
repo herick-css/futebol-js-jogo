@@ -49,6 +49,16 @@ ARQUIVOS
                           chão (celebNoChao; voo só nos pulos de verdade) e o Coraçãozinho sem as mãos na cabeça. CONTROLES:
                           lista de todos os botões (Em jogo e Ao receber) e o editor com a aba "Ao receber" (r1..r3: dominar,
                           passe e chute de primeira, cabecear, finalizar)
+                          (7.4.16) GOLEIRO NO TIME INTEIRO: defender continua com a IA, mas quando ele está com a bola (nas mãos ou
+                          no pé, já de pé) e no TIRO DE META o controle passa para ele: BOLA LONGA (J) ou PASSAR rasteiro (K), sem
+                          relógio e com Cancelar para trocar; com a bola nas mãos ele anda mas não sai da área. Soltou: o controle
+                          vai para quem recebe (ou o mais perto da bola). A 3ª PESSOA da câmera de TV é só para a cobrança SUA
+                          (falta, lateral, escanteio, pênalti, tiro de meta); a do adversário fica na TV. FÔLEGO GRADUAL: a
+                          resistência soma ~0,56 s por ponto na escala toda (1 → 0 s, 7 → +3,3 s, 10 → +5 s), além dos +6 s.
+                          MENUS DA PARTIDA (pausa, fim de jogo, intervalo, táticas, formação) com texto branco. VINHETA: a
+                          música do menu espera a vinheta do Harbor terminar (Abertura.ativa) — ela começava no primeiro toque e
+                          cobria o som da vinheta. IMPEDIMENTO (replay): como no VAR — o lado impedido fica vermelho, a linha do
+                          penúltimo defensor em azul e a do atacante em vermelho
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
