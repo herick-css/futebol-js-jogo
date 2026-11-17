@@ -59,6 +59,15 @@ ARQUIVOS
                           música do menu espera a vinheta do Harbor terminar (Abertura.ativa) — ela começava no primeiro toque e
                           cobria o som da vinheta. IMPEDIMENTO (replay): como no VAR — o lado impedido fica vermelho, a linha do
                           penúltimo defensor em azul e a do atacante em vermelho
+                          (7.4.17) FÔLEGO: o extra de todos caiu de +6 para +3 s (CORRIDA_EXTRA); a escala da resistência continua
+                          (1 → 0 s ... 10 → +5 s). BOTÕES DA PARTIDA com texto branco (ações, pause, câmera, Cancelar, pausa,
+                          formação, intervalo; o CONTINUAR ficou laranja). ONDE VOCÊ TOCA NA BOLA: no cruzamento, embaixo sobe,
+                          no meio vai RASTEIRO (com a curva do efeito de lado) e em cima sai QUICANDO; no chute, bem em cima
+                          (TOQUE_QUICA) a bola sai quicando. Quem está na linha tenta bloquear também os cruzamentos. GOLEIRO
+                          (você, no time inteiro): com a bola na mão tem 5 s (GK_MAO_SEG) ou até sair da área — PASSAR é o
+                          arremesso com a mão e BOLA LONGA é o bate-pronto (joga a bola para cima e chuta, G.punt); passou o tempo
+                          ou saiu da área, ele larga a bola no pé (largarNoPe) e sai jogando como jogador de linha (câmera lenta
+                          na mira, pode ser pressionado, desarmado e bloqueado)
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)

@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.16';
+const VERSAO_JOGO = '7.4.17';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -790,7 +790,7 @@ const Atributos = (() => {
     CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * Math.min(1, res) + 5 * clampA(((+atual.resistencia || 7) - 1) / 9, 0, 1);
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // encher a barra: recuperação
     // Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
-    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 5 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → (7.4.15) 10 s no 10 (+ os 6 s de CORRIDA_EXTRA na partida)
+    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 5 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → (7.4.15) 10 s no 10 (+ os 3 s de CORRIDA_EXTRA na partida; 6 até a 7.4.16)
     if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada / (1 + 0.5 * ganhoHist(a.recuperacao));   // (7.1.14) a RECUPERAÇÃO vale na história: no 10 enche 1,5x mais rápido
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
@@ -7227,9 +7227,46 @@ function trocarJogadorManual() {
   const p = proximoControlavel(user);
   if (p && trocarControle(p)) G.ctlCd = 1.6;               // a troca automática espera um pouco (senão desfaz a sua)
 }
+// (7.4.17) VOCÊ COM O GOLEIRO, BOLA NA MÃO: tem GK_MAO_SEG segundos (ou até sair da área) para repor com a mão — PASSAR é o
+//   arremesso com a mão e BOLA LONGA é o bate-pronto (joga a bola para cima e chuta). Passou o tempo ou saiu da área: ele larga a bola
+//   no pé (largarNoPe) e sai jogando como jogador de linha (CHUTAR/CRUZAR, PASSAR, DRIBLAR, com câmera lenta na mira) — aí os
+//   atacantes podem pressionar, roubar e bloquear o chute/cruzamento.
+const GK_MAO_SEG = 5, GK_LARGA_SEG = 0.25, PUNT = { SOBE: 0.28, CHUTE: 0.52 };
+function largarNoPe(p, motivo) {
+  if (!p || p.comPe || G.possession !== p) return;
+  p.comPe = true; p.maoT = 0; p.largaT = GK_LARGA_SEG; p.hold = Math.min(p.hold || 0, 0.9);
+  G.mode = null;                                    // os botões trocam para os de jogador de linha
+  showToast(motivo === 'area' ? 'Saiu da área: nosso goleiro joga com o pé' : 'Bola no chão: o goleiro sai jogando');
+}
+function updateGoleiroDoUsuario(dt) {
+  if (user && user.largaT > 0) user.largaT = Math.max(0, user.largaT - dt);
+  if (user && user.role === 'GK' && G.possession === user && !user.comPe && !user.goalKick && !user.punt && G.state === 'play' && !G.kick && !G.sp) {
+    user.maoT = (user.maoT || 0) + dt;
+    if (user.maoT >= GK_MAO_SEG) largarNoPe(user, 'tempo');
+  }
+  const P = G.punt;
+  if (!P || G.state === 'paused') return;
+  const p = P.p;
+  if (G.possession !== p || G.state !== 'play') { p.punt = false; G.punt = null; return; }   // algo interrompeu (apito, fim do tempo)
+  P.t += dt;
+  const c = Math.cos(p.angle), s = Math.sin(p.angle), t = P.t;
+  let y, f;
+  if (t < PUNT.SOBE) { const w = t / PUNT.SOBE; y = lerp(1.08, 1.75, Math.sin(w * Math.PI / 2)); f = lerp(0.55, 0.45, w); }   // joga a bola para cima
+  else { const w = clamp((t - PUNT.SOBE) / (PUNT.CHUTE - PUNT.SOBE), 0, 1); y = lerp(1.75, 0.5, w * w); f = lerp(0.45, 0.66, w); }   // ela cai na frente do pé
+  ball.x = p.x + c * f; ball.z = p.z + s * f; ball.y = y; ball.vx = ball.vy = ball.vz = 0;
+  p.vx = p.vz = 0;
+  if (t >= PUNT.CHUTE - 0.2 && !P.perna) { P.perna = true; p.kickT = 0.35; }   // a perna já vem
+  if (t >= PUNT.CHUTE) {
+    G.punt = null; p.punt = false;
+    const kt = p.kickT;
+    lancarBolaAlta(P.k, p);
+    if (kt > 0) p.kickT = kt;                       // a perna já estava no meio do movimento: não recomeça
+  }
+}
 function atualizarControleTime(dt) {
   if (!controleDoTime() || !user) return;
   G.ctlCd = Math.max(0, (G.ctlCd || 0) - dt);
+  updateGoleiroDoUsuario(dt);                       // (7.4.17) 5 s com a bola na mão, largar no pé, bate-pronto
   const h = G.possession, pt = G.passTarget, lk = ball.lastKicker;
   // (7.4.16) você estava no goleiro e a bola saiu dele: volta para um jogador de linha (quem vai receber, ou o mais perto da bola)
   if (user.role === 'GK' && h !== user && !(G.sp && G.sp.taker === user) && !G.kick && !G.cine && !G.celebAuto && G.state !== 'goal' && G.state !== 'celebrate') {
@@ -7237,7 +7274,7 @@ function atualizarControleTime(dt) {
     if (alvo && trocarControle(alvo, true)) return;
   }
   if (G.state !== 'play' || G.kick || G.recv || G.recvFx || G.cine || G.celebAuto || G.sp) return;
-  if (h && h !== user && goleiroProntoParaVoce(h)) { trocarControle(h, true, true); return; }               // (7.4.16) o goleiro pegou: você repõe
+  if (h && h !== user && goleiroProntoParaVoce(h)) { h.maoT = 0; trocarControle(h, true, true); return; }               // (7.4.16) o goleiro pegou: você repõe
   if (h && h !== user && controlavel(h) && !h.domIA) { trocarControle(h); return; }                         // companheiro com a bola
   if (!h && pt && pt.p && pt.p !== user && controlavel(pt.p) && lk && lk.team === 0) { trocarControle(pt.p); return; }   // passe para ele
   if (!user.out && !user.red && (h ? h.team === 1 : !(lk && lk.team === 0 && pt)) && G.ctlCd <= 0) {
@@ -7251,6 +7288,7 @@ function atualizarControleTime(dt) {
 }
 
 function userDesired(u, dt) {
+  if (u.punt) return { vx: 0, vz: 0 };              // (7.4.17) bate-pronto do goleiro
   u.running = false;
   if (G.state === 'goal' && G.golAutor && G.golAutor !== u) {   // gol de outro: a IA controla você
     const a = G.golAutor;
@@ -7348,7 +7386,7 @@ function afastarDe(t, c, raio) {
 // (7.4.15) FÔLEGO MAIOR: todo mundo ganha CORRIDA_EXTRA segundos de corrida (o padrão acabava rápido) e a resistência soma mais
 //   (extraFolego). (7.4.16) Gradual na escala toda: quanto mais alto, mais segundos — 1 → 0 s, 4 → +1,7 s, 7 → +3,3 s, 10 → +5 s. No "time inteiro", quem você controla corre com a resistência e a velocidade DELE
 //   (antes usava as do seu personagem).
-const CORRIDA_EXTRA = 6, CORRIDA_FOLEGO_10 = 5;
+const CORRIDA_EXTRA = 3, CORRIDA_FOLEGO_10 = 5;   // (7.4.17) o extra de todos caiu de 6 para 3 s
 const extraFolego = (r) => CORRIDA_FOLEGO_10 * clamp(((+r || 7) - 1) / 9, 0, 1);
 function segundosDeCorrida(u) {
   const livre = partidaLivre();
@@ -7594,7 +7632,8 @@ function updatePlayers(dt) {
     if (p.role === 'GK' && G.possession === p && !p.comPe && !p.goalKick && G.state === 'play' && !G.sp) {
       const side = -p.dir;
       if (!dentroDaArea(p.x, p.z, side, -0.1)) {
-        if (p.diveT > 0 || p.fall > 0 || p.caidoComBola > 0 || p.pulaTras) { p.comPe = true; p.hold = Math.min(p.hold, 0.9); p.caidoComBola = Math.min(p.caidoComBola || 0, 0.3); showToast(p.team === 0 ? 'Saiu da área: nosso goleiro joga com o pé' : 'Saiu da área: o goleiro joga com o pé'); }
+        if (p.isUser && !p.punt) largarNoPe(p, 'area');   // (7.4.17) você com o goleiro: saiu da área com a bola na mão = larga no pé e sai jogando
+        else if (p.diveT > 0 || p.fall > 0 || p.caidoComBola > 0 || p.pulaTras) { p.comPe = true; p.hold = Math.min(p.hold, 0.9); p.caidoComBola = Math.min(p.caidoComBola || 0, 0.3); showToast(p.team === 0 ? 'Saiu da área: nosso goleiro joga com o pé' : 'Saiu da área: o goleiro joga com o pé'); }
         else {
           const lim = BOX.depth - 0.15;
           if (Math.abs(p.x - side * HALF_L) > lim) p.x = side * HALF_L - side * lim;
@@ -7670,6 +7709,7 @@ function updatePlayers(dt) {
 // 9. FÍSICA DA BOLA
 // ---------------------------------------------------------------------
 function attachBall(p) {
+  if (p.punt) return;                              // (7.4.17) reposição de bate-pronto: a bola tem o caminho dela (updateGoleiroDoUsuario)
   if (p.bolaFixa) {                                // cobrança com corrida: a bola fica parada na marca
     ball.x = p.bolaFixa.x; ball.z = p.bolaFixa.z; ball.y = CONFIG.BALL_R; ball.vx = ball.vy = ball.vz = 0;
     return;
@@ -7701,7 +7741,7 @@ function attachBall(p) {
     ball.x = p.x + c * lerp(0.55, 0.62, w); ball.z = p.z + s * lerp(0.55, 0.62, w); ball.y = lerp(1.08, 0.42, w);
   }
   else if (nasMaos) { ball.x = p.x + c * 0.55; ball.z = p.z + s * 0.55; ball.y = 1.08; }      // entre as mãos, na frente do peito
-  else { ball.x = p.x + c * 0.62; ball.z = p.z + s * 0.62; ball.y = CONFIG.BALL_R; }
+  else { ball.x = p.x + c * 0.62; ball.z = p.z + s * 0.62; ball.y = p.largaT > 0 ? lerp(CONFIG.BALL_R, 1.08, p.largaT / GK_LARGA_SEG) : CONFIG.BALL_R; }   // (7.4.17) largando da mão para o pé
   ball.vx = p.vx; ball.vz = p.vz; ball.vy = 0;
 }
 
@@ -7954,6 +7994,7 @@ function givePossession(p, opts = {}) {
   // Goleiro FORA da área (saiu deslizando, saída nos pés...) não pode pegar com a mão: fica com a bola no pé.
   if (p.role === 'GK' && !opts.comPe && G.state === 'play' && !G.sp && !dentroDaArea(p.x, p.z, -p.dir)) opts = Object.assign({}, opts, { comPe: true });
   p.comPe = !!opts.comPe;                          // goleiro com a bola no PÉ (recuo de companheiro)
+  p.maoT = 0; p.punt = false; p.largaT = 0;        // (7.4.17) relógio da bola na mão do goleiro (você) e reposição
   ball.vx = ball.vy = ball.vz = 0; ball.spinSide = ball.spinVert = 0;
   ball.broken = false; ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.penalti = false;
   p.think = rand(0.3, 0.6);
@@ -9638,7 +9679,7 @@ function startKick(kind) {
   if (user.setPiece || user.throwIn) cam.yaw = user.angle;
   const lancar = kind === 'lancar';               // (7.4.16) goleiro: LANÇAR = bola longa pelo alto (o PASSAR é rasteiro)
   if (lancar) kind = 'pass';
-  const goleiro = user.role === 'GK';
+  const goleiro = user.role === 'GK' && !user.comPe;   // (7.4.17) com a bola no pé ele é jogador de linha: câmera lenta e relógio
   const a0 = kind === 'shot' ? Math.atan2(-user.z, HALF_L - user.x) : user.angle;
   G.kick = {
     kind, lancar, podeVoltar: goleiro, throwIn: user.throwIn, dirX: Math.cos(a0), dirZ: Math.sin(a0), aimed: false,
@@ -9791,13 +9832,15 @@ function chooseSpin(ox, oy) {
   k.spinChosen = true; k.ox = ox; k.oy = oy;
   const dot = $('spinDot');
   dot.hidden = false; dot.style.left = (50 + ox * 50) + '%'; dot.style.top = (50 + oy * 50) + '%';
-  $('spinInfo').textContent = describeSpin(ox, oy);
+  $('spinInfo').textContent = describeSpin(ox, oy, k.kind === 'shot' && k.cruzar);
   setTimeout(() => { if (G.state === 'spin' && G.kick === k) executeUserKick(); }, 380);
 }
 
-function describeSpin(ox, oy) {
+function describeSpin(ox, oy, cruzar) {
   const parts = [];
-  if (oy > 0.3) parts.push('sobe'); else if (oy < -0.3) parts.push('sai baixa e cai rápido');
+  // (7.4.17) em cima da bola ela sai QUICANDO; no cruzamento, no meio ela vai RASTEIRA (só sobe batendo embaixo)
+  if (cruzar) parts.push(oy > TOQUE_MEIO ? 'sobe' : oy < -TOQUE_MEIO ? 'sai quicando' : 'vai rasteira');
+  else if (oy > 0.3) parts.push('sobe'); else if (oy < -TOQUE_QUICA) parts.push('sai quicando'); else if (oy < -0.3) parts.push('sai baixa e cai rápido');
   if (ox > 0.25) parts.push('curva para a esquerda'); else if (ox < -0.25) parts.push('curva para a direita');
   return parts.length === 2 ? Tf('A bola {0} e {1}', T(parts[0]), T(parts[1])) : parts.length ? Tf('A bola {0}', T(parts[0])) : T('Batida reta, sem efeito');
 }
@@ -9834,8 +9877,45 @@ function quedaDaBola() {
   return { x: b.x, z: b.z, t: 4 };
 }
 
+// (7.4.17) ONDE VOCÊ TOCA NA BOLA manda (oy > 0 = embaixo, oy < 0 = em cima):
+//   cruzamento: embaixo (oy > TOQUE_MEIO) sobe como antes; no MEIO vai RASTEIRO (com a curva do efeito de lado: dá para fazer o
+//   passe de 3 dedos rasteiro); em cima (oy < -TOQUE_MEIO) sai QUICANDO. Chute: em cima de verdade (oy < -TOQUE_QUICA) a bola é
+//   empurrada contra o chão e sai quicando (antes só saía rasteira e reta).
+const TOQUE_MEIO = 0.2, TOQUE_QUICA = 0.45;
+function chuteContraOChao(oy, vel) {                // velocidade para BAIXO (o chão devolve no quique: QUIQUE)
+  return -vel * lerp(0.1, 0.3, clamp((-oy - TOQUE_QUICA) / (1 - TOQUE_QUICA), 0, 1));
+}
+// Bola alta do usuário (cruzamento tocando embaixo, escanteio, lateral, lançamento e o bate-pronto do goleiro).
+function lancarBolaAlta(k, u) {
+  const fEf = Atributos.fator('efeito'), ang0 = Math.atan2(k.dirZ, k.dirX);
+  const pf = Atributos.fator('passe');
+  let D, T, y1 = 0.4;
+  if (k.throwIn) {
+    D = lerp(3, 17 * clamp(0.8 + 0.2 * pf, 0.6, 1.1), k.power);
+    T = clamp(0.5 + D * 0.03, 0.55, 1.05);
+  } else {
+    const Dmax = clamp(HALF_L * 1.05, 20, 54) * clamp(0.75 + 0.25 * fh(u, 'forca'), 0.55, 1.1);
+    D = lerp(7, Dmax, k.power);
+    T = clamp(0.75 + D * 0.026, 0.9, 2.0) * (k.kind === 'shot' ? lerp(0.82, 1.18, clamp(((k.oy || 0) - TOQUE_MEIO) / (1 - TOQUE_MEIO), 0, 1)) : 1);   // quanto mais embaixo, mais alta (pouco abaixo do meio: mais tensa)
+    y1 = 0.6;
+  }
+  const erroDist = gauss() * (k.faixa >= 4 || k.faixa === 0 ? 0.07 : 0.035) * (k.faixa === 5 ? 1.6 : 1);
+  D *= 1 + erroDist;
+  const a = ang0 + desvioDoToque(k, u, k.throwIn ? 'passe' : 'cruzamento') * 1.15;
+  const vy = (y1 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
+  const hs = k.throwIn ? Math.min(CONFIG.THROW_MAX * 1.15, D / T) : vArrasto(D, T);
+  const lado = k.kind === 'shot' ? (k.ox || 0) * 0.6 * fEf : 0;
+  kickBall(u, Math.cos(a) * hs, vy, Math.sin(a) * hs, lado, 0, !!k.throwIn);
+  u.angle = a;
+  ball.userPass = true; G.stats.passes++;
+  const Q = quedaDaBola();
+  const rec = designarRecebedor(u, Q.x, Q.z, Q.t);
+  if (!k.throwIn && !k.lancar) ball.cruzamento = { team: u.team, alvo: rec };
+  if (!k.throwIn) prepararBloqueios(u);              // (7.4.17) quem está na linha tenta bloquear o cruzamento
+}
 function executeUserKick() {
   const k = G.kick, u = user;
+  const maosGK = u.role === 'GK' && !u.comPe && !u.goalKick;   // (7.4.17) goleiro com a bola na mão
   if (u.bolaFixa && !G.corrida) {                  // falta/pênalti: primeiro a corrida até a bola
     k.spinChosen = true;
     hideKickUI();
@@ -9845,31 +9925,36 @@ function executeUserKick() {
   const fEf = Atributos.fator('efeito');
   const ang0 = Math.atan2(k.dirZ, k.dirX);
   const fim = () => { G.kick = null; G.state = 'play'; G.targetScale = 1; hideKickUI(); };
-  // ---- BOLA ALTA: cruzamento (CHUTAR fora do gol), escanteio (CRUZAR) e lateral com as mãos ----
-  if ((k.kind === 'shot' && k.cruzar) || k.alto || k.throwIn) {
-    const pf = Atributos.fator('passe');
-    let D, T, y1 = 0.4;
-    if (k.throwIn) {
-      D = lerp(3, 17 * clamp(0.8 + 0.2 * pf, 0.6, 1.1), k.power);
-      T = clamp(0.5 + D * 0.03, 0.55, 1.05);
-    } else {
-      const Dmax = clamp(HALF_L * 1.05, 20, 54) * clamp(0.75 + 0.25 * fh(u, 'forca'), 0.55, 1.1);
-      D = lerp(7, Dmax, k.power);
-      T = clamp(0.75 + D * 0.026, 0.9, 2.0) * (k.kind === 'shot' ? 1 + clamp(k.oy || 0, -1, 1) * 0.18 : 1);   // efeito "sobe" = mais alta; "baixo" = mais tensa
-      y1 = 0.6;
-    }
-    const erroDist = gauss() * (k.faixa >= 4 || k.faixa === 0 ? 0.07 : 0.035) * (k.faixa === 5 ? 1.6 : 1);
-    D *= 1 + erroDist;
-    const a = ang0 + desvioDoToque(k, u, k.throwIn ? 'passe' : 'cruzamento') * 1.15;
-    const vy = (y1 - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
-    const hs = k.throwIn ? Math.min(CONFIG.THROW_MAX * 1.15, D / T) : vArrasto(D, T);
-    const lado = k.kind === 'shot' ? (k.ox || 0) * 0.6 * fEf : 0;
-    kickBall(u, Math.cos(a) * hs, vy, Math.sin(a) * hs, lado, 0, !!k.throwIn);
+  // ---- (7.4.17) CRUZAMENTO RASTEIRO (toque no meio) ou QUICANDO (toque em cima) ----
+  if (k.kind === 'shot' && k.cruzar && !k.throwIn && (k.oy || 0) <= TOQUE_MEIO) {
+    const oy = k.oy || 0, quica = oy < -TOQUE_MEIO;
+    const sp = curvaPor(FORCA_X, VEL_PASSE, k.power) * 1.12 * clamp(0.7 + 0.3 * fh(u, 'forca'), 0.55, 1.15);
+    const a = ang0 + desvioDoToque(k, u, 'cruzamento');
+    const vy = quica ? -sp * lerp(0.18, 0.32, clamp((-oy - TOQUE_MEIO) / (1 - TOQUE_MEIO), 0, 1)) : 0.25;
+    kickBall(u, Math.cos(a) * sp, vy, Math.sin(a) * sp, (k.ox || 0) * 0.9 * fEf, quica ? oy * fEf : 0);   // efeito de lado: a curva rasteira
     u.angle = a;
     ball.userPass = true; G.stats.passes++;
-    const Q = quedaDaBola();
-    const rec = designarRecebedor(u, Q.x, Q.z, Q.t);
-    if (!k.throwIn && !k.lancar) ball.cruzamento = { team: u.team, alvo: rec };
+    designarRecebedor(u);
+    prepararBloqueios(u);                            // quem está na linha tenta bloquear
+    fim();
+    return;
+  }
+  // ---- BOLA ALTA: cruzamento (CHUTAR fora do gol, tocando EMBAIXO da bola), escanteio (CRUZAR) e lateral com as mãos ----
+  if ((k.kind === 'shot' && k.cruzar) || k.alto || k.throwIn) {
+    if (k.lancar && maosGK) { u.punt = true; G.punt = { p: u, t: 0, k, perna: false }; fim(); return; }   // (7.4.17) bate-pronto: joga para cima e chuta
+    lancarBolaAlta(k, u);
+    fim();
+    return;
+  }
+  // ---- (7.4.17) GOLEIRO COM A BOLA NA MÃO: PASSAR é o arremesso com a mão (sai baixinho e rola) ----
+  if (k.kind === 'pass' && maosGK) {
+    const sp = curvaPor(FORCA_X, VEL_PASSE, k.power) * 0.85 * clamp(0.7 + 0.3 * fh(u, 'forca'), 0.55, 1.15);
+    const a = ang0 + desvioDoToque(k, u, 'passe');
+    kickBall(u, Math.cos(a) * sp, lerp(1.2, 3, k.power), Math.sin(a) * sp);
+    u.throwAnim = 0.3; u.kickT = 0;
+    u.angle = a;
+    ball.userPass = true; G.stats.passes++;
+    designarRecebedor(u);
     fim();
     return;
   }
@@ -9910,6 +9995,7 @@ function executeUserKick() {
   const vC = cavadinha ? (VEL_CAV[0] + VEL_CAV[1] * k.power) * (k.power > 0.45 ? clamp(0.75 + 0.25 * fF, 0.55, 1.12) : 1) : speed;
   if (cavadinha) elev = ELEV_CAV + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
   vy = Math.max(0.3, vC * Math.sin(elev));
+  if (!cavadinha && k.oy < -TOQUE_QUICA) vy = chuteContraOChao(k.oy, vC);   // (7.4.17) em cima da bola: sai quicando
   const hs = vC * Math.cos(elev);
   vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
   kickBall(u, vx, vy, vz, k.ox * fEf, cavadinha ? 0 : k.oy * fEf, k.throwIn);  // sai de onde a bola está
@@ -12414,7 +12500,7 @@ function hideKickUI() {
 function computeMode() {
   if (G.state === 'celebrate') return G.celebAuto ? 'none' : 'celebrate';
   if (G.state !== 'play' || G.espectador) return 'none';
-  if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : user.role === 'GK' ? 'goleiro' : (G.sp ? 'setpiece' : 'ball');   // (7.4.16) goleiro: PASSAR / LANÇAR
+  if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : user.role === 'GK' && !user.comPe ? 'goleiro' : (G.sp ? 'setpiece' : 'ball');   // (7.4.16) goleiro: PASSAR / LANÇAR; (7.4.17) com a bola no pé: como jogador de linha
   if (G.possession && G.possession.team === 0) return 'team';
   if (G.possession && G.possession.team === 1) return 'defend';
   if (bolaVindoPraVoce()) return pertoParaChuteDePrimeira() ? 'primeiraC' : 'primeira';   // (7.4.13) dá para bater de primeira
@@ -14049,7 +14135,7 @@ function poseOf(p) {
   if (G.state === 'end' && G.fimFesta && G.fimFesta.times.includes(p.team) && !p.out && !p.red) return 'up';   // pulinhos do apito final (sem torcida)
   if (G.state === 'celebrate' && p.team === 0 && !p.isUser && (p.role !== 'GK' || p.gkFesta) && dist2D(p, user) < 4) return 'up';
   if (p.throwIn || p.diveT > 0 || p.jumpT > 0) return 'up';
-  if (p.carry || (p.role === 'GK' && G.possession === p && !p.goalKick && !p.comPe)) return 'hold';
+  if (p.carry || (p.role === 'GK' && G.possession === p && !p.goalKick && !p.comPe && !(p.punt && G.punt && G.punt.t > 0.12))) return 'hold';
   return null;
 }
 
@@ -14223,7 +14309,7 @@ function medirMaos(p, m) {
 // atrás da linha nunca vira gol).
 function bolaNasMaosDoGoleiro() {
   const h = G.possession;
-  if (!h || h.role !== 'GK' || h.goalKick || h.comPe || h.throwIn || h.carry || h.bolaFixa || ball.hidden || !h.mesh || !h.mesh.raiz.visible) return null;
+  if (!h || h.role !== 'GK' || h.goalKick || h.comPe || h.punt || h.throwIn || h.carry || h.bolaFixa || ball.hidden || !h.mesh || !h.mesh.raiz.visible) return null;
   const E = h.mesh.bracoE, D = h.mesh.bracoD;
   for (let it = 0; it < 4; it++) {
     const d = maoDoBraco(E, _mA).distanceTo(maoDoBraco(D, _mB));
@@ -14743,7 +14829,7 @@ function syncMeshes(dt) {
   if (bolaMao) ball.mesh.position.copy(bolaMao); else ball.mesh.position.set(ball.x, ball.y, ball.z);
   // Só gira quando está rolando/voando. Nas mãos (goleiro, lateral, cobrador levando) fica parada.
   const h = G.possession;
-  const naMao = (h && (h.carry || h.throwIn || (h.role === 'GK' && !h.goalKick && !h.comPe))) || (G.sp && G.sp.taker && G.sp.taker.carry) || G.recvFx;
+  const naMao = (h && (h.carry || h.throwIn || (h.role === 'GK' && !h.goalKick && !h.comPe && !h.punt))) || (G.sp && G.sp.taker && G.sp.taker.carry) || G.recvFx;
   if (!naMao) {
     ball.mesh.rotation.x += ball.vz * dt / CONFIG.BALL_R;
     ball.mesh.rotation.z -= ball.vx * dt / CONFIG.BALL_R;
@@ -17567,6 +17653,10 @@ const Idioma = {
   'Toque na bola': ['Tap the ball', 'Toca el balón', 'Tocca il pallone', 'Touche le ballon'],
   'sobe': ['rises', 'sube', 'sale', 'monte'],
   'sai baixa e cai rápido': ['stays low and drops fast', 'sale baja y cae rápido', 'esce bassa e scende veloce', 'part bas et retombe vite'],
+  'Bola no chão: o goleiro sai jogando': ['Ball down: the keeper plays it out', 'Balón al suelo: el portero sale jugando', 'Palla a terra: il portiere imposta', 'Ballon au sol : le gardien relance au pied'],
+  'Saiu da área: nosso goleiro joga com o pé': ['Out of the box: our keeper plays with his feet', 'Salió del área: nuestro portero juega con el pie', 'Fuori area: il nostro portiere gioca con i piedi', 'Hors de la surface : notre gardien joue au pied'],
+  'Saiu da área: o goleiro joga com o pé': ['Out of the box: the keeper plays with his feet', 'Salió del área: el portero juega con el pie', "Fuori area: il portiere gioca con i piedi", 'Hors de la surface : le gardien joue au pied'],
+  'sai quicando': ['bounces along', 'sale botando', 'esce rimbalzando', 'part en rebondissant'], 'vai rasteira': ['stays on the ground', 'va rasa', 'va rasoterra', 'reste au sol'],   // (7.4.17)
   'curva para a esquerda': ['curves to the left', 'curva a la izquierda', 'curva a sinistra', 'tourne à gauche'],
   'curva para a direita': ['curves to the right', 'curva a la derecha', 'curva a destra', 'tourne à droite'],
   'A bola {0} e {1}': ['The ball {0} and {1}', 'El balón {0} y {1}', 'Il pallone {0} e {1}', 'Le ballon {0} et {1}'],
@@ -20680,6 +20770,16 @@ function montarTelasPixel() {
 }
 #pauseScreen, #endScreen { background-color: rgba(21, 13, 6, 0.94); --mx-creme: #ffffff; --chalk: #ffffff; --muted: #ffffff; color: #ffffff; }   /* (7.4.16) menus da partida: texto branco (o creme sumia no marrom) */
 #intervaloTela, #tatPainel, #ajForm { --chalk: #ffffff; --muted: #ffffff; color: #ffffff; }   /* (7.4.16) idem: intervalo, táticas e formação */
+/* (7.4.17) TODOS os botões da partida com texto BRANCO, como o CHUTAR (o PASSAR, o pause, os da pausa e da formação ficavam em
+   giz/creme ou em marrom escuro sobre madeira e sumiam no celular). Contorno escuro para ler em cima da grama e do laranja.
+   Os de fundo claro (o CONTINUAR creme, o "esperando" verde) passam a ter fundo escuro/laranja. */
+#hud button, #actions .act, #recvActs .act, #cancelKick, #skipBtn, #pauseScreen button, #endScreen button, #intervaloTela button, #ajForm button, #tatPainel button,
+#pauseScreen .pxBtn, #endScreen .pxBtn, #pauseScreen .pxBtn.pxPrim, #endScreen .pxBtn.pxPrim {
+  color: #ffffff !important; -webkit-text-fill-color: #ffffff; text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.7) !important;
+}
+#pauseScreen .pxBtn, #endScreen .pxBtn { text-shadow: 0 2px 0 rgba(0, 0, 0, 0.75) !important; }
+#pauseScreen .pxBtn.pxPrim, #endScreen .pxBtn.pxPrim { border-image-source: var(--sp-laranja); }
+.act.waiting { background: rgba(28, 140, 62, 0.88); }
 /* ---------- carregando ---------- */
 #carregando { position: fixed; inset: 0; z-index: 8; display: grid; place-items: center; padding: 16px; }
 #carregando[hidden] { display: none; }
