@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.12';
+const VERSAO_JOGO = '7.4.13';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -863,7 +863,7 @@ function gerarHabilidades(faixa, role, semente) {
 }
 function hab(p, nome) {
   if (!p) return 7;
-  if (p.isUser) return Atributos.valor(nome) ?? 7;
+  if (p.voce) return Atributos.valor(nome) ?? 7;            // (7.4.13) o SEU personagem (no "time inteiro" você também controla os outros, com as habilidades deles)
   return (p.hab && p.hab[nome]) ?? 7;
 }
 function fh(p, nome, exp) {
@@ -872,6 +872,7 @@ function fh(p, nome, exp) {
 // (7.1.14) multiplicador de uma habilidade do SEU jogador medido a partir do começo (5 na história, 7 na partida livre): 1 no começo
 function fUser(nome, exp) {
   const ref = Atributos.entrada && Atributos.entrada._corridaSeg > 0 ? 5 : 7;
+  if (typeof user !== 'undefined' && user && !user.voce && user.hab) return Math.pow(clamp((user.hab[nome] ?? 7) / 7, 0.5, 2), exp ?? 1);   // (7.4.13) controlando outro do time
   return Math.pow(clamp((Atributos.valor(nome) ?? ref) / ref, 0.5, 2), exp ?? 1);
 }
 
@@ -1791,6 +1792,22 @@ const Som = (() => {
   let ctx = null, mestre = null, ruido = null, mudo = false, vozes = 0, golAtivo = null;
   let torcidaGain = null, torcidaFiltro = null, nivelAtual = -1;
   try { mudo = localStorage.getItem('futebolJsMudo') === '1'; } catch (e) { /* sem armazenamento */ }
+  // (7.4.13) VOLUME POR CATEGORIA (Configurações): geral, efeitos (bola, apito, cliques e os sons das fases), torcida (o fundo,
+  //   o grito do gol, palmas, vaia, batuque), música (o tema do menu e as músicas das fases) e vozes (a fala dos personagens).
+  //   Cada uma tem o seu volume (0 a 1) e o seu "mudo"; fica guardado no aparelho (futebolJs.volumes.v1).
+  const CATS = ['geral', 'efeitos', 'torcida', 'musica', 'vozes'];
+  const VOL = { geral: 1, efeitos: 1, torcida: 1, musica: 1, vozes: 1 }, MUDO = { geral: false, efeitos: false, torcida: false, musica: false, vozes: false };
+  try { const v = JSON.parse(localStorage.getItem('futebolJs.volumes.v1') || 'null'); if (v) for (const c of CATS) { if (v.vol && Number.isFinite(v.vol[c])) VOL[c] = clamp(v.vol[c], 0, 1); if (v.mudo) MUDO[c] = !!v.mudo[c]; } } catch (e) { /* sem armazenamento */ }
+  const bus = {};                                          // efeitos, torcida, musica, vozes → mestre
+  const nivelDe = (c) => (MUDO[c] ? 0 : VOL[c]);
+  const nivelMestre = () => (mudo || MUDO.geral ? 0 : 0.85 * VOL.geral);
+  function aplicarVolumes() {
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    if (mestre) mestre.gain.setTargetAtTime(nivelMestre(), t, 0.05);
+    for (const c of CATS) if (bus[c]) bus[c].gain.setTargetAtTime(nivelDe(c), t, 0.05);
+  }
+  function guardarVolumes() { try { localStorage.setItem('futebolJs.volumes.v1', JSON.stringify({ vol: VOL, mudo: MUDO })); } catch (e) { /* ok */ } }
 
   function ligar() {
     try {
@@ -1799,8 +1816,9 @@ const Som = (() => {
         if (!AC) return;
         ctx = new AC();
         const comp = ctx.createDynamicsCompressor();          // evita estourar quando soma tudo
-        mestre = ctx.createGain(); mestre.gain.value = mudo ? 0 : 0.85;
+        mestre = ctx.createGain(); mestre.gain.value = nivelMestre();
         mestre.connect(comp); comp.connect(ctx.destination);
+        for (const c of CATS) { if (c === 'geral') continue; bus[c] = ctx.createGain(); bus[c].gain.value = nivelDe(c); bus[c].connect(mestre); }
         ruido = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
         const d = ruido.getChannelData(0);
         for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -1837,16 +1855,16 @@ const Som = (() => {
   function filtro(tipo, freq, Q) { const f = ctx.createBiquadFilter(); f.type = tipo; f.frequency.value = freq; f.Q.value = Q || 0.7; return f; }
   function ganho() { return ctx.createGain(); }
   // Tom com a frequência caindo de f0 para f1 (chute, toque, defesa).
-  function tom(tipo, f0, f1, t0, dur, pico) {
+  function tom(tipo, f0, f1, t0, dur, pico, dest) {
     const o = ctx.createOscillator(), g = ganho();
     o.type = tipo; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
     env(g, t0, 0.005, pico, dur);
-    o.connect(g); g.connect(mestre); o.start(t0); o.stop(t0 + dur + 0.05);
+    o.connect(g); g.connect(dest || bus.efeitos); o.start(t0); o.stop(t0 + dur + 0.05);
   }
-  function estalo(t0, dur, tipo, freq, pico) {
+  function estalo(t0, dur, tipo, freq, pico, dest) {
     const s = fonteRuido(t0, dur), f = filtro(tipo, freq, 0.8), g = ganho();
     env(g, t0, 0.003, pico, dur);
-    s.connect(f); f.connect(g); g.connect(mestre);
+    s.connect(f); f.connect(g); g.connect(dest || bus.efeitos);
   }
 
   // ---- torcida de fundo: dois ruídos em loop (corpo grave + "falatório" médio)
@@ -1862,7 +1880,7 @@ const Som = (() => {
     lfo.connect(lfoG); lfoG.connect(gFala.gain); lfo.start();
     a.connect(torcidaFiltro); torcidaFiltro.connect(gFala); gFala.connect(lp);
     b.connect(corpo); corpo.connect(gCorpo); gCorpo.connect(lp);
-    lp.connect(torcidaGain); torcidaGain.connect(mestre);
+    lp.connect(torcidaGain); torcidaGain.connect(bus.torcida);
   }
   // ---- (7.4.9) A VOZ DA TORCIDA ----------------------------------------------------------------------------------------
   // PALMAS: 3 s de "claps" (rajadas curtinhas de ruído, ~170 por segundo, cada uma de um tamanho) gravados UMA vez num
@@ -1888,7 +1906,7 @@ const Som = (() => {
     const nV = op.vozes || 6, f1 = filtro('bandpass', 500, 2.5), f2 = filtro('bandpass', 1000, 3.5), g2 = ganho();
     const lp = filtro('lowpass', 3400 - 2200 * (op.longe || 0), 0.6), saida = ganho();
     g2.gain.value = 0.5; saida.gain.value = op.ganho;
-    f1.connect(lp); f2.connect(g2); g2.connect(lp); lp.connect(saida); saida.connect(op.dest || mestre);
+    f1.connect(lp); f2.connect(g2); g2.connect(lp); lp.connect(saida); saida.connect(op.dest || bus.torcida);
     let t = t0;
     for (const [, dur, vog] of notas) { const V = VOGAIS[vog || 'o']; f1.frequency.setTargetAtTime(V[0], t, 0.03); f2.frequency.setTargetAtTime(V[1], t, 0.03); t += dur; }
     const fim = t, at = op.ataque || 0.02, primeira = notas.find((n) => n[0] != null);
@@ -1916,7 +1934,7 @@ const Som = (() => {
     const s = fonteRuido(t0, dur + 0.6), bp = filtro('bandpass', freq || 700, 0.8), g = ganho();
     g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(pico, t0 + (ataque || 0.3));
     g.gain.setValueAtTime(pico, t0 + Math.max(ataque || 0.3, dur - 0.3)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.5);
-    s.connect(bp); bp.connect(g); g.connect(mestre);
+    s.connect(bp); bp.connect(g); g.connect(bus.torcida);
   }
   // (7.4.11) A BATERIA COM AMOSTRAS: o bumbo e a caixa são sintetizados UMA vez em buffers (montarBateria); cada batida é só
   //   um BufferSource + um ganho. Antes cada batida criava osciladores, ruído e filtros — com o gol, as palmas e a torcida
@@ -1936,7 +1954,7 @@ const Som = (() => {
     const s2 = ctx.createBufferSource(), g = ganho(); s2.buffer = buf; if (taxa) s2.playbackRate.value = taxa;
     g.gain.value = clamp(v, 0, 1.2); s2.connect(g); g.connect(dest); s2.start(t);
   }
-  function barramento(longe) { const g = ganho(), lp = filtro('lowpass', 6000 - 4000 * (longe || 0), 0.6); g.connect(lp); lp.connect(mestre); return g; }
+  function barramento(longe) { const g = ganho(), lp = filtro('lowpass', 6000 - 4000 * (longe || 0), 0.6); g.connect(lp); lp.connect(bus.torcida); return g; }
   // bateria da organizada: bumbo nos tempos e caixa nos contratempos (k = volume, longe = abafado)
   function bateria(t0, dur, k, bpm, longe) {
     const b = 60 / (bpm || 124), bus = barramento(longe); bus.gain.value = 1 - 0.5 * (longe || 0);
@@ -1970,7 +1988,7 @@ const Som = (() => {
     const bp = filtro('bandpass', 1500, 0.7), g = ganho();
     g.gain.setValueAtTime(0.0001, t0); g.gain.linearRampToValueAtTime(0.55 * k, t0 + 0.25);
     g.gain.setValueAtTime(0.55 * k, t0 + dur * 0.45); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    s.connect(bp); bp.connect(g); g.connect(mestre);
+    s.connect(bp); bp.connect(g); g.connect(bus.torcida);
     s.start(t0, Math.random() * 2.5); s.stop(t0 + dur + 0.05);
   }
   // nivel 0..1 (chamado todo quadro; só mexe no som quando muda de verdade)
@@ -1997,12 +2015,24 @@ const Som = (() => {
       for (let i = 0; i < 7; i++) estalo(t + 0.18 + Math.random() * 0.9, 0.05, 'highpass', 2500 + Math.random() * 2500, (0.08 + Math.random() * 0.08) * k);   // o chiado
     },
     get mudo() { return mudo; },
-    get audio() { return ctx ? { ctx, mestre } : null; },        // para o Mumble (fala) usar o mesmo áudio
+    // para o Mumble (fala) e as fases usarem o mesmo áudio. (7.4.13) "mestre" agora é o barramento dos EFEITOS (o que as fases
+    //   tocam por ele obedece ao volume de efeitos); música e vozes têm o seu (musica, vozes); "geral" é o volume de tudo.
+    get audio() { return ctx ? { ctx, mestre: bus.efeitos || mestre, geral: mestre, efeitos: bus.efeitos, torcida: bus.torcida, musica: bus.musica || mestre, vozes: bus.vozes || mestre } : null; },
+    CATEGORIAS: CATS,
+    volume(cat) { return VOL[cat] ?? 1; },
+    mudoDe(cat) { return !!MUDO[cat]; },
+    ajustarVolume(cat, v, mudar) {
+      if (!(cat in VOL)) return;
+      if (v != null) VOL[cat] = clamp(Number(v) || 0, 0, 1);
+      if (mudar != null) MUDO[cat] = !!mudar;
+      if (cat === 'geral' && mudar === false && mudo) { mudo = false; try { localStorage.setItem('futebolJsMudo', '0'); } catch (e) { /* ok */ } }
+      aplicarVolumes(); guardarVolumes();
+    },
 
     alternarMudo() {
       mudo = !mudo;
       try { localStorage.setItem('futebolJsMudo', mudo ? '1' : '0'); } catch (e) { /* ok */ }
-      if (mestre) mestre.gain.setTargetAtTime(mudo ? 0 : 0.85, ctx.currentTime, 0.05);
+      aplicarVolumes();
       return mudo;
     },
     pausar(p) { if (ctx) { if (p) ctx.suspend(); else ctx.resume(); } },
@@ -2043,7 +2073,7 @@ const Som = (() => {
       g.gain.linearRampToValueAtTime(0.12, t + 0.25);
       g.gain.setValueAtTime(0.12, t + 0.7);
       g.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
-      vog.connect(g); g.connect(mestre);
+      vog.connect(g); g.connect(bus.torcida);
       for (let i = 0; i < 8; i++) {
         const o = ctx.createOscillator(), f0 = rand(190, 300);
         o.type = 'sawtooth';
@@ -2054,7 +2084,7 @@ const Som = (() => {
       const s = fonteRuido(t, 1.8), bp = filtro('bandpass', 480, 1.2), gn = ganho();   // "ar" da multidão
       gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(0.14, t + 0.25);
       gn.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
-      s.connect(bp); bp.connect(gn); gn.connect(mestre);
+      s.connect(bp); bp.connect(gn); gn.connect(bus.torcida);
     },
     // Passo na grama: "chhk" bem baixinho (ruído médio-agudo curtinho) + um toque grave quase mudo.
     passo() {
@@ -2074,7 +2104,7 @@ const Som = (() => {
       g.gain.exponentialRampToValueAtTime(0.32, t + 0.02);
       g.gain.setValueAtTime(0.32, t + dur - 0.05);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(mestre);
+      o.connect(bp); o2.connect(bp); bp.connect(g); g.connect(bus.efeitos);
       for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + dur + 0.05); }
     },
     apitoFinal() { this.apito(0.32, 0); this.apito(0.32, 0.5); this.apito(1.15, 1.0); },
@@ -2088,7 +2118,7 @@ const Som = (() => {
       const t = ctx.currentTime, MAX = 45, kk = clamp(k, 0.15, 1.2);
       const s = fonteRuido(t, MAX), bp = filtro('bandpass', 900, 0.5), lp = filtro('lowpass', 3000, 0.5), g = ganho();
       g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.3 * kk, t + 1.1);
-      s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(mestre);
+      s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(bus.torcida);
       if (kk > 0.45 && pesado(8)) {
         arDaTorcida(t, 1.2, 0.32 * kk, 1400, 0.08);                                  // o estouro
         coro(t + 0.05, [[0, 0.9, 'a'], [5, 2.6, 'e'], [7, 0.9, 'e']], { base: 205, vozes: 8, ganho: 0.08 * kk, desafina: 45, deslize: 0.3, ataque: 0.1, solta: 0.5 });   // (7.4.10) "AAAAA-ÊÊÊÊÊ!" (o "GOOOL" com o ô fechado soava triste)
@@ -2096,7 +2126,7 @@ const Som = (() => {
       }
       const vog = filtro('bandpass', 700, 0.9), gv = ganho();
       gv.gain.setValueAtTime(0.0001, t); gv.gain.linearRampToValueAtTime(0.07 * kk, t + 1.0);
-      vog.connect(gv); gv.connect(mestre);
+      vog.connect(gv); gv.connect(bus.torcida);
       const fontes = [s];
       for (let i = 0; i < 9; i++) {
         const o = ctx.createOscillator(), f0 = rand(180, 330);
@@ -2133,7 +2163,7 @@ const Som = (() => {
         o.type = 'sine'; o.frequency.setValueAtTime(f, t0); o.frequency.linearRampToValueAtTime(f * rand(0.92, 1.05), t0 + d);
         lfo.frequency.value = rand(5, 9); lg.gain.value = rand(20, 70); lfo.connect(lg); lg.connect(o.frequency);
         env(g, t0, 0.05, rand(0.015, 0.035) * kk, d);
-        o.connect(g); g.connect(mestre); o.start(t0); o.stop(t0 + d + 0.05); lfo.start(t0); lfo.stop(t0 + d + 0.05);
+        o.connect(g); g.connect(bus.torcida); o.start(t0); o.stop(t0 + d + 0.05); lfo.start(t0); lfo.stop(t0 + d + 0.05);
       }
     },
     // OLÉ! (drible): "o" curto e o "LÉ" lá em cima, todo mundo junto.
@@ -2170,7 +2200,16 @@ const Som = (() => {
       tom('sine', 110, 60, t, 0.12, 0.45);
       const s = fonteRuido(t, 1.3), bp = filtro('bandpass', 450, 1.4), g = ganho();   // "uuuh"
       env(g, t + 0.05, 0.2, 0.22, 1.3);
-      s.connect(bp); bp.connect(g); g.connect(mestre);
+      s.connect(bp); bp.connect(g); g.connect(bus.torcida);
+    },
+    // (7.4.13) FLASH de câmera de foto (a premiação): o obturador abrindo e fechando ("tchc-tic") e o "piiu" agudo do flash
+    //   carregando. longe = 0..1 (fotógrafo mais longe: mais baixo)
+    flash(longe = 0) {
+      if (!pronto() || !vaga(0.32)) return;
+      const t = ctx.currentTime, k = 1 - 0.5 * clamp(longe, 0, 1);
+      estalo(t, 0.016, 'highpass', 3800, 0.3 * k);
+      estalo(t + 0.042, 0.022, 'bandpass', 2300, 0.2 * k);
+      tom('sine', 3000, 7600, t + 0.05, 0.24, 0.016 * k);
     },
     // tipo: 'ok' | 'erro' | 'perfeito'
     clique(tipo = 'ok') {
@@ -2185,7 +2224,7 @@ const Som = (() => {
       const t = ctx.currentTime, s = fonteRuido(t, 0.4), bp = filtro('bandpass', 500, 1.2), g = ganho();
       bp.frequency.setValueAtTime(450, t); bp.frequency.exponentialRampToValueAtTime(3000, t + 0.32);
       env(g, t, 0.06, 0.35, 0.38);
-      s.connect(bp); bp.connect(g); g.connect(mestre);
+      s.connect(bp); bp.connect(g); g.connect(bus.efeitos);
     },
   };
 })();
@@ -4165,7 +4204,7 @@ function calcOffside(from) {
   return set.size ? { team: T, set } : null;
 }
 
-function nomeDe(p) { return p.isUser ? 'você' : p.name; }
+function nomeDe(p) { return p.voce ? 'você' : p.name; }
 
 function callOffside(p) {
   const r0 = G.offside && G.offside.reg;
@@ -7017,6 +7056,64 @@ function screenToWorld(up, right, yaw = cam.yaw) {
 }
 
 // Velocidade desejada do SEU jogador. Correr gasta estamina.
+// ---------------------------------------------------------------------
+// (7.4.13) CONTROLAR O TIME INTEIRO (só na partida livre; nunca no modo história)
+//   PARTIDA.controleTime (vem do cfg da partida livre). O jogador controlado é sempre o "user" (isUser); o SEU personagem
+//   continua marcado como p.voce (nome, habilidades, ficha). A troca é automática:
+//     • um companheiro (de linha) pegou a bola ..................... ele passa a ser o controlado
+//     • passe saindo para um companheiro .......................... controla quem vai receber (e ele corre sozinho até a
+//                                                                     bola enquanto você não mexe no joystick)
+//     • bola com o adversário ou solta ............................ o mais perto da bola (com folga, para não ficar pulando)
+//     • cobrança do seu time (falta, escanteio, lateral) .......... quem cobra
+//     • o controlado foi expulso ou substituído ................... o mais perto da bola
+//   E o botão TROCAR (tecla R) passa para o companheiro mais perto da bola. O goleiro fica sempre com a IA.
+// ---------------------------------------------------------------------
+const controleDoTime = () => !!(PARTIDA && PARTIDA.controleTime) && !G.espectador && !G.desafio;   // só a partida livre manda controleTime (o modo história nunca)
+const controlavel = (p) => !!p && p.team === 0 && p.role !== 'GK' && !p.out && !p.red && !p.scripted;
+function proximoControlavel(sai, excluir) {
+  let best = null, bd = Infinity;
+  for (const p of TEAMS[0]) {
+    if (p === sai || !controlavel(p) || (excluir && excluir.includes(p))) continue;
+    const d = Math.hypot(p.x - ball.x, p.z - ball.z);
+    if (d < bd) { bd = d; best = p; }
+  }
+  return best;
+}
+function trocarControle(p, forcar) {
+  if (!controlavel(p) && !(forcar && p && p.team === 0 && p.role !== 'GK' && !p.out)) return false;
+  if (p === user) return false;
+  if (!forcar && (G.kick || G.recv || G.recvFx || G.cine)) return false;
+  const old = user;
+  if (old) { old.isUser = false; old.running = false; old.embalo = null; old.think = 0; old.pedeT = 0; old.cansadoT = 0; }
+  p.isUser = true; p.embalo = null; p.chutePrep = 0; p.pedeT = 0;
+  if (G.chuteCine && G.chuteCine.p === p) fimChuteCine();
+  user = p;
+  G.userRequest = 0; G.ctlCd = 0.9; G.mode = null;        // G.mode = null: os botões são montados de novo
+  try { lastStaminaPct = -1; } catch (e) { /* ainda montando */ }
+  return true;
+}
+function trocarJogadorManual() {
+  if (!controleDoTime() || G.state !== 'play' || G.kick || G.recv || G.recvFx || G.possession === user) return;
+  const p = proximoControlavel(user);
+  if (p && trocarControle(p)) G.ctlCd = 1.6;               // a troca automática espera um pouco (senão desfaz a sua)
+}
+function atualizarControleTime(dt) {
+  if (!controleDoTime() || !user) return;
+  G.ctlCd = Math.max(0, (G.ctlCd || 0) - dt);
+  if (G.state !== 'play' || G.kick || G.recv || G.recvFx || G.cine || G.celebAuto || G.sp) return;
+  const h = G.possession, pt = G.passTarget, lk = ball.lastKicker;
+  if (h && h !== user && controlavel(h) && !h.domIA) { trocarControle(h); return; }                         // companheiro com a bola
+  if (!h && pt && pt.p && pt.p !== user && controlavel(pt.p) && lk && lk.team === 0) { trocarControle(pt.p); return; }   // passe para ele
+  if (!user.out && !user.red && (h ? h.team === 1 : !(lk && lk.team === 0 && pt)) && G.ctlCd <= 0) {
+    const ax = (h || ball).x + (h ? h.vx : ball.vx) * 0.35, az = (h || ball).z + (h ? h.vz : ball.vz) * 0.35;
+    let best = null, bd = Infinity;
+    for (const p of TEAMS[0]) { if (!controlavel(p)) continue; const d = Math.hypot(p.x - ax, p.z - az); if (d < bd) { bd = d; best = p; } }
+    const du = Math.hypot(user.x - ax, user.z - az);
+    if (best && best !== user && du > 4 && bd < du - 3.5) trocarControle(best);
+  }
+  if ((user.out || user.red) && G.state === 'play') trocarControle(proximoControlavel(user), true);
+}
+
 function userDesired(u, dt) {
   u.running = false;
   if (G.state === 'goal' && G.golAutor && G.golAutor !== u) {   // gol de outro: a IA controla você
@@ -7055,7 +7152,11 @@ function userDesired(u, dt) {
       return { vx: E.x * s0, vz: E.z * s0 };
     }
   }
-  if (inp.mag < 0.01) return { vx: 0, vz: 0 };
+  if (inp.mag < 0.01) {
+    // (7.4.13) time inteiro: o passe veio para ele e você não está mexendo — ele vai sozinho até o ponto da bola
+    if (controleDoTime() && G.passTarget && G.passTarget.p === u && !G.possession && Math.hypot(G.passTarget.x - u.x, G.passTarget.z - u.z) > 0.6) return seek(u, G.passTarget.x, G.passTarget.z, CONFIG.USER_RUN * 0.8);
+    return { vx: 0, vz: 0 };
+  }
   const hasBall = G.possession === u;
   const canRun = !u.exhausted;
   let s;
@@ -7633,6 +7734,7 @@ function updateBall(dt) {
   if (G.celebAuto && G.celebAuto.tipo === 'bola' && G.celebAuto.naMao) return;   // na mão de quem comemora
   if (G.possession) { attachBall(G.possession); return; }
   if (G.recvFx) return;                           // bola indo até o pé/peito/cabeça na recepção
+  if (G.kick && G.kick.primeira && !G.kick.primeira.solto) return;   // (7.4.13) de primeira: a bola espera no ar enquanto você mira
   if (G.sp && (G.sp.phase !== 'fetch' || G.sp.onRack)) return;  // nas mãos, parada no lugar, ou no suporte
   const R = CONFIG.BALL_R;
   // um passo só de física (o mesmo das previsões da IA e do goleiro): ver passoBola
@@ -8037,7 +8139,7 @@ function scoreGoal(team, tGol) {
   {                                               // súmula: autor, assistência (ou gol contra)
     const quem = byUser ? user : (G.possession && G.possession.team === team ? G.possession : ball.lastKicker && ball.lastKicker.team === team ? ball.lastKicker : null);
     const passe = quem && G.toqueAnt && G.toqueAnt !== quem && G.toqueAnt.team === team && G.time - G.toqueAntT < 12 ? G.toqueAnt : null;
-    const nomeDe = (p) => (p.isUser ? CHAVE_VOCE : p.ficha || p.name);
+    const nomeDe = (p) => (p.voce ? CHAVE_VOCE : p.ficha || p.name);
     if (passe && passe.isUser) G.stats.assist++;
     if (G.golsLog) G.golsLog.push({ time: team, autor: quem ? nomeDe(quem) : null, contra: !quem, assist: passe ? nomeDe(passe) : null, t: Math.round(G.time) });
   }
@@ -8688,6 +8790,7 @@ function startRestart(kind, team, spot, motivo) {
   }
   if (G.forcaCobrador) S.taker = G.forcaCobrador;  // disputa de pênaltis: a ordem decide
   if (!S.taker) { G.state = 'play'; return; }        // ninguém para cobrar: segue o jogo
+  if (controleDoTime() && team === 0 && S.taker.team === 0 && S.taker.role !== 'GK' && !G.forcaCobrador && S.taker !== user) trocarControle(S.taker, true);   // (7.4.13) time inteiro: você cobra
   S.taker.scripted = true;
   let ai = 0, di = 0, pi = 0;                      // vagas na área (escanteio) / fora da área (pênalti)
   for (const p of players) {
@@ -9154,7 +9257,8 @@ function expulsar(p) {
   const lista = TEAMS[p.team], i = lista.indexOf(p);
   if (i >= 0) lista.splice(i, 1);                   // a IA para de contar com ele
   p.saida = { x: p.x, z: Math.sign(p.z || 1) * (HALF_W + 6) };
-  if (p.isUser) setTimeout(() => { if (G.state !== 'end') endMatch('expulso'); }, 1600);
+  if (p.isUser && controleDoTime()) trocarControle(proximoControlavel(p), true);   // (7.4.13) time inteiro: o controle passa para outro
+  else if (p.isUser) setTimeout(() => { if (G.state !== 'end') endMatch('expulso'); }, 1600);
 }
 
 // O expulso sai andando para fora do campo e some.
@@ -9412,6 +9516,7 @@ function mirandoNoGol(dx, dz) {
   return Math.abs(HALF_L - O.x) > 1 && ang >= Math.min(a1, a2) && ang <= Math.max(a1, a2);
 }
 function rotuloDoToque(k) {
+  if (k.primeira) return T(k.kind === 'shot' ? (k.cruzar ? 'CRUZAMENTO DE PRIMEIRA' : 'CHUTE DE PRIMEIRA') : 'PASSE DE PRIMEIRA');   // (7.4.13)
   if (k.kind === 'shot') return T(k.cruzar ? 'CRUZAMENTO' : (user.setPiece === 'penalti' ? 'PÊNALTI' : 'CHUTE'));
   if (k.throwIn) return T('LATERAL');
   return T(k.alto ? 'CRUZAMENTO' : 'PASSE');
@@ -9461,6 +9566,7 @@ function desvioDoToque(k, u, atributo) {
   let f = fh(u, atributo);
   if (atributo === 'chute' && !u.setPiece && Math.hypot(HALF_L - u.x, u.z) < 18 * ESC) f *= fh(u, 'finalizacao');   // perto do gol: finalização
   s *= clamp(1.4 - 0.4 * f, 0.7, 1.6);
+  if (k.primeira) s *= k.primeira.ok ? 1.3 : 3.4;    // (7.4.13) de primeira é mais difícil; fora da faixa da barra, sai bem torto
   if (u.isUser && typeof Historia !== 'undefined' && Historia.emPartida()) s /= Espectros.precisao(atributo);   // (7.1.14) confiança, ressaca e fome
   if (!u.setPiece && !u.throwIn && !u.bolaFixa) {
     const o = nearestOf(TEAMS[1 - u.team], u);
@@ -9505,6 +9611,7 @@ function releasePower() {
   const k = G.kick, v = Math.min(1, power.value);
   k.power = v; k.faixa = faixaDaForca(v); k.over = 0; k.miss = 0;
   G.ultToque = { kind: k.kind, faixa: k.faixa, cav: false, n: (G.ultToque ? G.ultToque.n : 0) + 1 };   // a aula do João confere em que faixa você soltou
+  if (k.primeira) { primeiraSoltar(false); return; }      // (7.4.13) de primeira: mira e força (sem o efeito)
   if (k.kind === 'pass') { executeUserKick(); return; }   // passe: só 2 etapas
   G.state = 'spin'; k.spinT = 0; k.spinChosen = false;
   $('spinDot').hidden = true;
@@ -9825,7 +9932,7 @@ function furar() {
 // Atualiza o relógio do chute, a preparação e confere se o marcador roubou a bola.
 function updateKickClock(rdt) {
   if (!KICK_STATES.includes(G.state) || !G.kick) return;
-  if (G.possession !== user) {                     // roubaram enquanto você decidia
+  if (G.kick.primeira ? (G.possession && G.possession !== user) || user.out : G.possession !== user) {   // roubaram enquanto você decidia
     G.kick = null; G.state = 'play'; G.targetScale = 1;
     hideKickUI();
     showToast('Roubaram a bola!', 'bad');
@@ -9838,12 +9945,76 @@ function updateKickClock(rdt) {
   const f = $('kickTimerFill');
   f.style.transform = 'scaleX(' + Math.max(0, k.timer / CONFIG.KICK_TIME_LIMIT).toFixed(3) + ')';
   setClass(f, 'low', k.timer < 2);
-  if (k.timer <= 0) furar();
+  if (k.timer <= 0) { if (k.primeira) primeiraSoltar(true); else furar(); }
+}
+
+// ---------------------------------------------------------------------
+// (7.4.13) DE PRIMEIRA (sem dominar). Vem do minigame da recepção (PASSE DE 1ª / CHUTE DE 1ª, com a barra) ou do botão que
+//   aparece quando um passe rasteiro vem em você (sem barra). O tempo quase para e a bola espera no ar: você MIRA e escolhe a
+//   FORÇA (o chute de primeira não tem a etapa do efeito). Depois a bola chega no pé (ou no peito do pé, num voleio) em câmera
+//   lenta e sai na direção e na força escolhidas. Perto do gol (até um pouco fora da área) dá para chutar; longe, só o passe.
+// ---------------------------------------------------------------------
+const PRIMEIRA_LENTO = 0.04;
+function primeiraSemRecepcao(kind) {
+  if (!bolaVindoPraVoce() || (kind === 'shot' && !pertoParaChuteDePrimeira())) return;
+  iniciarPrimeira(kind, { ok: true, recvKind: 'pe' });
+}
+function iniciarPrimeira(kind, op) {
+  G.recv = null; G.recvHideT = 0; esconderRecepcao();
+  user.angle = Math.atan2(ball.z - user.z, ball.x - user.x); user.vx = user.vz = 0;   // de frente para a bola que chega
+  const a0 = kind === 'shot' ? Math.atan2(-user.z, HALF_L - user.x) : Math.atan2(user.z - ball.z, user.x - ball.x);   // passe: começa na direção em que a bola vinha
+  G.kick = {
+    kind, primeira: { ok: !!op.ok, recvKind: op.recvKind || 'pe', solto: false },
+    throwIn: false, dirX: Math.cos(a0), dirZ: Math.sin(a0), aimed: false,
+    target: null, dist: 0, power: 0, over: 0, miss: 0, zone: [0, 1],
+    ox: 0, oy: 0, spinT: 0, spinChosen: false, powerLabel: '',
+    timer: CONFIG.KICK_TIME_LIMIT, semLimite: false, yawRef: cam.yaw, windup: 0,
+  };
+  if (kind === 'shot') G.kick.cruzar = !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
+  G.state = 'aim'; G.targetScale = G.timeScale = PRIMEIRA_LENTO;
+  if (joy.id !== null) {                               // o dedo que estava no joystick já vira a mira
+    aimPad.id = joy.id; aimPad.onJoy = true; aimPad.ox = joy.cx; aimPad.oy = joy.cy;
+    aimPad.dx = joy.x * JOY_R; aimPad.dy = joy.y * JOY_R; joy.id = null; joy.x = joy.y = 0;
+    applyAimVector(); drawAimKnob();
+  }
+  showStage('aim');
+  $('cancelKick').hidden = true;
+  $('stageKind').textContent = T(kind === 'shot' ? 'CHUTE DE PRIMEIRA' : 'PASSE DE PRIMEIRA');
+  showBanner(op.ok ? 'DE PRIMEIRA!' : 'TEMPO ERRADO!', op.ok ? 0 : 1, 1.2, true);
+}
+// soltou a força (ou acabou o tempo): a bola vem até o pé e ele bate
+function primeiraSoltar(atrasou) {
+  const k = G.kick; if (!k || !k.primeira) return;
+  const P = k.primeira; P.solto = true;
+  if (atrasou) { P.ok = false; if (!(k.power > 0)) { k.power = 0.5; k.faixa = faixaDaForca(0.5); } }
+  if (!Number.isFinite(k.faixa)) k.faixa = faixaDaForca(k.power || 0.5);
+  hideKickUI();
+  const pose = P.recvKind === 'pe' ? 'pe' : 'voleio';
+  user.angle = Math.atan2(k.dirZ, k.dirX);
+  user.recvPose = pose === 'voleio' ? { kind: 'voleio', t: 0, dur: POSE_DUR.voleio, side: Math.random() < 0.5 ? 1 : -1 } : null;
+  const c = pontoContato(pose), d = Math.hypot(ball.x - c.x, ball.y - c.y, ball.z - c.z), v = Math.max(7, Math.hypot(ball.vx, ball.vy, ball.vz));
+  G.state = 'trap'; G.targetScale = 0.45;
+  G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: clamp(d / v, 0.14, 1.2) * (pose === 'voleio' ? 1 : 0.85), kind: P.recvKind, acao: 'primeira', ok: P.ok, pose,
+    fin: null, fase: 'ida', perfeito: false, culpaDoPasse: false, passador: ball.lastKicker, primeira: k };
+}
+// a bola chegou: sai o toque
+function baterDePrimeira(F) {
+  const k = F.primeira;
+  G.recvFx = null; G.recv = null;
+  if (G.offside && G.offside.set.has(user)) { G.kick = null; hideKickUI(); fimRecepcao(); G.state = 'play'; callOffside(user); return; }
+  if (G.offside) G.offside = null;
+  G.kick = k; G.state = 'play';
+  user.kickT = 0;
+  executeUserKick();                                    // a mesma batida do passe/chute normal (com o erro maior de primeira)
+  if (k.kind === 'pass') G.stats.passesPrimeira = (G.stats.passesPrimeira | 0) + 1; else G.stats.chutesPrimeira = (G.stats.chutesPrimeira | 0) + 1;
+  fimRecepcao(); G.recvIgnore = 0.5; user.controlCd = Math.max(user.controlCd || 0, 0.35);
+  if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;
 }
 
 function cancelKick() {
   if (!['aim', 'power', 'spin'].includes(G.state)) return;
   if (G.kick && G.kick.semLimite) return;          // bola parada: não tem para onde voltar
+  if (G.kick && G.kick.primeira) return;           // (7.4.13) de primeira: a bola já está chegando
   // A finta vale quando o chute está ARMADO: já escolheu a força, ou está enchendo a barra (perna lá atrás). Cancelar só na mira é desistir.
   const k = G.kick, armado = G.state === 'spin' || (G.state === 'power' && (power.holding && power.value > 0.12 || (k && k.windup > 0.6)));
   power.holding = false;
@@ -10141,14 +10312,22 @@ function startReceive(pr) {
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(acao); });
     B.appendChild(b);
   };
+  // (7.4.13) DE PRIMEIRA: bola baixa → PASSE DE 1ª (mira e força) e, perto do gol (até um pouco fora da área), CHUTE DE 1ª;
+  //   bola no peito perto do gol → CHUTE DE 1ª (um voleio com mira e força). A barra vale igual: fora da faixa, o toque sai torto.
+  R.op1 = kind === 'pe';
+  R.chute1 = kind !== 'alto' && pertoParaChuteDePrimeira();
+  R.domAlto = kind === 'alto' && pr.y < 2.6;
   if (kind === 'alto') {
     botao('CABECEAR', 'cabecear', R.fin ? 's2' : 's1', !R.fin);
     if (R.fin) botao(NOME_FIN[R.fin].replace(' AO GOL', ''), 'finalizar', 's1', true);
-    if (pr.y < 2.6) botao('DOMINAR', 'dominar', 's3', false);   // cabecinha para cima e domina
+    if (R.domAlto) botao('DOMINAR', 'dominar', 's3', false);   // cabecinha para cima e domina
+  } else {
+    botao('DOMINAR', 'dominar', 's1', true);
+    if (R.op1) botao('PASSE DE 1ª', 'passe1', 's2', false);
+    if (R.chute1) botao('CHUTE DE 1ª', 'chute1', R.op1 ? 's3' : 's2', false);
   }
-  else botao('DOMINAR', 'dominar', 's1', true);
   $('recvInfo').textContent = T(kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
-    : dificil ? 'Passe difícil: acerte o ponto AZUL' : 'Bata quando o marcador estiver na faixa verde');
+    : dificil ? 'Passe difícil: acerte o ponto AZUL' : R.op1 || R.chute1 ? 'Bata na faixa verde: domine ou toque de primeira' : 'Bata quando o marcador estiver na faixa verde');
   $('recvInfo').className = '';
   G.recvHideT = 0;
   $('recvLayer').hidden = false;
@@ -10233,6 +10412,12 @@ function martelar(acao) {
 
 function resolveReceive(acao, ok) {
   const R = G.recv;
+  if (acao === 'passe1' || acao === 'chute1') {    // (7.4.13) de primeira: abre a mira e a força (a bola espera no ar)
+    R.done = true;
+    if (R.kind !== 'alto') G.stats.dominios = Math.max(0, G.stats.dominios - 1);   // não foi tentativa de domínio
+    iniciarPrimeira(acao === 'passe1' ? 'pass' : 'shot', { ok: !!ok, recvKind: R.kind });
+    return;
+  }
   R.done = true; G.recvHideT = 0.6;
   G.targetScale = 1;                               // o jogo volta à velocidade normal (você continua andando)
   if (R.kind === 'alto' && !acao) {                // não tentou nada: a bola passa por cima
@@ -10499,6 +10684,7 @@ function updateRecvFx(rdt) {
 }
 
 function contatoRecepcao(F) {
+  if (F.acao === 'primeira') { baterDePrimeira(F); return; }   // (7.4.13)
   if (G.offside && G.offside.set.has(user)) { fimRecepcao(); callOffside(user); return; }
   if (G.offside) G.offside = null;
   if (F.kind !== 'alto') {
@@ -11673,6 +11859,61 @@ function finishTiming() {
 // 15. ENTRADAS
 // ---------------------------------------------------------------------
 const keys = {};
+// (7.4.13) TECLADO CONFIGURÁVEL: cada ação tem uma tecla (e.code), trocada em Configurações → Teclado e guardada no aparelho
+//   (futebolJs.teclas.v1). As setas sempre andam e o Enter sempre confirma/pula, além da tecla escolhida.
+//   grupo: quando a ação vale. Teclas iguais só são proibidas no mesmo grupo (a recepção e o jogo nunca valem juntos);
+//   andar, correr, câmera e trocar de jogador valem o tempo todo, então não repetem com nada.
+const TECLAS_ACOES = [
+  { id: 'cima', nome: 'Andar para cima', grupo: 'mov', padrao: 'KeyW' },
+  { id: 'baixo', nome: 'Andar para baixo', grupo: 'mov', padrao: 'KeyS' },
+  { id: 'esquerda', nome: 'Andar para a esquerda', grupo: 'mov', padrao: 'KeyA' },
+  { id: 'direita', nome: 'Andar para a direita', grupo: 'mov', padrao: 'KeyD' },
+  { id: 'correr', nome: 'Correr (segurar)', grupo: 'mov', padrao: 'ShiftLeft' },
+  { id: 'chutar', nome: 'Chutar / cruzar', grupo: 'jogo', padrao: 'KeyJ' },
+  { id: 'passar', nome: 'Passar / lançar', grupo: 'jogo', padrao: 'KeyK' },
+  { id: 'driblar', nome: 'Driblar', grupo: 'jogo', padrao: 'KeyL' },
+  { id: 'pedir', nome: 'Pedir a bola / desarmar', grupo: 'jogo', padrao: 'KeyE' },
+  { id: 'carrinho', nome: 'Carrinho', grupo: 'jogo', padrao: 'KeyQ' },
+  { id: 'forca', nome: 'Força do chute (segurar)', grupo: 'jogo', padrao: 'Space' },
+  { id: 'dominar', nome: 'Dominar', grupo: 'recv', padrao: 'Space' },
+  { id: 'cabecear', nome: 'Cabecear', grupo: 'recv', padrao: 'KeyK' },
+  { id: 'finalizar', nome: 'Finalizar de cabeça / voleio', grupo: 'recv', padrao: 'KeyJ' },
+  { id: 'passe1', nome: 'Passe de primeira', grupo: 'recv', padrao: 'KeyU' },
+  { id: 'chute1', nome: 'Chute de primeira', grupo: 'recv', padrao: 'KeyI' },
+  { id: 'comemorar1', nome: 'Comemoração 1', grupo: 'festa', padrao: 'Digit1' },
+  { id: 'comemorar2', nome: 'Comemoração 2', grupo: 'festa', padrao: 'Digit2' },
+  { id: 'camera', nome: 'Trocar a câmera', grupo: 'sempre', padrao: 'KeyC' },
+  { id: 'trocar', nome: 'Trocar de jogador (time inteiro)', grupo: 'sempre', padrao: 'KeyR' },
+];
+const TECLAS = (() => {
+  const t = {}; for (const a of TECLAS_ACOES) t[a.id] = a.padrao;
+  try { const v = JSON.parse(localStorage.getItem('futebolJs.teclas.v1') || 'null'); if (v && typeof v === 'object') for (const a of TECLAS_ACOES) if (typeof v[a.id] === 'string' && v[a.id]) t[a.id] = v[a.id]; } catch (e) { /* sem armazenamento */ }
+  return t;
+})();
+const tecla = (acao, code) => TECLAS[acao] === code || (acao === 'correr' && code === 'ShiftRight' && TECLAS.correr === 'ShiftLeft');
+const teclaSegurada = (acao) => !!keys[TECLAS[acao]] || (acao === 'correr' && TECLAS.correr === 'ShiftLeft' && !!keys.ShiftRight);
+function guardarTeclas() { try { localStorage.setItem('futebolJs.teclas.v1', JSON.stringify(TECLAS)); } catch (e) { /* ok */ } }
+// nome curto da tecla para mostrar ("J", "Espaço", "Shift esq.")
+function nomeTecla(code) {
+  if (!code) return '—';
+  if (/^Key[A-Z]$/.test(code)) return code.slice(3);
+  if (/^Digit\d$/.test(code)) return code.slice(5);
+  if (/^Numpad\d$/.test(code)) return 'Num ' + code.slice(6);
+  const N = { Space: 'Espaço', ShiftLeft: 'Shift', ShiftRight: 'Shift dir.', ControlLeft: 'Ctrl', ControlRight: 'Ctrl dir.', AltLeft: 'Alt', AltRight: 'Alt dir.', Tab: 'Tab', CapsLock: 'Caps',
+    ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Backspace: '⌫', Semicolon: 'Ç', Comma: ',', Period: '.', Slash: ';', Minus: '-', Equal: '=', BracketLeft: '´', BracketRight: '[', Backslash: ']', Quote: '~' };
+  return N[code] ? T(N[code]) : code;
+}
+// muda a tecla de uma ação; se outra ação que vale ao mesmo tempo já usa essa tecla, as duas trocam
+function definirTecla(acao, code) {
+  const A = TECLAS_ACOES.find((a) => a.id === acao); if (!A || !code) return null;
+  const juntas = (g1, g2) => g1 === g2 || g1 === 'mov' || g2 === 'mov' || g1 === 'sempre' || g2 === 'sempre';
+  const outra = TECLAS_ACOES.find((b) => b.id !== acao && TECLAS[b.id] === code && juntas(A.grupo, b.grupo));
+  if (outra) TECLAS[outra.id] = TECLAS[acao];
+  TECLAS[acao] = code; guardarTeclas();
+  return outra ? outra.id : null;
+}
+function teclasPadrao() { for (const a of TECLAS_ACOES) TECLAS[a.id] = a.padrao; guardarTeclas(); }
+const TeclaEspera = { ativa: false };                       // Configurações esperando a tecla nova (o jogo ignora o teclado)
 let JOY_R = 50;                                  // varia com o tamanho do joystick (ajustável)
 const joy = { id: null, cx: 0, cy: 0, x: 0, y: 0 };
 const aimPad = { id: null, ox: 0, oy: 0, dx: 0, dy: 0, onJoy: false };
@@ -11683,12 +11924,12 @@ function readMove() {
   if (mag < 0.15) { up = right = mag = 0; }
   let run = mag >= CONFIG.RUN_THRESHOLD;
   if (mag === 0) {
-    if (keys.KeyW || keys.ArrowUp) up += 1;
-    if (keys.KeyS || keys.ArrowDown) up -= 1;
-    if (keys.KeyD || keys.ArrowRight) right += 1;
-    if (keys.KeyA || keys.ArrowLeft) right -= 1;
+    if (teclaSegurada('cima') || keys.ArrowUp) up += 1;
+    if (teclaSegurada('baixo') || keys.ArrowDown) up -= 1;
+    if (teclaSegurada('direita') || keys.ArrowRight) right += 1;
+    if (teclaSegurada('esquerda') || keys.ArrowLeft) right -= 1;
     mag = Math.hypot(up, right);
-    if (mag > 0) { up /= mag; right /= mag; mag = keys.ShiftLeft || keys.ShiftRight ? 1 : CONFIG.RUN_THRESHOLD * 0.99; }
+    if (mag > 0) { up /= mag; right /= mag; mag = teclaSegurada('correr') ? 1 : CONFIG.RUN_THRESHOLD * 0.99; }
     run = mag >= CONFIG.RUN_THRESHOLD;
     if (mag > 0) { up *= mag; right *= mag; }
   }
@@ -11729,6 +11970,8 @@ $('touch').addEventListener('pointerdown', (e) => {
     drawAimKnob();
   } else if (G.state === 'power') {
     startPowerHold(e.pointerId);
+  } else if (podeArrastarCamera() && camArrasto.id === null) {   // (7.4.13) câmera livre: arrastar gira a câmera
+    camArrasto.id = e.pointerId; camArrasto.x = e.clientX; camArrasto.y = e.clientY;
   }
 });
 
@@ -11773,52 +12016,82 @@ $('timingLayer').addEventListener('pointerdown', (e) => { e.preventDefault(); ta
 $('cancelKick').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cancelKick(); });
 $('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') { if (!G.intTela) mostrarTelaIntervalo(); } else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
+// (7.4.13) três câmeras: BOLA (atrás de você, virada para a bola) → FRENTE (fixa para o gol) → LIVRE (você arrasta a tela, do
+//   lado direito, para a direção em que quer olhar; para cima e para baixo sobe e desce a câmera)
+const ROTULO_CAM = { bola: 'CÂM: BOLA', frente: 'CÂM: FRENTE', livre: 'CÂM: LIVRE' };
 function toggleCamera() {
-  cam.mode = cam.mode === 'bola' ? 'frente' : 'bola';
-  $('camBtn').textContent = T(cam.mode === 'bola' ? 'CÂM: BOLA' : 'CÂM: FRENTE');
+  cam.mode = cam.mode === 'bola' ? 'frente' : cam.mode === 'frente' ? 'livre' : 'bola';
+  $('camBtn').textContent = T(ROTULO_CAM[cam.mode]);
+  if (cam.mode === 'livre') { cam.livreH = cam.livreH || 0; showBanner('CÂMERA LIVRE: ARRASTE A TELA', 0, 1.8, true); }
+  camArrasto.id = null;
 }
+const camArrasto = { id: null, x: 0, y: 0 };
+function podeArrastarCamera() { return cam.mode === 'livre' && !G.espectador && (G.state === 'play' || G.state === 'celebrate' || G.state === 'trap' || G.state === 'restart' || G.state === 'foul'); }
+window.addEventListener('pointermove', (e) => {
+  if (e.pointerId !== camArrasto.id) return;
+  if (!podeArrastarCamera()) { camArrasto.id = null; return; }
+  const dx = e.clientX - camArrasto.x, dy = e.clientY - camArrasto.y;
+  camArrasto.x = e.clientX; camArrasto.y = e.clientY;
+  cam.yaw = wrapAngle(cam.yaw - dx * 0.0085);
+  cam.livreH = clamp((cam.livreH || 0) + dy * 0.025, -2.2, 9);
+});
+const soltarArrastoCam = (e) => { if (e.pointerId === camArrasto.id) camArrasto.id = null; };
+window.addEventListener('pointerup', soltarArrastoCam); window.addEventListener('pointercancel', soltarArrastoCam);
 $('camBtn').addEventListener('click', toggleCamera);
 
 window.addEventListener('keydown', (e) => {
-  if (e.repeat) return;
+  if (e.repeat || TeclaEspera.ativa) return;                 // trocando uma tecla em Configurações: a tecla é para lá
   keys[e.code] = true;
+  const K = (a) => tecla(a, e.code);
   const mode = computeMode();
   if (G.state === 'restart' && (e.code === 'Enter' || e.code === 'Escape')) { skipRestart(); return; }
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
-  if (G.state === 'aim' && (e.code === 'Enter' || e.code === 'KeyJ' || e.code === 'KeyK')) { confirmAim(); return; }
-  if (e.code === 'KeyC') toggleCamera();
+  if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
+  if (K('camera')) toggleCamera();
+  if (K('trocar')) trocarJogadorManual();
   if (G.recv && !G.recv.done) {
-    if (e.code === 'Space' || e.code === 'KeyE') { e.preventDefault(); martelar(null); return; }
-    if (e.code === 'KeyK' && G.recv.kind === 'alto') { martelar('cabecear'); return; }
-    if (e.code === 'KeyJ') { martelar(G.recv.kind === 'alto' ? 'finalizar' : 'dominar'); return; }
+    const R = G.recv;
+    if (R.kind === 'alto') {
+      if (K('cabecear')) { martelar('cabecear'); return; }
+      if (K('finalizar')) { martelar('finalizar'); return; }
+      if (K('dominar')) { e.preventDefault(); martelar(R.domAlto ? 'dominar' : null); return; }
+    } else {
+      if (K('passe1') && R.op1) { martelar('passe1'); return; }
+      if (K('chute1') && R.chute1) { martelar('chute1'); return; }
+      if (K('dominar')) { e.preventDefault(); martelar('dominar'); return; }
+    }
+  }
+  if (mode === 'primeira' || mode === 'primeiraC') {        // (7.4.13) bola vindo em você: de primeira, sem dominar
+    if (K('passe1') || K('passar')) { primeiraSemRecepcao('pass'); return; }
+    if ((K('chute1') || K('chutar')) && pertoParaChuteDePrimeira()) { primeiraSemRecepcao('shot'); return; }
   }
   if (G.state === 'celebrate') {
-    if (e.code === 'Digit1') startCelebration(celebDoJogador().slots[0]);
-    if (e.code === 'Digit2') startCelebration(celebDoJogador().slots[1]);
+    if (K('comemorar1')) startCelebration(celebDoJogador().slots[0]);
+    if (K('comemorar2')) startCelebration(celebDoJogador().slots[1]);
     if (e.code === 'Enter') endCelebration();
   }
-  if (e.code === 'KeyJ' && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
-  if (e.code === 'KeyK' && mode === 'kickoff') kickoffPass();
-  else if (e.code === 'KeyK' && (mode === 'ball' || mode === 'setpiece' || mode === 'throw')) startKick('pass');
-  if (e.code === 'KeyL' && mode === 'ball') startDribble();   // só funciona com a janela de drible aberta
-  if (e.code === 'KeyE') { if (mode === 'team') requestBall(); else if (mode === 'defend') tryUserTackle(); }
-  if (e.code === 'KeyQ' && (mode === 'defend' || mode === 'loose')) userCarrinho();
-  if (e.code === 'Space') { e.preventDefault(); if (G.state === 'power') startPowerHold('key'); }
+  if (K('chutar') && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
+  if (K('passar') && mode === 'kickoff') kickoffPass();
+  else if (K('passar') && (mode === 'ball' || mode === 'setpiece' || mode === 'throw')) startKick('pass');
+  if (K('driblar') && mode === 'ball') startDribble();   // só funciona com a janela de drible aberta
+  if (K('pedir')) { if (mode === 'team') requestBall(); else if (mode === 'defend') tryUserTackle(); }
+  if (K('carrinho') && (mode === 'defend' || mode === 'loose')) userCarrinho();
+  if (K('forca')) { e.preventDefault(); if (G.state === 'power') startPowerHold('key'); }
   if (e.code === 'Escape') cancelKick();
 });
 window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
-  if (e.code === 'Space' && power.holding && power.id === 'key') releasePower();
+  if (tecla('forca', e.code) && power.holding && power.id === 'key') releasePower();
 });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
 function keyboardAim() {
   if (G.state !== 'aim' || aimPad.id !== null) return;
   let up = 0, right = 0;
-  if (keys.KeyW || keys.ArrowUp) up += 1;
-  if (keys.KeyS || keys.ArrowDown) up -= 1;
-  if (keys.KeyD || keys.ArrowRight) right += 1;
-  if (keys.KeyA || keys.ArrowLeft) right -= 1;
+  if (teclaSegurada('cima') || keys.ArrowUp) up += 1;
+  if (teclaSegurada('baixo') || keys.ArrowDown) up -= 1;
+  if (teclaSegurada('direita') || keys.ArrowRight) right += 1;
+  if (teclaSegurada('esquerda') || keys.ArrowLeft) right -= 1;
   const m = Math.hypot(up, right);
   if (m > 0) { const w = screenToWorld(up / m, right / m, G.kick ? G.kick.yawRef : cam.yaw); setAimDir(w.x, w.z); }
 }
@@ -11883,9 +12156,9 @@ function showStage(stage) {
   $('stageBar').hidden = false;
   $('cancelKick').hidden = false;
   $('stageKind').textContent = rotuloDoToque(G.kick);
-  $('stepSpin').hidden = G.kick.kind !== 'shot';
+  $('stepSpin').hidden = G.kick.kind !== 'shot' || !!G.kick.primeira;   // de primeira: sem o efeito
   $('kickTimer').hidden = !!G.kick.semLimite;            // bola parada: sem relógio
-  $('cancelKick').hidden = !!G.kick.semLimite;
+  $('cancelKick').hidden = !!G.kick.semLimite || !!G.kick.primeira;
   document.querySelectorAll('.step[data-step]').forEach((el) => {
     const i = order.indexOf(el.dataset.step), cur = order.indexOf(stage);
     el.classList.toggle('on', i === cur);
@@ -11911,7 +12184,30 @@ function computeMode() {
   if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : (G.sp ? 'setpiece' : 'ball');
   if (G.possession && G.possession.team === 0) return 'team';
   if (G.possession && G.possession.team === 1) return 'defend';
+  if (bolaVindoPraVoce()) return pertoParaChuteDePrimeira() ? 'primeiraC' : 'primeira';   // (7.4.13) dá para bater de primeira
   return 'loose';
+}
+// (7.4.13) A bola (passe de um companheiro) está vindo em você, baixa: dá para tocar DE PRIMEIRA (passe ou chute) sem dominar.
+//   O "folga" segura o botão na tela por um instante (a previsão oscila quadro a quadro e o botão piscava).
+function bolaVindoPraVoce() {
+  const ok = (() => {
+    if (G.state !== 'play' || G.possession || G.recv || G.recvFx || !user || user.out || user.stun > 0 || user.controlCd > 0 || G.sp || G.kickoffPending || G.recvIgnore > 0) return false;
+    const lk = ball.lastKicker;
+    if (!lk || lk === user || lk.team !== user.team || ball.isShot || ball.hidden) return false;
+    if (ball.y > RECV.ALT.pe + 0.5) return false;                        // alta: vem pelo minigame (peito, cabeceio...)
+    const dx = user.x - ball.x, dz = user.z - ball.z, d = Math.hypot(dx, dz), hs = Math.hypot(ball.vx, ball.vz);
+    if (d < 1.2 || d > 28 || hs < 3) return false;
+    const along = (dx * ball.vx + dz * ball.vz) / hs;                    // a bola ainda vai andar até a sua altura?
+    if (along < d * 0.75) return false;
+    return Math.abs(dx * ball.vz - dz * ball.vx) / hs < 1.9;             // e passa perto de você
+  })();
+  if (ok) G.primeiraVem = G.time;
+  return ok || (G.primeiraVem != null && G.time - G.primeiraVem < 0.12 && G.state === 'play' && !G.possession && !G.recv && !G.recvFx);
+}
+function pertoParaChuteDePrimeira(u) {
+  u = u || user; if (!u) return false;
+  const fundo = HALF_L - u.x, lat = Math.abs(u.z);
+  return fundo > -0.5 && fundo < BOX.depth + 5 && lat < BOX.half + 3;  // da área até um pouco fora dela (a medida do voleio)
 }
 
 function renderButtons(mode) {
@@ -11945,11 +12241,17 @@ function renderButtons(mode) {
     mk('LANÇAR', 's1', () => startKick('pass'), 'primary');
   } else if (mode === 'team') {
     mk('PEDIR BOLA', 's1', requestBall, 'primary', 'reqBtn');
+    if (controleDoTime()) mk('TROCAR', 's3', trocarJogadorManual);
   } else if (mode === 'defend') {
     mk('DESARMAR', 's1', tryUserTackle, 'primary', 'tackleBtn');
     mk('CARRINHO', 's2', userCarrinho);
+    if (controleDoTime()) mk('TROCAR', 's3', trocarJogadorManual);
   } else if (mode === 'loose') {
     mk('CARRINHO', 's2', userCarrinho);
+    if (controleDoTime()) mk('TROCAR', 's3', trocarJogadorManual);
+  } else if (mode === 'primeira' || mode === 'primeiraC') {   // (7.4.13) a bola vem em você: de primeira
+    mk('PASSE DE 1ª', 's1', () => primeiraSemRecepcao('pass'), 'primary');
+    if (mode === 'primeiraC') mk('CHUTE DE 1ª', 's2', () => primeiraSemRecepcao('shot'), 'primary');
   }
 }
 
@@ -11974,7 +12276,7 @@ function updateHUD() {
   if (db) { const show = G.dribbleWin > 0; if (db.hidden === show) db.hidden = !show; }
   const j = $('joy');
   const aimingOnJoy = aimPad.onJoy && aimPad.id !== null;
-  const pushingFull = Math.hypot(joy.x, joy.y) >= CONFIG.RUN_THRESHOLD || keys.ShiftLeft || keys.ShiftRight;
+  const pushingFull = Math.hypot(joy.x, joy.y) >= CONFIG.RUN_THRESHOLD || teclaSegurada('correr');
   const tired = user.exhausted && pushingFull;
   setClass(j, 'run', user.running);
   setClass(j, 'tired', tired && !user.running);
@@ -11994,6 +12296,7 @@ function updateHUD() {
   let hint = '';
   if (mode === 'celebrate') hint = Tf('Comemore! {0} s', Math.max(0, Math.ceil(G.celebT)));
   else if (mode === 'loose') hint = T('Bola livre: corra até ela');
+  else if (mode === 'primeira' || mode === 'primeiraC') hint = T('A bola vem em você: dá para tocar de primeira');
   else if (mode === 'defend' && G.possession && dist2D(user, G.possession) > 2.4) hint = T('Chegue perto para desarmar');
   setText('hint', hint);
 }
@@ -12241,13 +12544,13 @@ function fimDoIntervalo() {
 }
 // ---- SALVAR NO INTERVALO (7.4.10): o que precisa para recomeçar a MESMA partida no 2º tempo (o resto vem da configuração)
 const CHAVE_VOCE_INT = '__voce';
-const chaveJog = (p) => (p.isUser ? CHAVE_VOCE_INT : p.ficha || p.name);
+const chaveJog = (p) => (p.voce ? CHAVE_VOCE_INT : p.ficha || p.name);
 function estadoDoIntervalo() {
   const P = PARTIDA;
   return {
     v: 1, placar: G.score.slice(), golsLog: (G.golsLog || []).slice(), stats: Object.assign({}, G.stats),
     trocas: G.trocas.map((t) => Object.assign({}, t)),
-    jogadores: P.participantes.map((p) => ({ team: p.team, k: chaveJog(p), nome: p.isUser ? 'Você' : p.name, am: !!p.yellow, vm: !!p.red, faltas: p.fouls | 0, folego: p.folego ?? 1, lesao: p.lesao || null })),
+    jogadores: P.participantes.map((p) => ({ team: p.team, k: chaveJog(p), nome: p.voce ? 'Você' : p.name, am: !!p.yellow, vm: !!p.red, faltas: p.fouls | 0, folego: p.folego ?? 1, lesao: p.lesao || null })),
     tat: P.tat ? JSON.parse(JSON.stringify(P.tat)) : null, taticaManual: G.taticaManual || null,
   };
 }
@@ -12266,7 +12569,7 @@ function retomarNoIntervalo(S) {
   if (!S || S.v !== 1) return;
   const P = PARTIDA;
   for (const t of S.trocas || []) {
-    const sai = TEAMS[t.team].find((p) => !p.out && (p.isUser ? 'Você' : p.name) === t.sai);
+    const sai = TEAMS[t.team].find((p) => !p.out && (p.voce ? 'Você' : p.name) === t.sai);
     const R = P.reservas[t.team], i = R.findIndex((j) => j.nome === t.entra);
     if (!sai || i < 0 || !podeTrocar(t.team)) continue;
     R.unshift(R.splice(i, 1)[0]);
@@ -12292,7 +12595,7 @@ function retomarNoIntervalo(S) {
 //   trocas (o time que perde troca mais; o que ganha bem, menos). As trocas pedidas acontecem na próxima bola parada (com a cena).
 //   Você nunca é tirado pelo técnico (só sai machucado).
 function candidatosTroca(team) {
-  return TEAMS[team].filter((p) => !p.isUser && !p.out && !p.red && p.role !== 'GK' && !p.entrouNoJogo && !G.subsFila.some((s) => s.sai === p))   // quem entrou não sai de novo
+  return TEAMS[team].filter((p) => !p.isUser && !p.voce && !p.out && !p.red && p.role !== 'GK' && !p.entrouNoJogo && !G.subsFila.some((s) => s.sai === p))   // quem entrou não sai de novo
     .map((p) => ({ p, nota: (p.folego ?? 1) - (p.yellow ? 0.25 : 0) - (p.lesao ? 0.5 : 0) + Math.random() * 0.25 }))
     .sort((a, b) => a.nota - b.nota).map((x) => x.p);
 }
@@ -12759,9 +13062,9 @@ function iniciarCenaPrePenaltis() {
     for (let i = 0; i < resto.length; i++) {
       const p = resto[i], v = VAGAS[k++ % VAGAS.length];
       let at = ATIV[i % ATIV.length];
-      if (p.isUser) at = Math.random() < 0.5 ? 'agua' : 'sentado';
+      if (p.voce) at = Math.random() < 0.5 ? 'agua' : 'sentado';
       const x = cx + s * v[0], z = cz + v[1];
-      if (at === 'conversa' && i + 1 < resto.length && !resto[i + 1].isUser) {
+      if (at === 'conversa' && i + 1 < resto.length && !resto[i + 1].voce) {
         const q = resto[++i], ang = rand(0, Math.PI);
         p.x = x - Math.cos(ang) * 0.6; p.z = z - Math.sin(ang) * 0.6; p.angle = ang;
         q.x = x + Math.cos(ang) * 0.6; q.z = z + Math.sin(ang) * 0.6; q.angle = ang + Math.PI;
@@ -12773,7 +13076,7 @@ function iniciarCenaPrePenaltis() {
       p.x = x; p.z = z;
       p.angle = Math.atan2(cz + 2 - z, cx - x) + rand(-0.9, 0.9);   // mais ou menos para a roda
       p.fim = { tipo: 'cena', pose: at, t0: 0, v: Math.random() < 0.5 ? 1 : 0, garrafa: at === 'agua' || (at === 'sentado' && Math.random() < 0.6) };
-      if (at === 'sentado' && p.isUser) p.fim.garrafa = true;
+      if (at === 'sentado' && p.voce) p.fim.garrafa = true;
       if (at === 'agua' || at === 'sentado') ocupa.solo.push(p);
       else if (at === 'aquece' || at === 'alonga') ocupa.aquece = ocupa.aquece || p;
       else if (at === 'meia') ocupa.meia = p;
@@ -12790,7 +13093,7 @@ function iniciarCenaPrePenaltis() {
   });
   // as tomadas: aberto, a roda do seu time, você/alguém bebendo água, o aquecimento, a roda do outro, a conversa/o meião/o goleiro
   const A = T[nosso], B = T[1 - nosso];
-  const solo = A.ocupa.solo.find((p) => p.isUser) || A.ocupa.solo[0] || B.ocupa.solo[0];
+  const solo = A.ocupa.solo.find((p) => p.voce) || A.ocupa.solo[0] || B.ocupa.solo[0];
   const aq = A.ocupa.aquece || B.ocupa.aquece || A.gk;
   const ult = (B.ocupa.par || A.ocupa.par) || [B.ocupa.meia || A.ocupa.meia || B.gk].filter(Boolean);
   const S = G.fimTomadas;
@@ -12959,7 +13262,7 @@ function ajAplicarLayout() {
 ajAplicarLayout();
 
 // Editor de botões: arraste cada item; escolha um e mexa no tamanho.
-function ajAbrirLayout() {
+function ajAbrirLayout(aoFechar) {
   const antigo = document.getElementById('ajEd'); if (antigo) antigo.remove();
   const ed = document.createElement('div');
   ed.id = 'ajEd';
@@ -13010,11 +13313,124 @@ function ajAbrirLayout() {
     AJ.layout = {}; ajAplicarLayout(); ajGuardar();
     const N = ajLayout(); for (const k of Object.keys(N)) { L[k] = N[k]; pos(k); } atualizaCtl();
   });
-  barra.querySelector('#ajEdOk').addEventListener('click', () => { ed.remove(); ajGuardar(); $('pauseScreen').hidden = false; });
+  barra.querySelector('#ajEdOk').addEventListener('click', () => { ed.remove(); ajGuardar(); if (aoFechar) aoFechar(); else $('pauseScreen').hidden = false; });
   barra.addEventListener('pointerdown', (ev) => ev.stopPropagation());
   atualizaCtl();
   ($('raizJogo') || document.body).appendChild(ed);
-  $('pauseScreen').hidden = true;
+  if (!aoFechar) $('pauseScreen').hidden = true;
+}
+
+// =====================================================================
+// (7.4.13) CONFIGURAÇÕES DE SOM, CONTROLES E TECLADO — montadas igual no menu inicial (Configurações) e na pausa.
+//   cfgSom ........ volume e mudo de cada categoria (geral, efeitos, torcida, músicas, vozes)
+//   cfgControles .. câmera (ângulo, altura, distância), círculo do jogador e o editor de botões/joystick
+//   cfgTeclado .... a tecla de CADA ação (andar, chutar, passar, dominar, cabecear, de primeira, câmera...)
+// =====================================================================
+const NOMES_VOLUME = { geral: 'Geral', efeitos: 'Efeitos (bola, apito, cliques)', torcida: 'Torcida', musica: 'Músicas', vozes: 'Vozes dos personagens' };
+const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação'], ['recv', 'Recebendo a bola'], ['festa', 'Comemoração'], ['sempre', 'A qualquer hora']];
+(function () {
+  const st = document.createElement('style');
+  st.textContent = '.cfgSec{display:flex;flex-direction:column;gap:8px;text-align:left}.cfgSec summary{cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em;padding:4px 0}' +
+    '.cfgLin{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,1.2fr) 40px auto;gap:8px;align-items:center;font:600 13px/1.2 var(--font-body)}' +
+    '.cfgLin input[type=range]{width:100%;accent-color:#f7941d}.cfgLin output{font:700 11px var(--font-display);text-align:right}' +
+    '.cfgMudo,.cfgTecla,.cfgBtn{font:700 11px var(--font-display);padding:6px 8px;background:#4a2c14;color:#fff0c8;border:2px solid #c8964a;box-shadow:0 2px 0 rgba(0,0,0,.45);cursor:pointer;min-width:56px}' +
+    '.cfgMudo:active,.cfgTecla:active,.cfgBtn:active{transform:translateY(2px);box-shadow:none}' +
+    '.cfgMudo[aria-pressed=true]{background:#7a1f16;border-color:#ff8a70}.cfgTecla.espera{background:#f7941d;color:#2a1206;border-color:#2a1206}' +
+    '.cfgSec .ajCores{display:flex;flex-wrap:wrap;gap:6px}.cfgSec .ajCor{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.45);padding:0;cursor:pointer;box-sizing:border-box}' +
+    '.cfgSec .ajCor.on{border-color:#fff;box-shadow:0 0 0 2px #f7941d}.cfgSec .ajCor.nada{background:repeating-linear-gradient(45deg,#333,#333 4px,#777 4px,#777 8px)!important}' +
+    '.cfgTec{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;font:600 13px/1.2 var(--font-body)}.cfgTec h4{grid-column:1/-1;margin:6px 0 0;font:700 11px var(--font-display);letter-spacing:.08em;color:#f7941d}' +
+    '.cfgFila{display:flex;flex-wrap:wrap;gap:8px}.cfgCam{display:flex;flex-direction:column;gap:6px;font:600 13px/1.2 var(--font-body)}.cfgCam label{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:4px 8px;align-items:center}' +
+    '.cfgCam input[type=range]{grid-column:1/-1;width:100%;accent-color:#f7941d}.cfgCam output{font:700 11px var(--font-display);text-align:right}.cfgAviso{font:600 12px var(--font-body);color:#ffb27a;min-height:1em;margin:0}' +
+    '.settings .cfgLin input[type=range],.cfgSec .cfgLin input[type=range]{grid-column:auto;grid-row:auto}.cfgLin .cfgMudo,.cfgTec .cfgTecla{width:auto;justify-self:end}' +
+    '@media (max-width:520px){.cfgLin{grid-template-columns:minmax(0,1fr) 40px auto}.cfgSec .cfgLin input[type=range]{grid-column:1/-1;grid-row:2}}' +
+    '.cfgPausa summary{cursor:pointer;padding:4px 0}.cfgPausa{margin:4px 0}';
+  document.head.appendChild(st);
+})();
+function cfgSomHTML() {
+  return '<div class="cfgSom cfgSec">' + Som.CATEGORIAS.map((c) => {
+    const v = Math.round(Som.volume(c) * 100), m = Som.mudoDe(c) || (c === 'geral' && Som.mudo);
+    return '<div class="cfgLin" data-cat="' + c + '"><span>' + T(NOMES_VOLUME[c]) + '</span><input type="range" min="0" max="100" step="5" value="' + v + '" aria-label="' + T(NOMES_VOLUME[c]) + '">' +
+      '<output>' + v + '%</output><button type="button" class="cfgMudo" aria-pressed="' + m + '">' + T(m ? 'Mudo' : 'Ligado') + '</button></div>';
+  }).join('') + '</div>';
+}
+function cfgSomLigar(box) {
+  const amostra = (c) => {
+    try {
+      Som.ligar();
+      if (c === 'efeitos' || c === 'geral') Som.chute(0.4);
+      else if (c === 'torcida') Som.palmas(0.6, 1.4);
+      else if (c === 'vozes' && typeof Mumble !== 'undefined' && Mumble.amostra) Mumble.amostra(2);
+    } catch (e) { /* sem som */ }
+  };
+  box.querySelectorAll('.cfgLin[data-cat]').forEach((lin) => {
+    const c = lin.dataset.cat, r = lin.querySelector('input'), o = lin.querySelector('output'), b = lin.querySelector('.cfgMudo');
+    r.addEventListener('input', () => { o.textContent = r.value + '%'; Som.ajustarVolume(c, Number(r.value) / 100); });
+    r.addEventListener('change', () => amostra(c));
+    b.addEventListener('click', (e) => {
+      e.stopPropagation(); Som.ligar();
+      const m = !(Som.mudoDe(c) || (c === 'geral' && Som.mudo));
+      Som.ajustarVolume(c, null, m);
+      b.setAttribute('aria-pressed', String(m)); b.textContent = T(m ? 'Mudo' : 'Ligado');
+      if (!m) amostra(c);
+    });
+  });
+}
+function cfgControlesHTML() {
+  return '<div class="cfgCam cfgSec">' +
+    '<label>' + T('Ângulo da câmera') + '<output data-o="alt"></output><input data-r="alt" type="range" min="60" max="180" step="5"></label>' +
+    '<label>' + T('Altura da câmera') + '<output data-o="h"></output><input data-r="h" type="range" min="-100" max="300" step="25"></label>' +
+    '<label>' + T('Distância da câmera') + '<output data-o="dist"></output><input data-r="dist" type="range" min="60" max="170" step="5"></label>' +
+    '<span>' + T('Círculo do jogador') + '</span><div class="ajCores cfgAro"></div>' +
+    '<div class="cfgFila"><button type="button" class="cfgBtn" data-c="camPad">' + T('Câmera padrão') + '</button><button type="button" class="cfgBtn" data-c="botoes">' + T('Ajustar botões e joystick') + '</button></div></div>';
+}
+function cfgControlesLigar(box, aoEditor) {
+  const r = (k) => box.querySelector('[data-r="' + k + '"]'), o = (k) => box.querySelector('[data-o="' + k + '"]');
+  const pinta = () => { o('alt').textContent = Math.round(AJ.camAlt * 100) + '%'; o('dist').textContent = Math.round(AJ.camDist * 100) + '%'; o('h').textContent = (AJ.camH > 0 ? '+' : '') + (Number(AJ.camH) || 0).toFixed(2).replace(/\.?0+$/, '') + ' m'; };
+  const valores = () => { AJ.camH = Number(AJ.camH) || 0; r('alt').value = Math.round(AJ.camAlt * 100); r('dist').value = Math.round(AJ.camDist * 100); r('h').value = Math.round(AJ.camH * 100); pinta(); };
+  valores();
+  r('alt').addEventListener('input', () => { AJ.camAlt = Number(r('alt').value) / 100; pinta(); });
+  r('dist').addEventListener('input', () => { AJ.camDist = Number(r('dist').value) / 100; pinta(); });
+  r('h').addEventListener('input', () => { AJ.camH = Number(r('h').value) / 100; pinta(); });
+  for (const k of ['alt', 'dist', 'h']) r(k).addEventListener('change', ajGuardar);
+  box.querySelector('[data-c="camPad"]').addEventListener('click', () => { AJ.camAlt = 1; AJ.camDist = 1; AJ.camH = 0; valores(); ajGuardar(); });
+  box.querySelector('[data-c="botoes"]').addEventListener('click', () => ajAbrirLayout(aoEditor || null));
+  const cores = box.querySelector('.cfgAro');
+  for (const [nome, hex] of AJ_ARO_CORES) { const b = document.createElement('button'); b.type = 'button'; b.className = 'ajCor'; b.dataset.cor = hex; b.style.background = hex; b.title = T(nome); b.setAttribute('aria-label', T(nome)); cores.appendChild(b); }
+  const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'ajCor nada'; nada.dataset.cor = 'nenhum'; nada.title = T('Sem círculo'); nada.setAttribute('aria-label', T('Sem círculo')); cores.appendChild(nada);
+  const marca = () => cores.querySelectorAll('.ajCor').forEach((b) => b.classList.toggle('on', b.dataset.cor === AJ.aro));
+  marca();
+  cores.addEventListener('click', (e) => { const b = e.target.closest('.ajCor'); if (!b) return; AJ.aro = b.dataset.cor; if (AJ.aro !== 'nenhum') userRing.material.color.set(AJ.aro); marca(); ajGuardar(); });
+}
+function cfgTecladoHTML() {
+  let h = '<div class="cfgTec cfgSec">';
+  for (const [g, nome] of GRUPOS_TECLADO) {
+    h += '<h4>' + T(nome) + '</h4>';
+    for (const a of TECLAS_ACOES.filter((x) => x.grupo === g)) h += '<span>' + T(a.nome) + '</span><button type="button" class="cfgTecla" data-tecla="' + a.id + '">' + nomeTecla(TECLAS[a.id]) + '</button>';
+  }
+  return h + '<p class="cfgAviso" style="grid-column:1/-1"></p><div class="cfgFila" style="grid-column:1/-1"><button type="button" class="cfgBtn" data-c="tecPad">' + T('Restaurar teclas padrão') + '</button></div>' +
+    '<p class="cfgAviso" style="grid-column:1/-1;color:inherit;opacity:.75">' + T('As setas sempre andam e o Enter sempre confirma. Toque numa tecla da lista e aperte a nova (Esc cancela).') + '</p></div>';
+}
+function cfgTecladoLigar(box) {
+  const aviso = box.querySelector('.cfgAviso');
+  const pinta = () => box.querySelectorAll('.cfgTecla').forEach((b) => { b.textContent = nomeTecla(TECLAS[b.dataset.tecla]); b.classList.remove('espera'); });
+  let fim = null;
+  const esperar = (b) => {
+    if (fim) fim();
+    TeclaEspera.ativa = true; b.classList.add('espera'); b.textContent = T('Aperte…'); aviso.textContent = '';
+    const tecla = (e) => {
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (e.code === 'Escape') { fim(); return; }
+      if (e.code === 'Enter' || e.code === 'NumpadEnter' || /^Arrow/.test(e.code) || e.code === 'MetaLeft' || e.code === 'MetaRight') { aviso.textContent = T('Essa tecla é fixa do jogo: escolha outra.'); return; }
+      const trocou = definirTecla(b.dataset.tecla, e.code);
+      fim();
+      if (trocou) { const A = TECLAS_ACOES.find((x) => x.id === trocou); aviso.textContent = Tf('A tecla estava em "{0}": as duas trocaram.', T(A.nome)); }
+    };
+    const fora = (e) => { if (e.target !== b) fim(); };
+    window.addEventListener('keydown', tecla, true); window.addEventListener('pointerdown', fora, true);
+    fim = () => { window.removeEventListener('keydown', tecla, true); window.removeEventListener('pointerdown', fora, true); fim = null; setTimeout(() => { TeclaEspera.ativa = false; }, 0); pinta(); };
+  };
+  box.querySelectorAll('.cfgTecla').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); esperar(b); }));
+  box.querySelector('[data-c="tecPad"]').addEventListener('click', () => { if (fim) fim(); teclasPadrao(); pinta(); aviso.textContent = T('Teclas padrão de volta.'); });
 }
 
 // Volta ao MENU INICIAL (pede confirmação; a partida em andamento se perde). Recarrega a página: é o jeito que garante estado limpo (fase da história,
@@ -13072,7 +13488,12 @@ function ajMontarPausa() {
     AJ.aro = b.dataset.cor; if (AJ.aro !== 'nenhum') userRing.material.color.set(AJ.aro);
     marca(); ajGuardar();
   });
-  extra.querySelector('#ajBotoes').addEventListener('click', ajAbrirLayout);
+  extra.querySelector('#ajBotoes').addEventListener('click', () => ajAbrirLayout());
+  // (7.4.13) o som (por categoria) e o teclado também ficam aqui
+  const somBox = document.createElement('details'); somBox.className = 'cfgPausa'; somBox.innerHTML = '<summary class="sectionTitle">' + T('SOM') + '</summary>' + cfgSomHTML();
+  const tecBox = document.createElement('details'); tecBox.className = 'cfgPausa'; tecBox.innerHTML = '<summary class="sectionTitle">' + T('TECLADO') + '</summary>' + cfgTecladoHTML();
+  box.insertBefore(somBox, extra); box.appendChild(tecBox);
+  cfgSomLigar(somBox); cfgTecladoLigar(tecBox);
   // Botão FORMAÇÃO ao lado de Continuar / Reiniciar.
   const linha = document.querySelector('#pauseScreen .btnRow');
   if (linha && !$('formBtn')) {
@@ -13127,7 +13548,7 @@ function ajAbrirFormacao() {
       g.beginPath(); g.arc(x, y, 14, 0, Math.PI * 2); g.fillStyle = cor; g.fill();
       g.lineWidth = p.isUser ? 4 : 2; g.strokeStyle = p.isUser ? (AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d') : (luz(cor) > 150 ? '#071430' : '#ffffff'); g.stroke();
       g.fillStyle = txt; g.font = 'bold 13px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(p.numero), x, y + 1);
-      const nome = p.isUser ? (P.usuario.nome || T('Você')) : String(p.name || '');
+      const nome = p.voce ? (P.usuario.nome || T('Você')) : String(p.name || '');
       const n = nome.length > 11 ? nome.slice(0, 10) + '…' : nome;
       g.font = 'bold 11px Arial'; g.textBaseline = 'top'; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)';
       g.strokeText(n, x, y + 16); g.fillStyle = '#ffffff'; g.fillText(n, x, y + 16);
@@ -13138,16 +13559,7 @@ function ajAbrirFormacao() {
 }
 
 $('pauseBtn').addEventListener('click', pauseGame);
-// Botão de som (ao lado do radar). Lembra a escolha entre as partidas.
-(function () {
-  const b = document.createElement('button');
-  b.id = 'somBtn'; b.className = 'hudBtn'; b.setAttribute('aria-label', Tseguro('Som'));
-  b.style.cssText = 'right:calc(84px + env(safe-area-inset-right, 0px));width:44px;padding:0;font-size:10px;';
-  const pinta = () => { b.textContent = Tseguro(Som.mudo ? 'MUDO' : 'SOM'); b.setAttribute('aria-label', Tseguro('Som')); b.style.opacity = Som.mudo ? '0.6' : '1'; };
-  pinta(); (window.__aoIdiomaPartida = window.__aoIdiomaPartida || []).push(pinta);
-  b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); Som.ligar(); Som.alternarMudo(); pinta(); });
-  $('pauseBtn').parentNode.appendChild(b);
-})();
+// (7.4.13) sem o botão de som na partida (o aviso de tática fica no lugar dele): o som se ajusta só no menu (Configurações) e na pausa.
 $('resumeBtn').addEventListener('click', resumeGame);
 $('restartBtn').addEventListener('click', resetMatch);
 $('againBtn').addEventListener('click', resetMatch);
@@ -13244,7 +13656,8 @@ function updateYaw(rdt) {
   } else if (G.state === 'celebrate') {                  // comemoração: a câmera vai atrás de você
     const sp = Math.hypot(user.vx, user.vz);
     want = sp > 1.5 ? Math.atan2(user.vz, user.vx) : cam.yaw;
-  } else if (cam.mode === 'frente') want = 0;
+  } else if (cam.mode === 'livre') return;               // (7.4.13) câmera livre: quem gira é você (arrastando a tela)
+  else if (cam.mode === 'frente') want = 0;
   else if (G.possession === user) {
     const toGoal = Math.atan2(-user.z * 0.3, HALF_L - user.x);
     want = toGoal + wrapAngle(user.angle - toGoal) * 0.35;
@@ -13312,7 +13725,7 @@ function cameraGoal() {
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
-  let back = c.back * AJ.camDist, h = c.height * AJ.camAlt, ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
+  let back = c.back * AJ.camDist, h = c.height * AJ.camAlt + (cam.mode === 'livre' ? cam.livreH || 0 : 0), ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
   if (G.kick && KICK_STATES.includes(G.state)) {
     if (G.kick.throwIn) {
       // Lateral: atrás e de lado (por cima do ombro), alto o bastante para ver o campo e você.
@@ -14076,7 +14489,10 @@ function syncMeshes(dt) {
   userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && G.state !== 'intervalo' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
   aimArrow.visible = !!kk;
-  if (kk) { aimArrow.position.set(ball.x, kk.throwIn ? 0.06 : 0.06, ball.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX); }
+  if (kk) {
+    const O = kk.primeira ? { x: user.x + Math.cos(user.angle) * 0.62, z: user.z + Math.sin(user.angle) * 0.62 } : ball;   // (7.4.13) de primeira: a seta sai do pé (a bola ainda está no ar, chegando)
+    aimArrow.position.set(O.x, 0.06, O.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX);
+  }
   targetRing.visible = !!(kk && kk.target);
   if (targetRing.visible) targetRing.position.set(kk.target.x, 0.04, kk.target.z);
   mostrarAreaLateral();
@@ -14104,6 +14520,7 @@ function stepGame(dt, rdt) {
   verificarFimDeTempo(dt);
   if (G.userRequest > 0) G.userRequest -= dt;
   keyboardAim();
+  atualizarControleTime(dt);                        // (7.4.13) time inteiro: quem você controla agora
   updateRoles(dt);
   updatePlayers(dt);
   updateCobrador(rdt);
@@ -15405,7 +15822,7 @@ function criarJogador(P, team, f, j, num, isUser) {
   const habs = isUser ? null : Object.assign(gerarHabilidades(faixa, f.role, j.semente != null ? j.semente : sementeDe((P.timesObj[team].id || team) + '|' + nome)), j.hab || {});
   const base = { x: f.fx * HALF_L, z: f.fz * HALF_W };
   return {
-    id: G.proxId++, team, dir, role: f.role, funcao: f.funcao || null, base, slotF: f, name: nome, numero: num, ficha: isUser ? CHAVE_VOCE : j.nome, dados: j,
+    id: G.proxId++, voce: !!isUser, team, dir, role: f.role, funcao: f.funcao || null, base, slotF: f, name: nome, numero: num, ficha: isUser ? CHAVE_VOCE : j.nome, dados: j,
     x: base.x * dir, z: base.z * dir, vx: 0, vz: 0, angle: dir > 0 ? 0 : Math.PI, anim: Math.random() * 6,
     stun: 0, controlCd: 0, think: 0, hold: 0, tackleT: 0.3, tackleCd: 0,
     dash: 0, dashVX: 0, dashVZ: 0, boost: 0,
@@ -15528,10 +15945,10 @@ function sentarNoBanco(sai, team, direto) {
   const ocup = new Set(reservasBanco.filter((d) => d.team === team && (d.saiu || PARTIDA.reservas[team].includes(d.j))).map((d) => d.assento));
   let i = [0, 1, 2, 3, 4].slice(0, ehSociety() ? ASSENTOS_SOCIETY : 5).find((k) => !ocup.has(k));
   if (i === undefined) return;
-  const j = sai.isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
+  const j = sai.voce ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
   const lado = Math.sign(sai.x - bancoX(team)) || 1;
   const a = assentoBanco(team, i);
-  reservasBanco.push({ team, j, assento: i, saiu: true, mancando: !!sai.mancando, mesh: bonecoDoBanco(PARTIDA, team, j, sai.role, sai.numero, sai.isUser),
+  reservasBanco.push({ team, j, assento: i, saiu: true, mancando: !!sai.mancando, mesh: bonecoDoBanco(PARTIDA, team, j, sai.role, sai.numero, sai.voce),
     x: direto ? a.x : clamp(sai.x, bancoX(team) - 6, bancoX(team) + 6), z: direto ? a.z : Math.min(sai.z, -(HALF_W + 0.8)), ang: direto ? Math.PI / 2 : Math.atan2(-1, 0), sentado: direto ? 1 : 0, pose: 'joelhos', anim: 0, fase: Math.random() * 6 });
 }
 function atualizarBanco(dt) {
@@ -15654,12 +16071,12 @@ function garantirQuartoArbitro() {
 // Você saindo: o jogo continua sem você (câmera de TV, mais rápido) e dá para pular para o fim.
 // ---------------------------------------------------------------------
 function chanceLesao(p) {
-  if (!p.isUser) return 0.05;
+  if (!p.voce) return 0.05;
   const a = clamp(PARTIDA.usuario.autocuidado ?? 0.7, 0, 1);
   return 0.06 * (1 + 2.5 * (1 - a));
 }
 function sortearGravidade(p) {
-  const a = p.isUser ? clamp(PARTIDA.usuario.autocuidado ?? 0.7, 0, 1) : 0.7;
+  const a = p.voce ? clamp(PARTIDA.usuario.autocuidado ?? 0.7, 0, 1) : 0.7;
   const r = Math.random(), grave = 0.06 + 0.3 * (1 - a), media = 0.3;
   if (r < grave) return { tipo: 'grave', jogos: 4 + Math.floor(Math.random() * 5) };
   if (r < grave + media) return { tipo: 'média', jogos: 1 + Math.floor(Math.random() * 2) };
@@ -15673,10 +16090,10 @@ function talvezLesionar(p, chanceExtra = 1) {
 function lesionar(p, grav) {
   const L = grav || sortearGravidade(p);
   p.lesao = L;
-  G.lesoes.push({ team: p.team, nome: p.isUser ? 'Você' : p.name, ficha: p.ficha, tipo: L.tipo, jogos: L.jogos });
-  showToast((p.isUser ? 'Você se machucou' : p.name + ' se machucou') + ' (lesão ' + L.tipo + ')', p.team === 0 ? 'bad' : '');
+  G.lesoes.push({ team: p.team, nome: p.voce ? 'Você' : p.name, ficha: p.ficha, tipo: L.tipo, jogos: L.jogos });
+  showToast((p.voce ? 'Você se machucou' : p.name + ' se machucou') + ' (lesão ' + L.tipo + ')', p.team === 0 ? 'bad' : '');
   if (L.tipo === 'leve') {
-    if (p.isUser) { p.staminaMax = 0.7; p.stamina = Math.min(p.stamina, 0.7); } else p.speedMul *= 0.92;
+    if (p.voce) { p.staminaMax = 0.7; p.stamina = Math.min(p.stamina, 0.7); } else p.speedMul *= 0.92;
     return;
   }
   p.speedMul *= 0.7; p.mancando = true;
@@ -15713,7 +16130,7 @@ function pedirSubstituicao(team, sai, motivo, urgente) {
 function tecnicoOlhaCansaco() {
   for (const team of [0, 1]) {
     if (G.subsFila.some((s) => s.team === team)) continue;
-    const cansado = TEAMS[team].filter((p) => !p.isUser && !p.out && p.role !== 'GK' && (p.folego ?? 1) < 0.38)
+    const cansado = TEAMS[team].filter((p) => !p.isUser && !p.voce && !p.out && p.role !== 'GK' && (p.folego ?? 1) < 0.38)
       .sort((a, b) => a.folego - b.folego)[0];
     if (cansado) pedirSubstituicao(team, cansado, 'cansaço', false);
   }
@@ -15744,6 +16161,7 @@ function verificarSubstituicoes() {
 // Troca o jogador nas listas (mesma posição da formação) e devolve quem entrou.
 function trocarNasListas(item) {
   const P = PARTIDA, sai = item.sai, team = item.team;
+  if (sai.isUser && controleDoTime()) trocarControle(proximoControlavel(sai), true);   // (7.4.13) time inteiro: quem sai deixa de ser o controlado
   const j = P.reservas[team].shift();
   const f = sai.slotF || { role: sai.role, fx: sai.base.x / HALF_L, fz: sai.base.z / HALF_W };
   const usados = P.numerosUsados[team];
@@ -15759,7 +16177,7 @@ function trocarNasListas(item) {
   if (G.passTarget && G.passTarget.p === sai) G.passTarget = null;
   for (const k of [0, 1]) { if (G.chasers[k] === sai) G.chasers[k] = null; if (G.pressers[k] === sai) G.pressers[k] = null; if (G.covers[k] === sai) G.covers[k] = null; }
   sai.out = true; sai.substituido = true;
-  G.trocas.push({ team, sai: sai.isUser ? 'Você' : sai.name, numSai: sai.numero, entra: entra.name, numEntra: num, motivo: item.motivo });
+  G.trocas.push({ team, sai: sai.voce ? 'Você' : sai.name, numSai: sai.numero, entra: entra.name, numEntra: num, motivo: item.motivo });
   if (sai.isUser) virarEspectador();
   return entra;
 }
@@ -15810,6 +16228,7 @@ let quartoArbitro = null;
 //   (fora do campo, do lado do 4º árbitro), cada um que sai vem até a frente do seu, todos batem as mãos juntos e trocam.
 function iniciarSubstituicao(itens) {
   if (!Array.isArray(itens)) itens = [itens];
+  if (controleDoTime()) for (const it of itens) if (it.sai && it.sai.isUser) trocarControle(proximoControlavel(it.sai, itens.map((x) => x.sai)), true);   // (7.4.13)
   const team = itens[0].team, soc = ehSociety();
   let bx = (team === 0 ? -1 : 1) * Math.min(9, HALF_L * 0.25), linhaZ = -(HALF_W + LADO_BANCO.espera - 0.9);
   const pares = [];
@@ -15830,8 +16249,8 @@ function iniciarSubstituicao(itens) {
   G.state = 'subst'; G.targetScale = 1;
   setLetterbox(true);
   $('skipBtn').hidden = false;
-  const txt = pares.length > 1 ? pares.map((P) => (P.sai.isUser ? T('você') : P.sai.name) + ' ▸ ' + P.entra.name).join(' · ')   // várias: curto, para caber
-    : Tf('sai {0} ({1}), entra {2} ({3})', pares[0].sai.isUser ? T('você') : pares[0].sai.name, pares[0].sai.numero, pares[0].entra.name, pares[0].entra.numero);
+  const txt = pares.length > 1 ? pares.map((P) => (P.sai.voce ? T('você') : P.sai.name) + ' ▸ ' + P.entra.name).join(' · ')   // várias: curto, para caber
+    : Tf('sai {0} ({1}), entra {2} ({3})', pares[0].sai.voce ? T('você') : pares[0].sai.name, pares[0].sai.numero, pares[0].entra.name, pares[0].entra.numero);
   $('cineLabel').textContent = (pares.length > 1 ? Tf('SUBSTITUIÇÕES · {0}', PARTIDA.timesObj[team].sigla) : Tf('SUBSTITUIÇÃO · {0}', PARTIDA.timesObj[team].sigla)) + ' · ' + txt + (pares.some((P) => P.item.motivo === 'lesão') ? T(' · lesão') : '');
   Som.apito(0.25);
 }
@@ -16115,7 +16534,7 @@ function registrarResultado(motivo) {
   });
   for (const p of P.participantes) {
     const f = fichaDe(H, P.timesObj[p.team].id, p.ficha);
-    const nome = p.isUser ? 'Você' : p.name;
+    const nome = p.voce ? 'Você' : p.name;
     if (p.red) { f.suspenso += 1; susp.push({ team: p.team, nome, motivo: 'vermelho' }); }
     else if (p.yellow && R.cartoesAcumulam) {
       f.amarelos = (f.amarelos || 0) + 1;
@@ -16724,6 +17143,62 @@ const Idioma = {
   'Pausar': ['Pause', 'Pausar', 'Pausa', 'Pause'],
   'CÂM: BOLA': ['CAM: BALL', 'CÁM: BALÓN', 'CAM: PALLONE', 'CAM : BALLON'],
   'CÂM: FRENTE': ['CAM: FRONT', 'CÁM: FRENTE', 'CAM: AVANTI', 'CAM : AVANT'],
+  // (7.4.13) som por categoria, teclado, câmera livre, de primeira, time inteiro e o mestre do clube
+  "Mudo": ["Muted", "Silenciado", "Muto", "Muet"],
+  "Bata na faixa verde: domine ou toque de primeira": ["Hit the green zone: control it or play it first time", "Golpea en la franja verde: controla o toca de primera", "Colpisci nella fascia verde: stoppa o giocala di prima", "Frappe dans la zone verte : contrôle ou joue en une touche"],
+  "CHUTE DE PRIMEIRA": ["FIRST-TIME SHOT", "TIRO DE PRIMERA", "TIRO DI PRIMA", "FRAPPE EN UNE TOUCHE"],
+  "CRUZAMENTO DE PRIMEIRA": ["FIRST-TIME CROSS", "CENTRO DE PRIMERA", "CROSS DI PRIMA", "CENTRE EN UNE TOUCHE"],
+  "DE PRIMEIRA!": ["FIRST TIME!", "¡DE PRIMERA!", "DI PRIMA!", "EN UNE TOUCHE !"],
+  "Andar para cima": ["Move up", "Moverse hacia arriba", "Muoviti in su", "Avancer"],
+  "Andar para baixo": ["Move down", "Moverse hacia abajo", "Muoviti in giù", "Reculer"],
+  "Andar para a esquerda": ["Move left", "Moverse a la izquierda", "Muoviti a sinistra", "Aller à gauche"],
+  "Andar para a direita": ["Move right", "Moverse a la derecha", "Muoviti a destra", "Aller à droite"],
+  "Correr (segurar)": ["Sprint (hold)", "Correr (mantener)", "Scattare (tieni premuto)", "Sprinter (maintenir)"],
+  "Chutar / cruzar": ["Shoot / cross", "Tirar / centrar", "Tirare / crossare", "Tirer / centrer"],
+  "Passar / lançar": ["Pass / throw in", "Pasar / sacar de banda", "Passare / rimessa", "Passer / remise en jeu"],
+  "Driblar": ["Dribble", "Regatear", "Dribblare", "Dribbler"],
+  "Pedir a bola / desarmar": ["Call for the ball / tackle", "Pedir el balón / quitar", "Chiedere palla / contrastare", "Demander le ballon / tacler"],
+  "Carrinho": ["Slide tackle", "Barrida", "Scivolata", "Tacle glissé"],
+  "Força do chute (segurar)": ["Kick power (hold)", "Fuerza del tiro (mantener)", "Potenza del tiro (tieni premuto)", "Puissance de frappe (maintenir)"],
+  "Dominar": ["Control", "Controlar", "Stoppare", "Contrôler"],
+  "Cabecear": ["Header", "Cabecear", "Colpire di testa", "Faire une tête"],
+  "Finalizar de cabeça / voleio": ["Finish with a header / volley", "Rematar de cabeza / volea", "Concludere di testa / al volo", "Finir de la tête / de volée"],
+  "Passe de primeira": ["First-time pass", "Pase de primera", "Passaggio di prima", "Passe en une touche"],
+  "Chute de primeira": ["First-time shot", "Tiro de primera", "Tiro di prima", "Frappe en une touche"],
+  "Comemoração 1": ["Celebration 1", "Celebración 1", "Esultanza 1", "Célébration 1"],
+  "Comemoração 2": ["Celebration 2", "Celebración 2", "Esultanza 2", "Célébration 2"],
+  "Trocar a câmera": ["Switch camera", "Cambiar la cámara", "Cambia telecamera", "Changer de caméra"],
+  "Trocar de jogador (time inteiro)": ["Switch player (whole team)", "Cambiar de jugador (todo el equipo)", "Cambia giocatore (tutta la squadra)", "Changer de joueur (toute l'équipe)"],
+  "Espaço": ["Space", "Espacio", "Spazio", "Espace"],
+  "Shift dir.": ["Right Shift", "Shift der.", "Shift des.", "Shift dr."],
+  "Ctrl dir.": ["Right Ctrl", "Ctrl der.", "Ctrl des.", "Ctrl dr."],
+  "Alt dir.": ["Right Alt", "Alt der.", "Alt des.", "Alt dr."],
+  "Andar": ["Moving", "Moverse", "Movimento", "Se déplacer"],
+  "Com a bola e na marcação": ["On the ball and defending", "Con el balón y en la marca", "Con la palla e in marcatura", "Avec le ballon et en défense"],
+  "Recebendo a bola": ["Receiving the ball", "Recibiendo el balón", "Ricevendo la palla", "En recevant le ballon"],
+  "A qualquer hora": ["Any time", "En cualquier momento", "In qualsiasi momento", "À tout moment"],
+  "Geral": ["Master", "General", "Generale", "Général"],
+  "Efeitos (bola, apito, cliques)": ["Effects (ball, whistle, clicks)", "Efectos (balón, silbato, clics)", "Effetti (palla, fischietto, clic)", "Effets (ballon, sifflet, clics)"],
+  "Músicas": ["Music", "Música", "Musica", "Musique"],
+  "Vozes dos personagens": ["Character voices", "Voces de los personajes", "Voci dei personaggi", "Voix des personnages"],
+  "Aperte…": ["Press…", "Pulsa…", "Premi…", "Appuie…"],
+  "Essa tecla é fixa do jogo: escolha outra.": ["That key is fixed in the game: pick another one.", "Esa tecla es fija del juego: elige otra.", "Quel tasto è fisso nel gioco: scegline un altro.", "Cette touche est fixe dans le jeu : choisis-en une autre."],
+  "A tecla estava em \"{0}\": as duas trocaram.": ["That key was on \"{0}\": the two were swapped.", "La tecla estaba en \"{0}\": se intercambiaron.", "Il tasto era su \"{0}\": sono stati scambiati.", "La touche était sur « {0} » : les deux ont été échangées."],
+  "Restaurar teclas padrão": ["Restore default keys", "Restaurar teclas predeterminadas", "Ripristina i tasti predefiniti", "Rétablir les touches par défaut"],
+  "Teclas padrão de volta.": ["Default keys restored.", "Teclas predeterminadas restauradas.", "Tasti predefiniti ripristinati.", "Touches par défaut rétablies."],
+  "As setas sempre andam e o Enter sempre confirma. Toque numa tecla da lista e aperte a nova (Esc cancela).": ["The arrow keys always move and Enter always confirms. Tap a key on the list and press the new one (Esc cancels).", "Las flechas siempre mueven y Enter siempre confirma. Toca una tecla de la lista y pulsa la nueva (Esc cancela).", "Le frecce muovono sempre e Invio conferma sempre. Tocca un tasto della lista e premi quello nuovo (Esc annulla).", "Les flèches déplacent toujours et Entrée confirme toujours. Touche une touche de la liste et appuie sur la nouvelle (Échap annule)."],
+  "TECLADO": ["KEYBOARD", "TECLADO", "TASTIERA", "CLAVIER"],
+  "CONTROLES": ["CONTROLS", "CONTROLES", "COMANDI", "COMMANDES"],
+  "Mestre do clube": ["Club master", "Maestro del club", "Maestro del club", "Maître du club"],
+  "Mestre do clube: funde o seu clube, dê nome, busque patrocínio e organize a parte técnica. As partidas são robô contra robô.": ["Club master: found your club, name it, find sponsors and run the technical side. The matches are bot vs bot.", "Maestro del club: funda tu club, ponle nombre, busca patrocinio y organiza la parte técnica. Los partidos son robot contra robot.", "Maestro del club: fonda il tuo club, dagli un nome, cerca sponsor e organizza la parte tecnica. Le partite sono robot contro robot.", "Maître du club : fonde ton club, donne-lui un nom, trouve des sponsors et organise la partie technique. Les matchs sont robot contre robot."],
+  "CÂM: LIVRE": ["CAM: FREE", "CÁM: LIBRE", "CAM: LIBERA", "CAM : LIBRE"],
+  "CÂMERA LIVRE: ARRASTE A TELA": ["FREE CAMERA: DRAG THE SCREEN", "CÁMARA LIBRE: ARRASTRA LA PANTALLA", "TELECAMERA LIBERA: TRASCINA LO SCHERMO", "CAMÉRA LIBRE : FAIS GLISSER L'ÉCRAN"],
+  "TROCAR": ["SWITCH", "CAMBIAR", "CAMBIA", "CHANGER"],
+  "PASSE DE 1ª": ["1-TOUCH PASS", "PASE DE 1ª", "PASSAGGIO DI 1ª", "PASSE EN 1 TOUCHE"],
+  "CHUTE DE 1ª": ["1-TOUCH SHOT", "TIRO DE 1ª", "TIRO DI 1ª", "FRAPPE EN 1 TOUCHE"],
+  "A bola vem em você: dá para tocar de primeira": ["The ball is coming to you: you can play it first time", "El balón viene hacia ti: puedes tocar de primera", "La palla arriva a te: puoi giocarla di prima", "Le ballon arrive vers toi : tu peux jouer en une touche"],
+  "PASSE DE PRIMEIRA": ["FIRST-TIME PASS", "PASE DE PRIMERA", "PASSAGGIO DI PRIMA", "PASSE EN UNE TOUCHE"],
+  "TEMPO ERRADO!": ["BAD TIMING!", "¡A DESTIEMPO!", "TEMPO SBAGLIATO!", "MAUVAIS TIMING !"],
   'Mapa do campo': ['Pitch map', 'Mapa del campo', 'Mappa del campo', 'Carte du terrain'],
   'Estamina': ['Stamina', 'Resistencia', 'Resistenza', 'Endurance'],
   'Pular ▶': ['Skip ▶', 'Saltar ▶', 'Salta ▶', 'Passer ▶'],
@@ -17199,7 +17674,7 @@ const Mumble = (() => {
     if (!A || Som.mudo || A.ctx.state === 'closed') return;
     const c = limpa(ch);
     if (!/[a-z0-9]/.test(c)) return;
-    const { ctx, mestre } = A, t0 = ctx.currentTime + 0.005;
+    const { ctx } = A, mestre = A.vozes || A.mestre, t0 = ctx.currentTime + 0.005;   // (7.4.13) as falas saem pelo volume de VOZES
     const vogal = FORMANTES[c] ? c : (/[0-9]/.test(c) ? 'o' : null);
     const dur = vogal ? 0.085 : 0.045;
     const base = (VOZES[voz] || VOZES[2]).base;
@@ -17430,7 +17905,7 @@ const Musica = (() => {
     const A = (typeof Som !== 'undefined') ? Som.audio : null;
     if (!A) return;
     ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
-    bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.mestre);
+    bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.musica || A.mestre);   // (7.4.13) volume de MÚSICA
     bus.gain.linearRampToValueAtTime(qual === 'rock' ? 0.7 : 0.9, ctx.currentTime + 1.5);
     if (!ruido) { ruido = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     if (!dist) { dist = ctx.createWaveShaper(); const cv = new Float32Array(257); for (let i = 0; i < 257; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 6); } dist.curve = cv; }
@@ -18903,7 +19378,7 @@ const Historia = (() => {
     const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
     const pen = G.penaltisPlacar ? G.penaltisPlacar.slice() : null;      // mata-mata empatado: quem passou nos pênaltis
     const out = { placar: G.score.slice(), gols, nota, venceu: pen ? pen[0] > pen[1] : G.score[0] > G.score[1], empate: !pen && G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s),
-      penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.isUser ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red, lesao: p.lesao ? (p.lesao.jogos | 0) : 0, pos: p.role })) };   // (7.4.1) a lesão e a posição: o campeonato da partida livre controla os desfalques
+      penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.voce ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red, lesao: p.lesao ? (p.lesao.jogos | 0) : 0, pos: p.role })) };   // (7.4.1) a lesão e a posição: o campeonato da partida livre controla os desfalques
     if (fimResolve) { const r = fimResolve; fimResolve = null; setTimeout(() => r(out), G.fimFesta ? 3600 : 1800); }   // com a festa do apito final, fica um pouco mais
   }
   // ---- DESAFIO: o treino do seu Nonato (treinoCampo.js) dentro da partida de verdade ----------------------------------------------
@@ -19479,6 +19954,8 @@ function montarMenuInicial() {
 .pxBtn:focus-visible { outline: none; border-image-source: var(--sp-grama); }
 .pxBtn:active { transform: translateY(var(--p)); }
 .pxBtn:disabled { opacity: 0.5; cursor: default; }
+.pxBtn.mxBreve:disabled { opacity: 0.78; filter: saturate(0.6); }
+.mxTagBreve { display: inline-block; margin-left: 6px; padding: 2px 5px; font: 700 9px/1.2 var(--font-display); letter-spacing: 0.06em; background: #b5640c; color: #fff; vertical-align: middle; text-shadow: none; }
 @media (hover: hover) { .pxBtn:hover:not(:disabled) { border-image-source: var(--sp-grama); } }
 .pxBtn.pxPrim { height: calc(var(--p) * 18); border-image-source: var(--sp-creme); color: var(--mx-ink, #2a1206); text-shadow: 0 2px 0 rgba(255, 255, 255, 0.6); font-size: 24px; }
 .pxBtn.pxPrim:focus-visible { border-image-source: var(--sp-laranja); }
@@ -19674,17 +20151,33 @@ function montarMenuInicial() {
   const telaFecharVeu = () => { veu.hidden = true; veu.innerHTML = ''; };
   // (7.4.1) CONFIGURAÇÕES: só o que vale para o jogo inteiro (som, idioma, como jogar e a versão). O horário, o clima, a duração, o
   //   estádio, a dificuldade, a posição e o personagem de cada partida são escolhidos na tela do confronto da partida livre.
+  // (7.4.13) + o SOM por categoria (geral, efeitos, torcida, músicas, vozes), os CONTROLES (câmera, círculo, botões e
+  //   joystick) e o TECLADO (todas as teclas, inclusive dominar, cabecear e de primeira)
   const abrirConfigGerais = () => {
     const como = document.querySelector('#startScreen .howto'), v = $('versaoInfo');
+    const sec = (id, titulo, corpo, aberto) => '<details class="mxComo cfgMenu" data-sec="' + id + '"' + (aberto ? ' open' : '') + ' style="text-align:left;font-size:12px"><summary style="cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em">' + titulo + '</summary>' + corpo + '</details>';
     abrirPainel(T('Configurações'), '<div class="mxBotoes mxEscolha" style="margin:0 auto">' +
-      '<button type="button" class="pxBtn" data-acao="somCfg">' + T('Som') + ': ' + T(Som.mudo ? 'Desligado' : 'Ligado') + '</button>' +
       '<button type="button" class="pxBtn" data-acao="idiomaCfg">' + T('Mudar idioma') + '</button></div>' +
-      (como ? '<details class="mxComo" style="margin-top:12px;text-align:left;font-size:12px"><summary style="cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em">' + T('COMO JOGAR') + '</summary>' + como.outerHTML + '</details>' : '') +
+      sec('som', T('SOM'), cfgSomHTML(), true) +
+      sec('controles', T('CONTROLES'), cfgControlesHTML()) +
+      sec('teclado', T('TECLADO'), cfgTecladoHTML()) +
+      (como ? sec('como', T('COMO JOGAR'), como.outerHTML) : '') +
       '<p class="mxMsg" style="opacity:.7;font-size:11px;margin-top:10px">' + esc(v ? v.textContent : '') + '</p>');
+    const box = veu.querySelector('.mxCaixa');
+    cfgSomLigar(box.querySelector('[data-sec="som"]'));
+    cfgControlesLigar(box.querySelector('[data-sec="controles"]'), () => {});
+    cfgTecladoLigar(box.querySelector('[data-sec="teclado"]'));
   };
+  // (7.4.13) MESTRE DO CLUBE: ainda "EM BREVE". O botão já existe (desligado) e, quando o módulo mestre.js existir, é só ligar
+  //   MESTRE_DO_CLUBE.pronto: fundar o clube (nome, escudo, cores), buscar patrocínio, organizar a parte técnica (elenco,
+  //   tática, comissão) e assistir às partidas — robô contra robô (a partida roda com G.espectador desde o começo).
+  const MESTRE_DO_CLUBE = { pronto: false, modulo: 'mestre' };
   const MENU_ACOES = {
     jogar: () => abrirPainel(T('Jogar'), '<div class="mxBotoes mxEscolha"><button type="button" class="pxBtn pxPrim" data-acao="modoHistoria">' + T('Modo história') + '</button>' +
-      '<button type="button" class="pxBtn" data-acao="partidaLivre">' + T('Partida livre') + '</button></div>'),
+      '<button type="button" class="pxBtn" data-acao="partidaLivre">' + T('Partida livre') + '</button>' +
+      '<button type="button" class="pxBtn mxBreve" data-acao="mestreClube"' + (MESTRE_DO_CLUBE.pronto ? '' : ' disabled aria-disabled="true"') + '>' + T('Mestre do clube') +
+      (MESTRE_DO_CLUBE.pronto ? '' : ' <span class="mxTagBreve">' + T('EM BREVE') + '</span>') + '</button></div>' +
+      (MESTRE_DO_CLUBE.pronto ? '' : '<p class="mxMsg" style="opacity:.8">' + T('Mestre do clube: funde o seu clube, dê nome, busque patrocínio e organize a parte técnica. As partidas são robô contra robô.') + '</p>')),
     carregar: () => abrirCarregar(),
     config: () => abrirConfigGerais(),                      // (7.4.1) som, idioma, como jogar e versão (as opções da partida agora ficam no confronto da partida livre)
     creditos: () => abrirPainel(T('Créditos'), '<p class="mxCredPeq">' + T('Feito por') + '</p><p class="mxCredNome">Herick</p>'),
@@ -19709,6 +20202,12 @@ function montarMenuInicial() {
       return;
     }
     if (b.dataset.acao === 'somCfg') { Som.ligar(); Som.alternarMudo(); abrirConfigGerais(); return; }
+    if (b.dataset.acao === 'mestreClube') {                 // (7.4.13) o modo novo (quando o mestre.js existir)
+      if (!MESTRE_DO_CLUBE.pronto) return;
+      PERSONAGEM.ativo = false; telaFecharVeu(); Som.ligar();
+      Fases.carregar(MESTRE_DO_CLUBE.modulo).then((m) => m.abrir()).catch((e) => { console.error('[Mestre do clube]', e); });
+      return;
+    }
     if (b.dataset.acao === 'idiomaCfg') { telaFecharVeu(); telaIdioma(); return; }
     if (b.dataset.acao === 'modoHistoria') { abrirSlotsNovo(); return; }
     if (b.dataset.acao === 'outroSlot') { abrirSlotsNovo(); return; }

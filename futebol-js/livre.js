@@ -153,13 +153,32 @@
 #lvLegenda { position: fixed; z-index: 44; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); max-width: calc(100% - 160px); text-align: center;
   font: 700 clamp(12px, 2.6vh, 17px)/1.25 var(--font-display); letter-spacing: .08em; color: #fff; text-shadow: 0 2px 0 #000, 0 0 6px #000; pointer-events: none; }
 @media (max-height: 460px) { #livre .lvPalco { height: 56vh; } #livre .lvTime { min-height: 88px; } #livre .lvTipo { min-height: 72px; } }
+/* (7.4.13) o confronto cabe na tela inteira, sem rolar: o palco (a encarada) estica no espaço que sobra; as outras abas rolam por dentro */
+#livre.lvEncaixe { overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
+#livre.lvEncaixe .lvCaixa { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; height: 100%; width: min(980px, 100%); }
+#livre.lvEncaixe .lvCaixa > * { flex: 0 0 auto; }
+#livre.lvEncaixe .lvCaixa > [data-pag] { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
+#livre.lvEncaixe .lvCaixa > [data-pag][hidden] { display: none; }
+#livre.lvEncaixe .lvCaixa > [data-pag="0"] { display: flex; flex-direction: column; overflow: hidden; touch-action: none; }
+#livre.lvEncaixe .lvCaixa > [data-pag="0"][hidden] { display: none; }
+#livre.lvEncaixe .lvPalco { flex: 1 1 auto; height: auto; min-height: 110px; margin: 0; }
+#livre.lvEncaixe .lvTopo { margin-bottom: 6px; } #livre.lvEncaixe .lvSub { margin: -2px 0 6px; } #livre.lvEncaixe .lvAbas { margin-bottom: 6px; } #livre.lvEncaixe .lvBtns { margin-top: 6px; }
+@media (max-height: 520px) {
+  #livre.lvEncaixe { padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)); }
+  #livre.lvEncaixe .lvCaixa { --p: var(--p2, 2px); padding: 2px 4px 4px; }
+  #livre.lvEncaixe .lvTopo { margin-bottom: 3px; } #livre.lvEncaixe .lvTopo .pxBtn { min-height: 30px; min-width: 80px; font-size: 11px; }
+  #livre.lvEncaixe .lvTit { font-size: 14px; } #livre.lvEncaixe .lvSub { margin: -2px 0 3px; font-size: 11px; }
+  #livre.lvEncaixe .lvAbas { margin-bottom: 4px; gap: 4px; } #livre.lvEncaixe .lvAbas .pxBtn { min-height: 28px; min-width: 0; padding: 2px 8px; font-size: 11px; }
+  #livre.lvEncaixe .lvBtns { margin-top: 4px; gap: 6px; } #livre.lvEncaixe .lvBtns .pxBtn { min-height: 34px; font-size: 12px; } #livre.lvEncaixe .lvBtns .pxBtn.pxPrim { min-height: 38px; font-size: 14px; }
+  #livre.lvEncaixe .lvKit { width: 32px; height: 32px; }
+}
 @media (orientation: portrait) { #livre .lvCampo { height: 150px; } }`;
     document.head.appendChild(st);
   }
   function tela(html) {
     css();
     if (!raiz) { raiz = document.createElement('div'); raiz.id = 'livre'; (document.getElementById('raizJogo') || document.body).appendChild(raiz); }
-    raiz.hidden = false; raiz.innerHTML = html; raiz.scrollTop = 0;
+    raiz.hidden = false; raiz.classList.remove('lvEncaixe'); raiz.innerHTML = html; raiz.scrollTop = 0;
     return raiz;
   }
   function esconder() { if (raiz) { raiz.hidden = true; raiz.innerHTML = ''; } }
@@ -189,7 +208,7 @@
   }
 
   // ============================================================================================ AS CONFIGURAÇÕES DA PARTIDA
-  const CFG0 = { horario: 'auto', clima: 'seco', dur: 300, dif: 'normal', pos: 'FWD', pers: '', abertura: 'completa', bola: '', celeb1: 'aviao', celeb2: 'joelhada' };
+  const CFG0 = { horario: 'auto', clima: 'seco', dur: 300, dif: 'normal', pos: 'FWD', pers: '', abertura: 'completa', bola: '', celeb1: 'aviao', celeb2: 'joelhada', controle: 'um' };   // (7.4.13) controle: 'um' | 'time'
   const cfgSalva = () => Object.assign({}, CFG0, ler(CHAVE_CFG, {}));
   const OPC = {
     horario: [['auto', 'Automático'], ['dia', 'Dia'], ['tarde', 'Tarde'], ['noite', 'Noite']],
@@ -198,9 +217,10 @@
     dif: [['muito_facil', 'Muito fácil'], ['facil', 'Fácil'], ['normal', 'Normal'], ['dificil', 'Difícil'], ['muito_dificil', 'Muito difícil']],
     pos: [['FWD', 'Atacante'], ['MID', 'Meia'], ['DEF', 'Zagueiro']],
     abertura: [['completa', 'Completa'], ['curta', 'Curta'], ['nenhuma', 'Sem abertura']],
+    controle: [['um', 'Um jogador'], ['time', 'Time inteiro']],
   };
-  const NOME_OPC = { horario: 'Horário', clima: 'Clima', dur: 'Duração', estadio: 'Estádio', dif: 'Dificuldade', pos: 'Sua posição', pers: 'Personagem', abertura: 'Abertura', bola: 'Bola', celeb1: 'Comemoração 1', celeb2: 'Comemoração 2' };
-  const DICA_OPC = { celeb1: 'As duas comemorações do gol (os dois botões que aparecem depois de marcar).', bola: 'A bola da partida (as bolas premium da loja também).', horario: 'Automático: o horário do jogo (o campeonato varia entre dia, tarde e noite).', abertura: 'A cena antes do jogo: o estádio, o ônibus, o vestiário, a torcida e a entrada em campo.', estadio: 'Só no amistoso: nos campeonatos o jogo é no estádio do mandante.' };
+  const NOME_OPC = { controle: 'Controle', horario: 'Horário', clima: 'Clima', dur: 'Duração', estadio: 'Estádio', dif: 'Dificuldade', pos: 'Sua posição', pers: 'Personagem', abertura: 'Abertura', bola: 'Bola', celeb1: 'Comemoração 1', celeb2: 'Comemoração 2' };
+  const DICA_OPC = { controle: 'Um jogador: só você (na posição escolhida). Time inteiro: você controla quem está com a bola ou mais perto dela (o goleiro joga sozinho).', celeb1: 'As duas comemorações do gol (os dois botões que aparecem depois de marcar).', bola: 'A bola da partida (as bolas premium da loja também).', horario: 'Automático: o horário do jogo (o campeonato varia entre dia, tarde e noite).', abertura: 'A cena antes do jogo: o estádio, o ônibus, o vestiário, a torcida e a entrada em campo.', estadio: 'Só no amistoso: nos campeonatos o jogo é no estádio do mandante.' };
   // (7.4.10) as bolas (a padrão e as 15 premium do cosmeticos.js) e as comemorações (todas as do jogo)
   function bolasLista() {
     const L = (window.FutebolCosmeticos && FutebolCosmeticos.dados && FutebolCosmeticos.dados.bolas) || [];
@@ -218,7 +238,7 @@
     const linha = (k, lista) => '<div class="lvCard"><h3>' + escH(T(NOME_OPC[k])) + '</h3><div class="lvChips' + (lista.length > 12 ? ' lvMuitos' : '') + '">' + lista.map(([v, n]) => '<button type="button" class="pxBtn' + (String(c[k]) === String(v) ? ' on' : '') + '" data-k="' + k + '" data-v="' + escH(v) + '">' + escH(k === 'estadio' && v !== 'casa' ? n : T(n)) + '</button>').join('') + '</div>' + (DICA_OPC[k] ? '<p style="opacity:.75;font-size:11px">' + escH(T(DICA_OPC[k])) + '</p>' : '') + '</div>';
     const pers = [['', 'Nenhum (você)']].concat((typeof personagensSalvos === 'function' ? personagensSalvos() : []).map((x) => [x.slot, x.nome]));
     const el = tela('<div class="lvCaixa">' + topo(T('Configurações da partida')) + '<div class="lvOpc">' +
-      linha('horario', OPC.horario) + linha('clima', OPC.clima) + linha('dur', OPC.dur) + (op.estadio ? linha('estadio', estadiosLista()) : '') +
+      linha('controle', OPC.controle) + linha('horario', OPC.horario) + linha('clima', OPC.clima) + linha('dur', OPC.dur) + (op.estadio ? linha('estadio', estadiosLista()) : '') +
       linha('dif', OPC.dif) + linha('pos', OPC.pos) + linha('pers', pers) + linha('abertura', OPC.abertura) +
       linha('bola', bolasLista()) + linha('celeb1', celebsLista()) + linha('celeb2', celebsLista()) + '</div>' +
       '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="ok">' + escH(T('Pronto')) + '</button></div></div>');
@@ -538,8 +558,11 @@
       tN.raiz.position.set(ladoNosso * 2.15, 0, -1.7); tA.raiz.position.set(-ladoNosso * 2.15, 0, -1.7);
       tN.raiz.rotation.y = -Math.PI / 2 + ladoNosso * -0.45; tA.raiz.rotation.y = -Math.PI / 2 + ladoNosso * 0.45;   // os técnicos de frente para a câmera, um pouco virados para o meio
       const t0 = performance.now(), y0N = mN.corpo.position.y, y0A = mA.corpo.position.y;
+      let wA = w, hA = h;
       const quadro = () => {
         if (!vivo) return;
+        const cw = canvas.clientWidth, ch = canvas.clientHeight;      // (7.4.13) a tela mudou de tamanho (girou, redimensionou): acompanha
+        if (cw > 50 && ch > 50 && (Math.abs(cw - wA) > 2 || Math.abs(ch - hA) > 2)) { wA = cw; hA = ch; R.setSize(cw, ch, false); cam.aspect = cw / ch; cam.updateProjectionMatrix(); }
         const t = (performance.now() - t0) / 1000;
         mN.corpo.position.y = y0N + Math.max(0, Math.sin(t * 2.1)) * 0.012; mA.corpo.position.y = y0A + Math.max(0, Math.sin(t * 2.1 + 1.3)) * 0.012;
         R.render(cena, cam); raf = requestAnimationFrame(quadro);
@@ -603,7 +626,7 @@
     for (;;) {
       const a = m.a, b = m.b, kc = m.casa ? a : b, kf = m.casa ? b : a, ta = TD(kc) || TV(kc), tb = TD(kf) || TV(kf);
       const ABAS = [T('Confronto'), T('Os times'), T('Escalações'), T('Desfalques')];
-      const el = tela('<div class="lvCaixa">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
+      const el = tela('<div class="lvCaixa lvConf">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
         '<div class="lvAbas">' + ABAS.map((x, i) => '<button type="button" class="pxBtn' + (i ? '' : ' on') + '" data-a="aba' + i + '">' + escH(x) + '</button>').join('') + '</div>' +
         '<div data-pag="0"><div class="lvPalco" style="--c1:' + ta.uni[0] + ';--c2:' + tb.uni[0] + '"><canvas></canvas>' +
         '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kc).media * 10))) + '</small><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span>' + htmlKits(kc, kits) + '</div>' +
@@ -614,6 +637,7 @@
         '<div data-pag="3" hidden><div class="lvOpc">' + cardDesfalques(kc, m.S) + cardDesfalques(kf, m.S) + '</div></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn" data-a="cfg">' + escH(T('Configurações')) + '</button>' + (m.tabela ? '<button type="button" class="pxBtn" data-a="tab">' + escH(T(m.tabelaNome || 'Classificação')) + '</button>' : '') +
         '<button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T('JOGAR')) + ' ▶</button></div></div>');
+      el.classList.add('lvEncaixe');                                   // (7.4.13) a tela do confronto cabe inteira, sem rolar
       const uniDe = () => ({ a: unisDe(m.a)[kits[m.a]], b: unisDe(m.b)[kits[m.b]] });
       let palco = encarada(el.querySelector('.lvPalco canvas'), Object.assign({}, m, { cfg, uni: uniDe() }));
       let r;
@@ -652,7 +676,8 @@
     return { campo, times: [tA, tB], mandante: J.casa ? 0 : 1, fogos: !!J.fogos && typeof campo === 'object',
       competicao: Object.assign({ tipo: 'amistoso', nome: T('Amistoso'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null }, J.comp || {}),
       dificuldade: c.dif || 'normal', clima: climaDe(c), gramado: 'baixo', horario: horarioDe(c, J.rodada), duracao: Number(c.dur) || 300, genero: 'M', usuario, taticas: [null, null], formacoes: [null, null],
-      comemoracoes: [c.celeb1 || 'aviao', c.celeb2 || 'joelhada'], bola: c.bola || '', kits: J.kits || null };   // (7.4.10) as comemorações, a bola e os uniformes escolhidos
+      comemoracoes: [c.celeb1 || 'aviao', c.celeb2 || 'joelhada'], bola: c.bola || '', kits: J.kits || null,
+      controleTime: c.controle === 'time' };   // (7.4.13) controlar o time inteiro (só aqui; o modo história nunca manda)   // (7.4.10) as comemorações, a bola e os uniformes escolhidos
   }
   // (7.4.10) retomar = { estado, clima, horario }: a partida salva no intervalo (começa no 2º tempo, sem a abertura). A partida
   //   pode ser salva no intervalo ("Salvar e sair"): aí volta { salvo: estado } e quem chamou guarda (guardarPausa).
@@ -1298,6 +1323,19 @@
       item('futsal', 'Futsal', 'Os clubes da A e da B na quadra (5 x 5).') + '</div></div>');
     return (await escolha(el)).a;
   }
+  // (7.4.13) depois do tipo de jogo: controlar UM jogador (o de sempre) ou o TIME INTEIRO. Fica guardado (e dá para mudar
+  //   nas configurações do confronto).
+  async function escolherControle(tipo) {
+    const c = cfgSalva();
+    const item = (a, nome, desc, on) => '<button type="button" class="pxBtn lvTipo' + (on ? ' on' : '') + '" data-a="' + a + '"><b>' + escH(T(nome)) + '</b><small>' + escH(T(desc)) + '</small></button>';
+    const el = tela('<div class="lvCaixa">' + topo(T('Como você quer jogar?')) + '<p class="lvSub">' + escH(T(NOME_TIPO[tipo] || '') + ' · ' + T('Dá para mudar depois nas configurações da partida.')) + '</p><div class="lvGrade">' +
+      item('um', 'Controlar um jogador', 'Você controla só o seu personagem, na posição escolhida. Os outros do time jogam sozinhos.', c.controle !== 'time') +
+      item('time', 'Controlar o time inteiro', 'Você controla quem está com a bola ou mais perto dela, e o botão TROCAR passa para outro. O goleiro joga sozinho.', c.controle === 'time') + '</div></div>');
+    const r = (await escolha(el)).a;
+    if (r !== 'um' && r !== 'time') return null;
+    gravar(CHAVE_CFG, Object.assign(cfgSalva(), { controle: r }));
+    return r;
+  }
   let aberto = false;
   async function abrir() {
     if (aberto) return; aberto = true;
@@ -1309,6 +1347,7 @@
         const a = await menuTipos();
         if (a === 'voltar') break;
         if (a === 'descartar') { if (await confirmar(T('Descartar a partida salva?'), T('O 2º tempo dela não vai poder ser jogado.'), T('Sim, descartar'), T('Não'))) apagarPausa(); continue; }
+        if (a !== 'retomar' && !(await escolherControle(a))) continue;   // (7.4.13) um jogador ou o time inteiro
         try { if (a === 'retomar') await retomarPausa(); else if (a === 'camp' || a === 'copa') await modoTorneio(a); else await modoAvulso(a); }
         catch (e) { console.error('[Livre]', e); try { await preto(false, 200); } catch (e2) { /* nada */ } }
       }
@@ -1319,6 +1358,17 @@
 
   // ============================================================================================ OS TEXTOS (en, es, it, fr)
   const TRAD = {
+    // (7.4.13) um jogador ou o time inteiro
+    "Controle": ["Control", "Control", "Controllo", "Contrôle"],
+    "Um jogador": ["One player", "Un jugador", "Un giocatore", "Un joueur"],
+    "Time inteiro": ["Whole team", "Todo el equipo", "Tutta la squadra", "Toute l'équipe"],
+    "Um jogador: só você (na posição escolhida). Time inteiro: você controla quem está com a bola ou mais perto dela (o goleiro joga sozinho).": ["One player: just you (in the position you chose). Whole team: you control whoever has the ball or is closest to it (the keeper plays on his own).", "Un jugador: solo tú (en la posición elegida). Todo el equipo: controlas a quien tiene el balón o está más cerca de él (el portero juega solo).", "Un giocatore: solo tu (nel ruolo scelto). Tutta la squadra: controlli chi ha la palla o è più vicino (il portiere gioca da sé).", "Un joueur : seulement ton personnage (au poste choisi). Toute l'équipe : tu contrôles celui qui a le ballon ou qui en est le plus près (le gardien joue seul)."],
+    "Como você quer jogar?": ["How do you want to play?", "¿Cómo quieres jugar?", "Come vuoi giocare?", "Comment veux-tu jouer ?"],
+    "Dá para mudar depois nas configurações da partida.": ["You can change it later in the match settings.", "Puedes cambiarlo después en la configuración del partido.", "Puoi cambiarlo dopo nelle impostazioni della partita.", "Tu pourras le changer plus tard dans les réglages du match."],
+    "Controlar um jogador": ["Control one player", "Controlar un jugador", "Controlla un giocatore", "Contrôler un joueur"],
+    "Você controla só o seu personagem, na posição escolhida. Os outros do time jogam sozinhos.": ["You control only your character, in the position you chose. The rest of the team plays on its own.", "Controlas solo a tu personaje, en la posición elegida. El resto del equipo juega solo.", "Controlli solo il tuo personaggio, nel ruolo scelto. Il resto della squadra gioca da sé.", "Tu contrôles seulement ton personnage, au poste choisi. Le reste de l'équipe joue tout seul."],
+    "Controlar o time inteiro": ["Control the whole team", "Controlar todo el equipo", "Controlla tutta la squadra", "Contrôler toute l'équipe"],
+    "Você controla quem está com a bola ou mais perto dela, e o botão TROCAR passa para outro. O goleiro joga sozinho.": ["You control whoever has the ball or is closest to it, and the SWITCH button passes control to another. The keeper plays on his own.", "Controlas a quien tiene el balón o está más cerca de él, y el botón CAMBIAR pasa a otro. El portero juega solo.", "Controlli chi ha la palla o è più vicino, e il tasto CAMBIA passa a un altro. Il portiere gioca da sé.", "Tu contrôles celui qui a le ballon ou qui en est le plus près, et le bouton CHANGER passe à un autre. Le gardien joue seul."],
     // (7.4.10) a bola, as comemorações, os uniformes no confronto e a partida salva no intervalo
     'Bola': ['Ball', 'Pelota', 'Pallone', 'Ballon'], 'Comemoração 1': ['Celebration 1', 'Celebración 1', 'Esultanza 1', 'Célébration 1'], 'Comemoração 2': ['Celebration 2', 'Celebración 2', 'Esultanza 2', 'Célébration 2'],
     'Bola padrão': ['Standard ball', 'Pelota estándar', 'Pallone standard', 'Ballon standard'],

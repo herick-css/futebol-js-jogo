@@ -6005,7 +6005,7 @@
         const A = typeof Som !== 'undefined' ? Som.audio : null; if (!A || bus) return;
         try { if (typeof Musica !== 'undefined' && Musica.tocando) Musica.parar(); } catch (e) { /* nada */ }
         const c = A.ctx; if (c.state === 'suspended') c.resume();
-        bus = c.createGain(); bus.gain.value = 0; bus.connect(A.mestre); bus.gain.linearRampToValueAtTime(0.75, c.currentTime + 1.2);
+        bus = c.createGain(); bus.gain.value = 0; bus.connect(A.musica || A.mestre); bus.gain.linearRampToValueAtTime(0.75, c.currentTime + 1.2);
         comp = 0; prox = c.currentTime + 0.15; laco(); timer = setInterval(laco, 200);
       },
       parar() {

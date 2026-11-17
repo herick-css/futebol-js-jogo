@@ -524,7 +524,7 @@
         if (!A || st.bus) return;
         try { if (typeof Musica !== 'undefined' && Musica.tocando) Musica.parar(); } catch (e) { /* nada */ }
         const c = A.ctx; if (c.state === 'suspended') c.resume();
-        st.bus = c.createGain(); st.bus.gain.value = 0; st.bus.connect(A.mestre); st.bus.gain.linearRampToValueAtTime(0.8, c.currentTime + 1.5);
+        st.bus = c.createGain(); st.bus.gain.value = 0; st.bus.connect(A.musica || A.mestre); st.bus.gain.linearRampToValueAtTime(0.8, c.currentTime + 1.5);
         st.comp = 0; st.prox = c.currentTime + 0.15; st.t0 = st.prox; laco(); st.timer = setInterval(laco, 200);
       },
       parar() {

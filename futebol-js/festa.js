@@ -172,11 +172,21 @@
     A.segura = T;
   }
   // o prêmio na mão direita: 'frente' (recebendo, na altura do peito) ou 'alto' (levantado)
+  // (7.4.13) o prêmio fica APOIADO NA PONTINHA DA MÃO (a base em cima dos dedos), e não atravessando a mão: a caixa da mão tem
+  //   0,17 m e o meio dela fica a 0,57 m do ombro. Levantado (braço quase de pé): a base em cima da ponta dos dedos. Na frente
+  //   (braço esticado): na ponta da mão, em cima da palma.
+  const MEIA_MAO = 0.085;
   function pegaUmaMao(A, P, modo) {
     const gx = modo === 'alto' ? 0 : 0.15, gz = modo === 'alto' ? 2.9 : 1.2;
     A.umaMao = { gx, gz };
-    const h = maoNoCorpo(1, gx, gz);
-    A.m.corpo.add(P); P.position.set(h.x, h.y - P.userData.baseH / 2, h.z); P.rotation.set(0, 0, 0);
+    const h = maoNoCorpo(1, gx, gz), d = { x: h.x / BRACO, y: (h.y - OMBRO_Y) / BRACO, z: (h.z - OMBRO_Z) / BRACO };   // a direção do braço
+    let x, y, z;
+    if (modo === 'alto') { x = h.x + d.x * (MEIA_MAO + 0.004); y = h.y + d.y * (MEIA_MAO + 0.004); z = h.z + d.z * (MEIA_MAO + 0.004); }
+    else {
+      const up = d.y, nx = -d.x * up, ny = 1 - d.y * up, nz = -d.z * up, nl = Math.hypot(nx, ny, nz) || 1;   // "para cima" da mão (perpendicular ao braço)
+      x = h.x + d.x * 0.055 + nx / nl * (MEIA_MAO + 0.004); y = h.y + d.y * 0.055 + ny / nl * (MEIA_MAO + 0.004); z = h.z + d.z * 0.055 + nz / nl * (MEIA_MAO + 0.004);
+    }
+    A.m.corpo.add(P); P.position.set(x, y, z); P.rotation.set(0, 0, 0);
     A.segura = P;
   }
   function soltar(A) { if (A.segura && A.segura.parent) A.segura.parent.remove(A.segura); A.segura = null; A.levanta = null; A.umaMao = null; }
@@ -377,6 +387,118 @@
   }
 
   // ============================================================================================ A NOITE DE PREMIAÇÃO
+  // (7.4.13) AS 7 APRESENTADORAS (uma sorteada por noite): pele, cabelo e a cor do vestido de cada uma; o rosto e o penteado saem
+  //   da semente (gerarAparencia). o.apresentadora (0 a 6) escolhe uma.
+  const APRESENTADORAS = [
+    { s: 'apresentadora-gala', vestido: '#1d4fa0' },
+    { s: 'apresentadora-2-camila', vestido: '#b0182a', pele: '#f0c8a8', cabelo: '#2a1a10' },
+    { s: 'apresentadora-3-joana', vestido: '#126b4a', pele: '#7a4a2c', cabelo: '#0e0a08' },
+    { s: 'apresentadora-4-renata', vestido: '#b8862b', pele: '#d9a27c', cabelo: '#c8a050' },
+    { s: 'apresentadora-5-patricia', vestido: '#16161c', pele: '#a86b45', cabelo: '#5a2a14' },
+    { s: 'apresentadora-6-luana', vestido: '#5b2a86', pele: '#e8b896', cabelo: '#8a2a1a' },
+    { s: 'apresentadora-7-beatriz', vestido: '#c2457a', pele: '#5c3a22', cabelo: '#141010' },
+  ];
+  function apresentadoraDe(i) {
+    const A = APRESENTADORAS[((i | 0) % APRESENTADORAS.length + APRESENTADORAS.length) % APRESENTADORAS.length];
+    const ap = Object.assign({ genero: 'F' }, typeof gerarAparencia === 'function' ? gerarAparencia(sementeDe(A.s), 'F') : {});
+    if (A.pele) ap.pele = A.pele; if (A.cabelo) ap.cabelo = A.cabelo; ap.barba = 0; ap.genero = 'F';
+    return { ap, vestido: A.vestido };
+  }
+  // (7.4.13) 50 FALAS DE QUEM RECEBE UM PRÊMIO: 25 humildes ('h') e 25 mais individualistas ('i'). O 3º texto é o da jogadora
+  //   (só quando muda). O ganhador da IA diz uma sorteada; quando é você, aparecem 5 para escolher (3 humildes e 2 individualistas).
+  const FALAS_PREMIO = [
+    ['h', 'Esse prêmio é de todo o time. Sem os meus companheiros, nada disso acontecia.'],
+    ['h', 'Agradeço a cada um que dividiu o campo comigo nesta temporada.'],
+    ['h', 'Agradeço à comissão técnica, aos roupeiros, ao pessoal da cozinha... todo mundo joga junto.'],
+    ['h', 'Divido este troféu com a minha família, que sempre acreditou em mim.'],
+    ['h', 'Eu só terminei as jogadas. Quem fez o trabalho pesado foi o time.'],
+    ['h', 'Não esperava por isso. Só quero continuar aprendendo e ajudando o grupo.'],
+    ['h', 'Esse prêmio vai para a torcida, que empurrou a gente em todos os jogos.'],
+    ['h', 'Tem muita gente aqui que merecia isso tanto quanto eu.'],
+    ['h', 'Agradeço a Deus, à família e aos companheiros. É de todos nós.'],
+    ['h', 'Lá no começo, eu jogava no campinho de terra do bairro. Hoje estou aqui. Valeu, futebol!'],
+    ['h', 'Quem merece os aplausos são os meus companheiros. Eu só estava no lugar certo.'],
+    ['h', 'Este troféu é pequeno perto do que o grupo construiu este ano.'],
+    ['h', 'Ao nosso treinador: valeu pela confiança desde o primeiro dia.'],
+    ['h', 'Vou guardar esse prêmio com carinho, mas o que importa mesmo é o time vencer.'],
+    ['h', 'Prêmio individual é bom, mas eu trocaria por mais um título com o grupo.'],
+    ['h', 'Aos mais novos da base: treinem, que um dia vocês estão aqui também.'],
+    ['h', 'Dedico aos meus pais, que me levavam para todos os treinos.'],
+    ['h', 'Ninguém ganha nada sozinho no futebol. Isso aqui é do vestiário inteiro.'],
+    ['h', 'Teve jogo em que eu errei muito, e o time me segurou. Esse prêmio é deles.'],
+    ['h', 'Só tenho a agradecer. Foi uma temporada de muito trabalho de todo mundo.'],
+    ['h', 'Quero dividir isso com o roupeiro, o massagista e o pessoal que ninguém vê.'],
+    ['h', 'Cada passe que eu recebi tinha o suor de um companheiro. Valeu, time!'],
+    ['h', 'Isso aqui é para quem acordou cedo para treinar comigo debaixo de chuva.'],
+    ['h', 'Fico feliz, mas amanhã a gente volta ao trabalho. O próximo jogo é o que importa.'],
+    ['h', 'Um abraço especial para a torcida. Vocês fizeram a diferença.'],
+    ['i', 'Eu sabia que esse prêmio ia ser meu. Trabalhei a temporada inteira para isso.'],
+    ['i', 'Os números falam por si: fui o melhor do campeonato, e ponto.', 'Os números falam por si: fui a melhor do campeonato, e ponto.'],
+    ['i', 'Já pode ir reservando o lugar na estante para o ano que vem.'],
+    ['i', 'Muita gente duvidou de mim. Hoje eu estou aqui com o troféu na mão.'],
+    ['i', 'Esse é só o primeiro. Vou ganhar muitos outros.'],
+    ['i', 'Quem joga como eu joguei não podia sair daqui sem nada.'],
+    ['i', 'Eu avisei no começo do ano: esse prêmio tinha dono.'],
+    ['i', 'Pode colocar o meu nome na história desse campeonato.'],
+    ['i', 'Mereço cada grama desse troféu. Ninguém fez o que eu fiz.'],
+    ['i', 'Agora quero ver quem vai me criticar.'],
+    ['i', 'Trabalhei mais do que todo mundo. O resultado está aqui.'],
+    ['i', 'Não tem segredo: talento e treino. E eu tenho os dois.'],
+    ['i', 'Os outros que corram atrás. Eu já estou na frente.'],
+    ['i', 'Ano que vem eu volto para buscar mais um. Podem anotar.'],
+    ['i', 'Os clubes grandes estão vendo. O meu futuro é lá em cima.'],
+    ['i', 'Esse troféu combina comigo, não acham?'],
+    ['i', 'O campeonato teve um nome, e todo mundo sabe qual é.'],
+    ['i', 'Sem falsa modéstia: foi a melhor temporada da minha vida, e a melhor da liga.'],
+    ['i', 'Ninguém me deu nada. Eu fui lá e conquistei.'],
+    ['i', 'Quem apostou contra mim perdeu dinheiro.'],
+    ['i', 'Vou mandar fazer uma réplica desse troféu para cada cômodo da minha casa.'],
+    ['i', 'A torcida adversária também vai ter que me aplaudir.'],
+    ['i', 'Se tivesse um prêmio acima desse, seria meu também.'],
+    ['i', 'Pode chamar a imprensa: hoje eu dou entrevista para todo mundo.'],
+    ['i', 'Eu nasci para levantar troféus. Esse é o primeiro de muitos.'],
+  ];
+  const falaPremio = (x, fem) => T(fem && x[2] ? x[2] : x[1]);
+  const sorteia = (L) => L[Math.floor(Math.random() * L.length)];
+  function cincoFalas(usadas) {
+    const livres = (tipo) => FALAS_PREMIO.filter((x) => x[0] === tipo && !usadas.has(x[1]));
+    const tira = (L, n) => { const out = []; L = L.slice(); while (out.length < n && L.length) out.push(L.splice(Math.floor(Math.random() * L.length), 1)[0]); return out; };
+    const op = tira(livres('h'), 3).concat(tira(livres('i'), 2));
+    for (let i = op.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [op[i], op[j]] = [op[j], op[i]]; }
+    return op;
+  }
+  // (7.4.13) OS FOTÓGRAFOS: flashes piscando na frente do palco (o ganhador acende com a luz do flash) + o som da câmera
+  function montarFlashes(g) {
+    const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+    const geo = new THREE.PlaneGeometry(0.16, 0.11), L = [];
+    // as câmeras ficam na beira do palco, na frente e embaixo de quem está sendo fotografado (aparecem na parte de baixo da tela)
+    for (let i = 0; i < 12; i++) {
+      const m = new THREE.Mesh(geo, mat.clone());
+      m.position.set(0.85 + (Math.random() - 0.5) * 3.2, 0.45 + Math.random() * 0.75, 2.0 + Math.random() * 0.9);
+      g.add(m); L.push({ m, t: 0 });
+    }
+    const luz = new THREE.PointLight(0xffffff, 0, 8); luz.position.set(0.9, 2.1, 2.6); g.add(luz);
+    // e um clarão bem de leve na tela inteira (o flash "estourando" na frente da câmera)
+    const clarao = document.createElement('div');
+    clarao.style.cssText = 'position:fixed;inset:0;z-index:29;background:#fff;opacity:0;pointer-events:none;transition:opacity .14s ease-out';
+    (document.getElementById('raizJogo') || document.body).appendChild(clarao);
+    const F = { L, luz, ate: 0, prox: 0, clarao };
+    F.disparar = () => {
+      const f = sorteia(L); f.t = 0.16; F.luz.intensity = 1.25; F.luz.position.set(f.m.position.x, 1.6, f.m.position.z);
+      if (Math.random() < 0.45) { clarao.style.transition = 'none'; clarao.style.opacity = '0.16'; void clarao.offsetWidth; clarao.style.transition = 'opacity .16s ease-out'; clarao.style.opacity = '0'; }
+      try { if (Som.flash) Som.flash(Math.random() * 0.4); } catch (e) { /* sem som */ }
+    };
+    F.remover = () => clarao.remove();
+    F.sessao = (seg) => { F.ate = performance.now() + seg * 1000; F.prox = 0; };
+    F.tick = (dt) => {
+      const agora = performance.now();
+      if (agora < F.ate && agora >= F.prox) { F.disparar(); if (Math.random() < 0.3) setTimeout(() => { if (performance.now() < F.ate) F.disparar(); }, 70); F.prox = agora + 110 + Math.random() * 380; }
+      for (const f of L) { f.t = Math.max(0, f.t - dt); f.m.material.opacity = f.t > 0 ? Math.min(1, f.t / 0.08) : 0; f.m.quaternion.copy(camera.quaternion); }
+      F.luz.intensity = Math.max(0, F.luz.intensity - dt * 10);
+    };
+    return F;
+  }
+  const aplausos = (k, dur) => { try { Som.palmas(k, dur); } catch (e) { /* sem som */ } };
   const NOME_PREMIO = { art: 'Artilheiro', ass: 'Líder de assistências', melhor: 'Melhor jogador' }, NOME_PREMIO_F = { art: 'Artilheira', ass: 'Líder de assistências', melhor: 'Melhor jogadora' };
   const valorPremio = (P) => (P.valor != null ? P.valor : P.v == null ? '' : P.tipo === 'art' ? Tf('{0} gols', P.v) : P.tipo === 'ass' ? Tf('{0} assistências', P.v) : Tf('nota média {0}', (+P.v).toFixed(1)));
   const NOME_OBJ = { art: 'a bola de ouro', ass: 'a chuteira de ouro', melhor: 'o jogadorzinho de ouro' };
@@ -423,13 +545,18 @@
     const io = o.io, L = [], meus = new Set(), voltaHud = esconderHudPartida();
     const antes = { bg: scene.background, fogN: scene.fog ? scene.fog.near : 0, fogF: scene.fog ? scene.fog.far : 0, est: ESTADIO.visible };
     scene.background = new THREE.Color(0x05050a); if (scene.fog) { scene.fog.near = 1e5; scene.fog.far = 2e5; } ESTADIO.visible = false;
-    const palco = montarPalco(o.nivel, o.titulo), Y = 0.3;
-    const apr = deTerno(L, Object.assign({ genero: 'F' }, typeof gerarAparencia === 'function' ? gerarAparencia(sementeDe('apresentadora-gala'), 'F') : {}), '#1d4fa0');
+    // (7.4.13) as luzes do jogo (o sol e o céu da partida) ficam bem fracas no salão: somadas às do palco, estouravam as cores claras
+    //   (pele clara e vestido amarelo saíam quase brancos)
+    const luzesJogo = []; scene.traverse((q) => { if (q.isLight && q.intensity > 0) luzesJogo.push([q, q.intensity]); });
+    for (const [q, i] of luzesJogo) q.intensity = i * 0.3;
+    const palco = montarPalco(o.nivel, o.titulo), Y = 0.3, flashes = montarFlashes(palco);
+    const AP = apresentadoraDe(o.apresentadora != null ? o.apresentadora : Math.floor(Math.random() * APRESENTADORAS.length));   // (7.4.13) uma das 7
+    const apr = deTerno(L, AP.ap, AP.vestido), usadas = new Set();
     meus.add(apr.m); apr.x = 2.0; apr.z = -0.1; apr.y = Y; apr.olha = Math.atan2(1, 0.4); apr.pose = 'apresenta';
     let plano = null, t0 = performance.now();
     const quadro = (rdt) => {
       const t = performance.now() / 1000, dt = Math.min(0.05, rdt || 0.016);
-      esconderJogo(meus); for (const A of L) poseAtor(A, t, dt);
+      esconderJogo(meus); for (const A of L) poseAtor(A, t, dt); flashes.tick(dt);
       if (plano) cameraPlano(plano, (performance.now() - t0) / 1000 / (plano.dur || 1));
     };
     const corta = (c) => { plano = c; t0 = performance.now(); };
@@ -467,10 +594,22 @@
         W.olha = Math.atan2(1, -0.15); apr.olha = Math.atan2(1, 0.4); apr.pose = 'palmas';
         pegaUmaMao(W, obj, 'alto');
         corta({ p: [0.9, 1.55, 3.9], p2: [0.95, 1.65, 3.3], t: [0.85, 1.3, 0], dur: 2.6 });
-        await io.esperar(700);
-        if (P.voce) { if (io.ganho) io.ganho(P); await fala(W, P.nome, T('Nem acredito! Valeu demais, esse prêmio é de todo o time!'), P.voz); }
-        else await fala(W, P.nome, fem ? T('Obrigada! Esse prêmio eu divido com o meu time.') : T('Obrigado! Esse prêmio eu divido com o meu time.'), P.voz);
+        aplausos(0.85, 3.4); flashes.sessao(3.2);                             // (7.4.13) aplausos e os flashes dos fotógrafos
+        await io.esperar(1400);
+        // (7.4.13) a fala do ganhador: uma das 50 (humilde ou individualista); a sua, você escolhe entre 5
+        let frase;
+        if (P.voce) {
+          if (io.ganho) io.ganho(P);
+          const ops = cincoFalas(usadas);
+          let i = 0;
+          try { i = typeof Escolha !== 'undefined' ? await Escolha.mostrar(T('O que você vai dizer no microfone?'), ops.map((x) => falaPremio(x, fem))) : 0; } catch (e) { i = 0; }
+          frase = ops[Math.max(0, Math.min(ops.length - 1, i | 0))] || ops[0];
+        } else frase = sorteia(FALAS_PREMIO.filter((x) => !usadas.has(x[1])));
+        usadas.add(frase[1]);
+        await fala(W, P.nome, falaPremio(frase, fem), P.voz);
         Dialogo.esconder();
+        aplausos(frase[0] === 'h' ? 0.75 : 0.5, 2.6); flashes.sessao(1.2);      // humilde: mais aplauso
+        await io.esperar(900);
         await io.preto(true, 450);
         soltar(W); descartar(obj); L.splice(L.indexOf(W), 1); meus.delete(W.m); ATLETAS.delete(W.m); descartar(W.m.raiz);
         apr.pose = 'apresenta'; apr.olha = Math.atan2(1, 0.4);
@@ -483,7 +622,8 @@
       Dialogo.esconder();
       await io.preto(true, 700);
     } finally {
-      faixa.remove(); GANCHO_RENDER = null; voltaHud();
+      faixa.remove(); flashes.remover(); GANCHO_RENDER = null; voltaHud();
+      for (const [q, i] of luzesJogo) q.intensity = i;
       for (const A of L) { soltar(A); ATLETAS.delete(A.m); descartar(A.m.raiz); }
       descartar(palco);
       scene.background = antes.bg; if (scene.fog) { scene.fog.near = antes.fogN; scene.fog.far = antes.fogF; } ESTADIO.visible = antes.est;
@@ -492,6 +632,59 @@
 
   // ============================================================================================ TEXTOS (pt → en, es, it, fr)
   const TRAD = {
+    // (7.4.13) as 50 falas dos premiados e a escolha da sua
+    "O que você vai dizer no microfone?": ["What will you say into the mic?", "¿Qué vas a decir al micrófono?", "Cosa dirai al microfono?", "Que vas-tu dire au micro ?"],
+    "Esse prêmio é de todo o time. Sem os meus companheiros, nada disso acontecia.": ["This award belongs to the whole team. Without my teammates, none of this would have happened.", "Este premio es de todo el equipo. Sin mis compañeros, nada de esto habría pasado.", "Questo premio è di tutta la squadra. Senza i miei compagni, niente di tutto questo sarebbe successo.", "Ce trophée appartient à toute l'équipe. Sans mes coéquipiers, rien de tout ça ne serait arrivé."],
+    "Agradeço a cada um que dividiu o campo comigo nesta temporada.": ["I thank everyone who shared the pitch with me this season.", "Le agradezco a cada uno que compartió la cancha conmigo esta temporada.", "Ringrazio ognuno di quelli che hanno condiviso il campo con me in questa stagione.", "Je remercie chacun de ceux qui ont partagé le terrain avec moi cette saison."],
+    "Agradeço à comissão técnica, aos roupeiros, ao pessoal da cozinha... todo mundo joga junto.": ["Thanks to the coaching staff, the kit men, the kitchen crew... everyone plays together.", "Gracias al cuerpo técnico, a los utileros, a la gente de la cocina... todos juegan juntos.", "Grazie allo staff tecnico, ai magazzinieri, a chi lavora in cucina... si gioca tutti insieme.", "Merci au staff technique, aux intendants, à l'équipe de la cuisine... tout le monde joue ensemble."],
+    "Divido este troféu com a minha família, que sempre acreditou em mim.": ["I share this trophy with my family, who always believed in me.", "Comparto este trofeo con mi familia, que siempre creyó en mí.", "Divido questo trofeo con la mia famiglia, che ha sempre creduto in me.", "Je partage ce trophée avec ma famille, qui a toujours cru en moi."],
+    "Eu só terminei as jogadas. Quem fez o trabalho pesado foi o time.": ["I only finished the plays. The team did the heavy lifting.", "Yo solo terminé las jugadas. El trabajo duro lo hizo el equipo.", "Io ho solo concluso le azioni. Il lavoro pesante l'ha fatto la squadra.", "Moi, j'ai juste conclu les actions. Le gros du travail, c'est l'équipe qui l'a fait."],
+    "Não esperava por isso. Só quero continuar aprendendo e ajudando o grupo.": ["I didn't expect this. I just want to keep learning and helping the group.", "No me lo esperaba. Solo quiero seguir aprendiendo y ayudando al grupo.", "Non me lo aspettavo. Voglio solo continuare a imparare e ad aiutare il gruppo.", "Je ne m'y attendais pas. Je veux juste continuer à apprendre et à aider le groupe."],
+    "Esse prêmio vai para a torcida, que empurrou a gente em todos os jogos.": ["This award goes to the fans, who pushed us on in every game.", "Este premio es para la afición, que nos empujó en todos los partidos.", "Questo premio va ai tifosi, che ci hanno spinto in ogni partita.", "Ce trophée est pour les supporters, qui nous ont poussés à chaque match."],
+    "Tem muita gente aqui que merecia isso tanto quanto eu.": ["There are a lot of people here who deserved this as much as I do.", "Hay mucha gente aquí que lo merecía tanto como yo.", "C'è tanta gente qui che lo meritava quanto me.", "Il y a beaucoup de monde ici qui le méritait autant que moi."],
+    "Agradeço a Deus, à família e aos companheiros. É de todos nós.": ["Thanks to God, to my family and to my teammates. It belongs to all of us.", "Gracias a Dios, a la familia y a los compañeros. Es de todos nosotros.", "Grazie a Dio, alla famiglia e ai compagni. È di tutti noi.", "Merci à Dieu, à la famille et aux coéquipiers. Il est à nous tous."],
+    "Lá no começo, eu jogava no campinho de terra do bairro. Hoje estou aqui. Valeu, futebol!": ["Back at the start, I played on the dirt pitch in my neighborhood. Today I'm here. Thank you, football!", "Al principio jugaba en la canchita de tierra del barrio. Hoy estoy aquí. ¡Gracias, fútbol!", "All'inizio giocavo nel campetto di terra del quartiere. Oggi sono qui. Grazie, calcio!", "Au début, je jouais sur le terrain en terre du quartier. Aujourd'hui je suis là. Merci, le foot !"],
+    "Quem merece os aplausos são os meus companheiros. Eu só estava no lugar certo.": ["My teammates are the ones who deserve the applause. I was just in the right place.", "Los que merecen los aplausos son mis compañeros. Yo solo estaba en el lugar indicado.", "Gli applausi li meritano i miei compagni. Io ho soltanto sfruttato le occasioni.", "Ce sont mes coéquipiers qui méritent les applaudissements. J'étais juste au bon endroit."],
+    "Este troféu é pequeno perto do que o grupo construiu este ano.": ["This trophy is small next to what the group built this year.", "Este trofeo es pequeño al lado de lo que el grupo construyó este año.", "Questo trofeo è piccolo rispetto a ciò che il gruppo ha costruito quest'anno.", "Ce trophée est petit à côté de ce que le groupe a construit cette année."],
+    "Ao nosso treinador: valeu pela confiança desde o primeiro dia.": ["To our coach: thanks for trusting me from day one.", "A nuestro entrenador: gracias por la confianza desde el primer día.", "Al nostro allenatore: grazie per la fiducia fin dal primo giorno.", "À notre entraîneur : merci pour la confiance dès le premier jour."],
+    "Vou guardar esse prêmio com carinho, mas o que importa mesmo é o time vencer.": ["I'll treasure this award, but what really matters is the team winning.", "Voy a guardar este premio con cariño, pero lo que de verdad importa es que gane el equipo.", "Custodirò questo premio con affetto, ma quello che conta davvero è che vinca la squadra.", "Je vais garder ce trophée précieusement, mais ce qui compte vraiment, c'est que l'équipe gagne."],
+    "Prêmio individual é bom, mas eu trocaria por mais um título com o grupo.": ["Individual awards are nice, but I'd trade it for one more title with the group.", "Un premio individual está bien, pero lo cambiaría por un título más con el grupo.", "Un premio individuale fa piacere, ma lo scambierei con un altro titolo insieme al gruppo.", "Un trophée individuel, c'est bien, mais je l'échangerais contre un titre de plus avec le groupe."],
+    "Aos mais novos da base: treinem, que um dia vocês estão aqui também.": ["To the youngsters in the academy: keep training, one day you'll be up here too.", "A los más jóvenes de las inferiores: entrenen, que un día ustedes también van a estar aquí.", "Ai più giovani del vivaio: allenatevi, che un giorno sarete qui anche voi.", "Aux plus jeunes du centre de formation : entraînez-vous, un jour vous serez ici vous aussi."],
+    "Dedico aos meus pais, que me levavam para todos os treinos.": ["I dedicate it to my parents, who took me to every training session.", "Se lo dedico a mis padres, que me llevaban a todos los entrenamientos.", "Lo dedico ai miei genitori, che mi portavano a tutti gli allenamenti.", "Je le dédie à mes parents, qui m'emmenaient à tous les entraînements."],
+    "Ninguém ganha nada sozinho no futebol. Isso aqui é do vestiário inteiro.": ["Nobody wins anything alone in football. This belongs to the whole dressing room.", "Nadie gana nada solo en el fútbol. Esto es de todo el vestuario.", "Nel calcio nessuno vince niente da solo. Questo è di tutto lo spogliatoio.", "Personne ne gagne rien seul au football. Ça, c'est à tout le vestiaire."],
+    "Teve jogo em que eu errei muito, e o time me segurou. Esse prêmio é deles.": ["There were games where I made lots of mistakes, and the team carried me. This award is theirs.", "Hubo partidos en los que fallé mucho, y el equipo me sostuvo. Este premio es de ellos.", "Ci sono state partite in cui ho sbagliato tanto, e la squadra mi ha sostenuto. Questo premio è loro.", "Il y a eu des matchs où j'ai fait beaucoup d'erreurs, et l'équipe m'a porté. Ce trophée est à eux."],
+    "Só tenho a agradecer. Foi uma temporada de muito trabalho de todo mundo.": ["I can only say thank you. It was a season of hard work from everyone.", "Solo tengo que agradecer. Fue una temporada de mucho trabajo de todos.", "Posso solo ringraziare. È stata una stagione di tanto lavoro da parte di tutti.", "Je ne peux que remercier. Ça a été une saison de gros travail pour tout le monde."],
+    "Quero dividir isso com o roupeiro, o massagista e o pessoal que ninguém vê.": ["I want to share this with the kit man, the physio and the people nobody sees.", "Quiero compartir esto con el utilero, el masajista y la gente que nadie ve.", "Voglio condividerlo con il magazziniere, il massaggiatore e le persone che nessuno vede.", "Je veux partager ça avec l'intendant, le kiné et les gens que personne ne voit."],
+    "Cada passe que eu recebi tinha o suor de um companheiro. Valeu, time!": ["Every pass I received carried a teammate's sweat. Thanks, team!", "Cada pase que recibí tenía el sudor de un compañero. ¡Gracias, equipo!", "Ogni passaggio che ho ricevuto aveva il sudore di un compagno. Grazie, squadra!", "Chaque passe que j'ai reçue portait la sueur d'un coéquipier. Merci, l'équipe !"],
+    "Isso aqui é para quem acordou cedo para treinar comigo debaixo de chuva.": ["This is for everyone who woke up early to train with me in the rain.", "Esto es para los que madrugaron para entrenar conmigo bajo la lluvia.", "Questo è per chi si è svegliato presto per allenarsi con me sotto la pioggia.", "Ça, c'est pour ceux qui se sont levés tôt pour s'entraîner avec moi sous la pluie."],
+    "Fico feliz, mas amanhã a gente volta ao trabalho. O próximo jogo é o que importa.": ["It feels great, but tomorrow we go back to work. The next game is what matters.", "Estoy feliz, pero mañana volvemos al trabajo. Lo que importa es el próximo partido.", "Sono felice, ma domani si torna al lavoro. Quello che conta è la prossima partita.", "Ça fait plaisir, mais demain on reprend le travail. C'est le prochain match qui compte."],
+    "Um abraço especial para a torcida. Vocês fizeram a diferença.": ["A special hug to the fans. You made the difference.", "Un abrazo especial para la afición. Ustedes marcaron la diferencia.", "Un abbraccio speciale ai tifosi. Avete fatto la differenza.", "Un câlin spécial aux supporters. Vous avez fait la différence."],
+    "Eu sabia que esse prêmio ia ser meu. Trabalhei a temporada inteira para isso.": ["I knew this award would be mine. I worked the whole season for it.", "Sabía que este premio iba a ser mío. Trabajé toda la temporada para esto.", "Sapevo che questo premio sarebbe stato mio. Ho lavorato tutta la stagione per questo.", "Je savais que ce trophée serait à moi. J'ai travaillé toute la saison pour ça."],
+    "Os números falam por si: fui o melhor do campeonato, e ponto.": ["The numbers speak for themselves: I was the best in the league, period.", "Los números hablan por sí solos: fui el mejor del campeonato, y punto.", "I numeri parlano da soli: sono stato il migliore del campionato, punto.", "Les chiffres parlent d'eux-mêmes : j'ai été le meilleur du championnat, point."],
+    "Os números falam por si: fui a melhor do campeonato, e ponto.": ["The numbers speak for themselves: I was the best in the league, period.", "Los números hablan por sí solos: fui la mejor del campeonato, y punto.", "I numeri parlano da soli: sono stata la migliore del campionato, punto.", "Les chiffres parlent d'eux-mêmes : j'ai été la meilleure du championnat, point."],
+    "Já pode ir reservando o lugar na estante para o ano que vem.": ["You can already save a spot on the shelf for next year.", "Ya pueden ir reservando el lugar en la estantería para el año que viene.", "Potete già riservare il posto sulla mensola per l'anno prossimo.", "Vous pouvez déjà réserver la place sur l'étagère pour l'an prochain."],
+    "Muita gente duvidou de mim. Hoje eu estou aqui com o troféu na mão.": ["A lot of people doubted me. Today I'm here with the trophy in my hand.", "Mucha gente dudó de mí. Hoy estoy aquí con el trofeo en la mano.", "Tanta gente ha dubitato di me. Oggi sono qui con il trofeo in mano.", "Beaucoup de gens ont douté de moi. Aujourd'hui, je suis là avec le trophée en main."],
+    "Esse é só o primeiro. Vou ganhar muitos outros.": ["This is only the first. I'll win many more.", "Este es solo el primero. Voy a ganar muchos más.", "Questo è solo il primo. Ne vincerò tanti altri.", "Ce n'est que le premier. J'en gagnerai beaucoup d'autres."],
+    "Quem joga como eu joguei não podia sair daqui sem nada.": ["Whoever plays the way I played couldn't leave here empty-handed.", "Quien juega como yo jugué no podía irse de aquí sin nada.", "Chi gioca come ho giocato io non poteva andarsene da qui senza niente.", "Quand on joue comme j'ai joué, on ne pouvait pas repartir d'ici sans rien."],
+    "Eu avisei no começo do ano: esse prêmio tinha dono.": ["I warned you at the start of the year: this award already had an owner.", "Lo avisé a principio de año: este premio tenía dueño.", "L'avevo detto a inizio anno: questo premio aveva già un padrone.", "Je l'avais dit en début d'année : ce trophée avait déjà un propriétaire."],
+    "Pode colocar o meu nome na história desse campeonato.": ["You can write my name into the history of this league.", "Pueden poner mi nombre en la historia de este campeonato.", "Potete scrivere il mio nome nella storia di questo campionato.", "Vous pouvez inscrire mon nom dans l'histoire de ce championnat."],
+    "Mereço cada grama desse troféu. Ninguém fez o que eu fiz.": ["I deserve every gram of this trophy. Nobody did what I did.", "Merezco cada gramo de este trofeo. Nadie hizo lo que yo hice.", "Merito ogni grammo di questo trofeo. Nessuno ha fatto quello che ho fatto io.", "Je mérite chaque gramme de ce trophée. Personne n'a fait ce que j'ai fait."],
+    "Agora quero ver quem vai me criticar.": ["Now let's see who's going to criticize me.", "Ahora quiero ver quién me va a criticar.", "Adesso voglio vedere chi mi criticherà.", "Maintenant, je veux voir qui va me critiquer."],
+    "Trabalhei mais do que todo mundo. O resultado está aqui.": ["I worked harder than everyone. The result is right here.", "Trabajé más que todos. El resultado está aquí.", "Ho lavorato più di tutti. Il risultato è qui.", "J'ai travaillé plus que tout le monde. Le résultat est là."],
+    "Não tem segredo: talento e treino. E eu tenho os dois.": ["There's no secret: talent and training. And I have both.", "No hay secreto: talento y entrenamiento. Y yo tengo los dos.", "Non c'è nessun segreto: talento e allenamento. E io li ho tutti e due.", "Il n'y a pas de secret : du talent et de l'entraînement. Et moi, j'ai les deux."],
+    "Os outros que corram atrás. Eu já estou na frente.": ["Let the others chase me. I'm already ahead.", "Que los demás corran detrás. Yo ya voy adelante.", "Gli altri mi rincorrano pure. Io sono già davanti.", "Que les autres courent derrière. Moi, je suis déjà devant."],
+    "Ano que vem eu volto para buscar mais um. Podem anotar.": ["Next year I'm coming back for another one. Write that down.", "El año que viene vuelvo a buscar otro. Pueden anotarlo.", "L'anno prossimo torno a prenderne un altro. Segnatevelo.", "L'an prochain, je reviens en chercher un autre. Notez-le."],
+    "Os clubes grandes estão vendo. O meu futuro é lá em cima.": ["The big clubs are watching. My future is at the top.", "Los clubes grandes están mirando. Mi futuro está allá arriba.", "I grandi club stanno guardando. Il mio futuro è lassù.", "Les grands clubs regardent. Mon avenir, c'est tout en haut."],
+    "Esse troféu combina comigo, não acham?": ["This trophy suits me, don't you think?", "Este trofeo me queda bien, ¿no creen?", "Questo trofeo mi sta bene, non trovate?", "Ce trophée me va bien, vous ne trouvez pas ?"],
+    "O campeonato teve um nome, e todo mundo sabe qual é.": ["This league had one name, and everyone knows which one.", "El campeonato tuvo un nombre, y todo el mundo sabe cuál es.", "Il campionato ha avuto un nome, e tutti sanno qual è.", "Le championnat a eu un nom, et tout le monde sait lequel."],
+    "Sem falsa modéstia: foi a melhor temporada da minha vida, e a melhor da liga.": ["No false modesty: it was the best season of my life, and the best in the league.", "Sin falsa modestia: fue la mejor temporada de mi vida, y la mejor de la liga.", "Senza falsa modestia: è stata la migliore stagione della mia vita, e la migliore del campionato.", "Sans fausse modestie : c'était la meilleure saison de ma vie, et la meilleure de la ligue."],
+    "Ninguém me deu nada. Eu fui lá e conquistei.": ["Nobody gave me anything. I went out there and earned it.", "Nadie me regaló nada. Fui y lo conquisté.", "Nessuno mi ha regalato niente: ho lottato e ho vinto.", "Personne ne m'a rien donné. J'ai tout conquis moi-même."],
+    "Quem apostou contra mim perdeu dinheiro.": ["Whoever bet against me lost money.", "Quien apostó contra mí perdió dinero.", "Chi ha scommesso contro di me ha perso soldi.", "Ceux qui ont parié contre moi ont perdu de l'argent."],
+    "Vou mandar fazer uma réplica desse troféu para cada cômodo da minha casa.": ["I'm getting a replica of this trophy made for every room in my house.", "Voy a mandar hacer una réplica de este trofeo para cada habitación de mi casa.", "Farò fare una replica di questo trofeo per ogni stanza di casa mia.", "Je vais faire faire une réplique de ce trophée pour chaque pièce de ma maison."],
+    "A torcida adversária também vai ter que me aplaudir.": ["The rival fans will have to applaud me too.", "La afición rival también va a tener que aplaudirme.", "Anche i tifosi avversari dovranno applaudirmi.", "Les supporters adverses vont devoir m'applaudir aussi."],
+    "Se tivesse um prêmio acima desse, seria meu também.": ["If there were an award above this one, it would be mine too.", "Si hubiera un premio por encima de este, también sería mío.", "Se ci fosse un premio sopra questo, sarebbe mio anche quello.", "S'il y avait un trophée au-dessus de celui-ci, il serait à moi aussi."],
+    "Pode chamar a imprensa: hoje eu dou entrevista para todo mundo.": ["Call the press: today I'm giving interviews to everyone.", "Pueden llamar a la prensa: hoy doy entrevistas a todo el mundo.", "Chiamate pure la stampa: oggi rilascio interviste a tutti.", "Appelez la presse : aujourd'hui, je donne des interviews à tout le monde."],
+    "Eu nasci para levantar troféus. Esse é o primeiro de muitos.": ["I was born to lift trophies. This is the first of many.", "Nací para levantar trofeos. Este es el primero de muchos.", "Il mio destino è alzare trofei. Questo è il primo di tanti.", "Mon destin, c'est de soulever des trophées. C'est le premier d'une longue série."],
     "Apresentadora": ["Host", "Presentadora", "Presentatrice", "Présentatrice"],
     "Boa noite! Bem-vindos à festa de premiação da Série A!": ["Good evening! Welcome to the Série A awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série A!", "Buonasera! Benvenuti alla serata di premiazione della Série A!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série A !"],
     "Boa noite! Bem-vindos à festa de premiação da Série B!": ["Good evening! Welcome to the Série B awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série B!", "Buonasera! Benvenuti alla serata di premiazione della Série B!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série B !"],

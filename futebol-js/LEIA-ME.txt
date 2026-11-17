@@ -18,6 +18,17 @@ ARQUIVOS
                           fica sempre do lado do túnel, vai ao meio-campo mostrar a placa e volta. Nas cenas, os braços ficam na
                           pose (sem o ajuste que encolhia o braço ao encostar em alguém). Sem a linha branca nas arestas: meio
                           pixel de folga no atlas dos bonecos e o calção sem a tampa de cima
+                          (7.4.13) MENU: Jogar → Modo história, Partida livre e Mestre do clube (EM BREVE: o botão já existe
+                          desligado; MESTRE_DO_CLUBE.pronto liga e baixa o mestre.js). CONFIGURAÇÕES (menu e pausa): som por
+                          categoria (geral, efeitos, torcida, músicas, vozes: volume e mudo, futebolJs.volumes.v1; o botão de som
+                          saiu da partida), controles (câmera, círculo, botões e joystick) e o TECLADO com todas as ações
+                          (andar, correr, chutar, passar, driblar, pedir, carrinho, força, dominar, cabecear, finalizar, passe e
+                          chute de primeira, comemorações, câmera, trocar de jogador; futebolJs.teclas.v1). DE PRIMEIRA: na
+                          recepção (PASSE DE 1ª e, perto do gol, CHUTE DE 1ª) e quando um passe rasteiro vem em você — o tempo
+                          quase para, você mira e escolhe a força, e a bola sai do pé sem dominar. TIME INTEIRO (só na partida
+                          livre): o controle passa para quem pega a bola, para quem vai receber o passe, para o mais perto na
+                          marcação e para quem cobra; botão TROCAR (R); p.voce marca o seu personagem. CÂMERA LIVRE (a 3ª do
+                          botão CÂM): arraste o lado direito da tela para girar e subir/descer
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -63,7 +74,9 @@ ARQUIVOS
   festa.js .............. as festas de título e a noite dos prêmios: a comemoração no gramado (roda, joelhos, aviãozinho,
                           a fila para o troféu, o troféu levantado, a volta olímpica e todos sentados), os troféus (várzea,
                           copas, Copa do Brasil, Série B e Série A), a bola, a chuteira e o jogadorzinho de ouro, e a gala com o ganhador de terno
-                          (baixado pela várzea e pela Série B)
+                          (baixado pela várzea e pela Série B). (7.4.13) 7 apresentadoras (uma por noite), 50 falas de quem
+                          ganha (25 humildes e 25 individualistas; você escolhe entre 5), o prêmio apoiado na ponta da mão,
+                          aplausos e os flashes dos fotógrafos (com o som da câmera, Som.flash)
   imprensa.js ........... a imprensa e a popularidade na Série B: um jogo sim, um jogo não, o ônibus chega ao estádio e uma
                           das 5 repórteres (Esfera, TBS, Band-Aid, TV Recordação, TV Agricultura) entrevista o jogador na
                           entrada; a pergunta é montada (time + jogador + jogo de hoje) e a resposta tranquila ou arrogante é
@@ -99,6 +112,8 @@ ARQUIVOS
                           Configurações do menu agora têm só som, idioma, como jogar e a versão
                           (7.4.10) Configurações com a bola (as 15 premium) e as duas comemorações; no confronto, os
                           quadradinhos do uniforme 1 e 2 de cada time; a partida salva no intervalo fica em futebolJs.livre.v1.pausa; (7.4.11) o escudo da garagem no meio das colunas
+                          (7.4.13) Depois do tipo de jogo: controlar UM jogador ou o TIME INTEIRO (também nas configurações
+                          da partida); a tela do confronto cabe inteira na tela, sem rolar (as outras abas rolam por dentro)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

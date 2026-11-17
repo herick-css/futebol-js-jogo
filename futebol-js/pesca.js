@@ -707,7 +707,7 @@
     function montar(A) {
       const c = A.ctx, r = { c, nivel: 1, p: 0, pratoJa: false };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(0.34, c.currentTime + 0.6); r.saida.connect(A.mestre);
+      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(0.34, c.currentTime + 0.6); r.saida.connect(A.musica || A.mestre);
       r.bat = c.createGain(); r.bat.gain.value = 0.9; r.bat.connect(r.saida);
       r.gt = c.createGain(); const ws = c.createWaveShaper(); ws.curve = curvaDist(60); ws.oversample = '2x'; const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; const gg = c.createGain(); gg.gain.value = 0.5; r.gt.connect(ws); ws.connect(lp); lp.connect(gg); gg.connect(r.saida);
       r.bx = c.createGain(); const lb = c.createBiquadFilter(); lb.type = 'lowpass'; lb.frequency.value = 650; r.bx.connect(lb); lb.connect(r.saida);
@@ -852,7 +852,7 @@
     function montar(A, k) {
       const c = A.ctx, E = ESTILOS[k], r = { c, E, k, nivel: 1, p: 0, PASSO: 60 / E.bpm / E.sub };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(E.vol, c.currentTime + 0.5); r.saida.connect(A.mestre);
+      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(E.vol, c.currentTime + 0.5); r.saida.connect(A.musica || A.mestre);
       r.bat = c.createGain(); r.bat.gain.value = 0.9; r.bat.connect(r.saida);
       const cadeia = (dist, corte, ganho) => { const ent = c.createGain(), lp = c.createBiquadFilter(), gg = c.createGain(); lp.type = 'lowpass'; lp.frequency.value = corte; gg.gain.value = ganho;
         if (dist > 0) { const ws = c.createWaveShaper(); ws.curve = curvaDist(dist); ws.oversample = '2x'; ent.connect(ws); ws.connect(lp); } else ent.connect(lp); lp.connect(gg); gg.connect(r.saida); return ent; };

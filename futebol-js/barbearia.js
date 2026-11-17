@@ -171,7 +171,7 @@
     function montar(A) {
       const c = A.ctx, r = { c, p: 0 };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(0.16, c.currentTime + 1.2); r.saida.connect(A.mestre);
+      r.saida = c.createGain(); r.saida.gain.setValueAtTime(0.0001, c.currentTime); r.saida.gain.exponentialRampToValueAtTime(0.16, c.currentTime + 1.2); r.saida.connect(A.musica || A.mestre);
       r.bat = c.createGain(); r.bat.gain.value = 0.8; r.bat.connect(r.saida);
       r.gt = c.createGain(); const ws = c.createWaveShaper(); ws.curve = curvaDist(9); const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2300; r.gt.connect(ws); ws.connect(lp); lp.connect(r.saida);
       r.bx = c.createGain(); const lb = c.createBiquadFilter(); lb.type = 'lowpass'; lb.frequency.value = 700; r.bx.connect(lb); lb.connect(r.saida);
