@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.14';
+const VERSAO_JOGO = '7.4.15';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -786,10 +786,11 @@ const Atributos = (() => {
     const vel = razao('velocidade'), res = razao('resistencia'), dri = razao('drible');
     CONFIG.USER_WALK = BASE.USER_WALK * vel; CONFIG.USER_RUN = BASE.USER_RUN * vel;
     CONFIG.USER_WALK_BALL = BASE.USER_WALK_BALL * vel; CONFIG.USER_RUN_BALL = BASE.USER_RUN_BALL * vel;
-    CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * res;
+    // (7.4.15) acima de 7 o fôlego soma até +5 s no 10 (antes multiplicava); abaixo de 7 continua caindo como antes
+    CONFIG.STAMINA_RUN_TIME = BASE.STAMINA_RUN_TIME * Math.min(1, res) + 5 * clampA(((+atual.resistencia || 7) - 7) / 3, 0, 1);
     CONFIG.STAMINA_REGEN_TIME = BASE.STAMINA_REGEN_TIME / razao('recuperacao');   // encher a barra: recuperação
     // Ajuste fino do fôlego (iniciante): _corridaSeg = segundos de corrida; _recuperaCada = segundos de descanso para devolver 1 s de corrida.
-    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 4 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → 9 s no 10
+    if (a._corridaSeg > 0) CONFIG.STAMINA_RUN_TIME = a._corridaSeg + 5 * ganhoHist(a.resistencia);   // (6.2.0) 5 s no 5 → (7.4.15) 10 s no 10 (+ os 6 s de CORRIDA_EXTRA na partida)
     if (a._recuperaCada > 0) CONFIG.STAMINA_REGEN_TIME = CONFIG.STAMINA_RUN_TIME * a._recuperaCada / (1 + 0.5 * ganhoHist(a.recuperacao));   // (7.1.14) a RECUPERAÇÃO vale na história: no 10 enche 1,5x mais rápido
     CONFIG.DRIBBLE_TIME = BASE.DRIBBLE_TIME * dri;
     CONFIG.DRIBBLE_COOLDOWN = BASE.DRIBBLE_COOLDOWN / Math.pow(clampA(atual.drible / 7, 0.15, 1.6), 0.8);
@@ -6996,9 +6997,18 @@ function gkThink(p, dt) {
         const py = ball.y + ball.vy * t - 0.5 * CONFIG.GRAVITY * t * t;
         const gap = pz - p.z;
         const noAlvo = Math.abs(pz) < GOAL_HALF + 0.3 && py < CONFIG.GOAL_H + 0.3;
-        const alcanca = Math.abs(gap) < 3.4;      // distância máxima de um mergulho
-        if (!noAlvo || !alcanca) {
-          // Bola para fora ou longe demais (na trave do outro lado): o corpo fica PARADO e só a cabeça acompanha a bola.
+        const alcanca = Math.abs(gap) < 3.4;      // distância de um mergulho parado
+        // (7.4.15) BOLA NO CANTO, LONGE DELE: antes ele só ficava olhando. Agora ele VAI ATRÁS (corre e mergulha) e o que decide é a
+        //   física: chute lento e de longe dá tempo de chegar (e de defender); rápido, de perto e no canto, o mergulho não alcança.
+        //   Só de vez em quando (mais quando é muito longe e muito rápido) ele fica parado assistindo a bola entrar.
+        if (noAlvo && !alcanca && ball.isShot) {
+          if (ball.gkAssiste == null) {
+            const longe = clamp((Math.abs(gap) - 3.4) / 2.5, 0, 1), rapido = clamp((ballSpeed() - 18) / 12, 0, 1);
+            ball.gkAssiste = Math.random() < 0.06 + 0.16 * longe * rapido;
+          }
+          if (ball.gkAssiste) { p.olhaT = Math.max(p.olhaT || 0, 0.8); return { vx: 0, vz: 0 }; }
+        } else if (!noAlvo || !alcanca) {
+          // Bola para fora: o corpo fica PARADO e só a cabeça acompanha a bola.
           if (ball.isShot || ballSpeed() > 12) { p.olhaT = Math.max(p.olhaT || 0, 0.8); return { vx: 0, vz: 0 }; }
           return seek(p, lineX, clamp(p.z, -LIM_GK(), LIM_GK()), CONFIG.GK_SPEED);
         }
@@ -7030,7 +7040,7 @@ function gkThink(p, dt) {
           if (h <= 1.65) { alt = 0.3; th = Math.acos(clamp((h - alt) / R, Math.cos(1.45), Math.cos(0.4))); }
           else { th = clamp(Math.asin(Math.min(1, ag / R)), 0.35, 1.2); alt = clamp(h - R * Math.cos(th), 0.3, 1.1); }
           p.diveKc = clamp(t / p.diveDur, 0.3, 0.9); p.diveTomb = th; p.diveAlt = alt;
-          const pes = clamp(ag - R * Math.sin(th), 0, 9.5 * Math.max(0.3, t));
+          const pes = clamp(ag - R * Math.sin(th), 0, 9.5 * Math.sqrt(fh(p, 'goleiro')) * Math.max(0.3, t));   // (7.4.15) o alcance do voo cresce com a habilidade de goleiro
           p.diveVZ = Math.sign(gap) * pes / Math.max(0.25, t); p.diveVX = 0;
           p.diveTipo = alt > 0.5 ? 'alto' : 'baixo';   // pula para cima (bola alta) ou se joga no chão
           // bola rasteira não muito longe: às vezes ele DESLIZA COM O PÉ (perna esticada), como no futsal
@@ -7279,6 +7289,7 @@ function userDesired(u, dt) {
     s = (hasBall ? CONFIG.USER_WALK_BALL : CONFIG.USER_WALK) * Math.min(1, inp.mag / CONFIG.RUN_THRESHOLD);
   }
   if (u.boost > 0) s *= 1.25;
+  s *= velDoControlado(u);                          // (7.4.15) time inteiro: cada um com a velocidade dele
   const w = screenToWorld(inp.up / inp.mag, inp.right / inp.mag);
   let vx = w.x * s, vz = w.z * s;
   // Falta do adversário esperando a cobrança: você não consegue entrar nos 9,15 m da bola.
@@ -7320,12 +7331,35 @@ function afastarDe(t, c, raio) {
   return t;
 }
 
+// (7.4.15) FÔLEGO MAIOR: todo mundo ganha CORRIDA_EXTRA segundos de corrida (o padrão acabava rápido) e quem tem resistência acima
+//   de 7 ganha mais, até +5 s no 10 (extraFolego). No "time inteiro", quem você controla corre com a resistência e a velocidade DELE
+//   (antes usava as do seu personagem).
+const CORRIDA_EXTRA = 6, CORRIDA_FOLEGO_10 = 5;
+const extraFolego = (r) => CORRIDA_FOLEGO_10 * clamp(((+r || 7) - 7) / 3, 0, 1);
+function segundosDeCorrida(u) {
+  const livre = partidaLivre();
+  if (!u.voce && u.hab) {
+    const r = u.hab.resistencia ?? 7, base = (livre ? CONFIG.LIVRE_CORRIDA : 10) + CORRIDA_EXTRA;
+    return base * Math.min(1, Math.pow(clamp(r / 7, 0.15, 1.6), 1.24)) + extraFolego(r);
+  }
+  if (livre) {                                      // a partida livre escala a barra (15 s no 7), mas os +5 s do fôlego 10 entram inteiros
+    const ex = extraFolego(Atributos.valor('resistencia'));
+    return CONFIG.LIVRE_CORRIDA * Math.max(0.15, (CONFIG.STAMINA_RUN_TIME - ex) / 10) + ex + CORRIDA_EXTRA;
+  }
+  return CONFIG.STAMINA_RUN_TIME + CORRIDA_EXTRA;
+}
+// velocidade de quem você controla em relação à do seu personagem (CONFIG.USER_RUN já é a do personagem)
+function velDoControlado(u) {
+  if (u.voce || !u.hab) return 1;
+  const dele = Math.pow(clamp((u.hab.velocidade ?? 7) / 7, 0.15, 1.6), 0.35), seu = Atributos.fator('velocidade') || 1;
+  return clamp(dele / seu, 0.7, 1.35);
+}
 // Estamina: cai durante a corrida e só volta depois de um tempinho parado de correr.
 function updateStamina(u, dt) {
   talvezLesaoMuscular(u, dt);
   if (u.cansadoT > 0) { u.cansadoT -= dt; if (u.running && Math.hypot(u.vx, u.vz) > 4) u.cansadoT = 0; }   // tempo da pose de cansaço
   if (G.state === 'celebrate') { u.stamina = 1; u.exhausted = false; return; }   // na comemoração não cansa
-  const livre = partidaLivre(), T = tempoCorrida(u, livre ? CONFIG.LIVRE_CORRIDA * CONFIG.STAMINA_RUN_TIME / 10 : CONFIG.STAMINA_RUN_TIME);   // partida livre: 15 s; a fadiga vale em toda partida
+  const livre = partidaLivre(), T = tempoCorrida(u, segundosDeCorrida(u));   // (7.4.15) +6 s para todos; a fadiga vale em toda partida
   if (u.running && Math.hypot(u.vx, u.vz) > 3) {
     u.stamina = Math.max(0, u.stamina - dt / T);
     u.regenWait = CONFIG.STAMINA_REGEN_DELAY;
@@ -7397,7 +7431,9 @@ function atualizarFolegoIA(p, dt, spd, des) {
   const andar = andarIA(p);
   const corre = !G.sp && !G.kickoffPending && spd > andar * 1.08 && Math.hypot(des.vx, des.vz) > andar * 1.05;
   const livre = partidaLivre();
-  const T = tempoCorrida(p, PARTIDA.criancas ? CONFIG.CRIANCA_CORRIDA : (livre ? CONFIG.LIVRE_CORRIDA : CONFIG.AI_RUN_TIME) * fh(p, 'resistencia') / Math.max(0.6, fh(p, 'velocidade')));   // crianças: 15 s; fadiga em toda partida
+  // (7.4.15) +6 s para todos; resistência acima de 7 soma até +5 s no 10; quem é mais rápido cansa um pouco antes
+  const base = (PARTIDA.criancas ? CONFIG.CRIANCA_CORRIDA : livre ? CONFIG.LIVRE_CORRIDA : CONFIG.AI_RUN_TIME) + CORRIDA_EXTRA;
+  const T = tempoCorrida(p, (base * Math.min(1, fh(p, 'resistencia')) + extraFolego(hab(p, 'resistencia'))) / Math.max(0.6, fh(p, 'velocidade')));
   if (corre) {
     p.stamina = Math.max(0, p.stamina - dt / T);
     p.regenWait = 0.6;
@@ -7696,7 +7732,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
     G.sp = null; G.focus = null; G.roleT = 0;
   }
   if (G.kickoffPending && G.kickoffPending.taker === from) { G.kickoffPending = null; G.roleT = 0; } // bola rolando
-  ball.saveRolled = false; ball.saveOk = false; ball.broken = false;
+  ball.saveRolled = false; ball.saveOk = false; ball.broken = false; ball.gkAssiste = null;   // (7.4.15) gkAssiste: o goleiro decide 1 vez por chute
   ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.distChute = 0;
   ball.penalti = ehPenalti; ball.cavadinha = false; ball.dominioDificil = false;   // dominioDificil: o tutorial força o ponto azul
   ball.querPeito = Math.random() < 0.6;            // se cair na altura do peito, domina no peito (ver predictArrival)
@@ -12185,6 +12221,10 @@ const camArrasto = { id: null, x: 0, y: 0 };
 // a câmera de TV: do lado (a sua equipe ataca para a DIREITA da tela), alta e longe; corre junto com a bola (um pouco puxada para
 //   você) e só mexe de lado. O joystick e a mira usam esse ângulo fixo (para cima = para o fundo do campo).
 const yawTV = () => -Math.PI / 2;
+// (7.4.15) na falta, no lateral, no escanteio e no pênalti a câmera de TV dá lugar à de 3ª pessoa (atrás de quem vai bater, como no
+//   Winning Eleven): de longe, com a bola na beirada do campo, não dava para ver nada. Volta para a TV quando a bola rola.
+const SP_TERCEIRA = ['falta', 'lateral', 'escanteio', 'penalti'];
+const tvEmTerceira = () => !!((G.sp && SP_TERCEIRA.includes(G.sp.kind)) || (user && (user.throwIn || user.setPiece)));
 function cameraTV() {
   const D = clamp(HALF_W * 0.5 + 15, 17, 30) * AJ.camDist, H = D * 0.6 * AJ.camAlt + (AJ.camH || 0);
   const ax = user && !user.out ? ball.x + (user.x - ball.x) * 0.2 : ball.x;
@@ -13844,7 +13884,7 @@ function updateYaw(rdt) {
   if (G.cine || G.shotCine || G.fintaCine || (G.chuteCine && G.chuteCine.fase === 'prep') || G.state === 'restart' || G.state === 'foul') return;   // nas cenas a câmera não gira
   let want, rapidez = CONFIG.CAM.turn;
   const S = G.sp;
-  if (cam.mode === 'tv' && (G.state === 'play' || G.state === 'trap' || KICK_STATES.includes(G.state))) { cam.yaw = yawTV(); return; }   // (7.4.14) TV: ângulo fixo
+  if (cam.mode === 'tv' && !tvEmTerceira() && (G.state === 'play' || G.state === 'trap' || KICK_STATES.includes(G.state))) { cam.yaw = yawTV(); return; }   // (7.4.14) TV: ângulo fixo
   if (KICK_STATES.includes(G.state)) {
     // Mirando: a câmera vai virando devagar para o lado da seta (75% do caminho), mostrando para
     // onde você aponta sem tirar você da tela. A seta não depende disso (usa a câmera do começo).
@@ -13924,7 +13964,7 @@ function cameraGoal() {
     const vl = Math.hypot(vx, vz) || 1; vx /= vl; vz /= vl;
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
-  if (cam.mode === 'tv' && !(G.kick && G.kick.throwIn)) return cameraTV();   // (7.4.14)
+  if (cam.mode === 'tv' && !tvEmTerceira()) return cameraTV();   // (7.4.14); (7.4.15) bola parada: 3ª pessoa
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
   let back = c.back * AJ.camDist, h = c.height * AJ.camAlt + (cam.mode === 'livre' ? cam.livreH || 0 : 0), ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
   if (G.kick && KICK_STATES.includes(G.state)) {

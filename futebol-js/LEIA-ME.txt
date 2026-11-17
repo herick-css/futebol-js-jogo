@@ -37,6 +37,14 @@ ARQUIVOS
                           180, 64 quadros a 24 por segundo + meio segundo parado; criarVinhetaHarbor); ela acorda o som em
                           qualquer toque (touchend/click no iPhone) e toca a trilha do ponto em que está; a tampa segura os
                           toques até sumir (o toque de pular caía nas bandeiras do idioma).
+                          (7.4.15) Na câmera de TV, falta, lateral, escanteio e pênalti usam a câmera de 3ª pessoa (atrás de quem
+                          bate); volta para a TV quando a bola rola. FÔLEGO: +6 s de corrida para todos (CORRIDA_EXTRA) e quem tem
+                          resistência acima de 7 ganha até +5 s no 10; no time inteiro, quem você controla corre com a
+                          resistência e a velocidade DELE. GOLEIRO: bola no canto longe dele não é mais só "assistir" — ele corre
+                          e mergulha (o alcance do voo cresce com a habilidade de goleiro); chute rápido, perto e no canto passa
+                          mais, lento e de longe ele pega; só de vez em quando ele fica parado vendo a bola entrar.
+                          CARREGADOR DO CANVA 1.2 (canva-carregador.html): a espera é a tela branca com o triângulo piscando, igual
+                          à da vinheta nova (a 1.1 mostrava o rosto do Harbor antigo enquanto baixava o jogo)
                           COMEMORAÇÕES: pernas para o lado com o sinal certo (não cruzam mais), o boneco sempre com o pé no
                           chão (celebNoChao; voo só nos pulos de verdade) e o Coraçãozinho sem as mãos na cabeça. CONTROLES:
                           lista de todos os botões (Em jogo e Ao receber) e o editor com a aba "Ao receber" (r1..r3: dominar,
