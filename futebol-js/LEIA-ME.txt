@@ -29,6 +29,18 @@ ARQUIVOS
                           livre): o controle passa para quem pega a bola, para quem vai receber o passe, para o mais perto na
                           marcação e para quem cobra; botão TROCAR (R); p.voce marca o seu personagem. CÂMERA LIVRE (a 3ª do
                           botão CÂM): arraste o lado direito da tela para girar e subir/descer
+                          (7.4.14) CÂMERA DE TV (estilo Winning Eleven: de lado, alta e aberta; o seu time ataca para a direita)
+                          é a padrão no time inteiro; o botão CÂM troca TV → bola → frente → livre. Câmera livre com o eixo
+                          normal (arrastar para a direita olha para a direita). DE PRIMEIRA errado (fora da faixa ou sem tempo)
+                          é FURÃO: a perna passa, a bola segue e entra uma cena curta (1,5 s, dois ângulos, câmera lenta). A
+                          ABERTURA é a VINHETA NOVA do Harbor (a intro dos vídeos do canal em pixel art preto e branco, 320 x
+                          180, 64 quadros a 24 por segundo + meio segundo parado; criarVinhetaHarbor); ela acorda o som em
+                          qualquer toque (touchend/click no iPhone) e toca a trilha do ponto em que está; a tampa segura os
+                          toques até sumir (o toque de pular caía nas bandeiras do idioma).
+                          COMEMORAÇÕES: pernas para o lado com o sinal certo (não cruzam mais), o boneco sempre com o pé no
+                          chão (celebNoChao; voo só nos pulos de verdade) e o Coraçãozinho sem as mãos na cabeça. CONTROLES:
+                          lista de todos os botões (Em jogo e Ao receber) e o editor com a aba "Ao receber" (r1..r3: dominar,
+                          passe e chute de primeira, cabecear, finalizar)
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -113,7 +125,8 @@ ARQUIVOS
                           (7.4.10) Configurações com a bola (as 15 premium) e as duas comemorações; no confronto, os
                           quadradinhos do uniforme 1 e 2 de cada time; a partida salva no intervalo fica em futebolJs.livre.v1.pausa; (7.4.11) o escudo da garagem no meio das colunas
                           (7.4.13) Depois do tipo de jogo: controlar UM jogador ou o TIME INTEIRO (também nas configurações
-                          da partida); a tela do confronto cabe inteira na tela, sem rolar (as outras abas rolam por dentro)
+                          da partida). (7.4.14) O confronto voltou ao tamanho de antes (com rolagem); no hino, a mão no peito
+                          (o antebraço vem para dentro e encosta na camisa)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

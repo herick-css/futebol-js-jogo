@@ -153,32 +153,13 @@
 #lvLegenda { position: fixed; z-index: 44; left: 50%; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); max-width: calc(100% - 160px); text-align: center;
   font: 700 clamp(12px, 2.6vh, 17px)/1.25 var(--font-display); letter-spacing: .08em; color: #fff; text-shadow: 0 2px 0 #000, 0 0 6px #000; pointer-events: none; }
 @media (max-height: 460px) { #livre .lvPalco { height: 56vh; } #livre .lvTime { min-height: 88px; } #livre .lvTipo { min-height: 72px; } }
-/* (7.4.13) o confronto cabe na tela inteira, sem rolar: o palco (a encarada) estica no espaço que sobra; as outras abas rolam por dentro */
-#livre.lvEncaixe { overflow: hidden; touch-action: none; display: flex; flex-direction: column; }
-#livre.lvEncaixe .lvCaixa { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; height: 100%; width: min(980px, 100%); }
-#livre.lvEncaixe .lvCaixa > * { flex: 0 0 auto; }
-#livre.lvEncaixe .lvCaixa > [data-pag] { flex: 1 1 auto; min-height: 0; overflow-y: auto; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
-#livre.lvEncaixe .lvCaixa > [data-pag][hidden] { display: none; }
-#livre.lvEncaixe .lvCaixa > [data-pag="0"] { display: flex; flex-direction: column; overflow: hidden; touch-action: none; }
-#livre.lvEncaixe .lvCaixa > [data-pag="0"][hidden] { display: none; }
-#livre.lvEncaixe .lvPalco { flex: 1 1 auto; height: auto; min-height: 110px; margin: 0; }
-#livre.lvEncaixe .lvTopo { margin-bottom: 6px; } #livre.lvEncaixe .lvSub { margin: -2px 0 6px; } #livre.lvEncaixe .lvAbas { margin-bottom: 6px; } #livre.lvEncaixe .lvBtns { margin-top: 6px; }
-@media (max-height: 520px) {
-  #livre.lvEncaixe { padding-top: calc(4px + env(safe-area-inset-top, 0px)); padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)); }
-  #livre.lvEncaixe .lvCaixa { --p: var(--p2, 2px); padding: 2px 4px 4px; }
-  #livre.lvEncaixe .lvTopo { margin-bottom: 3px; } #livre.lvEncaixe .lvTopo .pxBtn { min-height: 30px; min-width: 80px; font-size: 11px; }
-  #livre.lvEncaixe .lvTit { font-size: 14px; } #livre.lvEncaixe .lvSub { margin: -2px 0 3px; font-size: 11px; }
-  #livre.lvEncaixe .lvAbas { margin-bottom: 4px; gap: 4px; } #livre.lvEncaixe .lvAbas .pxBtn { min-height: 28px; min-width: 0; padding: 2px 8px; font-size: 11px; }
-  #livre.lvEncaixe .lvBtns { margin-top: 4px; gap: 6px; } #livre.lvEncaixe .lvBtns .pxBtn { min-height: 34px; font-size: 12px; } #livre.lvEncaixe .lvBtns .pxBtn.pxPrim { min-height: 38px; font-size: 14px; }
-  #livre.lvEncaixe .lvKit { width: 32px; height: 32px; }
-}
 @media (orientation: portrait) { #livre .lvCampo { height: 150px; } }`;
     document.head.appendChild(st);
   }
   function tela(html) {
     css();
     if (!raiz) { raiz = document.createElement('div'); raiz.id = 'livre'; (document.getElementById('raizJogo') || document.body).appendChild(raiz); }
-    raiz.hidden = false; raiz.classList.remove('lvEncaixe'); raiz.innerHTML = html; raiz.scrollTop = 0;
+    raiz.hidden = false; raiz.innerHTML = html; raiz.scrollTop = 0;
     return raiz;
   }
   function esconder() { if (raiz) { raiz.hidden = true; raiz.innerHTML = ''; } }
@@ -626,7 +607,7 @@
     for (;;) {
       const a = m.a, b = m.b, kc = m.casa ? a : b, kf = m.casa ? b : a, ta = TD(kc) || TV(kc), tb = TD(kf) || TV(kf);
       const ABAS = [T('Confronto'), T('Os times'), T('Escalações'), T('Desfalques')];
-      const el = tela('<div class="lvCaixa lvConf">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
+      const el = tela('<div class="lvCaixa">' + topo(m.comp) + '<p class="lvSub">' + escH([m.info, m.estadio].filter(Boolean).join(' · ')) + '</p>' +
         '<div class="lvAbas">' + ABAS.map((x, i) => '<button type="button" class="pxBtn' + (i ? '' : ' on') + '" data-a="aba' + i + '">' + escH(x) + '</button>').join('') + '</div>' +
         '<div data-pag="0"><div class="lvPalco" style="--c1:' + ta.uni[0] + ';--c2:' + tb.uni[0] + '"><canvas></canvas>' +
         '<div class="lado a"><img src="' + urlT(kc) + '" alt=""><b>' + escH(ta.nome) + '</b><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(kc), 10 - estrelasT(kc)) + '</span><small class="lvMed">' + escH(Tf('média {0}', Math.round(forcaT(kc).media * 10))) + '</small><span class="lvTag' + (m.neutro ? ' neutro' : '') + '">' + escH(T(m.neutro ? 'NEUTRO' : 'CASA')) + '</span>' + htmlKits(kc, kits) + '</div>' +
@@ -637,7 +618,6 @@
         '<div data-pag="3" hidden><div class="lvOpc">' + cardDesfalques(kc, m.S) + cardDesfalques(kf, m.S) + '</div></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn" data-a="cfg">' + escH(T('Configurações')) + '</button>' + (m.tabela ? '<button type="button" class="pxBtn" data-a="tab">' + escH(T(m.tabelaNome || 'Classificação')) + '</button>' : '') +
         '<button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T('JOGAR')) + ' ▶</button></div></div>');
-      el.classList.add('lvEncaixe');                                   // (7.4.13) a tela do confronto cabe inteira, sem rolar
       const uniDe = () => ({ a: unisDe(m.a)[kits[m.a]], b: unisDe(m.b)[kits[m.b]] });
       let palco = encarada(el.querySelector('.lvPalco canvas'), Object.assign({}, m, { cfg, uni: uniDe() }));
       let r;
@@ -810,7 +790,10 @@
       try { usarCotovelos(m, 0, 0); } catch (e) { /* nada */ }
     } else if (i % 3 === 1) {                                           // a mão direita no peito
       m.bracoE.rotation.set(0.1, 0, 0.05); try { usarCotovelo(m.bracoE, 0, 0); } catch (e) { /* nada */ }
-      m.bracoD.rotation.set(0.42, 0, 0.5); try { usarCotovelo(m.bracoD, 0, 2.0); } catch (e) { /* nada */ }
+      // (7.4.14) o antebraço vem PARA DENTRO (cotovelo 0,8 para dentro e 1,4 para a frente) e a mão encosta no peito, sem atravessar
+      //   (medido: a mão fica 0,24 m à frente do meio do corpo, encostada na camisa). Antes ele só dobrava para a frente: a mão subia
+      //   do lado do ombro, apontando para fora.
+      m.bracoD.rotation.set(0.5, 0, 0.35); try { usarCotovelo(m.bracoD, 0.8, 1.4); } catch (e) { /* nada */ }
     } else {                                                            // as mãos juntas nas costas
       m.bracoE.rotation.set(-0.04, 0, -0.36); m.bracoD.rotation.set(0.04, 0, -0.36);
       try { usarCotovelo(m.bracoE, -1.35, -0.15); usarCotovelo(m.bracoD, 1.35, -0.15); } catch (e) { /* nada */ }

@@ -61,7 +61,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.13';
+const VERSAO_JOGO = '7.4.14';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -994,180 +994,269 @@ function ajustarArea() {
 })();
 
 // ---------------------------------------------------------------------
-// ABERTURA (a primeira coisa na tela): o rosto do Harbor em pixel art e o nome embaixo, numa animação curta com sons.
-//   Começa em preto e branco, parado (como a vinheta desenhada à mão). No primeiro toque/tecla (o navegador só solta o som depois
-//   de um gesto) a cor entra: o rosto quica, os olhos saltam, a baba escorre, pinga, e as letras de HARBOR pulam uma a uma, cada
-//   uma com a sua nota; fecha com um acorde. Sem toque em 5 s, toca assim mesmo (o som sai se o navegador deixar). Depois de
-//   começar, outro toque pula. A tampa cobre o jogo desde já (o menu não aparece por baixo); Abertura.tocar(aoFim) roda a animação.
-//   Desenho: tela de 240 x 135 ampliada sem suavizar. Sons: sintetizados (osciladores), respeitando o mudo do jogo.
+// ABERTURA (a primeira coisa na tela): a vinheta do Harbor, a mesma intro dos vídeos do canal, em pixel art. (7.4.14: a vinheta nova)
+//   O navegador só solta o som depois de um gesto: até o primeiro toque/tecla a tela fica branca com um triângulo piscando.
+//   Sem toque em 5 s, toca assim mesmo (o som sai se o navegador deixar). Depois de começar, outro toque pula.
+//   A tampa cobre o jogo desde já (o menu não aparece por baixo); Abertura.tocar(aoFim) roda a animação.
+//   Desenho: tela de 320 x 180 ampliada sem suavizar. Sons: sintetizados (osciladores), respeitando o mudo do jogo.
 // ---------------------------------------------------------------------
+// Vinheta do Harbor: refeita da intro desenhada à mão dos vídeos (64 quadros a 24 por segundo), em pixel art preto e branco.
+//   O rosto nasce de um ponto, o nome aparece, os olhos piscam, a baba escorre, ele dá uma piscadela com estrelinha e a gota
+//   cai em cima do B. As medidas são de uma tela de 240 x 135; a abertura usa 320 x 180 (a escala acompanha, o pixel fica mais fino).
+//   Desenho: as formas são traçadas suaves numa tela pequena e depois viram pixel puro (tinta ou papel, sem meio-termo).
+//   O nome entra com pontilhado (o "esmaecer" de pixel art).
+function criarVinhetaHarbor(W, H) {
+  const S = W / 240, FPS = 24, NQ = 64, SEGURA = 0.5, DUR = NQ / FPS + SEGURA;
+  const CX = 122 * S, CY = 48.8 * S, R = 27.7;
+  const TINTA = [20, 20, 20], PAPEL = [255, 255, 255];
+  const nova = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+  const cvCena = nova(), cvNome = nova(), gCena = cvCena.getContext('2d', { willReadFrequently: true }), gNome = cvNome.getContext('2d', { willReadFrequently: true });
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const chave = (tab, n) => {                                   // tabela {quadro: valor}; entre um e outro, interpola
+    const ks = Object.keys(tab).map(Number).sort((a, b) => a - b);
+    if (n <= ks[0]) return tab[ks[0]]; if (n >= ks[ks.length - 1]) return tab[ks[ks.length - 1]];
+    for (let i = 1; i < ks.length; i++) if (n <= ks[i]) { const a = ks[i - 1], b = ks[i], u = (n - a) / (b - a), va = tab[a], vb = tab[b]; return Array.isArray(va) ? va.map((v, j) => v + (vb[j] - v) * u) : va + (vb - va) * u; }
+    return tab[ks[0]];
+  };
+  // ---- o quadro n (1 a 64), como na vinheta original
+  const CRESCE = { 2: 0, 3: 0.05, 4: 0.1, 5: 0.17, 6: 0.35, 7: 0.485, 8: 0.62, 9: 0.766, 10: 0.847, 11: 0.936, 12: 0.973, 13: 1 };
+  const ESTRELA = { 52: [-26.6, -5.3, 3.4, 0], 53: [-29, -8.8, 4.9, -8], 54: [-32.3, -12.6, 6.6, -16], 55: [-34.7, -16, 8.4, -20], 56: [-36.6, -16, 8.4, -14], 57: [-37.5, -16.3, 7.5, -8], 58: [-39.4, -17.2, 6.6, -14], 59: [-40.3, -18.2, 5, -18], 60: [-41.6, -18.8, 3.4, -12], 61: [-42.6, -19.3, 2, -8], 62: [-43.1, -19.7, 1.1, -4] };
+  const BOCA_ABRE = { 9: [4.2, 2.2], 10: [5.2, 3], 11: [6.4, 3.8], 12: [5.8, 3.2] };
+  function estado(n) {
+    const e = { s: n < 3 ? 0 : chave(CRESCE, n), nome: n < 11 ? 0 : n === 11 ? 0.3 : n === 12 ? 0.65 : 1,
+      olhoE: 'aberto', olhoD: 'aberto', olharE: [-0.3, -0.3], olharD: [0.22, -0.04], boca: 'sorriso', tamBoca: [6.6, 3.8], baba: 0, gota: null, respingo: -1, estrela: null };
+    if (BOCA_ABRE[n]) { e.boca = 'aberta'; e.tamBoca = BOCA_ABRE[n]; }
+    if (n >= 14 && n <= 51) { e.boca = 'aberta'; e.baba = n <= 15 ? 0 : n <= 19 ? [2, 3.4, 4.2, 4.6][n - 16] : n <= 50 ? 4.6 + Math.sin(n * 0.7) * 0.3 : 7; }
+    if (n >= 52) e.boca = 'bico';
+    if (n === 20) { e.olhoE = e.olhoD = 'meio'; e.olharE = [-0.55, 0.1]; e.olharD = [0.5, 0.15]; }
+    if (n === 21) e.olhoE = e.olhoD = 'fechado';
+    if (n === 22) { e.olhoE = 'quase'; e.olhoD = 'meio'; e.olharD = [0.2, 0.1]; }
+    if (n === 51) { e.olhoE = 'meio'; e.olharE = [-0.5, 0.1]; }
+    if (n >= 52) e.olhoE = 'piscada';
+    if (n === 52) e.gota = 20.3; else if (n === 53) e.gota = 32;
+    if (n >= 54) e.respingo = n - 54;
+    if (n >= 52 && n <= 62) e.estrela = ESTRELA[n];
+    return e;
+  }
+  // ---- o rosto (coordenadas da tela de 240, com o centro do rosto em 0,0)
+  let ALVO = null, GX = 3.4;                                    // onde a gota cai (alto da haste do B) e a coluna da baba
+  function rosto(g, e) {
+    const s = e.s; if (s <= 0) return;
+    g.setTransform(S * s, 0, 0, S * s, CX, CY);
+    const lw = (b) => Math.max(b, 0.95 / (S * s));
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#000'; g.fillStyle = '#fff';
+    g.beginPath(); g.arc(0, 0, R, 0, Math.PI * 2); g.fill(); g.lineWidth = lw(2.1); g.stroke();
+    const olho = (x, y, r, modo, olhar) => {
+      g.lineWidth = lw(1.6);
+      if (modo === 'fechado') { g.beginPath(); g.moveTo(x - r * 0.95, y + 0.2); g.quadraticCurveTo(x, y + 1.4, x + r * 0.95, y); g.stroke(); return; }
+      if (modo === 'piscada') {                                       // o traço grosso da piscadela, afinando para a direita
+        g.lineWidth = lw(2.5); g.beginPath(); g.moveTo(-26.2, -3.4); g.quadraticCurveTo(-22, -0.6, -18.5, -0.9); g.stroke();
+        g.lineWidth = lw(1.9); g.beginPath(); g.moveTo(-18.5, -0.9); g.quadraticCurveTo(-14, -1.6, -10.4, -5); g.stroke(); return;
+      }
+      const ry = modo === 'meio' ? r * 0.5 : modo === 'quase' ? r * 0.8 : r, pr = r * 0.57;
+      g.save(); g.beginPath(); g.ellipse(x, y + (r - ry) * 0.35, r, ry, 0, 0, Math.PI * 2); g.fill(); g.clip();
+      const px = x + olhar[0] * r, py = y + olhar[1] * r + (modo === 'meio' ? r * 0.25 : 0);
+      g.fillStyle = '#000'; g.beginPath(); g.arc(px, py, pr, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(px - pr * 0.38, py - pr * 0.38, Math.max(pr * 0.3, 0.6 / (S * s)), 0, Math.PI * 2); g.fill();
+      g.restore();
+      g.beginPath(); g.ellipse(x, y + (r - ry) * 0.35, r, ry, 0, 0, Math.PI * 2); g.stroke();
+      if (modo === 'meio') { g.lineWidth = lw(2.2); g.beginPath(); g.moveTo(x - r, y + (r - ry) * 0.35); g.quadraticCurveTo(x, y + (r - ry) * 0.35 - ry * 1.9, x + r, y + (r - ry) * 0.35); g.stroke(); }
+    };
+    olho(-16.9, -3.9, 7.8, e.olhoE, e.olharE);
+    olho(15.9, 0, 8.4, e.olhoD, e.olharD);
+    // a franja: o traço em "M" que liga um olho ao outro
+    g.lineWidth = lw(1.6); g.beginPath();
+    if (e.olhoE === 'piscada') { g.moveTo(-8.4, -5.6); g.lineTo(-3.9, -6.9); g.stroke(); g.beginPath(); g.moveTo(-2.4, -7.6); }
+    else { g.moveTo(-9.5, -3.6); g.quadraticCurveTo(-4.6, -5.6, -2.6, -7.5); }
+    g.quadraticCurveTo(-0.6, -9.6, 0.9, -11.6); g.lineTo(4.4, -5.8); g.lineTo(9.3, -13.4); g.quadraticCurveTo(10.6, -10.8, 11.6, -8.4); g.stroke();
+    // boca
+    const bx = 0, by = 10.3;
+    if (e.boca === 'sorriso') { g.lineWidth = lw(1.6); g.beginPath(); g.moveTo(bx - 5.4, by - 3.4); g.quadraticCurveTo(bx, by + 0.4, bx + 5.2, by - 3.6); g.stroke(); }
+    else {
+      const [rx, ry] = e.boca === 'bico' ? [5.6, 3.3] : e.tamBoca;
+      g.fillStyle = '#000'; g.beginPath(); g.ellipse(bx, by, rx, ry, 0, 0, Math.PI * 2); g.fill();
+      g.beginPath(); g.ellipse(bx - rx * 0.42, by - ry * 0.35, rx * 0.5, ry * 0.75, -0.3, 0, Math.PI * 2); g.ellipse(bx + rx * 0.42, by - ry * 0.35, rx * 0.5, ry * 0.75, 0.3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff'; g.beginPath();
+      if (e.boca === 'bico') g.ellipse(bx + 0.4, by + 0.3, rx * 0.3, Math.max(0.55, ry * 0.17), 0, 0, Math.PI * 2);
+      else g.ellipse(bx + rx * 0.18, by + ry * 0.32, rx * 0.5, Math.max(0.6, ry * 0.26), 0, 0, Math.PI * 2);
+      g.fill();
+    }
+    // a baba (um pingo em U, contornado, pendurado no canto da boca) e a gota que solta
+    if (e.baba > 0) {
+      const fx = GX, fy = by + 1.4, L = e.baba;
+      g.lineWidth = lw(4.6); g.beginPath(); g.moveTo(fx, fy); g.lineTo(fx, fy + L); g.stroke();
+      g.strokeStyle = '#fff'; g.lineWidth = lw(2); g.beginPath(); g.moveTo(fx, fy + 2); g.lineTo(fx, fy + L); g.stroke(); g.strokeStyle = '#000';
+    }
+    if (e.gota != null) {
+      g.fillStyle = '#fff'; g.lineWidth = lw(1.3); g.beginPath(); g.ellipse(GX, e.gota, 1.6, 2.6, 0, 0, Math.PI * 2); g.fill(); g.stroke();
+    }
+    // a estrelinha da piscadela
+    if (e.estrela && e.estrela[2] > 0.4) {
+      const [x, y, r, giro] = e.estrela, a0 = -Math.PI / 2 + giro * Math.PI / 180;
+      g.fillStyle = '#fff'; g.lineWidth = lw(Math.min(1.5, 0.45 + r * 0.14)); g.beginPath();
+      for (let i = 0; i < 10; i++) { const a = a0 + i * Math.PI / 5, rr = i % 2 ? r * 0.44 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+      g.closePath(); g.fill(); g.stroke();
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // ---- o nome: letras gordinhas feitas de traço grosso (preto) com o miolo branco e uma sombra embaixo à esquerda
+  const LETRAS = {
+    H: (p) => { p.moveTo(0, 0); p.lineTo(0, 1); p.moveTo(1, 0); p.lineTo(1, 1); p.moveTo(0, 0.5); p.lineTo(1, 0.5); },
+    A: (p) => { p.moveTo(0, 1); p.lineTo(0, 0.4); p.quadraticCurveTo(0, 0, 0.5, 0); p.quadraticCurveTo(1, 0, 1, 0.4); p.lineTo(1, 1); p.moveTo(0, 0.6); p.lineTo(1, 0.6); },
+    R: (p) => { p.moveTo(0, 1); p.lineTo(0, 0); p.lineTo(0.5, 0); p.quadraticCurveTo(1, 0, 1, 0.26); p.quadraticCurveTo(1, 0.5, 0.5, 0.5); p.lineTo(0, 0.5); p.moveTo(0.42, 0.5); p.lineTo(1, 1); },
+    B: (p) => { p.moveTo(0, 0); p.lineTo(0, 1); p.lineTo(0.55, 1); p.quadraticCurveTo(1, 1, 1, 0.74); p.quadraticCurveTo(1, 0.5, 0.5, 0.5); p.lineTo(0, 0.5); p.moveTo(0, 0); p.lineTo(0.48, 0); p.quadraticCurveTo(0.92, 0, 0.92, 0.25); p.quadraticCurveTo(0.92, 0.5, 0.48, 0.5); },
+    O: (p) => { p.moveTo(1, 0.5); p.ellipse(0.5, 0.5, 0.5, 0.5, 0, 0, Math.PI * 2); },
+  };
+  const NOME = 'HARBOR', BW = 10.2, BH = 17.4, PASSO = 18.2, TOPO = 90.6, GROSSO = 7.6, MIOLO = 4.9, SOMBRA = [-2.4, 3];
+  const JEITO = [[-6, 1.2, 1.04], [4, -0.6, 0.97], [-3, 1.4, 1], [5, -0.9, 1.05], [-5, 0.9, 0.96], [3, -0.2, 1.02]];   // cada letra meio torta e de um tamanho, como à mão
+  const ondeLetra = (i) => { const cx = CX / S + (i - (NOME.length - 1) / 2) * PASSO; return { cx, cy: TOPO + BH / 2 + JEITO[i][1], giro: JEITO[i][0] * Math.PI / 180, k: JEITO[i][2] }; };
+  const pontoNaLetra = (i, u, v) => { const L = ondeLetra(i), x = (u - 0.5) * BW * L.k, y = (v - 0.5) * BH * L.k; return [L.cx + x * Math.cos(L.giro) - y * Math.sin(L.giro), L.cy + x * Math.sin(L.giro) + y * Math.cos(L.giro)]; };
+  function nome(g) {
+    const passada = (dx, dy, larg, cor) => {
+      for (let i = 0; i < NOME.length; i++) {
+        const L = ondeLetra(i);
+        g.setTransform(S, 0, 0, S, 0, 0); g.translate(L.cx + dx, L.cy + dy); g.rotate(L.giro); g.scale(L.k, L.k); g.translate(-BW / 2, -BH / 2);
+        g.beginPath(); g.save(); g.scale(BW, BH); LETRAS[NOME[i]](g); g.restore();
+        g.lineWidth = larg; g.strokeStyle = cor; g.lineCap = 'round'; g.lineJoin = 'round'; g.stroke();
+      }
+    };
+    for (let k = 1; k <= 4; k++) passada(SOMBRA[0] * k / 4, SOMBRA[1] * k / 4, GROSSO, '#000');   // a sombra é um bloco (extrusão)
+    passada(0, 0, GROSSO, '#000');
+    passada(0, 0, MIOLO, '#fff');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // onde a gota cai: no alto da haste do B
+  function respingo(g, k) {                                     // k = quadros desde que a gota bateu
+    if (k < 0) return;
+    g.setTransform(S, 0, 0, S, 0, 0); g.strokeStyle = '#000'; g.fillStyle = '#fff'; g.lineCap = 'round'; g.lineJoin = 'round';
+    const [x, y] = ALVO, top = y - GROSSO / 2 + 0.4;
+    g.lineWidth = 1.3; g.beginPath();
+    if (k === 0) g.ellipse(x, top - 1.2, 2.2, 1.8, 0, 0, Math.PI * 2);          // a gota amassando no alto da letra
+    else if (k === 1) g.ellipse(x, top - 0.4, 3.2, 1.6, 0, 0, Math.PI * 2);     // espalhou
+    else { g.moveTo(x - 3.3, top + 1.2); g.lineTo(x - 3.1, top - 1); g.quadraticCurveTo(x, top - 1.6, x + 3.2, top - 1.1); g.lineTo(x + 3.3, top + 1.2); }   // virou uma tampinha
+    g.fill(); g.stroke();
+    if (k >= 1 && k <= 4) {
+      const r = [0, 0.95, 0.75, 0.5, 0.4][k], sobe = [0, 0, 1.2, 2, 2.4][k];
+      for (const [dx, dy] of [[-2.9, -3.4], [2.7, -3.8]]) { g.beginPath(); g.arc(x + dx, top + dy - sobe, r, 0, Math.PI * 2); if (k <= 2) { g.fill(); g.lineWidth = 0.9; g.stroke(); } else { g.fillStyle = '#000'; g.fill(); g.fillStyle = '#fff'; } }
+    }
+    g.setTransform(1, 0, 0, 1, 0, 0);
+  }
+  // ---- vira pixel: cada ponto é tinta ou papel; o nome usa pontilhado enquanto aparece
+  let quadroFeito = -1;
+  function quadro(gSaida, t, forcar) {
+    const n = Math.max(1, Math.min(NQ, Math.floor(t * FPS) + 1));
+    if (n === quadroFeito && !forcar) return n;
+    quadroFeito = n;
+    if (!ALVO) { ALVO = pontoNaLetra(3, 0, 0); GX = ALVO[0] - CX / S; }
+    const e = estado(n); e.n = n; e.nome = Math.min(1, e.nome);
+    gCena.setTransform(1, 0, 0, 1, 0, 0); gCena.clearRect(0, 0, W, H); gNome.setTransform(1, 0, 0, 1, 0, 0); gNome.clearRect(0, 0, W, H);
+    if (e.nome > 0) nome(gNome);
+    rosto(gCena, e);
+    respingo(gCena, e.respingo);
+    const a = gCena.getImageData(0, 0, W, H).data, b = gNome.getImageData(0, 0, W, H).data, saida = gSaida.createImageData(W, H), o = saida.data;
+    const lim = e.nome * 16;
+    for (let y = 0, i = 0; y < H; y++) for (let x = 0; x < W; x++, i += 4) {
+      let c = PAPEL;
+      if (b[i + 3] > 115 && (b[i] + b[i + 1] + b[i + 2]) < 384 && BAYER[(y & 3) * 4 + (x & 3)] < lim) c = TINTA;
+      if (a[i + 3] > 115) c = (a[i] + a[i + 1] + a[i + 2]) < 384 ? TINTA : PAPEL;
+      o[i] = c[0]; o[i + 1] = c[1]; o[i + 2] = c[2]; o[i + 3] = 255;
+    }
+    gSaida.putImageData(saida, 0, 0);
+    return n;
+  }
+  // ---- som (sintetizado a partir do som da vinheta): o "bu-úp" quando o rosto aparece e o brilho triplo da piscadela
+  function trilha(ctx, destino, t0, desde) {
+    desde = desde || 0;                                         // (7.4.14) a trilha começou atrasada: o que já passou não toca
+    t0 -= desde;
+    if (desde < 0.29) {
+      const vox = ctx.createOscillator(), corpo = ctx.createOscillator(), filtro = ctx.createBiquadFilter(), gv = ctx.createGain();
+      vox.type = 'sawtooth'; corpo.type = 'square'; filtro.type = 'lowpass'; filtro.frequency.value = 1900; filtro.Q.value = 7;
+      const cg = ctx.createGain(); cg.gain.value = 0.35;
+      for (const o of [vox, corpo]) { o.frequency.setValueAtTime(262, t0 + 0.29); o.frequency.setValueAtTime(262, t0 + 0.318); o.frequency.exponentialRampToValueAtTime(311, t0 + 0.352); }
+      gv.gain.value = 0.0001; gv.gain.setValueAtTime(0.0001, t0); gv.gain.setValueAtTime(0.0001, t0 + 0.288); gv.gain.exponentialRampToValueAtTime(0.42, t0 + 0.305); gv.gain.exponentialRampToValueAtTime(0.17, t0 + 0.338);
+      gv.gain.exponentialRampToValueAtTime(0.45, t0 + 0.37); gv.gain.exponentialRampToValueAtTime(0.19, t0 + 0.45); gv.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.5);
+      vox.connect(filtro); corpo.connect(cg); cg.connect(filtro); filtro.connect(gv); gv.connect(destino);
+      for (const o of [vox, corpo]) { o.start(t0 + 0.285); o.stop(t0 + 0.52); }
+    }
+    const PARC = [[700, 0.25, 0.2], [1995, 0.42, 0.16], [2373, 0.36, 0.14], [3165, 1, 0.22], [5751, 0.3, 0.07], [7016, 0.45, 0.09], [9001, 0.18, 0.05]];
+    [[2.07, 1, 1], [2.12, 0.8, 1], [2.17, 0.75, 1.4]].forEach(([tt, vol, longo]) => {
+      if (tt < desde) return;
+      for (const [f, amp, dec] of PARC) {
+        const o = ctx.createOscillator(), gg = ctx.createGain(), ti = t0 + tt; o.type = 'sine'; o.frequency.value = f;
+        gg.gain.setValueAtTime(0.0001, ti); gg.gain.exponentialRampToValueAtTime(0.2 * vol * amp, ti + 0.003); gg.gain.exponentialRampToValueAtTime(0.0001, ti + dec * longo);
+        o.connect(gg); gg.connect(destino); o.start(ti); o.stop(ti + dec * longo + 0.02);
+      }
+    });
+  }
+  return { W, H, FPS, NQ, DUR, quadro, trilha };
+}
 const Abertura = (() => {
-  const W = 240, H = 135, CX = 120, CY = 50, R = 30;
+  const W = 320, H = 180, V = criarVinhetaHarbor(W, H);
   const el = document.createElement('div'); el.id = 'abertura';
   el.style.cssText = 'position:fixed;inset:0;z-index:60;background:#ffffff;display:grid;place-items:center;overflow:hidden;touch-action:none;';
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   cv.style.cssText = 'width:min(100%, calc(100 * var(--avh, 1vh) * 16 / 9));height:auto;aspect-ratio:16/9;image-rendering:pixelated;image-rendering:crisp-edges;display:block;';
   el.appendChild(cv); raizJogo.appendChild(el);
   const g = cv.getContext('2d');
-  const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), Math.max(1, Math.round(w)), Math.max(1, Math.round(h))); };
-  // disco em pixels (linha a linha); f(x, y) opcional decide a cor de cada ponto
-  function disco(cx, cy, r, cor, f) {
-    for (let y = -Math.ceil(r); y <= Math.ceil(r); y++) for (let x = -Math.ceil(r); x <= Math.ceil(r); x++) {
-      if (x * x + y * y > r * r) continue;
-      const c = f ? f(x, y) : cor; if (c) px(cx + x, cy + y, 1, 1, c);
-    }
+  // espera pelo toque: papel branco e um triângulo piscando embaixo
+  function espera(t) {
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+    if (Math.floor(t * 2.5) % 2 === 0) { g.fillStyle = '#141414'; const e = W / 240; for (let i = 0; i < 3; i++) g.fillRect(Math.round(W / 2 - e + i * e), Math.round(H - 8 * e + i * e), Math.ceil(e), Math.ceil((5 - 2 * i) * e)); }
   }
-  const anel = (cx, cy, r, cor) => disco(cx, cy, r + 0.5, null, (x, y) => (x * x + y * y >= (r - 0.6) * (r - 0.6) ? cor : null));
-  const TINTA = '#1c120c';
-  // a franja: a borda de baixo do cabelo (um "M" no meio, como no desenho)
-  const franja = (x) => { const a = Math.abs(x); return a < 4 ? -9 - (4 - a) * 1.6 : a < 9 ? -14 + (a - 4) * 1.1 : a < 15 ? -8.5 - (a - 9) * 0.5 : -11.5 + (a - 15) * 0.45; };
-  function rosto(cor, t, o) {                                           // cor: 0 = preto e branco … 1 = colorido
-    const col = (c, pb) => (cor >= 1 ? c : cor <= 0 ? pb : null);
-    const mix = (c, pb) => { if (cor >= 1) return c; if (cor <= 0) return pb; const a = parseInt(c.slice(1), 16), b = parseInt(pb.slice(1), 16), k = cor; const ch = (s) => Math.round(((b >> s) & 255) * (1 - k) + ((a >> s) & 255) * k); return 'rgb(' + ch(16) + ',' + ch(8) + ',' + ch(0) + ')'; };
-    void col;
-    const cy = CY + o.dy, sx = o.sx, sy = o.sy;                          // amassa e estica (quique)
-    const X = (x) => CX + x * sx, Y = (y) => cy + y * sy;
-    // cabeça
-    for (let y = -R; y <= R; y++) for (let x = -R; x <= R; x++) {
-      const d2 = x * x + y * y; if (d2 > R * R) continue;
-      const borda = d2 >= (R - 1.2) * (R - 1.2), cabelo = y < franja(x), sombra = (x - 9) * (x - 9) + (y - 9) * (y - 9) > (R - 3) * (R - 3) * 0.72;
-      let c;
-      if (borda) c = TINTA;
-      else if (cabelo) c = mix(((x + y * 2) % 9 + 9) % 9 < 2 ? '#8a4f2c' : y < -R + 9 && x < -4 ? '#7a4426' : '#5e321c', '#ffffff');
-      else c = mix(sombra ? '#ee9f7c' : y > 6 && Math.abs(x) > 12 && Math.abs(x) < 21 && y < 16 ? '#f9b79c' : '#f8cdaa', '#ffffff');
-      if (!borda && Math.abs(y - franja(x)) < 0.9 && Math.abs(x) < 26) c = TINTA;   // o traço da franja
-      px(X(x), Y(y), Math.ceil(sx), Math.ceil(sy), c);
-    }
-    // olhos (um para cada lado, de propósito)
-    const olho = (ex, ey, r, k, ax, ay) => {
-      if (k <= 0) return; const rr = r * k, x0 = X(ex), y0 = Y(ey);
-      disco(x0, y0, rr, '#ffffff', (x, y) => (x * x + y * y >= (rr - 1.1) * (rr - 1.1) ? TINTA : cor > 0 && x + y > rr * 0.9 ? mix('#d9dfe8', '#ffffff') : '#ffffff'));
-      const ix = x0 + ax * rr * 0.36, iy = y0 + ay * rr * 0.36;
-      disco(ix, iy, rr * 0.52, mix('#7a4a2a', '#1c120c')); disco(ix, iy, rr * 0.3, '#120a06');
-      px(ix - rr * 0.22, iy - rr * 0.3, Math.max(1, rr * 0.18), Math.max(1, rr * 0.18), '#ffffff');
-    };
-    olho(-23, -3, 12, o.olhoE, o.pE[0], o.pE[1]); olho(23, 2, 13, o.olhoD, o.pD[0], o.pD[1]);
-    // boca aberta e a baba
-    const bx = X(-2), by = Y(16), ab = o.boca;
-    if (ab > 0) {
-      for (let y = -3; y <= 3; y++) for (let x = -5; x <= 5; x++) { const d = (x * x) / 25 + (y * y) / (9 * ab * ab + 0.01); if (d <= 1) px(bx + x, by + y, 1, 1, d > 0.62 ? TINTA : y > 1 ? mix('#e8556a', '#ffffff') : mix('#4a1418', '#1c120c')); }
-      px(bx - 3, by - 3 * ab - 1, 6, 1, TINTA);
-    } else px(bx - 3, by, 6, 1, TINTA);
-    if (o.baba > 0) {                                                   // o fio de baba e a gota na ponta
-      const L = o.baba, fx = bx + 3, fy = by + 2;
-      px(fx, fy, 2, L, mix('#cfeaff', '#ffffff')); px(fx - 1, fy, 1, L, TINTA); px(fx + 2, fy, 1, L, TINTA);
-      disco(fx + 0.5, fy + L, 2.2, mix('#e6f5ff', '#ffffff'), (x, y) => (x * x + y * y >= 2.2 ? TINTA : mix('#e6f5ff', '#ffffff')));
-    }
-    if (o.gota) { const q = o.gota; disco(q.x, q.y, 2.2, null, (x, y) => (x * x + y * y >= 2.2 ? TINTA : mix('#e6f5ff', '#ffffff'))); }
-  }
-  // letras gordinhas (5 x 7), com contorno, sombra e brilho
-  const LETRA = { H: ['10001', '10001', '10001', '11111', '10001', '10001', '10001'], A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'], R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'], B: ['11110', '10001', '10001', '11110', '10001', '10001', '11110'], O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'] };
-  const NOME = 'HARBOR', CORES = [['#f7941d', '#ffc46b'], ['#ffd23a', '#fff0a0'], ['#e8483b', '#ff8d7e'], ['#3a9be8', '#8fd0ff'], ['#57c466', '#a8f0a8'], ['#b06be8', '#dcb4ff']];
-  function letra(ch, x0, y0, e, cor, k) {                               // e = tamanho do "pixelão"; k = escala do pulo (0..1+)
-    const M = LETRA[ch], w = 5 * e, h = 7 * e, kk = Math.max(0.05, k), ox = x0 + w * (1 - kk) / 2, oy = y0 + h * (1 - kk);
-    const cel = (dx, dy, c, f) => { for (let r = 0; r < 7; r++) for (let q = 0; q < 5; q++) if (M[r][q] === '1') { const cc = f ? f(r, q) : c; px(ox + (q * e + dx) * kk, oy + (r * e + dy) * kk, Math.ceil(e * kk), Math.ceil(e * kk), cc); } };
-    if (cor) cel(3, 3, '#1c120c');                                      // a sombra só na versão colorida (no traço preto e branco embolava)
-    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, 1], [-1, 1], [1, -1]].concat(cor ? [[2, 2]] : [])) cel(dx, dy, TINTA);
-    cel(0, 0, null, (r) => (cor ? (r < 2 ? cor[1] : cor[0]) : '#ffffff'));
-  }
-  // ---- sons (sintetizados)
-  let ctx = null, saida = null;
-  const mudo = () => { try { return localStorage.getItem('futebolJsMudo') === '1'; } catch (e) { return false; } };
+  // ---- som
+  let ctx = null, saida = null, aoAcordar = null;
+  // (7.4.14) o volume segue o GERAL das configurações (e o mudo de sempre)
+  const volume = () => { try { if (localStorage.getItem('futebolJsMudo') === '1') return 0; const v = JSON.parse(localStorage.getItem('futebolJs.volumes.v1') || 'null'); if (v && v.mudo && v.mudo.geral) return 0; return 0.5 * (v && v.vol && Number.isFinite(v.vol.geral) ? v.vol.geral : 1); } catch (e) { return 0.5; } };
+  // (7.4.14) o áudio nasce "suspenso" e só acorda num gesto (no iPhone, só no touchend/click); quando a animação começava sozinha
+  //   (5 s sem toque), a trilha era agendada com o áudio parado e se perdia. Agora qualquer gesto acorda o áudio e, assim que ele
+  //   roda, a trilha toca a partir do ponto em que a animação está.
   function ligarSom() {
-    try { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; ctx = new AC(); saida = ctx.createGain(); saida.gain.value = mudo() ? 0 : 0.5; saida.connect(ctx.destination); } if (ctx.state === 'suspended') ctx.resume(); } catch (e) { ctx = null; }
-  }
-  function tom(f0, f1, t, dur, tipo, vol, vib) {
-    if (!ctx || ctx.state !== 'running') return;
     try {
-      const o = ctx.createOscillator(), gn = ctx.createGain(), t0 = ctx.currentTime + t; o.type = tipo || 'sine';
-      o.frequency.setValueAtTime(f0, t0); if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
-      if (vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = vib; lg.gain.value = f0 * 0.06; l.connect(lg); lg.connect(o.frequency); l.start(t0); l.stop(t0 + dur); }
-      gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(vol || 0.3, t0 + 0.012); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-      o.connect(gn); gn.connect(saida); o.start(t0); o.stop(t0 + dur + 0.03);
-    } catch (e) { /* sem som */ }
-  }
-  const NOTAS = [262, 330, 392, 523, 659, 784];
-  const T_LETRA = 2.05, PASSO = 0.17, T_FIM = 3.35, DUR = 4.3;
-  function trilha() {
-    tom(170, 560, 0, 0.16, 'sine', 0.4); tom(560, 240, 0.16, 0.2, 'sine', 0.32);                 // boing
-    tom(950, 320, 0.55, 0.07, 'sine', 0.35); tom(760, 250, 0.78, 0.08, 'sine', 0.35);             // os olhos saltam
-    for (let i = 0; i < 4; i++) tom(1300 + (i % 2) * 260, 0, 0.98 + i * 0.07, 0.025, 'square', 0.1);   // os olhos procurando
-    tom(230, 150, 1.3, 0.3, 'sawtooth', 0.16, 11);                                                // "blé"
-    tom(500, 320, 1.45, 0.42, 'sine', 0.1);                                                       // a baba descendo
-    tom(1500, 720, 1.98, 0.09, 'sine', 0.35);                                                     // plip
-    NOTAS.forEach((f, i) => { tom(f, 0, T_LETRA + i * PASSO, 0.16, 'square', 0.13); tom(f * 2, 0, T_LETRA + i * PASSO, 0.12, 'triangle', 0.2); });
-    for (const f of [523, 659, 784, 1047]) { tom(f, 0, T_FIM, 0.75, 'triangle', 0.2); tom(f, 0, T_FIM, 0.45, 'square', 0.06); }   // acorde
-    tom(2100, 3100, T_FIM + 0.08, 0.18, 'sine', 0.1); tom(2600, 3600, T_FIM + 0.22, 0.16, 'sine', 0.08);
-  }
-  const suave = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
-  const pulo = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : 1 + Math.sin(x * Math.PI) * 0.35 * (1 - x) + (x - 1) * 0 + (x < 0.6 ? (x / 0.6) - 1 : 0) * (x < 0.6 ? 1 : 0));   // cresce, passa um pouco e assenta
-  function quadro(t, espera) {
-    const cor = espera ? 0 : suave(t / 0.4);
-    // fundo: papel branco na espera; depois, raios em dois tons girando devagar
-    if (cor <= 0) px(0, 0, W, H, '#ffffff');
-    else for (let y = 0; y < H; y += 3) for (let x = 0; x < W; x += 3) {
-      const a = Math.atan2(y - CY, x - CX) + t * 0.25, raio = Math.floor(((a / (Math.PI * 2)) * 16 + 160)) % 2;
-      const dentro = Math.hypot(x - CX, y - CY) < cor * 190;
-      px(x, y, 3, 3, dentro ? (raio ? '#2a1a4a' : '#35225c') : '#ffffff');
-    }
-    const o = { dy: 0, sx: 1, sy: 1, olhoE: 1, olhoD: 1, pE: [-0.5, -0.55], pD: [0.45, 0.5], boca: 0.55, baba: 5, gota: null };
-    let nLetras = 0, tL = 0;
-    if (espera) { const b = Math.floor(t * 2) % 8 === 7; if (b) { o.olhoE = o.olhoD = 0.92; } }
-    else {
-      // quique (0 a 0,5 s)
-      if (t < 0.5) { const u = t / 0.5, h = Math.abs(Math.sin(u * Math.PI * 1.5)) * (1 - u) * 16; o.dy = -h; const am = u < 0.12 ? 1 - u / 0.12 : 0; o.sx = 1 + am * 0.14; o.sy = 1 - am * 0.14; }
-      // os olhos saltam
-      o.olhoE = t < 0.55 ? 0.8 : 0.8 + 0.2 * pulo((t - 0.55) / 0.2) + (t < 0.75 ? Math.sin((t - 0.55) / 0.2 * Math.PI) * 0.25 : 0);
-      o.olhoD = t < 0.78 ? 0.8 : 0.8 + 0.2 * pulo((t - 0.78) / 0.2) + (t < 0.98 ? Math.sin((t - 0.78) / 0.2 * Math.PI) * 0.25 : 0);
-      if (t > 0.98 && t < 1.28) { const k = Math.floor((t - 0.98) / 0.07); o.pE = [[0.6, -0.4], [-0.6, 0.4], [0.5, 0.5], [-0.5, -0.55]][k % 4]; o.pD = [[-0.6, -0.3], [0.6, -0.5], [-0.5, 0.5], [0.45, 0.5]][k % 4]; }
-      // a boca abre e a baba escorre; a gota solta e cai até a linha do nome
-      o.boca = t < 1.3 ? 0.55 : 0.55 + 0.45 * suave((t - 1.3) / 0.15);
-      o.baba = t < 1.4 ? 5 : t < 1.85 ? 5 + suave((t - 1.4) / 0.45) * 9 : 5 + Math.max(0, 1 - (t - 1.85) / 0.25) * 3;
-      if (t >= 1.85 && t < 2.0) { const u = (t - 1.85) / 0.15; o.gota = { x: CX + 1.5, y: CY + 34 + u * u * 46 }; }
-      if (t > T_FIM) { const u = Math.min(1, (t - T_FIM) / 0.25); o.pE = [0.55 * u - 0.5 * (1 - u), 0.1]; o.pD = [-0.55 * u + 0.45 * (1 - u), 0.1]; o.dy = -Math.sin(Math.min(1, (t - T_FIM) / 0.35) * Math.PI) * 5; }   // vesgo no acorde
-      nLetras = t < T_LETRA ? 0 : Math.min(NOME.length, Math.floor((t - T_LETRA) / PASSO) + 1); tL = t;
-    }
-    rosto(cor, t, o);
-    // o nome
-    const e = 3, larg = 5 * e, vao = 4, total = NOME.length * larg + (NOME.length - 1) * vao, x0 = Math.round((W - total) / 2), y0 = 100;
-    for (let i = 0; i < NOME.length; i++) {
-      if (espera) { letra(NOME[i], x0 + i * (larg + vao), y0 + (i % 2 ? 1 : -1), e, null, 1); continue; }
-      if (i >= nLetras) continue;
-      const u = (tL - (T_LETRA + i * PASSO)) / 0.22, k = u >= 1 ? 1 : 1 + Math.sin(u * Math.PI) * 0.28 - (1 - u) * (1 - u);
-      const onda = tL > T_FIM ? Math.sin((tL - T_FIM) * 9 - i * 0.8) * Math.max(0, 1 - (tL - T_FIM) / 0.7) * 3 : 0;
-      letra(NOME[i], x0 + i * (larg + vao), y0 + (i % 2 ? 1 : -1) - onda, e, CORES[i], k);
-    }
-    if (!espera && t >= 1.98 && t < 2.2) { const u = (t - 1.98) / 0.22; for (const a of [-1, 0, 1]) px(CX + 1 + a * u * 9, 96 - Math.sin(u * Math.PI) * 6 + Math.abs(a) * 2, 2, 2, '#e6f5ff'); }   // respingo
-    if (!espera && t > T_FIM && t < T_FIM + 0.6) { const u = (t - T_FIM) / 0.6; for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, r = 20 + u * 60; px(CX + Math.cos(a) * r * 1.5, 70 + Math.sin(a) * r * 0.75, 2, 2, CORES[i % 6][1]); } }   // estrelinhas
-    if (espera && Math.floor(t * 2.5) % 2 === 0) { for (let i = 0; i < 3; i++) px(CX - 1 + i, 128 + i, 1, 5 - 2 * i, TINTA); }   // ▶ piscando: toque para começar
+      if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; ctx = new AC(); saida = ctx.createGain(); saida.gain.value = volume(); saida.connect(ctx.destination); ctx.onstatechange = () => { if (aoAcordar) aoAcordar(); }; }
+      if (ctx.state !== 'running' && ctx.state !== 'closed') { const p = ctx.resume(); if (p && p.then) p.then(() => { if (aoAcordar) aoAcordar(); }, () => {}); }
+    } catch (e) { ctx = null; }
   }
   let rodando = false, feito = false;
   function tocar(aoFim) {
     if (rodando || feito) { if (feito && aoFim) aoFim(); return; }
     rodando = true; ligarSom();
-    let fase = 'espera', t0 = performance.now(), tIni = 0, raf = 0, limite = null;
-    const comecar = () => { if (fase !== 'espera') return; ligarSom(); fase = 'anima'; tIni = performance.now(); clearTimeout(limite); el.style.transition = 'background-color 0.4s'; el.style.backgroundColor = '#2a1a4a'; const vai = () => trilha(); if (ctx && ctx.state !== 'running' && ctx.resume) ctx.resume().then(vai, vai); else vai(); };
+    let fase = 'espera', t0 = performance.now(), tIni = 0, raf = 0, limite = null, trilhaFeita = false;
+    const tentaTrilha = () => {                                         // toca a trilha uma vez, quando o áudio estiver rodando
+      if (trilhaFeita || fase !== 'anima' || !ctx || ctx.state !== 'running') return;
+      const passou = Math.max(0, (performance.now() - tIni) / 1000);
+      trilhaFeita = true;
+      if (passou > 2.3) return;                                          // acordou tarde demais: fica sem
+      try { V.trilha(ctx, saida, ctx.currentTime + 0.02, passou); } catch (e) { /* sem som */ }
+    };
+    aoAcordar = tentaTrilha;
+    const comecar = () => { if (fase !== 'espera') return; ligarSom(); fase = 'anima'; tIni = performance.now() + 20; clearTimeout(limite); tentaTrilha(); };
     const terminar = () => {
-      if (fase === 'fim') return; fase = 'fim'; cancelAnimationFrame(raf); feito = true; rodando = false;
+      if (fase === 'fim') return; fase = 'fim'; cancelAnimationFrame(raf); feito = true; rodando = false; aoAcordar = null;
       el.removeEventListener('pointerdown', toque); window.removeEventListener('keydown', tecla);
       try { if (aoFim) aoFim(); } catch (e) { console.error(e); }
-      el.style.transition = 'opacity 0.35s ease'; el.style.opacity = '0'; el.style.pointerEvents = 'none';
-      setTimeout(() => { el.remove(); try { if (ctx) ctx.close(); } catch (e) { /* nada */ } ctx = null; }, 900);
+      // (7.4.14) a tampa continua pegando os toques enquanto some: o toque que pulou a vinheta (e o clique que vem depois dele) caía
+      //   nas bandeiras da tela de idioma que já estava por baixo. Ela só sai depois de sumir de vez.
+      el.style.transition = 'opacity 0.35s ease'; el.style.opacity = '0';
+      setTimeout(() => { el.remove(); try { if (ctx) ctx.close(); } catch (e) { /* nada */ } ctx = null; }, 450);
     };
-    const toque = (ev) => { if (ev) ev.preventDefault(); if (fase === 'espera') comecar(); else if (fase === 'anima' && performance.now() - tIni > 600) terminar(); };
+    const engole = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+    for (const tipo of ['click', 'pointerup', 'touchend', 'mousedown', 'mouseup']) el.addEventListener(tipo, engole);
+    const acorda = () => { ligarSom(); tentaTrilha(); };               // o iPhone só deixa o áudio acordar no touchend / click
+    el.addEventListener('touchend', acorda, { passive: false }); el.addEventListener('click', acorda); el.addEventListener('pointerup', acorda);
+    const toque = (ev) => { if (ev) ev.preventDefault(); ligarSom(); if (fase === 'espera') comecar(); else if (fase === 'anima' && performance.now() - tIni > 600) terminar(); };
     const tecla = (ev) => { if (ev.key === 'Tab') return; toque(null); };
     el.addEventListener('pointerdown', toque); window.addEventListener('keydown', tecla);
     if (ctx && ctx.state === 'running') comecar(); else limite = setTimeout(comecar, 5000);   // o navegador já deixa tocar: começa direto
     const laco = () => {
       if (fase === 'fim') return;
       const agora = performance.now();
-      if (fase === 'espera') quadro((agora - t0) / 1000, true);
-      else { const t = (agora - tIni) / 1000; quadro(Math.min(t, DUR), false); if (t >= DUR) { terminar(); return; } }
+      if (fase === 'espera') espera((agora - t0) / 1000);
+      else { const t = Math.max(0, (agora - tIni) / 1000); V.quadro(g, Math.min(t, V.NQ / V.FPS - 0.001)); if (t >= V.DUR) { terminar(); return; } }
       raf = requestAnimationFrame(laco);
     };
-    quadro(0, true); raf = requestAnimationFrame(laco);
+    espera(0); raf = requestAnimationFrame(laco);
   }
-  quadro(0, true);
+  espera(0);
   return { tocar, el };
 })();
 
@@ -4355,13 +4444,14 @@ const CELEBRACOES = {
     [1.9, { aLx: 1.5, aRx: -1.5, cLx: -1.5708, cRx: 1.5708, lean: 0, y: -0.08, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }], [2.3, { aLx: 1.5, aRx: -1.5, cLx: -1.5708, cRx: 1.5708, y: -0.08, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }],
     [2.5, { aLx: 1.5, aRx: -1.5, cL: 1.5708, cR: 1.5708, tw: 0.6, cab: 0.2 }], [2.9, { aLx: 1.5, aRx: -1.5, cL: 1.5708, cR: 1.5708, tw: -0.6, cab: 0.2 }],
     [3.2, { aLz: 1.5708, aRz: 1.5708, cL: 1.5708, cR: 1.5708 }], [3.6, {}]] },
+  // (7.4.14) antebraços menos dobrados (cLx 1,55 → 1,3): as mãos entravam na cabeça
   coracao: { nome: 'Coraçãozinho', loja: true, dur: 3.0, giro: 0, swing: 0.3, vel: [[0, 3], [0.4, 0], [3, 0]], keys: [
     [0, {}],
-    [0.5, { aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, cab: 0.1 }],
-    [1.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: 0.12 }],
-    [1.5, { y: 0, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: -0.12 }],
-    [2.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06, roll: 0.12 }],
-    [2.6, { aLx: 2.45, aRx: -2.45, cLx: 1.55, cRx: -1.55, lean: 0.06 }],
+    [0.5, { aLx: 2.45, aRx: -2.45, cLx: 1.3, cRx: -1.3, lean: 0.06, cab: 0.1 }],
+    [1.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.3, cRx: -1.3, lean: 0.06, roll: 0.12 }],
+    [1.5, { y: 0, aLx: 2.45, aRx: -2.45, cLx: 1.3, cRx: -1.3, lean: 0.06, roll: -0.12 }],
+    [2.0, { y: 0.1, aLx: 2.45, aRx: -2.45, cLx: 1.3, cRx: -1.3, lean: 0.06, roll: 0.12 }],
+    [2.6, { aLx: 2.45, aRx: -2.45, cLx: 1.3, cRx: -1.3, lean: 0.06 }],
     [3.0, {}]] },
   telefone: { nome: 'Me liga', loja: true, dur: 3.2, giro: 0.5, swing: 3.2, vel: [[0, 3.2], [3.2, 2.2]], keys: [
     [0, {}],
@@ -4471,6 +4561,28 @@ const CELEBRACOES = {
     [3.6, {}]] },
   dancinha: { nome: 'Dancinha', loja: true, dur: 3.6, giro: 0, swing: 0, vel: [[0, 0], [3.6, 0]], keys: (() => { const K = [[0, {}]]; for (let i = 0; i < 10; i++) { const s = i % 2 ? 1 : -1, alto = i % 4 < 2; K.push([0.3 + i * 0.32, { y: i % 2 ? 0.08 : -0.08, roll: s * 0.14, tw: s * 0.25, aLz: alto ? 2.6 : 0.8, aRz: alto ? 2.6 : 0.8, aLx: 0.5 + s * 0.3, aRx: -0.5 + s * 0.3, cL: alto ? 0.4 : 1.4, cR: alto ? 0.4 : 1.4, lLx: s < 0 ? -0.35 : 0, lRx: s > 0 ? 0.35 : 0, jL: -0.3, jR: -0.3, lLz: 0.15, lRz: 0.15 }]); } K.push([3.6, {}]); return K; })() },
 };
+// (7.4.14) CORREÇÕES DAS COMEMORAÇÕES
+//   • pernas para o lado (lLx/lRx): os quadros-chave foram escritos com o sinal trocado — o "abrir" cruzava uma perna por dentro da
+//     outra (Soco no ar, Fortão, Estrelinha, Giro, Passinho, Dancinha). Aqui o sinal é desvirado (a cena do aquecimento, que usa o
+//     sinal certo, não passa por aqui).
+//   • no chão: depois da pose, o ponto mais baixo do boneco vai para o gramado (nem flutuando — a Reverência subia 0,4 m — nem
+//     entrando nele). Só nos pulos de verdade (voo: [início, fim] em segundos) ele fica no ar; pulinho = os saltinhos curtos da dança.
+for (const k of Object.keys(CELEBRACOES)) for (const [, q] of CELEBRACOES[k].keys) { if (q.lLx) q.lLx = -q.lLx; if (q.lRx) q.lRx = -q.lRx; }
+Object.assign(CELEBRACOES.mortal, { voo: [[0.6, 1.45]] });
+Object.assign(CELEBRACOES.giro, { voo: [[0.62, 1.15]] });
+Object.assign(CELEBRACOES.soco, { voo: [[0.64, 1.25]] });
+Object.assign(CELEBRACOES.peixinho, { voo: [[0.22, 0.55]] });
+Object.assign(CELEBRACOES.coracao, { pulinho: true });
+Object.assign(CELEBRACOES.dancinha, { pulinho: true });
+Object.assign(CELEBRACOES.passinho, { pulinho: true });
+function celebNoChao(m, c, t, P) {
+  m.raiz.updateMatrixWorld(true);
+  const piso = pisoDoBoneco(m.raiz, Infinity);
+  let w = 0;                                                          // 1 = no meio de um pulo (fica no ar); perto das bordas, vai e volta suave
+  for (const [a, b] of c.voo || []) w = Math.max(w, t >= a && t <= b ? 1 : clamp(1 - Math.min(Math.abs(t - a), Math.abs(t - b)) / 0.12, 0, 1));
+  const alvo = Math.max(c.pulinho ? clamp(P.y || 0, 0, 0.12) : 0, Math.max(0, piso) * w);
+  if (Math.abs(alvo - piso) > 0.002) { m.raiz.position.y += alvo - piso; m.raiz.updateMatrixWorld(true); }
+}
 // (7.1.9) aplica a pose de uma comemoração num boneco (a partida e a loja usam a mesma). base = { x, y, z } do boneco no chão; ang = para onde ele olha.
 const _vCel = typeof THREE !== 'undefined' ? new THREE.Vector3() : null, _eCel = typeof THREE !== 'undefined' ? new THREE.Euler() : null;
 function aplicarPoseCeleb(m, c, P, corre, base, ang) {
@@ -10005,10 +10117,52 @@ function baterDePrimeira(F) {
   if (G.offside) G.offside = null;
   G.kick = k; G.state = 'play';
   user.kickT = 0;
+  if (!k.primeira.ok) { furaoDePrimeira(k); return; }  // (7.4.14) errou a barra (ou demorou): FUROU — a perna passa e a bola segue
   executeUserKick();                                    // a mesma batida do passe/chute normal (com o erro maior de primeira)
   if (k.kind === 'pass') G.stats.passesPrimeira = (G.stats.passesPrimeira | 0) + 1; else G.stats.chutesPrimeira = (G.stats.chutesPrimeira | 0) + 1;
   fimRecepcao(); G.recvIgnore = 0.5; user.controlCd = Math.max(user.controlCd || 0, 0.35);
   if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;
+}
+
+// (7.4.14) FURÃO: errou o tempo do toque de primeira. A perna passa por cima (o chute sai no vento), a bola segue o caminho dela
+//   quase igual (um tiquinho desviada, sem dono) e entra uma cena CURTA em câmera lenta, com dois ângulos (de lado, bem baixo, e de
+//   frente) e o letreiro FURÃO. Antes o erro só deixava o toque mais torto — e dava para fazer gol errando a barra.
+const FURAO = { DUR: 1.5, CORTE: 0.75, LENTO: 0.3 };
+function furaoDePrimeira(k) {
+  const vx = ball.vx, vz = ball.vz, hs = Math.hypot(vx, vz) || 1, a = Math.atan2(vz, vx) + rand(-0.22, 0.22), v = Math.max(3, hs * rand(0.7, 0.85));
+  // a bola passa: continua para onde ia (sem dono), e você fica um tempinho sem poder pegar nela
+  Object.assign(ball, { vx: Math.cos(a) * v, vz: Math.sin(a) * v, vy: Math.max(0, ball.vy) * 0.5 + rand(0, 0.6), spinSide: 0, spinVert: 0, isShot: false, userShot: false, userPass: false, cruzamento: null });
+  if (ball.y < CONFIG.BALL_R + 0.01) ball.y = CONFIG.BALL_R + 0.01;
+  G.possession = null;
+  user.kickT = 0.35;                                    // a perna vai, no vento
+  user.controlCd = 0.9; G.recvIgnore = 1.1;
+  if (k.kind === 'pass') G.stats.passes++; else G.stats.chutes++;
+  G.kick = null; hideKickUI(); fimRecepcao(); G.state = 'play';
+  Som.clique('erro');
+  G.stats.furoes = (G.stats.furoes | 0) + 1;
+  if (G.pulando || G.replay || G.acroCine || G.shotCine) return;
+  const ang = Math.atan2(vz, vx);
+  G.furaoCine = { t: 0, cut: true, seg: 0, ux: user.x, uz: user.z, fx: Math.cos(ang), fz: Math.sin(ang), lado: Math.random() < 0.5 ? 1 : -1 };
+  G.timeScale = G.targetScale = FURAO.LENTO;
+  setLetterbox(true);
+  showBanner('FURÃO!', 1, FURAO.DUR + 0.1);
+}
+function updateFuraoCine(rdt) {
+  const C = G.furaoCine; if (!C) return;
+  C.t += rdt;
+  if (C.seg === 0 && C.t >= FURAO.CORTE) { C.seg = 1; C.cut = true; }
+  if (C.t >= FURAO.DUR || G.state !== 'play' || G.replay || G.shotCine || G.acroCine) {
+    G.furaoCine = null;
+    if (G.state === 'play') { G.targetScale = 1; setLetterbox(false); }
+    return;
+  }
+  G.timeScale = G.targetScale = FURAO.LENTO;
+}
+function cameraFurao() {
+  const C = G.furaoCine, px = -C.fz * C.lado, pz = C.fx * C.lado;   // px/pz: o lado (perpendicular ao caminho da bola)
+  if (C.seg === 0) return { px: C.ux + px * 3.6 - C.fx * 0.6, py: 0.75, pz: C.uz + pz * 3.6 - C.fz * 0.6, tx: C.ux, ty: 0.7, tz: C.uz };   // de lado, rente ao chão
+  // de frente para ele, na frente da bola que passou: vê o jogador olhando a bola ir embora
+  return { px: C.ux + C.fx * 4.8 + px * 1.2, py: 1.5, pz: C.uz + C.fz * 4.8 + pz * 1.2, tx: (C.ux + ball.x) / 2, ty: 0.8, tz: (C.uz + ball.z) / 2 };
 }
 
 function cancelKick() {
@@ -12018,21 +12172,39 @@ $('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stop
 
 // (7.4.13) três câmeras: BOLA (atrás de você, virada para a bola) → FRENTE (fixa para o gol) → LIVRE (você arrasta a tela, do
 //   lado direito, para a direção em que quer olhar; para cima e para baixo sobe e desce a câmera)
-const ROTULO_CAM = { bola: 'CÂM: BOLA', frente: 'CÂM: FRENTE', livre: 'CÂM: LIVRE' };
+// (7.4.14) + a câmera de TV (TV: alta, de lado, bem aberta, estilo Winning Eleven): a padrão quando você controla o time inteiro
+const ROTULO_CAM = { bola: 'CÂM: BOLA', frente: 'CÂM: FRENTE', livre: 'CÂM: LIVRE', tv: 'CÂM: TV' };
+const ORDEM_CAM = ['tv', 'bola', 'frente', 'livre'];
 function toggleCamera() {
-  cam.mode = cam.mode === 'bola' ? 'frente' : cam.mode === 'frente' ? 'livre' : 'bola';
+  cam.mode = ORDEM_CAM[(ORDEM_CAM.indexOf(cam.mode) + 1) % ORDEM_CAM.length];
   $('camBtn').textContent = T(ROTULO_CAM[cam.mode]);
   if (cam.mode === 'livre') { cam.livreH = cam.livreH || 0; showBanner('CÂMERA LIVRE: ARRASTE A TELA', 0, 1.8, true); }
   camArrasto.id = null;
 }
 const camArrasto = { id: null, x: 0, y: 0 };
+// a câmera de TV: do lado (a sua equipe ataca para a DIREITA da tela), alta e longe; corre junto com a bola (um pouco puxada para
+//   você) e só mexe de lado. O joystick e a mira usam esse ângulo fixo (para cima = para o fundo do campo).
+const yawTV = () => -Math.PI / 2;
+function cameraTV() {
+  const D = clamp(HALF_W * 0.5 + 15, 17, 30) * AJ.camDist, H = D * 0.6 * AJ.camAlt + (AJ.camH || 0);
+  const ax = user && !user.out ? ball.x + (user.x - ball.x) * 0.2 : ball.x;
+  const x = clamp(ax, -HALF_L + Math.min(8, HALF_L * 0.35), HALF_L - Math.min(8, HALF_L * 0.35));
+  const z = clamp(ball.z * 0.5, -HALF_W * 0.4, HALF_W * 0.4);
+  return { px: x, py: Math.max(4, H), pz: z + D, tx: x, ty: 0.3, tz: z - 1.5 };
+}
+function camPadraoDaPartida() {                       // no começo de cada partida: time inteiro → TV; um jogador → a de sempre
+  cam.mode = PARTIDA && PARTIDA.controleTime ? 'tv' : (cam.mode === 'tv' ? 'bola' : cam.mode || 'bola');
+  cam.livreH = 0;
+  if (cam.mode === 'tv') cam.yaw = yawTV();
+  try { $('camBtn').textContent = T(ROTULO_CAM[cam.mode]); } catch (e) { /* ainda montando */ }
+}
 function podeArrastarCamera() { return cam.mode === 'livre' && !G.espectador && (G.state === 'play' || G.state === 'celebrate' || G.state === 'trap' || G.state === 'restart' || G.state === 'foul'); }
 window.addEventListener('pointermove', (e) => {
   if (e.pointerId !== camArrasto.id) return;
   if (!podeArrastarCamera()) { camArrasto.id = null; return; }
   const dx = e.clientX - camArrasto.x, dy = e.clientY - camArrasto.y;
   camArrasto.x = e.clientX; camArrasto.y = e.clientY;
-  cam.yaw = wrapAngle(cam.yaw - dx * 0.0085);
+  cam.yaw = wrapAngle(cam.yaw + dx * 0.0085);              // (7.4.14) eixo padrão: arrastar para a direita olha para a direita
   cam.livreH = clamp((cam.livreH || 0) + dy * 0.025, -2.2, 9);
 });
 const soltarArrastoCam = (e) => { if (e.pointerId === camArrasto.id) camArrasto.id = null; };
@@ -12361,6 +12533,8 @@ function matchRating() {
 
 function resetMatch() {
   Torcida.reiniciar(); AvisoTatica.limpar();                             // (7.4.9)
+  camPadraoDaPartida();                                                   // (7.4.14)
+  G.furaoCine = null;
   G.fimModo = null; G.fimIni = null; G.fimTom = null;
   montarTimes(PARTIDA);                            // escalação nova (tira suspensos/lesionados, banco cheio)
   limparReplay();
@@ -13234,7 +13408,8 @@ $('setFps').addEventListener('change', (e) => { $('fps').hidden = !e.target.chec
 // =====================================================================
 const AJ_ARO_CORES = [['Laranja', '#f7941d'], ['Amarelo', '#ffd400'], ['Vermelho', '#e53935'], ['Rosa', '#ff4fa3'], ['Roxo', '#8e44ff'], ['Azul', '#2f6bff'],
   ['Ciano', '#18d6e8'], ['Verde', '#2ecc40'], ['Lima', '#b6e61a'], ['Branco', '#ffffff'], ['Preto', '#111111'], ['Marrom', '#8b5a2b']];
-const AJ_LAYOUT_PADRAO = { joy: { t: 132, x: 22, y: 30 }, s1: { t: 94, x: 18, y: 18 }, s2: { t: 84, x: 122, y: 23 }, s3: { t: 80, x: 25, y: 122 } };
+const AJ_LAYOUT_PADRAO = { joy: { t: 132, x: 22, y: 30 }, s1: { t: 94, x: 18, y: 18 }, s2: { t: 84, x: 122, y: 23 }, s3: { t: 80, x: 25, y: 122 },
+  r1: { t: 94, x: 18, y: 18 }, r2: { t: 84, x: 122, y: 23 }, r3: { t: 80, x: 25, y: 122 } };   // (7.4.14) r1..r3 = os botões AO RECEBER a bola
 function ajLayout() {
   const o = {};
   for (const k of Object.keys(AJ_LAYOUT_PADRAO)) o[k] = Object.assign({}, AJ_LAYOUT_PADRAO[k], (AJ.layout && AJ.layout[k]) || {});
@@ -13256,6 +13431,12 @@ function ajAplicarLayout() {
     const c = L[n];
     css += '#actions .act.' + n + '{position:absolute;width:' + c.t + 'px;height:' + c.t + 'px;right:calc(' + c.x + 'px + ' + sR + ');bottom:calc(' + c.y + 'px + ' + sB + ');font-size:' + Math.max(8, Math.min(18, c.t * 0.125)).toFixed(1) + 'px}';
   }
+  // (7.4.14) os botões da recepção (dominar, de primeira, cabecear, finalizar) também têm tamanho e lugar próprios
+  css += '#recvActs{left:0;top:0;right:0;bottom:0;display:block}';
+  for (const n of ['s1', 's2', 's3']) {
+    const c = L['r' + n[1]];
+    css += '#recvActs .act.' + n + '{position:absolute;width:' + c.t + 'px;height:' + c.t + 'px;right:calc(' + c.x + 'px + ' + sR + ');bottom:calc(' + c.y + 'px + ' + sB + ');font-size:' + Math.max(8, Math.min(16, c.t * 0.115)).toFixed(1) + 'px}';
+  }
   st.textContent = css;
   JOY_R = 50 * k;
 }
@@ -13267,12 +13448,17 @@ function ajAbrirLayout(aoFechar) {
   const ed = document.createElement('div');
   ed.id = 'ajEd';
   ed.style.cssText = 'position:fixed;inset:0;z-index:40;background:rgba(7,20,48,.86);touch-action:none;user-select:none;-webkit-user-select:none;font-family:var(--font-display);color:#fff';
-  const L = ajLayout(); let sel = 's1';
-  const nomes = { joy: T('JOYSTICK'), s1: T('CHUTAR / DESARMAR'), s2: T('PASSAR'), s3: T('DRIBLAR') };
+  const L = ajLayout(); let sel = 's1', aba = 'jogo';
+  // (7.4.14) cada botão mostra TUDO o que ele vira (o mesmo lugar muda de função conforme a jogada); a aba "Ao receber" mostra os
+  //   botões da recepção (dominar, passe e chute de primeira, cabecear, finalizar)
+  const nomes = { joy: T('JOYSTICK'), s1: [T('CHUTAR'), T('DESARMAR'), T('PEDIR BOLA'), T('LANÇAR'), T('PASSE DE 1ª')].join(' · '), s2: [T('PASSAR'), T('CARRINHO'), T('CHUTE DE 1ª')].join(' · '),
+    s3: [T('DRIBLAR'), T('TROCAR'), T('PULAR')].join(' · '), r1: [T('DOMINAR'), T('FINALIZAR'), T('CABECEAR')].join(' · '), r2: [T('PASSE DE 1ª'), T('CABECEAR'), T('CHUTE DE 1ª')].join(' · '), r3: [T('CHUTE DE 1ª'), T('DOMINAR')].join(' · ') };
+  const ABAS_ED = { jogo: ['joy', 's1', 's2', 's3'], recv: ['joy', 'r1', 'r2', 'r3'] };
   const els = {};
   const pos = (k) => {
     const e = els[k], c = L[k];
-    e.style.width = e.style.height = c.t + 'px'; e.style.bottom = c.y + 'px'; e.style.fontSize = Math.max(8, Math.min(16, c.t * 0.11)) + 'px';
+    e.style.width = e.style.height = c.t + 'px'; e.style.bottom = c.y + 'px'; e.style.fontSize = Math.max(7, Math.min(12, c.t * 0.085)) + 'px';
+    e.style.display = ABAS_ED[aba].includes(k) ? 'flex' : 'none';
     if (k === 'joy') { e.style.left = c.x + 'px'; e.style.right = ''; } else { e.style.right = c.x + 'px'; e.style.left = ''; }
     e.style.borderColor = k === sel ? '#f7941d' : 'rgba(255,255,255,.55)';
     e.style.background = k === sel ? 'rgba(247,148,29,.35)' : 'rgba(14,37,71,.72)';
@@ -13281,12 +13467,14 @@ function ajAbrirLayout(aoFechar) {
   barra.style.cssText = 'position:absolute;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;align-items:center;background:rgba(7,20,48,.92);border:2px solid rgba(255,255,255,.35);padding:10px 14px;max-width:92vw;box-sizing:border-box';
   barra.innerHTML = '<div style="font-size:12px;text-align:center;line-height:1.4">' + T('Arraste cada botão para onde quiser. Toque em um para escolher e mude o tamanho.') + '</div>' +
     '<label style="display:flex;gap:8px;align-items:center;font-size:11px"><span id="ajEdNome"></span><input id="ajEdTam" type="range" min="56" max="190" step="2" style="width:min(240px,50vw)"><output id="ajEdTamV" style="min-width:42px"></output></label>' +
+    '<div style="display:flex;gap:8px"><button type="button" class="ajEdAba" data-aba="jogo" style="font:inherit;font-size:11px;padding:8px 12px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Em jogo') + '</button>' +
+    '<button type="button" class="ajEdAba" data-aba="recv" style="font:inherit;font-size:11px;padding:8px 12px;background:#0c1d3d;color:#fff;border:2px solid rgba(255,255,255,.55)">' + T('Ao receber') + '</button></div>' +
     '<div style="display:flex;gap:8px"><button type="button" id="ajEdRest" style="font:inherit;font-size:11px;padding:8px 12px;background:#0c1d3d;color:#fff;border:2px solid rgba(255,255,255,.55)">' + T('Restaurar padrão') + '</button>' +
     '<button type="button" id="ajEdOk" style="font:inherit;font-size:11px;padding:8px 14px;background:#f7941d;color:#071430;border:2px solid #071430">' + T('Pronto') + '</button></div>';
   ed.appendChild(barra);
   const atualizaCtl = () => { barra.querySelector('#ajEdNome').textContent = nomes[sel]; barra.querySelector('#ajEdTam').value = L[sel].t; barra.querySelector('#ajEdTamV').textContent = L[sel].t + ' px'; };
   const salvaItem = (k) => { AJ.layout = AJ.layout || {}; AJ.layout[k] = { t: L[k].t, x: L[k].x, y: L[k].y }; ajAplicarLayout(); };
-  for (const k of ['joy', 's1', 's2', 's3']) {
+  for (const k of ['joy', 's1', 's2', 's3', 'r1', 'r2', 'r3']) {
     const e = document.createElement('div');
     e.style.cssText = 'position:absolute;border-radius:50%;border:4px dashed rgba(255,255,255,.55);display:flex;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;padding:4px;line-height:1.2;cursor:grab;touch-action:none';
     e.textContent = nomes[k];
@@ -13307,6 +13495,11 @@ function ajAbrirLayout(aoFechar) {
       e.addEventListener('pointermove', mv); e.addEventListener('pointerup', up); e.addEventListener('pointercancel', up);
     });
   }
+  barra.querySelectorAll('.ajEdAba').forEach((b) => b.addEventListener('click', () => {
+    aba = b.dataset.aba; sel = aba === 'recv' ? 'r1' : 's1';
+    barra.querySelectorAll('.ajEdAba').forEach((x) => { const on = x === b; x.style.background = on ? '#f7941d' : '#0c1d3d'; x.style.color = on ? '#071430' : '#fff'; });
+    for (const k of Object.keys(els)) pos(k); atualizaCtl();
+  }));
   barra.querySelector('#ajEdTam').addEventListener('input', (ev) => { L[sel].t = Number(ev.target.value); pos(sel); atualizaCtl(); salvaItem(sel); });
   barra.querySelector('#ajEdTam').addEventListener('change', ajGuardar);
   barra.querySelector('#ajEdRest').addEventListener('click', () => {
@@ -13327,7 +13520,7 @@ function ajAbrirLayout(aoFechar) {
 //   cfgTeclado .... a tecla de CADA ação (andar, chutar, passar, dominar, cabecear, de primeira, câmera...)
 // =====================================================================
 const NOMES_VOLUME = { geral: 'Geral', efeitos: 'Efeitos (bola, apito, cliques)', torcida: 'Torcida', musica: 'Músicas', vozes: 'Vozes dos personagens' };
-const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação'], ['recv', 'Recebendo a bola'], ['festa', 'Comemoração'], ['sempre', 'A qualquer hora']];
+const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação'], ['recv', 'Ao receber a bola'], ['festa', 'Comemoração'], ['sempre', 'A qualquer hora']];
 (function () {
   const st = document.createElement('style');
   st.textContent = '.cfgSec{display:flex;flex-direction:column;gap:8px;text-align:left}.cfgSec summary{cursor:pointer;font:700 13px var(--font-display);letter-spacing:.08em;padding:4px 0}' +
@@ -13340,7 +13533,7 @@ const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação']
     '.cfgSec .ajCor.on{border-color:#fff;box-shadow:0 0 0 2px #f7941d}.cfgSec .ajCor.nada{background:repeating-linear-gradient(45deg,#333,#333 4px,#777 4px,#777 8px)!important}' +
     '.cfgTec{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;font:600 13px/1.2 var(--font-body)}.cfgTec h4{grid-column:1/-1;margin:6px 0 0;font:700 11px var(--font-display);letter-spacing:.08em;color:#f7941d}' +
     '.cfgFila{display:flex;flex-wrap:wrap;gap:8px}.cfgCam{display:flex;flex-direction:column;gap:6px;font:600 13px/1.2 var(--font-body)}.cfgCam label{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:4px 8px;align-items:center}' +
-    '.cfgCam input[type=range]{grid-column:1/-1;width:100%;accent-color:#f7941d}.cfgCam output{font:700 11px var(--font-display);text-align:right}.cfgAviso{font:600 12px var(--font-body);color:#ffb27a;min-height:1em;margin:0}' +
+    '.cfgLista{margin:0;padding-left:18px;font:600 12px/1.4 var(--font-body)}.cfgLista li{margin:3px 0}.cfgCam input[type=range]{grid-column:1/-1;width:100%;accent-color:#f7941d}.cfgCam output{font:700 11px var(--font-display);text-align:right}.cfgAviso{font:600 12px var(--font-body);color:#ffb27a;min-height:1em;margin:0}' +
     '.settings .cfgLin input[type=range],.cfgSec .cfgLin input[type=range]{grid-column:auto;grid-row:auto}.cfgLin .cfgMudo,.cfgTec .cfgTecla{width:auto;justify-self:end}' +
     '@media (max-width:520px){.cfgLin{grid-template-columns:minmax(0,1fr) 40px auto}.cfgSec .cfgLin input[type=range]{grid-column:1/-1;grid-row:2}}' +
     '.cfgPausa summary{cursor:pointer;padding:4px 0}.cfgPausa{margin:4px 0}';
@@ -13381,7 +13574,12 @@ function cfgControlesHTML() {
     '<label>' + T('Altura da câmera') + '<output data-o="h"></output><input data-r="h" type="range" min="-100" max="300" step="25"></label>' +
     '<label>' + T('Distância da câmera') + '<output data-o="dist"></output><input data-r="dist" type="range" min="60" max="170" step="5"></label>' +
     '<span>' + T('Círculo do jogador') + '</span><div class="ajCores cfgAro"></div>' +
-    '<div class="cfgFila"><button type="button" class="cfgBtn" data-c="camPad">' + T('Câmera padrão') + '</button><button type="button" class="cfgBtn" data-c="botoes">' + T('Ajustar botões e joystick') + '</button></div></div>';
+    '<div class="cfgFila"><button type="button" class="cfgBtn" data-c="camPad">' + T('Câmera padrão') + '</button><button type="button" class="cfgBtn" data-c="botoes">' + T('Ajustar botões e joystick') + '</button></div>' +
+    // (7.4.14) todos os botões de toque, inclusive os que só aparecem em certas jogadas
+    '<span style="margin-top:6px">' + T('Botões na tela') + '</span><ul class="cfgLista">' +
+    '<li><b>' + T('Em jogo') + ':</b> ' + [T('Chutar / cruzar'), T('Passar'), T('Driblar (quando dá)'), T('Pedir a bola'), T('Desarmar'), T('Carrinho'), T('Lançar (lateral)'), T('Trocar (time inteiro)'), T('Comemorações'), T('Pular')].join(' · ') + '</li>' +
+    '<li><b>' + T('Ao receber') + ':</b> ' + [T('Dominar'), T('Passe de primeira'), T('Chute de primeira (perto do gol)'), T('Cabecear'), T('Finalizar (cabeçada, voleio, bicicleta)')].join(' · ') + '</li></ul>' +
+    '<p class="cfgAviso" style="color:inherit;opacity:.75">' + T('O lugar e o tamanho de cada um ficam em "Ajustar botões e joystick" (abas Em jogo e Ao receber).') + '</p></div>';
 }
 function cfgControlesLigar(box, aoEditor) {
   const r = (k) => box.querySelector('[data-r="' + k + '"]'), o = (k) => box.querySelector('[data-o="' + k + '"]');
@@ -13646,6 +13844,7 @@ function updateYaw(rdt) {
   if (G.cine || G.shotCine || G.fintaCine || (G.chuteCine && G.chuteCine.fase === 'prep') || G.state === 'restart' || G.state === 'foul') return;   // nas cenas a câmera não gira
   let want, rapidez = CONFIG.CAM.turn;
   const S = G.sp;
+  if (cam.mode === 'tv' && (G.state === 'play' || G.state === 'trap' || KICK_STATES.includes(G.state))) { cam.yaw = yawTV(); return; }   // (7.4.14) TV: ângulo fixo
   if (KICK_STATES.includes(G.state)) {
     // Mirando: a câmera vai virando devagar para o lado da seta (75% do caminho), mostrando para
     // onde você aponta sem tirar você da tela. A seta não depende disso (usa a câmera do começo).
@@ -13688,6 +13887,7 @@ function cameraGoal() {
     return { px: mx + C.px * s * 6.4, py: 1.8, pz: mz + C.pz * s * 6.4, tx: mx, ty: 1.0, tz: mz };
   }
   if (G.acroCine) return cameraAcro();
+  if (G.furaoCine) return cameraFurao();            // (7.4.14)
   if (G.chuteCine && G.chuteCine.fase === 'prep') return cameraPreChute();
   if (G.shotCine) return shotCameraGoal();
   if (G.fintaCine) return cameraFinta();
@@ -13724,6 +13924,7 @@ function cameraGoal() {
     const vl = Math.hypot(vx, vz) || 1; vx /= vl; vz /= vl;
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
+  if (cam.mode === 'tv' && !(G.kick && G.kick.throwIn)) return cameraTV();   // (7.4.14)
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
   let back = c.back * AJ.camDist, h = c.height * AJ.camAlt + (cam.mode === 'livre' ? cam.livreH || 0 : 0), ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
   if (G.kick && KICK_STATES.includes(G.state)) {
@@ -13750,7 +13951,7 @@ function cameraGoal() {
 }
 
 function snapCamera() {
-  cam.yaw = 0;
+  cam.yaw = cam.mode === 'tv' ? yawTV() : 0;
   Object.assign(cam, cameraGoal());
 }
 
@@ -13758,8 +13959,8 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   const g = cameraGoal();
   let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
-  const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.chuteCine && G.chuteCine.cut) || (G.foul && G.foul.cut) || (G.state === 'fim' && G.fimCorte) || (G.state === 'intervalo' && G.intCorte);   // corte seco de câmera
-  if (corte) { k = 1; G.fimCorte = false; G.intCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.chuteCine) G.chuteCine.cut = false; if (G.foul) G.foul.cut = false; }
+  const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.chuteCine && G.chuteCine.cut) || (G.foul && G.foul.cut) || (G.furaoCine && G.furaoCine.cut) || (G.state === 'fim' && G.fimCorte) || (G.state === 'intervalo' && G.intCorte);   // corte seco de câmera
+  if (corte) { k = 1; G.fimCorte = false; G.intCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.chuteCine) G.chuteCine.cut = false; if (G.foul) G.foul.cut = false; if (G.furaoCine) G.furaoCine.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
   cam.tx = lerp(cam.tx, g.tx, k); cam.ty = lerp(cam.ty, g.ty, k); cam.tz = lerp(cam.tz, g.tz, k);
   const sp = Math.hypot(user.vx, user.vz);
@@ -14450,7 +14651,7 @@ function syncMeshes(dt) {
     if (p.perda) aplicarPerda(p, m);
     if (p.impacto) aplicarImpacto(p, m);
     if (p.driblePose) aplicarDriblePose(p, m); else if (m.pernaE.rotation.x || m.pernaD.rotation.x) { m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0; }
-    if (p.celeb && p.celebP) aplicarPoseCelebExtras(m, p.celebP);       // (7.1.9) cotovelos, cabeça e pernas para o lado das comemorações
+    if (p.celeb && p.celebP) { aplicarPoseCelebExtras(m, p.celebP); if (!(p.isUser && CELEBRACOES[p.celeb.name].controlado)) celebNoChao(m, CELEBRACOES[p.celeb.name], p.celeb.t, p.celebP); }   // (7.1.9) cotovelos, cabeça e pernas para o lado; (7.4.14) os pés no chão
     if (p.bloqueio) aplicarBloqueio(p, m); else if (m.cabeca.rotation.y) m.cabeca.rotation.y = 0;
     if (p.levanta && p.levanta.t >= 0 && p.role !== 'GK') aplicarLevanta(p, m);   // levantando do chão (depois do voleio/bicicleta)
     if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);   // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa, levantar
@@ -14486,6 +14687,7 @@ function syncMeshes(dt) {
   ball.shadow.position.set(ball.mesh.position.x, 0.02, ball.mesh.position.z);
   ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.mesh.position.y - CONFIG.BALL_R) * 0.12));
   userRing.position.set(user.x, 0.03, user.z);
+  { const k = cam.mode === 'tv' ? 1.8 : 1; if (userRing.scale.x !== k) userRing.scale.set(k, k, 1); }   // (7.4.14) na câmera de TV o círculo é maior (de longe)
   userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && G.state !== 'intervalo' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
   aimArrow.visible = !!kk;
@@ -14535,6 +14737,7 @@ function stepGame(dt, rdt) {
   updateShotCine(rdt);
   updateChuteCine(rdt);
   updateAcroCine(rdt);
+  updateFuraoCine(rdt);                             // (7.4.14)
   updateFintaCine(rdt);
   updateSpares(dt);
   updateOfficials(dt, rdt);
@@ -17143,6 +17346,25 @@ const Idioma = {
   'Pausar': ['Pause', 'Pausar', 'Pausa', 'Pause'],
   'CÂM: BOLA': ['CAM: BALL', 'CÁM: BALÓN', 'CAM: PALLONE', 'CAM : BALLON'],
   'CÂM: FRENTE': ['CAM: FRONT', 'CÁM: FRENTE', 'CAM: AVANTI', 'CAM : AVANT'],
+  // (7.4.14) câmera de TV, furão e os botões ao receber
+  "CÂM: TV": ["CAM: TV", "CÁM: TV", "CAM: TV", "CAM : TV"],
+  "FURÃO!": ["WHIFF!", "¡PIFIA!", "LISCIO!", "RATÉ !"],
+  "Em jogo": ["In play", "En juego", "In gioco", "En jeu"],
+  "Ao receber": ["When receiving", "Al recibir", "In ricezione", "À la réception"],
+  "Ao receber a bola": ["When receiving the ball", "Al recibir el balón", "Quando ricevi la palla", "En recevant le ballon"],
+  "CHUTAR": ["SHOOT", "TIRAR", "TIRA", "TIRER"],
+  "FINALIZAR": ["FINISH", "REMATAR", "CONCLUDI", "CONCLURE"],
+  "Botões na tela": ["On-screen buttons", "Botones en pantalla", "Pulsanti sullo schermo", "Boutons à l'écran"],
+  "Passar": ["Pass", "Pasar", "Passare", "Passer"],
+  "Driblar (quando dá)": ["Dribble (when possible)", "Regatear (cuando se puede)", "Dribblare (quando si può)", "Dribbler (quand c'est possible)"],
+  "Pedir a bola": ["Call for the ball", "Pedir el balón", "Chiedere palla", "Demander le ballon"],
+  "Desarmar": ["Tackle", "Quitar el balón", "Contrastare", "Tacler"],
+  "Lançar (lateral)": ["Throw in", "Sacar de banda", "Rimessa laterale", "Remise en jeu"],
+  "Trocar (time inteiro)": ["Switch (whole team)", "Cambiar (todo el equipo)", "Cambia (tutta la squadra)", "Changer (toute l'équipe)"],
+  "Comemorações": ["Celebrations", "Celebraciones", "Esultanze", "Célébrations"],
+  "Chute de primeira (perto do gol)": ["First-time shot (near the goal)", "Tiro de primera (cerca del arco)", "Tiro di prima (vicino alla porta)", "Frappe en une touche (près du but)"],
+  "Finalizar (cabeçada, voleio, bicicleta)": ["Finish (header, volley, bicycle kick)", "Rematar (cabezazo, volea, chilena)", "Concludere (colpo di testa, volée, rovesciata)", "Conclure (tête, volée, retourné)"],
+  "O lugar e o tamanho de cada um ficam em \"Ajustar botões e joystick\" (abas Em jogo e Ao receber).": ["Each button's position and size are in \"Adjust buttons and joystick\" (In play and When receiving tabs).", "El lugar y el tamaño de cada uno están en \"Ajustar botones y joystick\" (pestañas En juego y Al recibir).", "Posizione e dimensione di ognuno sono in \"Regola pulsanti e joystick\" (schede In gioco e In ricezione).", "La place et la taille de chacun sont dans « Régler boutons et joystick » (onglets En jeu et À la réception)."],
   // (7.4.13) som por categoria, teclado, câmera livre, de primeira, time inteiro e o mestre do clube
   "Mudo": ["Muted", "Silenciado", "Muto", "Muet"],
   "Bata na faixa verde: domine ou toque de primeira": ["Hit the green zone: control it or play it first time", "Golpea en la franja verde: controla o toca de primera", "Colpisci nella fascia verde: stoppa o giocala di prima", "Frappe dans la zone verte : contrôle ou joue en une touche"],
