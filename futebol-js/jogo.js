@@ -20,7 +20,7 @@
     var csm = document.createElement('meta'); csm.name = 'color-scheme'; csm.content = 'only dark'; document.head.appendChild(csm);
     document.documentElement.style.colorScheme = 'only dark';
   } catch (e) {}
-  document.body.insertAdjacentHTML('beforeend', "<div id=\"raizJogo\">\n<canvas id=\"game\"></canvas>\n<div id=\"touch\"></div>\n\n<div id=\"hud\">\n  <button id=\"pauseBtn\" class=\"hudBtn\" aria-label=\"Pausar\">II</button>\n  <button id=\"camBtn\" class=\"hudBtn\">C\u00c2M: BOLA</button>\n  <div id=\"fps\" hidden></div>\n  <div id=\"score\">\n    <span class=\"tag a\">AZU</span><b id=\"scoreA\">0</b><span>:</span><b id=\"scoreB\">0</b><span class=\"tag b\">VER</span>\n    <span id=\"clock\">05:00</span>\n  </div>\n  <canvas id=\"radar\" width=\"64\" height=\"100\" aria-label=\"Mapa do campo\"></canvas>\n  <div id=\"toast\"></div>\n  <div id=\"hint\"></div>\n  <div id=\"cardChip\" hidden></div>\n  <div id=\"actions\"></div>\n  <div id=\"joy\"><span id=\"joyLabel\"></span><div class=\"knob\" id=\"joyKnob\"></div></div>\n  <div id=\"stamina\" aria-label=\"Estamina\"><div id=\"staminaFill\"></div></div>\n</div>\n\n<div id=\"banner\"></div>\n<div class=\"bar top\"></div>\n<div class=\"bar bottom\"></div>\n<div id=\"cineLabel\"></div>\n<button id=\"skipBtn\" hidden>Pular \u25b6</button>\n<div id=\"fade\"></div>\n\n<div id=\"aimPad\" hidden><div class=\"knob\" id=\"aimKnob\"></div></div>\n\n<div id=\"stageBar\" hidden>\n  <div id=\"stageSteps\">\n    <span id=\"stageKind\">CHUTE</span>\n    <span class=\"step\" data-step=\"aim\">1 Mira</span>\n    <span class=\"step\" data-step=\"power\">2 For\u00e7a</span>\n    <span class=\"step\" data-step=\"spin\" id=\"stepSpin\">3 Efeito</span>\n  </div>\n  <div id=\"kickTimer\"><div id=\"kickTimerFill\"></div></div>\n  <p id=\"stageHint\"></p>\n</div>\n<button id=\"cancelKick\" hidden>Cancelar</button>\n\n<div id=\"powerUI\" hidden>\n  <span id=\"powerLabel\">M\u00c1X</span>\n  <div id=\"powerBar\">\n    <div id=\"powerOver\"></div>\n    <div id=\"powerZone\"></div>\n    <div id=\"powerFill\"></div>\n  </div>\n  <span class=\"step on\">FOR\u00c7A</span>\n</div>\n\n<div id=\"spinUI\" hidden>\n  <div id=\"spinBall\">\n    <span class=\"spinTag\" style=\"top:8%;left:50%;transform:translateX(-50%)\">CIMA</span>\n    <span class=\"spinTag\" style=\"bottom:8%;left:50%;transform:translateX(-50%)\">BAIXO</span>\n    <span class=\"spinTag\" style=\"left:7%;top:50%;transform:translateY(-130%)\">ESQ</span>\n    <span class=\"spinTag\" style=\"right:7%;top:50%;transform:translateY(-130%)\">DIR</span>\n    <div id=\"spinDot\" hidden></div>\n  </div>\n  <div id=\"spinInfo\"></div>\n</div>\n\n<div id=\"recvLayer\" hidden>\n  <div id=\"recvHead\">\n    <span id=\"recvKind\"></span>\n    <div id=\"hamTrack\"><div id=\"hamZone\"></div><div id=\"hamMarker\"></div></div>\n    <div id=\"recvTimer\"><div id=\"recvTimerFill\"></div></div>\n    <p id=\"recvInfo\"></p>\n  </div>\n  <div id=\"recvActs\"></div>\n</div>\n\n<div id=\"timingLayer\" hidden>\n  <div id=\"timingHead\">\n    <span id=\"timingTitle\"></span>\n    <span id=\"timingInfo\"></span>\n    <div id=\"timingTrack\"><div id=\"timingProg\"></div></div>\n  </div>\n</div>\n\n<div id=\"startScreen\" class=\"screen\">\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\">PROT\u00d3TIPO \u00b7 SISTEMA DE PARTIDA</p>\n      <h1>Futebol JS</h1>\n      <p>Voc\u00ea controla s\u00f3 o seu atacante (etiqueta laranja). Partida de teste 7 contra 7, com 5 minutos de rel\u00f3gio.</p>\n      <button id=\"startBtn\" class=\"big\">Come\u00e7ar partida</button>\n      <p id=\"versaoInfo\" style=\"font-size:11px;opacity:0.55;margin:0\"></p>\n    </div>\n    <ul class=\"howto\">\n      <li><b>ANDAR E CORRER</b>Joystick no canto esquerdo. Empurre at\u00e9 o fim para correr. A corrida gasta a barra verde (10 s de corrida) e ela volta devagar.</li>\n      <li><b>C\u00c2MERA</b>Por padr\u00e3o ela fica atr\u00e1s de voc\u00ea virada para a bola. O bot\u00e3o C\u00c2M troca para a c\u00e2mera fixa para frente.</li>\n      <li><b>CHUTAR / CRUZAR</b>Mire no gol para chutar. Mire num companheiro para cruzar: ele cabeceia, bate de primeira ou domina.</li>\n      <li><b>CHUTE</b>1. Arraste para mirar (a seta segue o dedo). 2. Segure e solte na faixa verde. 3. Toque no ponto da bola para o efeito.</li>\n      <li><b>PASSE</b>S\u00f3 dire\u00e7\u00e3o e for\u00e7a.</li>\n      <li><b>DRIBLE</b>O bot\u00e3o DRIBLAR aparece quando um marcador vem para cima de voc\u00ea. C\u00e2mera de lado, c\u00e2mera lenta e 2 toques em 2,2 s (no goleiro: 3 toques em 1,3 s). Depois precisa recarregar.</li>\n      <li><b>TEMPO PARA CHUTAR</b>Do clique at\u00e9 o chute voc\u00ea tem 6 s, ou o jogador fura. O marcador pode roubar a bola nesse tempo.</li>\n      <li><b>GOL SEU</b>At\u00e9 10 s para correr \u00e0 vontade e escolher a CELEBRA\u00c7\u00c3O 1 (avi\u00e3ozinho, voc\u00ea guia com o joystick) ou 2 (joelhada). Corra at\u00e9 a bandeirinha de escanteio, at\u00e9 as placas (no society: a grade) ou v\u00e1 buscar a bola no gol para comemora\u00e7\u00f5es especiais. Gol de outro jogador: a c\u00e2mera mostra a comemora\u00e7\u00e3o dele.</li>\n      <li><b>RECEBER A BOLA</b>Martele quando o marcador estiver na faixa verde (2 s). Bola baixa: dom\u00ednio; na altura do peito: dom\u00ednio no peito (com pulo se for alta); por cima da cabe\u00e7a: CABECEAR (toca para o mais perto) ou FINALIZAR (cabe\u00e7ada, voleio ou bicicleta).</li>\n      <li><b>DEFESA</b>DESARMAR ou CARRINHO. Por tr\u00e1s \u00e9 falta. 3 faltas = amarelo, mais 2 = vermelho. Carrinho por tr\u00e1s sem pegar a bola = vermelho direto.</li>\n      <li><b>NO COMPUTADOR</b>WASD ou setas, Shift corre. J chuta, K passa, L dribla, E pede a bola ou desarma, Q carrinho, C troca a c\u00e2mera. Na recep\u00e7\u00e3o: Espa\u00e7o martela (J finaliza, K cabeceia).</li>\n    </ul>\n  </div>\n</div>\n\n<div id=\"pauseScreen\" class=\"screen\" hidden>\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\">PAUSADO</p>\n      <h2>Seu desempenho</h2>\n      <dl class=\"stats\" id=\"pauseStats\"></dl>\n      <div class=\"btnRow\">\n        <button id=\"resumeBtn\" class=\"big\">Continuar</button>\n        <button id=\"restartBtn\" class=\"ghost\">Reiniciar</button>\n      </div>\n    </div>\n    <div class=\"settings\">\n      <p class=\"sectionTitle\">AJUSTES DE TESTE</p>\n      <label for=\"setBroken\">Chance do passe vir quebrado quando voc\u00ea pede<output id=\"outBroken\"></output>\n        <input id=\"setBroken\" type=\"range\" min=\"0\" max=\"100\" step=\"5\"></label>\n      <label for=\"setTackle\">For\u00e7a da marca\u00e7\u00e3o da IA em voc\u00ea<output id=\"outTackle\"></output>\n        <input id=\"setTackle\" type=\"range\" min=\"0\" max=\"60\" step=\"5\"></label>\n      <label for=\"setRes\">Resolu\u00e7\u00e3o interna (menor = mais pixelado e mais leve)<output id=\"outRes\"></output>\n        <input id=\"setRes\" type=\"range\" min=\"180\" max=\"540\" step=\"20\"></label>\n      <label for=\"setShake\">Tremida da c\u00e2mera na corrida<output id=\"outShake\"></output>\n        <input id=\"setShake\" type=\"range\" min=\"0\" max=\"20\" step=\"1\"></label>\n      <label class=\"check\" for=\"setFps\"><input id=\"setFps\" type=\"checkbox\"> Mostrar FPS e chamadas de desenho</label>\n    </div>\n  </div>\n</div>\n\n<div id=\"endScreen\" class=\"screen\" hidden>\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\" id=\"endTitle\">FIM DE JOGO</p>\n      <div class=\"finalScore\" id=\"finalScore\"></div>\n      <div class=\"rating\"><strong id=\"finalRating\">6.0</strong><p>Sua nota na partida. No modo hist\u00f3ria ela vai pesar nas propostas dos clubes.</p></div>\n      <button id=\"againBtn\" class=\"big\">Jogar de novo</button>\n    </div>\n    <dl class=\"stats\" id=\"endStats\"></dl>\n  </div>\n</div>\n\n<div id=\"rotate\">Gire o celular<br>para a horizontal</div>\n</div>");
+  document.body.insertAdjacentHTML('beforeend', "<div id=\"raizJogo\">\n<canvas id=\"game\"></canvas>\n<div id=\"touch\"></div>\n\n<div id=\"hud\">\n  <button id=\"pauseBtn\" class=\"hudBtn\" aria-label=\"Pausar\">II</button>\n  <button id=\"camBtn\" class=\"hudBtn\">C\u00c2M: BOLA</button>\n  <div id=\"fps\" hidden></div>\n  <div id=\"score\">\n    <span class=\"tag a\">AZU</span><b id=\"scoreA\">0</b><span>:</span><b id=\"scoreB\">0</b><span class=\"tag b\">VER</span>\n    <span id=\"clock\">05:00</span>\n  </div>\n  <canvas id=\"radar\" width=\"64\" height=\"100\" aria-label=\"Mapa do campo\"></canvas>\n  <div id=\"toast\"></div>\n  <div id=\"hint\"></div>\n  <div id=\"cardChip\" hidden></div>\n  <div id=\"actions\"></div>\n  <div id=\"joy\"><span id=\"joyLabel\"></span><div class=\"knob\" id=\"joyKnob\"></div></div>\n  <div id=\"stamina\" aria-label=\"Estamina\"><div id=\"staminaFill\"></div></div>\n</div>\n\n<div id=\"banner\"></div>\n<div class=\"bar top\"></div>\n<div class=\"bar bottom\"></div>\n<div id=\"cineLabel\"></div>\n<button id=\"skipBtn\" hidden>Pular \u25b6</button>\n<div id=\"fade\"></div>\n\n<div id=\"aimPad\" hidden><div class=\"knob\" id=\"aimKnob\"></div></div>\n\n<div id=\"stageBar\" hidden>\n  <div id=\"stageSteps\">\n    <span id=\"stageKind\">CHUTE</span>\n    <span class=\"step\" data-step=\"aim\">1 Mira</span>\n    <span class=\"step\" data-step=\"power\">2 For\u00e7a</span>\n    <span class=\"step\" data-step=\"spin\" id=\"stepSpin\">3 Efeito</span>\n  </div>\n  <div id=\"kickTimer\"><div id=\"kickTimerFill\"></div></div>\n  <p id=\"stageHint\"></p>\n</div>\n<button id=\"cancelKick\" hidden>Cancelar</button>\n\n<div id=\"powerUI\" hidden>\n  <span id=\"powerLabel\">M\u00c1X</span>\n  <div id=\"powerBar\">\n    <div id=\"powerOver\"></div>\n    <div id=\"powerZone\"></div>\n    <div id=\"powerFill\"></div>\n  </div>\n  <span class=\"step on\">FOR\u00c7A</span>\n</div>\n\n<div id=\"spinUI\" hidden>\n  <div id=\"spinBall\">\n    <span class=\"spinTag\" style=\"top:8%;left:50%;transform:translateX(-50%)\">CIMA</span>\n    <span class=\"spinTag\" style=\"bottom:8%;left:50%;transform:translateX(-50%)\">BAIXO</span>\n    <span class=\"spinTag\" style=\"left:7%;top:50%;transform:translateY(-130%)\">ESQ</span>\n    <span class=\"spinTag\" style=\"right:7%;top:50%;transform:translateY(-130%)\">DIR</span>\n    <div id=\"spinDot\" hidden></div>\n  </div>\n  <div id=\"spinInfo\"></div>\n</div>\n\n<div id=\"recvLayer\" hidden>\n  <div id=\"recvHead\">\n    <span id=\"recvKind\"></span>\n    <div id=\"hamTrack\"><div id=\"hamZone\"></div><div id=\"hamMarker\"></div></div>\n    <div id=\"recvTimer\"><div id=\"recvTimerFill\"></div></div>\n    <p id=\"recvInfo\"></p>\n  </div>\n  <div id=\"recvActs\"></div>\n</div>\n\n<div id=\"timingLayer\" hidden>\n  <div id=\"timingHead\">\n    <span id=\"timingTitle\"></span>\n    <span id=\"timingInfo\"></span>\n    <div id=\"timingTrack\"><div id=\"timingProg\"></div></div>\n  </div>\n</div>\n\n<div id=\"startScreen\" class=\"screen\">\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\">PROT\u00d3TIPO \u00b7 SISTEMA DE PARTIDA</p>\n      <h1>Futebol JS</h1>\n      <p>Voc\u00ea controla s\u00f3 o seu atacante (etiqueta laranja). Partida de teste 7 contra 7, com 5 minutos de rel\u00f3gio.</p>\n      <button id=\"startBtn\" class=\"big\">Come\u00e7ar partida</button>\n      <p id=\"versaoInfo\" style=\"font-size:11px;opacity:0.55;margin:0\"></p>\n    </div>\n    <ul class=\"howto\">\n      <li><b>ANDAR E CORRER</b>Joystick no canto esquerdo. Empurre at\u00e9 o fim para correr. A corrida gasta a barra verde (10 s de corrida) e ela volta devagar.</li>\n      <li><b>C\u00c2MERA</b>Por padr\u00e3o ela fica atr\u00e1s de voc\u00ea virada para a bola. O bot\u00e3o C\u00c2M troca para a c\u00e2mera fixa para frente.</li>\n      <li><b>CHUTAR / CRUZAR</b>Mire no gol para chutar. Mire num companheiro para cruzar: ele cabeceia, bate de primeira ou domina.</li>\n      <li><b>CHUTE</b>1. Arraste para mirar (a seta segue o dedo). 2. Segure e solte na faixa verde. 3. Toque no ponto da bola para o efeito.</li>\n      <li><b>PASSE</b>S\u00f3 dire\u00e7\u00e3o e for\u00e7a.</li>\n      <li><b>DRIBLE</b>O bot\u00e3o DRIBLAR aparece quando um marcador vem para cima de voc\u00ea. C\u00e2mera de lado, c\u00e2mera lenta e 2 toques em 2,2 s (no goleiro: 3 toques em 1,3 s). Depois precisa recarregar.</li>\n      <li><b>TEMPO PARA CHUTAR</b>Do clique at\u00e9 o chute voc\u00ea tem 6 s, ou o jogador fura. O marcador pode roubar a bola nesse tempo.</li>\n      <li><b>GOL SEU</b>At\u00e9 10 s para correr \u00e0 vontade e escolher a CELEBRA\u00c7\u00c3O 1 (avi\u00e3ozinho, voc\u00ea guia com o joystick) ou 2 (joelhada). Corra at\u00e9 a bandeirinha de escanteio, at\u00e9 as placas (no society: a grade) ou v\u00e1 buscar a bola no gol para comemora\u00e7\u00f5es especiais. Gol de outro jogador: a c\u00e2mera mostra a comemora\u00e7\u00e3o dele.</li>\n      <li><b>RECEBER A BOLA</b>Martele quando o marcador estiver na faixa verde (2 s). Bola baixa: dom\u00ednio; na altura do peito: dom\u00ednio no peito (com pulo se for alta); por cima da cabe\u00e7a: CABECEAR (toca para o mais perto) ou FINALIZAR (cabe\u00e7ada, voleio ou bicicleta).</li>\n      <li><b>DEFESA</b>DESARMAR ou CARRINHO. Por tr\u00e1s \u00e9 falta. 3 faltas = amarelo, mais 2 = vermelho. Carrinho por tr\u00e1s sem pegar a bola = vermelho direto.</li>\n      <li><b>NO COMPUTADOR</b>WASD ou setas, Shift corre. J chuta, K passa, L dribla, E pede a bola ou desarma, Q carrinho, C troca a c\u00e2mera. Na recep\u00e7\u00e3o: Espa\u00e7o martela (J finaliza, K cabeceia).</li>\n      <li><b>NO CONTROLE (XBOX)</b>Anal\u00f3gico ou direcional andam, RB corre. A passa, X chuta, B cruza, Y pede a bola, RS dribla, LB troca de jogador, View troca a c\u00e2mera, Menu pausa. Aperte para mirar e segure o mesmo bot\u00e3o para a for\u00e7a. Ao receber: B domina, A ou X de primeira. Marcando: A desarma, X carrinho. Troque os bot\u00f5es em Configura\u00e7\u00f5es \u2192 CONTROLE.</li>\n    </ul>\n  </div>\n</div>\n\n<div id=\"pauseScreen\" class=\"screen\" hidden>\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\">PAUSADO</p>\n      <h2>Seu desempenho</h2>\n      <dl class=\"stats\" id=\"pauseStats\"></dl>\n      <div class=\"btnRow\">\n        <button id=\"resumeBtn\" class=\"big\">Continuar</button>\n        <button id=\"restartBtn\" class=\"ghost\">Reiniciar</button>\n      </div>\n    </div>\n    <div class=\"settings\">\n      <p class=\"sectionTitle\">AJUSTES DE TESTE</p>\n      <label for=\"setBroken\">Chance do passe vir quebrado quando voc\u00ea pede<output id=\"outBroken\"></output>\n        <input id=\"setBroken\" type=\"range\" min=\"0\" max=\"100\" step=\"5\"></label>\n      <label for=\"setTackle\">For\u00e7a da marca\u00e7\u00e3o da IA em voc\u00ea<output id=\"outTackle\"></output>\n        <input id=\"setTackle\" type=\"range\" min=\"0\" max=\"60\" step=\"5\"></label>\n      <label for=\"setRes\">Resolu\u00e7\u00e3o interna (menor = mais pixelado e mais leve)<output id=\"outRes\"></output>\n        <input id=\"setRes\" type=\"range\" min=\"180\" max=\"540\" step=\"20\"></label>\n      <label for=\"setShake\">Tremida da c\u00e2mera na corrida<output id=\"outShake\"></output>\n        <input id=\"setShake\" type=\"range\" min=\"0\" max=\"20\" step=\"1\"></label>\n      <label class=\"check\" for=\"setFps\"><input id=\"setFps\" type=\"checkbox\"> Mostrar FPS e chamadas de desenho</label>\n    </div>\n  </div>\n</div>\n\n<div id=\"endScreen\" class=\"screen\" hidden>\n  <div class=\"card\">\n    <div class=\"side\">\n      <p class=\"eyebrow\" id=\"endTitle\">FIM DE JOGO</p>\n      <div class=\"finalScore\" id=\"finalScore\"></div>\n      <div class=\"rating\"><strong id=\"finalRating\">6.0</strong><p>Sua nota na partida. No modo hist\u00f3ria ela vai pesar nas propostas dos clubes.</p></div>\n      <button id=\"againBtn\" class=\"big\">Jogar de novo</button>\n    </div>\n    <dl class=\"stats\" id=\"endStats\"></dl>\n  </div>\n</div>\n\n<div id=\"rotate\">Gire o celular<br>para a horizontal</div>\n</div>");
 })();
 
 'use strict';
@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.0';
+const VERSAO_JOGO = '7.5.1';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -9912,8 +9912,10 @@ function startKick(kind) {
   if (user.setPiece || user.throwIn) cam.yaw = user.angle;
   const lancar = kind === 'lancar';               // (7.4.16) goleiro: LANÇAR = bola longa pelo alto (o PASSAR é rasteiro)
   if (lancar) kind = 'pass';
+  const cruzarFixo = kind === 'cruzar';           // (7.5.1) CRUZAR (B no controle, H no teclado): é sempre cruzamento, mesmo mirando no gol
+  if (cruzarFixo) kind = 'shot';
   const goleiro = user.role === 'GK' && !user.comPe;   // (7.4.17) com a bola no pé ele é jogador de linha: câmera lenta e relógio
-  const a0 = kind === 'shot' ? Math.atan2(-user.z, HALF_L - user.x) : user.angle;
+  const a0 = cruzarFixo ? Math.atan2(-user.z, HALF_L - 8 * ESC - user.x) : kind === 'shot' ? Math.atan2(-user.z, HALF_L - user.x) : user.angle;
   G.kick = {
     kind, lancar, podeVoltar: goleiro, throwIn: user.throwIn, dirX: Math.cos(a0), dirZ: Math.sin(a0), aimed: false,
     target: null, dist: 0, power: 0, over: 0, miss: 0, zone: [0, 1],
@@ -9924,7 +9926,8 @@ function startKick(kind) {
     windup: 0,                                     // 0→1: preparação do chute em câmera lenta
   };
   G.kick.alto = lancar || (kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));   // escanteio: PASSAR é cruzar
-  if (kind === 'shot') G.kick.cruzar = !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
+  G.kick.cruzarFixo = cruzarFixo;
+  if (kind === 'shot') G.kick.cruzar = cruzarFixo || !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
   G.state = 'aim'; G.targetScale = G.kick.semLimite ? 1 : CONFIG.SLOWMO_AIM;   // só a seta gira; bola parada não precisa de câmera lenta
   if (joy.id !== null) {
     aimPad.id = joy.id; aimPad.onJoy = true;
@@ -9965,7 +9968,7 @@ function setAimDir(dirX, dirZ) {
   const k = G.kick;
   k.dirX = dirX; k.dirZ = dirZ; k.aimed = true; k.target = null;
   k.alto = k.lancar || (k.kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));        // escanteio: o "PASSAR" é o cruzamento
-  if (k.kind === 'shot') k.cruzar = !mirandoNoGol(dirX, dirZ);
+  if (k.kind === 'shot') k.cruzar = !!k.cruzarFixo || !mirandoNoGol(dirX, dirZ);
   $('stageKind').textContent = rotuloDoToque(k);
 }
 
@@ -12415,7 +12418,9 @@ function startTiming(opts) {
     const el = document.createElement('div');
     el.className = 'tgt';
     el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
-    el.innerHTML = '<div class="ring"></div><span class="num">' + (i + 1) + '</span><span class="fb"></span>';
+    // (7.5.1) com controle, cada alvo mostra o botão que acerta ele (A, B, X)
+    const bn = Pad.ativo ? nomeBotao(botaoDoAlvo(i)) : null;
+    el.innerHTML = '<div class="ring"></div><span class="num' + (bn ? ' pad p' + bn : '') + '">' + (bn || (i + 1)) + '</span><span class="fb"></span>';
     el.hidden = true;
     layer.appendChild(el);
     const appear = opts.firstAt + i * opts.gap;
@@ -12506,6 +12511,7 @@ const TECLAS_ACOES = [
   { id: 'correr', nome: 'Correr (segurar)', grupo: 'mov', padrao: 'ShiftLeft' },
   { id: 'chutar', nome: 'Chutar / cruzar', grupo: 'jogo', padrao: 'KeyJ' },
   { id: 'passar', nome: 'Passar / lançar', grupo: 'jogo', padrao: 'KeyK' },
+  { id: 'cruzar', nome: 'Cruzar', grupo: 'jogo', padrao: 'KeyH' },
   { id: 'driblar', nome: 'Driblar', grupo: 'jogo', padrao: 'KeyL' },
   { id: 'pedir', nome: 'Pedir a bola / desarmar', grupo: 'jogo', padrao: 'KeyE' },
   { id: 'carrinho', nome: 'Carrinho', grupo: 'jogo', padrao: 'KeyQ' },
@@ -12558,6 +12564,14 @@ function readMove() {
   let mag = Math.hypot(up, right);
   if (mag < 0.15) { up = right = mag = 0; }
   let run = mag >= CONFIG.RUN_THRESHOLD;
+  // (7.5.1) controle: analógico esquerdo / direcional; anda no ritmo do analógico e só CORRE segurando o RB (como no PES)
+  if (mag === 0 && Pad.ativo && Pad.mag > 0) {
+    up = Pad.up; right = Pad.right; mag = Pad.mag;
+    const l = Math.hypot(up, right) || 1;
+    if (padSegura('correr')) { up /= l; right /= l; mag = 1; }
+    else { const m = Math.min(mag, CONFIG.RUN_THRESHOLD * 0.99); up = up / l * m; right = right / l * m; mag = m; }
+    return { up, right, mag, run: mag >= CONFIG.RUN_THRESHOLD };
+  }
   if (mag === 0) {
     if (teclaSegurada('cima') || keys.ArrowUp) up += 1;
     if (teclaSegurada('baixo') || keys.ArrowDown) up -= 1;
@@ -12728,7 +12742,8 @@ window.addEventListener('keydown', (e) => {
   const mode = computeMode();
   if (G.state === 'restart' && (e.code === 'Enter' || e.code === 'Escape')) { skipRestart(); return; }
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
-  if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
+  if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('cruzar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
+  if (G.state === 'dribble' && G.timing && K('driblar')) { tocarDribleProximo(); return; }   // (7.5.1) teclado: a tecla do drible acerta o próximo alvo
   if (K('camera')) toggleCamera();
   if (K('trocar')) trocarJogadorManual();
   if (G.recv && !G.recv.done) {
@@ -12753,6 +12768,7 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'Enter') endCelebration();
   }
   if (K('chutar') && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
+  if (K('cruzar') && (mode === 'ball' || mode === 'setpiece')) startKick('cruzar');   // (7.5.1)
   if (K('chutar') && mode === 'goleiro') startKick('lancar');   // (7.4.16)
   if (K('passar') && mode === 'kickoff') kickoffPass();
   else if (K('passar') && (mode === 'ball' || mode === 'setpiece' || mode === 'throw' || mode === 'goleiro')) startKick('pass');
@@ -12778,6 +12794,308 @@ function keyboardAim() {
   const m = Math.hypot(up, right);
   if (m > 0) { const w = screenToWorld(up / m, right / m, G.kick ? G.kick.yawRef : cam.yaw); setAimDir(w.x, w.z); }
 }
+
+// ---------------------------------------------------------------------
+// (7.5.1) CONTROLE (gamepad) — feito para o de XBOX (o mapeamento "standard" do navegador; o de PlayStation e os genéricos
+//   que o navegador reconhece também funcionam). Esquema do Winning Eleven / PES (e do Bomba Patch):
+//   analógico esquerdo ou setas andam · RB segurado corre · A passa · X chuta · B cruza · Y pede a bola · RS (apertar o
+//   analógico direito) dribla quando o DRIBLAR aparece · LB troca de jogador (time inteiro) · View troca a câmera · Menu pausa.
+//   CHUTE / PASSE / CRUZAMENTO: aperte para mirar com o analógico e segure o MESMO botão para encher a força (ou já segure
+//   direto: em 0,25 s ele mira para onde o analógico aponta e começa a força); soltou, sai. Efeito (chute e cruzamento): o
+//   analógico escolhe o ponto da bola e qualquer botão (A, B, X, Y) bate. Segurando o chute, A (passe) cancela = FINTA (PES).
+//   Y cancela a mira. Ao receber: B domina, A toca de primeira (cabeceia na bola alta), X chuta de primeira (finaliza na alta).
+//   A bola vindo rasteira em você: A ou X de primeira. Marcando: A desarma, X carrinho. Comemoração: A e X são as duas, Y pula.
+//   Drible: os alvos mostram A, B e X: aperte o botão de cada um no tempo certo. Cenas e cobranças: A ou Menu pulam.
+//   Menus e pausa: direcional/analógico move, A escolhe, B volta. Tudo dá para trocar em Configurações → CONTROLE (e na pausa).
+// ---------------------------------------------------------------------
+const PAD_NOMES = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'View', 'Menu', 'LS', 'RS', '↑', '↓', '←', '→', 'Xbox'];
+const PAD_ACOES = [
+  { id: 'correr', nome: 'Correr (segurar)', grupo: 'mov', padrao: 5 },
+  { id: 'passar', nome: 'Passar / lançar', grupo: 'jogo', padrao: 0 },
+  { id: 'chutar', nome: 'Chutar', grupo: 'jogo', padrao: 2 },
+  { id: 'cruzar', nome: 'Cruzar', grupo: 'jogo', padrao: 1 },
+  { id: 'pedir', nome: 'Pedir a bola', grupo: 'jogo', padrao: 3 },
+  { id: 'driblar', nome: 'Driblar (quando aparecer)', grupo: 'jogo', padrao: 11 },
+  { id: 'cancelar', nome: 'Cancelar a mira', grupo: 'chute', padrao: 3 },
+  { id: 'desarmar', nome: 'Desarmar', grupo: 'def', padrao: 0 },
+  { id: 'carrinho', nome: 'Carrinho', grupo: 'def', padrao: 2 },
+  { id: 'dominar', nome: 'Dominar', grupo: 'recv', padrao: 1 },
+  { id: 'passe1', nome: 'Passe de primeira / cabecear', grupo: 'recv', padrao: 0 },
+  { id: 'chute1', nome: 'Chute de primeira / finalizar', grupo: 'recv', padrao: 2 },
+  { id: 'drible1', nome: 'Drible: 1º toque', grupo: 'drible', padrao: 0 },
+  { id: 'drible2', nome: 'Drible: 2º toque', grupo: 'drible', padrao: 1 },
+  { id: 'drible3', nome: 'Drible: 3º toque (goleiro)', grupo: 'drible', padrao: 2 },
+  { id: 'comemorar1', nome: 'Comemoração 1', grupo: 'festa', padrao: 0 },
+  { id: 'comemorar2', nome: 'Comemoração 2', grupo: 'festa', padrao: 2 },
+  { id: 'pularFesta', nome: 'Pular a comemoração', grupo: 'festa', padrao: 3 },
+  { id: 'trocar', nome: 'Trocar de jogador (time inteiro)', grupo: 'sempre', padrao: 4 },
+  { id: 'camera', nome: 'Trocar a câmera', grupo: 'sempre', padrao: 8 },
+  { id: 'pausa', nome: 'Pausar / continuar', grupo: 'sempre', padrao: 9 },
+];
+const GRUPOS_PAD = [['mov', 'Andar'], ['jogo', 'Com a bola'], ['chute', 'Mirando'], ['def', 'Na marcação'], ['recv', 'Ao receber a bola'], ['drible', 'Drible (no tempo certo)'], ['festa', 'Comemoração'], ['sempre', 'A qualquer hora']];
+const PAD = (() => {
+  const t = {}; for (const a of PAD_ACOES) t[a.id] = a.padrao;
+  try { const v = JSON.parse(localStorage.getItem('futebolJs.controle.v1') || 'null'); if (v && typeof v === 'object') for (const a of PAD_ACOES) if (Number.isInteger(v[a.id]) && v[a.id] >= 0 && v[a.id] < 17) t[a.id] = v[a.id]; } catch (e) { /* sem armazenamento */ }
+  return t;
+})();
+function guardarControle() { try { localStorage.setItem('futebolJs.controle.v1', JSON.stringify(PAD)); } catch (e) { /* ok */ } }
+const nomeBotao = (b) => (b == null || b < 0 ? '—' : PAD_NOMES[b] || ('#' + b));
+// ações que valem ao mesmo tempo não podem ter o mesmo botão (se tiver, as duas trocam); "mirando" vale junto com "com a bola"
+//   (o botão do chute segurado é a força); o 12–15 (direcional) é fixo para andar
+const padJuntas = (g1, g2) => g1 === g2 || g1 === 'mov' || g2 === 'mov' || g1 === 'sempre' || g2 === 'sempre' || (g1 === 'jogo' && g2 === 'chute') || (g1 === 'chute' && g2 === 'jogo');
+function definirBotao(acao, b) {
+  const A = PAD_ACOES.find((a) => a.id === acao); if (!A || b == null || b >= 12 && b <= 15) return null;
+  const outra = PAD_ACOES.find((x) => x.id !== acao && PAD[x.id] === b && padJuntas(A.grupo, x.grupo));
+  if (outra) PAD[outra.id] = PAD[acao];
+  PAD[acao] = b; guardarControle();
+  return outra ? outra.id : null;
+}
+function controlePadrao() { for (const a of PAD_ACOES) PAD[a.id] = a.padrao; guardarControle(); }
+const Pad = { ativo: false, nome: '', ant: [], agora: [], up: 0, right: 0, mag: 0, rx: 0, ry: 0, botaoChute: null, chuteT0: 0, forca: null, espera: null, navT: 0, navDir: '' };
+const padSegura = (acao) => !!Pad.agora[PAD[acao]];
+const PAD_ZONA = 0.2;
+function lerEixos(x, y) { const m = Math.hypot(x, y); if (m < PAD_ZONA) return [0, 0, 0]; const k = Math.min(1, (m - PAD_ZONA) / (1 - PAD_ZONA)) / m; return [x * k, y * k, Math.min(1, m)]; }
+function lerControle(rdt) {
+  const lista = navigator.getGamepads ? navigator.getGamepads() : [];
+  let gp = null;
+  for (const g of lista) if (g && g.connected && (!gp || (g.mapping === 'standard' && gp.mapping !== 'standard'))) gp = g;
+  if (!gp) { if (Pad.ativo) { Pad.ativo = false; Pad.up = Pad.right = Pad.mag = 0; Pad.agora = []; document.body.classList.remove('comControle'); if (Pad.histTeclas && Pad.histTeclas.size) padSegurarHist([]); } return; }
+  const agora = gp.buttons.map((b) => !!b && (b.pressed || b.value > 0.5));
+  let [x, y] = lerEixos(gp.axes[0] || 0, gp.axes[1] || 0);
+  if (agora[12] || agora[13] || agora[14] || agora[15]) { x = (agora[15] ? 1 : 0) - (agora[14] ? 1 : 0); y = (agora[13] ? 1 : 0) - (agora[12] ? 1 : 0); const l = Math.hypot(x, y) || 1; x /= l; y /= l; }
+  const [rx, ry] = lerEixos(gp.axes[2] || 0, gp.axes[3] || 0);
+  Pad.up = -y; Pad.right = x; Pad.mag = Math.min(1, Math.hypot(x, y)); Pad.rx = rx; Pad.ry = ry; Pad.agora = agora; Pad.nome = gp.id || '';
+  if (!Pad.ativo && (agora.some(Boolean) || Pad.mag > 0 || Math.hypot(rx, ry) > 0)) { Pad.ativo = true; document.body.classList.add('comControle'); delete hudCache.padGlifos; G.mode = null; }
+  for (let b = 0; b < agora.length; b++) {
+    if (agora[b] && !Pad.ant[b]) padApertou(b);
+    else if (!agora[b] && Pad.ant[b]) padSoltou(b);
+  }
+  Pad.ant = agora;
+  if (Pad.ativo) padContinuo(rdt);
+}
+// em menus e telas (fora do lance): o direcional/analógico move o foco, A escolhe, B volta (é o Esc)
+const modalAberto = () => [...document.querySelectorAll('[aria-modal="true"]')].some((m) => !m.closest('[hidden]') && m.getClientRects().length > 0);
+const escolhaAberta = () => { const e = document.getElementById('escolha'); return !!(e && !e.hidden && e.getClientRects().length); };
+// MODO HISTÓRIA andando (cidade, Fase 1, Fase 2): o direcional da história está na tela e por cima de tudo. Aí o controle vira o
+//   teclado da história: analógico = WASD, RB = Shift (corre), analógico direito = Q/E (gira a câmera), A = Espaço (falar,
+//   interagir, passar a fala), B e Menu = Esc (pausa da cidade), Y = M (mapa)
+function padHistoria() {
+  if (G.state !== 'menu' || escolhaAberta() || modalAberto()) return null;
+  const el = document.querySelector('.cdPad, .f1Pad, .f2Pad');
+  if (!el || el.closest('[hidden]') || !el.getClientRects().length) return null;
+  const r = el.getBoundingClientRect(), t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+  return t && (t === el || el.contains(t)) ? el : null;
+}
+const padTeclaHist = (code, on) => window.dispatchEvent(new KeyboardEvent(on ? 'keydown' : 'keyup', { code, key: code, bubbles: true }));
+function padSegurarHist(lista) {
+  const quer = new Set(lista), tem = Pad.histTeclas || (Pad.histTeclas = new Set());
+  for (const c of [...tem]) if (!quer.has(c)) { tem.delete(c); padTeclaHist(c, false); }
+  for (const c of quer) if (!tem.has(c)) { tem.add(c); padTeclaHist(c, true); }
+}
+const navegandoMenu = () => {
+  if (escolhaAberta()) return true;
+  if (G.state === 'paused' || G.state === 'menu' || G.state === 'end' || G.state === 'fim') return true;
+  return modalAberto();
+};
+const PAD_FOCAVEIS = 'button, input, select, summary, [role="button"], a[href], [tabindex]:not([tabindex="-1"])';
+function padFocaveis() {
+  const out = [];
+  for (const el of document.querySelectorAll(PAD_FOCAVEIS)) {
+    if (el.disabled || el.closest('[hidden]') || el.closest('#hud') || el.closest('#recvLayer')) continue;
+    const r = el.getBoundingClientRect(); if (r.width < 4 || r.height < 4) continue;
+    const cx = Math.min(innerWidth - 1, Math.max(0, r.left + r.width / 2)), cy = Math.min(innerHeight - 1, Math.max(0, r.top + r.height / 2));
+    const topo = document.elementFromPoint(cx, cy);
+    if (!topo || !(topo === el || el.contains(topo) || topo.contains(el))) continue;   // coberto por outra tela: não conta
+    out.push({ el, x: cx, y: cy });
+  }
+  return out;
+}
+function padNavegar(dx, dy) {
+  const L = padFocaveis(); if (!L.length) return;
+  const at = document.activeElement, a = L.find((q) => q.el === at);
+  if (!a) { L[0].el.focus({ preventScroll: false }); return; }
+  if (at && at.type === 'range' && dx) {                      // barrinhas: esquerda/direita mudam o valor
+    const st = Number(at.step) || 1; at.value = String(Number(at.value) + dx * st);
+    at.dispatchEvent(new Event('input', { bubbles: true })); at.dispatchEvent(new Event('change', { bubbles: true })); return;
+  }
+  let best = null, bd = Infinity;
+  for (const q of L) {
+    if (q === a) continue;
+    const vx = q.x - a.x, vy = q.y - a.y, frente = vx * dx + vy * dy;
+    if (frente <= 4) continue;
+    const lado = Math.abs(vx * dy - vy * dx), d = frente + lado * 2.2;
+    if (d < bd) { bd = d; best = q; }
+  }
+  if (best) { best.el.focus({ preventScroll: false }); try { best.el.scrollIntoView({ block: 'nearest' }); } catch (e) { /* ok */ } }
+}
+function padClicar(el) {
+  if (!el) return;
+  if (el.tagName === 'SUMMARY' || el.tagName === 'A' || el.tagName === 'SELECT') { el.click(); return; }
+  if (el.type === 'checkbox') { el.click(); return; }
+  el.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+  el.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true }));
+  el.click();
+}
+const padTecla = (code) => window.dispatchEvent(new KeyboardEvent('keydown', { code, key: code === 'Escape' ? 'Escape' : code, bubbles: true }));
+function botaoVisivel(id) { const b = document.getElementById(id); return b && !b.hidden && b.getClientRects().length ? b : null; }
+function padApertou(b) {
+  if (Pad.espera) { const f = Pad.espera; Pad.espera = null; f(b); return; }   // Configurações esperando o botão novo
+  if (TeclaEspera.ativa) return;
+  const eh = (a) => PAD[a] === b, mode = computeMode();
+  // pular cenas (história, substituição, replay, espectador) e o "Pular" das cobranças
+  const pula = botaoVisivel('cenaPular') || botaoVisivel('skipBtn');
+  if (pula && (b === 0 || eh('pausa'))) { pula.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true })); return; }
+  if (padHistoria()) {
+    const tecla = b === 0 ? 'Space' : (b === 1 || b === 9) ? 'Escape' : b === 3 ? 'KeyM' : b === 2 ? 'KeyF' : null;
+    if (tecla) { padTeclaHist(tecla, true); padTeclaHist(tecla, false); }
+    return;
+  }
+  if (navegandoMenu()) {
+    if (G.state === 'paused' && eh('pausa')) { resumeGame(); return; }
+    if (b === 12) padNavegar(0, -1); else if (b === 13) padNavegar(0, 1); else if (b === 14) padNavegar(-1, 0); else if (b === 15) padNavegar(1, 0);
+    else if (b === 0) { const at = document.activeElement; if (at && at !== document.body && padFocaveis().some((q) => q.el === at)) padClicar(at); else padNavegar(0, 1); }
+    else if (b === 1) { if (G.state === 'paused') resumeGame(); else padTecla('Escape'); }
+    return;
+  }
+  if (eh('pausa')) { pauseGame(); return; }
+  if (G.state === 'restart') { if (b === 0) skipRestart(); return; }
+  if (G.state === 'foul') { if (b === 0) pularParalisacao(); return; }
+  if (G.state === 'dribble' && G.timing) { tocarDribleComBotao(b); return; }
+  if (KICK_STATES.includes(G.state) && G.kick) {
+    const k = G.kick;
+    if (G.state === 'spin') { if (b <= 3) { const sp = padEfeito(); chooseSpin(sp.x, sp.y); } return; }
+    if (b === Pad.botaoChute && !k.primeira || k.primeira && (eh('passar') || eh('chutar') || eh('cruzar') || eh('passe1') || eh('chute1'))) {
+      if (G.state === 'aim') confirmAim();
+      if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; }
+      return;
+    }
+    if (eh('cancelar') || (k.kind === 'shot' && !k.cruzar && eh('passar'))) { cancelKick(); return; }   // segurando o chute, A = finta
+    return;
+  }
+  if (eh('camera')) toggleCamera();
+  if (eh('trocar')) trocarJogadorManual();
+  if (G.recv && !G.recv.done) {
+    const R = G.recv;
+    if (R.kind === 'alto') {
+      if (eh('passe1')) martelar('cabecear'); else if (eh('chute1')) martelar('finalizar'); else if (eh('dominar')) martelar(R.domAlto ? 'dominar' : null);
+    } else {
+      if (eh('passe1') && R.op1) martelar('passe1'); else if (eh('chute1') && R.chute1) martelar('chute1'); else if (eh('dominar')) martelar('dominar');
+    }
+    return;
+  }
+  const iniciaToque = (kind) => { startKick(kind); if (KICK_STATES.includes(G.state)) { Pad.botaoChute = b; Pad.chuteT0 = performance.now(); Pad.forca = null; } };
+  if (mode === 'primeira' || mode === 'primeiraC') {
+    if (eh('passar') || eh('passe1')) { primeiraSemRecepcao('pass'); if (G.kick) { Pad.botaoChute = b; Pad.chuteT0 = performance.now(); } return; }
+    if ((eh('chutar') || eh('chute1')) && pertoParaChuteDePrimeira()) { primeiraSemRecepcao('shot'); if (G.kick) { Pad.botaoChute = b; Pad.chuteT0 = performance.now(); } return; }
+  }
+  if (G.state === 'celebrate') {
+    if (eh('comemorar1')) startCelebration(celebDoJogador().slots[0]);
+    else if (eh('comemorar2')) startCelebration(celebDoJogador().slots[1]);
+    else if (eh('pularFesta')) endCelebration();
+    return;
+  }
+  if (mode === 'ball' || mode === 'setpiece') {
+    if (eh('chutar')) iniciaToque('shot');
+    else if (eh('passar')) iniciaToque('pass');
+    else if (eh('cruzar')) iniciaToque('cruzar');
+    else if (eh('driblar')) startDribble();
+  } else if (mode === 'goleiro') {
+    if (eh('passar')) iniciaToque('pass'); else if (eh('chutar') || eh('cruzar')) iniciaToque('lancar');
+  } else if (mode === 'throw') {
+    if (eh('passar') || eh('chutar') || eh('cruzar')) iniciaToque('pass');
+  } else if (mode === 'kickoff') {
+    if (eh('passar')) kickoffPass();
+  } else if (mode === 'team') {
+    if (eh('pedir')) requestBall();
+  } else if (mode === 'defend') {
+    if (eh('desarmar')) tryUserTackle(); else if (eh('carrinho')) userCarrinho();
+  } else if (mode === 'loose') {
+    if (eh('carrinho')) userCarrinho();
+  }
+}
+function padSoltou(b) {
+  if (b === Pad.forca && power.holding && power.id === 'pad') releasePower();
+  if (b === Pad.forca) Pad.forca = null;
+  if (b === Pad.botaoChute && !KICK_STATES.includes(G.state)) Pad.botaoChute = null;
+}
+// o ponto da bola para o efeito: o analógico (para baixo = embaixo da bola)
+function padEfeito() { let x = Pad.right, y = -Pad.up; const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; } return { x, y }; }
+function padContinuo(rdt) {
+  // MIRA com o analógico (a seta segue para onde ele aponta, na câmera do começo da mira)
+  if (G.state === 'aim' && G.kick && Pad.mag > 0.3 && aimPad.id === null) {
+    const w = screenToWorld(Pad.up / Pad.mag, Pad.right / Pad.mag, G.kick.yawRef); setAimDir(w.x, w.z);
+  }
+  // segurou o botão do toque desde o começo: em 0,25 s a mira trava onde o analógico aponta e a força começa
+  if (G.state === 'aim' && G.kick && Pad.botaoChute != null && Pad.agora[Pad.botaoChute] && !Pad.forca && performance.now() - Pad.chuteT0 > 250) {
+    confirmAim(); if (G.state === 'power') { startPowerHold('pad'); Pad.forca = Pad.botaoChute; }
+  }
+  if (!KICK_STATES.includes(G.state) && Pad.botaoChute != null && !Pad.agora[Pad.botaoChute]) Pad.botaoChute = null;
+  // EFEITO: o ponto vermelho anda com o analógico até você apertar um botão
+  if (G.state === 'spin' && G.kick && !G.kick.spinChosen) {
+    const sp = padEfeito(), dot = $('spinDot');
+    if (Math.hypot(sp.x, sp.y) > 0.05) { dot.hidden = false; dot.style.left = (50 + sp.x * 50) + '%'; dot.style.top = (50 + sp.y * 50) + '%'; }
+  }
+  // câmera livre: o analógico direito gira e sobe/desce (como arrastar a tela)
+  if (podeArrastarCamera() && (Pad.rx || Pad.ry)) { cam.yaw = wrapAngle(cam.yaw + Pad.rx * rdt * 2.4); cam.livreH = clamp((cam.livreH || 0) + Pad.ry * rdt * 4, -2.2, 9); }
+  // história andando: o analógico vira WASD (e o RB, Shift; o analógico direito, Q/E)
+  if (padHistoria()) {
+    const L = [];
+    if (Pad.up > 0.35) L.push('KeyW'); if (Pad.up < -0.35) L.push('KeyS'); if (Pad.right > 0.35) L.push('KeyD'); if (Pad.right < -0.35) L.push('KeyA');
+    if (padSegura('correr') && L.length) L.push('ShiftLeft');
+    if (Pad.rx > 0.4) L.push('KeyE'); if (Pad.rx < -0.4) L.push('KeyQ');
+    padSegurarHist(L); return;
+  }
+  if (Pad.histTeclas && Pad.histTeclas.size) padSegurarHist([]);
+  // menus: segurar o analógico/direcional repete o movimento do foco
+  if (navegandoMenu() && !Pad.espera) {
+    const dir = Pad.mag > 0.6 ? (Math.abs(Pad.right) > Math.abs(Pad.up) ? (Pad.right > 0 ? 'd' : 'e') : (Pad.up > 0 ? 'c' : 'b')) : '';
+    const viaDpad = Pad.agora[12] || Pad.agora[13] || Pad.agora[14] || Pad.agora[15];
+    if (!dir) { Pad.navDir = ''; Pad.navT = 0; }
+    else if (dir !== Pad.navDir) { Pad.navDir = dir; Pad.navT = 0.38; if (!viaDpad) padNavegar(dir === 'd' ? 1 : dir === 'e' ? -1 : 0, dir === 'b' ? 1 : dir === 'c' ? -1 : 0); }
+    else if ((Pad.navT -= rdt) <= 0) { Pad.navT = 0.12; padNavegar(dir === 'd' ? 1 : dir === 'e' ? -1 : 0, dir === 'b' ? 1 : dir === 'c' ? -1 : 0); }
+  }
+}
+// drible: cada alvo tem o seu botão (A, B, X); o botão de um alvo que ainda não apareceu não conta; o botão errado com um alvo
+//   na tela conta como erro nele
+const botaoDoAlvo = (i) => PAD[['drible1', 'drible2', 'drible3'][i % 3]];
+function tocarDribleProximo() {
+  const T_ = G.timing; if (!T_ || T_.done) return;
+  const alvo = T_.targets.find((tg) => !tg.judged && T_.t >= tg.appear); if (!alvo) return;
+  const err = Math.abs(T_.t - alvo.hitAt); judgeTarget(alvo, err < 0.13 ? 'perfect' : err < 0.28 ? 'good' : 'miss');
+}
+function tocarDribleComBotao(b) {
+  const T_ = G.timing; if (!T_ || T_.done) return;
+  const ativos = T_.targets.filter((tg) => !tg.judged && T_.t >= tg.appear);
+  if (!ativos.length) return;
+  const alvo = ativos.find((tg) => botaoDoAlvo(T_.targets.indexOf(tg)) === b);
+  if (!alvo) { if ([0, 1, 2, 3].includes(b)) judgeTarget(ativos[0], 'miss'); return; }
+  const err = Math.abs(T_.t - alvo.hitAt);
+  judgeTarget(alvo, err < 0.13 ? 'perfect' : err < 0.28 ? 'good' : 'miss');
+}
+// os botões da tela mostram o botão do controle (quando há um controle ligado)
+const PAD_ROTULO = { 'CHUTAR / CRUZAR': 'chutar', 'PASSAR': 'passar', 'CRUZAR': 'cruzar', 'DRIBLAR': 'driblar', 'PEDIR BOLA': 'pedir', 'DESARMAR': 'desarmar', 'CARRINHO': 'carrinho',
+  'TROCAR': 'trocar', 'LANÇAR': 'passar', 'BOLA LONGA': 'chutar', 'PASSE DE 1ª': 'passar', 'CHUTE DE 1ª': 'chutar', 'PULAR': 'pularFesta' };
+function marcarBotoesDoControle(mode) {
+  if (!Pad.ativo) return;
+  const A = $('actions'); if (!A) return;
+  const festa = mode === 'celebrate', bt = A.querySelectorAll('.act');
+  bt.forEach((el, i) => {
+    let acao = PAD_ROTULO[el.dataset.rotulo || ''];
+    if (festa && !acao) acao = el.classList.contains('s1') ? 'comemorar1' : el.classList.contains('s2') ? 'comemorar2' : null;
+    if (acao) el.dataset.pad = nomeBotao(PAD[acao]); else delete el.dataset.pad;
+  });
+}
+(function () {
+  const st = document.createElement('style');
+  st.textContent = 'body.comControle .act[data-pad]::before{content:attr(data-pad);position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;padding:0 4px;box-sizing:border-box;' +
+    'border-radius:11px;background:#111;border:2px solid #fff;color:#fff;font:700 11px/18px var(--font-display);text-align:center}.act{position:relative}' +
+    'body.comControle .act[data-pad="A"]::before,.tgt .num.pA{background:#2f9e44}body.comControle .act[data-pad="B"]::before,.tgt .num.pB{background:#d9483b}' +
+    'body.comControle .act[data-pad="X"]::before,.tgt .num.pX{background:#2a72d6}body.comControle .act[data-pad="Y"]::before,.tgt .num.pY{background:#e0a800;color:#111}' +
+    '.tgt .num.pad{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;border:3px solid #fff;color:#fff}' +
+    '.cfgPad .cfgBotao.espera,.cfgTec .cfgTecla.espera{background:#f7941d;color:#071430}' +
+    'body.comControle :focus-visible,body.comControle button:focus{outline:3px solid #f7941d;outline-offset:2px}';
+  document.head.appendChild(st);
+})();
 
 // ---------------------------------------------------------------------
 // 16. HUD E TELAS
@@ -12901,7 +13219,7 @@ function renderButtons(mode) {
   const mk = (label, slot, fn, cls = '', id = '') => {
     const b = document.createElement('button');
     b.className = 'act ' + slot + ' ' + cls;
-    b.textContent = T(label);
+    b.textContent = T(label); b.dataset.rotulo = label;   // (7.5.1) para mostrar o botão do controle
     if (id) b.id = id;
     b.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
     A.appendChild(b);
@@ -12942,6 +13260,7 @@ function renderButtons(mode) {
     mk('PASSE DE 1ª', 's1', () => primeiraSemRecepcao('pass'), 'primary');
     if (mode === 'primeiraC') mk('CHUTE DE 1ª', 's2', () => primeiraSemRecepcao('shot'), 'primary');
   }
+  marcarBotoesDoControle(mode);                    // (7.5.1)
 }
 
 function fmtClock(s) {
@@ -14048,6 +14367,7 @@ const GRUPOS_TECLADO = [['mov', 'Andar'], ['jogo', 'Com a bola e na marcação']
     '.cfgMudo[aria-pressed=true]{background:#7a1f16;border-color:#ff8a70}.cfgTecla.espera{background:#f7941d;color:#2a1206;border-color:#2a1206}' +
     '.cfgSec .ajCores{display:flex;flex-wrap:wrap;gap:6px}.cfgSec .ajCor{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:3px solid rgba(255,255,255,.45);padding:0;cursor:pointer;box-sizing:border-box}' +
     '.cfgSec .ajCor.on{border-color:#fff;box-shadow:0 0 0 2px #f7941d}.cfgSec .ajCor.nada{background:repeating-linear-gradient(45deg,#333,#333 4px,#777 4px,#777 8px)!important}' +
+    '.cfgTec .cfgFixo{justify-self:end;font:600 11px var(--font-display);opacity:.75;text-align:right}' +
     '.cfgTec{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;font:600 13px/1.2 var(--font-body)}.cfgTec h4{grid-column:1/-1;margin:6px 0 0;font:700 11px var(--font-display);letter-spacing:.08em;color:#f7941d}' +
     '.cfgFila{display:flex;flex-wrap:wrap;gap:8px}.cfgCam{display:flex;flex-direction:column;gap:6px;font:600 13px/1.2 var(--font-body)}.cfgCam label{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:4px 8px;align-items:center}' +
     '.cfgLista{margin:0;padding-left:18px;font:600 12px/1.4 var(--font-body)}.cfgLista li{margin:3px 0}.cfgCam input[type=range]{grid-column:1/-1;width:100%;accent-color:#f7941d}.cfgCam output{font:700 11px var(--font-display);text-align:right}.cfgAviso{font:600 12px var(--font-body);color:#ffb27a;min-height:1em;margin:0}' +
@@ -14148,6 +14468,42 @@ function cfgTecladoLigar(box) {
   box.querySelector('[data-c="tecPad"]').addEventListener('click', () => { if (fim) fim(); teclasPadrao(); pinta(); aviso.textContent = T('Teclas padrão de volta.'); });
 }
 
+// (7.5.1) CONTROLE: a lista das ações com o botão de cada uma (toque e aperte o botão novo no controle) e o padrão do PES
+function cfgControleHTML() {
+  let h = '<div class="cfgTec cfgPad cfgSec"><p class="cfgAviso cfgPadEstado" style="grid-column:1/-1;color:inherit;opacity:.85"></p>';
+  for (const [g, nome] of GRUPOS_PAD) {
+    h += '<h4>' + T(nome) + '</h4>';
+    if (g === 'mov') h += '<span>' + T('Andar') + '</span><b class="cfgFixo">' + T('Analógico esquerdo / direcional') + '</b>';
+    for (const a of PAD_ACOES.filter((x) => x.grupo === g)) h += '<span>' + T(a.nome) + '</span><button type="button" class="cfgTecla cfgBotao" data-pad="' + a.id + '">' + nomeBotao(PAD[a.id]) + '</button>';
+    if (g === 'chute') h += '<span>' + T('Força') + '</span><b class="cfgFixo">' + T('segure o botão do toque') + '</b><span>' + T('Efeito') + '</span><b class="cfgFixo">' + T('analógico + qualquer botão') + '</b>';
+    if (g === 'sempre') h += '<span>' + T('Câmera livre') + '</span><b class="cfgFixo">' + T('analógico direito') + '</b>';
+  }
+  return h + '<p class="cfgAviso cfgPadAviso" style="grid-column:1/-1"></p><div class="cfgFila" style="grid-column:1/-1"><button type="button" class="cfgBtn" data-c="padPad">' + T('Restaurar o padrão (PES)') + '</button></div>' +
+    '<p class="cfgAviso" style="grid-column:1/-1;color:inherit;opacity:.75">' + T('Toque numa ação e aperte o botão novo no controle. Segurando o chute, A faz a finta. Nos menus: direcional move, A escolhe, B volta.') + '</p></div>';
+}
+function cfgControleLigar(box) {
+  const aviso = box.querySelector('.cfgPadAviso'), estado = box.querySelector('.cfgPadEstado');
+  const pinta = () => box.querySelectorAll('.cfgBotao').forEach((b) => { b.textContent = nomeBotao(PAD[b.dataset.pad]); b.classList.remove('espera'); });
+  const status = () => { estado.textContent = Pad.ativo ? Tf('Controle ligado: {0}', (Pad.nome || '').replace(/\(.*\)/, '').trim() || T('controle')) : T('Nenhum controle: aperte um botão do controle para ele aparecer aqui.'); };
+  status(); const iv = setInterval(() => { if (!box.isConnected) { clearInterval(iv); return; } status(); }, 800);
+  let fim = null;
+  const esperar = (bt) => {
+    if (fim) fim();
+    bt.classList.add('espera'); bt.textContent = T('Aperte…'); aviso.textContent = '';
+    const fora = (e) => { if (e.target !== bt) fim(); };
+    const tempo = setTimeout(() => { if (fim) { fim(); aviso.textContent = T('Nenhum botão apertado.'); } }, 6000);
+    Pad.espera = (b) => {
+      if (b >= 12 && b <= 15) { aviso.textContent = T('O direcional é fixo para andar: escolha outro botão.'); setTimeout(() => esperar(bt), 0); return; }
+      const trocou = definirBotao(bt.dataset.pad, b); fim();
+      if (trocou) { const A = PAD_ACOES.find((x) => x.id === trocou); aviso.textContent = Tf('O botão estava em "{0}": os dois trocaram.', T(A.nome)); }
+    };
+    window.addEventListener('pointerdown', fora, true);
+    fim = () => { window.removeEventListener('pointerdown', fora, true); clearTimeout(tempo); Pad.espera = null; fim = null; pinta(); };
+  };
+  box.querySelectorAll('.cfgBotao').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); esperar(b); }));
+  box.querySelector('[data-c="padPad"]').addEventListener('click', () => { if (fim) fim(); controlePadrao(); pinta(); aviso.textContent = T('Botões padrão de volta.'); });
+}
+
 // Volta ao MENU INICIAL (pede confirmação; a partida em andamento se perde). Recarrega a página: é o jeito que garante estado limpo (fase da história,
 // replay, câmera, música...). O que está salvo (saves, personagem, ajustes) continua.
 function ajVoltarAoMenu() {
@@ -14207,8 +14563,9 @@ function ajMontarPausa() {
   // (7.4.13) o som (por categoria) e o teclado também ficam aqui
   const somBox = document.createElement('details'); somBox.className = 'cfgPausa'; somBox.innerHTML = '<summary class="sectionTitle">' + T('SOM') + '</summary>' + cfgSomHTML();
   const tecBox = document.createElement('details'); tecBox.className = 'cfgPausa'; tecBox.innerHTML = '<summary class="sectionTitle">' + T('TECLADO') + '</summary>' + cfgTecladoHTML();
-  box.insertBefore(somBox, extra); box.appendChild(tecBox);
-  cfgSomLigar(somBox); cfgTecladoLigar(tecBox);
+  const padBox = document.createElement('details'); padBox.className = 'cfgPausa'; padBox.innerHTML = '<summary class="sectionTitle">' + T('CONTROLE (XBOX)') + '</summary>' + cfgControleHTML();   // (7.5.1)
+  box.insertBefore(somBox, extra); box.appendChild(tecBox); box.appendChild(padBox);
+  cfgSomLigar(somBox); cfgTecladoLigar(tecBox); cfgControleLigar(padBox);
   // Botão FORMAÇÃO ao lado de Continuar / Reiniciar.
   const linha = document.querySelector('#pauseScreen .btnRow');
   if (linha && !$('formBtn')) {
@@ -15560,6 +15917,7 @@ function frame(now) {
   if (PausaGlobal.ativa) { last = now; return; }             // celular em pé ou app em segundo plano: tudo parado
   const tCpu0 = performance.now(), quadroMs = now - last;
   const rdt = Math.min(0.05, (now - last) / 1000);
+  try { lerControle(rdt); } catch (e) { /* (7.5.1) controle: um erro de leitura não para o jogo */ }
   last = now;
   let dt = 0;
   if (G.state === 'replay') atualizarReplay(rdt);   // replay: só mostra a gravação (o jogo fica parado)
@@ -18734,6 +19092,50 @@ const Musica = (() => {
 // Tudo que aparece em texto passa por T()/Tf() (tabela I18N no bloco de idiomas, mais o bloco "Fase 1" logo abaixo).
 // ---------------------------------------------------------------------
 // ----- Fase 1 (escola) -----
+// (7.5.1) CONTROLE (Xbox)
+Object.assign(I18N, {
+  'Chutar': ['Shoot', 'Chutar', 'Tirare', 'Tirer'],
+  'Cruzar': ['Cross', 'Centrar', 'Crossare', 'Centrer'],
+  'Driblar (quando aparecer)': ['Dribble (when it appears)', 'Regatear (cuando aparezca)', 'Dribblare (quando appare)', 'Dribbler (quand ça apparaît)'],
+  'Cancelar a mira': ['Cancel aiming', 'Cancelar la mira', 'Annulla la mira', 'Annuler la visée'],
+  'Passe de primeira / cabecear': ['First-time pass / header', 'Pase de primera / cabecear', 'Passaggio di prima / colpo di testa', 'Passe en une touche / tête'],
+  'Chute de primeira / finalizar': ['First-time shot / finish', 'Tiro de primera / rematar', 'Tiro di prima / concludere', 'Frappe en une touche / finir'],
+  'Drible: 1º toque': ['Dribble: 1st touch', 'Regate: 1.er toque', 'Dribbling: 1º tocco', 'Dribble : 1re touche'],
+  'Drible: 2º toque': ['Dribble: 2nd touch', 'Regate: 2.º toque', 'Dribbling: 2º tocco', 'Dribble : 2e touche'],
+  'Drible: 3º toque (goleiro)': ['Dribble: 3rd touch (goalkeeper)', 'Regate: 3.er toque (portero)', 'Dribbling: 3º tocco (portiere)', 'Dribble : 3e touche (gardien)'],
+  'Pular a comemoração': ['Skip the celebration', 'Saltar la celebración', 'Salta l\'esultanza', 'Passer la célébration'],
+  'Pausar / continuar': ['Pause / resume', 'Pausar / continuar', 'Pausa / riprendi', 'Pause / reprendre'],
+  'Mirando': ['Aiming', 'Apuntando', 'Mirando', 'En visant'],
+  'Na marcação': ['Defending', 'Marcando', 'In marcatura', 'Au marquage'],
+  'Drible (no tempo certo)': ['Dribble (on time)', 'Regate (en el momento justo)', 'Dribbling (al momento giusto)', 'Dribble (au bon moment)'],
+  'Analógico esquerdo / direcional': ['Left stick / D-pad', 'Stick izquierdo / cruceta', 'Levetta sinistra / croce direzionale', 'Stick gauche / croix directionnelle'],
+  'Força': ['Power', 'Fuerza', 'Potenza', 'Puissance'],
+  'segure o botão do toque': ['hold the kick button', 'mantén el botón del toque', 'tieni premuto il tasto del tocco', 'maintiens le bouton de la frappe'],
+  'Efeito': ['Spin', 'Efecto', 'Effetto', 'Effet'],
+  'analógico + qualquer botão': ['stick + any button', 'stick + cualquier botón', 'levetta + qualsiasi tasto', 'stick + n\'importe quel bouton'],
+  'Câmera livre': ['Free camera', 'Cámara libre', 'Telecamera libera', 'Caméra libre'],
+  'analógico direito': ['right stick', 'stick derecho', 'levetta destra', 'stick droit'],
+  'Restaurar o padrão (PES)': ['Restore default (PES)', 'Restaurar predeterminado (PES)', 'Ripristina predefinito (PES)', 'Rétablir par défaut (PES)'],
+  'Toque numa ação e aperte o botão novo no controle. Segurando o chute, A faz a finta. Nos menus: direcional move, A escolhe, B volta.': [
+    'Tap an action and press the new button on the controller. While holding a shot, A fakes it. In menus: D-pad moves, A selects, B goes back.',
+    'Toca una acción y pulsa el botón nuevo en el mando. Manteniendo el tiro, A hace el amague. En los menús: la cruceta mueve, A elige, B vuelve.',
+    'Tocca un\'azione e premi il nuovo tasto sul controller. Tenendo il tiro, A fa la finta. Nei menu: la croce sposta, A sceglie, B torna indietro.',
+    'Touche une action et appuie sur le nouveau bouton de la manette. En maintenant la frappe, A fait la feinte. Dans les menus : la croix déplace, A choisit, B revient.'],
+  'Controle ligado: {0}': ['Controller connected: {0}', 'Mando conectado: {0}', 'Controller collegato: {0}', 'Manette connectée : {0}'],
+  'controle': ['controller', 'mando', 'controller', 'manette'],
+  'Nenhum controle: aperte um botão do controle para ele aparecer aqui.': ['No controller: press a button on the controller to make it show up here.', 'Ningún mando: pulsa un botón del mando para que aparezca aquí.', 'Nessun controller: premi un tasto del controller per farlo apparire qui.', 'Aucune manette : appuie sur un bouton de la manette pour qu\'elle apparaisse ici.'],
+  'Nenhum botão apertado.': ['No button pressed.', 'No se pulsó ningún botón.', 'Nessun tasto premuto.', 'Aucun bouton appuyé.'],
+  'O direcional é fixo para andar: escolha outro botão.': ['The D-pad is fixed for moving: choose another button.', 'La cruceta es fija para caminar: elige otro botón.', 'La croce direzionale è fissa per muoversi: scegli un altro tasto.', 'La croix directionnelle sert à se déplacer : choisis un autre bouton.'],
+  'O botão estava em "{0}": os dois trocaram.': ['The button was on "{0}": the two were swapped.', 'El botón estaba en "{0}": los dos se intercambiaron.', 'Il tasto era su "{0}": i due sono stati scambiati.', 'Le bouton était sur « {0} » : les deux ont été échangés.'],
+  'Botões padrão de volta.': ['Default buttons restored.', 'Botones predeterminados restaurados.', 'Tasti predefiniti ripristinati.', 'Boutons par défaut rétablis.'],
+  'CONTROLE (XBOX)': ['CONTROLLER (XBOX)', 'MANDO (XBOX)', 'CONTROLLER (XBOX)', 'MANETTE (XBOX)'],
+  'NO CONTROLE (XBOX)': ['ON THE CONTROLLER (XBOX)', 'CON MANDO (XBOX)', 'CON IL CONTROLLER (XBOX)', 'À LA MANETTE (XBOX)'],
+  'Analógico ou direcional andam, RB corre. A passa, X chuta, B cruza, Y pede a bola, RS dribla, LB troca de jogador, View troca a câmera, Menu pausa. Aperte para mirar e segure o mesmo botão para a força. Ao receber: B domina, A ou X de primeira. Marcando: A desarma, X carrinho. Troque os botões em Configurações → CONTROLE.': [
+    'Stick or D-pad to move, RB to sprint. A passes, X shoots, B crosses, Y asks for the ball, RS dribbles, LB switches player, View changes the camera, Menu pauses. Press to aim and hold the same button for power. When receiving: B controls, A or X first time. Defending: A tackles, X slide tackle. Change the buttons in Settings → CONTROLLER.',
+    'Stick o cruceta para caminar, RB corre. A pasa, X tira, B centra, Y pide el balón, RS regatea, LB cambia de jugador, View cambia la cámara, Menu pausa. Pulsa para apuntar y mantén el mismo botón para la fuerza. Al recibir: B controla, A o X de primera. Marcando: A quita, X barrida. Cambia los botones en Configuración → MANDO.',
+    'Levetta o croce per muoversi, RB per correre. A passa, X tira, B crossa, Y chiede palla, RS dribbla, LB cambia giocatore, View cambia la telecamera, Menu mette in pausa. Premi per mirare e tieni lo stesso tasto per la potenza. Ricevendo: B controlla, A o X di prima. In marcatura: A contrasta, X scivolata. Cambia i tasti in Impostazioni → CONTROLLER.',
+    'Stick ou croix pour se déplacer, RB pour sprinter. A passe, X tire, B centre, Y demande le ballon, RS dribble, LB change de joueur, View change la caméra, Menu met en pause. Appuie pour viser et maintiens le même bouton pour la puissance. À la réception : B contrôle, A ou X en une touche. Au marquage : A tacle, X tacle glissé. Change les boutons dans Paramètres → MANETTE.'],
+});
 Object.assign(I18N, {
   'Escola Santa Maria - interior do Brasil': ['Santa Maria School - countryside of Brazil', 'Escuela Santa María - interior de Brasil', 'Scuola Santa Maria - entroterra del Brasile', 'École Santa Maria - intérieur du Brésil'],
   '2014': ['2014', '2014', '2014', '2014'],
@@ -20975,12 +21377,14 @@ function montarMenuInicial() {
       sec('som', T('SOM'), cfgSomHTML(), true) +
       sec('controles', T('CONTROLES'), cfgControlesHTML()) +
       sec('teclado', T('TECLADO'), cfgTecladoHTML()) +
+      sec('controle', T('CONTROLE (XBOX)'), cfgControleHTML()) +
       (como ? sec('como', T('COMO JOGAR'), como.outerHTML) : '') +
       '<p class="mxMsg" style="opacity:.7;font-size:11px;margin-top:10px">' + esc(v ? v.textContent : '') + '</p>');
     const box = veu.querySelector('.mxCaixa');
     cfgSomLigar(box.querySelector('[data-sec="som"]'));
     cfgControlesLigar(box.querySelector('[data-sec="controles"]'), () => {});
     cfgTecladoLigar(box.querySelector('[data-sec="teclado"]'));
+    cfgControleLigar(box.querySelector('[data-sec="controle"]'));
   };
   // (7.4.13) MESTRE DO CLUBE: ainda "EM BREVE". O botão já existe (desligado) e, quando o módulo mestre.js existir, é só ligar
   //   MESTRE_DO_CLUBE.pronto: fundar o clube (nome, escudo, cores), buscar patrocínio, organizar a parte técnica (elenco,

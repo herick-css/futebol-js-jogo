@@ -118,6 +118,18 @@ ARQUIVOS
                           câmera de trás, enquanto você segura o joystick vale o ângulo de quando começou (yawCeleb; antes segurar
                           para um lado fazia andar em círculo). Câmera de TV: ao escolher a comemoração ela chega perto de você
                           (cameraTVComemoracao, do mesmo lado da TV) e volta a abrir quando a animação acaba
+                          (7.5.1) CONTROLE (gamepad, feito para o de Xbox; mapeamento "standard" do navegador) — jogo.js, seção
+                          "CONTROLE (gamepad)" (PAD_ACOES / PAD / lerControle / padApertou / padContinuo). Esquema do PES / Bomba
+                          Patch: analógico ou direcional andam, RB corre; A passa, X chuta, B cruza (startKick('cruzar'): sempre
+                          cruzamento), Y pede a bola, RS dribla, LB troca de jogador, View câmera, Menu pausa. Aperte para mirar e
+                          segure o MESMO botão para a força (ou segure direto: em 0,25 s trava a mira e enche); efeito = analógico +
+                          qualquer botão; segurando o chute, A = finta; Y cancela a mira. Recepção: B domina, A de primeira /
+                          cabeceia, X chute de primeira / finaliza. Marcando: A desarma, X carrinho. Comemoração: A / X, Y pula.
+                          Drible: os alvos mostram A, B, X (drible1–3). Cenas/cobranças: A ou Menu pulam. Menus e pausa: direcional
+                          move o foco, A escolhe, B volta (Esc). Modo história andando (cidade, Fase 1, Fase 2): o controle vira o
+                          teclado da história (WASD, Shift, Q/E, Espaço, Esc, M). Os botões da tela mostram o botão do controle.
+                          Tudo trocável em Configurações → CONTROLE (XBOX) e na pausa (futebolJs.controle.v1). Teclado: + H cruza e
+                          a tecla do drible acerta os alvos do minigame
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
