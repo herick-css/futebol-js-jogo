@@ -111,6 +111,13 @@ ARQUIVOS
                           esbarra, perde o embalo e leva um bote na hora (CORPO); para passar é preciso driblar ou tocar. SAÍDA DE BOLA no 6 x 6: os da frente do time sem a bola espalhados por
                           igual (dois nasciam no mesmo lugar), o parceiro da saída é o meia mais central e ninguém começa a
                           menos de 1,6 m de outro (separarNaSaida)
+                          (7.4.22) goleiro: alcance do mergulho limitado, tempo de reação, corpo que rebate (nucleoGoleiro /
+                          rebaterNoCorpo) e a câmera de TV que recua na lateral do lado de cá.
+                          (7.5.0, versão estável) COMEMORAÇÃO: os controles não giram mais — na câmera de TV o ângulo fica o da TV
+                          (antes a câmera ficava de lado, mas o joystick usava o ângulo que girava atrás de você e invertia); na
+                          câmera de trás, enquanto você segura o joystick vale o ângulo de quando começou (yawCeleb; antes segurar
+                          para um lado fazia andar em círculo). Câmera de TV: ao escolher a comemoração ela chega perto de você
+                          (cameraTVComemoracao, do mesmo lado da TV) e volta a abrir quando a animação acaba
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)

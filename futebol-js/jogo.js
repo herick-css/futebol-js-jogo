@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.22';
+const VERSAO_JOGO = '7.5.0';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -7478,6 +7478,7 @@ function userDesired(u, dt) {
     }
   }
   if (inp.mag < 0.01) {
+    u.yawCeleb = null;                              // (7.5.0) soltou o joystick: o próximo toque usa o ângulo da câmera de agora
     // (7.4.13) time inteiro: o passe veio para ele e você não está mexendo — ele vai sozinho até o ponto da bola
     if (controleDoTime() && G.passTarget && G.passTarget.p === u && !G.possession && Math.hypot(G.passTarget.x - u.x, G.passTarget.z - u.z) > 0.6) return seek(u, G.passTarget.x, G.passTarget.z, CONFIG.USER_RUN * 0.8);
     return { vx: 0, vz: 0 };
@@ -7493,7 +7494,12 @@ function userDesired(u, dt) {
   }
   if (u.boost > 0) s *= 1.25;
   s *= velDoControlado(u);                          // (7.4.15) time inteiro: cada um com a velocidade dele
-  const w = screenToWorld(inp.up / inp.mag, inp.right / inp.mag);
+  // (7.5.0) comemoração com a câmera de trás: a câmera vira para onde você corre; se o joystick seguisse o ângulo novo a cada
+  //   quadro, segurar para o lado fazia você andar em círculo (parecia invertido). Enquanto você segura, vale o ângulo de quando
+  //   começou a segurar; soltou, pega o da câmera de novo.
+  let yawCtl = cam.yaw;
+  if (G.state === 'celebrate' && cam.mode !== 'tv') { if (u.yawCeleb == null) u.yawCeleb = cam.yaw; yawCtl = u.yawCeleb; } else u.yawCeleb = null;
+  const w = screenToWorld(inp.up / inp.mag, inp.right / inp.mag, yawCtl);
   let vx = w.x * s, vz = w.z * s;
   // Falta do adversário esperando a cobrança: você não consegue entrar nos 9,15 m da bola.
   const S = G.sp;
@@ -12666,6 +12672,16 @@ const yawTV = () => -Math.PI / 2;
 //   Cobrou: volta para a TV (o G.sp some no chute).
 const SP_TERCEIRA = ['falta', 'lateral', 'escanteio', 'penalti', 'tiro de meta'];
 const tvEmTerceira = () => !!(user && ((G.sp && G.sp.taker === user && G.sp.team === user.team && SP_TERCEIRA.includes(G.sp.kind)) || user.throwIn || user.setPiece));
+// (7.5.0) CÂMERA DE TV NA COMEMORAÇÃO: quando você escolhe a comemoração, ela chega perto (do mesmo lado da TV, então o joystick
+//   continua igual) para a comemoração aparecer; acabou a animação, volta a abrir. Não entra na arquibancada: perto da placa do
+//   lado de cá ela para na placa e sobe.
+function cameraTVComemoracao() {
+  const fz = Math.sin(yawTV()), atras = 7.2 * AJ.camDist;          // a TV olha para −z: a câmera fica do lado +z de você
+  let px = user.x + 1.1, pz = user.z - fz * atras, py = 3.3 * AJ.camAlt;
+  const lim = (BOARD_Z || HALF_W + 3) - 0.8;
+  if (pz > lim) { py += (pz - lim) * 0.7; pz = lim; }
+  return { px, py: py + (AJ.camH || 0), pz, tx: user.x, ty: 1.05, tz: user.z };
+}
 function cameraTV() {
   const D = clamp(HALF_W * 0.5 + 15, 17, 30) * AJ.camDist, H = D * 0.6 * AJ.camAlt + (AJ.camH || 0);
   // (7.4.19) LATERAL e ESCANTEIO (os do adversário ficam nesta câmera): ela vai até a bola, mesmo FORA do campo, para mostrar quem
@@ -14345,7 +14361,9 @@ function updateYaw(rdt) {
   if (G.cine || G.shotCine || G.fintaCine || (G.chuteCine && G.chuteCine.fase === 'prep') || G.state === 'restart' || G.state === 'foul') return;   // nas cenas a câmera não gira
   let want, rapidez = CONFIG.CAM.turn;
   const S = G.sp;
-  if (cam.mode === 'tv' && !tvEmTerceira() && (G.state === 'play' || G.state === 'trap' || KICK_STATES.includes(G.state))) { cam.yaw = yawTV(); return; }   // (7.4.14) TV: ângulo fixo
+  // (7.5.0) na comemoração também: antes a câmera de TV ficava parada de lado, mas o ângulo dos controles ia girando atrás de você
+  //   (o da câmera de trás) e o joystick invertia/entortava
+  if (cam.mode === 'tv' && !tvEmTerceira() && (G.state === 'play' || G.state === 'trap' || G.state === 'celebrate' || KICK_STATES.includes(G.state))) { cam.yaw = yawTV(); return; }   // (7.4.14) TV: ângulo fixo
   if (KICK_STATES.includes(G.state)) {
     // Mirando: a câmera vai virando devagar para o lado da seta (75% do caminho), mostrando para
     // onde você aponta sem tirar você da tela. A seta não depende disso (usa a câmera do começo).
@@ -14432,6 +14450,7 @@ function cameraGoal() {
     const vl = Math.hypot(vx, vz) || 1; vx /= vl; vz /= vl;
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
+  if (cam.mode === 'tv' && G.state === 'celebrate' && user && user.celeb && !user.out) return cameraTVComemoracao();   // (7.5.0) zoom em você
   if (cam.mode === 'tv' && !tvEmTerceira()) return cameraTV();   // (7.4.14); (7.4.15) bola parada: 3ª pessoa
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
   let back = c.back * AJ.camDist, h = c.height * AJ.camAlt + (cam.mode === 'livre' ? cam.livreH || 0 : 0), ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
