@@ -1707,6 +1707,14 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     await andar(J, [[-4.1, -MID]], 1.6); S.esc.portas.minha.abrir(0); somPorta(true); await esperar(250);
     if (comer) { aviso(T('Procure um lugar para comer. Cuidado com os degraus!')); setTimeout(() => aviso(''), 3500); }
   }
+  // CARREGADOR ESCONDIDO: enquanto ele está no quarto e na escada, os arquivos da cidade baixam e ficam prontos aos poucos (um por
+  //   vez, com folga entre eles, quando o celular está livre). Na porta da rua a cidade já não espera download nem leitura de arquivo.
+  function preCarregarCidade() {
+    const fila = ['cidade', 'interiores', 'falas', 'mercado', 'pizzaria', 'restaurante', 'bar', 'esportiva', 'academia', 'cinema', 'barbearia', 'varzea', 'serieb', 'pesca', 'treino'];
+    const depois = (f) => setTimeout(() => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 1500 }) : f()), 350);
+    const proximo = () => { if (!S || !fila.length) return; const id = fila.shift(); Fases.carregar(id).catch(() => null).then(() => depois(proximo)); };
+    setTimeout(proximo, 1500);
+  }
   // A missão "encontre um lugar para comer" é só do PRIMEIRO dia, e só enquanto ele não comeu.
   function precisaMissaoComer() {
     let c = null; try { c = API.historia.ler('cidade'); } catch (e) { c = null; }
@@ -2279,6 +2287,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       brilho(1);
       const fim = new Promise((r) => { S.fimRes = r; });
       const ponto = retomar && svF2 ? retomar : 'inicio';
+      preCarregarCidade();                                             // já começa a preparar a cidade, aos poucos, enquanto ele está aqui
 
       if (volta && carta) {
         dados.luz = true; S.noTerreo = false; Musica.tocar('jazz');

@@ -3466,7 +3466,8 @@
     }
     S.pistaT = [1.5, 3.5];
     // já começa com alguns carros espalhados pela avenida (a cidade não começa vazia)
-    let k = 0; for (const p of PISTAS) for (const x of [-170, -60, 90]) ativarCarro(S.carros[k++], p, x * p.dir);
+    // (os lugares mudam a cada dia: antes eram sempre os mesmos e ele saía do prédio vendo sempre a pontinha do mesmo carro)
+    let k = 0; for (const p of PISTAS) { const xs = []; for (let t = 0; xs.length < 3 && t < 40; t++) { const x = -250 + Math.random() * 500; if (xs.every((q) => Math.abs(q - x) > 30)) xs.push(x); } for (const x of xs) ativarCarro(S.carros[k++], p, x); }
   }
   function ativarCarro(c, p, x) { c.ativo = true; c.dir = p.dir; c.z = p.z; c.x = x; c.vmax = 9 + Math.random() * 4; c.v = c.vmax; c.parado = 0; c.buzinou = false; c.pisca = null; c.piscou = false; c.paraFaixa = false; if (c.flash) c.flash.visible = false; c.m.visible = true; c.m.rotation.y = p.dir > 0 ? 0 : Math.PI; }
   // a faixa de pedestre: x de 7,7 a 11,9. linhaFaixa = quanto o carro ainda anda até parar antes dela (a frente tem 2,1 m)
@@ -4109,6 +4110,7 @@
     if (!S.dentro) { tickMoradores(dt); abrirPassagens(); separarPessoas(); gerenciarPedestres(dt); } else tickFluxo(dt);
     const J0 = S.jog;
     for (const A of S.npcs.slice()) {                                    // (cópia: um cliente pode sair da lista no meio do laço)
+      if (!Number.isFinite(A.x) || !Number.isFinite(A.z)) socorrerPosicao(A); else { A._okx = A.x; A._okz = A.z; }
       if (A.fantasma > 0) A.fantasma -= dt;
       if (!S.dentro && A.tipo === 'anda' && !A.dest && !A.oculto && Math.hypot(A.x - J0.x, A.z - J0.z) > 100) {   // longe: parado e invisível
         A.longeDemais = true; A.m.longe = true; if (A.boneco) A.boneco.visible = false; A.blob.visible = false; A.andando = false; continue;
@@ -4750,6 +4752,20 @@
       if (jaDentro) { A.x = ar.x0 + Math.random() * (ar.x1 - ar.x0); A.z = ar.z0 + Math.random() * (ar.z1 - ar.z0); } else { A.x = e.x; A.z = e.z; }
     }
     S.npcs.push(A); poseAtor(A, 0.016); return A;
+  }
+  // POSIÇÃO INVÁLIDA (NaN): a conta de algum caminho estourou. Sem isto o boneco ficava trocando de estado a cada quadro (perto/longe,
+  //   congelado/solto, guarda-chuva cria/apaga): aparecia e sumia sem parar e derrubava o desempenho. Volta para a última posição boa,
+  //   larga o caminho que deu errado e avisa no console uma vez por tipo (para achar a origem).
+  function socorrerPosicao(A) {
+    const J = S.jog, ok = Number.isFinite(A._okx) && Number.isFinite(A._okz);
+    let x = ok ? A._okx : null, z = ok ? A._okz : null;
+    if (x == null && S.rede && S.rede.length) { const k = pontoForaDaVista(45, 90); const N = S.rede[k >= 0 ? k : noMaisPerto(J.x + 40, J.z)]; x = N.x; z = N.z; }
+    A.x = x != null ? x : 0; A.z = z != null ? z : -500;
+    A.desvio = null; A.bloq = 0; A.travaE = 0; A.andando = false; A.fantasma = 0.5;
+    if (A.dest && Array.isArray(A.dest.rota)) A.dest.rota.length = 0;   // o caminho com conta errada acaba (a viagem/o destino terminam do jeito normal)
+    if (A.tipo === 'anda' && !A.dest && S.rede) { A.ant = null; A.alvo = noMaisPerto(A.x, A.z); }
+    const k = A.tipo + '/' + (A.dest ? A.dest.tipo : '-');
+    if (!(S.avisoNaN || (S.avisoNaN = {}))[k]) { S.avisoNaN[k] = true; console.warn('[Cidade] posição inválida (NaN) corrigida:', k); }
   }
   function descartarPessoa(A) {
     if (A.ativ) fimAtiv(A); tirarCel(A); if (A.congelado) descongelar(A);   // (6.6.5) (6.6.6)
@@ -7429,7 +7445,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         continue;
       }
       if (A.ativ) fimAtiv(A); A.recua = null; esconderMor(r); r.reagiu = false;
-      if (noHorario(r) && r.folga !== (d.dia || 1)) { if (molhado) r.reagiu = true; trocarMorador(r); colocarNoPosto(r); }
+      // o relógio pulou com chuva: ninguém aparece sentado no banco debaixo d'água (antes ia para o posto já marcado como "reagiu" e não
+      //   saía mais de lá); fica em casa e vai para o posto quando a chuva passar (o ramo 'casa' do tickMoradores espera o seco)
+      if (noHorario(r) && r.folga !== (d.dia || 1)) { trocarMorador(r); if (molhado) r.reagiu = true; else colocarNoPosto(r); }
     }
     if (S.treino) S.treino.pausa = (S.moradores || []).some((r) => r.posto.tipo === 'treino' && r.estado !== 'posto') || !turmaPresente();
     if (S.biel && !S.biel.indoEmbora) { removerBiel(); const F = fsal(); if (bielNaHora() && F.jogouDia !== d.dia) criarBiel(false); }
@@ -8866,7 +8884,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (a.fantasma > 0 || b.fantasma > 0) continue;                  // passando um pelo outro de propósito
         if (a.ativ && a.ativ.com === b) continue;                         // (6.6.5) abraço / selfie: os dois juntos de propósito
         if (a.porta || b.porta) continue;                                 // (6.6.15) passando pela porta
-        let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (d >= 0.42) continue;
+        let dx = b.x - a.x, dz = b.z - a.z, d = Math.hypot(dx, dz); if (!(d < 0.42)) continue;   // (d NaN também pula: não passa a conta errada para o vizinho)
         if (d < 1e-3) { const g = Math.random() * 6.28; dx = Math.cos(g); dz = Math.sin(g); d = 1; }
         const ra = temRotina(a), rb = temRotina(b);
         if (ra !== rb) {                                                 // quem tem rotina não é empurrado e o outro sai PARA O LADO (nunca para a frente dela)
@@ -8960,6 +8978,22 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
 
   // ------------------------------------------------------------------ roteiro: sai do prédio, o portão fecha, e fica livre na cidade
+  // ATRÁS DO PRETO, antes de abrir a tela: (1) espera os módulos da cidade (no máximo 2,5 s; o resto chega depois, como antes);
+  //   (2) a rua já vem andando: os carros rodam alguns segundos (um tanto diferente a cada dia), então ninguém sai do prédio vendo
+  //   sempre a mesma cena; (3) a placa de vídeo recebe tudo de uma vez (shaders e texturas, até o que está fora da câmera): os
+  //   primeiros segundos na rua não engasgam.
+  async function aquecerCidade(mods) {
+    try { await Promise.race([Promise.allSettled(mods || []), new Promise((r) => setTimeout(r, 2500))]); } catch (e) { /* segue */ }
+    if (!S || !S.ativo) return;
+    try { const seg = 1.5 + Math.random() * 7; for (let t = 0; t < seg; t += 1 / 30) tickCarros(1 / 30); } catch (e) { console.warn('[Cidade] aquecer a rua:', e); }
+    try {
+      atualizarCamera(0.016);
+      const desligados = []; scene.traverse((o) => { if ((o.isMesh || o.isPoints || o.isSprite) && o.frustumCulled) { o.frustumCulled = false; desligados.push(o); } });
+      renderer.compile(scene, camera); renderer.render(scene, camera);
+      for (const o of desligados) o.frustumCulled = true;
+    } catch (e) { console.warn('[Cidade] aquecer a placa de vídeo:', e); }
+    await new Promise((r) => requestAnimationFrame(() => r()));
+  }
   async function iniciar(ctx) {
     API = ctx.api; montarUI();
     UI.preto.hidden = false; UI.preto.style.transitionDuration = '0s'; UI.preto.classList.remove('claro');     // já no preto (sem piscar o mundo de antes)
@@ -8975,20 +9009,21 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       let f2 = null; try { f2 = await Fases.carregar('fase2'); } catch (e) { console.warn('[Cidade] fase2.js não veio (roupa padrão):', e); }
       prepararMundo(); textos();
       S.grupo = S.grupoCidade = new THREE.Group(); S.grupo.position.x = OX; scene.add(S.grupo); S.f2 = f2;
-      Fases.carregar('falas').then((m) => { if (S) S.falas = m; }, (e) => console.warn('[Cidade] falas.js não veio:', e));   // as falas de amizade
-      Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e));
-      Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e));   // (5.3.1) trabalho no mercado
-      Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e));   // (6.1.0) pizzaria e entregas
-      Fases.carregar('restaurante').then((m) => { if (S && m && m.criar) S.restaurante = m.criar(apiRestaurante()); }, (e) => console.warn('[Cidade] restaurante.js não veio:', e));   // (7.1.3) o restaurante self-service
-      Fases.carregar('bar').then((m) => { if (S && m && m.criar) S.bar = m.criar(apiBar()); }, (e) => console.warn('[Cidade] bar.js não veio:', e));   // (7.1.5) o bar, a sinuca e o jogo do bicho
-      Fases.carregar('esportiva').then((m) => { if (S && m && m.criar) S.esportiva = m.criar(apiBar()); }, (e) => console.warn('[Cidade] esportiva.js não veio:', e));   // (7.1.9) a Golaço Esportes (comemorações)
-      Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e));   // (6.2.0) academia e treinos
-      Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e));   // o cinema que paga (Herick, Joana, segurança)
-      Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e));
-      Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e));
-      Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e));   // a peneira e a Série B   // o campeonato de várzea   // a barbearia (cortes da loja)
-      Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e));   // (6.4.0) pesca no lago
-      Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e));   // (6.6.16) o treino com a turma do Nonato
+      const mods = [];                                                  // os módulos da cidade (a espera antes de abrir a tela)
+      mods.push(Fases.carregar('falas').then((m) => { if (S) S.falas = m; }, (e) => console.warn('[Cidade] falas.js não veio:', e)));   // as falas de amizade
+      mods.push(Fases.carregar('interiores').then((m) => { if (S) S.interiores = m; }, (e) => console.warn('[Cidade] interiores.js não veio:', e)));
+      mods.push(Fases.carregar('mercado').then((m) => { if (S && m && m.criar) { S.mercado = m.criar(apiMercado()); montarRuaMercado(); } }, (e) => console.warn('[Cidade] mercado.js não veio:', e)));   // (5.3.1) trabalho no mercado
+      mods.push(Fases.carregar('pizzaria').then((m) => { if (S && m && m.criar) S.pizzaria = m.criar(apiPizzaria()); }, (e) => console.warn('[Cidade] pizzaria.js não veio:', e)));   // (6.1.0) pizzaria e entregas
+      mods.push(Fases.carregar('restaurante').then((m) => { if (S && m && m.criar) S.restaurante = m.criar(apiRestaurante()); }, (e) => console.warn('[Cidade] restaurante.js não veio:', e)));   // (7.1.3) o restaurante self-service
+      mods.push(Fases.carregar('bar').then((m) => { if (S && m && m.criar) S.bar = m.criar(apiBar()); }, (e) => console.warn('[Cidade] bar.js não veio:', e)));   // (7.1.5) o bar, a sinuca e o jogo do bicho
+      mods.push(Fases.carregar('esportiva').then((m) => { if (S && m && m.criar) S.esportiva = m.criar(apiBar()); }, (e) => console.warn('[Cidade] esportiva.js não veio:', e)));   // (7.1.9) a Golaço Esportes (comemorações)
+      mods.push(Fases.carregar('academia').then((m) => { if (S && m && m.criar) { S.academia = m.criar(apiAcademia()); montarRuaAcademia(); } }, (e) => console.warn('[Cidade] academia.js não veio:', e)));   // (6.2.0) academia e treinos
+      mods.push(Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e)));   // o cinema que paga (Herick, Joana, segurança)
+      mods.push(Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e)));
+      mods.push(Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e)));
+      mods.push(Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e)));   // a peneira e a Série B   // o campeonato de várzea   // a barbearia (cortes da loja)
+      mods.push(Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e)));   // (6.4.0) pesca no lago
+      mods.push(Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e)));   // (6.6.16) o treino com a turma do Nonato
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });
@@ -9007,6 +9042,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         try { await despedidaLucia(encFim); } catch (e) { console.error(e); if (S && S.fimRes) { S.paraFase2 = 'acordar'; S.fimRes(); } }
       } else {
         S.intro = true;
+        await aquecerCidade(mods);                                       // atrás do preto: módulos prontos, a rua já andando e a placa de vídeo carregada
         await preto(false, 1100);
         await andar(J, [[SPAWN.x, -3.7]], 1.9);
         S.intro = false;
@@ -9031,5 +9067,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
+    _fns: { reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia } });   // (_estado/_planta/_fns: para testes)
 })();

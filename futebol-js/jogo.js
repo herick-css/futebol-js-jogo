@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.21';
+const VERSAO_JOGO = '7.4.22';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -6934,8 +6934,10 @@ function corpoGoleiro(gk) {
   if (gk.diveT > 0) {
     const tb = tombMergulho(gk), y0 = alturaMergulho(gk), lado = Math.sign(gk.diveVZ) || Math.sign((gk.diveSide || 1) * Math.cos(gk.angle)) || 1;
     pe.y = y0;
-    if (M) return { a: pe, b: { x: M.x, y: M.y, z: M.z }, raio: 0.6 };
-    return { a: pe, b: { x: gk.x, y: y0 + 2.0 * Math.cos(tb), z: gk.z + lado * 2.0 * Math.sin(tb) }, raio: 0.65 };
+    // a cápsula vai até as mãos desenhadas: o raio é a bola mais a mão e uma folga pequena (era 0,6: a "ponta dos dedos" alcançava
+    //   meio metro além da mão e todo chute no canto batia nele)
+    if (M) return { a: pe, b: { x: M.x, y: M.y, z: M.z }, raio: 0.42 };
+    return { a: pe, b: { x: gk.x, y: y0 + 2.0 * Math.cos(tb), z: gk.z + lado * 2.0 * Math.sin(tb) }, raio: 0.47 };
   }
   const topo = gk.jumpT > 0 ? 2.3 + Math.sin((1 - gk.jumpT / 0.5) * Math.PI) * 0.7 : 2.3;
   return { a: pe, b: { x: gk.x, y: topo, z: gk.z }, raio: 1.1 };   // em pé: braços alcançam ~1,1 m para os lados
@@ -6970,6 +6972,19 @@ function distSegmento3D(p, a, b) {
   return Math.hypot(a.x + abx * t - p.x, a.y + aby * t - p.y, a.z + abz * t - p.z);
 }
 
+// O CORPO DE VERDADE do goleiro (tronco, cabeça, pernas): a parte de dentro da cápsula de alcance (corpoGoleiro). Bola que passa
+//   por aqui bate e volta, mesmo quando a defesa "falhou"; só a margem de fora (ponta dos dedos, braço esticado) deixa passar.
+function nucleoGoleiro(gk, C) {
+  if (gk.diveT > 0 && gk.diveTipo === 'pe') return { a: C.a, b: C.b, raio: 0.26 };
+  if (gk.diveT > 0) return { a: C.a, b: { x: C.a.x + (C.b.x - C.a.x) * 0.72, y: C.a.y + (C.b.y - C.a.y) * 0.72, z: C.a.z + (C.b.z - C.a.z) * 0.72 }, raio: 0.3 };
+  return { a: { x: C.a.x, y: 0.05, z: C.a.z }, b: { x: C.b.x, y: C.b.y - 0.38, z: C.b.z }, raio: 0.3 };   // em pé: dos pés ao alto da cabeça
+}
+// Bola que sai do goleiro (rebote, espalmada, desvio): sem efeito (o giro do chute fazia a curva voltar para dentro do gol) e
+//   nunca andando para o próprio gol.
+function bolaSaiDoGoleiro(gk, min) {
+  ball.spinSide = 0; ball.spinVert = 0;
+  if (ball.vx * gk.dir < min) ball.vx = gk.dir * (min + Math.random() * 1.5);
+}
 // Goleiro: postura de espera, acompanha a bola, mergulha, pula em bola alta e segura a bola nas mãos.
 function gkThink(p, dt) {
   const ownGx = -p.dir * HALF_L;
@@ -7125,6 +7140,10 @@ function gkThink(p, dt) {
         const gap = pz - p.z;
         const noAlvo = Math.abs(pz) < GOAL_HALF + 0.3 && py < CONFIG.GOAL_H + 0.3;
         const alcanca = Math.abs(gap) < 3.4;      // distância de um mergulho parado
+        // TEMPO DE REAÇÃO: o goleiro leva ~0,15 a 0,3 s para ver o chute e sair do lugar (o melhor reage antes). Até lá fica onde
+        //   está, só olhando; depois vai na bola no passo dele, sem acelerar além do normal. Chute forte, de perto e no canto entra.
+        if (ball.isShot && ball.gkReage == null) ball.gkReage = G.time + clamp(0.24 / Math.sqrt(fh(p, 'goleiro')) + rand(-0.05, 0.05), 0.12, 0.34);
+        if (ball.isShot && G.time < ball.gkReage) { p.olhaT = Math.max(p.olhaT || 0, 0.4); return { vx: 0, vz: 0 }; }
         // (7.4.15) BOLA NO CANTO, LONGE DELE: antes ele só ficava olhando. Agora ele VAI ATRÁS (corre e mergulha) e o que decide é a
         //   física: chute lento e de longe dá tempo de chegar (e de defender); rápido, de perto e no canto, o mergulho não alcança.
         //   Só de vez em quando (mais quando é muito longe e muito rápido) ele fica parado assistindo a bola entrar.
@@ -7168,12 +7187,14 @@ function gkThink(p, dt) {
           if (h <= 1.65) { alt = 0.3; th = Math.acos(clamp((h - alt) / R, Math.cos(1.45), Math.cos(0.4))); }
           else { th = clamp(Math.asin(Math.min(1, ag / R)), 0.35, 1.2); alt = clamp(h - R * Math.cos(th), 0.3, 1.1); }
           p.diveKc = clamp(t / p.diveDur, 0.3, 0.9); p.diveTomb = th; p.diveAlt = alt;
-          const pes = clamp(ag - R * Math.sin(th), 0, 9.5 * Math.sqrt(fh(p, 'goleiro')) * Math.max(0.3, t));   // (7.4.15) o alcance do voo cresce com a habilidade de goleiro
+          // o voo de lado tem limite de gente: o corpo deitado (~1,5 m) mais ~1,1 m de impulso (mais com a habilidade), a no máximo
+          //   ~6 m/s (antes o impulso ia a 9,5 m/s sem limite de distância e ele cobria o gol inteiro: chute no canto não entrava)
+          const fg = Math.sqrt(fh(p, 'goleiro')), pes = clamp(ag - R * Math.sin(th), 0, Math.min(1.1 * fg, 6 * fg * Math.max(0.3, t)));
           p.diveVZ = Math.sign(gap) * pes / Math.max(0.25, t); p.diveVX = 0;
           p.diveTipo = alt > 0.5 ? 'alto' : 'baixo';   // pula para cima (bola alta) ou se joga no chão
           // bola rasteira não muito longe: às vezes ele DESLIZA COM O PÉ (perna esticada), como no futsal
           const pePref = campoPequeno() ? 0.5 : 0.3;
-          if (py < 0.5 && Math.abs(gap) < 2.4 && Math.random() < pePref) { p.diveTipo = 'pe'; p.diveTomb = p.diveAlt = null; p.diveVZ = clamp((gap - Math.sign(gap) * 1.0) / Math.max(0.3, t), -6, 6); p.diveDur = p.diveT = clamp(t + 0.35, 0.5, 0.85); }
+          if (py < 0.5 && Math.abs(gap) < 2.4 && Math.random() < pePref) { p.diveTipo = 'pe'; p.diveTomb = p.diveAlt = null; p.diveVZ = clamp((gap - Math.sign(gap) * 1.0) / Math.max(0.3, t), -4.5, 4.5); p.diveDur = p.diveT = clamp(t + 0.35, 0.5, 0.85); }
           const right = Math.cos(p.angle);        // lado direito do goleiro em Z (ele olha para o campo)
           p.diveSide = Math.sign(gap * right) || 1;
           return { vx: 0, vz: p.diveVZ };
@@ -7190,7 +7211,7 @@ function gkThink(p, dt) {
         // ele só ajeita o corpo e espera a bola cair — e ela é lenta, dá tempo.
         const voltaDeCostas = ball.cavadinha && (ball.cavAdiant || 0) > 4;
         if (ball.cavadinha && !voltaDeCostas && t < 0.5 && py > 1.9 && Math.abs(gap) < 1.6 && p.jumpT <= 0) p.jumpT = 0.5;
-        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (voltaDeCostas ? 0.55 : 1.4));
+        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (voltaDeCostas ? 0.55 : 1));   // no passo dele (antes 40% mais rápido)
       }
     }
     const inBox = Math.abs(ball.x - ownGx) < BOX.depth - 2 && Math.abs(ball.z) < BOX.half - 2;
@@ -7922,7 +7943,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
     G.sp = null; G.focus = null; G.roleT = 0;
   }
   if (G.kickoffPending && G.kickoffPending.taker === from) { G.kickoffPending = null; G.roleT = 0; } // bola rolando
-  ball.saveRolled = false; ball.saveOk = false; ball.broken = false; ball.gkAssiste = null;   // (7.4.15) gkAssiste: o goleiro decide 1 vez por chute
+  ball.saveRolled = false; ball.saveOk = false; ball.broken = false; ball.gkAssiste = null; ball.gkReage = null;   // (7.4.15) gkAssiste: o goleiro decide 1 vez por chute; gkReage: quando ele reage ao chute
   ball.isShot = false; ball.userShot = false; ball.userPass = false; ball.cruzamento = null; ball.distChute = 0;
   ball.penalti = ehPenalti; ball.cavadinha = false; ball.dominioDificil = false;   // dominioDificil: o tutorial força o ponto azul
   ball.querPeito = Math.random() < 0.6;            // se cair na altura do peito, domina no peito (ver predictArrival)
@@ -8195,6 +8216,13 @@ function checkBallContacts() {
       dMin = Math.min(dMin, distSegmento3D({ x: ball.x - ball.vx * f, y: ball.y - ball.vy * f, z: ball.z - ball.vz * f }, C.a, C.b));
     }
     if (!inBox || dMin > C.raio) continue;
+    const N = nucleoGoleiro(gk, C);
+    let dNuc = Infinity, ptN = null;
+    for (let s = 0; s <= 4; s++) {
+      const f = s / 4 * passo, q = { x: ball.x - ball.vx * f, y: ball.y - ball.vy * f, z: ball.z - ball.vz * f }, d = distSegmento3D(q, N.a, N.b);
+      if (d < dNuc) { dNuc = d; ptN = q; }
+    }
+    const bateNoCorpo = dNuc <= N.raio + CONFIG.BALL_R;
     if (!ball.saveRolled) {
       ball.saveRolled = true;
       // Quão no meio do goleiro a bola passa: distância da linha da bola até ele (no chão) e
@@ -8233,11 +8261,14 @@ function checkBallContacts() {
       if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < chancePe * fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
       if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < chanceTapa * fD))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
+        bolaSaiDoGoleiro(gk, 1.2);
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
         showToast('Espalmou!'); Som.defesa(); Torcida.defesa(gk.team);
         return;
       }
     }
+    // a defesa falhou, mas a bola vai pegar no corpo (cabeça, tronco, pernas, o corpo voando no mergulho): bate e volta, não atravessa
+    if (!ball.saveOk && bateNoCorpo && sp3 > 4) { rebaterNoCorpo(gk, N, ptN); return; }
     // Bola já devagar no pé dele (cavadinha curta, chute que morreu): pega, mesmo que a primeira
     // tentativa tenha falhado. Antes ela ficava parada embaixo dele para sempre.
     if (!ball.saveOk && sp3 < 5) ball.saveOk = true;
@@ -8374,6 +8405,22 @@ function jeitoDaDefesa(gk, sp3, noCorpo) {
   if (gk.diveT > 0) return r < 0.5 ? 'espalma' : r < 0.85 ? 'rebote' : 'doisTempos';
   return r < 0.42 ? 'doisTempos' : r < 0.82 ? 'rebote' : 'espalma';
 }
+// A bola bateu no corpo do goleiro sem ele defender: reflete na superfície do corpo (perde força) e sai para longe do gol.
+function rebaterNoCorpo(gk, N, pt) {
+  const abx = N.b.x - N.a.x, aby = N.b.y - N.a.y, abz = N.b.z - N.a.z, l2 = abx * abx + aby * aby + abz * abz || 1;
+  const t = clamp(((pt.x - N.a.x) * abx + (pt.y - N.a.y) * aby + (pt.z - N.a.z) * abz) / l2, 0, 1);
+  let nx = pt.x - (N.a.x + abx * t), ny = pt.y - (N.a.y + aby * t), nz = pt.z - (N.a.z + abz * t);
+  const nl = Math.hypot(nx, ny, nz);
+  if (nl < 1e-3) { nx = gk.dir; ny = 0; nz = 0; } else { nx /= nl; ny /= nl; nz /= nl; }
+  const vn = ball.vx * nx + ball.vy * ny + ball.vz * nz;
+  if (vn < 0) { ball.vx -= 1.4 * vn * nx; ball.vy -= 1.4 * vn * ny; ball.vz -= 1.4 * vn * nz; }
+  ball.vx *= 0.55; ball.vy = Math.max(ball.vy * 0.55, 0.8); ball.vz *= 0.55;
+  bolaSaiDoGoleiro(gk, 1.2);
+  ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false; ball.saveRolled = true; ball.saveOk = false;
+  if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
+  G.passTarget = null; G.offside = null;
+  showToast('Bateu no goleiro!'); Som.defesa(); Torcida.defesa(gk.team);
+}
 function aplicarJeitoDaDefesa(gk, jeito) {
   const lado = Math.sign(ball.vz || gk.z || (Math.random() - 0.5)) || 1;
   ball.spinSide = 0; ball.spinVert = 0;
@@ -8391,7 +8438,12 @@ function aplicarJeitoDaDefesa(gk, jeito) {
     gk.controlCd = 0.7;
     showToast(gk.team === 1 ? 'Deu rebote!' : 'Nosso goleiro deu rebote!'); Som.defesa(); Torcida.defesa(gk.team);
   } else if (jeito === 'tapa') {                    // tapa por cima do travessão (ou para escanteio)
-    ball.vx = -gk.dir * rand(1.5, 3.5); ball.vz = lado * rand(0.5, 2.5); ball.vy = rand(4.5, 6.5);
+    // para trás só passando POR CIMA do travessão: a velocidade para trás é a que a bola precisa para cruzar a linha ainda acima da
+    //   trave (antes, com o goleiro adiantado, ela caía antes da linha e entrava: gol contra). Longe da linha, espalma para o lado.
+    const dLinha = Math.abs(gk.x + gk.dir * HALF_L), vy = rand(5, 6.5), alto = CONFIG.GOAL_H + 0.45 - Math.max(0.3, ball.y);
+    const tCai = alto > 0 && vy * vy > 2 * CONFIG.GRAVITY * alto ? (vy + Math.sqrt(vy * vy - 2 * CONFIG.GRAVITY * alto)) / CONFIG.GRAVITY : 0;
+    if (dLinha > 3.2 || tCai <= 0) { aplicarJeitoDaDefesa(gk, 'espalma'); return; }
+    ball.vx = -gk.dir * Math.max(rand(1.5, 3.5), dLinha / tCai * 1.3 + 0.5); ball.vz = lado * rand(0.5, 2.5); ball.vy = vy;
     gk.controlCd = 0.8; gk.jumpT = Math.max(gk.jumpT, 0.4);
     gk.defPose = { tipo: 'tapa', t: 0, dur: 0.7, lado };
     showToast('Espalmou por cima!'); Som.defesa(); Torcida.defesa(gk.team);
@@ -8405,7 +8457,7 @@ function aplicarJeitoDaDefesa(gk, jeito) {
 function defesaComOPe(gk, sp3) {
   const rx = -Math.sin(gk.angle) * gk.diveSide, rz = Math.cos(gk.angle) * gk.diveSide;
   ball.vx = gk.dir * rand(2.5, 6.5) + rx * rand(1, 4); ball.vz = rz * rand(1.5, 5) + rand(-1.5, 1.5); ball.vy = rand(0.6, 2.4) * Math.min(1, sp3 / 15);
-  ball.spinSide = rand(-0.4, 0.4); ball.spinVert = 0;
+  bolaSaiDoGoleiro(gk, 1.5);
   ball.lastKicker = gk; G.lastTouch = gk; ball.isShot = false; ball.saveRolled = true; ball.saveOk = false;
   if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
   G.passTarget = null; G.offside = null;
@@ -12624,7 +12676,15 @@ function cameraTV() {
   const z = clamp(ball.z * 0.5, -HALF_W * 0.4, HALF_W * 0.4);
   // a câmera não vai para dentro da arquibancada: fica no lugar de sempre e só INCLINA até a bola (do lado de cá olha mais para baixo)
   const tz = cobra ? clamp(ball.z, -HALF_W - 1.5, HALF_W + 1.5) - (ball.z > 0 ? 0 : 1.5) : z - 1.5;
-  return { px: x, py: Math.max(4, H), pz: z + D, tx: x, ty: 0.3, tz };
+  // a jogada na lateral do lado de cá (perto da câmera): ela recua (e sobe junto, no mesmo ângulo) até a beirada de baixo da tela
+  //   mostrar a bola com folga e a linha lateral; do lado de lá e no meio fica onde sempre esteve
+  let k = 1;
+  if (!cobra && ball.z > 0) {
+    const meia = camera.fov * Math.PI / 360 * 0.8, zVer = Math.min(HALF_W + 1.5, ball.z + 4);
+    const cabe = (s) => { const py = Math.max(4, H * s), pz = z + D * s; return Math.atan2(py, pz - zVer) - Math.atan2(py - 0.3, pz - tz) <= meia; };
+    if (!cabe(1)) { let a = 1, b = 1.9; for (let i = 0; i < 10; i++) { const m = (a + b) / 2; if (cabe(m)) b = m; else a = m; } k = b; }
+  }
+  return { px: x, py: Math.max(4, H * k), pz: z + D * k, tx: x, ty: 0.3, tz };
 }
 function camPadraoDaPartida() {                       // no começo de cada partida: time inteiro → TV; um jogador → a de sempre
   cam.mode = PARTIDA && PARTIDA.controleTime ? 'tv' : (cam.mode === 'tv' ? 'bola' : cam.mode || 'bola');
