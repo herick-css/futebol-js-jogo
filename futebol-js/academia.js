@@ -695,6 +695,7 @@
       const G = M.mg, s = S(), J = s.jog, m = J.m; if (!G || !G.q || G.fase === 'fim') return;
       const q = G.q; G.ta += dt;
       if (G.tipo === 'esteira') {
+        J.noLugar = performance.now() + 300;                              // na esteira ele corre sem sair do lugar (de propósito)
         if (G.fase === 'falha') { quedaEsteira(J, q, G.ta); return; }
         if (G.fase === 'ok') {                                          // a lona desacelera e ele termina andando
           const k = clampN(G.ta / 1.6, 0, 1); G.vBelt = lerpN(G.vReal || 2.5, 0, k);

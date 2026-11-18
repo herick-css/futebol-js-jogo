@@ -233,7 +233,7 @@
       // pose (o modelo olha para +z: braço para a frente = rotation.x negativo)
       const resp = Math.sin(H.t * 2.2) * 0.012;
       m.corpo.position.y = resp; m.cabeca.rotation.set(0, 0, 0);
-      if (H.andando) {
+      if (andaDeVerdade(H, dt, H.andando)) {                             // relógio parado (cena/ligação): ele não fica andando no lugar
         H.fase += dt * 7.5; const w = Math.sin(H.fase);
         m.pernaE.rotation.x = w * 0.6; m.pernaD.rotation.x = -w * 0.6; m.bracoE.rotation.x = -w * 0.5; m.bracoD.rotation.x = w * 0.5; m.bracoE.rotation.z = m.bracoD.rotation.z = 0;
         m.corpo.position.y = Math.abs(Math.cos(H.fase)) * 0.04;

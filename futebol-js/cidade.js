@@ -626,6 +626,8 @@
     'Time do Biel': ['Biel’s Team', 'Equipo de Biel', 'Squadra di Biel', 'Équipe de Biel'], 'Galera da Quadra': ['Court Crew', 'Banda de la Cancha', 'Quelli del Campo', 'La Bande du Terrain'],
     'Futsal na quadra': ['Futsal at the court', 'Futsal en la cancha', 'Calcetto al campetto', 'Futsal au terrain'],
     'Futsal na quadra: 5 contra 5!': ['Futsal on the court: 5 vs 5!', 'Futsal en la cancha: ¡5 contra 5!', 'Calcetto al campo: 5 contro 5!', 'Futsal sur le terrain : 5 contre 5 !'],
+    'Racha no sintético: 6 contra 6!': ['Pickup game on the turf: 6 vs 6!', 'Partido en la sintética: ¡6 contra 6!', 'Partitella sul sintetico: 6 contro 6!', 'Match sur le synthétique : 6 contre 6 !'],
+    'Futsal na quadra: 6 contra 6!': ['Futsal on the court: 6 vs 6!', 'Futsal en la cancha: ¡6 contra 6!', 'Calcetto al campo: 6 contro 6!', 'Futsal sur le terrain : 6 contre 6 !'],   // (7.4.19)
     'Racha no sintético: 5 contra 5!': ['Pickup game on the turf: 5 vs 5!', 'Partido en la sintética: ¡5 contra 5!', 'Partitella sul sintetico: 5 contro 5!', 'Match sur le synthétique : 5 contre 5 !'],
     'Que jogão, {0}! Você manda bem demais na quadra.': ['What a game, {0}! You’re great on the court.', '¡Qué partidazo, {0}! Juegas muy bien en la cancha.', 'Che partita, {0}! Sei bravissimo in campo.', 'Quel match, {0} ! Tu es super fort sur le terrain.'],
     'Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.': ['Thanks, {0}! It didn’t click much today, but that’s futsal.', '¡Gracias, {0}! Hoy no salió mucho, pero el futsal es así.', 'Grazie, {0}! Oggi non è andata benissimo, ma il calcetto è così.', 'Merci, {0} ! Ça n’a pas trop marché aujourd’hui, mais le futsal c’est comme ça.'],
@@ -2669,10 +2671,10 @@
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
     const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
-      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), g('Rafa', 6161, 'M'), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M')] };   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
+      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), g('Rafa', 6161, 'M'), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M'), g('Bruno', 4747, 'M')] };   // (7.4.19) 6 x 6: + o Bruno   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
     const t1 = { id: 's_caio', nome: T('Time do Caio'), sigla: 'CAI', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
       emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'CA' }, tecnico: tec,
-      elenco: [Object.assign({ nome: 'Caio' }, AP_CAIO), Object.assign({ nome: 'Júlia' }, apJulia()), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M')] };   // 5 x 5: + Vitinho
+      elenco: [Object.assign({ nome: 'Caio' }, AP_CAIO), Object.assign({ nome: 'Júlia' }, apJulia()), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M'), g('Lia', 9797, 'F')] };   // (7.4.19) 6 x 6: + a Lia; antes 5 x 5: + Vitinho
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: aparenciaNaPartida() };
     return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
@@ -2709,7 +2711,7 @@
     await preto(true, 800);
     sairParaPartida();
     let r = null;
-    try { r = await Historia.partida({ cfg, aviso: T('Racha no sintético: 5 contra 5!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    try { r = await Historia.partida({ cfg, aviso: T('Racha no sintético: 6 contra 6!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
     await preto(true, 900);
     voltarDaPartida();
     try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
@@ -3129,10 +3131,10 @@
     const tec = { nome: 'Biel', aparencia: { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, roupa: '#222222' } };
     const t0 = { id: 'q_biel', nome: T('Time do Biel'), sigla: 'BIE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_VERDE, uniforme2: UNI_BRANCO,
       emblema: { forma: 'escudo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'BI' }, tecnico: tec,
-      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), (luciaJogaHoje('futsal') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Bruna', 2323, 'F'))] };   // você completa os 5 (o Duda vai no gol)
+      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), (luciaJogaHoje('futsal') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Bruna', 2323, 'F')), g('Kauã', 2727, 'M')] };   // (7.4.19) 6 x 6: + o Kauã   // você completa os 5 (o Duda vai no gol)
     const t1 = { id: 'q_quadra', nome: T('Galera da Quadra'), sigla: 'QDR', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_BRANCO, uniforme2: UNI_VERDE,
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'QC' }, tecnico: tec,
-      elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M')] };
+      elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M'), g('Mel', 4646, 'F')] };   // (7.4.19) 6 x 6: + a Mel
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: aparenciaNaPartida() };
     return { campo: 'futsal', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Futsal na quadra'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
@@ -3149,7 +3151,7 @@
     if (S.biel) S.biel.m.raiz.visible = false;
     sairParaPartida();
     let r = null;
-    try { r = await Historia.partida({ cfg, aviso: T('Futsal na quadra: 5 contra 5!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
+    try { r = await Historia.partida({ cfg, aviso: T('Futsal na quadra: 6 contra 6!'), aoPronto: () => preto(false, 800) }); } catch (e) { console.error(e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
     await preto(true, 900);
     voltarDaPartida();
     try { Historia.confirmarResultado(); } catch (e) { /* nada */ }
@@ -3688,6 +3690,7 @@
   function poseAtor(A, dt) {
     if (A.congelado) descongelar(A);                                     // (6.6.6) alguém pediu a pose: volta a ser o boneco completo
     const m = A.m, r = m.raiz, e = Math.min(1, dt * 10), es = A.opt.escala || 1;
+    const anda = andaDeVerdade(A, dt, !!A.andando);                      // só balança as pernas quem saiu do lugar (gatilho/cena não deixa ninguém correndo parado)
     usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0); usarCotovelo(m.bracoD, 0, 0); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = 0;
     if (m.cabecaLigada) { usarCabeca(m, 0); m.cabeca.rotation.y = 0; }
     if (A.celeb) {                                                   // comemoração de gol (as mesmas poses da partida)
@@ -3738,7 +3741,7 @@
       const t = A.chuteT, pr = t < 0.16 ? -t / 0.16 * 0.9 : -0.9 + Math.min(1, (t - 0.16) / 0.14) * 2.2;
       m.pernaD.rotation.z = pr; m.pernaE.rotation.z = -0.15; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.5; m.bracoE.rotation.z = 0.3;
       r.position.y = A.y;
-    } else if (A.andando && (!A.goleiro || A.poseFn || A.tipo === 'morador')) {   // (6.6.19) o goleiro andando (indo/voltando do campo) anda de verdade
+    } else if (anda && (!A.goleiro || A.poseFn || A.tipo === 'morador')) {   // (6.6.19) o goleiro andando (indo/voltando do campo) anda de verdade
       const k = A.correndo ? 1.1 : 0.75; A.fase += dt * A.vel * (A.correndo ? 2.9 : 4.6); const s = Math.sin(A.fase);
       m.pernaE.rotation.z = s * k; m.pernaD.rotation.z = -s * k; m.bracoE.rotation.z = -s * k * 0.8; m.bracoD.rotation.z = s * k * 0.8;
       if (A.correndo) { usarCotovelo(m.bracoE, 0, 1.3); usarCotovelo(m.bracoD, 0, 1.3); }
@@ -3756,7 +3759,7 @@
     if (A.puxa) { const b = Math.sin(A.t * 3.2) * 0.22; m.bracoE.rotation.z = m.bracoD.rotation.z = 2.35 + b; usarCotovelo(m.bracoE, 0, 0.35 - b); usarCotovelo(m.bracoD, 0, 0.35 - b); }   // puxando a persiana
     if (A.chuva && !A.sentado) { m.bracoD.rotation.z = A.maoAlta ? 2.2 : 2.55; usarCotovelo(m.bracoD, 0, A.maoAlta ? 0.75 : 1.1); if (A.chuva !== 'guarda') { m.bracoE.rotation.z = Math.min(m.bracoE.rotation.z, 0.6); } }   // na chuva: o braço sobe até a cabeça (mão, jornal ou guarda-chuva)
     m.bracoE.rotation.x = 0; m.bracoD.rotation.x = A.sentado && A.bebe > 0 ? 0.45 : A.chuva && A.maoAlta && !A.sentado ? 0.35 : 0;   // bebendo: a mão fecha para a frente da boca · (6.6.15) cabelo alto: a mão na frente da testa, sem entrar no cabelo
-    if (A.pedeFaixa && !A.sentado && !A.recua && !A.andando) poseEspera(A, dt);       // (6.3.0) parado na beira da faixa
+    if (A.pedeFaixa && !A.sentado && !A.recua && !anda) poseEspera(A, dt);       // (6.3.0) parado na beira da faixa
     else if (A.cabY) { A.cabY *= 1 - Math.min(1, dt * 8); if (Math.abs(A.cabY) < 0.02) A.cabY = 0; }   // atravessando: a cabeça volta a olhar para a frente
     if (A.cabY) { usarCabeca(m, m.cabeca.rotation.z || -0.0001); m.cabeca.rotation.y = A.cabY; }
     if (A.esbarrao > 0) { A.esbarrao = Math.max(0, A.esbarrao - dt); m.corpo.rotation.z = -Math.sin(A.esbarrao * 20) * A.esbarrao * 0.5; }   // esbarrão: cambaleia (como o técnico)
@@ -4320,13 +4323,24 @@
       contornar(A, B, x0, z0, fim);
     }
   }
+  // no roteiro (andar), a animação segue a velocidade: andando até 3,2 m/s, correndo acima (antes o "correndo" que sobrava do
+  //   controle livre fazia ele correr no lugar ou "correr" a passo de caminhada pela cena inteira)
+  const CORRE_ROTEIRO = 3.2;
+  // gatilho (ligação, mensagem, cutscene, loja...) tirou o controle: ninguém fica com a corrida do controle livre presa no corpo
+  function pararAoPerderControle() {
+    const J = S.jog; if (!J) return;
+    J.andando = false; J.correndo = false;
+    if (UI && UI.joy) { UI.joy.id = null; UI.joy.x = UI.joy.y = 0; if (UI.knob) UI.knob.style.transform = ''; }
+    if (UI && UI.teclas) for (const k in UI.teclas) UI.teclas[k] = false;
+    if (UI && UI.pad) UI.pad.classList.remove('corre');
+  }
   function tickJogador(dt) {
     const J = S.jog; J.t += dt;
     if (J.rota && J.rota.length) {
       const x0 = J.x, z0 = J.z; if (J.rota.length === 1) for (const B of luciasNaCena()) if ((S.modo === 'cena' || S.modo === 'saindo') && !encostados(J, B)) chegadaLivre(J, B, J.rota[0]);
       const p = J.rota[0], dx = p.x - J.x, dz = p.z - J.z, d = Math.hypot(dx, dz), st = J.vel * dt;
-      if (d <= st) { J.x = p.x; J.z = p.z; J.rota.shift(); if (!J.rota.length) { J.rota = null; J.andando = false; const r = J.rotaRes; J.rotaRes = null; if (r) r(); } }
-      else { J.x += dx / d * st; J.z += dz / d * st; J.yawAlvo = Math.atan2(-dz, dx); J.andando = true; corpoNaCena(J, x0, z0); }
+      if (d <= st) { J.x = p.x; J.z = p.z; J.rota.shift(); if (!J.rota.length) { J.rota = null; J.andando = false; J.correndo = false; const r = J.rotaRes; J.rotaRes = null; if (r) r(); } }
+      else { J.x += dx / d * st; J.z += dz / d * st; J.yawAlvo = Math.atan2(-dz, dx); J.andando = true; J.correndo = J.vel > CORRE_ROTEIRO; corpoNaCena(J, x0, z0); }
     }
     const dy = ((J.yawAlvo - J.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; J.yaw += dy * Math.min(1, dt * 10);
     if (J.sentado) J.y = 0; else { const ty = altura(J.x, J.z); J.y += (ty - J.y) * Math.min(1, dt * 18); }
@@ -4338,8 +4352,8 @@
     if (!(A.rota && A.rota.length)) { A.andando = false; return; }
     const x0 = A.x, z0 = A.z; if (A.rota.length === 1 && luciasNaCena().includes(A) && S.jog && !encostados(A, S.jog) && (S.modo === 'cena' || S.modo === 'saindo')) chegadaLivre(A, S.jog, A.rota[0]);
     const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = (A.vel || 1.2) * dt;
-    if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; A.andando = false; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
-    else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; corpoNaCena(A, x0, z0); }
+    if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; A.andando = false; A.correndo = false; const r = A.rotaRes; A.rotaRes = null; if (r) r(); } }
+    else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.correndo = (A.vel || 1.2) > CORRE_ROTEIRO; corpoNaCena(A, x0, z0); }
   }
   const andar = (A, pts, vel) => new Promise((ok) => { A.vel = vel || 2.2; A.rota = pts.map((p) => ({ x: p[0], z: p[1] })); A.rotaRes = ok; });
   function tickPortao(dt) {
@@ -4896,7 +4910,7 @@
     const a = alvoAtual(); if (!a) return;
     som(); S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
     S.jog.andando = false; S.jog.correndo = false;     // sem isto, interagir andando/correndo deixava a animação "correndo" travada até a cena acabar
-    try { await a.fn(a); } catch (e) { console.error(e); }
+    try { await a.fn(a); } catch (e) { console.error(e); try { Dialogo.esconder(); } catch (e2) { /* nada */ } }   // (7.4.19) deu erro no meio: a fala não fica presa na tela
     if (S && S.ativo && S.modo === 'cena' && UI.ficha.hidden) liberar();
   }
   async function sentar(a) {
@@ -6026,11 +6040,11 @@
     const funcionario = empregoEscolhido() === 'cafeteria';
     if (funcionario) {
       if (!d.luciaApresentou) {
-        const { mariposa, falou } = fase1Lucia();
+        const { mariposa: teveMariposa, falou } = fase1Lucia();          // (7.4.19) "teveMariposa": o nome "mariposa" escondia a função mariposa() e dava erro (o diálogo travava na tela)
         if (d.luciaContratou) {                                         // pediu demissão no encontro para trabalhar com ela
           await fala('lucia', Tf(fem() ? 'Bom dia, {0}! Minha funcionária nova chegou!' : 'Bom dia, {0}! Meu funcionário novo chegou!', nomeJog()));
           await fala('lucia', T('Deixa eu te explicar como funciona por aqui.'));
-        } else if (mariposa) {
+        } else if (teveMariposa) {
           await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
           await fala('lucia', T('A quanto tempo você mora aqui?'));
           await fala('jog', T('Acabei de me mudar para a cidade.'));
@@ -6096,8 +6110,8 @@
   }
   // a Lúcia reconhece quem NÃO trabalha na cafeteria (os mesmos 3 jeitos da Fase 1), sem falar de trabalho
   async function apresentacaoLuciaVisitante() {
-    const d = S.dados, { mariposa, falou } = fase1Lucia();
-    if (mariposa) {
+    const d = S.dados, { mariposa: teveMariposa, falou } = fase1Lucia();   // (7.4.19) idem: sem esconder a função mariposa()
+    if (teveMariposa) {
       await fala('lucia', Tf('Espera... {0}?! Não acredito que é você!', nomeJog()));
       await fala('lucia', T('A quanto tempo você mora aqui?'));
       await fala('jog', T('Acabei de me mudar para a cidade.'));
@@ -7173,6 +7187,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.pad.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) moveJoy(e); });
     const solta = (e) => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; };
     UI.pad.addEventListener('pointerup', solta); UI.pad.addEventListener('pointercancel', solta);
+    UI.pad.addEventListener('lostpointercapture', solta);               // o direcional sumiu debaixo do dedo (cena começou): solta, senão ele voltava correndo sozinho
     // arrastar em qualquer outro lugar da tela gira a câmera
     const arr = { id: null, x: 0 };
     arrasto.addEventListener('pointerdown', (e) => { if (arr.id != null) return; arr.id = e.pointerId; arr.x = e.clientX; arrasto.setPointerCapture(e.pointerId); });
@@ -7194,6 +7209,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if ((e.code === 'Enter' || e.code === 'Space' || e.code === 'KeyF') && UI.mapa.hidden && UI.pausa.hidden) { e.preventDefault(); interagir(); }
     });
     window.addEventListener('keyup', (e) => { UI.teclas[e.code] = false; });
+    window.addEventListener('blur', () => { if (UI && UI.teclas) for (const k in UI.teclas) UI.teclas[k] = false; });   // trocou de janela com a tecla apertada
     // missão: aparece inteira por 5 s e recolhe num quadradinho; tocar no quadradinho mostra de novo
     UI.missao.hidden = true; UI.misIco.hidden = false;                 // (6.1.1) começa recolhido (a caixa vazia aparecia e, ao tocar, o ícone não voltava)
     UI.missao.addEventListener('click', () => recolherMissao());
@@ -8876,6 +8892,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if (n > 1) S.travaPulo = 0.5; else if (S.travaPulo > 0) S.travaPulo = Math.max(0, S.travaPulo - dt);   // parado durante o pulo e 0,5 s depois
       for (let i = 0; i < n; i++) {
         S.t += dt;
+        if (S.modo !== S.modoAnt) { if (S.modoAnt === 'livre') pararAoPerderControle(); S.modoAnt = S.modo; }
         if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.andando = false; S.jog.correndo = false; } else mover(dt); if (!noCinema()) tickHorario(dt); tickDescobertas(); }   // dentro do cinema o relógio não anda
         else if (S.trabalhando) tickHorario(dt);       // o relógio continua andando durante o expediente
         if (S.turno) tickTurno(dt);

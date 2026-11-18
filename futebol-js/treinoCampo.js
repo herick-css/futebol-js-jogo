@@ -37,7 +37,7 @@
       emblema: { forma: 'circulo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'SN' }, tecnico: tec,
       elenco: [j('Paredão', apDe(ctx.gol, 8083, 'M')), j('Tonhão', apDe(ctx.bat[1], 8082, 'M'))].concat(EXTRAS.map((n, i) => j(n, api.gerarAparencia(8090 + i * 7, 'M')))) };
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || tr('Você'), posicao: 'FWD', numero: PERSONAGEM.numero, aparencia: api.aparenciaNaPartida() };
-    return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: tr('Treino'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
+    return { campo: (typeof CAMPOS !== 'undefined' && CAMPOS.societyTreino) ? 'societyTreino' : 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: tr('Treino'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },   // (7.4.19) o treino fica no society antigo (48 x 30, 5 x 5)
       dificuldade: 'normal', clima: hc.clima, gramado: 'baixo', horario: hc.horario, duracao: 600, usuario: eu, atributos: ctx.atributos(), taticas: [null, null], formacoes: [null, null] };
   }
 

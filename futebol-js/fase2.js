@@ -502,6 +502,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     UI.pad.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) mover(e); });
     const solta = (e) => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; };
     UI.pad.addEventListener('pointerup', solta); UI.pad.addEventListener('pointercancel', solta);
+    UI.pad.addEventListener('lostpointercapture', solta);               // o direcional sumiu debaixo do dedo (cena começou): solta, senão ele voltava andando sozinho
     UI.joy = joy; UI.teclas = {};
     window.addEventListener('keydown', (e) => {
       if (!S || !S.ativo) return;
@@ -741,10 +742,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     let mov = false;
     if (A.rota && A.rota.length) {
       const p = A.rota[0], dx = p.x - A.x, dz = p.z - A.z, d = Math.hypot(dx, dz), st = A.vel * dt;
-      if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; const rr = A.rotaRes; A.rotaRes = null; if (rr) rr(); } }
-      else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); mov = true; }
+      if (d <= st) { A.x = p.x; A.z = p.z; A.rota.shift(); if (!A.rota.length) { A.rota = null; if (A === S.jog) A.correndo = false; const rr = A.rotaRes; A.rotaRes = null; if (rr) rr(); } }
+      else { A.x += dx / d * st; A.z += dz / d * st; A.yawAlvo = Math.atan2(-dz, dx); mov = true; if (A === S.jog && S.modo !== 'livre') A.correndo = A.vel > 3.2; }   // no roteiro: corre só se a cena mandou rápido
     }
-    if (A === S.jog && A.livreAndando) mov = true;
+    if (A === S.jog && A.livreAndando && S.modo === 'livre') mov = true;
     const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 10);
     if (A.seguir && S.altura) { const ty = S.altura(A.x, A.z, A); A.y = A.ySnap ? ty : A.y + (ty - A.y) * Math.min(1, dt * 22); A.ySnap = false; }
     if (mov) posePe(A, t, dt, true);
@@ -2183,6 +2184,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     for (let i = 0; i < nPassos; i++) {
       S.t += dt;
       if (S.modo === 'livre') { if (S.travaPulo > 0) { S.jog.livreAndando = false; S.jog.correndo = false; } else mover(dt); }
+      else if (S.jog && (S.jog.livreAndando || (S.jog.correndo && !(S.jog.rota && S.jog.rota.length)))) { S.jog.livreAndando = false; S.jog.correndo = false; }   // cena/gatilho tirou o controle: a corrida do controle livre não fica presa
       for (const A of S.elenco) tickAtor(A, S.t, dt);
       if (S.viz && !S.viz.oculto) { const p = !!S.viz.puxando; if (S.viz._p && !p) soltarFumaca(); S.viz._p = p; }
       fumacaTick(dt); if (S.agua) aguaTick(dt); bolaTick(dt);

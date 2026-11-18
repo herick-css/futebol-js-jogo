@@ -306,6 +306,7 @@
 
   // ============================================================================================ TEXTURAS DO MANDANTE
   //   faixa: o escudo + o nome, repetido ao longo das fáscias · telão: o escudo grande com o nome e "SÉRIE A" · bandeira: listras + escudo
+  const cabe = (g, txt, x, y, w, px) => { if (typeof textoQueCabe === 'function') return textoQueCabe(g, txt, x, y, w, px); g.font = 'bold ' + px + 'px Arial'; g.fillText(txt, x, y, w); return px; };   // (7.4.19)
   function canvas(w, h, f) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; f(g, w, h); return c; }
   // as faixas de janela dos prédios da cidade: 16 andares de 16 px (a faixa embaixo de cada andar, o resto transparente), cada um
   //   com uma cor (vidro, luz acesa, apagada); cada prédio começa num andar sorteado da textura
@@ -323,8 +324,8 @@
       g.fillStyle = fundo; g.fillRect(0, 0, 256, 32);
       g.fillStyle = c2; g.fillRect(0, 0, 256, 2); g.fillRect(0, 30, 256, 2);
       desenharEmblema(g, 6, 3, 26, 26, M.emblema);
-      g.fillStyle = luma(fundo) > 150 ? '#14161c' : '#ffffff'; g.font = 'bold 15px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(String(M.nome || '').toUpperCase(), 144, 17, 200);
+      g.fillStyle = luma(fundo) > 150 ? '#14161c' : '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      cabe(g, String(M.nome || '').toUpperCase(), 144, 17, 200, 15);   // (7.4.19) nome grande: fonte menor (não espreme)
     });
     const t = pixelTexture(cnv); t.wrapS = THREE.RepeatWrapping; return t;
   }
@@ -335,8 +336,8 @@
       const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, c1); gr.addColorStop(1, '#05070c'); g.fillStyle = gr; g.fillRect(4, 4, 248, 120);
       for (let y = 4; y < 124; y += 2) { g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(4, y, 248, 1); }   // as linhas do LED
       desenharEmblema(g, 14, 18, 88, 92, M.emblema);
-      g.fillStyle = '#ffffff'; g.font = 'bold 22px Arial'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(String(M.sigla || M.nome || '').toUpperCase(), 180, 46, 140);
+      g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      cabe(g, String(M.sigla || M.nome || '').toUpperCase(), 180, 46, 140, 22);
       g.fillStyle = c2; g.fillRect(118, 62, 124, 3);
       g.fillStyle = '#ffffff'; g.font = 'bold 14px Arial'; g.fillText(txt || 'SÉRIE A', 180, 84, 140);
     }));

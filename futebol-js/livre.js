@@ -10,8 +10,8 @@
                       (empate = pênaltis), a final num estádio grande neutro. Também fica salva.
        Amistoso ..... qualquer time da A ou da B contra qualquer outro, no estádio que você quiser.
        Várzea ....... os 10 times do Campeonato de Várzea, no campo de terra da cidadezinha.
-       Sintético .... os clubes da A e da B no society (5 x 5).
-       Futsal ....... os clubes da A e da B na quadra (5 x 5).
+       Sintético .... os clubes da A e da B no society (6 x 6).
+       Futsal ....... os clubes da A e da B na quadra (6 x 6).
    - Antes de cada jogo: a tela do CONFRONTO (os dois jogadores se encarando, com os técnicos atrás), os times, as escalações e os
      desfalques; em CONFIGURAÇÕES escolhe horário, clima, duração, estádio (só no amistoso), dificuldade, posição, personagem e a
      abertura (a cena de entrada: o estádio por fora, o ônibus chegando e os jogadores descendo, o vestiário, a torcida e a entrada
@@ -688,8 +688,10 @@
   const caixaM = (w, h, d, cor, x, y, z, basic) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basic ? new THREE.MeshBasicMaterial({ color: cor }) : new THREE.MeshLambertMaterial({ color: cor })); m.position.set(x, y, z); return m; };
   function texTexto(txt, w, h, fundo, cor, fonte) {
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
-    g.fillStyle = fundo; g.fillRect(0, 0, w, h); g.fillStyle = cor; g.font = fonte || ('bold ' + Math.round(h * 0.62) + 'px Arial'); g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(String(txt).toUpperCase(), w / 2, h / 2 + 1, w - 8);
+    g.fillStyle = fundo; g.fillRect(0, 0, w, h); g.fillStyle = cor; g.textAlign = 'center'; g.textBaseline = 'middle';
+    // (7.4.19) nome grande: a fonte diminui até caber (antes o texto era espremido na largura e ficava "bugado")
+    if (fonte || typeof textoQueCabe !== 'function') { g.font = fonte || ('bold ' + Math.round(h * 0.62) + 'px Arial'); g.fillText(String(txt).toUpperCase(), w / 2, h / 2 + 1, w - 8); }
+    else textoQueCabe(g, String(txt).toUpperCase(), w / 2, h / 2 + 1, w - 8, Math.round(h * 0.62));
     const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; return t;
   }
   function texImg(url) { const t = new THREE.TextureLoader().load(url); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; return t; }
@@ -1031,7 +1033,7 @@
       if (!b) { b = await escolherTime(T('Escolha o adversário'), grupos, [a], Tf('O seu time: {0}', nomeT(a))); if (!b) { a = null; continue; } }
       const cfg = Object.assign(cfgSalva(), { estadio: 'casa' });
       const campo = tipo === 'amistoso' ? 'serieA' : tipo === 'sintetico' ? 'society' : tipo === 'futsal' ? 'futsal' : 'varzea';
-      const nomeCampo = campo === 'serieA' ? nomeEstadio(modeloCasa(a)) : T(campo === 'society' ? 'Campo society (5 x 5)' : campo === 'futsal' ? 'Quadra de futsal (5 x 5)' : 'Campo de várzea');
+      const nomeCampo = campo === 'serieA' ? nomeEstadio(modeloCasa(a)) : T(campo === 'society' ? 'Campo society (6 x 6)' : campo === 'futsal' ? 'Quadra de futsal (6 x 6)' : 'Campo de várzea');
       for (;;) {
         const res = await confronto({ a, b, casa: true, comp: T(NOME_TIPO[tipo]), info: T(campo === 'serieA' ? 'Amistoso' : NOME_TIPO[tipo]), estadio: nomeCampo, cfg, S: null, podeEstadio: tipo === 'amistoso' });
         if (!res) { b = null; break; }
@@ -1302,8 +1304,8 @@
       item('copa', 'Copa', 'Copa do Brasil: 32 times, mata-mata e a final num estádio grande. Fica salva.', !!D0.copa) +
       item('amistoso', 'Amistoso', 'Um jogo entre quaisquer times da A e da B, no estádio que você quiser.') +
       item('varzea', 'Várzea', 'Os times do Campeonato de Várzea, no campo de terra da cidadezinha.') +
-      item('sintetico', 'Sintético', 'Os clubes da A e da B no society (5 x 5).') +
-      item('futsal', 'Futsal', 'Os clubes da A e da B na quadra (5 x 5).') + '</div></div>');
+      item('sintetico', 'Sintético', 'Os clubes da A e da B no society (6 x 6).') +
+      item('futsal', 'Futsal', 'Os clubes da A e da B na quadra (6 x 6).') + '</div></div>');
     return (await escolha(el)).a;
   }
   // (7.4.13) depois do tipo de jogo: controlar UM jogador (o de sempre) ou o TIME INTEIRO. Fica guardado (e dá para mudar
@@ -1391,6 +1393,7 @@
     "Campeonato salvo": ["Saved league", "Campeonato guardado", "Campionato salvato", "Championnat sauvegardé"],
     "Campo de várzea": ["Dirt pitch", "Campo de barrio", "Campo di periferia", "Terrain de quartier"],
     "Campo society (5 x 5)": ["Small-sided pitch (5 v 5)", "Campo de fútbol 5 (5 x 5)", "Campo a 5 (5 x 5)", "Terrain de foot à 5 (5 x 5)"],
+    "Campo society (6 x 6)": ["Small-sided pitch (6 v 6)", "Campo de fútbol 6 (6 x 6)", "Campo a 6 (6 x 6)", "Terrain de foot à 6 (6 x 6)"], "Quadra de futsal (6 x 6)": ["Futsal court (6 v 6)", "Cancha de futsal (6 x 6)", "Campo da futsal (6 x 6)", "Terrain de futsal (6 x 6)"],   // (7.4.19)
     "Cartões e desfalques": ["Cards and absentees", "Tarjetas y bajas", "Cartellini e assenti", "Cartons et absents"],
     "Chave": ["Bracket", "Cuadro", "Tabellone", "Tableau"],
     "Começar um novo": ["Start a new one", "Empezar uno nuevo", "Iniziarne uno nuovo", "En commencer un nouveau"],
@@ -1433,7 +1436,9 @@
     "O ônibus do {0} chega ao estádio": ["The {0} bus arrives at the stadium", "El autobús del {0} llega al estadio", "Il pullman del {0} arriva allo stadio", "Le bus de {0} arrive au stade"],
     "Os 20 melhores do país": ["The country's 20 best", "Los 20 mejores del país", "Le 20 migliori del paese", "Les 20 meilleures du pays"],
     "Os clubes da A e da B na quadra (5 x 5).": ["The Série A and B clubs on the court (5 v 5).", "Los clubes de la A y de la B en la cancha (5 x 5).", "I club della A e della B sul campo indoor (5 x 5).", "Les clubs de A et de B sur le terrain en salle (5 x 5)."],
+    "Os clubes da A e da B na quadra (6 x 6).": ["The Série A and B clubs on the court (6 v 6).", "Los clubes de la A y de la B en la cancha (6 x 6).", "I club della A e della B sul campo indoor (6 x 6).", "Les clubs de A et de B sur le terrain en salle (6 x 6)."],
     "Os clubes da A e da B no society (5 x 5).": ["The Série A and B clubs on the small-sided pitch (5 v 5).", "Los clubes de la A y de la B en fútbol 5 (5 x 5).", "I club della A e della B nel calcio a 5 su erba (5 x 5).", "Les clubs de A et de B en foot à 5 (5 x 5)."],
+    "Os clubes da A e da B no society (6 x 6).": ["The Série A and B clubs on the small-sided pitch (6 v 6).", "Los clubes de la A y de la B en fútbol 6 (6 x 6).", "I club della A e della B nel calcio a 6 su erba (6 x 6).", "Les clubs de A et de B en foot à 6 (6 x 6)."],
     "Os times do Campeonato de Várzea, no campo de terra da cidadezinha.": ["The amateur league teams, on the little town's dirt pitch.", "Los equipos del campeonato de barrio, en el campo de tierra del pueblito.", "Le squadre del campionato di periferia, sul campo in terra del paesino.", "Les équipes du championnat de quartier, sur le terrain en terre de la petite ville."],
     "Outros países": ["Other countries", "Otros países", "Altri paesi", "Autres pays"],
     "PRÊMIOS DA COPA DO BRASIL": ["COPA DO BRASIL AWARDS", "PREMIOS DE LA COPA DO BRASIL", "PREMI DELLA COPA DO BRASIL", "PRIX DE LA COPA DO BRASIL"],

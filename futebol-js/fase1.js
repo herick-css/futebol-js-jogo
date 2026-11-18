@@ -97,6 +97,7 @@ const Fase1 = (() => {
     UI.pad.addEventListener('pointermove', (e) => { if (e.pointerId === joy.id) mover(e); });
     const solta = (e) => { if (e.pointerId !== joy.id) return; joy.id = null; joy.x = joy.y = 0; UI.knob.style.transform = ''; };
     UI.pad.addEventListener('pointerup', solta); UI.pad.addEventListener('pointercancel', solta);
+    UI.pad.addEventListener('lostpointercapture', solta);               // o direcional sumiu debaixo do dedo (cena começou): solta, senão ele voltava andando sozinho
     UI.joy = joy; UI.teclas = {};
     window.addEventListener('keydown', (e) => {
       if (!S || !S.ativo) return;
@@ -853,7 +854,8 @@ const Fase1 = (() => {
 
   // ------------------------------------------------------------------ pátio e quadra
   // A quadra do pátio é a MESMA do jogo (construirQuadraFutsal): as medidas vêm do campo 'futsal'.
-  const QF = CAMPOS.futsalEscola || CAMPOS.futsal, QX = QF.comprimento / 2, QH = QF.largura / 2, QB = QF.folga, QZ = -30, PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
+  // (7.4.19) a quadra ficou maior (57 x 34): o centro vai mais para trás e o PORTÃO (a grade do lado da escola) continua no mesmo lugar (z = -14,6)
+  const QF = CAMPOS.futsalEscola || CAMPOS.futsal, QX = QF.comprimento / 2, QH = QF.largura / 2, QB = QF.folga, QZ = -(14.6 + QH + QB), PORTAO = 1.2;   // meio comprimento, meia largura, folga até a grade, centro (z) e meia largura do portão
   const Z_PORTAO = QZ + QH + QB;                                        // z da grade do lado da escola (onde fica o portão)
   const PAT_Z0 = 8.2;                                                   // parede da escola (fachada)
   const ARV_PROF = { x: -8.5, z: -9.0 };                                // a árvore onde o Professor Roberto vigia a turma
@@ -958,14 +960,15 @@ const Fase1 = (() => {
     }
     // a turma debaixo da árvore: em volta do tronco, conversando (as mesmas crianças da partida; trocam a roupa na hora de jogar)
     // a turma do Roberto: dois sentados no chão (de costas para o tronco), dois conversando e dois aquecendo (pulinhos e braços girando)
-    const volta = [['tadeu', -1.1, 0.9, 'chao'], ['duda', 0.7, 1.2, 'chao'], ['cadu', -2.2, -0.2, 'conv'], ['bia', -1.5, -1.2, 'conv'], ['nando', 1.3, -1.6, 'aquece'], ['leo', 2.5, -2.3, 'aquece']];
+    const volta = [['tadeu', -1.1, 0.9, 'chao'], ['duda', 0.7, 1.2, 'chao'], ['cadu', -2.2, -0.2, 'conv'], ['bia', -1.5, -1.2, 'conv'], ['nando', 1.3, -1.6, 'aquece'], ['leo', 2.5, -2.3, 'aquece'],
+      ['vitor', 0.2, -2.6, 'aquece']];                                    // (7.4.19) + o Vítor (5 x 5)
     for (const [id, dx, dz, modo] of volta) {
       const A = criar(pat, cor(HIST[id])); A.x = ARV_PROF.x + dx; A.z = ARV_PROF.z + dz; A.bloq = true; A.conv = n++; S.gente.push(A);
       A.modoTurma = modo; A.fase = n * 1.7;
       if (modo === 'chao') { A.chao = true; olhar(A, ARV_PROF.x + dx * 2.5, ARV_PROF.z + dz * 2.5); A.conv = null; }
       else if (modo === 'aquece') { A.aquece = true; olhar(A, ARV_PROF.x + 3, ARV_PROF.z - 5); A.conv = null; }
       A.yaw = A.yawAlvo;
-      S.falantes[id] = { A, nome: HIST[id].nome, voz: ({ cadu: 4, bia: 0, tadeu: 4, duda: 0, nando: 2, leo: 2 })[id] };
+      S.falantes[id] = { A, nome: HIST[id].nome, voz: ({ cadu: 4, bia: 0, tadeu: 4, duda: 0, nando: 2, leo: 2, vitor: 3 })[id] };
     }
     { const c = S.falantes.cadu.A, b = S.falantes.bia.A; olhar(c, b.x, b.z); c.yaw = c.yawAlvo; olhar(b, c.x, c.z); b.yaw = b.yawAlvo; }
     const rob = criar(pat, cor(HIST.professor)); rob.x = ARV_PROF.x + 2.6; rob.z = ARV_PROF.z + 0.2; olhar(rob, ARV_PROF.x, ARV_PROF.z); rob.yaw = rob.yawAlvo; rob.bloq = true;
@@ -1067,8 +1070,8 @@ const Fase1 = (() => {
     J.x = -3.0; J.z = -27.5; Jo.x = -1.2; Jo.z = -27.0; J.yaw = J.yawAlvo = Jo.yaw = Jo.yawAlvo = -Math.PI / 2; J.rota = Jo.rota = null; Jo.bloq = true;
     S.bolaAlt = 0.75;
     // as crianças (e o professor) já estavam no pátio, debaixo da árvore: agora vestem os uniformes e vêm para a quadra pelo portão
-    const unis = { cadu: HIST.uni0, bia: HIST.uni0, tadeu: HIST.uni1, duda: HIST.uni1, nando: HIST.uni1, leo: HIST.uni1 };
-    const ids = ['cadu', 'bia', 'tadeu', 'duda', 'nando', 'leo'];
+    const unis = { cadu: HIST.uni0, bia: HIST.uni0, tadeu: HIST.uni1, duda: HIST.uni1, nando: HIST.uni1, leo: HIST.uni1, vitor: HIST.uni1 };
+    const ids = ['cadu', 'bia', 'tadeu', 'duda', 'nando', 'leo', 'vitor'];
     for (const id of ids) vestir(S.falantes[id].A, unis[id]);
     const kids = ids.map((id) => S.falantes[id].A), rob = S.falantes.rob.A;
     for (const A of kids.concat([rob])) { A.conv = null; A.rota = null; A.chao = A.aquece = false; }
@@ -1076,16 +1079,30 @@ const Fase1 = (() => {
     await preto(false, 1000);
     await esperar(500);
     // chegam pelo portão
-    const destinos = [[-4.5, -22.0], [-2.6, -23.6], [0.2, -22.4], [2.4, -23.6], [4.4, -22.2], [6.2, -24.0]];
+    const destinos = [[-4.5, -22.0], [-2.6, -23.6], [0.2, -22.4], [2.4, -23.6], [4.4, -22.2], [6.2, -24.0], [7.6, -22.4]];
     const entrada = Z_PORTAO + 3.0, dentro = Z_PORTAO - 2.6;
     await Promise.all(kids.map((k, i) => andar(k, [[(i - 2.5) * 0.25, entrada], [(i - 2.5) * 0.25, dentro], destinos[i]], 3.0)).concat([andar(rob, [[0, entrada], [0, dentro], [0.4, -21.0]], 2.4)]));
     for (const k of kids) olhar(k, Jo.x, Jo.z); olhar(rob, Jo.x, Jo.z); olhar(Jo, kids[0].x, kids[0].z); olhar(J, kids[0].x, kids[0].z);
     camPara('qd_geral');
-    await fala('cadu', T('E aí, João! Vocês querem jogar um quatro contra quatro com a gente?'), 'qd_geral');
-    await fala('bia', T('A gente tá em seis. Com vocês dois, fecha certinho!'), 'qd_geral');
+    await fala('cadu', T('E aí, João! Vocês querem jogar um cinco contra cinco com a gente?'), 'qd_geral');
+    await fala('bia', T('A gente tá em sete. Com vocês dois, ainda falta uma pessoa...'), 'qd_geral');
+    // (7.4.19) a LÚCIA chega pelo portão (ela também ia para o pátio depois da aula) e completa o time
+    const Lu = criar(pat, Object.assign({}, HIST.lucia)); S.luciaA = Lu;
+    Lu.x = 0.6; Lu.z = entrada + 1.5; Lu.yaw = Lu.yawAlvo = -Math.PI / 2; Lu.bloq = true;
+    Dialogo.esconder();
+    await andar(Lu, [[0.3, entrada], [0.3, dentro], [1.4, -25.6]], 3.6);   // ela vem correndo
+    for (const k of kids) olhar(k, Lu.x, Lu.z); olhar(Jo, Lu.x, Lu.z); olhar(J, Lu.x, Lu.z); olhar(Lu, Jo.x, Jo.z);
+    await fala('lucia', T('Ei! Eu ouvi direito? Tá faltando gente? Eu jogo!'), 'qd_geral');
+    await fala('joao', T('Lúcia! Chegou na hora certa: agora fecha certinho, cinco contra cinco!'), 'qd_geral');
     olhar(Jo, J.x, J.z);
-    await fala('joao', Tf('Claro que a gente quer! Eu e {0} ficamos juntos. Sérgio e Bia, vocês vêm com a gente?', nomeJog()), 'qd_geral');
+    await fala('joao', Tf('Eu, {0} e a Lúcia ficamos juntos. Sérgio e Bia, vocês vêm com a gente?', nomeJog()), 'qd_geral');
     await fala('cadu', T('Fechou! Bora!'), 'qd_geral');
+    // ela conversa com você (do jeito que foi a conversa na sala e no corredor)
+    olhar(Lu, J.x, J.z); olhar(J, Lu.x, Lu.z); S.parA = J; S.parB = Lu;
+    await fala('lucia', S.mariposa ? Tgf('{0}! Que bom que você veio... quer dizer, que bom que vai ter mais gente no time, né?', nomeJog())
+      : S.lucia === 'precisa' ? T('Se travar no jogo, olha pra mim, tá? Igual eu falei na aula!')
+      : Tf('Vamos ganhar, {0}! Eu jogo desde pequena, sabia?', nomeJog()), 'dupla');
+    await fala('jog', T('Vamos nessa, Lúcia!'), 'dupla');
     olhar(J, Jo.x, Jo.z); S.parA = J; S.parB = Jo;
     await fala('jog', T('João... eu nunca joguei uma partida de verdade.'), 'dupla');
     await fala('joao', T('Eu sei. Mas eu confio em você!'), 'dupla');
@@ -1098,6 +1115,7 @@ const Fase1 = (() => {
     PERSONAGEM.atributos = Atributos.iniciante(PERSONAGEM.posicaoHist);   // (7.4.5) tudo 30 e as habilidades da posição entre 40 e 50 (sorteadas)
     Dialogo.esconder();
     await mariposa();
+    if (S.luciaA) vestir(S.luciaA, HIST.uni0);                        // (7.4.19) a Lúcia também veste o colete do nosso time
     await fala('joao', [T('Boa! Você fica lá atrás, protegendo o nosso gol.'), T('Boa! Você fica no meio, distribuindo o jogo.'), T('Boa! Você fica lá na frente, atrás do gol deles.')][posR] || '', 'dupla');
     Dialogo.esconder();
     await preto(true, 900);
@@ -1125,9 +1143,10 @@ const Fase1 = (() => {
   }
   const resultadoRuim = (r) => !!r.expulso || (!r.venceu && !r.bom);       // derrota ou empate sem jogar bem, ou vermelho
   async function cenaFinal(r) {
-    const J = S.jog, Jo = S.joaoA;
-    tirarElenco([J, Jo]);
+    const J = S.jog, Jo = S.joaoA, Lu = S.luciaA && S.elenco.includes(S.luciaA) ? S.luciaA : null;
+    tirarElenco(Lu ? [J, Jo, Lu] : [J, Jo]);
     vestir(J, HIST.uni0);
+    if (Lu) { Lu.x = -1.6; Lu.z = -28.9; Lu.rota = null; olhar(Lu, J.x, J.z); Lu.yaw = Lu.yawAlvo; }   // (7.4.19) a Lúcia fica com a gente
     J.x = -2.4; J.z = -27.4; Jo.x = -0.6; Jo.z = -27.0; J.rota = Jo.rota = null; olhar(J, Jo.x, Jo.z); olhar(Jo, J.x, J.z); J.yaw = J.yawAlvo; Jo.yaw = Jo.yawAlvo;
     S.falantes = {}; S.parA = J; S.parB = Jo; S.bolaDono = Jo; S.modo = 'cena';
     const traco = r.bom ? 'talento' : 'forca';
@@ -1160,6 +1179,12 @@ const Fase1 = (() => {
       await fala('joao', r.empate ? T('Empatamos... eu esperava um pouco mais de você.') : T('A gente perdeu... e eu esperava mais de você. Fiquei meio decepcionado.'), 'dupla');
       await fala('jog', r.empate ? T('Eu falei que nunca tinha jogado... mas pelo menos não perdemos, né?') : T('Eu falei que nunca tinha jogado...'), 'dupla');   // empate: "pelo menos não perdemos"
       await fala('joao', T('Tudo bem. Eu te ajudo a treinar!'), 'dupla');
+    }
+    if (Lu) {                                                           // (7.4.19) a Lúcia também comenta o jogo
+      olhar(Lu, J.x, J.z); olhar(J, Lu.x, Lu.z); S.parA = J; S.parB = Lu;
+      await fala('lucia', r.expulso ? Tf('Ai, {0}... da próxima vez, mais calma, tá?', nomeJog()) : r.venceu ? T('Que jogo! Foi muito divertido jogar com vocês!') : T('Foi divertido mesmo assim! Amanhã a gente joga de novo?'), 'dupla');
+      await fala('jog', r.expulso ? T('Tá bom, Lúcia... desculpa.') : T('Valeu, Lúcia! Até amanhã!'), 'dupla');
+      S.parB = Jo; olhar(J, Jo.x, Jo.z);
     }
     Dialogo.esconder();
     await esperar(300);

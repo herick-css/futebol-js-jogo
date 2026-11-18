@@ -1265,8 +1265,9 @@
       g.fillStyle = t.uni[1]; g.beginPath(); g.moveTo(0, 46); g.lineTo(256, 26); g.lineTo(256, 40); g.lineTo(0, 60); g.closePath(); g.fill();
       g.fillStyle = t.uni[2] === t.uni[0] ? t.uni[3] : t.uni[2]; g.fillRect(0, 60, 256, 4);
       g.drawImage(arte(t.k), 8, 6, 44, 44);
-      g.font = 'bold 15px monospace'; g.textBaseline = 'middle'; g.fillStyle = corDist2(t.uni[0], '#ffffff') < 160 ? '#1c1c1f' : '#ffffff';
-      g.fillText(t.nome.toUpperCase(), 60, 20, 190);
+      g.textBaseline = 'middle'; g.fillStyle = corDist2(t.uni[0], '#ffffff') < 160 ? '#1c1c1f' : '#ffffff';
+      if (typeof textoQueCabe === 'function') textoQueCabe(g, t.nome.toUpperCase(), 60, 20, 190, 15, { familia: 'monospace' });   // (7.4.19) nome grande: fonte menor
+      else { g.font = 'bold 15px monospace'; g.fillText(t.nome.toUpperCase(), 60, 20, 190); }
       g.font = 'bold 9px monospace'; g.fillText(T('DELEGAÇÃO OFICIAL'), 60, 36, 190);
       const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
       return tex;

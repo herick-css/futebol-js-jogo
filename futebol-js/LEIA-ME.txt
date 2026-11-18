@@ -71,6 +71,23 @@ ARQUIVOS
                           (7.4.18) PLACAR e textos da HUD com cor branca explícita, e o jogo avisa o navegador que é escuro
                           (meta color-scheme "only dark"): o modo escuro automático do Android/WebView (e de apps como o do Canva)
                           recolore páginas que não declaram o esquema — o carregador 1.2 é branco — e os textos brancos viravam pretos
+                          (7.4.19) LÚCIA: a conversa não fica mais presa até as 17h (variável "mariposa" escondia a função; o
+                          diálogo agora fecha em qualquer erro). TREINO DA FASE 1: cavadinha certa mas fora do gol = o João
+                          valida o movimento e manda cobrar de novo (duasChances com "quase"); no lateral/escanteio o objetivo
+                          vai para o canto e o João fica na distância do cruzamento verde. CÂMERA DA SUA COBRANÇA de lateral e
+                          escanteio: atrás das costas, por dentro da grade/placas (camera.near maior só nessa hora). Sem aviso de
+                          tática quando o time não tem técnico. Reservas aquecendo voltam para o banco nas cenas de intervalo/fim.
+                          CÂMERA DE TV: acompanha a cobrança do adversário fora do campo e a textura do campo tem mipmap (a
+                          linha lateral do outro lado não some). CAMPOS: society 62x39 e futsal 65x39, 6 x 6; a quadra da escola
+                          57x34, 5 x 5, com a Lúcia no nosso time (chega correndo e conversa) e o Vítor no deles; o treino do
+                          Nonato (societyTreino) e o da Fase 1 (futsalTreino) ficam nos tamanhos antigos. CRUZAMENTO mais fraco
+                          que o chute (CRUZ_ALCANCE/CRUZ_TEMPO). NOMES GRANDES nas faixas (túnel, fáscias, telão, ônibus, partida
+                          livre): a fonte diminui até caber (textoQueCabe), sem cortar nem espremer
+                          ANDAR/CORRER PRESO: andaDeVerdade (jogo.js) volta o boneco à pose parada se ele está marcado andando mas
+                          não sai do lugar (gatilhos, ligação, cena, relógio parado) — na cidade, no cinema e na esteira (noLugar);
+                          o direcional solta quando some debaixo do dedo (lostpointercapture) e as teclas soltam ao trocar de
+                          janela; no roteiro a animação segue a velocidade (corre acima de 3,2 m/s); na partida, velocidade presa
+                          com o corpo parado não trava o jogador no meio da passada
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
