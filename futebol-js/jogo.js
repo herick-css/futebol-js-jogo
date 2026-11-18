@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.4.19';
+const VERSAO_JOGO = '7.4.20';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -389,18 +389,20 @@ const CAMPOS = {
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#946e42', gramaB: '#a18050', fundo: '#597a38', padrao: 'terra', faixas: 0, linhas: '#e6dcc0' } },
   // society e futsal: (7.4.19) 6 x 6 (goleiro + 5 na linha) e ~30% maiores (62 x 39 e 65 x 39; antes 48 x 30 / 50 x 30, 5 x 5): com
-  //   um a mais por time o espaço por jogador fica parecido com o do 7 x 7 de várzea.
-  society: { nome: 'Society (6 x 6)', comprimento: 62, largura: 39, jogadores: 6, gol: { largura: 5.5, altura: 2.3 }, estadio: 'society',
+  //   um a mais por time o espaço por jogador fica parecido com o do 7 x 7 de várzea. (7.4.20) GOLS ~30% maiores junto com o campo
+  //   (society 5,5 x 2,3 → 7,2 x 2,75 · futsal 4,6 x 2,2 → 6,6 x 2,6 · escola 4,4 x 2,2 → 6,0 x 2,5): o mergulho do goleiro alcança
+  //   ~3,4 m, e no gol pequeno ele chegava em qualquer canto parado no meio. Os treinos ficam com os gols antigos.
+  society: { nome: 'Society (6 x 6)', comprimento: 62, largura: 39, jogadores: 6, gol: { largura: 7.2, altura: 2.75 }, estadio: 'society',
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 99, cartoesAcumulam: false },
     aparencia: { gramaA: '#2c8a3e', gramaB: '#2c8a3e', fundo: '#1f5f2b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   // Quadra de futsal do modo história: mesma lógica do society (4 x 4, sem impedimento, lateral com o pé),
   // mas sem torcida, sem banco e sem técnico. Piso azul, borda laranja, mureta baixa e tela em volta.
   // um pouco maior: com os meninos pequenos e a bola voando alto, a IA mandava muita bola para fora pelas laterais.
-  futsal: { nome: 'Quadra de futsal (6 x 6)', comprimento: 65, largura: 39, jogadores: 6, gol: { largura: 4.6, altura: 2.2 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
+  futsal: { nome: 'Quadra de futsal (6 x 6)', comprimento: 65, largura: 39, jogadores: 6, gol: { largura: 6.6, altura: 2.6 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 0, cartoesAcumulam: false },
     aparencia: { gramaA: '#2f63b8', gramaB: '#2f63b8', fundo: '#d9732b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   // A quadra da ESCOLA (Fase 1): (7.4.19) 57 x 34, 5 x 5 (os meninos do pátio + a Lúcia); antes 44 x 26, 4 x 4. Não aparece no menu (oculto).
-  futsalEscola: { nome: 'Quadra da escola (5 x 5)', oculto: true, comprimento: 57, largura: 34, jogadores: 5, gol: { largura: 4.4, altura: 2.2 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
+  futsalEscola: { nome: 'Quadra da escola (5 x 5)', oculto: true, comprimento: 57, largura: 34, jogadores: 5, gol: { largura: 6.0, altura: 2.5 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
     regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 0, cartoesAcumulam: false },
     aparencia: { gramaA: '#2f63b8', gramaB: '#2f63b8', fundo: '#d9732b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   // (7.4.19) os TREINOS ficam nas medidas antigas (as aulas do João e os desafios do seu Nonato foram afinados nelas)
@@ -7078,6 +7080,7 @@ function gkThink(p, dt) {
         }
         if (t < 0.55 && Math.abs(gap) > 0.9) {
           // Mergulho: voa de lado e chega junto com a bola.
+          p.diveDe = { x: p.x, z: p.z };            // (7.4.20) de onde ele saiu (para medir o quanto teve que se esticar)
           p.diveDur = clamp(t + 0.15, 0.35, 0.7);
           p.diveT = p.diveDur;
           // O corpo deitado fica entre os pés e as mãos: mira para a bola passar no meio do corpo
@@ -7119,7 +7122,10 @@ function gkThink(p, dt) {
     if (inBox && ballSpeed() < 9) return seek(p, ball.x, ball.z, CONFIG.GK_SPEED);
   }
   const F = G.focus || ball;
-  const depth = 1.0 + clamp((50 - Math.abs(F.x - ownGx)) * 0.06, 0, 3);
+  // (7.4.20) society/futsal: a conta era a do campo grande (a 10 m do gol ele ficava 3,4 m fora da linha e fechava o gol todo);
+  //   agora ~1,7 m, como um goleiro de quadra
+  const dF = Math.abs(F.x - ownGx);
+  const depth = campoPequeno() ? 0.9 + clamp((50 * ESC - dF) * 0.035, 0, 1.3) : 1.0 + clamp((50 - dF) * 0.06, 0, 3);
   // (7.4.4) acompanhando a bola ele anda de um lado para o outro, mas para a 15% da largura do gol de cada trave (com a trave
   //   de 0 a 100%, ele fica entre 15% e 85%): antes chegava quase na trave e deixava o outro lado todo aberto
   return seek(p, ownGx + p.dir * depth, clamp(F.z * 0.3, -LIM_GK(), LIM_GK()), CONFIG.GK_SPEED);
@@ -7336,6 +7342,7 @@ function atualizarControleTime(dt) {
 
 function userDesired(u, dt) {
   if (u.punt) return { vx: 0, vz: 0 };              // (7.4.17) bate-pronto do goleiro
+  if (u === user && G.recvFx && G.recvFx.espera && G.recvFx.uAlvo) return passoDeEspera(u);   // (7.4.20) esperando a bola: se ajeita na linha dela
   u.running = false;
   if (G.state === 'goal' && G.golAutor && G.golAutor !== u) {   // gol de outro: a IA controla você
     const a = G.golAutor;
@@ -7700,7 +7707,7 @@ function updatePlayers(dt) {
       if (sp > 0.3) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 6 * dt);   // triste: anda de frente
     } else if (p.isUser) {
       const ang0 = p.angle;
-      if (sp > 0.3 && !p.recvPose && (G.state === 'play' || G.state === 'celebrate' || G.state === 'trap' || G.state === 'goal')) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), (p.celeb ? 4 : 12) * dt);
+      if (sp > 0.3 && !p.recvPose && !(G.recvFx && G.recvFx.espera) && (G.state === 'play' || G.state === 'celebrate' || G.state === 'trap' || G.state === 'goal')) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), (p.celeb ? 4 : 12) * dt);
       // Velocidade da curva (para o aviãozinho inclinar para o lado em que você vira).
       p.giro = lerp(p.giro || 0, dt > 0 ? wrapAngle(p.angle - ang0) / dt : 0, Math.min(1, dt * 6));
     } else if (p.celeb) {
@@ -7789,6 +7796,12 @@ function attachBall(p) {
   }
   else if (nasMaos) { ball.x = p.x + c * 0.55; ball.z = p.z + s * 0.55; ball.y = 1.08; }      // entre as mãos, na frente do peito
   else { ball.x = p.x + c * 0.62; ball.z = p.z + s * 0.62; ball.y = p.largaT > 0 ? lerp(CONFIG.BALL_R, 1.08, p.largaT / GK_LARGA_SEG) : CONFIG.BALL_R; }   // (7.4.17) largando da mão para o pé
+  const CB = p.chegaBola;                          // (7.4.20) acabou de dominar: a bola termina o caminho até o pé na velocidade em que vinha
+  if (CB) {
+    const k = (G.time - CB.t0) / CB.dur;
+    if (k >= 1 || k < 0 || p.carry || p.throwIn || nasMaos) p.chegaBola = null;
+    else { const kk = 1 - (1 - k) * (1 - k); ball.x = lerp(CB.x, ball.x, kk); ball.z = lerp(CB.z, ball.z, kk); ball.y = lerp(CB.y, ball.y, kk); }
+  }
   ball.vx = p.vx; ball.vz = p.vz; ball.vy = 0;
 }
 
@@ -7809,7 +7822,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   ball.vx = vx; ball.vy = vy; ball.vz = vz;
   ball.spinSide = spinSide; ball.spinVert = spinVert;
   ball.y = Math.max(ball.y, CONFIG.BALL_R + 0.01);
-  ball.lastKicker = from; G.lastTouch = from;
+  ball.lastKicker = from; G.lastTouch = from; from.chegaBola = null;
   from.controlCd = 0.45;
   if (!isThrow) { const v = Math.hypot(vx, vy, vz); if (v > 17) Som.chute((v - 17) / 14); else Som.toque(v / 17); }
   if (!isThrow && !(from.role === 'GK' && !from.goalKick && !from.comPe)) from.kickT = 0.35; // animação do chute (goleiro: no tiro de meta e com a bola no pé)
@@ -8111,7 +8124,10 @@ function checkBallContacts() {
       // Quão no meio do goleiro a bola passa: distância da linha da bola até ele (no chão) e
       // altura. Bola no corpo é defesa quase sempre; o gol precisa de um chute longe das mãos.
       const hs = Math.hypot(ball.vx, ball.vz) || 1;
-      const passa = Math.abs((gk.x - ball.x) * ball.vz - (gk.z - ball.z) * ball.vx) / hs;
+      // (7.4.20) society/futsal: no mergulho, "longe do corpo" é medido de onde ele SAIU (antes era do corpo já voando até a bola,
+      //   e todo chute no canto contava como "no meio do goleiro": ele defendia quase sempre)
+      const ref = campoPequeno() && gk.diveT > 0 && gk.diveDe ? gk.diveDe : gk;
+      const passa = Math.abs((ref.x - ball.x) * ball.vz - (ref.z - ball.z) * ball.vx) / hs;
       const noCorpo = passa < 0.6 && ball.y < 2.1;
       let chance = clamp(1.45 - sp3 / 30, 0.2, 0.95) + clamp(1 - passa / reach, 0, 1) * 0.45;
       chance += (fh(gk, 'goleiro') - 1) * 0.3;     // habilidade de goleiro
@@ -8127,14 +8143,19 @@ function checkBallContacts() {
       if (ball.cavadinha) chance = chanceCavadinhaGoleiro(gk, 0, noCorpo);
       if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
+      if (campoPequeno() && ball.isShot && !noCorpo && !ball.cavadinha && !ball.penalti) chance -= 0.08;   // (7.4.20) society/futsal: um pouco mais fácil fora do corpo
       if (DI && DI.team !== gk.team) chance = 1;     // lateral/indireto: defesa fácil
       const fD = G.desafio && G.desafio.defesa != null ? G.desafio.defesa : 1;   // treino do seu Nonato: o Paredão fica mais esperto com a dificuldade
       chance *= fD;
       ball.saveOk = Math.random() < chance;
       ball.defNoCorpo = noCorpo;                     // para escolher COMO ele defende (encaixa, dois tempos, rebote...)
       if (ball.userShot && gk.team === 1) { G.stats.noAlvo++; if (ball.userCabeca) G.stats.cabecadasNoAlvo = (G.stats.cabecadasNoAlvo | 0) + 1; ball.userShot = false; }
-      if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
-      if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < 0.5 * fD))) {   // no corpo nunca "atravessa": rebate
+      // (7.4.20) society/futsal: errou a defesa no canto = nem sempre a ponta do pé/da mão ainda desvia (antes o deslize com o pé
+      //   desviava 100% e o tapa 50%, e o goleiro "defendia" quase tudo). Perto de onde ele estava continua desviando quase sempre.
+      const pq = campoPequeno(), perto = clamp(1 - passa / reach, 0, 1);
+      const chancePe = pq ? 0.3 + 0.55 * perto : 1, chanceTapa = pq ? 0.2 + 0.3 * perto : 0.5;
+      if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < chancePe * fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
+      if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < chanceTapa * fD))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
         showToast('Espalmou!'); Som.defesa(); Torcida.defesa(gk.team);
@@ -8199,7 +8220,13 @@ function checkBallContacts() {
       u.boladaT = G.time + 0.8;
       if (Math.random() < 0.65) { levarBolada(u); return; }
     }
-    if (d < 0.9 && ball.y < 1.0) { givePossession(u); return; }
+    if (d < 0.9 && ball.y < 1.0) {
+      // (7.4.20) domínio automático sem "teletransporte": a bola continua na velocidade dela até o pé (chegaBola, no attachBall)
+      const ch = { x: ball.x, y: ball.y, z: ball.z, t0: G.time, v: Math.hypot(ball.vx, ball.vz) };
+      givePossession(u);
+      if (G.possession === u) { const pe = pontoPe(); ch.dur = clamp(2 * Math.hypot(pe.x - ch.x, pe.z - ch.z) / Math.max(4, ch.v), 0.05, 0.25); u.chegaBola = ch; }
+      return;
+    }
   }
   // Barreira: quem acabou de pular na cobrança bloqueia a bola até ~2,4 m de altura.
   for (const p of players) {
@@ -9268,6 +9295,9 @@ function startSetPieceWait() {
   // companheiro para tocar/cruzar. Lateral já é o arremesso. Sem relógio e sem câmera lenta.
   // Falta e pênalti: você se afasta uns passos da bola para a corrida (ver updateCobrador).
   if (p.isUser && (S.kind === 'falta' || S.kind === 'penalti')) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z };
+  // (7.4.20) escanteio e lateral com o pé também: antes você ficava travado na pose de "indo chutar" (a perna armando) enquanto
+  //   escolhia; agora fica parado (ou andando, se se mexer) um pouco atrás da bola e a corrida + a batida só vêm depois da escolha
+  if (p.isUser && (S.kind === 'escanteio' || (S.kind === 'lateral' && S.pe))) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z, atras: 1.5, lado: 0.6 };
   if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : S.kind === 'tiro de meta' ? 'lancar' : (G.desafio && G.desafio.toque) || 'shot');   // (7.4.16) tiro de meta: começa no LANÇAR   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
 }
 
@@ -9286,7 +9316,8 @@ function updateCobrador(dt) {
   const ang = Math.atan2(k.dirZ, k.dirX), fx = Math.cos(ang), fz = Math.sin(ang);
   const R = G.corrida;
   let tx, tz, vmax;
-  if (!R) { tx = B.x - fx * 2.4 + fz * 0.9; tz = B.z - fz * 2.4 - fx * 0.9; vmax = 2.6; }        // esquerda = (fz, −fx)
+  const atras = B.atras || 2.4, lado = B.lado || 0.9;   // (7.4.20) escanteio/lateral: mais perto da bola (a placa/grade está ali atrás)
+  if (!R) { tx = B.x - fx * atras + fz * lado; tz = B.z - fz * atras - fx * lado; vmax = 2.6; }        // esquerda = (fz, −fx)
   else { R.t += dt; R.v = Math.min(6, R.v + dt * 9); tx = B.x - fx * 0.55 + fz * 0.12; tz = B.z - fz * 0.55 - fx * 0.12; vmax = R.v; }
   const dx = tx - u.x, dz = tz - u.z, d = Math.hypot(dx, dz);
   const v = d > 0.01 ? Math.min(vmax, R ? vmax : d * 4) : 0;
@@ -10260,9 +10291,12 @@ function updateKickClock(rdt) {
 //   FORÇA (o chute de primeira não tem a etapa do efeito). Depois a bola chega no pé (ou no peito do pé, num voleio) em câmera
 //   lenta e sai na direção e na força escolhidas. Perto do gol (até um pouco fora da área) dá para chutar; longe, só o passe.
 // ---------------------------------------------------------------------
-const PRIMEIRA_LENTO = 0.04;
+const PRIMEIRA_LENTO = 0.04, PRIMEIRA_ESPERA_LENTO = 0.6;   // (7.4.20) depois de mirar: um pouco lento enquanto a bola chega
+const PRIMEIRA_JANELA = 1.0, PRIMEIRA_BOTAO_MS = 180;   // (7.4.20) a bola a até ~1 s de você; o botão na tela há pelo menos 0,18 s
 function primeiraSemRecepcao(kind) {
   if (!bolaVindoPraVoce() || (kind === 'shot' && !pertoParaChuteDePrimeira())) return;
+  // (7.4.20) o toque só vale com o botão de primeira JÁ NA TELA (antes um toque/tecla de outra hora disparava antes de ele aparecer)
+  if (!G.primeiraBotoesT || performance.now() - G.primeiraBotoesT < PRIMEIRA_BOTAO_MS) return;
   iniciarPrimeira(kind, { ok: true, recvKind: 'pe' });
 }
 function iniciarPrimeira(kind, op) {
@@ -10299,9 +10333,12 @@ function primeiraSoltar(atrasou) {
   user.angle = Math.atan2(k.dirZ, k.dirX);
   user.recvPose = pose === 'voleio' ? { kind: 'voleio', t: 0, dur: POSE_DUR.voleio, side: Math.random() < 0.5 ? 1 : -1 } : null;
   const c = pontoContato(pose), d = Math.hypot(ball.x - c.x, ball.y - c.y, ball.z - c.z), v = Math.max(7, Math.hypot(ball.vx, ball.vy, ball.vz));
-  G.state = 'trap'; G.targetScale = 0.45;
+  G.state = 'trap'; G.targetScale = PRIMEIRA_ESPERA_LENTO;
   G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: clamp(d / v, 0.14, 1.2) * (pose === 'voleio' ? 1 : 0.85), kind: P.recvKind, acao: 'primeira', ok: P.ok, pose,
     fin: null, fase: 'ida', perfeito: false, culpaDoPasse: false, passador: ball.lastKicker, primeira: k };
+  // (7.4.20) a bola NÃO é puxada até o pé: ela vem no caminho e na velocidade dela, você se ajeita e a perna sai na hora certa
+  iniciarEspera(G.recvFx, user.angle);
+  G.recvFx.chutePe = pose === 'pe';
 }
 // a bola chegou: sai o toque
 function baterDePrimeira(F) {
@@ -10310,9 +10347,11 @@ function baterDePrimeira(F) {
   if (G.offside && G.offside.set.has(user)) { G.kick = null; hideKickUI(); fimRecepcao(); G.state = 'play'; callOffside(user); return; }
   if (G.offside) G.offside = null;
   G.kick = k; G.state = 'play';
+  const kt = user.kickT;                                // (7.4.20) a perna já veio (o balanço começa antes de a bola chegar)
   user.kickT = 0;
-  if (!k.primeira.ok) { furaoDePrimeira(k); return; }  // (7.4.14) errou a barra (ou demorou): FUROU — a perna passa e a bola segue
+  if (!k.primeira.ok) { furaoDePrimeira(k); if (kt > 0) user.kickT = kt; return; }  // (7.4.14) errou a barra (ou demorou): FUROU — a perna passa e a bola segue
   executeUserKick();                                    // a mesma batida do passe/chute normal (com o erro maior de primeira)
+  if (kt > 0) user.kickT = kt;
   if (k.kind === 'pass') G.stats.passesPrimeira = (G.stats.passesPrimeira | 0) + 1; else G.stats.chutesPrimeira = (G.stats.chutesPrimeira | 0) + 1;
   fimRecepcao(); G.recvIgnore = 0.5; user.controlCd = Math.max(user.controlCd || 0, 0.35);
   if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;
@@ -10380,6 +10419,7 @@ function cancelKick() {
 //                                                      fica em câmera lenta com 2 ângulos (atrás de você → de lado, no gol).
 // ---------------------------------------------------------------------
 const FINTA_CHANCE = 0.65;   // chance de CADA marcador na linha do chute comprar a finta
+const GK_FINTA = { cara: 0.3, area: 0.2, longe: 0.1 };   // (7.4.20) chance de o goleiro comprar a finta de chute
 function fintaDeChute(k) {
   const u = user;
   let enganou = false;
@@ -10408,7 +10448,8 @@ function fintaDeChute(k) {
   if (gk && gk.diveT <= 0 && gk.stun <= 0 && Math.hypot(HALF_L - u.x, u.z) < 36 * Math.max(0.5, ESC)) {
     const naArea = dentroDaArea(u.x, u.z, 1);
     const cara = ultimoHomem({ team: 1, dir: -1, x: u.x }, u, true);
-    const prob = cara ? 0.85 : naArea ? 0.6 : 0.3;   // ele também leu o chute armado (ver lerChuteArmado)
+    // (7.4.20) o goleiro cai na finta só em 3 de 10 no cara a cara (antes 85%: funcionava quase sempre); na área 2 de 10, de longe 1
+    const prob = cara ? GK_FINTA.cara : naArea ? GK_FINTA.area : GK_FINTA.longe;
     if (Math.random() < prob) {
       const lado = Math.random() < 0.5 ? -1 : 1;
       gk.diveDur = 0.6; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null; gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.5 ? 'baixo' : 'alto';
@@ -10734,9 +10775,10 @@ function updateReceive(rdt) {
 }
 
 // A batida do martelo (botão, toque na barra ou Espaço).
+const MARTELO_MIN = 0.12;                          // (7.4.20) a barra acabou de abrir: um toque que já vinha de antes não conta
 function martelar(acao) {
   const R = G.recv;
-  if (!R || R.done) return;
+  if (!R || R.done || R.t < MARTELO_MIN) return;
   if (!acao) acao = R.kind === 'alto' ? 'cabecear' : 'dominar';   // bater na barra / Espaço na bola alta = cabecear (o seguro)
   if (acao === 'finalizar' && !R.fin) acao = 'cabecear';
   const naFaixa = R.pos >= R.zona.ini - RECV.FOLGA && R.pos <= R.zona.fim + RECV.FOLGA;
@@ -10779,15 +10821,17 @@ function resolveReceive(acao, ok) {
   else if (R.kind === 'alto') pose = acao === 'cabecear' || R.fin === 'cabecada' ? 'cabeca' : R.fin;
   if (acao === 'dominar') { const v = escolherDominio(R, acao); if (v) pose = v; }   // domínios novos (coxa, sola, orientado...)
   let lado = Math.random() < 0.5 ? 1 : -1;
+  const angEspera = anguloDeEspera();               // (7.4.20) de frente para a bola que vem
   if (pose === 'esticado') {                        // estica a perna do lado por onde a bola vai passar
     const vh2 = ball.vx * ball.vx + ball.vz * ball.vz || 1, tq = Math.max(0, ((user.x - ball.x) * ball.vx + (user.z - ball.z) * ball.vz) / vh2);
     const qx = ball.x + ball.vx * tq - user.x, qz = ball.z + ball.vz * tq - user.z;
-    lado = (qx * -Math.sin(user.angle) + qz * Math.cos(user.angle)) >= 0 ? 1 : -1;
+    lado = (qx * -Math.sin(angEspera) + qz * Math.cos(angEspera)) >= 0 ? 1 : -1;
   }
   user.recvPose = pose ? { kind: pose, t: 0, dur: POSE_DUR[pose], side: lado } : null;
   if (ok && acao === 'finalizar' && (pose === 'voleio' || pose === 'bicicleta')) iniciarCenaAcro(user, pose);
   G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: CONTATO_T[pose || 'pe'], kind: R.kind, acao, ok, pose, fin: R.fin, fase: 'ida',
     perfeito: !!R.perfeito, culpaDoPasse: !!R.culpaDoPasse, passador: ball.lastKicker };
+  iniciarEspera(G.recvFx, angEspera);               // (7.4.20) a bola segue o caminho e a velocidade dela; você espera e domina quando ela chega
   if (R.perfeito) iniciarDominioPerfeito(G.recvFx);
 }
 
@@ -10796,7 +10840,8 @@ function resolveReceive(acao, ok) {
 function iniciarDominioPerfeito(F) {
   F.contactT = 0.85;                               // a bola leva ~0,85 s (real) até o contato
   if (user.recvPose) user.recvPose.dur *= 2.2;
-  G.targetScale = G.timeScale = 0.12;
+  // (7.4.20) a bola vem no caminho dela: a câmera lenta é a que faz o que falta durar ~0,85 s (real)
+  G.targetScale = G.timeScale = F.espera ? clamp((F.tA || 0.1) / 0.85, 0.08, 0.5) : 0.12;
   setLetterbox(true);
   showBanner('DOMÍNIO PERFEITO', 0, 2.6, true);    // letreiro menor
   G.dominioPerfeito = true;
@@ -11007,11 +11052,98 @@ function atualizarDominiosIA(rdt) {
 function pontoPe() { return { x: user.x + Math.cos(user.angle) * 0.62, y: CONFIG.BALL_R, z: user.z + Math.sin(user.angle) * 0.62 }; }
 
 // A bola vai (em tempo real) até o ponto de contato e aí acontece o resultado.
+// (7.4.20) ESPERAR A BOLA: depois de escolher (dominar, passe/chute de 1ª, cabecear...) a bola NÃO é mais puxada em linha reta
+//   até o pé/peito (antes ela chegava em ~0,2 s, mais rápida e por outro caminho). Ela segue a física dela (a mesma do
+//   updateBall: velocidade, queda, quique, efeito); o jogo prevê onde ela cruza o ponto de contato, você dá os passinhos para
+//   ficar na linha dela (até ESPERA.VEL m/s), a pose de recepção é sincronizada para encostar quando ela chega e só nos últimos
+//   ~0,06–0,2 s a bola é ajustada os centímetros que faltam até o pé/peito/cabeça desenhados.
+const ESPERA = { MAX_T: 1.8, VEL: 7.5, BALANCO: 0.19 };
+// ponto de contato de cada pose, no corpo: [para a frente, para o lado] (o lado vai para onde a perna da pose está)
+const OFF_CONTATO = { pe: [0.62, 0], peito: [0.31, 0], peitoPulo: [0.31, 0], cabeca: [0.18, 0], bicicleta: [0.1, 0], voleio: [0.45, 0],
+  coxa: [0.32, 0.12], amortece: [0.45, 0.12], solaPara: [0.34, 0.12], orientado: [0.28, 0.3], esticado: [0.45, 0.62], peitoSobe: [0.36, 0], peDoAlto: [0.45, 0.12], cabecinha: [0.2, 0] };
+function anguloDeEspera() {
+  const hs = Math.hypot(ball.vx, ball.vz);
+  return hs > 1.5 ? Math.atan2(-ball.vz, -ball.vx) : Math.atan2(ball.z - user.z, ball.x - user.x);
+}
+function iniciarEspera(F, ang) {
+  F.espera = true; F.tg = 0; F.ang = ang;
+  F.bf = { x: ball.x, y: ball.y, z: ball.z, vx: ball.vx, vy: ball.vy, vz: ball.vz, ss: ball.spinSide, sv: ball.spinVert };
+  let o = OFF_CONTATO[F.pose || 'pe'] || OFF_CONTATO.pe, sd = user.recvPose ? (user.recvPose.side || 1) : 1;
+  const ca = Math.cos(ang), sa = Math.sin(ang);
+  let hx = F.bf.vx, hz = F.bf.vz, hl = Math.hypot(hx, hz);
+  // de primeira, tocando para o MESMO lado para onde a bola já vai (ela vem de trás do toque): você fica ao lado da linha
+  //   dela e bate com o pé de dentro — antes a bola atravessava o corpo para chegar no pé da frente
+  if (F.acao === 'primeira' && F.pose === 'pe' && hl > 1 && (hx * ca + hz * sa) / hl > 0.2) {
+    const lado = ((ball.x - user.x) * -sa + (ball.z - user.z) * ca) >= 0 ? 1 : -1;
+    o = [0.3, 0.38]; sd = lado; F.offPe = { f: o[0], l: o[1] * sd };
+  }
+  const ox = ca * o[0] - sa * o[1] * sd, oz = sa * o[0] + ca * o[1] * sd;
+  const cx = user.x + ox, cz = user.z + oz;
+  const b = Object.assign({}, F.bf);
+  if (hl < 0.5) { hx = cx - b.x; hz = cz - b.z; hl = Math.hypot(hx, hz) || 1; }
+  hx /= hl; hz /= hl; F.hx = hx; F.hz = hz;          // a direção (no chão) em que a bola vem
+  const h = 1 / 120;
+  let t = 0;
+  if ((b.x - cx) * hx + (b.z - cz) * hz < 0) {
+    for (; t < ESPERA.MAX_T; t += h) {
+      passoBola(b, h);
+      if ((b.x - cx) * hx + (b.z - cz) * hz >= 0 || Math.hypot(b.vx, b.vz) < 0.8) break;
+    }
+  }
+  F.tA = t; F.bA = { x: b.x, y: b.y, z: b.z };
+  F.uAlvo = { x: b.x - ox, z: b.z - oz };            // onde você precisa estar para o ponto de contato cair na linha da bola
+  if (user.recvPose) { user.recvPose.espera = true; user.recvPose.t = 0; }
+}
+// o ponto onde a bola encosta agora (no de primeira de lado, o pé de dentro, ao lado do corpo)
+function pontoDeEspera(F) {
+  if (!F.offPe) return pontoContato(F.pose);
+  const ca = Math.cos(user.angle), sa = Math.sin(user.angle);
+  return { x: user.x + ca * F.offPe.f - sa * F.offPe.l, y: CONFIG.BALL_R, z: user.z + sa * F.offPe.f + ca * F.offPe.l };
+}
+// a velocidade dos passinhos até a linha da bola (usada no userDesired)
+function passoDeEspera(u) {
+  const F = G.recvFx, resta = Math.max(0.06, (F.resta != null ? F.resta : F.tA - F.tg) - 0.02);
+  const dx = F.uAlvo.x - u.x, dz = F.uAlvo.z - u.z, d = Math.hypot(dx, dz);
+  if (d < 0.03) return { vx: 0, vz: 0 };
+  const v = Math.min(ESPERA.VEL, d / resta);
+  return { vx: dx / d * v, vz: dz / d * v };
+}
+function atualizarEspera(F, dt) {
+  F.tg += dt;
+  for (let n = Math.max(1, Math.ceil(dt * 120)), k = 0; k < n; k++) passoBola(F.bf, dt / n);   // a física de verdade (em passinhos)
+  const b = F.bf, c = pontoDeEspera(F);
+  // quanto falta até o ponto de contato, MEDIDO NA BOLA (a previsão é só o plano: a bola manda)
+  const ex = c.x - b.x, ey = c.y - b.y, ez = c.z - b.z, falta = ex * F.hx + ez * F.hz;
+  const vAlong = b.vx * F.hx + b.vz * F.hz;
+  const resta = vAlong > 0.6 ? Math.max(0, falta) / vAlong : Math.max(0, F.tA - F.tg);
+  F.resta = resta;
+  if (F.acao === 'primeira' && G.state === 'trap') G.targetScale = resta > 0.45 ? 1 : PRIMEIRA_ESPERA_LENTO;   // de primeira: velocidade normal, lento só na chegada
+  user.angle = turnToward(user.angle, F.ang, 14 * Math.max(dt, 0.004));
+  const rp = user.recvPose;
+  if (rp && rp.espera) rp.t = Math.max(0, (CONTATO_T[F.pose] || 0.2) - resta);   // a pose encosta quando a bola chega
+  if (F.chutePe && !F.balanco && resta < ESPERA.BALANCO) { F.balanco = true; user.kickT = 0.35; }   // a perna vem antes (de primeira)
+  // os últimos centímetros: só o desvio de LADO/ALTURA até o ponto desenhado é corrigido (perto do fim); o avanço da bola
+  //   no caminho dela não muda — a velocidade com que ela chega é a dela
+  const px = ex - F.hx * falta, pz = ez - F.hz * falta;
+  const janela = Math.max(0.6, Math.abs(vAlong) * 0.12);
+  const k = smooth(clamp(1 - falta / janela, 0, 1));
+  ball.x = b.x + px * k; ball.y = Math.max(CONFIG.BALL_R, b.y + ey * k); ball.z = b.z + pz * k;
+  ball.vx = b.vx; ball.vy = b.vy; ball.vz = b.vz; ball.spinSide = b.ss; ball.spinVert = b.sv;
+  if (resta < 0.12 && DOMINIOS_NOVOS.includes(F.pose)) afastarBolaDoCorpo(user);
+  const parada = vAlong <= 0.6 && F.tg > F.tA + 0.35;    // bola que morreu antes de chegar: você já foi até ela
+  if (falta <= 0.02 || parada) {
+    F.espera = false; if (rp) rp.espera = false;
+    const cc = pontoDeEspera(F); ball.x = cc.x; ball.y = cc.y; ball.z = cc.z;
+    contatoRecepcao(F);
+  }
+}
 function updateRecvFx(rdt) {
   const F = G.recvFx;
   if (!F) return;
+  const dtJogo = rdt * G.timeScale;                 // (7.4.20) a bola, na espera, anda no tempo do jogo (o mesmo da física)
   rdt *= fatorCenaAcro();                           // na câmera lenta da bicicleta/voleio a bola chega devagar
   F.t += rdt;
+  if (F.fase === 'ida' && F.espera) { atualizarEspera(F, dtJogo); return; }
   if (F.fase === 'ida') {
     const c = pontoContato(F.pose), k = smooth(Math.min(1, F.t / F.contactT));
     ball.x = lerp(F.from.x, c.x, k); ball.y = lerp(F.from.y, c.y, k); ball.z = lerp(F.from.z, c.z, k);
@@ -11137,7 +11269,7 @@ function updateRecvPose(rdt) {
   for (const p of players) {                     // vale para você e para a IA (cabeceio, voleio, bicicleta)
     const rp = p.recvPose;
     if (!rp) continue;
-    rp.t += rdt;
+    if (!rp.espera) rp.t += rdt;                     // (7.4.20) esperando a bola: o tempo da pose vem da bola (atualizarEspera)
     if (rp.t >= rp.dur) {
       // caiu (de costas na bicicleta, de lado no voleio) e LEVANTA de um dos jeitos (ver LEVANTAR), sem "desgirar" do chão
       if (rp.kind === 'bicicleta') { p.fall = 1; p.fallKind = 'costas'; p.fallSide = rp.side; iniciarLevanta(p, 'costas', false, 0.12, 0.8); }
@@ -12577,6 +12709,7 @@ function bolaVindoPraVoce() {
     if (d < 1.2 || d > 28 || hs < 3) return false;
     const along = (dx * ball.vx + dz * ball.vz) / hs;                    // a bola ainda vai andar até a sua altura?
     if (along < d * 0.75) return false;
+    if (along / hs > PRIMEIRA_JANELA) return false;                      // (7.4.20) só quando ela já está chegando (antes: até 28 m)
     return Math.abs(dx * ball.vz - dz * ball.vx) / hs < 1.9;             // e passa perto de você
   })();
   if (ok) G.primeiraVem = G.time;
@@ -12590,6 +12723,7 @@ function pertoParaChuteDePrimeira(u) {
 
 function renderButtons(mode) {
   const A = $('actions');
+  if (mode !== 'primeira' && mode !== 'primeiraC') G.primeiraBotoesT = 0;
   A.innerHTML = '';
   const mk = (label, slot, fn, cls = '', id = '') => {
     const b = document.createElement('button');
@@ -12631,6 +12765,7 @@ function renderButtons(mode) {
     mk('CARRINHO', 's2', userCarrinho);
     if (controleDoTime()) mk('TROCAR', 's3', trocarJogadorManual);
   } else if (mode === 'primeira' || mode === 'primeiraC') {   // (7.4.13) a bola vem em você: de primeira
+    if (!G.primeiraBotoesT) G.primeiraBotoesT = performance.now();   // (7.4.20) desde quando o botão está na tela
     mk('PASSE DE 1ª', 's1', () => primeiraSemRecepcao('pass'), 'primary');
     if (mode === 'primeiraC') mk('CHUTE DE 1ª', 's2', () => primeiraSemRecepcao('shot'), 'primary');
   }

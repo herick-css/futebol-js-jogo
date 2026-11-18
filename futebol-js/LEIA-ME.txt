@@ -88,6 +88,17 @@ ARQUIVOS
                           o direcional solta quando some debaixo do dedo (lostpointercapture) e as teclas soltam ao trocar de
                           janela; no roteiro a animação segue a velocidade (corre acima de 3,2 m/s); na partida, velocidade presa
                           com o corpo parado não trava o jogador no meio da passada
+                          (7.4.20) GOLS do society (7,2 x 2,75), futsal (6,6 x 2,6) e quadra da escola (6,0 x 2,5) ~30% maiores, junto
+                          com o campo (os treinos ficam com os antigos); no society/futsal a defesa no mergulho mede o "longe do
+                          corpo" de onde o goleiro saiu, o deslize com o pé e o tapa nem sempre desviam e o chute fora do corpo
+                          ficou um pouco mais fácil. FINTA NO GOLEIRO: ele compra só em 3 de 10 no cara a cara (GK_FINTA; antes
+                          85%). RECEPÇÃO (domínio, passe e chute de primeira): a bola não é mais puxada até o pé — ela segue a
+                          física dela (mesma velocidade e caminho), você dá os passinhos até a linha dela (iniciarEspera /
+                          atualizarEspera), a pose e a perna sincronizam com a chegada e só o desvio de lado/altura dos últimos
+                          centímetros é corrigido; de primeira para o mesmo lado em que a bola vai, o toque é com o pé de dentro,
+                          ao lado do corpo; domínio automático sem "teletransporte" (chegaBola). Botão de primeira só com a bola a
+                          ~1 s e na tela há 0,18 s; a barra do domínio ignora toques nos primeiros 0,12 s. ESCANTEIO e LATERAL com
+                          o pé: você fica parado/andando atrás da bola enquanto escolhe e a corrida + batida vêm depois (bolaFixa)
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
