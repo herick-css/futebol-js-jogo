@@ -99,6 +99,18 @@ ARQUIVOS
                           ao lado do corpo; domínio automático sem "teletransporte" (chegaBola). Botão de primeira só com a bola a
                           ~1 s e na tela há 0,18 s; a barra do domínio ignora toques nos primeiros 0,12 s. ESCANTEIO e LATERAL com
                           o pé: você fica parado/andando atrás da bola enquanto escolhe e a corrida + batida vêm depois (bolaFixa)
+                          (7.4.21) DEFESA: o do bote é quem está NA FRENTE do atacante (entre ele e o gol) também no futsal/society;
+                          quem foi passado volta na cobertura e, no nosso campo, a bola vem antes do homem. Fora da linha do gol o
+                          marcador não contorna mais a bola: corre na diagonal para um ponto à frente do atacante (corte de
+                          recuperação); na frente, fecha a ~1,3–1,7 m na velocidade dele (antes recuava a 72% e abria espaço) e
+                          parte para o bote mais vezes (mais perto do gol, mais ainda). O fixo fecha conforme o atacante chega
+                          (6,5 → 3 m) e os marcadores não sobem além da linha da bola (ficam entre a bola e o gol) e ficam um
+                          pouco mais na linha do passe; o fixo só sai para cobrir alguém sobrando quando o do bote já está na frente
+                          de quem conduz (senão fica na linha da bola) e recua na mesma velocidade de quem vem para cima dele.
+                          BLOQUEIO DE CORPO (bloqueioDeCorpo): o marcador bem no caminho não é mais atravessado — quem conduz
+                          esbarra, perde o embalo e leva um bote na hora (CORPO); para passar é preciso driblar ou tocar. SAÍDA DE BOLA no 6 x 6: os da frente do time sem a bola espalhados por
+                          igual (dois nasciam no mesmo lugar), o parceiro da saída é o meia mais central e ninguém começa a
+                          menos de 1,6 m de outro (separarNaSaida)
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
