@@ -892,6 +892,7 @@
         if (!dp.conheceu) { await api.fala('mario', T('Bem-vindo à Forno a Lenha! Senta aí que a Carla já te atende.')); dp.conheceu = true; api.gravar(d.ponto || 'chegada'); return; }
         const ab = api.falaAmizade ? api.falaAmizade('mario') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('mario', ab.l); return; }   // -80: o Mário não perde mais tempo com você
+        if (api.recusaPapo && await api.recusaPapo('mario')) { return; }   // já conversaram 2 vezes hoje
         if (ab && ab.l) await api.fala('mario', ab.l);
         const Q = PAPOS_MARIO[(dp.papo | 0) % PAPOS_MARIO.length]; dp.papo = (dp.papo | 0) + 1;
         await api.fala('mario', T(Q.p));
@@ -927,6 +928,7 @@
       try {
         const ab = api.falaAmizade ? api.falaAmizade('carla') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('carla', ab.l); return; }   // -80: a Carla não perde mais tempo com você
+        if (api.recusaPapo && await api.recusaPapo('carla')) { return; }   // já conversaram 2 vezes hoje
         const q = ab && ab.l ? ab.l : T(pk(['Oi! Tô com as mãos na massa, literalmente!', 'O segredo é o forno bem quente!', U() ? 'Corre que essa tá quentinha!' : 'Tô no forno, já já sai mais uma!']));
         await api.fala('carla', q);
         const r = await Escolha.mostrar(q, [T('Valeu, Carla!'), T('Fala menos e faz a pizza mais rápido.')]);   // a grosseria

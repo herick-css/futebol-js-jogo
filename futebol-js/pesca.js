@@ -1375,6 +1375,14 @@
       if (!m) { opt = Object.assign({ camisa: cores[0], listra: cores[0], gola: cores[2], calcao: cores[1], meia: cores[1], sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
       return { m, opt };
     }
+    // o que vai NA CABEÇA (óculos, boné) fica num pivô no pescoço (o mesmo ponto da cabeça separada): quando a cabeça vira para olhar
+    //   alguém, o pivô vira junto (sem isso, a cabeça girava e os óculos e o boné ficavam parados de frente, "desmontando" o rosto)
+    function pivoCabeca(m) {
+      if (m.pivoCabeca) return m.pivoCabeca;
+      const g = new THREE.Group(); g.position.set(0.02, 1.36, 0); g.rotation.order = 'ZXY'; m.corpo.add(g); m.pivoCabeca = g; return g;
+    }
+    function naCabeca(m, mesh) { mesh.position.set(-0.02, -1.36, 0); pivoCabeca(m).add(mesh); }
+    function seguirCabeca(m) { const g = m.pivoCabeca; if (!g) return; const lig = !!m.cabecaLigada; g.rotation.y = lig ? m.cabeca.rotation.y : 0; g.rotation.z = lig ? m.cabeca.rotation.z : 0; g.rotation.x = lig ? m.cabeca.rotation.x : 0; }
     // os mesmos óculos do Cadu (mercado.js / fase1.js)
     function oculos(m, opt) {
       const kc = (opt && opt.cabecao) || 1, Lg = new Lote(), c = 0x111118;
@@ -1387,13 +1395,13 @@
         Lg.caixa(0.24 * kc, e, e, c, 0.13 * kc, yo + 0.04 * kc, sz * 0.256 * kc);
       }
       Lg.caixa(d, e, 0.06 * kc, c, xf, yo + 0.03 * kc, 0);
-      m.corpo.add(Lg.malha(MAT_CORES));
+      naCabeca(m, Lg.malha(MAT_CORES));
     }
     function chapeu(m, tipo) {                                          // 'palha' (Bené) ou 'bone' (Cadu no lago)
       const G = new api.Geo();
       if (tipo === 'palha') { G.box(0.78, 0.04, 0.78, '#d8b860', 0, 1.93, 0); G.box(0.5, 0.17, 0.5, '#e0c470', 0, 1.96, 0); G.box(0.51, 0.05, 0.51, '#8a3a2a', 0, 1.98, 0); }
       else { G.box(0.54, 0.13, 0.55, '#2a6a8a', -0.02, 1.9, 0); G.box(0.24, 0.035, 0.42, '#2a6a8a', 0.34, 1.9, 0); G.box(0.1, 0.06, 0.12, '#f2f2ee', 0.25, 1.95, 0); }
-      m.corpo.add(G.malha(api.MAT));
+      naCabeca(m, G.malha(api.MAT));
     }
     // a VARA: 4 pedaços encadeados (o cabo e 3 da vara) para ela VERGAR; a origem é onde a mão segura. +y = do cabo para a ponta.
     function criarVara(v) {
@@ -1756,7 +1764,8 @@
     // a pose do Cadu sentado com a vara (por cima da pose de sentado do poseAtor, que já rodou neste quadro)
     function poseCaduLago() {
       const C = P.cadu, cp = P.cp; if (!C || C.oculto || !cp) return;
-      const longe = !!C.m.longe; cp.vara.raiz.visible = !longe && cp.e !== 'brabo'; if (longe || cp.e === 'brabo') { cp.linha.visible = false; if (cp.e !== 'brabo') return; }
+      seguirCabeca(C.m);                                                  // (a cabeça já voltou para a frente no poseAtor; o boné e os óculos também)
+      const longe = !!C.m.longe; cp.vara.raiz.visible = !longe && cp.e !== 'brabo'; if (longe || cp.e === 'brabo') { cp.linha.visible = false; C.cabLago = 0; if (cp.e !== 'brabo') return; }
       const m = C.m, t = S().t; let dz = 0.55, cz = 1.05, ez = 0.7, ecz = 0.95, ex = -0.42, b = 0.05;
       if (cp.e === 'espera') { dz += Math.sin(t * 0.8) * 0.03; }
       else if (cp.e === 'fisga') { dz = 1.35; cz = 0.9; b = 0.4; }
@@ -1769,7 +1778,7 @@
       m.bracoD.rotation.z = dz; m.bracoD.rotation.x = 0.12; usarCotovelo(m.bracoD, 0, cz);
       m.bracoE.rotation.z = ez; m.bracoE.rotation.x = ex; usarCotovelo(m.bracoE, 0, ecz);
       vergar(cp.vara, SINAL_VERGA * b);
-      if (cp.e === 'brabo') { cp.boia.visible = false; return; }
+      if (cp.e === 'brabo') { cp.boia.visible = false; C.cabLago = 0; return; }
       // a linha e a boia
       const a = mundo(cp.vara.ponta);
       let bx = cp.bx, bz = cp.bz, by = Y_AGUA + 0.02 + Math.sin(t * 2.2) * 0.012;
@@ -1777,9 +1786,13 @@
       if (cp.e === 'lanca') { if (!cp.solto) { bx = a.x; by = a.y - 0.3; bz = a.z; } else { const u = clampN(cp.voo / 0.55, 0, 1); bx = lerpN(a.x, cp.bx, u); bz = lerpN(a.z, cp.bz, u); by = lerpN(a.y, Y_AGUA + 0.02, u) + Math.sin(u * Math.PI) * 1.4; } }
       cp.boia.visible = cp.e !== 'pega'; cp.boia.position.set(bx, by, bz);
       if (cp.e === 'pega' && cp.mPeixe) linhaDe(cp.linha, a, mundo(cp.mPeixe), 0.02); else linhaDe(cp.linha, a, { x: bx, y: by + 0.17, z: bz }, cp.e === 'puxa' ? 0.05 : 0.3);
-      // olhando para o jogador quando ele chega perto (só a cabeça)
-      const s = S(), J = s.jog, dj = Math.hypot(J.x - C.x, J.z - C.z);
-      if (dj < 5 || C.conversando) { const ang = Math.atan2(-(J.z - C.z), J.x - C.x) - C.yaw, a2 = ((ang + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; usarCabeca(m, -0.0001); m.cabeca.rotation.y = clampN(a2, -1.1, 1.1); }
+      // olhando para o jogador quando ele chega perto (só a cabeça, virando aos poucos; os óculos e o boné vão junto)
+      const s = S(), J = s.jog, dj = Math.hypot(J.x - C.x, J.z - C.z), agora = performance.now(), dt = clampN(((agora - (C.tCab || agora)) / 1000) || 0, 0, 0.1); C.tCab = agora;
+      let alvo = 0;
+      if (dj < 5 || C.conversando) { const ang = Math.atan2(-(J.z - C.z), J.x - C.x) - C.yaw; alvo = clampN(((ang + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI, -1.0, 1.0); }
+      C.cabLago = (C.cabLago || 0) + (alvo - (C.cabLago || 0)) * Math.min(1, dt * 4.5);
+      if (Math.abs(C.cabLago) > 0.01) { usarCabeca(m, -0.0001); m.cabeca.rotation.y = C.cabLago; }
+      seguirCabeca(m);
     }
     function tickBene() {
       const s = S(), A = P.bene; if (!A) return;
@@ -1896,6 +1909,7 @@
         if (diaDeTrabalho()) { await semPescaHoje(); return; }
         const r = await Escolha.mostrar(tr('Você quer pescar agora?'), [tr('Sim'), tr('Conversar'), tr('Agora não')]);
         if (r === 1) {
+          if (api.recusaPapo && await api.recusaPapo('cadu')) { Dialogo.esconder(); return; }   // já conversaram 2 vezes hoje
           const Q = ab && ab.l && ab.est === 'amigo' ? ab.l : tr(PAPOS_LAGO[(p.papo | 0) % PAPOS_LAGO.length]); p.papo = (p.papo | 0) + 1;
           await api.fala('cadu', Q);
           const rq = await Escolha.mostrar(Q, [tr('Valeu pela dica!'), tr('Já sei disso, não precisa me ensinar.')]);   // a grosseria

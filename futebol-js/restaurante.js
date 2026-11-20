@@ -15,7 +15,7 @@
      sobremesas e o balcão da sopa. O jogador ESCOLHE O PRATO (20 pratos, a maioria saudável, com saladas e sobremesas) e a cena roda:
      pega o prato, passa pelas cubas (o prato vai sendo montado na mão), senta numa mesa livre, come (o prato vai esvaziando), levanta,
      vai até o caixa e paga para o Renan. Os efeitos: a fome do dia, Saudável (+ nos pratos saudáveis, − nas sobremesas e nos pesados),
-     a refeição pesada (feijoada, lasanha e parmegiana) e o "comeu saudável hoje" (o hábito da Série B).
+     a refeição pesada (feijoada, lasanha e parmegiana) e o "comeu saudável hoje" (o hábito do Brasileirão B).
    - CLIENTES (do registro das lojas da cidade): entram, pegam o prato, se servem no bufê, sentam, comem, fazem fila no caixa e vão embora.
    - PIXEL ART: cada prato é desenhado pixel a pixel (40 x 40) a partir das porções (ingredientes com textura própria: arroz soltinho,
      feijão com caldo, grelhados com as marcas da grelha, salada com as folhas...), em 4 estados (cheio → comendo → quase → vazio), e o
@@ -806,7 +806,7 @@
       const L = (vazias.length ? vazias : qualquer).sort((a, b) => dist(a) - dist(b));
       return L[0] || null;
     }
-    // os efeitos de comer (como o lanche do Valdemar e a pizza): a fome, o Saudável, a refeição pesada e o hábito da Série B
+    // os efeitos de comer (como o lanche do Valdemar e a pizza): a fome, o Saudável, a refeição pesada e o hábito do Brasileirão B
     async function comeu(p, cheio) {
       const s = S(), d = s.dados;
       d.fome = Math.max(0, (d.fome || 0) - p.enche); d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia;
@@ -845,6 +845,7 @@
         }
         const ab = api.falaAmizade ? api.falaAmizade('renan') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('renan', ab.l); return; }   // -80: o Renan não perde mais tempo com você
+        if (api.recusaPapo && await api.recusaPapo('renan')) { return; }   // já conversaram 2 vezes hoje
         if (ab && ab.l) await api.fala('renan', ab.l);
         const Q = PAPOS_RENAN[(dr.papoR | 0) % PAPOS_RENAN.length]; dr.papoR = (dr.papoR | 0) + 1;
         await api.fala('renan', T(Q.p));
@@ -861,6 +862,7 @@
       try {
         const ab = api.falaAmizade ? api.falaAmizade('cida') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cida', ab.l); return; }   // -80: a Dona Cida não perde mais tempo com você
+        if (api.recusaPapo && await api.recusaPapo('cida')) { return; }   // já conversaram 2 vezes hoje
         const q = ab && ab.l ? ab.l : T(pk(['Olha a comida quentinha saindo!', 'Tem salada fresquinha, viu? Faz bem pra quem joga bola!', 'Hoje a lasanha tá daquele jeito, hein!']));
         await api.fala('cida', q);
         const r = await Escolha.mostrar(q, [T('Valeu, Dona Cida!'), T('Anda logo, a cuba do arroz tá vazia.')]);

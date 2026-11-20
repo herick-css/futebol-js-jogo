@@ -76,7 +76,7 @@
   ];
   // (7.4.4) O NIVELAMENTO: a várzea vai de 30 a 60 de habilidade (setor × 10). Os números acima são o "desenho" de cada time (quem é
   //   forte no quê); aqui eles entram na régua da várzea: o menor setor (3,9) vira 3,0 e o maior (8,7) vira 6,0. Assim um 5 estrelas da
-  //   várzea fica abaixo de qualquer time da Série B (50–70), que fica abaixo da Série A (65–85).
+  //   várzea fica abaixo de qualquer time do Brasileirão B (50–70), que fica abaixo do Brasileirão A (65–85).
   for (const t of TIMES_VZ) for (const x of ['gk', 'def', 'mid', 'fwd']) t.setores[x] = Math.round((3.0 + (t.setores[x] - 3.9) * 0.625) * 10) / 10;
   const IDX = {}; TIMES_VZ.forEach((t, i) => { IDX[t.k] = i; });
   const NOSSO_I = IDX[NOSSO];
@@ -448,7 +448,7 @@
       if (L.art && L.ass) await rafa(Tgf('Artilheiro E líder de assistências: {0} gols e {1} passes pra gol. Não é pra qualquer um!', L.P.art.v, L.P.ass.v));
       else if (L.art) await rafa(Tgf('Artilheiro do campeonato, com {0} gols!', L.P.art.v));
       else if (L.ass) await rafa(Tgf('E o líder de assistências, com {0} passes pra gol. Joga pro time!', L.P.ass.v));
-      await rafa(T('Escuta: logo, logo vai ter uma peneira com olheiros de times da Série B do Brasileirão, numa outra cidade.'));
+      await rafa(T('Escuta: logo, logo vai ter uma peneira com olheiros de times do Brasileirão B, numa outra cidade.'));
       await rafa(T('Pode demorar um pouquinho pra sair, mas quando sair a vaga é sua: eu consigo a inscrição e um ônibus pra gente ir até lá.'));
       await api.fala('jog', T('Rafa, nem sei como te agradecer. Pode deixar: eu vou dar o meu melhor!'));
       await rafa(pk([Tg('Eu sei que vai. Agora vai descansar, craque.'), T('É isso! Eu te aviso quando for. Vai com tudo!')]));
@@ -1362,7 +1362,7 @@
     "Artilheira do campeonato, com {0} gols!": ["Top scorer of the championship, with {0} goals!", "¡Máxima goleadora del campeonato, con {0} goles!", "Capocannoniera del campionato, con {0} gol!", "Meilleure buteuse du championnat, avec {0} buts !"],
     "E o líder de assistências, com {0} passes pra gol. Joga pro time!": ["And the assists leader, with {0} assists. You play for the team!", "Y el líder de asistencias, con {0} pases de gol. ¡Juegas para el equipo!", "E il re degli assist, con {0} assist. Giochi per la squadra!", "Et le meilleur passeur, avec {0} passes décisives. Tu joues pour l'équipe !"],
     "E a líder de assistências, com {0} passes pra gol. Joga pro time!": ["And the assists leader, with {0} assists. You play for the team!", "Y la líder de asistencias, con {0} pases de gol. ¡Juegas para el equipo!", "E la regina degli assist, con {0} assist. Giochi per la squadra!", "Et la meilleure passeuse, avec {0} passes décisives. Tu joues pour l'équipe !"],
-    "Escuta: logo, logo vai ter uma peneira com olheiros de times da Série B do Brasileirão, numa outra cidade.": ["Listen: pretty soon there's going to be a tryout with scouts from Brazilian Série B clubs, in another city.", "Escucha: muy pronto va a haber una prueba con ojeadores de equipos de la Série B del Brasileirão, en otra ciudad.", "Senti: tra poco ci sarà un provino con osservatori di squadre della Série B brasiliana, in un'altra città.", "Écoute : bientôt, il y aura une détection avec des recruteurs de clubs de Série B du Brasileirão, dans une autre ville."],
+    "Escuta: logo, logo vai ter uma peneira com olheiros de times do Brasileirão B, numa outra cidade.": ["Listen: pretty soon there's going to be a tryout with scouts from Brasileirão B clubs, in another city.", "Escucha: muy pronto va a haber una prueba con ojeadores de equipos del Brasileirão B, en otra ciudad.", "Senti: tra poco ci sarà un provino con osservatori di squadre del Brasileirão B, in un'altra città.", "Écoute : bientôt, il y aura une détection avec des recruteurs de clubs du Brasileirão B, dans une autre ville."],
     "Pode demorar um pouquinho pra sair, mas quando sair a vaga é sua: eu consigo a inscrição e um ônibus pra gente ir até lá.": ["It might take a little while to happen, but when it does the spot is yours: I'll get you signed up and a bus to take us there.", "Puede tardar un poquito, pero cuando salga el lugar es tuyo: yo consigo la inscripción y un autobús para ir hasta allá.", "Potrebbe volerci un po', ma quando arriva il posto è tuo: ti faccio iscrivere e trovo un pullman per andarci.", "Ça peut prendre un peu de temps, mais quand ça arrive, la place est à toi : je m'occupe de l'inscription et d'un bus pour y aller."],
     "Rafa, nem sei como te agradecer. Pode deixar: eu vou dar o meu melhor!": ["Rafa, I don't even know how to thank you. Count on me: I'll give it my best!", "Rafa, no sé ni cómo agradecerte. Cuenta conmigo: ¡voy a dar lo mejor de mí!", "Rafa, non so nemmeno come ringraziarti. Contaci: darò il massimo!", "Rafa, je ne sais même pas comment te remercier. Compte sur moi : je vais donner le meilleur de moi-même !"],
     "Eu sei que vai. Agora vai descansar, craque.": ["I know you will. Now go get some rest, superstar.", "Sé que sí. Ahora ve a descansar, crack.", "Lo so. Adesso vai a riposarti, campione.", "Je sais. Maintenant, va te reposer, champion."],

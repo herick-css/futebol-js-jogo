@@ -2,16 +2,16 @@
    serieb.js — A PENEIRA E A CARREIRA PROFISSIONAL NA SÉRIE B (módulo da cidade, como a varzea.js).
    - Registrado com FutebolJS.registrarFase({ id: 'serieb' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano e chama criar(api) (api = apiSerieB() da cidade). O quarto (fase2.js) também
-     baixa este arquivo para a cena da CARTA (carta.mostrar) e para a aba "Série B" do app Carreira (dados).
+     baixa este arquivo para a cena da CARTA (carta.mostrar) e para a aba "Brasileirão B" do app Carreira (dados).
    - O COMEÇO: depois do campeonato de várzea, o Rafa conta da peneira (varzea.js). A cena do PRESENTE (presente) volta para o
      aquecimento do começo do jogo: dois anos depois, 18 anos, de uniforme todo branco no campo de várzea padrão (com a Lúcia
      torcendo, se estiverem namorando). A PENEIRA é um 7 x 7 sem nome nem emblema: "Time 1" (branco, o jogador) x "Time 2" (cinza).
    - A NOTA DA PENEIRA (desempenhoPeneira): nota do motor + gols + assistências + resultado. Ela decide a FAIXA das 3 propostas
      (bom / médio / ruim). Tranquilo (espectro 'tranquilo' >= 25) facilita os bons; Problemático (<= -25) dificulta os bons, chama
      os médios e paga EXTRA_PROBLEMATICO a mais por jogo. SALARIOS: por jogo + por gol + por assistência (+ bônus de vitória e luvas).
-   - OS 20 TIMES (TIMES_B): paródias dos times da Série B de 2026, com nome, cores e emblema (pixel art 32x32) próprios. A força
+   - OS 20 TIMES (TIMES_B): paródias dos times do Brasileirão B de 2026, com nome, cores e emblema (pixel art 32x32) próprios. A força
      sai dos 3 últimos anos (2023, 2024 e 2025: posição na tabela, gols feitos e sofridos, com o peso da divisão): ataque, defesa,
-     estrelas, formação e estilo. POPULARIDADE de 15 a 100 (5 faixas: quanto mais, mais torcida no estádio da Série B, que cabe
+     estrelas, formação e estilo. POPULARIDADE de 15 a 100 (5 faixas: quanto mais, mais torcida no estádio do Brasileirão B, que cabe
      menos gente que o oficial); ela só muda pela API popularidade (o sistema que vai mexer nela ainda vai ser feito).
    - O EMPREGO: jogos na terça, quinta e sábado em horários variados. O ônibus do clube (com as cores e o emblema) passa no ponto
      da avenida 1h30 antes do jogo; quem não está lá perde o jogo. Nos outros dias, as MISSÕES do clube, uma depois da outra:
@@ -19,14 +19,14 @@
    - A CONFIANÇA DO TÉCNICO (0 a 100, começa em 20): +1 por hábito cumprido e −1 por hábito não cumprido; jogo bom (nota 7+; 6,5+ para quem entrou com menos de 45 minutos) +3,
      jogo ruim ou faltar −3. Abaixo de 50: começa no banco (assiste e entra no 2º tempo; mais confiança = entra mais cedo). Ao chegar
      em 50: a primeira chance de titular (nota 8+ mantém, senão volta para o banco). De 80 para cima: sempre titular.
-   - A TEMPORADA: Série B de 38 rodadas (todos contra todos, ida e volta; vitória 3, empate 1, derrota 0), Copa Estadual (4 times)
+   - A TEMPORADA: Brasileirão B de 38 rodadas (todos contra todos, ida e volta; vitória 3, empate 1, derrota 0), Copa Estadual (4 times)
      e Copa Regional (8 times), mata-mata em jogo único. Tudo fica em historia.cidade.pro.
-   - (7.3.0) A SÉRIE A: 20 paródias dos clubes da Série A de 2026 (TIMES_A, escudos 32x32 em EMB_A), com a força tirada dos últimos
-     10 anos (2016 a 2025: posição, gols e a tendência). A Série A é simulada junto (mesmas rodadas, gols, assistências e notas).
+   - (7.3.0) A SÉRIE A: 20 paródias dos clubes do Brasileirão A de 2026 (TIMES_A, escudos 32x32 em EMB_A), com a força tirada dos últimos
+     10 anos (2016 a 2025: posição, gols e a tendência). O Brasileirão A é simulada junto (mesmas rodadas, gols, assistências e notas).
      No fim da temporada sobem os 4 primeiros da B (nivelados com 3★ ou 2★ na A) e caem os 4 últimos da A, e começa a próxima
      temporada (o time do jogador pode subir e cair). A Copa do Brasil (32 times: os 20 da A e os 12 mais fortes da B) entra no
      calendário; Estadual e Regional passam a misturar as duas séries. Nos jogos entre séries as estrelas da A valem o dobro na tela.
-     A classificação (Série A, Série B, copas e artilharia) abre antes de cada jogo e no app Carreira do computador.
+     A classificação (Brasileirão A, Brasileirão B, copas e artilharia) abre antes de cada jogo e no app Carreira do computador.
    ===================================================================================================================== */
 (() => {
   'use strict';
@@ -42,7 +42,7 @@
   const ANTES_ONIBUS = 1.5, VOLTA_DEPOIS = 2.2;   // o ônibus passa 1h30 antes do jogo; volta 2h12 depois do início
   const HORAS_JOGO = [16, 19, 21, 15.5, 20, 17, 21.5, 19.5];
   const r1 = (v) => Math.round(v * 10) / 10;
-  const PREMIO_IND_B = 200;                                                  // cada prêmio individual da Série B que o jogador ganha
+  const PREMIO_IND_B = 200;                                                  // cada prêmio individual do Brasileirão B que o jogador ganha
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
   const rndDe = (sem) => (typeof sorteador === 'function' ? sorteador(sem) : (() => { let a = sem >>> 0 || 1; return () => { a = (a * 1664525 + 1013904223) >>> 0; return a / 4294967296; }; })());
   const semDe = (txt) => (typeof sementeDe === 'function' ? sementeDe(txt) : [...String(txt)].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619) >>> 0, 2166136261));
@@ -117,7 +117,7 @@
       hist: [['B', 19, 31, 58, 38], ['C', 7, 24, 21, 19], ['C', 4, 27, 19, 19]] },
   ];
   // ============================================================================================ (7.3.0) OS 20 TIMES DA SÉRIE A (paródias)
-  //   hist: os últimos 10 anos (2016 a 2025), no mesmo formato da Série B: [divisão, posição, gols feitos, gols sofridos, jogos]
+  //   hist: os últimos 10 anos (2016 a 2025), no mesmo formato do Brasileirão B: [divisão, posição, gols feitos, gols sofridos, jogos]
   //   (Séries C e D: só a posição). Fonte: as tabelas finais dos Brasileirões A e B de 2016 a 2025.
   const TIMES_A = [
     { k: 'urubu', nome: 'Urubu da Gávea FC', sigla: 'UGF', uf: 'RJ', reg: 'SE', tecnico: 'Mister Anacleto', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Elenco caro: troca passes no campo do rival e sufoca com pressão alta.',
@@ -186,12 +186,12 @@
   const NOME_TATICA = { tikitaka: 'Toque de bola', falso9: 'Falso 9', retranca: 'Retranca', contra: 'Contra-ataque', aerea: 'Bola aérea' };
 
   // ---- (7.4.4) O NIVELAMENTO ENTRE OS CAMPEONATOS (habilidade de 0 a 100 = setor × 10). As estrelas são relativas ao campeonato
-  //   (um 5 estrelas da várzea é mais fraco que um 5 estrelas da Série B, que é mais fraco que um da Série A), mas a habilidade não:
-  //   várzea 30–60 (varzea.js) · times pequenos do interior 46–53 · Série B 50–70 · Série A 65–85 · (7.5.2) Espanha e Inglaterra
-  //   64–100 (os mais fracos no nível de um time forte da Série B; os gigantes perto de 100: ver nivelarEuropa).
+  //   (um 5 estrelas da várzea é mais fraco que um 5 estrelas do Brasileirão B, que é mais fraco que um do Brasileirão A), mas a habilidade não:
+  //   várzea 30–60 (varzea.js) · times pequenos do interior 46–53 · Brasileirão B 50–70 · Brasileirão A 65–85 · (7.5.2) Espanha e Inglaterra
+  //   64–100 (os mais fracos no nível de um time forte do Brasileirão B; os gigantes perto de 100: ver nivelarEuropa).
   const FAIXA = { B: [5.0, 7.0], A: [6.5, 8.4] }, BASE_B0 = [5.1, 1.8];
   // ---- A FORÇA PELOS 3 ANOS: posição na escada das divisões (A 1–20, B 21–40, C 41–60, D 61+), gols por jogo com o peso da
-  //   divisão (gol na Série A vale mais; sofrer na Série C pesa mais). Pesos dos anos: 2023 = 0,2 · 2024 = 0,3 · 2025 = 0,5.
+  //   divisão (gol no Brasileirão A vale mais; sofrer na Série C pesa mais). Pesos dos anos: 2023 = 0,2 · 2024 = 0,3 · 2025 = 0,5.
   //   ov (0 a 1) = 0,5 × posição + 0,25 × ataque + 0,25 × defesa, normalizados entre os 20.
   (function calcularForca() {
     const W = [0.2, 0.3, 0.5], AJ = { A: [1.2, 0.85], B: [1, 1], C: [0.82, 1.2] }, OFF = { A: 0, B: 20, C: 40, D: 60 };
@@ -208,7 +208,7 @@
     TIMES_B.forEach((t, i) => {
       t.ov = 0.5 * R[i] + 0.25 * A[i] + 0.25 * D[i]; t.atk = A[i]; t.def = D[i]; t.rank = R[i];
       t.gpj = r1(raw[i].a * 100) / 100; t.gsj = r1(raw[i].d * 100) / 100;
-      const base = BASE_B0[0] + t.ov * BASE_B0[1], fx = (v) => r1(clampN(v, FAIXA.B[0], FAIXA.B[1]));   // (7.4.4) Série B: habilidade de 50 a 70
+      const base = BASE_B0[0] + t.ov * BASE_B0[1], fx = (v) => r1(clampN(v, FAIXA.B[0], FAIXA.B[1]));   // (7.4.4) Brasileirão B: habilidade de 50 a 70
       t.setores = { gk: fx(base + (D[i] - 0.5) * 0.9), def: fx(base + (D[i] - 0.5) * 1.1), mid: fx(base + (R[i] - 0.5) * 0.6), fwd: fx(base + (A[i] - 0.5) * 1.1) };
       t.estrelas = t.ov >= 0.75 ? 5 : t.ov >= 0.55 ? 4 : t.ov >= 0.42 ? 3 : t.ov >= 0.2 ? 2 : 1;
     });
@@ -225,7 +225,7 @@
   //   · a TENDÊNCIA (média dos 3 últimos anos menos a dos 7 anteriores): quem vem subindo forte (o Leão Caipira saiu da Série D
   //     para o 4º lugar da A) ganha um empurrão, quem vem caindo perde.
   //   ov = 0,45 × posição + 0,2 × ataque + 0,2 × defesa + 0,15 × tendência (tudo normalizado entre os 20).
-  //   A escala de habilidade da Série A fica ACIMA da da B: setores de 6,6 a 8,4 (Série B: 5,1 a 6,9) — (7.4.4) antes 8,0–9,4 e 6,05–7,8.
+  //   A escala de habilidade do Brasileirão A fica ACIMA da da B: setores de 6,6 a 8,4 (Brasileirão B: 5,1 a 6,9) — (7.4.4) antes 8,0–9,4 e 6,05–7,8.
   const BASE_A = [6.6, 1.75], BASE_B = BASE_B0;
   const estrelasA = (ov) => (ov >= 0.85 ? 5 : ov >= 0.6 ? 4 : ov >= 0.42 ? 3 : ov >= 0.2 ? 2 : 1);
   (function calcularForcaA() {
@@ -245,7 +245,7 @@
     TIMES_A.forEach((t, i) => {
       t.div0 = 'A'; t.ov = (ov0[i] - lo) / (hi - lo); t.atk = A[i]; t.def = D[i]; t.rank = R[i]; t.tend = TD[i];
       t.gpj = r1(raw[i].a * 100) / 100; t.gsj = r1(raw[i].d * 100) / 100;
-      const base = BASE_A[0] + t.ov * BASE_A[1], fx = (v) => r1(clampN(v, FAIXA.A[0], FAIXA.A[1]));   // (7.4.4) Série A: habilidade de 65 a 85
+      const base = BASE_A[0] + t.ov * BASE_A[1], fx = (v) => r1(clampN(v, FAIXA.A[0], FAIXA.A[1]));   // (7.4.4) Brasileirão A: habilidade de 65 a 85
       t.setores = { gk: fx(base + (D[i] - 0.5) * 0.7), def: fx(base + (D[i] - 0.5) * 0.9), mid: fx(base + (R[i] - 0.5) * 0.5), fwd: fx(base + (A[i] - 0.5) * 0.9) };
       t.estrelas = estrelasA(t.ov); t.faixa = 'A';
     });
@@ -253,7 +253,7 @@
   // ============================================================================================ (7.5.2) AS LIGAS DA EUROPA
   //   20 paródias da 1ª divisão da Espanha (TIMES_ES) e 20 da Inglaterra (TIMES_EN), temporada 2026-27, com nome, cores, escudo
   //   (pixel art 32x32 em EMB_EU), uniforme (uniformes.js) e estádio (estadiosA.js) próprios.
-  //   hist: as 10 últimas temporadas (2016-17 a 2025-26), no mesmo formato da Série A: [divisão, posição, gols feitos, gols sofridos,
+  //   hist: as 10 últimas temporadas (2016-17 a 2025-26), no mesmo formato do Brasileirão A: [divisão, posição, gols feitos, gols sofridos,
   //   jogos]. 'A' = 1ª divisão (38 jogos) · 'B' = 2ª divisão (Espanha: 22 times e 42 jogos; Inglaterra: 24 times e 46 jogos) ·
   //   'C' e 'D' = 3ª e 4ª divisões (só a posição). Fonte: as tabelas finais de cada temporada (La Liga, Segunda, Premier League e
   //   Championship); 3ª e 4ª divisões aproximadas.
@@ -381,9 +381,9 @@
       uni: ['#f5a12d', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f5a12d', '#1c1c1f', '#2a72d6'], uni2: ['#f4f4f0', '#1c1c1f', '#f5a12d', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f'],
       hist: [['A', 18, 37, 80, 38], ['B', 18, 70, 70, 46], ['B', 13, 66, 68, 46], ['B', 24, 57, 87, 46], ['C', 1, 0, 0, 0], ['B', 19, 41, 54, 46], ['B', 15, 51, 61, 46], ['B', 7, 68, 60, 46], ['B', 21, 44, 54, 46], ['B', 6, 70, 66, 46]] },
   ];
-  // ---- O NIVELAMENTO DA EUROPA: a mesma conta da Série A (posição na escada das divisões com os anos recentes pesando mais, gols
+  // ---- O NIVELAMENTO DA EUROPA: a mesma conta do Brasileirão A (posição na escada das divisões com os anos recentes pesando mais, gols
   //   feitos e sofridos por jogo com o peso da divisão e a tendência), numa escala própria de cada liga. Os mais fracos ficam no
-  //   nível de um time forte da Série B ou de um médio da Série A (habilidade ~66–70) e os melhores chegam a 97–100.
+  //   nível de um time forte do Brasileirão B ou de um médio do Brasileirão A (habilidade ~66–70) e os melhores chegam a 97–100.
   //   (a 2ª divisão da Espanha tem 22 times e a da Inglaterra 24: os degraus da 3ª e da 4ª começam depois deles)
   const LIGAS_EU = {
     ES: { times: TIMES_ES, base: [6.75, 2.85], faixa: [6.4, 10], off: { A: 0, B: 20, C: 42, D: 62 }, nome: 'Espanha' },
@@ -460,7 +460,7 @@
     tubarao: { pal: ['#1a1208', '#f4f4f0', '#71b6e3', '#3a9ad8', '#8c9aa8', '#2b72a0', '#ffffff', '#e8eef2', '#1d5fb0', '#5c8cc6', '#154682', '#f7f7f4', '#979795', '#d2d2ce'],
       px: '................................|................................|...aaaaaaaaaaaaaaaaaaaaaaaaaa...|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccccccccacccccccccccdba...|...abcdddddddaeaddddddddddfba...|...abcddddddaeeaddddddddddfba...|...abcdddddaeeeaaaadddddddfba...|...abcddaaaeeeeeeeeaaaddddfba...|...abcdaeeeeeeeeeeeeeeaaddfba...|...abcaeaeeeeeeeeeeeeeeeaafba...|...abcaeeeeeeeeeeeeeeeeeeafba...|...abcdagagaghhhhhhhhhhaadfba...|...abcddaaaaaaaaaaaaaaadddfba...|...abcddddddddddddddddddddfba...|...abggiiggiiggiiggiiggiiggba...|...abjiiiiiiiiiiiiiiiiiiiikba...|...abjiggiiggiiggiiggiiggikba...|...abjiiiiiiiiiiiiiiiiiiiikba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..allllllliiililliliiillllllla..|aaabbbbbbbbibbiibibibbbbbbbbbaaa|amabbbbbbbbibbiiiibiibbbbbbbbama|amabbbbbbbbibbibiibibbbbbbbbbama|.aannnnnnnninninnininnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbiiiiiiiiiibbaaa...ama|aaa.....aabbbkkiikkbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
   };
-  // (7.3.0) os escudos da Série A (pixel art 32x32, mesmo padrão: contorno, faixa com a sigla e a ponta)
+  // (7.3.0) os escudos do Brasileirão A (pixel art 32x32, mesmo padrão: contorno, faixa com a sigla e a ponta)
   const EMB_A = {
     urubu: { pal: ['#1a1208', '#f4f4f0', '#d65862', '#c8202e', '#9c1924', '#505051', '#151517', '#101012', '#55555c', '#d8d0c8', '#f2c230', '#d8636d', '#74131b', '#a01a25'],
       px: '................................|................................|....aaaaaaaaaaaaaaaaaaaaaaaa....|...abbbbbbbbbbbbbbbbbbbbbbbba...|...abcccccccaaaaaaaacccccccba...|...abcddddaabbbbbbbbaaddddeba...|...abfgggabbbbbbbbbbbbaggghba...|...abfggabbbbbbiibbbbbbagghba...|...abcdabbbbbbiiijbbbbbbadeba...|...abcdabbgbbbikijjbbgbbadeba...|...abfgabgggbbgiibjbgggbaghba...|...abfgabggggggggggggggbaghba...|...abcdabbggggggggggggbbadeba...|...abcdabbbggggggggggbbbadeba...|...abfggabbbbggggggbbbbagghba...|...abfgggabbbbgbbgbbbbaggghba...|...abcddddaabbbbbbbbaaddddeba...|...abcddddddaaaaaaaaddddddeba...|...abfgggggggggggggggggggghba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..alllllllblbllbblbbblllllllla..|aaadddddddbdbdbdddbddddddddddaaa|amadddddddbdbdbdbdbbdddddddddama|amadddddddbdbdbdbdbddddddddddama|.aannnnnnnbbbnnbbnbnnnnnnnnnnaa.|amaaaaaaaaaaaaaaaaaaaaaaaaaaaama|ama...aaabbggggggggggbbaaa...ama|aaa.....aabbbddggddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
@@ -610,7 +610,7 @@
     ['Cruzeirinho do Sul', 'CDS', '#1d4fa0', '#f4f4f0'], ['Tupi das Águas', 'TDA', '#2a8a8a', '#f4f4f0'], ['Comercial da Serra', 'CMS', '#7a1f2b', '#e8c27a'],
     ['Palmeirinha do Brejo', 'PDB', '#1f8a3a', '#f4f4f0'], ['Vasquinho da Praia', 'VDP', '#f4f4f0', '#1c1c1f'], ['Botinha FC', 'BFC', '#1c1c1f', '#f4f4f0'],
   ].map(([nome, sigla, c1, c2], i) => {
-    const forca = 4.6 + ((i * 7) % 9) * 0.09;                                // (7.4.4) de 4,6 a 5,3 (antes 5,6 a 6,3): abaixo da Série B
+    const forca = 4.6 + ((i * 7) % 9) * 0.09;                                // (7.4.4) de 4,6 a 5,3 (antes 5,6 a 6,3): abaixo do Brasileirão B
     return { k: 'pq' + i, nome, sigla, pequeno: true, formacao: ['4-4-2', '5-3-2', '4-3-3'][i % 3], tatica: ['contra', 'retranca', 'aerea'][i % 3], estilo: 'Time do interior: muita vontade e pouca técnica.',
       tecnico: ['Seu Juca', 'Professor Didi', 'Seu Tonico', 'Dona Lurdes', 'Mister Peixoto', 'Seu Zequinha'][i % 6], estrelas: 1,
       uni: [c1, c2, c2, c1, c1, c2, '#f2c230'], uni2: [c2, c1, c1, c2, c2, c1, '#1c1c1f'], setores: { gk: forca, def: forca, mid: forca, fwd: forca - 0.1 },
@@ -796,13 +796,13 @@
     return out;
   }
 
-  // ============================================================================================ A TEMPORADA (7.3.0: Série A e Série B)
+  // ============================================================================================ A TEMPORADA (7.3.0: Brasileirão A e Brasileirão B)
   //   Cada temporada guarda os 20 times de cada divisão (T.times.A / T.times.B, pelas chaves) e as duas tabelas de 38 rodadas
-  //   (T.ligaA e T.liga, a da Série B com o nome antigo). Cada jogo fica compacto: [casa, fora, gols casa, gols fora], com o ÍNDICE
+  //   (T.ligaA e T.liga, a do Brasileirão B com o nome antigo). Cada jogo fica compacto: [casa, fora, gols casa, gols fora], com o ÍNDICE
   //   do time na lista da divisão (−1 = ainda não jogado). Pontos: vitória 3, empate 1, derrota 0. Desempate: vitórias, saldo, gols
   //   feitos. As duas divisões andam juntas: cada vaga de liga do calendário fecha a mesma rodada na A e na B (tudo simulado, menos
   //   o jogo do jogador). No fim: os 4 primeiros da B sobem, os 4 últimos da A caem e começa outra temporada.
-  //   Temporadas salvas antes da 7.3.0 (só com a Série B): garantirLiga cria a Série A e simula as rodadas que já passaram.
+  //   Temporadas salvas antes da 7.3.0 (só com o Brasileirão B): garantirLiga cria o Brasileirão A e simula as rodadas que já passaram.
   const DIVS = ['A', 'B'];
   function tabelaLiga(sem, n) {
     n = n || 20; const r = rndDe(sem), arr = []; for (let i = 0; i < n; i++) arr.push(i); arr.sort(() => r() - 0.5);
@@ -824,7 +824,7 @@
     if (!T.estA) T.estA = {};
     if (!T.ligaA) {
       T.ligaA = tabelaLiga(semDe('ligaA|' + T.n + '|' + T.nosso), T.times.A.length);
-      for (const v of T.vagas) if (v.comp === 'liga' && v.feito) simularRodada(T, 'A', v.r);   // o que a Série A jogou até aqui
+      for (const v of T.vagas) if (v.comp === 'liga' && v.feito) simularRodada(T, 'A', v.r);   // o que o Brasileirão A jogou até aqui
     }
     return T;
   }
@@ -868,7 +868,7 @@
   // AS COPAS (mata-mata, jogo único, empate = pênaltis; o mais forte manda o jogo)
   //   Estadual (4): os times do mesmo estado, das DUAS séries (o nosso e os 3 mais fortes) + pequenos do interior até 4.
   //   Regional (8): os da mesma região, das duas séries (o nosso e os 7 mais fortes) + pequenos até 8.
-  //   (7.3.0) Copa do Brasil (32): os 20 da Série A e os 12 mais fortes da Série B (o nosso sempre entra). Na 1ª fase os 16 mais
+  //   (7.3.0) Copa do Brasil (32): os 20 do Brasileirão A e os 12 mais fortes do Brasileirão B (o nosso sempre entra). Na 1ª fase os 16 mais
   //   fortes pegam os 16 mais fracos (sorteio dentro de cada pote), como os cabeças de chave de verdade.
   const N_COPA = { est: 4, reg: 8, cdb: 32 };
   function montarCopa(tipo, nosso, sem, times) {
@@ -994,13 +994,13 @@
 
   // ============================================================================================ (7.3.0) O NÍVEL DOS TIMES ENTRE AS TEMPORADAS
   //   P.niveis[k] = { setores, estrelas, temp }: o nível de um time que mudou (subiu, caiu, foi melhor ou pior do que prometia).
-  //   · quem SOBE é nivelado com a Série A: 3 estrelas (campeão e vice da B) ou 2 (3º e 4º) na primeira temporada lá, com os setores
-  //     no nível de Série A dessas estrelas (o clube se reforça); o jeito do time (ataque melhor que defesa etc.) continua o mesmo;
-  //   · quem CAI perde parte do elenco e cai para o nível dos melhores da Série B (4 ou 5 estrelas lá): volta a ser favorito, mas
+  //   · quem SOBE é nivelado com o Brasileirão A: 3 estrelas (campeão e vice da B) ou 2 (3º e 4º) na primeira temporada lá, com os setores
+  //     no nível de Brasileirão A dessas estrelas (o clube se reforça); o jeito do time (ataque melhor que defesa etc.) continua o mesmo;
+  //   · quem CAI perde parte do elenco e cai para o nível dos melhores do Brasileirão B (4 ou 5 estrelas lá): volta a ser favorito, mas
   //     não um gigante — sem isso os rebaixados voltavam todos no ano seguinte (nos testes, quase 100%);
   //   · todo mundo: terminou acima do que a força prometia → +0,02 por posição (até +0,25); abaixo → o contrário.
   //   As estrelas de cada temporada saem do ranking de força dentro da própria divisão, na mesma proporção das de fábrica
-  //   (Série A: 2 de 5★, 7 de 4★, 6 de 3★, 3 de 2★, 2 de 1★; Série B: 1, 6, 7, 4, 2). Na 1ª temporada valem as de fábrica.
+  //   (Brasileirão A: 2 de 5★, 7 de 4★, 6 de 3★, 3 de 2★, 2 de 1★; Brasileirão B: 1, 6, 7, 4, 2). Na 1ª temporada valem as de fábrica.
   const mediaSet = (s) => (s.gk + s.def + s.mid + s.fwd) / 4;
   const COTA_ESTRELAS = { A: [2, 7, 6, 3, 2], B: [1, 6, 7, 4, 2] };
   function estrelasPorCota(div, n, pos) { const C = COTA_ESTRELAS[div], tot = C.reduce((a, b) => a + b, 0); let acc = 0; for (let i = 0; i < 5; i++) { acc += C[i] * n / tot; if (pos < acc - 1e-9) return 5 - i; } return 1; }
@@ -1038,12 +1038,12 @@
       const cl = classificacao(T, div), pelaForca = cl.map((x) => x.k).sort((a, b) => mediaSet(setDe(b)) - mediaSet(setDe(a)));
       cl.forEach((x, pos) => mexe(x.k, clampN((pelaForca.indexOf(x.k) - pos) * 0.02, -0.25, 0.25)));
     }
-    caem.forEach((k, i) => {                                             // rebaixados: no nível dos melhores da Série B (ov 0,95 a 0,8)
+    caem.forEach((k, i) => {                                             // rebaixados: no nível dos melhores do Brasileirão B (ov 0,95 a 0,8)
       const s = setDe(k), m = mediaSet(s), alvo = BASE_B[0] + (0.95 - i * 0.05) * BASE_B[1];
       for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), FAIXA.B[0], FAIXA.B[1]));
       N[k] = { setores: s };
     });
-    sobem.forEach((k, i) => {                                            // nivelados com a Série A: 3 estrelas (1º e 2º) ou 2 (3º e 4º)
+    sobem.forEach((k, i) => {                                            // nivelados com o Brasileirão A: 3 estrelas (1º e 2º) ou 2 (3º e 4º)
       const s = setDe(k), m = mediaSet(s), alvo = BASE_A[0] + (i < 2 ? 0.5 : 0.3) * BASE_A[1], est = i < 2 ? 3 : 2;
       for (const x of ['gk', 'def', 'mid', 'fwd']) s[x] = r1(clampN(alvo + (s[x] - m), FAIXA.A[0], FAIXA.A[1]));
       N[k] = { setores: s, estrelas: est, temp: T.n + 1 };
@@ -1064,19 +1064,19 @@
   }
 
   // ============================================================================================ (7.3.0) AS TABELAS (antes do jogo e no computador)
-  //   Times de divisões diferentes frente a frente (copas): as estrelas vão para a régua de 10, com as da Série A em dobro —
-  //   uma Série B de 4 estrelas mostra 4/10; uma Série A de 3 estrelas, 6/10. Assim a diferença entre os campeonatos aparece.
+  //   Times de divisões diferentes frente a frente (copas): as estrelas vão para a régua de 10, com as do Brasileirão A em dobro —
+  //   uma Brasileirão B de 4 estrelas mostra 4/10; uma Brasileirão A de 3 estrelas, 6/10. Assim a diferença entre os campeonatos aparece.
   function estrelasNoJogo(TT, k, outro) {
     const t = TIME_DE[k]; if (!t) return '';
     const dA = TT ? divDe(garantirLiga(TT), k) : t.div0, dB = TT ? divDe(TT, outro) : (TIME_DE[outro] || {}).div0;
-    if (dA === dB || (dA !== 'A' && dB !== 'A')) return estrelasTxt(t.estrelas || 1);   // (pequeno do interior x Série B: a régua normal)
+    if (dA === dB || (dA !== 'A' && dB !== 'A')) return estrelasTxt(t.estrelas || 1);   // (pequeno do interior x Brasileirão B: a régua normal)
     return estrelasTxt((t.estrelas || 1) * (dA === 'A' ? 2 : 1), 10);
   }
   function htmlTabela(TT, div, nosso, esc) {
     garantirLiga(TT);
     const cl = classificacao(TT, div), rod = TT.vagas.filter((v) => v.comp === 'liga' && v.feito).length;
     const marca = (i) => (div === 'B' && i < 4 ? '<i class="tbSobe">▲</i>' : div === 'A' && i >= 16 ? '<i class="tbCai">▼</i>' : '');
-    return '<p class="tbSub">' + esc(Tf('{0} de 38 rodadas', rod)) + ' · ' + esc(div === 'B' ? T('Os 4 primeiros sobem para a Série A.') : T('Os 4 últimos caem para a Série B.')) + '</p>'
+    return '<p class="tbSub">' + esc(Tf('{0} de 38 rodadas', rod)) + ' · ' + esc(div === 'B' ? T('Os 4 primeiros sobem para o Brasileirão A.') : T('Os 4 últimos caem para o Brasileirão B.')) + '</p>'
       + '<table class="crTab tbTab"><tr><th>#</th><th>' + esc(T('Time')) + '</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>GP</th><th>GC</th><th>SG</th></tr>'
       + cl.map((x, i) => '<tr class="' + (x.k === nosso ? 'nos' : '') + (div === 'B' && i < 4 ? ' sobe' : div === 'A' && i >= 16 ? ' cai' : '') + '"><td>' + (i + 1) + marca(i) + '</td><td><img src="' + urlArte(x.k) + '" alt="">' + esc(TIME_DE[x.k].nome)
         + ' <span class="tbEst">' + estrelasTxt(TIME_DE[x.k].estrelas || 1) + '</span></td><td><b>' + x.p + '</b></td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + x.gp + '</td><td>' + x.gc + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('')
@@ -1098,12 +1098,12 @@
     const lista = (div, campo) => { const l = artilheiros(TT, 8, div, campo); return l.length ? l.map((x, i) => '<p class="' + (x.nome === '__voce' ? 'tbNos' : '') + '">' + (i + 1) + '. ' + esc(nome(x)) + ' · ' + esc(campo === 'a' ? Tf('{0} assistências', x.a) : Tf('{0} gols', x.g)) + '</p>').join('') : '<p>—</p>'; };
     let h = '';
     for (const div of [TT.divNosso, TT.divNosso === 'A' ? 'B' : 'A'])
-      h += '<div class="crCard"><h4>⚽ ' + esc(Tf('Artilharia da Série {0}', div)) + '</h4>' + lista(div, 'g') + '</div><div class="crCard"><h4>🎯 ' + esc(Tf('Assistências da Série {0}', div)) + '</h4>' + lista(div, 'a') + '</div>';
+      h += '<div class="crCard"><h4>⚽ ' + esc(Tf('Artilharia do Brasileirão {0}', div)) + '</h4>' + lista(div, 'g') + '</div><div class="crCard"><h4>🎯 ' + esc(Tf('Assistências do Brasileirão {0}', div)) + '</h4>' + lista(div, 'a') + '</div>';
     return h;
   }
   function htmlHistorico(P, esc) {
     const L = (P.temporadas || []).slice().reverse(); if (!L.length) return '';
-    return '<div class="crCard"><h4>📜 ' + esc(T('Temporadas anteriores')) + '</h4>' + L.map((x) => '<p><b>' + esc(Tf('Temporada {0}', x.n)) + ':</b> ' + esc(Tf('{0}º na Série {1}', x.pos, x.div)) + ' · '
+    return '<div class="crCard"><h4>📜 ' + esc(T('Temporadas anteriores')) + '</h4>' + L.map((x) => '<p><b>' + esc(Tf('Temporada {0}', x.n)) + ':</b> ' + esc(Tf('{0}º no Brasileirão {1}', x.pos, x.div)) + ' · '
       + esc(Tf('Campeão da A: {0} · da B: {1}', TIME_DE[x.campA].sigla, TIME_DE[x.campB].sigla)) + ' · ' + esc(Tf('Subiram: {0} · Caíram: {1}', x.sobem.map((k) => TIME_DE[k].sigla).join(', '), x.caem.map((k) => TIME_DE[k].sigla).join(', '))) + '</p>').join('') + '</div>';
   }
   const CSS_TABELAS = `.tbTab td,.tbTab th{white-space:nowrap}.tbTab td img{width:16px;height:16px;image-rendering:pixelated;vertical-align:middle;margin-right:4px}
@@ -1111,7 +1111,7 @@
 .tbEst{color:#f2c230;font-size:9px;letter-spacing:0}.tbSub{margin:0 0 4px;font-size:10px;opacity:.8}.tbNos{color:#f2c230;font-weight:700}`;
 
   // ============================================================================================ POPULARIDADE (15 a 100, 5 faixas)
-  //   A torcida no estádio da Série B sai daqui (ocupação de 0 a 1). O sistema que faz ela subir ainda vai ser feito: por enquanto
+  //   A torcida no estádio do Brasileirão B sai daqui (ocupação de 0 a 1). O sistema que faz ela subir ainda vai ser feito: por enquanto
   //   só existe a API (popularidade.somar), que guarda o motivo de cada mudança.
   const FAIXAS_POP = [
     { min: 15, nome: 'Torcida pequena', ocup: 0.16 }, { min: 30, nome: 'Torcida fiel', ocup: 0.3 }, { min: 45, nome: 'Torcida crescendo', ocup: 0.46 },
@@ -1130,7 +1130,7 @@
     { id: 1, nome: 'Juca Barbosa', preco: 200, times: 1, melhor: 0, sal: 0, meses: [12, 18], txt: 'Começou levando garoto da várzea para teste. Conhece gente em todo clube.' },
     { id: 2, nome: 'Rosângela Prado', preco: 250, times: 1, melhor: 0.1, sal: 0, meses: [12, 18], txt: 'Ex-jogadora de futsal. Tem bons contatos com os diretores.' },
     { id: 3, nome: 'Valdir Matos', preco: 350, times: 2, melhor: 0, sal: 0.15, meses: [12, 18, 24], txt: 'Negociador duro: não sai da mesa sem um salário melhor.' },
-    { id: 4, nome: 'Helena Bastos', preco: 500, times: 2, melhor: 0.25, sal: 0.25, meses: [18, 24], txt: 'Advogada esportiva. Cuida de jogadores da Série A.' },
+    { id: 4, nome: 'Helena Bastos', preco: 500, times: 2, melhor: 0.25, sal: 0.25, meses: [18, 24], txt: 'Advogada esportiva. Cuida de jogadores do Brasileirão A.' },
     { id: 5, nome: 'Marcão Vilela', preco: 1000, times: 3, melhor: 0.8, sal: 0.5, meses: [24, 36], txt: 'O empresário mais famoso do país. Se ele liga, os grandes atendem.' },
   ];
   const EMP_DE = (id) => EMPRESARIOS.find((e) => e.id === id) || null;
@@ -1167,7 +1167,7 @@
     const DIAS = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo'];
 
     const popularidade = {
-      valor(k) { const P = pro(); P.pop = P.pop || {}; if (P.pop[k] != null) return P.pop[k]; const t = TIME_DE[k]; return t && t.div0 === 'A' ? clampN(42 + 9 * (t.estrelas0 || 1), 15, 95) : POP0; },   // (7.3.0) os da Série A já começam com torcida grande
+      valor(k) { const P = pro(); P.pop = P.pop || {}; if (P.pop[k] != null) return P.pop[k]; const t = TIME_DE[k]; return t && t.div0 === 'A' ? clampN(42 + 9 * (t.estrelas0 || 1), 15, 95) : POP0; },   // (7.3.0) os do Brasileirão A já começam com torcida grande
       somar(k, n, motivo) {
         const P = pro(); P.pop = P.pop || {}; const v0 = this.valor(k), v = clampN(Math.round(v0 + n), 0, 100);
         P.pop[k] = v; (P.popLog = P.popLog || []).push([dados().dia | 0, k, v - v0, String(motivo || '')]); if (P.popLog.length > 60) P.popLog.shift();
@@ -1205,7 +1205,7 @@
     //   prancheta na mão. Namorando: a Lúcia do lado de fora do alambrado, pulando e torcendo.
     const BASE = { x: -3, z: 0 };
     async function modeloAdulto(ap, femi, roupa, cores) {
-      try { const F2 = await Fases.carregar('fase2'); if (F2 && F2.modeloPessoa) return F2.modeloPessoa({ ap, fem: femi, roupa, cores }); } catch (e) { console.warn('[Série B] modelo:', e); }
+      try { const F2 = await Fases.carregar('fase2'); if (F2 && F2.modeloPessoa) return F2.modeloPessoa({ ap, fem: femi, roupa, cores }); } catch (e) { console.warn('[Brasileirão B] modelo:', e); }
       return null;
     }
     async function montarAquecimento() {
@@ -1328,7 +1328,7 @@
         if (el) setTimeout(() => el.remove(), 2600);
         api.irParaFase2({ cartaPeneira: true, ap: api.apLucia(), namorando: namorando(), trabalhaComLucia: api.empregoEscolhido() === 'cafeteria' && !!dados().confeitaria });
       } catch (e) {
-        console.error('[Série B] presente:', e);
+        console.error('[Brasileirão B] presente:', e);
         clearInterval(trava);
         if (C) try { desmontarAquecimento(C); } catch (e2) { /* nada */ }
         try { Historia.abortar(); } catch (e2) { /* nada */ }
@@ -1355,7 +1355,7 @@
     const contratado = () => pro().etapa === 'contratado' && !!temp();
     const nomeT = (k) => (TIME_DE[k] ? TIME_DE[k].nome : k);
     function nomeComp(T0, v) {
-      if (v.comp === 'liga') return garantirLiga(T0).divNosso === 'A' ? Tf('Série A · Rodada {0} de 38', v.r + 1) : Tf('Série B · Rodada {0} de 38', v.r + 1);
+      if (v.comp === 'liga') return garantirLiga(T0).divNosso === 'A' ? Tf('Brasileirão A · Rodada {0} de 38', v.r + 1) : Tf('Brasileirão B · Rodada {0} de 38', v.r + 1);
       const C = T0.copas[v.comp], fase = T(NOME_FASE[nFases(C)][v.fase]);
       return nomeCopa(v.comp) + ' · ' + fase;
     }
@@ -1509,16 +1509,16 @@
         else if (tipo === 'copa') await api.mensagemCelular(clube().nome, x.campeao === pro().clube ? Tf('SOMOS CAMPEÕES DA {0}!', (x.comp === 'est' ? T('Copa Estadual') : x.comp === 'cdb' ? T('Copa do Brasil') : T('Copa Regional')).toUpperCase()) : Tf('O campeão da {0} foi o {1}.', x.comp === 'est' ? T('Copa Estadual') : x.comp === 'cdb' ? T('Copa do Brasil') : T('Copa Regional'), nomeT(x.campeao)), '');
         else if (tipo === 'fim') {
           const T0 = garantirLiga(temp()), div = T0.divNosso, cl = classificacao(T0, div), pos = cl.findIndex((y) => y.k === T0.nosso) + 1;
-          const txt = div === 'A' ? (pos === 1 ? T('CAMPEÕES DA SÉRIE A! O título mais importante do país é nosso!') : pos >= 17 ? Tf('Terminamos a Série A em {0}º lugar e fomos rebaixados. Ano que vem é Série B.', pos) : Tf('Fim da Série A: terminamos em {0}º lugar.', pos))
-            : (pos === 1 ? T('CAMPEÕES DA SÉRIE B! E com o acesso para a Série A!') : pos <= 4 ? Tf('ACESSO! Terminamos a Série B em {0}º lugar e subimos para a Série A!', pos) : Tf('Fim da Série B: terminamos em {0}º lugar.', pos));
+          const txt = div === 'A' ? (pos === 1 ? T('CAMPEÕES DO BRASILEIRÃO A! O título mais importante do país é nosso!') : pos >= 17 ? Tf('Terminamos o Brasileirão A em {0}º lugar e fomos rebaixados. Ano que vem é Brasileirão B.', pos) : Tf('Fim do Brasileirão A: terminamos em {0}º lugar.', pos))
+            : (pos === 1 ? T('CAMPEÕES DO BRASILEIRÃO B! E com o acesso para o Brasileirão A!') : pos <= 4 ? Tf('ACESSO! Terminamos o Brasileirão B em {0}º lugar e subimos para o Brasileirão A!', pos) : Tf('Fim do Brasileirão B: terminamos em {0}º lugar.', pos));
           await api.mensagemCelular(clube().nome, txt, T('Depois da festa de premiação começa a próxima temporada. Descansa, que você merece!'));
         } else if (tipo === 'nova') {
           const nomes = (l) => l.map((k) => TIME_DE[k].sigla).join(', ');
-          await api.mensagemCelular(clube().nome, Tf('Temporada {0} começando! Subiram para a Série A: {1}. Caíram para a Série B: {2}.', x.n, nomes(x.sobem), nomes(x.caem)),
-            x.subimos ? Tf('Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.', x.base) : x.caimos ? T('Agora é Série B de novo. Vamos voltar mais fortes!') : x.div === 'A' ? T('Mais um ano na Série A. Bora!') : T('Mais um ano na Série B: dessa vez é o acesso!'));
+          await api.mensagemCelular(clube().nome, Tf('Temporada {0} começando! Subiram para o Brasileirão A: {1}. Caíram para o Brasileirão B: {2}.', x.n, nomes(x.sobem), nomes(x.caem)),
+            x.subimos ? Tf('Agora somos Brasileirão A! O seu contrato subiu para {0} fakes por jogo.', x.base) : x.caimos ? T('Agora é Brasileirão B de novo. Vamos voltar mais fortes!') : x.div === 'A' ? T('Mais um ano no Brasileirão A. Bora!') : T('Mais um ano no Brasileirão B: dessa vez é o acesso!'));
         } else if (['empRec', 'empOk', 'empCobra', 'empFim', 'janelaAbre', 'janelaOfertas'].includes(tipo)) await mensagemCarreira(tipo, x);   // (7.4.6)
         else if (tipo === 'hoje') await api.mensagemCelular(clube().nome, Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', x.comp, nomeT(x.adv), fmt(x.h)), Tf('O ônibus do clube passa no ponto da avenida às {0}. Não se atrase!', fmt(x.h - ANTES_ONIBUS)));
-      } catch (e) { console.warn('[Série B] mensagem:', e); }
+      } catch (e) { console.warn('[Brasileirão B] mensagem:', e); }
       M.lendo = false; M.tMsg = 2.5; gravar();
     }
     function avisarJogoDeHoje() {
@@ -1669,7 +1669,7 @@
         tirarOnibus();
         res = await partidaDoDia(pv);
       } catch (e) {
-        console.error('[Série B] dia de jogo:', e);
+        console.error('[Brasileirão B] dia de jogo:', e);
         try { Historia.abortar(); } catch (e2) { /* nada */ }
       } finally {
         tirarOnibus();
@@ -1694,7 +1694,7 @@
       const P = pro(), nosso = P.clube, adv = jn.c === nosso ? jn.f : jn.c, casa = jn.c === nosso;
       const eu = { nome: nomeJ(), posicao: posJ(), numero: (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9, aparencia: api.aparenciaNaPartida() };
       const tA = timeMotor(TIME_DE[nosso], { voce: posJ() }), tB = timeMotor(TIME_DE[adv]);
-      const mand = casa ? nosso : adv, T0 = garantirLiga(temp()), estadioA = divDe(T0, mand) === 'A';   // (7.3.0) mandante da Série A: o estádio grande
+      const mand = casa ? nosso : adv, T0 = garantirLiga(temp()), estadioA = divDe(T0, mand) === 'A';   // (7.3.0) mandante do Brasileirão A: o estádio grande
       if (!estadioA) (casa ? tA : tB).torcidaB = popularidade.ocupacao(mand);
       tA.popularidade = popularidade.valor(nosso) / 100; tB.popularidade = popularidade.valor(adv) / 100;
       const h = v.h, horario = h < 15.5 ? 'dia' : h < 18.4 ? 'tarde' : 'noite';
@@ -1706,10 +1706,10 @@
       const campoA = () => Object.assign({}, CAMPOS.serieA, { modelo: neutro ? 'floresta' : window.EstadiosA ? window.EstadiosA.modeloDoClube(mand) : '' });   // os estádios do estadiosA.js
       const temA = typeof CAMPOS !== 'undefined' && CAMPOS.serieA;
       return { campo: (estadioA || neutro) ? (temA ? campoA() : 'oficial') : 'serieB', fogos: grande && !!temA && (estadioA || neutro), times: [tA, tB], mandante: casa ? 0 : 1,
-        competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T(T0.divNosso === 'A' ? 'Série A' : 'Série B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
+        competicao: { tipo: copa ? 'copa' : 'liga', nome: copa ? nomeComp(temp(), v).split(' · ')[0] : T(T0.divNosso === 'A' ? 'Brasileirão A' : 'Brasileirão B'), rodada: copa ? 0 : v.r + 1, fase: copa ? T(NOME_FASE[nFases(temp().copas[v.comp])][v.fase]) : '', mataMata: copa, jogo: 'unico', placarIda: null },
         dificuldade: 'normal', clima: Math.random() < 0.15 ? 'chuva' : 'seco', gramado: 'baixo', horario, duracao: o.duracao, usuario: eu, atributos: api.atributosJogador(), taticas: [null, null], formacoes: [null, null] };
     }
-    // ---- A FESTA: o título no gramado (copas e Série B) e a noite dos prêmios da Série B
+    // ---- A FESTA: o título no gramado (copas e Brasileirão B) e a noite dos prêmios do Brasileirão B
     const vozJog = () => (typeof PERSONAGEM !== 'undefined' && typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2);
     function jogadoresDaFesta() {                                       // os 11 do nosso time, com o jogador no lugar do titular da posição dele
       const t = TIME_DE[pro().clube], E = elencoB(t).slice(0, 11), pos = posJ(), meu = (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9;
@@ -1722,7 +1722,7 @@
       try {
         const F = await Fases.carregar('festa'), t = TIME_DE[pro().clube], tm = timeMotor(t);
         await F.campeao({ cfg, lado: -1, uni: Object.assign({}, tm.uniforme, { emblema: tm.emblema }), jogadores: jogadoresDaFesta(), trofeu, cores: [t.uni[0], t.uni[1]], io: { preto: api.preto, esperar: api.esperar } });
-      } catch (e) { console.error('[Série B] festa do título:', e); }
+      } catch (e) { console.error('[Brasileirão B] festa do título:', e); }
     }
     function premiosDaFesta(T0) {
       const P = premiosSerieB(T0, garantirLiga(T0).divNosso), out = [];
@@ -1751,19 +1751,19 @@
         if (meus && !P.pagoPremios) { P.pagoPremios = true; d.fakes = (d.fakes | 0) + meus * valor; }
         if (lista.length) {
           const F = await Fases.carregar('festa');
-          await F.gala({ nivel: div === 'A' ? 'seriea' : 'serieb', titulo: div === 'A' ? T('PRÊMIOS DA SÉRIE A') : T('PRÊMIOS DA SÉRIE B'), premios: lista,
+          await F.gala({ nivel: div === 'A' ? 'seriea' : 'serieb', titulo: div === 'A' ? T('PRÊMIOS DO BRASILEIRÃO A') : T('PRÊMIOS DO BRASILEIRÃO B'), premios: lista,
             io: { preto: api.preto, esperar: api.esperar, ganho: () => { try { api.somDinheiro(); api.ganhoNaTela(valor); } catch (e) { /* nada */ } } } });
         }
-      } catch (e) { console.error('[Série B] fim da temporada:', e); }
+      } catch (e) { console.error('[Brasileirão B] fim da temporada:', e); }
       finally {
         try { api.voltarDaPartida(); if (P.pagoPremios) api.mostrarDinheiro(); } catch (e) { /* nada */ }
-        try { novaTemporadaDoClube(); } catch (e) { console.error('[Série B] temporada nova:', e); }
+        try { novaTemporadaDoClube(); } catch (e) { console.error('[Brasileirão B] temporada nova:', e); }
         clearInterval(trava); M.cena = false; try { Dialogo.esconder(); } catch (e) { /* nada */ }
         gravar();
         await api.preto(false, 700); if (s.ativo && s.modo === 'cena') api.liberar();
       }
     }
-    // (7.3.0) A TEMPORADA SEGUINTE: sobem 4, caem 4, os níveis novos; o contrato continua (subiu para a Série A: +50% em tudo)
+    // (7.3.0) A TEMPORADA SEGUINTE: sobem 4, caem 4, os níveis novos; o contrato continua (subiu para o Brasileirão A: +50% em tudo)
     function novaTemporadaDoClube() {
       const P = pro(), d = dados(), T0 = garantirLiga(temp()); if (!T0 || P.etapa !== 'fimTemporada') return;
       // (7.4.6) a próxima temporada começa no 1º de janeiro seguinte (dezembro é de férias). Saves de antes da 7.4.6 (a temporada
@@ -1840,12 +1840,12 @@
       (P.hist = P.hist || []).push({ i: pv.i, comp: v.comp, adv, casa, nos, eles, pen, nota, g: gols, a: ass, tit: esc.titular, min });
       if (P.hist.length > 60) P.hist.shift();
       try { const K = api.carreira(); K.pro = K.pro || { j: 0, g: 0, a: 0, bons: 0 }; K.pro.j++; K.pro.g += gols; K.pro.a += ass; if (nota >= 8) K.pro.bons++; } catch (e) { /* nada */ }
-      if (r) try { if (api.evoluirPartida) api.evoluirPartida(r); } catch (e) { console.warn('[Série B] evolução:', e); }   // (7.1.14) as habilidades e os espectros, como nas outras partidas
+      if (r) try { if (api.evoluirPartida) api.evoluirPartida(r); } catch (e) { console.warn('[Brasileirão B] evolução:', e); }   // (7.1.14) as habilidades e os espectros, como nas outras partidas
       if (r) try {                                                          // (7.1.14) a POPULARIDADE do clube (a lotação do estádio) com os seus jogos
         let pp = (venceu ? 2 : empate ? 0 : -1) + Math.min(3, gols) + (nota >= 8 ? 1 : 0) - (r.expulso ? 3 : 0);
         if (pp) popularidade.somar(nosso, pp, venceu ? 'vitória' : empate ? 'empate' : 'derrota');
         if (venceu) popularidade.somar(adv, -1, 'derrota para nós');
-      } catch (e) { console.warn('[Série B] popularidade:', e); }
+      } catch (e) { console.warn('[Brasileirão B] popularidade:', e); }
       gravar();
       return { v, jn, adv, casa, nos, eles, pen, nota, gols, ass, venceu, empate, bom, c0, c1, esc, pag, pagamento: pag.total, min, expulso: !!(r && r.expulso), semJogo: !r };
     }
@@ -1894,14 +1894,14 @@
     function barraConf(c) {
       return '<div class="sbBarra"><b style="width:' + c + '%"></b><i style="left:50%"></i><i style="left:80%"></i></div><div class="sbLeg"><span>0</span><span>' + escH(T('50: chance de titular')) + '</span><span>' + escH(T('80: sempre titular')) + '</span></div>';
     }
-    const ladoHtml = (k, etq, outro) => '<div class="sbLado"><img src="' + urlArte(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="sbEst">' + (outro ? estrelasNoJogo(temp(), k, outro) : estrelasTxt(TIME_DE[k].estrelas || 1)) + '</span><small>' + escH(etq) + (outro && TIME_DE[k] && !TIME_DE[k].pequeno ? ' · ' + escH(Tf('Série {0}', divDe(garantirLiga(temp()), k) || '-')) : '') + '</small></div>';
-    // (7.3.0) A CLASSIFICAÇÃO: Série A, Série B, as copas e a artilharia (antes do jogo; o computador tem a mesma coisa)
+    const ladoHtml = (k, etq, outro) => '<div class="sbLado"><img src="' + urlArte(k) + '" alt=""><b>' + escH(nomeT(k)) + '</b><span class="sbEst">' + (outro ? estrelasNoJogo(temp(), k, outro) : estrelasTxt(TIME_DE[k].estrelas || 1)) + '</span><small>' + escH(etq) + (outro && TIME_DE[k] && !TIME_DE[k].pequeno ? ' · ' + escH(Tf('Brasileirão {0}', divDe(garantirLiga(temp()), k) || '-')) : '') + '</small></div>';
+    // (7.3.0) A CLASSIFICAÇÃO: Brasileirão A, Brasileirão B, as copas e a artilharia (antes do jogo; o computador tem a mesma coisa)
     function telaClassificacao(aba) {
       cssSb();
       return new Promise((ok) => {
         const T0 = garantirLiga(temp()), nosso = pro().clube, el = document.createElement('div'); el.className = 'sbTela'; el.style.zIndex = '41';
         let a = aba || T0.divNosso;
-        const ABAS = [['A', T('Série A')], ['B', T('Série B')], ['copas', T('Copas')], ['art', T('Artilharia')]];
+        const ABAS = [['A', T('Brasileirão A')], ['B', T('Brasileirão B')], ['copas', T('Copas')], ['art', T('Artilharia')]];
         const pinta = () => {
           const corpo = a === 'A' || a === 'B' ? htmlTabela(T0, a, nosso, escH) : a === 'copas' ? htmlCopas(T0, nosso, escH) : htmlArtilharia(T0, nosso, escH, nomeJ);
           el.innerHTML = '<div class="sbCaixa sbClass"><div class="sbComp">' + escH(Tf('Temporada {0} · Classificação', T0.n)) + '</div><div class="sbAbas">'
@@ -1947,7 +1947,7 @@
         eu = { team: 0, j: ap, assento: 2, saiu: true, mesh: bonecoDoBanco(PARTIDA, 0, Object.assign({ nome: nomeJ(), nomeCamisa: (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.nomeCamisa) || '' }, ap), posJ(), (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.numero) || 9, true), x: a.x, z: a.z, ang: Math.PI / 2, sentado: 1, pose: 'joelhos', anim: 0, fase: 0 };
         reservasBanco.push(eu);
         if (eu.mesh.etiqueta) eu.mesh.etiqueta.visible = true;            // o nome em cima: dá para achar o jogador no meio dos reservas
-      } catch (e) { console.warn('[Série B] banco:', e); }
+      } catch (e) { console.warn('[Brasileirão B] banco:', e); }
       const a = assentoBanco(0, 2), noBanco = new Set(reservasBanco.map((x) => x.mesh));
       GANCHO_RENDER = () => {
         for (const A of ATLETAS) A.raiz.visible = noBanco.has(A);
@@ -2192,7 +2192,7 @@
         const card = (o, i) => {
           const t = TIME_DE[o.k], div = temp().times.A.includes(o.k) ? 'A' : 'B';
           const tag = o.renova ? T('Renovação') : o.emp ? Tf('Pelo empresário ({0})', EMP_DE(o.emp).nome) : T('Proposta direta do clube');
-          return '<div class="sbOf"><div class="cab"><img src="' + urlArte(t.k) + '" alt=""><div><b>' + escH(t.nome) + '</b><span class="est">' + estrelasTxt(t.estrelas) + '</span> <small>' + escH(Tf('Série {0}', div)) + '</small></div></div>'
+          return '<div class="sbOf"><div class="cab"><img src="' + urlArte(t.k) + '" alt=""><div><b>' + escH(t.nome) + '</b><span class="est">' + estrelasTxt(t.estrelas) + '</span> <small>' + escH(Tf('Brasileirão {0}', div)) + '</small></div></div>'
             + '<p><b>' + escH(tag) + '</b>' + (o.melhor ? ' · <span style="color:#1f6a2a">' + escH(T('time melhor que o seu')) + '</span>' : '') + '</p>'
             + '<h5>' + escH(T('Contrato')) + '</h5><p class="din">' + escH(Tf('{0} fakes por jogo', o.base + (o.extra | 0))) + '</p>'
             + '<p>' + escH(Tf('+{0} por gol · +{1} por assistência', o.gol, o.ass)) + '</p><p>' + escH(Tf('Bônus por vitória: {0} fakes', o.vit)) + '</p><p>' + escH(Tf('Luvas (na assinatura): {0} fakes', o.luvas)) + '</p>'
@@ -2281,8 +2281,8 @@
           else if (P.etapa === 'carta') { M.cena = true; api.irParaFase2({ cartaPeneira: true, ap: api.apLucia(), namorando: namorando(), trabalhaComLucia: api.empregoEscolhido() === 'cafeteria' && !!s.dados.confeitaria }); }
         }
         if (contratado() || P.etapa === 'fimTemporada') {
-          try { aplicarNiveis(P); garantirLiga(temp()); } catch (e) { console.warn('[Série B] liga:', e); }   // (7.3.0) os níveis da temporada e a Série A (saves antigos)
-          if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); try { tickEmpresario(); tickJanela(); } catch (e) { console.warn('[Série B] empresário/janela:', e); } }
+          try { aplicarNiveis(P); garantirLiga(temp()); } catch (e) { console.warn('[Brasileirão B] liga:', e); }   // (7.3.0) os níveis da temporada e o Brasileirão A (saves antigos)
+          if (!M.cena) { fecharVagas(); registrarHabitos(); avaliarHabitos(); avisarJogoDeHoje(); controlarOnibus(); missaoDoDia(); try { tickEmpresario(); tickJanela(); } catch (e) { console.warn('[Brasileirão B] empresário/janela:', e); } }
           if (P.etapa === 'fimTemporada' && !P.galaVista && !M.cena && !M.lendo && !M.filaMsg.length && s.modo === 'livre' && !s.ligando && !s.dentro) cenaFimTemporada();
           else if (P.etapa === 'fimTemporada' && P.galaVista && !M.cena) novaTemporadaDoClube();   // (7.3.0) save que acabou a temporada antes da 7.3.0 (a festa já foi): a próxima começa agora
         }
@@ -2296,7 +2296,7 @@
   // ============================================================================================ A CARTA (o quarto, fase2.js)
   //   carta.mostrar(ofertas, nome) → a folha com as 3 propostas; resolve o índice escolhido (a escolha pede confirmação).
   //   aceitarOferta(c, i) → grava no save da cidade (c): clube, contrato, a confiança inicial, a temporada e as luvas.
-  const FRASE_FAIXA = { bom: 'um dos melhores times da Série B', medio: 'um time bom da Série B', ruim: 'um time da Série B' };
+  const FRASE_FAIXA = { bom: 'um dos melhores times do Brasileirão B', medio: 'um time bom do Brasileirão B', ruim: 'um time do Brasileirão B' };
   function cssCarta() {
     if (document.getElementById('sbCartaCss')) return;
     const st = document.createElement('style'); st.id = 'sbCartaCss';
@@ -2332,7 +2332,7 @@
             + '<h5>' + escH(T('Como o time joga')) + '</h5><p>' + escH(Tf('{0} · {1}', t.formacao, T(NOME_TATICA[t.tatica] || t.tatica))) + '</p><p>' + escH(T(t.estilo)) + '</p><p>' + escH(Tf('Técnico: {0}', t.tecnico)) + '</p>'
             + '<button type="button" data-i="' + i + '">' + escH(T('Escolher')) + '</button></div>';
         };
-        const lista = () => { el.innerHTML = '<div class="sbFolha"><h2>' + escH(Tf('PROPOSTAS PARA {0}', String(nome || '').toUpperCase())) + '</h2><p class="sub">' + escH(T('Depois da peneira, três clubes da Série B querem você. Escolha um:')) + '</p><div class="sbOfs">' + ofertas.map(card).join('') + '</div></div>'; };
+        const lista = () => { el.innerHTML = '<div class="sbFolha"><h2>' + escH(Tf('PROPOSTAS PARA {0}', String(nome || '').toUpperCase())) + '</h2><p class="sub">' + escH(T('Depois da peneira, três clubes do Brasileirão B querem você. Escolha um:')) + '</p><div class="sbOfs">' + ofertas.map(card).join('') + '</div></div>'; };
         const confirmar = (i) => {
           const t = TIME_DE[ofertas[i].k];
           el.innerHTML = '<div class="sbFolha" style="width:min(460px,100%)"><h2>' + escH(Tf('Aceitar a proposta do {0}?', t.nome)) + '</h2><div style="text-align:center"><img src="' + urlArte(t.k) + '" alt="" style="width:72px;height:72px;image-rendering:pixelated"></div>'
@@ -2360,7 +2360,7 @@
   }
   const fraseOferta = (o) => Tf('Uau, o {0}, {1}, me fez uma proposta! Eu preciso aceitar.', TIME_DE[o.k].nome, T(FRASE_FAIXA[o.faixa] || FRASE_FAIXA.medio));
 
-  // ============================================================================================ O APP CARREIRA (aba Série B)
+  // ============================================================================================ O APP CARREIRA (aba Brasileirão B)
   function carreiraHtml(c, nomeJog, esc) {
     const P = c.pro || {}, T0 = P.temporada; if (!T0 || !P.clube) return '<p class="crVazio">' + esc(Tg('Você ainda não é jogador profissional.')) + '</p>';
     const t = TIME_DE[P.clube], E = P.est || {}, num = (v, tt) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(tt)) + '</span></div>';
@@ -2380,8 +2380,8 @@
     const div = T0.divNosso, outra = div === 'A' ? 'B' : 'A';
     h += '<style>' + CSS_TABELAS + '.crSec{margin:0}.crSec>summary{cursor:pointer;font:800 13px/1.2 system-ui;padding:8px 10px;background:#1f2a44;color:#fff;border-radius:6px}.crSec[open]>summary{margin-bottom:8px}'
       + '#f2Pc .tbEst{color:#c8902a}#f2Pc .tbNos{color:#c8642a}#f2Pc .tbTab tr.sobe td:first-child{box-shadow:inset 3px 0 0 #2f9a48}#f2Pc .tbTab tr.cai td:first-child{box-shadow:inset 3px 0 0 #c8352b}#f2Pc .tbSub{color:#556}</style>';
-    h += sec(Tf('Temporada {0} · Série {1}', T0.n, div), '<div class="crCard">' + htmlTabela(T0, div, P.clube, esc) + '</div>', true);
-    h += sec(Tf('Série {0}', outra), '<div class="crCard">' + htmlTabela(T0, outra, P.clube, esc) + '</div>', false);
+    h += sec(Tf('Temporada {0} · Brasileirão {1}', T0.n, div), '<div class="crCard">' + htmlTabela(T0, div, P.clube, esc) + '</div>', true);
+    h += sec(Tf('Brasileirão {0}', outra), '<div class="crCard">' + htmlTabela(T0, outra, P.clube, esc) + '</div>', false);
     h += sec(T('Copas'), htmlCopas(T0, P.clube, esc), false);
     h += sec(T('Artilharia'), htmlArtilharia(T0, P.clube, esc, nomeJog), false);
     const hist = htmlHistorico(P, esc); if (hist) h += sec(T('Temporadas anteriores'), hist, false);
@@ -2454,36 +2454,36 @@
     "Começou levando garoto da várzea para teste. Conhece gente em todo clube.": ["Started out taking amateur kids to trials. Knows people at every club.", "Empezó llevando chicos del fútbol de barrio a pruebas. Conoce gente en todos los clubes.", "Ha iniziato portando ragazzi dei campetti ai provini. Conosce gente in ogni club.", "Il a commencé en emmenant des gamins du foot de quartier aux essais. Il connaît du monde dans tous les clubs."],
     "Ex-jogadora de futsal. Tem bons contatos com os diretores.": ["Former futsal player. Has good contacts with club directors.", "Exjugadora de fútbol sala. Tiene buenos contactos con los directivos.", "Ex giocatrice di calcio a 5. Ha buoni contatti con i dirigenti.", "Ancienne joueuse de futsal. A de bons contacts avec les dirigeants."],
     "Negociador duro: não sai da mesa sem um salário melhor.": ["Tough negotiator: never leaves the table without a better salary.", "Negociador duro: no se levanta de la mesa sin un salario mejor.", "Negoziatore duro: non si alza dal tavolo senza uno stipendio migliore.", "Négociateur coriace : il ne quitte pas la table sans un meilleur salaire."],
-    "Advogada esportiva. Cuida de jogadores da Série A.": ["Sports lawyer. Represents Série A players.", "Abogada deportiva. Representa a jugadores de la Série A.", "Avvocata sportiva. Segue giocatori della Série A.", "Avocate du sport. Elle s'occupe de joueurs de Série A."],
+    "Advogada esportiva. Cuida de jogadores do Brasileirão A.": ["Sports lawyer. Represents Brasileirão A players.", "Abogada deportiva. Representa a jugadores del Brasileirão A.", "Avvocata sportiva. Segue giocatori del Brasileirão A.", "Avocate du sport. Elle s'occupe de joueurs du Brasileirão A."],
     "O empresário mais famoso do país. Se ele liga, os grandes atendem.": ["The most famous agent in the country. When he calls, the big clubs answer.", "El representante más famoso del país. Si él llama, los grandes contestan.", "Il procuratore più famoso del paese. Se chiama lui, i grandi rispondono.", "L'agent le plus célèbre du pays. Quand il appelle, les grands clubs répondent."],
-    "Agora somos Série A! O seu contrato subiu para {0} fakes por jogo.": ["We're Série A now! Your contract went up to {0} fakes per game.", "¡Ahora somos Série A! Tu contrato subió a {0} fakes por partido.", "Ora siamo in Série A! Il tuo contratto è salito a {0} fakes a partita.", "On est en Série A ! Ton contrat passe à {0} fakes par match."],
-    "Agora é Série B de novo. Vamos voltar mais fortes!": ["It's Série B again now. We'll come back stronger!", "Ahora es Série B otra vez. ¡Volveremos más fuertes!", "Ora è di nuovo Série B. Torneremo più forti!", "C'est de nouveau la Série B. On reviendra plus forts !"],
-    "Artilharia da Série {0}": ["Série {0} top scorers", "Goleadores de la Série {0}", "Capocannonieri della Série {0}", "Meilleurs buteurs de la Série {0}"],
-    "Assistências da Série {0}": ["Série {0} assists", "Asistencias de la Série {0}", "Assist della Série {0}", "Passes décisives de la Série {0}"],
-    "CAMPEÕES DA SÉRIE A! O título mais importante do país é nosso!": ["SÉRIE A CHAMPIONS! The biggest title in the country is ours!", "¡CAMPEONES DE LA SÉRIE A! ¡El título más importante del país es nuestro!", "CAMPIONI DELLA SÉRIE A! Il titolo più importante del paese è nostro!", "CHAMPIONS DE LA SÉRIE A ! Le plus grand titre du pays est à nous !"],
-    "CAMPEÕES DA SÉRIE B! E com o acesso para a Série A!": ["SÉRIE B CHAMPIONS! And promoted to Série A!", "¡CAMPEONES DE LA SÉRIE B! ¡Y con el ascenso a la Série A!", "CAMPIONI DELLA SÉRIE B! E promossi in Série A!", "CHAMPIONS DE LA SÉRIE B ! Et promus en Série A !"],
+    "Agora somos Brasileirão A! O seu contrato subiu para {0} fakes por jogo.": ["We're Brasileirão A now! Your contract went up to {0} fakes per game.", "¡Ahora somos Brasileirão A! Tu contrato subió a {0} fakes por partido.", "Ora siamo nel Brasileirão A! Il tuo contratto è salito a {0} fakes a partita.", "On est au Brasileirão A ! Ton contrat passe à {0} fakes par match."],
+    "Agora é Brasileirão B de novo. Vamos voltar mais fortes!": ["It's Brasileirão B again now. We'll come back stronger!", "Ahora es Brasileirão B otra vez. ¡Volveremos más fuertes!", "Ora è di nuovo Brasileirão B. Torneremo più forti!", "C'est de nouveau le Brasileirão B. On reviendra plus forts !"],
+    "Artilharia do Brasileirão {0}": ["Brasileirão {0} top scorers", "Goleadores del Brasileirão {0}", "Capocannonieri del Brasileirão {0}", "Meilleurs buteurs du Brasileirão {0}"],
+    "Assistências do Brasileirão {0}": ["Brasileirão {0} assists", "Asistencias del Brasileirão {0}", "Assist del Brasileirão {0}", "Passes décisives du Brasileirão {0}"],
+    "CAMPEÕES DO BRASILEIRÃO A! O título mais importante do país é nosso!": ["BRASILEIRÃO A CHAMPIONS! The biggest title in the country is ours!", "¡CAMPEONES DEL BRASILEIRÃO A! ¡El título más importante del país es nuestro!", "CAMPIONI DEL BRASILEIRÃO A! Il titolo più importante del paese è nostro!", "CHAMPIONS DU BRASILEIRÃO A ! Le plus grand titre du pays est à nous !"],
+    "CAMPEÕES DO BRASILEIRÃO B! E com o acesso para o Brasileirão A!": ["BRASILEIRÃO B CHAMPIONS! And promoted to Brasileirão A!", "¡CAMPEONES DEL BRASILEIRÃO B! ¡Y con el ascenso al Brasileirão A!", "CAMPIONI DEL BRASILEIRÃO B! E promossi nel Brasileirão A!", "CHAMPIONS DU BRASILEIRÃO B ! Et promus au Brasileirão A !"],
     "Campeão da A: {0} · da B: {1}": ["A champion: {0} · B: {1}", "Campeón de la A: {0} · de la B: {1}", "Campione della A: {0} · della B: {1}", "Champion de la A : {0} · de la B : {1}"],
     "Classificação": ["Standings", "Clasificación", "Classifica", "Classement"],
     "Copa do Brasil": ["Brazilian Cup", "Copa de Brasil", "Coppa del Brasile", "Coupe du Brésil"],
     "Copas": ["Cups", "Copas", "Coppe", "Coupes"],
     "Depois da festa de premiação começa a próxima temporada. Descansa, que você merece!": ["After the awards night the next season starts. Rest, you deserve it!", "Después de la gala de premios empieza la próxima temporada. ¡Descansa, que te lo mereces!", "Dopo la serata di premiazione inizia la prossima stagione. Riposati, te lo meriti!", "Après la soirée des trophées, la saison suivante commence. Repose-toi, tu le mérites !"],
-    "Fim da Série A: terminamos em {0}º lugar.": ["End of Série A: we finished {0}th.", "Fin de la Série A: terminamos en el {0}º lugar.", "Fine della Série A: siamo arrivati {0}º.", "Fin de la Série A : on termine {0}e."],
-    "Mais um ano na Série A. Bora!": ["Another year in Série A. Let's go!", "Un año más en la Série A. ¡Vamos!", "Un altro anno in Série A. Forza!", "Encore une année en Série A. Allez !"],
-    "Mais um ano na Série B: dessa vez é o acesso!": ["Another year in Série B: this time we go up!", "Un año más en la Série B: ¡esta vez es el ascenso!", "Un altro anno in Série B: stavolta è promozione!", "Encore une année en Série B : cette fois, c'est la montée !"],
-    "Os 4 primeiros sobem para a Série A.": ["The top 4 are promoted to Série A.", "Los 4 primeros suben a la Série A.", "I primi 4 salgono in Série A.", "Les 4 premiers montent en Série A."],
-    "Os 4 últimos caem para a Série B.": ["The bottom 4 are relegated to Série B.", "Los 4 últimos bajan a la Série B.", "Gli ultimi 4 retrocedono in Série B.", "Les 4 derniers descendent en Série B."],
-    "PRÊMIOS DA SÉRIE A": ["SÉRIE A AWARDS", "PREMIOS DE LA SÉRIE A", "PREMI DELLA SÉRIE A", "TROPHÉES DE LA SÉRIE A"],
+    "Fim do Brasileirão A: terminamos em {0}º lugar.": ["End of Brasileirão A: we finished {0}th.", "Fin del Brasileirão A: terminamos en el {0}º lugar.", "Fine del Brasileirão A: siamo arrivati {0}º.", "Fin du Brasileirão A : on termine {0}e."],
+    "Mais um ano no Brasileirão A. Bora!": ["Another year in Brasileirão A. Let's go!", "Un año más en el Brasileirão A. ¡Vamos!", "Un altro anno nel Brasileirão A. Forza!", "Encore une année au Brasileirão A. Allez !"],
+    "Mais um ano no Brasileirão B: dessa vez é o acesso!": ["Another year in Brasileirão B: this time we go up!", "Un año más en el Brasileirão B: ¡esta vez es el ascenso!", "Un altro anno nel Brasileirão B: stavolta è promozione!", "Encore une année au Brasileirão B : cette fois, c'est la montée !"],
+    "Os 4 primeiros sobem para o Brasileirão A.": ["The top 4 are promoted to Brasileirão A.", "Los 4 primeros suben al Brasileirão A.", "I primi 4 salgono nel Brasileirão A.", "Les 4 premiers montent au Brasileirão A."],
+    "Os 4 últimos caem para o Brasileirão B.": ["The bottom 4 are relegated to Brasileirão B.", "Los 4 últimos bajan al Brasileirão B.", "Gli ultimi 4 retrocedono nel Brasileirão B.", "Les 4 derniers descendent au Brasileirão B."],
+    "PRÊMIOS DO BRASILEIRÃO A": ["BRASILEIRÃO A AWARDS", "PREMIOS DEL BRASILEIRÃO A", "PREMI DEL BRASILEIRÃO A", "TROPHÉES DU BRASILEIRÃO A"],
     "Subiram: {0} · Caíram: {1}": ["Promoted: {0} · Relegated: {1}", "Subieron: {0} · Bajaron: {1}", "Promosse: {0} · Retrocesse: {1}", "Promus : {0} · Relégués : {1}"],
-    "Série A": ["Série A", "Série A", "Série A", "Série A"],
-    "Série A · Rodada {0} de 38": ["Série A · Round {0} of 38", "Série A · Jornada {0} de 38", "Série A · Giornata {0} di 38", "Série A · Journée {0} sur 38"],
-    "Série {0}": ["Série {0}", "Série {0}", "Série {0}", "Série {0}"],
+    "Brasileirão A": ["Brasileirão A", "Brasileirão A", "Brasileirão A", "Brasileirão A"],
+    "Brasileirão A · Rodada {0} de 38": ["Brasileirão A · Round {0} of 38", "Brasileirão A · Jornada {0} de 38", "Brasileirão A · Giornata {0} di 38", "Brasileirão A · Journée {0} sur 38"],
+    "Brasileirão {0}": ["Brasileirão {0}", "Brasileirão {0}", "Brasileirão {0}", "Brasileirão {0}"],
     "Temporada {0}": ["Season {0}", "Temporada {0}", "Stagione {0}", "Saison {0}"],
-    "Temporada {0} começando! Subiram para a Série A: {1}. Caíram para a Série B: {2}.": ["Season {0} is starting! Promoted to Série A: {1}. Relegated to Série B: {2}.", "¡Empieza la temporada {0}! Subieron a la Série A: {1}. Bajaron a la Série B: {2}.", "Inizia la stagione {0}! Promosse in Série A: {1}. Retrocesse in Série B: {2}.", "La saison {0} commence ! Promus en Série A : {1}. Relégués en Série B : {2}."],
+    "Temporada {0} começando! Subiram para o Brasileirão A: {1}. Caíram para o Brasileirão B: {2}.": ["Season {0} is starting! Promoted to Brasileirão A: {1}. Relegated to Brasileirão B: {2}.", "¡Empieza la temporada {0}! Subieron al Brasileirão A: {1}. Bajaron al Brasileirão B: {2}.", "Inizia la stagione {0}! Promosse nel Brasileirão A: {1}. Retrocesse nel Brasileirão B: {2}.", "La saison {0} commence ! Promus au Brasileirão A : {1}. Relégués au Brasileirão B : {2}."],
     "Temporada {0} · Classificação": ["Season {0} · Standings", "Temporada {0} · Clasificación", "Stagione {0} · Classifica", "Saison {0} · Classement"],
-    "Temporada {0} · Série {1}": ["Season {0} · Série {1}", "Temporada {0} · Série {1}", "Stagione {0} · Série {1}", "Saison {0} · Série {1}"],
+    "Temporada {0} · Brasileirão {1}": ["Season {0} · Brasileirão {1}", "Temporada {0} · Brasileirão {1}", "Stagione {0} · Brasileirão {1}", "Saison {0} · Brasileirão {1}"],
     "Temporadas anteriores": ["Previous seasons", "Temporadas anteriores", "Stagioni precedenti", "Saisons précédentes"],
-    "Terminamos a Série A em {0}º lugar e fomos rebaixados. Ano que vem é Série B.": ["We finished Série A in {0}th place and were relegated. Next year it's Série B.", "Terminamos la Série A en el {0}º lugar y descendimos. El año que viene es Série B.", "Abbiamo chiuso la Série A al {0}º posto e siamo retrocessi. L'anno prossimo è Série B.", "On termine la Série A à la {0}e place et on descend. L'an prochain, c'est la Série B."],
-    "{0}º na Série {1}": ["{0}th in Série {1}", "{0}º en la Série {1}", "{0}º in Série {1}", "{0}e en Série {1}"],
+    "Terminamos o Brasileirão A em {0}º lugar e fomos rebaixados. Ano que vem é Brasileirão B.": ["We finished Brasileirão A in {0}th place and were relegated. Next year it's Brasileirão B.", "Terminamos el Brasileirão A en el {0}º lugar y descendimos. El año que viene es Brasileirão B.", "Abbiamo chiuso il Brasileirão A al {0}º posto e siamo retrocessi. L'anno prossimo è Brasileirão B.", "On termine le Brasileirão A à la {0}e place et on descend. L'an prochain, c'est le Brasileirão B."],
+    "{0}º no Brasileirão {1}": ["{0}th in Brasileirão {1}", "{0}º en el Brasileirão {1}", "{0}º nel Brasileirão {1}", "{0}e au Brasileirão {1}"],
     "Primeira fase": ["First round", "Primera fase", "Primo turno", "Premier tour"],
     "Oitavas de final": ["Round of 16", "Octavos de final", "Ottavi di finale", "Huitièmes de finale"],
     "Norte": ["North", "Norte", "Nord", "Nord"],
@@ -2509,7 +2509,7 @@
     "Unido e aguerrido: compete com o coração.": ["United and battling: competes with heart.", "Unido y aguerrido: compite con el corazón.", "Unito e combattivo: gioca col cuore.", "Uni et combatif : joue avec le cœur."],
     "Torcida gigante empurra; aposta no cruzamento.": ["A huge crowd pushes them on; they rely on crosses.", "La hinchada gigante empuja; apuesta por el centro.", "Un tifo enorme spinge; punta sui cross.", "Un public immense pousse ; mise sur les centres."],
     "Time 1": ["Team 1", "Equipo 1", "Squadra 1", "Équipe 1"],
-    "PRÊMIOS DA SÉRIE B": ["SÉRIE B AWARDS", "PREMIOS DE LA SÉRIE B", "PREMI DELLA SÉRIE B", "TROPHÉES DE LA SÉRIE B"],
+    "PRÊMIOS DO BRASILEIRÃO B": ["BRASILEIRÃO B AWARDS", "PREMIOS DEL BRASILEIRÃO B", "PREMI DEL BRASILEIRÃO B", "TROPHÉES DU BRASILEIRÃO B"],
     "Time 2": ["Team 2", "Equipo 2", "Squadra 2", "Équipe 2"],
     "Missão do clube: hoje tem jogo contra o {0}, mas você está {1}. Descanse e se recupere.": ["Club mission: there's a game against {0} today, but you're {1}. Rest and recover.", "Misión del club: hoy hay partido contra {0}, pero estás {1}. Descansa y recupérate.", "Missione del club: oggi c'è la partita contro {0}, ma sei {1}. Riposati e recupera.", "Mission du club : il y a match contre {0} aujourd'hui, mais tu es {1}. Repose-toi et récupère."],
     "suspenso por {0} jogo(s)": ["suspended for {0} game(s)", "suspendido por {0} partido(s)", "squalificato per {0} partita/e", "suspendu pour {0} match(s)"],
@@ -2532,7 +2532,7 @@
     "Alguns dias depois...": ["A few days later...", "Unos días después...", "Qualche giorno dopo...", "Quelques jours plus tard..."],
     "Peneira": ["Tryout", "Prueba", "Provino", "Détection"],
     "Peneira: Time 1 x Time 2. Mostre o seu futebol para os olheiros!": ["Tryout: Team 1 vs Team 2. Show the scouts what you've got!", "Prueba: Equipo 1 vs Equipo 2. ¡Muéstrales tu fútbol a los ojeadores!", "Provino: Squadra 1 contro Squadra 2. Mostra il tuo calcio agli osservatori!", "Détection : Équipe 1 contre Équipe 2. Montre ton football aux recruteurs !"],
-    "Série B · Rodada {0} de 38": ["Série B · Round {0} of 38", "Série B · Jornada {0} de 38", "Série B · Giornata {0} di 38", "Série B · Journée {0} sur 38"],
+    "Brasileirão B · Rodada {0} de 38": ["Brasileirão B · Round {0} of 38", "Brasileirão B · Jornada {0} de 38", "Brasileirão B · Giornata {0} di 38", "Brasileirão B · Journée {0} sur 38"],
     "Copa Estadual ({0})": ["State Cup ({0})", "Copa Estatal ({0})", "Coppa Statale ({0})", "Coupe de l'État ({0})"],
     "Copa Regional {0}": ["{0} Regional Cup", "Copa Regional {0}", "Coppa Regionale {0}", "Coupe régionale {0}"],
     "Missão do clube: jogo contra o {0} às {1}. O ônibus do clube passa no ponto da avenida às {2}.": ["Club mission: game against {0} at {1}. The club bus stops at the avenue bus stop at {2}.", "Misión del club: partido contra {0} a las {1}. El autobús del club pasa por la parada de la avenida a las {2}.", "Missione del club: partita contro {0} alle {1}. Il pullman del club passa alla fermata del viale alle {2}.", "Mission du club : match contre {0} à {1}. Le bus du club passe à l'arrêt de l'avenue à {2}."],
@@ -2548,15 +2548,15 @@
     "Copa Estadual": ["State Cup", "Copa Estatal", "Coppa Statale", "Coupe de l'État"],
     "Copa Regional": ["Regional Cup", "Copa Regional", "Coppa Regionale", "Coupe régionale"],
     "O campeão da {0} foi o {1}.": ["The {0} champion was {1}.", "El campeón de la {0} fue {1}.", "Il campione della {0} è stato {1}.", "Le champion de la {0} est {1}."],
-    "ACESSO! Terminamos a Série B em {0}º lugar e subimos para a Série A!": ["PROMOTION! We finished Série B in {0}th place and went up to Série A!", "¡ASCENSO! Terminamos la Série B en el {0}º puesto y subimos a la Série A!", "PROMOZIONE! Abbiamo chiuso la Série B al {0}º posto e siamo saliti in Série A!", "MONTÉE ! On a fini la Série B à la {0}e place et on monte en Série A !"],
-    "Fim da Série B: terminamos em {0}º lugar.": ["End of Série B: we finished {0}th.", "Fin de la Série B: terminamos en el {0}º puesto.", "Fine della Série B: abbiamo chiuso al {0}º posto.", "Fin de la Série B : on a fini {0}e."],
+    "ACESSO! Terminamos o Brasileirão B em {0}º lugar e subimos para o Brasileirão A!": ["PROMOTION! We finished Brasileirão B in {0}th place and went up to Brasileirão A!", "¡ASCENSO! Terminamos el Brasileirão B en el {0}º puesto y subimos al Brasileirão A!", "PROMOZIONE! Abbiamo chiuso il Brasileirão B al {0}º posto e siamo saliti nel Brasileirão A!", "MONTÉE ! On a fini le Brasileirão B à la {0}e place et on monte au Brasileirão A !"],
+    "Fim do Brasileirão B: terminamos em {0}º lugar.": ["End of Brasileirão B: we finished {0}th.", "Fin del Brasileirão B: terminamos en el {0}º puesto.", "Fine del Brasileirão B: abbiamo chiuso al {0}º posto.", "Fin du Brasileirão B : on a fini {0}e."],
     "A próxima temporada ainda vai chegar. Descansa, que você merece!": ["The next season is still to come. Get some rest, you deserve it!", "La próxima temporada todavía va a llegar. ¡Descansa, que te lo mereces!", "La prossima stagione deve ancora arrivare. Riposati, te lo meriti!", "La prochaine saison arrive plus tard. Repose-toi, tu l'as mérité !"],
     "Hoje tem jogo! {0} contra o {1}, às {2}.": ["Game day! {0} against {1}, at {2}.", "¡Hoy hay partido! {0} contra {1}, a las {2}.", "Oggi si gioca! {0} contro {1}, alle {2}.", "Match aujourd'hui ! {0} contre {1}, à {2}."],
     "O ônibus do clube passa no ponto da avenida às {0}. Não se atrase!": ["The club bus stops at the avenue bus stop at {0}. Don't be late!", "El autobús del club pasa por la parada de la avenida a las {0}. ¡No llegues tarde!", "Il pullman del club passa alla fermata del viale alle {0}. Non fare tardi!", "Le bus du club passe à l'arrêt de l'avenue à {0}. Ne sois pas en retard !"],
     "DELEGAÇÃO OFICIAL": ["OFFICIAL TEAM BUS", "DELEGACIÓN OFICIAL", "DELEGAZIONE UFFICIALE", "DÉLÉGATION OFFICIELLE"],
     "Entrar no ônibus do {0}": ["Board the {0} bus", "Subir al autobús del {0}", "Salire sul pullman del {0}", "Monter dans le bus du {0}"],
     "Esperar o ônibus do clube (passa às {0})": ["Wait for the club bus (comes at {0})", "Esperar el autobús del club (pasa a las {0})", "Aspettare il pullman del club (passa alle {0})", "Attendre le bus du club (passe à {0})"],
-    "Série B": ["Série B", "Série B", "Série B", "Série B"],
+    "Brasileirão B": ["Brasileirão B", "Brasileirão B", "Brasileirão B", "Brasileirão B"],
     "você entra aos {0}'": ["you come on at {0}'", "entras al {0}'", "entri al {0}'", "tu entres à la {0}e"],
     "{0} x {1}: você começa jogando!": ["{0} vs {1}: you're in the starting lineup!", "{0} vs {1}: ¡empiezas jugando!", "{0} contro {1}: parti titolare!", "{0} contre {1} : tu es titulaire !"],
     "Substituição: você entra aos {0}'!": ["Substitution: you come on at {0}'!", "Cambio: ¡entras al {0}'!", "Sostituzione: entri al {0}'!", "Remplacement : tu entres à la {0}e !"],
@@ -2621,7 +2621,7 @@
     "Técnico: {0}": ["Coach: {0}", "Entrenador: {0}", "Allenatore: {0}", "Entraîneur : {0}"],
     "Escolher": ["Choose", "Elegir", "Scegli", "Choisir"],
     "PROPOSTAS PARA {0}": ["OFFERS FOR {0}", "PROPUESTAS PARA {0}", "OFFERTE PER {0}", "OFFRES POUR {0}"],
-    "Depois da peneira, três clubes da Série B querem você. Escolha um:": ["After the tryout, three Série B clubs want you. Choose one:", "Después de la prueba, tres clubes de la Série B te quieren. Elige uno:", "Dopo il provino, tre club di Série B ti vogliono. Scegline uno:", "Après la détection, trois clubs de Série B te veulent. Choisis-en un :"],
+    "Depois da peneira, três clubes do Brasileirão B querem você. Escolha um:": ["After the tryout, three Brasileirão B clubs want you. Choose one:", "Después de la prueba, tres clubes del Brasileirão B te quieren. Elige uno:", "Dopo il provino, tre club del Brasileirão B ti vogliono. Scegline uno:", "Après la détection, trois clubs du Brasileirão B te veulent. Choisis-en un :"],
     "Aceitar a proposta do {0}?": ["Accept the offer from {0}?", "¿Aceptar la propuesta del {0}?", "Accettare l'offerta del {0}?", "Accepter l'offre du {0} ?"],
     "Aceitar": ["Accept", "Aceptar", "Accetta", "Accepter"],
     "Ver as outras": ["See the others", "Ver las otras", "Vedi le altre", "Voir les autres"],
@@ -2632,7 +2632,7 @@
     "Ganhos no clube: {0} fakes": ["Earned at the club: {0} fakes", "Ganancias en el club: {0} fakes", "Guadagni al club: {0} fakes", "Gains au club : {0} fakes"],
     "{0} de 38 rodadas": ["{0} of 38 rounds", "{0} de 38 jornadas", "{0} di 38 giornate", "{0} journées sur 38"],
     "Time": ["Team", "Equipo", "Squadra", "Équipe"],
-    "Os 4 primeiros sobem para a Série A. Ninguém cai.": ["The top 4 go up to Série A. Nobody goes down.", "Los 4 primeros suben a la Série A. Nadie desciende.", "Le prime 4 salgono in Série A. Nessuno retrocede.", "Les 4 premiers montent en Série A. Personne ne descend."],
+    "Os 4 primeiros sobem para o Brasileirão A. Ninguém cai.": ["The top 4 go up to Brasileirão A. Nobody goes down.", "Los 4 primeros suben al Brasileirão A. Nadie desciende.", "Le prime 4 salgono nel Brasileirão A. Nessuno retrocede.", "Les 4 premiers montent au Brasileirão A. Personne ne descend."],
     "Artilharia": ["Top scorers", "Goleadores", "Classifica marcatori", "Meilleurs buteurs"],
     "{0} gols": ["{0} goals", "{0} goles", "{0} gol", "{0} buts"],
     "Toque de bola": ["Possession game", "Toque de balón", "Possesso palla", "Jeu de possession"],
@@ -2652,9 +2652,9 @@
     "Torcida crescendo": ["Growing crowd", "Afición creciendo", "Tifoseria in crescita", "Public grandissant"],
     "Torcida grande": ["Big crowd", "Gran afición", "Grande tifoseria", "Grand public"],
     "Casa cheia": ["Full house", "Lleno total", "Tutto esaurito", "Stade plein"],
-    "um dos melhores times da Série B": ["one of the best teams in Série B", "uno de los mejores equipos de la Série B", "una delle migliori squadre della Série B", "l'une des meilleures équipes de Série B"],
-    "um time bom da Série B": ["a good Série B team", "un buen equipo de la Série B", "una buona squadra di Série B", "une bonne équipe de Série B"],
-    "um time da Série B": ["a Série B team", "un equipo de la Série B", "una squadra di Série B", "une équipe de Série B"],
+    "um dos melhores times do Brasileirão B": ["one of the best teams in Brasileirão B", "uno de los mejores equipos del Brasileirão B", "una delle migliori squadre del Brasileirão B", "l'une des meilleures équipes du Brasileirão B"],
+    "um time bom do Brasileirão B": ["a good Brasileirão B team", "un buen equipo del Brasileirão B", "una buona squadra del Brasileirão B", "une bonne équipe du Brasileirão B"],
+    "um time do Brasileirão B": ["a Brasileirão B team", "un equipo del Brasileirão B", "una squadra del Brasileirão B", "une équipe du Brasileirão B"],
     "Toque de bola, pressão alta e muita gente no ataque.": ["Passing game, high press and lots of players going forward.", "Toque de balón, presión alta y mucha gente en ataque.", "Possesso palla, pressing alto e tanti uomini in attacco.", "Jeu de passes, pressing haut et beaucoup de monde en attaque."],
     "Defesa muito bem armada e contra-ataque rápido.": ["Very well-organized defense and quick counterattacks.", "Defensa muy bien armada y contraataque rápido.", "Difesa ben organizzata e contropiede rapido.", "Défense très bien organisée et contre-attaque rapide."],
     "Compacto, troca passes e não se desespera.": ["Compact, passes it around and never panics.", "Compacto, toca el balón y no se desespera.", "Compatto, fa girare palla e non si dispera.", "Compact, fait circuler le ballon et ne panique jamais."],
@@ -2735,6 +2735,6 @@
   if (typeof FEM_TRAD !== 'undefined') for (const k of Object.keys(FEM)) if (!FEM_TRAD[k]) FEM_TRAD[k] = FEM[k];
 
 
-  window.FutebolJS.registrarFase({ id: 'serieb', nome: 'Série B', nucleoMinimo: '7.1', iniciar: async () => {}, criar, carta, aceitarOferta, fraseOferta,
+  window.FutebolJS.registrarFase({ id: 'serieb', nome: 'Brasileirão B', nucleoMinimo: '7.1', iniciar: async () => {}, criar, carta, aceitarOferta, fraseOferta,
     dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet, EMPRESARIOS, fimDoContrato, montarCalendario3, novaTemporada, rankingTimes }, TIMES_B, TIMES_A, TIMES_ES, TIMES_EN, LIGAS_EU, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
 })();

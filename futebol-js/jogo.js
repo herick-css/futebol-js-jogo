@@ -419,12 +419,12 @@ const CAMPOS = {
   // cimento sem cadeiras, cobertura só na principal, refletores baixos, placas de comércio do bairro) e o gramado GASTO
   // (aparencia.gasto: carecas de terra na frente dos gols e no meio, buracos e remendos de grama). A torcida sai da popularidade
   // do mandante (times[].torcidaB, de 0 a 1) e cabe bem menos gente que no estádio oficial.
-  serieB: { nome: 'Estádio da Série B (11 x 11)', comprimento: 100, largura: 64, jogadores: 11, estadio: 'arenaB',
+  serieB: { nome: 'Estádio do Brasileirão B (11 x 11)', comprimento: 100, largura: 64, jogadores: 11, estadio: 'arenaB',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#3a7330', gramaB: '#427e36', fundo: '#3a6630', padrao: 'faixas', faixas: 12, linhas: '#dfe2d2', gasto: true } },
   // ESTÁDIOS DA SÉRIE A (estadio 'arenaA'): os 8 modelos do estadiosA.js (campo.modelo: 'anel', 'caldeirao', 'fachada', 'listras',
   // 'floresta', 'petalas', 'ferradura', 'concha'; sem modelo, sai do mandante). Gramado impecável e névoa mais longe (o estádio é maior).
-  serieA: { nome: 'Estádio da Série A (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arenaA', nevoaLonge: 1.35,
+  serieA: { nome: 'Estádio do Brasileirão A (11 x 11)', comprimento: 105, largura: 68, jogadores: 11, estadio: 'arenaA', nevoaLonge: 1.35,
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#2e7d34', gramaB: '#38903d', fundo: '#2b6e30', padrao: 'faixas', faixas: 18, linhas: '#f1f3ea' } },
 };
@@ -523,6 +523,20 @@ const DIFICULDADES = {
   dificil:       { nome: 'Difícil',       nivel: 1 },
   muito_dificil: { nome: 'Muito difícil', nivel: 2 },
 };
+// O ADVERSÁRIO EM CADA NÍVEL (fora do modo história). hab: o tanto que soma em TODAS as habilidades de cada jogador adversário
+//   (finalização, passe, defesa, desarme, goleiro, fôlego...): "gen" para o elenco sorteado pela faixa do nível (FAIXA_NIVEL, que já
+//   muda com o nível) e "pronto" para os elencos que já vêm com habilidades (Brasileirão, Europa: antes o nível não mudava nada
+//   neles). bote: o quanto ele se atira mais no bote e ganha mais divididas. pressa: o tempo para decidir e para voltar a pensar
+//   no bote (menor = mais rápido). Uns 25% mais difícil em cada nível; no muito difícil, 40%.
+const DIF_ADV = {
+  muito_facil:   { gen: 1.5, pronto: 0.5, bote: 1.25, pressa: 0.8 },
+  facil:         { gen: 1.5, pronto: 1.0, bote: 1.25, pressa: 0.8 },
+  normal:        { gen: 1.5, pronto: 1.5, bote: 1.25, pressa: 0.8 },
+  dificil:       { gen: 1.5, pronto: 2.2, bote: 1.25, pressa: 0.8 },
+  muito_dificil: { gen: 2.4, pronto: 3.2, bote: 1.4, pressa: 0.71 },
+};
+let DIF = { ativo: false, adv: 1, gen: 0, pronto: 0, bote: 1, pressa: 1 };
+const difDe = (p) => (DIF.ativo && p && p.team === DIF.adv ? DIF : null);   // o ajuste vale para este jogador? (só o time adversário)
 
 // ---- Times. Cores em '#rrggbb'. forca 0–100. popularidade 0–1 (quanto de torcida leva).
 // uniforme2 é o reserva (usado quando as camisas dos dois times são parecidas).
@@ -706,7 +720,7 @@ const DURACOES = { padrao: 300, rapida: 180 };   // partida normal (5 min) e par
 //   calJan = o dia (do save) que é 1º de janeiro do ano calAno.
 //   · Antes da peneira (o passado da história) o dia 1 é 1º de fevereiro de dois anos atrás.
 //   · "Dois anos depois", na peneira, o calendário é acertado: a peneira é em 8 de janeiro do ano de hoje, a carta chega dias
-//     depois e a temporada começa no fim de janeiro (como a Série A de 2026: de 28 de janeiro a 2 de dezembro).
+//     depois e a temporada começa no fim de janeiro (como o Brasileirão A de 2026: de 28 de janeiro a 2 de dezembro).
 //   · Saves de antes da 7.4.6 que já estão na carreira: o 1º jogo da temporada atual vira 28 de janeiro.
 //   A TEMPORADA (serieb.js): janeiro a maio jogando, JUNHO livre (a janela de transferências do meio do ano), julho a novembro
 //   jogando e DEZEMBRO de férias (a outra janela); em janeiro começa a próxima.
@@ -816,7 +830,7 @@ const Atributos = (() => {
   return {
     NOMES, aplicar,
     padrao: () => tudo(7),
-    // (7.4.5) o INICIANTE da história: tudo 3 (30 na régua de 0 a 100, a mesma dos times: várzea 30–60, Série B 50–70, Série A 65–85)
+    // (7.4.5) o INICIANTE da história: tudo 3 (30 na régua de 0 a 100, a mesma dos times: várzea 30–60, Brasileirão B 50–70, Brasileirão A 65–85)
     //   e as habilidades da posição escolhida no começo do modo história sorteadas entre 4,0 e 5,0 (40 a 50). Sem posição (o treino
     //   do tutorial, antes da escolha): tudo 5, como antes. O fôlego curto do iniciante continua.
     iniciante: (pos) => {
@@ -883,7 +897,7 @@ function gerarHabilidades(faixa, role, semente) {
 function hab(p, nome) {
   if (!p) return 7;
   if (p.voce) return Atributos.valor(nome) ?? 7;            // (7.4.13) o SEU personagem (no "time inteiro" você também controla os outros, com as habilidades deles)
-  return (p.hab && p.hab[nome]) ?? 7;
+  return ((p.hab && p.hab[nome]) ?? 7) + (p.difHab || 0);
 }
 function fh(p, nome, exp) {
   return Math.pow(clamp(hab(p, nome) / 7, 0.15, 1.6), (exp ?? HAB_EXP[nome] ?? 1) * (nome === 'velocidade' ? 1 : HAB_PESO));
@@ -1408,7 +1422,7 @@ const MAT_CORES = new THREE.MeshLambertMaterial({ vertexColors: true });   // ma
 // ---------------------------------------------------------------------
 // 4. CENÁRIO
 // ---------------------------------------------------------------------
-// GRAMADO GASTO (estádio da Série B): tudo em quadradinhos, como o resto do jogo e cortado na linha do campo.
+// GRAMADO GASTO (estádio do Brasileirão B): tudo em quadradinhos, como o resto do jogo e cortado na linha do campo.
 //   carecas de terra na frente dos dois gols (a pequena área é o que mais apanha) e no círculo central, falhas menores espalhadas,
 //   uns BURACOS (terra escura com a borda mais clara, de 40 a 90 cm) e remendos de grama nova de outro tom.
 function gramadoGasto(g, X, Y, A) {
@@ -1631,13 +1645,13 @@ function buildPitch(op) {
 const BANDEIRAS = [];
 
 // Placas de publicidade em volta do campo. Os "anúncios" são dos seus próprios projetos.
-// placas do estádio da Série B: o comércio do bairro (o último é escuro: as faces de cima e das pontas usam um pedaço dele)
+// placas do estádio do Brasileirão B: o comércio do bairro (o último é escuro: as faces de cima e das pontas usam um pedaço dele)
 const ANUNCIOS_B = [['PADARIA PÃO QUENTINHO', '#e8c27a', '#5a2a10'], ['AUTO PEÇAS 2 IRMÃOS', '#1f4a8a', '#f2c230'], ['AÇOUGUE BOI GORDO', '#a8201a', '#ffffff'],
   ['FUTEBOL JS', '#F7941D', '#071430'], ['MATERIAIS SÃO JORGE', '#2f7a3a', '#ffffff'], ['BAR DO TIÃO', '#111111', '#f2c230']];
-// placas da Série A (LED): marcas grandes de mentira e os projetos de sempre
+// placas do Brasileirão A (LED): marcas grandes de mentira e os projetos de sempre
 const ANUNCIOS_A = [['BANCO FAKES', '#101820', '#2fe08a'], ['FUTEBOL JS', '#F7941D', '#071430'], ['TV AGRICULTURA', '#0d3b1e', '#f2c230'], ['SUPER LAN MASTER', '#0B4F9C', '#ffffff'],
   ['GOLAÇO ESPORTES', '#c8202e', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['ESFERA', '#1d2a6b', '#ffffff'], ['CACHOLA', '#111111', '#6bf08e']];
-let ESTADIO_A = null;                              // o último estádio da Série A montado ({ modelo, nome, torcedores })
+let ESTADIO_A = null;                              // o último estádio do Brasileirão A montado ({ modelo, nome, torcedores })
 // (7.4.19) TEXTO QUE CABE: diminui a FONTE até o texto caber na largura (antes o canvas espremia o texto na marra, com o maxWidth,
 //   e nome de time grande ficava achatado/"bugado"; no túnel ainda era cortado em 22 letras). Desenha e devolve o tamanho usado.
 function textoQueCabe(g, txt, x, y, maxW, px, op) {
@@ -3462,7 +3476,7 @@ function pintarCamisa(g, ox, cor, listra, gola, numero, costas, emblema, nomeCam
     else { g.fillStyle = '#FFFFFF'; g.fillRect(ox + 19, 6, 7, 8); g.fillStyle = listra; g.fillRect(ox + 20, 7, 5, 6); }
   }
 }
-// CAMISAS COM DESENHO: o uniforme pode trazer um "modelo" (os dos times da Série A e da Série B ficam no uniformes.js).
+// CAMISAS COM DESENHO: o uniforme pode trazer um "modelo" (os dos times do Brasileirão A e do Brasileirão B ficam no uniformes.js).
 //   Com modelo, o atlas do jogador é feito em dobro (256 x 64, as mesmas UVs): cada face da camisa ganha 64 x 64 pixels,
 //   as laterais do tronco e as mangas ganham o desenho (UV_LADO_CAMISA e UV_MANGA, na parte livre do atlas) e o peito
 //   ganha o espaço da pixel art do time (PEITO: 8 x 8 do atlas = 16 x 16 pixels de arte, sem suavizar).
@@ -5738,7 +5752,8 @@ function aiPressiona(p, holder, dt) {
   p.commitT -= dt;
   // (7.4.21) decide o bote com mais frequência (antes a cada 1,2–2,8 s) e mais quando o atacante já está perto do nosso gol
   const dGolH = Math.hypot(-p.dir * HALF_L - holder.x, holder.z), perigoGol = dGolH < 26 * ESC;
-  if (p.commitT <= 0) { p.commitT = rand(0.6, 1.4); p.committing = Math.random() < Math.min(0.92, (taticaDe(p.team).bote ?? 0.55) + (perigoGol ? 0.25 : 0.1)) ? 0.7 : 0; }   // (7.1.22) a tática sem a bola diz o quanto ele se atira
+  const Dp = difDe(p);
+  if (p.commitT <= 0) { p.commitT = rand(0.6, 1.4) * (Dp ? Dp.pressa : 1); p.committing = Math.random() < Math.min(0.95, ((taticaDe(p.team).bote ?? 0.55) + (perigoGol ? 0.25 : 0.1)) * (Dp ? Dp.bote : 1)) ? 0.7 : 0; }   // (7.1.22) a tática sem a bola diz o quanto ele se atira
   if (holder === user && KICK_STATES.includes(G.state)) p.committing = 0.5;   // você parou para chutar: ele vem no bote
   // Você vindo para cima dele devagar (sem driblar, sem arrancar): ele NÃO recua mais —
   // fica e dá o bote. Antes ele ia andando de costas e você passava sem perder a bola.
@@ -5791,7 +5806,7 @@ function aiPressiona(p, holder, dt) {
     return seek(p, clamp(hx + gx / gl * frente, -HALF_L + 1, HALF_L - 1), clamp(hz + gz / gl * frente, -HALF_W + 1, HALF_W - 1), CONFIG.AI_SPEED * p.speedMul);
   }
   const fecha = clamp(1.3 + vh * 0.06, 1.3, 1.7);
-  if (dH < 1.9 && !porTras(p, holder)) p.committing = Math.max(p.committing, Math.random() < (perigoGol ? 0.9 : 0.6) * dt * 3 ? 0.45 : 0);   // de frente e perto: dá o bote
+  if (dH < 1.9 && !porTras(p, holder)) p.committing = Math.max(p.committing, Math.random() < (perigoGol ? 0.9 : 0.6) * dt * 3 * (Dp ? Dp.bote : 1) ? 0.45 : 0);   // de frente e perto: dá o bote
   if (dH > 3.5 || vh > 3.5) corrida(p, 2);                          // chegando / acompanhando a arrancada
   return seek(p, hx + gx / gl * fecha, hz + gz / gl * fecha, CONFIG.AI_SPEED * (vh > 2 ? 1 : 0.85) * p.speedMul);
 }
@@ -5926,7 +5941,7 @@ function aiCarry(p, dt) {
     return { vx: 0, vz: 0 };
   }
   if (p.think <= 0 || p.stuckT > 1.2) {
-    p.think = rand(0.35, 0.75) / (0.55 + 0.45 * fh(p, 'passe'));   // quem passa bem decide mais rápido
+    p.think = rand(0.35, 0.75) / (0.55 + 0.45 * fh(p, 'passe')) * (difDe(p) ? DIF.pressa : 1);   // quem passa bem decide mais rápido
     const J = jogadaDoTime(p);                       // jogada ensaiada da vez (tabela, pelo lado, enfiada)
     const limpo = linhaDeChuteLimpa(p);
     const cara = dG < 16 && ultimoHomem({ team: 1 - p.team, dir: -p.dir, x: p.x }, p, true);   // só o goleiro na frente
@@ -7299,7 +7314,8 @@ function tryTackle(def, holder, dt) {
     }
     if (Math.random() < 0.1 && startSlide(def, holder)) return;              // de frente, às vezes vai de carrinho
   }
-  let chance = (holder.isUser ? CONFIG.AI_TACKLE_CHANCE / Atributos.posse() : 0.22) * fh(def, 'desarme') / Math.sqrt(fh(holder, 'drible'));   // desarme x drible; (6.2.0) a sua força segura a bola
+  let chance = (holder.isUser ? CONFIG.AI_TACKLE_CHANCE / Atributos.posse() : 0.22) * fh(def, 'desarme') / Math.sqrt(fh(holder, 'drible'));
+  { const Dd = difDe(def); if (Dd) chance *= Dd.bote; }   // desarme x drible; (6.2.0) a sua força segura a bola
   if (holder.isUser && Math.hypot(holder.vx, holder.vz) < 4.2) chance = Math.min(0.6, chance * 2);   // você andando: bote mais fácil
   if (holder.boost > 0) chance *= 0.6;
   if (holder.ajeita && holder.chutePrep > 0) chance = Math.min(0.75, chance * 1.6);   // (7.2.0) ajeitando o chute de longe: a bola está solta no pé
@@ -7808,6 +7824,10 @@ function updatePlayers(dt) {
       // Carrinho (e levantando dele) ou cabeceio/voleio/bicicleta da IA: o corpo não gira.
     } else if (p.lamento && (G.state === 'goal' || G.state === 'celebrate')) {
       if (sp > 0.3) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), 6 * dt);   // triste: anda de frente
+    } else if (p.role === 'GK' && (p.diveT > 0 || p.pulaTras || p.jumpT > 0 || p.fall > 0 || p.caidoComBola > 0 || (p.levanta && p.levanta.t >= 0))) {
+      // GOLEIRO NO AR OU NO CHÃO (mergulho, pulo, cavadinha, deitado, levantando): o corpo NÃO gira. Ele fica de frente para quem
+      //   chutou, do jeito que estava quando pulou. Antes ele continuava virando para a bola (ou para onde ia, quando é você): com o
+      //   corpo inclinado, o giro em volta do eixo dos pés varria o corpo inteiro no ar (e no chão, deitado, ele "rodava").
     } else if (p.isUser) {
       const ang0 = p.angle;
       if (sp > 0.3 && !p.recvPose && !(G.recvFx && G.recvFx.espera) && (G.state === 'play' || G.state === 'celebrate' || G.state === 'trap' || G.state === 'goal')) p.angle = turnToward(p.angle, Math.atan2(p.vz, p.vx), (p.celeb ? 4 : 12) * dt);
@@ -15499,7 +15519,7 @@ function syncMeshes(dt) {
       }
       if (P.yaw === undefined) P = Object.assign({}, POSE0, P);       // (o aviãozinho controlado monta a pose na mão)
       aplicarPoseCeleb(m, c, P, corre, { x: p.x, y: 0, z: p.z }, p.angle); p.celebP = P;   // (7.1.9) a mesma função da loja (cambalhotas, giros...)
-    } else if (p.celebP) { p.celebP = null; m.raiz.rotation.order = 'XYZ'; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0; m.corpo.rotation.y = 0; }
+    } else if (p.celebP) { p.celebP = null; m.raiz.rotation.order = 'YXZ'; m.raiz.rotation.x = 0; m.raiz.rotation.z = 0; m.corpo.rotation.y = 0; }   // (a ordem do boneco: gira e depois inclina; com 'XYZ' as quedas e os mergulhos depois de comemorar inclinavam em volta do eixo do campo)
     if (p.slidePose > 0) {
       // (7.2.0) CARRINHO mais natural: ele SENTA de lado no gramado (quadril quase no chão, tronco ~40° para trás), a perna
       // da frente vai esticada na bola e a de trás dobra por baixo; a mão de trás apoia no chão e a outra equilibra.
@@ -15993,6 +16013,9 @@ function desenharEmblema(g, x, y, w, h, emb) {
 
 const corRGB = (h) => { const n = parseInt(h.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const corDist = (a, b) => { const A = corRGB(a), B = corRGB(b); return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]); };
+// a cor do texto por cima de uma cor de time: preto em camisa branca ou clara (amarela, azul-clara, cinza...), branco no resto
+//   (luminância relativa: acima de 0,4 o preto lê melhor)
+const corTextoSobre = (h) => { const L = corRGB(h).map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * L[0] + 0.7152 * L[1] + 0.0722 * L[2] > 0.4 ? '#111111' : '#ffffff'; };
 const corFundoNome = (h) => { const [r, g, b] = corRGB(h); return 'rgba(' + Math.round(r * 0.45) + ',' + Math.round(g * 0.45) + ',' + Math.round(b * 0.45) + ',0.88)'; };
 
 function resolverPartida(cfg = {}) {
@@ -16142,10 +16165,10 @@ function montarEstadio() {
   crowd.pintarAtlas(PARTIDA.uniformes[0].camisa, PARTIDA.uniformes[1].camisa);
   const tipo = PARTIDA.campo.estadio || 'arena';
   ESTADIO_A = null;                                // (7.4.0) só vale para a partida montada agora (os fogos e a cena de fora dependem dele)
-  buildPitch(tipo === 'arenaA' && window.EstadiosA ? { semFundo: true } : undefined);   // (7.4.0) na Série A o chão de fora é o do estadiosA.js (o pátio e a cidade)
+  buildPitch(tipo === 'arenaA' && window.EstadiosA ? { semFundo: true } : undefined);   // (7.4.0) no Brasileirão A o chão de fora é o do estadiosA.js (o pátio e a cidade)
   TUNEL.placa = null; TUNEL.grupo = null;
   if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); }
-  else if (tipo === 'arenaA') {                    // Série A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
+  else if (tipo === 'arenaA') {                    // Brasileirão A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
     buildBoards(ANUNCIOS_A);
     let ok = false;
     if (window.EstadiosA) try { ESTADIO_A = window.EstadiosA.construir(PARTIDA); ok = true; } catch (e) { console.warn('[Estádio A]', e); crowd.limpar(); }
@@ -16814,7 +16837,9 @@ function atualizarPlacarFixo() {
     const el = tags[i]; if (!el) return;
     el.textContent = P.timesObj[i].sigla;
     el.style.background = P.uniformes[i].camisa;
-    el.style.color = corDist(P.uniformes[i].camisa, '#ffffff') < 120 ? '#111' : '#fff';
+    const tx = corTextoSobre(P.uniformes[i].camisa);                       // (com !important: a regra do CSS que deixa a HUD toda branca também vale aqui)
+    el.style.setProperty('color', tx, 'important'); el.style.setProperty('-webkit-text-fill-color', tx, 'important');
+    el.style.setProperty('text-shadow', tx === '#ffffff' ? '1px 1px 0 rgba(0, 0, 0, 0.6)' : 'none', 'important');
     let c = document.getElementById('emb' + i);
     if (!c) { c = document.createElement('canvas'); c.id = 'emb' + i; c.width = c.height = 26; c.style.cssText = 'width:18px;height:18px;image-rendering:auto;vertical-align:middle'; }
     const g = c.getContext('2d'); g.clearRect(0, 0, 26, 26); desenharEmblema(g, 1, 1, 24, 24, P.timesObj[i].emblema);
@@ -16836,6 +16861,8 @@ function atualizarInfoTatica() {
 function montarPartida(cfg) {
   PARTIDA = resolverPartida(cfg);
   PARTIDA.criancas = cfg && cfg.criancas || null;
+  { const D = DIF_ADV[PARTIDA.dificuldade] || DIF_ADV.normal, historia = !!(cfg && cfg.atributos);   // (a história tem o equilíbrio dela: lá não muda)
+    DIF = { ativo: !historia && !PARTIDA.criancas, adv: 1, gen: D.gen, pronto: D.pronto, bote: D.bote, pressa: D.pressa }; }
   Atributos.aplicar(cfg && cfg.atributos);          // sem "atributos" = tudo 7 (o jogo de sempre)
   aplicarDimensoes(PARTIDA.campo);
   CONFIG.MATCH_SECONDS = PARTIDA.duracao;
@@ -16925,6 +16952,7 @@ function criarJogador(P, team, f, j, num, isUser) {
   // . O elenco da história pode trazer as habilidades prontas (j.hab).
   const faixa = team === 1 ? (FAIXA_NIVEL[P.dificuldade] || FAIXA_NIVEL.normal) : FAIXA_NIVEL.normal;
   const habs = isUser ? null : Object.assign(gerarHabilidades(faixa, f.role, j.semente != null ? j.semente : sementeDe((P.timesObj[team].id || team) + '|' + nome)), j.hab || {});
+  const difHab = !isUser && DIF.ativo && team === DIF.adv ? (j.hab ? DIF.pronto : DIF.gen) : 0;
   const base = { x: f.fx * HALF_L, z: f.fz * HALF_W };
   return {
     id: G.proxId++, voce: !!isUser, team, dir, role: f.role, funcao: f.funcao || null, base, slotF: f, name: nome, numero: num, ficha: isUser ? CHAVE_VOCE : j.nome, dados: j,
@@ -16935,7 +16963,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     celeb: null, celebsIA: isUser ? null : j.celebsIA || null,   // (7.2.0) as duas comemorações dele
     diveT: 0, diveDur: 0.55, diveVX: 0, diveVZ: 0, diveSide: 1, jumpT: 0,
     throwIn: false, goalKick: false, setPiece: null, carry: false, slot: -1,
-    hab: habs, speedMul: isUser ? 1 : P.criancas ? rand(0.98, 1.02) * vel : rand(0.96, 1.03) * vel * Math.pow(clamp(habs.velocidade / 7, 0.15, 1.6), HAB_EXP.velocidade), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
+    hab: habs, difHab, speedMul: isUser ? 1 : P.criancas ? rand(0.98, 1.02) * vel : rand(0.96, 1.03) * vel * Math.pow(clamp(habs.velocidade / 7, 0.15, 1.6), HAB_EXP.velocidade), drift: { x: 0, z: 0, tx: 0, tz: 0, t: rand(0, 3) }, runT: 0,
     commitT: rand(0.5, 2), committing: 0, folego: 1,
     stamina: 1, exhausted: false, regenWait: 0, dribbleCd: 0, staminaMax: 1,
     isUser, mesh,
@@ -17752,7 +17780,7 @@ function infoSelecao(id, v) {
   }
   if (id === 'cfgClima') return T(v === 'chuva' ? 'Bola corre mais e quica menos' : v === 'neve' ? 'Bola segura no gramado' : 'Normal');
   if (id === 'cfgGrama') return T(v === 'alto' ? 'Bola rola mais devagar' : 'Bola rola rápido');
-  if (id === 'cfgDif') { const f = FAIXA_NIVEL[v]; return Tf('Habilidades do adversário {0} (de 10). Seus companheiros: 5 a 6. Você nunca piora.', f ? Tf('{0} a {1}', f[0], f[1]) : ''); }
+  if (id === 'cfgDif') { const f = FAIXA_NIVEL[v], b = (DIF_ADV[v] || DIF_ADV.normal).gen, n = (x) => Math.min(10, Math.round(x + b)); return Tf('Habilidades do adversário {0} (de 10). Seus companheiros: 5 a 6. Você nunca piora.', f ? Tf('{0} a {1}', n(f[0]), n(f[1])) : ''); }
   if (id === 'cfgGenero') return T(v === 'F' ? 'Só jogadoras' : v === 'X' ? 'Homens e mulheres nos dois times' : 'Só jogadores');
   if (id === 'cfgPersonagem') return v ? T('Você joga com a aparência, o nome e o número desse personagem') : (personagensSalvos().length ? '' : T('Nenhum personagem salvo ainda (crie um no modo história)'));
   if (id === 'cfgTat') return v && TATICAS[v] ? '' : T('Usa a tática preferida do seu time');
@@ -18601,7 +18629,7 @@ const Idioma = {
   'Quadra da escola (5 x 5)': ['School court (5 v 5)', 'Cancha de la escuela (5 x 5)', 'Campo della scuola (5 x 5)', 'Terrain de l’école (5 x 5)'],
   'Society (treino)': ['Society (training)', 'Society (entrenamiento)', 'Calcetto (allenamento)', 'Society (entraînement)'], 'Quadra da escola (treino)': ['School court (training)', 'Cancha de la escuela (entrenamiento)', 'Campo della scuola (allenamento)', 'Terrain de l’école (entraînement)'],
   'Oficial (11 x 11)': ['Official (11 v 11)', 'Oficial (11 x 11)', 'Ufficiale (11 x 11)', 'Officiel (11 x 11)'],
-  'Estádio da Série B (11 x 11)': ['Série B stadium (11 v 11)', 'Estadio de la Série B (11 x 11)', 'Stadio della Série B (11 x 11)', 'Stade de Série B (11 x 11)'],
+  'Estádio do Brasileirão B (11 x 11)': ['Brasileirão B stadium (11 v 11)', 'Estadio del Brasileirão B (11 x 11)', 'Stadio del Brasileirão B (11 x 11)', 'Stade du Brasileirão B (11 x 11)'],
   '4-4-2 (clássica)': ['4-4-2 (classic)', '4-4-2 (clásica)', '4-4-2 (classica)', '4-4-2 (classique)'],
   '4-3-3 (ofensiva)': ['4-3-3 (attacking)', '4-3-3 (ofensiva)', '4-3-3 (offensiva)', '4-3-3 (offensive)'],
   '5-3-2 (defensiva)': ['5-3-2 (defensive)', '5-3-2 (defensiva)', '5-3-2 (difensiva)', '5-3-2 (défensive)'],
@@ -21482,8 +21510,8 @@ function ajustarCortePersonagem() {
   if (ap.barbaNome) { const i = ESTILOS_BARBA.findIndex((c) => c.cosmetico && c.nome === ap.barbaNome); if (i >= 0) ap.barba = i; }   // a barba da loja, do mesmo jeito
   if (ap.chuteiraNome) { const i = CHUTEIRAS.findIndex((c) => (c.loja || c.cosmetico) && c.nome === ap.chuteiraNome); if (i >= 0) ap.chuteira = i; }   // (7.1.10) a chuteira premium da Golaço Esportes, pelo nome
 }
-Fases.carregar('estadiosA').catch((e) => console.warn('[Estádio A] estadiosA.js não veio:', e));   // os estádios da Série A (antes da 1ª partida de lá)
-Fases.carregar('uniformes').catch((e) => console.warn('[Uniformes] uniformes.js não veio:', e));   // o desenho das camisas dos times da Série A e B
+Fases.carregar('estadiosA').catch((e) => console.warn('[Estádio A] estadiosA.js não veio:', e));   // os estádios do Brasileirão A (antes da 1ª partida de lá)
+Fases.carregar('uniformes').catch((e) => console.warn('[Uniformes] uniformes.js não veio:', e));   // o desenho das camisas dos times do Brasileirão A e B
 const Cosmeticos = { pronto: Fases.carregar('cosmeticos').then(() => { ajustarCortePersonagem(); }, (e) => console.warn('[Cosméticos] cosmeticos.js não veio:', e)) };
 
 montarTelaDeConfig();

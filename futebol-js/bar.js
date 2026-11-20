@@ -1332,6 +1332,7 @@
         }
         const ab = api.falaAmizade ? api.falaAmizade('jairo') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('jairo', ab.l); return; }   // -80: o Jairo não perde mais tempo com você
+        if (api.recusaPapo && await api.recusaPapo('jairo')) { return; }   // já conversaram 2 vezes hoje
         if (ab && ab.l) await api.fala('jairo', ab.l);
         const Q = PAPOS_JAIRO[(db.papoJ | 0) % PAPOS_JAIRO.length]; db.papoJ = (db.papoJ | 0) + 1;
         if (Q.vazio) {                                                  // o papo do movimento: depende de como está a casa

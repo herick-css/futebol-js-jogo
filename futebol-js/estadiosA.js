@@ -305,7 +305,7 @@
   }
 
   // ============================================================================================ TEXTURAS DO MANDANTE
-  //   faixa: o escudo + o nome, repetido ao longo das fáscias · telão: o escudo grande com o nome e "SÉRIE A" · bandeira: listras + escudo
+  //   faixa: o escudo + o nome, repetido ao longo das fáscias · telão: o escudo grande com o nome e "BRASILEIRÃO A" · bandeira: listras + escudo
   const cabe = (g, txt, x, y, w, px) => { if (typeof textoQueCabe === 'function') return textoQueCabe(g, txt, x, y, w, px); g.font = 'bold ' + px + 'px Arial'; g.fillText(txt, x, y, w); return px; };   // (7.4.19)
   function canvas(w, h, f) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; f(g, w, h); return c; }
   // as faixas de janela dos prédios da cidade: 16 andares de 16 px (a faixa embaixo de cada andar, o resto transparente), cada um
@@ -336,10 +336,10 @@
       const gr = g.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, c1); gr.addColorStop(1, '#05070c'); g.fillStyle = gr; g.fillRect(4, 4, 248, 120);
       for (let y = 4; y < 124; y += 2) { g.fillStyle = 'rgba(0,0,0,0.18)'; g.fillRect(4, y, 248, 1); }   // as linhas do LED
       desenharEmblema(g, 14, 18, 88, 92, M.emblema);
-      g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillStyle = luma(E.c1) * 0.64 > 110 ? '#14161c' : '#ffffff'; g.textAlign = 'center'; g.textBaseline = 'middle';   // camisa branca ou clara: a sigla em preto (o fundo ali é a cor do time indo para o preto)
       cabe(g, String(M.sigla || M.nome || '').toUpperCase(), 180, 46, 140, 22);
       g.fillStyle = c2; g.fillRect(118, 62, 124, 3);
-      g.fillStyle = '#ffffff'; g.font = 'bold 14px Arial'; g.fillText(txt || 'SÉRIE A', 180, 84, 140);
+      g.fillStyle = '#ffffff'; g.font = 'bold 14px Arial'; g.fillText(txt || 'BRASILEIRÃO A', 180, 84, 140);
     }));
   }
   function texBandeira(E) {
@@ -1982,7 +1982,7 @@
   //     op: { dur (s), ritmo (rojões por s), longe (0..1: o som abafado de quem está fora) }. Devolve uma Promise (quando acabam).
   //   cena(op): o estádio visto de fora, a câmera girando devagar em volta (com a cidade), faixas de cinema e o nome do estádio;
   //     com op.fogos, a queima de fogos junto. Um toque na tela pula. op: { dur (s), fogos, texto, angulo }. Devolve uma Promise.
-  //   Os dois só funcionam com um estádio da Série A montado (o último construir).
+  //   Os dois só funcionam com um estádio do Brasileirão A montado (o último construir).
   let ULT = null, FX = null;
   const NFX = 4200;
   function fxMontar() {
@@ -2118,7 +2118,7 @@
     return ks[h % ks.length];
   }
 
-  // a casa de cada clube da Série A (serieb.js, TIMES_A): o modelo mais parecido com o estádio de verdade de cada um
+  // a casa de cada clube do Brasileirão A (serieb.js, TIMES_A): o modelo mais parecido com o estádio de verdade de cada um
   //   (7.4.0) cada clube na sua casa; quem não tem estádio próprio joga onde já joga (as Laranjeiras dividem o Anel com o Urubu).
   //   A Arena da Floresta não é de ninguém: é o campo neutro da final da Copa do Brasil (serieb.js).
   const CASA_DO_CLUBE = { urubu: 'anel', laranjeiras: 'anel', raposa: 'lagoa', periquito: 'caldeirao', imortal: 'humaita', peixe: 'vila',
@@ -2132,9 +2132,9 @@
     reddevils: 'theatre', merseyreds: 'kop', gunners: 'bowl', citizens: 'masts', lilywhites: 'wall', kingsroad: 'towns', magpies: 'towns',
     villans: 'towns', toffees: 'towns', eagles: 'towns', sherwood: 'towns', peacocks: 'towns', seagulls: 'towns', blackcats: 'towns',
     skyblues: 'towns', tractors: 'towns', tigers: 'towns', cottagers: 'brick', cherries: 'brick', bees: 'brick' };
-  // quem subiu da Série B (sem casa na lista) joga num dos estádios do interior, sempre o mesmo
+  // quem subiu do Brasileirão B (sem casa na lista) joga num dos estádios do interior, sempre o mesmo
   const DO_INTERIOR = ['caipira', 'taboao', 'oeste'];
   const modeloDoClube = (k) => CASA_DO_CLUBE[k] || (k ? DO_INTERIOR[(typeof sementeDe === 'function' ? sementeDe('casa|' + k) : String(k).length) % DO_INTERIOR.length] : '');
   window.EstadiosA = { construir, modelos: () => Object.keys(MODELOS), nome: (k) => NOMES[k] || '', modeloDoTime, modeloDoClube, fogos, pararFogos, cena, atual: () => ULT && Object.assign({}, ULT) };
-  if (window.FutebolJS && window.FutebolJS.registrarFase) window.FutebolJS.registrarFase({ id: 'estadiosA', nome: 'Estádios da Série A', nucleoMinimo: '7.2', iniciar: async () => {}, EstadiosA: window.EstadiosA });
+  if (window.FutebolJS && window.FutebolJS.registrarFase) window.FutebolJS.registrarFase({ id: 'estadiosA', nome: 'Estádios do Brasileirão A', nucleoMinimo: '7.2', iniciar: async () => {}, EstadiosA: window.EstadiosA });
 })();

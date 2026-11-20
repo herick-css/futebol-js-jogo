@@ -35,7 +35,7 @@
   }
   function trofeu(tipo, cores) {
     const L = new Lote(); let base = 0.09, baseH = 0.05, extra = null;
-    if (tipo === 'seriea') {                                                     // (7.3.0) a taça da Série A: maior, toda dourada, base preta de mármore
+    if (tipo === 'seriea') {                                                     // (7.3.0) a taça do Brasileirão A: maior, toda dourada, base preta de mármore
       L.caixa(0.32, 0.1, 0.32, COR.preto, 0, 0.05, 0); L.caixa(0.325, 0.016, 0.325, COR.ouro, 0, 0.1, 0);
       L.caixa(0.006, 0.05, 0.16, COR.ouro3, 0.161, 0.05, 0);
       L.caixa(0.22, 0.07, 0.22, COR.ouro2, 0, 0.143, 0); L.caixa(0.15, 0.05, 0.15, COR.ouro, 0, 0.203, 0);
@@ -313,7 +313,7 @@
     const virar = (A, x, z) => { A.olha = Math.atan2(z - A.z, x - A.x); A.yaw = A.olha; };
     const torcida = () => { try { crowd.comemorar(0); } catch (e) { /* nada */ } };
     try {
-      // 0) (7.4.0) jogo grande num estádio da Série A: o estádio por fora com a queima de fogos
+      // 0) (7.4.0) jogo grande num estádio do Brasileirão A: o estádio por fora com a queima de fogos
       if (o.cfg && o.cfg.fogos && window.EstadiosA && typeof ESTADIO_A !== 'undefined' && ESTADIO_A) {
         await io.preto(false, 500);
         await window.EstadiosA.cena({ fogos: true, dur: 6.5, texto: window.T('É CAMPEÃO!') });   // (aqui dentro o T é o troféu: a tradução é a do jogo, window.T)
@@ -569,7 +569,7 @@
     try {
       corta({ p: [0, 1.35, 6.4], p2: [0, 1.35, 5.7], t: [0, 1.35, -0.5], dur: 4 });   // reto, na altura do peito: o título lá em cima e a apresentadora acima da caixa de fala
       await io.preto(false, 700);
-      await fala(apr, T('Apresentadora'), o.saudacao ? o.saudacao : o.nivel === 'seriea' ? T('Boa noite! Bem-vindos à festa de premiação da Série A!') : o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação da Série B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
+      await fala(apr, T('Apresentadora'), o.saudacao ? o.saudacao : o.nivel === 'seriea' ? T('Boa noite! Bem-vindos à festa de premiação do Brasileirão A!') : o.nivel === 'serieb' ? T('Boa noite! Bem-vindos à festa de premiação do Brasileirão B!') : T('Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!'), 0);
       await fala(apr, T('Apresentadora'), T('Chegou a hora dos prêmios individuais. Vamos lá!'), 0);
       for (const P of o.premios) {
         if (!P) continue;
@@ -686,8 +686,8 @@
     "Pode chamar a imprensa: hoje eu dou entrevista para todo mundo.": ["Call the press: today I'm giving interviews to everyone.", "Pueden llamar a la prensa: hoy doy entrevistas a todo el mundo.", "Chiamate pure la stampa: oggi rilascio interviste a tutti.", "Appelez la presse : aujourd'hui, je donne des interviews à tout le monde."],
     "Eu nasci para levantar troféus. Esse é o primeiro de muitos.": ["I was born to lift trophies. This is the first of many.", "Nací para levantar trofeos. Este es el primero de muchos.", "Il mio destino è alzare trofei. Questo è il primo di tanti.", "Mon destin, c'est de soulever des trophées. C'est le premier d'une longue série."],
     "Apresentadora": ["Host", "Presentadora", "Presentatrice", "Présentatrice"],
-    "Boa noite! Bem-vindos à festa de premiação da Série A!": ["Good evening! Welcome to the Série A awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série A!", "Buonasera! Benvenuti alla serata di premiazione della Série A!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série A !"],
-    "Boa noite! Bem-vindos à festa de premiação da Série B!": ["Good evening! Welcome to the Série B awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Série B!", "Buonasera! Benvenuti alla serata di premiazione della Série B!", "Bonsoir ! Bienvenue à la soirée des trophées de la Série B !"],
+    "Boa noite! Bem-vindos à festa de premiação do Brasileirão A!": ["Good evening! Welcome to the Brasileirão A awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios del Brasileirão A!", "Buonasera! Benvenuti alla serata di premiazione del Brasileirão A!", "Bonsoir ! Bienvenue à la soirée des trophées du Brasileirão A !"],
+    "Boa noite! Bem-vindos à festa de premiação do Brasileirão B!": ["Good evening! Welcome to the Brasileirão B awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios del Brasileirão B!", "Buonasera! Benvenuti alla serata di premiazione del Brasileirão B!", "Bonsoir ! Bienvenue à la soirée des trophées du Brasileirão B !"],
     "Boa noite! Bem-vindos à festa de premiação do Campeonato de Várzea!": ["Good evening! Welcome to the Amateur Tournament awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios del Campeonato de Barrio!", "Buonasera! Benvenuti alla serata di premiazione del Torneo dei Dilettanti!", "Bonsoir ! Bienvenue à la soirée des trophées du Championnat Amateur !"],
     "Chegou a hora dos prêmios individuais. Vamos lá!": ["It's time for the individual awards. Here we go!", "Llegó la hora de los premios individuales. ¡Vamos allá!", "È arrivato il momento dei premi individuali. Si comincia!", "C'est l'heure des trophées individuels. C'est parti !"],
     "E {0} vai para... {1}!": ["And {0} goes to... {1}!", "Y {0} es para... ¡{1}!", "E {0} va a... {1}!", "Et {0} revient à... {1} !"],

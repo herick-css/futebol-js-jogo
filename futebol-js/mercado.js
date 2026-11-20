@@ -999,6 +999,7 @@
         }
         const ab = api.falaAmizade ? api.falaAmizade('cadu') : null;
         if (ab && ab.est === 'corte') { if (ab.l) await api.fala('cadu', ab.l); fim(); return; }   // -80: ele não conversa mais com você
+        if (api.recusaPapo && await api.recusaPapo('cadu')) { fim(); return; }   // já conversaram 2 vezes hoje
         const P = PAPOS_CADU.filter((q) => (!q.salvou || salvou) && (!q.novo || !salvou)), Q = P[(dm.papo | 0) % P.length]; dm.papo = (dm.papo | 0) + 1;
         if (ab && ab.l) await api.fala('cadu', ab.l);
         await api.fala('cadu', T(Q.p));
@@ -1070,6 +1071,7 @@
       }
       const ab = api.falaAmizade ? api.falaAmizade('pai') : null;
       if (ab && ab.est === 'corte') { if (ab.l) await api.fala('pai', ab.l); Dialogo.esconder(); return; }   // -80: o seu Raimundo não perde mais tempo
+      if (api.recusaPapo && await api.recusaPapo('pai')) { Dialogo.esconder(); return; }   // já conversaram 2 vezes hoje
       const Q = ab && ab.l ? ab.l : T(PAPOS_PAI[(dm.papoPai | 0) % PAPOS_PAI.length]); dm.papoPai = (dm.papoPai | 0) + 1;
       await api.fala('pai', Q);
       const r = await Escolha.mostrar(Q, [ab && ab.est === 'neg' ? T('Desculpa, seu Raimundo.') : T('Haha, verdade!'), T('Tá, seu Raimundo... o senhor fala demais.')]);
@@ -1084,7 +1086,7 @@
     const PAPOS_ROSA = [
       { p: 'Ai, você não sabe da última! O Toninho cortou o cabelo do seu Valdemar e ele saiu achando que tava dez anos mais novo.', a: ['Haha, e tava?', 'Tava nada! Mas deixa ele sonhar, né?'], b: ['Você sabe de tudo, hein?', 'Quem fica no caixa ouve a cidade inteira, meu bem.'], c: ['Que fofoca mais sem graça.', 'Nossa... tá bom, não te conto mais nada.'] },
       { p: 'Hoje tem prova de farmacologia na faculdade. Tô com o nome dos remédios escrito até na mão!', a: ['Você vai arrasar!', 'Ai, Deus te ouça! Depois te conto a nota.'], b: ['Enfermagem deve ser puxado.', 'Muito! Mas quando eu vestir o branco, vai valer cada noite sem dormir.'], c: ['Colando na prova? Que feio.', 'Colando? É pra estudar no ônibus! Credo.'] },
-      { p: 'Você já foi no forró da praça no sábado? Aquilo é a coisa mais animada da cidade!', a: ['Ainda não, mas quero ir!', 'Vai sim! Eu te ensino o passo, é fácil.'], b: ['Não sei dançar.', 'Ninguém sabe no começo! É só seguir o sanfoneiro.'], c: ['Forró é coisa de gente velha.', 'Velha? A pista lota de gente jovem! Você que não sabe o que perde.'] },
+      { p: 'Você já foi no pagode da praça no sábado à noite? Aquilo é a coisa mais animada da cidade!', a: ['Ainda não, mas quero ir!', 'Vai sim! Eu te ensino o passo, é fácil.'], b: ['Não sei dançar.', 'Ninguém sabe no começo! É só seguir o pandeiro.'], c: ['Pagode é coisa de gente velha.', 'Velha? A praça lota de gente jovem! Você que não sabe o que perde.'] },
       { p: 'Quando eu me formar, quero trazer minha mãe do interior pra morar comigo aqui. Ela nunca viu uma cidade com cinema!', a: ['Que sonho bonito!', 'Né? Vou levar ela no cinema do Herick no primeiro dia.'], b: ['Ela vai estranhar no começo.', 'Vai sim! Ela acorda às quatro pra tirar leite. Aqui vai acordar e ir pra padaria, haha.'], c: ['Sua mãe vai odiar isso aqui.', 'Hm. Você não conhece a minha mãe.'] },
       { p: 'Sabe quem leva mais coisa daqui? A Dona Cida. Uma vez levou trinta ovos de uma vez pra fazer pudim!', a: ['Trinta?! Que pudim é esse?', 'O de cupuaçu! Se você provar, nunca mais esquece.'], b: ['Ela cozinha pro restaurante, né?', 'É! E ainda leva marmita pra metade da cidade.'], c: ['E eu com isso?', 'Nada, ué. Só tava puxando assunto.'] },
       { p: 'O Cadu fica todo vermelho quando alguém elogia ele. Já reparou? É a coisa mais fofa.', a: ['Ele é gente boa demais.', 'É o melhor chefe que eu já tive. E olha que ele nem é o dono!'], b: ['Ele é tímido mesmo.', 'Tímido, mas quando o assunto é peixe, ninguém faz ele calar a boca!'], c: ['Ele é meio bobão.', 'Bobão nada! Respeita o meu chefe, hein.'] },
@@ -1114,13 +1116,13 @@
       'Muito! Mas quando eu vestir o branco, vai valer cada noite sem dormir.': ['Very! But when I put on the white uniform, every sleepless night will be worth it.', '¡Mucho! Pero cuando me ponga el uniforme blanco, va a valer cada noche sin dormir.', 'Tantissimo! Ma quando indosserò il camice bianco, varrà ogni notte insonne.', 'Très ! Mais quand je porterai la blouse blanche, chaque nuit blanche en aura valu la peine.'],
       'Colando na prova? Que feio.': ['Cheating on the exam? Shame on you.', '¿Copiando en el examen? Qué feo.', 'Copi all’esame? Che brutto.', 'Tu triches à l’examen ? C’est moche.'],
       'Colando? É pra estudar no ônibus! Credo.': ['Cheating? It’s to study on the bus! Geez.', '¿Copiando? ¡Es para estudiar en el colectivo! Dios mío.', 'Copiare? È per studiare sull’autobus! Ma dai.', 'Tricher ? C’est pour réviser dans le bus ! Franchement.'],
-      'Você já foi no forró da praça no sábado? Aquilo é a coisa mais animada da cidade!': ['Have you been to the forró dance in the square on Saturday? It’s the liveliest thing in town!', '¿Ya fuiste al forró de la plaza el sábado? ¡Es lo más animado de la ciudad!', 'Sei mai stato al forró della piazza il sabato? È la cosa più vivace della città!', 'Tu es déjà allé au forró de la place le samedi ? C’est le truc le plus animé de la ville !'],
+      'Você já foi no pagode da praça no sábado à noite? Aquilo é a coisa mais animada da cidade!': ['Have you been to the pagode in the square on Saturday night? It’s the liveliest thing in town!', '¿Ya fuiste al pagode de la plaza el sábado a la noche? ¡Es lo más animado de la ciudad!', 'Sei mai stato al pagode della piazza il sabato sera? È la cosa più vivace della città!', 'Tu es déjà allé au pagode de la place le samedi soir ? C’est le truc le plus animé de la ville !'],
       'Ainda não, mas quero ir!': ['Not yet, but I want to go!', 'Todavía no, ¡pero quiero ir!', 'Non ancora, ma voglio andarci!', 'Pas encore, mais je veux y aller !'],
       'Vai sim! Eu te ensino o passo, é fácil.': ['You should! I’ll teach you the steps, it’s easy.', '¡Ve! Te enseño el paso, es fácil.', 'Vai! Ti insegno il passo, è facile.', 'Viens ! Je t’apprends le pas, c’est facile.'],
       'Não sei dançar.': ['I can’t dance.', 'No sé bailar.', 'Non so ballare.', 'Je ne sais pas danser.'],
-      'Ninguém sabe no começo! É só seguir o sanfoneiro.': ['Nobody can at first! Just follow the accordion player.', '¡Nadie sabe al principio! Solo sigue al acordeonista.', 'Nessuno sa farlo all’inizio! Basta seguire il fisarmonicista.', 'Personne ne sait au début ! Il suffit de suivre l’accordéoniste.'],
-      'Forró é coisa de gente velha.': ['Forró is for old people.', 'El forró es cosa de viejos.', 'Il forró è roba da vecchi.', 'Le forró, c’est pour les vieux.'],
-      'Velha? A pista lota de gente jovem! Você que não sabe o que perde.': ['Old? The dance floor is packed with young people! You don’t know what you’re missing.', '¿Viejos? ¡La pista se llena de gente joven! Tú no sabes lo que te pierdes.', 'Vecchi? La pista è piena di giovani! Sei tu che non sai cosa ti perdi.', 'Vieux ? La piste est pleine de jeunes ! C’est toi qui ne sais pas ce que tu rates.'],
+      'Ninguém sabe no começo! É só seguir o pandeiro.': ['Nobody can at first! Just follow the pandeiro.', '¡Nadie sabe al principio! Solo sigue el pandeiro.', 'Nessuno sa farlo all’inizio! Basta seguire il pandeiro.', 'Personne ne sait au début ! Il suffit de suivre le pandeiro.'],
+      'Pagode é coisa de gente velha.': ['Pagode is for old people.', 'El pagode es cosa de viejos.', 'Il pagode è roba da vecchi.', 'Le pagode, c’est pour les vieux.'],
+      'Velha? A praça lota de gente jovem! Você que não sabe o que perde.': ['Old? The square is packed with young people! You don’t know what you’re missing.', '¿Viejos? ¡La plaza se llena de gente joven! Tú no sabes lo que te pierdes.', 'Vecchi? La piazza è piena di giovani! Sei tu che non sai cosa ti perdi.', 'Vieux ? La place est pleine de jeunes ! C’est toi qui ne sais pas ce que tu rates.'],
       'Quando eu me formar, quero trazer minha mãe do interior pra morar comigo aqui. Ela nunca viu uma cidade com cinema!': ['When I graduate, I want to bring my mom from the countryside to live with me here. She’s never seen a town with a cinema!', 'Cuando me reciba, quiero traer a mi mamá del interior a vivir conmigo aquí. ¡Nunca vio una ciudad con cine!', 'Quando mi laureo, voglio portare mia madre dalla campagna a vivere con me qui. Non ha mai visto una città con un cinema!', 'Quand j’aurai mon diplôme, je veux faire venir ma mère de la campagne pour vivre avec moi ici. Elle n’a jamais vu une ville avec un cinéma !'],
       'Que sonho bonito!': ['What a beautiful dream!', '¡Qué sueño tan lindo!', 'Che bel sogno!', 'Quel beau rêve !'],
       'Né? Vou levar ela no cinema do Herick no primeiro dia.': ['Right? I’ll take her to Herick’s cinema on day one.', '¿Verdad? La voy a llevar al cine de Herick el primer día.', 'Vero? La porterò al cinema di Herick il primo giorno.', 'Hein ? Je l’emmènerai au cinéma de Herick dès le premier jour.'],
@@ -1163,6 +1165,7 @@
       }
       const ab = api.falaAmizade ? api.falaAmizade('rosa') : null;
       if (ab && ab.est === 'corte') { if (ab.l) await api.fala('rosa', ab.l); return; }   // -80: ela não perde mais tempo com você
+      if (api.recusaPapo && await api.recusaPapo('rosa')) { return; }   // já conversaram 2 vezes hoje
       if (ab && ab.l) await api.fala('rosa', ab.l);
       const Q = PAPOS_ROSA[(dm.papoRosa | 0) % PAPOS_ROSA.length]; dm.papoRosa = (dm.papoRosa | 0) + 1;
       await api.fala('rosa', T(Q.p));

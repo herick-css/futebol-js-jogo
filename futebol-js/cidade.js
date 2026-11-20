@@ -121,19 +121,19 @@
      (desenharRemedio, 20 x 20) no painel e no balcão. Humilde/Ganancioso não tem remédio.
 
    NOVIDADES DA 7.1.14
-   - HABILIDADES: todas sobem e descem. Depois de cada jogo da história (evoluirPartida: sintético, futsal, várzea, Série B) os
+   - HABILIDADES: todas sobem e descem. Depois de cada jogo da história (evoluirPartida: sintético, futsal, várzea, Brasileirão B) os
      contadores de chutes no alvo, gols, dribles, domínios, cabeçadas, desarmes, assistências e passes viram pontos; a academia e o
      treino do seu Nonato rendem mais com Disciplinado; a recuperação sobe dormindo bem; o Goleiro (reflexo) sobe com fisgadas rápidas
      na pesca. DESTREINO: mais de 7 dias sem academia/jogo (físicas) ou 10 sem treino/jogo (técnicas) → −0,05 por dia (mínimo 5).
      Efeitos novos no seu jogador: desarme (chance do bote), defesa (alcance e tempo entre botes), goleiro (levanta mais rápido),
      recuperação (enche o fôlego mais rápido na história).
    - ESPECTROS: Ativo x SEDENTÁRIO (dia parado −3), Humilde x GANANCIOSO (bicho, sinuca valendo, dinheiro; trabalhar deixa humilde;
-     ganância baixa as propostas da Série B e os companheiros às vezes ignoram o seu pedido de bola), Disciplinado (sono, treino,
+     ganância baixa as propostas do Brasileirão B e os companheiros às vezes ignoram o seu pedido de bola), Disciplinado (sono, treino,
      expediente, porre), Confiante (resultados, gols, nota) e Tranquilo (cartões). Todos os efeitos agora valem na partida.
    - FOME: dia sem comer conta (dados.diasSemComer). Depois de 2 dias ele avisa; no 3º, 12 h depois de acordar sem comer, DESMAIA e
      acorda no hospital (o Doutor Paulo explica): −25 em Saudável e 3 dias DESNUTRIDO (−2 força/velocidade/resistência, −20% precisão).
    - RESSACA: vale o dia seguinte inteiro (dados.ressacaDia) e tira 30% da precisão do chute.
-   - POPULARIDADE (Série B): os seus jogos mexem na popularidade do clube (a lotação do estádio).
+   - POPULARIDADE (Brasileirão B): os seus jogos mexem na popularidade do clube (a lotação do estádio).
 
    NOVIDADES DA 7.1.12
    - ROUPAS (fase2.js): a barra da blusa agora fica POR CIMA da calça (antes a cintura da calça cortava moletons, jaquetas e
@@ -516,6 +516,9 @@
     // amizade e conversas com a Lúcia
     'Convidar para jogar': ['Invite to play', 'Invitar a jugar', 'Invita a giocare', 'Inviter à jouer'],
     'Chamar para sair': ['Ask her out', 'Invitarla a salir', 'Chiedile di uscire', 'L’inviter à sortir'],
+    'Foi bom conversar com você! Mas agora eu preciso voltar ao que eu tava fazendo.': ['It was nice talking to you! But now I need to get back to what I was doing.', '¡Fue lindo hablar contigo! Pero ahora tengo que volver a lo que estaba haciendo.', 'È stato bello parlare con te! Ma ora devo tornare a quello che stavo facendo.', 'C’était sympa de parler avec toi ! Mais là, je dois retourner à ce que je faisais.'],
+    'Hoje a gente já conversou bastante, né? Amanhã tem mais!': ['We already talked a lot today, huh? More tomorrow!', 'Hoy ya hablamos bastante, ¿no? ¡Mañana hay más!', 'Oggi abbiamo già chiacchierato parecchio, eh? Domani ce n’è ancora!', 'On a déjà bien discuté aujourd’hui, hein ? On remet ça demain !'],
+    'Agora não dá, tenho umas coisas pra resolver. A gente se fala amanhã!': ['Not now, I’ve got some things to sort out. Talk tomorrow!', 'Ahora no puedo, tengo unas cosas que resolver. ¡Hablamos mañana!', 'Adesso non posso, ho delle cose da sistemare. Ci sentiamo domani!', 'Pas maintenant, j’ai des trucs à régler. On se parle demain !'],
     'Foi muito bom conversar com você! Mas agora eu preciso trabalhar.': ['It was really nice talking to you! But now I need to work.', '¡Fue muy lindo hablar contigo! Pero ahora tengo que trabajar.', 'È stato bellissimo parlare con te! Ma ora devo lavorare.', 'C’était super de parler avec toi ! Mais maintenant je dois travailler.'],
     'Você acredita que hoje um cliente pediu café com sal? Disse que é costume da família.': ['Can you believe a customer ordered coffee with salt today? Said it’s a family tradition.', '¿Puedes creer que hoy un cliente pidió café con sal? Dijo que es costumbre de familia.', 'Ci credi che oggi un cliente ha chiesto il caffè con il sale? Ha detto che è un’abitudine di famiglia.', 'Tu crois qu’aujourd’hui un client a demandé un café salé ? Il a dit que c’est une tradition familiale.'],
     'Que estranho!': ['That’s weird!', '¡Qué raro!', 'Che strano!', 'C’est bizarre !'],
@@ -2982,6 +2985,7 @@
       }
       const ab = falaAmizade(id);
       if (ab && ab.est === 'corte') { if (ab.l) await fala(id, ab.l); return; }   // -80: não perde mais tempo com você
+      if (await recusaPapo(id)) return;                                 // já conversaram 2 vezes hoje
       if (ab && ab.l) await fala(id, ab.l);
       const L = i ? PAPOS_JULIA : PAPOS_CAIO, chave = i ? 'papoJulia' : 'papoCaio', Q = L[(f[chave] | 0) % L.length]; f[chave] = (f[chave] | 0) + 1;
       const p = Q.g ? Tg(Q.p) : T(Q.p);
@@ -3015,6 +3019,7 @@
       if (r === 0) { await fala('joao', T('Olha a galera chegando aí! Bora!')); Dialogo.esconder(); await jogarSintetico(); return; }
       await fala('joao', T('Beleza, mas não demora!'));
     } else {
+      if (await recusaPapo('joao')) { Dialogo.esconder(); return; }   // já conversaram 2 vezes hoje (na espera do racha ele sempre fala: é o convite para jogar)
       const p = ab && ab.l ? ab.l : Tf(JOAO_PAPOS[(f.papoJoaoCasa | 0) % JOAO_PAPOS.length], nome); f.papoJoaoCasa = (f.papoJoaoCasa | 0) + 1;
       await fala('joao', p);
       const r = await Escolha.mostrar(p, [T('Tudo certo, João!'), T('Tá, tá... você não cansa de falar, não?')]);   // dá para ser grosso até com o melhor amigo
@@ -4135,6 +4140,7 @@
       else if (A.tipo === 'clientePz') { if (S.pizzaria) S.pizzaria.tickCliente(A, dt); }   // (6.1.0) clientes da pizzaria.js
       else if (A.tipo === 'clienteRs') { if (S.restaurante) S.restaurante.tickCliente(A, dt); }   // (7.1.3) clientes do restaurante.js (self-service)
       else if (A.tipo === 'clienteBar') { if (S.bar) S.bar.tickCliente(A, dt); }
+      else if (A.tipo === 'pagode') { if (S.pagode) try { S.pagode.tickAtor(A, dt); } catch (e) { if (!S.erroPagode) { S.erroPagode = true; console.warn('[Cidade] pagode:', e); } } }
       else if (A.tipo === 'clienteEsp') { if (S.esportiva) S.esportiva.tickCliente(A, dt); }   // (7.1.9) os pseudo-clientes da loja esportiva   // (7.1.5) o povo do bar.js (bebe, dança, fuma, joga sinuca)
       else if (A.tipo === 'esteira') { A.andando = true; A.correndo = true; A.vel = 3; }
       else if (A.tipo === 'valdemar') tickValdemar(A, dt);
@@ -4611,7 +4617,7 @@
     }
   }
   const NOME_LUGAR = { cinema: 'Cinema', cafeteria: 'Cafeteria', supermercado: 'Supermercado', hospital: 'Hospital', bar: 'Bar', pizzaria: 'Pizzaria', restaurante: 'Restaurante', lanche: 'Lanche do seu Valdemar', academia: 'Academia', barbearia: 'Barbearia', esportiva: 'Golaço Esportes' };
-  // (7.1.2) um LUGAR montado por outro arquivo (imprensa.js: a chegada no estádio da Série B). O mesmo esquema das salas (a cidade fica
+  // (7.1.2) um LUGAR montado por outro arquivo (imprensa.js: a chegada no estádio do Brasileirão B). O mesmo esquema das salas (a cidade fica
   //   escondida e parada, as listas de colisão/pessoas trocam pelas do lugar), sem o interiores.js e sem escurecer a tela (quem chama
   //   cuida do preto). R = { nome, grupo, col, pisos, entrada: {x, z, yaw}, cam: {dist, pitch, yaw}, fundo, lim, saida, extras,
   //   semRelogio (o relógio não anda), semSaida (sem o "Sair"), alvos(v) (as interações do lugar), luz: { ceu, chao, hi, sol, si, sp } }.
@@ -4895,7 +4901,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'farmacia' ? abrirFarmacia : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); alvosRacha(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); alvosRacha(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.pagode) try { S.pagode.alvos(v); } catch (e) { console.warn('[Cidade] pagode:', e); } if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
@@ -4977,7 +4983,7 @@
   const FOME_DO_DIA = 2;
   // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
   // ---------------------------------------------------------------------------------------------------------------------- (7.1.14)
-  // EVOLUÇÃO DEPOIS DE CADA PARTIDA DA HISTÓRIA (sintético, futsal, várzea e Série B). Contadores em dados.evo.c; cada vez que um
+  // EVOLUÇÃO DEPOIS DE CADA PARTIDA DA HISTÓRIA (sintético, futsal, várzea e Brasileirão B). Contadores em dados.evo.c; cada vez que um
   //   enche, a habilidade sobe (até 10). Também mexe nos espectros (Ativo, Confiante, Tranquilo) e marca o dia do último jogo
   //   (o destreino e o sedentarismo contam a partir dele).
   //     10 chutes no alvo → +0,25 chute, efeito e força     3 gols → +0,25 finalização          8 dribles certos → +0,25 drible
@@ -5346,6 +5352,7 @@
       painelRecolhivel, fimPainel, criarRuaAgendada, sumirV, surgirV, Amizade,    // painel que vira ícone; Cadu e Rosa na rua
       grosseria, falaGrossa,                                             // a grosseria nas conversas (−5 corações, +arrogância)
       aberturaAmizade, falaAmizade, linhaAmizade, precoAmizade, recusaAmizade, checarAtendimento, papoAmizade,   // amizade negativa, corte e amigos (falas.js)
+      recusaPapo, papoEsgotado,                                          // só 2 conversas por dia que mexem nos corações
       lojaGente, lojaSaiu, lojaRestam, semente,                         // (6.6.5) o registro de quem está nas lojas
       mariposa,                                                          // a mariposa: o que acabou de acontecer muda a história
     };
@@ -5378,11 +5385,15 @@
   function apiBar() {
     return Object.assign(apiRestaurante(), { mensagemCelular, adulto: () => !!(S.dados.pro && S.dados.pro.presente), valdemarNoBar: () => !!(S.valdemar && S.valdemar.estado === 'bar'), nomeJogFem: () => fem() });
   }
+  // o que o pagode.js (a roda de sábado na praça: a banda que vem de fora, o povo dançando e a Rosa) usa daqui
+  function apiPagode() {
+    return Object.assign(apiBar(), { PRACA, PRACA_C, rotaGente, pontaPara, irEmbora, chegarDeFora });
+  }
   // o que o varzea.js (o campeonato de várzea) usa daqui: o da barbearia e mais a partida (sair/voltar), a carreira, o mapa da várzea e o celular
   function apiVarzea() {
     return Object.assign(apiBarbearia(), { evoluirPartida, VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao, chegarDeFora, irEmbora });
   }
-  // o que o serieb.js (a peneira e a carreira na Série B) usa daqui: o da várzea, o ponto de ônibus, a Lúcia (cenas do presente) e a ida
+  // o que o serieb.js (a peneira e a carreira no Brasileirão B) usa daqui: o da várzea, o ponto de ônibus, a Lúcia (cenas do presente) e a ida
   //   para o quarto com uma cena pronta (a carta da peneira)
   function apiSerieB() {
     return Object.assign(apiVarzea(), { PONTO: { x: -114.6, z: 9.0 }, apLucia, irParaFase2 });
@@ -5587,10 +5598,27 @@
     }
     return false;
   }
-  // conversar de boa aproxima: +n uma vez por dia com cada um (e não vale depois do corte)
+  // CONVERSAS QUE CONTAM (a mesma regra da Lúcia): com cada personagem com nome, só as 2 primeiras conversas do dia mexem nos corações,
+  //   para ganhar (papoAmizade) ou para perder (grosseria). Na 3ª, ele diz que agora não dá (recusaPapo) e fica para amanhã.
+  const PAPOS_POR_DIA = 2;
+  const RECUSA_PAPO = ['Foi bom conversar com você! Mas agora eu preciso voltar ao que eu tava fazendo.', 'Hoje a gente já conversou bastante, né? Amanhã tem mais!', 'Agora não dá, tenho umas coisas pra resolver. A gente se fala amanhã!'];
+  function papoDoDia(id) {
+    const d = S.dados, hoje = d.dia || 1, P = d.papoDia || (d.papoDia = {});
+    if (!P[id] || P[id].dia !== hoje) P[id] = { dia: hoje, n: 0 };
+    return P[id];
+  }
+  const papoEsgotado = (id) => !!(S && S.dados) && id !== 'lucia' && papoDoDia(id).n >= PAPOS_POR_DIA;
+  async function recusaPapo(id, quem) {                                  // true = já conversaram 2 vezes hoje (e ele avisou)
+    if (!papoEsgotado(id)) return false;
+    await fala(quem || id, T(RECUSA_PAPO[Math.floor(Math.random() * RECUSA_PAPO.length)]));
+    return true;
+  }
+  // conversar de boa aproxima: +n (até 2 conversas por dia com cada um); comprar dele (n = 1) aproxima uma vez por dia; nada depois do corte
   function papoAmizade(id, n = 2) {
-    const d = S.dados, pd = d.papoAmizade || (d.papoAmizade = {});
-    if (pd[id] === (d.dia || 1) || Amizade.cortado(id)) return;
+    const d = S.dados; if (Amizade.cortado(id)) return;
+    if (n >= 2) { const P = papoDoDia(id); if (P.n >= PAPOS_POR_DIA) return; P.n++; Amizade.somar(id, n); return; }
+    const pd = d.papoAmizade || (d.papoAmizade = {});
+    if (pd[id] === (d.dia || 1)) return;
     pd[id] = d.dia || 1; Amizade.somar(id, n);
   }
   const desceMariposa = () => { try { return typeof Mariposa !== 'undefined' && Mariposa.comTexto() ? 46 : 0; } catch (e) { return 0; } };   // a explicação da mariposa ocupa o alto
@@ -5619,7 +5647,10 @@
   function mariposa() { try { return typeof Mariposa !== 'undefined' ? Mariposa.mostrar() : Promise.resolve(); } catch (e) { return Promise.resolve(); } }
   function grosseria(id) {
     mariposa();                                                          // falar mal de alguém marca a história (corações e Problemático)
-    if (S && S.dados) Amizade.somar(id, GROSSO_CORACOES); else amizadeNaTela(id, GROSSO_CORACOES);
+    if (S && S.dados) {                                                  // a grosseria também é uma das 2 conversas do dia que mexem nos corações
+      const P = id === 'lucia' ? null : papoDoDia(id);                   // (a Lúcia tem a conta dela, luciaPapoDia)
+      if (!P || P.n < PAPOS_POR_DIA) { if (P) P.n++; Amizade.somar(id, GROSSO_CORACOES); }
+    } else amizadeNaTela(id, GROSSO_CORACOES);
     marcarArrogancia('foi grosso com ' + (NOME_AMIGO[id] || id));
     if (S && S.dados) gravar(S.dados.ponto || 'chegada');
   }
@@ -8926,7 +8957,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         tickComemoracao(dt); tickJogador(dt); tickPessoas(dt); tickVomito(dt);
         if (S.mercado) S.mercado.tick(dt);                              // (5.3.1) depois do tickJogador: a pose de carregar caixa vale
         if (S.pizzaria) S.pizzaria.tick(dt);                            // (6.1.0) idem (bicicleta, caixa de pizza, Carla e Mário)
-        if (S.bar) try { S.bar.tick(dt); } catch (e) { if (!S.erroBar) { S.erroBar = true; console.warn('[Cidade] bar:', e); } }   // (7.1.5) o bar, o e-mail do bicho e o capuz chegando
+        if (S.bar) try { S.bar.tick(dt); } catch (e) { if (!S.erroBar) { S.erroBar = true; console.warn('[Cidade] bar:', e); } }
+        if (S.pagode) try { S.pagode.tick(dt); } catch (e) { if (!S.erroPagode) { S.erroPagode = true; console.warn('[Cidade] pagode:', e); } }   // (7.1.5) o bar, o e-mail do bicho e o capuz chegando
         if (S.esportiva) try { S.esportiva.tick(dt); } catch (e) { if (!S.erroEsp) { S.erroEsp = true; console.warn('[Cidade] esportiva:', e); } }   // (7.1.9) a prévia das comemorações, o Dedé e os clientes
         if (S.restaurante) try { S.restaurante.tick(dt); } catch (e) { if (!S.erroRest) { S.erroRest = true; console.warn('[Cidade] restaurante:', e); } }   // (7.1.3) a Dona Cida, o Renan, os clientes e a chegada deles de manhã
         if (S.academia) S.academia.tick(dt);                            // (6.2.0) idem (catracas, poses dos aparelhos, minigames)
@@ -8957,6 +8989,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.pizzaria) try { S.pizzaria.limpar(); } catch (e) { console.warn('[Cidade] pizzaria:', e); }
     if (S.restaurante) try { S.restaurante.limpar(); } catch (e) { console.warn('[Cidade] restaurante:', e); }
     if (S.bar) try { S.bar.limpar(); } catch (e) { console.warn('[Cidade] bar:', e); }
+    if (S.pagode) try { S.pagode.limpar(); } catch (e) { console.warn('[Cidade] pagode:', e); }
     if (S.esportiva) try { S.esportiva.limpar(); } catch (e) { console.warn('[Cidade] esportiva:', e); }
     if (S.academia) try { S.academia.limpar(); } catch (e) { console.warn('[Cidade] academia:', e); }
     if (S.cinema) try { S.cinema.limpar(); } catch (e) { console.warn('[Cidade] cinema:', e); }
@@ -9021,9 +9054,10 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       mods.push(Fases.carregar('cinema').then((m) => { if (S && m && m.criar) S.cinema = m.criar(apiCinema()); }, (e) => console.warn('[Cidade] cinema.js não veio:', e)));   // o cinema que paga (Herick, Joana, segurança)
       mods.push(Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e)));
       mods.push(Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e)));
-      mods.push(Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e)));   // a peneira e a Série B   // o campeonato de várzea   // a barbearia (cortes da loja)
+      mods.push(Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e)));   // a peneira e o Brasileirão B   // o campeonato de várzea   // a barbearia (cortes da loja)
       mods.push(Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e)));   // (6.4.0) pesca no lago
-      mods.push(Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e)));   // (6.6.16) o treino com a turma do Nonato
+      mods.push(Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e)));
+      mods.push(Fases.carregar('pagode').then((m) => { if (S && m && m.criar) S.pagode = m.criar(apiPagode()); }, (e) => console.warn('[Cidade] pagode.js não veio:', e)));   // a roda de pagode da praça (sábado à noite)   // (6.6.16) o treino com a turma do Nonato
       prepararDia(dados);
       montarCidade(); if (S.vidros) { const v = S.vidros.malha(S.matJanela = guardar(new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x000000 }))); S.grupo.add(v); S.vidros = null; } montarLuzes(); criarCarros(); montarMarca(); criarBolaQuadra();
       S.planta.push({ r: FUTSAL, cor: '#d07a33', chao: true }, { r: SOCIETY, cor: '#4f9a3f', chao: true });

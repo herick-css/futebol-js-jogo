@@ -3,7 +3,7 @@
    - Registrado com FutebolJS.registrarFase({ id: 'livre' }) só para o jogo saber baixar o arquivo; o menu inicial (jogo.js) chama
      Fases.carregar('livre').then((m) => m.abrir()).
    - Os tipos:
-       Campeonato ... a Série A ou a Série B (Brasil) ou (7.5.2) a Liga Espanhola ou a Liga Inglesa (20 times cada), rápido
+       Campeonato ... o Brasileirão A ou o Brasileirão B (Brasil) ou (7.5.2) a Liga Espanhola ou a Liga Inglesa (20 times cada), rápido
                       (19 rodadas, só turno) ou padrão (38, turno e returno). A tabela, as
                       rodadas simuladas dos outros jogos, artilharia, cartões e suspensões (3 amarelos ou 1 vermelho = 1 jogo fora,
                       como na vida real), lesões, a festa do título e a noite dos prêmios individuais. Fica salvo no aparelho.
@@ -48,8 +48,8 @@
   // (7.5.2) as ligas: 'A' e 'B' (Brasil), 'ES' (Espanha) e 'EN' (Inglaterra)
   const LISTA_DIV = { A: 'TIMES_A', B: 'TIMES_B', ES: 'TIMES_ES', EN: 'TIMES_EN' };
   const timesDiv = (div) => (LISTA_DIV[div] ? SBD[LISTA_DIV[div]] || [] : VZD ? VZD.TIMES_VZ : []).map((t) => t.k);
-  const NOME_DIV = { A: 'Série A', B: 'Série B', ES: 'Liga Espanhola', EN: 'Liga Inglesa' };
-  const nomeDiv = (div) => NOME_DIV[div] || 'Série A';
+  const NOME_DIV = { A: 'Brasileirão A', B: 'Brasileirão B', ES: 'Liga Espanhola', EN: 'Liga Inglesa' };
+  const nomeDiv = (div) => NOME_DIV[div] || 'Brasileirão A';
   const europa = (div) => div === 'ES' || div === 'EN';
 
   // ============================================================================================ A TELA (pixel art, como o menu)
@@ -258,7 +258,7 @@
       if (r.k) return r.k;
     }
   }
-  const GRUPOS_BR = () => [{ nome: 'Série A', times: timesDiv('A') }, { nome: 'Série B', times: timesDiv('B') }];
+  const GRUPOS_BR = () => [{ nome: 'Brasileirão A', times: timesDiv('A') }, { nome: 'Brasileirão B', times: timesDiv('B') }];
   // (7.5.2) amistoso, sintético e futsal: o Brasil e as ligas da Europa
   const GRUPOS_TODOS = () => GRUPOS_BR().concat([{ nome: 'Liga Espanhola', times: timesDiv('ES') }, { nome: 'Liga Inglesa', times: timesDiv('EN') }]);
 
@@ -432,7 +432,7 @@
       cl.map((x, i) => '<tr class="' + (x.k === S.nosso ? 'nos ' : '') + zonaCamp(S, i + 1) + '"><td>' + (i + 1) + '</td><td class="n"><img src="' + urlT(x.k) + '" alt="">' + escH(nomeT(x.k)) + '</td><td><b>' + x.p + '</b></td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('') + '</table>' +
       '<p class="lvLeg">' + (europa(S.div) ? '<i style="background:#3f9d2a"></i>' + escH(T('Copa dos Campeões da Europa')) + '<i style="background:#2a7ad6"></i>' + escH(T('Torneio Europeu')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))
         : S.div === 'A' ? '<i style="background:#3f9d2a"></i>' + escH(T('Libertadores')) + '<i style="background:#2a7ad6"></i>' + escH(T('Pré-Libertadores')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))
-        : '<i style="background:#3f9d2a"></i>' + escH(T('Acesso à Série A')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))) + '</p>';
+        : '<i style="background:#3f9d2a"></i>' + escH(T('Acesso ao Brasileirão A')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))) + '</p>';
   }
   const linhaJogo = (S, c, f, gc, gf, pen, extra) => '<div class="lvJogo' + (c === S.nosso || f === S.nosso ? ' nos' : '') + '"><span><img src="' + urlT(c) + '" alt="">' + escH(siglaT(c)) + '</span><b>' + (gc < 0 ? 'x' : gc + ' x ' + gf) + (pen ? ' <small>(' + pen[0] + '-' + pen[1] + ')</small>' : '') + '</b><span>' + escH(siglaT(f)) + '<img src="' + urlT(f) + '" alt=""></span>' + (extra || '') + '</div>';
   function htmlRodada(S, r) {
@@ -690,7 +690,7 @@
 
   // ---------------------------------------------------------------------------------------- A ABERTURA (a cena antes do apito)
   //   completa: o estádio por fora (com fogos nos jogos grandes) → o ônibus chegando e os jogadores descendo → o vestiário (o técnico
-  //   falando) → a torcida → os times entrando em campo e perfilados. curta: o estádio e a entrada. Campo sem estádio da Série A
+  //   falando) → a torcida → os times entrando em campo e perfilados. curta: o estádio e a entrada. Campo sem estádio do Brasileirão A
   //   (society, futsal, várzea): o vestiário e a entrada. O botão PULAR corta tudo.
   let legEl = null, pularEl = null;
   function legenda(t) { if (!legEl) { legEl = document.createElement('div'); legEl.id = 'lvLegenda'; document.body.appendChild(legEl); } legEl.textContent = t || ''; legEl.hidden = !t; }
@@ -1085,7 +1085,7 @@
     if (!S) {
       // o país (Brasil; no campeonato, também Espanha e Inglaterra: 7.5.2), a liga, o formato e o time
       const bPais = (a, nome, desc, off) => '<button type="button" class="pxBtn lvTipo" ' + (off ? 'disabled' : 'data-a="' + a + '"') + '><b>' + escH(T(nome)) + '</b><small>' + escH(T(desc)) + '</small></button>';
-      const el = tela('<div class="lvCaixa">' + topo(T('Escolha o país')) + '<div class="lvGrade">' + bPais('BR', 'Brasil', tipo === 'camp' ? 'Série A e Série B' : 'Copa do Brasil') +
+      const el = tela('<div class="lvCaixa">' + topo(T('Escolha o país')) + '<div class="lvGrade">' + bPais('BR', 'Brasil', tipo === 'camp' ? 'Brasileirão A e Brasileirão B' : 'Copa do Brasil') +
         (tipo === 'camp' ? bPais('ES', 'Espanha', 'Liga Espanhola: 20 times, a elite do país') + bPais('EN', 'Inglaterra', 'Liga Inglesa: 20 times, a elite do país')
           : bPais('', 'Em breve', 'Outros países', true)) + '</div></div>');
       const pais = (await escolha(el)).a;
@@ -1094,8 +1094,8 @@
         let div = pais;
         if (pais === 'BR') {
           const e2 = tela('<div class="lvCaixa">' + topo(T('Escolha o campeonato')) + '<div class="lvGrade">' +
-            '<button type="button" class="pxBtn lvTipo" data-a="A"><b>' + escH(T('Série A')) + '</b><small>' + escH(T('Os 20 melhores do país')) + '</small></button>' +
-            '<button type="button" class="pxBtn lvTipo" data-a="B"><b>' + escH(T('Série B')) + '</b><small>' + escH(T('20 times brigando pelo acesso')) + '</small></button></div></div>');
+            '<button type="button" class="pxBtn lvTipo" data-a="A"><b>' + escH(T('Brasileirão A')) + '</b><small>' + escH(T('Os 20 melhores do país')) + '</small></button>' +
+            '<button type="button" class="pxBtn lvTipo" data-a="B"><b>' + escH(T('Brasileirão B')) + '</b><small>' + escH(T('20 times brigando pelo acesso')) + '</small></button></div></div>');
           div = (await escolha(e2)).a; if (div !== 'A' && div !== 'B') return;
         }
         const e3 = tela('<div class="lvCaixa">' + topo(T('Formato')) + '<div class="lvGrade">' +
@@ -1105,7 +1105,7 @@
         const k = await escolherTime(T('Escolha o seu time'), [{ nome: nomeDiv(div), times: timesDiv(div) }]); if (!k) return;
         S = novoCampeonato(div, fmt, k);
       } else {
-        const k = await escolherTime(T('Escolha o seu time'), GRUPOS_BR(), null, T('32 times: os 20 da Série A e os 12 melhores da Série B (o seu sempre entra).')); if (!k) return;
+        const k = await escolherTime(T('Escolha o seu time'), GRUPOS_BR(), null, T('32 times: os 20 do Brasileirão A e os 12 melhores do Brasileirão B (o seu sempre entra).')); if (!k) return;
         S = novaCopa(k);
       }
       salvar(tipo, S);
@@ -1255,7 +1255,7 @@
       const lista = listaPremios(S); if (!lista.length) return;
       const F = await Fases.carregar('festa');
       esconder(); await preto(true, 300); semTitulo();
-      await F.gala({ nivel: tipo === 'camp' && S.div === 'B' ? 'serieb' : 'seriea', titulo: tipo === 'copa' ? T('PRÊMIOS DA COPA DO BRASIL') : S.div === 'ES' ? T('PRÊMIOS DA LIGA ESPANHOLA') : S.div === 'EN' ? T('PRÊMIOS DA LIGA INGLESA') : S.div === 'A' ? T('PRÊMIOS DA SÉRIE A') : T('PRÊMIOS DA SÉRIE B'),
+      await F.gala({ nivel: tipo === 'camp' && S.div === 'B' ? 'serieb' : 'seriea', titulo: tipo === 'copa' ? T('PRÊMIOS DA COPA DO BRASIL') : S.div === 'ES' ? T('PRÊMIOS DA LIGA ESPANHOLA') : S.div === 'EN' ? T('PRÊMIOS DA LIGA INGLESA') : S.div === 'A' ? T('PRÊMIOS DO BRASILEIRÃO A') : T('PRÊMIOS DO BRASILEIRÃO B'),
         saudacao: tipo === 'copa' ? T('Boa noite! Bem-vindos à festa de premiação da Copa do Brasil!') : S.div === 'ES' ? T('Boa noite! Bem-vindos à festa de premiação da Liga Espanhola!') : S.div === 'EN' ? T('Boa noite! Bem-vindos à festa de premiação da Liga Inglesa!') : null, premios: lista, io: { preto, esperar } });
     } catch (e) { console.error('[Livre] noite dos prêmios:', e); }
   }
@@ -1315,7 +1315,7 @@
         '<button type="button" class="pxBtn" data-a="descartar">' + escH(T('Descartar')) + '</button></div></div>';
     }
     const el = tela('<div class="lvCaixa">' + topo(T('Partida livre')) + cont + '<p class="lvSub">' + escH(T('Escolha o tipo de jogo.')) + '</p><div class="lvGrade">' +
-      item('camp', 'Campeonato', 'Brasil (Série A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.', !!D0.camp) +
+      item('camp', 'Campeonato', 'Brasil (Brasileirão A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.', !!D0.camp) +
       item('copa', 'Copa', 'Copa do Brasil: 32 times, mata-mata e a final num estádio grande. Fica salva.', !!D0.copa) +
       item('amistoso', 'Amistoso', 'Um jogo entre quaisquer times do Brasil, da Espanha e da Inglaterra, no estádio que você quiser.') +
       item('varzea', 'Várzea', 'Os times do Campeonato de Várzea, no campo de terra da cidadezinha.') +
@@ -1391,13 +1391,13 @@
     "19 rodadas: todos se enfrentam uma vez": ["19 rounds: everyone plays each other once", "19 jornadas: todos se enfrentan una vez", "19 giornate: tutti si affrontano una volta", "19 journées : tout le monde s'affronte une fois"],
     "20 times brigando pelo acesso": ["20 teams fighting for promotion", "20 equipos luchando por el ascenso", "20 squadre in lotta per la promozione", "20 équipes qui luttent pour la montée"],
     "3 amarelos ou 1 vermelho: 1 jogo de suspensão. Lesão: fora pelos jogos indicados.": ["3 yellows or 1 red: a 1-match ban. Injury: out for the matches shown.", "3 amarillas o 1 roja: 1 partido de sanción. Lesión: fuera los partidos indicados.", "3 gialli o 1 rosso: 1 giornata di squalifica. Infortunio: fuori per le partite indicate.", "3 jaunes ou 1 rouge : 1 match de suspension. Blessure : absent pour les matchs indiqués."],
-    "32 times: os 20 da Série A e os 12 melhores da Série B (o seu sempre entra).": ["32 teams: the 20 from Série A and the 12 best from Série B (yours always gets in).", "32 equipos: los 20 de la Série A y los 12 mejores de la Série B (el tuyo siempre entra).", "32 squadre: le 20 della Série A e le 12 migliori della Série B (la tua entra sempre).", "32 équipes : les 20 de Série A et les 12 meilleures de Série B (la tienne entre toujours)."],
+    "32 times: os 20 do Brasileirão A e os 12 melhores do Brasileirão B (o seu sempre entra).": ["32 teams: the 20 from Brasileirão A and the 12 best from Brasileirão B (yours always gets in).", "32 equipos: los 20 del Brasileirão A y los 12 mejores del Brasileirão B (el tuyo siempre entra).", "32 squadre: le 20 del Brasileirão A e le 12 migliori del Brasileirão B (la tua entra sempre).", "32 équipes : les 20 du Brasileirão A et les 12 meilleures du Brasileirão B (la tienne entre toujours)."],
     "38 rodadas: turno e returno, como o de verdade": ["38 rounds: home and away, like the real one", "38 jornadas: ida y vuelta, como el de verdad", "38 giornate: andata e ritorno, come quello vero", "38 journées : aller et retour, comme le vrai"],
     "A cena antes do jogo: o estádio, o ônibus, o vestiário, a torcida e a entrada em campo.": ["The scene before the match: the stadium, the bus, the locker room, the crowd and the walk onto the pitch.", "La escena antes del partido: el estadio, el autobús, el vestuario, la afición y la salida al campo.", "La scena prima della partita: lo stadio, il pullman, lo spogliatoio, i tifosi e l'ingresso in campo.", "La scène avant le match : le stade, le bus, le vestiaire, les supporters et l'entrée sur le terrain."],
     "A rodada · você está em {0}º ({1} pts)": ["The round · you are {0}th ({1} pts)", "La jornada · estás {0}º ({1} pts)", "La giornata · sei {0}º ({1} pt)", "La journée · tu es {0}e ({1} pts)"],
     "A torcida do {0} faz a festa": ["The {0} fans are partying", "La afición del {0} hace la fiesta", "I tifosi del {0} fanno festa", "Les supporters de {0} font la fête"],
     "Abertura": ["Opening", "Apertura", "Apertura", "Ouverture"],
-    "Acesso à Série A": ["Promotion to Série A", "Ascenso a la Série A", "Promozione in Série A", "Montée en Série A"],
+    "Acesso ao Brasileirão A": ["Promotion to Brasileirão A", "Ascenso al Brasileirão A", "Promozione nel Brasileirão A", "Montée au Brasileirão A"],
     "Adiantar": ["Fast-forward", "Adelantar", "Avanti veloce", "Avancer"],
     "Automático": ["Automatic", "Automático", "Automatico", "Automatique"],
     "Automático: o horário do jogo (o campeonato varia entre dia, tarde e noite).": ["Automatic: the match's own time (the league varies between day, afternoon and night).", "Automático: el horario del partido (el campeonato varía entre día, tarde y noche).", "Automatico: l'orario della partita (il campionato varia tra giorno, pomeriggio e sera).", "Automatique : l'heure du match (le championnat varie entre jour, après-midi et soir)."],
@@ -1450,10 +1450,10 @@
     "O seu time: {0}": ["Your team: {0}", "Tu equipo: {0}", "La tua squadra: {0}", "Ton équipe : {0}"],
     "O ônibus do {0} chega ao estádio": ["The {0} bus arrives at the stadium", "El autobús del {0} llega al estadio", "Il pullman del {0} arriva allo stadio", "Le bus de {0} arrive au stade"],
     "Os 20 melhores do país": ["The country's 20 best", "Los 20 mejores del país", "Le 20 migliori del paese", "Les 20 meilleures du pays"],
-    "Os clubes da A e da B na quadra (5 x 5).": ["The Série A and B clubs on the court (5 v 5).", "Los clubes de la A y de la B en la cancha (5 x 5).", "I club della A e della B sul campo indoor (5 x 5).", "Les clubs de A et de B sur le terrain en salle (5 x 5)."],
-    "Os clubes da A e da B na quadra (6 x 6).": ["The Série A and B clubs on the court (6 v 6).", "Los clubes de la A y de la B en la cancha (6 x 6).", "I club della A e della B sul campo indoor (6 x 6).", "Les clubs de A et de B sur le terrain en salle (6 x 6)."],
-    "Os clubes da A e da B no society (5 x 5).": ["The Série A and B clubs on the small-sided pitch (5 v 5).", "Los clubes de la A y de la B en fútbol 5 (5 x 5).", "I club della A e della B nel calcio a 5 su erba (5 x 5).", "Les clubs de A et de B en foot à 5 (5 x 5)."],
-    "Os clubes da A e da B no society (6 x 6).": ["The Série A and B clubs on the small-sided pitch (6 v 6).", "Los clubes de la A y de la B en fútbol 6 (6 x 6).", "I club della A e della B nel calcio a 6 su erba (6 x 6).", "Les clubs de A et de B en foot à 6 (6 x 6)."],
+    "Os clubes da A e da B na quadra (5 x 5).": ["The Brasileirão A and B clubs on the court (5 v 5).", "Los clubes de la A y de la B en la cancha (5 x 5).", "I club della A e della B sul campo indoor (5 x 5).", "Les clubs de A et de B sur le terrain en salle (5 x 5)."],
+    "Os clubes da A e da B na quadra (6 x 6).": ["The Brasileirão A and B clubs on the court (6 v 6).", "Los clubes de la A y de la B en la cancha (6 x 6).", "I club della A e della B sul campo indoor (6 x 6).", "Les clubs de A et de B sur le terrain en salle (6 x 6)."],
+    "Os clubes da A e da B no society (5 x 5).": ["The Brasileirão A and B clubs on the small-sided pitch (5 v 5).", "Los clubes de la A y de la B en fútbol 5 (5 x 5).", "I club della A e della B nel calcio a 5 su erba (5 x 5).", "Les clubs de A et de B en foot à 5 (5 x 5)."],
+    "Os clubes da A e da B no society (6 x 6).": ["The Brasileirão A and B clubs on the small-sided pitch (6 v 6).", "Los clubes de la A y de la B en fútbol 6 (6 x 6).", "I club della A e della B nel calcio a 6 su erba (6 x 6).", "Les clubs de A et de B en foot à 6 (6 x 6)."],
     "Os times do Campeonato de Várzea, no campo de terra da cidadezinha.": ["The amateur league teams, on the little town's dirt pitch.", "Los equipos del campeonato de barrio, en el campo de tierra del pueblito.", "Le squadre del campionato di periferia, sul campo in terra del paesino.", "Les équipes du championnat de quartier, sur le terrain en terre de la petite ville."],
     "Outros países": ["Other countries", "Otros países", "Altri paesi", "Autres pays"],
     "PRÊMIOS DA COPA DO BRASIL": ["COPA DO BRASIL AWARDS", "PREMIOS DE LA COPA DO BRASIL", "PREMI DELLA COPA DO BRASIL", "PRIX DE LA COPA DO BRASIL"],
@@ -1474,10 +1474,10 @@
     "Sintético": ["Small-sided", "Fútbol 5", "Calcio a 5", "Foot à 5"],
     "Sorteado": ["Random", "Al azar", "Casuale", "Au hasard"],
     "Sua nota: {0}": ["Your rating: {0}", "Tu nota: {0}", "Il tuo voto: {0}", "Ta note : {0}"],
-    "Série A ou B: rápido (19 rodadas) ou padrão (38). Fica salvo.": ["Série A or B: quick (19 rounds) or standard (38). It is saved.", "Série A o B: rápido (19 jornadas) o estándar (38). Se guarda.", "Série A o B: rapido (19 giornate) o standard (38). Viene salvato.", "Série A ou B : rapide (19 journées) ou standard (38). Il est sauvegardé."],
+    "Brasileirão A ou B: rápido (19 rodadas) ou padrão (38). Fica salvo.": ["Brasileirão A or B: quick (19 rounds) or standard (38). It is saved.", "Brasileirão A o B: rápido (19 jornadas) o estándar (38). Se guarda.", "Brasileirão A o B: rapido (19 giornate) o standard (38). Viene salvato.", "Brasileirão A ou B : rapide (19 journées) ou standard (38). Il est sauvegardé."],
     "Só no amistoso: nos campeonatos o jogo é no estádio do mandante.": ["Friendly only: in competitions the match is at the home team's stadium.", "Solo en el amistoso: en los campeonatos se juega en el estadio del local.", "Solo in amichevole: nei tornei si gioca nello stadio di casa.", "Seulement en amical : en compétition, le match est au stade de l'équipe à domicile."],
     "Trocar os times": ["Change the teams", "Cambiar los equipos", "Cambia le squadre", "Changer les équipes"],
-    "Um jogo entre quaisquer times da A e da B, no estádio que você quiser.": ["A match between any Série A and B teams, at the stadium you want.", "Un partido entre cualquier equipo de la A y de la B, en el estadio que quieras.", "Una partita tra qualsiasi squadra della A e della B, nello stadio che vuoi.", "Un match entre n'importe quelles équipes de A et de B, dans le stade de ton choix."],
+    "Um jogo entre quaisquer times da A e da B, no estádio que você quiser.": ["A match between any Brasileirão A and B teams, at the stadium you want.", "Un partido entre cualquier equipo de la A y de la B, en el estadio que quieras.", "Una partita tra qualsiasi squadra della A e della B, nello stadio che vuoi.", "Un match entre n'importe quelles équipes de A et de B, dans le stade de ton choix."],
     "Ver a premiação de novo": ["Watch the awards again", "Ver la premiación de nuevo", "Rivedi la premiazione", "Revoir la remise des prix"],
     "Você está {0}: o jogo vai ser simulado. Acompanhe o placar.": ["You are {0}: the match will be simulated. Follow the score.", "Estás {0}: el partido se simulará. Sigue el marcador.", "Sei {0}: la partita verrà simulata. Segui il punteggio.", "Tu es {0} : le match sera simulé. Suis le score."],
     "Você tem um jogo salvo. Quer continuar ou começar um novo?": ["You have a saved game. Continue it or start a new one?", "Tienes una partida guardada. ¿Quieres continuarla o empezar una nueva?", "Hai una partita salvata. Vuoi continuarla o iniziarne una nuova?", "Tu as une partie sauvegardée. Tu veux la continuer ou en commencer une nouvelle ?"],
@@ -1518,7 +1518,7 @@
     "PRÊMIOS DA LIGA INGLESA": ["ENGLISH LEAGUE AWARDS", "PREMIOS DE LA LIGA INGLESA", "PREMI DEL CAMPIONATO INGLESE", "PRIX DU CHAMPIONNAT D'ANGLETERRE"],
     "Boa noite! Bem-vindos à festa de premiação da Liga Espanhola!": ["Good evening! Welcome to the Spanish League awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Liga española!", "Buonasera! Benvenuti alla serata dei premi della Liga spagnola!", "Bonsoir ! Bienvenue à la soirée des prix du Championnat d'Espagne !"],
     "Boa noite! Bem-vindos à festa de premiação da Liga Inglesa!": ["Good evening! Welcome to the English League awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Liga inglesa!", "Buonasera! Benvenuti alla serata dei premi del Campionato inglese!", "Bonsoir ! Bienvenue à la soirée des prix du Championnat d'Angleterre !"],
-    "Brasil (Série A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.": ["Brazil (Série A or B), Spain or England: quick (19 rounds) or standard (38). It is saved.", "Brasil (Série A o B), España o Inglaterra: rápido (19 jornadas) o estándar (38). Se guarda.", "Brasile (Série A o B), Spagna o Inghilterra: rapido (19 giornate) o standard (38). Viene salvato.", "Brésil (Série A ou B), Espagne ou Angleterre : rapide (19 journées) ou standard (38). Il est sauvegardé."],
+    "Brasil (Brasileirão A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.": ["Brazil (Brasileirão A or B), Spain or England: quick (19 rounds) or standard (38). It is saved.", "Brasil (Brasileirão A o B), España o Inglaterra: rápido (19 jornadas) o estándar (38). Se guarda.", "Brasile (Brasileirão A o B), Spagna o Inghilterra: rapido (19 giornate) o standard (38). Viene salvato.", "Brésil (Brasileirão A ou B), Espagne ou Angleterre : rapide (19 journées) ou standard (38). Il est sauvegardé."],
     "Um jogo entre quaisquer times do Brasil, da Espanha e da Inglaterra, no estádio que você quiser.": ["A match between any teams from Brazil, Spain and England, at the stadium you want.", "Un partido entre cualquier equipo de Brasil, España e Inglaterra, en el estadio que quieras.", "Una partita tra qualsiasi squadra di Brasile, Spagna e Inghilterra, nello stadio che vuoi.", "Un match entre n'importe quelles équipes du Brésil, d'Espagne et d'Angleterre, dans le stade de ton choix."],
     "Os clubes do Brasil, da Espanha e da Inglaterra no society (6 x 6).": ["The clubs from Brazil, Spain and England on the small-sided pitch (6 v 6).", "Los clubes de Brasil, España e Inglaterra en fútbol 6 (6 x 6).", "I club di Brasile, Spagna e Inghilterra nel calcio a 6 su erba (6 x 6).", "Les clubs du Brésil, d'Espagne et d'Angleterre en foot à 6 (6 x 6)."],
     "Os clubes do Brasil, da Espanha e da Inglaterra na quadra (6 x 6).": ["The clubs from Brazil, Spain and England on the court (6 v 6).", "Los clubes de Brasil, España e Inglaterra en la cancha (6 x 6).", "I club di Brasile, Spagna e Inghilterra sul campo indoor (6 x 6).", "Les clubs du Brésil, d'Espagne et d'Angleterre sur le terrain en salle (6 x 6)."],

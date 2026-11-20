@@ -1293,9 +1293,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     "Obrigada por estar sempre do meu lado.": ["Thank you for always being by my side.", "Gracias por estar siempre a mi lado.", "Grazie di essere sempre al mio fianco.", "Merci d'être toujours à mes côtés."],
     "Uma nova jornada vai começar agora.": ["A new journey begins now.", "Ahora empieza un nuevo camino.", "Adesso comincia un nuovo viaggio.", "Une nouvelle aventure commence maintenant."],
     "Missão: o primeiro jogo é na {0} (dia {1}) às {2}. O ônibus do clube passa no ponto da avenida 1h30 antes.": ["Mission: the first game is on {0} (day {1}) at {2}. The club bus stops at the avenue bus stop 1h30 before.", "Misión: el primer partido es el {0} (día {1}) a las {2}. El autobús del club pasa por la parada de la avenida 1h30 antes.", "Missione: la prima partita è {0} (giorno {1}) alle {2}. Il pullman del club passa alla fermata del viale 1h30 prima.", "Mission : le premier match est {0} (jour {1}) à {2}. Le bus du club passe à l'arrêt de l'avenue 1h30 avant."],
-    "Série B": ["Série B", "Série B", "Série B", "Série B"],
+    "Brasileirão B": ["Brasileirão B", "Brasileirão B", "Brasileirão B", "Brasileirão B"],
     "Jogador profissional": ["Professional player", "Jugador profesional", "Giocatore professionista", "Joueur professionnel"],
-    "Clube da Série B": ["Série B club", "Club de la Série B", "Club di Série B", "Club de Série B"],
+    "Clube do Brasileirão B": ["Brasileirão B club", "Club del Brasileirão B", "Club del Brasileirão B", "Club du Brasileirão B"],
   });
   for (const k of Object.keys(TRAD_F2)) if (!I18N[k]) I18N[k] = TRAD_F2[k];
   if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, {"Obrigado, amor. De verdade.": "Obrigada, amor. De verdade.", "Obrigado por estar sempre do meu lado.": "Obrigada por estar sempre do meu lado."});
@@ -1516,7 +1516,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   function telaCarreira(aba) {
     let c = null; try { c = API.historia.ler('cidade') || {}; } catch (e) { c = {}; }
     const K = (c.carreira || {})[aba] || {}, n = (k) => K[k] | 0;
-    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']].concat(c.pro && c.pro.clube ? [['serieb', 'Profissional']] : []);   // (7.3.0) Série A ou B: a aba é a carreira profissional
+    const ABAS = [['sintetico', 'Sintético'], ['futsal', 'Futsal'], ['varzea', 'Várzea']].concat(c.pro && c.pro.clube ? [['serieb', 'Profissional']] : []);   // (7.3.0) Brasileirão A ou B: a aba é a carreira profissional
     const abas = '<div class="crAbas">' + ABAS.map(([k, t]) => '<button type="button" class="crAba' + (k === aba ? ' on' : '') + '" data-a="abaCr" data-v="' + k + '">' + esc(T(t)) + '</button>').join('') + '</div>';
     const num = (v, t) => '<div class="crNum"><b>' + esc(String(v)) + '</b><span>' + esc(T(t)) + '</span></div>';
     const j = n('j'), media = j ? (Math.round(K.nota / j * 10) / 10).toFixed(1) : '—';
@@ -1578,7 +1578,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
           const v = vagaPorId(sel);
           tela = janela('loggedon.com/vagas/' + v.id, topoLo(false) + '<div class="loCorpo"><div class="loCard"><h4>' + esc(T('Aceitar esta vaga?')) + '</h4><p>' + esc(T(v.titulo)) + '</p><p><small>' + esc(T('Você só pode aceitar uma vaga.')) + '</small></p><div class="loBtns"><button type="button" class="loBtn" data-a="sim">' + esc(T('Sim, aceitar')) + '</button><button type="button" class="loBtn sec" data-a="vaga" data-v="' + v.id + '">' + esc(T('Voltar')) + '</button></div></div></div>');
         } else {
-          const v = vagaPorId(D.emprego) || { titulo: 'Jogador profissional', emp: 'Clube da Série B' };   // (serieb.js) o emprego virou o clube
+          const v = vagaPorId(D.emprego) || { titulo: 'Jogador profissional', emp: 'Clube do Brasileirão B' };   // (serieb.js) o emprego virou o clube
           tela = janela('loggedon.com/aceito', topoLo(false) + '<div class="loCorpo"><div class="loCard"><h4>✅ ' + esc(T('Vaga aceita!')) + '</h4><p>' + esc(T(v.titulo)) + ' · ' + esc(T(v.emp)) + '</p><p><small>' + esc(T('A empresa vai entrar em contato com você.')) + '</small></p><div class="loBtns"><button type="button" class="loBtn" data-a="fim">' + esc(T('Fechar o computador')) + '</button></div></div></div>');
         }
         el.innerHTML = '<div class="pcMonitor"><div class="pcTela">' + tela + '<button type="button" class="pcSair" data-a="sair">✕ ' + esc(T('Sair do computador')) + '</button></div><div class="pcBarra"><span>' + esc(T('Computador')) + '</span><span class="pcHora">' + hora() + '</span></div></div>';
@@ -1710,7 +1710,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // CARREGADOR ESCONDIDO: enquanto ele está no quarto e na escada, os arquivos da cidade baixam e ficam prontos aos poucos (um por
   //   vez, com folga entre eles, quando o celular está livre). Na porta da rua a cidade já não espera download nem leitura de arquivo.
   function preCarregarCidade() {
-    const fila = ['cidade', 'interiores', 'falas', 'mercado', 'pizzaria', 'restaurante', 'bar', 'esportiva', 'academia', 'cinema', 'barbearia', 'varzea', 'serieb', 'pesca', 'treino'];
+    const fila = ['cidade', 'interiores', 'falas', 'mercado', 'pizzaria', 'restaurante', 'bar', 'esportiva', 'academia', 'cinema', 'barbearia', 'varzea', 'serieb', 'pesca', 'treino', 'pagode'];
     const depois = (f) => setTimeout(() => (window.requestIdleCallback ? window.requestIdleCallback(f, { timeout: 1500 }) : f()), 350);
     const proximo = () => { if (!S || !fila.length) return; const id = fila.shift(); Fases.carregar(id).catch(() => null).then(() => depois(proximo)); };
     setTimeout(proximo, 1500);
@@ -1817,27 +1817,44 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (A.copo) A.copo.rotation.z = -(ombro + cot) - 0.35 * A.kf;              // o copo fica de pé (e inclina no gole)
     if (m.cabecaLigada) usarCabeca(m, 0.08 * A.kf);
   }
-  // embaixadinha: a bola sobe e desce na frente dela, uma perna de cada vez
+  // embaixadinha: a bola sobe e desce na frente dela, uma perna de cada vez; a perna de apoio dobra um pouco, os braços abrem para
+  //   equilibrar (o do lado do chute sobe um tico) e a cabeça acompanha a bola
   function poseEmbaixadinha(A, t, dt) {
     const m = A.m, r = m.raiz, P = 0.72, u = (t % P) / P, chute = Math.pow(Math.max(0, Math.cos(u * Math.PI * 2)), 6), lado = Math.floor(t / P) % 2;
-    usarJoelhos(m, 0, 0); usarCotovelo(m.bracoE, 0, 0.3); usarCotovelo(m.bracoD, 0, 0.3); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = -0.05; r.position.y = A.y;
-    m.pernaE.rotation.z = lado ? 0.75 * chute : 0; m.pernaD.rotation.z = lado ? 0 : 0.75 * chute;
-    usarJoelhos(m, lado ? -0.5 * chute : 0, lado ? 0 : -0.5 * chute);
-    m.bracoE.rotation.z = 0.25; m.bracoD.rotation.z = 0.25; m.bracoE.rotation.x = 0.45; m.bracoD.rotation.x = -0.45;
-    if (m.cabecaLigada) usarCabeca(m, -0.35);
+    usarCotovelo(m.bracoE, 0, 0.3); usarCotovelo(m.bracoD, 0, 0.3); r.rotation.z = 0; r.rotation.x = 0; m.corpo.rotation.z = -0.06 - chute * 0.04; r.position.y = A.y - chute * 0.015;
+    m.pernaE.rotation.z = lado ? 0.75 * chute : 0.04; m.pernaD.rotation.z = lado ? 0.04 : 0.75 * chute;
+    usarJoelhos(m, lado ? -0.5 * chute : -0.12, lado ? -0.12 : -0.5 * chute);
+    m.bracoE.rotation.z = 0.22 + (lado ? 0 : chute * 0.12); m.bracoD.rotation.z = 0.22 + (lado ? chute * 0.12 : 0);
+    m.bracoE.rotation.x = 0.42 + (lado ? chute * 0.1 : 0); m.bracoD.rotation.x = -0.42 - (lado ? 0 : chute * 0.1);
+    let yb = 0.55;
     const B = A.bolaEmb; if (B) {
       const fx = Math.cos(A.yaw), fz = -Math.sin(A.yaw), sx = -fz, sz = fx, off = (lado ? 1 : -1) * 0.12;
-      B.position.set(A.x + fx * 0.36 + sx * off, 0.3 + Math.sin(u * Math.PI) * 0.62, A.z + fz * 0.36 + sz * off); B.rotation.x += dt * 7;
+      yb = 0.3 + Math.sin(u * Math.PI) * 0.62;
+      B.position.set(A.x + fx * 0.36 + sx * off, yb, A.z + fz * 0.36 + sz * off); B.rotation.x += dt * 7;
     }
+    A.cabEmb = lerp(A.cabEmb == null ? -0.3 : A.cabEmb, clamp(-0.38 + (yb - 0.3) * 0.32, -0.38, -0.18), Math.min(1, dt * 8));
+    usarCabeca(m, A.cabEmb);
   }
-  // rindo: mão na barriga, corpo para trás, sacudindo
-  function poseRindo(A, t, dt) {
+  // vendo a embaixadinha e rindo. A.riso (0..1) vai atrás de A.risoAlvo. Sem riso: parado, a cabeça acompanhando a bola. Rindo: só os
+  //   ombros e o rosto (os ombros sobem e descem um pouquinho a cada "ha", a cabeça vai um tico para trás e balança); o corpo e os
+  //   braços ficam soltos. Falando, as mãos acompanham a fala de leve.
+  function poseOlhaRindo(A, t, dt) {
     posePe(A, t, dt, false);
-    const m = A.m, r = m.raiz, s = Math.sin(t * 15); m.pernaE.rotation.z = m.pernaD.rotation.z = 0;
-    m.bracoE.rotation.z = 0.55; m.bracoE.rotation.x = -0.2; usarCotovelo(m.bracoE, 0, 1.5);
-    m.bracoD.rotation.z = 0.35 + Math.abs(s) * 0.15; usarCotovelo(m.bracoD, 0, 0.4);
-    m.corpo.rotation.z = 0.12 + s * 0.04; r.position.y = A.y + Math.abs(s) * 0.02;
-    if (m.cabecaLigada) usarCabeca(m, 0.22 + s * 0.05);
+    const m = A.m, r = m.raiz, e = Math.min(1, dt * 10), B = S.lucia && S.lucia.bolaEmb;
+    A.riso = lerp(A.riso || 0, A.risoAlvo || 0, Math.min(1, dt * 3.5)); const k = A.riso;
+    const ha = Math.pow(Math.max(0, Math.sin(t * 10.5)), 1.5) * k;                     // cada "ha": um tranco curto dos ombros
+    m.pernaE.rotation.z = m.pernaD.rotation.z = 0;
+    const gz = A.fala ? 0.22 + Math.sin(t * 4.2) * 0.1 : 0, gd = A.fala ? 0.3 + Math.sin(t * 4.2 + 1.4) * 0.12 : 0;
+    A.gE = lerp(A.gE || 0, gz, e); A.gD = lerp(A.gD || 0, gd, e);
+    m.bracoE.rotation.z = 0.05 + A.gE + ha * 0.05; m.bracoD.rotation.z = 0.05 + A.gD + ha * 0.05;
+    m.bracoE.rotation.x = 0.06 + ha * 0.07; m.bracoD.rotation.x = -(0.06 + ha * 0.07);              // os ombros "abrindo" no tranco
+    if (A.fala) usarCotovelo(m.bracoD, 0, 0.35 + Math.sin(t * 4.2 + 0.6) * 0.15);
+    r.position.y = A.y + ha * 0.014; m.corpo.rotation.z = k * 0.025;
+    let cab = 0;                                                                         // olhando a bola (sobe e desce com ela)
+    if (B) { const d = Math.hypot(B.position.x - A.x, B.position.z - A.z) || 1; cab = clamp(Math.atan2(B.position.y - 1.62, d) * 0.55, -0.3, 0.1); }
+    A.cabV = lerp(A.cabV == null ? cab : A.cabV, cab, Math.min(1, dt * 6));
+    usarCabeca(m, (A.cabV * (1 - k * 0.8) + k * (0.13 + ha * 0.07)) || -0.0001);
+    m.cabeca.rotation.y = Math.sin(t * 5.25) * 0.05 * k;                               // um balancinho de lado no riso
   }
   function poseCelular(A, t, dt) {                               // olhando o celular na mão
     posePe(A, t, dt, false);
@@ -1908,15 +1925,17 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const bq = S.quarto.bola, bs = S.quarto.bolaSombra; if (bq) bq.visible = false; if (bs) bs.visible = false;
     const bola = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 8), new THREE.MeshLambertMaterial({ map: texBolaF() })); S.quarto.g.add(bola);
     L.pose = poseEmbaixadinha; L.x = 0.6; L.z = 0.55; L.yaw = L.yawAlvo = -Math.PI * 0.75; L.bolaEmb = bola;   // virada para a câmera e para você
-    J.pose = poseRindo; J.x = -1.25; J.z = 1.35; J.yaw = J.yawAlvo = Math.atan2(-(L.z - J.z), L.x - J.x);
-    S.camEspecial = [0.8, 1.5, 3.4, -0.3, 0.7, 0.9]; S.camSnap = true;
-    await preto(false, 700); await esperar(3600);
+    J.pose = poseOlhaRindo; J.riso = 0; J.risoAlvo = 0; J.cabV = null; J.x = -1.25; J.z = 1.35; J.yaw = J.yawAlvo = Math.atan2(-(L.z - J.z), L.x - J.x);
+    S.camEspecial = [0.8, 1.65, 3.6, -0.3, 0.92, 0.9]; S.camSnap = true;                // (um pouco mais alto: as cabeças não cortam em cima)
+    await preto(false, 700); await esperar(2300);                                      // primeiro ele só olha
+    J.risoAlvo = 1; await esperar(1500);                                               // depois ri (os ombros e o rosto)
     const daEscola = (() => { try { const h1 = API.historia.ler('fase1') || {}; return !!(h1.lucia || h1.mariposa); } catch (e) { return false; } })();   // "ainda" só se ele a conhecia da escola
-    await fala('jog', daEscola ? T('Hahahaha! Você ainda manda bem!') : T('Hahahaha! Você manda muito bem!')); Dialogo.esconder(); await esperar(900);
+    J.risoAlvo = 0.5;                                                                  // e fala, ainda rindo um pouco
+    await fala('jog', daEscola ? T('Hahahaha! Você ainda manda bem!') : T('Hahahaha! Você manda muito bem!')); Dialogo.esconder(); J.risoAlvo = 0.15; await esperar(900);
     await preto(true, 900);
     L.bolaEmb = null; S.quarto.g.remove(bola); bola.geometry.dispose(); bola.material.map.dispose(); bola.material.dispose();
     if (bq) bq.visible = true; if (bs) bs.visible = true;
-    J.pose = 'pe';
+    J.pose = 'pe'; for (const A of [J, L]) { usarCabeca(A.m, 0); A.m.cabeca.rotation.y = 0; }
     if (S.relogio) { S.relogio.hora = Math.max(S.relogio.hora, 21.8); salvarRelogio(); }
     gravar('fim');
     S.argsCidade = { origem: 'fase2', encontroFim: { demissao: !!R.demissao } };

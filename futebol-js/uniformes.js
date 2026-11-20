@@ -1,5 +1,5 @@
 // =====================================================================================================================
-// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B e (7.5.2) dos 40 da Espanha e da Inglaterra
+// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times do Brasileirão A e do Brasileirão B e (7.5.2) dos 40 da Espanha e da Inglaterra
 //   (as paródias do serieb.js) e o espaço da
 //   pixel art no peito. Cada time tem [uniforme 1, uniforme 2]; o motor do desenho fica no jogo.js (compilarModelo e
 //   pintarCamisaModelo: lá está a lista de camadas e texturas). As cores das camisas continuam vindo do serieb.js (uni e
