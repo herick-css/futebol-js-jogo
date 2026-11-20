@@ -163,6 +163,13 @@ ARQUIVOS
                           serieb.criar(api).popularidade.somar(time, pontos, motivo) — de 15 a 100, 5 faixas de torcida
                           (7.4.4) Habilidade dos times (0 a 100): várzea 30–60, times pequenos do interior 46–53, Série B 50–70,
                           Série A 65–85 (Europa, quando vier: 85–100). As estrelas são relativas ao campeonato de cada um.
+                          (7.5.2) A EUROPA: TIMES_ES (20 paródias da 1ª divisão da Espanha 2026-27) e TIMES_EN (20 da Inglaterra), com
+                          nome, sigla, técnico, esquema, tática, jeito de jogar, uniformes 1 e 2 e escudo 32x32 próprios (EMB_EU: símbolo
+                          desenhado à mão no molde dos brasileiros). A força sai das 10 últimas temporadas (2016-17 a 2025-26: posição,
+                          gols e tendência, a mesma conta da Série A; 2ª divisão com 22 ou 24 times, 3ª e 4ª só a posição) e vai para a
+                          escala de cada liga (nivelarEuropa / LIGAS_EU): os mais fracos ~65–68 (o nível de um time forte da Série B) e os
+                          gigantes até 100 (setores até 10; o elenco aceita até 10). Estrelas relativas a cada liga. Os jogadores têm nomes
+                          inventados de cada país (NOMES_PAIS). TIME_DE inclui os 40; o modo carreira continua só com a A e a B.
                           (7.4.5) O personagem da história começa com tudo 30 e as habilidades da posição escolhida (atacante,
                           meia ou zagueiro) sorteadas entre 40 e 50.
                           (7.4.7) CALENDÁRIO: meses de 30 dias (Calendario, no jogo.js; o HUD mostra "Ter 14 mar 15:30"). A peneira
@@ -193,6 +200,14 @@ ARQUIVOS
                           última rodada) mostra a cena antes do apito, fogos nos gols do mandante e na festa do título.
                           Torcida maior, cobertura, telões e o escudo e as cores do time da casa nas faixas, nos telões, nas
                           bandeiras e nas cadeiras (baixado na abertura)
+                          (7.5.2) Mais 13 estádios, da Espanha e da Inglaterra (o construtor comum tribunas(): anéis por lado, cantos
+                          abertos ou fechados, coberturas por lado): castellana (caixa de 3 anéis, teto em anel, telão de 360° e a pele de
+                          lâminas prateadas), tresAneis (bowl oval gigante de 3 anéis, blocos nas duas cores e a sigla nas cadeiras), olas
+                          (cobertura em ondas), arco (o arco branco em cima da lateral), vertical (o mais em pé), municipal (o espanhol de
+                          cidade média, 3 jeitos), theatre (cantos fechados e treliças em cima do teto), kop (a cabeceira enorme de um anel
+                          só com o escudo nas cadeiras), bowl (anel de camarotes e pele de vidro), masts (o teto pendurado em mastros),
+                          wall (a cabeceira-parede), towns (o inglês clássico, 3 jeitos) e brick (o antigo de bairro, com a fachada de
+                          tijolo). CASA_DO_CLUBE leva cada clube para o seu; o "sem modelo" continua sorteando só entre os do Brasil
   uniformes.js .......... o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B (listras verticais e horizontais,
                           faixa diagonal, faixas no peito, laterais, degradê, texturas de estrelas, ondas, tigre...), seguindo
                           o padrão dos clubes parodiados, e a pixel art do peito (PEITO: 16 x 16 por time; sem ela vai o escudo
@@ -200,6 +215,7 @@ ARQUIVOS
                           serieb.js pega o modelo de cada time com Uniformes.kit(chave, 0 ou 1) (baixado na abertura)
                           (7.4.10) O Periquito da Pompeia virou PORCO DA POMPEIA (o porco verde no escudo do serieb.js; a chave
                           continua 'periquito') e o vermelho das camisas dele virou branco
+                          (7.5.2) Mais os 40 times da Espanha e da Inglaterra (listras, mangas de outra cor, faixas, laterais, texturas)
   livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
                           varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
                           com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,
@@ -216,6 +232,9 @@ ARQUIVOS
                           (7.4.13) Depois do tipo de jogo: controlar UM jogador ou o TIME INTEIRO (também nas configurações
                           da partida). (7.4.14) O confronto voltou ao tamanho de antes (com rolagem); no hino, a mão no peito
                           (o antebraço vem para dentro e encosta na camisa)
+                          (7.5.2) Campeonato: além do Brasil, a ESPANHA e a INGLATERRA (Liga Espanhola e Liga Inglesa, 20 times, rápido ou
+                          padrão; zonas: 4 da Copa dos Campeões da Europa, 2 do Torneio Europeu e 3 rebaixados; troféu, festa e noite dos
+                          prêmios de cada liga). Amistoso, sintético e futsal com as abas Série A, Série B, Liga Espanhola e Liga Inglesa
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

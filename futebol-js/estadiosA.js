@@ -1,5 +1,5 @@
 /* =====================================================================================================================
-   estadiosA.js — OS 20 ESTÁDIOS DA SÉRIE A (o jogo baixa na abertura, como o cosmeticos.js).
+   estadiosA.js — OS 20 ESTÁDIOS DA SÉRIE A e (7.5.2) os 13 da Espanha e da Inglaterra (o jogo baixa na abertura, como o cosmeticos.js).
    - O campo da partida é o CAMPOS.serieA do jogo.js (estadio: 'arenaA', 105 x 68) com campo.modelo = uma das chaves de MODELOS.
      Sem modelo (ou com um que não existe), o modelo sai do nome do mandante (o mesmo time cai sempre no mesmo estádio).
      Sem este arquivo, a partida usa o estádio oficial de sempre.
@@ -1460,6 +1460,348 @@
     E.chaoCor = 0x2b5a2f; E.corPatio = 0x8c877c; E.mangueiras = true;
   };
 
+  // ============================================================================================ (7.5.2) OS ESTÁDIOS DA ESPANHA E DA INGLATERRA
+  //   Os da Europa são outra escola: colados no campo (sem fosso nem pista), em pé, com dois ou três anéis e a cobertura chegando
+  //   quase na linha. Cada um é inspirado num estádio de verdade, com nome e desenho próprios:
+  //     castellana . Estadio de la Castellana: a caixa de três anéis toda fechada, o teto em anel, o telão de 360° embaixo dele e a
+  //                  pele de lâminas prateadas por fora (Santiago Bernabéu)
+  //     tresAneis .. Estadio de los Tres Anillos: o bowl oval gigante de três anéis, o de cima altíssimo, e as cadeiras em blocos
+  //                  das duas cores com a sigla montada (Camp Nou)
+  //     olas ....... Estadio de las Olas: o bowl com a cobertura em ondas e a lateral principal mais alta (Metropolitano)
+  //     arco ....... Estadio del Arco: a caixa de dois anéis com o arco branco gigante por cima da lateral e a pele branca (San Mamés)
+  //     vertical ... Estadio Vertical: o mais em pé de todos, a lateral de frente altíssima e só a tribuna coberta (Mestalla)
+  //     municipal .. Estadio Municipal: o estádio espanhol de cidade média (dois anéis nas laterais, cabeceiras mais baixas)
+  //     theatre .... The Theatre: as quatro arquibancadas com os cantos fechados e as treliças por cima do teto (Old Trafford)
+  //     kop ........ Kop Park: a cabeceira de um anel só, enorme, a tribuna de três anéis e os cantos abertos (Anfield)
+  //     bowl ....... The Bowl: o bowl de dois anéis com o anel de camarotes, o teto fino e a pele de vidro (Emirates)
+  //     masts ...... Masts Arena: o bowl com o teto pendurado por cabos em mastros por fora (Etihad)
+  //     wall ....... Southwall Stadium: a cabeceira de um anel só gigante (a "parede") e o resto em três anéis (Tottenham)
+  //     towns ...... Town Ground: o estádio inglês clássico, quatro arquibancadas soltas e as torres de luz nos cantos
+  //     brick ...... Old Brick Ground: o estádio antigo de bairro, baixinho, com a fachada de tijolo e o telhado de duas águas
+  const MODELOS_BR = Object.keys(MODELOS);   // o "sem modelo" (modeloDoTime) continua sorteando só entre os de cá
+  const ehBranco = (c) => rgb(num(c)).every((v) => v > 200);
+  const corCadeira = (E) => (ehBranco(E.c1) ? (luma(E.c2) < 150 ? E.c2 : 0xd2d6dc) : E.c1);   // time de branco: a 2ª cor (se for forte) ou prata
+  // as torres de luz nos cantos abertos
+  function torresDeLuz(E, ax, az, H) {
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+      const x = sx * ax, z = sz * az;
+      caixa(E.L, x, H / 2, z, 0.9, H, 0.9, 0x595e66);
+      caixa(E.L, x, H + 1, z, 5, 2.4, 0.8, 0x3a3f46, Math.atan2(-z, -x) + Math.PI / 2);
+      caixa(E.Lp, x - sx * 0.3, H + 1, z - sz * 0.3, 4.4, 2, 0.5, 0xffffff, Math.atan2(-z, -x) + Math.PI / 2);
+    }
+  }
+  // O CONSTRUTOR COMUM: cada lado com os seus anéis (op.lados['z-'] = [fileiras do 1º, do 2º, do 3º]; 0 ou nada = não tem),
+  //   os cantos (op.cantos, ou null = abertos), as coberturas e as luzes. Devolve, por lado, o anel de cima (R) e a cobertura.
+  //   op = { recuo, rb, nArc, lados, cantos, dy: [por anel], dz, vao: [por anel], assento(r, i, info, anel), concreto, camarotes,
+  //          teto: { lados ('todos' ou lista), cor, baixo, folga, frente, desce }, fora, organizada, forro, corFundo }
+  function tribunas(E, op) {
+    const HL = E.HL, HW = E.HW, C = caminho(HL + op.recuo, HW + op.recuo, op.rb, { nArc: op.nArc || 6, passo: op.passo || 4 });
+    const fora = op.fora || ((r, i, x, z, lado) => lado === 'x+' && z > 6);
+    const org = op.organizada || 'x-';
+    const tc = { ocup: E.ocup, emPe: (r, lado) => rnd() < (lado === org ? 0.82 : 0.16), time: timePadrao(E, fora) };
+    const conf = (l) => (l[0] === 'c' ? op.cantos : op.lados[l]);
+    const grupos = {};
+    for (const l of ['z-', 'z+', 'x-', 'x+', 'c++', 'c+-', 'c-+', 'c--']) { const v = conf(l); if (!v || !v[0]) continue; const k = v.join(','); (grupos[k] = grupos[k] || []).push(l); }
+    const dy = op.dy || [0.55, 0.72, 0.82], vao = op.vao || [0, 4.6, 4.0], res = {};
+    for (const k in grupos) {
+      const ls = grupos[k], filtro = (i, lado) => ls.includes(lado), ns = k.split(',').map(Number).filter((n) => n > 0);
+      let R = null; const Rs = [];
+      ns.forEach((n, a) => {
+        const base = { C, n, dz: op.dz || 0.88, filtro, concreto: op.concreto || ((r) => (r % 2 ? 0x6a6d73 : 0x63666c)),
+          assento: (r, i, info) => op.assento(r, i, info, a, n), torcida: tc, escadas: 6, corEscada: 0xd0ccbe };
+        if (a === 0) {
+          R = arquibancada(E, Object.assign(base, { o0: 0, y0: 1.3, dy: (op.dyLado && op.dyLado[ls[0]]) || dy[0], chao: true }));
+          muretaFaixa(E, C, -0.15, 1.25, 24, filtro);
+        } else {
+          const oC = R.oFim, yC = R.yTopo + 0.3;
+          laje(E, C, oC, oC + 1.8, yC, yC, 0.3, 0x7b7e84, filtro);
+          if (op.camarotes && a === 1) for (let i = 0; i < C.N.length - 1; i++) {   // o vidro dos camarotes entre o 1º e o 2º anel
+            if (!filtro(i, ladoDo(C, i))) continue;
+            const p = ponto(C.N[i], C.rb, oC + 1.8), q = ponto(C.N[i + 1], C.rb, oC + 1.8), y1 = yC + vao[a] - 1.6;
+            face(E.L, [p[0], yC, p[1]], [q[0], yC, q[1]], [q[0], y1, q[1]], [p[0], y1, p[1]], [p[0] * 1.3, yC + 1, p[1] * 1.3], 0x1f3a56);
+            if (i % 2 === 0) caixa(E.L, p[0], (yC + y1) / 2, p[1], 0.2, y1 - yC, 0.2, 0xd8dbdf);
+          }
+          const A = Object.assign(base, { o0: oC + 1.8, y0: yC + vao[a], dy: dy[a], espessura: 0.5 });
+          R = arquibancada(E, A);
+          anelSuspenso(E, A, R, { tex: true, periodo: 24, fascia: 1.4, parapeito: 0.7, forro: op.forro || 0x50545b, corFundo: op.corFundo || 0x3b3f46, muro: 2.4 });
+        }
+        Rs.push(R);
+      });
+      if (Rs.length === 1) for (let i = 0; i < C.N.length - 1; i++) {   // um anel só: o muro de trás
+        if (!filtro(i, ladoDo(C, i))) continue;
+        const a = C.N[i], b = C.N[i + 1], p = ponto(a, C.rb, R.oFim), q = ponto(b, C.rb, R.oFim), r0 = ponto(a, C.rb, R.oFim + 0.4), r1 = ponto(b, C.rb, R.oFim + 0.4), yt = R.yTopo + 1.6;
+        hexa(E.L, [[p[0], 0, p[1]], [q[0], 0, q[1]], [p[0], yt, p[1]], [q[0], yt, q[1]], [r0[0], 0, r0[1]], [r1[0], 0, r1[1]], [r0[0], yt, r0[1]], [r1[0], yt, r1[1]]], op.corFundo || 0x4a4e55, ['y0']);
+      }
+      // a cobertura do grupo
+      const T = op.teto, cobre = T && (T.lados === 'todos' || ls.some((l) => T.lados.includes(l) || (l[0] === 'c' && T.lados.includes('c'))));
+      let yT = null, oT1 = R.oFim + 1;
+      if (cobre && !T.propria) {
+        const fT = (i, lado) => filtro(i, lado) && (T.lados === 'todos' || T.lados.includes(lado) || (lado[0] === 'c' && T.lados.includes('c')));
+        yT = R.yTopo + (T.folga || 6.5);
+        const oT0 = T.frente != null ? T.frente : 3, des = T.desce != null ? T.desce : 1.6;
+        teto(E, C, oT0, oT1, yT, yT - des, 0.4, T.cor || 0xd9dce0, fT, T.baixo || 0x8f949b);
+        laje(E, C, oT0 - 0.3, oT0 + 0.5, yT + 0.2, yT + 0.2, 0.9, T.borda || 0x50545b, fT);
+        for (let i = 0; i < C.N.length - 1; i += 2) if (fT(i, ladoDo(C, i))) {
+          radial(E, C, i, oT0, yT - 0.4, oT1, yT - des - 0.4, 0.3, 0.9, T.costela || 0x7d828a);
+          if (i % 4 === 0) radial(E, C, i, R.oFim + 0.3, R.yTopo + 2, R.oFim + 0.7, yT - des - 0.8, 0.6, R.yTopo + 2 - (yT - des - 0.8) + 0.4, 0x8d9197);
+        }
+        luzesNoAnel(E, C, oT0 + 0.5, yT - 0.75, 3.6, fT);
+      }
+      for (const l of ls) res[l] = { R, Rs, ns, yT, oT1 };
+    }
+    return { C, res };
+  }
+  // a sigla do mandante montada nas cadeiras de um lado (z+ / z- / x+ / x-): devolve f(r, info, n) -> true onde vai a letra
+  function siglaNasCadeiras(E, lado, larg) {
+    const txt = String(E.M.sigla || E.M.nome || '').toUpperCase().slice(0, 4), m = mapaTexto(txt, txt.length * 9, 11);
+    return (r, info, n) => {
+      if (info.lado !== lado) return false;
+      const t = lado === 'z+' ? -info.x : lado === 'z-' ? info.x : lado === 'x+' ? -info.z : info.z;
+      return m((t + larg / 2) / larg, 0.08 + 0.84 * (1 - (r + 0.5) / n));
+    };
+  }
+  // a pele de fora em lâminas horizontais (do chão até y1), uma a cada passo
+  function laminas(E, C, o, y1, passo, cor, cor2, filtro) {
+    for (let y = 2; y < y1; y += passo) laje(E, C, o, o + 0.7, y, y, 0.45, (Math.round(y / passo) % 2 ? cor : cor2), filtro);
+    for (let i = 0; i < C.N.length - 1; i += 3) if (!filtro || filtro(i, ladoDo(C, i))) radial(E, C, i, o + 0.1, y1, o + 0.5, 0.2, 0.3, y1 - 0.2, tom(cor, 0.8));
+  }
+
+  // ------------------------------------------------------------------------------------------ CASTELLANA (Santiago Bernabéu)
+  NOMES.castellana = 'Estadio de la Castellana';
+  MODELOS.castellana = (E) => {
+    const cc = corCadeira(E), claro = mistura(cc, 0xffffff, 0.3);
+    const T = tribunas(E, { recuo: 7, rb: 6, nArc: 4, lados: { 'z-': [15, 13, 15], 'z+': [15, 13, 15], 'x-': [15, 12, 13], 'x+': [15, 12, 13] }, cantos: [15, 12, 13],
+      dy: [0.56, 0.74, 0.86], vao: [0, 5.2, 4.2], camarotes: true, organizada: 'x+',
+      assento: (r, i, info, a) => (a === 1 ? (r % 2 ? claro : cc) : hash(Math.floor(info.s / 4), r, 3 + a) < 0.1 ? E.c2 : r % 2 ? cc : tom(cc, 0.9)),
+      teto: { lados: [], propria: true } });
+    // o teto em anel por cima de tudo (fechado nos lados, a abertura em cima do campo) e o telão de 360° pendurado na borda
+    const C = T.C; let yMax = 0, oMax = 0;
+    for (const l in T.res) { yMax = Math.max(yMax, T.res[l].R.yTopo); oMax = Math.max(oMax, T.res[l].R.oFim); }
+    const yT = yMax + 7, oT0 = 2.5, oT1 = oMax + 2;
+    teto(E, C, oT0, oT1, yT, yT - 1, 0.5, (i) => (i % 2 ? 0xd2d5da : 0xc8cbd0), null, 0x9aa0a8);
+    laje(E, C, oT0 - 0.4, oT0 + 0.6, yT + 0.3, yT + 0.3, 1.2, 0x8a8f96);
+    for (let i = 0; i < C.N.length - 1; i += 2) radial(E, C, i, oT0, yT - 0.5, oT1, yT - 1.4, 0.3, 1.1, 0x7d828a);
+    luzesNoAnel(E, C, oT0 + 0.7, yT - 0.9, 3.2);
+    for (let i = 0; i < C.N.length - 1; i++) {                          // o telão em anel (a textura do telão repetida em volta)
+      const a = C.N[i], b = C.N[i + 1], p = ponto(a, C.rb, oT0 + 0.2), q = ponto(b, C.rb, oT0 + 0.2), u0 = -a.s / 22, u1 = -b.s / 22;
+      face(E.Lt, [p[0], yT - 4.6, p[1]], [q[0], yT - 4.6, q[1]], [q[0], yT - 1.2, q[1]], [p[0], yT - 1.2, p[1]], [p[0] + a.nx * 6, yT - 3, p[1] + a.nz * 6], null, [[u0, 0], [u1, 0], [u1, 1], [u0, 1]]);
+    }
+    // por fora: a pele de lâminas prateadas, do chão até o teto
+    laminas(E, C, oT1 + 0.2, yT, 2.2, 0xd6d9de, 0xb8bcc2);
+    E.txtTelao = 'LIGA'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ TRES ANILLOS (Camp Nou)
+  NOMES.tresAneis = 'Estadio de los Tres Anillos';
+  MODELOS.tresAneis = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? tom(cc, 0.75) : E.c2, sig = siglaNasCadeiras(E, 'z+', 40);
+    const T = tribunas(E, { recuo: 11, rb: 34, nArc: 12, lados: { 'z-': [16, 14, 22], 'z+': [16, 14, 22], 'x-': [16, 14, 22], 'x+': [16, 14, 22] }, cantos: [16, 14, 22],
+      dy: [0.48, 0.64, 0.78], vao: [0, 4.4, 4.0], organizada: 'x-',
+      assento: (r, i, info, a, n) => {
+        if (a === 2 && sig(r, info, n)) return 0xf2f2ee;                // a sigla montada no anel de cima, de frente para a tribuna
+        const blocos = Math.floor(info.s / 14) % 2;
+        return a === 0 ? (blocos ? cc : c2) : a === 1 ? (blocos ? c2 : cc) : (blocos ? cc : c2);
+      },
+      teto: { lados: 'todos', frente: 0, folga: 5, desce: 0.8, cor: 0xe8eaec, baixo: 0xa3a8ae } });
+    // o teto só cobre o anel de cima: a borda dele recua (o teto de verdade é um anel fino lá em cima)
+    const R = T.res['z-'].R;
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 11 + R.oFim - 4), R.yTopo + 2.4, 0, 16, 7, s > 0 ? Math.PI / 2 : -Math.PI / 2, { pernas: false });
+    pele(E, T.C, R.oFim + 1.4, 0, R.yTopo + 2, (i) => (i % 2 ? 0xc8c4bb : 0xbdb9b0));
+    for (let i = 0; i < T.C.N.length - 1; i += 2) radial(E, T.C, i, R.oFim + 1.5, R.yTopo + 1.8, R.oFim + 2.2, 0.3, 0.8, R.yTopo + 1.6, 0xa8a49b);
+    E.txtTelao = 'LIGA'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ OLAS (Metropolitano)
+  NOMES.olas = 'Estadio de las Olas';
+  MODELOS.olas = (E) => {
+    const cc = corCadeira(E), sig = siglaNasCadeiras(E, 'z+', 46);
+    const T = tribunas(E, { recuo: 8, rb: 20, nArc: 8, lados: { 'z-': [16, 22], 'z+': [16, 15], 'x-': [17, 13], 'x+': [17, 13] }, cantos: [16, 13],
+      dy: [0.55, 0.76], vao: [0, 4.8], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a, n) => (a === 0 && sig(r, info, n) ? 0xf2f2ee : hash(Math.floor(info.s / 3), r, 9) < 0.08 ? tom(cc, 0.75) : cc),
+      teto: { lados: [], propria: true } });
+    // a cobertura em ondas: a altura sobe e desce em volta do estádio (cada pedaço é uma placa com as duas pontas na sua altura)
+    const C = T.C; let yMax = 0, oMax = 0;
+    for (const l in T.res) { yMax = Math.max(yMax, T.res[l].R.yTopo); oMax = Math.max(oMax, T.res[l].R.oFim); }
+    const onda = (s) => yMax + 7 + 3.2 * Math.sin(s / C.total * Math.PI * 6), oT0 = 2.5, oT1 = oMax + 3;
+    for (let i = 0; i < C.N.length - 1; i++) {
+      const a = C.N[i], b = C.N[i + 1], ya = onda(a.s), yb = onda(b.s);
+      const p0 = ponto(a, C.rb, oT0), p1 = ponto(b, C.rb, oT0), q0 = ponto(a, C.rb, oT1), q1 = ponto(b, C.rb, oT1);
+      const P = [[p0[0], ya - 0.4, p0[1]], [p1[0], yb - 0.4, p1[1]], [p0[0], ya, p0[1]], [p1[0], yb, p1[1]], [q0[0], ya - 2.4, q0[1]], [q1[0], yb - 2.4, q1[1]], [q0[0], ya - 2, q0[1]], [q1[0], yb - 2, q1[1]]];
+      hexa(E.L, P, i % 2 ? 0xeef0f2 : 0xe4e7ea, ['x0', 'x1', 'y0']);
+      face(E.Lr, P[0], P[1], P[5], P[4], [P[0][0], ya + 10, P[0][2]], tom(E.c1, 0.55));      // por baixo, a cor do time escurecida
+      caixa(E.L, (p0[0] + p1[0]) / 2, (ya + yb) / 2 + 0.2, (p0[1] + p1[1]) / 2, 0.6, 1, 0.6, 0x50545b);
+      if (i % 3 === 0) radial(E, C, i, oT1 - 0.6, ya - 2.4, oT1 - 0.2, 0.2, 0.7, ya - 2.6, 0x9ca0a6);
+    }
+    luzesNoAnel(E, C, oT0 + 0.5, yMax + 6, 3.4);
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 18), yMax + 1.5, 0, 14, 6.5, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 4 });
+    pele(E, C, oMax + 0.6, 0, yMax + 2, (i) => (i % 2 ? 0x9aa3ad : 0x8e97a1));
+    E.txtTelao = 'LIGA'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ ARCO (San Mamés)
+  NOMES.arco = 'Estadio del Arco';
+  MODELOS.arco = (E) => {
+    const cc = corCadeira(E);
+    const T = tribunas(E, { recuo: 7, rb: 4, nArc: 3, lados: { 'z-': [15, 16], 'z+': [15, 16], 'x-': [16, 14], 'x+': [16, 14] }, cantos: [15, 14],
+      dy: [0.58, 0.78], vao: [0, 5], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a) => (a === 1 && r % 5 === 4 ? 0xeeeeea : r % 2 ? cc : tom(cc, 0.9)),
+      teto: { lados: 'todos', cor: 0xf4f4f2, baixo: 0xb8bcc2, borda: 0xe8e8e6, costela: 0xd8dade, folga: 6 } });
+    // a pele branca de painéis por fora e o ARCO branco por cima da lateral dos bancos (z-)
+    const C = T.C, Rz = T.res['z-'];
+    pele(E, C, Rz.oT1 + 0.4, 0, Rz.yT, (i) => (i % 2 ? 0xf2f2f0 : 0xe2e5e8));
+    const zA = -(E.HW + 7 + Rz.R.oFim * 0.55), x0 = E.HL + 16, yb = Rz.yT + 0.5, alt = 22, N = 18;
+    let prev = null;
+    for (let k = 0; k <= N; k++) {
+      const t = k / N, x = -x0 + 2 * x0 * t, y = yb + alt * Math.sin(Math.PI * t), p = [x, y, zA];
+      if (prev) viga(E.L, prev, p, 2.6, 0xf6f6f4);
+      if (k > 0 && k < N && k % 3 === 0) viga(E.L, p, [x, yb, zA + (k % 6 ? 6 : -6)], 0.25, 0xbfc3c8);   // os tirantes que seguram o teto
+      prev = p;
+    }
+    for (const s of [-1, 1]) caixa(E.L, s * x0, yb / 2, zA, 3, yb, 3, 0xe6e6e2);   // os pés do arco
+    E.txtTelao = 'LIGA'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ VERTICAL (Mestalla)
+  NOMES.vertical = 'Estadio Vertical';
+  MODELOS.vertical = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe8e8e4 : E.c2;
+    const T = tribunas(E, { recuo: 6, rb: 3, nArc: 2, lados: { 'z-': [14, 16], 'z+': [14, 26], 'x-': [20, 12], 'x+': [20] }, cantos: [14, 10],
+      dy: [0.7, 0.92], dz: 0.8, vao: [0, 4.2], organizada: 'x-',
+      assento: (r, i, info, a) => (info.lado === 'x-' ? (r % 3 === 0 ? c2 : cc) : a === 1 && Math.floor(info.s / 10) % 3 === 0 ? c2 : cc),
+      teto: { lados: ['z-'], folga: 5.5, cor: 0x55595f, baixo: 0x6a6e75 } });
+    const R = T.res['x+'].R;
+    telao(E, E.HL + 6 + R.oFim + 1.5, R.yTopo + 6.5, 0, 15, 7, Math.PI / 2, { pernas: true });
+    torresDeLuz(E, E.HL + 14, E.HW + 14, 40);
+    E.txtTelao = 'LIGA'; E.bairro = 'cidade'; E.esplanada = 8; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ MUNICIPAL (o espanhol de cidade média)
+  //   Três jeitos (o mesmo clube cai sempre no mesmo): com a tribuna coberta, com as duas laterais cobertas ou todo coberto.
+  NOMES.municipal = 'Estadio Municipal';
+  MODELOS.municipal = (E) => {
+    const v = (typeof sementeDe === 'function' ? sementeDe('mun|' + (E.M.nome || '')) : 0) % 3, cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe6e6e2 : E.c2;
+    tribunas(E, { recuo: 7.5, rb: v === 2 ? 16 : 8, nArc: 5, lados: { 'z-': [15, 12], 'z+': [15, v === 1 ? 12 : 8], 'x-': [17, v === 2 ? 8 : 0], 'x+': [17] }, cantos: v === 2 ? [15, 8] : [12],
+      dy: [0.56, 0.74], vao: [0, 4.4], organizada: 'x-',
+      assento: (r, i, info) => ((Math.floor(info.s / 9) + (r >> 2)) % 4 === 0 ? c2 : cc),
+      teto: { lados: v === 0 ? ['z-'] : v === 1 ? ['z-', 'z+'] : 'todos', folga: 5.5, cor: 0xdfe2e6, baixo: 0x9aa0a8 } });
+    telao(E, -(E.HL + 7.5 + 19), 15, 0, 13, 6, -Math.PI / 2, { pernas: true });
+    if (v !== 2) torresDeLuz(E, E.HL + 15, E.HW + 15, 34);
+    E.txtTelao = 'LIGA'; E.bairro = 'bairro'; E.esplanada = 10; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ THEATRE (Old Trafford)
+  NOMES.theatre = 'The Theatre';
+  MODELOS.theatre = (E) => {
+    const cc = corCadeira(E), sig = siglaNasCadeiras(E, 'x-', 40);
+    const T = tribunas(E, { recuo: 6, rb: 9, nArc: 5, lados: { 'z-': [14, 12], 'z+': [14, 14, 11], 'x-': [14, 14], 'x+': [14, 14] }, cantos: [14, 12],
+      dy: [0.56, 0.74, 0.84], vao: [0, 4.8, 4.2], camarotes: true, organizada: 'x+',
+      assento: (r, i, info, a, n) => (a === 1 && sig(r, info, n) ? 0xf2f2ee : cc),
+      teto: { lados: 'todos', cor: 0x9ba0a7, baixo: 0x6c7178, borda: 0x3d4148, costela: 0x5a5f66, folga: 6.2, desce: 2.2 } });
+    // as treliças por cima do teto (a marca de fora): uma viga alta em cada lado, com os montantes
+    const C = T.C;
+    for (let i = 0; i < C.N.length - 1; i += 3) {
+      const l = ladoDo(C, i), r = T.res[l]; if (!r || !r.yT) continue;
+      const n = C.N[i], o0 = 4, o1 = r.oT1 - 1, y0 = r.yT + 0.2, y1 = r.yT - 2;
+      viga(E.L, ponto3(n, C.rb, o0, y0 + 0.2), ponto3(n, C.rb, o1, y1 + 4.5), 0.35, 0x2f3238);
+      viga(E.L, ponto3(n, C.rb, (o0 + o1) / 2, (y0 + y1) / 2), ponto3(n, C.rb, (o0 + o1) / 2, (y0 + y1 + 4.5) / 2 + 2.3), 0.25, 0x2f3238);
+    }
+    for (const l in T.res) { const r = T.res[l]; if (!r.yT) continue; pele(E, C, r.oT1 + 0.3, 0, r.yT - 1.5, (i) => (i % 2 ? 0x8a3a2e : 0x7e342a), (i, lado) => lado === l); }   // a fachada de tijolo
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 6 + 3), T.res['x+'].yT - 6, 0, 12, 5.5, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 4 });
+    E.txtTelao = 'LEAGUE'; E.bairro = 'cidade'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ KOP (Anfield)
+  NOMES.kop = 'Kop Park';
+  MODELOS.kop = (E) => {
+    const cc = corCadeira(E), esc = mapaEscudo(E, 28), n0 = 38;
+    const T = tribunas(E, { recuo: 6, rb: 1, nArc: 2, lados: { 'z-': [14, 13, 12], 'z+': [13, 10], 'x-': [n0], 'x+': [13, 10] }, cantos: null,
+      dy: [0.56, 0.74, 0.86], dyLado: { 'x-': 0.6 }, vao: [0, 4.6, 4.2], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a, n) => {
+        if (info.lado === 'x-') { const lq = 26, u = (info.z + lq / 2) / lq, v = 1 - (r + 0.5) / n; const k = u >= 0 && u <= 1 && v > 0.2 ? esc(u, (v - 0.2) / 0.8) : null; return k != null ? k : cc; }
+        return r % 6 === 5 ? tom(cc, 0.82) : cc;
+      },
+      teto: { lados: 'todos', cor: 0xd8dbdf, baixo: 0x8f949b, folga: 6, desce: 2 } });
+    torresDeLuz(E, E.HL + 12, E.HW + 12, 30);
+    E.txtTelao = 'LEAGUE'; E.bairro = 'bairro'; E.esplanada = 6; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ BOWL (Emirates)
+  NOMES.bowl = 'The Bowl';
+  MODELOS.bowl = (E) => {
+    const cc = corCadeira(E);
+    const T = tribunas(E, { recuo: 9, rb: 30, nArc: 12, lados: { 'z-': [17, 19], 'z+': [17, 19], 'x-': [17, 19], 'x+': [17, 19] }, cantos: [17, 19],
+      dy: [0.54, 0.74], vao: [0, 6.2], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a) => (hash(Math.floor(info.s / 6), r, 4) < 0.06 ? 0xf2f2ee : a === 1 && r % 4 === 0 ? tom(cc, 0.85) : cc),
+      teto: { lados: 'todos', cor: 0xf0f2f4, baixo: 0xc9d2da, borda: 0xf6f6f4, costela: 0xe0e3e6, folga: 6.5, frente: 4, desce: 1.2 } });
+    const C = T.C, r = T.res['z-'];
+    laminas(E, C, r.oT1 + 0.3, r.yT - 1, 4, 0x3a5a72, 0x46667e);              // a pele de vidro
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 9 + r.R.oFim - 6), r.yT - 4.5, s * 14, 11, 5, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 3 });
+    E.txtTelao = 'LEAGUE'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ MASTS (Etihad)
+  NOMES.masts = 'Masts Arena';
+  MODELOS.masts = (E) => {
+    const cc = corCadeira(E);
+    const T = tribunas(E, { recuo: 9, rb: 22, nArc: 8, lados: { 'z-': [16, 14, 10], 'z+': [16, 14], 'x-': [16, 14, 10], 'x+': [16, 14, 10] }, cantos: [16, 14],
+      dy: [0.55, 0.74, 0.84], vao: [0, 5, 4.2], camarotes: true, organizada: 'x+',
+      assento: (r, i, info, a) => (a === 2 ? tom(cc, 0.85) : r % 7 === 6 ? 0xe8e8e4 : cc),
+      teto: { lados: 'todos', cor: 0xc9ced4, baixo: 0x8c939b, folga: 6.5, desce: 1.8 } });
+    // os mastros por fora, com os cabos até a borda do teto
+    const C = T.C, H = Math.max(...Object.values(T.res).map((r) => r.yT || 0)) + 22;
+    for (let i = 0; i < C.N.length - 1; i += Math.max(4, Math.floor((C.N.length - 1) / 12))) {
+      const l = ladoDo(C, i), r = T.res[l] || T.res['z+']; if (!r.yT) continue;
+      const n = C.N[i], m = ponto(n, C.rb, r.oT1 + 9);
+      viga(E.L, [m[0], 0, m[1]], [m[0], H, m[1]], 1.1, 0xb8bdc4);
+      viga(E.L, [m[0], H, m[1]], ponto3(n, C.rb, 5, r.yT), 0.12, 0x3a3e45);
+      viga(E.L, [m[0], H, m[1]], ponto3(n, C.rb, r.oT1, r.yT - 1.8), 0.12, 0x3a3e45);
+    }
+    E.txtTelao = 'LEAGUE'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ WALL (Tottenham Hotspur Stadium)
+  NOMES.wall = 'Southwall Stadium';
+  MODELOS.wall = (E) => {
+    const cc = corCadeira(E);
+    const T = tribunas(E, { recuo: 7, rb: 10, nArc: 5, lados: { 'z-': [15, 15, 11], 'z+': [15, 14], 'x-': [15, 14], 'x+': [46] }, cantos: [15, 12],
+      dy: [0.56, 0.74, 0.86], dyLado: { 'x+': 0.68 }, vao: [0, 5, 4.2], camarotes: true, organizada: 'x+',
+      assento: (r, i, info) => (info.lado === 'x+' ? (r % 9 === 8 ? 0xe8e8e4 : cc) : cc),
+      teto: { lados: 'todos', cor: 0xe6e8eb, baixo: 0xb5bcc4, folga: 6.5, desce: 1.6 } });
+    const r = T.res['x+'];
+    telao(E, E.HL + 7 + r.R.oFim - 8, r.yT - 5, 0, 18, 8, Math.PI / 2, { cabos: 3 });
+    laminas(E, T.C, r.oT1 + 0.3, r.yT - 1, 3, 0xc0c5cc, 0x9aa6b2, (i, lado) => lado === 'x+');
+    E.txtTelao = 'LEAGUE'; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ TOWN GROUND (o inglês clássico)
+  //   Quatro arquibancadas soltas, cada uma da sua altura (três jeitos, o mesmo clube cai sempre no mesmo) e as torres de luz.
+  NOMES.towns = 'Town Ground';
+  MODELOS.towns = (E) => {
+    const v = (typeof sementeDe === 'function' ? sementeDe('town|' + (E.M.nome || '')) : 0) % 3, cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe8e8e4 : E.c2, sig = siglaNasCadeiras(E, 'z+', 34);
+    const L = [{ 'z-': [14, 12], 'z+': [14], 'x-': [16], 'x+': [13, 9] }, { 'z-': [14, 14, 10], 'z+': [14, 10], 'x-': [15, 10], 'x+': [15] }, { 'z-': [15, 13], 'z+': [15, 13], 'x-': [18], 'x+': [18] }][v];
+    tribunas(E, { recuo: 5.5, rb: 1, nArc: 2, lados: L, cantos: null, dy: [0.56, 0.74, 0.84], vao: [0, 4.6, 4.2], camarotes: v === 1, organizada: 'x-',
+      assento: (r, i, info, a, n) => (a === 0 && sig(r, info, n) ? c2 : cc),
+      teto: { lados: 'todos', cor: v === 1 ? 0xdfe2e6 : 0x8c9198, baixo: 0x6c7178, folga: 5.2, desce: 2 } });
+    torresDeLuz(E, E.HL + 11, E.HW + 11, 32);
+    E.txtTelao = 'LEAGUE'; E.bairro = 'bairro'; E.esplanada = 8; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ------------------------------------------------------------------------------------------ OLD BRICK GROUND (o antigo de bairro)
+  NOMES.brick = 'Old Brick Ground';
+  MODELOS.brick = (E) => {
+    const cc = corCadeira(E);
+    const T = tribunas(E, { recuo: 5, rb: 1, nArc: 2, lados: { 'z-': [12, 8], 'z+': [12], 'x-': [13], 'x+': [11] }, cantos: null, dy: [0.5, 0.66], vao: [0, 3.8], organizada: 'x-',
+      assento: (r) => (r % 2 ? cc : tom(cc, 0.9)), concreto: (r) => (r % 2 ? 0x7a7a74 : 0x72726c), teto: { lados: 'todos', cor: 0x6a5048, baixo: 0x5a4a44, folga: 4, desce: 2.6 } });
+    // a tribuna antiga: a fachada de tijolo atrás, com o frontão branco no meio
+    const r = T.res['z-'], C = T.C, zF = -(E.HW + 5 + r.oT1 + 0.6), lw = 2 * E.HL - 4;
+    caixa(E.L, 0, r.yT / 2, zF, lw, r.yT, 1.2, { todo: 0x9a4a32, y1: 0x6a5048 }, 0, ['y0']);
+    for (let x = -lw / 2 + 4; x < lw / 2; x += 8) caixa(E.L, x, r.yT * 0.55, zF - 0.62, 2.2, 2.6, 0.1, 0xe8e2d0);   // as janelas
+    caixa(E.L, 0, r.yT + 2, zF, 14, 4, 1.2, 0xf2efe6);                       // o frontão
+    caixa(E.L, 0, r.yT + 4.4, zF, 9, 1, 1.25, 0xf2efe6);
+    torresDeLuz(E, E.HL + 9, E.HW + 9, 24);
+    E.txtTelao = 'LEAGUE'; E.bairro = 'bairro'; E.esplanada = 4; E.semEstac = true; E.chaoCor = 0x2a5a2e;
+  };
+
   // ============================================================================================ (7.4.0) O ENTORNO: A CIDADE EM VOLTA
   //   Depois do modelo, em volta do estádio: a ESPLANADA de concreto (com as árvores e o estacionamento atrás da tribuna), a
   //   AVENIDA que dá a volta (asfalto, faixa amarela, calçadas com meio-fio, postes acesos e carros estacionados) e a CIDADE em
@@ -1772,7 +2114,7 @@
   }
   // sem modelo na partida: o mesmo time cai sempre no mesmo estádio
   function modeloDoTime(M) {
-    const ks = Object.keys(MODELOS), h = typeof sementeDe === 'function' ? sementeDe(String((M && (M.id || M.nome)) || 'x')) : 0;
+    const ks = MODELOS_BR, h = typeof sementeDe === 'function' ? sementeDe(String((M && (M.id || M.nome)) || 'x')) : 0;
     return ks[h % ks.length];
   }
 
@@ -1781,7 +2123,15 @@
   //   A Arena da Floresta não é de ninguém: é o campo neutro da final da Copa do Brasil (serieb.js).
   const CASA_DO_CLUBE = { urubu: 'anel', laranjeiras: 'anel', raposa: 'lagoa', periquito: 'caldeirao', imortal: 'humaita', peixe: 'vila',
     timao: 'fachada', glorioso: 'arcos', leaocaipira: 'caipira', touro: 'taboao', verdaooeste: 'oeste', galo: 'listras', furacao: 'baixada',
-    leaoazul: 'mangueiral', saci: 'petalas', esquadrao: 'ferradura', colina: 'colinaE', morumbi: 'concha', leaodabarra: 'toca', coxa: 'alto' };
+    leaoazul: 'mangueiral', saci: 'petalas', esquadrao: 'ferradura', colina: 'colinaE', morumbi: 'concha', leaodabarra: 'toca', coxa: 'alto',
+    // (7.5.2) Espanha e Inglaterra: os grandes na casa parecida com a de verdade; os outros no estádio comum de cada país
+    merengue: 'castellana', blaugrana: 'tresAneis', colchonero: 'olas', leones: 'arco', murcielago: 'vertical', nervion: 'vertical',
+    submarino: 'municipal', verdiblanco: 'municipal', txuriurdin: 'municipal', celeste: 'municipal', azulon: 'municipal', franjirrojo: 'municipal',
+    perico: 'municipal', babazorro: 'municipal', franjiverde: 'municipal', granota: 'municipal', rojillo: 'municipal', racinguista: 'municipal',
+    branquiazul: 'municipal', boquerones: 'municipal',
+    reddevils: 'theatre', merseyreds: 'kop', gunners: 'bowl', citizens: 'masts', lilywhites: 'wall', kingsroad: 'towns', magpies: 'towns',
+    villans: 'towns', toffees: 'towns', eagles: 'towns', sherwood: 'towns', peacocks: 'towns', seagulls: 'towns', blackcats: 'towns',
+    skyblues: 'towns', tractors: 'towns', tigers: 'towns', cottagers: 'brick', cherries: 'brick', bees: 'brick' };
   // quem subiu da Série B (sem casa na lista) joga num dos estádios do interior, sempre o mesmo
   const DO_INTERIOR = ['caipira', 'taboao', 'oeste'];
   const modeloDoClube = (k) => CASA_DO_CLUBE[k] || (k ? DO_INTERIOR[(typeof sementeDe === 'function' ? sementeDe('casa|' + k) : String(k).length) % DO_INTERIOR.length] : '');

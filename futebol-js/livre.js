@@ -3,15 +3,16 @@
    - Registrado com FutebolJS.registrarFase({ id: 'livre' }) só para o jogo saber baixar o arquivo; o menu inicial (jogo.js) chama
      Fases.carregar('livre').then((m) => m.abrir()).
    - Os tipos:
-       Campeonato ... a Série A ou a Série B (Brasil), rápido (19 rodadas, só turno) ou padrão (38, turno e returno). A tabela, as
+       Campeonato ... a Série A ou a Série B (Brasil) ou (7.5.2) a Liga Espanhola ou a Liga Inglesa (20 times cada), rápido
+                      (19 rodadas, só turno) ou padrão (38, turno e returno). A tabela, as
                       rodadas simuladas dos outros jogos, artilharia, cartões e suspensões (3 amarelos ou 1 vermelho = 1 jogo fora,
                       como na vida real), lesões, a festa do título e a noite dos prêmios individuais. Fica salvo no aparelho.
        Copa ......... a Copa do Brasil: 32 times (os 20 da A e os 12 mais fortes da B, o seu sempre entra), mata-mata em jogo único
                       (empate = pênaltis), a final num estádio grande neutro. Também fica salva.
-       Amistoso ..... qualquer time da A ou da B contra qualquer outro, no estádio que você quiser.
+       Amistoso ..... qualquer time da A, da B, da Espanha ou da Inglaterra contra qualquer outro, no estádio que você quiser.
        Várzea ....... os 10 times do Campeonato de Várzea, no campo de terra da cidadezinha.
-       Sintético .... os clubes da A e da B no society (6 x 6).
-       Futsal ....... os clubes da A e da B na quadra (6 x 6).
+       Sintético .... os clubes do Brasil, da Espanha e da Inglaterra no society (6 x 6).
+       Futsal ....... os clubes do Brasil, da Espanha e da Inglaterra na quadra (6 x 6).
    - Antes de cada jogo: a tela do CONFRONTO (os dois jogadores se encarando, com os técnicos atrás), os times, as escalações e os
      desfalques; em CONFIGURAÇÕES escolhe horário, clima, duração, estádio (só no amistoso), dificuldade, posição, personagem e a
      abertura (a cena de entrada: o estádio por fora, o ônibus chegando e os jogadores descendo, o vestiário, a torcida e a entrada
@@ -44,7 +45,12 @@
   const forcaT = (k) => { const t = TD(k); if (t) return SBD.forcaTime(t); const v = TV(k); return v ? VZD.forcaTime(v) : { media: 6, gk: 6, def: 6, mid: 6, fwd: 6 }; };
   const elencoT = (k) => { const t = TD(k); if (t) return t.pequeno ? [] : SBD.elencoB(t); const v = TV(k); return v ? VZD.elencoVz(v) : []; };
   const divT = (k) => (TD(k) ? TD(k).div0 || (SBD.TIMES_A.includes(TD(k)) ? 'A' : 'B') : 'VZ');
-  const timesDiv = (div) => (div === 'A' ? SBD.TIMES_A : div === 'B' ? SBD.TIMES_B : VZD ? VZD.TIMES_VZ : []).map((t) => t.k);
+  // (7.5.2) as ligas: 'A' e 'B' (Brasil), 'ES' (Espanha) e 'EN' (Inglaterra)
+  const LISTA_DIV = { A: 'TIMES_A', B: 'TIMES_B', ES: 'TIMES_ES', EN: 'TIMES_EN' };
+  const timesDiv = (div) => (LISTA_DIV[div] ? SBD[LISTA_DIV[div]] || [] : VZD ? VZD.TIMES_VZ : []).map((t) => t.k);
+  const NOME_DIV = { A: 'Série A', B: 'Série B', ES: 'Liga Espanhola', EN: 'Liga Inglesa' };
+  const nomeDiv = (div) => NOME_DIV[div] || 'Série A';
+  const europa = (div) => div === 'ES' || div === 'EN';
 
   // ============================================================================================ A TELA (pixel art, como o menu)
   let raiz = null, cssFeito = false;
@@ -253,6 +259,8 @@
     }
   }
   const GRUPOS_BR = () => [{ nome: 'Série A', times: timesDiv('A') }, { nome: 'Série B', times: timesDiv('B') }];
+  // (7.5.2) amistoso, sintético e futsal: o Brasil e as ligas da Europa
+  const GRUPOS_TODOS = () => GRUPOS_BR().concat([{ nome: 'Liga Espanhola', times: timesDiv('ES') }, { nome: 'Liga Inglesa', times: timesDiv('EN') }]);
 
   // ============================================================================================ OS JOGADORES, AS FICHAS E OS DESFALQUES
   //   S.fichas[k][nome] = { am: amarelos, su: jogos de suspensão, le: jogos de lesão }  (nome do jogador; o seu é '__voce')
@@ -387,7 +395,7 @@
   function novoCampeonato(div, formato, nosso) {
     const ks = timesDiv(div), ida = tabelaTurno(ks.length);
     const rod = formato === 'padrao' ? ida.concat(ida.map((r) => r.map(([c, f]) => [f, c, -1, -1]))) : ida;
-    return { tipo: 'camp', v: 1, pais: 'BR', div, formato, nosso, times: ks, rod, r: 0, est: {}, fichas: {}, jogosNosso: 0, fim: false, festa: false, gala: false, hist: [], sem: (Math.random() * 1e9) >>> 0, criado: Date.now() };
+    return { tipo: 'camp', v: 1, pais: europa(div) ? div : 'BR', div, formato, nosso, times: ks, rod, r: 0, est: {}, fichas: {}, jogosNosso: 0, fim: false, festa: false, gala: false, hist: [], sem: (Math.random() * 1e9) >>> 0, criado: Date.now() };
   }
   function classificacao(S) {
     const L = S.times.map((k, i) => ({ i, k, j: 0, p: 0, v: 0, e: 0, d: 0, gp: 0, gc: 0 }));
@@ -417,12 +425,13 @@
     S.r = r + 1;
     if (S.r >= S.rod.length) S.fim = true;
   }
-  const zonaCamp = (S, pos) => (S.div === 'A' ? (pos <= 4 ? 'z1' : pos <= 6 ? 'z2' : pos > S.times.length - 4 ? 'z3' : '') : (pos <= 4 ? 'z1' : pos > S.times.length - 4 ? 'z3' : ''));
+  const zonaCamp = (S, pos) => (europa(S.div) ? (pos <= 4 ? 'z1' : pos <= 6 ? 'z2' : pos > S.times.length - 3 ? 'z3' : '') : S.div === 'A' ? (pos <= 4 ? 'z1' : pos <= 6 ? 'z2' : pos > S.times.length - 4 ? 'z3' : '') : (pos <= 4 ? 'z1' : pos > S.times.length - 4 ? 'z3' : ''));
   function htmlTabela(S) {
     const cl = classificacao(S);
     return '<table class="lvTab"><tr><th>#</th><th style="text-align:left">' + escH(T('Time')) + '</th><th>P</th><th>J</th><th>V</th><th>E</th><th>D</th><th>' + escH(T('SG')) + '</th></tr>' +
       cl.map((x, i) => '<tr class="' + (x.k === S.nosso ? 'nos ' : '') + zonaCamp(S, i + 1) + '"><td>' + (i + 1) + '</td><td class="n"><img src="' + urlT(x.k) + '" alt="">' + escH(nomeT(x.k)) + '</td><td><b>' + x.p + '</b></td><td>' + x.j + '</td><td>' + x.v + '</td><td>' + x.e + '</td><td>' + x.d + '</td><td>' + (x.gp - x.gc) + '</td></tr>').join('') + '</table>' +
-      '<p class="lvLeg">' + (S.div === 'A' ? '<i style="background:#3f9d2a"></i>' + escH(T('Libertadores')) + '<i style="background:#2a7ad6"></i>' + escH(T('Pré-Libertadores')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))
+      '<p class="lvLeg">' + (europa(S.div) ? '<i style="background:#3f9d2a"></i>' + escH(T('Copa dos Campeões da Europa')) + '<i style="background:#2a7ad6"></i>' + escH(T('Torneio Europeu')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))
+        : S.div === 'A' ? '<i style="background:#3f9d2a"></i>' + escH(T('Libertadores')) + '<i style="background:#2a7ad6"></i>' + escH(T('Pré-Libertadores')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))
         : '<i style="background:#3f9d2a"></i>' + escH(T('Acesso à Série A')) + '<i style="background:#c8202e"></i>' + escH(T('Rebaixamento'))) + '</p>';
   }
   const linhaJogo = (S, c, f, gc, gf, pen, extra) => '<div class="lvJogo' + (c === S.nosso || f === S.nosso ? ' nos' : '') + '"><span><img src="' + urlT(c) + '" alt="">' + escH(siglaT(c)) + '</span><b>' + (gc < 0 ? 'x' : gc + ' x ' + gf) + (pen ? ' <small>(' + pen[0] + '-' + pen[1] + ')</small>' : '') + '</b><span>' + escH(siglaT(f)) + '<img src="' + urlT(f) + '" alt=""></span>' + (extra || '') + '</div>';
@@ -559,7 +568,7 @@
     const TRAJE = { terno: 'de terno', agasalho: 'de agasalho do clube', polo: 'de polo do clube', social: 'de camisa social', jaqueta: 'de jaqueta' };
     const tat = typeof TATICAS !== 'undefined' && TATICAS[t.tatica] ? T(TATICAS[t.tatica].nome) : '';
     return '<div class="lvCard"><h3><img src="' + urlT(k) + '" alt="">' + escH(t.nome) + '</h3>' +
-      '<p><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(k), 10 - estrelasT(k)) + '</span> · ' + escH(Tf('média {0}', Math.round(f.media * 10))) + (TD(k) ? ' · ' + escH(T(divT(k) === 'A' ? 'Série A' : 'Série B')) : '') + '</p>' +
+      '<p><span class="est">' + '★★★★★☆☆☆☆☆'.slice(5 - estrelasT(k), 10 - estrelasT(k)) + '</span> · ' + escH(Tf('média {0}', Math.round(f.media * 10))) + (TD(k) ? ' · ' + escH(T(nomeDiv(divT(k)))) : '') + '</p>' +
       '<p>' + escH(Tf('Técnico: {0}', t.tecnico)) + (V ? ' (' + escH(T(TRAJE[V.traje.tipo])) + (V.traje.oculos ? ', ' + escH(T(V.traje.oculos === 'escuro' ? 'óculos escuros' : 'de óculos')) : '') + (V.traje.bone ? ', ' + escH(T('de boné')) : '') + ')' : '') + '</p>' +
       '<p>' + escH(Tf('Esquema: {0}', t.formacao)) + (tat ? ' · ' + escH(tat) : '') + '</p>' + barras + (t.estilo || t.nota ? '<p style="opacity:.85">' + escH(T(t.estilo || t.nota)) + '</p>' : '') + '</div>';
   }
@@ -1026,7 +1035,7 @@
   // ============================================================================================ AMISTOSO, VÁRZEA, SINTÉTICO E FUTSAL
   const NOME_TIPO = { camp: 'Campeonato', copa: 'Copa', amistoso: 'Amistoso', varzea: 'Várzea', sintetico: 'Sintético', futsal: 'Futsal' };
   async function modoAvulso(tipo) {
-    const grupos = tipo === 'varzea' ? [{ nome: 'Várzea', times: timesDiv('VZ') }] : GRUPOS_BR();
+    const grupos = tipo === 'varzea' ? [{ nome: 'Várzea', times: timesDiv('VZ') }] : GRUPOS_TODOS();
     let a = null, b = null;
     for (;;) {
       if (!a) { a = await escolherTime(T('Escolha o seu time'), grupos, null, T(NOME_TIPO[tipo])); if (!a) return; }
@@ -1065,7 +1074,7 @@
   async function modoTorneio(tipo) {
     let S = salvos()[tipo];
     if (S && S.v === 1) {
-      const resumo = tipo === 'camp' ? Tf('{0} · {1} · rodada {2} de {3}', T(S.div === 'A' ? 'Série A' : 'Série B'), nomeT(S.nosso), Math.min(S.r + 1, S.rod.length), S.rod.length) : Tf('Copa do Brasil · {0} · {1}', nomeT(S.nosso), S.fim ? T('encerrada') : faseNome(S));
+      const resumo = tipo === 'camp' ? Tf('{0} · {1} · rodada {2} de {3}', T(nomeDiv(S.div)), nomeT(S.nosso), Math.min(S.r + 1, S.rod.length), S.rod.length) : Tf('Copa do Brasil · {0} · {1}', nomeT(S.nosso), S.fim ? T('encerrada') : faseNome(S));
       const el = tela('<div class="lvCaixa">' + topo(T(tipo === 'camp' ? 'Campeonato salvo' : 'Copa salva')) + '<p class="lvMsg">' + escH(T('Você tem um jogo salvo. Quer continuar ou começar um novo?')) + '</p>' +
         '<div class="lvCard"><h3><img src="' + urlT(S.nosso) + '" alt="">' + escH(resumo) + '</h3></div>' +
         '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="cont">' + escH(T('Continuar')) + ' ▶</button><button type="button" class="pxBtn" data-a="novo">' + escH(T('Começar um novo')) + '</button></div></div>');
@@ -1074,20 +1083,26 @@
       if (r.a === 'novo') { if (!(await confirmar(T('Começar um novo?'), T('O jogo salvo será apagado. Tem certeza?'), T('Sim, começar um novo'), T('Não')))) return modoTorneio(tipo); S = null; }
     } else S = null;
     if (!S) {
-      // o país (por enquanto só o Brasil), a liga, o formato e o time
-      const el = tela('<div class="lvCaixa">' + topo(T('Escolha o país')) + '<div class="lvGrade"><button type="button" class="pxBtn lvTipo" data-a="BR"><b>' + escH(T('Brasil')) + '</b><small>' + escH(T(tipo === 'camp' ? 'Série A e Série B' : 'Copa do Brasil')) + '</small></button>' +
-        '<button type="button" class="pxBtn lvTipo" disabled><b>' + escH(T('Em breve')) + '</b><small>' + escH(T('Outros países')) + '</small></button></div></div>');
-      if ((await escolha(el)).a !== 'BR') return;
+      // o país (Brasil; no campeonato, também Espanha e Inglaterra: 7.5.2), a liga, o formato e o time
+      const bPais = (a, nome, desc, off) => '<button type="button" class="pxBtn lvTipo" ' + (off ? 'disabled' : 'data-a="' + a + '"') + '><b>' + escH(T(nome)) + '</b><small>' + escH(T(desc)) + '</small></button>';
+      const el = tela('<div class="lvCaixa">' + topo(T('Escolha o país')) + '<div class="lvGrade">' + bPais('BR', 'Brasil', tipo === 'camp' ? 'Série A e Série B' : 'Copa do Brasil') +
+        (tipo === 'camp' ? bPais('ES', 'Espanha', 'Liga Espanhola: 20 times, a elite do país') + bPais('EN', 'Inglaterra', 'Liga Inglesa: 20 times, a elite do país')
+          : bPais('', 'Em breve', 'Outros países', true)) + '</div></div>');
+      const pais = (await escolha(el)).a;
+      if (pais !== 'BR' && !(tipo === 'camp' && (pais === 'ES' || pais === 'EN'))) return;
       if (tipo === 'camp') {
-        const e2 = tela('<div class="lvCaixa">' + topo(T('Escolha o campeonato')) + '<div class="lvGrade">' +
-          '<button type="button" class="pxBtn lvTipo" data-a="A"><b>' + escH(T('Série A')) + '</b><small>' + escH(T('Os 20 melhores do país')) + '</small></button>' +
-          '<button type="button" class="pxBtn lvTipo" data-a="B"><b>' + escH(T('Série B')) + '</b><small>' + escH(T('20 times brigando pelo acesso')) + '</small></button></div></div>');
-        const div = (await escolha(e2)).a; if (div !== 'A' && div !== 'B') return;
+        let div = pais;
+        if (pais === 'BR') {
+          const e2 = tela('<div class="lvCaixa">' + topo(T('Escolha o campeonato')) + '<div class="lvGrade">' +
+            '<button type="button" class="pxBtn lvTipo" data-a="A"><b>' + escH(T('Série A')) + '</b><small>' + escH(T('Os 20 melhores do país')) + '</small></button>' +
+            '<button type="button" class="pxBtn lvTipo" data-a="B"><b>' + escH(T('Série B')) + '</b><small>' + escH(T('20 times brigando pelo acesso')) + '</small></button></div></div>');
+          div = (await escolha(e2)).a; if (div !== 'A' && div !== 'B') return;
+        }
         const e3 = tela('<div class="lvCaixa">' + topo(T('Formato')) + '<div class="lvGrade">' +
           '<button type="button" class="pxBtn lvTipo" data-a="rapido"><b>' + escH(T('Rápido')) + '</b><small>' + escH(T('19 rodadas: todos se enfrentam uma vez')) + '</small></button>' +
           '<button type="button" class="pxBtn lvTipo" data-a="padrao"><b>' + escH(T('Padrão')) + '</b><small>' + escH(T('38 rodadas: turno e returno, como o de verdade')) + '</small></button></div></div>');
         const fmt = (await escolha(e3)).a; if (fmt !== 'rapido' && fmt !== 'padrao') return;
-        const k = await escolherTime(T('Escolha o seu time'), [{ nome: div === 'A' ? 'Série A' : 'Série B', times: timesDiv(div) }]); if (!k) return;
+        const k = await escolherTime(T('Escolha o seu time'), [{ nome: nomeDiv(div), times: timesDiv(div) }]); if (!k) return;
         S = novoCampeonato(div, fmt, k);
       } else {
         const k = await escolherTime(T('Escolha o seu time'), GRUPOS_BR(), null, T('32 times: os 20 da Série A e os 12 melhores da Série B (o seu sempre entra).')); if (!k) return;
@@ -1113,7 +1128,7 @@
       const j = jogoDoNosso(S, S.r); if (!j) return null;
       const casa = j.c === S.nosso, adv = casa ? j.f : j.c, mand = j.c;
       return { a: S.nosso, b: adv, casa, campo: 'serieA', modelo: modeloCasa(mand), rodada: S.r, S, fogos: S.r === S.rod.length - 1,
-        comp: { tipo: 'liga', nome: T(S.div === 'A' ? 'Série A' : 'Série B'), rodada: S.r + 1, fase: '', mataMata: false }, info: Tf('Rodada {0} de {1}', S.r + 1, S.rod.length) };
+        comp: { tipo: 'liga', nome: T(nomeDiv(S.div)), rodada: S.r + 1, fase: '', mataMata: false }, info: Tf('Rodada {0} de {1}', S.r + 1, S.rod.length) };
     }
     const g = jogoCopaNosso(S); if (!g) return null;
     const casa = g.c === S.nosso, adv = casa ? g.f : g.c, fin = S.fases[S.fases.length - 1].length === 1;
@@ -1172,7 +1187,7 @@
       if (S.fim) { const a = await fimDoTorneio(S, 'camp'); if (a === 'novo') { salvar('camp', null); return modoTorneio('camp'); } return; }
       const J = jogoDeHoje(S), cl = classificacao(S), pos = cl.findIndex((x) => x.k === S.nosso) + 1;
       const adv = J ? J.b : null;
-      const el = tela('<div class="lvCaixa">' + topo(T(S.div === 'A' ? 'Série A' : 'Série B') + ' · ' + nomeT(S.nosso)) +
+      const el = tela('<div class="lvCaixa">' + topo(T(nomeDiv(S.div)) + ' · ' + nomeT(S.nosso)) +
         '<p class="lvSub">' + escH(Tf('Rodada {0} de {1} · {2}º lugar · {3} pts', S.r + 1, S.rod.length, pos, cl[pos - 1].p)) + '</p>' +
         (J ? '<div class="lvCard"><h3>' + escH(T('Próximo jogo')) + '</h3><div class="lvVs"><div><img src="' + urlT(J.casa ? J.a : J.b) + '" alt=""><b>' + escH(nomeT(J.casa ? J.a : J.b)) + '</b><span class="lvTag">' + escH(T('CASA')) + '</span></div><div class="x">x</div><div><img src="' + urlT(J.casa ? J.b : J.a) + '" alt=""><b>' + escH(nomeT(J.casa ? J.b : J.a)) + '</b><span class="lvTag fora">' + escH(T('FORA')) + '</span></div></div><p style="text-align:center">' + escH(nomeEstadio(J.modelo)) + '</p></div>' : '') +
         '<div class="lvBtns"><button type="button" class="pxBtn pxPrim" data-a="jogar">' + escH(T(pausa() && pausa().tipo === 'camp' ? 'Continuar o 2º tempo' : 'Próximo jogo')) + ' ▶</button></div>' +
@@ -1219,10 +1234,10 @@
       const F = await Fases.carregar('festa'), k = S.nosso, t = TD(k), tm = SBD.timeMotor(t), cfgU = cfgSalva();
       const fin = tipo === 'copa' ? S.fases[S.fases.length - 1][0] : null;
       const J = { a: k, b: fin ? (fin.c === k ? fin.f : fin.c) : S.times.find((x) => x !== k), casa: true, campo: 'serieA', modelo: fin && fin.neutro ? fin.neutro : modeloCasa(k), S, fogos: true,
-        comp: { tipo: tipo === 'copa' ? 'copa' : 'liga', nome: T(tipo === 'copa' ? 'Copa do Brasil' : S.div === 'A' ? 'Série A' : 'Série B') }, cfg: Object.assign({}, cfgU, { horario: 'noite', clima: 'seco' }) };
+        comp: { tipo: tipo === 'copa' ? 'copa' : 'liga', nome: T(tipo === 'copa' ? 'Copa do Brasil' : nomeDiv(S.div)) }, cfg: Object.assign({}, cfgU, { horario: 'noite', clima: 'seco' }) };
       const cfg = montarCfg(J);
       esconder(); await preto(true, 300); semTitulo();
-      await F.campeao({ cfg, lado: -1, uni: Object.assign({}, tm.uniforme, { emblema: tm.emblema }), jogadores: jogadoresDaFesta(S, k, cfgU), trofeu: tipo === 'copa' ? 'cdb' : S.div === 'A' ? 'seriea' : 'serieb', cores: [t.uni[0], t.uni[1]], io: { preto, esperar } });
+      await F.campeao({ cfg, lado: -1, uni: Object.assign({}, tm.uniforme, { emblema: tm.emblema }), jogadores: jogadoresDaFesta(S, k, cfgU), trofeu: tipo === 'copa' ? 'cdb' : S.div === 'B' ? 'serieb' : 'seriea', cores: [t.uni[0], t.uni[1]], io: { preto, esperar } });
     } catch (e) { console.error('[Livre] festa do título:', e); }
   }
   function listaPremios(S) {
@@ -1240,8 +1255,8 @@
       const lista = listaPremios(S); if (!lista.length) return;
       const F = await Fases.carregar('festa');
       esconder(); await preto(true, 300); semTitulo();
-      await F.gala({ nivel: tipo === 'camp' && S.div === 'B' ? 'serieb' : 'seriea', titulo: tipo === 'copa' ? T('PRÊMIOS DA COPA DO BRASIL') : S.div === 'A' ? T('PRÊMIOS DA SÉRIE A') : T('PRÊMIOS DA SÉRIE B'),
-        saudacao: tipo === 'copa' ? T('Boa noite! Bem-vindos à festa de premiação da Copa do Brasil!') : null, premios: lista, io: { preto, esperar } });
+      await F.gala({ nivel: tipo === 'camp' && S.div === 'B' ? 'serieb' : 'seriea', titulo: tipo === 'copa' ? T('PRÊMIOS DA COPA DO BRASIL') : S.div === 'ES' ? T('PRÊMIOS DA LIGA ESPANHOLA') : S.div === 'EN' ? T('PRÊMIOS DA LIGA INGLESA') : S.div === 'A' ? T('PRÊMIOS DA SÉRIE A') : T('PRÊMIOS DA SÉRIE B'),
+        saudacao: tipo === 'copa' ? T('Boa noite! Bem-vindos à festa de premiação da Copa do Brasil!') : S.div === 'ES' ? T('Boa noite! Bem-vindos à festa de premiação da Liga Espanhola!') : S.div === 'EN' ? T('Boa noite! Bem-vindos à festa de premiação da Liga Inglesa!') : null, premios: lista, io: { preto, esperar } });
     } catch (e) { console.error('[Livre] noite dos prêmios:', e); }
   }
   async function fimDoTorneio(S, tipo) {
@@ -1252,7 +1267,7 @@
     const campanha = tipo === 'camp' ? Tf('O seu time terminou em {0}º lugar.', pos) : campeao === S.nosso ? T('O seu time é o campeão!') : Tf('O seu time caiu na fase: {0}.', T(FASES_COPA[S.hist.length - 1] || FASES_COPA[0]));
     const NOMEP = { art: 'Artilheiro', ass: 'Líder de assistências', melhor: 'Melhor jogador' };
     for (;;) {
-      const el = tela('<div class="lvCaixa">' + topo(T(tipo === 'camp' ? (S.div === 'A' ? 'Série A' : 'Série B') : 'Copa do Brasil') + ' · ' + T('Fim'), true) +
+      const el = tela('<div class="lvCaixa">' + topo(T(tipo === 'camp' ? nomeDiv(S.div) : 'Copa do Brasil') + ' · ' + T('Fim'), true) +
         '<div class="lvVs"><div><img src="' + urlT(campeao) + '" alt="" style="width:88px;height:88px"><b>' + escH(T('CAMPEÃO')) + '</b><b>' + escH(nomeT(campeao)) + '</b></div></div>' +
         '<p class="lvMsg" style="text-align:center">' + escH(campanha) + '</p>' +
         '<div class="lvCard"><h3>' + escH(T('Prêmios individuais')) + '</h3><ul class="lvLista">' + (P.map((x) => '<li' + (x.voce ? ' class="nos"' : '') + '><span>' + escH(T(NOMEP[x.tipo])) + '</span><span><b>' + escH(x.nome) + '</b> · ' + escH(x.time) + ' · ' + escH(x.tipo === 'art' ? Tf('{0} gols', x.v) : x.tipo === 'ass' ? Tf('{0} assistências', x.v) : Tf('nota média {0}', (+x.v).toFixed(1))) + '</span></li>').join('') || '<li><span>—</span></li>') + '</ul></div>' +
@@ -1300,12 +1315,12 @@
         '<button type="button" class="pxBtn" data-a="descartar">' + escH(T('Descartar')) + '</button></div></div>';
     }
     const el = tela('<div class="lvCaixa">' + topo(T('Partida livre')) + cont + '<p class="lvSub">' + escH(T('Escolha o tipo de jogo.')) + '</p><div class="lvGrade">' +
-      item('camp', 'Campeonato', 'Série A ou B: rápido (19 rodadas) ou padrão (38). Fica salvo.', !!D0.camp) +
+      item('camp', 'Campeonato', 'Brasil (Série A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.', !!D0.camp) +
       item('copa', 'Copa', 'Copa do Brasil: 32 times, mata-mata e a final num estádio grande. Fica salva.', !!D0.copa) +
-      item('amistoso', 'Amistoso', 'Um jogo entre quaisquer times da A e da B, no estádio que você quiser.') +
+      item('amistoso', 'Amistoso', 'Um jogo entre quaisquer times do Brasil, da Espanha e da Inglaterra, no estádio que você quiser.') +
       item('varzea', 'Várzea', 'Os times do Campeonato de Várzea, no campo de terra da cidadezinha.') +
-      item('sintetico', 'Sintético', 'Os clubes da A e da B no society (6 x 6).') +
-      item('futsal', 'Futsal', 'Os clubes da A e da B na quadra (6 x 6).') + '</div></div>');
+      item('sintetico', 'Sintético', 'Os clubes do Brasil, da Espanha e da Inglaterra no society (6 x 6).') +
+      item('futsal', 'Futsal', 'Os clubes do Brasil, da Espanha e da Inglaterra na quadra (6 x 6).') + '</div></div>');
     return (await escolha(el)).a;
   }
   // (7.4.13) depois do tipo de jogo: controlar UM jogador (o de sempre) ou o TIME INTEIRO. Fica guardado (e dá para mudar
@@ -1490,6 +1505,23 @@
     "{0} · {1} · rodada {2} de {3}": ["{0} · {1} · round {2} of {3}", "{0} · {1} · jornada {2} de {3}", "{0} · {1} · giornata {2} di {3}", "{0} · {1} · journée {2} sur {3}"],
     "Última rodada": ["Last round", "Última jornada", "Ultima giornata", "Dernière journée"],
     "Partida livre": ["Quick match", "Partido libre", "Partita libera", "Match libre"],
+    // (7.5.2) as ligas da Espanha e da Inglaterra
+    "Liga Espanhola": ["Spanish League", "Liga española", "Liga spagnola", "Championnat d'Espagne"],
+    "Liga Inglesa": ["English League", "Liga inglesa", "Campionato inglese", "Championnat d'Angleterre"],
+    "Espanha": ["Spain", "España", "Spagna", "Espagne"],
+    "Inglaterra": ["England", "Inglaterra", "Inghilterra", "Angleterre"],
+    "Liga Espanhola: 20 times, a elite do país": ["Spanish League: 20 teams, the country's elite", "Liga española: 20 equipos, la élite del país", "Liga spagnola: 20 squadre, l'élite del paese", "Championnat d'Espagne : 20 équipes, l'élite du pays"],
+    "Liga Inglesa: 20 times, a elite do país": ["English League: 20 teams, the country's elite", "Liga inglesa: 20 equipos, la élite del país", "Campionato inglese: 20 squadre, l'élite del paese", "Championnat d'Angleterre : 20 équipes, l'élite du pays"],
+    "Copa dos Campeões da Europa": ["European Champions Cup", "Copa de Campeones de Europa", "Coppa dei Campioni d'Europa", "Coupe des champions d'Europe"],
+    "Torneio Europeu": ["European Trophy", "Torneo Europeo", "Torneo Europeo", "Tournoi européen"],
+    "PRÊMIOS DA LIGA ESPANHOLA": ["SPANISH LEAGUE AWARDS", "PREMIOS DE LA LIGA ESPAÑOLA", "PREMI DELLA LIGA SPAGNOLA", "PRIX DU CHAMPIONNAT D'ESPAGNE"],
+    "PRÊMIOS DA LIGA INGLESA": ["ENGLISH LEAGUE AWARDS", "PREMIOS DE LA LIGA INGLESA", "PREMI DEL CAMPIONATO INGLESE", "PRIX DU CHAMPIONNAT D'ANGLETERRE"],
+    "Boa noite! Bem-vindos à festa de premiação da Liga Espanhola!": ["Good evening! Welcome to the Spanish League awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Liga española!", "Buonasera! Benvenuti alla serata dei premi della Liga spagnola!", "Bonsoir ! Bienvenue à la soirée des prix du Championnat d'Espagne !"],
+    "Boa noite! Bem-vindos à festa de premiação da Liga Inglesa!": ["Good evening! Welcome to the English League awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Liga inglesa!", "Buonasera! Benvenuti alla serata dei premi del Campionato inglese!", "Bonsoir ! Bienvenue à la soirée des prix du Championnat d'Angleterre !"],
+    "Brasil (Série A ou B), Espanha ou Inglaterra: rápido (19 rodadas) ou padrão (38). Fica salvo.": ["Brazil (Série A or B), Spain or England: quick (19 rounds) or standard (38). It is saved.", "Brasil (Série A o B), España o Inglaterra: rápido (19 jornadas) o estándar (38). Se guarda.", "Brasile (Série A o B), Spagna o Inghilterra: rapido (19 giornate) o standard (38). Viene salvato.", "Brésil (Série A ou B), Espagne ou Angleterre : rapide (19 journées) ou standard (38). Il est sauvegardé."],
+    "Um jogo entre quaisquer times do Brasil, da Espanha e da Inglaterra, no estádio que você quiser.": ["A match between any teams from Brazil, Spain and England, at the stadium you want.", "Un partido entre cualquier equipo de Brasil, España e Inglaterra, en el estadio que quieras.", "Una partita tra qualsiasi squadra di Brasile, Spagna e Inghilterra, nello stadio che vuoi.", "Un match entre n'importe quelles équipes du Brésil, d'Espagne et d'Angleterre, dans le stade de ton choix."],
+    "Os clubes do Brasil, da Espanha e da Inglaterra no society (6 x 6).": ["The clubs from Brazil, Spain and England on the small-sided pitch (6 v 6).", "Los clubes de Brasil, España e Inglaterra en fútbol 6 (6 x 6).", "I club di Brasile, Spagna e Inghilterra nel calcio a 6 su erba (6 x 6).", "Les clubs du Brésil, d'Espagne et d'Angleterre en foot à 6 (6 x 6)."],
+    "Os clubes do Brasil, da Espanha e da Inglaterra na quadra (6 x 6).": ["The clubs from Brazil, Spain and England on the court (6 v 6).", "Los clubes de Brasil, España e Inglaterra en la cancha (6 x 6).", "I club di Brasile, Spagna e Inghilterra sul campo indoor (6 x 6).", "Les clubs du Brésil, d'Espagne et d'Angleterre sur le terrain en salle (6 x 6)."],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 

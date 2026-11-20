@@ -1,5 +1,6 @@
 // =====================================================================================================================
-// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B (as paródias do serieb.js) e o espaço da
+// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B e (7.5.2) dos 40 da Espanha e da Inglaterra
+//   (as paródias do serieb.js) e o espaço da
 //   pixel art no peito. Cada time tem [uniforme 1, uniforme 2]; o motor do desenho fica no jogo.js (compilarModelo e
 //   pintarCamisaModelo: lá está a lista de camadas e texturas). As cores das camisas continuam vindo do serieb.js (uni e
 //   uni2): 'c' aqui é a camisa daquele uniforme, 'l' a listra, 'g' a gola, 'k' o calção; o resto é cor escrita.
@@ -179,6 +180,167 @@
     tubarao: [          // Londrina (o Tubarão): azul-celeste com ondas e detalhes brancos; a 2 é branca com o celeste
       { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'ondas', k: 0.1 } },
       { lateral: '#3a9ad8', lateralFrente: 0.03, gola: 'v', golaCor: '#3a9ad8', punho: '#3a9ad8', tex: { t: 'ondas', k: 0.05 } },
+    ],    // ------------------------------------------------------------------------------------------------- (7.5.2) ESPANHA
+    blaugrana: [        // Barcelona: listras largas azul-grená com detalhes dourados; a 2 é dourada
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 5 }], gola: 'redonda', golaCor: '#edbb00', punho: '#edbb00', numero: '#edbb00' },
+      { gola: 'v', golaCor: '#a50044', golaCor2: '#004d98', punho: '#a50044', tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    merengue: [         // Real Madrid: branca com detalhes dourados e gola polo; a 2 é azul-marinho
+      { gola: 'polo', golaCor: '#c9a227', punho: '#c9a227', numero: '#1c2a4a', tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: '#c9a227', punho: '#c9a227', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    colchonero: [       // Atlético de Madrid: listras verticais vermelhas e brancas, gola azul; a 2 é azul-marinho
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#1d2f6f', punho: '#1d2f6f', numero: '#1d2f6f' },
+      { gola: 'v', golaCor: '#c8202e', punho: '#c8202e', tex: { t: 'pontos', k: 0.04 } },
+    ],
+    submarino: [        // Villarreal: amarela com detalhes azuis; a 2 é azul
+      { lateral: '#1d4fa0', lateralFrente: 0.025, gola: 'v', golaCor: '#1d4fa0', punho: '#1d4fa0', numero: '#1d4fa0', tex: { t: 'ondas', k: 0.05 } },
+      { gola: 'v', golaCor: '#ffe02a', punho: '#ffe02a', tex: { t: 'ondas', k: 0.05 } },
+    ],
+    verdiblanco: [      // Betis: listras verticais verdes e brancas com gola polo; a 2 é amarela
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'polo', golaCor: '#0b8f3c', punho: '#0b8f3c', numero: '#0b8f3c' },
+      { gola: 'redonda', golaCor: '#0b8f3c', punho: '#0b8f3c', tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    leones: [           // Athletic: listras vermelhas e brancas, calção preto; a 2 é verde
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: PR, punho: BR, numero: PR },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'curvas', k: 0.05 } },
+    ],
+    txuriurdin: [       // Real Sociedad: listras azuis e brancas com gola polo; a 2 é preta e laranja
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'polo', golaCor: BR, punho: BR, numero: PR },
+      { lateral: '#e8742a', lateralFrente: 0.03, gola: 'redonda', golaCor: '#e8742a', punho: '#e8742a' },
+    ],
+    celeste: [          // Celta: celeste com detalhes brancos e vermelhos; a 2 é azul-marinho
+      { gola: 'redonda', golaCor: BR, golaCor2: '#c8202e', punho: BR, punho2: '#c8202e', tex: { t: 'xadrez', k: 0.03 } },
+      { gola: 'v', golaCor: '#8ac6ea', punho: '#8ac6ea', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    nervion: [          // Sevilla: branca com o vermelho na gola, nos punhos e nas laterais; a 2 é vermelha
+      { lateral: '#d01c2a', lateralFrente: 0.02, gola: 'redonda', golaCor: '#d01c2a', punho: '#d01c2a', tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    murcielago: [       // Valencia: branca com preto e laranja; a 2 é preta com ombros laranja
+      { gola: 'redonda', golaCor: PR, golaCor2: '#e8742a', punho: PR, punho2: '#e8742a', tex: { t: 'pontos', k: 0.04 } },
+      { camadas: [{ t: 'ombros', c: '#e8742a', h: 0.06 }], gola: 'v', golaCor: '#e8742a', punho: '#e8742a' },
+    ],
+    azulon: [           // Getafe: azul com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'riscas', k: 0.05 } },
+      { lateral: '#1d4fa0', lateralFrente: 0.03, gola: 'v', golaCor: '#1d4fa0', punho: '#1d4fa0' },
+    ],
+    franjirrojo: [      // Rayo Vallecano: branca com a faixa diagonal vermelha; a 2 é preta com a faixa vermelha
+      { camadas: [{ t: 'faixa', c: '#d01c2a', w: 0.17, dir: 1 }], gola: 'redonda', golaCor: '#d01c2a', punho: '#d01c2a', numero: PR },
+      { camadas: [{ t: 'faixa', c: '#d01c2a', w: 0.17, dir: 1 }], gola: 'redonda', golaCor: '#d01c2a', punho: '#d01c2a', numero: BR },
+    ],
+    perico: [           // Espanyol: listras azuis e brancas, calção azul; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: '#1859b8', punho: '#1859b8', numero: PR },
+      { gola: 'v', golaCor: '#1859b8', punho: '#1859b8', tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    babazorro: [        // Alavés: listras finas azuis e brancas; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 11 }], gola: 'v', golaCor: '#1a3f99', punho: BR, numero: PR },
+      { gola: 'redonda', golaCor: '#1a3f99', punho: '#1a3f99', tex: { t: 'linhas', k: 0.04 } },
+    ],
+    franjiverde: [      // Elche: branca com a faixa verde no peito, calção preto; a 2 é verde com a faixa branca
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#0f8a3c', 0.13]] }], gola: 'redonda', golaCor: '#0f8a3c', punho: '#0f8a3c', numero: PR },
+      { camadas: [{ t: 'banda', y: 0.3, f: [[BR, 0.13]] }], gola: 'redonda', golaCor: BR, punho: BR },
+    ],
+    granota: [          // Levante: listras azul e grená; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'v', golaCor: '#a3123a', punho: '#a3123a', numero: BR },
+      { gola: 'v', golaCor: '#a3123a', golaCor2: '#1d3f8f', punho: '#a3123a', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    rojillo: [          // Osasuna: vermelha com detalhes azul-marinho; a 2 é branca
+      { gola: 'redonda', golaCor: '#1c2a4a', punho: '#1c2a4a', tex: { t: 'diagonais', k: 0.05 } },
+      { lateral: '#c41a2a', lateralFrente: 0.03, gola: 'redonda', golaCor: '#c41a2a', punho: '#c41a2a' },
+    ],
+    racinguista: [      // Racing de Santander: branca com o verde na gola e nas laterais, calção preto; a 2 é verde
+      { lateral: '#0f8a3c', lateralFrente: 0.02, gola: 'polo', golaCor: '#0f8a3c', punho: '#0f8a3c', tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: PR, punho: PR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    branquiazul: [      // Deportivo: listras azuis e brancas; a 2 é grená
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#1f6fd0', punho: BR, numero: PR },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'pontos', k: 0.04 } },
+    ],
+    boquerones: [       // Málaga: listras celestes e brancas, calção azul; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#1a3f99', punho: '#1a3f99', numero: '#1a3f99' },
+      { gola: 'v', golaCor: '#4aa0e8', punho: '#4aa0e8', tex: { t: 'ondas', k: 0.05 } },
+    ],
+    // ------------------------------------------------------------------------------------------------- (7.5.2) INGLATERRA
+    gunners: [          // Arsenal: vermelha com as mangas brancas; a 2 é preta
+      { manga: BR, punho: '#e0161e', gola: 'v', golaCor: BR, golaCor2: '#e0161e', numero: BR },
+      { gola: 'v', golaCor: '#e0161e', punho: '#e0161e', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    citizens: [         // Manchester City: azul-celeste com detalhes azul-marinho; a 2 é azul-marinho
+      { gola: 'v', golaCor: '#1c2c5b', punho: '#1c2c5b', tex: { t: 'xadrez', k: 0.03 } },
+      { gola: 'redonda', golaCor: '#6cabdd', punho: '#6cabdd', tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    reddevils: [        // Manchester United: vermelha com gola polo preta, calção branco; a 2 é branca
+      { gola: 'polo', golaCor: PR, punho: PR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'polo', golaCor: '#da1a2a', punho: '#da1a2a' },
+    ],
+    villans: [          // Aston Villa: grená com as mangas azul-celeste; a 2 é branca
+      { manga: '#95bfe5', punho: '#95bfe5', gola: 'v', golaCor: '#95bfe5', numero: BR },
+      { gola: 'v', golaCor: '#670e36', golaCor2: '#95bfe5', punho: '#670e36', tex: { t: 'riscas', k: 0.04 } },
+    ],
+    merseyreds: [       // Liverpool: toda vermelha com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'pontos', k: 0.03 } },
+      { gola: 'redonda', golaCor: '#c8102e', punho: '#c8102e' },
+    ],
+    cherries: [         // Bournemouth: listras vermelhas e pretas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 11 }], gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#da291c', punho: '#da291c' },
+    ],
+    blackcats: [        // Sunderland: listras vermelhas e brancas, calção preto; a 2 é azul-marinho
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'v', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'v', golaCor: '#eb172b', punho: '#eb172b', tex: { t: 'linhas', k: 0.04 } },
+    ],
+    seagulls: [         // Brighton: listras azuis e brancas com as mangas azuis; a 2 é amarela
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], manga: 'c', punho: BR, gola: 'redonda', golaCor: '#0057b8', numero: PR },
+      { gola: 'v', golaCor: '#0057b8', punho: '#0057b8' },
+    ],
+    bees: [             // Brentford: listras vermelhas e brancas, calção preto; a 2 é amarela e preta (as abelhas)
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: PR },
+      { lateral: PR, lateralFrente: 0.03, gola: 'v', golaCor: PR, punho: PR, tex: { t: 'xadrez', k: 0.05 } },
+    ],
+    kingsroad: [        // Chelsea: azul-royal com detalhes brancos; a 2 é creme
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: '#034694', punho: '#034694' },
+    ],
+    cottagers: [        // Fulham: branca com detalhes pretos; a 2 é vermelha
+      { lateral: PR, lateralFrente: 0.02, gola: 'redonda', golaCor: PR, punho: PR },
+      { gola: 'v', golaCor: PR, punho: PR, tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    magpies: [          // Newcastle: listras verticais alvinegras; a 2 é verde-azulada
+      { camadas: [{ t: 'listras', c: ['l', 'c'], n: 9 }], gola: 'redonda', golaCor: PR, punho: BR, numero: '#f2c230' },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    toffees: [          // Everton: azul-royal com detalhes brancos; a 2 é âmbar
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'xadrez', k: 0.03 } },
+      { gola: 'redonda', golaCor: '#1c2a4a', punho: '#1c2a4a' },
+    ],
+    peacocks: [         // Leeds: toda branca com azul e amarelo; a 2 é azul
+      { gola: 'v', golaCor: '#1d428a', golaCor2: '#ffcd00', punho: '#1d428a', punho2: '#ffcd00', tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: '#ffcd00', punho: '#ffcd00', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    eagles: [           // Crystal Palace: listras vermelhas e azuis; a 2 é branca com a faixa diagonal
+      { camadas: [{ t: 'listras', c: ['l', 'c'], n: 7 }], gola: 'redonda', golaCor: '#1b458f', punho: '#1b458f', numero: BR },
+      { camadas: [{ t: 'faixa', c: '#c4122e', w: 0.12, dir: -1, borda: '#1b458f', bw: 0.03 }], gola: 'redonda', golaCor: '#1b458f', punho: '#c4122e' },
+    ],
+    sherwood: [         // Nottingham Forest: vermelha com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'curvas', k: 0.04 } },
+      { gola: 'v', golaCor: '#dd0000', punho: '#dd0000' },
+    ],
+    lilywhites: [       // Tottenham: branca com gola polo azul-marinho; a 2 é azul-marinho
+      { gola: 'polo', golaCor: '#132257', punho: '#132257', tex: { t: 'linhas', k: 0.025 } },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'diagonais', k: 0.05 } },
+    ],
+    skyblues: [         // Coventry: azul-celeste com detalhes brancos; a 2 é azul-marinho
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'ondas', k: 0.04 } },
+      { gola: 'v', golaCor: '#59a9e0', punho: '#59a9e0' },
+    ],
+    tractors: [         // Ipswich: azul com detalhes brancos; a 2 é vermelha
+      { lateral: BR, lateralFrente: 0.02, gola: 'v', golaCor: BR, punho: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'redonda', golaCor: BR, punho: BR },
+    ],
+    tigers: [           // Hull City: listras âmbar e pretas, calção preto; a 2 é branca com listras de tigre
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], manga: 'c', punho: PR, gola: 'redonda', golaCor: PR, numero: PR },
+      { gola: 'v', golaCor: PR, punho: '#f5a12d', tex: { t: 'tigre', k: 0.08 } },
     ],
   };
 
