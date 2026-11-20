@@ -1082,8 +1082,13 @@
   //                  recuando na frente do trio de arbitragem
   //     hino ....... 0 passando na frente · 1 por trás deles · 2 de perto, devagar · 3 o geral do alto. Com o tema de copa (a Copa dos
   //                  Campeões; depois a Libertadores) os 4 ângulos são outros, sempre com o pano do círculo central à vista
-  //     extra ...... 0 o aquecimento no gramado (esta vem ANTES do vestiário) · 1 o destaque (o artilheiro do time, você ou a estrela;
+  //     extra ...... (depois do hino) 0 a foto oficial do time titular · 1 o destaque (o artilheiro do time, você ou a estrela;
   //                  se você começa no banco, o banco) · 2 o sorteio do campo (cara ou coroa) · 3 os técnicos à beira do campo
+  //   A ORDEM DOS FATOS NÃO MUDA, só o jeito de cada cena: o estádio (vazio de time) → o ônibus chegando → o vestiário → a torcida →
+  //   a entrada → o hino → o extra. (7.5.5) Até a entrada, NINGUÉM do jogo aparece no campo (jogadores, trio, técnicos e reservas
+  //   ficam escondidos: antes o helicóptero e o mergulho do estádio já mostravam o time lá dentro); os técnicos e o banco aparecem
+  //   na entrada, junto com os times. Nada de time no gramado antes do vestiário (o aquecimento saiu: era o time em campo antes de
+  //   chegar ao vestiário).
   //   Abertura curta: o estádio, a entrada e o hino. Sem estádio do Brasileirão A (society, futsal, várzea): sem estádio, ônibus e
   //   torcida.
   const VARIACOES = { estadio: 4, onibus: 4, vestiario: 4, torcida: 4, entrada: 4, hino: 4, extra: 4 };
@@ -1148,10 +1153,9 @@
     const ocultos = new Set();                                         // quem alguma cena escondeu (volta a aparecer no fim)
     // (7.5.4) o sorteio veio da tela do confronto (J.cenas); sem ele (partida retomada, chamada de fora), sorteia aqui
     const V = Object.assign({}, J.cenas || sortearAbertura()), TM = temaDe(J);
-    const aquecimentoAntes = V.extra === 0;                            // o aquecimento é antes do vestiário; os outros extras, no fim
-    const antes = aquecimentoAntes ? ['extra'] : [], depois = aquecimentoAntes ? [] : ['extra'];
-    const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada', 'hino'] : ['estadio', 'onibus'].concat(antes, ['vestiario', 'torcida', 'entrada', 'hino'], depois))
-      : (modo === 'curta' ? ['entrada', 'hino'] : antes.concat(['vestiario', 'entrada', 'hino'], depois));
+    // a ordem é sempre a mesma (só muda o jeito de cada cena); o extra vem sempre por último, com os times já em campo
+    const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada', 'hino'] : ['estadio', 'onibus', 'vestiario', 'torcida', 'entrada', 'hino', 'extra'])
+      : (modo === 'curta' ? ['entrada', 'hino'] : ['vestiario', 'entrada', 'hino', 'extra']);
     if (TM) cenas.unshift('vinheta');                                  // a copa com tema: a vinheta com a música antes de tudo
     const rodar = (dur, fn) => new Promise((ok) => {           // um plano: fn(t, rdt) a cada quadro até dur segundos (ou o pular)
       const t0 = performance.now(); let tl = t0;
@@ -1177,6 +1181,11 @@
     const aoLugar = () => { for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; deP(s.p); } };
     const deP = (p) => { try { dePe(p); } catch (e) { /* nada */ } };
     const ocultar = (p) => { if (p && p.mesh) { p.mesh.raiz.visible = false; ocultos.add(p); } };
+    // (7.5.5) o campo vazio até a entrada: os jogadores, o trio, os técnicos e os reservas no banco somem (voltam na entrada/no hino)
+    const banco = [].concat(typeof tecnicos !== 'undefined' ? tecnicos : [], typeof reservasBanco !== 'undefined' ? reservasBanco : [],
+      typeof quartoArbitro !== 'undefined' && quartoArbitro ? [quartoArbitro] : []).filter((x) => x && x.mesh && x.mesh.raiz && x.mesh.raiz.visible);
+    for (const p of players.concat(officials, banco)) ocultar(p);
+    const mostrarBanco = () => { for (const x of banco) if (x.mesh) x.mesh.raiz.visible = true; };
     let pano = null;
     try {
       for (const c of cenas) {
@@ -1360,7 +1369,7 @@
       const z0 = tunel ? -(HALF_W + TUNEL_BOCA) + 0.6 : -(HALF_W + 3.2), vel = 1.45, esp = 1.15;
       const surge = (p) => { if (!p.mesh) return; const vis = p.z > fundo; p.mesh.raiz.visible = vis; if (!vis) ocultos.add(p); };
       await corte(() => {
-        if (abre) mostrarTunel(true); G.torcidaCena = 1;
+        if (abre) mostrarTunel(true); G.torcidaCena = 1; mostrarBanco();
         for (const p of perfil.concat(juizes)) deP(p);
         legenda(Tf('{0} x {1}: os times entram em campo', nomeT(kMand), nomeT(kVis)));
         if (TM) TM.tocar('hino');
@@ -1394,6 +1403,7 @@
         }
         // (7.4.10) o túnel some e quem estava dentro dele reaparece só com a tela já preta (antes sumia com o plano ainda na tela)
         for (const p of juizes.concat(perfil)) if (p.mesh) p.mesh.raiz.visible = true;
+        mostrarBanco();
         if (abre) mostrarTunel(false);
         filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.7 + i * ESP_HINO); p.z = zL; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
         juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = zL; o.vx = o.vz = 0; o.angle = -Math.PI / 2; });
@@ -1425,39 +1435,38 @@
     // ------------------------------------------------------------------------ OS EXTRAS
     async function cenaExtra(v) {
       if (v === 3 && !(typeof tecnicos !== 'undefined' && tecnicos.length >= 2)) v = 2;   // sem banco (society): o sorteio
-      if (v === 0) return aquecimento();
+      if (v === 0) return fotoOficial();
       if (v === 1) return destaque();
       if (v === 3) return osTecnicos();
       return sorteio();
     }
-    // O AQUECIMENTO: cada time na sua metade (uma fila correndo, a roda de bobinho e o goleiro saltando no gol); o trio não aparece
-    async function aquecimento() {
-      const grupos = [TEAMS[0].filter((p) => !p.out), TEAMS[1].filter((p) => !p.out)];
-      const lado = (team) => (team === 0 ? -1 : 1);
+    // A FOTO OFICIAL: depois do hino, os onze titulares do seu time posam em duas fileiras desencontradas (seis atrás, de braços
+    //   cruzados; cinco na frente, com as mãos para trás) para os fotógrafos, com os flashes; a câmera um pouco alta, como a do
+    //   fotógrafo, para aparecer o rosto de todos. O adversário e o trio já foram para os seus lugares (fora do quadro)
+    async function fotoOficial() {
+      const onze = TEAMS[0].filter((p) => !p.out), gk = onze.find((p) => p.role === 'GK');
+      const atras = (gk ? [gk] : []).concat(onze.filter((p) => p !== gk)).slice(0, 6), frente = onze.filter((p) => !atras.includes(p));
+      const x0 = -Math.min(10, HALF_L * 0.3), z0 = -Math.min(3.5, HALF_W * 0.3), fotos = [];
       await corte(() => {
-        aoLugar(); for (const o of officials) ocultar(o);
-        G.torcidaCena = 0.45; legenda(T(J.campo === 'futsal' ? 'O aquecimento na quadra' : 'O aquecimento no gramado'));
+        aoLugar(); for (const p of TEAMS[1].concat(officials)) ocultar(p);
+        atras.forEach((p, i) => { p.x = x0 + (i - (atras.length - 1) / 2) * 1.02; p.z = z0; p.angle = -Math.PI / 2; p.vx = p.vz = 0; });
+        frente.forEach((p, i) => { p.x = x0 + (i - (frente.length - 1) / 2) * 1.02; p.z = z0 - 1.05; p.angle = -Math.PI / 2; p.vx = p.vz = 0; });   // no vão de quem está atrás
+        for (let i = 0; i < 4; i++) {                                    // os fotógrafos na frente, cada um com o flash
+          const m = figurante(J.a, 60 + i, true); scene.add(m.raiz); lixo.push({ boneco: m });
+          m.raiz.position.set(x0 + [-4.4, -3.1, 3.1, 4.4][i], 0, z0 - 5.4 - (i % 2) * 0.7); virar(m, -[-4.4, -3.1, 3.1, 4.4][i] * 0.12, 1);   // dos lados (o meio fica livre para a câmera)
+          m.bracoE.rotation.set(0.35, 0, 1.75); m.bracoD.rotation.set(-0.35, 0, 1.75); usarCotovelo(m.bracoE, -1.0, 1.4); usarCotovelo(m.bracoD, 1.0, 1.4);
+          const fl = caixaM(0.3, 0.3, 0.3, 0xffffff, 0.45, 1.66, 0, true); fl.visible = false; m.troncoInteiro.add(fl); fotos.push({ fl, prox: 0.8 + i * 0.45 });
+        }
+        G.torcidaCena = 0.55; legenda(T('A foto oficial: os onze titulares'));
       });
-      const DUR = 5.4;
+      const DUR = 4.8;
       await plano1(DUR, (tt) => {
-        grupos.forEach((Gp, team) => {
-          const s = lado(team), gk = Gp.find((p) => p.role === 'GK'), linha = Gp.filter((p) => p !== gk);
-          if (gk) { gk.x = s * (HALF_L - 2.2); gk.z = Math.sin(tt * 2.2) * 2.6; gk.angle = s > 0 ? Math.PI : 0; deP(gk); if (gk.mesh) gk.mesh.raiz.position.y = Math.max(0, Math.sin(tt * 4.4)) * 0.22; }
-          linha.forEach((p, i) => {
-            if (i < 5) {                                                // a fila correndo de um lado para o outro do campo
-              const Lz = HALF_W * 0.88, d = ((tt * 2.4 + i * 1.7) % Lz), z = -Lz / 2 + d;   // (o tamanho do campo: vale no futsal e no society)
-              p.x = s * (HALF_L * 0.19 + (i % 2) * 1.2); p.z = z; p.angle = Math.PI / 2; p.vx = 0; p.vz = 2.4; passos(p, tt * 8 + i * 1.3);
-            } else {                                                    // a roda de bobinho (quem está no meio corre atrás da bola)
-              const n = linha.length - 5, j = i - 5, cx = s * HALF_L * 0.46, cz = HALF_W * 0.27 * (team ? -1 : 1);
-              if (j === n - 1) { const a = tt * 1.9; p.x = cx + Math.cos(a) * 1.1; p.z = cz + Math.sin(a * 1.3) * 1.1; p.angle = a + Math.PI / 2; passos(p, tt * 9); }
-              else { const a = (j / Math.max(1, n - 1)) * Math.PI * 2; p.x = cx + Math.cos(a) * 3.4; p.z = cz + Math.sin(a) * 3.4; p.angle = Math.atan2(cz - p.z, cx - p.x); deP(p); p.mesh && (p.mesh.raiz.position.y = Math.max(0, Math.sin(tt * 6 + j)) * 0.06); }
-            }
-          });
-        });
+        atras.forEach((p) => { const m = p.mesh; if (!m || !m.pernaE) return; deP(p); m.bracoE.rotation.set(-0.32, 0, 0.62); m.bracoD.rotation.set(0.32, 0, 0.62); try { usarCotovelo(m.bracoE, -1.05, 1.5); usarCotovelo(m.bracoD, 1.05, 1.5); } catch (e) { /* nada */ } });
+        frente.forEach((p, i) => { try { hino(p, 2 + i * 3, tt); } catch (e) { deP(p); } });   // as mãos juntas nas costas
+        for (const f of fotos) { f.fl.visible = tt > f.prox && tt < f.prox + 0.07; if (tt > f.prox + 0.07) f.prox = tt + 0.35 + Math.random() * 0.9; }
         const k = suave(tt / DUR);
-        camOlha(HALF_L * (-0.52 + 0.84 * k), 3.4 - 0.8 * k, HALF_W * (-0.34 + 0.06 * k), HALF_L * (-0.38 + 0.76 * k), 0.9, HALF_W * 0.09);
+        camOlha(x0 + 1.2 - 2.4 * k, 2.75 - 0.2 * k, z0 - 8.4 + 1.6 * k, x0, 1.15, z0 - 0.5);
       });
-      for (const o of officials) if (o.mesh) o.mesh.raiz.visible = true;
       legenda('');
     }
     // O DESTAQUE: a câmera de perto em quem o time espera tudo (o artilheiro do time no torneio, você ou a estrela); se VOCÊ começa
@@ -2174,7 +2183,6 @@
     "A roda: o grito antes de entrar em campo": ["The huddle: the war cry before taking the field", "La piña: el grito antes de salir al campo", "Il cerchio: il grido prima di entrare in campo", "Le cercle : le cri avant d'entrer sur le terrain"],
     "Concentração: cada um no seu canto": ["Focus: everyone in their own corner", "Concentración: cada uno en su rincón", "Concentrazione: ognuno nel suo angolo", "Concentration : chacun dans son coin"],
     "{0} puxa o grito no vestiário": ["{0} leads the war cry in the dressing room", "{0} lidera el grito en el vestuario", "{0} guida il grido nello spogliatoio", "{0} lance le cri dans le vestiaire"],
-    "O aquecimento no gramado": ["The warm-up on the pitch", "El calentamiento en el césped", "Il riscaldamento sul prato", "L'échauffement sur la pelouse"],
     "Você começa no banco: espere a sua chance": ["You start on the bench: wait for your chance", "Empiezas en el banquillo: espera tu oportunidad", "Parti dalla panchina: aspetta la tua occasione", "Tu commences sur le banc : attends ta chance"],
     "{0}: o artilheiro do time, com {1} gol": ["{0}: the team's top scorer, with {1} goal", "{0}: el máximo goleador del equipo, con {1} gol", "{0}: il capocannoniere della squadra, con {1} gol", "{0} : le meilleur buteur de l'équipe, avec {1} but"],
     "{0}: o artilheiro do time, com {1} gols": ["{0}: the team's top scorer, with {1} goals", "{0}: el máximo goleador del equipo, con {1} goles", "{0}: il capocannoniere della squadra, con {1} gol", "{0} : le meilleur buteur de l'équipe, avec {1} buts"],
@@ -2184,8 +2192,8 @@
     "Todos os olhos nele: {0}": ["All eyes on him: {0}", "Todas las miradas en él: {0}", "Tutti gli occhi su di lui: {0}", "Tous les regards sur lui : {0}"],
     "O sorteio: cara ou coroa": ["The coin toss: heads or tails", "El sorteo: cara o cruz", "Il sorteggio: testa o croce", "Le tirage au sort : pile ou face"],
     "{0} e {1} à beira do campo": ["{0} and {1} on the touchline", "{0} y {1} en la banda", "{0} e {1} a bordo campo", "{0} et {1} au bord du terrain"],
-    // (7.5.4) futsal
-    "O aquecimento na quadra": ["The warm-up on the court", "El calentamiento en la cancha", "Il riscaldamento sul campo", "L'échauffement sur le terrain"],
+    // (7.5.5) a foto oficial
+    "A foto oficial: os onze titulares": ["The official photo: the starting eleven", "La foto oficial: los once titulares", "La foto ufficiale: gli undici titolari", "La photo officielle : les onze titulaires"],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 

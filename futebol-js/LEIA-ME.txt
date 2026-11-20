@@ -245,6 +245,11 @@ ARQUIVOS
                           a Libertadores entra igual, com J.tema = 'liberta' e window.Libertadores) mantém a vinheta, a música e o pano em
                           todas as combinações; o pano agora cobre o círculo central inteiro e só ondula para cima (antes sobrava um anel de
                           grama e ele afundava no gramado). A bola nunca aparece nas cenas
+                          (7.5.5) A ORDEM DOS FATOS fica fixa (só o jeito de cada cena muda): estádio → ônibus → vestiário → torcida →
+                          entrada → hino → extra. Até a entrada o campo fica VAZIO (jogadores, trio, técnicos, reservas e 4º árbitro
+                          escondidos: o helicóptero e o mergulho do estádio mostravam o time lá dentro antes de ele chegar); o banco
+                          aparece na entrada. O aquecimento saiu (era o time em campo antes do vestiário): o extra 0 agora é a FOTO
+                          OFICIAL dos onze titulares, depois do hino
   campeoes.js ........... a Copa dos Campeões (7.5.3): o escudo, a música (o "hino"), a vinheta de abertura e o pano do
                           círculo central (baixado pelo livre.js). (7.5.4) A música é gravada uma vez (OfflineAudioContext, na
                           tela do confronto) e toca como um buffer só: tocar ao vivo engasgava e cortava o som no celular. A
