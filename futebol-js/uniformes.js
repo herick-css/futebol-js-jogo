@@ -1,5 +1,5 @@
 // =====================================================================================================================
-// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times do Brasileirão A e do Brasileirão B e (7.5.2) dos 40 da Espanha e da Inglaterra
+// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times do Brasileirão A e do Brasileirão B e (7.5.2) dos 40 da Espanha e da Inglaterra e dos 56 de França, Alemanha e Itália
 //   (as paródias do serieb.js) e o espaço da
 //   pixel art no peito. Cada time tem [uniforme 1, uniforme 2]; o motor do desenho fica no jogo.js (compilarModelo e
 //   pintarCamisaModelo: lá está a lista de camadas e texturas). As cores das camisas continuam vindo do serieb.js (uni e
@@ -341,6 +341,233 @@
     tigers: [           // Hull City: listras âmbar e pretas, calção preto; a 2 é branca com listras de tigre
       { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], manga: 'c', punho: PR, gola: 'redonda', golaCor: PR, numero: PR },
       { gola: 'v', golaCor: PR, punho: '#f5a12d', tex: { t: 'tigre', k: 0.08 } },
+    ],
+    // ------------------------------------------------------------------------------------------------- FRANÇA
+    capitale: [         // PSG: azul-marinho com a faixa vertical vermelha de bordas brancas; a 2 é branca com a faixa fina
+      { camadas: [{ t: 'vfaixa', c: '#da291c', x: 0.5, w: 0.22, borda: BR, bw: 0.035 }], manga: 'c', gola: 'redonda', golaCor: '#da291c', punho: '#da291c', numero: BR },
+      { camadas: [{ t: 'vfaixa', c: '#0b2a5b', x: 0.5, w: 0.13, borda: '#da291c', bw: 0.03 }], gola: 'redonda', golaCor: '#0b2a5b', punho: '#0b2a5b', numero: '#0b2a5b' },
+    ],
+    vieuxport: [        // Olympique de Marseille: branca com detalhes azul-celeste; a 2 é celeste
+      { gola: 'v', golaCor: '#4fb3e8', punho: '#4fb3e8', numero: '#1c2a4a', tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: BR, punho: BR, numero: '#1c2a4a', tex: { t: 'ondas', k: 0.05 } },
+    ],
+    gones: [            // Lyon: branca com a faixa diagonal vermelha e azul; a 2 é azul-marinho
+      { camadas: [{ t: 'faixa', c: '#c8202e', w: 0.1, dir: 1, borda: '#1d4fa0', bw: 0.045 }], gola: 'redonda', golaCor: '#1d4fa0', punho: '#c8202e', numero: '#1d4fa0' },
+      { gola: 'v', golaCor: '#c8202e', punho: '#c8202e', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    rocher: [           // Monaco: metade vermelha e metade branca; a 2 é branca com o vermelho
+      { camadas: [{ t: 'metade', c: BR, lado: 1 }], gola: 'redonda', golaCor: '#c9a227', punho: '#c9a227', numero: '#1c1c1f' },
+      { lateral: '#d4111e', lateralFrente: 0.03, gola: 'v', golaCor: '#d4111e', punho: '#d4111e', tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    dogues: [           // Lille: vermelha com detalhes azul-marinho, calção azul; a 2 é branca
+      { gola: 'v', golaCor: '#1c2a4a', punho: '#1c2a4a', numero: BR, tex: { t: 'xadrez', k: 0.03 } },
+      { gola: 'v', golaCor: '#d01f2f', golaCor2: '#1c2a4a', punho: '#d01f2f', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    sangetor: [         // Lens: o "sangue e ouro", amarela com as mangas vermelhas; a 2 é preta com o dourado
+      { manga: '#d71920', punho: '#f6d100', gola: 'redonda', golaCor: '#d71920', numero: '#d71920' },
+      { gola: 'v', golaCor: '#f6d100', golaCor2: '#d71920', punho: '#f6d100', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    breton: [           // Rennes: vermelha com os ombros pretos, calção preto; a 2 é branca
+      { camadas: [{ t: 'ombros', c: PR, h: 0.1, hm: 0.3 }], gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#e2001a', golaCor2: PR, punho: '#e2001a', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    aiglons: [          // Nice: listras vermelhas e pretas, calção preto; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#c8102e', punho: '#c8102e', tex: { t: 'pontos', k: 0.04 } },
+    ],
+    alsacien: [         // Strasbourg: azul com detalhes brancos e calção branco; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'ondas', k: 0.04 } },
+      { lateral: '#1d5fbf', lateralFrente: 0.025, gola: 'v', golaCor: '#1d5fbf', punho: '#1d5fbf' },
+    ],
+    violets: [          // Toulouse: roxa com detalhes brancos; a 2 é branca com o roxo
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#5b2a86', 0.08]] }], gola: 'redonda', golaCor: '#5b2a86', punho: '#5b2a86' },
+    ],
+    merlus: [           // Lorient: laranja com detalhes pretos; a 2 é preta
+      { gola: 'v', golaCor: PR, punho: PR, numero: PR, tex: { t: 'ondas', k: 0.05 } },
+      { gola: 'v', golaCor: '#f47a20', punho: '#f47a20', tex: { t: 'linhas', k: 0.04 } },
+    ],
+    lumiere: [          // Paris FC: azul-marinho com o celeste nos detalhes; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.34, f: [['#7fb8e6', 0.05]] }], gola: 'redonda', golaCor: '#7fb8e6', punho: '#7fb8e6', numero: BR },
+      { gola: 'v', golaCor: '#16274d', punho: '#16274d', tex: { t: 'riscas', k: 0.04 } },
+    ],
+    finistere: [        // Brest: vermelha com detalhes brancos; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'ondas', k: 0.05 } },
+      { gola: 'redonda', golaCor: '#e2001a', punho: '#e2001a', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    scoistes: [         // Angers: listras pretas e brancas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['l', 'c'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { gola: 'v', golaCor: PR, punho: PR, tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    cielmarine: [       // Le Havre: metade celeste e metade azul-marinho; a 2 é branca
+      { camadas: [{ t: 'metade', c: '#1c2a4a', lado: 1 }], gola: 'redonda', golaCor: '#1c2a4a', punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#7fc4ea', golaCor2: '#1c2a4a', punho: '#7fc4ea' },
+    ],
+    abbaye: [           // Auxerre: branca com detalhes azuis; a 2 é azul
+      { lateral: '#1d4fa0', lateralFrente: 0.02, gola: 'v', golaCor: '#1d4fa0', punho: '#1d4fa0', numero: '#1d4fa0' },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    champenois: [       // Troyes: azul com detalhes brancos; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'pontos', k: 0.04 } },
+      { gola: 'v', golaCor: '#1a4a9e', punho: '#1a4a9e' },
+    ],
+    vingtquatre: [      // Le Mans: vermelha com detalhes amarelos, calção preto; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f2c230', 0.05], [PR, 0.04]] }], gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#d01c2a', punho: '#d01c2a', tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    // ------------------------------------------------------------------------------------------------- ALEMANHA
+    isar: [             // Bayern: vermelha com detalhes brancos; a 2 é branca com o vermelho e o azul
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'xadrez', k: 0.035 } },
+      { camadas: [{ t: 'banda', y: 0.32, f: [['#dc052d', 0.04], ['#0b2a5b', 0.03]] }], gola: 'v', golaCor: '#dc052d', punho: '#dc052d' },
+    ],
+    ruhrgelb: [         // Borussia Dortmund: amarela com a gola e os punhos pretos, calção preto; a 2 é preta com o amarelo
+      { gola: 'v', golaCor: PR, punho: PR, numero: PR, tex: { t: 'diagonais', k: 0.05 } },
+      { lateral: '#fde100', lateralFrente: 0.025, gola: 'v', golaCor: '#fde100', punho: '#fde100', numero: '#fde100' },
+    ],
+    messebullen: [      // RB Leipzig: branca com o vermelho e o azul-marinho; a 2 é azul-marinho
+      { lateral: '#dd0741', lateralFrente: 0.02, gola: 'v', golaCor: '#0c2043', punho: '#dd0741', numero: '#0c2043' },
+      { gola: 'v', golaCor: '#dd0741', punho: '#dd0741', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    brustring: [        // Stuttgart: branca com o anel vermelho no peito; a 2 é vermelha com o anel branco
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#e32219', 0.11]] }], gola: 'redonda', golaCor: '#e32219', punho: '#e32219', numero: '#e32219' },
+      { camadas: [{ t: 'banda', y: 0.3, f: [[BR, 0.11]] }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    kraichgau: [        // Hoffenheim: azul com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'curvas', k: 0.04 } },
+      { gola: 'v', golaCor: '#1961b5', punho: '#1961b5' },
+    ],
+    werkself: [         // Leverkusen: vermelha com as laterais e os ombros pretos; a 2 é branca
+      { camadas: [{ t: 'ombros', c: PR, h: 0.08, hm: 0.25 }], lateral: PR, lateralFrente: 0.03, gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#e32221', golaCor2: PR, punho: '#e32221', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    breisgau: [         // Freiburg: vermelha com detalhes brancos e calção preto; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.04 } },
+      { gola: 'v', golaCor: '#e2001a', punho: '#e2001a', tex: { t: 'pontos', k: 0.03 } },
+    ],
+    adlermain: [        // Eintracht Frankfurt: preta com detalhes vermelhos; a 2 é branca
+      { lateral: '#e1000f', lateralFrente: 0.025, gola: 'v', golaCor: '#e1000f', punho: '#e1000f', numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { gola: 'redonda', golaCor: PR, golaCor2: '#e1000f', punho: PR },
+    ],
+    fugger: [           // Augsburg: metade vermelha e metade branca com o verde nos detalhes; a 2 é branca
+      { camadas: [{ t: 'metade', c: BR, lado: 1 }], gola: 'redonda', golaCor: '#46714d', punho: '#46714d', numero: '#46714d' },
+      { gola: 'v', golaCor: '#ba3733', golaCor2: '#46714d', punho: '#ba3733' },
+    ],
+    karneval: [         // Mainz: vermelha com detalhes brancos e calção branco; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'pontos', k: 0.05 } },
+      { gola: 'v', golaCor: '#c3141e', punho: '#c3141e' },
+    ],
+    eiserne: [          // Union Berlin: vermelha com detalhes brancos; a 2 é branca
+      { gola: 'polo', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'polo', golaCor: '#d4011d', punho: '#d4011d' },
+    ],
+    fohlen: [           // Borussia Mönchengladbach: branca com o preto e o verde; a 2 é preta com o verde
+      { camadas: [{ t: 'banda', y: 0.3, f: [[PR, 0.05], ['#00a650', 0.04]] }], gola: 'v', golaCor: PR, punho: '#00a650', numero: PR },
+      { gola: 'v', golaCor: '#00a650', punho: '#00a650', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    rothosen: [         // Hamburgo: branca com detalhes azuis e o calção vermelho; a 2 é azul
+      { gola: 'redonda', golaCor: '#0a3f86', punho: '#0a3f86', numero: '#0a3f86', tex: { t: 'xadrez', k: 0.03 } },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'ondas', k: 0.04 } },
+    ],
+    geissbock: [        // Colônia: branca com detalhes vermelhos; a 2 é vermelha
+      { lateral: '#ed1c24', lateralFrente: 0.025, gola: 'redonda', golaCor: '#ed1c24', punho: '#ed1c24', numero: '#ed1c24' },
+      { gola: 'redonda', golaCor: BR, punho: BR, tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    weser: [            // Werder Bremen: verde com detalhes brancos; a 2 é branca com o verde
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'ondas', k: 0.05 } },
+      { camadas: [{ t: 'faixa', c: '#1d9053', w: 0.08, dir: 1 }], gola: 'v', golaCor: '#1d9053', punho: '#1d9053' },
+    ],
+    knappen: [          // Schalke: azul-royal com detalhes brancos e calção branco; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.035 } },
+      { gola: 'redonda', golaCor: '#004d9d', punho: '#004d9d' },
+    ],
+    saarwunder: [       // Elversberg: preta com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.04 } },
+      { gola: 'v', golaCor: PR, punho: PR, tex: { t: 'linhas', k: 0.03 } },
+    ],
+    paderquell: [       // Paderborn: listras azuis e pretas em degradê; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7, funde: 0.4 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#1c3e8a', punho: '#1c3e8a' },
+    ],
+    // ------------------------------------------------------------------------------------------------- ITÁLIA
+    biscione: [         // Inter: listras azuis e pretas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { gola: 'v', golaCor: '#0068a8', golaCor2: PR, punho: '#0068a8', tex: { t: 'riscas', k: 0.04 } },
+    ],
+    vesuvio: [          // Napoli: azul-celeste com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'ondas', k: 0.05 } },
+      { gola: 'v', golaCor: '#12a0d7', punho: '#12a0d7', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    lupa: [             // Roma: grená com detalhes dourados; a 2 é branca
+      { gola: 'v', golaCor: '#f0bc42', punho: '#f0bc42', numero: '#f0bc42', tex: { t: 'diagonais', k: 0.04 } },
+      { gola: 'v', golaCor: '#8e1f2f', golaCor2: '#f0bc42', punho: '#8e1f2f' },
+    ],
+    lariani: [          // Como: azul com detalhes brancos; a 2 é branca
+      { gola: 'polo', golaCor: BR, punho: BR, numero: BR, tex: { t: 'ondas', k: 0.04 } },
+      { gola: 'polo', golaCor: '#1a4f9c', punho: '#1a4f9c' },
+    ],
+    diavolo: [          // Milan: listras vermelhas e pretas, calção branco; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'redonda', golaCor: '#fb090b', golaCor2: PR, punho: '#fb090b', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    signora: [          // Juventus: listras pretas e brancas; a 2 é preta com o dourado
+      { camadas: [{ t: 'listras', c: ['l', 'c'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    dea: [              // Atalanta: listras largas azuis e pretas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#1e71b8', punho: '#1e71b8', tex: { t: 'pontos', k: 0.04 } },
+    ],
+    felsina: [          // Bologna: listras vermelhas e azuis, calção branco; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: '#1a2f62', punho: '#1a2f62', numero: BR },
+      { gola: 'v', golaCor: '#a21c26', golaCor2: '#1a2f62', punho: '#a21c26' },
+    ],
+    aquile: [           // Lazio: azul-celeste com detalhes brancos; a 2 é azul-marinho
+      { gola: 'v', golaCor: BR, punho: BR, numero: '#1c2a4a', tex: { t: 'diagonais', k: 0.04 } },
+      { gola: 'v', golaCor: '#87d8f7', punho: '#87d8f7', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    zebrette: [         // Udinese: listras finas pretas e brancas; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 13 }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { gola: 'v', golaCor: BR, punho: BR, tex: { t: 'linhas', k: 0.04 } },
+    ],
+    neroverdi: [        // Sassuolo: listras verdes e pretas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#00a752', punho: '#00a752', tex: { t: 'pontos', k: 0.04 } },
+    ],
+    granata: [          // Torino: grená com detalhes brancos; a 2 é branca
+      { gola: 'polo', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { camadas: [{ t: 'faixa', c: '#8a1e03', w: 0.09, dir: 1 }], gola: 'redonda', golaCor: '#8a1e03', punho: '#8a1e03' },
+    ],
+    crociati: [         // Parma: branca com a cruz preta; a 2 é amarela e azul
+      { camadas: [{ t: 'vfaixa', c: PR, x: 0.5, w: 0.12 }, { t: 'banda', y: 0.3, f: [[PR, 0.1]] }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { camadas: [{ t: 'banda', y: 0.26, f: [['#1a3a8a', 0.16]] }], gola: 'redonda', golaCor: '#1a3a8a', punho: '#1a3a8a' },
+    ],
+    isolani: [          // Cagliari: metade vermelha e metade azul; a 2 é branca
+      { camadas: [{ t: 'metade', c: '#0b2a5b', lado: 1 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#c8102e', golaCor2: '#0b2a5b', punho: '#c8102e' },
+    ],
+    giglio: [           // Fiorentina: roxa com detalhes brancos; a 2 é branca com o roxo
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'curvas', k: 0.04 } },
+      { camadas: [{ t: 'faixa', c: '#5b2b82', w: 0.08, dir: -1, borda: '#c8202e', bw: 0.02 }], gola: 'v', golaCor: '#5b2b82', punho: '#5b2b82' },
+    ],
+    grifone: [          // Genoa: metade vermelha e metade azul-marinho; a 2 é branca
+      { camadas: [{ t: 'metade', c: '#a6192e', lado: 0 }], gola: 'redonda', golaCor: '#a6192e', punho: '#a6192e', numero: BR },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#a6192e', 0.05], ['#1c2a5c', 0.05]] }], gola: 'redonda', golaCor: '#1c2a5c', punho: '#a6192e' },
+    ],
+    salento: [          // Lecce: listras amarelas e vermelhas, calção azul-marinho; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#d71920', punho: '#d71920', numero: '#1c2a4a' },
+      { gola: 'v', golaCor: '#d71920', golaCor2: '#f6d100', punho: '#d71920' },
+    ],
+    laguna: [           // Venezia: preta com as faixas laranja e verde no peito; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f47a20', 0.06], ['#1f8a4c', 0.06]] }], gola: 'v', golaCor: '#f47a20', punho: '#1f8a4c', numero: '#f47a20' },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f47a20', 0.05], ['#1f8a4c', 0.05]] }], gola: 'v', golaCor: PR, punho: PR },
+    ],
+    ciociari: [         // Frosinone: amarela com detalhes azuis; a 2 é azul
+      { gola: 'v', golaCor: '#1d4fa0', punho: '#1d4fa0', numero: '#1d4fa0', tex: { t: 'riscas', k: 0.05 } },
+      { gola: 'v', golaCor: '#f6d100', punho: '#f6d100', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    brianza: [          // Monza: vermelha com a faixa diagonal branca; a 2 é branca com a faixa vermelha
+      { camadas: [{ t: 'faixa', c: BR, w: 0.1, dir: 1 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { camadas: [{ t: 'faixa', c: '#d71920', w: 0.1, dir: 1 }], gola: 'v', golaCor: '#d71920', punho: '#d71920' },
     ],
   };
 

@@ -1948,6 +1948,7 @@
     const k = MODELOS[P.campo.modelo] ? P.campo.modelo : modeloDoTime(E.M);
     E.modelo = k;
     MODELOS[k](E);
+    if (P.campo.telao) E.txtTelao = P.campo.telao;                     // o texto do telão pedido pela partida (a copa europeia)
     if (!E.pegada) E.pegada = medir(E);
     let yMax = 20; for (let i = 1; i < E.L.pos.length; i += 3) if (E.L.pos[i] > yMax && Math.abs(E.L.pos[i - 1]) < E.pegada[0] && Math.abs(E.L.pos[i + 1]) < E.pegada[1]) yMax = E.L.pos[i];
     // a frente da arquibancada no meio do lado dos bancos (z-): até onde o túnel da entrada pode ir sem entrar nela
@@ -2118,6 +2119,20 @@
     return ks[h % ks.length];
   }
 
+  // ------------------------------------------------------------------------------------------ FRANÇA, ALEMANHA E ITÁLIA
+  //   Os mesmos desenhos da Espanha e da Inglaterra com o nome e o telão de cada país (a casa mais parecida com a de verdade)
+  const DE_OUTRO = (k, base, nome, txt) => { NOMES[k] = nome; MODELOS[k] = (E) => { MODELOS[base](E); E.txtTelao = txt; }; };
+  DE_OUTRO('parcCapitale', 'bowl', 'Parc de la Capitale', 'LIGUE'); DE_OUTRO('velodrome', 'olas', 'Vélodrome du Vieux-Port', 'LIGUE');
+  DE_OUTRO('grandStade', 'masts', 'Grand Stade des Gones', 'LIGUE'); DE_OUTRO('stadeMunicipal', 'municipal', 'Stade Municipal', 'LIGUE');
+  DE_OUTRO('stadeVille', 'towns', 'Stade de la Ville', 'LIGUE');
+  DE_OUTRO('arenaIsar', 'bowl', 'Isar-Arena', 'LIGA'); DE_OUTRO('suedwand', 'wall', 'Westfalen-Südwand', 'LIGA');
+  DE_OUTRO('arenaRhein', 'masts', 'Rhein-Arena', 'LIGA'); DE_OUTRO('knappenArena', 'theatre', 'Knappen-Arena', 'LIGA');
+  DE_OUTRO('stadtStadion', 'towns', 'Stadtstadion', 'LIGA'); DE_OUTRO('altesStadion', 'brick', 'Altes Stadion', 'LIGA');
+  DE_OUTRO('scala', 'masts', 'Stadio della Scala', 'LEGA'); DE_OUTRO('olimpicoRoma', 'castellana', 'Stadio dei Sette Colli', 'LEGA');
+  DE_OUTRO('vulcano', 'tresAneis', 'Stadio del Vulcano', 'LEGA'); DE_OUTRO('torinoArena', 'wall', 'Arena Bianconera', 'LEGA');
+  DE_OUTRO('comunale', 'municipal', 'Stadio Comunale', 'LEGA'); DE_OUTRO('stadioCitta', 'towns', 'Stadio di Città', 'LEGA');
+  DE_OUTRO('vecchioStadio', 'brick', 'Vecchio Stadio', 'LEGA');
+
   // a casa de cada clube do Brasileirão A (serieb.js, TIMES_A): o modelo mais parecido com o estádio de verdade de cada um
   //   (7.4.0) cada clube na sua casa; quem não tem estádio próprio joga onde já joga (as Laranjeiras dividem o Anel com o Urubu).
   //   A Arena da Floresta não é de ninguém: é o campo neutro da final da Copa do Brasil (serieb.js).
@@ -2131,7 +2146,17 @@
     branquiazul: 'municipal', boquerones: 'municipal',
     reddevils: 'theatre', merseyreds: 'kop', gunners: 'bowl', citizens: 'masts', lilywhites: 'wall', kingsroad: 'towns', magpies: 'towns',
     villans: 'towns', toffees: 'towns', eagles: 'towns', sherwood: 'towns', peacocks: 'towns', seagulls: 'towns', blackcats: 'towns',
-    skyblues: 'towns', tractors: 'towns', tigers: 'towns', cottagers: 'brick', cherries: 'brick', bees: 'brick' };
+    skyblues: 'towns', tractors: 'towns', tigers: 'towns', cottagers: 'brick', cherries: 'brick', bees: 'brick',
+    capitale: 'parcCapitale', vieuxport: 'velodrome', gones: 'grandStade', rocher: 'stadeMunicipal', dogues: 'stadeVille', sangetor: 'stadeVille',
+    breton: 'stadeVille', aiglons: 'stadeVille', alsacien: 'stadeMunicipal', violets: 'stadeMunicipal', merlus: 'stadeMunicipal', lumiere: 'stadeMunicipal',
+    finistere: 'stadeMunicipal', scoistes: 'stadeMunicipal', cielmarine: 'stadeVille', abbaye: 'stadeMunicipal', champenois: 'stadeMunicipal', vingtquatre: 'stadeVille',
+    isar: 'arenaIsar', ruhrgelb: 'suedwand', messebullen: 'arenaRhein', werkself: 'arenaRhein', knappen: 'knappenArena', brustring: 'stadtStadion',
+    adlermain: 'stadtStadion', fohlen: 'stadtStadion', rothosen: 'stadtStadion', geissbock: 'stadtStadion', weser: 'stadtStadion', kraichgau: 'stadtStadion',
+    breisgau: 'stadtStadion', fugger: 'stadtStadion', karneval: 'stadtStadion', eiserne: 'altesStadion', saarwunder: 'altesStadion', paderquell: 'altesStadion',
+    biscione: 'scala', diavolo: 'scala', lupa: 'olimpicoRoma', aquile: 'olimpicoRoma', vesuvio: 'vulcano', signora: 'torinoArena',
+    dea: 'stadioCitta', felsina: 'stadioCitta', giglio: 'stadioCitta', granata: 'stadioCitta', grifone: 'stadioCitta', zebrette: 'stadioCitta',
+    lariani: 'vecchioStadio', neroverdi: 'comunale', crociati: 'comunale', isolani: 'comunale', salento: 'comunale', laguna: 'vecchioStadio',
+    ciociari: 'comunale', brianza: 'comunale' };
   // quem subiu do Brasileirão B (sem casa na lista) joga num dos estádios do interior, sempre o mesmo
   const DO_INTERIOR = ['caipira', 'taboao', 'oeste'];
   const modeloDoClube = (k) => CASA_DO_CLUBE[k] || (k ? DO_INTERIOR[(typeof sementeDe === 'function' ? sementeDe('casa|' + k) : String(k).length) % DO_INTERIOR.length] : '');

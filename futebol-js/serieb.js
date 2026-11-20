@@ -381,6 +381,241 @@
       uni: ['#f5a12d', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f5a12d', '#1c1c1f', '#2a72d6'], uni2: ['#f4f4f0', '#1c1c1f', '#f5a12d', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f'],
       hist: [['A', 18, 37, 80, 38], ['B', 18, 70, 70, 46], ['B', 13, 66, 68, 46], ['B', 24, 57, 87, 46], ['C', 1, 0, 0, 0], ['B', 19, 41, 54, 46], ['B', 15, 51, 61, 46], ['B', 7, 68, 60, 46], ['B', 21, 44, 54, 46], ['B', 6, 70, 66, 46]] },
   ];
+  // ---- 18 paródias da 1ª divisão da França (TIMES_FR), 18 da Alemanha (TIMES_DE) e 20 da Itália (TIMES_IT), temporada 2026-27.
+  //   Mesmo formato da Espanha e da Inglaterra. br: o escudo (pixel art 32x32 montada por gerarBrasao, mais abaixo):
+  //   f = forma, p = desenho do fundo, c = [cor 1, cor 2, cor do aro], s = o símbolo do meio, l = as letras.
+  //   2ª divisão: França 20 times (18 desde 2024-25), Alemanha 18, Itália 20 (22 até 2017-18). Fonte: as tabelas finais de cada
+  //   temporada (Ligue 1/2, Bundesliga/2. Bundesliga, Serie A/B, RSSSF); 3ª e 4ª divisões aproximadas.
+  const TIMES_FR = [
+    { k: 'capitale', nome: 'Paris Tour Eiffelle FC', sigla: 'PTE', tecnico: 'Míster Lucho', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Constelação de craques: pressão alta e troca de passes em velocidade.',
+      uni: ['#0b2a5b', '#da291c', '#f4f4f0', '#0b2a5b', '#0b2a5b', '#da291c', '#1fb38a'], uni2: ['#f4f4f0', '#0b2a5b', '#da291c', '#f4f4f0', '#f4f4f0', '#0b2a5b', '#f2c230'],
+      br: { f: 'redondo', p: 'vfaixa', c: ['#0b2a5b', '#da291c', '#f4f4f0'], s: 'torre', l: 'PTE' },
+      hist: [['A', 2, 83, 27, 38], ['A', 1, 108, 29, 38], ['A', 1, 105, 35, 38], ['A', 1, 75, 24, 27], ['A', 2, 86, 28, 38], ['A', 1, 90, 36, 38], ['A', 1, 89, 40, 38], ['A', 1, 81, 33, 34], ['A', 1, 92, 35, 34], ['A', 1, 74, 29, 34]] },
+    { k: 'vieuxport', nome: 'Olympique du Vieux-Port', sigla: 'OVP', tecnico: 'Signore Roberto', formacao: '4-3-3', tatica: 'contra', estilo: 'Intenso e vertical, joga com o estádio fervendo.',
+      uni: ['#f4f4f0', '#4fb3e8', '#4fb3e8', '#f4f4f0', '#f4f4f0', '#1c2a4a', '#1c1c1f'], uni2: ['#4fb3e8', '#f4f4f0', '#f4f4f0', '#4fb3e8', '#4fb3e8', '#1c2a4a', '#f2c230'],
+      br: { f: 'escudo', p: 'liso', c: ['#f4f4f0', '#4fb3e8', '#4fb3e8'], s: 'estrela', l: 'OVP', sc: '#4fb3e8' },
+      hist: [['A', 5, 57, 41, 38], ['A', 4, 80, 47, 38], ['A', 5, 60, 52, 38], ['A', 2, 41, 29, 28], ['A', 5, 54, 47, 38], ['A', 2, 63, 38, 38], ['A', 3, 67, 40, 38], ['A', 8, 52, 41, 34], ['A', 2, 74, 47, 34], ['A', 5, 63, 45, 34]] },
+    { k: 'gones', nome: 'Olympique des Gones', sigla: 'OGO', tecnico: 'Monsieur Paulo', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Ofensivo, cheio de garotos da base e muito toque de bola.',
+      uni: ['#f4f4f0', '#1d4fa0', '#c8202e', '#f4f4f0', '#f4f4f0', '#1d4fa0', '#f2c230'], uni2: ['#1c2a4a', '#c8202e', '#c8202e', '#1c2a4a', '#1c2a4a', '#c8202e', '#1fb38a'],
+      br: { f: 'redondo', p: 'faixa', c: ['#f4f4f0', '#c8202e', '#1d4fa0'], s: 'leao', l: 'OGO', sc: '#1d4fa0' },
+      hist: [['A', 4, 77, 48, 38], ['A', 3, 87, 43, 38], ['A', 3, 70, 47, 38], ['A', 7, 42, 27, 28], ['A', 4, 81, 43, 38], ['A', 8, 66, 51, 38], ['A', 7, 65, 47, 38], ['A', 6, 49, 55, 34], ['A', 6, 65, 46, 34], ['A', 4, 53, 40, 34]] },
+    { k: 'rocher', nome: 'AS Rocher Princier', sigla: 'ARP', tecnico: 'Herr Adi', formacao: '4-4-2', tatica: 'contra', estilo: 'Elenco jovem e caríssimo: muita posse e laterais por dentro.',
+      uni: ['#d4111e', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#d4111e', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#d4111e', '#d4111e', '#d4111e', '#f4f4f0', '#d4111e', '#f2c230'],
+      br: { f: 'escudo', p: 'diagonal', c: ['#d4111e', '#f4f4f0', '#c9a227'], s: 'coroa', l: 'ARP', sc: '#c9a227' },
+      hist: [['A', 1, 107, 31, 38], ['A', 2, 85, 45, 38], ['A', 17, 38, 57, 38], ['A', 9, 44, 44, 28], ['A', 3, 76, 42, 38], ['A', 3, 65, 40, 38], ['A', 6, 70, 58, 38], ['A', 2, 68, 42, 34], ['A', 3, 63, 41, 34], ['A', 7, 60, 54, 34]] },
+    { k: 'dogues', nome: 'Dogues des Flandres', sigla: 'DDF', tecnico: 'Monsieur Bruno', formacao: '4-2-3-1', tatica: 'falso9', estilo: 'Compacto e frio: defende bem, rouba no meio e mata na transição.',
+      uni: ['#d01f2f', '#1c2a4a', '#1c2a4a', '#1c2a4a', '#d01f2f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#d01f2f', '#1c2a4a', '#f4f4f0', '#f4f4f0', '#d01f2f', '#1fb38a'],
+      br: { f: 'quadrado', p: 'liso', c: ['#d01f2f', '#1c2a4a', '#1c2a4a'], s: 'cao', l: 'DDF', sc: '#f4f4f0' },
+      hist: [['A', 11, 40, 47, 38], ['A', 17, 41, 67, 38], ['A', 2, 68, 33, 38], ['A', 4, 35, 27, 28], ['A', 1, 64, 23, 38], ['A', 10, 48, 48, 38], ['A', 5, 65, 44, 38], ['A', 4, 52, 34, 34], ['A', 5, 52, 36, 34], ['A', 3, 52, 37, 34]] },
+    { k: 'sangetor', nome: 'Sang et Or Artésien', sigla: 'SOA', tecnico: 'Monsieur Pierre', formacao: '3-5-2', tatica: 'contra', estilo: 'Torcida de mineiros que não para de cantar: pressão alta e alas voando.',
+      uni: ['#f6d100', '#d71920', '#d71920', '#1c1c1f', '#f6d100', '#d71920', '#2a72d6'], uni2: ['#1c1c1f', '#f6d100', '#f6d100', '#1c1c1f', '#1c1c1f', '#f6d100', '#f4f4f0'],
+      br: { f: 'escudo', p: 'metade', c: ['#d71920', '#f6d100', '#1c1c1f'], s: 'picareta', l: 'SOA', sc: '#1c1c1f' },
+      hist: [['B', 4, 59, 40, 38], ['B', 14, 48, 49, 38], ['B', 5, 49, 28, 38], ['B', 2, 39, 24, 28], ['A', 7, 55, 54, 38], ['A', 7, 62, 48, 38], ['A', 2, 68, 29, 38], ['A', 7, 45, 37, 34], ['A', 8, 42, 39, 34], ['A', 2, 66, 35, 34]] },
+    { k: 'breton', nome: 'Stade Rouge Breton', sigla: 'SRB', tecnico: 'Monsieur Habib', formacao: '4-4-2', tatica: 'contra', estilo: 'Transição rápida e muita correria; a defesa sofre.',
+      uni: ['#e2001a', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1c1c1f', '#e2001a', '#f4f4f0', '#f4f4f0', '#e2001a', '#1fb38a'],
+      br: { f: 'escudo', p: 'aros', c: ['#e2001a', '#1c1c1f', '#1c1c1f'], s: 'arminho', l: 'SRB', sc: '#f4f4f0' },
+      hist: [['A', 9, 36, 42, 38], ['A', 5, 50, 44, 38], ['A', 10, 55, 52, 38], ['A', 3, 38, 24, 28], ['A', 6, 52, 40, 38], ['A', 4, 82, 40, 38], ['A', 4, 69, 39, 38], ['A', 10, 53, 46, 34], ['A', 12, 51, 50, 34], ['A', 6, 59, 50, 34]] },
+    { k: 'aiglons', nome: 'Aiglons de la Baie', sigla: 'ADB', tecnico: 'Monsieur Franck', formacao: '4-3-3', tatica: 'retranca', estilo: 'Equilibrado, mas oscila: alterna grandes jogos e tropeços.',
+      uni: ['#c8102e', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#c8102e', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#c8102e', '#2a72d6'],
+      br: { f: 'oval', p: 'listras', c: ['#c8102e', '#1c1c1f', '#c9a227'], s: 'aguia', l: 'ADB', sc: '#c9a227' },
+      hist: [['A', 3, 63, 36, 38], ['A', 8, 53, 52, 38], ['A', 7, 30, 35, 38], ['A', 5, 41, 38, 28], ['A', 9, 50, 53, 38], ['A', 5, 52, 36, 38], ['A', 9, 48, 37, 38], ['A', 5, 40, 29, 34], ['A', 4, 66, 41, 34], ['A', 16, 37, 60, 34]] },
+    { k: 'alsacien', nome: 'Racing Alsacien', sigla: 'RAL', tecnico: 'Mister Liam', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Elenco jovem e ousado: saída de bola caprichada e muita velocidade.',
+      uni: ['#1d5fbf', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#1d5fbf', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1d5fbf', '#1d5fbf', '#1d5fbf', '#f4f4f0', '#1d5fbf', '#1c1c1f'],
+      br: { f: 'escudo', p: 'faixa', c: ['#1d5fbf', '#f4f4f0', '#f4f4f0'], s: 'cegonha', l: 'RAL', sc: '#f4f4f0' },
+      hist: [['B', 1, 63, 47, 38], ['A', 15, 44, 67, 38], ['A', 11, 58, 48, 38], ['A', 10, 32, 32, 27], ['A', 15, 49, 58, 38], ['A', 6, 60, 43, 38], ['A', 15, 51, 59, 38], ['A', 13, 38, 50, 34], ['A', 7, 56, 44, 34], ['A', 8, 58, 47, 34]] },
+    { k: 'violets', nome: 'Violets de la Garonne', sigla: 'VGA', tecnico: 'Monsieur Carles', formacao: '3-5-2', tatica: 'contra', estilo: 'Três zagueiros e alas velozes: perigoso no contra-ataque.',
+      uni: ['#5b2a86', '#f4f4f0', '#f4f4f0', '#5b2a86', '#5b2a86', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#5b2a86', '#5b2a86', '#f4f4f0', '#f4f4f0', '#5b2a86', '#1fb38a'],
+      br: { f: 'losango', p: 'liso', c: ['#5b2a86', '#f4f4f0', '#f4f4f0'], s: 'cruz', l: 'VGA', sc: '#f4f4f0' },
+      hist: [['A', 13, 37, 41, 38], ['A', 18, 38, 54, 38], ['A', 16, 35, 57, 38], ['A', 20, 22, 58, 28], ['B', 3, 71, 42, 38], ['B', 1, 82, 33, 38], ['A', 13, 51, 57, 38], ['A', 11, 42, 46, 34], ['A', 10, 44, 43, 34], ['A', 9, 47, 46, 34]] },
+    { k: 'merlus', nome: 'Merlus du Morbihan', sigla: 'MMO', tecnico: 'Madame Corinne', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Campeão da segunda divisão: o ataque que mais marcou.',
+      uni: ['#f47a20', '#1c1c1f', '#1c1c1f', '#f47a20', '#f47a20', '#1c1c1f', '#2a72d6'], uni2: ['#1c1c1f', '#f47a20', '#f47a20', '#1c1c1f', '#1c1c1f', '#f47a20', '#f4f4f0'],
+      br: { f: 'escudo', p: 'liso', c: ['#f47a20', '#1c1c1f', '#1c1c1f'], s: 'peixe', l: 'MMO', sc: '#1c1c1f' },
+      hist: [['A', 18, 44, 70, 38], ['B', 7, 61, 46, 38], ['B', 6, 51, 41, 38], ['B', 1, 45, 25, 28], ['A', 16, 50, 68, 38], ['A', 16, 35, 63, 38], ['A', 10, 52, 53, 38], ['A', 17, 43, 66, 34], ['B', 1, 68, 31, 34], ['A', 10, 48, 51, 34]] },
+    { k: 'lumiere', nome: 'Paris Lumière FC', sigla: 'PLU', tecnico: 'Monsieur Stéphane', formacao: '4-4-2', tatica: 'retranca', estilo: 'Promovido que surpreendeu: defesa organizada e muita entrega.',
+      uni: ['#16274d', '#7fb8e6', '#7fb8e6', '#16274d', '#16274d', '#7fb8e6', '#f2c230'], uni2: ['#f4f4f0', '#16274d', '#16274d', '#f4f4f0', '#f4f4f0', '#16274d', '#1fb38a'],
+      br: { f: 'redondo', p: 'aros', c: ['#16274d', '#7fb8e6', '#7fb8e6'], s: 'barco', l: 'PLU', sc: '#f4f4f0' },
+      hist: [['C', 3, 30, 18, 34], ['B', 8, 46, 36, 38], ['B', 4, 36, 22, 38], ['B', 17, 22, 40, 28], ['B', 5, 53, 37, 38], ['B', 4, 54, 35, 38], ['B', 7, 45, 43, 38], ['B', 5, 49, 42, 38], ['B', 2, 55, 33, 34], ['A', 11, 47, 50, 34]] },
+    { k: 'finistere', nome: 'Pirates du Finistère', sigla: 'PFI', tecnico: 'Monsieur Éric', formacao: '4-3-3', tatica: 'aerea', estilo: 'Intenso: jogo direto, muita bola parada e força pelo alto.',
+      uni: ['#e2001a', '#f4f4f0', '#f4f4f0', '#e2001a', '#e2001a', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#e2001a', '#e2001a', '#f4f4f0', '#f4f4f0', '#e2001a', '#f2c230'],
+      br: { f: 'escudo', p: 'liso', c: ['#e2001a', '#f4f4f0', '#f4f4f0'], s: 'ancora', l: 'PFI', sc: '#f4f4f0' },
+      hist: [['B', 5, 58, 44, 38], ['B', 5, 58, 43, 38], ['B', 2, 64, 35, 38], ['A', 14, 34, 37, 28], ['A', 17, 50, 66, 38], ['A', 11, 49, 57, 38], ['A', 14, 44, 54, 38], ['A', 3, 53, 34, 34], ['A', 9, 52, 59, 34], ['A', 12, 43, 55, 34]] },
+    { k: 'scoistes', nome: 'Scoistes de l\'Anjou', sigla: 'SAN', tecnico: 'Monsieur Alexandre', formacao: '5-3-2', tatica: 'retranca', estilo: 'Fechadinho atrás: sofre poucos gols e faz poucos também.',
+      uni: ['#1c1c1f', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#2a72d6'],
+      br: { f: 'escudo', p: 'listras', c: ['#1c1c1f', '#f4f4f0', '#1c1c1f'], s: 'castelo', l: 'SAN', sc: '#c9a227' },
+      hist: [['A', 12, 40, 49, 38], ['A', 14, 42, 52, 38], ['A', 13, 44, 49, 38], ['A', 11, 28, 33, 28], ['A', 13, 40, 58, 38], ['A', 14, 44, 55, 38], ['A', 20, 33, 81, 38], ['B', 2, 56, 42, 38], ['A', 14, 32, 53, 34], ['A', 13, 29, 48, 34]] },
+    { k: 'cielmarine', nome: 'Ciel et Marine du Havre', sigla: 'CMH', tecnico: 'Monsieur Didier', formacao: '5-3-2', tatica: 'retranca', estilo: 'Duro e chato de enfrentar: bloco baixo, faltas táticas e bola longa.',
+      uni: ['#7fc4ea', '#1c2a4a', '#1c2a4a', '#1c2a4a', '#7fc4ea', '#1c2a4a', '#f2c230'], uni2: ['#f4f4f0', '#1c2a4a', '#7fc4ea', '#f4f4f0', '#f4f4f0', '#1c2a4a', '#1fb38a'],
+      br: { f: 'escudo', p: 'metade', c: ['#7fc4ea', '#1c2a4a', '#1c2a4a'], s: 'ancora', l: 'CMH', sc: '#f4f4f0' },
+      hist: [['B', 8, 39, 31, 38], ['B', 4, 53, 34, 38], ['B', 7, 45, 40, 38], ['B', 6, 38, 25, 28], ['B', 12, 38, 48, 38], ['B', 8, 38, 41, 38], ['B', 1, 46, 19, 38], ['A', 15, 34, 45, 34], ['A', 15, 40, 71, 34], ['A', 14, 32, 44, 34]] },
+    { k: 'abbaye', nome: 'AJ Abbaye Bourguignonne', sigla: 'AAB', tecnico: 'Monsieur Christophe', formacao: '4-4-2', tatica: 'aerea', estilo: 'Defende em bloco e aposta na bola parada.',
+      uni: ['#f4f4f0', '#1d4fa0', '#1d4fa0', '#f4f4f0', '#f4f4f0', '#1d4fa0', '#1c1c1f'], uni2: ['#1d4fa0', '#f4f4f0', '#f4f4f0', '#1d4fa0', '#1d4fa0', '#f4f4f0', '#f2c230'],
+      br: { f: 'escudo', p: 'liso', c: ['#f4f4f0', '#1d4fa0', '#1d4fa0'], s: 'torre', l: 'AAB', sc: '#1d4fa0' },
+      hist: [['B', 17, 28, 40, 38], ['B', 11, 51, 55, 38], ['B', 15, 34, 36, 38], ['B', 11, 31, 30, 28], ['B', 6, 64, 43, 38], ['B', 3, 61, 39, 38], ['A', 17, 35, 63, 38], ['B', 1, 72, 36, 38], ['A', 11, 48, 51, 34], ['A', 15, 34, 44, 34]] },
+    { k: 'champenois', nome: 'Champenois de Troyes', sigla: 'CTR', tecnico: 'Monsieur Gaël', formacao: '4-3-3', tatica: 'contra', estilo: 'Campeão da segunda divisão: ataque fortíssimo e defesa vazada.',
+      uni: ['#1a4a9e', '#f4f4f0', '#f4f4f0', '#1a4a9e', '#1a4a9e', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1a4a9e', '#1a4a9e', '#f4f4f0', '#f4f4f0', '#1a4a9e', '#1c1c1f'],
+      br: { f: 'redondo', p: 'liso', c: ['#1a4a9e', '#f4f4f0', '#c9a227'], s: 'galo', l: 'CTR', sc: '#f4f4f0' },
+      hist: [['B', 3, 59, 43, 38], ['A', 19, 32, 59, 38], ['B', 3, 51, 28, 38], ['B', 4, 34, 25, 28], ['B', 1, 60, 36, 38], ['A', 15, 37, 53, 38], ['A', 19, 45, 81, 38], ['B', 17, 42, 50, 38], ['B', 10, 36, 34, 34], ['B', 1, 60, 33, 34]] },
+    { k: 'vingtquatre', nome: 'Vingt-Quatre Heures FC', sigla: 'VQH', tecnico: 'Monsieur Patrice', formacao: '4-4-2', tatica: 'contra', estilo: 'Recém-promovido: compacto e perigoso no contra-ataque.',
+      uni: ['#d01c2a', '#f2c230', '#f2c230', '#1c1c1f', '#d01c2a', '#f2c230', '#2a72d6'], uni2: ['#f4f4f0', '#d01c2a', '#d01c2a', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f'],
+      br: { f: 'escudo', p: 'liso', c: ['#d01c2a', '#f2c230', '#1c1c1f'], s: 'raio', l: 'VQH', sc: '#f2c230' },
+      hist: [['D', 3, 0, 0, 0], ['D', 1, 0, 0, 0], ['C', 3, 38, 29, 34], ['B', 19, 30, 45, 28], ['C', 6, 0, 0, 0], ['C', 12, 0, 0, 0], ['C', 9, 0, 0, 0], ['C', 3, 0, 0, 0], ['C', 2, 0, 0, 0], ['B', 2, 50, 31, 34]] },
+  ];
+  const TIMES_DE = [
+    { k: 'isar', nome: 'Rot-Weiß Isarstadt', sigla: 'RWI', tecnico: 'Herr Vinzenz', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'O rolo compressor: domina a bola, empilha gols e quase nunca perde em casa.',
+      uni: ['#dc052d', '#f4f4f0', '#f4f4f0', '#dc052d', '#dc052d', '#f4f4f0', '#1fb38a'], uni2: ['#f4f4f0', '#dc052d', '#0b2a5b', '#f4f4f0', '#f4f4f0', '#dc052d', '#f2c230'],
+      br: { f: 'redondo', p: 'losangos', c: ['#1e64c8', '#f4f4f0', '#dc052d'], s: 'nenhum', l: 'RWI', sc: '#dc052d' },
+      hist: [['A', 1, 89, 22, 34], ['A', 1, 92, 28, 34], ['A', 1, 88, 32, 34], ['A', 1, 100, 32, 34], ['A', 1, 99, 44, 34], ['A', 1, 97, 37, 34], ['A', 1, 92, 38, 34], ['A', 3, 94, 45, 34], ['A', 1, 99, 32, 34], ['A', 1, 122, 36, 34]] },
+    { k: 'ruhrgelb', nome: 'Ballspiel Schwarzgelb Ruhr', sigla: 'BSR', tecnico: 'Herr Nikolaus', formacao: '3-5-2', tatica: 'contra', estilo: 'Muralha amarela atrás do gol: pressão alta e contra-ataque fulminante.',
+      uni: ['#fde100', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#fde100', '#1c1c1f', '#2a72d6'], uni2: ['#1c1c1f', '#fde100', '#fde100', '#1c1c1f', '#1c1c1f', '#fde100', '#f4f4f0'],
+      br: { f: 'redondo', p: 'liso', c: ['#fde100', '#1c1c1f', '#1c1c1f'], s: 'nenhum', l: 'BSR', grande: true },
+      hist: [['A', 3, 72, 40, 34], ['A', 4, 64, 47, 34], ['A', 2, 81, 44, 34], ['A', 2, 84, 41, 34], ['A', 3, 75, 46, 34], ['A', 2, 85, 52, 34], ['A', 2, 83, 44, 34], ['A', 5, 68, 43, 34], ['A', 4, 71, 51, 34], ['A', 2, 70, 34, 34]] },
+    { k: 'messebullen', nome: 'Messestadt Bullen', sigla: 'MBU', tecnico: 'Herr Ole', formacao: '4-2-3-1', tatica: 'contra', estilo: 'Pressão alta incansável e jogo vertical.',
+      uni: ['#f4f4f0', '#dd0741', '#dd0741', '#f4f4f0', '#f4f4f0', '#0c2043', '#f2c230'], uni2: ['#0c2043', '#dd0741', '#dd0741', '#0c2043', '#0c2043', '#dd0741', '#1fb38a'],
+      br: { f: 'oval', p: 'liso', c: ['#f4f4f0', '#dd0741', '#0c2043'], s: 'touro', l: 'MBU', sc: '#dd0741' },
+      hist: [['A', 2, 66, 39, 34], ['A', 6, 57, 53, 34], ['A', 3, 63, 29, 34], ['A', 3, 81, 37, 34], ['A', 2, 60, 32, 34], ['A', 4, 72, 37, 34], ['A', 3, 64, 41, 34], ['A', 4, 77, 39, 34], ['A', 7, 53, 48, 34], ['A', 3, 66, 47, 34]] },
+    { k: 'brustring', nome: 'Schwaben Brustring', sigla: 'SBR', tecnico: 'Herr Sebastian', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Muito bem treinado: linha alta e saída de bola caprichada.',
+      uni: ['#f4f4f0', '#e32219', '#e32219', '#f4f4f0', '#f4f4f0', '#e32219', '#1c1c1f'], uni2: ['#e32219', '#f4f4f0', '#f4f4f0', '#e32219', '#e32219', '#f4f4f0', '#f2c230'],
+      br: { f: 'escudo', p: 'liso', c: ['#f2c230', '#1c1c1f', '#e32219'], s: 'chifres', l: 'SBR', sc: '#1c1c1f' },
+      hist: [['B', 1, 63, 37, 34], ['A', 7, 36, 36, 34], ['A', 16, 32, 70, 34], ['B', 2, 62, 41, 34], ['A', 9, 56, 55, 34], ['A', 15, 41, 59, 34], ['A', 16, 45, 57, 34], ['A', 2, 78, 39, 34], ['A', 9, 64, 53, 34], ['A', 4, 71, 49, 34]] },
+    { k: 'kraichgau', nome: 'TSG Kraichgau Dorf', sigla: 'TKD', tecnico: 'Herr Christian', formacao: '3-5-2', tatica: 'contra', estilo: 'Ataque forte e rápido; a defesa às vezes fica exposta.',
+      uni: ['#1961b5', '#f4f4f0', '#f4f4f0', '#1961b5', '#1961b5', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1961b5', '#1961b5', '#f4f4f0', '#f4f4f0', '#1961b5', '#1c1c1f'],
+      br: { f: 'escudo', p: 'liso', c: ['#1961b5', '#f4f4f0', '#f4f4f0'], s: 'folha', l: 'TKD', sc: '#f4f4f0' },
+      hist: [['A', 4, 64, 37, 34], ['A', 3, 66, 48, 34], ['A', 9, 70, 52, 34], ['A', 6, 53, 53, 34], ['A', 11, 52, 54, 34], ['A', 9, 58, 60, 34], ['A', 12, 48, 57, 34], ['A', 7, 66, 66, 34], ['A', 15, 46, 68, 34], ['A', 5, 65, 52, 34]] },
+    { k: 'werkself', nome: 'Werkself vom Rhein', sigla: 'WVR', tecnico: 'Herr Kasper', formacao: '3-5-2', tatica: 'tikitaka', estilo: 'Técnico e ofensivo: muita posse e jogadas pelo meio.',
+      uni: ['#e32221', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#e32221', '#1c1c1f', '#f2c230'], uni2: ['#f4f4f0', '#e32221', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#e32221', '#2a72d6'],
+      br: { f: 'redondo', p: 'liso', c: ['#e32221', '#1c1c1f', '#1c1c1f'], s: 'leao', l: 'WVR', sc: '#1c1c1f' },
+      hist: [['A', 12, 53, 55, 34], ['A', 5, 58, 44, 34], ['A', 4, 69, 52, 34], ['A', 5, 61, 44, 34], ['A', 6, 53, 39, 34], ['A', 3, 80, 47, 34], ['A', 6, 57, 49, 34], ['A', 1, 89, 24, 34], ['A', 2, 72, 43, 34], ['A', 6, 68, 47, 34]] },
+    { k: 'breisgau', nome: 'SC Breisgau Schwarzwald', sigla: 'BSW', tecnico: 'Herr Julian', formacao: '4-4-2', tatica: 'contra', estilo: 'Unido e aguerrido: compete com o coração.',
+      uni: ['#e2001a', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#e2001a', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#e2001a', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#e2001a', '#1fb38a'],
+      br: { f: 'escudo', p: 'liso', c: ['#f4f4f0', '#e2001a', '#1c1c1f'], s: 'pinheiro', l: 'BSW', sc: '#e2001a' },
+      hist: [['A', 7, 42, 60, 34], ['A', 15, 32, 56, 34], ['A', 13, 46, 61, 34], ['A', 8, 48, 47, 34], ['A', 10, 52, 52, 34], ['A', 6, 58, 46, 34], ['A', 5, 51, 44, 34], ['A', 10, 45, 58, 34], ['A', 5, 49, 53, 34], ['A', 7, 51, 57, 34]] },
+    { k: 'adlermain', nome: 'Adler vom Main', sigla: 'ADM', tecnico: 'Herr Dino', formacao: '3-5-2', tatica: 'contra', estilo: 'Raça e transição rápida: cresce nos jogos grandes.',
+      uni: ['#1c1c1f', '#e1000f', '#e1000f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#e1000f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#e1000f', '#2a72d6'],
+      br: { f: 'escudo', p: 'liso', c: ['#f4f4f0', '#1c1c1f', '#e1000f'], s: 'aguia', l: 'ADM', sc: '#1c1c1f' },
+      hist: [['A', 11, 36, 43, 34], ['A', 8, 45, 45, 34], ['A', 7, 60, 48, 34], ['A', 9, 59, 60, 34], ['A', 5, 69, 53, 34], ['A', 11, 45, 49, 34], ['A', 7, 58, 52, 34], ['A', 6, 51, 50, 34], ['A', 3, 68, 46, 34], ['A', 8, 61, 65, 34]] },
+    { k: 'fugger', nome: 'FC Fuggerstadt', sigla: 'FFS', tecnico: 'Herr Manuel', formacao: '5-3-2', tatica: 'retranca', estilo: 'Muita marcação, jogo físico e cruzamentos.',
+      uni: ['#ba3733', '#f4f4f0', '#46714d', '#f4f4f0', '#ba3733', '#46714d', '#f2c230'], uni2: ['#f4f4f0', '#ba3733', '#46714d', '#ba3733', '#f4f4f0', '#46714d', '#1c1c1f'],
+      br: { f: 'escudo', p: 'metade', c: ['#ba3733', '#f4f4f0', '#46714d'], s: 'pinha', l: 'FFS', sc: '#46714d' },
+      hist: [['A', 13, 35, 51, 34], ['A', 12, 43, 46, 34], ['A', 15, 51, 71, 34], ['A', 15, 45, 63, 34], ['A', 13, 36, 54, 34], ['A', 14, 39, 56, 34], ['A', 15, 42, 63, 34], ['A', 11, 50, 60, 34], ['A', 12, 35, 51, 34], ['A', 9, 45, 61, 34]] },
+    { k: 'karneval', nome: 'Karneval Nullfünf', sigla: 'KNF', tecnico: 'Herr Urs', formacao: '3-5-2', tatica: 'contra', estilo: 'Pressão o tempo todo e muita intensidade em casa.',
+      uni: ['#c3141e', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#c3141e', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#c3141e', '#c3141e', '#c3141e', '#f4f4f0', '#c3141e', '#f2c230'],
+      br: { f: 'redondo', p: 'liso', c: ['#c3141e', '#f4f4f0', '#f4f4f0'], s: 'roda', l: 'KNF', sc: '#f4f4f0' },
+      hist: [['A', 15, 44, 55, 34], ['A', 14, 38, 52, 34], ['A', 12, 46, 57, 34], ['A', 13, 44, 65, 34], ['A', 12, 39, 56, 34], ['A', 8, 50, 45, 34], ['A', 9, 54, 55, 34], ['A', 13, 39, 51, 34], ['A', 6, 55, 43, 34], ['A', 10, 44, 53, 34]] },
+    { k: 'eiserne', nome: 'Eiserne von Köpenick', sigla: 'EVK', tecnico: 'Herr Steffen', formacao: '5-3-2', tatica: 'retranca', estilo: 'Bloco baixo e contra-ataque mortal.',
+      uni: ['#d4011d', '#f4f4f0', '#f4f4f0', '#d4011d', '#d4011d', '#f4f4f0', '#fbd800'], uni2: ['#f4f4f0', '#d4011d', '#d4011d', '#f4f4f0', '#f4f4f0', '#d4011d', '#1c1c1f'],
+      br: { f: 'redondo', p: 'liso', c: ['#d4011d', '#f2c230', '#f2c230'], s: 'martelo', l: 'EVK', sc: '#f2c230' },
+      hist: [['B', 4, 51, 39, 34], ['B', 8, 54, 46, 34], ['B', 3, 54, 33, 34], ['A', 11, 41, 58, 34], ['A', 7, 50, 43, 34], ['A', 5, 50, 44, 34], ['A', 4, 51, 38, 34], ['A', 15, 33, 58, 34], ['A', 13, 35, 51, 34], ['A', 11, 44, 58, 34]] },
+    { k: 'fohlen', nome: 'Fohlen vom Niederrhein', sigla: 'FVN', tecnico: 'Herr Gerardo', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Gosta de ficar com a bola e joga pelos lados.',
+      uni: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#00a650', '#f2c230'], uni2: ['#1c1c1f', '#00a650', '#00a650', '#1c1c1f', '#1c1c1f', '#00a650', '#2a72d6'],
+      br: { f: 'losango', p: 'liso', c: ['#f4f4f0', '#1c1c1f', '#00a650'], s: 'cavalo', l: 'FVN', sc: '#1c1c1f' },
+      hist: [['A', 9, 45, 49, 34], ['A', 9, 47, 52, 34], ['A', 5, 55, 42, 34], ['A', 4, 66, 40, 34], ['A', 8, 64, 56, 34], ['A', 10, 54, 61, 34], ['A', 10, 52, 55, 34], ['A', 14, 56, 67, 34], ['A', 10, 55, 57, 34], ['A', 12, 42, 53, 34]] },
+    { k: 'rothosen', nome: 'Rothosen Hanseaten', sigla: 'RHA', tecnico: 'Herr Merlin', formacao: '4-3-3', tatica: 'contra', estilo: 'Gigante de volta à elite: meio-campo criativo e torcida apaixonada.',
+      uni: ['#f4f4f0', '#0a3f86', '#0a3f86', '#d6001c', '#0a3f86', '#d6001c', '#1c1c1f'], uni2: ['#0a3f86', '#f4f4f0', '#f4f4f0', '#0a3f86', '#0a3f86', '#f4f4f0', '#f2c230'],
+      br: { f: 'losango', p: 'quartos', c: ['#1c1c1f', '#f4f4f0', '#0a3f86'], s: 'estrela', l: 'RHA', sc: '#0a3f86' },
+      hist: [['A', 14, 33, 61, 34], ['A', 17, 29, 53, 34], ['B', 4, 45, 42, 34], ['B', 4, 62, 46, 34], ['B', 4, 71, 44, 34], ['B', 3, 67, 35, 34], ['B', 3, 70, 45, 34], ['B', 4, 64, 44, 34], ['B', 2, 78, 44, 34], ['A', 13, 40, 54, 34]] },
+    { k: 'geissbock', nome: 'Geißbock Domstadt', sigla: 'GDS', tecnico: 'Herr Lukas', formacao: '4-4-2', tatica: 'aerea', estilo: 'Torcida gigante empurra; aposta no cruzamento.',
+      uni: ['#f4f4f0', '#ed1c24', '#ed1c24', '#f4f4f0', '#f4f4f0', '#ed1c24', '#1c1c1f'], uni2: ['#ed1c24', '#f4f4f0', '#f4f4f0', '#ed1c24', '#ed1c24', '#f4f4f0', '#f2c230'],
+      br: { f: 'escudo', p: 'liso', c: ['#f4f4f0', '#ed1c24', '#ed1c24'], s: 'cabra', l: 'GDS', sc: '#ed1c24' },
+      hist: [['A', 5, 51, 42, 34], ['A', 18, 35, 70, 34], ['B', 1, 84, 47, 34], ['A', 14, 51, 69, 34], ['A', 16, 34, 60, 34], ['A', 7, 52, 49, 34], ['A', 11, 49, 54, 34], ['A', 17, 28, 60, 34], ['B', 1, 53, 38, 34], ['A', 14, 49, 63, 34]] },
+    { k: 'weser', nome: 'Grün-Weiß an der Weser', sigla: 'GWW', tecnico: 'Herr Horst', formacao: '4-3-3', tatica: 'contra', estilo: 'Ataque criativo, mas leva gol com facilidade.',
+      uni: ['#1d9053', '#f4f4f0', '#f4f4f0', '#1d9053', '#1d9053', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1d9053', '#1d9053', '#f4f4f0', '#f4f4f0', '#1d9053', '#1c1c1f'],
+      br: { f: 'losango', p: 'liso', c: ['#1d9053', '#f4f4f0', '#f4f4f0'], s: 'letraW', l: 'GWW', sc: '#f4f4f0' },
+      hist: [['A', 8, 61, 64, 34], ['A', 11, 37, 40, 34], ['A', 8, 58, 49, 34], ['A', 16, 42, 69, 34], ['A', 17, 36, 57, 34], ['B', 2, 65, 43, 34], ['A', 13, 51, 64, 34], ['A', 9, 48, 54, 34], ['A', 8, 54, 57, 34], ['A', 15, 37, 60, 34]] },
+    { k: 'knappen', nome: 'Knappen Königsblau', sigla: 'KKB', tecnico: 'Herr Miron', formacao: '4-4-2', tatica: 'aerea', estilo: 'Gigante de volta à elite: estádio lotado, muita luta e bola na área.',
+      uni: ['#004d9d', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#004d9d', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#004d9d', '#004d9d', '#004d9d', '#f4f4f0', '#004d9d', '#1c1c1f'],
+      br: { f: 'redondo', p: 'liso', c: ['#004d9d', '#f4f4f0', '#f4f4f0'], s: 'picareta', l: 'KKB', sc: '#f4f4f0' },
+      hist: [['A', 10, 45, 40, 34], ['A', 2, 53, 37, 34], ['A', 14, 37, 55, 34], ['A', 12, 38, 58, 34], ['A', 18, 25, 86, 34], ['B', 1, 72, 44, 34], ['A', 17, 35, 71, 34], ['B', 10, 53, 60, 34], ['B', 14, 52, 62, 34], ['B', 1, 50, 31, 34]] },
+    { k: 'saarwunder', nome: 'SV Saarwunder', sigla: 'SSW', tecnico: 'Frau Inka', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'O conto de fadas da aldeia: subiu tocando a bola e sem medo de ninguém.',
+      uni: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#2a72d6'],
+      br: { f: 'escudo', p: 'aros', c: ['#1c1c1f', '#f4f4f0', '#1c1c1f'], s: 'estrela', l: 'SSW', sc: '#f2c230' },
+      hist: [['D', 1, 0, 0, 0], ['D', 3, 0, 0, 0], ['D', 2, 0, 0, 0], ['D', 3, 0, 0, 0], ['D', 2, 0, 0, 0], ['D', 1, 0, 0, 0], ['C', 1, 0, 0, 0], ['B', 11, 49, 63, 34], ['B', 3, 64, 37, 34], ['B', 2, 64, 39, 34]] },
+    { k: 'paderquell', nome: 'SC Paderquellen', sigla: 'SCQ', tecnico: 'Herr Ralf', formacao: '4-3-3', tatica: 'contra', estilo: 'Pressão alta e jogo vertical, sem medo de ninguém.',
+      uni: ['#1c3e8a', '#1c1c1f', '#1c1c1f', '#1c3e8a', '#1c3e8a', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1c3e8a', '#1c3e8a', '#f4f4f0', '#f4f4f0', '#1c3e8a', '#1c1c1f'],
+      br: { f: 'escudo', p: 'listras', c: ['#1c3e8a', '#1c1c1f', '#f4f4f0'], s: 'ondas', l: 'SCQ', sc: '#f4f4f0' },
+      hist: [['C', 18, 0, 0, 0], ['C', 2, 0, 0, 0], ['B', 2, 76, 50, 34], ['A', 18, 37, 74, 34], ['B', 9, 53, 45, 34], ['B', 7, 56, 44, 34], ['B', 6, 68, 44, 34], ['B', 7, 54, 54, 34], ['B', 4, 56, 46, 34], ['B', 3, 59, 45, 34]] },
+  ];
+  const TIMES_IT = [
+    { k: 'biscione', nome: 'Biscione Nerazzurro', sigla: 'BNZ', tecnico: 'Mister Cristoforo', formacao: '3-5-2', tatica: 'contra', estilo: 'Três zagueiros de ferro, alas incansáveis e um ataque matador.',
+      uni: ['#0068a8', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#0068a8', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#0068a8', '#1fb38a'],
+      br: { f: 'redondo', p: 'listras', c: ['#0068a8', '#1c1c1f', '#c9a227'], s: 'serpente', l: 'BNZ', sc: '#c9a227' },
+      hist: [['A', 7, 72, 49, 38], ['A', 4, 66, 30, 38], ['A', 4, 57, 33, 38], ['A', 2, 81, 36, 38], ['A', 1, 89, 35, 38], ['A', 2, 84, 32, 38], ['A', 3, 71, 42, 38], ['A', 1, 89, 22, 38], ['A', 2, 79, 35, 38], ['A', 1, 89, 35, 38]] },
+    { k: 'vesuvio', nome: 'Partenopei del Vesuvio', sigla: 'PVE', tecnico: 'Mister Tonino', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'O estádio-vulcão empurra: muita posse e ataque pelos lados.',
+      uni: ['#12a0d7', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#12a0d7', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#12a0d7', '#12a0d7', '#12a0d7', '#f4f4f0', '#12a0d7', '#1c1c1f'],
+      br: { f: 'redondo', p: 'liso', c: ['#12a0d7', '#f4f4f0', '#f4f4f0'], s: 'vulcao', l: 'PVE', sc: '#f4f4f0' },
+      hist: [['A', 3, 94, 39, 38], ['A', 2, 77, 29, 38], ['A', 2, 74, 36, 38], ['A', 7, 61, 50, 38], ['A', 5, 86, 41, 38], ['A', 3, 74, 31, 38], ['A', 1, 77, 28, 38], ['A', 10, 55, 48, 38], ['A', 1, 59, 27, 38], ['A', 2, 58, 36, 38]] },
+    { k: 'lupa', nome: 'Lupi Giallorossi', sigla: 'LGR', tecnico: 'Mister Giampi', formacao: '3-5-2', tatica: 'retranca', estilo: 'Defesa organizadíssima: sofreu pouquíssimos gols na última campanha.',
+      uni: ['#8e1f2f', '#f0bc42', '#f0bc42', '#f4f4f0', '#1c1c1f', '#f0bc42', '#1fb38a'], uni2: ['#f4f4f0', '#8e1f2f', '#f0bc42', '#f4f4f0', '#f4f4f0', '#8e1f2f', '#2a72d6'],
+      br: { f: 'redondo', p: 'metade', c: ['#8e1f2f', '#f0bc42', '#f0bc42'], s: 'lobo', l: 'LGR', sc: '#f0bc42' },
+      hist: [['A', 2, 90, 38, 38], ['A', 3, 61, 28, 38], ['A', 6, 66, 48, 38], ['A', 5, 77, 51, 38], ['A', 7, 68, 58, 38], ['A', 6, 59, 43, 38], ['A', 6, 50, 38, 38], ['A', 6, 65, 46, 38], ['A', 5, 56, 35, 38], ['A', 3, 59, 31, 38]] },
+    { k: 'lariani', nome: 'Lariani del Lago', sigla: 'LDL', tecnico: 'Mister Cesco', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Projeto milionário à beira do lago: toque de bola refinado e muita técnica.',
+      uni: ['#1a4f9c', '#f4f4f0', '#f4f4f0', '#1a4f9c', '#1a4f9c', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1a4f9c', '#1a4f9c', '#f4f4f0', '#f4f4f0', '#1a4f9c', '#1c1c1f'],
+      br: { f: 'escudo', p: 'liso', c: ['#1a4f9c', '#f4f4f0', '#f4f4f0'], s: 'cruz', l: 'LDL', sc: '#f4f4f0' },
+      hist: [['C', 13, 0, 0, 0], ['D', 2, 0, 0, 0], ['D', 1, 0, 0, 0], ['C', 13, 0, 0, 0], ['C', 1, 0, 0, 0], ['B', 13, 49, 54, 38], ['B', 13, 47, 48, 38], ['B', 2, 58, 40, 38], ['A', 10, 49, 52, 38], ['A', 4, 65, 29, 38]] },
+    { k: 'diavolo', nome: 'Diavoli Rossoneri', sigla: 'DRN', tecnico: 'Mister Massimo', formacao: '3-5-2', tatica: 'contra', estilo: 'Gigante tradicional: defesa sólida e um ataque que decide nos detalhes.',
+      uni: ['#fb090b', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#fb090b', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#fb090b', '#1fb38a'],
+      br: { f: 'oval', p: 'listras', c: ['#fb090b', '#1c1c1f', '#f4f4f0'], s: 'diabo', l: 'DRN', sc: '#f4f4f0' },
+      hist: [['A', 6, 57, 45, 38], ['A', 6, 56, 42, 38], ['A', 5, 55, 36, 38], ['A', 6, 63, 46, 38], ['A', 2, 74, 41, 38], ['A', 1, 69, 31, 38], ['A', 4, 64, 43, 38], ['A', 2, 76, 49, 38], ['A', 8, 61, 43, 38], ['A', 5, 53, 35, 38]] },
+    { k: 'signora', nome: 'Vecchia Signora Torinese', sigla: 'VST', tecnico: 'Mister Luciano', formacao: '4-3-3', tatica: 'retranca', estilo: 'Sofre pouco e vive do erro do rival.',
+      uni: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#1c1c1f', '#f2c230', '#f2c230', '#1c1c1f', '#1c1c1f', '#f2c230', '#2a72d6'],
+      br: { f: 'oval', p: 'listras', c: ['#f4f4f0', '#1c1c1f', '#1c1c1f'], s: 'letraJ', l: 'VST', sc: '#c9a227' },
+      hist: [['A', 1, 77, 27, 38], ['A', 1, 86, 24, 38], ['A', 1, 70, 30, 38], ['A', 1, 76, 43, 38], ['A', 4, 77, 38, 38], ['A', 4, 57, 37, 38], ['A', 7, 56, 33, 38], ['A', 3, 54, 31, 38], ['A', 4, 58, 35, 38], ['A', 6, 61, 34, 38]] },
+    { k: 'dea', nome: 'Dea Orobica', sigla: 'DOR', tecnico: 'Mister Raffaele', formacao: '3-5-2', tatica: 'contra', estilo: 'Pressão homem a homem no campo todo e alas que chegam como atacantes.',
+      uni: ['#1e71b8', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#1e71b8', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#1e71b8', '#1fb38a'],
+      br: { f: 'redondo', p: 'listras', c: ['#1e71b8', '#1c1c1f', '#f4f4f0'], s: 'deusa', l: 'DOR', sc: '#f4f4f0' },
+      hist: [['A', 4, 62, 41, 38], ['A', 7, 57, 39, 38], ['A', 3, 77, 46, 38], ['A', 3, 98, 48, 38], ['A', 3, 90, 47, 38], ['A', 8, 65, 48, 38], ['A', 5, 66, 48, 38], ['A', 4, 72, 42, 38], ['A', 3, 78, 37, 38], ['A', 7, 51, 36, 38]] },
+    { k: 'felsina', nome: 'Felsinei Rossoblù', sigla: 'FRB', tecnico: 'Mister Vincenzo', formacao: '4-2-3-1', tatica: 'tikitaka', estilo: 'Toque de bola, pressão alta e muita gente no ataque.',
+      uni: ['#a21c26', '#1a2f62', '#1a2f62', '#f4f4f0', '#1a2f62', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#a21c26', '#1a2f62', '#f4f4f0', '#f4f4f0', '#a21c26', '#1fb38a'],
+      br: { f: 'escudo', p: 'listras', c: ['#a21c26', '#1a2f62', '#f4f4f0'], s: 'torre', l: 'FRB', sc: '#f4f4f0' },
+      hist: [['A', 15, 40, 58, 38], ['A', 15, 40, 52, 38], ['A', 10, 48, 56, 38], ['A', 12, 52, 65, 38], ['A', 12, 51, 65, 38], ['A', 13, 44, 55, 38], ['A', 9, 53, 49, 38], ['A', 5, 54, 32, 38], ['A', 9, 57, 47, 38], ['A', 8, 49, 46, 38]] },
+    { k: 'aquile', nome: 'Aquile Biancocelesti', sigla: 'ABC', tecnico: 'Mister Maurizio', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'Técnico e paciente: roda a bola pelo meio.',
+      uni: ['#87d8f7', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#87d8f7', '#1c2a4a', '#f2c230'], uni2: ['#1c2a4a', '#87d8f7', '#87d8f7', '#1c2a4a', '#1c2a4a', '#87d8f7', '#1fb38a'],
+      br: { f: 'escudo', p: 'liso', c: ['#87d8f7', '#f4f4f0', '#f4f4f0'], s: 'aguia', l: 'ABC', sc: '#f4f4f0' },
+      hist: [['A', 5, 74, 51, 38], ['A', 5, 89, 49, 38], ['A', 8, 56, 46, 38], ['A', 4, 79, 42, 38], ['A', 6, 61, 55, 38], ['A', 5, 77, 58, 38], ['A', 2, 60, 30, 38], ['A', 7, 49, 39, 38], ['A', 7, 61, 49, 38], ['A', 9, 41, 40, 38]] },
+    { k: 'zebrette', nome: 'Zebrette Friulane', sigla: 'ZFR', tecnico: 'Mister Kosta', formacao: '3-5-2', tatica: 'aerea', estilo: 'Muita força pelo alto e um centroavante matador.',
+      uni: ['#f4f4f0', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#1c1c1f', '#f2c230'], uni2: ['#1c1c1f', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#1c1c1f', '#f4f4f0', '#2a72d6'],
+      br: { f: 'escudo', p: 'listras', c: ['#f4f4f0', '#1c1c1f', '#1c1c1f'], s: 'zebra', l: 'ZFR', sc: '#1c1c1f' },
+      hist: [['A', 13, 47, 56, 38], ['A', 14, 48, 63, 38], ['A', 12, 39, 53, 38], ['A', 13, 37, 51, 38], ['A', 14, 42, 58, 38], ['A', 12, 61, 58, 38], ['A', 12, 47, 48, 38], ['A', 15, 37, 53, 38], ['A', 12, 41, 56, 38], ['A', 10, 45, 48, 38]] },
+    { k: 'neroverdi', nome: 'Neroverdi Emiliani', sigla: 'NVE', tecnico: 'Mister Fabio', formacao: '4-3-3', tatica: 'tikitaka', estilo: 'De volta à elite: troca passes e ataca com muita gente.',
+      uni: ['#00a752', '#1c1c1f', '#1c1c1f', '#1c1c1f', '#00a752', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#00a752', '#1c1c1f', '#f4f4f0', '#f4f4f0', '#00a752', '#2a72d6'],
+      br: { f: 'redondo', p: 'listras', c: ['#00a752', '#1c1c1f', '#f4f4f0'], s: 'galo', l: 'NVE', sc: '#f4f4f0' },
+      hist: [['A', 12, 58, 63, 38], ['A', 11, 29, 59, 38], ['A', 11, 53, 60, 38], ['A', 8, 69, 63, 38], ['A', 8, 64, 56, 38], ['A', 11, 64, 66, 38], ['A', 13, 47, 61, 38], ['A', 19, 43, 75, 38], ['B', 1, 78, 38, 38], ['A', 11, 46, 50, 38]] },
+    { k: 'granata', nome: 'Granata del Toro', sigla: 'GDT', tecnico: 'Mister Marco', formacao: '3-5-2', tatica: 'retranca', estilo: 'Muita marcação e jogo de raça: vence apertado.',
+      uni: ['#8a1e03', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#8a1e03', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#8a1e03', '#8a1e03', '#8a1e03', '#f4f4f0', '#8a1e03', '#1c1c1f'],
+      br: { f: 'oval', p: 'liso', c: ['#8a1e03', '#f2c230', '#f2c230'], s: 'touro', l: 'GDT', sc: '#f2c230' },
+      hist: [['A', 9, 71, 66, 38], ['A', 9, 54, 46, 38], ['A', 7, 52, 37, 38], ['A', 16, 46, 68, 38], ['A', 17, 50, 69, 38], ['A', 10, 46, 41, 38], ['A', 10, 42, 41, 38], ['A', 9, 36, 36, 38], ['A', 11, 39, 45, 38], ['A', 12, 44, 63, 38]] },
+    { k: 'crociati', nome: 'Crociati Ducali', sigla: 'CDU', tecnico: 'Mister Carlos', formacao: '5-3-2', tatica: 'retranca', estilo: 'Fecha atrás e luta por cada bola.',
+      uni: ['#f4f4f0', '#1c1c1f', '#f2c230', '#f4f4f0', '#f4f4f0', '#1c2a4a', '#2a72d6'], uni2: ['#f2c230', '#1a3a8a', '#1a3a8a', '#1a3a8a', '#f2c230', '#1a3a8a', '#1c1c1f'],
+      br: { f: 'escudo', p: 'cruz', c: ['#f4f4f0', '#1c1c1f', '#f2c230'], s: 'coroa', l: 'CDU', sc: '#f2c230' },
+      hist: [['C', 2, 0, 0, 0], ['B', 2, 57, 37, 42], ['A', 14, 41, 61, 38], ['A', 11, 56, 57, 38], ['A', 20, 39, 83, 38], ['B', 12, 48, 43, 38], ['B', 4, 48, 39, 38], ['B', 1, 66, 35, 38], ['A', 16, 44, 58, 38], ['A', 13, 28, 46, 38]] },
+    { k: 'isolani', nome: 'Isolani Rossoblù', sigla: 'IRB', tecnico: 'Mister Fabio Isola', formacao: '4-4-2', tatica: 'aerea', estilo: 'Forte pelo alto e muito competitivo em casa.',
+      uni: ['#c8102e', '#0b2a5b', '#0b2a5b', '#0b2a5b', '#0b2a5b', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#c8102e', '#0b2a5b', '#f4f4f0', '#f4f4f0', '#c8102e', '#1fb38a'],
+      br: { f: 'redondo', p: 'metade', c: ['#c8102e', '#0b2a5b', '#f4f4f0'], s: 'ilha', l: 'IRB', sc: '#f4f4f0' },
+      hist: [['A', 11, 55, 76, 38], ['A', 16, 33, 61, 38], ['A', 15, 36, 54, 38], ['A', 14, 52, 56, 38], ['A', 16, 43, 59, 38], ['A', 18, 34, 68, 38], ['B', 5, 50, 34, 38], ['A', 16, 42, 68, 38], ['A', 15, 40, 56, 38], ['A', 14, 40, 53, 38]] },
+    { k: 'giglio', nome: 'Viola del Giglio', sigla: 'VGI', tecnico: 'Mister Paolo', formacao: '3-5-2', tatica: 'contra', estilo: 'Equilibrado: defesa firme e laterais que apoiam.',
+      uni: ['#5b2b82', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#5b2b82', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#5b2b82', '#5b2b82', '#5b2b82', '#f4f4f0', '#5b2b82', '#1c1c1f'],
+      br: { f: 'oval', p: 'liso', c: ['#5b2b82', '#c8202e', '#f4f4f0'], s: 'lis', l: 'VGI', sc: '#c8202e' },
+      hist: [['A', 8, 63, 57, 38], ['A', 8, 54, 46, 38], ['A', 16, 47, 45, 38], ['A', 10, 51, 48, 38], ['A', 13, 47, 59, 38], ['A', 7, 59, 51, 38], ['A', 8, 53, 43, 38], ['A', 8, 61, 46, 38], ['A', 6, 60, 41, 38], ['A', 15, 41, 50, 38]] },
+    { k: 'grifone', nome: 'Grifone del Porto', sigla: 'GDP', tecnico: 'Mister Daniele', formacao: '3-5-2', tatica: 'contra', estilo: 'Raçudo em casa, mas vive uma fase de reconstrução.',
+      uni: ['#1c2a5c', '#a6192e', '#a6192e', '#1c2a5c', '#1c2a5c', '#f4f4f0', '#f2c230'], uni2: ['#f4f4f0', '#a6192e', '#1c2a5c', '#f4f4f0', '#f4f4f0', '#a6192e', '#1fb38a'],
+      br: { f: 'escudo', p: 'metade', c: ['#a6192e', '#1c2a5c', '#f2c230'], s: 'grifo', l: 'GDP', sc: '#f2c230' },
+      hist: [['A', 16, 38, 64, 38], ['A', 12, 33, 43, 38], ['A', 17, 39, 57, 38], ['A', 17, 47, 73, 38], ['A', 11, 47, 58, 38], ['A', 19, 27, 60, 38], ['B', 2, 53, 28, 38], ['A', 11, 45, 45, 38], ['A', 13, 37, 49, 38], ['A', 16, 41, 51, 38]] },
+    { k: 'salento', nome: 'Salentini Giallorossi', sigla: 'SGR', tecnico: 'Mister Eusebio', formacao: '4-3-3', tatica: 'contra', estilo: 'Linhas compactas e contra-ataque pelos lados.',
+      uni: ['#f6d100', '#d71920', '#d71920', '#1c2a4a', '#d71920', '#1c2a4a', '#2a72d6'], uni2: ['#f4f4f0', '#d71920', '#f6d100', '#f4f4f0', '#f4f4f0', '#d71920', '#1c1c1f'],
+      br: { f: 'oval', p: 'listras', c: ['#f6d100', '#d71920', '#1c2a4a'], s: 'lobo', l: 'SGR', sc: '#1c2a4a' },
+      hist: [['C', 2, 0, 0, 0], ['C', 1, 0, 0, 0], ['B', 2, 66, 45, 36], ['A', 18, 52, 85, 38], ['B', 4, 68, 47, 38], ['B', 1, 59, 31, 38], ['A', 16, 33, 46, 38], ['A', 14, 32, 54, 38], ['A', 17, 27, 58, 38], ['A', 17, 28, 50, 38]] },
+    { k: 'laguna', nome: 'Lagunari Arancioneroverdi', sigla: 'LAV', tecnico: 'Mister Giovanni', formacao: '3-5-2', tatica: 'tikitaka', estilo: 'Campeão da segunda divisão: o ataque que mais marcou.',
+      uni: ['#1c1c1f', '#f47a20', '#1f8a4c', '#1c1c1f', '#1c1c1f', '#f47a20', '#f2c230'], uni2: ['#f4f4f0', '#f47a20', '#1f8a4c', '#f4f4f0', '#f4f4f0', '#1c1c1f', '#2a72d6'],
+      br: { f: 'escudo', p: 'liso', c: ['#1c1c1f', '#f47a20', '#1f8a4c'], s: 'leaoalado', l: 'LAV', sc: '#f2c230' },
+      hist: [['C', 1, 0, 0, 0], ['B', 5, 56, 42, 42], ['B', 15, 35, 46, 36], ['B', 11, 37, 40, 38], ['B', 5, 53, 39, 38], ['A', 20, 34, 69, 38], ['B', 8, 51, 50, 38], ['B', 3, 69, 46, 38], ['A', 19, 32, 56, 38], ['B', 1, 77, 31, 38]] },
+    { k: 'ciociari', nome: 'Canarini Ciociari', sigla: 'CCI', tecnico: 'Mister Massimiliano', formacao: '4-3-3', tatica: 'contra', estilo: 'Ataque veloz pelos lados, mas a defesa vive em crise.',
+      uni: ['#f6d100', '#1d4fa0', '#1d4fa0', '#1d4fa0', '#f6d100', '#1d4fa0', '#1c1c1f'], uni2: ['#1d4fa0', '#f6d100', '#f6d100', '#1d4fa0', '#1d4fa0', '#f6d100', '#f4f4f0'],
+      br: { f: 'redondo', p: 'liso', c: ['#f6d100', '#1d4fa0', '#1d4fa0'], s: 'passaro', l: 'CCI', sc: '#1d4fa0' },
+      hist: [['B', 3, 57, 42, 42], ['B', 3, 65, 47, 42], ['A', 19, 29, 69, 38], ['B', 8, 41, 38, 38], ['B', 10, 38, 42, 38], ['B', 9, 58, 45, 38], ['B', 1, 63, 26, 38], ['A', 18, 44, 69, 38], ['B', 15, 37, 50, 38], ['B', 2, 76, 34, 38]] },
+    { k: 'brianza', nome: 'Brianzoli Biancorossi', sigla: 'BBR', tecnico: 'Mister Paolo Brio', formacao: '3-5-2', tatica: 'retranca', estilo: 'Defesa forte: subiu sofrendo pouquíssimos gols.',
+      uni: ['#d71920', '#f4f4f0', '#f4f4f0', '#f4f4f0', '#d71920', '#f4f4f0', '#1c1c1f'], uni2: ['#f4f4f0', '#d71920', '#d71920', '#d71920', '#f4f4f0', '#d71920', '#f2c230'],
+      br: { f: 'redondo', p: 'faixa', c: ['#d71920', '#f4f4f0', '#f4f4f0'], s: 'coroa', l: 'BBR', sc: '#f2c230' },
+      hist: [['D', 1, 0, 0, 0], ['C', 11, 0, 0, 0], ['C', 5, 0, 0, 0], ['C', 1, 0, 0, 0], ['B', 3, 51, 33, 38], ['B', 4, 60, 38, 38], ['A', 11, 48, 52, 38], ['A', 12, 39, 51, 38], ['A', 20, 28, 69, 38], ['B', 3, 61, 32, 38]] },
+  ];
   // ---- O NIVELAMENTO DA EUROPA: a mesma conta do Brasileirão A (posição na escada das divisões com os anos recentes pesando mais, gols
   //   feitos e sofridos por jogo com o peso da divisão e a tendência), numa escala própria de cada liga. Os mais fracos ficam no
   //   nível de um time forte do Brasileirão B ou de um médio do Brasileirão A (habilidade ~66–70) e os melhores chegam a 97–100.
@@ -388,6 +623,11 @@
   const LIGAS_EU = {
     ES: { times: TIMES_ES, base: [6.75, 2.85], faixa: [6.4, 10], off: { A: 0, B: 20, C: 42, D: 62 }, nome: 'Espanha' },
     EN: { times: TIMES_EN, base: [6.85, 2.75], faixa: [6.5, 10], off: { A: 0, B: 20, C: 44, D: 68 }, nome: 'Inglaterra' },
+    // França, Alemanha e Itália: a mesma conta. O topo de cada uma chega perto dos gigantes de Espanha e Inglaterra; o fundo da
+    //   França fica um pouco abaixo (liga mais desigual: um gigante e um pelotão mais fraco)
+    FR: { times: TIMES_FR, base: [6.55, 2.95], faixa: [6.3, 10], off: { A: 0, B: 20, C: 40, D: 58 }, nome: 'França' },
+    DE: { times: TIMES_DE, base: [6.7, 2.85], faixa: [6.4, 10], off: { A: 0, B: 18, C: 36, D: 56 }, nome: 'Alemanha' },
+    IT: { times: TIMES_IT, base: [6.72, 2.8], faixa: [6.4, 10], off: { A: 0, B: 20, C: 42, D: 62 }, nome: 'Itália' },
   };
   function nivelarEuropa(L, div0) {
     const LT = L.times, W = [0.03, 0.04, 0.05, 0.06, 0.08, 0.09, 0.11, 0.13, 0.17, 0.24], OFF = L.off, FUNDO = OFF.D + 19;
@@ -413,9 +653,9 @@
       t.estrelas = estrelasA(t.ov); t.faixa = div0;
     });
   }
-  nivelarEuropa(LIGAS_EU.ES, 'ES'); nivelarEuropa(LIGAS_EU.EN, 'EN');
+  nivelarEuropa(LIGAS_EU.ES, 'ES'); nivelarEuropa(LIGAS_EU.EN, 'EN'); nivelarEuropa(LIGAS_EU.FR, 'FR'); nivelarEuropa(LIGAS_EU.DE, 'DE'); nivelarEuropa(LIGAS_EU.IT, 'IT');
   // o nível de fábrica de cada time (para voltar a ele numa temporada nova)
-  for (const t of TIMES_B.concat(TIMES_A, TIMES_ES, TIMES_EN)) { t.setores0 = Object.assign({}, t.setores); t.estrelas0 = t.estrelas; }
+  for (const t of TIMES_B.concat(TIMES_A, TIMES_ES, TIMES_EN, TIMES_FR, TIMES_DE, TIMES_IT)) { t.setores0 = Object.assign({}, t.setores); t.estrelas0 = t.estrelas; }
 
   // ============================================================================================ OS EMBLEMAS (pixel art 32x32)
   const EMB_B = {
@@ -588,6 +828,121 @@
       px: '................................|...aaaaaaa..aaaaaaaa..aaaaaaa...|...abbbbba..abbbbbba..abbbbba...|...abcdebaaaabcddebaaaabcdeba...|...abcddebffbcddddebffbcddeba...|...abcdddfbbfddddddfbbfdddeba...|...abcddfbghbffffffbhgbfddeba...|...abcddfbbbbbbbbgbbbbbfddeba...|...abcddfbggbbbbbbbbggbfddeba...|...abcddfbbbbabbbbabbbbfddeba...|...abcddfbbgbbbbbbbbbgbfddeba...|...abcddfbbbbiiiiiibbbbfddeba...|...abcdddfbiiiiggiiiibfdddeba...|...abcddddfbiiihhiiibfddddeba...|...abcdddddfbbiiiibbfdddddeba...|...abcddddddfbbbbbbfddddddeba...|...abcdddddddffffffdddddddeba...|...abcddddddddddddddddddddeba...|...abcddddddddddddddddddddeba...|..aaaaaaaaaaaaaaaaaaaaaaaaaaaa..|..ajjjjjjjdjdjdddjjdjjjjjjjjja..|aaabbbbbbbdbdbbdbbdbdbbbbbbbbaaa|akabbbbbbbdddbbdbbdddbbbbbbbbaka|akabbbbbbbdbdbbdbbdbdbbbbbbbbaka|.aallllllldldlldlldldllllllllaa.|akaaaaaaaaaaaaaaaaaaaaaaaaaaaaka|aka...aaabbddddddddddbbaaa...aka|aaa.....aabbbddddddbbbaa.....aaa|.........aaabbbbbbbbaaa.........|...........aaaaaaaaaa...........|...............aa...............|................................' },
   };
   Object.assign(EMB_B, EMB_A, EMB_EU);
+  // ---- OS ESCUDOS DE FRANÇA, ALEMANHA E ITÁLIA: montados pixel a pixel (32x32) a partir do br de cada time: a forma com o contorno
+  //   escuro e o aro, o desenho do fundo, a faixa com as letras e o símbolo do meio (11 x 11; '#' = cor do símbolo, '+' = detalhe)
+  const SIMBOLOS = {
+    estrela: ['.....#.....', '....###....', '....###....', '###########', '.#########.', '..#######..', '...#####...', '..#######..', '..###.###..', '.###...###.', '.##.....##.'],
+    coroa: ['#....#....#', '##..###..##', '###.###.###', '###########', '##+##+##+##', '###########', '###########'],
+    torre: ['.....#.....', '.....#.....', '....###....', '....#.#....', '....###....', '...##.##...', '...#####...', '..##...##..', '..#######..', '.##.....##.', '##.......##'],
+    leao: ['..##...##..', '.#########.', '###########', '##+#####+##', '###########', '###.###.###', '####+#+####', '.#########.', '..##+++##..', '...#####...', '....###....'],
+    aguia: ['.....#.....', '....###....', '#...#+#...#', '##..###..##', '###.###.###', '###########', '.#########.', '...#####...', '....###....', '...##.##...', '..##...##..'],
+    lis: ['.....#.....', '....###....', '....###....', '.#..###..#.', '###.###.###', '#.#######.#', '...#####...', '###########', '...#####...', '..#.###.#..', '.#...#...#.'],
+    cruz: ['....###....', '....###....', '....###....', '###########', '###########', '###########', '....###....', '....###....', '....###....', '....###....', '....###....'],
+    ancora: ['.....#.....', '....#+#....', '.....#.....', '..#######..', '.....#.....', '.....#.....', '#....#....#', '##...#...##', '.##..#..##.', '..#######..', '....###....'],
+    castelo: ['#.#.....#.#', '###.#.#.###', '###.###.###', '###########', '####+++####', '###+++++###', '###+++++###', '###+++++###', '###########'],
+    touro: ['#.........#', '##.......##', '.##.....##.', '..#######..', '.#########.', '..#+###+#..', '...#####...', '...#####...', '...#+#+#...', '....###....'],
+    lobo: ['#.........#', '##.......##', '###.....###', '#+#######+#', '###########', '.##+###+##.', '..#######..', '...#####...', '....#+#....', '.....#.....'],
+    raio: ['......####.', '.....####..', '....####...', '...####....', '..########.', '.......##..', '......##...', '.....##....', '....##.....', '...##......', '..#........'],
+    barco: ['.....#.....', '.....##....', '.....###...', '.....####..', '.....#####.', '.....#.....', '###########', '.#########.', '..#######..', '.+.+.+.+.+.'],
+    cabra: ['##.......##', '.##.....##.', '..##...##..', '...#####...', '..#######..', '..#+###+#..', '...#####...', '...#####...', '....###....', '....#+#....', '....+++....'],
+    cavalo: ['....##.....', '...####....', '..######...', '.###+####..', '#########..', '########...', '...#####...', '...######..', '...#######.', '...########', '...########'],
+    galo: ['...#.......', '..###......', '..#+##.....', '.####......', '..###...###', '..####.###.', '..########.', '...######..', '....####...', '.....#.#...', '....##.##..'],
+    cao: ['##.......##', '###.....###', '.#########.', '.##+###+##.', '.#########.', '..##+++##..', '..#+++++#..', '...#####...'],
+    peixe: ['...######..', '#.########.', '###+#######', '###########', '#.########.', '...######..'],
+    arminho: ['.....#.....', '....###....', '...#.#.#...', '.....#.....', '....###....', '...#####...', '..#######..', '..###.###..', '.###...###.', '.##.....##.'],
+    cegonha: ['....##.....', '...####....', '...##+###..', '....##.....', '...####....', '..######...', '.########..', '..#######..', '....#.#....', '....#.#....', '....#.#....'],
+    picareta: ['##.......##', '###.....###', '.###...###.', '..###.###..', '...#####...', '....###....', '...#####...', '..##...##..', '.##.....##.', '##.......##'],
+    folha: ['......####.', '....######.', '...#######.', '..########.', '..###+####.', '.###+####..', '.##+####...', '.#+####....', '+#####.....', '+..........'],
+    chifres: ['#.#.#.#.#.#', '#.#.#.#.#.#', '###.###.###', '.###...###.', '.##.....##.', '..#######..', '...#####...', '..#######..', '...#####...'],
+    pinheiro: ['.....#.....', '....###....', '...#####...', '....###....', '...#####...', '..#######..', '...#####...', '..#######..', '.#########.', '.....#.....', '.....#.....'],
+    pinha: ['.....#.....', '....###....', '...#+#+#...', '...##+##...', '..#+#+#+#..', '..##+#+##..', '..#+#+#+#..', '...##+##...', '...#+#+#...', '....###....'],
+    roda: ['...#####...', '..#..#..#..', '.#...#...#.', '#.#..#..#.#', '#..#.#.#..#', '#####+#####', '#..#.#.#..#', '#.#..#..#.#', '.#...#...#.', '..#..#..#..', '...#####...'],
+    martelo: ['.#######...', '.#######...', '.#######...', '....##.....', '....##.....', '....##.....', '....##.....', '....##.....', '....##.....', '...####....'],
+    letraW: ['#.........#', '#.........#', '#....#....#', '#...###...#', '#..##.##..#', '#.##...##.#', '###.....###', '##.......##'],
+    ondas: ['.##...##...', '#..#.#..#.#', '....#....#.', '...........', '.##...##...', '#..#.#..#.#', '....#....#.', '...........', '.##...##...', '#..#.#..#.#'],
+    serpente: ['...####....', '..#+##+#...', '..######...', '...####....', '....###....', '...###.....', '..###......', '..####.....', '...#####...', '.....####..', '......###..', '....####...'],
+    vulcao: ['....#.#....', '...#.#.#...', '....###....', '....+#+....', '...#####...', '..#######..', '.#########.', '###########'],
+    diabo: ['#.........#', '##.......##', '.##.....##.', '..#######..', '.#########.', '.##+###+##.', '.#########.', '..##+++##..', '...#####...', '....###....', '.....#.....'],
+    letraJ: ['..#######..', '..#######..', '.....##....', '.....##....', '.....##....', '.....##....', '##...##....', '##...##....', '.######....', '..####.....'],
+    deusa: ['...####....', '..######...', '.########..', '.####+###..', '..#######..', '...#####...', '..####.....', '.#####.....', '#######....'],
+    zebra: ['..##.......', '.####......', '##+###.....', '#######....', '.#+#+##....', '..#+#+##...', '...#+#+##..', '....#+#+#..', '.....####..'],
+    ilha: ['....#..#...', '...#####...', '....##.....', '....#......', '...###.....', '.#######...', '##########.', '+.+.+.+.+.+'],
+    grifo: ['...##......', '..####.....', '.##+##.##..', '.#####.###.', '..########.', '..#######..', '..######...', '...#####...', '..##..##...', '.##....##..'],
+    leaoalado: ['#.........#', '##.#####.##', '###########', '###+###+###', '.#########.', '..###+###..', '...#####...', '....###....'],
+    passaro: ['...###.....', '..##+##....', '..#####+...', '...####....', '..#######..', '.#########.', '..########.', '...#####...', '....#.#....', '...##.##...'],
+  };
+  const FONTE3x5 = {
+    A: '.#.|#.#|###|#.#|#.#', B: '##.|#.#|##.|#.#|##.', C: '.##|#..|#..|#..|.##', D: '##.|#.#|#.#|#.#|##.', E: '###|#..|##.|#..|###', F: '###|#..|##.|#..|#..', G: '.##|#..|#.#|#.#|.##',
+    H: '#.#|#.#|###|#.#|#.#', I: '###|.#.|.#.|.#.|###', J: '..#|..#|..#|#.#|.#.', K: '#.#|#.#|##.|#.#|#.#', L: '#..|#..|#..|#..|###', M: '#.#|###|###|#.#|#.#', N: '##.|#.#|#.#|#.#|#.#',
+    O: '.#.|#.#|#.#|#.#|.#.', P: '##.|#.#|##.|#..|#..', Q: '.#.|#.#|#.#|##.|.##', R: '##.|#.#|##.|#.#|#.#', S: '.##|#..|.#.|..#|##.', T: '###|.#.|.#.|.#.|.#.', U: '#.#|#.#|#.#|#.#|###',
+    V: '#.#|#.#|#.#|#.#|.#.', W: '#.#|#.#|###|###|#.#', X: '#.#|#.#|.#.|#.#|#.#', Y: '#.#|#.#|.#.|.#.|.#.', Z: '###|..#|.#.|#..|###' };
+  const pixLetra = (ch, x, y) => { const s = FONTE3x5[ch]; return !!s && s.split('|')[y][x] === '#'; };
+  const hexRGB = (h) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  const lumi = (h) => { const [r, g, b] = hexRGB(h); return 0.299 * r + 0.587 * g + 0.114 * b; };
+  const distC = (a, b) => { const A = hexRGB(a), B = hexRGB(b); return Math.abs(A[0] - B[0]) + Math.abs(A[1] - B[1]) + Math.abs(A[2] - B[2]); };
+  function gerarBrasao(B) {
+    const N = 32, cx = 15.5, f = B.f || 'escudo', c0 = B.c[0], c1 = B.c[1] || c0, c2 = B.c[2] || c1;
+    const dentro = (x, y) => {
+      const px = x + 0.5, py = y + 0.5, dx = Math.abs(px - 16);
+      if (f === 'redondo') return (px - 16) ** 2 + (py - 16) ** 2 <= 14.6 ** 2;
+      if (f === 'oval') return ((px - 16) / 12.6) ** 2 + ((py - 16) / 14.8) ** 2 <= 1;
+      if (f === 'losango') return dx / 15 + Math.abs(py - 16) / 15.4 <= 1;
+      if (f === 'quadrado') return px >= 3 && px <= 29 && py >= 3 && py <= 29 && !((dx > 11) && (py < 5 || py > 27));
+      if (py < 2 || py > 30.6) return false;                                       // escudo: reto em cima, ponta embaixo
+      if (py < 17) return dx <= 13;
+      const t = (py - 17) / 13.6; return dx <= 13 * Math.sqrt(Math.max(0, 1 - t * t));
+    };
+    const M = [];
+    for (let y = 0; y < N; y++) { M.push([]); for (let x = 0; x < N; x++) M[y].push(dentro(x, y) ? 1 : 0); }
+    const erodir = (A) => A.map((ln, y) => ln.map((v, x) => (v && y > 0 && y < N - 1 && x > 0 && x < N - 1 && A[y - 1][x] && A[y + 1][x] && A[y][x - 1] && A[y][x + 1] ? 1 : 0)));
+    const M1 = erodir(M), M2 = erodir(M1);
+    const fundo = (x, y) => {
+      const p = B.p || 'liso';
+      if (p === 'listras') return Math.floor((x - 1) / 3) % 2 ? c1 : c0;
+      if (p === 'aros') return Math.floor((y - 1) / 3) % 2 ? c1 : c0;
+      if (p === 'metade') return x < 16 ? c0 : c1;
+      if (p === 'faixa') return Math.abs(x - y) <= 3 ? c1 : c0;
+      if (p === 'diagonal') return x + y > 31 ? c1 : c0;
+      if (p === 'vfaixa') { const d = Math.abs(x + 0.5 - 16); return d <= 3.5 ? c1 : d <= 4.5 ? c2 : c0; }
+      if (p === 'cruz') return Math.abs(x + 0.5 - 16) <= 2.5 || Math.abs(y + 0.5 - 17) <= 2.5 ? c1 : c0;
+      if (p === 'quartos') return (x < 16) !== (y < 16) ? c1 : c0;
+      if (p === 'losangos') return (Math.floor((x + y) / 4) + Math.floor((x - y + 64) / 4)) % 2 ? c1 : c0;
+      return c0;
+    };
+    const G = [];                                                                     // a cor de cada pixel (null = transparente)
+    for (let y = 0; y < N; y++) { G.push([]); for (let x = 0; x < N; x++) G[y].push(!M[y][x] ? null : !M1[y][x] ? '#1a1208' : !M2[y][x] ? c2 : fundo(x, y)); }
+    const L = (B.l || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3), sim = SIMBOLOS[B.s];
+    const sc = B.sc || (lumi(c0) < 110 ? '#f4f4f0' : '#1c1c1f'), sc2 = lumi(sc) > 140 ? '#1c1c1f' : '#f4f4f0';
+    const pinta = (x, y, c) => { if (x >= 0 && y >= 0 && x < N && y < N && M2[y][x]) G[y][x] = c; };
+    const contorno = (pts, c) => {                                                     // borda de 1 pixel quando o símbolo some no fundo
+      const S = new Set(pts.map(([x, y]) => x + ',' + y));
+      for (const [x, y] of pts) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const X = x + dx, Y = y + dy; if (S.has(X + ',' + Y) || X < 0 || Y < 0 || X >= N || Y >= N || !M2[Y][X]) continue;
+        if (distC(G[Y][X], c) < 150) G[Y][X] = lumi(c) > 140 ? '#1a1208' : '#f4f4f0';
+      }
+    };
+    if (!sim) {                                                                       // sem símbolo: as letras grandes (2x) no meio
+      const W = L.length * 6 + (L.length - 1) * 2, x0 = Math.round(16 - W / 2), y0 = 11, pts = [];
+      for (let i = 0; i < L.length; i++) for (let yy = 0; yy < 5; yy++) for (let xx = 0; xx < 3; xx++) if (pixLetra(L[i], xx, yy))
+        for (const [a, b] of [[0, 0], [1, 0], [0, 1], [1, 1]]) pts.push([x0 + i * 8 + xx * 2 + a, y0 + yy * 2 + b]);
+      const cl = B.sc || (lumi(c0) < 110 ? '#f2c230' : '#1c1c1f');
+      contorno(pts, cl); for (const [x, y] of pts) pinta(x, y, cl);
+    } else {
+      const yB = f === 'escudo' ? 5 : f === 'losango' ? 9 : 6, cb = c2 === c0 ? c1 : c2, cl = lumi(cb) > 140 ? '#1c1c1f' : '#f4f4f0';
+      for (let y = yB; y < yB + 7; y++) for (let x = 0; x < N; x++) pinta(x, y, cb);    // a faixa das letras
+      const W = L.length * 4 - 1, x0 = Math.round(16 - W / 2);
+      for (let i = 0; i < L.length; i++) for (let yy = 0; yy < 5; yy++) for (let xx = 0; xx < 3; xx++) if (pixLetra(L[i], xx, yy)) pinta(x0 + i * 4 + xx, yB + 1 + yy, cl);
+      const h = sim.length, w = sim[0].length, sx = Math.round(16 - w / 2), sy = yB + 8 + Math.max(0, Math.floor((11 - h) / 2)) + (f === 'escudo' ? 1 : 0), pts = [], det = [];
+      sim.forEach((ln, yy) => { for (let xx = 0; xx < w; xx++) { if (ln[xx] === '#') pts.push([sx + xx, sy + yy]); else if (ln[xx] === '+') det.push([sx + xx, sy + yy]); } });
+      contorno(pts.concat(det), sc);
+      for (const [x, y] of pts) pinta(x, y, sc);
+      for (const [x, y] of det) pinta(x, y, sc2);
+    }
+    const pal = [], ABC = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const px = G.map((ln) => ln.map((c) => { if (!c) return '.'; let i = pal.indexOf(c); if (i < 0) { i = pal.length; pal.push(c); } return ABC[i]; }).join('')).join('|');
+    return { pal, px };
+  }
+  for (const t of TIMES_FR.concat(TIMES_DE, TIMES_IT)) if (t.br && !EMB_B[t.k]) EMB_B[t.k] = gerarBrasao(t.br);
   const ARTES = {};
   function arte(k) {                                                       // o canvas 32x32 do emblema (desenhado uma vez só)
     if (ARTES[k]) return ARTES[k];
@@ -616,7 +971,7 @@
       uni: [c1, c2, c2, c1, c1, c2, '#f2c230'], uni2: [c2, c1, c1, c2, c2, c1, '#1c1c1f'], setores: { gk: forca, def: forca, mid: forca, fwd: forca - 0.1 },
       emblemaSimples: { forma: ['escudo', 'circulo', 'losango'][i % 3], cor1: c1, cor2: c2, letras: sigla.slice(0, 2) } };
   });
-  const TIME_DE = {}; for (const t of TIMES_B.concat(TIMES_A, TIMES_ES, TIMES_EN, PEQUENOS)) TIME_DE[t.k] = t;
+  const TIME_DE = {}; for (const t of TIMES_B.concat(TIMES_A, TIMES_ES, TIMES_EN, TIMES_FR, TIMES_DE, TIMES_IT, PEQUENOS)) TIME_DE[t.k] = t;
 
   // ============================================================================================ HABILIDADES E ELENCOS
   const HABS = ['defesa', 'desarme', 'forca', 'resistencia', 'recuperacao', 'velocidade', 'chute', 'efeito', 'passe', 'cruzamento', 'drible', 'dominio', 'cabeceio', 'finalizacao', 'goleiro'];
@@ -672,6 +1027,31 @@
         'Price', 'Bennett', 'Young', 'Griffiths', 'Mitchell', 'Kelly', 'Cook', 'Carter', 'Richardson', 'Bailey', 'Collins', 'Bell', 'Murphy', 'Miller', 'Cox', 'Khan', 'Okafor',
         'Mensah', 'Diallo', 'Andersen', 'Lindqvist', 'Ferreira', 'Murray', "O'Brien", 'McCarthy', 'Doyle', 'Byrne', 'Van Dijkstra', 'Moreau', 'Kowalski', 'Haugen'],
       a: [], pa: 0 },
+    FR: { p: ['Lucas', 'Hugo', 'Théo', 'Nathan', 'Maxime', 'Antoine', 'Julien', 'Romain', 'Kevin', 'Florian', 'Bastien', 'Clément', 'Adrien', 'Valentin', 'Quentin', 'Mathis', 'Enzo',
+        'Rayan', 'Yanis', 'Bilal', 'Moussa', 'Ibrahima', 'Mamadou', 'Ousmane', 'Kylian', 'Warren', 'Désiré', 'Jean-Clair', 'Benjamin', 'Lilian', 'Aurélien', 'Dayot', 'Loïc', 'Malo',
+        'Gaëtan', 'Corentin', 'Thibault', 'Jordan', 'Sofiane', 'Amine', 'Naël', 'Ismaël', 'Wilfried', 'Steve', 'Rémi', 'Pierre', 'Victor', 'Arthur', 'Eliesse', 'Bradley'],
+      s: ['Martin', 'Bernard', 'Dubois', 'Thomas', 'Robert', 'Richard', 'Petit', 'Durand', 'Leroy', 'Moreau', 'Simon', 'Laurent', 'Lefebvre', 'Michel', 'Garcia', 'David', 'Bertrand',
+        'Roux', 'Vincent', 'Fournier', 'Morel', 'Girard', 'André', 'Mercier', 'Dupont', 'Lambert', 'Bonnet', 'François', 'Martinez', 'Legrand', 'Garnier', 'Faure', 'Rousseau', 'Blanc',
+        'Guérin', 'Muller', 'Henry', 'Roussel', 'Nicolas', 'Perrin', 'Morin', 'Mathieu', 'Clément', 'Gauthier', 'Dumont', 'Lopez', 'Fontaine', 'Chevalier', 'Robin', 'Diallo', 'Traoré',
+        'Koné', 'Camara', 'Cissé', 'Touré', 'Sissoko', 'Kanté', 'Mendy', 'Gomis', 'Bakayoko', 'Benali', 'Haddad', 'Le Goff', 'Le Bihan', 'Kerjean'],
+      a: [], pa: 0 },
+    DE: { p: ['Lukas', 'Leon', 'Jonas', 'Finn', 'Felix', 'Maximilian', 'Paul', 'Elias', 'Niklas', 'Tim', 'Julian', 'Florian', 'Kevin', 'Marco', 'Sebastian', 'Tobias', 'Jannik',
+        'Kai', 'Leroy', 'Serge', 'Joshua', 'Florian', 'Robin', 'Nico', 'Mats', 'Thilo', 'Benjamin', 'Moritz', 'Timo', 'Lennart', 'Malik', 'Emre', 'Yusuf', 'Kerem', 'Denis', 'Marius',
+        'Jamal', 'Karim', 'Dominik', 'Oliver', 'Manuel', 'Alexander', 'Christoph', 'Philipp', 'Jonathan', 'Luca', 'Ilkay', 'Armel', 'Jeremie', 'Ansgar'],
+      s: ['Müller', 'Schmidt', 'Schneider', 'Fischer', 'Weber', 'Meyer', 'Wagner', 'Becker', 'Schulz', 'Hoffmann', 'Schäfer', 'Koch', 'Bauer', 'Richter', 'Klein', 'Wolf', 'Schröder',
+        'Neumann', 'Schwarz', 'Zimmermann', 'Braun', 'Krüger', 'Hofmann', 'Hartmann', 'Lange', 'Schmitt', 'Werner', 'Schmitz', 'Krause', 'Meier', 'Lehmann', 'Schmid', 'Schulze',
+        'Maier', 'Köhler', 'Herrmann', 'König', 'Walter', 'Mayer', 'Huber', 'Kaiser', 'Fuchs', 'Peters', 'Lang', 'Scholz', 'Möller', 'Weiß', 'Jung', 'Hahn', 'Vogel', 'Friedrich',
+        'Keller', 'Günther', 'Frank', 'Berger', 'Winkler', 'Roth', 'Beck', 'Lorenz', 'Baumann', 'Yilmaz', 'Öztürk', 'Kowalczyk', 'Nowak', 'Petrović', 'Asante', 'Okoye'],
+      a: [], pa: 0 },
+    IT: { p: ['Alessandro', 'Lorenzo', 'Matteo', 'Andrea', 'Gabriele', 'Riccardo', 'Davide', 'Federico', 'Francesco', 'Marco', 'Giacomo', 'Nicolò', 'Simone', 'Luca', 'Stefano',
+        'Daniele', 'Giorgio', 'Pietro', 'Tommaso', 'Edoardo', 'Filippo', 'Manuel', 'Mattia', 'Christian', 'Gianluca', 'Leonardo', 'Samuele', 'Alberto', 'Emanuele', 'Giovanni',
+        'Salvatore', 'Domenico', 'Vincenzo', 'Raffaele', 'Ciro', 'Gennaro', 'Antonio', 'Fabio', 'Roberto', 'Paolo', 'Sandro', 'Rafael', 'Lautaro', 'Nicolás', 'Dusan', 'Teun',
+        'Hakan', 'Mehdi', 'Youssef', 'Adama'],
+      s: ['Rossi', 'Russo', 'Ferrari', 'Esposito', 'Bianchi', 'Romano', 'Colombo', 'Ricci', 'Marino', 'Greco', 'Bruno', 'Gallo', 'Conti', 'De Luca', 'Mancini', 'Costa', 'Giordano',
+        'Rizzo', 'Lombardi', 'Moretti', 'Barbieri', 'Fontana', 'Santoro', 'Mariani', 'Rinaldi', 'Caruso', 'Ferrara', 'Galli', 'Martini', 'Leone', 'Longo', 'Gentile', 'Martinelli',
+        'Vitale', 'Lombardo', 'Serra', 'Coppola', 'De Santis', "D'Angelo", 'Marchetti', 'Parisi', 'Villa', 'Conte', 'Ferraro', 'Ferri', 'Fabbri', 'Bianco', 'Marini', 'Grasso',
+        'Valentini', 'Messina', 'Sala', 'De Angelis', 'Gatti', 'Pellegrini', 'Palumbo', 'Sanna', 'Farina', 'Rizzi', 'Monti', 'Cattaneo', 'Morelli', 'Amato', 'Silvestri'],
+      a: ['Totò', 'Pippo', 'Gigi', 'Beppe', 'Ciccio', 'Tonino', 'Peppino', 'Nando', 'Sasà', 'Lele', 'Bobo', 'Ninni'], pa: 0.08 },
   };
   const USADOS = new Set();
   function nomeNovo(r, pais) {
@@ -720,7 +1100,7 @@
   const estrelasTxt = (n, max) => { max = max || 5; n = clampN(n | 0, 0, max); return '★'.repeat(n) + '☆'.repeat(max - n); };
   // o desenho da camisa (modelo) e a pixel art do peito vêm do uniformes.js (Uniformes.kit(k, 0 = uniforme 1, 1 = uniforme 2))
   const uniDe = (u, k, n) => Object.assign({ camisa: u[0], listra: u[1], gola: u[2], calcao: u[3], meia: u[4], sola: u[5], goleiro: u[6] }, (k && window.Uniformes && window.Uniformes.kit(k, n)) || null);
-  function apTecnico(t) { return typeof gerarAparencia === 'function' ? gerarAparencia(semDe('sb-tec|' + t.k), /^(Dona|Doña|Ms\.) /.test(t.tecnico) ? 'F' : 'M') : {}; }
+  function apTecnico(t) { return typeof gerarAparencia === 'function' ? gerarAparencia(semDe('sb-tec|' + t.k), /^(Dona|Doña|Ms\.|Madame|Frau|Signora) /.test(t.tecnico) ? 'F' : 'M') : {}; }
   // o time no formato do motor. voce: o time do jogador (o elenco sai sem o titular da posição dele: o motor põe o jogador no lugar)
   function timeMotor(t, o) {
     o = o || {};
@@ -2719,6 +3099,19 @@
     "Campeão da segunda divisão: o ataque que mais marcou.": ["Second division champions: the highest-scoring attack.", "Campeón de segunda división: el ataque más goleador.", "Campione della seconda divisione: l'attacco più prolifico.", "Champion de deuxième division : l'attaque la plus prolifique."],
     "De volta à elite: troca passes e ataca com muita gente.": ["Back in the top flight: passes it around and attacks in numbers.", "De vuelta a la élite: toca y ataca con mucha gente.", "Di nuovo in massima serie: palleggia e attacca con tanti uomini.", "De retour dans l'élite : fait tourner et attaque en nombre."],
     "Promovido ofensivo, mas com a defesa frágil.": ["An attacking promoted side, but with a fragile defence.", "Ascendido ofensivo, pero con la defensa frágil.", "Neopromossa offensiva, ma con la difesa fragile.", "Promu offensif, mais avec une défense fragile."],
+    // o jeito de jogar dos times da França, da Alemanha e da Itália
+    "Constelação de craques: pressão alta e troca de passes em velocidade.": ["A constellation of stars: high pressing and quick passing.", "Constelación de cracks: presión alta y toque rápido.", "Una costellazione di campioni: pressing alto e passaggi veloci.", "Une constellation de stars : pressing haut et passes rapides."],
+    "Torcida de mineiros que não para de cantar: pressão alta e alas voando.": ["Miners' town fans who never stop singing: high pressing and flying wing-backs.", "Afición minera que no para de cantar: presión alta y carrileros volando.", "Tifosi minatori che non smettono mai di cantare: pressing alto ed esterni che volano.", "Un public de mineurs qui chante sans arrêt : pressing haut et pistons qui volent."],
+    "Elenco jovem e ousado: saída de bola caprichada e muita velocidade.": ["Young, daring squad: neat build-up play and lots of pace.", "Plantilla joven y atrevida: buena salida de balón y mucha velocidad.", "Rosa giovane e audace: costruzione curata e tanta velocità.", "Effectif jeune et audacieux : relance soignée et beaucoup de vitesse."],
+    "O rolo compressor: domina a bola, empilha gols e quase nunca perde em casa.": ["The steamroller: dominates the ball, piles on goals and hardly ever loses at home.", "La apisonadora: domina el balón, acumula goles y casi nunca pierde en casa.", "Il rullo compressore: domina il pallone, segna a raffica e non perde quasi mai in casa.", "Le rouleau compresseur : domine le ballon, empile les buts et ne perd presque jamais à domicile."],
+    "Muralha amarela atrás do gol: pressão alta e contra-ataque fulminante.": ["A yellow wall behind the goal: high pressing and lightning counters.", "Muralla amarilla detrás de la portería: presión alta y contraataque fulminante.", "Il muro giallo dietro la porta: pressing alto e contropiede fulminante.", "Un mur jaune derrière le but : pressing haut et contre-attaque foudroyante."],
+    "Gigante de volta à elite: estádio lotado, muita luta e bola na área.": ["A giant back in the top flight: packed stadium, lots of fight and balls into the box.", "Gigante de vuelta a la élite: estadio lleno, mucha lucha y balones al área.", "Una big di nuovo in Serie A: stadio pieno, tanta lotta e palloni in area.", "Un géant de retour en élite : stade plein, beaucoup de combat et des ballons dans la surface."],
+    "O conto de fadas da aldeia: subiu tocando a bola e sem medo de ninguém.": ["The village fairy tale: came up passing the ball and fearing no one.", "El cuento de hadas del pueblo: subió tocando el balón y sin miedo a nadie.", "La favola del paesino: promossa giocando la palla e senza paura di nessuno.", "Le conte de fées du village : monté en faisant tourner le ballon, sans peur de personne."],
+    "Três zagueiros de ferro, alas incansáveis e um ataque matador.": ["Three iron centre-backs, tireless wing-backs and a deadly attack.", "Tres centrales de hierro, carrileros incansables y un ataque letal.", "Tre difensori di ferro, esterni instancabili e un attacco letale.", "Trois défenseurs de fer, des pistons infatigables et une attaque redoutable."],
+    "O estádio-vulcão empurra: muita posse e ataque pelos lados.": ["The volcano stadium roars them on: lots of possession and attacks down the flanks.", "El estadio volcán empuja: mucha posesión y ataque por las bandas.", "Lo stadio vulcano spinge: tanto possesso e attacco sulle fasce.", "Le stade-volcan pousse : beaucoup de possession et des attaques sur les côtés."],
+    "Projeto milionário à beira do lago: toque de bola refinado e muita técnica.": ["A big-money project by the lake: refined passing and lots of technique.", "Proyecto millonario a orillas del lago: toque refinado y mucha técnica.", "Un progetto milionario in riva al lago: palleggio raffinato e tanta tecnica.", "Un projet richissime au bord du lac : jeu de passes raffiné et beaucoup de technique."],
+    "Gigante tradicional: defesa sólida e um ataque que decide nos detalhes.": ["A traditional giant: solid defence and an attack that decides games on the details.", "Gigante tradicional: defensa sólida y un ataque que decide en los detalles.", "Una big tradizionale: difesa solida e un attacco che decide nei dettagli.", "Un géant historique : défense solide et une attaque qui fait la différence sur les détails."],
+    "Pressão homem a homem no campo todo e alas que chegam como atacantes.": ["Man-to-man pressing all over the pitch and wing-backs who arrive like forwards.", "Presión individual en todo el campo y carrileros que llegan como delanteros.", "Pressing a uomo su tutto il campo ed esterni che arrivano come attaccanti.", "Pressing individuel sur tout le terrain et des pistons qui arrivent comme des attaquants."],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
   // o que muda quando a personagem é feminina (o português muda: FEM_PT; só outro idioma muda: FEM_TRAD)
@@ -2736,5 +3129,5 @@
 
 
   window.FutebolJS.registrarFase({ id: 'serieb', nome: 'Brasileirão B', nucleoMinimo: '7.1', iniciar: async () => {}, criar, carta, aceitarOferta, fraseOferta,
-    dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet, EMPRESARIOS, fimDoContrato, montarCalendario3, novaTemporada, rankingTimes }, TIMES_B, TIMES_A, TIMES_ES, TIMES_EN, LIGAS_EU, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
+    dados: { _t: { simularRodada, proximaFase, simularPlacar, penaltis, forcaNum, mediaSet, EMPRESARIOS, fimDoContrato, montarCalendario3, novaTemporada, rankingTimes }, TIMES_B, TIMES_A, TIMES_ES, TIMES_EN, TIMES_FR, TIMES_DE, TIMES_IT, LIGAS_EU, garantirLiga, virarTemporada, aplicarNiveis, montarCopa, htmlTabela, estrelasNoJogo, premiosSerieB, artilheiros, TIME_DE, classificacao, urlArte, arte, estrelasTxt, carreiraHtml, FAIXAS_POP, desempenhoPeneira, faixaPeneira, gerarOfertas, novaTemporada, elencoB, forcaTime, timeMotor, SALARIOS } });
 })();

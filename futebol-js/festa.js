@@ -53,6 +53,13 @@
       alcas(L, 0.14, 0.22, 0.42, 0.56, COR.ouro2, 0.032);
       for (const s of [-1, 1]) { L.caixa(0.012, 0.2, 0.045, 0x1f8a3a, 0.02, 0.36, s * 0.225); L.caixa(0.012, 0.18, 0.045, 0xf2c230, -0.02, 0.37, s * 0.225); }
       base = 0.12; baseH = 0.09;
+    } else if (tipo === 'europa') {                                              // a Copa dos Campeões: prateada, alta, com as alças enormes ("orelhas")
+      L.caixa(0.26, 0.1, 0.26, COR.preto, 0, 0.05, 0); L.caixa(0.265, 0.014, 0.265, COR.prata2, 0, 0.1, 0);
+      L.caixa(0.18, 0.06, 0.18, COR.prata2, 0, 0.137, 0); L.caixa(0.075, 0.2, 0.075, COR.prata, 0, 0.267, 0); L.caixa(0.13, 0.04, 0.13, COR.prata2, 0, 0.387, 0);
+      L.caixa(0.19, 0.05, 0.19, COR.prata, 0, 0.432, 0); L.caixa(0.29, 0.1, 0.29, COR.prata, 0, 0.507, 0); L.caixa(0.33, 0.14, 0.33, COR.prata, 0, 0.627, 0);
+      L.caixa(0.35, 0.03, 0.35, COR.prata2, 0, 0.712, 0);
+      alcas(L, 0.16, 0.34, 0.4, 0.78, COR.prata2, 0.04);
+      base = 0.13; baseH = 0.1;
     } else if (tipo === 'serieb') {
       L.caixa(0.28, 0.09, 0.28, COR.marmore, 0, 0.045, 0); L.caixa(0.285, 0.016, 0.285, COR.ouro, 0, 0.09, 0);
       L.caixa(0.006, 0.04, 0.14, COR.ouro3, 0.141, 0.045, 0);
