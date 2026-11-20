@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.5';
+const VERSAO_JOGO = '7.5.6';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -399,7 +399,7 @@ const CAMPOS = {
   // mas sem torcida, sem banco e sem técnico. Piso azul, borda laranja, mureta baixa e tela em volta.
   // um pouco maior: com os meninos pequenos e a bola voando alto, a IA mandava muita bola para fora pelas laterais.
   futsal: { nome: 'Quadra de futsal (6 x 6)', comprimento: 65, largura: 39, jogadores: 6, gol: { largura: 6.6, altura: 2.6 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
-    regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 0, cartoesAcumulam: false },
+    regras: { impedimento: false, acrescimos: false, lateral: 'pe', substituicoes: 999, trocasVoadoras: true, cartoesAcumulam: false },   // trocas voadoras: sai e volta à vontade (ver trocaVoadora)
     aparencia: { gramaA: '#2f63b8', gramaB: '#2f63b8', fundo: '#d9732b', padrao: 'liso', faixas: 0, linhas: '#ffffff' } },
   // A quadra da ESCOLA (Fase 1): (7.4.19) 57 x 34, 5 x 5 (os meninos do pátio + a Lúcia); antes 44 x 26, 4 x 4. Não aparece no menu (oculto).
   futsalEscola: { nome: 'Quadra da escola (5 x 5)', oculto: true, comprimento: 57, largura: 34, jogadores: 5, gol: { largura: 6.0, altura: 2.5 }, estadio: 'society', visual: 'futsal', semTorcida: true, folga: 2.4,
@@ -3587,6 +3587,15 @@ function compilarModelo(M, o) {
       case 'ombros':
         if (m) return y < (L.hm != null ? L.hm : 0.3) ? L.c : cor;
         return y < (L.h || 0.1) ? L.c : cor;
+      case 'v': {                                    // o V no peito (desce dos ombros até o meio)
+        if (m || s || (parte === 'b' && !L.costas)) return cor;
+        const yv = (L.y != null ? L.y : 0.05) + (0.5 - Math.abs(x - 0.5)) * (L.k != null ? L.k : 0.9), w = (L.w || 0.12) / 2, d = Math.abs(y - yv);
+        return d < w ? L.c : L.borda && d < w + (L.bw || 0.025) ? L.borda : cor;
+      }
+      case 'quadros': {                              // o xadrez (quadrados de duas cores)
+        const yy = m ? yManga(y) : y, n = L.n || 6, xx = m ? x * 0.36 : x;
+        return (Math.floor(xx * n) + Math.floor(yy * n)) % 2 ? L.c : cor;
+      }
     }
     return cor;
   }
@@ -13394,7 +13403,7 @@ function resetMatch() {
   G.fimModo = null; G.fimIni = null; G.fimTom = null;
   montarTimes(PARTIDA);                            // escalação nova (tira suspensos/lesionados, banco cheio)
   limparReplay();
-  Object.assign(G, { subsFila: [], trocas: [], lesoes: [], espectador: false, pulando: false, subst: null, substToque: null, pen: null, penaltisPlacar: null, resultado: null });
+  Object.assign(G, { subsFila: [], trocas: [], lesoes: [], espectador: false, pulando: false, subst: null, substToque: null, pen: null, penaltisPlacar: null, resultado: null, voando: [], tVoa: 0, voaParada: null });
   $('skipBtn').textContent = T('Pular ▶'); painelPenaltis();
   if (PARTIDA.usuarioIndisponivel) setTimeout(() => showToast('Atenção: você está ' + PARTIDA.usuarioIndisponivel + ' (no teste, joga assim mesmo)', 'bad'), 400);
   G.fimFesta = null; G.ovoBola = false; G.ovoFeito = false; G.camOvo = null;
@@ -13482,6 +13491,7 @@ function intervalo() {
   G.intRef = { x: r.x, z: r.z, angle: r.angle };
   Som.apito(0.4); setTimeout(() => { try { Som.apito(1.0); } catch (e) { /* nada */ } }, 420);
   if (G.pulando) { fimDoIntervalo(); return; }
+  if (PARTIDA.campo.visual === 'futsal') { intervaloNaQuadra(); return; }
   // a saída: cada um vai para a boca do túnel (ou para a lateral dos bancos), uns andando, outros trotando, sem pressa
   const tunel = !!TUNEL.grupo, abre = tunel || !!TUNEL.placa;      // sem túnel: o portão do alambrado abre (como na entrada)
   if (abre) mostrarTunel(true);
@@ -13491,10 +13501,43 @@ function intervalo() {
   setLetterbox(true);
   $('skipBtn').hidden = false; $('cineLabel').textContent = '';
 }
+// O INTERVALO DO FUTSAL: ninguém sai da quadra. Cada time vai para o seu lado da lateral (onde ficam os reservas) e lá uns
+//   sentam no chão (alguns bebendo água), outros bebem em pé ou alongam; o goleiro bebe em pé. As poses são as das cenas dos
+//   pênaltis (POSES_CENA), aplicadas com o relógio do intervalo.
+function intervaloNaQuadra() {
+  const zL = -(HALF_W + Math.min(1.2, (PARTIDA.campo.folga || 2.4) * 0.5));
+  G.intSaida = { futsal: true, zL };
+  for (const team of [0, 1]) {
+    const L = TEAMS[team].filter((p) => !p.out), s = team === 0 ? -1 : 1;
+    L.forEach((p, i) => {
+      const r = Math.random(), gk = p.role === 'GK';
+      const pose = gk ? 'agua' : r < 0.58 ? 'sentado' : r < 0.86 ? 'agua' : 'alonga';
+      p.intS = { t0: 0.5 + rand(0, 0.6), v: rand(3.8, 4.8), alvo: { x: s * (2.6 + i * 1.45) + rand(-0.2, 0.2), z: zL + rand(-0.2, 0.25) }, pose, v2: Math.random() < 0.5 ? 1 : 0,
+        garrafa: pose === 'agua' || (pose === 'sentado' && Math.random() < 0.55), foi: false };
+    });
+  }
+  setLetterbox(true);
+  $('skipBtn').hidden = false; $('cineLabel').textContent = '';
+}
 function updateIntervalo(dt) {
   G.intT += dt;
   const r = referee, R = G.intRef, S = G.intSaida;
   if (R) { r.x = R.x; r.z = R.z; r.vx = r.vz = 0; r.angle = R.angle; }
+  if (S && S.futsal) {                                                         // futsal: até o lado da quadra, e lá a pose
+    for (const p of players) {
+      if (p.out) continue;
+      p.vx = p.vz = 0;
+      const I = p.intS; if (!I || I.foi || G.intT < I.t0) continue;
+      const dx = I.alvo.x - p.x, dz = I.alvo.z - p.z, d = Math.hypot(dx, dz);
+      if (d < 0.12) { I.foi = true; p.x = I.alvo.x; p.z = I.alvo.z; p.angle = Math.PI / 2; p.fim = { tipo: 'cena', pose: I.pose, t0: G.intT, v: I.v2, garrafa: I.garrafa }; continue; }
+      const passo = Math.min(d, I.v * dt);
+      p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * I.v; p.vz = dz / d * I.v;
+      p.anim = (p.anim || 0) + I.v * 2.6 * dt; p.angle = turnToward(p.angle, Math.atan2(dz, dx), 6 * dt);
+    }
+    if (G.intT > 0.2 && !G.intBanner) { G.intBanner = true; showBanner('INTERVALO', 0, 3.4); $('cineLabel').textContent = Tf('Fim do 1º tempo · {0} {1} x {2} {3}', PARTIDA.timesObj[0].sigla || '', G.score[0], G.score[1], PARTIDA.timesObj[1].sigla || ''); }
+    if (G.intT > 9.8 && !G.intTela) mostrarTelaIntervalo();
+    return;
+  }
   for (const p of players) {
     if (p.out) continue;
     p.vx = p.vz = 0;
@@ -13516,6 +13559,11 @@ function cameraIntervalo() {
   const F = G.intT < 1.6 ? 0 : G.intT < 4.7 ? 1 : G.intT < 7.6 ? 2 : 3;
   if (F !== G.intFase) { G.intFase = F; G.intCorte = true; }                    // cortes secos: o juiz, os jogadores vindo, a boca do túnel, o alto
   if (F === 0) return { px: r.x + Math.cos(R.angle) * 4.2, py: 1.9, pz: r.z + Math.sin(R.angle) * 4.2, tx: r.x, ty: 1.5, tz: r.z };   // o juiz apitando
+  if (S && S.futsal) {                                                           // futsal: os dois times indo para o lado da quadra, e de perto cada um
+    if (F === 1) return { px: 0, py: 3.0, pz: S.zL + 11, tx: 0, ty: 0.8, tz: S.zL };
+    const s = F === 2 ? -1 : 1, k = Math.min(1, (G.intT - (F === 2 ? 4.7 : 7.6)) / 3);
+    return { px: s * (3.2 + 2.2 * k), py: 2.1, pz: S.zL + 6.8, tx: s * 6.2, ty: 0.5, tz: S.zL };
+  }
   if (F === 1 && S) {                                                            // da beira do campo, perto da saída: o time vem andando na direção da câmera
     const k = (G.intT - 1.6) / 3.1, L = players.filter((p) => !p.out && p.intS && !p.intS.foi);
     const mx = L.length ? L.reduce((a, p) => a + p.x, 0) / L.length : 0, mz = L.length ? L.reduce((a, p) => a + p.z, 0) / L.length : 0;
@@ -13560,7 +13608,7 @@ function fimDoIntervalo() {
   if (G.state !== 'intervalo') return;
   esconderTelaIntervalo();
   if (G.intSaida && G.intSaida.tunel) mostrarTunel(false);
-  for (const p of players) { if (p.intS) { p.intS = null; if (!p.out) p.mesh.raiz.visible = true; } }
+  for (const p of players) { if (p.intS) { p.intS = null; if (!p.out) p.mesh.raiz.visible = true; } if (p.fim && p.fim.pose) p.fim = null; }   // (futsal: as poses do intervalo)
   G.intSaida = null; G.intTela = false;
   $('banner').className = ''; $('cineLabel').textContent = ''; $('skipBtn').hidden = true;
   setLetterbox(false);
@@ -13631,14 +13679,14 @@ function candidatosTroca(team) {
 }
 function trocasRestantes(team) { const P = PARTIDA, fila = G.subsFila.filter((s) => s.team === team).length; return Math.min(P.reservas[team].length - fila, P.regras.substituicoes - P.subsUsadas[team] - fila); }
 function trocasDoIntervalo() {
-  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio) return;
+  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio || P.regras.trocasVoadoras) return;
   for (const team of [0, 1]) {
     const r = Math.random(), n = Math.min(trocasRestantes(team), r < 0.35 ? 0 : r < 0.8 ? 1 : 2);
     for (const sai of candidatosTroca(team).slice(0, n)) executarTrocaDireto({ team, sai, motivo: 'intervalo' });
   }
 }
 function tecnicoPlanejaTrocas() {
-  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio || nTempos() < 2 || (G.tempo || 1) < 2) return;
+  const P = PARTIDA; if (!P || !P.reservas || P.regras.substituicoes <= 0 || G.desafio || P.regras.trocasVoadoras || nTempos() < 2 || (G.tempo || 1) < 2) return;
   if (!G.trocasPlano) G.trocasPlano = [0.62, 0.75, 0.86].map((m) => [m + rand(-0.03, 0.03), m + rand(-0.03, 0.03)]);   // [time 0, time 1]
   const agora = decorridoPartida();
   for (const team of [0, 1]) {
@@ -14036,7 +14084,7 @@ function garrafaDe(m) {
 function aplicarPoseCena(p, m) {
   const F = p.fim, f = POSES_CENA[F.pose];
   if (!f) return;
-  const t = G.fimT - (F.t0 || 0);
+  const t = (G.state === 'intervalo' ? G.intT : G.fimT) - (F.t0 || 0);
   const P = Object.assign({}, POSE0, f(t, p, F));
   aplicarPoseCeleb(m, POSE_CENA_C, P, 0, { x: p.x, y: 0, z: p.z }, p.angle);
   aplicarPoseCelebExtras(m, P);
@@ -15565,7 +15613,7 @@ function syncMeshes(dt) {
     if (p.levanta && p.levanta.t >= 0 && p.role !== 'GK') aplicarLevanta(p, m);   // levantando do chão (depois do voleio/bicicleta)
     if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);   // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa, levantar
     if (m.garrafa) m.garrafa.visible = false;
-    if (G.state === 'fim' && p.fim && p.fim.pose && !p.out) aplicarPoseCena(p, m);   // (7.4.9) as cenas dos pênaltis (água, aquecimento, roda...)
+    if ((G.state === 'fim' || G.state === 'intervalo') && p.fim && p.fim.pose && !p.out) aplicarPoseCena(p, m);   // (7.4.9) as cenas dos pênaltis (água, aquecimento, roda...) e o intervalo do futsal
     // NADA ABAIXO DO GRAMADO: depois de todas as poses, se alguma parte do boneco entrou no chão (a ponta do pé na
     // passada, o braço no aviãozinho, o corpo no mergulho...), ele sobe o quanto entrou.
     // A conta é pesada (o boneco inteiro): para quem só anda/corre ela é feita a cada 3 quadros (a correção do último cálculo vale
@@ -15627,6 +15675,7 @@ function stepGame(dt, rdt) {
   if (G.lastTouch !== G.toqueAtual) { G.toqueAnt = G.toqueAtual; G.toqueAntT = G.time; G.toqueAtual = G.lastTouch; }   // a súmula dos gols (assistência)
   if (relogioCorre()) G.clock -= dt;
   if (!G.desafio) { tecnicoPensa(); verificarSubstituicoes(); }   // treino: sem técnico mexendo e sem trocas
+  if (G.voando) andarVoadores(rdt || dt);
   atualizarPenaltis(dt);
   verificarFimDeTempo(dt);
   if (G.userRequest > 0) G.userRequest -= dt;
@@ -17265,6 +17314,7 @@ function pedirSubstituicao(team, sai, motivo, urgente) {
 }
 // Técnico olhando o cansaço (chamado junto com tecnicoPensa).
 function tecnicoOlhaCansaco() {
+  if (trocasVoadoras()) return;                    // futsal: as trocas voadoras cuidam disso (verificarVoadoras)
   for (const team of [0, 1]) {
     if (G.subsFila.some((s) => s.team === team)) continue;
     const cansado = TEAMS[team].filter((p) => !p.isUser && !p.voce && !p.out && p.role !== 'GK' && (p.folego ?? 1) < 0.38)
@@ -17274,6 +17324,7 @@ function tecnicoOlhaCansaco() {
 }
 // Momento de trocar: bola fora (busca da bola) ou falta (depois do apito).
 function verificarSubstituicoes() {
+  if (trocasVoadoras()) { verificarVoadoras(); return; }
   if (!G.subsFila.length || G.subst || G.pulando) {
     if (G.pulando && G.subsFila.length && (G.state === 'restart' || G.state === 'foul' || G.state === 'play')) executarTrocaDireto(G.subsFila.shift());   // pulando: a troca sai na hora (o pulo quase nunca para num 'restart')
     return;
@@ -17294,6 +17345,70 @@ function verificarSubstituicoes() {
     itens.push(G.subsFila.shift());
   }
   iniciarSubstituicao(itens);
+}
+// ---------------------------------------------------------------------
+// AS TROCAS VOADORAS (futsal: PARTIDA.regras.trocasVoadoras). No futsal quem sai pode voltar e a troca é na hora, sem placa nem
+//   cena: em cada bola parada (lateral, escanteio, tiro de meta, falta) cada técnico pode trocar até 2 da linha (o mais cansado;
+//   às vezes só um rodízio). Quem entra aparece na lateral, do lado do time, e corre para o lugar; quem sai anda até lá e some
+//   (volta para o banco, recuperando o fôlego, e pode entrar de novo). Você nunca é trocado; o goleiro também não. As trocas que
+//   VOCÊ pede no menu saem do mesmo jeito, na próxima bola parada.
+// ---------------------------------------------------------------------
+const trocasVoadoras = () => !!(PARTIDA && PARTIDA.regras && PARTIDA.regras.trocasVoadoras);
+function trocaVoadora(team, sai) {
+  const P = PARTIDA, R = P.reservas[team];
+  if (!R.length || !players.includes(sai) || sai.out || sai.isUser || sai.voce || sai.role === 'GK') return null;
+  const agora = G.tVoa || 0, folegoDe = (j) => (j._folego == null ? 1 : Math.min(1, j._folego + Math.max(0, agora - (j._desde || 0)) * 0.012));
+  let bi = 0; R.forEach((j, k) => { if (folegoDe(j) > folegoDe(R[bi])) bi = k; });
+  const j = R.splice(bi, 1)[0], fol = folegoDe(j);
+  const f = sai.slotF || { role: sai.role, fx: sai.base.x / HALF_L, fz: sai.base.z / HALF_W };
+  let num = j._num; if (!num) { const usados = P.numerosUsados[team]; num = NUMEROS[f.role].find((v) => !usados.has(v)) || (20 + usados.size); usados.add(num); }
+  const entra = criarJogador(P, team, f, j, num, false);
+  entra.folego = fol; entra.stamina = 1; entra.exhausted = false; entra.cansadoT = 0;
+  const i = players.indexOf(sai), t = TEAMS[team].indexOf(sai);
+  if (i >= 0) players[i] = entra;
+  if (t >= 0) TEAMS[team][t] = entra;
+  if (!P.participantes.some((q) => q.ficha === entra.ficha && q.team === team)) P.participantes.push(entra);
+  if (G.possession === sai) G.possession = null;
+  if (G.passTarget && G.passTarget.p === sai) G.passTarget = null;
+  for (const k of [0, 1]) { if (G.chasers[k] === sai) G.chasers[k] = null; if (G.pressers[k] === sai) G.pressers[k] = null; if (G.covers[k] === sai) G.covers[k] = null; }
+  sai.out = true; sai.substituido = true;
+  R.push(Object.assign({}, sai.dados, { _folego: sai.folego ?? 1, _desde: agora, _num: sai.numero }));   // volta para o banco: pode entrar de novo
+  const s = team === 0 ? -1 : 1, xl = s * rand(1.5, 4.5), zl = -(HALF_W + 0.9);
+  entra.x = xl; entra.z = zl + 0.3; entra.angle = Math.PI / 2; entra.vx = entra.vz = 0;
+  sai.scripted = true; sai.stun = 0; sai.fall = 0; sai.falling = false; sai.perda = null; sai.celeb = null;
+  (G.voando = G.voando || []).push({ p: sai, x: xl + s * 0.9, z: zl - 0.4 });
+  CORPOS = players.concat(officials, G.voando.map((v) => v.p));
+  if (team === 0 || !G.espectador) showToast(Tf('Troca rápida ({0}): sai {1}, entra {2}', P.timesObj[team].sigla || '', sai.name, entra.name));
+  return entra;
+}
+function verificarVoadoras() {
+  const S = G.sp, F = G.foul;
+  const parado = (G.state === 'restart' && S && (S.phase === 'fetch' || S.phase === 'carry')) || (G.state === 'foul' && F && F.t > 1.0);
+  if (!parado || G.pulando) return;
+  const chave = S || F; if (G.voaParada === chave) return;
+  G.voaParada = chave;
+  const vale = (p) => !p.out && !p.red && !p.isUser && !p.voce && p.role !== 'GK' && !(S && S.taker === p) && G.possession !== p;
+  // primeiro as que você pediu no menu (as do time 0) e as que estavam na fila
+  while (G.subsFila.length) { const it = G.subsFila.shift(); if (vale(it.sai)) trocaVoadora(it.team, it.sai); }
+  for (const team of [0, 1]) {
+    if (!PARTIDA.reservas[team].length) continue;
+    const L = TEAMS[team].filter(vale).sort((a, b) => (a.folego ?? 1) - (b.folego ?? 1));
+    if (!L.length) continue;
+    const r = Math.random(), cansado = (L[0].folego ?? 1) < 0.86;
+    const n = cansado ? (r < 0.55 ? 1 : r < 0.75 ? 2 : 0) : (r < 0.22 ? 1 : 0);   // o mais cansado; às vezes só o rodízio
+    for (const p of (cansado ? L : L.slice().sort(() => Math.random() - 0.5)).slice(0, Math.min(n, PARTIDA.reservas[team].length))) trocaVoadora(team, p);
+  }
+}
+// quem saiu numa troca voadora anda até a lateral e some (chamado todo quadro)
+function andarVoadores(dt) {
+  G.tVoa = (G.tVoa || 0) + dt;
+  if (!G.voando.length) return;
+  for (let n = G.voando.length - 1; n >= 0; n--) {
+    const v = G.voando[n], p = v.p, dx = v.x - p.x, dz = v.z - p.z, d = Math.hypot(dx, dz), vel = 3.2;
+    if (d < 0.2) { descartarBoneco(p.mesh.raiz); G.voando.splice(n, 1); CORPOS = players.concat(officials, G.voando.map((w) => w.p)); continue; }
+    const passo = Math.min(d, vel * dt); p.x += dx / d * passo; p.z += dz / d * passo; p.vx = dx / d * vel; p.vz = dz / d * vel;
+    p.anim = (p.anim || 0) + vel * 2.6 * dt; p.angle = turnToward(p.angle, Math.atan2(dz, dx), 8 * dt);
+  }
 }
 // Troca o jogador nas listas (mesma posição da formação) e devolve quem entrou.
 function trocarNasListas(item) {
@@ -18625,6 +18740,7 @@ const Idioma = {
   'Quadra de futsal (5 x 5)': ['Futsal court (5 v 5)', 'Cancha de futsal (5 x 5)', 'Campo da futsal (5 x 5)', 'Terrain de futsal (5 x 5)'],
   'Quadra da escola (4 x 4)': ['School court (4 v 4)', 'Cancha de la escuela (4 x 4)', 'Campo della scuola (4 x 4)', 'Terrain de l’école (4 x 4)'],
   'Society (6 x 6)': ['Society (6 v 6)', 'Society (6 x 6)', 'Calcetto (6 x 6)', 'Society (6 x 6)'],
+  'Troca rápida ({0}): sai {1}, entra {2}': ['Rolling sub ({0}): {1} off, {2} on', 'Cambio rápido ({0}): sale {1}, entra {2}', 'Cambio volante ({0}): esce {1}, entra {2}', 'Changement volant ({0}) : {1} sort, {2} entre'],
   'Quadra de futsal (6 x 6)': ['Futsal court (6 v 6)', 'Cancha de futsal (6 x 6)', 'Campo da futsal (6 x 6)', 'Terrain de futsal (6 x 6)'],
   'Quadra da escola (5 x 5)': ['School court (5 v 5)', 'Cancha de la escuela (5 x 5)', 'Campo della scuola (5 x 5)', 'Terrain de l’école (5 x 5)'],
   'Society (treino)': ['Society (training)', 'Society (entrenamiento)', 'Calcetto (allenamento)', 'Society (entraînement)'], 'Quadra da escola (treino)': ['School court (training)', 'Cancha de la escuela (entrenamiento)', 'Campo della scuola (allenamento)', 'Terrain de l’école (entraînement)'],

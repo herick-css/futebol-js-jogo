@@ -1,5 +1,5 @@
 // =====================================================================================================================
-// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times do Brasileirão A e do Brasileirão B e (7.5.2) dos 40 da Espanha e da Inglaterra e dos 56 de França, Alemanha e Itália
+// UNIFORMES: o desenho das camisas 1 e 2 dos 40 times do Brasileirão A e do Brasileirão B e (7.5.2) dos 40 da Espanha e da Inglaterra e dos 56 de França, Alemanha e Itália e dos 82 de Argentina, Chile, Bolívia e Colômbia
 //   (as paródias do serieb.js) e o espaço da
 //   pixel art no peito. Cada time tem [uniforme 1, uniforme 2]; o motor do desenho fica no jogo.js (compilarModelo e
 //   pintarCamisaModelo: lá está a lista de camadas e texturas). As cores das camisas continuam vindo do serieb.js (uni e
@@ -568,6 +568,338 @@
     brianza: [          // Monza: vermelha com a faixa diagonal branca; a 2 é branca com a faixa vermelha
       { camadas: [{ t: 'faixa', c: BR, w: 0.1, dir: 1 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
       { camadas: [{ t: 'faixa', c: '#d71920', w: 0.1, dir: 1 }], gola: 'v', golaCor: '#d71920', punho: '#d71920' },
+    ],
+    // ------------------------------------------------------------------------------------------------- ARGENTINA
+    xeneize: [          // Boca: azul com a faixa horizontal amarela no peito; a 2 é amarela com a faixa azul
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f2c230', 0.2]], manga: true }], gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#103f91', 0.14]] }], gola: 'v', golaCor: '#103f91', punho: '#103f91', numero: '#103f91' },
+    ],
+    bandaroja: [        // River: branca com a faixa diagonal vermelha; a 2 é vermelha com a faixa branca
+      { camadas: [{ t: 'faixa', c: '#d41f2b', w: 0.2, dir: -1 }], gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: PR },
+      { camadas: [{ t: 'faixa', c: BR, w: 0.16, dir: -1 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+    ],
+    academia: [         // Racing: listras celestes e brancas; a 2 é preta com detalhes celestes
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: BR, punho: '#6cb4e4', numero: '#1c2a4a' },
+      { gola: 'v', golaCor: '#6cb4e4', punho: '#6cb4e4', numero: '#6cb4e4', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    rojo: [             // Independiente: toda vermelha, gola branca, calção azul-escuro; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: '#d0101e', punho: '#d0101e', numero: '#d0101e' },
+    ],
+    cuervo: [           // San Lorenzo: listras azuis e vermelhas; a 2 é branca com a faixa azul-grená
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { camadas: [{ t: 'banda', y: 0.32, f: [['#1b3a8a', 0.06], ['#c8202e', 0.06]] }], gola: 'redonda', golaCor: '#1b3a8a', punho: '#c8202e' },
+    ],
+    pincha: [           // Estudiantes: listras vermelhas e brancas; a 2 é branca com o vermelho
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], manga: 'c', gola: 'redonda', golaCor: '#d41f2b', punho: BR, numero: PR },
+      { camadas: [{ t: 'vfaixa', c: '#d41f2b', x: 0.5, w: 0.1 }], gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b' },
+    ],
+    lobotripero: [      // Gimnasia: branca com a faixa azul-escura no peito; a 2 é azul
+      { camadas: [{ t: 'banda', y: 0.28, f: [['#0c2557', 0.16]], manga: true }], gola: 'redonda', golaCor: '#0c2557', punho: '#0c2557', numero: '#0c2557' },
+      { camadas: [{ t: 'banda', y: 0.28, f: [[BR, 0.12]] }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    fortin: [           // Vélez: branca com o V azul no peito; a 2 é azul com o V branco
+      { camadas: [{ t: 'v', c: '#1d4fa0', w: 0.14 }], gola: 'v', golaCor: '#1d4fa0', punho: '#1d4fa0', numero: '#1d4fa0' },
+      { camadas: [{ t: 'v', c: BR, w: 0.12 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+    ],
+    globo: [            // Huracán: branca com os detalhes vermelhos; a 2 é vermelha
+      { lateral: '#d41f2b', lateralFrente: 0.03, gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    canalla: [          // Rosario Central: listras azuis e amarelas; a 2 é amarela com o azul
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { lateral: '#123b8c', lateralFrente: 0.03, gola: 'v', golaCor: '#123b8c', punho: '#123b8c', numero: '#123b8c' },
+    ],
+    leproso: [          // Newell's: metade vermelha e metade preta; a 2 é branca
+      { camadas: [{ t: 'metade', c: PR, lado: 1 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#d41f2b', 0.05], [PR, 0.05]] }], gola: 'redonda', golaCor: PR, punho: '#d41f2b' },
+    ],
+    bicho: [            // Argentinos Juniors: vermelha com a faixa diagonal branca fina; a 2 é branca
+      { camadas: [{ t: 'faixa', c: BR, w: 0.07, dir: 1 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { camadas: [{ t: 'faixa', c: '#d41f2b', w: 0.07, dir: 1 }], gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b' },
+    ],
+    granate: [          // Lanús: grená com detalhes brancos; a 2 é branca com a faixa grená
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.05 } },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#7a1530', 0.1]] }], gola: 'v', golaCor: '#7a1530', punho: '#7a1530' },
+    ],
+    albiazul: [         // Talleres: listras azul-escuras e brancas; a 2 é branca com detalhes azuis
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { lateral: '#0c2557', lateralFrente: 0.03, gola: 'redonda', golaCor: '#0c2557', punho: '#0c2557', numero: '#0c2557' },
+    ],
+    pirata: [           // Belgrano: toda celeste; a 2 é branca com a faixa celeste
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: PR, tex: { t: 'ondas', k: 0.05 } },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#5fb0e5', 0.1]] }], gola: 'redonda', golaCor: '#5fb0e5', punho: '#5fb0e5' },
+    ],
+    gloria: [           // Instituto: listras vermelhas e brancas finas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 13 }], gola: 'v', golaCor: BR, punho: BR, numero: PR },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b', tex: { t: 'linhas', k: 0.03 } },
+    ],
+    halcon: [           // Defensa y Justicia: amarela com o verde; a 2 é verde
+      { lateral: '#0e7a3e', lateralFrente: 0.035, gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+      { lateral: '#f2d200', lateralFrente: 0.03, gola: 'v', golaCor: '#f2d200', punho: '#f2d200', numero: '#f2d200' },
+    ],
+    taladro: [          // Banfield: listras verdes e brancas; a 2 é branca com a faixa verde
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: PR },
+      { camadas: [{ t: 'faixa', c: '#0e7a3e', w: 0.1, dir: 1 }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e' },
+    ],
+    matador: [          // Tigre: azul com a faixa horizontal vermelha; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.34, f: [['#d41f2b', 0.16]], manga: true }], gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: BR },
+      { camadas: [{ t: 'banda', y: 0.34, f: [['#123b8c', 0.07], ['#d41f2b', 0.07]] }], gola: 'redonda', golaCor: '#123b8c', punho: '#d41f2b' },
+    ],
+    calamar: [          // Platense: branca com a faixa marrom no peito; a 2 é marrom
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#5a3a22', 0.14]], manga: true }], gola: 'v', golaCor: '#5a3a22', punho: '#5a3a22', numero: '#5a3a22' },
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    tatengue: [         // Unión: listras vermelhas e brancas largas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b', tex: { t: 'diagonais', k: 0.04 } },
+    ],
+    verdejunin: [       // Sarmiento: toda verde; a 2 é branca com o verde
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { lateral: '#0e7a3e', lateralFrente: 0.03, gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    ferroviario: [      // Central Córdoba: listras pretas e brancas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: BR, punho: BR, numero: '#f2c230' },
+      { gola: 'redonda', golaCor: PR, punho: PR, numero: PR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    decano: [           // Atlético Tucumán: listras celestes e brancas, calção azul-escuro; a 2 é azul-escura
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'v', golaCor: '#0c2557', punho: '#0c2557', numero: '#0c2557' },
+      { gola: 'v', golaCor: '#6cb4e4', punho: '#6cb4e4', numero: '#6cb4e4' },
+    ],
+    guapo: [            // Barracas Central: aros vermelhos e brancos; a 2 é branca
+      { camadas: [{ t: 'aros', c: ['c', 'l'], n: 8 }], manga: 'c', gola: 'redonda', golaCor: BR, punho: BR, numero: PR },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    lepra: [            // Independiente Rivadavia: azul com detalhes brancos; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { camadas: [{ t: 'faixa', c: '#1d3fa0', w: 0.08, dir: -1 }], gola: 'v', golaCor: '#1d3fa0', punho: '#1d3fa0' },
+    ],
+    malevo: [           // Deportivo Riestra: toda preta; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.04 } },
+      { gola: 'v', golaCor: PR, punho: PR, numero: PR },
+    ],
+    marplatense: [      // Aldosivi: listras amarelas e verdes; a 2 é verde
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+      { gola: 'redonda', golaCor: '#f2d200', punho: '#f2d200', numero: '#f2d200', tex: { t: 'ondas', k: 0.05 } },
+    ],
+    blanquinegro: [     // Gimnasia de Mendoza: listras brancas e pretas; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 7 }], gola: 'redonda', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    imperio: [          // Estudiantes de Río Cuarto: listras celestes e brancas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 11 }], gola: 'redonda', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'v', golaCor: '#6cb4e4', punho: '#6cb4e4', numero: '#6cb4e4' },
+    ],
+    // ------------------------------------------------------------------------------------------------- CHILE
+    albomacul: [        // Colo-Colo: branca com detalhes pretos, calção preto; a 2 é preta
+      { gola: 'polo', golaCor: PR, punho: PR, numero: PR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'polo', golaCor: BR, punho: BR, numero: BR },
+    ],
+    bulla: [            // Universidad de Chile: azul com o detalhe vermelho; a 2 é branca
+      { gola: 'redonda', golaCor: '#d41f2b', golaCor2: BR, punho: '#d41f2b', numero: BR },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#1d3fa0', 0.06], ['#d41f2b', 0.04]] }], gola: 'redonda', golaCor: '#1d3fa0', punho: '#1d3fa0' },
+    ],
+    cruzado: [          // Universidad Católica: branca com a faixa azul no peito; a 2 é azul
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#1d3fa0', 0.12]], manga: true }], gola: 'redonda', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+      { camadas: [{ t: 'banda', y: 0.3, f: [[BR, 0.1]] }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    ruletero: [         // Everton: azul com detalhes dourados; a 2 é dourada
+      { lateral: '#f2c230', lateralFrente: 0.03, gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#0c2557', punho: '#0c2557', numero: '#0c2557' },
+    ],
+    baisano: [          // Palestino: branca com a faixa vertical verde e vermelha; a 2 é verde
+      { camadas: [{ t: 'vfaixa', c: '#0e7a3e', x: 0.5, w: 0.16, borda: '#d41f2b', bw: 0.04 }], gola: 'redonda', golaCor: '#d41f2b', punho: '#0e7a3e', numero: PR },
+      { camadas: [{ t: 'vfaixa', c: BR, x: 0.5, w: 0.1, borda: '#d41f2b', bw: 0.03 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    acerero: [          // Huachipato: listras azuis e pretas; a 2 é branca
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'redonda', golaCor: '#1d3fa0', punho: PR, numero: '#1d3fa0' },
+    ],
+    tomatero: [         // Deportes Limache: vermelha com o verde; a 2 é branca
+      { lateral: '#0e7a3e', lateralFrente: 0.03, gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: BR },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    bucanero: [         // Coquimbo: amarela com detalhes pretos; a 2 é preta
+      { gola: 'v', golaCor: PR, punho: PR, numero: PR, tex: { t: 'ondas', k: 0.05 } },
+      { gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+    ],
+    lila: [             // Deportes Concepción: lilás; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'redonda', golaCor: '#6a2c91', punho: '#6a2c91', numero: '#6a2c91' },
+    ],
+    chillanejo: [       // Ñublense: vermelha; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.05 } },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    papayero: [         // La Serena: vermelha com a faixa diagonal branca; a 2 é branca
+      { camadas: [{ t: 'faixa', c: BR, w: 0.1, dir: 1 }], gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    italico: [          // Audax Italiano: verde com a faixa tricolor; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.32, f: [[BR, 0.04], ['#d41f2b', 0.04]] }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    rancagua: [         // O'Higgins: celeste; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { gola: 'redonda', golaCor: '#6cb4e4', punho: '#6cb4e4', numero: '#6cb4e4' },
+    ],
+    minero: [           // Cobresal: branca com o laranja; a 2 é laranja
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f07a1a', 0.08], ['#0e7a3e', 0.03]] }], gola: 'redonda', golaCor: '#f07a1a', punho: '#f07a1a', numero: '#0e7a3e' },
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR },
+    ],
+    campanil: [         // Universidad de Concepción: amarela com o azul; a 2 é azul
+      { lateral: '#1d3fa0', lateralFrente: 0.03, gola: 'v', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+      { gola: 'v', golaCor: '#f2d200', punho: '#f2d200', numero: '#f2d200' },
+    ],
+    cementero: [        // Unión La Calera: vermelha; a 2 é branca com a faixa vermelha
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { camadas: [{ t: 'faixa', c: '#d41f2b', w: 0.08, dir: -1 }], gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b' },
+    ],
+    // ------------------------------------------------------------------------------------------------- BOLÍVIA
+    siemprelisto: [     // Always Ready: vermelha com a faixa diagonal branca; a 2 é branca
+      { camadas: [{ t: 'faixa', c: BR, w: 0.12, dir: -1 }], gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { camadas: [{ t: 'faixa', c: '#d41f2b', w: 0.1, dir: -1 }], gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b' },
+    ],
+    celestepaz: [       // Bolívar: celeste; a 2 é branca com o celeste
+      { gola: 'polo', golaCor: BR, punho: BR, numero: '#0c2557', tex: { t: 'linhas', k: 0.03 } },
+      { lateral: '#5fb0e5', lateralFrente: 0.03, gola: 'polo', golaCor: '#5fb0e5', punho: '#5fb0e5', numero: '#5fb0e5' },
+    ],
+    atigrado: [         // The Strongest: listras amarelas e pretas; a 2 é preta
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230', tex: { t: 'tigre', k: 0.06 } },
+    ],
+    cerrorico: [        // Real Potosí: lilás; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#6a2c91', punho: '#6a2c91', numero: '#6a2c91' },
+    ],
+    refinero: [         // Oriente Petrolero: verde com a faixa vertical branca; a 2 é branca
+      { camadas: [{ t: 'vfaixa', c: BR, x: 0.5, w: 0.16 }], gola: 'redonda', golaCor: BR, punho: BR, numero: '#0e7a3e' },
+      { camadas: [{ t: 'vfaixa', c: '#0e7a3e', x: 0.5, w: 0.12 }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e' },
+    ],
+    amanecer: [         // Aurora: celeste; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'pontos', k: 0.05 } },
+      { gola: 'redonda', golaCor: '#6cb4e4', punho: '#6cb4e4', numero: '#6cb4e4' },
+    ],
+    canero: [           // Guabirá: vermelha; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b', tex: { t: 'riscas', k: 0.05 } },
+    ],
+    florecido: [        // Blooming: celeste com detalhes brancos; a 2 é branca
+      { lateral: BR, lateralFrente: 0.03, gola: 'v', golaCor: BR, punho: BR, numero: BR },
+      { gola: 'v', golaCor: '#5fb0e5', punho: '#5fb0e5', numero: '#5fb0e5' },
+    ],
+    banense: [          // Nacional Potosí: azul com o vermelho; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#d41f2b', 0.07]] }], gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: BR },
+      { gola: 'redonda', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+    ],
+    petrolero: [        // Independiente Petrolero: amarela com o verde; a 2 é verde
+      { camadas: [{ t: 'ombros', c: '#0e7a3e', h: 0.08 }], gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+      { gola: 'v', golaCor: '#f2d200', punho: '#f2d200', numero: '#f2d200' },
+    ],
+    carnavalero: [      // Real Oruro: azul com o amarelo; a 2 é amarela
+      { camadas: [{ t: 'faixa', c: '#f2c230', w: 0.08, dir: 1 }], gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+    ],
+    balompie: [         // ABB: azul-escura com o dourado; a 2 é branca
+      { lateral: '#f2c230', lateralFrente: 0.03, gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'redonda', golaCor: '#0c2557', punho: '#0c2557', numero: '#0c2557' },
+    ],
+    chapare: [          // San Antonio Bulo Bulo: verde com o amarelo; a 2 é amarela
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f2d200', 0.06]] }], gola: 'redonda', golaCor: '#f2d200', punho: '#f2d200', numero: '#f2d200' },
+      { gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    vinteno: [          // Universitario de Vinto: vermelha com a faixa vertical branca e preta; a 2 é branca
+      { camadas: [{ t: 'vfaixa', c: BR, x: 0.5, w: 0.1, borda: PR, bw: 0.025 }], gola: 'redonda', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    chapaco: [          // Real Tomayapo: grená com o dourado; a 2 é dourada
+      { gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#7a1530', punho: '#7a1530', numero: '#7a1530' },
+    ],
+    coronel: [          // Gualberto Villarroel: verde; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    // ------------------------------------------------------------------------------------------------- COLÔMBIA
+    verdolaga: [        // Atlético Nacional: listras verdes e brancas; a 2 é branca com o verde
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: PR },
+      { lateral: '#0e7a3e', lateralFrente: 0.03, gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    currambero: [       // Junior: listras vermelhas e brancas, calção azul; a 2 é azul
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: BR },
+    ],
+    volcanico: [        // Pasto: vermelha com o amarelo e o azul; a 2 é amarela
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#f2c230', 0.05], ['#1d3fa0', 0.05]] }], gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#1d3fa0', numero: '#d41f2b' },
+    ],
+    escarlata: [        // América de Cali: escarlate; a 2 é branca
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'linhas', k: 0.03 } },
+      { gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    blancoblanco: [     // Once Caldas: branca, calção preto; a 2 é preta
+      { gola: 'v', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'v', golaCor: BR, punho: BR, numero: BR, tex: { t: 'riscas', k: 0.05 } },
+    ],
+    musical: [          // Tolima: grená com o dourado; a 2 é dourada
+      { camadas: [{ t: 'ombros', c: '#f2c230', h: 0.06, hm: 0.2 }], gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#7a1530', punho: '#7a1530', numero: '#7a1530' },
+    ],
+    cardenal: [         // Santa Fe: vermelha com mangas brancas; a 2 é branca
+      { manga: BR, gola: 'redonda', golaCor: BR, punho: '#d41f2b', numero: BR },
+      { manga: '#d41f2b', gola: 'redonda', golaCor: '#d41f2b', punho: BR, numero: '#d41f2b' },
+    ],
+    interbog: [         // Internacional de Bogotá: verde com o dourado; a 2 é branca
+      { lateral: '#f2c230', lateralFrente: 0.03, gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+      { gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    azucarero: [        // Deportivo Cali: verde com detalhes brancos; a 2 é branca
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'diagonais', k: 0.04 } },
+      { camadas: [{ t: 'banda', y: 0.3, f: [['#0e7a3e', 0.08]] }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e' },
+    ],
+    embajador: [        // Millonarios: azul com detalhes brancos; a 2 é branca com o azul
+      { gola: 'polo', golaCor: BR, punho: BR, numero: BR, tex: { t: 'estrelas', k: 0.06 } },
+      { lateral: '#1d3fa0', lateralFrente: 0.03, gola: 'polo', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: '#1d3fa0' },
+    ],
+    poderoso: [         // Independiente Medellín: vermelha com o azul; a 2 é azul
+      { camadas: [{ t: 'faixa', c: '#1d3fa0', w: 0.12, dir: 1 }], gola: 'v', golaCor: '#1d3fa0', punho: '#1d3fa0', numero: BR },
+      { camadas: [{ t: 'faixa', c: '#d41f2b', w: 0.1, dir: 1 }], gola: 'v', golaCor: '#d41f2b', punho: '#d41f2b', numero: BR },
+    ],
+    aguiladorada: [     // Águilas Doradas: dourada com o preto; a 2 é preta
+      { camadas: [{ t: 'ombros', c: PR, h: 0.07 }], gola: 'v', golaCor: PR, punho: PR, numero: PR },
+      { gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+    ],
+    leopardo: [         // Bucaramanga: amarela com o verde; a 2 é verde
+      { lateral: '#0e7a3e', lateralFrente: 0.03, gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e', tex: { t: 'tigre', k: 0.05 } },
+      { gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+    ],
+    llanero: [          // Llaneros: vermelha com o verde; a 2 é branca
+      { camadas: [{ t: 'banda', y: 0.32, f: [['#0e7a3e', 0.07]] }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: BR },
+      { gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+    ],
+    sabana: [           // Fortaleza: verde com o preto; a 2 é branca
+      { camadas: [{ t: 'vfaixa', c: PR, x: 0.5, w: 0.08 }], gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    felino: [           // Jaguares: verde com o amarelo; a 2 é branca
+      { gola: 'v', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230', tex: { t: 'tigre', k: 0.05 } },
+      { gola: 'v', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+    ],
+    vallenato: [        // Alianza (Valledupar): amarela com o verde; a 2 é verde
+      { camadas: [{ t: 'faixa', c: '#0e7a3e', w: 0.08, dir: -1 }], gola: 'redonda', golaCor: '#0e7a3e', punho: '#0e7a3e', numero: '#0e7a3e' },
+      { gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
+    ],
+    ajedrezado: [       // Boyacá Chicó: o xadrez preto e branco; a 2 é preta
+      { camadas: [{ t: 'quadros', c: PR, n: 6 }], gola: 'redonda', golaCor: PR, punho: PR, numero: '#f2c230' },
+      { gola: 'redonda', golaCor: BR, punho: BR, numero: BR, tex: { t: 'xadrez', k: 0.04 } },
+    ],
+    motilon: [          // Cúcuta: metade vermelha e metade preta; a 2 é branca
+      { camadas: [{ t: 'metade', c: PR, lado: 1 }], gola: 'v', golaCor: PR, punho: PR, numero: BR },
+      { gola: 'v', golaCor: '#d41f2b', punho: PR, numero: '#d41f2b' },
+    ],
+    matecana: [         // Pereira: listras amarelas e vermelhas; a 2 é vermelha
+      { camadas: [{ t: 'listras', c: ['c', 'l'], n: 9 }], gola: 'redonda', golaCor: '#d41f2b', punho: '#d41f2b', numero: '#d41f2b' },
+      { gola: 'redonda', golaCor: '#f2c230', punho: '#f2c230', numero: '#f2c230' },
     ],
   };
 

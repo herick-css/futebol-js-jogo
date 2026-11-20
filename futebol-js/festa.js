@@ -60,6 +60,18 @@
       L.caixa(0.35, 0.03, 0.35, COR.prata2, 0, 0.712, 0);
       alcas(L, 0.16, 0.34, 0.4, 0.78, COR.prata2, 0.04);
       base = 0.13; baseH = 0.1;
+    } else if (tipo === 'liberta') {                                             // a Libertadores: a base preta em degraus, o pé de prata e a taça dourada alta com as asas abertas e a estrela
+      L.caixa(0.27, 0.07, 0.27, COR.preto, 0, 0.035, 0); L.caixa(0.23, 0.06, 0.23, COR.preto, 0, 0.1, 0); L.caixa(0.235, 0.012, 0.235, COR.ouro, 0, 0.131, 0);
+      L.caixa(0.006, 0.04, 0.12, COR.ouro3, 0.136, 0.035, 0);
+      L.caixa(0.15, 0.05, 0.15, COR.prata2, 0, 0.162, 0); L.caixa(0.06, 0.2, 0.06, COR.prata, 0, 0.287, 0); L.caixa(0.11, 0.035, 0.11, COR.ouro2, 0, 0.404, 0);
+      L.caixa(0.16, 0.05, 0.16, COR.ouro, 0, 0.446, 0); L.caixa(0.25, 0.12, 0.25, COR.ouro, 0, 0.531, 0); L.caixa(0.3, 0.1, 0.3, COR.ouro, 0, 0.641, 0); L.caixa(0.32, 0.025, 0.32, COR.ouro3, 0, 0.703, 0);
+      for (const s of [-1, 1]) {                                                 // as asas: três penas subindo para fora
+        L.caixa(0.03, 0.05, 0.1, COR.ouro2, 0, 0.6, s * 0.2); L.caixa(0.03, 0.04, 0.08, COR.ouro2, 0, 0.66, s * 0.27);
+        L.caixa(0.03, 0.04, 0.06, COR.ouro3, 0, 0.72, s * 0.31); L.caixa(0.03, 0.035, 0.04, COR.ouro3, 0, 0.77, s * 0.335);
+      }
+      L.caixa(0.04, 0.05, 0.04, COR.ouro2, 0, 0.74, 0);                          // a estrela em cima (em pé, de frente)
+      for (const [y, w] of [[0.84, 0.03], [0.82, 0.07], [0.8, 0.12], [0.78, 0.08], [0.76, 0.05]]) L.caixa(0.02, 0.02, w, COR.ouro3, 0, y, 0);
+      base = 0.14; baseH = 0.13;
     } else if (tipo === 'serieb') {
       L.caixa(0.28, 0.09, 0.28, COR.marmore, 0, 0.045, 0); L.caixa(0.285, 0.016, 0.285, COR.ouro, 0, 0.09, 0);
       L.caixa(0.006, 0.04, 0.14, COR.ouro3, 0.141, 0.045, 0);
