@@ -858,6 +858,8 @@
   const htmlKits = (k, kits) => '<div class="lvKits">' + unisDe(k).map((U, i) => '<button type="button" class="lvKit' + (kits[k] === i ? ' on' : '') + '" data-a="kit:' + escH(k) + ':' + i + '" title="' + escH(Tf('Uniforme {0}', i + 1)) + '">' + svgCamisa(U) + '<small>' + (i + 1) + '</small></button>').join('') + '</div>';
   async function confronto(m) {
     let cfg = Object.assign({}, m.cfg);
+    const cenas = m.cenas || sortearAbertura();                         // (7.5.4) o jeito de cada cena da abertura já sai daqui
+    { const tm = temaDe(m); if (tm && typeof tm.preparar === 'function') try { tm.preparar(); } catch (e) { /* toca ao vivo */ } }   // (7.5.4) a música da copa gravada antes
     const kits = m.kits || kitsAuto(m.a, m.b, m.casa);
     for (;;) {
       const a = m.a, b = m.b, kc = m.casa ? a : b, kf = m.casa ? b : a, ta = TD(kc) || TV(kc), tb = TD(kf) || TV(kf);
@@ -892,7 +894,7 @@
       palco.parar();
       m.kits = kits;
       if (r.a === 'voltar') return null;
-      if (r.a === 'jogar') return { cfg, kits: [kits[m.a], kits[m.b]] };
+      if (r.a === 'jogar') return { cfg, kits: [kits[m.a], kits[m.b]], cenas };
       if (r.a === 'cfg') { const c = await telaConfig({ cfg, estadio: m.podeEstadio }); if (c) cfg = c; continue; }
       if (r.a === 'tab') { await m.tabela(); continue; }
     }
@@ -936,9 +938,10 @@
   }
 
   // ---------------------------------------------------------------------------------------- A ABERTURA (a cena antes do apito)
-  //   completa: o estádio por fora (com fogos nos jogos grandes) → o ônibus chegando e os jogadores descendo → o vestiário (o técnico
-  //   falando) → a torcida → os times entrando em campo e perfilados. curta: o estádio e a entrada. Campo sem estádio do Brasileirão A
-  //   (society, futsal, várzea): o vestiário e a entrada. O botão PULAR corta tudo.
+  //   completa: o estádio por fora (com fogos nos jogos grandes) → o ônibus chegando → o vestiário → a torcida → os times entrando em
+  //   campo → o hino (perfilados) → um extra. curta: o estádio, a entrada e o hino. Campo sem estádio do Brasileirão A (society,
+  //   futsal, várzea): o vestiário, a entrada, o hino e o extra. O botão PULAR corta tudo. (7.5.4) Cada cena tem 4 jeitos (ver
+  //   VARIACOES, logo abaixo), sorteados na tela do confronto.
   let legEl = null, pularEl = null;
   function legenda(t) { if (!legEl) { legEl = document.createElement('div'); legEl.id = 'lvLegenda'; document.body.appendChild(legEl); } legEl.textContent = t || ''; legEl.hidden = !t; }
   const caixaM = (w, h, d, cor, x, y, z, basic) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), basic ? new THREE.MeshBasicMaterial({ color: cor }) : new THREE.MeshLambertMaterial({ color: cor })); m.position.set(x, y, z); return m; };
@@ -1064,27 +1067,98 @@
   function camOlha(px, py, pz, tx, ty, tz) { camera.position.set(px, py, pz); camera.lookAt(tx, ty, tz); }
   const ESP_HINO = 1.3;                                                // (7.4.10) a distância entre os jogadores perfilados no hino (era 0,95)
 
+  // ---------------------------------------------------------------------------------------- (7.5.4) AS VARIAÇÕES DA ABERTURA
+  //   Cada cena tem 4 jeitos. O sorteio é feito na TELA DO CONFRONTO (sortearAbertura, nada é montado ali) e vai no J (J.cenas);
+  //   a abertura só monta o que saiu. São 7 cenas com 4 jeitos cada: 4^7 = 16.384 aberturas diferentes. O mesmo jeito não sai duas
+  //   vezes seguidas na mesma cena (de um jogo para o outro).
+  //     estadio .... 0 a volta em torno, do alto · 1 o mergulho (de longe até por cima da cobertura) · 2 o helicóptero (de cima, descendo)
+  //                  · 3 a grua (passando de lado)                                                       (estadiosA.js: cena({ variante }))
+  //     onibus ..... 0 de lado, acompanhando · 1 de frente (da porta do vestiário) · 2 o técnico descendo (de baixo, na porta do
+  //                  ônibus) · 3 o ônibus do ADVERSÁRIO chegando (do alto)
+  //     vestiario .. 0 o técnico passa as instruções · 1 a roda (de cima, girando) · 2 a concentração (cada um no seu canto)
+  //                  · 3 o capitão puxa o grito
+  //     torcida .... 0 a câmera correndo na frente da lateral · 1 a organizada atrás do gol · 2 o geral do alto · 3 do canto, girando
+  //     entrada .... 0 de lado, na frente da fila · 1 de baixo, na boca do túnel · 2 a grua (do alto, descendo) · 3 de frente,
+  //                  recuando na frente do trio de arbitragem
+  //     hino ....... 0 passando na frente · 1 por trás deles · 2 de perto, devagar · 3 o geral do alto. Com o tema de copa (a Copa dos
+  //                  Campeões; depois a Libertadores) os 4 ângulos são outros, sempre com o pano do círculo central à vista
+  //     extra ...... 0 o aquecimento no gramado (esta vem ANTES do vestiário) · 1 o destaque (o artilheiro do time, você ou a estrela;
+  //                  se você começa no banco, o banco) · 2 o sorteio do campo (cara ou coroa) · 3 os técnicos à beira do campo
+  //   Abertura curta: o estádio, a entrada e o hino. Sem estádio do Brasileirão A (society, futsal, várzea): sem estádio, ônibus e
+  //   torcida.
+  const VARIACOES = { estadio: 4, onibus: 4, vestiario: 4, torcida: 4, entrada: 4, hino: 4, extra: 4 };
+  let ultimaAbertura = null;
+  function sortearAbertura() {
+    const v = {};
+    for (const k in VARIACOES) {
+      const n = VARIACOES[k]; let x = Math.floor(Math.random() * n);
+      if (ultimaAbertura && x === ultimaAbertura[k]) x = (x + 1 + Math.floor(Math.random() * (n - 1))) % n;
+      v[k] = x;
+    }
+    return (ultimaAbertura = v);
+  }
+  // (7.5.4) O TEMA DA COPA: a copa com cerimônia própria entrega um objeto com intro(op) (a vinheta: Promise de { fechar }),
+  //   tocar('intro' | 'hino'), parar(seg), pano() (o canvas do pano redondo do círculo central) e, se quiser, preparar() (grava a
+  //   música antes: chamado na tela do confronto). A Copa dos Campeões é o
+  //   window.Campeoes (campeoes.js); a Libertadores entra igual (window.Libertadores, J.tema = 'liberta'), sem mexer nas cenas.
+  const TEMAS = { champ: () => CP(), liberta: () => window.Libertadores || null };
+  function temaDe(J) {
+    const k = J.tema || (J.champ ? 'champ' : null), f = k && TEMAS[k], t = f ? f() : null;
+    return t && typeof t.tocar === 'function' && typeof t.pano === 'function' ? t : null;
+  }
+  // a pose de pé, parada (sem o passo nem os braços do hino): a base das cenas que usam os jogadores do jogo
+  function dePe(p) {
+    const m = p.mesh; if (!m || !m.pernaE) return;
+    m.raiz.position.y = 0; m.raiz.rotation.x = m.raiz.rotation.z = 0; m.corpo.rotation.set(0, 0, 0); m.corpo.position.y = 0;
+    m.pernaE.rotation.set(0, 0, 0); m.pernaD.rotation.set(0, 0, 0); m.bracoE.rotation.set(0.08, 0, 0.05); m.bracoD.rotation.set(-0.08, 0, 0.05);
+    try { usarJoelhos(m, 0, 0); usarCotovelos(m, 0, 0); usarCabeca(m, 0); } catch (e) { /* nada */ }
+  }
+  const suave = (k) => { k = Math.max(0, Math.min(1, k)); return k * k * (3 - 2 * k); };
+  // o vestiário do time k (a sala: piso, paredes, armários com as camisas, banco, luzes, escudo e o quadro tático)
+  function salaVestiario(k, Y) {
+    const g = new THREE.Group(), t = TD(k) || TV(k), c1 = new THREE.Color(t.uni[0]).getHex(), esc = new THREE.Color(t.uni[0]).multiplyScalar(0.6).getHex();
+    g.position.set(0, Y, 0);
+    g.add(caixaM(12.4, 0.2, 8.4, 0x5b6470, 0, -0.1, 0)); for (let x = -6; x < 6; x += 1) for (let z = -4; z < 4; z += 1) if ((x + z) % 2 === 0) g.add(caixaM(1, 0.02, 1, 0x4e5662, x + 0.5, 0.005, z + 0.5));
+    g.add(caixaM(12.4, 3.6, 0.2, 0xe9e6dc, 0, 1.8, -4.1)); g.add(caixaM(0.2, 3.6, 8.4, 0xe9e6dc, -6.1, 1.8, 0)); g.add(caixaM(0.2, 3.6, 8.4, 0xe9e6dc, 6.1, 1.8, 0)); g.add(caixaM(12.4, 3.6, 0.2, 0xe9e6dc, 0, 1.8, 4.1));
+    g.add(caixaM(12.4, 0.2, 8.4, 0xcfd2d6, 0, 3.6, 0, true));
+    for (const [x, z, w, d] of [[0, -3.98, 12.2, 0.05], [-5.98, 0, 0.05, 8.2], [5.98, 0, 0.05, 8.2]]) g.add(caixaM(w, 1.1, d, c1, x, 0.55, z));   // a faixa na cor do time
+    for (let i = 0; i < 10; i++) {                                    // os armários com as camisas
+      const x = -5.2 + i * 1.12; g.add(caixaM(1.02, 2.15, 0.5, esc, x, 1.08, -3.7)); g.add(caixaM(0.6, 0.72, 0.06, c1, x, 1.55, -3.43)); g.add(caixaM(0.18, 0.1, 0.07, 0xffffff, x, 1.62, -3.39));
+    }
+    g.add(caixaM(11.4, 0.12, 0.55, 0x9b7448, 0, 0.45, -2.95)); for (const x of [-5, -2.5, 0, 2.5, 5]) g.add(caixaM(0.12, 0.45, 0.4, 0x6b4a2b, x, 0.22, -2.95));
+    for (const x of [-3.5, 0, 3.5]) g.add(caixaM(1.4, 0.05, 0.35, 0xffffff, x, 3.48, 0, true));
+    g.add(plano(1.3, 1.3, texImg(urlT(k)), 0, 2.85, -3.42, 0));
+    const quadro = document.createElement('canvas'); quadro.width = 192; quadro.height = 120; { const q = quadro.getContext('2d'); q.fillStyle = '#f4f4f0'; q.fillRect(0, 0, 192, 120); q.strokeStyle = '#2a72d6'; q.lineWidth = 2; q.strokeRect(8, 8, 176, 104); q.beginPath(); q.moveTo(96, 8); q.lineTo(96, 112); q.stroke(); q.beginPath(); q.arc(96, 60, 14, 0, 7); q.stroke(); q.fillStyle = '#c8202e'; for (const [x, y] of [[30, 60], [55, 30], [55, 90], [75, 50], [75, 70], [118, 40], [118, 80]]) { q.beginPath(); q.arc(x, y, 4, 0, 7); q.fill(); } q.strokeStyle = '#1a1a1a'; q.beginPath(); q.moveTo(75, 50); q.lineTo(110, 30); q.moveTo(75, 70); q.lineTo(130, 96); q.stroke(); }
+    const tq = new THREE.CanvasTexture(quadro); tq.magFilter = THREE.NearestFilter; g.add(plano(2.2, 1.4, tq, 5.94, 1.9, -0.8, -Math.PI / 2));
+    return g;
+  }
+
   async function abertura(J, cfgE) {
     const modo = J.cfg.abertura || 'completa';
     if (modo === 'nenhuma') { await preto(false, 600); return; }
     const E = EA(), A = E && typeof ESTADIO_A !== 'undefined' && ESTADIO_A ? E.atual() : null;
-    const est0 = G.state, salvos = players.concat(officials).map((p) => ({ p, x: p.x, z: p.z, a: p.angle })), bolaV = ball.mesh.visible;
-    G.state = 'menu'; G.semNomes = true; ball.mesh.visible = ball.shadow.visible = false;   // sem os nomes em cima das cabeças e sem o círculo do jogador
+    const est0 = G.state, salvos = players.concat(officials).map((p) => ({ p, x: p.x, z: p.z, a: p.angle })), bolaV = ball.mesh.visible, bolaH = ball.hidden;
+    G.state = 'menu'; G.semNomes = true; ball.mesh.visible = ball.shadow.visible = false; ball.hidden = true;   // sem os nomes em cima das cabeças, sem a bola (7.5.4: o "hidden" segura) e sem o círculo do jogador
     for (const o of [userRing, targetRing, dribbleRing, aimArrow]) try { o.visible = false; } catch (e) { /* nada */ }
     setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ }
     let pular = false;
     if (!pularEl) { pularEl = document.createElement('button'); pularEl.type = 'button'; pularEl.id = 'lvPular'; pularEl.className = 'pxBtn'; document.body.appendChild(pularEl); }
     pularEl.textContent = T('Pular') + ' ▶'; pularEl.hidden = false; pularEl.onclick = () => { clique(); pular = true; preto(true, 160); };
-    const lixo = [], ctx = { J, A, pular: () => pular };
-    let ocultosEntrada = [];                                           // quem a entrada esconde dentro do túnel (volta a aparecer no fim)
-    const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada'] : ['estadio', 'onibus', 'vestiario', 'torcida', 'entrada']) : (modo === 'curta' ? ['entrada'] : ['vestiario', 'entrada']);
-    const champ = !!J.champ && !!CP();                                 // a Copa dos Campeões: a vinheta com a música antes de tudo e o hino na entrada
-    if (champ) cenas.unshift('vinheta');
+    const lixo = [];
+    const ocultos = new Set();                                         // quem alguma cena escondeu (volta a aparecer no fim)
+    // (7.5.4) o sorteio veio da tela do confronto (J.cenas); sem ele (partida retomada, chamada de fora), sorteia aqui
+    const V = Object.assign({}, J.cenas || sortearAbertura()), TM = temaDe(J);
+    const aquecimentoAntes = V.extra === 0;                            // o aquecimento é antes do vestiário; os outros extras, no fim
+    const antes = aquecimentoAntes ? ['extra'] : [], depois = aquecimentoAntes ? [] : ['extra'];
+    const cenas = A ? (modo === 'curta' ? ['estadio', 'entrada', 'hino'] : ['estadio', 'onibus'].concat(antes, ['vestiario', 'torcida', 'entrada', 'hino'], depois))
+      : (modo === 'curta' ? ['entrada', 'hino'] : antes.concat(['vestiario', 'entrada', 'hino'], depois));
+    if (TM) cenas.unshift('vinheta');                                  // a copa com tema: a vinheta com a música antes de tudo
     const rodar = (dur, fn) => new Promise((ok) => {           // um plano: fn(t, rdt) a cada quadro até dur segundos (ou o pular)
       const t0 = performance.now(); let tl = t0;
       let feito = false;
       GANCHO_RENDER = () => {
         const agora = performance.now(), t = (agora - t0) / 1000, rdt = Math.min(0.05, (agora - tl) / 1000); tl = agora;
+        ball.mesh.visible = ball.shadow.visible = false;                  // (7.5.4) a bola nunca aparece nas cenas (no sorteio ela ficava no meio)
         fn(Math.min(t, dur), feito ? 0 : rdt);
         if (!feito && (t >= dur || pular)) { feito = true; ok(); }   // (7.4.2) o plano fica congelado no último quadro até o preto cobrir (antes o jogo aparecia no corte)
       };
@@ -1092,168 +1166,375 @@
     const corte = async (setup) => { await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220); await esperar(70); setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ } setup(); };
     const plano1 = async (dur, fn) => { const p = rodar(dur, fn); await preto(false, 260); await p; };   // o plano começa ainda no preto (a câmera já no lugar)
     const kM = J.casa ? J.a : J.b, nM = nomeT(kM);
+    const kMand = PARTIDA.mandante === 1 ? J.b : J.a, kVis = PARTIDA.mandante === 1 ? J.a : J.b;
+    // os jogadores do jogo (o seu time é sempre o TEAMS[0]), na fila da entrada (a casa à esquerda) e o trio de arbitragem
+    const casa = PARTIDA.mandante === 1 ? 1 : 0, filas = [TEAMS[casa].filter((p) => !p.out), TEAMS[1 - casa].filter((p) => !p.out)];
+    const juizes = officials.filter((o) => o.mesh && o.mesh.raiz.visible);
+    const perfil = filas[0].concat(filas[1]);
+    const zL = TM ? -((typeof CIRCLE_R === 'number' ? CIRCLE_R : 9) + 0.7) : -2.6;   // a linha do hino (com o pano: na frente do círculo central)
+    const abre = typeof mostrarTunel === 'function' && typeof TUNEL !== 'undefined' && (TUNEL.grupo || TUNEL.placa), tunel = abre && TUNEL.grupo;
+    // volta todos para o lugar do início do jogo, de pé e parados (as cenas no gramado que vêm depois de outra)
+    const aoLugar = () => { for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; deP(s.p); } };
+    const deP = (p) => { try { dePe(p); } catch (e) { /* nada */ } };
+    const ocultar = (p) => { if (p && p.mesh) { p.mesh.raiz.visible = false; ocultos.add(p); } };
+    let pano = null;
     try {
       for (const c of cenas) {
         if (pular) break;
+        const v = V[c] || 0;
         if (c === 'vinheta') {
           const kc = J.casa ? J.a : J.b, kf = J.casa ? J.b : J.a;
-          CP().tocar('intro');
-          const v = CP().intro({ a: { nome: nomeT(kc), url: urlT(kc) }, b: { nome: nomeT(kf), url: urlT(kf) }, fase: J.info || (J.comp && J.comp.fase) || '', estadio: A ? A.nome : '', dur: 8.4, parar: () => pular });
+          if (typeof TM.preparar === 'function') try { TM.preparar(); } catch (e) { /* nada */ }
+          TM.tocar('intro');
+          const vh = TM.intro({ a: { nome: nomeT(kc), url: urlT(kc) }, b: { nome: nomeT(kf), url: urlT(kf) }, fase: J.info || (J.comp && J.comp.fase) || '', estadio: A ? A.nome : '', dur: 8.4, parar: () => pular });
           await esperar(60); await preto(false, 120);
-          const h = await v; await preto(true, 120); h.fechar();
+          const h = await vh; await preto(true, 120); h.fechar();
           continue;
         }
         if (c === 'estadio') {
           // (7.4.2) a cena começa ainda no preto (a câmera já lá fora) e volta para o preto um pouco antes de acabar: o campo com os
           //   jogadores posicionados nunca aparece entre um plano e outro (nem se tocar na tela para cortar a cena)
           G.torcidaCena = 0.3;
-          const durE = J.fogos ? 6 : 4.6;
+          const durE = J.fogos ? 6 : 4.8;
           const cortaTapa = () => preto(true, 140);
           window.addEventListener('pointerdown', cortaTapa, true);
           const fimE = setTimeout(() => preto(true, 320), durE * 1000 - 380);
-          const pc = E.cena({ fogos: !!J.fogos, dur: durE, texto: A.nome + ' · ' + (J.comp && J.comp.nome ? J.comp.nome : T('Amistoso')), parar: () => pular });
+          const pc = E.cena({ fogos: !!J.fogos, dur: durE, variante: v, texto: A.nome + ' · ' + (J.comp && J.comp.nome ? J.comp.nome : T('Amistoso')), parar: () => pular });
           await esperar(90); await preto(false, 450);
           try { await pc; } finally { clearTimeout(fimE); window.removeEventListener('pointerdown', cortaTapa, true); }
           await preto(true, 0);
           setLetterbox(true); try { $('cineLabel').textContent = ''; } catch (e) { /* nada */ }
         } else if (c === 'onibus') {
-          // a garagem do estádio: o ônibus entra, o técnico desce na frente e os jogadores (de agasalho, fone e mochila) vão para o vestiário
-          const Y = -80, gar = garagem(J.a, A.nome), bus = onibus(J.a); gar.position.set(0, Y, 0); gar.add(bus); lixo.push(gar);
-          const anda = [], tec = tecnicoDe(J.a, true); lixo.push({ boneco: tec });
-          titularesDe(J.S, J.a).slice(0, 8).forEach((j, i) => { const m = viajante(J.a, j, i); m.raiz.visible = false; gar.add(m.raiz); lixo.push({ boneco: m }); anda.push({ m, t0: 3.35 + (i + 1) * 0.62, v: 1.35 }); });
-          tec.raiz.visible = false; gar.add(tec.raiz); anda.unshift({ m: tec, t0: 3.0, v: 1.25 });
-          const fas = [], fotos = [];
-          for (let i = 0; i < 12; i++) { const m = figurante(J.a, i + 1, false); gar.add(m.raiz); lixo.push({ boneco: m }); m.raiz.position.set(13.1 + (i % 2) * 0.7 + (i % 3) * 0.08, 0, -3.3 + i * 0.62); virar(m, -1, (i % 4 - 1.5) * 0.2); fas.push(m); }
-          for (let i = 0; i < 2; i++) {
-            const m = figurante(J.a, 40 + i, true); gar.add(m.raiz); lixo.push({ boneco: m }); m.raiz.position.set(11.6 + i * 0.4, 0, 0.2 + i * 1.3); virar(m, -1, 0.35 - i * 0.2);   // perto do gradil, de frente para quem chega
-            m.bracoE.rotation.set(0.35, 0, 1.75); m.bracoD.rotation.set(-0.35, 0, 1.75); usarCotovelo(m.bracoE, -1.0, 1.4); usarCotovelo(m.bracoD, 1.0, 1.4);
-            const fl = caixaM(0.3, 0.3, 0.3, 0xffffff, 0.45, 1.66, 0, true); fl.visible = false; m.troncoInteiro.add(fl); fotos.push({ m, fl, prox: 3.4 + i * 0.7 });
-          }
-          // o caminho de cada um: desce do ônibus (z+), anda até a porta do vestiário (x+) e entra (z-)
-          const P0 = [4.45, 1.5], P1 = [4.45, 2.5], P2 = [9.5, 2.5], P3 = [9.5, -4.6];
-          const L1 = 1, L2 = 5.05, L3 = 7.1;
-          const noCaminho = (d) => {
-            if (d < L1) return [P0[0], P0[1] + d, 0, 1];
-            if (d < L1 + L2) return [P1[0] + (d - L1), P1[1], 1, 0];
-            if (d < L1 + L2 + L3) return [P2[0], P2[1] - (d - L1 - L2), 0, -1];
-            return null;
-          };
-          await corte(() => { scene.add(gar); bus.position.set(-40, 0, 0); G.torcidaCena = 0.35; legenda(Tf('O ônibus do {0} chega ao estádio', nomeT(J.a))); });
-          const DUR = 9;
-          await plano1(DUR, (t) => {
-            const kb = Math.min(1, t / 2.8); bus.position.x = -40 + 40 * (1 - Math.pow(1 - kb, 3));
-            for (const w of anda) {
-              const tt = t - w.t0; if (tt < 0) { w.m.raiz.visible = false; continue; }
-              const q = noCaminho(tt * w.v); if (!q) { w.m.raiz.visible = false; continue; }
-              w.m.raiz.visible = true; w.m.raiz.position.set(q[0], tt < 0.25 ? 0.18 * (1 - tt / 0.25) : 0, q[1]); virar(w.m, q[2] || 0.0001, q[3]); andar(w.m, tt * 6.2, w.v);
-            }
-            fas.forEach((m, i) => { const f = t * 7 + i * 1.7; m.bracoD.rotation.z = 2.6 + Math.sin(f) * 0.35; m.bracoE.rotation.z = i % 2 ? 2.6 + Math.cos(f) * 0.35 : 0.25; m.raiz.position.y = Math.max(0, Math.sin(f * 0.5 + i)) * 0.12; });
-            for (const f of fotos) { f.fl.visible = t > f.prox && t < f.prox + 0.07; if (t > f.prox + 0.07) f.prox = t + 0.5 + Math.random() * 1.4; }
-            const k = t / DUR, e = k * k * (3 - 2 * k);
-            camOlha(-5 + 16.5 * e, Y + 1.9 - 0.25 * e, 10.5 - 2 * e, Math.max(bus.position.x + 1, -6 + 14 * e), Y + 1.4, 0.4);
-          });
-          legenda('');
+          await cenaOnibus(v);
         } else if (c === 'vestiario') {
-          const Y = -40, g = new THREE.Group(), t = TD(J.a) || TV(J.a), c1 = new THREE.Color(t.uni[0]).getHex(), esc = new THREE.Color(t.uni[0]).multiplyScalar(0.6).getHex();
-          g.position.set(0, Y, 0); lixo.push(g);
-          g.add(caixaM(12.4, 0.2, 8.4, 0x5b6470, 0, -0.1, 0)); for (let x = -6; x < 6; x += 1) for (let z = -4; z < 4; z += 1) if ((x + z) % 2 === 0) g.add(caixaM(1, 0.02, 1, 0x4e5662, x + 0.5, 0.005, z + 0.5));
-          g.add(caixaM(12.4, 3.6, 0.2, 0xe9e6dc, 0, 1.8, -4.1)); g.add(caixaM(0.2, 3.6, 8.4, 0xe9e6dc, -6.1, 1.8, 0)); g.add(caixaM(0.2, 3.6, 8.4, 0xe9e6dc, 6.1, 1.8, 0)); g.add(caixaM(12.4, 3.6, 0.2, 0xe9e6dc, 0, 1.8, 4.1));
-          g.add(caixaM(12.4, 0.2, 8.4, 0xcfd2d6, 0, 3.6, 0, true));
-          for (const [x, z, w, d] of [[0, -3.98, 12.2, 0.05], [-5.98, 0, 0.05, 8.2], [5.98, 0, 0.05, 8.2]]) g.add(caixaM(w, 1.1, d, c1, x, 0.55, z));   // a faixa na cor do time
-          for (let i = 0; i < 10; i++) {                                    // os armários com as camisas
-            const x = -5.2 + i * 1.12; g.add(caixaM(1.02, 2.15, 0.5, esc, x, 1.08, -3.7)); g.add(caixaM(0.6, 0.72, 0.06, c1, x, 1.55, -3.43)); g.add(caixaM(0.18, 0.1, 0.07, 0xffffff, x, 1.62, -3.39));
-          }
-          g.add(caixaM(11.4, 0.12, 0.55, 0x9b7448, 0, 0.45, -2.95)); for (const x of [-5, -2.5, 0, 2.5, 5]) g.add(caixaM(0.12, 0.45, 0.4, 0x6b4a2b, x, 0.22, -2.95));
-          for (const x of [-3.5, 0, 3.5]) g.add(caixaM(1.4, 0.05, 0.35, 0xffffff, x, 3.48, 0, true));
-          g.add(plano(1.3, 1.3, texImg(urlT(J.a)), 0, 2.85, -3.42, 0));
-          const quadro = document.createElement('canvas'); quadro.width = 192; quadro.height = 120; { const q = quadro.getContext('2d'); q.fillStyle = '#f4f4f0'; q.fillRect(0, 0, 192, 120); q.strokeStyle = '#2a72d6'; q.lineWidth = 2; q.strokeRect(8, 8, 176, 104); q.beginPath(); q.moveTo(96, 8); q.lineTo(96, 112); q.stroke(); q.beginPath(); q.arc(96, 60, 14, 0, 7); q.stroke(); q.fillStyle = '#c8202e'; for (const [x, y] of [[30, 60], [55, 30], [55, 90], [75, 50], [75, 70], [118, 40], [118, 80]]) { q.beginPath(); q.arc(x, y, 4, 0, 7); q.fill(); } q.strokeStyle = '#1a1a1a'; q.beginPath(); q.moveTo(75, 50); q.lineTo(110, 30); q.moveTo(75, 70); q.lineTo(130, 96); q.stroke(); }
-          const tq = new THREE.CanvasTexture(quadro); tq.magFilter = THREE.NearestFilter; g.add(plano(2.2, 1.4, tq, 5.94, 1.9, -0.8, -Math.PI / 2));
-          const sent = titularesDe(J.S, J.a).slice(0, 9), bonecos = [];
-          sent.forEach((j, i) => {
-            const m = boneco(J.a, j, j.pos === 'GK' ? 1 : i + 2); g.add(m.raiz); lixo.push({ boneco: m });
-            if (i < 7) { m.raiz.position.set(-4.4 + i * 1.3, 0, -2.9); virar(m, 0.0001, 1); sentar(m); usarCabeca(m, 0.08); }
-            else { m.raiz.position.set(i === 7 ? -5.2 : 4.6, 0, -1.4 + (i - 7) * 0.6); virar(m, i === 7 ? 1 : -1, 0.6); m.bracoE.rotation.set(-0.32, 0, 0.62); m.bracoD.rotation.set(0.32, 0, 0.62); usarCotovelo(m.bracoE, -1.05, 1.5); usarCotovelo(m.bracoD, 1.05, 1.5); }
-            bonecos.push(m);
-          });
-          const tec = tecnicoDe(J.a, true); g.add(tec.raiz); lixo.push({ boneco: tec }); tec.raiz.position.set(0.4, 0, 0.8); virar(tec, 0.0001, -1);
-          const nomeTec = (TD(J.a) || TV(J.a)).tecnico;
-          await corte(() => { scene.add(g); G.torcidaCena = 0.08; legenda(Tf('No vestiário, {0} passa as últimas instruções', nomeTec)); });
-          await plano1(5.6, (tt) => {
-            const fala = Math.sin(tt * 3.2), aponta = tt % 2.6 < 1.3;
-            tec.bracoD.rotation.z = aponta ? 1.45 + fala * 0.12 : 0.9 + fala * 0.3; tec.bracoD.rotation.x = -0.15; tec.bracoE.rotation.z = aponta ? 0.2 : 0.7 + Math.cos(tt * 2.7) * 0.25; tec.bracoE.rotation.x = 0.2;
-            tec.corpo.rotation.z = Math.sin(tt * 1.7) * 0.05;
-            camOlha(4.6 - tt * 0.28, Y + 1.62, 3.3 - tt * 0.12, -0.6 + tt * 0.1, Y + 1.0, -2.3);
-          });
-          legenda('');
+          await cenaVestiario(v);
         } else if (c === 'torcida') {
-          await corte(() => { G.torcidaCena = 0.95; try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ } legenda(Tf('A torcida do {0} faz a festa', nM)); });
+          await corte(() => { aoLugar(); G.torcidaCena = 0.95; try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ } legenda(Tf('A torcida do {0} faz a festa', nM)); });
           if (J.fogos) try { E.fogos({ dur: 4, ritmo: 2.4 }); } catch (e) { /* nada */ }
-          await plano1(4.4, (tt) => { const x = -26 + tt * 11; camOlha(x, 1.6, HALF_W - 2.5, x * 0.8 + 4, 9.5, HALF_W + 30); if (tt > 2.2 && tt < 2.25) try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ } });
+          const HL = HALF_L, HW = HALF_W;
+          await plano1(4.4, (tt) => {
+            if (tt > 2.2 && tt < 2.25) try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ }
+            const k = suave(tt / 4.4);
+            if (v === 1) camOlha(-(HL - 5) - k * 1.5, 1.3 + k * 1.2, -17 + k * 5, -(HL + 34), 9 + k * 2, -7 + k * 9);                   // a organizada atrás do gol
+            else if (v === 2) camOlha(-16 + k * 22, 15 - k * 2, -HW + 3, -8 + k * 18, 7, HW + 26);                                          // do alto, do lado da tribuna
+            else if (v === 3) { const a = 0.05 + k * 1.45; camOlha(HL - 6, 1.25, HW - 5, HL - 6 + Math.cos(a) * 36, 10.5, HW - 5 + Math.sin(a) * 36); }   // do canto, girando
+            else { const x = -26 + tt * 11; camOlha(x, 1.6, HW - 2.5, x * 0.8 + 4, 9.5, HW + 30); }                                       // correndo na frente da lateral
+          });
           legenda('');
         } else if (c === 'entrada') {
-          // os dois times em fila (a casa à esquerda), o trio de arbitragem na frente, saindo do túnel até o meio do campo
-          const casa = PARTIDA.mandante === 1 ? 1 : 0, filas = [TEAMS[casa].filter((p) => !p.out), TEAMS[1 - casa].filter((p) => !p.out)];
-          const juizes = officials.filter((o) => o.mesh && o.mesh.raiz.visible);
-          // eles saem do TÚNEL (o inflável do mandante, montado pelo jogo.js): a fila começa dentro dele e cada um só aparece
-          //   depois do fundo do túnel; a placa do meio sai do lugar. Sem túnel (várzea, society, futsal), o portão do alambrado abre e a fila
-          //   vem de fora do campo por ele.
-          const abre = typeof mostrarTunel === 'function' && typeof TUNEL !== 'undefined' && (TUNEL.grupo || TUNEL.placa), tunel = abre && TUNEL.grupo;
-          const fundo = tunel ? TUNEL.fundoZ + 0.4 : -Infinity;
-          const z0 = tunel ? -(HALF_W + TUNEL_BOCA) + 0.6 : -(HALF_W + 3.2), v = 1.45, esp = 1.15;
-          const surge = (p) => { if (p.mesh) p.mesh.raiz.visible = p.z > fundo; };
-          ocultosEntrada = juizes.concat(filas[0], filas[1]);
-          await corte(() => { if (abre) mostrarTunel(true); G.torcidaCena = 1; legenda(Tf('{0} x {1}: os times entram em campo', nomeT(PARTIDA.mandante === 1 ? J.b : J.a), nomeT(PARTIDA.mandante === 1 ? J.a : J.b))); if (champ) CP().tocar('hino'); });
-          await plano1(5.2, (tt, rdt) => {
-            const frente = z0 + v * tt;
-            juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = frente + 1.6; o.vx = 0; o.vz = v; o.angle = Math.PI / 2; passos(o, tt * 6.4 + i * 1.3); surge(o); });
-            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 0.75 : -0.75); p.z = frente - i * esp; p.vx = 0; p.vz = v; p.angle = Math.PI / 2; passos(p, tt * 6.4 + i * 0.9 + s * 2.1); surge(p); }));
-            camOlha(2.6, 1.45, -HALF_W + 7.5 + tt * 0.3, -0.2, 1.25, frente - 1.5);
-          });
-          if (pular) break;
-          // perfilados no meio de campo (parados: a pose de pé de novo), de frente para a tribuna (a câmera passa por eles)
-          // parados DE VERDADE no hino: as pernas juntas, o corpo reto, os braços para trás (as mãos juntas nas costas) ou,
-          //   em alguns, a mão direita no peito; os juízes com os braços para baixo. Cada um respira no seu ritmo.
-          const perfil = filas[0].concat(filas[1]);
-          // (a Copa dos Campeões: o pano redondo da copa no círculo central, balançando, e os times perfilados na frente dele)
-          const zL = champ ? -9.4 : -2.6; let pano = null;
-          await corte(() => {
-            if (champ) {
-              const tx = new THREE.CanvasTexture(CP().pano()); tx.magFilter = THREE.NearestFilter;
-              pano = new THREE.Mesh(new THREE.PlaneGeometry(15, 15, 20, 20), new THREE.MeshLambertMaterial({ map: tx, transparent: true, alphaTest: 0.5 }));
-              pano.rotation.x = -Math.PI / 2; pano.position.set(0, 0.08, 0); scene.add(pano); lixo.push(pano);
-            }
-            // (7.4.10) o túnel some e quem estava dentro dele reaparece só com a tela já preta (antes sumia com o plano ainda na tela)
-            for (const p of juizes.concat(filas[0], filas[1])) if (p.mesh) p.mesh.raiz.visible = true;
-            if (abre) mostrarTunel(false);
-            filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.7 + i * ESP_HINO); p.z = zL; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
-            juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = zL; o.vx = o.vz = 0; o.angle = -Math.PI / 2; });
-            perfil.forEach((p, i) => hino(p, i, 0)); juizes.forEach((o, i) => hino(o, i, 0, true));
-            legenda(T('O hino e a foto: os times perfilados'));
-          });
-          const L = 1.7 + 10 * ESP_HINO, durH = champ ? 6.6 : 4.4;
-          await plano1(durH, (tt) => {
-            perfil.forEach((p, i) => hino(p, i, tt)); juizes.forEach((o, i) => hino(o, i, tt, true));
-            const x = -L + (2 * L) * (tt / durH);
-            if (!champ) { camOlha(x * 0.85, 1.55, -8.4, x, 1.2, -2.6); return; }
-            camOlha(x * 0.55, 4.6, zL - 10.5, x * 0.7, 0.2, zL + 7.5);
-            const P = pano.geometry.attributes.position;
-            for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i), d = Math.min(1, Math.hypot(px, py) / 7.5); P.setZ(i, 0.16 * d * Math.sin(px * 0.55 + tt * 3.1) * Math.cos(py * 0.45 - tt * 2.3)); }
-            P.needsUpdate = true;
-          });
-          legenda('');
+          await cenaEntrada(v);
+        } else if (c === 'hino') {
+          await cenaHino(v);
+        } else if (c === 'extra') {
+          await cenaExtra(v);
         }
       }
     } finally {
       await preto(true, pretoEl && pretoEl.classList.contains('on') ? 0 : 220);   // (7.4.2) arruma tudo no escuro
       GANCHO_RENDER = null; G.camOvo = null; G.torcidaCena = null; G.semNomes = false; legenda(''); if (pularEl) pularEl.hidden = true;
-      if (champ) { try { CP().parar(pular ? 0.5 : 1.8); } catch (e) { /* nada */ } const vv = document.getElementById('cpVinheta'); if (vv) vv.remove(); }
-      try { if (typeof mostrarTunel === 'function') mostrarTunel(false); for (const p of ocultosEntrada) if (p.mesh) p.mesh.raiz.visible = true; } catch (e) { /* nada */ }   // (7.4.10) pulou no meio da entrada
+      if (TM) { try { TM.parar(pular ? 0.5 : 1.8); } catch (e) { /* nada */ } const vv = document.getElementById('cpVinheta'); if (vv) vv.remove(); }
+      try { if (typeof mostrarTunel === 'function') mostrarTunel(false); } catch (e) { /* nada */ }
+      for (const p of ocultos) if (p.mesh) p.mesh.raiz.visible = true;   // (7.4.10) pulou no meio da entrada (ou de outra cena)
       for (const x of lixo) { if (x.boneco) { try { descartarBoneco(x.boneco.raiz); } catch (e) { /* nada */ } } else descartar(x); }
-      for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; }
-      ball.mesh.visible = bolaV; ball.shadow.visible = bolaV;
+      for (const s of salvos) { s.p.x = s.x; s.p.z = s.z; s.p.angle = s.a; s.p.vx = s.p.vz = 0; deP(s.p); }
+      ball.hidden = bolaH; ball.mesh.visible = bolaV; ball.shadow.visible = bolaV;
       if (G.state === 'menu') G.state = est0;
       setLetterbox(false); snapCamera();
       await esperar(120); await preto(false, 450);
+    }
+
+    // ------------------------------------------------------------------------ A CHEGADA (o ônibus na garagem do estádio)
+    //   o ônibus entra, o técnico desce na frente e os jogadores (de agasalho, fone e mochila) vão para o vestiário
+    async function cenaOnibus(v) {
+      const k = v === 3 ? J.b : J.a;                                   // 3: quem chega é o adversário
+      const Y = -80, gar = garagem(k, A.nome), bus = onibus(k); gar.position.set(0, Y, 0); gar.add(bus); lixo.push(gar);
+      const anda = [], tec = tecnicoDe(k, true); lixo.push({ boneco: tec });
+      titularesDe(J.S, k).slice(0, 8).forEach((j, i) => { const m = viajante(k, j, i); m.raiz.visible = false; gar.add(m.raiz); lixo.push({ boneco: m }); anda.push({ m, t0: 3.35 + (i + 1) * 0.62, v: 1.35 }); });
+      tec.raiz.visible = false; gar.add(tec.raiz); anda.unshift({ m: tec, t0: 3.0, v: 1.25 });
+      const fas = [], fotos = [];
+      for (let i = 0; i < 12; i++) { const m = figurante(k, i + 1, false); gar.add(m.raiz); lixo.push({ boneco: m }); m.raiz.position.set(13.1 + (i % 2) * 0.7 + (i % 3) * 0.08, 0, -3.3 + i * 0.62); virar(m, -1, (i % 4 - 1.5) * 0.2); fas.push(m); }
+      for (let i = 0; i < 2; i++) {
+        const m = figurante(k, 40 + i, true); gar.add(m.raiz); lixo.push({ boneco: m }); m.raiz.position.set(11.6 + i * 0.4, 0, 0.2 + i * 1.3); virar(m, -1, 0.35 - i * 0.2);   // perto do gradil, de frente para quem chega
+        m.bracoE.rotation.set(0.35, 0, 1.75); m.bracoD.rotation.set(-0.35, 0, 1.75); usarCotovelo(m.bracoE, -1.0, 1.4); usarCotovelo(m.bracoD, 1.0, 1.4);
+        const fl = caixaM(0.3, 0.3, 0.3, 0xffffff, 0.45, 1.66, 0, true); fl.visible = false; m.troncoInteiro.add(fl); fotos.push({ m, fl, prox: 3.4 + i * 0.7 });
+      }
+      // o caminho de cada um: desce do ônibus (z+), anda até a porta do vestiário (x+) e entra (z-)
+      const P0 = [4.45, 1.5], P1 = [4.45, 2.5], P2 = [9.5, 2.5];
+      const L1 = 1, L2 = 5.05, L3 = 7.1;
+      const noCaminho = (d) => {
+        if (d < L1) return [P0[0], P0[1] + d, 0, 1];
+        if (d < L1 + L2) return [P1[0] + (d - L1), P1[1], 1, 0];
+        if (d < L1 + L2 + L3) return [P2[0], P2[1] - (d - L1 - L2), 0, -1];
+        return null;
+      };
+      const parado = v === 2;                                          // 2: o ônibus já está quase parando (a câmera espera na porta)
+      const xIni = parado ? -14 : -40, tB = parado ? 2.2 : 2.8;
+      await corte(() => { scene.add(gar); bus.position.set(xIni, 0, 0); G.torcidaCena = 0.35; legenda(Tf('O ônibus do {0} chega ao estádio', nomeT(k))); });
+      const DUR = v === 2 ? 8 : 9;
+      if (parado) { for (const w of anda) w.t0 -= 0.6; }
+      await plano1(DUR, (t) => {
+        const kb = Math.min(1, t / tB); bus.position.x = xIni - xIni * (1 - Math.pow(1 - kb, 3));
+        for (const w of anda) {
+          const tt = t - w.t0; if (tt < 0) { w.m.raiz.visible = false; continue; }
+          const q = noCaminho(tt * w.v); if (!q) { w.m.raiz.visible = false; continue; }
+          w.m.raiz.visible = true; w.m.raiz.position.set(q[0], tt < 0.25 ? 0.18 * (1 - tt / 0.25) : 0, q[1]); virar(w.m, q[2] || 0.0001, q[3]); andar(w.m, tt * 6.2, w.v);
+        }
+        fas.forEach((m, i) => { const f = t * 7 + i * 1.7; m.bracoD.rotation.z = 2.6 + Math.sin(f) * 0.35; m.bracoE.rotation.z = i % 2 ? 2.6 + Math.cos(f) * 0.35 : 0.25; m.raiz.position.y = Math.max(0, Math.sin(f * 0.5 + i)) * 0.12; });
+        for (const f of fotos) { f.fl.visible = t > f.prox && t < f.prox + 0.07; if (t > f.prox + 0.07) f.prox = t + 0.5 + Math.random() * 1.4; }
+        const e = suave(t / DUR);
+        if (v === 1) camOlha(12.1 - 0.5 * e, Y + 1.8, 5.6 - 0.5 * e, 2.5 - 2 * e, Y + 1.3, 1.4);                                   // de frente, da porta do vestiário
+        else if (v === 2) {                                                                                                           // de baixo, na porta do ônibus; depois segue a fila
+          const k2 = suave((t - 3.6) / 3.2);
+          camOlha(6.0 + 2.6 * k2, Y + 0.55 + 0.9 * k2, 4.9 + 0.8 * k2, 4.45 + 5 * k2, Y + 1.85 - 0.6 * k2, 1.3 + 0.2 * k2);
+        } else if (v === 3) camOlha(-15 + 13 * e, Y + 5.1, 9.6 - 1.2 * e, Math.max(bus.position.x + 2, -4 + 12 * e), Y + 0.6, 0.6);   // do alto (o adversário)
+        else camOlha(-5 + 16.5 * e, Y + 1.9 - 0.25 * e, 10.5 - 2 * e, Math.max(bus.position.x + 1, -6 + 14 * e), Y + 1.4, 0.4);      // de lado, acompanhando
+      });
+      legenda('');
+    }
+
+    // ------------------------------------------------------------------------ O VESTIÁRIO
+    async function cenaVestiario(v) {
+      const Y = -40, g = salaVestiario(J.a, Y); lixo.push(g);
+      const tit = titularesDe(J.S, J.a), nomeTec = (TD(J.a) || TV(J.a)).tecnico;
+      const novo = (j, i) => { const m = boneco(J.a, j, j.pos === 'GK' ? 1 : i + 2); g.add(m.raiz); lixo.push({ boneco: m }); return m; };
+      const tec = tecnicoDe(J.a, true); g.add(tec.raiz); lixo.push({ boneco: tec });
+      let anim = null, cam = null, leg = '';
+      if (v === 1) {
+        // A RODA: os onze de pé em círculo, abraçados (os braços nos ombros de quem está do lado), pulando juntos; a câmera de cima, girando
+        const roda = tit.slice(0, 11).map((j, i) => novo(j, i)), R = 1.85, cz = -0.2;
+        roda.forEach((m, i) => { const a = (i / roda.length) * Math.PI * 2; m.raiz.position.set(Math.cos(a) * R, 0, cz + Math.sin(a) * R); virar(m, -Math.cos(a), -Math.sin(a)); m.bracoE.rotation.set(1.3, 0, 0.15); m.bracoD.rotation.set(-1.3, 0, 0.15); try { usarCotovelo(m.bracoE, -0.5, 0.2); usarCotovelo(m.bracoD, 0.5, 0.2); } catch (e) { /* nada */ } });
+        tec.raiz.position.set(4.3, 0, 1.6); virar(tec, -1, -0.5);
+        anim = (tt) => { roda.forEach((m, i) => { const f = tt > 1.6 ? tt * 8.5 : 0; m.raiz.position.y = Math.max(0, Math.sin(f)) * 0.16; m.corpo.rotation.z = tt > 1.6 ? 0 : 0.25 * Math.min(1, tt); try { usarCabeca(m, tt > 1.6 ? -0.05 : 0.3); } catch (e) { /* nada */ } }); };
+        cam = (tt) => { const a = -0.6 + tt * 0.5, r = 1.1 - tt * 0.08; camOlha(Math.cos(a) * r, Y + 3.38, cz + Math.sin(a) * r, 0, Y + 0.2, cz); };
+        leg = T('A roda: o grito antes de entrar em campo');
+      } else if (v === 2) {
+        // A CONCENTRAÇÃO: cada um no seu canto (a cabeça baixa, os cotovelos nos joelhos), dois de pé alongando; a câmera passa baixa
+        tit.slice(0, 9).forEach((j, i) => {
+          const m = novo(j, i);
+          if (i < 7) { m.raiz.position.set(-4.4 + i * 1.3, 0, -2.9); virar(m, 0.0001, 1); sentar(m); m.bracoE.rotation.z = m.bracoD.rotation.z = 1.25; usarCabeca(m, 0.42 - (i % 3) * 0.08); }
+          else { m.raiz.position.set(i === 7 ? -5.3 : 4.9, 0, -1.1); virar(m, i === 7 ? 1 : -1, 0.3); m.bracoE.rotation.set(0.15, 0, 2.95); m.bracoD.rotation.set(-0.15, 0, 2.95); }
+        });
+        tec.raiz.visible = false;
+        anim = () => { /* eles quase não se mexem */ };
+        cam = (tt) => { const x = -4.6 + tt * 1.45; camOlha(x, Y + 1.45, 1.3, x + 1.3, Y + 0.75, -2.9); };
+        leg = T('Concentração: cada um no seu canto');
+      } else if (v === 3) {
+        // O CAPITÃO PUXA O GRITO: a estrela do time na frente (os braços para cima), os outros atrás, de pé, batendo palmas
+        const cap = estrela(J.a, J.S), resto = tit.filter((j) => j !== cap).slice(0, 8), mc = novo(cap, 9);
+        mc.raiz.position.set(0, 0, 0.8); virar(mc, 0.0001, 1);
+        const atras = resto.map((j, i) => { const m = novo(j, i); const a = Math.PI * (0.15 + 0.7 * (i / Math.max(1, resto.length - 1))); m.raiz.position.set(-Math.cos(a) * 2.6, 0, 0.6 - Math.sin(a) * 2.2); virar(m, -m.raiz.position.x * 0.3 + 0.0001, 1); return m; });
+        tec.raiz.position.set(4.6, 0, -1.6); virar(tec, -1, 0.6);
+        anim = (tt) => {
+          mc.bracoE.rotation.set(0.25, 0, 2.7 + Math.sin(tt * 4.2) * 0.25); mc.bracoD.rotation.set(-0.25, 0, 2.7 + Math.cos(tt * 4.2) * 0.25); mc.raiz.position.y = Math.max(0, Math.sin(tt * 4.2)) * 0.1;
+          atras.forEach((m, i) => { const q = Math.sin(tt * 9 + i * 0.4); m.bracoE.rotation.set(-0.28 - 0.2 * q, 0, 1.1); m.bracoD.rotation.set(0.28 + 0.2 * q, 0, 1.1); m.raiz.position.y = tt > 2.4 ? Math.max(0, Math.sin(tt * 8 + i)) * 0.12 : 0; });
+        };
+        cam = (tt) => camOlha(0.5 - tt * 0.12, Y + 1.12, 3.4 - tt * 0.26, 0, Y + 1.55, -0.4);
+        leg = Tf('{0} puxa o grito no vestiário', cap.nome || nomeT(J.a));
+      } else {
+        // O TÉCNICO FALANDO (o de sempre): sete sentados no banco, dois de pé de braços cruzados e o técnico na frente
+        tit.slice(0, 9).forEach((j, i) => {
+          const m = novo(j, i);
+          if (i < 7) { m.raiz.position.set(-4.4 + i * 1.3, 0, -2.9); virar(m, 0.0001, 1); sentar(m); usarCabeca(m, 0.08); }
+          else { m.raiz.position.set(i === 7 ? -5.2 : 4.6, 0, -1.4 + (i - 7) * 0.6); virar(m, i === 7 ? 1 : -1, 0.6); m.bracoE.rotation.set(-0.32, 0, 0.62); m.bracoD.rotation.set(0.32, 0, 0.62); usarCotovelo(m.bracoE, -1.05, 1.5); usarCotovelo(m.bracoD, 1.05, 1.5); }
+        });
+        tec.raiz.position.set(0.4, 0, 0.8); virar(tec, 0.0001, -1);
+        anim = (tt) => {
+          const fala = Math.sin(tt * 3.2), aponta = tt % 2.6 < 1.3;
+          tec.bracoD.rotation.z = aponta ? 1.45 + fala * 0.12 : 0.9 + fala * 0.3; tec.bracoD.rotation.x = -0.15; tec.bracoE.rotation.z = aponta ? 0.2 : 0.7 + Math.cos(tt * 2.7) * 0.25; tec.bracoE.rotation.x = 0.2;
+          tec.corpo.rotation.z = Math.sin(tt * 1.7) * 0.05;
+        };
+        cam = (tt) => camOlha(4.6 - tt * 0.28, Y + 1.62, 3.3 - tt * 0.12, -0.6 + tt * 0.1, Y + 1.0, -2.3);
+        leg = Tf('No vestiário, {0} passa as últimas instruções', nomeTec);
+      }
+      await corte(() => { scene.add(g); G.torcidaCena = v === 1 || v === 3 ? 0.18 : 0.08; legenda(leg); });
+      await plano1(5.6, (tt) => { anim(tt); cam(tt); });
+      legenda('');
+    }
+
+    // ------------------------------------------------------------------------ A ENTRADA (os dois times em fila, saindo do túnel)
+    //   eles saem do TÚNEL (o inflável do mandante, montado pelo jogo.js): a fila começa dentro dele e cada um só aparece depois do
+    //   fundo do túnel; a placa do meio sai do lugar. Sem túnel (várzea, society, futsal), o portão do alambrado abre e a fila vem de
+    //   fora do campo por ele. O trio de arbitragem na frente.
+    async function cenaEntrada(v) {
+      const fundo = tunel ? TUNEL.fundoZ + 0.4 : -Infinity;
+      const z0 = tunel ? -(HALF_W + TUNEL_BOCA) + 0.6 : -(HALF_W + 3.2), vel = 1.45, esp = 1.15;
+      const surge = (p) => { if (!p.mesh) return; const vis = p.z > fundo; p.mesh.raiz.visible = vis; if (!vis) ocultos.add(p); };
+      await corte(() => {
+        if (abre) mostrarTunel(true); G.torcidaCena = 1;
+        for (const p of perfil.concat(juizes)) deP(p);
+        legenda(Tf('{0} x {1}: os times entram em campo', nomeT(kMand), nomeT(kVis)));
+        if (TM) TM.tocar('hino');
+      });
+      const DUR = 5.2;
+      await plano1(DUR, (tt) => {
+        const frente = z0 + vel * tt, k = suave(tt / DUR);
+        juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = frente + 1.6; o.vx = 0; o.vz = vel; o.angle = Math.PI / 2; passos(o, tt * 6.4 + i * 1.3); surge(o); });
+        filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 0.75 : -0.75); p.z = frente - i * esp; p.vx = 0; p.vz = vel; p.angle = Math.PI / 2; passos(p, tt * 6.4 + i * 0.9 + s * 2.1); surge(p); }));
+        if (v === 1) camOlha(3.4, 0.55, -HALF_W + 1.2, 0.2, 1.5 + 0.4 * k, frente - 3.5);                       // de baixo, na boca do túnel
+        else if (v === 2) camOlha(-7 + 3 * k, 11 - 4.5 * k, -HALF_W + 13 - 2 * k, 0, 0.6, frente - 3);          // a grua: do alto, descendo
+        else if (v === 3) camOlha(0.9, 1.65, frente + 6.2, 0, 1.35, frente - 2.5);                            // de frente, recuando junto
+        else camOlha(2.6, 1.45, -HALF_W + 7.5 + tt * 0.3, -0.2, 1.25, frente - 1.5);                          // de lado, na frente da fila
+      });
+      legenda('');
+    }
+
+    // ------------------------------------------------------------------------ O HINO E A FOTO (os times perfilados)
+    //   parados DE VERDADE: as pernas juntas, o corpo reto, os braços para trás (as mãos juntas nas costas) ou, em alguns, a mão
+    //   direita no peito; os juízes com os braços para baixo. Cada um respira no seu ritmo. Com o tema da copa: o pano redondo no
+    //   círculo central, balançando, e os times perfilados na frente dele (os 4 ângulos sempre com o pano à vista).
+    async function cenaHino(v) {
+      await corte(() => {
+        if (TM) {
+          // (7.5.4) o pano cobre o círculo central INTEIRO (antes: 15 m de lado num círculo de 18 m, sobrava um anel de grama) e só
+          //   ondula para CIMA (antes descia abaixo do gramado e aparecia picotado)
+          const Rp = (typeof CIRCLE_R === 'number' ? CIRCLE_R : 9) + 0.12;
+          const tx = new THREE.CanvasTexture(TM.pano()); tx.magFilter = THREE.NearestFilter;
+          pano = new THREE.Mesh(new THREE.PlaneGeometry(2 * Rp, 2 * Rp, 28, 28), new THREE.MeshLambertMaterial({ map: tx, transparent: true, alphaTest: 0.5 }));
+          pano.rotation.x = -Math.PI / 2; pano.position.set(0, 0.06, 0); pano.userData.R = Rp; scene.add(pano); lixo.push(pano);
+        }
+        // (7.4.10) o túnel some e quem estava dentro dele reaparece só com a tela já preta (antes sumia com o plano ainda na tela)
+        for (const p of juizes.concat(perfil)) if (p.mesh) p.mesh.raiz.visible = true;
+        if (abre) mostrarTunel(false);
+        filas.forEach((F, s) => F.forEach((p, i) => { p.x = (s ? 1 : -1) * (1.7 + i * ESP_HINO); p.z = zL; p.vx = p.vz = 0; p.angle = -Math.PI / 2; }));
+        juizes.forEach((o, i) => { o.x = (i - (juizes.length - 1) / 2) * 0.8; o.z = zL; o.vx = o.vz = 0; o.angle = -Math.PI / 2; });
+        perfil.forEach((p, i) => hino(p, i, 0)); juizes.forEach((o, i) => hino(o, i, 0, true));
+        legenda(T('O hino e a foto: os times perfilados'));
+      });
+      const L = 1.7 + 10 * ESP_HINO, durH = TM ? 6.6 : 4.6;
+      await plano1(durH, (tt) => {
+        perfil.forEach((p, i) => hino(p, i, tt)); juizes.forEach((o, i) => hino(o, i, tt, true));
+        const k = tt / durH, ks = suave(k), x = -L + (2 * L) * k;
+        if (pano) {
+          const P = pano.geometry.attributes.position, Rp = pano.userData.R;
+          for (let i = 0; i < P.count; i++) { const px = P.getX(i), py = P.getY(i), d = Math.min(1, Math.hypot(px, py) / Rp); P.setZ(i, 0.14 * d * (0.5 + 0.5 * Math.sin(px * 0.5 + tt * 3.1) * Math.cos(py * 0.42 - tt * 2.3))); }
+          P.needsUpdate = true;
+          if (v === 1) camOlha(-5 + 10 * ks, 18 - 2 * ks, zL - 12, 0, 0, -2.6);                                    // do alto: o pano inteiro e a fila
+          else if (v === 2) camOlha(x * 0.7, 1.75, zL - 3.4, x * 0.75 + 0.8, 1.0, zL + 6);                       // de perto, o pano atrás deles
+          else if (v === 3) camOlha(L + 7 - 3 * ks, 3.2 + ks, zL - 5 + 3 * ks, -3, 0.5, zL + 4);                 // de lado: a fila e o pano
+          else camOlha(x * 0.55, 4.6, zL - 10.5, x * 0.7, 0.2, zL + 7.5);                                        // passando na frente, do alto
+          return;
+        }
+        if (v === 1) camOlha(x * 0.6, 2.3, zL + 6.5, x * 0.8, 1.35, zL - 6);                                     // por trás deles
+        else if (v === 2) { const xc = -L * 0.55 + L * 1.1 * k; camOlha(xc, 1.62, zL - 2.3, xc + 1.1, 1.45, zL); }   // de perto, devagar
+        else if (v === 3) camOlha(2 - 4 * ks, 7.5 - 1.5 * ks, zL - 14 + 3 * ks, 0, 0.9, zL + 1);                  // o geral do alto
+        else camOlha(x * 0.85, 1.55, zL - 5.8, x, 1.2, zL);                                                      // passando na frente
+      });
+      legenda('');
+    }
+
+    // ------------------------------------------------------------------------ OS EXTRAS
+    async function cenaExtra(v) {
+      if (v === 3 && !(typeof tecnicos !== 'undefined' && tecnicos.length >= 2)) v = 2;   // sem banco (society): o sorteio
+      if (v === 0) return aquecimento();
+      if (v === 1) return destaque();
+      if (v === 3) return osTecnicos();
+      return sorteio();
+    }
+    // O AQUECIMENTO: cada time na sua metade (uma fila correndo, a roda de bobinho e o goleiro saltando no gol); o trio não aparece
+    async function aquecimento() {
+      const grupos = [TEAMS[0].filter((p) => !p.out), TEAMS[1].filter((p) => !p.out)];
+      const lado = (team) => (team === 0 ? -1 : 1);
+      await corte(() => {
+        aoLugar(); for (const o of officials) ocultar(o);
+        G.torcidaCena = 0.45; legenda(T(J.campo === 'futsal' ? 'O aquecimento na quadra' : 'O aquecimento no gramado'));
+      });
+      const DUR = 5.4;
+      await plano1(DUR, (tt) => {
+        grupos.forEach((Gp, team) => {
+          const s = lado(team), gk = Gp.find((p) => p.role === 'GK'), linha = Gp.filter((p) => p !== gk);
+          if (gk) { gk.x = s * (HALF_L - 2.2); gk.z = Math.sin(tt * 2.2) * 2.6; gk.angle = s > 0 ? Math.PI : 0; deP(gk); if (gk.mesh) gk.mesh.raiz.position.y = Math.max(0, Math.sin(tt * 4.4)) * 0.22; }
+          linha.forEach((p, i) => {
+            if (i < 5) {                                                // a fila correndo de um lado para o outro do campo
+              const Lz = HALF_W * 0.88, d = ((tt * 2.4 + i * 1.7) % Lz), z = -Lz / 2 + d;   // (o tamanho do campo: vale no futsal e no society)
+              p.x = s * (HALF_L * 0.19 + (i % 2) * 1.2); p.z = z; p.angle = Math.PI / 2; p.vx = 0; p.vz = 2.4; passos(p, tt * 8 + i * 1.3);
+            } else {                                                    // a roda de bobinho (quem está no meio corre atrás da bola)
+              const n = linha.length - 5, j = i - 5, cx = s * HALF_L * 0.46, cz = HALF_W * 0.27 * (team ? -1 : 1);
+              if (j === n - 1) { const a = tt * 1.9; p.x = cx + Math.cos(a) * 1.1; p.z = cz + Math.sin(a * 1.3) * 1.1; p.angle = a + Math.PI / 2; passos(p, tt * 9); }
+              else { const a = (j / Math.max(1, n - 1)) * Math.PI * 2; p.x = cx + Math.cos(a) * 3.4; p.z = cz + Math.sin(a) * 3.4; p.angle = Math.atan2(cz - p.z, cx - p.x); deP(p); p.mesh && (p.mesh.raiz.position.y = Math.max(0, Math.sin(tt * 6 + j)) * 0.06); }
+            }
+          });
+        });
+        const k = suave(tt / DUR);
+        camOlha(HALF_L * (-0.52 + 0.84 * k), 3.4 - 0.8 * k, HALF_W * (-0.34 + 0.06 * k), HALF_L * (-0.38 + 0.76 * k), 0.9, HALF_W * 0.09);
+      });
+      for (const o of officials) if (o.mesh) o.mesh.raiz.visible = true;
+      legenda('');
+    }
+    // O DESTAQUE: a câmera de perto em quem o time espera tudo (o artilheiro do time no torneio, você ou a estrela); se VOCÊ começa
+    //   no banco, a cena é você no banco
+    async function destaque() {
+      const meu = TEAMS[0].filter((p) => !p.out), voce = typeof user !== 'undefined' ? user : null;
+      const noBanco = !!voce && (voce.out || !players.includes(voce));
+      let foco = null, leg = '';
+      if (noBanco) {
+        const banco = (typeof reservasBanco !== 'undefined' ? reservasBanco : []).filter((r) => r.team === 0 && r.mesh);
+        const b0 = banco[0] || null, bx = typeof bancoX === 'function' ? bancoX(0) : -9, bz = -(HALF_W + (typeof LADO_BANCO !== 'undefined' ? LADO_BANCO.banco : 4.8));
+        await corte(() => { aoLugar(); G.torcidaCena = 0.6; legenda(T('Você começa no banco: espere a sua chance')); });
+        await plano1(4.6, (tt) => { const k = suave(tt / 4.6); camOlha(bx + 3.2 - 2 * k, 1.35, bz + 3.4 - 0.6 * k, (b0 && b0.mesh ? b0.mesh.raiz.position.x : bx), 0.9, bz); });
+        legenda('');
+        return;
+      }
+      const art = J.S ? artilharia(J.S, 'g', 30).find((x) => x.k === J.a) : null;
+      if (art) foco = art.n === VOCE ? (voce && voce.team === 0 ? voce : null) : meu.find((p) => p.ficha === art.n);
+      if (foco) { const f = foco.isUser && fem(); leg = Tf(art.g === 1 ? (f ? '{0}: a artilheira do time, com {1} gol' : '{0}: o artilheiro do time, com {1} gol') : (f ? '{0}: a artilheira do time, com {1} gols' : '{0}: o artilheiro do time, com {1} gols'), foco.isUser ? (J.S && J.S.voceNome) || T('Você') : foco.name, art.g); }
+      else {
+        foco = voce && voce.team === 0 && !voce.out ? voce : meu.filter((p) => p.role !== 'GK').sort((x, y) => ((y.dados && y.dados.media) || 0) - ((x.dados && x.dados.media) || 0))[0] || meu[0];
+        leg = foco && foco.isUser ? T('Todos os olhos em você: a hora é agora') : Tf('Todos os olhos nele: {0}', foco ? foco.name : '');
+      }
+      if (!foco) return;
+      await corte(() => { aoLugar(); G.torcidaCena = 0.7; legenda(leg); });
+      const a0 = foco.dir > 0 ? -0.5 : Math.PI - 0.5;                 // pela frente dele (olhando para o campo do adversário)
+      await plano1(4.6, (tt) => {
+        const k = suave(tt / 4.6), a = a0 + k * 1.1, r = 2.6 - 0.7 * k;
+        deP(foco); if (foco.mesh) { foco.mesh.corpo.position.y = Math.sin(tt * 2.2) * 0.006; try { usarCabeca(foco.mesh, -0.04 + Math.sin(tt * 1.3) * 0.03); } catch (e) { /* nada */ } }
+        camOlha(foco.x + Math.cos(a) * r, 1.55, foco.z + Math.sin(a) * r, foco.x, 1.42, foco.z);
+      });
+      legenda('');
+    }
+    // O SORTEIO: o juiz no círculo central entre os dois capitães, a moeda sobe girando e cai; o capitão que ganhou aponta o campo
+    async function sorteio() {
+      const juiz = officials.find((o) => o.role === 'REF') || juizes[0];
+      const capitao = (team) => { const L = TEAMS[team].filter((p) => !p.out && p.role !== 'GK'); return L.find((p) => p.isUser) || L.sort((x, y) => ((y.dados && y.dados.media) || 0) - ((x.dados && x.dados.media) || 0))[0]; };
+      const c0 = capitao(0), c1 = capitao(1);
+      if (!juiz || !c0 || !c1) return;
+      const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.02, 14), new THREE.MeshLambertMaterial({ color: 0xe8c547 }));
+      const ganhou = Math.random() < 0.5 ? c0 : c1;
+      await corte(() => {
+        aoLugar();
+        for (const p of players) { if (p === c0 || p === c1) continue; if (Math.hypot(p.x, p.z) < 3.2) { p.x = Math.sign(p.x || 1) * 3.6; } }   // abre espaço no meio
+        juiz.x = 0; juiz.z = 0.9; juiz.angle = -Math.PI / 2; deP(juiz);
+        c0.x = -1.15; c0.z = 0.1; c0.angle = 0; c1.x = 1.15; c1.z = 0.1; c1.angle = Math.PI; deP(c0); deP(c1);
+        scene.add(moeda); lixo.push(moeda); moeda.position.set(0, 1.25, 0.6);
+        G.torcidaCena = 0.55; legenda(T('O sorteio: cara ou coroa'));
+      });
+      const DUR = 4.8;
+      await plano1(DUR, (tt) => {
+        // a moeda: sobe (1,2 s) girando, cai na mão do juiz (2,4 s); o juiz mostra; o capitão que ganhou aponta para o campo dele
+        const voo = Math.max(0, Math.min(1, (tt - 1.2) / 1.2)), alt = voo > 0 && voo < 1 ? 4 * 1.7 * voo * (1 - voo) : 0;
+        moeda.position.set(0, 1.25 + alt, 0.62); moeda.rotation.x = voo > 0 && voo < 1 ? voo * 22 : Math.PI / 2;
+        const m = juiz.mesh; if (m) { m.bracoD.rotation.set(-0.2, 0, tt > 0.6 ? 1.25 : 0.2); m.bracoE.rotation.set(0.1, 0, 0.1); }
+        if (tt > 3.1 && ganhou.mesh) { ganhou.mesh.bracoD.rotation.set(ganhou === c0 ? -1.2 : -1.2, 0, 1.1); }
+        const k = suave(tt / DUR);
+        camOlha(-0.5 + 1.0 * k, 1.6 + (voo > 0 && voo < 1 ? 0.4 : 0), -4.4 + 0.5 * k, 0, 1.45 + alt * 0.5, 0.3);
+      });
+      legenda('');
+    }
+    // OS TÉCNICOS À BEIRA DO CAMPO: a câmera vai de um técnico ao outro (cada um gesticulando na sua área), com o banco atrás
+    async function osTecnicos() {
+      const t0 = tecnicos[0], t1 = tecnicos[1];
+      await corte(() => { aoLugar(); G.torcidaCena = 0.6; legenda(Tf('{0} e {1} à beira do campo', t0.nome || '', t1.nome || '')); });
+      const DUR = 5.4;
+      await plano1(DUR, (tt) => {
+        [t0, t1].forEach((t, i) => {
+          const m = t.mesh; if (!m || !m.bracoD) return;
+          const f = tt * (2.6 + i * 0.7);
+          m.bracoD.rotation.z = (i ? 1.3 : 0.9) + Math.sin(f) * 0.35; m.bracoD.rotation.x = -0.2; m.bracoE.rotation.z = i ? 0.4 + Math.cos(f) * 0.2 : 1.1 + Math.cos(f) * 0.25; m.bracoE.rotation.x = 0.2;
+          m.raiz.position.set(t.x, 0, t.z); m.raiz.rotation.y = -Math.PI / 2 + Math.sin(tt * 0.8 + i) * 0.35;   // de frente para o campo
+        });
+        const k = suave((tt / DUR - 0.36) / 0.3), x = t0.x + (t1.x - t0.x) * k, z = t0.z + (t1.z - t0.z) * k;   // para em cada um; a passagem é rápida
+        camOlha(x + 0.6, 1.6, z + 3.4, x, 1.35, z - 0.3);
+      });
+      legenda('');
     }
   }
 
@@ -1318,7 +1599,7 @@
         if (!res) { b = null; break; }
         Object.assign(cfg, res.cfg);
         const modelo = campo === 'serieA' ? (res.cfg.estadio && res.cfg.estadio !== 'casa' ? res.cfg.estadio : modeloCasa(a)) : null;
-        const J = { a, b, casa: true, campo, modelo, comp: { tipo: 'amistoso', nome: T(NOME_TIPO[tipo]) }, S: null, cfg: res.cfg, kits: res.kits, rodada: Math.floor(Math.random() * 7) };
+        const J = { a, b, casa: true, campo, modelo, comp: { tipo: 'amistoso', nome: T(NOME_TIPO[tipo]) }, S: null, cfg: res.cfg, kits: res.kits, cenas: res.cenas, rodada: Math.floor(Math.random() * 7) };
         const r = await jogar(J);
         if (r && r.salvo) { guardarPausa(tipo, J, r.salvo); await avisoSalvo(); return; }   // (7.4.10) salvou no intervalo
         const pl = r ? r.placar : [0, 0];
@@ -1438,7 +1719,7 @@
     const cfg = Object.assign(cfgSalva(), { estadio: 'casa' });
     const res = retoma ? { cfg: retoma.J.cfg, kits: retoma.J.kits } : await confronto(Object.assign({}, J0, { cfg, comp: J0.comp.nome + (J0.comp.fase ? ' · ' + J0.comp.fase : ''), estadio: nomeEstadio(J0.modelo) + (J0.neutro ? ' (' + T('neutro') + ')' : ''), tabela: () => verTabela(S), tabelaNome: tipo === 'camp' ? 'Classificação' : tipo === 'champ' ? 'Tabela' : 'Chave' }));
     if (!res) return;
-    const J = Object.assign({}, J0, { cfg: res.cfg, kits: res.kits }); S.voceNome = voceDe(res.cfg).nome;
+    const J = Object.assign({}, J0, { cfg: res.cfg, kits: res.kits, cenas: res.cenas }); S.voceNome = voceDe(res.cfg).nome;
     let placarCF, r = null;
     if (fora) {
       await preto(true, 300);
@@ -1889,6 +2170,22 @@
     "PRÊMIOS DA COPA DOS CAMPEÕES": ["CHAMPIONS CUP AWARDS", "PREMIOS DE LA COPA DE CAMPEONES", "PREMI DELLA COPPA DEI CAMPIONI", "PRIX DE LA COUPE DES CHAMPIONS"],
     "Boa noite! Bem-vindos à festa de premiação da Copa dos Campeões!": ["Good evening! Welcome to the Champions Cup awards night!", "¡Buenas noches! ¡Bienvenidos a la gala de premios de la Copa de Campeones!", "Buonasera! Benvenuti alla serata dei premi della Coppa dei Campioni!", "Bonsoir ! Bienvenue à la soirée des prix de la Coupe des Champions !"],
     "CAMPEÕES": ["CHAMPIONS", "CAMPEONES", "CAMPIONI", "CHAMPIONS"],
+    // (7.5.4) as variações da abertura
+    "A roda: o grito antes de entrar em campo": ["The huddle: the war cry before taking the field", "La piña: el grito antes de salir al campo", "Il cerchio: il grido prima di entrare in campo", "Le cercle : le cri avant d'entrer sur le terrain"],
+    "Concentração: cada um no seu canto": ["Focus: everyone in their own corner", "Concentración: cada uno en su rincón", "Concentrazione: ognuno nel suo angolo", "Concentration : chacun dans son coin"],
+    "{0} puxa o grito no vestiário": ["{0} leads the war cry in the dressing room", "{0} lidera el grito en el vestuario", "{0} guida il grido nello spogliatoio", "{0} lance le cri dans le vestiaire"],
+    "O aquecimento no gramado": ["The warm-up on the pitch", "El calentamiento en el césped", "Il riscaldamento sul prato", "L'échauffement sur la pelouse"],
+    "Você começa no banco: espere a sua chance": ["You start on the bench: wait for your chance", "Empiezas en el banquillo: espera tu oportunidad", "Parti dalla panchina: aspetta la tua occasione", "Tu commences sur le banc : attends ta chance"],
+    "{0}: o artilheiro do time, com {1} gol": ["{0}: the team's top scorer, with {1} goal", "{0}: el máximo goleador del equipo, con {1} gol", "{0}: il capocannoniere della squadra, con {1} gol", "{0} : le meilleur buteur de l'équipe, avec {1} but"],
+    "{0}: o artilheiro do time, com {1} gols": ["{0}: the team's top scorer, with {1} goals", "{0}: el máximo goleador del equipo, con {1} goles", "{0}: il capocannoniere della squadra, con {1} gol", "{0} : le meilleur buteur de l'équipe, avec {1} buts"],
+    "{0}: a artilheira do time, com {1} gol": ["{0}: the team's top scorer, with {1} goal", "{0}: la máxima goleadora del equipo, con {1} gol", "{0}: la capocannoniera della squadra, con {1} gol", "{0} : la meilleure buteuse de l'équipe, avec {1} but"],
+    "{0}: a artilheira do time, com {1} gols": ["{0}: the team's top scorer, with {1} goals", "{0}: la máxima goleadora del equipo, con {1} goles", "{0}: la capocannoniera della squadra, con {1} gol", "{0} : la meilleure buteuse de l'équipe, avec {1} buts"],
+    "Todos os olhos em você: a hora é agora": ["All eyes on you: the time is now", "Todas las miradas en ti: es la hora", "Tutti gli occhi su di te: è il momento", "Tous les regards sur toi : c'est le moment"],
+    "Todos os olhos nele: {0}": ["All eyes on him: {0}", "Todas las miradas en él: {0}", "Tutti gli occhi su di lui: {0}", "Tous les regards sur lui : {0}"],
+    "O sorteio: cara ou coroa": ["The coin toss: heads or tails", "El sorteo: cara o cruz", "Il sorteggio: testa o croce", "Le tirage au sort : pile ou face"],
+    "{0} e {1} à beira do campo": ["{0} and {1} on the touchline", "{0} y {1} en la banda", "{0} e {1} a bordo campo", "{0} et {1} au bord du terrain"],
+    // (7.5.4) futsal
+    "O aquecimento na quadra": ["The warm-up on the court", "El calentamiento en la cancha", "Il riscaldamento sul campo", "L'échauffement sur le terrain"],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 

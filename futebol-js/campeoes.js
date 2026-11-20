@@ -176,40 +176,96 @@
     [D.D6, D.A5, D.Fs6, D.D6, D.A6].forEach((m, i) => sino(c, dst, b(20.5 + i * 0.5), m, 0.05));
     return 26.5 * BT;
   }
+  // (7.5.4) A MÚSICA PRÉ-GRAVADA: tocar ao vivo era pesado demais (dezenas de osciladores, filtros e um reverb novo de uma vez só,
+  //   quando o jogo inteiro se limita a 14 vozes): no celular o áudio engasgava, picotava e às vezes parava de sair. Agora cada
+  //   parte é gravada UMA vez num OfflineAudioContext (preparar(), chamado na tela do confronto; fora da linha de tempo do jogo) e
+  //   toca como um buffer só. Se pedirem antes de ficar pronta, começa quando ficar, já no ponto certo (sem atrasar a cena); sem
+  //   OfflineAudioContext, toca ao vivo como antes.
+  const PARTES = { intro: { f: tocarIntro, bt: 12.6 }, hino: { f: tocarHino, bt: 26.5 } };
+  const BUF = {};                                                     // parte -> AudioBuffer (pronto) ou Promise (gravando)
+  let IMP = null;
+  function cadeia(c, saida) {                                         // o barramento com a reverberação de catedral
+    const bus = c.createGain(), seco = c.createGain(), rev = c.createConvolver(), molhado = c.createGain();
+    if (!IMP || IMP.sampleRate !== c.sampleRate) IMP = impulso(c, 3.2);
+    rev.buffer = IMP; seco.gain.value = 0.72; molhado.gain.value = 0.6;
+    bus.gain.value = 1; bus.connect(seco); bus.connect(rev); rev.connect(molhado); seco.connect(saida); molhado.connect(saida);
+    return { bus, nos: [seco, rev, molhado] };
+  }
+  function gravar(parte) {
+    if (BUF[parte]) return BUF[parte];
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return null;
+    try {
+      const A = typeof Som !== 'undefined' && Som.audio ? Som.audio : null, sr = A ? A.ctx.sampleRate : 44100;
+      const dur = PARTES[parte].bt * BT + 4, c = new OAC(2, Math.ceil(dur * sr), sr), k = cadeia(c, c.destination);
+      PARTES[parte].f(c, k.bus, 0.02);
+      const p = new Promise((ok) => {
+        const fim = (b) => { BUF[parte] = b || null; ok(b || null); };
+        c.oncomplete = (e) => fim(e.renderedBuffer);
+        const r = c.startRendering(); if (r && r.then) r.then(fim, () => fim(null));
+      });
+      BUF[parte] = p; return p;
+    } catch (e) { BUF[parte] = null; return null; }
+  }
+  // preparar(): grava as duas partes (uma depois da outra, para não pesar). Pode chamar quantas vezes quiser.
+  function preparar() { const p = gravar('intro'); if (p && p.then) p.then(() => gravar('hino')); else gravar('hino'); }
   // tocar(parte): começa a tocar; devolve a duração em segundos (0 sem som). parar(seg): some aos poucos.
   function tocar(parte) {
     const A = audio(); if (!A) return 0;
     parar(0.25);
-    const c = A.ctx; try { if (c.state === 'suspended') c.resume(); } catch (e) { /* nada */ }
-    const bus = c.createGain(), seco = c.createGain(), rev = c.createConvolver(), molhado = c.createGain(), saida = A.musica || A.mestre;
-    rev.buffer = impulso(c, 3.2); seco.gain.value = 0.72; molhado.gain.value = 0.6;
-    bus.gain.value = 1; bus.connect(seco); bus.connect(rev); rev.connect(molhado); seco.connect(saida); molhado.connect(saida);
-    const t0 = c.currentTime + 0.06, dur = parte === 'hino' ? tocarHino(c, bus, t0) : tocarIntro(c, bus, t0);
-    const eu = { bus, nos: [seco, rev, molhado], fim: t0 + dur + 3.5 };
+    const c = A.ctx; try { if (c.state !== 'running') c.resume(); } catch (e) { /* nada */ }
+    const saida = A.musica || A.mestre, dur = PARTES[parte].bt * BT;
+    const pedido = c.currentTime, b = BUF[parte] || gravar(parte);
+    if (b) {
+      const g = c.createGain(); g.gain.value = 1; g.connect(saida);
+      const eu = { bus: g, nos: [], src: null, fim: pedido + dur + 4 };
+      MUS = eu;
+      const soltar = (buf) => {
+        if (!buf || MUS !== eu) return;
+        const atraso = Math.max(0, c.currentTime - pedido);              // ficou pronta depois: entra no ponto em que estaria
+        if (atraso >= buf.duration - 0.5) return;
+        const s = c.createBufferSource(); s.buffer = buf; s.connect(g); s.start(c.currentTime + 0.03, atraso); eu.src = s;
+        s.onended = () => { if (MUS === eu) MUS = null; desligar(eu); };
+      };
+      if (b.then) b.then(soltar); else soltar(b);
+      return dur;
+    }
+    const k = cadeia(c, saida), t0 = c.currentTime + 0.06;            // sem gravação: ao vivo (o jeito antigo)
+    PARTES[parte].f(c, k.bus, t0);
+    const eu = { bus: k.bus, nos: k.nos, fim: t0 + dur + 3.5 };
     MUS = eu;
     setTimeout(() => { if (MUS === eu) MUS = null; desligar(eu); }, (dur + 4) * 1000);
     return dur;
   }
-  function desligar(m) { try { m.bus.disconnect(); for (const n of m.nos) n.disconnect(); } catch (e) { /* nada */ } }
+  function desligar(m) { try { if (m.src) m.src.stop(); } catch (e) { /* já parou */ } try { m.bus.disconnect(); for (const n of m.nos) n.disconnect(); } catch (e) { /* nada */ } }
   function parar(seg) {
     const m = MUS; if (!m) return; MUS = null;
-    const A = audio(), c = A ? A.ctx : null;
+    const A = typeof Som !== 'undefined' && Som.audio ? Som.audio : null, c = A ? A.ctx : null;   // (7.5.4) mesmo no mudo: some
     if (!c) { desligar(m); return; }
     const t = c.currentTime, s = Math.max(0.05, seg == null ? 1.2 : seg);
-    try { m.bus.gain.cancelScheduledValues(t); m.bus.gain.setValueAtTime(m.bus.gain.value, t); m.bus.gain.exponentialRampToValueAtTime(0.0001, t + s); } catch (e) { /* nada */ }
+    try { m.bus.gain.cancelScheduledValues(t); m.bus.gain.setValueAtTime(Math.max(0.0001, m.bus.gain.value), t); m.bus.gain.exponentialRampToValueAtTime(0.0001, t + s); } catch (e) { /* nada */ }
     setTimeout(() => desligar(m), (s + 0.2) * 1000);
   }
 
   // ============================================================================================ A VINHETA DE ABERTURA
   //   op = { a: { nome, sigla, url }, b: { ... } (mandante e visitante), fase (texto), estadio (texto), dur (segundos),
   //          parar: () => true quando o jogador tocou em PULAR }. A tela é desenhada em 270 linhas (pixel art) e cobre o jogo.
+  //   (7.5.4) ENQUADRADA: ela vai dentro do #raizJogo (a parte VISÍVEL da tela; no Canva o iframe pode ser maior que a tela e a
+  //   parte de baixo, com os escudos, ficava fora) e mede a proporção dele; com a tela em pé, a largura fica em 320 e a altura
+  //   cresce (antes a imagem era esticada e cortada). O conteúdo fica centralizado na altura.
   function carregarImg(url) { return new Promise((ok) => { if (!url) return ok(null); const i = new Image(); i.onload = () => ok(i); i.onerror = () => ok(null); i.src = url; }); }
   async function intro(op) {
-    const H = 270, el = document.createElement('canvas'), g = el.getContext('2d');
-    const medir = () => { const W = Math.max(320, Math.round(H * (innerWidth / Math.max(1, innerHeight)))); if (el.width !== W) { el.width = W; el.height = H; } };
+    const raiz = document.getElementById('raizJogo') || document.body, el = document.createElement('canvas'), g = el.getContext('2d');
+    let H = 270, oy = 0;                                              // oy: o deslocamento para centralizar o desenho de 270 linhas
+    const medir = () => {
+      const r = raiz.getBoundingClientRect(), w = Math.max(1, r.width || innerWidth), h = Math.max(1, r.height || innerHeight), pr = w / h;
+      let W = Math.round(270 * pr), HH = 270;
+      if (W < 320) { W = 320; HH = Math.round(320 / pr); }
+      if (el.width !== W || el.height !== HH) { el.width = W; el.height = HH; }
+      H = HH; oy = Math.round((HH - 270) / 2);
+    };
     medir();
-    el.id = 'cpVinheta'; el.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:43;image-rendering:pixelated;background:#020718';
-    document.body.appendChild(el);
+    el.id = 'cpVinheta'; el.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:43;image-rendering:pixelated;background:#020718';
+    raiz.appendChild(el);
     const [ia, ib] = await Promise.all([carregarImg(op.a && op.a.url), carregarImg(op.b && op.b.url)]);
     const dur = op.dur || 8.4, rnd = (n) => ((Math.sin(n * 91.17) * 43758.5453) % 1 + 1) % 1;
     const ESTR = Array.from({ length: 150 }, (_, i) => ({ x: rnd(i + 1), y: rnd(i + 300), r: rnd(i + 600) < 0.12 ? 2 : 1, f: 0.5 + rnd(i + 900) * 3, ph: rnd(i + 1200) * 6.3 }));
@@ -222,15 +278,17 @@
         const t = (performance.now() - t0) / 1000;
         if (t >= dur || (op.parar && op.parar())) { ok(); return; }
         medir();
-        const W = el.width, cx = W / 2;
-        const gr = g.createRadialGradient(cx, H * 0.42, 10, cx, H * 0.42, W * 0.75); gr.addColorStop(0, AZUL[3]); gr.addColorStop(0.45, AZUL[2]); gr.addColorStop(1, AZUL[0]);
-        g.fillStyle = gr; g.fillRect(0, 0, W, H);
+        const W = el.width, cx = W / 2, HT = H;
+        g.setTransform(1, 0, 0, 1, 0, 0);
+        const gr = g.createRadialGradient(cx, HT / 2 - 22, 10, cx, HT / 2 - 22, Math.max(W, HT) * 0.75); gr.addColorStop(0, AZUL[3]); gr.addColorStop(0.45, AZUL[2]); gr.addColorStop(1, AZUL[0]);
+        g.fillStyle = gr; g.fillRect(0, 0, W, HT);
+        for (const s of ESTR) { const a = 0.35 + 0.65 * Math.max(0, Math.sin(t * s.f + s.ph)); g.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.fillRect(Math.round(s.x * W), Math.round(s.y * HT), s.r, s.r); }
+        g.setTransform(1, 0, 0, 1, 0, oy);                             // daqui em diante: o quadro de 270 linhas, centralizado
+        { const H = 270;
         // os fachos de luz girando atrás da taça
         g.save(); g.translate(cx, H * 0.4); g.rotate(t * 0.12); g.fillStyle = 'rgba(160,190,255,' + (0.05 + 0.04 * Math.sin(t * 1.3)) + ')';
         for (let i = 0; i < 12; i++) { g.rotate(Math.PI / 6); g.beginPath(); g.moveTo(0, 0); g.lineTo(W, -26); g.lineTo(W, 26); g.closePath(); g.fill(); }
         g.restore();
-        // as estrelas piscando
-        for (const s of ESTR) { const a = 0.35 + 0.65 * Math.max(0, Math.sin(t * s.f + s.ph)); g.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.fillRect(Math.round(s.x * W), Math.round(s.y * H), s.r, s.r); }
         // a taça: cresce, brilha e depois sobe para dar lugar aos escudos
         const k1 = suave(t / 1.6), k2 = suave((t - 3.6) / 1.0);
         const tam = (40 + 90 * k1) * (1 - 0.32 * k2), ly = H * (0.42 - 0.16 * k2);
@@ -253,17 +311,20 @@
             const x = cx + s * (dx + (1 - k3) * W * 0.5);
             g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 6; g.imageSmoothingEnabled = false;
             if (img) g.drawImage(img, Math.round(x - e / 2), Math.round(ys - e / 2 - 8), e, e); g.restore();
-            g.font = fonte(9); g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(nome, x + 1, ys + e / 2 + 2); g.fillStyle = PRATA[0]; g.fillText(nome, x, ys + e / 2 + 1);
+            const mw = W * 0.44;                                       // (7.5.4) nome comprido não invade o outro lado
+            g.font = fonte(9); g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(nome, x + 1, ys + e / 2 + 2, mw); g.fillStyle = PRATA[0]; g.fillText(nome, x, ys + e / 2 + 1, mw);
           };
           lado(ia, ((op.a && op.a.nome) || '').toUpperCase(), -1); lado(ib, ((op.b && op.b.nome) || '').toUpperCase(), 1);
           g.globalAlpha = k3; g.font = fonte(22); g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText('x', cx + 1, ys - 6); g.fillStyle = PRATA[1]; g.fillText('x', cx, ys - 8);
           g.font = fonte(9); const linha = [op.fase, op.estadio].filter(Boolean).join(' · ').toUpperCase();
-          g.fillStyle = 'rgba(2,7,24,.65)'; const lw = g.measureText(linha).width + 18; g.fillRect(cx - lw / 2, H - 26, lw, 15);
-          g.fillStyle = PRATA[1]; g.fillText(linha, cx, H - 18); g.globalAlpha = 1;
+          g.fillStyle = 'rgba(2,7,24,.65)'; const lw = Math.min(W - 8, g.measureText(linha).width + 18); g.fillRect(cx - lw / 2, H - 26, lw, 15);
+          g.fillStyle = PRATA[1]; g.fillText(linha, cx, H - 18, W - 20); g.globalAlpha = 1;
         }
+        }
+        g.setTransform(1, 0, 0, 1, 0, 0);
         // o começo e o fim no preto
         const esc = Math.max(1 - suave(t / 0.6), suave((t - dur + 0.45) / 0.45));
-        if (esc > 0) { g.fillStyle = 'rgba(0,0,0,' + esc.toFixed(3) + ')'; g.fillRect(0, 0, W, H); }
+        if (esc > 0) { g.fillStyle = 'rgba(0,0,0,' + esc.toFixed(3) + ')'; g.fillRect(0, 0, W, HT); }
         requestAnimationFrame(quadro);
       };
       requestAnimationFrame(quadro);
@@ -277,7 +338,7 @@
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
 
-  const API = { NOME, logo, logoURL, desenharLogo, pano, tocar, parar, intro, esperar, _t: { tocarIntro, tocarHino } };
+  const API = { NOME, logo, logoURL, desenharLogo, pano, tocar, parar, preparar, intro, esperar, _t: { tocarIntro, tocarHino, gravadas: () => ({ intro: BUF.intro, hino: BUF.hino }) } };
   window.Campeoes = API;
   if (window.FutebolJS && window.FutebolJS.registrarFase) window.FutebolJS.registrarFase(Object.assign({ id: 'campeoes', nome: 'Copa dos Campeões', nucleoMinimo: '7.5', iniciar: async () => {} }, API));
 })();

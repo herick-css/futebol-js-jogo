@@ -208,6 +208,7 @@ ARQUIVOS
                           só com o escudo nas cadeiras), bowl (anel de camarotes e pele de vidro), masts (o teto pendurado em mastros),
                           wall (a cabeceira-parede), towns (o inglês clássico, 3 jeitos) e brick (o antigo de bairro, com a fachada de
                           tijolo). CASA_DO_CLUBE leva cada clube para o seu; o "sem modelo" continua sorteando só entre os do Brasil
+                          (7.5.4) A cena de fora (cena) tem 4 câmeras: a volta em torno, o mergulho, o helicóptero e a grua
   uniformes.js .......... o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B (listras verticais e horizontais,
                           faixa diagonal, faixas no peito, laterais, degradê, texturas de estrelas, ondas, tigre...), seguindo
                           o padrão dos clubes parodiados, e a pixel art do peito (PEITO: 16 x 16 por time; sem ela vai o escudo
@@ -235,6 +236,20 @@ ARQUIVOS
                           (7.5.2) Campeonato: além do Brasil, a ESPANHA e a INGLATERRA (Liga Espanhola e Liga Inglesa, 20 times, rápido ou
                           padrão; zonas: 4 da Copa dos Campeões da Europa, 2 do Torneio Europeu e 3 rebaixados; troféu, festa e noite dos
                           prêmios de cada liga). Amistoso, sintético e futsal com as abas Série A, Série B, Liga Espanhola e Liga Inglesa
+                          (7.5.4) A ABERTURA VARIADA: cada cena tem 4 jeitos (estádio, ônibus, vestiário, torcida, entrada, hino e um
+                          extra), sorteados na tela do confronto (sortearAbertura; o mesmo jeito não repete no jogo seguinte): 4^7 = 16.384
+                          aberturas. A entrada e o hino viraram cenas separadas. Extras: o aquecimento no gramado (antes do vestiário), o
+                          destaque (o artilheiro do time, você ou a estrela; no banco, se você começar lá), o sorteio (cara ou coroa) e os
+                          técnicos à beira do campo. Ônibus: de lado, de frente, o técnico descendo ou o do ADVERSÁRIO chegando. Vestiário: o
+                          técnico falando, a roda, a concentração ou o capitão puxando o grito. O tema da copa (temaDe: a Copa dos Campeões;
+                          a Libertadores entra igual, com J.tema = 'liberta' e window.Libertadores) mantém a vinheta, a música e o pano em
+                          todas as combinações; o pano agora cobre o círculo central inteiro e só ondula para cima (antes sobrava um anel de
+                          grama e ele afundava no gramado). A bola nunca aparece nas cenas
+  campeoes.js ........... a Copa dos Campeões (7.5.3): o escudo, a música (o "hino"), a vinheta de abertura e o pano do
+                          círculo central (baixado pelo livre.js). (7.5.4) A música é gravada uma vez (OfflineAudioContext, na
+                          tela do confronto) e toca como um buffer só: tocar ao vivo engasgava e cortava o som no celular. A
+                          vinheta vai dentro do #raizJogo (a parte visível: no Canva a parte de baixo ficava fora da tela) e
+                          não estica mais (em pé, cresce a altura)
   cosmeticos.js ......... os cosméticos feitos no conversor (cortes da loja) e as 15 bolas da Golaço Esportes;
                           o jogo baixa na abertura. Não aparecem no criador: cortes na barbearia (os NPCs podem usar), bolas no Juca
   versao.txt ............ a versão atual (o carregador do Canva confere para avisar de atualização)

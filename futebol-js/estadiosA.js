@@ -1982,7 +1982,10 @@
   //     branco e dourado (crisântemo, anel e "chorão" dourado). Funciona com qualquer câmera (dentro, no gol, na cena de fora).
   //     op: { dur (s), ritmo (rojões por s), longe (0..1: o som abafado de quem está fora) }. Devolve uma Promise (quando acabam).
   //   cena(op): o estádio visto de fora, a câmera girando devagar em volta (com a cidade), faixas de cinema e o nome do estádio;
-  //     com op.fogos, a queima de fogos junto. Um toque na tela pula. op: { dur (s), fogos, texto, angulo }. Devolve uma Promise.
+  //     com op.fogos, a queima de fogos junto. Um toque na tela pula. op: { dur (s), fogos, texto, angulo, variante }. Devolve uma Promise.
+  //     (7.5.4) variante (o jeito da câmera, sorteado na tela do confronto): 0 a volta em torno, do alto (o de sempre) · 1 o mergulho
+  //     (de longe, voando reto até passar por cima da cobertura e ver o campo) · 2 o helicóptero (de cima do campo, descendo e girando)
+  //     · 3 a grua (passando de lado, na altura da cobertura)
   //   Os dois só funcionam com um estádio do Brasileirão A montado (o último construir).
   let ULT = null, FX = null;
   const NFX = 4200;
@@ -2082,6 +2085,7 @@
     const dur = (op.dur || 7) * 1000, [ax, az] = ULT.pegada, R = Math.max(ax, az) * 1.75 + 70;
     const est0 = G.state, cam0 = G.camOvo, near0 = camera.near, far0 = camera.far;
     const a0 = op.angulo != null ? op.angulo : -2.3 + Math.random() * 0.6, h = R * (op.fogos ? 0.3 : 0.38), ty = ULT.yMax * (op.fogos ? 1.1 : 0.45);
+    const vr = (op.variante | 0) % 4, rP = Math.max(ax, az);           // (7.5.4) o jeito da câmera; rP: a metade da pegada do estádio
     G.state = 'menu';                                                   // o jogo parado (sem relógio nem bonecos andando) durante a cena
     try { setLetterbox(true); $('cineLabel').textContent = op.texto != null ? op.texto : ULT.nome; } catch (e) { /* sem faixas */ }
     camera.near = 1.5; camera.far = 1400; camera.updateProjectionMatrix();
@@ -2095,8 +2099,20 @@
     await new Promise((res) => {
       const passo = () => {
         const t = Math.min(1, (performance.now() - t0) / dur), e = t * t * (3 - 2 * t);
-        const a = a0 + 0.75 * e, r = R * (1 - 0.12 * e), y = h * (1 - 0.25 * e);
-        const pose = { px: Math.cos(a) * r, py: y, pz: Math.sin(a) * r, tx: 0, ty, tz: 0 };
+        let pose;
+        if (vr === 1) {                                                 // o mergulho: de longe, voando reto até passar por cima da cobertura
+          const a = a0 + 0.1 * e, r = R * 1.1 - (R * 1.1 - rP * 0.8) * e;
+          pose = { px: Math.cos(a) * r, py: R * 0.42 * (1 - e) + (ULT.yMax + 14) * e, pz: Math.sin(a) * r, tx: 0, ty: ULT.yMax * 0.5 * (1 - e), tz: 0 };
+        } else if (vr === 2) {                                          // o helicóptero: de cima do campo, descendo e girando
+          const a = a0 + 0.9 * e, r = rP * (0.25 + 0.7 * e), y = R * (0.95 - 0.45 * e);
+          pose = { px: Math.cos(a) * r, py: y, pz: Math.sin(a) * r, tx: 0, ty: 0, tz: 0 };
+        } else if (vr === 3) {                                          // a grua: passando de lado, na altura da cobertura
+          const ca = Math.cos(a0), sa = Math.sin(a0), d = rP + 26, lat = (e - 0.5) * 2 * (rP + 30);
+          pose = { px: ca * d - sa * lat, py: ULT.yMax + 6 + 10 * e, pz: sa * d + ca * lat, tx: -sa * lat * 0.3, ty: ULT.yMax * 0.5, tz: ca * lat * 0.3 };
+        } else {
+          const a = a0 + 0.75 * e, r = R * (1 - 0.12 * e), y = h * (1 - 0.25 * e);
+          pose = { px: Math.cos(a) * r, py: y, pz: Math.sin(a) * r, tx: 0, ty, tz: 0 };
+        }
         G.camOvo = pose; Object.assign(cam, pose);
         if (op.parar && op.parar()) pulou = true;                       // (7.4.1) quem chamou pode cortar a cena (o "Pular" da abertura)
         if (pulou || t >= 1) return res();
