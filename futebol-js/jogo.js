@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.6';
+const VERSAO_JOGO = '7.5.7';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -1711,7 +1711,9 @@ function montarTunel() {
   const c2 = Math.abs(lum(c1) - lum(c2raw)) < 40 ? (lum(c1) > 128 ? 0x1b1d22 : 0xf2f2ee) : c2raw;
   // o fundo: logo depois da placa, sem entrar na arquibancada (a frente dela no meio do lado dos bancos vem do estadiosA.js)
   const frente = ESTADIO_A && window.EstadiosA && EstadiosA.atual && EstadiosA.atual() ? EstadiosA.atual().frenteZ : null;
-  let fundo = BOARD_ZN + 1.6; if (frente) fundo = Math.max(BOARD_ZN + 0.5, Math.min(fundo, frente - 0.3));
+  // (sempre na frente da arquibancada: nos estádios apertados, o fundo depois da placa ficava atrás da mureta e, pela boca do túnel,
+  //   via-se a faixa e a torcida em vez do escuro)
+  let fundo = BOARD_ZN + 1.6; if (frente) fundo = Math.max(HALF_W + TUNEL_BOCA + 0.8, Math.min(fundo, frente - 0.3));
   const z0 = -(HALF_W + TUNEL_BOCA), z1 = -fundo, W = TUNEL_LARG / 2, YL = 1.55, RY = 1.2, NA = 7, PASSO = 1.5;
   TUNEL.fundoZ = z1;
   // a seção: as duas paredes retas e o arco de cima (pontos de baixo à esquerda, pelo alto, até baixo à direita)
@@ -1734,6 +1736,7 @@ function montarTunel() {
   }
   // o fundo fechado (escuro): de dentro não se vê a arquibancada nem quem ainda está esperando
   for (let i = 0; i < S.length - 1; i++) { const [xa, ya] = S[i], [xb, yb] = S[i + 1]; quad([xb, yb, z1], [xa, ya, z1], [0, YL * 0.5, z1], [0, YL * 0.5, z1], 0x0c0d10, 0, 0, 1); }
+  quad([-W, 0, z1], [W, 0, z1], [0, YL * 0.5, z1], [0, YL * 0.5, z1], 0x0c0d10, 0, 0, 1);   // o triângulo de baixo (entre as duas paredes, no chão): sem ele, via-se a arquibancada pelo vão
   // a boca: um anel mais gordo (a moldura) na ponta do campo, com a frente e o contorno
   const esp = 0.28, borda = c1, filete = c2;
   for (let i = 0; i < S.length - 1; i++) {
@@ -16813,40 +16816,46 @@ function aplicarAmbiente(P) {
   particulas.definir(P.clima);
 }
 
-// Chuva e neve: uma malha de partículas que acompanha a câmera (1 chamada de desenho). As gotas
-// caem no shader (o processador só manda o tempo e a posição da câmera).
+// Chuva e neve: uma malha de partículas (1 chamada de desenho). As gotas caem no shader (o processador só manda o tempo, o centro e o
+//   tamanho da caixa). A caixa fica em volta do ponto do chão para onde a câmera olha e cresce com a distância: a câmera do jogo
+//   (de lado, longe do lado de lá) e as cenas de abertura (do alto, de fora do estádio) veem chover no campo inteiro, não só perto
+//   delas; e a altura vai até acima da câmera (do helicóptero também se vê a chuva caindo lá embaixo).
 const particulas = (() => {
-  const N = 1400, CAIXA = 40, ALT = 22;
+  const N = 3200, CAIXA0 = 60, ALT0 = 22;
   let obj = null, tipo = 'seco';
-  const U = { uTempo: { value: 0 }, uCam: { value: new THREE.Vector3() }, uVel: { value: 18 }, uVento: { value: 0 }, uInt: { value: 1 } };
+  const U = { uTempo: { value: 0 }, uCentro: { value: new THREE.Vector3() }, uCaixa: { value: CAIXA0 }, uAlt: { value: ALT0 }, uVel: { value: 18 }, uVento: { value: 0 }, uInt: { value: 1 } };
+  const dir = new THREE.Vector3();
   function criar(t) {
     if (obj) { scene.remove(obj); obj.geometry.dispose(); obj.material.dispose(); obj = null; }
     tipo = t;
     if (t !== 'chuva' && t !== 'neve') return;
     const chuva = t === 'chuva';
     const pos = new Float32Array(N * (chuva ? 6 : 3)), base = new Float32Array(N * (chuva ? 6 : 3));
-    for (let i = 0; i < N; i++) {
-      const x = rand(-CAIXA, CAIXA), y = rand(0, ALT), z = rand(-CAIXA, CAIXA);
-      if (chuva) { pos.set([x, y, z, x + 0.05, y - 0.7, z], i * 6); base.set([x, y, z, x, y, z], i * 6); }
+    for (let i = 0; i < N; i++) {                                    // a posição base em 0..1 (a caixa de verdade vem do uniforme)
+      const x = Math.random(), y = Math.random(), z = Math.random();
+      if (chuva) { pos.set([x, y, z, x, y, z], i * 6); base.set([x, y, z, x, y, z], i * 6); }
       else { pos.set([x, y, z], i * 3); base.set([x, y, z], i * 3); }
+      if (chuva) pos[i * 6 + 4] = y - 1;                             // a ponta de baixo da gota (marcada com y - 1)
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    g.setAttribute('aBase', new THREE.BufferAttribute(base, 3));   // ponto de cima da gota (as 2 pontas andam juntas)
+    g.setAttribute('aBase', new THREE.BufferAttribute(base, 3));
     U.uVel.value = chuva ? 18 : 1.6; U.uVento.value = chuva ? 0.5 : 0.8;
-    const C = CAIXA.toFixed(1), C2 = (CAIXA * 2).toFixed(1), H = ALT.toFixed(1);
-    const vs = `uniform float uTempo; uniform vec3 uCam; uniform float uVel; uniform float uVento; uniform float uInt;
+    const vs = `uniform float uTempo; uniform vec3 uCentro; uniform float uCaixa; uniform float uAlt; uniform float uVel; uniform float uVento; uniform float uInt;
       attribute vec3 aBase;
       void main() {
-        if (fract(sin(dot(aBase.xz, vec2(12.9898, 78.233))) * 43758.5453) > uInt) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }   // intensidade: só uma parte das gotas
-        vec3 off = position - aBase;
-        vec3 b = aBase;
-        b.y = mod(b.y - uTempo * uVel, ${H});                         // cai e volta lá de cima
-        b.x += sin(uTempo * 0.7 + b.z) * uVento;                     // vento balançando
-        b.x = uCam.x + mod(b.x - uCam.x + ${C}, ${C2}) - ${C};      // sempre em volta da câmera
-        b.z = uCam.z + mod(b.z - uCam.z + ${C}, ${C2}) - ${C};
-        gl_Position = projectionMatrix * viewMatrix * vec4(b + off, 1.0);
-        gl_PointSize = 3.0;
+        if (fract(sin(dot(aBase.xz, vec2(12.9898, 78.233)) * 97.0) * 43758.5453) > uInt) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }   // intensidade: só uma parte das gotas
+        float ponta = aBase.y - position.y;                          // 0 em cima, 1 na ponta de baixo da gota
+        vec3 b;
+        b.y = mod(aBase.y * uAlt - uTempo * uVel, uAlt);             // cai e volta lá de cima
+        float x = aBase.x * 2.0 * uCaixa, z = aBase.z * 2.0 * uCaixa;
+        x += sin(uTempo * 0.7 + z) * uVento;                         // vento balançando
+        b.x = uCentro.x + mod(x - uCentro.x, 2.0 * uCaixa) - uCaixa; // a caixa em volta do centro (as gotas não pulam quando ele anda)
+        b.z = uCentro.z + mod(z - uCentro.z, 2.0 * uCaixa) - uCaixa;
+        b += vec3(0.05, -0.7, 0.0) * ponta;
+        vec4 mv = viewMatrix * vec4(b, 1.0);
+        gl_Position = projectionMatrix * mv;
+        gl_PointSize = clamp(90.0 / max(1.0, -mv.z), 1.0, 3.0);           // o floco longe fica menor (do helicóptero não vira um lençol branco)
       }`;
     const fs = chuva ? 'void main(){ gl_FragColor = vec4(0.75, 0.82, 0.95, 0.45); }' : 'void main(){ gl_FragColor = vec4(1.0, 1.0, 1.0, 0.9); }';
     const m = new THREE.ShaderMaterial({ uniforms: U, vertexShader: vs, fragmentShader: fs, transparent: true, depthWrite: false });
@@ -16858,7 +16867,18 @@ const particulas = (() => {
     definir(t) { if (t !== tipo || (!obj && (t === 'chuva' || t === 'neve'))) criar(t); },
     tipo: () => tipo,
     intens(k) { U.uInt.value = Math.max(0, Math.min(1, k)); if (obj) obj.visible = U.uInt.value > 0.01; },   // 0 a 1 (chuva que começa/para aos poucos; some dentro dos lugares)
-    atualizar(dt) { if (!obj) return; U.uTempo.value = (U.uTempo.value + dt) % 1000; U.uCam.value.copy(camera.position); },
+    atualizar(dt) {
+      if (!obj) return;
+      U.uTempo.value = (U.uTempo.value + dt) % 1000;
+      const c = camera.position; camera.getWorldDirection(dir);
+      // o ponto do chão para onde a câmera olha (olhando para o horizonte: um pouco à frente dela)
+      let d = dir.y < -0.03 ? Math.min(220, c.y / -dir.y) : 30;
+      const hz = Math.hypot(dir.x, dir.z) || 1;
+      U.uCentro.value.set(c.x + dir.x / hz * d * hz, 0, c.z + dir.z / hz * d * hz);
+      const dist = Math.hypot(U.uCentro.value.x - c.x, U.uCentro.value.z - c.z);
+      U.uCaixa.value = Math.max(CAIXA0, Math.min(150, dist * 0.8 + 25));
+      U.uAlt.value = Math.max(ALT0, Math.min(90, c.y + 8));
+    },
   };
 })();
 

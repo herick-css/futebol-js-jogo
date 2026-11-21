@@ -1,5 +1,5 @@
 /* =====================================================================================================================
-   estadiosA.js — OS 20 ESTÁDIOS DA SÉRIE A, (7.5.2) os 13 da Espanha e da Inglaterra e os 10 da América do Sul (o jogo baixa na abertura, como o cosmeticos.js).
+   estadiosA.js — OS 20 ESTÁDIOS DA SÉRIE A, (7.5.2) os 13 da Espanha e da Inglaterra, os 10 da América do Sul e os 5 da Série B (o jogo baixa na abertura, como o cosmeticos.js).
    - O campo da partida é o CAMPOS.serieA do jogo.js (estadio: 'arenaA', 105 x 68) com campo.modelo = uma das chaves de MODELOS.
      Sem modelo (ou com um que não existe), o modelo sai do nome do mandante (o mesmo time cai sempre no mesmo estádio).
      Sem este arquivo, a partida usa o estádio oficial de sempre.
@@ -1856,14 +1856,14 @@
   MODELOS.bombonera = (E) => {
     const az = 0x103f91, am = 0xf2c230, c1 = ehBranco(E.c1) ? 0xd2d6dc : E.c1, c2 = ehBranco(E.c2) || dist(E.c2, c1) < 60 ? 0xf2f2ee : E.c2;
     const fileira = (r, i, info, a) => (a === 1 ? (Math.floor(info.s / 12) % 2 ? c2 : c1) : r % 2 ? c1 : tom(c1, 0.9));
-    const T = tribunas(E, { recuo: 4.5, rb: 6, nArc: 5, lados: { 'z+': [12, 11, 12], 'x-': [12, 11, 12], 'x+': [12, 11, 12], 'z-': [7] }, cantos: [12, 11, 12],
+    const T = tribunas(E, { recuo: 5.4, rb: 6, nArc: 5, lados: { 'z+': [12, 11, 12], 'x-': [12, 11, 12], 'x+': [12, 11, 12], 'z-': [7] }, cantos: [12, 11, 12],
       dy: [0.78, 0.98, 1.08], dz: 0.8, vao: [0, 3.2, 3.0], organizada: 'z+',
       concreto: (r, j, lado) => (lado === 'z+' || lado === 'x-' || lado === 'x+' || lado[0] === 'c' ? (Math.floor(r / 2) % 2 ? tom(az, 0.9) : tom(am, 0.85)) : (r % 2 ? 0x6a6d73 : 0x63666c)),
       assento: (r, i, info, a) => (info.lado === 'z-' ? (r % 2 ? c1 : tom(c1, 0.88)) : a === 0 ? null : fileira(r, i, info, a)),
       fora: (r, i, x, z, lado) => lado === 'x+' && r > 6,
       teto: { lados: [], propria: true } });
     // o lado reto: a parede dos palcos (os camarotes de vidro em 6 andares), quase em pé, colada no campo
-    const Rz = T.res['z-'].R, zP = -(E.HW + 4.5 + Rz.oFim + 0.4), yTop = T.res['z+'].R.yTopo + 1.5, larg = 2 * E.HL + 6;
+    const Rz = T.res['z-'].R, zP = -(E.HW + 5.4 + Rz.oFim + 0.4), yTop = T.res['z+'].R.yTopo + 1.5, larg = 2 * E.HL + 6;
     caixa(E.L, 0, yTop / 2, zP - 3.2, larg, yTop, 6, { todo: 0xe8e4d8, y1: 0x5a5e66 }, 0, ['y0']);
     const nA = 6, h0 = Rz.yTopo + 1.8, hA = (yTop - h0 - 0.5) / nA;
     for (let k = 0; k < nA; k++) {
@@ -1875,7 +1875,7 @@
     // o paredão de fora dos três lados: concreto pintado em faixas
     for (const l of ['z+', 'x-', 'x+']) { const r = T.res[l].R; pele(E, T.C, r.oFim + 0.4, 0, r.yTopo + 1.8, (i) => (i % 3 ? 0xd9d3c3 : tom(am, 0.9)), (i, lado) => lado === l || lado[0] === 'c'); }
     for (const s of [-1, 1]) caixa(E.L, s * (E.HL + 12), T.res['x+'].R.yTopo + 4, s > 0 ? 12 : -12, 0.8, 8, 0.8, 0x595e66);
-    torresDeLuz(E, E.HL + 8, E.HW + 6, T.res['z+'].R.yTopo + 8);
+    { const R = T.res['z+'].R; torresDeLuz(E, E.HL + 5.4 + R.oFim + 1.5, E.HW + 5.4 + R.oFim + 1.5, R.yTopo + 10); }   // atrás dos anéis (no meio deles furavam a arquibancada)
     E.txtTelao = 'LIGA'; E.bairro = 'bairro'; E.esplanada = 4; E.semEstac = true; E.chaoCor = 0x2a5a2e;
   };
 
@@ -1890,7 +1890,7 @@
       teto: { lados: 'todos', cor: 0xe4e7ea, baixo: 0xb2b8bf, folga: 7, frente: 6, desce: 1.2 } });
     const r = T.res['z-'];
     laminas(E, T.C, r.oT1 + 0.3, r.yT - 1, 3.2, 0xd8d8d2, 0xc4c6c4);
-    for (const s of [-1, 1]) telao(E, s * (E.HL + 12 + r.R.oFim - 4), r.yT - 5, 0, 15, 6.5, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 3 });
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 12 + 6 + 1.2), r.yT - 4.6, 0, 15, 6.5, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 0.9 });   // pendurados logo atrás da beira da cobertura (lá no fundo ela os escondia)
     E.txtTelao = 'LIGA'; E.chaoAte = [E.HL + 3, E.HW + 3]; E.chaoCor = 0x2a5a2e;
   };
 
@@ -2047,6 +2047,90 @@
     telao(E, E.HL + (v === 0 ? 5.5 : 7) + r.oFim + 1.5, r.yTopo + 5, 0, 12, 5.5, Math.PI / 2, { pernas: true });
     torresDeLuz(E, E.HL + 14, E.HW + 14, 32);
     E.txtTelao = 'LIGA'; E.bairro = 'bairro'; E.esplanada = 6; E.chaoCor = 0x2a5a2e;
+  };
+
+  // ============================================================================================ O BRASILEIRÃO B
+  //   Os principais da Série B com casa própria (antes todos caíam nos três estádios do interior):
+  //   castelao ... Arena do Sertão: o oval moderno de dois anéis, a cobertura branca em volta toda e os dois telões
+  //   ilha ....... Estádio da Ilha: o antigo, apertado, as arquibancadas coladas no campo; a social coberta e o resto de concreto
+  //                pintado nas cores do time
+  //   jaconi ..... Estádio da Serra: pequeno e íngreme, a social coberta e, atrás de um gol, o barranco de grama com as árvores
+  //   pantanal ... Arena do Pantanal: moderna, quatro tribunas cobertas separadas (os cantos abertos) e a fachada de lâminas brancas
+  //   ressacada .. Estádio da Ressaca: o oval aberto de um anel só, a cobertura só na social e os morros verdes em volta
+  NOMES.castelao = 'Arena do Sertão';
+  MODELOS.castelao = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xeeeeea : E.c2;
+    const T = tribunas(E, { recuo: 9, rb: 30, nArc: 12, lados: { 'z-': [18, 14], 'z+': [18, 14], 'x-': [18, 14], 'x+': [18, 14] }, cantos: [18, 14],
+      dy: [0.54, 0.72], vao: [0, 4.8], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a) => (a === 1 ? (Math.floor(info.s / 18) % 2 ? cc : c2) : r % 2 ? cc : tom(cc, 0.9)),
+      teto: { lados: 'todos', cor: 0xf4f4f0, baixo: 0xc8ccd2, folga: 6, frente: 7, desce: 1 } });
+    const r = T.res['z-'];
+    laminas(E, T.C, r.R.oFim + 0.4, r.yT - 1, 3, 0xe8e6e0, 0xd2d0ca);
+    for (const s of [-1, 1]) telao(E, s * (E.HL + 9 + 7 + 1.2), r.yT - 4.2, 0, 14, 6, s > 0 ? Math.PI / 2 : -Math.PI / 2, { cabos: 0.8 });   // logo atrás da beira da cobertura
+    E.txtTelao = 'SÉRIE B'; E.chaoCor = 0x2a5a2e;
+  };
+  NOMES.ilha = 'Estádio da Ilha';
+  MODELOS.ilha = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe8e8e4 : E.c2, pop = (r) => (Math.floor(r / 2) % 2 ? tom(cc, 0.95) : tom(c2, 0.92));
+    const T = tribunas(E, { recuo: 5.4, rb: 1, nArc: 2, lados: { 'z-': [12, 8], 'z+': [14], 'x-': [13], 'x+': [13] }, cantos: null,
+      dy: [0.6, 0.76], vao: [0, 3.8], organizada: 'z+',
+      concreto: (r, j, lado) => (lado === 'z-' ? (r % 2 ? 0x6a6d73 : 0x63666c) : pop(r)),
+      assento: (r, i, info) => (info.lado === 'z-' ? (r % 2 ? cc : tom(cc, 0.9)) : null),
+      teto: { lados: ['z-'], folga: 4.6, cor: 0xcfd3d8, baixo: 0x8f949b, desce: 1.6 } });
+    const r = T.res['x+'].R;
+    telao(E, E.HL + 5.4 + r.oFim + 1.2, r.yTopo + 4.6, 0, 11, 5, Math.PI / 2, { pernas: true });
+    torresDeLuz(E, E.HL + 12, E.HW + 11, 30);
+    E.txtTelao = 'SÉRIE B'; E.bairro = 'bairro'; E.esplanada = 4; E.chaoCor = 0x2a5a2e;
+  };
+  NOMES.jaconi = 'Estádio da Serra';
+  MODELOS.jaconi = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe8e8e4 : E.c2, pop = (r) => (Math.floor(r / 3) % 2 ? tom(cc, 0.95) : 0x8a8a84);
+    const T = tribunas(E, { recuo: 5.4, rb: 1, nArc: 2, lados: { 'z-': [14, 8], 'z+': [14], 'x-': [12] }, cantos: null,
+      dy: [0.66, 0.8], vao: [0, 3.8], organizada: 'x-',
+      concreto: (r, j, lado) => (lado === 'z-' ? (r % 2 ? 0x6a6d73 : 0x63666c) : pop(r)),
+      assento: (r, i, info, a) => (info.lado === 'z-' ? (a === 1 ? c2 : r % 2 ? cc : tom(cc, 0.9)) : null),
+      teto: { lados: ['z-', 'z+'], folga: 4.8, cor: 0xd6d9de, baixo: 0x8f949b, desce: 1.4 } });
+    // atrás do gol do lado x+: o barranco de grama subindo (sem arquibancada e sem torcida) com as árvores no alto
+    const x0 = E.HL + 6, x1 = E.HL + 26, w = E.HW + 14;
+    face(E.L, [x0, 0, -w], [x0, 0, w], [x1, 12, w], [x1, 12, -w], [x0 + 30, -10, 0], 0x4f8a3e);
+    face(E.L, [x1, 12, -w], [x1, 12, w], [x1 + 30, 12, w], [x1 + 30, 12, -w], [x1 + 10, 0, 0], 0x4a8238);
+    for (const s of [-1, 1]) face(E.L, [x0, 0, s * w], [x1, 12, s * w], [x1 + 30, 12, s * w], [x1 + 30, 0, s * w], [x1, 6, 0], 0x6a5a40);
+    for (let k = 0; k < 16; k++) arvore(E.L, x1 + 3 + (k % 3) * 5 + hash(k, 1, 7) * 2, -w + 3 + k * (2 * w - 6) / 15, 12 + 0, 0.9 + hash(k, 2, 7) * 0.5, k % 3 ? 0x3f7a35 : 0x356b2e);
+    for (let k = 0; k < 6; k++) arvore(E.L, x0 + 6 + k * 2.6, (k % 2 ? 1 : -1) * (w - 4 - k), 3.6 + k * 1.5, 0.8, 0x3f7a35);
+    // a mureta no pé do barranco (o fim do campo) e o placar velho em cima
+    caixa(E.L, x0 - 0.3, 0.6, 0, 0.5, 1.2, 2 * w, 0xd6d0c0);
+    telao(E, x1 - 2, 12 + 4.2, 0, 10, 4.4, Math.PI / 2, { pernas: true });
+    torresDeLuz(E, E.HL + 11, E.HW + 10, 30);
+    E.txtTelao = 'SÉRIE B'; E.bairro = 'mata'; E.esplanada = 4; E.chaoCor = 0x2a5a2e;
+    E.livre = [[x0 - 2, -w - 4, x1 + 34, w + 4]];
+  };
+  NOMES.pantanal = 'Arena do Pantanal';
+  MODELOS.pantanal = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xeeeeea : E.c2;
+    const T = tribunas(E, { recuo: 7, rb: 1, nArc: 2, lados: { 'z-': [16, 12], 'z+': [16, 12], 'x-': [20], 'x+': [20] }, cantos: null,
+      dy: [0.56, 0.74], vao: [0, 4.6], camarotes: true, organizada: 'x-',
+      assento: (r, i, info, a) => (hash(Math.floor(info.s / 6), r, 5 + a) < 0.08 ? c2 : r % 2 ? cc : tom(cc, 0.92)),
+      teto: { lados: 'todos', cor: 0xf0f0ec, baixo: 0xb8bcc2, folga: 6, frente: 5, desce: 1 } });
+    const r = T.res['z-'];
+    laminas(E, T.C, r.R.oFim + 0.5, r.yT - 0.5, 1.4, 0xf2f2ee, 0xe2e2dc, (i, lado) => lado[0] !== 'c');   // só nas tribunas (nos cantos abertos ficavam soltas)
+    telao(E, E.HL + 7 + T.res['x+'].R.oFim - 2, T.res['x+'].yT - 3.6, 0, 12, 5, Math.PI / 2, { cabos: 2.2 });
+    E.txtTelao = 'SÉRIE B'; E.chaoCor = 0x2a5a2e;
+  };
+  NOMES.ressacada = 'Estádio da Ressaca';
+  MODELOS.ressacada = (E) => {
+    const cc = corCadeira(E), c2 = ehBranco(E.c2) ? 0xe8e8e4 : E.c2;
+    const T = tribunas(E, { recuo: 8, rb: 22, nArc: 10, lados: { 'z-': [20, 8], 'z+': [20], 'x-': [20], 'x+': [20] }, cantos: [20],
+      dy: [0.54, 0.7], vao: [0, 4.2], organizada: 'x+',
+      concreto: (r, j, lado) => (lado === 'z-' ? (r % 2 ? 0x6a6d73 : 0x63666c) : r % 2 ? 0x8a8a84 : 0x82827c),
+      assento: (r, i, info, a) => (info.lado === 'z-' ? (a === 1 ? c2 : r % 2 ? cc : tom(cc, 0.9)) : (Math.floor(info.s / 10) + r) % 9 === 0 ? c2 : cc),
+      teto: { lados: ['z-'], folga: 5.2, cor: 0xdfe2e6, baixo: 0x9aa0a8, desce: 1.4 } });
+    const R = T.res['z+'].R;
+    pele(E, T.C, R.oFim + 0.4, 0, R.yTopo + 1.4, (i) => (i % 2 ? 0xe0dccf : 0xd6d2c4), (i, lado) => lado !== 'z-');
+    torresDeLuz(E, E.HL + 20, E.HW + 18, 34);
+    E.pegada = medir(E);
+    for (let k = 0; k < 36; k++) { const a = k / 36 * Math.PI * 2; arvore(E.L, Math.cos(a) * (E.pegada[0] + 5), Math.sin(a) * (E.pegada[1] + 5), 3.2, 1, k % 2 ? 0x3f7a35 : 0x2f6a2c); }
+    cordilheira(E, { ang: Math.PI * 0.5, abre: 80, dist: 200, alt: 40, neve: 0, cor: 0x3f7036, n: 14 });
+    E.txtTelao = 'SÉRIE B'; E.chaoCor = 0x2a5a2e;
   };
 
   // ============================================================================================ (7.4.0) O ENTORNO: A CIDADE EM VOLTA
@@ -2404,6 +2488,11 @@
   DE_OUTRO('tahuichi', 'caribe', 'Estadio de los Llanos Orientales', 'LIGA'); DE_OUTRO('potosino', 'altiplano', 'Estadio de la Villa Imperial', 'LIGA');
   DE_OUTRO('canchaCO', 'cancha', 'Estadio Municipal', 'LIGA'); DE_OUTRO('pascual', 'municipal', 'Estadio del Pascual', 'LIGA');
   DE_OUTRO('palmaseca', 'caribe', 'Estadio de Palmaseca', 'LIGA'); DE_OUTRO('galeras', 'cerros', 'Estadio del Volcán', 'LIGA');
+  // o Brasileirão B: os outros grandes da Série B nas variações das casas novas (acima)
+  DE_OUTRO('aflitos', 'ilha', 'Estádio dos Aflitos', 'SÉRIE B'); DE_OUTRO('serrinha', 'ilha', 'Estádio da Serrinha', 'SÉRIE B');
+  DE_OUTRO('carvao', 'ilha', 'Estádio do Carvão', 'SÉRIE B'); DE_OUTRO('trilhos', 'jaconi', 'Estádio dos Trilhos', 'SÉRIE B');
+  DE_OUTRO('gerais', 'pantanal', 'Arena das Gerais', 'SÉRIE B'); DE_OUTRO('pajucara', 'ressacada', 'Estádio da Pajuçara', 'SÉRIE B');
+  DE_OUTRO('cafe', 'ressacada', 'Estádio do Café', 'SÉRIE B');
 
   // a casa de cada clube do Brasileirão A (serieb.js, TIMES_A): o modelo mais parecido com o estádio de verdade de cada um
   //   (7.4.0) cada clube na sua casa; quem não tem estádio próprio joga onde já joga (as Laranjeiras dividem o Anel com o Urubu).
@@ -2443,7 +2532,10 @@
     chapare: 'canchaBO', vinteno: 'canchaBO', chapaco: 'canchaBO', coronel: 'canchaBO',
     verdolaga: 'valle', poderoso: 'valle', currambero: 'caribe', escarlata: 'pascual', azucarero: 'palmaseca', embajador: 'cerros', cardenal: 'cerros',
     interbog: 'cerros', sabana: 'cerros', volcanico: 'galeras', blancoblanco: 'canchaCO', musical: 'canchaCO', aguiladorada: 'canchaCO',
-    leopardo: 'canchaCO', llanero: 'canchaCO', felino: 'canchaCO', vallenato: 'canchaCO', ajedrezado: 'canchaCO', motilon: 'canchaCO', matecana: 'canchaCO' };
+    leopardo: 'canchaCO', llanero: 'canchaCO', felino: 'canchaCO', vallenato: 'canchaCO', ajedrezado: 'canchaCO', motilon: 'canchaCO', matecana: 'canchaCO',
+    // Brasileirão B (os outros continuam nos três estádios do interior)
+    fortalecer: 'castelao', vovo: 'castelao', rubronegro: 'ilha', timbu: 'aflitos', esmeraldino: 'serrinha', carvoeiro: 'carvao', juventa: 'jaconi',
+    fantasma: 'trilhos', dourado: 'pantanal', coelhao: 'gerais', avante: 'ressacada', regatas: 'pajucara', tubarao: 'cafe' };
   // quem subiu do Brasileirão B (sem casa na lista) joga num dos estádios do interior, sempre o mesmo
   const DO_INTERIOR = ['caipira', 'taboao', 'oeste'];
   const modeloDoClube = (k) => CASA_DO_CLUBE[k] || (k ? DO_INTERIOR[(typeof sementeDe === 'function' ? sementeDe('casa|' + k) : String(k).length) % DO_INTERIOR.length] : '');
