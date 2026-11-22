@@ -28,6 +28,18 @@
     'Herick': ['Herick', 'Herick', 'Herick', 'Herick'], 'Joana': ['Joana', 'Joana', 'Joana', 'Joana'], 'Seu Wilson': ['Mr. Wilson', 'Don Wilson', 'Signor Wilson', 'M. Wilson'],
     'Falar com o Herick': ['Talk to Herick', 'Hablar con Herick', 'Parla con Herick', 'Parler à Herick'],
     'Falar com a Joana': ['Talk to Joana', 'Hablar con Joana', 'Parla con Joana', 'Parler à Joana'],
+    'Falar com a Bia': ['Talk to Bia', 'Hablar con Bia', 'Parla con Bia', 'Parler à Bia'], 'Bia': ['Bia', 'Bia', 'Bia', 'Bia'],
+    'Oi! Pipoca quentinha saindo agora. Vai querer?': ['Hi! Fresh popcorn coming out right now. Want some?', '¡Hola! Palomitas calentitas saliendo ahora. ¿Vas a querer?', 'Ciao! Popcorn caldi appena fatti. Ne vuoi?', 'Salut ! Pop-corn tout chaud qui sort à l’instant. Tu en veux ?'],
+    'Pipoca de cinema sem filme de verdade é a minha especialidade. O que vai ser?': ['Movie popcorn without a real movie is my specialty. What will it be?', 'Palomitas de cine sin película de verdad son mi especialidad. ¿Qué va a ser?', 'Popcorn da cinema senza un vero film sono la mia specialità. Cosa prendi?', 'Le pop-corn de cinéma sans vrai film, c’est ma spécialité. Ce sera quoi ?'],
+    'Dica da Bia: o combo sai mais barato. E o refri gela a garganta antes dos anúncios.': ['Bia’s tip: the combo is cheaper. And the soda cools your throat before the ads.', 'Consejo de Bia: el combo sale más barato. Y el refresco te refresca la garganta antes de los anuncios.', 'Consiglio di Bia: il combo costa meno. E la bibita rinfresca la gola prima della pubblicità.', 'Le conseil de Bia : le combo revient moins cher. Et le soda rafraîchit la gorge avant les pubs.'],
+    'Pipoca ({0} fakes)': ['Popcorn ({0} fakes)', 'Palomitas ({0} fakes)', 'Popcorn ({0} fakes)', 'Pop-corn ({0} fakes)'],
+    'Refri ({0} fakes)': ['Soda ({0} fakes)', 'Refresco ({0} fakes)', 'Bibita ({0} fakes)', 'Soda ({0} fakes)'],
+    'Pipoca com refri ({0} fakes)': ['Popcorn with soda ({0} fakes)', 'Palomitas con refresco ({0} fakes)', 'Popcorn con bibita ({0} fakes)', 'Pop-corn avec soda ({0} fakes)'],
+    'Nada, obrigado': ['Nothing, thanks', 'Nada, gracias', 'Niente, grazie', 'Rien, merci'],
+    'Nada, obrigada': ['Nothing, thanks', 'Nada, gracias', 'Niente, grazie', 'Rien, merci'],
+    'Pipoca? Isso é só ar com sal.': ['Popcorn? That’s just air with salt.', '¿Palomitas? Eso es solo aire con sal.', 'Popcorn? È solo aria e sale.', 'Du pop-corn ? C’est juste de l’air avec du sel.'],
+    'Ar com sal e muito carinho, viu? Mas tudo bem, cada um com o seu gosto.': ['Air with salt and lots of love, okay? But fine, to each their own.', 'Aire con sal y mucho cariño, ¿eh? Pero bueno, cada uno con su gusto.', 'Aria, sale e tanto affetto, eh? Ma va bene, ognuno ha i suoi gusti.', 'De l’air, du sel et beaucoup d’amour, hein ? Mais bon, chacun ses goûts.'],
+    'Tudo bem! A pipoca fica esperando você.': ['No problem! The popcorn will be waiting for you.', '¡Está bien! Las palomitas te esperan.', 'Va bene! I popcorn ti aspettano.', 'Pas de souci ! Le pop-corn t’attend.'],
     'Bilhete de 15 s (+{0} fakes)': ['15 s ticket (+{0} fakes)', 'Boleto de 15 s (+{0} fakes)', 'Biglietto da 15 s (+{0} fakes)', 'Billet de 15 s (+{0} fakes)'],
     'Bilhete de 30 s (+{0} fakes)': ['30 s ticket (+{0} fakes)', 'Boleto de 30 s (+{0} fakes)', 'Biglietto da 30 s (+{0} fakes)', 'Billet de 30 s (+{0} fakes)'],
     'Só passando': ['Just passing by', 'Solo de paso', 'Passavo solo di qui', 'Je passais juste'],
@@ -64,7 +76,7 @@
     'Já pensou em virar crítico de anúncio? Experiência você tem de sobra.': ['Ever thought of becoming an ad critic? You’ve got plenty of experience.', '¿Pensaste en volverte crítico de anuncios? Experiencia te sobra.', 'Hai mai pensato di diventare critico di pubblicità? L’esperienza non ti manca.', 'Tu as déjà pensé à devenir critique de pubs ? De l’expérience, tu en as à revendre.'],
     'Este jogo foi feito com muito amor e pouquíssimas horas de sono.': ['This game was made with lots of love and very few hours of sleep.', 'Este juego se hizo con mucho amor y poquísimas horas de sueño.', 'Questo gioco è stato fatto con tanto amore e pochissime ore di sonno.', 'Ce jeu a été fait avec beaucoup d’amour et très peu d’heures de sommeil.'],
     'Se o anúncio for chato, reclama com ele, não comigo.': ['If the ad is boring, complain to it, not to me.', 'Si el anuncio es aburrido, quéjate con él, no conmigo.', 'Se la pubblicità è noiosa, lamentati con lei, non con me.', 'Si la pub est ennuyeuse, plains-toi à elle, pas à moi.'],
-    'A pipoca é por conta da casa. Mentira, é por conta da sua imaginação.': ['The popcorn is on the house. Just kidding, it’s on your imagination.', 'Las palomitas corren por cuenta de la casa. Mentira, corren por cuenta de tu imaginación.', 'I popcorn li offre la casa. Scherzo, li offre la tua immaginazione.', 'Le pop-corn est offert par la maison. Je rigole, il est offert par ton imagination.'],
+    'Lembra quando eu dizia que um dia ia ter pipoca? A Bia tá ali na bombonière. Promessa cumprida!': ['Remember when I said someday we’d have popcorn? Bia is over at the snack bar. Promise kept!', '¿Te acuerdas cuando decía que algún día iba a haber palomitas? Bia está ahí en el puesto de golosinas. ¡Promesa cumplida!', 'Ti ricordi quando dicevo che un giorno ci sarebbero stati i popcorn? Bia è lì al bancone degli snack. Promessa mantenuta!', 'Tu te souviens quand je disais qu’un jour il y aurait du pop-corn ? Bia est là-bas, au stand de confiseries. Promesse tenue !'],
     'Cada 30 segundos seus valem ouro. Ou melhor: valem 100 fakes.': ['Every 30 seconds of yours is worth gold. Or rather: worth 100 fakes.', 'Cada 30 segundos tuyos valen oro. O mejor: valen 100 fakes.', 'Ogni tuo mezzo minuto vale oro. Anzi: vale 100 fakes.', 'Chacune de tes 30 secondes vaut de l’or. Ou plutôt : 100 fakes.'],
     'Fiz um cinema sem fila nenhuma. O segurança é só para dar um charme.': ['I made a cinema with no line at all. The security guard is just for style.', 'Hice un cine sin ninguna fila. El guardia es solo para darle encanto.', 'Ho fatto un cinema senza nessuna coda. La guardia è solo per fare scena.', 'J’ai fait un cinéma sans aucune file d’attente. Le vigile, c’est juste pour le style.'],
     'Quanto mais você assiste, mais rápido sai a próxima atualização. Pressão nenhuma, hein?': ['The more you watch, the sooner the next update comes out. No pressure, huh?', 'Cuanto más miras, más rápido sale la próxima actualización. Sin presión, ¿eh?', 'Più guardi, prima esce il prossimo aggiornamento. Nessuna pressione, eh?', 'Plus tu regardes, plus vite sort la prochaine mise à jour. Aucune pression, hein ?'],
@@ -105,7 +117,7 @@
     'Já pensou em virar crítico de anúncio? Experiência você tem de sobra.',
     'Este jogo foi feito com muito amor e pouquíssimas horas de sono.',
     'Se o anúncio for chato, reclama com ele, não comigo.',
-    'A pipoca é por conta da casa. Mentira, é por conta da sua imaginação.',
+    'Lembra quando eu dizia que um dia ia ter pipoca? A Bia tá ali na bombonière. Promessa cumprida!',
     'Cada 30 segundos seus valem ouro. Ou melhor: valem 100 fakes.',
     'Fiz um cinema sem fila nenhuma. O segurança é só para dar um charme.',
     'Quanto mais você assiste, mais rápido sai a próxima atualização. Pressão nenhuma, hein?',
@@ -114,13 +126,13 @@
   // a Joana: cinéfila, quer escrever roteiros, ia ao cinema com a avó toda sexta
   const JOANA_PAPOS = ['Oi! Hoje a sessão tá boa, viu? Escolhi as poltronas do meio pra você ver melhor.', 'Sabia que o primeiro filme que eu vi foi aqui? Minha avó me trouxe numa sexta, eu tinha seis anos.',
     'Tô escrevendo um roteiro nas horas vagas. Um suspense que se passa numa cidade pequena igual a essa...', 'Se o filme de hoje tiver final triste, eu já aviso: a culpa não é minha, é do roteirista.',
-    'Pipoca a gente ainda não tem. O Herick diz que um dia vai ter. Eu digo que ele fala isso desde o começo, haha.', 'Qual sessão vai ser hoje? Quinze ou trinta segundos de pura emoção?'];
+    'Já provou a pipoca da Bia? Quase não tem caloria... mas também não mata a fome de ninguém, haha.', 'Qual sessão vai ser hoje? Quinze ou trinta segundos de pura emoção?'];
   for (const [k, v] of Object.entries({
     'Oi! Hoje a sessão tá boa, viu? Escolhi as poltronas do meio pra você ver melhor.': ['Hi! Today’s showing is good, you know? I picked the middle seats so you can see better.', '¡Hola! Hoy la función está buena, ¿eh? Elegí las butacas del medio para que veas mejor.', 'Ciao! Oggi lo spettacolo è bello, sai? Ho scelto le poltrone centrali così vedi meglio.', 'Coucou ! La séance d’aujourd’hui est bien, tu sais ? J’ai choisi les fauteuils du milieu pour que tu voies mieux.'],
     'Sabia que o primeiro filme que eu vi foi aqui? Minha avó me trouxe numa sexta, eu tinha seis anos.': ['Did you know the first movie I ever saw was here? My grandma brought me on a Friday, I was six.', '¿Sabías que la primera película que vi fue aquí? Mi abuela me trajo un viernes, yo tenía seis años.', 'Sai che il primo film che ho visto è stato qui? Mia nonna mi ci ha portata un venerdì, avevo sei anni.', 'Tu savais que le premier film que j’ai vu, c’était ici ? Ma grand-mère m’a emmenée un vendredi, j’avais six ans.'],
     'Tô escrevendo um roteiro nas horas vagas. Um suspense que se passa numa cidade pequena igual a essa...': ['I’m writing a script in my spare time. A thriller set in a small town just like this one...', 'Estoy escribiendo un guion en mis ratos libres. Un suspenso que pasa en una ciudad pequeña igual a esta...', 'Sto scrivendo una sceneggiatura nel tempo libero. Un thriller ambientato in una piccola città proprio come questa...', 'J’écris un scénario à mes heures perdues. Un suspense qui se passe dans une petite ville comme celle-ci...'],
     'Se o filme de hoje tiver final triste, eu já aviso: a culpa não é minha, é do roteirista.': ['If today’s movie has a sad ending, I’m warning you: it’s not my fault, it’s the screenwriter’s.', 'Si la película de hoy tiene final triste, ya te aviso: la culpa no es mía, es del guionista.', 'Se il film di oggi ha un finale triste, ti avviso: non è colpa mia, è dello sceneggiatore.', 'Si le film d’aujourd’hui finit mal, je te préviens : ce n’est pas ma faute, c’est celle du scénariste.'],
-    'Pipoca a gente ainda não tem. O Herick diz que um dia vai ter. Eu digo que ele fala isso desde o começo, haha.': ['We don’t have popcorn yet. Herick says we will someday. I say he’s been saying that since the beginning, haha.', 'Palomitas todavía no tenemos. Herick dice que algún día va a haber. Yo digo que lo dice desde el principio, jaja.', 'Il popcorn ancora non ce l’abbiamo. Herick dice che un giorno ci sarà. Io dico che lo ripete dall’inizio, haha.', 'On n’a pas encore de pop-corn. Herick dit qu’un jour, il y en aura. Moi, je dis qu’il répète ça depuis le début, haha.'],
+    'Já provou a pipoca da Bia? Quase não tem caloria... mas também não mata a fome de ninguém, haha.': ['Have you tried Bia’s popcorn? It barely has any calories... but it doesn’t fill anyone up either, haha.', '¿Ya probaste las palomitas de Bia? Casi no tienen calorías... pero tampoco le quitan el hambre a nadie, jaja.', 'Hai già provato i popcorn di Bia? Quasi non hanno calorie... ma non tolgono la fame a nessuno, haha.', 'Tu as goûté le pop-corn de Bia ? Il n’a presque pas de calories... mais il ne cale personne non plus, haha.'],
     'Qual sessão vai ser hoje? Quinze ou trinta segundos de pura emoção?': ['Which showing will it be today? Fifteen or thirty seconds of pure excitement?', '¿Qué función va a ser hoy? ¿Quince o treinta segundos de pura emoción?', 'Quale spettacolo oggi? Quindici o trenta secondi di pura emozione?', 'Quelle séance aujourd’hui ? Quinze ou trente secondes de pure émotion ?'],
   })) if (typeof I18N !== 'undefined' && !I18N[k]) I18N[k] = v;
   const clampN = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -351,13 +363,18 @@
       const apG = { pele: PELES_FITZ[4].cor, cabelo: CORES_CABELO[0].cor, estilo: acha(ESTILOS_CABELO, 'Raspado'), rosto: acha(ROSTOS, 'Sério'), labio: 4, barba: acha(ESTILOS_BARBA, 'Cavanhaque'), corBarba: CORES_CABELO[0].cor };
       const G = api.criarNPCFixo(apG, false, 6, ['#1c1c1f', '#1c1c1f', '#f2f2ee', '#1c1c1f']); G.tipo = 'parado'; G.x = C.seguranca.x; G.z = C.seguranca.z; G.yaw = G.yawAlvo = C.seguranca.yaw; M.guarda = G;
       s.falantesExtra.seguranca = { A: G, nome: T('Seu Wilson'), voz: 4 };
+      if (C.bomboniere) {                                                // a Bia, da bombonière (pipoca, refri e o combo)
+        const apB = { pele: PELES_FITZ[3].cor, cabelo: CORES_CABELO[0].cor, estilo: acha(ESTILOS_CABELO, 'Cacheado volumoso'), rosto: acha(ROSTOS, 'Sorridente'), labio: 3, barba: 0 };
+        const B = api.criarNPCFixo(apB, true, 1, ['#f2c230', '#1c1c1f', '#c8352b', '#c8352b']); B.tipo = 'parado'; B.x = C.bomboniere.x; B.z = C.bomboniere.z; B.yaw = B.yawAlvo = C.bomboniere.yaw; M.bia = B;
+        s.falantesExtra.bia = { A: B, nome: T('Bia'), voz: 0 };
+      }
       for (const K of C.cordas) { K.aberta = false; K.ladoAnt = null; K.calado = false; K.perto = false; }
     }
     function saiu() {
       const s = S();
       if (M.H) removerHerick(M.H);
-      M.H = null; M.joana = null; M.guarda = null; M.C = null; M.idx = null; M.passe = false; M.sessao = false; M.filme = false;
-      if (s && s.falantesExtra) { delete s.falantesExtra.joana; delete s.falantesExtra.seguranca; if (!M.Hfora) delete s.falantesExtra.herick; }
+      M.H = null; M.joana = null; M.guarda = null; M.bia = null; M.C = null; M.idx = null; M.passe = false; M.sessao = false; M.filme = false;
+      if (s && s.falantesExtra) { delete s.falantesExtra.joana; delete s.falantesExtra.seguranca; delete s.falantesExtra.bia; if (!M.Hfora) delete s.falantesExtra.herick; }
     }
     const dentroCine = () => { const s = S(); return !!(s && s.dentro && s.dentro.nome === 'cinema' && M.C); };
 
@@ -405,6 +422,26 @@
       const C = M.C;
       if (M.H) v.push({ x: M.H.x, z: M.H.z + 0.55, r: 1.6, txt: T('Falar com o Herick'), fn: falarHerick, y: 2.9, pri: true });
       v.push({ x: C.bilheteria.falar.x, z: C.bilheteria.falar.z, r: 1.5, txt: T('Falar com a Joana'), fn: falarJoana, y: 2.6, pri: true });
+      if (M.bia && C.bomboniere) v.push({ x: C.bomboniere.falar.x, z: C.bomboniere.falar.z, r: 1.5, txt: T('Falar com a Bia'), fn: falarBia, y: 2.6, pri: true });
+    }
+    const BIA_PAPOS = ['Oi! Pipoca quentinha saindo agora. Vai querer?', 'Pipoca de cinema sem filme de verdade é a minha especialidade. O que vai ser?', 'Dica da Bia: o combo sai mais barato. E o refri gela a garganta antes dos anúncios.'];
+    async function falarBia() {
+      const s = S(), B = M.bia, J = s.jog, c = dadosC(), L = api.BOMBONIERE || [];
+      s.modo = 'cena'; api.UI().ctl.hidden = true; J.andando = false;
+      if (B) { B.yawAlvo = Math.atan2(-(J.z - B.z), J.x - B.x); api.camCena(camConversa(B, J)); J.yawAlvo = Math.atan2(-(B.z - J.z), B.x - J.x); }
+      try {
+        const p = T(BIA_PAPOS[(c.papoB | 0) % BIA_PAPOS.length]); c.papoB = (c.papoB | 0) + 1;
+        await api.fala('bia', p);
+        const ops = [Tf('Pipoca ({0} fakes)', L[0].preco), Tf('Refri ({0} fakes)', L[1].preco), Tf('Pipoca com refri ({0} fakes)', L[2].preco), T(PERSONAGEM.genero === 'F' ? 'Nada, obrigada' : 'Nada, obrigado'), T('Pipoca? Isso é só ar com sal.')];
+        const r = await Escolha.mostrar(p, ops);
+        if (r === 4) await api.falaGrossa('bia', 'bia', T('Pipoca? Isso é só ar com sal.'), T('Ar com sal e muito carinho, viu? Mas tudo bem, cada um com o seu gosto.'));
+        else if (r === 3) await api.fala('bia', T('Tudo bem! A pipoca fica esperando você.'));
+        else { api.camCena(null); await api.lancheCinema(L[r], 'bia'); }
+        Dialogo.esconder();
+      } catch (e) { console.error(e); Dialogo.esconder(); }
+      if (M.bia && M.C) M.bia.yawAlvo = M.C.bomboniere.yaw;
+      api.camCena(null);
+      const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
     }
     const opcoesBilhete = () => [Tf('Bilhete de 15 s (+{0} fakes)', PAGA[15]), Tf('Bilhete de 30 s (+{0} fakes)', PAGA[30]), T('Só passando')];
     async function falarHerick() {

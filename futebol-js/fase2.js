@@ -110,7 +110,37 @@
       { n: 'Agasalho retrô', t: 'calca', m: 1, solta: 1, loja: 1, preco: 400, e: { p: 'esporte', ziper: 1, faixa: 1 }, c: ['#c8352b', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
       { n: 'Camiseta smile', t: 'bermuda', loja: 1, preco: 190, e: { d: 'smile' }, c: ['#7a4fb0', '#5b5f66', '#f2f2ee', '#f2c230'] },
       { n: 'Regata de basquete', t: 'short', regata: 1, loja: 1, preco: 260, e: { p: 'esporte', num: '23' }, c: ['#e8742a', '#e8742a', '#1c1c1f', '#f2f2ee'] },
-      { n: 'Camiseta estrelada', t: 'calca', loja: 1, preco: 240, e: { p: 'listrasFinas', d: 'estrela' }, c: ['#1f3a73', '#4a6fa5', '#f2f2ee', '#f2c230'] },
+      { n: 'Camiseta estrelada', t: 'calca', loja: 1, preco: 240, e: { p: 'listrasFinas', d: 'estrela' }, c: ['#1f3a73', '#4a6fa5', '#f2f2ee', '#f2c230'] },      // (mais 30 da loja: entram depois das outras para os números das já salvas não mudarem)
+      { n: 'Camiseta oceano', t: 'bermuda', loja: 1, preco: 210, e: { p: 'degrade', d: 'onda' }, c: ['#9bd1f0', '#2a3f66', '#f2f2ee', '#1f3a73'] },
+      { n: 'Camiseta vintage listrada', t: 'calca', loja: 1, preco: 190, e: { p: 'listrasFinas' }, c: ['#d8c39a', '#7a4a2a', '#7a4a2a', '#a3162a'] },
+      { n: 'Camisa jeans', t: 'calca', m: 1, loja: 1, preco: 330, e: { p: 'social', botoes: 1 }, c: ['#4a6fa5', '#1c1c1f', '#9bd1f0', '#f2f2ee'] },
+      { n: 'Moletom degradê', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 390, e: { p: 'degrade' }, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee', '#3fb7b0'] },
+      { n: 'Camiseta trovão', t: 'short', loja: 1, preco: 220, e: { p: 'faixa', d: 'raio' }, c: ['#1c1c1f', '#1c1c1f', '#f2c230', '#f2c230'] },
+      { n: 'Polo xadrez', t: 'bermuda', loja: 1, preco: 290, e: { p: 'xadrez', g: 'polo' }, c: ['#1f7a4d', '#d8c39a', '#1c1c1f', '#f2c230'] },
+      { n: 'Regata tropical', t: 'bermuda', regata: 1, loja: 1, preco: 210, e: { p: 'havaiana' }, c: ['#f2c230', '#1f3a73', '#c8352b', '#1f7a4d'] },
+      { n: 'Camiseta verde-oliva', t: 'calca', loja: 1, preco: 200, e: { p: 'ombros' }, c: ['#556b2f', '#1c1c1f', '#1c1c1f', '#d8c39a'] },
+      { n: 'Jaqueta universitária', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 450, e: { p: 'ombros', ziper: 1 }, c: ['#a3162a', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta número 10', t: 'short', loja: 1, preco: 230, e: { num: '10' }, c: ['#f2c230', '#1f7a4d', '#1f7a4d', '#1f7a4d'] },
+      { n: 'Camiseta coração', t: 'bermuda', loja: 1, preco: 180, e: { d: 'coracao' }, c: ['#f2f2ee', '#5b5f66', '#c8352b', '#c8352b'] },
+      { n: 'Camisa social xadrez', t: 'calca', m: 1, dentro: 1, loja: 1, preco: 360, e: { p: 'xadrez', botoes: 1, g: 'polo' }, c: ['#f2f2ee', '#2a3f66', '#3a64b8', '#9bd1f0'] },
+      { n: 'Camiseta neon', t: 'short', loja: 1, preco: 240, e: { p: 'diagonal' }, c: ['#6cae3e', '#1c1c1f', '#1c1c1f', '#f2c230'] },
+      { n: 'Agasalho noturno', t: 'calca', m: 1, solta: 1, loja: 1, preco: 430, e: { p: 'esporte', ziper: 1 }, c: ['#1c1c1f', '#1c1c1f', '#7a4fb0', '#3fb7b0'] },
+      { n: 'Camiseta estrela cadente', t: 'calca', loja: 1, preco: 250, e: { p: 'listrasFinas', d: 'estrela' }, c: ['#2a3f66', '#1c1c1f', '#4a6fa5', '#f2c230'] },
+      { n: 'Camiseta bolinhas azul', t: 'bermuda', loja: 1, preco: 180, e: { p: 'bolinhas' }, c: ['#3a64b8', '#d8c39a', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Moletom flor', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 370, e: { p: 'moletom', d: 'flor' }, c: ['#ffb199', '#8c9199', '#f2f2ee', '#c8352b'] },
+      { n: 'Regata vermelha e preta', t: 'short', regata: 1, loja: 1, preco: 170, e: { p: 'meia' }, c: ['#c8352b', '#1c1c1f', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta tie-dye verde', t: 'bermuda', loja: 1, preco: 250, e: { p: 'tiedye' }, c: ['#6cae3e', '#5b5f66', '#1f7a4d', '#f2c230'] },
+      { n: 'Camiseta montanha nevada', t: 'calca', m: 1, loja: 1, preco: 260, e: { p: 'degrade', d: 'montanha' }, c: ['#4a6fa5', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Camiseta GOL', t: 'short', loja: 1, preco: 210, e: { p: 'barra', txt: 'GOL' }, c: ['#f2f2ee', '#1c1c1f', '#c8352b', '#c8352b'] },
+      { n: 'Corta-vento listrado', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 440, e: { p: 'listras', ziper: 1 }, c: ['#f2c230', '#1c1c1f', '#1c1c1f', '#1f3a73'] },
+      { n: 'Camiseta sol nascente', t: 'bermuda', loja: 1, preco: 200, e: { d: 'sol' }, c: ['#e8742a', '#d8c39a', '#f2f2ee', '#f2c230'] },
+      { n: 'Camiseta camuflada areia', t: 'calca', loja: 1, preco: 230, e: { p: 'camuflado' }, c: ['#d8c39a', '#7a4a2a', '#b9a36a', '#7a4a2a'] },
+      { n: 'Polo de tênis', t: 'short', loja: 1, preco: 270, e: { p: 'polo', faixa: 1 }, c: ['#f2f2ee', '#f2f2ee', '#1f7a4d', '#1f7a4d'] },
+      { n: 'Camiseta smile neon', t: 'bermuda', loja: 1, preco: 220, e: { p: 'listrasV', d: 'smile' }, c: ['#1c1c1f', '#5b5f66', '#f2f2ee', '#6cae3e'] },
+      { n: 'Camiseta coroa dourada', t: 'calca', m: 1, loja: 1, preco: 260, e: { d: 'coroa' }, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee', '#f2c230'] },
+      { n: 'Regata de praia', t: 'short', regata: 1, loja: 1, preco: 190, e: { p: 'degrade', d: 'palmeira' }, c: ['#f2c230', '#3fb7b0', '#f2f2ee', '#e8742a'] },
+      { n: 'Camiseta bola de ouro', t: 'bermuda', loja: 1, preco: 280, e: { d: 'bola' }, c: ['#1c1c1f', '#1c1c1f', '#f2f2ee', '#f2c230'] },
+      { n: 'Jaqueta jeans', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 480, e: { p: 'ziper' }, c: ['#4a6fa5', '#2a3f66', '#f2f2ee', '#9bd1f0'] },
     ],
     F: [
       { n: 'Camiseta e short', t: 'short', e: { d: 'coracao' }, c: ['#d95fa0', '#4a6fa5', '#f2f2ee', '#f2f2ee'] },
@@ -161,7 +191,37 @@
       { n: 'Moletom coração', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 360, e: { p: 'moletom', d: 'coracao' }, c: ['#b9b6ae', '#1c1c1f', '#f2f2ee', '#c8352b'] },
       { n: 'Top tie-dye e short', t: 'short', top: 1, loja: 1, preco: 240, e: { p: 'tiedye' }, c: ['#9bd1f0', '#f2f2ee', '#d95fa0', '#f2c230'] },
       { n: 'Vestido degradê', t: 'vestido', m: 1, loja: 1, preco: 380, e: { p: 'degrade', g: 'v' }, c: ['#f2c230', '#c8352b', '#f2f2ee', '#d95fa0'] },
-      { n: 'Camiseta smile e saia', t: 'saia', loja: 1, preco: 220, e: { d: 'smile' }, c: ['#f2c230', '#4a6fa5', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta smile e saia', t: 'saia', loja: 1, preco: 220, e: { d: 'smile' }, c: ['#f2c230', '#4a6fa5', '#1c1c1f', '#1c1c1f'] },      // (mais 30 da loja: entram depois das outras para os números das já salvas não mudarem)
+      { n: 'Vestido de bolinhas', t: 'vestido', loja: 1, preco: 340, e: { p: 'bolinhas', g: 'v' }, c: ['#1c1c1f', '#f2f2ee', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Vestido tie-dye', t: 'vestido', loja: 1, preco: 360, e: { p: 'tiedye' }, c: ['#f4a6c0', '#f2f2ee', '#7a4fb0', '#9bd1f0'] },
+      { n: 'Camiseta estrela e saia vermelha', t: 'saia', loja: 1, preco: 260, e: { d: 'estrela' }, c: ['#f2f2ee', '#a3162a', '#1c1c1f', '#c8352b'] },
+      { n: 'Top listrado e calça', t: 'calca', top: 1, loja: 1, preco: 240, e: { p: 'listras' }, c: ['#f2f2ee', '#2a3f66', '#2a3f66', '#1f3a73'] },
+      { n: 'Jardineira jeans', t: 'jardineira', loja: 1, preco: 380, e: { p: 'listrasFinas' }, c: ['#f2f2ee', '#4a6fa5', '#c8352b', '#c8352b'] },
+      { n: 'Macacão verde', t: 'macacao', loja: 1, preco: 400, c: ['#1f7a4d', '#f2c230', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Moletom lilás', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 370, e: { p: 'moletom', d: 'estrela' }, c: ['#c9b3e8', '#1c1c1f', '#f2f2ee', '#7a4fb0'] },
+      { n: 'Vestido sol', t: 'vestido', loja: 1, preco: 330, e: { d: 'sol', g: 'v' }, c: ['#f2c230', '#e8742a', '#f2f2ee', '#e8742a'] },
+      { n: 'Blusa havaiana e short', t: 'short', loja: 1, preco: 300, e: { p: 'havaiana', botoes: 1 }, c: ['#d95fa0', '#f2f2ee', '#f2c230', '#1f7a4d'] },
+      { n: 'Regata neon e legging', t: 'calca', regata: 1, loja: 1, preco: 220, e: { p: 'diagonal' }, c: ['#6cae3e', '#1c1c1f', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Camiseta coração e saia rosa', t: 'saia', loja: 1, preco: 230, e: { d: 'coracao' }, c: ['#f2f2ee', '#d95fa0', '#d95fa0', '#c8352b'] },
+      { n: 'Vestido longo listrado', t: 'vestido', m: 1, loja: 1, preco: 380, e: { p: 'listrasV' }, c: ['#f2f2ee', '#3a64b8', '#3a64b8', '#3a64b8'] },
+      { n: 'Top estrela e short', t: 'short', top: 1, loja: 1, preco: 230, e: { d: 'estrela' }, c: ['#1c1c1f', '#4a6fa5', '#f2f2ee', '#f2c230'] },
+      { n: 'Agasalho rosa', t: 'calca', m: 1, solta: 1, loja: 1, preco: 420, e: { p: 'esporte', ziper: 1 }, c: ['#f4a6c0', '#f4a6c0', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Blusa listrada e saia longa', t: 'saia', longa: 1, loja: 1, preco: 300, e: { p: 'listrasFinas' }, c: ['#f2f2ee', '#7a4a2a', '#7a4a2a', '#1c1c1f'] },
+      { n: 'Camiseta flor e calça', t: 'calca', loja: 1, preco: 210, e: { d: 'flor' }, c: ['#9bd1f0', '#2a3f66', '#f2f2ee', '#d95fa0'] },
+      { n: 'Vestido camuflado', t: 'vestido', loja: 1, preco: 340, e: { p: 'camuflado' }, c: ['#556b2f', '#1c1c1f', '#2e3b1f', '#b9a36a'] },
+      { n: 'Corta-vento roxo', t: 'calca', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 440, e: { p: 'faixa', ziper: 1 }, c: ['#7a4fb0', '#1c1c1f', '#f2f2ee', '#f2c230'] },
+      { n: 'Camiseta palmeira e short', t: 'short', loja: 1, preco: 200, e: { d: 'palmeira' }, c: ['#f2c230', '#3fb7b0', '#f2f2ee', '#1f7a4d'] },
+      { n: 'Vestido xadrez', t: 'vestido', loja: 1, preco: 360, e: { p: 'xadrez' }, c: ['#c8352b', '#1c1c1f', '#1c1c1f', '#f2f2ee'] },
+      { n: 'Top degradê e calça', t: 'calca', top: 1, loja: 1, preco: 260, e: { p: 'degrade' }, c: ['#d95fa0', '#2a3f66', '#f2f2ee', '#f2c230'] },
+      { n: 'Camisa social rosa e calça', t: 'calca', m: 1, dentro: 1, loja: 1, preco: 340, e: { p: 'social' }, c: ['#f4a6c0', '#1c1c1f', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Regata smile e saia', t: 'saia', regata: 1, loja: 1, preco: 210, e: { d: 'smile' }, c: ['#f2c230', '#1c1c1f', '#1c1c1f', '#1c1c1f'] },
+      { n: 'Moletom montanha', t: 'calca', m: 1, capuz: 1, solta: 1, loja: 1, preco: 380, e: { p: 'moletom', d: 'montanha' }, c: ['#3fb7b0', '#5b5f66', '#f2f2ee', '#f2f2ee'] },
+      { n: 'Vestido coroa', t: 'vestido', m: 1, loja: 1, preco: 400, e: { d: 'coroa', g: 'v' }, c: ['#1c1c1f', '#1c1c1f', '#c8352b', '#f2c230'] },
+      { n: 'Blusa bicolor e bermuda', t: 'bermuda', loja: 1, preco: 210, e: { p: 'meia' }, c: ['#f4a6c0', '#d8c39a', '#1c1c1f', '#9bd1f0'] },
+      { n: 'Macacão listrado', t: 'macacao', loja: 1, preco: 420, e: { p: 'listras' }, c: ['#f2f2ee', '#1f3a73', '#1f3a73', '#1f3a73'] },
+      { n: 'Camiseta raio e short', t: 'short', loja: 1, preco: 220, e: { p: 'barra', d: 'raio' }, c: ['#1c1c1f', '#c8352b', '#c8352b', '#f2c230'] },
+      { n: 'Jaqueta jeans e saia', t: 'saia', m: 1, jaqueta: 1, solta: 1, loja: 1, preco: 460, e: { p: 'ziper' }, c: ['#4a6fa5', '#1c1c1f', '#f2f2ee', '#9bd1f0'] },
+      { n: 'Vestido estrelado', t: 'vestido', loja: 1, preco: 380, e: { p: 'listrasFinas', d: 'estrela', g: 'v' }, c: ['#1f3a73', '#1f3a73', '#4a6fa5', '#f2c230'] },
     ],
   };
   const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
@@ -1070,6 +1130,66 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'Top tie-dye e short': ['Tie-dye top and shorts', 'Top tie-dye y short', 'Top tie-dye e shorts', 'Top tie-dye et short'],
     'Vestido degradê': ['Gradient dress', 'Vestido degradado', 'Vestito sfumato', 'Robe dégradée'],
     'Camiseta smile e saia': ['Smiley tee and skirt', 'Camiseta sonrisa y falda', 'Maglietta smile e gonna', 'T-shirt smiley et jupe'],
+    'Camiseta oceano': ['Ocean tee', 'Camiseta océano', 'Maglietta oceano', 'T-shirt océan'],
+    'Camiseta vintage listrada': ['Vintage striped tee', 'Camiseta vintage a rayas', 'Maglietta vintage a righe', 'T-shirt vintage rayé'],
+    'Camisa jeans': ['Denim shirt', 'Camisa vaquera', 'Camicia di jeans', 'Chemise en jean'],
+    'Moletom degradê': ['Gradient hoodie', 'Sudadera degradada', 'Felpa sfumata', 'Sweat à capuche dégradé'],
+    'Camiseta trovão': ['Thunder tee', 'Camiseta trueno', 'Maglietta tuono', 'T-shirt tonnerre'],
+    'Polo xadrez': ['Plaid polo', 'Polo a cuadros', 'Polo a quadri', 'Polo à carreaux'],
+    'Regata tropical': ['Tropical tank top', 'Camiseta sin mangas tropical', 'Canottiera tropicale', 'Débardeur tropical'],
+    'Camiseta verde-oliva': ['Olive tee', 'Camiseta verde oliva', 'Maglietta verde oliva', 'T-shirt vert olive'],
+    'Jaqueta universitária': ['Varsity jacket', 'Chaqueta universitaria', 'Giacca college', 'Veste universitaire'],
+    'Camiseta número 10': ['Number 10 tee', 'Camiseta número 10', 'Maglietta numero 10', 'T-shirt numéro 10'],
+    'Camiseta coração': ['Heart tee', 'Camiseta corazón', 'Maglietta cuore', 'T-shirt cœur'],
+    'Camisa social xadrez': ['Plaid dress shirt', 'Camisa de vestir a cuadros', 'Camicia elegante a quadri', 'Chemise habillée à carreaux'],
+    'Camiseta neon': ['Neon tee', 'Camiseta neón', 'Maglietta neon', 'T-shirt fluo'],
+    'Agasalho noturno': ['Night tracksuit', 'Chándal nocturno', 'Tuta notturna', 'Survêtement de nuit'],
+    'Camiseta estrela cadente': ['Shooting star tee', 'Camiseta estrella fugaz', 'Maglietta stella cadente', 'T-shirt étoile filante'],
+    'Camiseta bolinhas azul': ['Blue polka-dot tee', 'Camiseta azul de lunares', 'Maglietta blu a pois', 'T-shirt bleu à pois'],
+    'Moletom flor': ['Flower hoodie', 'Sudadera flor', 'Felpa fiore', 'Sweat à capuche fleur'],
+    'Regata vermelha e preta': ['Red and black tank top', 'Camiseta sin mangas roja y negra', 'Canottiera rossa e nera', 'Débardeur rouge et noir'],
+    'Camiseta tie-dye verde': ['Green tie-dye tee', 'Camiseta tie-dye verde', 'Maglietta tie-dye verde', 'T-shirt tie-dye vert'],
+    'Camiseta montanha nevada': ['Snowy mountain tee', 'Camiseta montaña nevada', 'Maglietta montagna innevata', 'T-shirt montagne enneigée'],
+    'Camiseta GOL': ['GOAL tee', 'Camiseta GOL', 'Maglietta GOL', 'T-shirt BUT'],
+    'Corta-vento listrado': ['Striped windbreaker', 'Cortavientos a rayas', 'Giacca a vento a righe', 'Coupe-vent rayé'],
+    'Camiseta sol nascente': ['Sunrise tee', 'Camiseta sol naciente', 'Maglietta sole nascente', 'T-shirt soleil levant'],
+    'Camiseta camuflada areia': ['Desert camo tee', 'Camiseta camuflaje arena', 'Maglietta mimetica sabbia', 'T-shirt camouflage sable'],
+    'Polo de tênis': ['Tennis polo', 'Polo de tenis', 'Polo da tennis', 'Polo de tennis'],
+    'Camiseta smile neon': ['Neon smiley tee', 'Camiseta sonrisa neón', 'Maglietta smile neon', 'T-shirt smiley fluo'],
+    'Camiseta coroa dourada': ['Golden crown tee', 'Camiseta corona dorada', 'Maglietta corona d’oro', 'T-shirt couronne dorée'],
+    'Regata de praia': ['Beach tank top', 'Camiseta sin mangas de playa', 'Canottiera da spiaggia', 'Débardeur de plage'],
+    'Camiseta bola de ouro': ['Golden ball tee', 'Camiseta balón de oro', 'Maglietta pallone d’oro', 'T-shirt ballon d’or'],
+    'Jaqueta jeans': ['Denim jacket', 'Chaqueta vaquera', 'Giacca di jeans', 'Veste en jean'],
+    'Vestido de bolinhas': ['Polka-dot dress', 'Vestido de lunares', 'Vestito a pois', 'Robe à pois'],
+    'Vestido tie-dye': ['Tie-dye dress', 'Vestido tie-dye', 'Vestito tie-dye', 'Robe tie-dye'],
+    'Camiseta estrela e saia vermelha': ['Star tee and red skirt', 'Camiseta estrella y falda roja', 'Maglietta stella e gonna rossa', 'T-shirt étoile et jupe rouge'],
+    'Top listrado e calça': ['Striped top and pants', 'Top a rayas y pantalón', 'Top a righe e pantaloni', 'Top rayé et pantalon'],
+    'Jardineira jeans': ['Denim overalls', 'Peto vaquero', 'Salopette di jeans', 'Salopette en jean'],
+    'Macacão verde': ['Green jumpsuit', 'Mono verde', 'Tuta verde', 'Combinaison verte'],
+    'Moletom lilás': ['Lilac hoodie', 'Sudadera lila', 'Felpa lilla', 'Sweat à capuche lilas'],
+    'Vestido sol': ['Sun dress', 'Vestido sol', 'Vestito sole', 'Robe soleil'],
+    'Blusa havaiana e short': ['Hawaiian blouse and shorts', 'Blusa hawaiana y short', 'Camicetta hawaiana e shorts', 'Chemisier hawaïen et short'],
+    'Regata neon e legging': ['Neon tank top and leggings', 'Camiseta sin mangas neón y leggings', 'Canottiera neon e leggings', 'Débardeur fluo et legging'],
+    'Camiseta coração e saia rosa': ['Heart tee and pink skirt', 'Camiseta corazón y falda rosa', 'Maglietta cuore e gonna rosa', 'T-shirt cœur et jupe rose'],
+    'Vestido longo listrado': ['Long striped dress', 'Vestido largo a rayas', 'Vestito lungo a righe', 'Robe longue rayée'],
+    'Top estrela e short': ['Star top and shorts', 'Top estrella y short', 'Top stella e shorts', 'Top étoile et short'],
+    'Agasalho rosa': ['Pink tracksuit', 'Chándal rosa', 'Tuta rosa', 'Survêtement rose'],
+    'Blusa listrada e saia longa': ['Striped blouse and long skirt', 'Blusa a rayas y falda larga', 'Camicetta a righe e gonna lunga', 'Chemisier rayé et jupe longue'],
+    'Camiseta flor e calça': ['Flower tee and pants', 'Camiseta flor y pantalón', 'Maglietta fiore e pantaloni', 'T-shirt fleur et pantalon'],
+    'Vestido camuflado': ['Camo dress', 'Vestido camuflado', 'Vestito mimetico', 'Robe camouflage'],
+    'Corta-vento roxo': ['Purple windbreaker', 'Cortavientos morado', 'Giacca a vento viola', 'Coupe-vent violet'],
+    'Camiseta palmeira e short': ['Palm tree tee and shorts', 'Camiseta palmera y short', 'Maglietta palma e shorts', 'T-shirt palmier et short'],
+    'Vestido xadrez': ['Plaid dress', 'Vestido a cuadros', 'Vestito a quadri', 'Robe à carreaux'],
+    'Top degradê e calça': ['Gradient top and pants', 'Top degradado y pantalón', 'Top sfumato e pantaloni', 'Top dégradé et pantalon'],
+    'Camisa social rosa e calça': ['Pink dress shirt and pants', 'Camisa de vestir rosa y pantalón', 'Camicia elegante rosa e pantaloni', 'Chemise habillée rose et pantalon'],
+    'Regata smile e saia': ['Smiley tank top and skirt', 'Camiseta sin mangas sonrisa y falda', 'Canottiera smile e gonna', 'Débardeur smiley et jupe'],
+    'Moletom montanha': ['Mountain hoodie', 'Sudadera montaña', 'Felpa montagna', 'Sweat à capuche montagne'],
+    'Vestido coroa': ['Crown dress', 'Vestido corona', 'Vestito corona', 'Robe couronne'],
+    'Blusa bicolor e bermuda': ['Two-tone blouse and Bermuda shorts', 'Blusa bicolor y bermuda', 'Camicetta bicolore e bermuda', 'Chemisier bicolore et bermuda'],
+    'Macacão listrado': ['Striped jumpsuit', 'Mono a rayas', 'Tuta a righe', 'Combinaison rayée'],
+    'Camiseta raio e short': ['Lightning tee and shorts', 'Camiseta rayo y short', 'Maglietta fulmine e shorts', 'T-shirt éclair et short'],
+    'Jaqueta jeans e saia': ['Denim jacket and skirt', 'Chaqueta vaquera y falda', 'Giacca di jeans e gonna', 'Veste en jean et jupe'],
+    'Vestido estrelado': ['Starry dress', 'Vestido estrellado', 'Vestito stellato', 'Robe étoilée'],
     'Dormir': ['Sleep', 'Dormir', 'Dormi', 'Dormir'],
     'Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?': ["It's not bedtime yet. Sleep anyway and wake up tomorrow at 5 AM?", 'Todavía no es hora de dormir. ¿Dormir igual y despertar mañana a las 5h?', 'Non è ancora ora di dormire. Dormire comunque e svegliarsi domani alle 5?', "Ce n'est pas encore l'heure de dormir. Dormir quand même et se réveiller demain à 5 h ?"],
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
@@ -1220,6 +1340,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     'A empresa vai entrar em contato com você.': ['The company will contact you.', 'La empresa se pondrá en contacto contigo.', "L'azienda ti contatterà.", "L'entreprise va vous contacter."],
     'Fechar o computador': ['Close the computer', 'Cerrar la computadora', 'Chiudere il computer', "Fermer l'ordinateur"],
     'Sair do computador': ['Leave the computer', 'Dejar la computadora', 'Lasciare il computer', "Quitter l'ordinateur"],
+    'Agora não... tenho muita coisa pra fazer hoje.': ['Not now... I have a lot to do today.', 'Ahora no... tengo mucho que hacer hoy.', 'Ora no... ho un sacco di cose da fare oggi.', 'Pas maintenant... j’ai plein de choses à faire aujourd’hui.'],
     'Agora não... eu preciso ver as candidaturas.': ['Not now... I need to check the applications.', 'Ahora no... necesito ver las solicitudes.', 'Ora no... devo vedere le candidature.', 'Pas maintenant... je dois voir les candidatures.'],
     'Tranquilo': ['Easygoing', 'Tranquilo', 'Tranquillo', 'Tranquille'],
     'Você escolheu um emprego': ['You chose a job', 'Elegiste un empleo', 'Hai scelto un lavoro', 'Vous avez choisi un emploi'],
@@ -1551,7 +1672,10 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     return new Promise((fim) => {
       const el = UI.pc, D = S.dados; el.hidden = false; S.modo = 'pc';
       let etapa = 'desktop', sel = null, msg = '', fechou = false, abaCr = 'sintetico';
-      const hora = () => { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
+      const hora = () => {                                               // a hora do mundo do jogo (a mesma do relógio do quarto e da cidade), não a do aparelho
+        const c = S.relogio || API.historia.ler('cidade') || {}, h = typeof c.hora === 'number' ? c.hora : 8.5, m = Math.floor((h * 60 + 0.001) / 10) * 10;
+        return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+      };
       const sair = (r) => { if (fechou) return; fechou = true; el.hidden = true; el.onclick = null; fim(r); };
       const vagaPorId = (id) => VAGAS.find((v) => v.id === id);
       const cardVaga = (v, botao) => '<button type="button" class="loCard loVaga" data-a="vaga" data-v="' + v.id + '"><span class="loIco">' + v.ico + '</span><span><h4>' + esc(T(v.titulo)) + '</h4><p>' + esc(Tf('{0} respondeu à sua candidatura', T(v.emp))) + '</p><small>' + esc(T(v.info)) + '</small></span></button>';
@@ -1560,7 +1684,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       const render = () => {
         let tela = '';
         if (etapa === 'desktop') {
-          tela = '<div class="pcIcones"><button type="button" class="pcIcone" data-a="carreira"><span>⚽</span>' + esc(T('Carreira')) + '</button><button type="button" class="pcIcone" data-a="nav"><span>🌐</span>' + esc(T('Navegador')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>📁</span>' + esc(T('Arquivos')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>🎮</span>' + esc(T('Jogos')) + '</button></div><p class="pcMsg" style="position:absolute;left:14px;bottom:10px;color:#ffd98a">' + esc(msg) + '</p>';
+          tela = '<div class="pcIcones"><button type="button" class="pcIcone" data-a="carreira"><span>⚽</span>' + esc(T('Carreira')) + '</button><button type="button" class="pcIcone" data-a="nav"><span>🌐</span>' + esc(T('Navegador')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>📁</span>' + esc(T('Arquivos')) + '</button><button type="button" class="pcIcone" data-a="outro"><span>🎮</span>' + esc(T('Jogos')) + '</button></div><p class="pcMsg" style="position:absolute;left:108px;right:14px;bottom:10px;color:#ffd98a;text-shadow:0 1px 0 rgba(0,0,0,.6)">' + esc(msg) + '</p>';
         } else if (etapa === 'carreira') {
           tela = '<div class="pcJanela"><div class="pcPag">' + telaCarreira(abaCr) + '</div></div>';
         } else if (etapa === 'busca') {
@@ -1588,7 +1712,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
         const a = b.dataset.a;
         if (a === 'sair') return sair(null);
         if (a === 'fim') return sair(D.emprego);
-        if (a === 'outro') { msg = T('Agora não... eu preciso ver as candidaturas.'); render(); return; }
+        if (a === 'outro') { msg = D.emprego ? T('Agora não... tenho muita coisa pra fazer hoje.') : T('Agora não... eu preciso ver as candidaturas.'); render(); return; }
         if (a === 'nav') { etapa = 'busca'; msg = ''; render(); return; }
         if (a === 'carreira') { etapa = 'carreira'; msg = ''; render(); carregarVarzea().then(() => { if (!fechou && etapa === 'carreira') render(); }); return; }
         if (a === 'abaCr') { abaCr = b.dataset.v; render(); return; }

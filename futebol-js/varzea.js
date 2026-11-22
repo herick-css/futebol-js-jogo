@@ -592,9 +592,11 @@
       for (const x of [w[0] + 4.5, w[0] + 12.5]) out.push({ sai: oesteSai, rota: [[w[0] - 0.7, atras], [w[0] - 0.7, frente], [x, frente]], x, z: F1.z, h: F1.h, yaw: yN });
       for (const x of [e[0] + 5.5, e[0] + 11, e[1] - 2.5]) out.push({ sai: lesteSai, rota: [[e[1] + 0.7, atras], [e[1] + 0.7, frente], [x, frente]], x, z: F1.z, h: F1.h, yaw: yN });
       // os bancos do lado leste (dois por banco), de frente para o campo
-      for (const B of VZ.leste.slice(0, 3)) for (const t of [-0.75, 0.75]) out.push({ sai: lesteSai, rota: [[V.x1 + 4, B.z + 2.1], [V.x1 + 1.05, B.z + 2.1], [V.x1 + 1.05, B.z + t]], x: B.x, z: B.z + t, h: 0.45, yaw: Math.PI });
+      //   (pelo corredor entre a cerca e os bancos: do lado de lá dos bancos fica o prédio da esquina)
+      const corr = Math.min(V.x1 + 0.6, (VZ.leste[0] ? VZ.leste[0].x : V.x1 + 1.3) - 0.7), boca = [corr, V.z1 + 2.6];
+      for (const B of VZ.leste.slice(0, 3)) for (const t of [-0.75, 0.75]) out.push({ sai: lesteSai, rota: [boca.slice(), [corr, B.z + t]], x: B.x, z: B.z + t, h: 0.45, yaw: Math.PI });
       // em pé: atrás da cerca norte (do lado do banco) e da cerca oeste
-      for (const x of [V.x0 + 13, V.x0 + 19, V.x1 - 19, V.x1 - 13]) out.push({ sai: lesteSai, rota: [[V.x1 + 4, V.z0 - 1.1], [x, V.z0 - 1.1]], x, z: V.z0 - 1.1, h: 0, yaw: yS });
+      for (const x of [V.x0 + 13, V.x0 + 19, V.x1 - 19, V.x1 - 13]) out.push({ sai: lesteSai, rota: [boca.slice(), [corr, V.z0 - 1.1], [x, V.z0 - 1.1]], x, z: V.z0 - 1.1, h: 0, yaw: yS });
       for (const z of [V.z1 - 12, V.z1 - 24]) out.push({ sai: oesteSai, rota: [[V.x0 - 0.9, z]], x: V.x0 - 0.9, z, h: 0, yaw: 0 });
       return out;
     }

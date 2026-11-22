@@ -600,7 +600,7 @@
       G.box(0.18, 0.12, 0.18, '#9a9aa0', 8.1, 1.9, 9.3);                     // a panelinha lá em cima
       for (let i = 0; i < 4; i++) { G.box(0.16, 0.26, 0.16, i % 2 ? '#c8352b' : '#3a64b8', 6.0 + i * 0.3, 1.06, 9.2); G.box(0.17, 0.03, 0.17, '#f4f4ec', 6.0 + i * 0.3, 1.32, 9.2); }
       G.box(3.6, 1.0, 0.08, '#1c1c1f', 7, 2.75, 8.9); placa('PIPOCA · REFRI', '#1c1c1f', '#f2c230', 3.2, 0.5, 7, 3.0, 8.95);
-      R.pessoas.push({ tipo: 'parado', x: 7, z: 8.55, yaw: -Math.PI / 2, fem: rnd() < 0.5 });
+      C.bomboniere = { x: 7, z: 8.55, yaw: -Math.PI / 2, falar: { x: 7, z: 10.55 } };   // a Bia (cinema.js) vende pipoca, refri e o combo
       // cartazes nas paredes do saguão (filmes de mentira), com moldura dourada
       const FILMES = [['O CHUTE FINAL', '#1f3a73', '#f2c230'], ['PIXEL F.C.', '#1f7a4d', '#f4f4ec'], ['A BOLA QUE VOLTOU', '#7a1c24', '#f2d070'], ['SAUDADE DO MEIO-CAMPO', '#3a2a5a', '#f4a6c0']];
       const cartaz = (f, x, z, ry) => {
@@ -722,7 +722,10 @@
       }
       R.pessoas.push({ tipo: 'parado', x: 9.45, z: 0.7, yaw: Math.PI, fem: true, marca: 'farma' });            // a farmacêutica
       R.extras.push({ x: 7.3, z: 0.7, r: 1.7, txt: 'Comprar remédios', acao: 'farmacia' });
-      G.box(0.5, 0.25, 0.5, '#e8eef4', 7.0, 0, 3.9); G.box(0.36, 0.9, 0.36, '#f4f6f8', 7.0, 0.25, 3.9); G.box(0.24, 0.32, 0.24, '#9ec7dd', 7.0, 1.15, 3.9); bloq(7.0, 3.9, 0.5, 0.5);   // o bebedouro
+      { const bx = 10.7, bz = 4.6;                                                                              // o bebedouro, encostado na parede leste (ao sul das prateleiras da farmácia)
+        G.box(0.5, 0.25, 0.5, '#e8eef4', bx, 0, bz); G.box(0.36, 0.9, 0.36, '#f4f6f8', bx, 0.25, bz); G.box(0.24, 0.32, 0.24, '#9ec7dd', bx, 1.15, bz);
+        G.box(0.06, 0.34, 0.1, '#c9ced4', 10.94, 1.0, bz - 0.36); G.box(0.05, 0.05, 0.08, '#f4f4ec', 10.92, 0.8, bz - 0.36);   // o porta-copos na parede
+        bloq(bx, bz, 0.5, 0.5); }
       // ---- plantas nos cantos e as faixas no chão (da porta: azul para a recepção, verde para a farmácia)
       for (const [px, pz] of [[-10.3, 7.3], [10.3, 7.3], [-1.8, -7.3], [10.3, -7.3]]) { G.box(0.5, 0.45, 0.5, '#8a5a2b', px, 0, pz); G.box(0.7, 0.6, 0.7, '#3f8f3a', px, 0.45, pz); G.box(0.4, 0.4, 0.4, '#4a9a42', px, 1.05, pz); bloq(px, pz, 0.6, 0.6); }
       for (const [x0, z0, x1, z1, cor] of [[-0.3, 7.0, -0.3, -3.6, AZ], [-0.3, -3.6, -4, -3.6, AZ], [0.3, 7.0, 0.3, 5.6, VD], [0.3, 5.6, 6.9, 5.6, VD], [6.9, 5.6, 6.9, 0.7, VD]]) {
@@ -839,7 +842,9 @@
       for (const mx of [4.95, 9.45]) { const mz = -3.95; G.box(0.6, 0.12, 0.6, '#f4f4ec', mx, 0, mz); G.box(0.64, 0.03, 0.64, SEC.roupas[0], mx, 0.12, mz); bloq(mx, mz, 0.6, 0.6); ES.manequins.push({ x: mx, y: 0.15, z: mz, yaw: -Math.PI / 2 }); }
       G.box(0.08, 2.3, 1.5, '#f4f4ec', 8.55, 0, -8.4); G.box(1.3, 0.08, 1.5, '#f4f4ec', 9.2, 2.3, -8.4); G.box(1.25, 1.9, 0.05, '#7a4fb0', 9.2, 0.25, -7.66); G.box(1.3, 0.05, 0.05, '#c9ced4', 9.2, 2.18, -7.66); bloq(9.2, -8.4, 1.4, 1.6);   // o provador (a cortina roxa)
       pend('ROUPAS', SEC.roupas[0], 7.2, -7.6);
-      ES.secoes.roupas = { x: 4.95, z: -6.4, yaw: -Math.PI / 2 };   // a Kelly fica ao lado da arara (no meio dela ficava dentro das roupas) ES.provarRoupa = { x: 6.9, z: -4.6 };   // (7.1.12) onde o jogador prova as roupas
+      ES.secoes.roupas = { x: 4.95, z: -6.4, yaw: -Math.PI / 2 };   // a Kelly fica ao lado da arara (no meio dela ficava dentro das roupas)
+      ES.provarRoupa = { x: 6.9, z: -4.6 };                             // onde o jogador prova as roupas do catálogo (de frente para o espelho)
+      ES.provador = { x: 9.2, z: -7.05 };                               // na frente da cortina do provador (lá dentro ele troca entre as roupas que já tem)
       // ---- BOLAS (sudoeste): a prateleira da parede oeste, a pirâmide e o cestão
       const COR_BL = ['#f4f4ec', '#f2c230', '#e8742a', '#3fb7b0', '#d95fa0', '#c8352b', '#3a64b8', '#1f9a4d'];
       const geoBola = guardar(new THREE.SphereGeometry(0.15, 10, 8)), matBola = COR_BL.map((c) => guardar(new THREE.MeshLambertMaterial({ color: c })));

@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.9';
+const VERSAO_JOGO = '7.5.10';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -17214,6 +17214,7 @@ function atualizarBanco(dt) {
 //   alguém vai entrar, ele anda até o meio-campo (ainda fora do campo, onde quem entra espera) e, na cena da troca, levanta a
 //   placa; acabou a troca, volta para o lugar dele. Society: não tem. Com o túnel aberto (entrada, intervalo), ele some.
 const Q4 = { x: 0, z: 0, ang: Math.PI / 2, anim: 0, placa: 0 };
+const PLACA_SEG = 1.7, PLACA_BAIXA = 0.5;                              // cada placa: 1,2 s no alto e 0,5 s abaixando e levantando a próxima
 const postoDoQuarto = () => ({ x: 3.4, z: -(HALF_W + 2.7) });
 const meioDoQuarto = () => ({ x: 0, z: -(HALF_W + LADO_BANCO.placaTroca) });
 function atualizarQuarto(dt, alguemEsperando) {
@@ -17227,7 +17228,12 @@ function atualizarQuarto(dt, alguemEsperando) {
   let anda = false;
   if (d > 0.04) { const v = 1.7, st = Math.min(d, v * dt); Q4.x += dx / d * st; Q4.z += dz / d * st; Q4.anim += v * 2.6 * dt; Q4.ang = turnToward(Q4.ang, Math.atan2(dz, dx), 8 * dt); anda = true; }
   else Q4.ang = turnToward(Q4.ang, Math.PI / 2, 6 * dt);                                  // parado: de frente para o campo
-  const levanta = naTroca && !anda && G.subst.fase !== 'troca';
+  // várias trocas de uma vez: uma placa por troca (levanta, mostra, abaixa e levanta a próxima), não as placas emendadas
+  let levanta = naTroca && !anda && G.subst.fase !== 'troca', iPlaca = 0;
+  if (levanta && G.subst.pares.length > 1) {
+    const S_ = G.subst, n = S_.pares.length; S_.placaT = (S_.placaT || 0) + dt;
+    iPlaca = Math.floor(S_.placaT / PLACA_SEG) % n; levanta = S_.placaT % PLACA_SEG < PLACA_SEG - PLACA_BAIXA;
+  }
   Q4.placa += ((levanta ? 1 : 0) - Q4.placa) * Math.min(1, dt * 6);
   q.raiz.visible = true;
   q.raiz.position.set(Q4.x, 0, Q4.z); q.raiz.rotation.y = -Q4.ang;
@@ -17235,7 +17241,7 @@ function atualizarQuarto(dt, alguemEsperando) {
   q.pernaE.rotation.z = bal; q.pernaD.rotation.z = -bal;
   q.bracoE.rotation.z = lerp(-bal * 0.6, 2.5, a); q.bracoD.rotation.z = lerp(bal * 0.6, 2.5, a);
   q.bracoE.rotation.x = lerp(0.1, -0.2, a); q.bracoD.rotation.x = lerp(-0.1, 0.2, a);
-  if (naTroca && a > 0.6) placaTroca.mostrar(Q4.x, Q4.z + 0.45, G.subst.pares); else placaTroca.esconder();
+  if (naTroca && a > 0.85) placaTroca.mostrar(Q4.x, Q4.z + 0.45, [G.subst.pares[iPlaca] || G.subst.pares[0]]); else placaTroca.esconder();   // só com os braços lá em cima (abaixando, a placa some)
 }
 // Pose do boneco do banco: mistura "em pé" e "sentado" (d.sentado de 0 a 1).
 function posarBoneco(d, andando, aquecendo, dt) {
@@ -17474,7 +17480,7 @@ function executarTrocaDireto(item) {
 }
 
 // Placa eletrônica do quarto árbitro (sprite com canvas): vermelho sai, verde entra.
-// (7.4.11) com mais de uma troca de uma vez, a placa mostra todas (uma coluna por troca: o que sai em cima, o que entra embaixo)
+// Com mais de uma troca de uma vez o quarto árbitro mostra uma de cada vez (atualizarQuarto): a placa recebe sempre uma troca só.
 const placaTroca = (() => {
   const c = document.createElement('canvas'); c.width = 64 * 3; c.height = 40;
   const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
@@ -17559,7 +17565,8 @@ function atualizarSubstituicao(rdt) {
       P.chegou = andar(sai, P.alvoSai, sai.mancando ? (longe ? 3.0 : 2.0) : longe ? 6.5 : 4.2, rdt) || P.chegou;   // longe: vem trotando (machucado, mancando)
       P.entra.angle = turnToward(P.entra.angle, Math.atan2(sai.z - P.entra.z, sai.x - P.entra.x), 6 * rdt);
     }
-    if (S.fase === 'placa' && S.tf > 1.3) mudar('sai');
+    const nP = S.pares.length, fimPlaca = nP > 1 ? (S.placaT || 0) >= nP * PLACA_SEG - PLACA_BAIXA - 0.1 || S.tf > nP * PLACA_SEG + 3 : S.tf > 1.3;   // várias: a câmera fica na placa até a última aparecer inteira
+    if (S.fase === 'placa' && fimPlaca) mudar('sai');
     if (S.fase === 'sai' && S.pares.every((P) => P.chegou)) { mudar('toque'); S.tocou = true; Som.toque(0.5); }
   } else if (S.fase === 'toque') {
     const toque = [];

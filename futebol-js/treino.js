@@ -1131,7 +1131,8 @@
       tickLuzes();
       if (P.sessao) return;                                              // (6.6.19) treinando no campo de treino (a cidade está parada)
       if (T_.pausa) {                                                     // a turma não está (foi para casa / na chuva): a bola some, o treino recomeça depois
-        if (P.dr) { P.dr = null; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; for (const A of [T_.gol].concat(T_.bat)) limparPose(A); }
+        if (P.dr) { P.dr = null; for (const A of [T_.gol].concat(T_.bat)) limparPose(A); }
+        T_.bola.mesh.visible = false; T_.bola.sombra.visible = false;     // sempre: sem treino rolando, a bola não fica largada (nem no 0, 0 da cidade)
         return;
       }
       if (P.parado) return;                                               // conversando com o jogador

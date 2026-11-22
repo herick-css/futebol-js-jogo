@@ -1168,6 +1168,18 @@
     'Casa da Lúcia': ['Lucy’s house', 'Casa de Lucía', 'Casa di Lucia', 'Maison de Lucie'],
   };
   for (const k of Object.keys(TRAD_ENC_CD)) if (!I18N[k]) I18N[k] = TRAD_ENC_CD[k];
+  const TRAD_CINE_CD = {   // a bomboniere do cinema (a Bia vende; o lanche é daqui: lancheCinema)
+    'Ih... tá faltando dinheiro aí.': ['Uh-oh... you are a bit short on money.', 'Uy... te falta dinero.', 'Ehi... ti mancano dei soldi.', 'Oups... il te manque des sous.'],
+    'Saindo pipoca!': ['One popcorn, coming right up!', '¡Saliendo unas palomitas!', 'Popcorn in arrivo!', 'Et un pop-corn, un !'],
+    'Saindo refri!': ['One soda, coming right up!', '¡Saliendo un refresco!', 'Bibita in arrivo!', 'Et un soda, un !'],
+    'Saindo pipoca com refri!': ['Popcorn and soda, coming right up!', '¡Saliendo palomitas con refresco!', 'Popcorn e bibita in arrivo!', 'Et un pop-corn avec soda, un !'],
+    'Eu já tava satisfeito... mas pipoca sempre cabe.': ['I was already full... but there is always room for popcorn.', 'Ya estaba lleno... pero siempre hay lugar para palomitas.', 'Ero già sazio... ma per i popcorn c’è sempre posto.', 'J’étais déjà rassasié... mais il y a toujours de la place pour le pop-corn.'],
+    'Eu já tava satisfeita... mas pipoca sempre cabe.': ['I was already full... but there is always room for popcorn.', 'Ya estaba llena... pero siempre hay lugar para palomitas.', 'Ero già sazia... ma per i popcorn c’è sempre posto.', 'J’étais déjà rassasiée... mais il y a toujours de la place pour le pop-corn.'],
+    'Refrescante! Mas é açúcar puro.': ['Refreshing! But it is pure sugar.', '¡Refrescante! Pero es puro azúcar.', 'Rinfrescante! Ma è zucchero puro.', 'Rafraîchissant ! Mais c’est du sucre pur.'],
+    'Pipoca é leve... mas não enche quase nada, haha.': ['Popcorn is light... but it barely fills you up, haha.', 'Las palomitas son ligeras... pero casi no llenan, jaja.', 'I popcorn sono leggeri... ma non saziano quasi per niente, haha.', 'Le pop-corn, c’est léger... mais ça ne cale presque pas, haha.'],
+    'Combo de cinema! Só falta o filme.': ['Movie combo! All that is missing is the movie.', '¡Combo de cine! Solo falta la película.', 'Combo da cinema! Manca solo il film.', 'Combo cinéma ! Il ne manque que le film.'],
+  };
+  for (const k of Object.keys(TRAD_CINE_CD)) if (!I18N[k]) I18N[k] = TRAD_CINE_CD[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
     'Naquele dia eu não esqueci... eu passei mal e apaguei no sofá. Falei que esqueci porque fiquei com vergonha.': [null, 'Ese día no me olvidé... me sentí mal y me quedé dormida en el sofá. Dije que me olvidé porque me dio vergüenza.', 'Quel giorno non me ne sono dimenticata... sono stata male e sono crollata sul divano. Ho detto che me ne ero dimenticata perché mi vergognavo.', 'Ce jour-là, je n’ai pas oublié... j’ai été malade et je me suis endormie sur le canapé. J’ai dit que j’avais oublié parce que j’avais honte.'],
     'A verdade é que a minha mãe me ligou chorando naquela hora, e eu não quis te encher com problema de família.': [null, null, null, 'La vérité, c’est que ma mère m’a appelée en pleurant à ce moment-là, et je ne voulais pas t’embêter avec des histoires de famille.'],
@@ -1441,10 +1453,22 @@
   const texGrama = () => { const t = texCanvas(64, 64, (g, w, h) => {          // 64 px = 10,7 m (o mesmo tamanho de quadradinho da cidade)
     const rnd = semente(5), k = w / 10.7; g.fillStyle = VERDE; g.fillRect(0, 0, w, h);
     quadradinhosGrama(g, rnd, 0, 0, 10.7, 10.7, (x) => x * k, (z) => z * k, k, k, true); granular(g, w, h, 0.1, rnd); }, true); t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; };
-  const texEstrada = () => { const t = texCanvas(64, 64, (g, w, h) => {      // 64 px = 8 m (ao longo) × 10,4 m (de lado)
-    const rnd = semente(9), py = h / 10.4; g.fillStyle = ASFALTO; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#e9e6dc'; g.fillRect(0, Math.round(0.25 * py), w, 1); g.fillRect(0, Math.round((10.4 - 0.4) * py), w, 1);
-    g.fillStyle = '#f2c230'; g.fillRect(0, Math.round(5.2 * py) - 1, w / 2, 1);
+  // a estrada de fora: o MESMO desenho da avenida da cidade (mesmo tamanho de pixel, bordas brancas a 25 cm, tracejado de 4 m a cada 8 m,
+  //   manchas de asfalto), com 64 m de comprimento (repete sem emenda) e a largura da avenida (antes era 8 m × 10,4 m, a largura antiga:
+  //   as linhas não batiam com as da cidade e aparecia uma emenda no fim da avenida)
+  const ESTRADA_L = 64;
+  const texEstrada = () => { const t = texCanvas(Math.round(ESTRADA_L * 2048 / 240), Math.round((AV.z1 - AV.z0) * 1024 / 152), (g, w, h) => {
+    const rnd = semente(9), sx = w / ESTRADA_L, sz = h / (AV.z1 - AV.z0), W = AV.z1 - AV.z0;
+    g.fillStyle = ASFALTO; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 70; i++) {                                     // as manchas (desenhadas também do outro lado da emenda da repetição)
+      const x = rnd() * ESTRADA_L, z = 0.5 + rnd() * (W - 1), rx = 0.5 + rnd() * 2, rz = 0.3 + rnd() * 0.8, cor = rnd() < 0.5 ? '#4c4f54' : '#777a7f';
+      g.globalAlpha = 0.18; g.fillStyle = cor;
+      for (const d of [-ESTRADA_L, 0, ESTRADA_L]) { g.beginPath(); g.ellipse((x + d) * sx, z * sz, rx * sx, rz * sz, 0, 0, Math.PI * 2); g.fill(); }
+    }
+    g.globalAlpha = 1;
+    const linha = (x0, x1, zc, cor) => { g.fillStyle = cor; g.fillRect(x0 * sx, Math.floor(zc * sz), (x1 - x0) * sx, 1); };   // uma fileira inteira de pixels (como saem as da cidade)
+    linha(0, ESTRADA_L, 0.325, '#e9e6dc'); linha(0, ESTRADA_L, W - 0.325, '#e9e6dc');
+    for (let x = 0; x < ESTRADA_L; x += 8) linha(x, x + 4, AV.zc - AV.z0, '#f2c230');
     granular(g, w, h, 0.12, rnd);
   }, true); t.wrapS = THREE.RepeatWrapping; return t; };
   // alambrado (losangos de arame) e rede do gol: transparentes no vão (alphaTest: sem ordem de transparência, sem piscar)
@@ -1680,7 +1704,7 @@
       for (const f of ['l', 'r', 'b']) { const L = f === 'b' ? w : d, n = Math.floor((L - 2) / 4); for (let a = 0; a < andares; a++) for (let q = 0; q < n; q++) janela(G, w, d, f, -L / 2 + (L / n) * (q + 0.5), a * (h / andares) + 1.2, 1.0, 0.9); }
       if (o.telhado) telhado(G, w, d, h, 1.6, 0.4, '#b5552e', 'x', cor); else G.box(w + 0.14, 0.55, d + 0.14, escurece(cor, 0.92), 0, h - 0.06, 0, '#8d8a82');
       const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, giro = frente < 0 ? Math.PI : 0;
-      juntar(Gd, G, cx, cz, giro);
+      juntar(Gd, G, cx, cz, giro); S.col.push({ x0: r.x0, x1: r.x1, z0: r.z0, z1: r.z1 });   // ninguém atravessa (os das esquinas entram na cidade)
       if (G.vid.p.length) { const V = S.vidros || (S.vidros = new Geo()); juntar(V, G.vid, cx, cz, giro); }   // os vidros que acendem à noite (a malha da cidade inteira)
       if (o.letreiro) {                                                // a placa da loja (com o nome): a única peça à parte
         const L = o.letreiro, tex = guardar(texLetreiro(L.txt, L.fundo, L.cor, 3.0, 0.6)), mf = guardar(new THREE.MeshLambertMaterial({ map: tex, emissive: 0x000000, emissiveMap: tex })), mb = guardar(new THREE.MeshLambertMaterial({ color: hexN(L.fundo) }));
@@ -1690,7 +1714,7 @@
     };
     const asfalto = (x0, x1, z0, z1) => {                             // a rua no sentido z (as faixas da textura acompanham a rua)
       const L = z1 - z0, W = x1 - x0, geo = guardar(new THREE.PlaneGeometry(L, W)), uv = geo.attributes.uv;
-      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * L / 8, uv.getY(i));
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * L / ESTRADA_L, uv.getY(i));
       const m = new THREE.Mesh(geo, guardar(new THREE.MeshLambertMaterial({ map: te, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
       m.rotation.order = 'YXZ'; m.rotation.y = Math.PI / 2; m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.004, (z0 + z1) / 2); g.add(m);
     };
@@ -1698,13 +1722,15 @@
     for (const sg of [-1, 1]) {
       const X = (a, b) => (sg > 0 ? { x0: a, x1: b } : { x0: -b, x1: -a });
       // a rua que dobra (para o norte e para o sul; no cruzamento vale o asfalto da avenida)
-      const xr = X(R0.a0, R0.a1); asfalto(xr.x0, xr.x1, -R0.zf - 30, -5.1); asfalto(xr.x0, xr.x1, 10.5, R0.zf + 30);
-      // os prédios das esquinas (do lado da cidade): de frente para a avenida, colados na calçada da rua que dobra (escondem quem dobra)
-      const q = X(120.4, R0.ci - 0.25);
-      predio(Object.assign({}, q, { z0: -17, z1: -5.5 }), 1, 7.2, 2, sg > 0 ? '#e3b95a' : '#c9d6c3', { letreiro: { txt: sg > 0 ? 'PADARIA' : 'FARMÁCIA', fundo: sg > 0 ? '#7a4a2a' : '#1f7a4d', cor: '#fff6e0' } });
-      predio(Object.assign({}, q, { z0: -34, z1: -17.4 }), 1, 9.5, 3, '#d9b38c');
-      predio(Object.assign({}, q, { z0: 10.9, z1: 22.5 }), -1, 7.2, 2, sg > 0 ? '#bfcfdc' : '#e3c4c4', { letreiro: { txt: sg > 0 ? 'OFICINA' : 'MERCEARIA', fundo: sg > 0 ? '#2a3f66' : '#8a1f24', cor: '#fff6e0' } });
-      predio(Object.assign({}, q, { z0: 22.9, z1: 40 }), -1, 9.5, 3, '#e8d4b8');
+      const xr = X(R0.a0, R0.a1); asfalto(xr.x0, xr.x1, -R0.zf - 30, AV.z0); asfalto(xr.x0, xr.x1, AV.z1, R0.zf + 30);   // até a beira da avenida (no vão da calçada aparecia grama)
+      // os prédios das esquinas (do lado da cidade): de frente para a avenida, colados na calçada da rua que dobra (escondem quem dobra).
+      //   Entram na cidade até onde dá (eram só 4,35 m de frente): até 0,8 m da cerca do sintético; do lado da várzea, até atrás dos
+      //   bancos da torcida (VZ.leste); a oeste, sem cobrir a ponta das ruas de terra norte (z −38…−33,6) e sul (z 36…40,4).
+      const q = (xi) => X(xi, R0.ci - 0.25), xN = sg > 0 ? 120 : 117.8, xS = 117.8;
+      predio(Object.assign(q(xN), { z0: -17, z1: -5.5 }), 1, 7.2, 2, sg > 0 ? '#e3b95a' : '#c9d6c3', { letreiro: { txt: sg > 0 ? 'PADARIA' : 'FARMÁCIA', fundo: sg > 0 ? '#7a4a2a' : '#1f7a4d', cor: '#fff6e0' } });
+      predio(Object.assign(q(xN), { z0: sg > 0 ? -34 : -33.1, z1: -17.4 }), 1, 9.5, 3, '#d9b38c');
+      predio(Object.assign(q(xS), { z0: 10.9, z1: 22.5 }), -1, 7.2, 2, sg > 0 ? '#bfcfdc' : '#e3c4c4', { letreiro: { txt: sg > 0 ? 'OFICINA' : 'MERCEARIA', fundo: sg > 0 ? '#2a3f66' : '#8a1f24', cor: '#fff6e0' } });
+      predio(Object.assign(q(xS), { z0: 22.9, z1: sg > 0 ? 40 : 35.5 }), -1, 9.5, 3, '#e8d4b8');
       // do outro lado da rua: um quarteirão de cada lado da avenida (sobrados e lojinhas)
       for (const [z0, z1, fr] of [[-18, -5.6, 1], [11, 23.5, -1]]) {
         let x = R0.co + 0.5;
@@ -1763,7 +1789,7 @@
     const tg = guardar(texGrama()), te = guardar(texEstrada());
     const faixaChao = (x0, x1, z0, z1, estrada) => {
       const geo = guardar(new THREE.PlaneGeometry(x1 - x0, z1 - z0)), uv = geo.attributes.uv;
-      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (x1 - x0) / (estrada ? 8 : 10.7), estrada ? uv.getY(i) : uv.getY(i) * (z1 - z0) / 10.7);
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, estrada ? (x0 + 120 + uv.getX(i) * (x1 - x0)) / ESTRADA_L : uv.getX(i) * (x1 - x0) / 10.7, estrada ? uv.getY(i) : uv.getY(i) * (z1 - z0) / 10.7);   // a estrada conta o x do mundo: o tracejado continua o da avenida (de −120 em 8 m)
       const m = new THREE.Mesh(geo, guardar(new THREE.MeshLambertMaterial({ map: estrada ? te : tg })));
       m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); g.add(m);
     };
@@ -2107,7 +2133,7 @@
       bancos: [cx - 8, cx + 8].map((x) => ({ x, z: VARZEA.z0 + 3.95 })),                    // os bancos de reserva (de frente para o campo)
       arq: [[VARZEA.x0 + 5.5, 86 - 0.5], [92 + 0.5, VARZEA.x1 - 5.5]],                       // os dois lances da arquibancada (x), um de cada lado do portão
       filas: [{ z: VARZEA.z1 + 0.65, h: 0.45 }, { z: VARZEA.z1 + 1.55, h: 0.9 }],            // fila 1 (encostada na cerca) e fila 2 (mais alta)
-      leste: [-38, -30.5, -23, -15.5].map((z) => ({ x: VARZEA.x1 + 2.5, z })),               // os bancos da torcida, do lado de fora da cerca leste (de frente para o oeste)
+      leste: [-38, -30.5, -23, -15.5].map((z) => ({ x: VARZEA.x1 + 1.3, z })),               // os bancos da torcida, do lado de fora da cerca leste (de frente para o oeste; antes do prédio da esquina)
     };
   })();
   function montarVarzeaCampeonato() {
@@ -2132,7 +2158,7 @@
     [[x1 - 0.25, '#5e5b54'], [x1 - 0.75, '#3d3a35'], [x1 - 1.25, '#25221f'], [x1 - 1.95, '#12100e'], [x0 + 0.6, '#080706']].forEach(([x, cor], i) => G.box(i < 3 ? 0.5 : 0.9, 0.02, z1 - z0 - 2 * e, cor, x, 0.005, (z0 + z1) / 2));
     G.box(0.02, hB - 0.04, z1 - z0 - 2 * e, '#080706', x0 + e + 0.02, 0.02, (z0 + z1) / 2);
     { const ccx = (x0 + x1) / 2, ccz = (z0 + z1) / 2, piv = new THREE.Group(), m = G.malha(MAT);
-      piv.position.set(ccx, 0, ccz); piv.rotation.y = VZ.giro || 0; m.position.set(-ccx, 0, -ccz); piv.add(m); S.grupo.add(piv);
+      piv.position.set(ccx, 0, ccz); piv.rotation.y = VZ.giro || 0; m.position.set(-ccx, 0, -ccz); piv.add(m); S.grupo.add(piv); VZ.piv = piv;
       const c = Math.abs(Math.cos(VZ.giro || 0)), sn = Math.abs(Math.sin(VZ.giro || 0)), hx = ((x1 - x0) * c + (z1 - z0) * sn) / 2, hz = ((x1 - x0) * sn + (z1 - z0) * c) / 2;
       bloquear(ccx - hx - 0.05, ccx + hx + 0.05, ccz - hz - 0.05, ccz + hz + 0.05, hA); }
     G = G0;
@@ -2161,7 +2187,8 @@
     addMalha(G, 0, 0);
     // a plaquinha VESTIÁRIOS na verga
     const pl = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.26), guardar(new THREE.MeshBasicMaterial({ map: guardar(texCanvas(96, 16, (q) => { q.fillStyle = '#f2f0e6'; q.fillRect(0, 0, 96, 16); q.fillStyle = '#2a1206'; q.fillRect(0, 0, 96, 1); q.fillRect(0, 15, 96, 1); q.fillRect(0, 0, 1, 16); q.fillRect(95, 0, 1, 16); q.font = "bold 10px 'Courier New', monospace"; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(T('VESTIÁRIOS'), 48, 9); })) })));
-    pl.position.set(x1 + 0.005, hA - 0.17, (z0 + z1) / 2); pl.rotation.y = Math.PI / 2; S.grupo.add(pl);
+    // na verga, girando junto com a casinha (solta no grupo da cidade ela ficava olhando para o leste, na parede do lado)
+    pl.position.set(x1 + 0.005 - (x0 + x1) / 2, hA - 0.17, 0); pl.rotation.y = Math.PI / 2; if (VZ.piv) VZ.piv.add(pl); else S.grupo.add(pl);
   }
   function cerca(r, alt, vaos, y0) {
     const G = new Geo(), lados = [['n', r.x0, r.z0, r.x1, r.z0], ['s', r.x0, r.z1, r.x1, r.z1], ['w', r.x0, r.z0, r.x0, r.z1], ['e', r.x1, r.z0, r.x1, r.z1]];
@@ -2594,9 +2621,12 @@
     const esp = [{ x: F.cx - 1.6, z: F.cz + 3 }, { x: F.cx + 1.6, z: F.cz + 3 }];
     bat.forEach((A, i) => { A.tipo = 'treino'; A.x = esp[i].x; A.z = esp[i].z; A.yaw = A.yawAlvo = -Math.PI / 2; A.y = 0.08; S.npcs.push(A); });
     gol_.tipo = 'treino'; gol_.goleiro = true; gol_.x = F.cx; gol_.z = gz - 0.5; gol_.yaw = gol_.yawAlvo = Math.PI / 2; gol_.y = 0.08; S.npcs.push(gol_);
+    // a bola nasce ESCONDIDA e já na marca: criada no (0, 0) e visível, ficava largada no meio da avenida (o 0, 0 da cidade, com o asfalto
+    //   por cima dela) até a turma começar a treinar, e nos dias em que a turma não vinha ela nem saía de lá
     const mesh = new THREE.Mesh(guardar(new THREE.SphereGeometry(0.15, 12, 8)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) })));
-    S.grupo.add(mesh);
-    S.treino = { F, gz, spot, bat, gol: gol_, esp, vez: 0, fase: 'anda', t: 0, bola: { mesh, sombra: sombraAtor(0.17), x: spot.x, y: 0.23, z: spot.z, vx: 0, vy: 0, vz: 0 } };
+    mesh.position.set(spot.x, 0.23, spot.z); mesh.visible = false; S.grupo.add(mesh);
+    const sombra = sombraAtor(0.17); sombra.visible = false;
+    S.treino = { F, gz, spot, bat, gol: gol_, esp, vez: 0, fase: 'anda', t: 0, parado: true, bola: { mesh, sombra, x: spot.x, y: 0.23, z: spot.z, vx: 0, vy: 0, vz: 0 } };
   }
   function tickTreino(dt) {
     const T_ = S.treino; if (!T_) return;
@@ -3568,9 +3598,14 @@
       if (!V.rotaV) V.rotaV = P.pts.map((p) => ({ x: p[0], z: p[1] }));
       const q = V.rotaV[0], dx = q.x - V.x, dz = q.z - V.z, d = Math.hypot(dx, dz), v = P.vel * dt;
       V.vel = P.vel; V.correndo = false;
-      if (d <= Math.max(v, 0.05)) { V.x = q.x; V.z = q.z; V.rotaV.shift(); if (V.rotaV.length) fim = false; else { V.rotaV = null; V.andando = false; } }
-      else if (Math.hypot(S.jog.x - (V.x + dx / d * 0.6), S.jog.z - (V.z + dz / d * 0.6)) < 0.55 && !S.jog.sentado) { V.andando = false; fim = false; }   // o jogador no caminho: espera
-      else { V.x += dx / d * v; V.z += dz / d * v; V.yawAlvo = Math.atan2(-dz, dx); V.andando = true; fim = false; }
+      if (V.passaT > 0) V.passaT -= dt;
+      if (d <= Math.max(v, 0.05)) { V.x = q.x; V.z = q.z; V.rotaV.shift(); V.bloqT = 0; if (V.rotaV.length) fim = false; else { V.rotaV = null; V.andando = false; } }
+      else if (!(V.passaT > 0) && Math.hypot(S.jog.x - (V.x + dx / d * 0.6), S.jog.z - (V.z + dz / d * 0.6)) < 0.55 && !S.jog.sentado) {   // o jogador no caminho
+        V.andando = false; fim = false; V.bloqT = (V.bloqT || 0) + dt;
+        if (V.bloqT > 0.5 && !q.desvio) desviarValdemar(V, q, dx / d, dz / d);   // contorna pelo lado de lá do jogador
+        if (V.bloqT > 2.5) { V.passaT = 1.4; V.bloqT = 0; }             // não tem por onde: segue (como quem tem rotina), o jogador cambaleia
+      }
+      else { V.x += dx / d * v; V.z += dz / d * v; V.yawAlvo = Math.atan2(-dz, dx); V.andando = true; V.bloqT = 0; fim = false; }
     } else if (P.t === 'espera') { V.timer += dt; V.andando = false; if (V.timer < P.s) fim = false; else V.timer = 0; }
     else if (P.t === 'ate') { V.andando = false; if (!P.f()) fim = false; }
     else if (P.t === 'sumir') sumirV(V);
@@ -3582,6 +3617,17 @@
     else if (P.t === 'virar') V.yawAlvo = P.yaw;
     else if (P.t === 'estado') V.estado = P.e;
     if (fim) { V.passo++; if (V.passo >= V.plano.length) V.plano = null; }
+  }
+  // o seu Valdemar parado atrás do jogador: dois pontos de desvio ao lado dele (primeiro do lado de onde o Valdemar já está um pouco, se
+  //   não couber do outro) antes do ponto da rota; os trechos entre eles têm que estar livres (paredes, balcão, carros)
+  function desviarValdemar(V, q, ux, uz) {
+    const J = S.jog, px = -uz, pz = ux, lado = Math.sign((J.x - V.x) * px + (J.z - V.z) * pz) || 1;
+    const livreSeg = (x0, z0, x1, z1) => { for (let k = 1; k <= 4; k++) { const t = k / 4; if (!livreNPC(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, V, true, true)) return false; } return true; };
+    for (const s of [-lado, lado]) for (const larg of [0.9, 1.25]) {
+      const ax = J.x + px * s * larg - ux * 0.4, az = J.z + pz * s * larg - uz * 0.4, bx = J.x + px * s * larg + ux * 0.5, bz = J.z + pz * s * larg + uz * 0.5;   // ao lado dele: um passo antes e um depois
+      if (livreSeg(V.x, V.z, ax, az) && livreSeg(ax, az, bx, bz) && livreSeg(bx, bz, q.x, q.z)) { V.rotaV.unshift({ x: ax, z: az, desvio: true }, { x: bx, z: bz, desvio: true }); V.bloqT = 0; return true; }
+    }
+    return false;
   }
   // 20h com o jogador sentado no balcão: ele avisa, levanta o jogador e fecha
   async function avisoFechar() {
@@ -4043,6 +4089,7 @@
     linha([[XE, ZN], [XE, -72]]); linha([[XE, ZS], [XE, 38.2], [XE, 72]]);                // rua de terra leste
     linha([[-116, -35.8], [XW, -35.8], [0, -35.8], [0, -31], [cx, -29.5]]);           // rua de terra norte até o adro da igreja
     linha([[-116, 38.2], [XW, 38.2], [-41, 38.2], [XE, 38.2]]); linha([[-41, 38.2], [-41, 46]]);   // rua de terra sul e o caminho do lago
+    { const gx = SOCIETY.x1 - 3.75, gz = SOCIETY.z0 - 1.4; linha([[116, ZS], [116, gz - 3], [gx, gz]]); }   // da calçada sul até o portão do sintético (sem ele o nó mais perto do portão era o da rua que dobra, e o caminho passava pelo prédio da esquina)
     linha([[cx, ZN], [cx, cz + 4]]); linha([[cx, cz - 4], [cx, -29.5]]);              // praça: caminho do meio (dá a volta no canteiro)
     linha([[cx, cz + 4], [cx + 4, cz], [cx, cz - 4], [cx - 4, cz], [cx, cz + 4]]);
     linha([[-10.5, cz], [cx - 4, cz]]); linha([[cx + 4, cz], [30, cz]]);
@@ -4297,7 +4344,8 @@
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
       }
-      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && (S.modo === 'livre' || S.modo === 'cena') && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) J0.esbarrao = 0.6;   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado)
+      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && (S.modo === 'livre' || S.modo === 'cena') && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) { J0.esbarrao = 0.6; if (!(A.esbarrao > 0.05)) A.esbarrao = 0.6; }   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado): os dois cambaleiam
+      else if (S.modo === 'cena' && J0.andando && !A.oculto && !A.sentado && !A.deitado && !A.gesto && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.45 && !(A.esbarrao > 0.05)) A.esbarrao = 0.6;   // o jogador andando sozinho numa cena passou por dentro de alguém: a pessoa cambaleia
       if (A.tipo === 'luciaRua') tickLuciaRua(A);
       else if (A.tipo === 'rua') tickRua(A);                          // Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
@@ -4945,7 +4993,7 @@
     if (a) {
       a.ocupado = A;
       if (jaDentro) { A.sentado = true; A.x = a.x; A.z = a.z; A.assento = a.h; A.yaw = A.yawAlvo = a.yaw; A.cli.fase = 'fica'; }
-      else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = e.yaw; const q = pontoLev(a, A); A.cli.rota = [{ x: q.x, z: q.z }];
+      else { A.x = e.x; A.z = e.z; A.yaw = A.yawAlvo = e.yaw; const q = pontoChegada(a, A, e); A.cli.rota = [{ x: q.x, z: q.z }];
       }   // (6.6.18) na cafeteria sem turno ele senta e a Lúcia vai até a mesa (tickGarcom); antes ele pedia no caixa (fase 'pedir')
     } else {
       const ar = (S.fluxo && S.fluxo.area) || { x0: e.x - 2, x1: e.x + 2, z0: e.z - 3, z1: e.z }; A.area = ar; A.cli.fase = 'fica';
@@ -5495,6 +5543,30 @@
     if (Sono.deveAvisarSaude()) await fala('jog', T('Eu estou com hábitos não saudáveis, isso com certeza vai me prejudicar nos jogos....'));
     Dialogo.esconder();
   }
+  // a BOMBONIÈRE do cinema (cinema.js, a Bia): a pipoca quase não tem caloria (conta como saudável), mas só tira 0,5 da fome;
+  //   o refri é açúcar puro (não mata a fome); o combo junta os dois mais barato
+  const BOMBONIERE = [
+    { id: 'pipoca', nome: 'Pipoca', preco: 20, enche: 0.5, saude: 1, sai: 'Saindo pipoca!' },
+    { id: 'refri', nome: 'Refri', preco: 15, enche: 0, saude: -2, sai: 'Saindo refri!' },
+    { id: 'combo', nome: 'Pipoca com refri', preco: 30, enche: 0.5, saude: -1, sai: 'Saindo pipoca com refri!' },
+  ];
+  async function lancheCinema(c, quem) {
+    const d = S.dados, J = S.jog;
+    if (d.fakes < c.preco) { await fala(quem, T('Ih... tá faltando dinheiro aí.')); Dialogo.esconder(); return false; }
+    const cheio = c.enche > 0 && (d.fome || 0) <= 0;
+    d.fakes -= c.preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(c.preco);
+    await fala(quem, T(c.sai)); Dialogo.esconder();                    // a frase inteira traduzida (o nome sozinho, 'Pipoca', também é apelido de jogador)
+    await esperar(900);
+    darLanche(J, c.id); J.comendo = 3.4; await esperar(3500);
+    for (let w = 0; w < 50 && S && S.ativo && J.comendo > 0; w++) await esperar(100);
+    tirarLanche(J);
+    if (c.enche) { d.fome = Math.max(0, (d.fome || 0) - c.enche); d.comidas = (d.comidas || 0) + 1; d.comeuDia = d.dia; }
+    try { Espectros.mover('saudavel', cheio ? c.saude - 2 : c.saude, 'comprou ' + c.nome + ' no cinema'); } catch (e) { /* ok */ }
+    gravar(d.ponto || 'chegada');
+    await fala('jog', cheio ? (fem() ? T('Eu já tava satisfeita... mas pipoca sempre cabe.') : T('Eu já tava satisfeito... mas pipoca sempre cabe.')) : c.id === 'refri' ? T('Refrescante! Mas é açúcar puro.') : c.id === 'pipoca' ? T('Pipoca é leve... mas não enche quase nada, haha.') : T('Combo de cinema! Só falta o filme.'));
+    Dialogo.esconder();
+    return true;
+  }
   // passou mal: inclina, põe as mãos nos joelhos e vomita (partículas verdes e uma poça que some depois)
   async function vomitar() {
     const J = S.jog; S.modo = 'cena'; UI.ctl.hidden = true; aviso('');
@@ -5581,7 +5653,7 @@
   // o que o cinema.js (o Herick, a Joana, o segurança, as cordas e as sessões pagas) usa daqui
   function erroCinema(e) { if (!S.erroCinema) { S.erroCinema = true; console.warn('[Cidade] cinema:', e); } }   // um erro no cinema.js não trava a cidade (avisa uma vez só)
   function apiCinema() {
-    return Object.assign(apiAcademia(), { spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; }, rotaCasaPorta, pontoNaRota });   // (6.6.5) a rota do Herick (mora com a Fernanda)
+    return Object.assign(apiAcademia(), { BOMBONIERE, lancheCinema, iconePx, spriteExclamacao, sombraAtor, pontoDeLevantar, criarNPCFixo, camCena: (c) => { S.camCena = c; if (S.cam) S.cam.snap = true; }, rotaCasaPorta, pontoNaRota });   // (6.6.5) a rota do Herick (mora com a Fernanda)
   }
   // o que o barbearia.js usa daqui: o do cinema e mais refazer o modelo do jogador (corte novo), o letreiro e o assento
   function apiBarbearia() {
@@ -7315,18 +7387,36 @@
     tirarCopo(L);
     if (item) darCopo(L, item.tier || 0, item.bolo ? iconeBolo(item.bolo) : null);
   }
-  function passosGarcom(t) {
-    const L = [], mesa = t.tipo === 'jogador' ? mesaDoAssento(t.a) : mesaDoAssento(t.A.cli.a);
-    if (t.tipo === 'cliente') L.push({ ir: mesa }, { pose: 'anota', s: 2.4, ao: 'anotou' });
-    const bolo = t.tipo === 'jogador' || !!t.item.bolo;
-    L.push({ ir: bolo ? 'vitrine' : 'bancada' }, { pose: bolo ? 'pega' : 'prepara', s: bolo ? 1.2 : 2.8, ao: 'pegou' });
-    L.push({ ir: mesa }, { pose: 'serve', s: 0.8, ao: 'serviu' });
+  // o LOTE: ela pega até 3 pedidos de uma vez. Roteiro: anota mesa por mesa (a mais perto primeiro), faz todos os cafés juntos na
+  //   bancada e/ou pega todas as fatias na vitrine, e entrega mesa por mesa. Cada passo sabe de qual pedido é (p.t): se aquele
+  //   cliente foi embora no meio, os passos dele são pulados e o resto do lote continua.
+  const LOTE_GARCOM = 3;
+  const mesaDaTarefa = (t) => (t.tipo === 'jogador' ? mesaDoAssento(t.a) : mesaDoAssento(t.A.cli.a));
+  function ordemMesas(lista, de) {                                           // vizinho mais perto, a partir de onde ela está
+    const fila = lista.slice(), out = []; let q = de;
+    while (fila.length) {
+      let k = 0, dm = 1e9;
+      fila.forEach((t, i) => { const [mx, mz] = MESAS_CAFE[mesaDaTarefa(t)], d = Math.hypot(mx - q.x, mz - q.z); if (d < dm) { dm = d; k = i; } });
+      const t = fila.splice(k, 1)[0]; out.push(t); q = { x: MESAS_CAFE[mesaDaTarefa(t)][0], z: MESAS_CAFE[mesaDaTarefa(t)][1] };
+    }
+    return out;
+  }
+  function passosLote(lote, de) {
+    const L = [], ehBolo = (t) => t.tipo === 'jogador' || !!(t.item && t.item.bolo);
+    for (const t of ordemMesas(lote.filter((t) => t.tipo === 'cliente'), de)) L.push({ ir: mesaDaTarefa(t), t }, { pose: 'anota', s: 1.6, ao: 'anotou', t });
+    const cafes = lote.filter((t) => !ehBolo(t)), bolos = lote.filter(ehBolo);
+    if (cafes.length) L.push({ ir: 'bancada', grupo: cafes }, { pose: 'prepara', s: 1.6 + 0.7 * cafes.length, ao: 'pegou', grupo: cafes });
+    if (bolos.length) L.push({ ir: 'vitrine', grupo: bolos }, { pose: 'pega', s: 0.8 + 0.35 * bolos.length, ao: 'pegou', grupo: bolos });
+    const ultimo = bolos.length ? pontoCafe('vitrine') : pontoCafe('bancada');
+    for (const t of ordemMesas(lote, ultimo)) L.push({ ir: mesaDaTarefa(t), t }, { pose: 'serve', s: 0.6, ao: 'serviu', t });
     return L;
   }
   function tarefaValida(t) {
     if (t.tipo === 'jogador') return !!S.jog.sentado && S.sentadoEm === t.a;
     const A = t.A; return S.npcs.includes(A) && A.cli && A.cli.a && A.cli.fase === 'fica' && A.cli.servico === t;
   }
+  const naMaoLote = (G) => (G.tarefa ? G.tarefa.itens.find((t) => t.pego && !t.servido && tarefaValida(t)) : null);   // o que ela mostra na mão: o próximo a entregar
+  function mostrarNaMao(L, G) { const t = naMaoLote(G); itemNaMaoLucia(L, t ? (t.tipo === 'jogador' ? { bolo: t.bolo } : t.item) : null); }
   // a pose dela anotando (bloquinho imaginário) e mexendo na bancada / na vitrine (por cima do poseAtor: A.poseFn)
   function poseGarcom(A, m) {
     const t = A.t || 0, p = A.gcPose;
@@ -7337,13 +7427,12 @@
   function fimPassoGarcom(L) { L.gcPose = null; L.poseFn = null; L.fala = false; }
   function pararGarcom(voltar) {                                             // a cena da confeitaria, o turno: larga o que estava fazendo
     const L = S.lucia, G = L && L.gc; if (!G) return;
-    const t = G.tarefa;
-    if (t && t.tipo === 'cliente' && tarefaValida(t)) G.fila.unshift(t);    // o cliente continua na fila (ela volta depois)
-    else if (t && t.tipo === 'jogador') G.fila.unshift(t);
+    const lote = G.tarefa;
+    if (lote) for (const t of lote.itens.slice().reverse()) if (!t.servido && (t.tipo === 'jogador' || tarefaValida(t))) { t.pego = false; G.fila.unshift(t); }   // quem não foi servido volta para a fila (ela volta depois)
     G.tarefa = null; G.passos = []; G.passo = null; L.cliRota = null; fimPassoGarcom(L); itemNaMaoLucia(L, null);
     if (voltar) { L.x = LUCIA_CAIXA.x; L.z = LUCIA_CAIXA.z; L.yaw = L.yawAlvo = LUCIA_CAIXA.yaw; L.andando = false; G.onde = 'caixa'; }
   }
-  const VEL_GARCOM = 2.25, RITMO_GARCOM = 1.5;                              // (7.1.6) a Lúcia 1,5x mais rápida lá dentro: anda a 2,25 m/s (era 1,5) e anota, prepara e serve em 2/3 do tempo
+  const VEL_GARCOM = 2.9, RITMO_GARCOM = 2.1;                               // a Lúcia ágil lá dentro: anda a 2,9 m/s e anota, prepara e serve em menos da metade do tempo base
   function tickGarcom(L, dt) {
     const G = garcom(); if (!G || S.cenaConf) return;
     if (S.turno) {                                                           // turno do jogador: ela fica no caixa
@@ -7354,37 +7443,47 @@
     }
     if (!G.tarefa) {
       G.fila = G.fila.filter(tarefaValida);
-      const t = (S.modo === 'livre' || G.fila[0] && G.fila[0].tipo === 'jogador') && !L.conversando ? G.fila.shift() : null;   // conversa / cena: não sai do caixa no meio
-      if (t) { G.tarefa = t; G.passos = passosGarcom(t); G.passo = null; if (t.tipo === 'cliente') t.estado = 'vem'; }
-      else {                                                                 // nada para fazer: de volta ao caixa
+      const pode = (S.modo === 'livre' || G.fila[0] && G.fila[0].tipo === 'jogador') && !L.conversando;   // conversa / cena: não sai do caixa no meio
+      if (pode && G.fila.length) {                                           // até 3 pedidos de uma vez (o do jogador sempre entra primeiro)
+        const itens = G.fila.splice(0, LOTE_GARCOM);
+        for (const t of itens) { t.pego = false; t.servido = false; if (t.tipo === 'cliente') t.estado = 'vem'; }
+        G.tarefa = { itens }; G.passos = passosLote(itens, { x: L.x, z: L.z }); G.passo = null;
+      } else {                                                               // nada para fazer: de volta ao caixa
         if (G.onde !== 'caixa' && !L.cliRota) { L.cliRota = rotaCafe(G.onde, 'caixa'); G.onde = 'caixa'; }
         if (L.cliRota) { if (seguir(L, L.cliRota, VEL_GARCOM, dt)) { L.cliRota = null; L.yawAlvo = LUCIA_CAIXA.yaw; } }
         else { L.andando = false; if (!L.conversando && S.modo === 'livre') L.yawAlvo = LUCIA_CAIXA.yaw; }
         return;
       }
     }
-    const t = G.tarefa;
-    if (!tarefaValida(t)) { const leva = G.passos.some((p) => p.ao === 'serviu') || (G.passo && G.passo.ao === 'serviu'); G.tarefa = null; G.passos = []; G.passo = null; fimPassoGarcom(L); itemNaMaoLucia(L, null); if (L.cliRota) { L.cliRota = null; } void leva; return; }   // o cliente foi embora
+    const lote = G.tarefa;
     if (!G.passo) {
-      G.passo = G.passos.shift();
-      if (!G.passo) { G.tarefa = null; fimPassoGarcom(L); return; }
-      G.passo.t = 0;
+      // o próximo passo que ainda vale (pula os dos clientes que já foram embora; um grupo vazio também é pulado)
+      for (;;) {
+        G.passo = G.passos.shift();
+        if (!G.passo) { G.tarefa = null; fimPassoGarcom(L); itemNaMaoLucia(L, null); return; }
+        const P0 = G.passo;
+        if (P0.t && !(P0.t.tipo === 'jogador' || tarefaValida(P0.t))) continue;
+        if (P0.grupo && !P0.grupo.some((t) => t.tipo === 'jogador' || tarefaValida(t))) continue;
+        break;
+      }
+      G.passo.t0 = 0;
       if (G.passo.ir != null) { L.cliRota = G.onde === G.passo.ir ? [] : rotaCafe(G.onde, G.passo.ir); G.onde = G.passo.ir; }
     }
     const P = G.passo;
+    if (P.t && !(P.t.tipo === 'jogador' ? true : tarefaValida(P.t))) { fimPassoGarcom(L); G.passo = null; L.cliRota = null; mostrarNaMao(L, G); return; }   // foi embora no meio do caminho
     if (P.ir != null) {
       fimPassoGarcom(L);
       if (seguir(L, L.cliRota || [], VEL_GARCOM, dt)) { L.cliRota = null; L.andando = false; const q = pontoCafe(P.ir); L.yawAlvo = q.yaw; G.passo = null; }
       return;
     }
-    L.andando = false; P.t += dt * RITMO_GARCOM;
+    L.andando = false; P.t0 += dt * RITMO_GARCOM;
     if (L.gcPose !== P.pose) { L.gcPose = P.pose; L.poseFn = poseGarcom; }
-    if (P.pose === 'anota') { const k = Math.floor(P.t / 0.8) % 2; L.fala = k === 0; if (t.A) t.A.fala = k === 1; }
-    if (P.t < P.s) return;
-    if (P.ao === 'anotou') { SomCafe.anotar(); if (t.A) t.A.fala = false; }
-    else if (P.ao === 'pegou') { itemNaMaoLucia(L, t.tipo === 'jogador' ? { bolo: t.bolo } : t.item); SomCafe.pronto(); }
+    if (P.pose === 'anota') { const k = Math.floor(P.t0 / 0.8) % 2; L.fala = k === 0; if (P.t.A) P.t.A.fala = k === 1; }
+    if (P.t0 < P.s) return;
+    if (P.ao === 'anotou') { SomCafe.anotar(); if (P.t.A) P.t.A.fala = false; }
+    else if (P.ao === 'pegou') { for (const t of P.grupo) t.pego = true; mostrarNaMao(L, G); SomCafe.pronto(); }
     else if (P.ao === 'serviu') {
-      itemNaMaoLucia(L, null); SomCafe.entregar();
+      const t = P.t; t.servido = true; SomCafe.entregar();
       if (t.tipo === 'jogador') servirJogador(t);
       else {
         const A = t.A, C = A.cli; C.servico = null; C.pagou = true; setTimeout(() => { try { SomCafe.caixa(); } catch (e) { /* sem som */ } }, 450);   // recebe na mesa
@@ -7392,7 +7491,9 @@
         else { darCopo(A, t.item.tier); A.bebe = 14 + Math.random() * 16; }
         C.t = Math.max(C.t, (A.comeBolo || A.bebe || 15) + 6 + Math.random() * 20);
       }
+      mostrarNaMao(L, G);
     }
+    void lote;
     fimPassoGarcom(L); G.passo = null;
   }
   // a fatia chegou na mesa do jogador: ele come (a pose do lanche) e só então pode levantar
@@ -7421,7 +7522,18 @@
       topo(x, y - 3, w);
     };
     const MEAT = '#6b3a1e', QJ = '#f2c230', ALF = '#5fae5a', TOM = '#d8402f', OVO = '#fff7e0';
-    if (id === 'podrao') { hamb(1, 14, [[ALF, 1, true], [QJ, 1], [MEAT, 2], [OVO, 1], [MEAT, 1]], 14); px(5, 9, QJ); px(6, 9, QJ); }
+    const balde = (x0, w, y0) => {                                // o balde de pipoca listrado de vermelho e branco, com a pipoca transbordando
+      for (let y = y0; y < 15; y++) { const enc = Math.floor((y - y0) / 4); for (let i = enc; i < w - enc; i++) px(x0 + i, y, (i >> 1) % 2 ? '#f4f4ec' : '#d8302a'); }
+      for (const [a, b] of [[1, -1], [2, -2], [3, -1], [4, -3], [5, -2], [6, -1], [7, -2], [3, -3], [5, -4], [8, -1], [0, 0], [9, 0]]) if (a < w) { px(x0 + a, y0 + b, b % 2 ? '#fff6c8' : '#f2d070'); px(x0 + a, y0 + b + 1, '#fbf0c0'); }
+    };
+    const copo = (x0, y0) => {                                    // o copo de refri com tampa e canudinho
+      for (let y = y0; y < 15; y++) { const enc = y > y0 + 6 ? 1 : 0; rc(x0 + enc, y, 5 - enc * 2, 1, y === y0 + 3 ? '#f2c230' : '#3a64b8'); }
+      rc(x0 - 1, y0 - 1, 7, 1, '#f4f4ec'); rc(x0 + 3, y0 - 5, 1, 4, '#c8352b'); px(x0 + 4, y0 - 5, '#c8352b');
+    };
+    if (id === 'pipoca') balde(3, 10, 6);
+    else if (id === 'refri') copo(5, 5);
+    else if (id === 'combo') { balde(0, 9, 7); copo(10, 6); }
+    else if (id === 'podrao') { hamb(1, 14, [[ALF, 1, true], [QJ, 1], [MEAT, 2], [OVO, 1], [MEAT, 1]], 14); px(5, 9, QJ); px(6, 9, QJ); }
     else if (id === 'quasetudo') { hamb(1, 14, [[ALF, 1, true], [TOM, 1], [QJ, 1], [MEAT, 1], ['#e89a9a', 1], [OVO, 1], [MEAT, 1], [QJ, 1]], 15); }
     else if (id === 'wrapfit') {                                   // o wrap integral: a massa enrolada, cortada na diagonal, com alface, frango e tomate aparecendo
       const MASSA = '#c8a068', MASSA2 = '#a8804a', FR = '#f0dcb0';
@@ -8285,6 +8397,16 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const horaEntre = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
   const noHorario = (r) => (r.posto && r.posto.tipo === 'treino' ? turmaVai(idaTurma(r)) : horaEntre(S.dados.hora, r.saida, r.volta));   // (6.6.16) a turma do Nonato tem a agenda dela · (6.6.19) sai de casa antes
   const yawPara = (dx, dz) => Math.atan2(-dz, dx);
+  // onde quem CHEGA para sentar para de andar: o lado livre do assento que fica mais perto de quem vem (da porta). Com o pontoLev
+  //   (que sempre testa primeiro a frente do assento, e a frente da cadeira é a mesa) ele passava da cadeira e voltava.
+  function pontoChegada(a, A, de) {
+    let best = null, bd = 1e9;
+    for (const [ux, uz] of [[a.fx, a.fz], [-a.fz, a.fx], [a.fz, -a.fx], [-a.fx, -a.fz]]) for (const dd of [0.62, 0.85, 1.1]) {
+      const x = a.x + ux * dd, z = a.z + uz * dd; if (!livreNPC(x, z, A, true)) continue;
+      const d = Math.hypot(x - de.x, z - de.z) + dd * 0.4; if (d < bd) { bd = d; best = { x, z }; } break;
+    }
+    return best || pontoLev(a, A);
+  }
   function pontoLev(a, A) {                                          // onde a pessoa fica de pé ao levantar de um assento (o primeiro ponto livre em volta)
     for (const [ux, uz] of [[a.fx, a.fz], [-a.fz, a.fx], [a.fz, -a.fx], [-a.fx, -a.fz]]) for (const dd of [0.8, 1.1, 1.5]) { const x = a.x + ux * dd, z = a.z + uz * dd; if (livreNPC(x, z, A, true)) return { x, z }; }
     return { x: a.x + a.fx * 0.8, z: a.z + a.fz * 0.8 };
@@ -9488,5 +9610,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia, checarFaltaEncontro, alvosPortaLucia, portaCasaLucia, pedirDesculpasLucia, chamarLuciaDeNovo, apiNamoro } });   // (_estado/_planta/_fns: para testes)
+    _fns: { novoCliente, pedirGarcom, reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia, checarFaltaEncontro, alvosPortaLucia, portaCasaLucia, pedirDesculpasLucia, chamarLuciaDeNovo, apiNamoro } });   // (_estado/_planta/_fns: para testes)
 })();
