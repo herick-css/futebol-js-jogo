@@ -22,6 +22,11 @@
    - Barbearia do Toninho (nome 'barbearia'): piso xadrez, dois espelhos com a bancada, a segunda cadeira de barbeiro, o banco de espera
      e o poste listrado. R.barbearia: { cadeira, toninho, corte, quadro } (o barbearia.js põe o Toninho, a cadeira de corte que gira,
      o quadro de preços e a cena do corte).
+   - Casa da Lúcia (nome 'casaLucia', 9 x 7): sala e cozinha juntas, tudo de GATO, BOLO e CAFÉ — balcão com a máquina de espresso, o
+     moedor, o bolo de cenoura na boleira, potes de café em grão e cupcakes; o quadro "bolo do dia"; o sofá mostarda de frente para a
+     câmera com a mesinha de centro e o tapete de patinhas; o arranhador, a caminha, os potes de ração e o retrato do Grão; a mesa
+     redonda com girassóis, o saco de café, a janela com cortina e o relógio de gato. R.casaLucia: { sofaJ, sofaL, h, colo, mesa,
+     balcao, caminha, esconde } (o namoro.js põe a Lúcia, o Grão e a bandeja; a visita é toda roteirizada).
    - (6.2.0) Academia refeita: recepção, duas catracas (entrada e saída), esteiras, supinos e colchonetes (R.academia; ver academia.js).
    - construir(nome, api) devolve { grupo, lim, col, pisos, assentos, pessoas, entrada, saida, extras, fundo, cam }
        assentos: [{ x, z, fx, fz, h, tipo }] (fx/fz = para onde olha quem senta)
@@ -31,7 +36,7 @@
 (function () {
   'use strict';
 
-  const LUGARES = ['supermercado', 'cafeteria', 'pizzaria', 'restaurante', 'academia', 'bar', 'cinema', 'hospital', 'lanche', 'esportiva', 'barbearia'];
+  const LUGARES = ['supermercado', 'cafeteria', 'pizzaria', 'restaurante', 'academia', 'bar', 'cinema', 'hospital', 'lanche', 'esportiva', 'barbearia', 'casaLucia'];
 
   function construir(nome, api) {
     const { Geo, MAT, guardar, texCanvas, granular, semente, texLetreiro } = api;
@@ -917,6 +922,121 @@
         toninho: { x: 1.05, z: -1.55, yaw: -Math.PI / 2 },                          // esperando, do lado da outra cadeira, de frente para a porta
         corte: { x: -2.78, z: -2.2, yaw: 0 },                                       // cortando: do lado oeste da cadeira, virado para ela
         quadro: { x: 4.1, z: zN + 0.06 },                                           // o quadro dos preços (na parede norte, depois do espelho)
+      };
+    } else if (nome === 'casaLucia') {
+      // CASA DA LÚCIA (9 x 7): a casa da avó dela. Cozinha no canto noroeste, sala no meio/leste, o canto do Grão na parede leste.
+      sala(9, 7, 2.9, '#f3e6cf', '#b88a58', '#a97c4c', 0.42);
+      R.fundo = 0x1a120c; R.cam = { dist: 6.2, pitch: 0.8 };
+      const zN = -3.5, xO = -4.5, xL = 4.5, MAD = '#6a4428', LATTE = '#c9a27a', MOST = '#d9a441', ROSA = '#c8556a';
+      const mats = {}, mt = (c, basico) => mats[c + (basico ? 'b' : '')] || (mats[c + (basico ? 'b' : '')] = guardar(basico ? new THREE.MeshBasicMaterial({ color: c }) : new THREE.MeshLambertMaterial({ color: c })));
+      const cil = (r, h, c, x, y, z, n, basico) => { const m = new THREE.Mesh(guardar(new THREE.CylinderGeometry(r, r, h, n || 14)), mt(c, basico)); m.position.set(x, y + h / 2, z); grupo.add(m); return m; };
+      const bola = (r, c, x, y, z) => { const m = new THREE.Mesh(guardar(new THREE.SphereGeometry(r, 8, 6)), mt(c)); m.position.set(x, y, z); grupo.add(m); return m; };
+      const quadroParede = (tex, w, h, x, y, z, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); return m; };
+      // barrado cor de café com leite e o friso de madeira (nas paredes que a câmera vê)
+      G.box(8.9, 1.0, 0.04, LATTE, 0, 0, zN + 0.03); G.box(8.9, 0.05, 0.07, MAD, 0, 1.0, zN + 0.04);
+      for (const x of [xO + 0.03, xL - 0.03]) { G.box(0.04, 1.0, 6.9, LATTE, x, 0, 0); G.box(0.07, 0.05, 6.9, MAD, x, 1.0, 0); }
+      // ---- a COZINHA: balcão com tampo de madeira escura, armários claros, prateleiras com canecas
+      G.box(3.6, 0.9, 0.6, '#e8d9bd', -2.5, 0, zN + 0.33, '#e8d9bd'); G.box(3.7, 0.06, 0.66, '#5b3a22', -2.5, 0.9, zN + 0.35); bloq(-2.5, zN + 0.33, 3.6, 0.68);
+      for (let i = 0; i < 4; i++) { const x = -4.08 + i * 0.9; G.box(0.84, 0.78, 0.02, '#f2e6cc', x + 0.02, 0.06, zN + 0.64); G.box(0.12, 0.03, 0.03, '#8a8a8a', x + 0.3, 0.68, zN + 0.66); }
+      const yB = 0.96;                                                                  // em cima do balcão
+      // a máquina de espresso (vermelha, com detalhes cromados) e duas xicrinhas
+      G.box(0.42, 0.4, 0.36, '#c8352b', -3.85, yB, zN + 0.3); G.box(0.44, 0.04, 0.38, '#c9ced4', -3.85, yB + 0.4, zN + 0.3); G.box(0.12, 0.06, 0.1, '#c9ced4', -3.85, yB + 0.2, zN + 0.52);
+      G.box(0.3, 0.02, 0.14, '#3a3a3e', -3.85, yB, zN + 0.55); G.box(0.05, 0.05, 0.05, '#f4f4ec', -3.92, yB + 0.02, zN + 0.55); G.box(0.05, 0.05, 0.05, '#f4f4ec', -3.78, yB + 0.02, zN + 0.55);
+      G.box(0.07, 0.07, 0.02, '#e8e8e0', -3.72, yB + 0.28, zN + 0.49); G.box(0.02, 0.1, 0.02, '#1c1c1f', -3.98, yB + 0.24, zN + 0.5);
+      // o moedor (com café em grão no funil)
+      G.box(0.16, 0.24, 0.18, '#2a2a2e', -3.3, yB, zN + 0.3); G.box(0.13, 0.12, 0.13, '#d8e8ec', -3.3, yB + 0.24, zN + 0.3); G.box(0.11, 0.07, 0.11, '#4a2a14', -3.3, yB + 0.25, zN + 0.3);
+      // a BOLEIRA com o bolo de cenoura e cobertura de chocolate (morangos em cima e a cobertura escorrendo)
+      cil(0.05, 0.1, '#f4f4ec', -2.6, yB, zN + 0.35, 10); cil(0.19, 0.02, '#f4f4ec', -2.6, yB + 0.1, zN + 0.35, 16);
+      cil(0.15, 0.12, '#e8892a', -2.6, yB + 0.12, zN + 0.35, 16); cil(0.153, 0.035, '#3a2012', -2.6, yB + 0.235, zN + 0.35, 16);
+      for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; G.box(0.03, 0.035 + (i % 3) * 0.015, 0.02, '#3a2012', -2.6 + Math.cos(a) * 0.15, yB + 0.2 - (i % 3) * 0.015, zN + 0.35 + Math.sin(a) * 0.15); }
+      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2 + 0.3; G.box(0.035, 0.035, 0.035, '#d4202a', -2.6 + Math.cos(a) * 0.08, yB + 0.27, zN + 0.35 + Math.sin(a) * 0.08); }
+      // potes de vidro com café em grão (três alturas)
+      for (const [dx, h] of [[-0.13, 0.22], [0, 0.28], [0.13, 0.18]]) { G.box(0.11, h, 0.11, '#cfe2e8', -1.95 + dx, yB, zN + 0.3); G.box(0.1, h * 0.7, 0.1, '#4a2a14', -1.95 + dx, yB + 0.005, zN + 0.3); G.box(0.12, 0.03, 0.12, MAD, -1.95 + dx, yB + h, zN + 0.3); }
+      // cupcakes de cobertura rosa na bandejinha
+      G.box(0.22, 0.015, 0.2, '#f4f4ec', -0.82, yB, zN + 0.32);
+      for (const [dx, dz] of [[-0.05, -0.05], [0.05, -0.05], [-0.05, 0.05], [0.05, 0.05]]) { G.box(0.06, 0.05, 0.06, '#c89a5a', -0.82 + dx, yB + 0.015, zN + 0.32 + dz); G.box(0.065, 0.035, 0.065, '#f4a6c0', -0.82 + dx, yB + 0.065, zN + 0.32 + dz); G.box(0.015, 0.015, 0.015, '#d4202a', -0.82 + dx, yB + 0.1, zN + 0.32 + dz); }
+      // prateleiras com canecas coloridas e um pote de biscoito em forma de gato
+      for (const y of [1.55, 1.98]) { G.box(3.3, 0.04, 0.24, MAD, -2.5, y, zN + 0.14); for (const x of [-4.0, -1.0]) G.box(0.04, 0.12, 0.2, MAD, x, y - 0.12, zN + 0.12); }
+      { const cores = ['#f2f2ee', '#e8742a', '#3fb7b0', '#f2c230', ROSA, '#7a4fb0', '#6cae3e', '#2a3f66'];
+        for (let i = 0; i < 8; i++) { const x = -3.95 + i * 0.36; G.box(0.1, 0.11, 0.1, cores[i], x, 1.59, zN + 0.16); G.box(0.02, 0.06, 0.04, cores[i], x + 0.06, 1.61, zN + 0.16); }
+        G.box(0.22, 0.2, 0.18, '#f2f2ee', -1.55, 2.02, zN + 0.15); G.box(0.05, 0.06, 0.03, '#f2f2ee', -1.62, 2.22, zN + 0.15); G.box(0.05, 0.06, 0.03, '#f2f2ee', -1.48, 2.22, zN + 0.15);   // o pote-gato
+        G.box(0.03, 0.03, 0.01, '#1c1c1f', -1.6, 2.12, zN + 0.245); G.box(0.03, 0.03, 0.01, '#1c1c1f', -1.5, 2.12, zN + 0.245); G.box(0.02, 0.015, 0.01, ROSA, -1.55, 2.08, zN + 0.245);
+        for (let i = 0; i < 5; i++) G.box(0.07, 0.17 + (i % 2) * 0.05, 0.13, pk(['#8a2f2a', '#2a3f66', '#c99a3a', '#1f5a3a']), -3.9 + i * 0.09, 2.02, zN + 0.13);   // livros de receita
+      }
+      placa('BOLO DO DIA: CENOURA', '#2b2b2b', '#f4efe2', 1.7, 0.36, -2.5, 2.48, zN + 0.04);
+      // as luminárias pendentes em cima do balcão
+      for (const x of [-3.2, -1.8]) { G.box(0.015, 0.45, 0.015, '#1c1c1f', x, 2.45, -2.95); G.box(0.26, 0.16, 0.26, '#2a3f66', x, 2.3, -2.95); G.box(0.16, 0.03, 0.16, '#ffe8b0', x, 2.28, -2.95); }
+      // ---- a SALA: o sofá mostarda (de frente para a câmera), almofadas de patinha e a manta
+      const SX = 1.5;
+      G.box(2.3, 0.3, 0.62, '#b8842e', SX, 0.06, -0.86); for (const [x, z] of [[0.45, -0.6], [2.55, -0.6], [0.45, -1.25], [2.55, -1.25]]) G.box(0.06, 0.06, 0.06, '#3a2616', x, 0, z);
+      G.box(0.98, 0.1, 0.5, MOST, 1.02, 0.36, -0.84); G.box(0.98, 0.1, 0.5, MOST, 1.98, 0.36, -0.84);                 // os dois assentos (topo em 0,46)
+      G.box(2.3, 0.62, 0.22, MOST, SX, 0.34, -1.19); G.box(2.32, 0.06, 0.24, '#b8842e', SX, 0.96, -1.19);              // o encosto
+      for (const x of [0.42, 2.58]) G.box(0.16, 0.6, 0.78, MOST, x, 0.06, -0.9);                                         // os braços
+      for (const [x, c] of [[0.66, '#f4efe2'], [2.34, '#f4efe2']]) { G.box(0.34, 0.3, 0.12, c, x, 0.46, -1.02); for (const [a, b] of [[-0.07, 0.06], [0.06, 0.12], [0.0, -0.05]]) G.box(0.04, 0.035, 0.01, '#4a2f1f', x + a, 0.6 + b, -0.955); }
+      G.box(0.2, 0.62, 0.5, '#7a9a6a', 2.58, 0.07, -0.95); G.box(0.22, 0.03, 0.52, '#6a8a5a', 2.58, 0.67, -0.95);       // a manta jogada no braço
+      bloq(SX, -0.95, 2.4, 0.86);
+      // o tapete redondo com patinhas e a mesinha de centro
+      cil(1.5, 0.008, '#a8563a', SX, 0.002, 0.2, 22); cil(1.38, 0.008, '#efe2c8', SX, 0.006, 0.2, 22);
+      for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + 0.2, rr = 1.05; const px = SX + Math.cos(a) * rr, pz = 0.2 + Math.sin(a) * rr; G.box(0.09, 0.004, 0.08, '#8a5a3a', px, 0.012, pz); for (const [ox, oz] of [[-0.06, -0.06], [0, -0.08], [0.06, -0.06]]) G.box(0.035, 0.004, 0.035, '#8a5a3a', px + ox, 0.012, pz + oz); }
+      G.box(1.1, 0.04, 0.55, '#7a4a2a', SX, 0.38, 0.15); for (const [x, z] of [[-0.5, -0.22], [0.5, -0.22], [-0.5, 0.22], [0.5, 0.22]]) G.box(0.05, 0.38, 0.05, '#5b3a22', SX + x, 0, 0.15 + z);
+      G.box(0.18, 0.02, 0.24, '#3fb7b0', SX - 0.42, 0.42, 0.16); G.box(0.12, 0.015, 0.16, '#f2f2ee', SX - 0.42, 0.44, 0.16);   // revista de gatos
+      bloq(SX, 0.15, 1.12, 0.57);
+      // o abajur de chão (luz quentinha)
+      G.box(0.26, 0.03, 0.26, '#2a2a2e', 3.05, 0, -1.15); G.box(0.03, 1.45, 0.03, '#2a2a2e', 3.05, 0.03, -1.15); G.box(0.34, 0.26, 0.34, '#f4e2b8', 3.05, 1.42, -1.15); bloq(3.05, -1.15, 0.3, 0.3);
+      { const l = new THREE.PointLight(0xffc888, 0.55, 5.5); l.position.set(3.05, 1.5, -1.15); grupo.add(l); const l2 = new THREE.PointLight(0xffd9a0, 0.35, 7); l2.position.set(-2.5, 2.2, -2.6); grupo.add(l2); }
+      // a janela (noite lá fora) com a cortina rosa e um vasinho no parapeito
+      G.box(1.7, 1.3, 0.05, '#f4efe2', 1.8, 1.0, zN + 0.04); G.box(1.5, 1.1, 0.05, '#1e2c4a', 1.8, 1.1, zN + 0.06); G.box(0.05, 1.1, 0.06, '#f4efe2', 1.8, 1.1, zN + 0.08); G.box(1.5, 0.05, 0.06, '#f4efe2', 1.8, 1.62, zN + 0.08);
+      for (const [x, y] of [[1.25, 1.85], [1.55, 1.95], [2.2, 1.8], [2.35, 2.02], [1.4, 1.45], [2.05, 1.38]]) G.box(0.025, 0.025, 0.01, '#fff6c8', x, y, zN + 0.09);
+      G.box(1.86, 0.06, 0.2, '#f4efe2', 1.8, 0.96, zN + 0.12); G.box(0.12, 0.1, 0.12, '#c8682a', 1.25, 1.02, zN + 0.14); G.box(0.16, 0.12, 0.16, '#5a9a44', 1.25, 1.12, zN + 0.14);
+      G.box(0.1, 0.09, 0.08, '#1c1c1f', 2.3, 1.02, zN + 0.14); G.box(0.025, 0.04, 0.025, '#1c1c1f', 2.27, 1.11, zN + 0.14); G.box(0.025, 0.04, 0.025, '#1c1c1f', 2.33, 1.11, zN + 0.14);   // um gatinho de enfeite
+      for (const s of [-1, 1]) { G.box(0.34, 1.75, 0.06, ROSA, 1.8 + s * 0.98, 0.65, zN + 0.12); G.box(0.36, 0.06, 0.07, '#a8434f', 1.8 + s * 0.98, 1.3, zN + 0.13); }
+      G.box(2.4, 0.04, 0.04, '#5b3a22', 1.8, 2.42, zN + 0.12);
+      // o relógio de gato (cauda de pêndulo) e a estante com fotos
+      G.box(0.22, 0.34, 0.05, '#1c1c1f', 3.55, 1.6, zN + 0.05); G.box(0.16, 0.14, 0.02, '#f4efe2', 3.55, 1.74, zN + 0.08); G.box(0.025, 0.04, 0.02, '#f2c230', 3.5, 1.82, zN + 0.09); G.box(0.025, 0.04, 0.02, '#f2c230', 3.6, 1.82, zN + 0.09);
+      G.box(0.05, 0.06, 0.05, '#1c1c1f', 3.48, 1.94, zN + 0.05); G.box(0.05, 0.06, 0.05, '#1c1c1f', 3.62, 1.94, zN + 0.05); G.box(0.03, 0.22, 0.03, '#1c1c1f', 3.55, 1.38, zN + 0.06);
+      G.box(1.0, 0.04, 0.24, MAD, -0.05, 1.62, zN + 0.14); G.box(0.2, 0.25, 0.03, '#c99a3a', -0.35, 1.66, zN + 0.1); G.box(0.16, 0.2, 0.02, '#8ab8d8', -0.35, 1.685, zN + 0.12); for (let i = 0; i < 4; i++) G.box(0.06, 0.2, 0.15, pk(['#8a2f2a', '#3fb7b0', '#f2c230', '#7a4fb0']), 0.0 + i * 0.07, 1.66, zN + 0.14);
+      G.box(0.14, 0.12, 0.14, '#e8e8e0', 0.32, 1.66, zN + 0.14); G.box(0.22, 0.2, 0.22, '#4f8a3a', 0.32, 1.76, zN + 0.14);
+      // ---- o canto do GRÃO (parede leste): arranhador de três andares, caminha, potinhos, novelos e o retrato dele
+      const AX = 3.95, AZ = -2.6;
+      G.box(0.72, 0.06, 0.72, '#c9b28a', AX, 0, AZ);
+      for (const [dx, dz, h] of [[-0.22, -0.22, 1.5], [0.22, 0.2, 1.05], [0.22, -0.22, 0.55]]) { G.box(0.1, h, 0.1, '#d8c39a', AX + dx, 0.06, AZ + dz); for (let y = 0.15; y < h; y += 0.18) G.box(0.105, 0.02, 0.105, '#a88a5a', AX + dx, 0.06 + y, AZ + dz); }
+      G.box(0.5, 0.05, 0.5, '#c9b28a', AX + 0.1, 0.6, AZ); G.box(0.46, 0.4, 0.46, '#c9b28a', AX + 0.05, 1.1, AZ + 0.02); G.box(0.2, 0.22, 0.02, '#3a2a1a', AX - 0.05, 1.16, AZ + 0.255);
+      G.box(0.5, 0.05, 0.5, '#c9b28a', AX - 0.1, 1.55, AZ - 0.05); G.box(0.5, 0.08, 0.04, '#b89a6a', AX - 0.1, 1.6, AZ + 0.18);
+      G.box(0.008, 0.28, 0.008, '#f4efe2', AX + 0.2, 1.27, AZ - 0.28); bola(0.045, '#f4a6c0', AX + 0.2, 1.24, AZ - 0.28);
+      bloq(AX, AZ, 0.78, 0.78);
+      cil(0.3, 0.08, ROSA, 3.85, 0, 0.95, 16); cil(0.23, 0.075, '#f4c8d8', 3.85, 0.005, 0.95, 16);                      // a caminha (o Grão dorme em y 0,07)
+      G.box(0.6, 0.008, 0.36, '#e8d9bd', 4.05, 0, 2.25); cil(0.1, 0.06, '#3a64b8', 4.05, 0.008, 2.12, 12); cil(0.1, 0.06, '#f2c230', 4.05, 0.008, 2.38, 12);
+      G.box(0.06, 0.004, 0.03, '#f2f2ee', 4.05, 0.069, 2.12); G.box(0.11, 0.02, 0.11, '#7a4a2a', 4.05, 0.035, 2.12); G.box(0.12, 0.012, 0.12, '#a9d6f0', 4.05, 0.05, 2.38);   // o peixinho no pote, ração e água
+      bola(0.07, ROSA, 3.35, 0.07, 1.65); bola(0.06, '#6cae3e', 3.15, 0.06, 1.85); G.box(0.36, 0.006, 0.01, ROSA, 3.0, 0.004, 1.7);   // novelos
+      G.box(0.07, 0.05, 0.04, '#9aa0a8', 2.9, 0, 2.35); G.box(0.08, 0.006, 0.006, '#9aa0a8', 2.83, 0.02, 2.35);     // o ratinho de brinquedo
+      { const tex = guardar(texCanvas(16, 16, (g) => {                   // o retrato do Grão (pixel art)
+          g.fillStyle = '#f4e2b8'; g.fillRect(0, 0, 16, 16); g.fillStyle = '#4a2f1f'; g.fillRect(3, 5, 10, 8); g.fillRect(3, 3, 3, 3); g.fillRect(10, 3, 3, 3);
+          g.fillStyle = '#c99a6a'; g.fillRect(6, 10, 4, 3); g.fillStyle = '#8fdc5a'; g.fillRect(5, 7, 2, 2); g.fillRect(9, 7, 2, 2); g.fillStyle = '#101010'; g.fillRect(6, 7, 1, 2); g.fillRect(10, 7, 1, 2);
+          g.fillStyle = '#e89aa8'; g.fillRect(7, 10, 2, 1); g.fillStyle = '#f4efe2'; g.fillRect(1, 10, 3, 1); g.fillRect(12, 10, 3, 1); }));
+        G.box(0.05, 0.62, 0.62, '#c99a3a', xL - 0.04, 1.35, 0.95); quadroParede(tex, 0.52, 0.52, xL - 0.075, 1.66, 0.95, -Math.PI / 2);
+        const pl = guardar(texLetreiro('GRÃO', '#4a2f1f', '#f4efe2', 0.5, 0.14)); quadroParede(pl, 0.5, 0.14, xL - 0.075, 1.22, 0.95, -Math.PI / 2); }
+      // ---- a mesa redonda da avó (oeste) com girassóis, as cadeiras, o saco de café e o pôster de xícara
+      const MX = -3.0, MZ = -0.9;
+      cil(0.06, 0.7, '#3a2616', MX, 0, MZ, 8); cil(0.25, 0.03, '#3a2616', MX, 0, MZ, 12); cil(0.46, 0.04, '#8a5a2b', MX, 0.7, MZ, 18);
+      cil(0.05, 0.16, '#d8e8ec', MX, 0.74, MZ, 8); for (let i = 0; i < 3; i++) { const a = i * 2.1; G.box(0.012, 0.22, 0.012, '#4f8a3a', MX + Math.cos(a) * 0.03, 0.86, MZ + Math.sin(a) * 0.03); G.box(0.09, 0.09, 0.03, '#f2c230', MX + Math.cos(a) * 0.06, 1.06, MZ + Math.sin(a) * 0.06); G.box(0.035, 0.035, 0.035, '#5a3a1a', MX + Math.cos(a) * 0.06, 1.087, MZ + Math.sin(a) * 0.06); }
+      cadeira(MX, MZ + 0.78, 0, -1, '#8a5a2b'); cadeira(MX, MZ - 0.78, 0, 1, '#8a5a2b');
+      bloq(MX, MZ, 0.95, 0.95); bloq(MX, MZ + 0.78, 0.5, 0.5); bloq(MX, MZ - 0.78, 0.5, 0.5);
+      G.box(0.46, 0.5, 0.36, '#b89a6a', -4.05, 0, 1.5, '#a8885a'); G.box(0.4, 0.06, 0.3, '#a8885a', -4.05, 0.5, 1.5); G.box(0.2, 0.12, 0.01, '#5a3a1a', -4.05, 0.25, 1.68);
+      for (let i = 0; i < 9; i++) G.box(0.025, 0.012, 0.018, '#3a2012', -3.85 + (rnd() - 0.5) * 0.3, 0, 1.75 + (rnd() - 0.5) * 0.3);   // grãos caídos
+      bloq(-4.05, 1.5, 0.5, 0.4);
+      { const tex = guardar(texCanvas(16, 20, (g) => {                   // pôster: uma xícara fumegando
+          g.fillStyle = '#f2c230'; g.fillRect(0, 0, 16, 20); g.fillStyle = '#f4efe2'; g.fillRect(3, 9, 9, 7); g.fillRect(12, 10, 2, 4); g.fillStyle = '#5a3418'; g.fillRect(4, 9, 7, 2);
+          g.fillStyle = '#c8352b'; g.fillRect(2, 16, 12, 1); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fillRect(5, 3, 1, 4); g.fillRect(8, 2, 1, 5); g.fillRect(6, 6, 1, 1); g.fillRect(9, 6, 1, 1); }));
+        G.box(0.05, 0.84, 0.68, '#5b3a22', xO + 0.04, 1.3, -0.9); quadroParede(tex, 0.6, 0.76, xO + 0.075, 1.72, -0.9, Math.PI / 2); }
+      // plantas nos cantos
+      for (const [x, z] of [[-0.42, zN + 0.35], [-4.1, 2.9], [4.05, 2.95]]) { G.box(0.3, 0.32, 0.3, '#c8682a', x, 0, z); G.box(0.5, 0.55, 0.5, '#4f8a3a', x, 0.32, z); G.box(0.32, 0.35, 0.32, '#5f9a44', x + 0.05, 0.82, z - 0.03); bloq(x, z, 0.4, 0.4); }
+      R.casaLucia = {
+        sofaJ: { x: 1.02, z: -0.86 }, sofaL: { x: 1.98, z: -0.86 }, h: 0.46,                // os dois lugares do sofá (de frente para +z)
+        colo: { y: 0.6, dz: 0.2 },                                                           // o Grão deitado no colo de quem senta no sofaJ
+        mesa: { x: SX, z: 0.15, y: 0.42 },                                                  // o tampo da mesinha de centro
+        balcao: { x: -1.45, z: -2.5 },                                                      // onde a Lúcia fica no balcão (a bandeja fica na frente dela)
+        caminha: { x: 3.85, z: 0.95, yaw: Math.PI },
+        esconde: { x: MX, z: MZ },                                                          // embaixo da mesa redonda (o Grão foge para cá)
       };
     } else return null;
 
