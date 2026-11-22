@@ -789,13 +789,11 @@
         }
       }
       P.mus.mixar(v, corte, pan, dt);
-      const M = typeof Musica !== 'undefined' ? Musica : null; if (!M) return;
-      const forte = P.mus.tocando && v > 0.18;
-      if (forte && M.tocando && M.estilo === 'jazz') { M.parar(); P.jazzPausado = true; }
-      else if (P.jazzPausado && !forte) {
-        if (s.dentro || !naRua) P.jazzPausado = false;
-        else if ((v < 0.08 || !P.mus.tocando) && !M.tocando && s.modo === 'livre') { M.tocar('jazz'); P.jazzPausado = false; }
-      }
+      const M = typeof Musica !== 'undefined' ? Musica : null; if (!M || !M.ceder) return;
+      // perto da roda o jazz cede o lugar; longe (ou lá dentro de algum lugar, onde o pagode não se ouve) ele volta. A folga entre
+      //   0,08 e 0,18 evita ficar liga-desliga na divisa.
+      if (P.mus.tocando && v > 0.18) { if (!P.jazzPausado) { M.ceder('pagode'); P.jazzPausado = true; } }
+      else if (P.jazzPausado && (v < 0.08 || !P.mus.tocando)) { M.retomar('pagode'); P.jazzPausado = false; }
     }
 
     // ---------------------------------------------------------------- tick (todo quadro)
@@ -860,7 +858,7 @@
     function limpar() {
       try { if (vivo()) acabarEvento(true); } catch (e) { /* nada */ }
       P.mus.parar(true);
-      if (P.jazzPausado) P.jazzPausado = false;
+      if (P.jazzPausado) { P.jazzPausado = false; try { if (typeof Musica !== 'undefined' && Musica.retomar) Musica.retomar('pagode'); } catch (e) { /* nada */ } }
     }
     return {
       tick: (dt) => { if (P.ev && P.ev.morto) { const D = diaDoEvento(); if (D !== P.ev.D) P.ev = null; else { P.absAnt = tAbs(); P.estavaDentro = !!S().dentro; tickSom(dt); return; } } tick(dt); },

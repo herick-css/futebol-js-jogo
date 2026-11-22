@@ -266,22 +266,35 @@
     medir();
     el.id = 'cpVinheta'; el.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:43;image-rendering:pixelated;background:#020718';
     raiz.appendChild(el);
-    const [ia, ib] = await Promise.all([carregarImg(op.a && op.a.url), carregarImg(op.b && op.b.url)]);
+    const soltar = () => { try { if (typeof pausarRender === 'function') pausarRender(false); } catch (e) { /* nada */ } };
+    const [ia0, ib0] = await Promise.all([carregarImg(op.a && op.a.url), carregarImg(op.b && op.b.url)]);
+    // o que não muda de um quadro para o outro fica pronto antes: o fundo (por tamanho), o brilho da taça, os escudos com a sombra
+    const comSombra = (img) => { if (!img) return null; const e = 64, c = document.createElement('canvas'); c.width = c.height = e + 16; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.shadowColor = 'rgba(0,0,0,.7)'; q.shadowBlur = 6; q.drawImage(img, 8, 8, e, e); return c; };
+    const ia = comSombra(ia0), ib = comSombra(ib0);
+    const halo = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const q = c.getContext('2d'), gr = q.createRadialGradient(64, 64, 6, 64, 64, 64); gr.addColorStop(0, 'rgba(170,200,255,.85)'); gr.addColorStop(0.45, 'rgba(160,190,255,.33)'); gr.addColorStop(1, 'rgba(150,180,255,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); return c; })();
+    let fundo = null, nQ = 0, largT = 0;
+    const fundoDe = (W, HT) => {
+      if (fundo && fundo.width === W && fundo.height === HT) return fundo;
+      fundo = document.createElement('canvas'); fundo.width = W; fundo.height = HT; const q = fundo.getContext('2d'), cx = W / 2;
+      const gr = q.createRadialGradient(cx, HT / 2 - 22, 10, cx, HT / 2 - 22, Math.max(W, HT) * 0.75); gr.addColorStop(0, AZUL[3]); gr.addColorStop(0.45, AZUL[2]); gr.addColorStop(1, AZUL[0]);
+      q.fillStyle = gr; q.fillRect(0, 0, W, HT); return fundo;
+    };
     const dur = op.dur || 8.4, rnd = (n) => ((Math.sin(n * 91.17) * 43758.5453) % 1 + 1) % 1;
     const ESTR = Array.from({ length: 150 }, (_, i) => ({ x: rnd(i + 1), y: rnd(i + 300), r: rnd(i + 600) < 0.12 ? 2 : 1, f: 0.5 + rnd(i + 900) * 3, ph: rnd(i + 1200) * 6.3 }));
     const fonte = (px) => "bold " + px + "px 'Silkscreen', 'Courier New', monospace";
     const titulo = Tx(NOME).toUpperCase();
     const suave = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    try { if (typeof pausarRender === 'function') pausarRender(true); } catch (e) { /* nada */ }   // a tela inteira é nossa: o 3D escondido não é desenhado
     const t0 = performance.now();
     await new Promise((ok) => {
-      const quadro = () => {
+      const quadro = () => { try { desenhar(); } catch (e) { console.error('[Campeões] vinheta:', e); soltar(); ok(); } };   // um erro no desenho não prende a vinheta (nem o 3D parado)
+      const desenhar = () => {
         const t = (performance.now() - t0) / 1000;
-        if (t >= dur || (op.parar && op.parar())) { ok(); return; }
-        medir();
+        if (t >= dur || (op.parar && op.parar())) { soltar(); ok(); return; }
+        if (nQ++ % 20 === 0) medir();                                    // (medir força o layout da página: a cada 20 quadros basta)
         const W = el.width, cx = W / 2, HT = H;
         g.setTransform(1, 0, 0, 1, 0, 0);
-        const gr = g.createRadialGradient(cx, HT / 2 - 22, 10, cx, HT / 2 - 22, Math.max(W, HT) * 0.75); gr.addColorStop(0, AZUL[3]); gr.addColorStop(0.45, AZUL[2]); gr.addColorStop(1, AZUL[0]);
-        g.fillStyle = gr; g.fillRect(0, 0, W, HT);
+        g.drawImage(fundoDe(W, HT), 0, 0);
         for (const s of ESTR) { const a = 0.35 + 0.65 * Math.max(0, Math.sin(t * s.f + s.ph)); g.fillStyle = 'rgba(255,255,255,' + a.toFixed(2) + ')'; g.fillRect(Math.round(s.x * W), Math.round(s.y * HT), s.r, s.r); }
         g.setTransform(1, 0, 0, 1, 0, oy);                             // daqui em diante: o quadro de 270 linhas, centralizado
         { const H = 270;
@@ -292,15 +305,15 @@
         // a taça: cresce, brilha e depois sobe para dar lugar aos escudos
         const k1 = suave(t / 1.6), k2 = suave((t - 3.6) / 1.0);
         const tam = (40 + 90 * k1) * (1 - 0.32 * k2), ly = H * (0.42 - 0.16 * k2);
-        g.save(); g.shadowColor = 'rgba(170,200,255,.9)'; g.shadowBlur = 14 + 8 * Math.sin(t * 3);
-        g.globalAlpha = k1; desenharLogo(g, cx, ly, tam, t * 0.5, Math.max(0, Math.sin(t * 2.2))); g.restore();
+        { const hs = tam * (1.4 + 0.12 * Math.sin(t * 3)); g.save(); g.globalAlpha = k1 * 0.9; g.imageSmoothingEnabled = true; g.drawImage(halo, cx - hs / 2, ly - hs / 2, hs, hs); g.restore(); }   // o brilho da taça (sprite pronto)
+        g.save(); g.globalAlpha = k1; desenharLogo(g, cx, ly, tam, t * 0.5, Math.max(0, Math.sin(t * 2.2))); g.restore();
         // o nome da copa (letra por letra) com o brilho passando
         const nL = Math.floor(Math.max(0, t - 1.2) * 14), txt = titulo.slice(0, nL);
         if (txt) {
           const ty = ly + tam * 0.5 + 18; g.font = fonte(17); g.textAlign = 'center'; g.textBaseline = 'middle';
           g.fillStyle = '#000'; g.fillText(txt, cx + 1, ty + 2);
           const gt = g.createLinearGradient(0, ty - 9, 0, ty + 9); gt.addColorStop(0, PRATA[0]); gt.addColorStop(0.6, PRATA[1]); gt.addColorStop(1, PRATA[3]); g.fillStyle = gt; g.fillText(txt, cx, ty);
-          const larg = g.measureText(titulo).width, bx = cx - larg / 2 + ((t * 0.9) % 1.6) / 1.6 * (larg + 60) - 30;
+          const larg = largT || (largT = g.measureText(titulo).width), bx = cx - larg / 2 + ((t * 0.9) % 1.6) / 1.6 * (larg + 60) - 30;
           g.save(); g.beginPath(); g.rect(bx, ty - 10, 12, 20); g.clip(); g.fillStyle = 'rgba(255,255,255,.85)'; g.fillText(txt, cx, ty); g.restore();
         }
         // os dois escudos entrando pelos lados, o "x" e a fase
@@ -309,8 +322,7 @@
           const ys = H * 0.72, e = 64, dx = W * 0.26;
           const lado = (img, nome, s) => {
             const x = cx + s * (dx + (1 - k3) * W * 0.5);
-            g.save(); g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 6; g.imageSmoothingEnabled = false;
-            if (img) g.drawImage(img, Math.round(x - e / 2), Math.round(ys - e / 2 - 8), e, e); g.restore();
+            if (img) g.drawImage(img, Math.round(x - e / 2) - 8, Math.round(ys - e / 2 - 8) - 8);   // (a sombra já vem no desenho)
             const mw = W * 0.44;                                       // (7.5.4) nome comprido não invade o outro lado
             g.font = fonte(9); g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(nome, x + 1, ys + e / 2 + 2, mw); g.fillStyle = PRATA[0]; g.fillText(nome, x, ys + e / 2 + 1, mw);
           };
@@ -329,7 +341,7 @@
       };
       requestAnimationFrame(quadro);
     });
-    return { fechar: () => { if (el.parentNode) el.parentNode.removeChild(el); } };
+    return { fechar: () => { soltar(); if (el.parentNode) el.parentNode.removeChild(el); } };
   }
 
   // ============================================================================================ OS TEXTOS (en, es, it, fr)

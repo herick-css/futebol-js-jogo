@@ -342,22 +342,36 @@
     medir();
     el.id = 'cpVinheta'; el.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;z-index:43;image-rendering:pixelated;background:#050302';
     raiz.appendChild(el);
-    const [ia, ib] = await Promise.all([carregarImg(op.a && op.a.url), carregarImg(op.b && op.b.url)]);
+    const soltar = () => { try { if (typeof pausarRender === 'function') pausarRender(false); } catch (e) { /* nada */ } };
+    const [ia0, ib0] = await Promise.all([carregarImg(op.a && op.a.url), carregarImg(op.b && op.b.url)]);
+    // o que não muda de um quadro para o outro fica pronto antes: o fundo (por tamanho), o brilho da taça, os escudos com a sombra
+    const comSombra = (img) => { if (!img) return null; const e = 64, c = document.createElement('canvas'); c.width = c.height = e + 16; const q = c.getContext('2d'); q.imageSmoothingEnabled = false; q.shadowColor = 'rgba(0,0,0,.75)'; q.shadowBlur = 6; q.drawImage(img, 8, 8, e, e); return c; };
+    const ia = comSombra(ia0), ib = comSombra(ib0);
+    const halo = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const q = c.getContext('2d'), gr = q.createRadialGradient(64, 64, 6, 64, 64, 64); gr.addColorStop(0, 'rgba(255,200,80,.85)'); gr.addColorStop(0.45, 'rgba(255,190,70,.35)'); gr.addColorStop(1, 'rgba(255,180,60,0)'); q.fillStyle = gr; q.fillRect(0, 0, 128, 128); return c; })();
+    let fundo = null;
+    const fundoDe = (W, HT) => {
+      if (fundo && fundo.width === W && fundo.height === HT) return fundo;
+      fundo = document.createElement('canvas'); fundo.width = W; fundo.height = HT; const q = fundo.getContext('2d'), cx = W / 2;
+      const gr = q.createRadialGradient(cx, HT / 2 - 18, 8, cx, HT / 2 - 18, Math.max(W, HT) * 0.72); gr.addColorStop(0, NOITE[3]); gr.addColorStop(0.42, NOITE[2]); gr.addColorStop(1, NOITE[0]);
+      q.fillStyle = gr; q.fillRect(0, 0, W, HT); return fundo;
+    };
+    let larguras = null, nQ = 0;
     const dur = op.dur || 8.4, rnd = (n) => ((Math.sin(n * 91.17) * 43758.5453) % 1 + 1) % 1;
     const CONF = Array.from({ length: 110 }, (_, i) => ({ x: rnd(i + 1), y0: rnd(i + 200), v: 18 + rnd(i + 400) * 30, w: 2 + Math.floor(rnd(i + 500) * 2), cor: i % 3 === 0 ? OURO[1] : PICADO[i % PICADO.length], f: 1 + rnd(i + 700) * 3, ph: rnd(i + 800) * 6.3 }));
     const fonte = (px) => "bold " + px + "px 'Silkscreen', 'Courier New', monospace";
     const titulo = Tx(NOME).toUpperCase();
     const suave = (x) => { x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); };
+    try { if (typeof pausarRender === 'function') pausarRender(true); } catch (e) { /* nada */ }   // a tela inteira é nossa: o 3D escondido não é desenhado
     const t0 = performance.now();
     await new Promise((ok) => {
-      const quadro = () => {
+      const quadro = () => { try { desenhar(); } catch (e) { console.error('[Libertadores] vinheta:', e); soltar(); ok(); } };   // um erro no desenho não prende a vinheta (nem o 3D parado)
+      const desenhar = () => {
         const t = (performance.now() - t0) / 1000;
-        if (t >= dur || (op.parar && op.parar())) { ok(); return; }
-        medir();
+        if (t >= dur || (op.parar && op.parar())) { soltar(); ok(); return; }
+        if (nQ++ % 20 === 0) medir();                                    // (medir força o layout da página: a cada 20 quadros basta)
         const W = el.width, cx = W / 2, HT = H;
         g.setTransform(1, 0, 0, 1, 0, 0); g.imageSmoothingEnabled = false;
-        const gr = g.createRadialGradient(cx, HT / 2 - 18, 8, cx, HT / 2 - 18, Math.max(W, HT) * 0.72); gr.addColorStop(0, NOITE[3]); gr.addColorStop(0.42, NOITE[2]); gr.addColorStop(1, NOITE[0]);
-        g.fillStyle = gr; g.fillRect(0, 0, W, HT);
+        g.drawImage(fundoDe(W, HT), 0, 0);
         // as fileiras de bandeirinhas (presas num fio que faz a curva), balançando com o vento
         for (let f = 0; f < 2; f++) {
           const y0 = 6 + f * 22, n = Math.ceil(W / 16) + 1, flecha = 10 + f * 4;
@@ -384,17 +398,19 @@
           // a taça: sobe de baixo crescendo, brilha e depois sobe para dar lugar aos escudos
           const k1 = suave(t / 1.7), k2 = suave((t - 3.7) / 1.0);
           const tam = (36 + 96 * k1) * (1 - 0.34 * k2), ly = H * (0.62 - 0.18 * k1 - 0.15 * k2);
-          g.save(); g.shadowColor = 'rgba(255,200,80,.9)'; g.shadowBlur = 12 + 8 * Math.sin(t * 3.2);
-          g.globalAlpha = k1; desenharLogo(g, cx, ly, tam, t * 0.6, Math.max(0, Math.sin(t * 2.4))); g.restore();
+          { const hs = tam * (1.35 + 0.12 * Math.sin(t * 3.2)); g.save(); g.globalAlpha = k1 * 0.9; g.imageSmoothingEnabled = true; g.drawImage(halo, cx - hs / 2, ly - hs / 2, hs, hs); g.restore(); }   // o brilho da taça (sprite pronto)
+          g.save(); g.globalAlpha = k1; desenharLogo(g, cx, ly, tam, t * 0.6, Math.max(0, Math.sin(t * 2.4))); g.restore();
           // o nome da copa (letra por letra, cada uma caindo no lugar) com o brilho passando
           const nL = Math.floor(Math.max(0, t - 1.3) * 12);
           if (nL > 0) {
             const ty = ly + tam * 0.5 + 18; g.font = fonte(19); g.textAlign = 'left'; g.textBaseline = 'middle';
-            const larg = g.measureText(titulo).width; let xx = cx - larg / 2;
+            if (!larguras) larguras = { tudo: g.measureText(titulo).width, ch: [...titulo].map((c) => g.measureText(c).width) };   // a fonte não muda: mede uma vez
+            const larg = larguras.tudo; let xx = cx - larg / 2;
+            const gt = g.createLinearGradient(0, ty - 10, 0, ty + 10); gt.addColorStop(0, OURO[0]); gt.addColorStop(0.55, OURO[1]); gt.addColorStop(1, OURO[3]);
             for (let i = 0; i < Math.min(nL, titulo.length); i++) {
-              const ch = titulo[i], wc = g.measureText(ch).width, ti = t - 1.3 - i / 12, cai = (1 - suave(ti / 0.25)) * 10;
+              const ch = titulo[i], wc = larguras.ch[i], ti = t - 1.3 - i / 12, cai = (1 - suave(ti / 0.25)) * 10;
               g.fillStyle = '#000'; g.fillText(ch, xx + 1, ty + 2 - cai);
-              const gt = g.createLinearGradient(0, ty - 10, 0, ty + 10); gt.addColorStop(0, OURO[0]); gt.addColorStop(0.55, OURO[1]); gt.addColorStop(1, OURO[3]); g.fillStyle = gt; g.fillText(ch, xx, ty - cai);
+              g.fillStyle = gt; g.fillText(ch, xx, ty - cai);
               xx += wc;
             }
             const bx = cx - larg / 2 + ((t * 0.8) % 1.7) / 1.7 * (larg + 60) - 30;
@@ -407,8 +423,7 @@
             const lado = (img, nome, s) => {
               const x = cx + s * (dx + (1 - k3) * W * 0.5);
               g.save(); g.fillStyle = 'rgba(242,194,48,.18)'; g.beginPath(); g.arc(x, ys - 8, e * 0.62, 0, Math.PI * 2); g.fill(); g.restore();
-              g.save(); g.shadowColor = 'rgba(0,0,0,.75)'; g.shadowBlur = 6; g.imageSmoothingEnabled = false;
-              if (img) g.drawImage(img, Math.round(x - e / 2), Math.round(ys - e / 2 - 8), e, e); g.restore();
+              if (img) g.drawImage(img, Math.round(x - e / 2) - 8, Math.round(ys - e / 2 - 8) - 8);   // (a sombra já vem no desenho)
               const mw = W * 0.44;
               g.font = fonte(9); g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(nome, x + 1, ys + e / 2 + 2, mw); g.fillStyle = OURO[0]; g.fillText(nome, x, ys + e / 2 + 1, mw);
             };
@@ -427,7 +442,7 @@
       };
       requestAnimationFrame(quadro);
     });
-    return { fechar: () => { if (el.parentNode) el.parentNode.removeChild(el); } };
+    return { fechar: () => { soltar(); if (el.parentNode) el.parentNode.removeChild(el); } };
   }
 
   // ============================================================================================ OS TEXTOS (en, es, it, fr)

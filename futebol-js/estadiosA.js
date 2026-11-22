@@ -1843,6 +1843,10 @@
   }
   // a pista de atletismo (vermelha, com as raias brancas) entre o campo e as arquibancadas
   function pistaAtletismo(E, ax, az, rb, larg, cor) {
+    // a curva da pista não pode entrar no gramado: o canto do campo (com 0,8 m de folga para a bandeirinha) fica do lado de dentro do
+    //   arco interno. Com a pista a "a" metros da linha, o raio cabe até a·√2/(√2 − 1) (o que passa disso vai para baixo das arquibancadas)
+    const folga = 0.8, rMax = (Math.min(ax, az) - folga) * Math.SQRT2 / (Math.SQRT2 - 1);
+    rb = Math.max(1, Math.min(rb, rMax));
     const C = caminho(E.HL + ax, E.HW + az, rb, { nArc: 10, passo: 6 });
     laje(E, C, 0, larg, 0.03, 0.03, 0.04, cor || 0xb04a32);
     for (let k = 1; k < 6; k++) laje(E, C, k * larg / 6 - 0.03, k * larg / 6 + 0.03, 0.035, 0.035, 0.01, 0xe9e2d6);

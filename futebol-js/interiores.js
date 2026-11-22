@@ -293,9 +293,10 @@
       const vidro = (w, h, x, y, z, rx, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ color: 0xcfeefa, transparent: true, opacity: 0.26, depthWrite: false, side: THREE.DoubleSide }))); m.position.set(x, y, z); m.rotation.set(rx || 0, ry || 0, 0, 'YXZ'); grupo.add(m); return m; };
       const quadro = (tex, w, h, x, y, z, ry) => { const m = new THREE.Mesh(guardar(new THREE.PlaneGeometry(w, h)), guardar(new THREE.MeshLambertMaterial({ map: tex }))); m.position.set(x, y, z); m.rotation.y = ry || 0; grupo.add(m); return m; };
       // meia-parede de azulejo verde-claro com a faixa de madeira (norte, leste e oeste)
-      G.box(19.9, 1.05, 0.04, '#a8cf96', 0, 0, -7.94); G.box(19.9, 0.08, 0.06, '#7a5232', 0, 1.05, -7.93);
+      //   na parede norte o azulejo para nos dois lados do batente da porta da cozinha (x 1,93 a 3,27), sem cobrir o vão
+      for (const [a, b] of [[-9.95, 1.93], [3.27, 9.95]]) { G.box(b - a, 1.05, 0.04, '#a8cf96', (a + b) / 2, 0, -7.94); G.box(b - a, 0.08, 0.06, '#7a5232', (a + b) / 2, 1.05, -7.93); }
       for (const sx of [-1, 1]) { G.box(0.04, 1.05, 15.9, '#a8cf96', sx * 9.94, 0, 0); G.box(0.06, 0.08, 15.9, '#7a5232', sx * 9.93, 1.05, 0); }
-      for (let i = 0; i < 40; i++) G.box(0.02, 1.05, 0.05, '#93bd80', -9.75 + i * 0.5, 0, -7.92);   // rejunte
+      for (let i = 0; i < 40; i++) { const x = -9.75 + i * 0.5; if (x > 1.9 && x < 3.3) continue; G.box(0.02, 1.05, 0.05, '#93bd80', x, 0, -7.92); }   // rejunte
       placa('RESTAURANTE SELF-SERVICE', '#1f7a4d', '#f4f4ec', 7.2, 0.7, -1.2, 3.42, -7.96);
       // ---- a ÁREA DA COZINHA: meia-parede (com vidro em cima) dos dois lados, do bufê até a parede norte
       for (const sx of [-1, 1]) {
@@ -309,7 +310,7 @@
           g.fillStyle = '#0a0806'; g.fillRect(0, 0, W, H);                // (7.1.6) o VÃO ESCURO (como as outras portas): a Dona Cida entra e some no escuro, sem "atravessar a parede"
           g.fillStyle = '#16110c'; g.fillRect(0, H - 10, W, 10); g.fillStyle = '#1e1810'; g.fillRect(0, H - 4, W, 4);   // um resto de luz no chão
         }));
-        quadro(fundo, w, h, px, h / 2, -7.965);
+        quadro(fundo, w, h, px, h / 2, -7.94);                             // na frente do rodapé (o vão escuro inteiro, do chão ao batente)
         G.box(w + 0.24, 0.12, 0.08, '#7a5232', px, h, -7.95); for (const s of [-1, 1]) G.box(0.12, h, 0.08, '#7a5232', px + s * (w / 2 + 0.06), 0, -7.95);
         const folha = new THREE.Group(), F = new Geo();
         F.box(w, h - 0.04, 0.06, '#d8d2c2', w / 2, 0.02, 0); F.box(w - 0.12, 0.12, 0.07, '#c9ced4', w / 2, 0.95, 0);   // a folha e a placa de empurrar

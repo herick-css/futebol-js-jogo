@@ -1914,7 +1914,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     let R = { demissao: false };
     if (CD && CD.encontro) {
       R = await CD.encontro.roteiro({ nome: nomeJog(), fala: (q, t) => (q === 'lucia' ? falaLucia(t) : fala(q, t)), escolha: (t, o) => Escolha.mostrar(t, o),
-        somar: async (n) => somarAmizadeF2('lucia', n, CD), trabalha: !!E.trabalha, emprego: E.emprego || null, final: 'passar' });
+        somar: async (n) => somarAmizadeF2('lucia', n, CD), trabalha: !!E.trabalha, emprego: E.emprego || null, final: 'passar', local: 'casa' });
     }
     Dialogo.esconder();
     // bebendo (alguns goles)
@@ -2018,29 +2018,42 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   // ---- acordou depois do encontro (cidade.js: { acordar: 'encontro', demissao: 'mercado' | 'pizzaria' | null })
   const CONTATO_EMPREGO = { mercado: 'Mercadinho Bom Preço', pizzaria: 'Mário (Pizzaria)' };
+  // as mensagens do celular: aparecem uma a uma (tocar na tela adianta todas). Nunca prende o jogo: se o relógio da página travar
+  //   ou algo der errado, o botão Fechar aparece mesmo assim, e sem ninguém fechar o celular some sozinho um tempo depois.
   function celularMensagens(contato, msgs) {
     return new Promise((ok) => {
       const el = document.createElement('div'); el.id = 'f2Celular';
-      el.style.cssText = 'position:fixed;inset:0;z-index:30;display:grid;place-items:center;background:rgba(0,0,0,.35);';
+      el.style.cssText = 'position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(0,0,0,.35);';
       const cel = document.createElement('div');
       cel.style.cssText = 'width:min(250px,70vw);height:min(330px,92vh);background:#1c1c1f;border:4px solid #3a3a3e;border-radius:18px;padding:10px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;font-family:var(--font-body);box-shadow:0 6px 0 rgba(0,0,0,.4);';
-      const topo = document.createElement('div'); topo.textContent = contato;
-      topo.style.cssText = 'font:700 13px/1.2 var(--font-display);color:#fff0c8;text-align:center;padding:4px 0 6px;border-bottom:2px solid #3a3a3e;';
-      const lista = document.createElement('div'); lista.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overscroll-behavior:contain;';   // rola: mensagem comprida não fica cortada em cima
-      const ok_ = document.createElement('button'); ok_.type = 'button'; ok_.className = 'pxBtn pxPrim'; ok_.textContent = T('Fechar'); ok_.hidden = true; ok_.style.cssText = 'align-self:center;height:34px;min-height:0;padding:0 18px;font-size:13px;';
+      const topo = document.createElement('div'); topo.textContent = T(contato);
+      topo.style.cssText = 'flex:0 0 auto;font:700 13px/1.2 var(--font-display);color:#fff0c8;text-align:center;padding:4px 0 6px;border-bottom:2px solid #3a3a3e;';
+      const lista = document.createElement('div'); lista.style.cssText = 'flex:1 1 0;min-height:0;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overscroll-behavior:contain;padding-top:4px;';
+      const ok_ = document.createElement('button'); ok_.type = 'button'; ok_.className = 'pxBtn pxPrim'; ok_.textContent = T('Fechar'); ok_.style.cssText = 'flex:0 0 auto;align-self:center;height:34px;min-height:0;padding:0 18px;font-size:13px;visibility:hidden;';
       cel.append(topo, lista, ok_); el.appendChild(cel); ($('raizJogo') || document.body).appendChild(el);
-      let i = 0;
-      const prox = () => {
-        if (!S || !S.ativo) { el.remove(); ok(); return; }
-        if (i >= msgs.length) { ok_.hidden = false; setTimeout(() => { lista.scrollTop = lista.scrollHeight; }, 0); return; }
-        const [eu, txt] = msgs[i++], b = document.createElement('div'); b.textContent = txt;
-        b.style.cssText = 'max-width:82%;padding:6px 8px;font:600 12px/1.3 var(--font-body);border-radius:10px;' + (eu ? 'align-self:flex-end;background:#3fa34d;color:#fff;' : 'align-self:flex-start;background:#f2f2ee;color:#1c1c1f;');
-        if (!lista.children.length) b.style.marginTop = 'auto';          // as mensagens começam embaixo (como num chat)
-        lista.appendChild(b); lista.scrollTop = lista.scrollHeight; try { somClique(); } catch (e) { /* sem som */ }
-        setTimeout(prox, 1500);
+      let i = 0, feito = false, tProx = 0, tVig = 0, tFim = 0;
+      const fechar = () => { if (feito) return; feito = true; clearTimeout(tProx); clearTimeout(tVig); clearTimeout(tFim); el.remove(); ok(); };
+      const bolha = (eu, txt) => {
+        const b = document.createElement('div'); b.textContent = txt;
+        b.style.cssText = 'flex:0 0 auto;max-width:82%;padding:6px 8px;font:600 12px/1.3 var(--font-body);border-radius:10px;' + (eu ? 'align-self:flex-end;background:#3fa34d;color:#fff;' : 'align-self:flex-start;background:#f2f2ee;color:#1c1c1f;');
+        lista.appendChild(b); lista.scrollTop = lista.scrollHeight;
       };
-      ok_.onclick = () => { el.remove(); ok(); };
-      setTimeout(prox, 600);
+      const terminar = () => {                                             // todas na tela: o Fechar aparece; sem ninguém tocar, fecha sozinho
+        while (i < msgs.length) { const [eu, txt] = msgs[i++]; bolha(eu, txt); }
+        ok_.style.visibility = 'visible'; lista.scrollTop = lista.scrollHeight;
+        clearTimeout(tFim); tFim = setTimeout(fechar, 15000);
+      };
+      const prox = () => {
+        if (feito) return;
+        if (!S || !S.ativo) { fechar(); return; }
+        if (i >= msgs.length) { terminar(); return; }
+        try { const [eu, txt] = msgs[i++]; bolha(eu, txt); try { somClique(); } catch (e) { /* sem som */ } } catch (e) { console.error('[Fase 2] celular:', e); terminar(); return; }
+        tProx = setTimeout(prox, 1400);
+      };
+      ok_.onclick = (ev) => { ev.stopPropagation(); fechar(); };
+      el.addEventListener('click', () => { if (feito) return; if (ok_.style.visibility === 'visible') fechar(); else { clearTimeout(tProx); terminar(); } });
+      tProx = setTimeout(prox, 500);
+      tVig = setTimeout(() => { if (!feito && ok_.style.visibility !== 'visible') terminar(); }, 600 + msgs.length * 1400 + 3000);   // vigia: o Fechar sempre aparece
     });
   }
   async function acordarDoEncontro(demissao) {

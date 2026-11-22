@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.7';
+const VERSAO_JOGO = '7.5.8';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -385,7 +385,7 @@ const CAMPOS = {
   varzea: { nome: 'Várzea padrão (7 x 7)', categoria: 'varzea', comprimento: 78, largura: 48, jogadores: 7, estadio: 'varzea',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#5d7a33', gramaB: '#6b8a3a', fundo: '#7a6a45', padrao: 'manchas', faixas: 0, linhas: '#f1ead2' } },
-  varzeaCidade: { nome: 'Várzea cidadezinha (7 x 7)', categoria: 'varzea', modelo: 'cidade', comprimento: 64, largura: 40, jogadores: 7, gol: { largura: 6, altura: 2.3 }, estadio: 'varzea',
+  varzeaCidade: { nome: 'Várzea cidadezinha (7 x 7)', categoria: 'varzea', modelo: 'cidade', comprimento: 64, largura: 40, jogadores: 7, gol: { largura: 7.6, altura: 2.85 }, estadio: 'varzea',
     regras: { substituicoes: 5 },
     aparencia: { gramaA: '#946e42', gramaB: '#a18050', fundo: '#597a38', padrao: 'terra', faixas: 0, linhas: '#e6dcc0' } },
   // society e futsal: (7.4.19) 6 x 6 (goleiro + 5 na linha) e ~30% maiores (62 x 39 e 65 x 39; antes 48 x 30 / 50 x 30, 5 x 5): com
@@ -12724,8 +12724,9 @@ const tvEmTerceira = () => !!(user && ((G.sp && G.sp.taker === user && G.sp.team
 function cameraTVComemoracao() {
   const fz = Math.sin(yawTV()), atras = 7.2 * AJ.camDist;          // a TV olha para −z: a câmera fica do lado +z de você
   let px = user.x + 1.1, pz = user.z - fz * atras, py = 3.3 * AJ.camAlt;
-  const lim = (BOARD_Z || HALF_W + 3) - 0.8;
-  if (pz > lim) { py += (pz - lim) * 0.7; pz = lim; }
+  const lim = (BOARD_Z || HALF_W + 3) - 0.8, limN = (BOARD_ZN || HALF_W + 3) - 0.8, limX = (BOARD_X || HALF_L + 3) - 0.8;
+  if (pz > lim) { py += (pz - lim) * 0.7; pz = lim; } else if (pz < -limN) { py += (-limN - pz) * 0.7; pz = -limN; }
+  if (Math.abs(px) > limX) { py += (Math.abs(px) - limX) * 0.5; px = Math.sign(px) * limX; }   // no canto (comemorando na bandeirinha) ela não entra na torcida
   return { px, py: py + (AJ.camH || 0), pz, tx: user.x, ty: 1.05, tz: user.z };
 }
 function cameraTV() {
@@ -14799,9 +14800,9 @@ function updateYaw(rdt) {
     if (!k || !k.aimed) return;
     want = k.yawRef + wrapAngle(Math.atan2(k.dirZ, k.dirX) - k.yawRef) * 0.75;
     rapidez = 1.6;
-  } else if (G.state === 'celebrate') {                  // comemoração: a câmera vai atrás de você
+  } else if (G.state === 'celebrate') {                  // comemoração: a câmera vai atrás de você (e gira mais rápido: correndo, ele saía da tela)
     const sp = Math.hypot(user.vx, user.vz);
-    want = sp > 1.5 ? Math.atan2(user.vz, user.vx) : cam.yaw;
+    want = sp > 1.5 ? Math.atan2(user.vz, user.vx) : cam.yaw; rapidez = 4.2;
   } else if (cam.mode === 'livre') return;               // (7.4.13) câmera livre: quem gira é você (arrastando a tela)
   else if (cam.mode === 'frente') want = 0;
   else if (G.possession === user) {
@@ -14878,7 +14879,7 @@ function cameraGoal() {
     const vl = Math.hypot(vx, vz) || 1; vx /= vl; vz /= vl;
     return { px: p.x + vx * 6.5, py: 2.8, pz: p.z + vz * 6.5, tx: p.x, ty: 1.0, tz: p.z };
   }
-  if (cam.mode === 'tv' && G.state === 'celebrate' && user && user.celeb && !user.out) return cameraTVComemoracao();   // (7.5.0) zoom em você
+  if (cam.mode === 'tv' && G.state === 'celebrate' && user && !user.out) return cameraTVComemoracao();   // zoom em você a comemoração inteira, correndo ou já dançando
   if (cam.mode === 'tv' && !tvEmTerceira()) return cameraTV();   // (7.4.14); (7.4.15) bola parada: 3ª pessoa
   const fx = Math.cos(cam.yaw), fz = Math.sin(cam.yaw);
   let back = c.back * AJ.camDist, h = c.height * AJ.camAlt + (cam.mode === 'livre' ? cam.livreH || 0 : 0), ahead = c.ahead;   // distância e ângulo (altura relativa ao alvo) da câmera; camH = sobe/desce a câmera inteira (mantém o ângulo)
@@ -14916,7 +14917,7 @@ function updateCamera(rdt) {
   updateYaw(rdt);
   { const nr = camCobrancaAtiva() && !G.cine && !G.shotCine ? NEAR_COBRANCA : NEAR_PADRAO; if (camera.near !== nr) { camera.near = nr; camera.updateProjectionMatrix(); } }   // (7.4.19) a grade/placa entre a câmera e você não tapa
   const g = cameraGoal();
-  let k = 1 - Math.exp(-rdt * (G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));
+  let k = 1 - Math.exp(-rdt * (G.state === 'celebrate' ? 8 : G.cine || G.shotCine || G.state === 'restart' || G.state === 'foul' ? 6 : 5));   // na comemoração ela acompanha mais de perto
   const corte = (G.acroCine && G.acroCine.cut) || (G.cine && G.cine.cut) || (G.shotCine && G.shotCine.cut) || (G.fintaCine && G.fintaCine.cut) || (G.chuteCine && G.chuteCine.cut) || (G.foul && G.foul.cut) || (G.furaoCine && G.furaoCine.cut) || (G.state === 'fim' && G.fimCorte) || (G.state === 'intervalo' && G.intCorte);   // corte seco de câmera
   if (corte) { k = 1; G.fimCorte = false; G.intCorte = false; if (G.acroCine) G.acroCine.cut = false; if (G.cine) G.cine.cut = false; if (G.shotCine) G.shotCine.cut = false; if (G.fintaCine) G.fintaCine.cut = false; if (G.chuteCine) G.chuteCine.cut = false; if (G.foul) G.foul.cut = false; if (G.furaoCine) G.furaoCine.cut = false; }
   cam.px = lerp(cam.px, g.px, k); cam.py = lerp(cam.py, g.py, k); cam.pz = lerp(cam.pz, g.pz, k);
@@ -15984,6 +15985,9 @@ const PausaGlobal = (() => {
   setTimeout(girar, 0);
   return { get ativa() { return ativa; }, motivo };
 })();
+// quem cobre a tela inteira com um canvas opaco (a vinheta das copas) pede para o quadro 3D não ser desenhado enquanto isso
+let RENDER_PAUSADO = false;
+function pausarRender(on) { RENDER_PAUSADO = !!on; }
 function frame(now) {
   requestAnimationFrame(frame);
   if (PausaGlobal.ativa) { last = now; return; }             // celular em pé ou app em segundo plano: tudo parado
@@ -16022,7 +16026,7 @@ function frame(now) {
   Torcida.atualizar(rdt);                                   // (7.4.9) cantos, vaias (a torcida reage ao jogo)
   Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !Abertura.ativa && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);   // (7.4.16) não por cima da vinheta do Harbor         // criador/fase: sem barulho de torcida
   // torcida: só o relógio do shader (o resto é na placa de vídeo)
-  renderer.render(scene, camera);
+  if (!RENDER_PAUSADO) renderer.render(scene, camera);                // (uma tela inteira por cima, como a vinheta das copas: não desenha o 3D escondido)
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
   updateHUD();
@@ -16333,17 +16337,21 @@ function buildArredores(tipo, op) {
   }
   // Várzea da cidadezinha: a boca dos vestiários subterrâneos (entre os dois bancos), a avenida de um lado, casas e árvores do outro e os morros.
   if (cidade) {
-    // --- a casinha da escada (cunha de concreto: alta na porta, baixa no fundo). A porta olha para +x; lá dentro, os degraus somem no escuro.
-    const hz = -(Zn - 1.15), CONC = 0x84827c, CONC2 = 0x6d6c66, tb = 0.7 / 2.3 - 0.5;
+    // --- a casinha da escada (cunha de concreto: alta na porta, baixa no fundo). A PORTA OLHA PARA O CAMPO (+z): quem sai no intervalo
+    //   e no fim entra por ela; lá dentro os degraus descem para trás (para baixo do alambrado) e somem no escuro. As peças são as da
+    //   casinha "de pé" (porta para +x) giradas 90° em volta do centro: (x, z) do desenho vira (-z, x).
+    const hz = -(Zn - 1.85), CONC = 0x84827c, CONC2 = 0x6d6c66, tb = 0.7 / 2.3 - 0.5;
     const cunha = [-0.5, -0.5, -0.5, 0.5, -0.5, -0.5, -0.5, tb, -0.5, 0.5, 0.5, -0.5, -0.5, -0.5, 0.5, 0.5, -0.5, 0.5, -0.5, tb, 0.5, 0.5, 0.5, 0.5];
-    for (const sz of [-1, 1]) E.caixa(3.4, 2.3, 0.15, CONC, 0, 1.15, hz + sz * 0.925, null, null, cunha);
-    E.caixa(0.15, 0.7, 2.0, CONC, -1.625, 0.35, hz);
-    E.caixa(4.06, 0.1, 2.2, CONC2, 0, 1.58, hz, null, [0, 0, 25.2]);                  // a laje inclinada
-    E.caixa(0.16, 0.34, 1.7, CONC2, 1.62, 2.13, hz);                                  // a verga da porta (onde fica a placa)
-    [[1.25, 0x494742], [0.75, 0x302d29], [0.25, 0x1d1b18], [-0.45, 0x0e0c0b], [-1.15, 0x060505]].forEach(([x, cor], i) => E.caixa(i < 3 ? 0.5 : 0.9, 0.02, 1.7, cor, x, 0.012, hz));   // os degraus descendo
-    E.caixa(0.02, 0.66, 1.7, 0x060505, -1.54, 0.34, hz);
+    const GIRA = (g) => [g ? g[0] : 0, -90 + (g ? g[1] : 0), g ? g[2] : 0];
+    const peca = (w, h, d, cor, x, y, z, g, cantos) => E.caixa(w, h, d, cor, -z, y, hz + x, null, GIRA(g), cantos);   // (x, z) relativos ao centro, no desenho de pé
+    for (const sz of [-1, 1]) peca(3.4, 2.3, 0.15, CONC, 0, 1.15, sz * 0.925, null, cunha);
+    peca(0.15, 0.7, 2.0, CONC, -1.625, 0.35, 0);
+    peca(4.06, 0.1, 2.2, CONC2, 0, 1.58, 0, [0, 0, 25.2]);                            // a laje inclinada
+    peca(0.16, 0.34, 1.7, CONC2, 1.62, 2.13, 0);                                      // a verga da porta (onde fica a placa)
+    [[1.25, 0x494742], [0.75, 0x302d29], [0.25, 0x1d1b18], [-0.45, 0x0e0c0b], [-1.15, 0x060505]].forEach(([x, cor], i) => peca(i < 3 ? 0.5 : 0.9, 0.02, 1.7, cor, x, 0.012, 0));   // os degraus descendo
+    peca(0.02, 0.66, 1.7, 0x060505, -1.54, 0.34, 0);
     const placa = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 0.26), new THREE.MeshBasicMaterial({ map: drawTexture(96, 16, (q) => { q.fillStyle = '#f2f0e6'; q.fillRect(0, 0, 96, 16); q.fillStyle = '#2a1206'; q.fillRect(0, 0, 96, 1); q.fillRect(0, 15, 96, 1); q.fillRect(0, 0, 1, 16); q.fillRect(95, 0, 1, 16); q.font = "bold 10px 'Courier New', monospace"; q.textAlign = 'center'; q.textBaseline = 'middle'; q.fillText(T('VESTIÁRIOS'), 48, 9); }) }));
-    placa.position.set(1.705, 2.13, hz); placa.rotation.y = Math.PI / 2; ESTADIO.add(placa); freeze(placa);
+    placa.position.set(0, 2.13, hz + 1.705); placa.rotation.y = 0; ESTADIO.add(placa); freeze(placa);
     // --- a avenida do lado da arquibancada (calçada, asfalto, calçada) e uns prédios baixos do outro lado dela
     const za = Z + 4.4;
     E.caixa(X * 2 + 60, 0.12, 2.9, 0x6c6e72, 0, 0.06, za + 1.45); E.caixa(X * 2 + 60, 0.03, 8.4, 0x4a4c50, 0, 0.015, za + 7.1); E.caixa(X * 2 + 60, 0.12, 2.9, 0x6c6e72, 0, 0.06, za + 12.75);
@@ -16438,8 +16446,8 @@ function construirBancos() {
       L.caixa(5, 0.3, 0.06, 0x9a6b3c, x, 0.85, z - 0.63);                       // o encosto
       for (const t of [-2.3, 0, 2.3]) { L.caixa(0.1, 0.38, 0.5, 0x6b4a2b, x + t, 0.19, z - 0.3); L.caixa(0.08, 1.0, 0.08, 0x6b4a2b, x + t, 0.5, z - 0.63); }
     }
-    const hz = -(BOARD_ZN - 1.15);
-    BANCOS.push({ x0: -1.75, x1: 1.75, z0: hz - 1.05, z1: hz + 1.05, h: 2.3 });
+    const hz = -(BOARD_ZN - 1.85);                                              // a casinha (girada: a porta para o campo, 2,1 m de largura em x)
+    BANCOS.push({ x0: -1.05, x1: 1.05, z0: hz - 1.75, z1: hz + 1.75, h: 2.3 });
     const mc = L.malha(MAT_CORES); ESTADIO.add(mc); freeze(mc);
     return;
   }
@@ -19195,14 +19203,28 @@ const Musica = (() => {
     return RB * 4;
   };
 
+  // o agendador: se a página travou (ou o navegador segurou o timer) e o relógio do áudio passou da próxima nota, pula o que ficou para
+  //   trás em vez de agendar tudo de uma vez no passado (isso tocava dezenas de notas juntas: o estouro e o chiado)
   const laco = () => {
     if (!tocando || !ctx) return;
+    if (prox < ctx.currentTime - 0.05) prox = ctx.currentTime + 0.08;
     while (prox < ctx.currentTime + 1.2) prox += estilo === 'rock' ? rock(prox, compasso++) : jazz(prox, compasso++);
   };
+  // quem quer o lugar do jazz (a roda de pagode perto, a barbearia com a música dela...) pede com ceder(dono) e devolve com retomar(dono).
+  //   Enquanto alguém segura, o jazz não toca; quando o último devolve, ele volta sozinho, se ainda era a música que devia estar tocando
+  //   (um parar() no meio, de uma cena ou de uma partida, apaga esse pedido). Assim nunca tocam duas músicas por cima uma da outra.
+  const donos = new Set(); let base = '';
   const tocar = (qual) => {
-    qual = qual || 'jazz';
+    qual = qual || 'jazz'; base = qual;
+    if (qual === 'jazz' && donos.size) { if (tocando) pararJa(); return; }
+    tocarJa(qual);
+  };
+  const ceder = (dono) => { if (donos.has(dono)) return; donos.add(dono); if (tocando && estilo === 'jazz') pararJa(); };
+  const retomar = (dono) => { if (!donos.delete(dono)) return; if (!donos.size && base === 'jazz' && !tocando) tocarJa('jazz'); };
+  const zerar = () => { donos.clear(); };
+  const tocarJa = (qual) => {
     if (tocando && estilo === qual) return;
-    if (tocando) parar();
+    if (tocando) pararJa();
     const A = (typeof Som !== 'undefined') ? Som.audio : null;
     if (!A) return;
     ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
@@ -19213,7 +19235,8 @@ const Musica = (() => {
     estilo = qual; tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
     laco(); timer = setInterval(laco, 250);
   };
-  const parar = () => {
+  const parar = () => { base = ''; pararJa(); };
+  const pararJa = () => {
     if (!tocando) return;
     tocando = false; estilo = ''; clearInterval(timer);
     const b = bus, c = ctx;
@@ -19244,7 +19267,7 @@ const Musica = (() => {
     o.connect(f); o2.connect(f); f.connect(g); g.connect(A.mestre);
     for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + d + 0.05); }
   };
-  return { tocar, parar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; } };
+  return { tocar, parar, ceder, retomar, zerar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; }, get cedido() { return donos.size > 0; } };
 })();
 
 // ---------------------------------------------------------------------

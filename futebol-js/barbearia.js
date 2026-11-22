@@ -143,7 +143,7 @@
   // ------------------------------------------------------------------ MÚSICA TEMA: punk rock leve (pop punk de skate), em Ré maior, 160 bpm.
   //   Bateria reta (bumbo no 1 e no 3, caixa no 2 e no 4, chimbal em colcheia), baixo em colcheia, power chords com distorção leve
   //   (abafadas, com a primeira de cada compasso aberta) e, a partir da 2ª volta, um solinho chiclete. 8 compassos: D A Bm G · Bm G D A.
-  const Musica = (() => {
+  const MusicaBarb = (() => {
     let R = null;
     const PASSO = 60 / 160 / 2;
     const RAIZ = [38, 33, 35, 31, 35, 31, 38, 33];                 // Ré, Lá, Si, Sol · Si, Sol, Ré, Lá (o acorde de Si é menor: a quinta é a mesma)
@@ -167,7 +167,7 @@
           g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.045, t + 0.015); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g); g.connect(r.ld); o.start(t); o.stop(t + dur + 0.03); }
       }
     }
-    function agenda() { const r = R; if (!r) return; const ate = r.c.currentTime + 0.15; while (r.prox < ate) { passo(r, r.p, r.prox); r.prox += PASSO; r.p++; } }
+    function agenda() { const r = R; if (!r) return; const now = r.c.currentTime; if (r.prox < now - 0.03) { const n = Math.ceil((now - r.prox) / PASSO); r.prox += n * PASSO; r.p += n; } const ate = now + 0.3; while (r.prox < ate) { passo(r, r.p, r.prox); r.prox += PASSO; r.p++; } }
     function montar(A) {
       const c = A.ctx, r = { c, p: 0 };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -266,7 +266,8 @@
       M.cadeira = api.assento(C.x, C.z, C.fx, C.fz, C.h, 'cadeira'); M.cadeira.ocupado = { reservado: true };
       girarCadeira(Math.PI / 2);
       montarQuadro(R);
-      Musica.tocar();
+      try { if (typeof Musica !== 'undefined' && Musica.ceder) Musica.ceder('barbearia'); } catch (e) { /* sem música */ }
+      MusicaBarb.tocar();
     }
     // a cadeira olhando para yaw (o mesmo jeito de contar do jogador: π/2 = norte, para o espelho; −π/2 = sul, para a sala)
     function girarCadeira(yaw) { if (M.cadeiraM) M.cadeiraM.rotation.y = yaw - Math.PI / 2; if (M.cadeira) { M.cadeira.yaw = yaw; M.cadeira.fx = Math.cos(yaw); M.cadeira.fz = -Math.sin(yaw); } }
@@ -286,7 +287,8 @@
     }
     function saiu() {
       const s = S();
-      Musica.parar(); fecharPainel();
+      MusicaBarb.parar(); fecharPainel();
+      try { if (typeof Musica !== 'undefined' && Musica.retomar) Musica.retomar('barbearia'); } catch (e) { /* sem música */ }
       M.cortando = 0; M.anim = null; for (const f of M.fios) if (f.m.parent) f.m.parent.remove(f.m); M.fios = [];
       M.R = null; M.B = null; M.T = null; M.quadro = null; M.tesoura = null; M.pente = null; M.cadeira = null; M.cadeiraM = null;
       if (s && s.falantesExtra) delete s.falantesExtra.toninho;
@@ -513,7 +515,7 @@
       }
     }
 
-    return { entrou, saiu, alvos, tick, aberto, CORTES_ESPECIAIS, BARBAS_ESPECIAIS, PRECO_PADRAO, _M: M, _fns: { falarComToninho, cenaDoCorte, painel, vestirLook, sentarParaEscolher, levantar, Musica, TIPOS } };
+    return { entrou, saiu, alvos, tick, aberto, CORTES_ESPECIAIS, BARBAS_ESPECIAIS, PRECO_PADRAO, _M: M, _fns: { falarComToninho, cenaDoCorte, painel, vestirLook, sentarParaEscolher, levantar, Musica: MusicaBarb, TIPOS } };
   }
 
   window.FutebolJS.registrarFase({ id: 'barbearia', nome: 'Barbearia', nucleoMinimo: '6.6.12', iniciar: async () => {}, criar });

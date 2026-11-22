@@ -219,10 +219,10 @@
 #livre .lvCaixa.liberta .pxBtn.on { border-image-source: var(--sp-laranja, var(--sp-grama)); }
 #livre .lvPalco.liberta { background: radial-gradient(ellipse 60% 75% at 50% 38%, #6a2a0c, #2a1206 52%, #050302);
   box-shadow: inset 0 0 0 2px rgba(200,144,26,.6), inset 0 -40px 60px rgba(0,0,0,.5); }
-#livre .lvPalco.liberta::before { content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .5;
-  background: repeating-conic-gradient(from 0deg at 50% 34%, rgba(242,194,48,.22) 0 6deg, rgba(0,0,0,0) 6deg 18deg); animation: lbGira 18s linear infinite; }
-@keyframes lbGira { to { transform: rotate(360deg); } }
-#livre .lvPalco.liberta::before { transform-origin: 50% 34%; }
+#livre .lvPalco.liberta::before { content: ''; position: absolute; left: 50%; top: 34%; width: 170%; aspect-ratio: 1 / 1; pointer-events: none; opacity: .5;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(242,194,48,.22) 0 6deg, rgba(0,0,0,0) 6deg 18deg); border-radius: 50%;
+  transform: translate(-50%, -50%); will-change: transform; animation: lbGira 18s linear infinite; }
+@keyframes lbGira { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 #livre .lvPalco.liberta .cpMarca { position: absolute; left: 50%; top: 5%; width: 34%; max-width: 190px; transform: translateX(-50%); opacity: .26; image-rendering: pixelated; pointer-events: none; }
 #livre .lvPalco.liberta .cpChao { position: absolute; left: 0; right: 0; bottom: 0; height: 22%; background: linear-gradient(180deg, rgba(242,194,48,0), rgba(242,194,48,.16)); border-top: 1px solid rgba(242,194,48,.35); pointer-events: none; }
 #livre .lvPalco.liberta .lbPicado { position: absolute; left: -2%; right: -2%; top: 0; height: 18px; pointer-events: none; z-index: 0;
@@ -1213,10 +1213,25 @@
     g.add(caixaM(11.0, 1.05, 2.6, 0x16202c, -0.4, 2.3, 0, true)); g.add(caixaM(11.9, 0.16, 2.4, 0xd5d8dc, 0, 3.33, 0));
     for (const s of [-1, 1]) { g.add(caixaM(12.02, 0.32, 0.04, c2, 0, 1.0, s * 1.28)); g.add(caixaM(4.0, 0.22, 0.04, c2, 3.4, 1.38, s * 1.28)); }   // a faixa
     g.add(caixaM(0.06, 1.6, 2.32, 0x16202c, 6.02, 2.05, 0, true)); g.add(caixaM(0.06, 0.18, 2.0, 0x1b1d22, 6.03, 1.1, 0));
-    g.add(caixaM(0.06, 0.32, 1.6, c2, 6.03, 3.0, 0));
+    { const led = texTexto((t.sigla || t.nome || '').toUpperCase(), 256, 32, '#0d0f12', '#ffb347'); g.add(plano(1.7, 0.28, led, 6.05, 3.0, 0, Math.PI / 2)); }
     for (const z of [-0.85, 0.85]) g.add(caixaM(0.08, 0.22, 0.4, 0xfff3c4, 6.04, 0.95, z, true));
     for (const z of [-0.85, 0.85]) g.add(caixaM(0.08, 0.22, 0.3, 0xc81e1e, -6.04, 0.95, z, true));
-    for (const x of [-4, 3.6]) for (const z of [-1.2, 1.2]) { g.add(caixaM(1.0, 1.0, 0.36, 0x18191c, x, 0.5, z)); g.add(caixaM(0.42, 0.42, 0.38, 0x9aa0a8, x, 0.5, z)); }
+    // as rodas de verdade (pneu redondo, aro e cubo) dentro da caixa de roda escura
+    const geoPneu = new THREE.CylinderGeometry(0.5, 0.5, 0.34, 18), geoAro = new THREE.CylinderGeometry(0.3, 0.3, 0.36, 14), geoCubo = new THREE.CylinderGeometry(0.11, 0.11, 0.38, 8);
+    const mPneu = new THREE.MeshLambertMaterial({ color: 0x18191c }), mAro = new THREE.MeshLambertMaterial({ color: 0x9aa0a8 }), mCubo = new THREE.MeshLambertMaterial({ color: 0x55595f });
+    for (const x of [-4, 3.6]) {
+      g.add(caixaM(1.36, 0.62, 2.63, 0x0b0c0e, x, 0.62, 0));                                           // a caixa de roda (o vão escuro na lataria)
+      for (const z of [-1.18, 1.18]) for (const [geo, mat] of [[geoPneu, mPneu], [geoAro, mAro], [geoCubo, mCubo]]) { const r = new THREE.Mesh(geo, mat); r.rotation.x = Math.PI / 2; r.position.set(x, 0.5, z); g.add(r); }
+    }
+    // as colunas entre as janelas, o ar-condicionado no teto e os retrovisores
+    for (let x = -5.3; x <= 4.4; x += 1.62) g.add(caixaM(0.12, 1.07, 2.62, c1, x, 2.3, 0));
+    g.add(caixaM(3.2, 0.32, 1.7, 0xc9ccd1, -2.2, 3.56, 0)); g.add(caixaM(2.8, 0.06, 1.4, 0x9aa0a8, -2.2, 3.74, 0));
+    for (const z of [-1, 1]) { g.add(caixaM(0.5, 0.06, 0.06, 0x1b1d22, 6.25, 2.75, z * 1.3)); g.add(caixaM(0.1, 0.42, 0.22, 0x1b1d22, 6.48, 2.5, z * 1.42)); }
+    // a frente: o para-choque, a grade e o letreiro de LED com o nome (no lugar da faixa lisa); a traseira: o vidro de trás, a grade do motor e o para-choque
+    g.add(caixaM(0.22, 0.36, 2.58, 0x1b1d22, 6.1, 0.55, 0)); g.add(caixaM(0.06, 0.3, 1.2, 0x2b2f36, 6.05, 1.35, 0));
+    for (let i = 0; i < 4; i++) g.add(caixaM(0.07, 0.03, 1.1, 0x55595f, 6.06, 1.24 + i * 0.07, 0));
+    g.add(caixaM(0.22, 0.36, 2.58, 0x1b1d22, -6.1, 0.55, 0)); g.add(caixaM(0.06, 0.95, 2.1, 0x16202c, -6.02, 2.45, 0, true));
+    for (let i = 0; i < 5; i++) g.add(caixaM(0.07, 0.05, 1.6, 0x2b2f36, -6.05, 1.15 + i * 0.12, 0));
     g.add(caixaM(1.1, 2.2, 0.03, 0x0d0f12, 4.45, 1.45, 1.29, true));      // a porta (aberta) do lado do estádio
     g.add(caixaM(1.1, 0.18, 0.5, 0x6d7178, 4.45, 0.2, 1.5));              // o degrau
     const nome = texTexto(t.nome, 512, 48, k2, lumH(k2) > 0.6 ? '#1a1a1a' : '#ffffff');
@@ -1271,6 +1286,16 @@
     for (let z = -3.6; z <= 4.0; z += 0.6) g.add(caixaM(0.06, 1.05, 0.06, 0xb9bec6, 12.6, 0.52, z));
     g.add(caixaM(0.08, 0.08, 8.2, 0xb9bec6, 12.6, 1.05, 0.15)); g.add(caixaM(0.08, 0.08, 8.2, 0xb9bec6, 12.6, 0.3, 0.15));   // o gradil
     g.add(caixaM(0.4, 6, 22, 0x9a9890, 23, 3, 0));
+    // a garagem é fechada: a parede da frente (com os pilares e a faixa do clube) e, no fundo, o portão por onde o ônibus entra, com o
+    //   túnel escuro atrás. Nenhuma câmera da cena vê o céu nem o fim do chão.
+    g.add(caixaM(70, 6.4, 0.4, 0x8e8c85, -10, 3.1, 10.9));
+    g.add(caixaM(70, 0.9, 0.05, c1, -10, 1.3, 10.68)); g.add(caixaM(70, 0.12, 0.05, 0xf2f2ee, -10, 1.85, 10.68));
+    for (let x = -40; x < 22; x += 8) g.add(caixaM(0.7, 6, 0.7, 0x8f8d86, x, 3, 10.4));
+    for (const [z0, z1] of [[-11, -3.4], [3.4, 11]]) g.add(caixaM(0.4, 6.4, z1 - z0, 0x8e8c85, -45, 3.1, (z0 + z1) / 2));
+    g.add(caixaM(0.4, 1.8, 6.8, 0x8e8c85, -45, 5.3, 0)); g.add(caixaM(0.5, 0.35, 7.0, 0xe8c547, -44.95, 4.35, 0));   // a viga do portão (com a faixa amarela)
+    g.add(caixaM(7, 4.4, 6.8, 0x060708, -48.7, 2.2, 0, true));                                      // o túnel de entrada (escuro)
+    for (const z of [-3.6, 3.6]) for (let i = 0; i < 6; i++) g.add(caixaM(0.42, 0.42, 0.42, i % 2 ? 0x1b1d22 : 0xe8c547, -44.6, 0.21 + i * 0.42, z));   // as faixas de alerta nos cantos do portão
+    g.add(caixaM(0.06, 0.5, 2.4, 0x1b8f3a, -44.75, 3.6, -5.6, true)); g.add(caixaM(0.07, 0.36, 2.2, 0xf2f2ee, -44.74, 3.6, -5.6, true));   // a placa verde da saída
     return g;
   }
   // a pose andando (pernas e braços balançando) e a sentada
@@ -1744,31 +1769,68 @@
       });
       legenda('');
     }
-    // O SORTEIO: o juiz no círculo central entre os dois capitães, a moeda sobe girando e cai; o capitão que ganhou aponta o campo
+    // O SORTEIO: o juiz no círculo central entre os dois capitães, a moeda sobe girando e cai na mão dele. Ele olha a moeda e APONTA para
+    //   quem ganhou; o vencedor comemora (soco no ar, um pulinho) e a bola rola até o pé dele; quem perdeu põe as mãos na cintura e baixa
+    //   a cabeça. Ganha sempre o time que dá a saída (o time 0 começa com a bola: kickoff(0)), para a cena bater com o jogo.
     async function sorteio() {
       const juiz = officials.find((o) => o.role === 'REF') || juizes[0];
       const capitao = (team) => { const L = TEAMS[team].filter((p) => !p.out && p.role !== 'GK'); return L.find((p) => p.isUser) || L.sort((x, y) => ((y.dados && y.dados.media) || 0) - ((x.dados && x.dados.media) || 0))[0]; };
       const c0 = capitao(0), c1 = capitao(1);
       if (!juiz || !c0 || !c1) return;
       const moeda = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.02, 14), new THREE.MeshLambertMaterial({ color: 0xe8c547 }));
-      const ganhou = Math.random() < 0.5 ? c0 : c1;
+      const ganhou = c0, perdeu = c1, sg = ganhou.x < 0 ? -1 : 1;
+      let bolaC = null; try { bolaC = ball.mesh.clone(); bolaC.visible = false; } catch (e) { bolaC = null; }
+      const nomeT = (k) => { try { return (PARTIDA.timesObj[k] && PARTIDA.timesObj[k].nome) || ''; } catch (e) { return ''; } };
       await corte(() => {
         aoLugar();
         for (const p of players) { if (p === c0 || p === c1) continue; if (Math.hypot(p.x, p.z) < 3.2) { p.x = Math.sign(p.x || 1) * 3.6; } }   // abre espaço no meio
         juiz.x = 0; juiz.z = 0.9; juiz.angle = -Math.PI / 2; deP(juiz);
         c0.x = -1.15; c0.z = 0.1; c0.angle = 0; c1.x = 1.15; c1.z = 0.1; c1.angle = Math.PI; deP(c0); deP(c1);
         scene.add(moeda); lixo.push(moeda); moeda.position.set(0, 1.25, 0.6);
+        if (bolaC) { scene.add(bolaC); lixo.push(bolaC); }
         G.torcidaCena = 0.55; legenda(T('O sorteio: cara ou coroa'));
       });
-      const DUR = 4.8;
+      const DUR = 6.6, T_CAI = 2.4, T_APONTA = 3.0, T_REAGE = 3.35;
+      let disse = false;
+      const giro = (p, alvo, k) => { const d = ((alvo - p.angle + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; p.angle += d * k; if (p.mesh) p.mesh.raiz.rotation.y = -p.angle; };
       await plano1(DUR, (tt) => {
-        // a moeda: sobe (1,2 s) girando, cai na mão do juiz (2,4 s); o juiz mostra; o capitão que ganhou aponta para o campo dele
-        const voo = Math.max(0, Math.min(1, (tt - 1.2) / 1.2)), alt = voo > 0 && voo < 1 ? 4 * 1.7 * voo * (1 - voo) : 0;
+        const voo = Math.max(0, Math.min(1, (tt - 1.2) / (T_CAI - 1.2))), alt = voo > 0 && voo < 1 ? 4 * 1.7 * voo * (1 - voo) : 0;
         moeda.position.set(0, 1.25 + alt, 0.62); moeda.rotation.x = voo > 0 && voo < 1 ? voo * 22 : Math.PI / 2;
-        const m = juiz.mesh; if (m) { m.bracoD.rotation.set(-0.2, 0, tt > 0.6 ? 1.25 : 0.2); m.bracoE.rotation.set(0.1, 0, 0.1); }
-        if (tt > 3.1 && ganhou.mesh) { ganhou.mesh.bracoD.rotation.set(ganhou === c0 ? -1.2 : -1.2, 0, 1.1); }
-        const k = suave(tt / DUR);
-        camOlha(-0.5 + 1.0 * k, 1.6 + (voo > 0 && voo < 1 ? 0.4 : 0), -4.4 + 0.5 * k, 0, 1.45 + alt * 0.5, 0.3);
+        if (tt > T_APONTA) moeda.visible = false;                                   // o juiz guarda a moeda e aponta
+        const m = juiz.mesh;
+        if (m) {
+          if (tt < T_CAI) { m.bracoD.rotation.set(-0.2, 0, tt > 0.6 ? 1.25 : 0.2); m.bracoE.rotation.set(0.1, 0, 0.1); }
+          else if (tt < T_APONTA) { m.bracoD.rotation.set(-0.15, 0, 1.0); m.bracoE.rotation.set(0.15, 0, 0.95); try { usarCabeca(m, -0.3); } catch (e) { /* nada */ } }   // olha a moeda na mão
+          else {                                                                       // vira para o vencedor e aponta para ele
+            giro(juiz, Math.atan2(ganhou.z - juiz.z, ganhou.x - juiz.x), 0.18);
+            m.bracoD.rotation.set(-0.1, 0, 1.55); m.bracoE.rotation.set(0.08, 0, 0.05); try { usarCabeca(m, 0); } catch (e) { /* nada */ }
+          }
+        }
+        if (tt > T_APONTA && !disse) { disse = true; const n = nomeT(0); legenda(n ? Tf('{0} ganhou o sorteio e começa com a bola', n) : T('Ganhou o sorteio e começa com a bola')); }
+        if (tt > T_REAGE) {
+          const r = tt - T_REAGE, gm = ganhou.mesh, pm = perdeu.mesh;
+          if (gm) {                                                                    // o soco no ar (duas vezes) e o pulinho; depois aponta a bola no pé
+            if (r < 1.5) {                                                             // os dois braços para cima, abertos em V (de lado aparecem: a cabeça grande escondia um braço só)
+              const pulo = Math.max(0, Math.sin(Math.min(1, r / 0.45) * Math.PI)) * 0.3, b = Math.sin(r * 11) * 0.15;
+              gm.raiz.position.y = pulo; gm.bracoD.rotation.set(-0.62, 0, 2.55 + b); gm.bracoE.rotation.set(0.62, 0, 2.55 - b);
+            }
+            else { gm.raiz.position.y = 0; gm.bracoD.rotation.set(-0.1, 0, 0.75); gm.bracoE.rotation.set(0.1, 0, 0.1); try { usarCotovelos(gm, 0, 0); usarCabeca(gm, -0.3); } catch (e) { /* nada */ } }
+          }
+          if (pm) {                                                                    // mãos na cintura, cabeça baixa, um balanço de quem aceita
+            const k = Math.min(1, r / 0.4); pm.bracoE.rotation.set(1.16 * k, 0, 0); pm.bracoD.rotation.set(-1.16 * k, 0, 0); pm.corpo.rotation.z = -0.1 * k;   // (a pose 'cintura' de quem toma gol)
+            try { usarCotovelos(pm, -2.0 * k, 2.0 * k); usarCabeca(pm, -0.45 * k); } catch (e) { /* nada */ }
+            pm.raiz.rotation.y = -perdeu.angle + Math.sin(r * 2.2) * 0.12 * k;
+          }
+          if (bolaC) {                                                                 // a bola sai do pé do juiz e rola até o vencedor
+            const kb = suave((r - 0.5) / 1.1), x0 = 0, z0 = 0.75, x1 = ganhou.x + 0.42 * Math.cos(ganhou.angle), z1 = ganhou.z + 0.42 * Math.sin(ganhou.angle);
+            bolaC.visible = r > 0.5; bolaC.position.set(x0 + (x1 - x0) * kb, 0.11, z0 + (z1 - z0) * kb); bolaC.rotation.z -= 0.15 * (kb < 1 ? 1 : 0);
+          }
+        }
+        const k = suave(tt / T_APONTA), kz = suave((tt - T_APONTA) / 1.1);
+        // até a moeda cair, o plano de sempre; depois a câmera vai para a frente do vencedor (três quartos, do lado da câmera)
+        const ax = -0.5 + 1.0 * k, az = -4.4 + 0.5 * k, ay = 1.6 + (voo > 0 && voo < 1 ? 0.4 : 0);
+        const fa = ganhou.angle + sg * 0.95, bx = ganhou.x + Math.cos(fa) * 3.0, bz = ganhou.z + Math.sin(fa) * 3.0;
+        camOlha(ax + (bx - ax) * kz, ay + (1.5 - ay) * kz, az + (bz - az) * kz, ganhou.x * kz, 1.45 + alt * 0.5 * (1 - kz) - 0.2 * kz, 0.3 + (ganhou.z - 0.3) * kz);
       });
       legenda('');
     }
@@ -2476,6 +2538,8 @@
     "Todos os olhos em você: a hora é agora": ["All eyes on you: the time is now", "Todas las miradas en ti: es la hora", "Tutti gli occhi su di te: è il momento", "Tous les regards sur toi : c'est le moment"],
     "Todos os olhos nele: {0}": ["All eyes on him: {0}", "Todas las miradas en él: {0}", "Tutti gli occhi su di lui: {0}", "Tous les regards sur lui : {0}"],
     "O sorteio: cara ou coroa": ["The coin toss: heads or tails", "El sorteo: cara o cruz", "Il sorteggio: testa o croce", "Le tirage au sort : pile ou face"],
+    "{0} ganhou o sorteio e começa com a bola": ["{0} won the coin toss and kicks off", "{0} ganó el sorteo y saca", "{0} ha vinto il sorteggio e batte il calcio d’inizio", "{0} a gagné le tirage au sort et donne le coup d’envoi"],
+    "Ganhou o sorteio e começa com a bola": ["Won the coin toss and kicks off", "Ganó el sorteo y saca", "Ha vinto il sorteggio e batte il calcio d’inizio", "A gagné le tirage au sort et donne le coup d’envoi"],
     "{0} e {1} à beira do campo": ["{0} and {1} on the touchline", "{0} y {1} en la banda", "{0} e {1} a bordo campo", "{0} et {1} au bord du terrain"],
     // a América do Sul e a Libertadores
     "Liga Argentina": ["Argentine League", "Liga Argentina", "Campionato argentino", "Championnat argentin"],

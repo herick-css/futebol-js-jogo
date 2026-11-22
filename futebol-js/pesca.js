@@ -703,7 +703,7 @@
       if (p >= 8) osc(r, 'sawtooth', hz(raiz - 12 + (ps === 7 ? 7 : 0)), t, PASSO * 0.85, 0.3, r.bx);
       if (n >= 2 && !intro) { const nota = SOLO[cp][ps]; if (nota) { let d = 1; while (ps + d < 8 && !SOLO[cp][ps + d]) d++; solo(r, nota + (n >= 3 && cp % 2 ? 12 : 0), t, PASSO * d * 0.95); } }
     }
-    function agenda() { const r = R; if (!r) return; const ate = r.c.currentTime + 0.15; while (r.prox < ate) { passo(r, r.p, r.prox); r.prox += PASSO; r.p++; } }
+    function agenda() { const r = R; if (!r) return; const now = r.c.currentTime; if (r.prox < now - 0.03) { const n = Math.ceil((now - r.prox) / PASSO); r.prox += n * PASSO; r.p += n; } const ate = now + 0.3; while (r.prox < ate) { passo(r, r.p, r.prox); r.prox += PASSO; r.p++; } }
     function montar(A) {
       const c = A.ctx, r = { c, nivel: 1, p: 0, pratoJa: false };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -848,7 +848,7 @@
         },
         final(r, t) { const [rz] = this.prog[0]; for (let k = 0; k < 6; k++) bumbo(r, t + k * 0.06, 1.1 - k * 0.1); prato(r, t); china(r, t + 0.03); acorde(r, rz + 12, t, 3.2, 1.35); baixo(r, rz, t, 3.0, 1.2); lead(r, 98, t, 2.6, 1); lead(r, 105, t, 2.6, 0.4); } },
     ];
-    function agenda() { const r = R; if (!r) return; const ate = r.c.currentTime + 0.15; while (r.prox < ate) { r.E.passo(r, r.p, r.prox, r.PASSO); r.prox += r.PASSO; r.p++; } }
+    function agenda() { const r = R; if (!r) return; const now = r.c.currentTime; if (r.prox < now - 0.03) { const n = Math.ceil((now - r.prox) / r.PASSO); r.prox += n * r.PASSO; r.p += n; } const ate = now + 0.3; while (r.prox < ate) { r.E.passo(r, r.p, r.prox, r.PASSO); r.prox += r.PASSO; r.p++; } }
     function montar(A, k) {
       const c = A.ctx, E = ESTILOS[k], r = { c, E, k, nivel: 1, p: 0, PASSO: 60 / E.bpm / E.sub };
       r.rb = c.createBuffer(1, c.sampleRate, c.sampleRate); const d = r.rb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;

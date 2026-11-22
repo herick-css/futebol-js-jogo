@@ -343,6 +343,14 @@
     const VZ = api.VZ, V = api.VARZEA;
     const PORTAO = { x: 89, z: V.z1 + 1.15 };                                 // do lado de fora do portão (o vão da cerca é de x 86 a 92)
     const PORTA = { x: VZ.casa.x1 + 0.9, z: (VZ.casa.z0 + VZ.casa.z1) / 2 };  // na frente da porta da casinha da escada
+    // A casinha (e o vestiário embaixo dela) é desenhada "de pé", com a porta para +x, e fica girada em volta do centro (VZ.giro: a porta de
+    //   frente para o campo). As contas daqui ficam nesse desenho; pW leva um ponto para o mundo e pL faz o caminho de volta.
+    const GIRO = VZ.giro || 0, CXC = (VZ.casa.x0 + VZ.casa.x1) / 2, CZC = (VZ.casa.z0 + VZ.casa.z1) / 2, cG = Math.cos(GIRO), sG = Math.sin(GIRO);
+    const pW = (x, z) => { const dx = x - CXC, dz = z - CZC; return [CXC + dx * cG + dz * sG, CZC - dx * sG + dz * cG]; };
+    const pL = (x, z) => { const dx = x - CXC, dz = z - CZC; return [CXC + dx * cG - dz * sG, CZC + dx * sG + dz * cG]; };
+    const porEm = (A, x, z, yaw) => { const [wx, wz] = pW(x, z); A.x = wx; A.z = wz; if (yaw != null) A.yaw = A.yawAlvo = yaw + GIRO; };
+    const camL = (c) => { const [px, pz] = pW(c.px, c.pz), [tx, tz] = pW(c.tx, c.tz); return { px, py: c.py, pz, tx, ty: c.ty, tz }; };
+    const rotaL = (L) => L.map(([x, z]) => pW(x, z));
     const dados = () => S().dados;
     const camp = () => { const d = dados(); return (d.varzea = d.varzea || { etapa: 'nada' }); };
     const agora = () => hAbs(dados().dia || 1, dados().hora || 0);
@@ -678,7 +686,8 @@
     //   Embaixo da faixa do banco de reservas: a escada sai da casinha (porta para o leste) e desce 3,1 m para o oeste.
     const SALA = { x0: VZ.casa.x0 - 10.2, x1: VZ.casa.x0 - 1.8, z0: VZ.casa.z0 - 1.7, z1: VZ.casa.z1 + 1.7, y: -3.1, alt: 2.7 };
     const ESC = { x0: SALA.x1, x1: VZ.casa.x1 - 0.15, z0: VZ.casa.z0 + 0.15, z1: VZ.casa.z1 - 0.15 };
-    function alturaVestiario(x, z) {
+    function alturaVestiario(xw, zw) {
+      const [x, z] = pL(xw, zw);
       if (x >= ESC.x0 && x <= ESC.x1 + 0.3 && z >= ESC.z0 - 0.05 && z <= ESC.z1 + 0.05) return SALA.y * clampN((ESC.x1 - x) / (ESC.x1 - ESC.x0), 0, 1);
       if (x >= SALA.x0 && x <= SALA.x1 && z >= SALA.z0 && z <= SALA.z1) return SALA.y;
       return null;
@@ -749,8 +758,9 @@
       const texE = new THREE.CanvasTexture(arte(NOSSO)); texE.magFilter = texE.minFilter = THREE.NearestFilter; texE.generateMipmaps = false;
       const poster = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshLambertMaterial({ map: texE, transparent: true, alphaTest: 0.5 }));
       poster.position.set(X0 + 0.02, Y + 1.6, (Z0 + Z1) / 2 - 1.05); poster.rotation.y = Math.PI / 2; grupo.add(poster);
-      S().grupo.add(grupo);
-      M.sala = { grupo, descartar: () => { grupo.parent && grupo.parent.remove(grupo); malha.geometry.dispose(); for (const o of [quadro, poster]) { o.geometry.dispose(); o.material.map.dispose(); o.material.dispose(); } } };
+      const piv = new THREE.Group(); piv.position.set(CXC, 0, CZC); piv.rotation.y = GIRO; grupo.position.set(-CXC, 0, -CZC); piv.add(grupo);
+      S().grupo.add(piv);
+      M.sala = { grupo, descartar: () => { piv.parent && piv.parent.remove(piv); malha.geometry.dispose(); for (const o of [quadro, poster]) { o.geometry.dispose(); o.material.map.dispose(); o.material.dispose(); } } };
       return M.sala;
     }
     function tirarSala() { if (M.sala) { M.sala.descartar(); M.sala = null; } }
@@ -799,43 +809,43 @@
         await api.andar(J, [[PORTAO.x, PORTAO.z - 2.2], [PORTAO.x + 1.6, PORTAO.z - 9]], 2.3);
         await api.preto(true, 450);
         // 2) a casinha da escada: entra e desce
-        J.x = PORTA.x + 3.2; J.z = PORTA.z + 3.6; J.y = 0; J.yaw = J.yawAlvo = Math.atan2(-(PORTA.z - J.z), PORTA.x - J.x);
-        api.camCena({ px: PORTA.x + 5.6, py: 2.1, pz: PORTA.z + 5.3, tx: PORTA.x - 1.2, ty: 0.7, tz: PORTA.z - 0.3 });
+        porEm(J, PORTA.x + 3.2, PORTA.z + 3.6, Math.atan2(3.6, -3.2)); J.y = 0;
+        api.camCena(camL({ px: PORTA.x + 5.6, py: 2.1, pz: PORTA.z + 5.3, tx: PORTA.x - 1.2, ty: 0.7, tz: PORTA.z - 0.3 }));
         s.alturaExtra = alturaVestiario;
         await api.preto(false, 450);
-        await api.andar(J, [[PORTA.x, PORTA.z], [ESC.x1 - 0.4, PORTA.z], [ESC.x1 - 2.4, PORTA.z]], 1.7);
+        await api.andar(J, rotaL([[PORTA.x, PORTA.z], [ESC.x1 - 0.4, PORTA.z], [ESC.x1 - 2.4, PORTA.z]]), 1.7);
         await api.preto(true, 500);
         // 3) lá embaixo: chega pela escada, troca de roupa e conversa com o Seu Damião
         montarSala();
         const zc = (SALA.z0 + SALA.z1) / 2;
-        J.x = ESC.x0 + 2.2; J.z = PORTA.z; J.y = api.altura(J.x, J.z);
-        api.camCena({ px: SALA.x0 + 1.0, py: SALA.y + 1.75, pz: SALA.z1 - 0.55, tx: SALA.x1 - 0.6, ty: SALA.y + 0.75, tz: zc - 0.2 });
+        porEm(J, ESC.x0 + 2.2, PORTA.z); J.y = api.altura(J.x, J.z);
+        api.camCena(camL({ px: SALA.x0 + 1.0, py: SALA.y + 1.75, pz: SALA.z1 - 0.55, tx: SALA.x1 - 0.6, ty: SALA.y + 0.75, tz: zc - 0.2 }));
         const tec = TIMES_VZ[NOSSO_I], apD = apTecnico(tec);
         const D = api.criarNPCFixo(apD, false, 0, ['#1f2a44', '#3a3a40', '#e8742a', '#1c1c1f']); atores.push(D);
-        D.tipo = 'cena'; D.x = SALA.x0 + 1.3; D.z = zc + 0.25; D.y = SALA.y; D.yaw = D.yawAlvo = 0;
+        D.tipo = 'cena'; porEm(D, SALA.x0 + 1.3, zc + 0.25, 0); D.y = SALA.y;
         s.falantesExtra = s.falantesExtra || {}; s.falantesExtra.damiao = { A: D, nome: 'Seu Damião', voz: 1 };
         const E = elencoVz(tec), cores = ['#e8742a', '#1f2a44', '#1f2a44', '#e8742a'];
         const rafaJ = E.find((x) => x.nome === 'Rafa') || E[0];
         const R = api.criarNPCFixo(rafaJ, false, 7, cores); atores.push(R);
-        R.tipo = 'cena'; R.x = SALA.x0 + 3.4; R.z = SALA.z0 + 1.05; R.y = SALA.y; R.sentado = true; R.assento = 0.45; R.yaw = R.yawAlvo = -Math.PI / 2;
+        R.tipo = 'cena'; porEm(R, SALA.x0 + 3.4, SALA.z0 + 1.05, -Math.PI / 2); R.y = SALA.y; R.sentado = true; R.assento = 0.45;
         s.falantesExtra.rafa = { A: R, nome: 'Rafa', voz: 3 };
         // dois companheiros sentados no banco sul e um no banco dos armários
         [[SALA.x0 + 1.2, SALA.z1 - 0.3, Math.PI / 2, 1], [SALA.x0 + 6.1, SALA.z1 - 0.3, Math.PI / 2, 2], [SALA.x0 + 5.2, SALA.z0 + 1.05, -Math.PI / 2, 3]].forEach(([x, z, yaw, i]) => {
           const j = E[i], A = api.criarNPCFixo(j, j.genero === 'F', 7, cores); atores.push(A);
-          A.tipo = 'cena'; A.x = x; A.z = z; A.y = SALA.y; A.sentado = true; A.assento = 0.45; A.yaw = A.yawAlvo = yaw;
+          A.tipo = 'cena'; porEm(A, x, z, yaw); A.y = SALA.y; A.sentado = true; A.assento = 0.45;
         });
         await api.preto(false, 500);
-        await api.andar(J, [[ESC.x0 + 0.4, PORTA.z], [SALA.x0 + 3.6, zc + 0.1]], 1.6);
+        await api.andar(J, rotaL([[ESC.x0 + 0.4, PORTA.z], [SALA.x0 + 3.6, zc + 0.1]]), 1.6);
         await api.esperar(250);
         await api.preto(true, 450);
         // de uniforme: o boneco do jogador some e entra o de uniforme (com o nome nas costas)
         s.meus.delete(J.m); J.m.raiz.visible = false; if (J.anel) J.anel.visible = false;   // (a cidade mostra todo quadro só quem está em S.meus)
         const fem = typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
         const U = api.criarNPCFixo(api.aparenciaNaPartida(), fem, 7, cores); atores.push(U);
-        U.tipo = 'cena'; U.x = SALA.x0 + 3.0; U.z = zc + 0.15; U.y = SALA.y; U.yaw = U.yawAlvo = Math.PI;
+        U.tipo = 'cena'; porEm(U, SALA.x0 + 3.0, zc + 0.15, Math.PI); U.y = SALA.y;
         s.falantesExtra.jog = { A: U, nome: api.nomeJog(), voz: typeof PERSONAGEM.voz === 'number' ? PERSONAGEM.voz : 2 };
-        D.yaw = D.yawAlvo = 0;
-        api.camCena({ px: SALA.x0 + 4.6, py: SALA.y + 1.62, pz: zc + 1.85, tx: SALA.x0 + 1.9, ty: SALA.y + 0.55, tz: zc - 0.25 });
+        D.yaw = D.yawAlvo = GIRO;
+        api.camCena(camL({ px: SALA.x0 + 4.6, py: SALA.y + 1.62, pz: zc + 1.85, tx: SALA.x0 + 1.9, ty: SALA.y + 0.55, tz: zc - 0.25 }));
         await api.esperar(350);
         await api.preto(false, 450);
         await conversaVestiario(g, ped, C);
@@ -954,15 +964,15 @@
     // na saída do vestiário: o Seu Damião comenta o jogo, a nota (com o bônus) e a tabela
     async function depoisDoJogo(C, g, R) {
       const s = S(), J = s.jog, atores = [];
-      J.sentado = false; J.rota = null; J.x = PORTA.x + 0.5; J.z = PORTA.z + 0.6; J.y = api.altura(J.x, J.z);
+      J.sentado = false; J.rota = null; porEm(J, PORTA.x + 0.5, PORTA.z + 0.6); J.y = api.altura(J.x, J.z);
       const tec = TIMES_VZ[NOSSO_I], D = api.criarNPCFixo(apTecnico(tec), false, 0, ['#1f2a44', '#3a3a40', '#e8742a', '#1c1c1f']); atores.push(D);
-      D.tipo = 'cena'; D.x = PORTA.x + 2.3; D.z = PORTA.z + 0.6; D.y = api.altura(D.x, D.z);
+      D.tipo = 'cena'; porEm(D, PORTA.x + 2.3, PORTA.z + 0.6); D.y = api.altura(D.x, D.z);
       const Rf = api.criarNPCFixo(elencoVz(tec).find((x) => x.nome === 'Rafa'), false, 7, ['#e8742a', '#1f2a44', '#1f2a44', '#e8742a']); atores.push(Rf);
-      Rf.tipo = 'cena'; Rf.x = PORTA.x + 1.4; Rf.z = PORTA.z - 0.45; Rf.y = api.altura(Rf.x, Rf.z);
+      Rf.tipo = 'cena'; porEm(Rf, PORTA.x + 1.4, PORTA.z - 0.45); Rf.y = api.altura(Rf.x, Rf.z);
       D.yaw = D.yawAlvo = Math.atan2(-(J.z - D.z), J.x - D.x); Rf.yaw = Rf.yawAlvo = Math.atan2(-((J.z + D.z) / 2 + 0.8 - Rf.z), (J.x + D.x) / 2 - Rf.x);
       J.yaw = J.yawAlvo = Math.atan2(-(D.z - J.z), D.x - J.x);
       s.falantesExtra = s.falantesExtra || {}; s.falantesExtra.damiao = { A: D, nome: 'Seu Damião', voz: 1 }; s.falantesExtra.rafa = { A: Rf, nome: 'Rafa', voz: 3 };
-      api.camCena({ px: PORTA.x + 1.4, py: 1.75, pz: PORTA.z + 5.4, tx: PORTA.x + 1.4, ty: 0.42, tz: PORTA.z + 0.1 });
+      api.camCena(camL({ px: PORTA.x + 1.4, py: 1.75, pz: PORTA.z + 5.4, tx: PORTA.x + 1.4, ty: 0.42, tz: PORTA.z + 0.1 }));
       try { if (typeof Musica !== 'undefined') Musica.tocar('jazz'); } catch (e) { /* nada */ }
       await api.preto(false, 700);
       try {

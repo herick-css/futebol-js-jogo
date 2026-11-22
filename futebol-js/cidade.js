@@ -683,6 +683,8 @@
   });
   Object.assign(TRAD_CD, {
     // o encontro com a Lúcia
+    'Que cantinho aconchegante, {0}! Obrigada por me chamar pra vir aqui.': ['What a cozy little place, {0}! Thanks for inviting me over.', '¡Qué rinconcito más acogedor, {0}! Gracias por invitarme a venir.', 'Che angolino accogliente, {0}! Grazie per avermi invitata qui.', 'Quel petit coin douillet, {0} ! Merci de m’avoir invitée ici.'],
+    'É melhor eu não sair da cidadezinha.': ['I’d better not leave town.', 'Mejor no salgo del pueblito.', 'Meglio non uscire dal paesino.', 'Je ferais mieux de ne pas quitter le village.'],
     'Oi, {0}! Que bom que você veio!': ['Hi, {0}! I’m so glad you came!', '¡Hola, {0}! ¡Qué bueno que viniste!', 'Ciao, {0}! Che bello che sei venuto!', 'Salut, {0} ! Je suis contente que tu sois venu !'],
     'Você está linda hoje.': ['You look beautiful tonight.', 'Estás preciosa hoy.', 'Sei bellissima stasera.', 'Tu es magnifique ce soir.'],
     'Como você está?': ['How are you?', '¿Cómo estás?', 'Come stai?', 'Comment ça va ?'],
@@ -1025,6 +1027,16 @@
     'Torceu mais do que todo mundo. Isso conta muito pra mim.': ['You cheered more than anyone. That means a lot to me.', 'Me apoyaste más que nadie. Eso significa mucho para mí.', 'Hai fatto il tifo più di tutti. Per me conta tantissimo.', 'Tu m’as encouragée plus que personne. Ça compte beaucoup pour moi.'],
     'Para... assim eu choro aqui na frente dos clientes, haha.': ['Stop... I’ll cry right here in front of the customers, haha.', 'Para... que voy a llorar aquí delante de los clientes, jaja.', 'Smettila... così piango qui davanti ai clienti, haha.', 'Arrête... je vais pleurer devant les clients, haha.'],
     'Ai... obrigada. De verdade.': ['Oh... thank you. Really.', 'Ay... gracias. De verdad.', 'Oh... grazie. Davvero.', 'Oh... merci. Vraiment.'],
+    'Eu só consegui porque tive um amigo do meu lado. Toda vez que eu pensei em desistir, você me botou pra cima.': ['I only made it because I had a friend by my side. Every time I thought about giving up, you lifted me up.', 'Solo lo logré porque tuve un amigo a mi lado. Cada vez que pensé en rendirme, tú me levantaste el ánimo.', 'Ce l’ho fatta solo perché avevo un amico al mio fianco. Ogni volta che pensavo di mollare, mi hai tirata su.', 'Je n’y suis arrivée que parce que j’avais un ami à mes côtés. Chaque fois que j’ai pensé abandonner, tu m’as remonté le moral.'],
+    'Eu só consegui porque tive uma amiga do meu lado. Toda vez que eu pensei em desistir, você me botou pra cima.': ['I only made it because I had a friend by my side. Every time I thought about giving up, you lifted me up.', 'Solo lo logré porque tuve una amiga a mi lado. Cada vez que pensé en rendirme, tú me levantaste el ánimo.', 'Ce l’ho fatta solo perché avevo un’amica al mio fianco. Ogni volta che pensavo di mollare, mi hai tirata su.', 'Je n’y suis arrivée que parce que j’avais une amie à mes côtés. Chaque fois que j’ai pensé abandonner, tu m’as remonté le moral.'],
+    'Pra que servem os amigos?': ['What are friends for?', '¿Para qué están los amigos?', 'A cosa servono gli amici?', 'À quoi servent les amis ?'],
+    'Então eu quero ser o primeiro cliente!': ['Then I want to be the first customer!', '¡Entonces quiero ser el primer cliente!', 'Allora voglio essere il primo cliente!', 'Alors je veux être le premier client !'],
+    'Então eu quero ser a primeira cliente!': ['Then I want to be the first customer!', '¡Entonces quiero ser la primera clienta!', 'Allora voglio essere la prima cliente!', 'Alors je veux être la première cliente !'],
+    '(Dar um toca aqui)': ['(High five)', '(Chocar los cinco)', '(Batti il cinque)', '(Taper dans la main)'],
+    'Haha, nem vem! Você é o melhor amigo que alguém podia ter.': ['Haha, come on! You’re the best friend anyone could ask for.', '¡Jaja, no empieces! Eres el mejor amigo que alguien podría tener.', 'Haha, ma dai! Sei il migliore amico che si possa avere.', 'Haha, arrête ! Tu es le meilleur ami qu’on puisse rêver.'],
+    'Haha, nem vem! Você é a melhor amiga que alguém podia ter.': ['Haha, come on! You’re the best friend anyone could ask for.', '¡Jaja, no empieces! Eres la mejor amiga que alguien podría tener.', 'Haha, ma dai! Sei la migliore amica che si possa avere.', 'Haha, arrête ! Tu es la meilleure amie qu’on puisse rêver.'],
+    'Fechado! Vou guardar o pedaço mais bonito pra você.': ['Deal! I’ll save the prettiest slice for you.', '¡Trato hecho! Te voy a guardar el pedazo más lindo.', 'Affare fatto! Ti terrò da parte la fetta più bella.', 'Marché conclu ! Je te garde la plus belle part.'],
+    'Isso aí! Valeu mesmo, viu? Você é demais.': ['That’s it! Thanks a lot, really. You’re awesome.', '¡Eso es! Gracias de verdad, ¿eh? Eres el mejor.', 'Così si fa! Grazie davvero, eh? Sei grande.', 'C’est ça ! Merci beaucoup, vraiment. Tu es génial.'],
     'Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.': ['Each slice costs {0} fakes. I’d make it free for you... but then I’d go broke, haha.', 'Cada porción cuesta {0} fakes. Para ti hasta sería gratis... pero me arruinaría, jaja.', 'Ogni fetta costa {0} fakes. Per te la farei anche gratis... ma poi fallirei, haha.', 'Chaque part coûte {0} fakes. Pour toi, je la ferais même gratuite... mais je ferais faillite, haha.'],
     'Quando quiser um bolo, é só vir na vitrine ou falar comigo no caixa!': ['Whenever you want a cake, just come to the display case or talk to me at the register!', '¡Cuando quieras un pastel, ven a la vitrina o háblame en la caja!', 'Quando vuoi una torta, vieni alla vetrina o parlami alla cassa!', 'Quand tu veux un gâteau, viens à la vitrine ou parle-moi à la caisse !'],
     'A Confeitaria da Lúcia abriu! 5 bolos no café.': ['Lucy’s Pastry Shop is open! 5 cakes at the café.', '¡Abrió la Repostería de Lucía! 5 pasteles en el café.', 'La Pasticceria di Lucia ha aperto! 5 torte al caffè.', 'La Pâtisserie de Lucie a ouvert ! 5 gâteaux au café.'],
@@ -1112,6 +1124,7 @@
   };
   for (const k of Object.keys(TRAD_SB_CD)) if (!I18N[k]) I18N[k] = TRAD_SB_CD[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
+    'Isso aí! Valeu mesmo, viu? Você é demais.': [null, '¡Eso es! Gracias de verdad, ¿eh? Eres la mejor.', null, 'C’est ça ! Merci beaucoup, vraiment. Tu es géniale.'],
     'Você não apareceu no racha! A galera ficou te esperando.': [null, null, 'Non ti sei fatta vedere alla partita! Ti stavano tutti aspettando.', 'Tu n’es pas venue au match ! Tout le monde t’attendait.'],
     'Mas tranquilo: tem de novo toda segunda e quarta, às {0}. Te espero lá!': [null, 'Pero tranquila: hay de nuevo todos los lunes y miércoles, a las {0}. ¡Te espero allá!', 'Ma tranquilla: si gioca di nuovo ogni lunedì e mercoledì, alle {0}. Ti aspetto lì!', null],
     'Acabei de me mudar pra cidade.': [null, null, 'Mi sono appena trasferita in città.', null],
@@ -1143,6 +1156,18 @@
     const faixa = (z0, z1) => { let x = -120; for (const [a, b] of vaos) { CALCADAS.push({ x0: x, x1: a, z0, z1, y: 0.12 }); x = b; } CALCADAS.push({ x0: x, x1: 120, z0, z1, y: 0.12 }); };
     faixa(-5.1, AV.z0); faixa(AV.z1, 10.5);
   }
+  // AS RUAS QUE DOBRAM (fora da cidade, nas duas pontas da avenida): a calçada continua até uma rua que cruza a avenida (x ±127,5 a ±134,5);
+  //   quem vai embora a pé dobra a esquina e some atrás dos prédios da esquina; quem chega vem por ela. Só as calçadas de dentro têm gente.
+  const RUA_FORA = { ci: 125, a0: 127.5, a1: 134.5, co: 137, zf: 80 };   // calçada de dentro (125–127,5), asfalto (127,5–134,5), calçada de fora (134,5–137)
+  const ZONAS_FORA = [];
+  for (const sg of [-1, 1]) {
+    const X = (a, b) => (sg > 0 ? { x0: a, x1: b } : { x0: -b, x1: -a });
+    for (const [z0, z1] of [[-5.1, AV.z0], [AV.z1, 10.5]]) { CALCADAS.push(Object.assign(X(120, RUA_FORA.a0), { z0, z1, y: 0.12 })); CALCADAS.push(Object.assign(X(RUA_FORA.a1, 160), { z0, z1, y: 0.12 })); }
+    for (const [z0, z1] of [[-RUA_FORA.zf, -5.1], [10.5, RUA_FORA.zf]]) { CALCADAS.push(Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0, z1, y: 0.12 })); CALCADAS.push(Object.assign(X(RUA_FORA.a1, RUA_FORA.co), { z0, z1, y: 0.12 })); }
+    ZONAS_FORA.push(Object.assign(X(118, RUA_FORA.a0), { z0: -5.1, z1: AV.z0 }), Object.assign(X(118, RUA_FORA.a0), { z0: AV.z1, z1: 10.5 }),
+      Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0: -RUA_FORA.zf, z1: -5.1 }), Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0: 10.5, z1: RUA_FORA.zf }));
+  }
+  const naRuaFora = (x, z) => { for (const r of ZONAS_FORA) if (x >= r.x0 && x <= r.x1 && z >= r.z0 && z <= r.z1) return true; return false; };
   const PRACA = R(540, 228, 220, 127), PRACA_C = { x: PX(649), z: PZ(292) };
   const VARZEA = R(905, 135, 285, 205), VARZEA_L = R(925, 168, 245, 150);   // a cerca do lado norte foi 3 m para trás: espaço para os bancos de reserva e a casinha da escada do vestiário
   const SOCIETY = R(925, 535, 260, 175), SOCIETY_L = R(945, 553, 220, 140);
@@ -1589,6 +1614,78 @@
     return mesh;
   }
 
+  // O ENTORNO (fora do limite): as ruas que dobram nas duas pontas da avenida, os prédios das esquinas (escondem quem dobra), um quarteirão do
+  //   outro lado de cada rua, o posto de gasolina, galpões e casas ao longo da estrada e os postes da fiação. Nada disso tem colisão com o
+  //   jogador (ele não chega lá); os pedestres andam só nas calçadas de dentro das ruas que dobram.
+  function montarArredores(g, te) {
+    const rnd = semente(4711), Gd = new Geo();
+    // tudo numa malha só (nenhum prédio daqui precisa ficar translúcido): cada prédio é montado na origem e copiado girado/no lugar
+    const juntar = (D, G, x, z, giro) => { const c = Math.cos(giro), sn = Math.sin(giro);
+      for (let k = 0; k < G.p.length; k += 3) { const px = G.p[k], pz = G.p[k + 2], nx = G.n[k], nz = G.n[k + 2]; D.p.push(x + px * c + pz * sn, G.p[k + 1], z - px * sn + pz * c); D.n.push(nx * c + nz * sn, G.n[k + 1], -nx * sn + nz * c); }
+      for (const v of G.c) D.c.push(v); };
+    const predio = (r, frente, h, andares, cor, o) => {
+      o = o || {}; const w = r.x1 - r.x0, d = r.z1 - r.z0, G = new Geo(); G.vid = new Geo();
+      G.box(w, h, d, cor, 0, 0, 0, '#9a968c'); G.box(w + 0.08, 0.9, d + 0.08, escurece(cor, 0.72), 0, 0, 0);
+      for (let a = 1; a < andares; a++) G.box(w + 0.06, 0.2, d + 0.06, escurece(cor, 0.85), 0, a * (h / andares) - 0.1, 0);
+      porta(G, w, d, 'f', -w * 0.18, 1.1, 2.2, '#5b3a22');
+      for (let a = 0; a < andares; a++) for (let u = -w / 2 + 1.2; u < w / 2 - 0.8; u += 2.2) if (a > 0 || Math.abs(u + w * 0.18) > 1.2) janela(G, w, d, 'f', u, 1.0 + a * (h / andares), 1.0, 1.1);
+      for (const f of ['l', 'r', 'b']) { const L = f === 'b' ? w : d, n = Math.floor((L - 2) / 4); for (let a = 0; a < andares; a++) for (let q = 0; q < n; q++) janela(G, w, d, f, -L / 2 + (L / n) * (q + 0.5), a * (h / andares) + 1.2, 1.0, 0.9); }
+      if (o.telhado) telhado(G, w, d, h, 1.6, 0.4, '#b5552e', 'x', cor); else G.box(w + 0.14, 0.55, d + 0.14, escurece(cor, 0.92), 0, h - 0.06, 0, '#8d8a82');
+      const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, giro = frente < 0 ? Math.PI : 0;
+      juntar(Gd, G, cx, cz, giro);
+      if (G.vid.p.length) { const V = S.vidros || (S.vidros = new Geo()); juntar(V, G.vid, cx, cz, giro); }   // os vidros que acendem à noite (a malha da cidade inteira)
+      if (o.letreiro) {                                                // a placa da loja (com o nome): a única peça à parte
+        const L = o.letreiro, tex = guardar(texLetreiro(L.txt, L.fundo, L.cor, 3.0, 0.6)), mf = guardar(new THREE.MeshLambertMaterial({ map: tex, emissive: 0x000000, emissiveMap: tex })), mb = guardar(new THREE.MeshLambertMaterial({ color: hexN(L.fundo) }));
+        (S.letreiros || (S.letreiros = [])).push(mf);
+        const placa = new THREE.Mesh(guardar(new THREE.BoxGeometry(3.0, 0.6, 0.16)), [mb, mb, mb, mb, mf, mb]); placa.position.set(cx, 3.0, cz + (frente < 0 ? -1 : 1) * (d / 2 + 0.16)); placa.rotation.y = giro; g.add(placa);
+      }
+    };
+    const asfalto = (x0, x1, z0, z1) => {                             // a rua no sentido z (as faixas da textura acompanham a rua)
+      const L = z1 - z0, W = x1 - x0, geo = guardar(new THREE.PlaneGeometry(L, W)), uv = geo.attributes.uv;
+      for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * L / 8, uv.getY(i));
+      const m = new THREE.Mesh(geo, guardar(new THREE.MeshLambertMaterial({ map: te, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })));
+      m.rotation.order = 'YXZ'; m.rotation.y = Math.PI / 2; m.rotation.x = -Math.PI / 2; m.position.set((x0 + x1) / 2, 0.004, (z0 + z1) / 2); g.add(m);
+    };
+    const R0 = RUA_FORA, cores = ['#e6c88e', '#d9b38c', '#c9d6c3', '#e8d4b8', '#bfcfdc', '#e3c4c4', '#d6d0a8', '#f0e2c8'];
+    for (const sg of [-1, 1]) {
+      const X = (a, b) => (sg > 0 ? { x0: a, x1: b } : { x0: -b, x1: -a });
+      // a rua que dobra (para o norte e para o sul; no cruzamento vale o asfalto da avenida)
+      const xr = X(R0.a0, R0.a1); asfalto(xr.x0, xr.x1, -R0.zf - 30, -5.1); asfalto(xr.x0, xr.x1, 10.5, R0.zf + 30);
+      // os prédios das esquinas (do lado da cidade): de frente para a avenida, colados na calçada da rua que dobra (escondem quem dobra)
+      const q = X(120.4, R0.ci - 0.25);
+      predio(Object.assign({}, q, { z0: -17, z1: -5.5 }), 1, 7.2, 2, sg > 0 ? '#e3b95a' : '#c9d6c3', { letreiro: { txt: sg > 0 ? 'PADARIA' : 'FARMÁCIA', fundo: sg > 0 ? '#7a4a2a' : '#1f7a4d', cor: '#fff6e0' } });
+      predio(Object.assign({}, q, { z0: -34, z1: -17.4 }), 1, 9.5, 3, '#d9b38c');
+      predio(Object.assign({}, q, { z0: 10.9, z1: 22.5 }), -1, 7.2, 2, sg > 0 ? '#bfcfdc' : '#e3c4c4', { letreiro: { txt: sg > 0 ? 'OFICINA' : 'MERCEARIA', fundo: sg > 0 ? '#2a3f66' : '#8a1f24', cor: '#fff6e0' } });
+      predio(Object.assign({}, q, { z0: 22.9, z1: 40 }), -1, 9.5, 3, '#e8d4b8');
+      // do outro lado da rua: um quarteirão de cada lado da avenida (sobrados e lojinhas)
+      for (const [z0, z1, fr] of [[-18, -5.6, 1], [11, 23.5, -1]]) {
+        let x = R0.co + 0.5;
+        for (let k = 0; k < 3; k++) {
+          const w = 6 + rnd() * 3, h = 5.6 + rnd() * 3.5;
+          predio(Object.assign(X(x, x + w), { z0, z1 }), fr, h, h > 7 ? 2 : 1, cores[Math.floor(rnd() * cores.length)], { telhado: rnd() < 0.5 });
+          x += w + 0.4;
+        }
+      }
+      // ao longo da estrada: galpões e casas espalhados, o posto de gasolina (só numa ponta) e os postes com a fiação
+      for (let k = 0; k < 7; k++) {
+        const x0 = 168 + k * 26 + rnd() * 8, lado = k % 2 ? 1 : -1, w = 8 + rnd() * 10, d = 7 + rnd() * 8, h = 3.5 + rnd() * 4;
+        const z0 = lado > 0 ? 14 + rnd() * 10 : -(14 + rnd() * 10) - d, c = cores[Math.floor(rnd() * cores.length)], xa = X(x0, x0 + w);
+        Gd.box(w, h, d, c, (xa.x0 + xa.x1) / 2, 0, z0 + d / 2, '#9a968c'); Gd.box(w + 0.8, 0.5, d + 0.8, escurece(c, 0.7), (xa.x0 + xa.x1) / 2, h, z0 + d / 2);
+        Gd.box(2.2, 2.6, 0.08, '#3a3d42', (xa.x0 + xa.x1) / 2, 0, lado > 0 ? z0 - 0.04 : z0 + d + 0.04);   // o portão
+      }
+      if (sg > 0) {                                                    // o posto: a cobertura, as bombas, a lojinha e a placa alta
+        const px = 150, pz = 14;
+        Gd.box(12, 0.5, 7, '#f4f2ea', px + 6, 4.6, pz + 3.5); Gd.box(12.2, 0.3, 7.2, '#c8352b', px + 6, 4.35, pz + 3.5);
+        for (const dx of [2, 10]) Gd.box(0.4, 4.4, 0.4, '#d8d8d0', px + dx, 0, pz + 3.5);
+        for (const dx of [4, 8]) { Gd.box(0.7, 1.5, 0.5, '#c8352b', px + dx, 0, pz + 3.5); Gd.box(0.5, 0.35, 0.52, '#f4f2ea', px + dx, 1.05, pz + 3.5); }
+        Gd.box(6, 3.2, 4.5, '#f4f2ea', px + 6, 0, pz + 9.5); Gd.box(6.2, 0.6, 4.7, '#c8352b', px + 6, 3.2, pz + 9.5);
+        Gd.box(0.4, 7, 0.4, '#8c9199', px - 1, 0, pz + 1); Gd.box(2.4, 1.6, 0.3, '#c8352b', px - 1, 6.2, pz + 1); Gd.box(2.0, 1.2, 0.32, '#f2c230', px - 1, 6.4, pz + 1);
+      }
+      for (let x = 124; x < 400; x += 22) for (const zz of [-6.6, 12.0]) { const xa = sg * x; Gd.box(0.22, 7.5, 0.22, '#8a6a4a', xa, 0, zz); Gd.box(1.6, 0.12, 0.12, '#5a4a3a', xa, 7.0, zz); }
+    }
+    g.add(Gd.malha(MAT));
+  }
+
   function casa(r, frente, cor, rnd, especial, marca, dono) {     // dono: 'cadu' | 'rosa' | 'diego' | 'fernanda' (não muda o sorteio das casas)
     const w = r.x1 - r.x0, d = r.z1 - r.z0, laje = !especial && rnd() < 0.3, lado = rnd() < 0.5 ? -1 : 1;
     const sg = frente < 0 ? -1 : 1, uP = lado * w * 0.27, cxc = (r.x0 + r.x1) / 2, czc = (r.z0 + r.z1) / 2;   // onde fica a porta no mundo e onde a pessoa para na frente dela
@@ -1624,6 +1721,7 @@
     };
     faixaChao(-420, 420, -420, LIM.z0); faixaChao(-420, 420, LIM.z1, 420);
     for (const [a, b] of [[-420, LIM.x0], [LIM.x1, 420]]) { faixaChao(a, b, LIM.z0, AV.z0); faixaChao(a, b, AV.z0, AV.z1, true); faixaChao(a, b, AV.z1, LIM.z1); }
+    montarArredores(g, te);
     // --- morros em volta (meio enterrados: cruzam o chão, nunca ficam no mesmo plano)
     const geoMorro = guardar(new THREE.SphereGeometry(1, 12, 7)), matMorro = [guardar(new THREE.MeshLambertMaterial({ color: 0x6f9a4a, flatShading: true })), guardar(new THREE.MeshLambertMaterial({ color: 0x5f8a40, flatShading: true })), guardar(new THREE.MeshLambertMaterial({ color: 0x7ea558, flatShading: true }))];
     const morro = (x, z, rx, ry, rz) => { const m = new THREE.Mesh(geoMorro, matMorro[Math.floor(rnd() * 3)]); m.scale.set(rx, ry, rz); m.position.set(x, -ry * 0.35, z); m.rotation.y = rnd() * 3; g.add(m); };
@@ -1633,11 +1731,21 @@
 
     // --- calçadas elevadas (12 cm) com meio-fio mais escuro
     { const tc = guardar(texCalcada()), mTop = guardar(new THREE.MeshLambertMaterial({ map: tc })), mLado = guardar(new THREE.MeshLambertMaterial({ color: 0x6f7278 }));   // lajotas quadradas no topo (cinza)
-      for (const c of CALCADAS) {
-        const w = c.x1 - c.x0, d = c.z1 - c.z0, geo = guardar(new THREE.BoxGeometry(w, 0.12, d)), uv = geo.attributes.uv;
-        for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * w / 3 + c.x0 / 3, uv.getY(i) * d / 3);
-        const m = new THREE.Mesh(geo, [mLado, mLado, mTop, mLado, mLado, mLado]); m.position.set((c.x0 + c.x1) / 2, 0.06, (c.z0 + c.z1) / 2); g.add(m);
-      } }
+      // todas as calçadas em DUAS malhas (o piso de lajota e as beiradas): uma caixa por calçada com 6 materiais eram até 6 desenhos cada
+      { const A = { p: [], n: [], u: [] }, B = { p: [], n: [], u: [] };
+        for (const c of CALCADAS) {
+          const w = c.x1 - c.x0, d = c.z1 - c.z0, geo = new THREE.BoxGeometry(w, 0.12, d), P = geo.attributes.position, N = geo.attributes.normal, U = geo.attributes.uv, I = geo.index;
+          const ox = (c.x0 + c.x1) / 2, oz = (c.z0 + c.z1) / 2;
+          for (const gr of geo.groups) {
+            const D = gr.materialIndex === 2 ? A : B;
+            for (let k = gr.start; k < gr.start + gr.count; k++) { const v = I.getX(k); D.p.push(P.getX(v) + ox, P.getY(v) + 0.06, P.getZ(v) + oz); D.n.push(N.getX(v), N.getY(v), N.getZ(v)); D.u.push(U.getX(v) * w / 3 + c.x0 / 3, U.getY(v) * d / 3); }
+          }
+          geo.dispose();
+        }
+        for (const [D, mat] of [[A, mTop], [B, mLado]]) {
+          const geo = guardar(new THREE.BufferGeometry()); geo.setAttribute('position', new THREE.Float32BufferAttribute(D.p, 3)); geo.setAttribute('normal', new THREE.Float32BufferAttribute(D.n, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(D.u, 2));
+          g.add(new THREE.Mesh(geo, mat));
+        } } }
 
     // --- prédio do jogador (4 andares, caixa d'água, sacadas, portão de ferro azul aberto)
     edificio({ r: R(150, 268, 112, 87), frente: 1, h: 12, andares: 4, fundos: false, equipamentos: false, cor: '#e6c88e', barrado: '#b48a5a', faixa: '#cfae74',
@@ -1882,9 +1990,10 @@
     // --- várzea (o chão já está pintado): alambrado baixo, gols de ferro e o portão do lado da avenida
     { const r = VARZEA, cz = (VARZEA_L.z0 + VARZEA_L.z1) / 2;
       cerca(r, 2.6, [{ lado: 's', a: 86, b: 92 }], 0);
-      const G = new Geo(); for (const gx of [VARZEA_L.x0, VARZEA_L.x1]) { for (const t of [-3, 3]) G.box(0.14, 2.2, 0.14, '#c9c9c0', gx, 0, cz + t); G.box(0.14, 0.14, 6.14, '#c9c9c0', gx, 2.2, cz); }
+      const GL = 7.6, GA = 2.85;                                       // o gol (o mesmo da partida: CAMPOS.varzeaCidade.gol)
+      const G = new Geo(); for (const gx of [VARZEA_L.x0, VARZEA_L.x1]) { for (const t of [-GL / 2, GL / 2]) G.box(0.14, GA, 0.14, '#c9c9c0', gx, 0, cz + t); G.box(0.14, 0.14, GL + 0.14, '#c9c9c0', gx, GA, cz); }
       addMalha(G, 0, 0);
-      S.redes.push({ x: VARZEA_L.x0, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: -1, y: 0 }, { x: VARZEA_L.x1, z: cz, larg: 6, alt: 2.2, prof: 1.3, dir: 1, y: 0 });
+      S.redes.push({ x: VARZEA_L.x0, z: cz, larg: GL, alt: GA, prof: 1.4, dir: -1, y: 0 }, { x: VARZEA_L.x1, z: cz, larg: GL, alt: GA, prof: 1.4, dir: 1, y: 0 });
       montarVarzeaCampeonato(); }
     redesDosGols();
 
@@ -1932,6 +2041,7 @@
         const x = -230 + rnd() * 460, z = -190 + rnd() * 380;
         if (x > LIM.x0 - 3 && x < LIM.x1 + 3 && z > LIM.z0 - 3 && z < LIM.z1 + 3) continue;
         if (Math.abs(z - AV.zc) < 9) continue;
+        if ((Math.abs(x) > 117 && Math.abs(x) < 168 && Math.abs(z) < 45) || (Math.abs(x) > RUA_FORA.ci - 2 && Math.abs(x) < RUA_FORA.co + 2)) continue;   // o entorno: as ruas que dobram e os quarteirões das esquinas
         arvore(x, z, 1 + rnd() * 0.9, false);
       }
       addMalha(G, 0, 0); }
@@ -1944,7 +2054,8 @@
     const cx = (VARZEA_L.x0 + VARZEA_L.x1) / 2, cz = (VARZEA_L.z0 + VARZEA_L.z1) / 2;
     return {
       cx, cz, portao: { x: 89, z: -8 },
-      casa: { x0: cx - 1.7, x1: cx + 1.7, z0: VARZEA.z0 + 1.8, z1: VARZEA.z0 + 3.8 },          // a casinha da escada (a porta olha para leste)
+      casa: { x0: cx - 1.7, x1: cx + 1.7, z0: VARZEA.z0 + 1.8, z1: VARZEA.z0 + 3.8 },          // a casinha da escada, no desenho "de pé" (porta para +x)...
+      giro: -Math.PI / 2,                                                                    // ...girada 90° em volta do centro: a porta olha para o campo (sul)
       bancos: [cx - 8, cx + 8].map((x) => ({ x, z: VARZEA.z0 + 3.95 })),                    // os bancos de reserva (de frente para o campo)
       arq: [[VARZEA.x0 + 5.5, 86 - 0.5], [92 + 0.5, VARZEA.x1 - 5.5]],                       // os dois lances da arquibancada (x), um de cada lado do portão
       filas: [{ z: VARZEA.z1 + 0.65, h: 0.45 }, { z: VARZEA.z1 + 1.55, h: 0.9 }],            // fila 1 (encostada na cerca) e fila 2 (mais alta)
@@ -1952,8 +2063,10 @@
     };
   })();
   function montarVarzeaCampeonato() {
-    const G = new Geo(), C = VZ.casa, CONC = '#a9a79f', CONC2 = '#8c8a83', MAD = '#a87844', MAD2 = '#9a6b3c', PE = '#6b4a2b';
-    // --- a casinha da escada: cunha de concreto (2,3 m na porta, 0,7 m no fundo), laje inclinada, verga e os degraus descendo no escuro
+    const G0 = new Geo(), C = VZ.casa, CONC = '#a9a79f', CONC2 = '#8c8a83', MAD = '#a87844', MAD2 = '#9a6b3c', PE = '#6b4a2b';
+    // --- a casinha da escada: cunha de concreto (2,3 m na porta, 0,7 m no fundo), laje inclinada, verga e os degraus descendo no escuro.
+    //   Desenhada "de pé" (porta para +x) numa malha própria, que gira em volta do centro (VZ.giro): a porta fica de frente para o campo.
+    let G = new Geo();
     const hA = 2.3, hB = 0.7, x0 = C.x0, x1 = C.x1, z0 = C.z0, z1 = C.z1, e = 0.15;
     const hy = (x) => hB + (hA - hB) * (x - x0) / (x1 - x0);
     for (const [za, zb, fora] of [[z0, z0 + e, -1], [z1 - e, z1, 1]]) {               // as duas paredes de lado (trapézios com espessura)
@@ -1970,7 +2083,11 @@
     G.box(0.16, 0.34, z1 - z0 - 2 * e, CONC2, x1 - 0.08, hA - 0.34, (z0 + z1) / 2);    // a verga da porta
     [[x1 - 0.25, '#5e5b54'], [x1 - 0.75, '#3d3a35'], [x1 - 1.25, '#25221f'], [x1 - 1.95, '#12100e'], [x0 + 0.6, '#080706']].forEach(([x, cor], i) => G.box(i < 3 ? 0.5 : 0.9, 0.02, z1 - z0 - 2 * e, cor, x, 0.005, (z0 + z1) / 2));
     G.box(0.02, hB - 0.04, z1 - z0 - 2 * e, '#080706', x0 + e + 0.02, 0.02, (z0 + z1) / 2);
-    bloquear(x0 - 0.05, x1 + 0.05, z0 - 0.05, z1 + 0.05, hA);
+    { const ccx = (x0 + x1) / 2, ccz = (z0 + z1) / 2, piv = new THREE.Group(), m = G.malha(MAT);
+      piv.position.set(ccx, 0, ccz); piv.rotation.y = VZ.giro || 0; m.position.set(-ccx, 0, -ccz); piv.add(m); S.grupo.add(piv);
+      const c = Math.abs(Math.cos(VZ.giro || 0)), sn = Math.abs(Math.sin(VZ.giro || 0)), hx = ((x1 - x0) * c + (z1 - z0) * sn) / 2, hz = ((x1 - x0) * sn + (z1 - z0) * c) / 2;
+      bloquear(ccx - hx - 0.05, ccx + hx + 0.05, ccz - hz - 0.05, ccz + hz + 0.05, hA); }
+    G = G0;
     // --- os bancos de reserva: assento, encosto e os pés de madeira
     for (const B of VZ.bancos) {
       G.box(5, 0.07, 0.6, MAD, B.x, 0.38, B.z); G.box(5, 0.3, 0.06, MAD2, B.x, 0.7, B.z - 0.33);
@@ -2272,7 +2389,7 @@
       const k = (Math.floor(p.x / 4)) + ',' + (Math.floor(p.z / 4)); if (!S.plantas.grade.has(k)) S.plantas.grade.set(k, []); S.plantas.grade.get(k).push(p);
       matrizPlanta(p); cor.setRGB(p.t, p.t * (0.95 + Math.random() * 0.1), p.t); meshes[p.tipo].setColorAt(p.i, cor);
     }
-    for (const m of meshes) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; S.grupo.add(m); }
+    for (const m of meshes) { m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true; m.frustumCulled = false; S.grupo.add(m); }   // a caixa de corte do InstancedMesh é a de UMA planta na origem: com o corte ligado, todas sumiam juntas conforme a câmera
   }
   function matrizPlanta(p) {
     const P = S.plantas, ang = Math.hypot(p.bx, p.bz);
@@ -2794,7 +2911,7 @@
     let m = null, opt = null;
     try { if (S.f2 && S.f2.modeloPessoa) { const r = S.f2.modeloPessoa({ ap, fem, roupa, cores }); m = r.m; opt = r.opt; } } catch (e) { console.warn('[Cidade] NPC:', e); }
     if (!m) { opt = Object.assign({ camisa: cores[0], listra: cores[2], gola: cores[2], calcao: cores[1], meia: '#f2f2ee', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1, cabecao: 1, escala: 1 }, ap); m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false; }
-    S.grupo.add(m.raiz); S.meus.add(m);
+    S.grupo.add(m.raiz); S.meus.add(m); m.novo = 1;
     const A = { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1.2, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'parado' };
     S.npcs.push(A); return A;
   }
@@ -2911,7 +3028,7 @@
   function naRodaRacha(A, R, i, n) {                                     // já está jogando (carregou no meio da janela)
     const v = vagaNaRoda(R, i); A.x = v.x; A.z = v.z; A.y = R.y; A.yaw = A.yawAlvo = Math.atan2(-(R.cz - v.z), R.cx - v.x);
     A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: Infinity, ang: (i / Math.max(2, n)) * Math.PI * 2 }; R.jog.push(A);
-    if (R.jog.length === 1 || !R.bola || !R.bola.mesh.visible) { const B = bolaDaRoda(R); B.x = A.x + Math.cos(A.yaw) * 0.42; B.z = A.z - Math.sin(A.yaw) * 0.42; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
+    if (R.jog.length === 1 || !R.bola || !R.bola.mesh.visible) { const B = bolaDaRoda(R); B.x = A.x + Math.cos(A.yaw) * 0.42; B.z = A.z - Math.sin(A.yaw) * 0.42; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; mostrarBolaRoda(R, B); }
   }
   function tickRacha() {
     if (S.dentro || !S.rede || !S.casas) return;
@@ -3795,6 +3912,7 @@
     const m = A.m, t = A.t || 0, g = A.gesto;
     if (g === 'acena') { m.bracoD.rotation.z = 2.7; m.bracoD.rotation.x = -0.35 + Math.sin(t * 11) * 0.32; usarCotovelo(m.bracoD, 0, 0.3); }
     else if (g === 'abraco') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.45; b.rotation.x = s * 0.5; usarCotovelo(b, 0, 1.0); } m.corpo.rotation.z = -0.03; }
+    else if (g === 'tocaAqui') { const k = Math.min(1, t / 0.35); m.bracoD.rotation.z = 0.2 + 2.0 * k; m.bracoD.rotation.x = 0.4 * k; usarCotovelo(m.bracoD, 0, 0.2 + 0.4 * (1 - k)); }   // o toca aqui: a direita sobe e encontra a do outro
     else if (g === 'aperto') { m.bracoD.rotation.z = 1.0 + Math.sin(t * 13) * 0.09; m.bracoD.rotation.x = -0.18; usarCotovelo(m.bracoD, 0, 0.35); }   // (6.6.19) aperto de mão (a direita para a frente, balançando)
     else if (g === 'beijo') { for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.25; b.rotation.x = s * 0.4; usarCotovelo(b, 0, 0.8); } m.corpo.rotation.z = -0.05; if (m.cabecaLigada) usarCabeca(m, -0.06); }
     else if (g === 'selfie') {                                         // (6.6.5) celular lá no alto, na frente (a mão direita), olhando para ele
@@ -3820,7 +3938,7 @@
   }
   function sombraAtor(raio) {
     const b = new THREE.Mesh(S.geoSombra || (S.geoSombra = guardar(new THREE.CircleGeometry(1, 12))), S.matSombra || (S.matSombra = guardar(new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.32, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }))));
-    b.scale.set(raio, raio, 1); b.rotation.x = -Math.PI / 2; S.grupo.add(b); return b;
+    b.scale.set(raio, raio, 1); b.rotation.x = -Math.PI / 2; b.position.y = -50; S.grupo.add(b); return b;   // nasce embaixo do chão: só aparece quando o dono a coloca no lugar
   }
   function criarJogador(f2, H, extra) {
     let m = null, opt = null;
@@ -3854,7 +3972,7 @@
       opt = Object.assign({ camisa: pk(PAL_BLUSA), listra: '#f2f2ee', gola: '#f2f2ee', calcao: pk(PAL_CALCA), meia: '#f2f2ee', sola: '#e6e6e0', corTexto: '#F2F2EE', numero: '', nome: ' ', fundoNome: 'rgba(0,0,0,0)', manga: 0, meiao: 1 }, ap, { cabecao: 1, escala: 1, barba: fem ? 0 : ap.barba });
       m = makeAthlete(opt); m.etiqueta.visible = false; m.sombra.visible = false;
     }
-    S.grupo.add(m.raiz); S.meus.add(m);
+    S.grupo.add(m.raiz); S.meus.add(m); m.novo = 1;
     const P = { m, opt, ap, blob: sombraAtor(0.32), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: rnd() * 6, vel: 1.15 + rnd() * 0.4, t: rnd() * 10, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: 'anda' };
     if (esporte) { P.esporte = true; P.vel = 2.7 + rnd() * 0.6; P.correndo = true; }   // o esportivo trota (2,7–3,3 m/s)
     return P;
@@ -3866,8 +3984,9 @@
     const liga = (a, b) => { if (a === b) return; if (!nos[a].viz.includes(b)) nos[a].viz.push(b); if (!nos[b].viz.includes(a)) nos[b].viz.push(a); };
     const linha = (pts) => { let ant = no(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) { const [x0, z0] = pts[i - 1], [x1, z1] = pts[i], n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / 10)); for (let k = 1; k <= n; k++) { const c = no(x0 + (x1 - x0) * k / n, z0 + (z1 - z0) * k / n); liga(ant, c); ant = c; } } };
     const cx = PRACA_C.x, cz = PRACA_C.z, ZN = -4.2, ZS = 8.1, XW = -58.4, XE = 57, XF = cx;
-    linha([[-116, ZN], [XW, ZN], [XF, ZN], [XE, ZN], [116, ZN]]);                    // calçada norte
-    linha([[-116, ZS], [XW, ZS], [XF, ZS], [XE, ZS], [116, ZS]]);                    // calçada sul
+    const XR = (RUA_FORA.ci + RUA_FORA.a0) / 2, ZR = RUA_FORA.zf - 4;                // a calçada de dentro da rua que dobra (fora da cidade)
+    linha([[-XR, -ZR], [-XR, ZN], [-116, ZN], [XW, ZN], [XF, ZN], [XE, ZN], [116, ZN], [XR, ZN], [XR, -ZR]]);   // calçada norte (nas pontas dobra para o norte)
+    linha([[-XR, ZR], [-XR, ZS], [-116, ZS], [XW, ZS], [XF, ZS], [XE, ZS], [116, ZS], [XR, ZS], [XR, ZR]]);     // calçada sul (nas pontas dobra para o sul)
     linha([[XF, ZN], [XF, ZS]]);                                                     // faixa de pedestre
     linha([[XW, ZN], [XW, -35.8], [XW, -72]]); linha([[XW, ZS], [XW, 38.2]]);              // rua de terra oeste (antes ela atravessava o lago até z 72)
     { const T = trilhaLago(), perto = (x, z) => T.reduce((b, p) => (Math.hypot(p[0] - x, p[1] - z) < Math.hypot(b[0] - x, b[1] - z) ? p : b), T[0]);   // (6.6.0) a trilha do lago
@@ -3947,8 +4066,9 @@
   //   andando ele trava ninguém (o roteiro não desvia de pedestre).
   const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || (S.modo === 'cena' ? false : J.andando || S.modo !== 'livre'); };
   function livreNPC(x, z, A, semJog, ignorarGente) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
     if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
-    else if (x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) return false;
+    else if ((x < LIM.x0 + 1 || x > LIM.x1 - 1 || z < LIM.z0 + 1 || z > LIM.z1 - 1) && !naRuaFora(x, z)) return false;
     if (!S.dentro && z > AV.z0 - 0.05 && z < AV.z1 + 0.05 && !(x > 7.7 && x < 11.9)) return false;      // no asfalto, só pela faixa de pedestre
     const rr = 0.28;
     for (const b of S.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
@@ -4050,7 +4170,7 @@
     if (d0 < 0.6) {                                                  // chegou no nó: escolhe o próximo (não volta, a não ser que seja ponta)
       if (A.cool <= 0 && !S.dentro && !A.faixaE) { decidirDestino(A); if (A.dest) return; }               // de cada 10 pedestres que decidem, 5 entram num lugar
       const op = N.viz.filter((i) => i !== A.ant), atrav = N.faixa ? op.find((i) => S.rede[i].faixa) : undefined, prox = A.faixaE && A.faixaE.no === A.alvo && A.faixaE.prox != null ? A.faixaE.prox : atrav != null && Math.random() < 0.7 ? atrav : op.length ? op[Math.floor(Math.random() * op.length)] : A.ant;   // na ponta da faixa: 7 em 10 atravessam
-      if (A.tipo === 'anda' && borda(N) && Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80) { reciclarPedestre(A); return; }   // saiu pela ponta do mapa
+      if (A.tipo === 'anda' && borda(N) && (Math.hypot(A.x - S.jog.x, A.z - S.jog.z) > 80 || (N.viz.length === 1 && Math.abs(N.x) > RUA_FORA.ci))) { reciclarPedestre(A); return; }   // saiu pela ponta do mapa (a da rua que dobra fica escondida: some sempre)
       if (N.faixa && S.rede[prox].faixa) {                           // vai atravessar: para na beira, estica o braço para o carro e espera ele PASSAR
         if (!A.faixaE) A.faixaE = novaEsperaFaixa(); A.faixaE.no = A.alvo; A.faixaE.prox = prox;
         if (esperaFaixa(A, S.rede[prox].x, S.rede[prox].z, dt)) return;
@@ -4224,6 +4344,7 @@
   }
   const RJ = 0.38;                                                    // o corpo do jogador (ombros e braços): com 0,3 metade do braço entrava nos móveis
   function livre(x, z) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
     if (S.dentro) { const L = S.dentro.lim; if (x < L.x0 || x > L.x1 || z < L.z0 || z > L.z1) return false; }
     else if (x < LIM.x0 + 1.5 || x > LIM.x1 - 1.5 || z < LIM.z0 + 1.5 || z > LIM.z1 - 1.5) return false;
     for (const b of S.col) if (x > b.x0 - RJ && x < b.x1 + RJ && z > b.z0 - RJ && z < b.z1 + RJ) return false;
@@ -4264,7 +4385,9 @@
     const fx = -sy, fz = -cy, rx = cy, rz = -sy;                     // frente (da câmera para o jogador) e direita
     const dx = rx * e.ix - fx * e.iy, dz = rz * e.ix - fz * e.iy, dl = Math.hypot(dx, dz) || 1;
     const vel = (V ? CORRER * V.mult * Math.min(1, e.m / 0.85) : corre ? CORRER : ANDAR * Math.max(0.35, e.m)) * fVel() * cafeMult(), sp = vel * dt;   // (5.6.0) café: mais rápido
+    if (!Number.isFinite(sp) || !Number.isFinite(dx) || !Number.isFinite(dz)) { J.andando = false; J.correndo = false; return; }   // entrada ou velocidade inválida: não anda (senão a posição virava NaN)
     const nx = J.x + dx / dl * sp, nz = J.z + dz / dl * sp, x0 = J.x, z0 = J.z;
+    if (!S.dentro && !V && S.modo === 'livre' && (nx < LIM.x0 + 3 || nx > LIM.x1 - 3 || nz < LIM.z0 + 3 || nz > LIM.z1 - 3)) { voltarDaBorda(); return; }   // a borda do mundo: ele mesmo desiste e volta
     let moveu = false;
     if (livre(nx, J.z)) { J.x = nx; moveu = true; }
     if (livre(J.x, nz)) { J.z = nz; moveu = true; }
@@ -4275,7 +4398,7 @@
     if (moveu) for (const A of S.npcs) {
       if (A.oculto || A.sentado || A.deitado || !(A.esbarrao > 0.05)) continue;
       const ax = J.x - A.x, az = J.z - A.z, d = Math.hypot(ax, az);
-      if (d >= 0.58) continue;
+      if (!(d < 0.58)) continue;                                        // (NaN também pula)
       A.esbarrao = Math.max(A.esbarrao, 0.3); if (!temRotina(A)) A.travaE = Math.max(A.travaE || 0, 0.3);
       const sx = -dz / dl, sz = dx / dl, lado = Math.sign(ax * sx + az * sz) || 1, f = (1 - d / 0.58) * 2.4 * dt;
       const px = J.x + sx * lado * f, pz = J.z + sz * lado * f;
@@ -4286,6 +4409,22 @@
     // (6.1.0) de bicicleta: andou bem menos do que devia (bateu de frente em parede, poste, carro...) → cai
     if (V) { const real = Math.hypot(J.x - x0, J.z - z0); if (e.m > 0.45 && real < sp * 0.5) V.bloq = (V.bloq || 0) + dt; else V.bloq = 0; if (V.bloq > 0.06 && V.bater) V.bater(); }
   }
+  // O FIM DO MUNDO SEM PAREDE: chegando perto da borda, ele para, vira para dentro, volta uns passos e diz que é melhor não sair da cidade
+  async function voltarDaBorda() {
+    if (S.voltandoBorda) return; S.voltandoBorda = true;
+    const J = S.jog; S.modo = 'cena'; UI.ctl.hidden = true; J.andando = false; J.correndo = false;
+    try {
+      const cx = clamp(J.x, LIM.x0 + 12, LIM.x1 - 12), cz = clamp(J.z, LIM.z0 + 12, LIM.z1 - 12);
+      const dx = cx - J.x, dz = cz - J.z, d = Math.hypot(dx, dz) || 1, ux = dx / d, uz = dz / d;
+      let alvo = null; for (const k of [4, 3, 2, 1.2]) { const tx = J.x + ux * k, tz = J.z + uz * k; if (livre(tx, tz)) { alvo = [tx, tz]; break; } }
+      J.yawAlvo = Math.atan2(-uz, ux); await esperar(260);
+      const volta = alvo ? andar(J, [alvo], 1.5) : Promise.resolve();
+      await fala('jog', T('É melhor eu não sair da cidadezinha.'));
+      await volta; Dialogo.esconder();
+    } catch (e) { console.error('[Cidade] borda:', e); }
+    S.voltandoBorda = false;
+    if (S && S.ativo && S.modo === 'cena') liberar();
+  }
   // (6.6.17) CORPO NAS CENAS: o jogador e a Lúcia nunca se atravessam. Cada corpo é uma elipse (0,24 m para a frente e para trás,
   //   0,40 m para os lados, com os braços); a distância mínima entre os dois é a soma dos "raios" na direção de um para o outro.
   //   Andando pelo roteiro (andar), quem esbarra no outro contorna (desliza em volta, para o lado do destino) e, se o ponto de chegada
@@ -4293,7 +4432,8 @@
   const CORPO_FRENTE = 0.24, CORPO_LADO = 0.4, CORPO_FOLGA = 0.03;
   function raioCorpo(A, ux, uz) {                                      // o raio da elipse do corpo na direção (ux, uz) (unitária)
     const fx = Math.cos(A.yaw || 0), fz = -Math.sin(A.yaw || 0), c = ux * fx + uz * fz, sn = ux * fz - uz * fx, a = CORPO_FRENTE, b = CORPO_LADO;
-    return a * b / Math.sqrt((b * c) * (b * c) + (a * sn) * (a * sn));
+    const q = (b * c) * (b * c) + (a * sn) * (a * sn);
+    return q > 1e-12 ? a * b / Math.sqrt(q) : b;                        // sem direção (os dois no mesmo ponto): sem isso dá infinito e a posição vira NaN
   }
   function distCorpos(A, B, ux, uz) { return raioCorpo(A, ux, uz) + raioCorpo(B, -ux, -uz) + CORPO_FOLGA; }
   const encostados = (A, B) => ['abraco', 'beijo'].includes(A.gesto) || ['abraco', 'beijo'].includes(B.gesto) || (A.sentado && B.sentado);
@@ -4302,10 +4442,10 @@
     return L;
   }
   // depois do passo de quem segue um roteiro (A): se entrou no corpo de B, volta para a borda e escorrega para o lado do destino
-  function contornar(A, B, x0, z0, alvo) {
+  function contornarCorpo(A, B, x0, z0, alvo) {   // (nome próprio: contornar(A, dx, dz, d) é o desvio dos pedestres)
     let dx = A.x - B.x, dz = A.z - B.z, d = Math.hypot(dx, dz);
-    if (d < 1e-4) { dx = x0 - B.x; dz = z0 - B.z; d = Math.hypot(dx, dz) || 1; }
-    const ux = dx / d, uz = dz / d, need = distCorpos(A, B, ux, uz); if (d >= need) return false;
+    if (d < 1e-4) { dx = x0 - B.x; dz = z0 - B.z; d = Math.hypot(dx, dz); if (d < 1e-4) { dx = -Math.cos(B.yaw || 0); dz = Math.sin(B.yaw || 0); d = 1e-4; } else d = Math.max(d, 1e-4); }
+    const dl = Math.hypot(dx, dz) || 1, ux = dx / dl, uz = dz / dl, need = distCorpos(A, B, ux, uz); if (!(d < need)) return false;
     const queria = Math.hypot(A.x - x0, A.z - z0);
     A.x = B.x + ux * need; A.z = B.z + uz * need;
     if (alvo && Math.hypot(A.x - x0, A.z - z0) < queria * 0.5) {        // de frente, quase não andou: dá a volta pelo lado do destino
@@ -4317,8 +4457,10 @@
   }
   // o ponto de chegada do roteiro não pode ficar dentro do outro: puxa para a borda (do lado de onde se vem)
   function chegadaLivre(A, B, p) {
-    const dx = p.x - B.x, dz = p.z - B.z, d = Math.hypot(dx, dz), ux = d > 1e-4 ? dx / d : (A.x - B.x) / (Math.hypot(A.x - B.x, A.z - B.z) || 1), uz = d > 1e-4 ? dz / d : (A.z - B.z) / (Math.hypot(A.x - B.x, A.z - B.z) || 1);
-    const need = distCorpos(A, B, ux, uz); if (d >= need) return;
+    const dx = p.x - B.x, dz = p.z - B.z, d = Math.hypot(dx, dz), dA = Math.hypot(A.x - B.x, A.z - B.z);
+    let ux = d > 1e-4 ? dx / d : dA > 1e-4 ? (A.x - B.x) / dA : 0, uz = d > 1e-4 ? dz / d : dA > 1e-4 ? (A.z - B.z) / dA : 0;
+    if (!ux && !uz) { ux = -Math.cos(B.yaw || 0); uz = Math.sin(B.yaw || 0); }   // tudo no mesmo ponto: fica de frente para ela
+    const need = distCorpos(A, B, ux, uz); if (!(d < need)) return;
     p.x = B.x + ux * need; p.z = B.z + uz * need;
   }
   function corpoNaCena(A, x0, z0) {                                    // A acabou de andar (de x0, z0) pelo roteiro
@@ -4328,7 +4470,7 @@
       if (!B || B === A || encostados(A, B) || (B.m && B.m.raiz && B.m.raiz.visible === false && !S.meus.has(B.m))) continue;
       const fim = A.rota && A.rota.length ? A.rota[A.rota.length - 1] : null;
       if (fim && A.rota.length === 1) chegadaLivre(A, B, fim);
-      contornar(A, B, x0, z0, fim);
+      contornarCorpo(A, B, x0, z0, fim);
     }
   }
   // no roteiro (andar), a animação segue a velocidade: andando até 3,2 m/s, correndo acima (antes o "correndo" que sobrava do
@@ -4762,6 +4904,20 @@
   // POSIÇÃO INVÁLIDA (NaN): a conta de algum caminho estourou. Sem isto o boneco ficava trocando de estado a cada quadro (perto/longe,
   //   congelado/solto, guarda-chuva cria/apaga): aparecia e sumia sem parar e derrubava o desempenho. Volta para a última posição boa,
   //   larga o caminho que deu errado e avisa no console uma vez por tipo (para achar a origem).
+  // o jogador (e a câmera) com conta errada (NaN/infinito): volta para o último lugar bom. Sem isso a câmera ia para NaN, a tela ficava
+  //   de uma cor só, a seta mostrava "NaN m" e o jogo parecia travado
+  function socorrerJogador() {
+    const J = S.jog, C = S.cam; if (!J) return;
+    if (Number.isFinite(J.x) && Number.isFinite(J.z) && Number.isFinite(J.y) && Number.isFinite(J.yaw)) { J._okx = J.x; J._okz = J.z; J._oky = J.y; J._okyaw = J.yaw; }
+    else {
+      if (!S.avisouNaN) { S.avisouNaN = true; console.warn('[Cidade] posição do jogador inválida, voltando ao último ponto bom', { x: J.x, z: J.z, y: J.y, modo: S.modo, dentro: S.dentro && S.dentro.nome }); }
+      const ok = Number.isFinite(J._okx) && Number.isFinite(J._okz);
+      J.x = ok ? J._okx : (S.dentro ? 0 : SPAWN.x); J.z = ok ? J._okz : (S.dentro ? 0 : -4.9); J.y = Number.isFinite(J._oky) ? J._oky : 0; J.yaw = J.yawAlvo = Number.isFinite(J._okyaw) ? J._okyaw : 0;
+      J.rota = null; J.andando = false; J.correndo = false; J.vel = 0; if (J.rotaRes) { const r = J.rotaRes; J.rotaRes = null; r(); }
+      if (J.m && J.m.raiz) J.m.raiz.position.set(J.x, J.y, J.z); if (J.anel) J.anel.position.set(J.x, J.y + 0.03, J.z); C.snap = true;
+    }
+    if (!Number.isFinite(C.yaw)) C.yaw = 0; if (!Number.isFinite(C.dist) || C.dist <= 0) C.dist = 6; if (!Number.isFinite(C.dAt)) C.dAt = C.dist; if (C.pitch != null && !Number.isFinite(C.pitch)) C.pitch = 0.48;
+  }
   function socorrerPosicao(A) {
     const J = S.jog, ok = Number.isFinite(A._okx) && Number.isFinite(A._okz);
     let x = ok ? A._okx : null, z = ok ? A._okz : null;
@@ -5449,9 +5605,14 @@
     const h1 = (API.historia.ler('fase1')) || {};
     return { mariposa: !!h1.mariposa, falou: !!h1.lucia };
   }
+  // o emprego mora no save da fase2. Ler o save inteiro (JSON) dezenas de vezes por quadro pesava muito com um save grande:
+  //   guarda a resposta por meio segundo (e esquece na hora em que a própria cidade muda o emprego)
   function empregoEscolhido() {
-    const h2 = API.historia.ler('fase2');
-    return (h2 && h2.emprego) || null;
+    const agora = performance.now(), c = S && S.cacheEmprego;
+    if (c && agora - c.t < 500) return c.v;
+    const h2 = API.historia.ler('fase2'), v = (h2 && h2.emprego) || null;
+    if (S) S.cacheEmprego = { t: agora, v };
+    return v;
   }
   const TIERS = [                                 // ordem fixa da mistura: cada um nasce de dois do tier anterior
     { nome: 'Cafezinho preto', cor: '#3a2213', creme: false, cacau: false, chantilly: false, chocBorda: false },
@@ -6064,7 +6225,7 @@
     return {
       tocar() {
         const A = typeof Som !== 'undefined' ? Som.audio : null; if (!A || bus) return;
-        try { if (typeof Musica !== 'undefined' && Musica.tocando) Musica.parar(); } catch (e) { /* nada */ }
+        try { if (typeof Musica !== 'undefined') Musica.parar(); } catch (e) { /* nada */ }
         const c = A.ctx; if (c.state === 'suspended') c.resume();
         bus = c.createGain(); bus.gain.value = 0; bus.connect(A.musica || A.mestre); bus.gain.linearRampToValueAtTime(0.75, c.currentTime + 1.2);
         comp = 0; prox = c.currentTime + 0.15; laco(); timer = setInterval(laco, 200);
@@ -6373,7 +6534,7 @@
   // ---- a conversa do encontro. io: { nome, fala(q, t), escolha(titulo, ops), somar(n), trabalha, emprego, final: 'comer' | 'passar' }
   async function roteiroEncontro(io) {
     const R = { demissao: false }, L = (t) => io.fala('lucia', t), J = (t) => io.fala('jog', t);
-    const oi = Tf('Oi, {0}! Que bom que você veio!', io.nome);
+    const oi = io.local === 'casa' ? Tf('Que cantinho aconchegante, {0}! Obrigada por me chamar pra vir aqui.', io.nome) : Tf('Oi, {0}! Que bom que você veio!', io.nome);   // na casa do jogador quem chegou foi ela
     await L(oi);
     const r0 = await io.escolha(oi, [T('Você está linda hoje.'), T('Como você está?'), T('(Não dizer nada)')]);
     if (r0 === 0) { await J(T('Você está linda hoje.')); await L(T('A-ah... obrigada! Você também está muito bem.')); await io.somar(5); }
@@ -6581,7 +6742,7 @@
     // demissão: o emprego vira a cafeteria a partir de amanhã (a mensagem do trabalho antigo chega quando ele acorda)
     const antigo = empregoEscolhido();
     if (R.demissao && antigo && antigo !== 'cafeteria') {
-      try { const h2 = API.historia.ler('fase2') || {}; API.historia.gravar('fase2', Object.assign({}, h2, { emprego: 'cafeteria' })); } catch (e) { console.warn('[Cidade] demissão:', e); }
+      try { const h2 = API.historia.ler('fase2') || {}; API.historia.gravar('fase2', Object.assign({}, h2, { emprego: 'cafeteria' })); S.cacheEmprego = null; } catch (e) { console.warn('[Cidade] demissão:', e); }
       d.luciaContratou = { de: antigo, dia: (d.dia || 1) + (d.hora >= 12 ? 1 : 0) }; d.luciaApresentou = false; d.luciaConheceu = true;
     }
     d.encontros = (d.encontros | 0) + 1; d.encontroLucia = null;
@@ -6783,6 +6944,27 @@
     L.yawAlvo = 0; J.yawAlvo = Math.PI;                                                     // um de frente para o outro
     await esperar(500);
     await fala('lucia', T('Mas eu preciso te falar uma coisa...'));
+    // ainda não saíram juntos (nenhum encontro, sem namoro): a conversa é de amigos, sem clima de romance
+    const amigos = !(d.encontros | 0) && !d.namorando && !(d.encontroLucia && d.encontroLucia.feito);
+    if (amigos) {
+      const q = fem() ? T('Eu só consegui porque tive uma amiga do meu lado. Toda vez que eu pensei em desistir, você me botou pra cima.') : T('Eu só consegui porque tive um amigo do meu lado. Toda vez que eu pensei em desistir, você me botou pra cima.');
+      await fala('lucia', q);
+      const primeiro = fem() ? T('Então eu quero ser a primeira cliente!') : T('Então eu quero ser o primeiro cliente!');
+      const ra = await Escolha.mostrar(q, [T('Pra que servem os amigos?'), primeiro, T('(Dar um toca aqui)')]);
+      Dialogo.esconder();
+      if (ra === 2) {                                                                       // o toca aqui: um passo para perto, as duas mãos lá em cima
+        const mx = CONF.x - 0.025;
+        L.x = mx - 0.45; J.x = mx + 0.45; L.gesto = J.gesto = 'tocaAqui'; L.t = J.t = 0;
+        await esperar(380); try { if (typeof Som !== 'undefined' && Som.clique) Som.clique(); } catch (e) { /* sem som */ }
+        await esperar(900);
+        L.gesto = J.gesto = null; L.x = xL; J.x = xJ;
+        await fala('lucia', Tg('Isso aí! Valeu mesmo, viu? Você é demais.'));
+      } else {
+        await fala('jog', ra === 0 ? T('Pra que servem os amigos?') : primeiro);
+        await fala('lucia', ra === 0 ? (fem() ? T('Haha, nem vem! Você é a melhor amiga que alguém podia ter.') : T('Haha, nem vem! Você é o melhor amigo que alguém podia ter.')) : T('Fechado! Vou guardar o pedaço mais bonito pra você.'));
+      }
+    }
+    if (!amigos) {
     await fala('lucia', T('Eu só consegui por sua causa. Toda vez que eu duvidei de mim, você estava do meu lado.'));
     const r = await Escolha.mostrar(T('Eu só consegui por sua causa. Toda vez que eu duvidei de mim, você estava do meu lado.'), [T('Você conseguiu sozinha. Eu só torci.'), T('Eu sempre soube que você ia conseguir!'), T('(Abraçar a Lúcia)')]);
     Dialogo.esconder();
@@ -6796,6 +6978,7 @@
       await fala('jog', r === 0 ? T('Você conseguiu sozinha. Eu só torci.') : T('Eu sempre soube que você ia conseguir!'));
       await fala('lucia', r === 0 ? T('Torceu mais do que todo mundo. Isso conta muito pra mim.') : T('Para... assim eu choro aqui na frente dos clientes, haha.'));
       coracoes(L.x, 1.85, L.z);
+    }
     }
     await fala('lucia', Tf('Cada fatia custa {0} fakes. Pra você eu até faria de graça... mas aí eu ia falir, haha.', precoAmizade('lucia', PRECO_BOLO)));
     await fala('lucia', T('Quando quiser um bolo, é só vir na vitrine ou falar comigo no caixa!'));
@@ -8549,7 +8732,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         A.dest = { tipo: 'bola', R, fase: 'joga', rota: [], t: 0, fim: S.t + 60 + Math.random() * 200, ang: (i / Math.max(2, n)) * Math.PI * 2 }; if (!pegar) S.npcs.push(A);
       }
       if (!R.jog.length) continue;
-      const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0; B.voa = B.rola = false; B.mesh.visible = B.sombra.visible = true;
+      const B = bolaDaRoda(R), P = R.jog[0]; B.x = P.x + Math.cos(P.yaw) * 0.42; B.z = P.z - Math.sin(P.yaw) * 0.42; B.y = R.y + 0.15; R.dono = P; R.t = 0; B.voa = B.rola = false; mostrarBolaRoda(R, B);
     }
   }
   // termina o que estava fazendo (e o par, junto)
@@ -8798,9 +8981,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function bolaDaRoda(R) {
     if (R.bola) return R.bola;
     const mesh = new THREE.Mesh(S.geoBolaR || (S.geoBolaR = guardar(new THREE.SphereGeometry(0.15, 12, 8))), S.matBolaR || (S.matBolaR = guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) }))));
-    S.grupo.add(mesh);
-    return (R.bola = { mesh, sombra: sombraAtor(0.17), x: R.cx, y: R.y + 0.15, z: R.cz, vx: 0, vy: 0, vz: 0, voa: false, rola: false, alvo: null });
+    S.grupo.add(mesh); mesh.visible = false; mesh.position.set(R.cx, R.y + 0.15, R.cz);
+    const sombra = sombraAtor(0.17); sombra.visible = false; sombra.position.set(R.cx, R.y + 0.02, R.cz);
+    return (R.bola = { mesh, sombra, x: R.cx, y: R.y + 0.15, z: R.cz, vx: 0, vy: 0, vz: 0, voa: false, rola: false, alvo: null });
   }
+  // a bola aparece JÁ no lugar dela (mostrada antes de ir para o pé de quem pegou, passaria um quadro no meio da rua)
+  function mostrarBolaRoda(R, B) { B.mesh.position.set(B.x, B.y, B.z); B.sombra.position.set(B.x, R.y + 0.02, B.z); B.mesh.visible = B.sombra.visible = true; }
   function tickBolaNPC(A, dt) {
     const D = A.dest, R = D.R;
     if (D.fase === 'ir') {
@@ -8809,7 +8995,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       if (!A.racha && (!rodaSegue(R) || R.jog.length >= MAX_RODA)) { sairDaRoda(A); return; }
       D.fase = 'joga'; D.fim = A.racha ? Infinity : S.t + 150 + Math.random() * 270; R.jog.push(A); A.correndo = false;   // (6.6.15) fica de 2,5 a 7 minutos (antes 1 a 2,5: era só chegar e já ir)
       arrumarRoda(R);
-      if (R.jog.length === 1) { const B = bolaDaRoda(R); B.x = A.x; B.z = A.z + 0.4; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; B.mesh.visible = B.sombra.visible = true; }
+      if (R.jog.length === 1) { const B = bolaDaRoda(R); B.x = A.x; B.z = A.z + 0.4; B.y = R.y + 0.15; B.voa = B.rola = false; R.dono = A; R.t = 0; mostrarBolaRoda(R, B); }
       return;
     }
     if (D.fase === 'sai') {
@@ -8978,7 +9164,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
     atualizarCeu(); atualizarRelogioUI();
     if (typeof Cena !== 'undefined') Cena.marcar(S.modo === 'cena' && S.intro);   // só a chegada é cutscene (conversa no balcão e comemoração não)
-    for (const a of ATLETAS) a.raiz.visible = S.meus.has(a) && !a.longe;
+    // quem acabou de nascer fica na origem (no meio da avenida) até a primeira pose: só aparece depois de ir para o lugar dele
+    socorrerJogador();
+    for (const a of ATLETAS) { if (a.novo && ((a.raiz.position.x !== 0 || a.raiz.position.z !== 0) || ++a.novo > 4)) a.novo = 0; a.raiz.visible = S.meus.has(a) && !a.longe && !a.novo; }
     atualizarCamera(dt);
     particulas.atualizar(0);                                            // a chuva acompanha a câmera da cidade (o quadro do jogo já usou a câmera antiga)
   }
@@ -9006,7 +9194,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     document.body.classList.remove('cdAtivo');
     for (const k of ['ctl', 'arrasto', 'hud', 'esq', 'aviso', 'seta', 'mapa', 'pausa', 'ficha']) UI[k].hidden = true;
     UI.preto.hidden = true; UI.preto.classList.add('claro');
-    if (typeof Dialogo !== 'undefined') Dialogo.esconder(); Musica.parar();
+    if (typeof Dialogo !== 'undefined') Dialogo.esconder(); Musica.parar(); if (Musica.zerar) Musica.zerar();
     S = null;
   }
 
@@ -9069,6 +9257,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const fim = new Promise((r) => { S.fimRes = r; });
       const primeira = !dados.visitas; dados.visitas = (dados.visitas | 0) + 1;
       gravar('chegada');
+      if (Musica.zerar) Musica.zerar();
       Musica.tocar('jazz');
       const encFim = ctx.args && ctx.args.encontroFim;                 // voltou do encontro no quarto (fase2.js): a despedida na casa da Lúcia
       if (encFim) {
