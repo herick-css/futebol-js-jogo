@@ -2,9 +2,10 @@
    varzea.js — O CAMPEONATO DE VÁRZEA do Campo Henrique Antônio (módulo da cidade, como a barbearia.js).
    - Registrado com FutebolJS.registrarFase({ id: 'varzea' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade (cidade.js) baixa em segundo plano e chama criar(api) (api = apiVarzea() da cidade).
-   - O OLHEIRO: depois de 10 jogos bons (sintético + futsal, nota 8+), o Rafa (que joga no time do João no sintético) aparece
-     com a exclamação em frente ao portão da várzea e chama o jogador para o time do Peladão FC. Prêmio do campeão: 5.000 fakes,
-     divididos no time; a parte do jogador fica em PREMIO_JOG (625).
+   - O CONVITE: no fim do torneio de futsal (torneios.js), o Rafa (que joga no time do João no sintético e no do Biel no futsal) chama o
+     jogador para o time do Peladão FC (pessoalmente, ou por mensagem para quem não estava no último jogo) e já inscreve. Quem falta
+     recebe a bronca do Rafa com o placar e o próximo jogo; quem não foi a nenhum jogo da 1ª fase é cortado das eliminatórias.
+     Prêmio do campeão: 5.000 fakes, divididos no time; a parte do jogador fica em PREMIO_JOG (625).
    - O CAMPEONATO: 10 times (TIMES_VZ), todos contra todos em turno único (9 rodadas), os 4 melhores vão para a semifinal
      (1º x 4º e 2º x 3º, jogo único, empate vai para os pênaltis) e os dois vencedores fazem a final. Sábado às 14h e domingo
      às 10h (fora do horário de qualquer emprego: cafeteria 8–16h, mercado 14–22h nos dias úteis, pizzaria 17–24h).
@@ -27,6 +28,12 @@
   const BONS_PARA_OLHEIRO = 10;                                              // jogos bons (sintético + futsal) para o Rafa aparecer
   const H_SAB = 14, H_DOM = 10, DURACAO = 300;                               // horários dos jogos e a partida de 5 minutos
   const NOSSO = 'peladao';
+  const VACILO = [                                                           // as broncas do Rafa quando o jogador falta (as mesmas dos torneios: torneios.js)
+    'Pô, {0}, que vacilo! Você não apareceu no jogo...', 'Ô {0}, cadê você? A gente te esperou até o último minuto!', 'Vacilou, hein, {0}? O time inteiro perguntando de você.',
+    'Sério, {0}? Sumiu bem no dia do jogo...', '{0}, isso não se faz! A gente contava com você hoje.', 'Fala, {0}... ficou faltando você em campo. Vacilo!',
+    'Poxa, {0}, nem um aviso? A gente jogou com um a menos.', '{0}, você deu um bolo no time inteiro! Que vacilo...', 'Esperamos, esperamos... e nada de você, {0}. Vacilou feio.',
+    'Ô {0}, compromisso é compromisso! Seu nome tá na lista do time.',
+  ];
 
   // ============================================================================================ OS 10 TIMES
   //   setores: a média que cada setor tem (1 a 10) — gk goleiro, def defesa, mid meio, fwd ataque. forte/fraco: o comentário
@@ -366,7 +373,9 @@
     // ---------------------------------------------------------------- jogos bons (sintético + futsal) e o convite
     function jogosBons() { try { const C = api.carreira(); return (C.sintetico.bons | 0) + (C.futsal.bons | 0); } catch (e) { return 0; } }
     function ondeViu() { try { const C = api.carreira(); return (C.sintetico.j | 0) >= (C.futsal.j | 0) ? 'sintetico' : 'futsal'; } catch (e) { return 'sintetico'; } }
-    const rafaPodeAparecer = () => { const C = camp(), h = dados().hora; return ((C.etapa === 'nada' || C.etapa === 'recusou') && jogosBons() >= BONS_PARA_OLHEIRO || peneiraPendente()) && h >= 8 && h < 19.5 && !S().dentro; };
+    // o convite agora vem do Rafa no fim do torneio de futsal (torneios.js), com a inscrição automática: ele só espera na frente do portão
+    //   para falar da peneira (depois do campeonato) e para quem tinha recusado num save antigo
+    const rafaPodeAparecer = () => { const C = camp(), h = dados().hora; return (C.etapa === 'recusou' && jogosBons() >= BONS_PARA_OLHEIRO || peneiraPendente()) && h >= 8 && h < 19.5 && !S().dentro; };
     const peneiraPendente = () => { const C = camp(); return C.etapa === 'fim' && !!C.jogos && C.peneira !== 'convidado'; };
     function criarRafa() {
       const E = elencoVz(TIMES_VZ[NOSSO_I]), j = E.find((x) => x.nome === 'Rafa') || E[0];
@@ -481,7 +490,14 @@
     function jogoDeHoje() {
       const C = camp(); if (C.etapa !== 'ativo') return null;
       const g = proxNosso(C); if (!g || g.r < C.feitas) return null;
+      if (g.r > 8 && C.cortado) return null;                                // não foi a nenhum jogo da 1ª fase: cortado das eliminatórias
       return diaDa(C, g.r) === dados().dia ? g : null;
+    }
+    // (7.6.0) a hora do nosso jogo num dia (a cidade usa para acordar a tempo depois de uma noite de trabalho)
+    function horaNoDia(dia) {
+      const C = camp(); if (C.etapa !== 'ativo') return null;
+      const g = (C.jogos || []).find((x) => !x.feito && ehNosso(x) && x.r >= (C.feitas | 0) && diaDa(C, x.r) === dia && !(x.r > 8 && C.cortado));
+      return g ? horaDa(g.r) : null;
     }
     // ---------------------------------------------------------------- as rodadas: fecha o que já passou (simula quem não jogou)
     function fecharRodadas() {
@@ -495,13 +511,13 @@
       for (const g of C.jogos.filter((x) => x.r === k && !x.feito)) {
         const nosso = ehNosso(g);
         simularPlacar(C, g);
-        if (nosso && avisar) { C.faltas = (C.faltas | 0) + 1; M.filaMsg.push(['faltou', g]); }
+        if (nosso && avisar && !(g.r > 8 && C.cortado)) { C.faltas = (C.faltas | 0) + 1; M.filaMsg.push(['faltou', g]); }
       }
       C.feitas = k + 1;
-      if (k === 8) montarMataMata(C);
+      if (k === 8) { montarMataMata(C); if (C.semis.includes(NOSSO_I) && !C.jogos.some((x) => x.comVoce)) { C.cortado = true; if (avisar) M.filaMsg.push(['cortado']); } }
       else if (k === 9) montarFinal(C);
       else if (k === 10) encerrar(C, avisar);
-      if (k === 8 && avisar && !C.semis.includes(NOSSO_I)) M.filaMsg.push(['fora']);
+      if (k === 8 && avisar && !C.semis.includes(NOSSO_I)) M.filaMsg.push([C.jogos.some((x) => x.comVoce) ? 'fora' : 'foraSemVoce']);
     }
     function encerrar(C, avisar) {
       const F = C.jogos.find((g) => g.r === 10), camp0 = vencedor(F);
@@ -519,10 +535,14 @@
       if ((M.tMsg -= dt) > 0) return;
       M.lendo = true; const [tipo, g] = M.filaMsg.shift(), C = camp();
       try {
-        if (tipo === 'faltou') {
-          const nosC = g.c === NOSSO_I, a = nosC ? g.gc : g.gf, b = nosC ? g.gf : g.gc;
-          await api.mensagemCelular('Seu Damião', Tf('Você não apareceu no jogo contra o {0}...', nomeT(adversario(g))), Tf('Jogamos sem você: {0} {1} x {2} {3}.', TIMES_VZ[NOSSO_I].nome, a, b, nomeT(adversario(g))) + (g.pen ? ' ' + Tf('Pênaltis {0}x{1}.', nosC ? g.pen[0] : g.pen[1], nosC ? g.pen[1] : g.pen[0]) : ''));
-        } else if (tipo === 'fora') await api.mensagemCelular('Rafa', T('Não deu... a gente ficou fora da semifinal.'), T('Valeu por jogar com a gente! Ano que vem tem mais.'));
+        if (tipo === 'faltou') {                                           // quem chamou (o Rafa) dá a bronca, conta o placar e o próximo jogo
+          const nosC = g.c === NOSSO_I, a = nosC ? g.gc : g.gf, b = nosC ? g.gf : g.gc, px = proxNosso(C);
+          const prox = px && !(px.r > 8 && C.cortado) ? Tf('O próximo é {0}, dia {1}, às {2}, contra {3}.', T(DIAS[semanaDe(diaDa(C, px.r))]), diaDa(C, px.r), fmt(horaDa(px.r)), nomeT(adversario(px))) + ' ' + Tg('Você já tá inscrito no time: aparece!') : '';
+          await api.mensagemCelular('Rafa', Tgf(VACILO[((C.faltas | 0) + 6) % VACILO.length], api.nomeJog()),
+            Tf('Deu {0} x {1} contra {2}.', a, b, nomeT(adversario(g))) + (g.pen ? ' ' + Tf('Nos pênaltis: {0} x {1}.', nosC ? g.pen[0] : g.pen[1], nosC ? g.pen[1] : g.pen[0]) : '') + (prox ? ' ' + prox : ''));
+        } else if (tipo === 'cortado') await api.mensagemCelular('Rafa', T('O time passou pras semifinais!'), T('Mas como você não veio em nenhum jogo, a gente teve que te cortar das eliminatórias.'));
+        else if (tipo === 'foraSemVoce') await api.mensagemCelular('Rafa', T('Não deu: o time ficou fora das semifinais.'), T('E você nem apareceu nos jogos...'));
+        else if (tipo === 'fora') await api.mensagemCelular('Rafa', T('Não deu... a gente ficou fora da semifinal.'), T('Valeu por jogar com a gente! Ano que vem tem mais.'));
         else if (tipo === 'fim') { await mensagemFim(C); C.premiosPendentes = true; }
         else if (tipo === 'hoje') await api.mensagemCelular('Rafa', Tf('Hoje tem jogo! {0} contra o {1}, às {2}.', faseNome(g.r), nomeT(adversario(g)), fmt(horaDa(g.r))), T('Chega uma hora antes, no vestiário embaixo do campo.'));
       } catch (e) { console.warn('[Várzea] mensagem:', e); }
@@ -1200,7 +1220,7 @@
       return { etapa: C.etapa, tabela: classificacao(C).map((x) => Object.assign({ nome: TIMES_VZ[x.i].nome, sigla: TIMES_VZ[x.i].sigla }, x)) };
     }
 
-    return { tick, alvos, _M: M, _fns: { conversarRafa, diaDeJogo, iniciarCampeonato, fecharRodadas, fecharRodada, telaPrePartida, painelFinal, montarSala, tirarSala, alturaVestiario, encarada, registrarJogo, depoisDoJogo, camp, vagas, cfgPartida, jogoDeHoje, conversaVestiario, festaDoTitulo, noiteDosPremios, cenaPremios, premiosDaFesta },
+    return { tick, alvos, horaNoDia, _M: M, _fns: { conversarRafa, diaDeJogo, iniciarCampeonato, fecharRodadas, fecharRodada, telaPrePartida, painelFinal, montarSala, tirarSala, alturaVestiario, encarada, registrarJogo, depoisDoJogo, camp, vagas, cfgPartida, jogoDeHoje, conversaVestiario, festaDoTitulo, noiteDosPremios, cenaPremios, premiosDaFesta },
       dados: { POSES, TIMES_VZ, elencoVz, forcaTime, estrelas, titulares, classificacao, premios, arte, urlArte, resumoCarreira, PREMIO_JOG, PREMIO_IND } };
   }
 

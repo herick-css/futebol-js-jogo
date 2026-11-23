@@ -17,7 +17,7 @@
    - CLIENTES (grupos de 1 ou 2 por mesa): entram, sentam, a Carla anota, a pizza chega (pixel art GRANDE cobrindo a mesa), eles comem
      (a pizza vai perdendo fatias: inteira → sem 2 → sem 4 → só uma → some), levantam, pagam no caixa do Mário e vão embora.
      Segunda a quarta: pouca gente · quinta: médio · sexta a domingo: cheio (nunca lota: sempre sobram 2 mesas).
-   - O JOGADOR também pode comer: sentado numa mesa, "Pedir uma pizza" (8 sabores, 100 fakes). A pizza ENCHE a fome do dia e
+   - O JOGADOR também pode comer: sentado numa mesa, "Pedir uma pizza" (8 sabores, 200 a 400 fakes conforme o sabor). A pizza ENCHE a fome do dia e
      tira 3 de Saudável (comida não saudável); comer já satisfeito é como no lanche do Valdemar (mais 4 e passa mal 20 s depois).
    - 8 SABORES em pixel art 32 x 32 (SABORES / desenharPizza), com o estado de cada pizza (8, 6, 4 ou 1 fatia) e a fatia na mão.
    - O TRABALHO (quem escolheu a pizzaria na Fase 2): ENTREGADOR, quinta a domingo (4 x 3), das 17h à meia-noite.
@@ -162,12 +162,20 @@
     'Valeu, Carla!': ['Thanks, Carla!', '¡Gracias, Carla!', 'Grazie, Carla!', 'Merci, Carla !'],
   });
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "Acelerar até a meia-noite? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia.": ["Fast-forward to midnight? If you speed up, you only get a fixed {0} fakes for the day.", "¿Acelerar hasta la medianoche? Si aceleras, solo recibes un valor fijo de {0} fakes por el día.", "Accelerare fino a mezzanotte? Accelerando, ricevi solo un importo fisso di {0} fakes per la giornata.", "Accélérer jusqu’à minuit ? En accélérant, tu ne touches qu’un montant fixe de {0} fakes pour la journée."],
+    "Turno acelerado: fica o valor fixo, {0} fakes.": ["Shift sped up: it’s the fixed amount, {0} fakes.", "Turno acelerado: queda el valor fijo, {0} fakes.", "Turno accelerato: resta l’importo fisso, {0} fakes.", "Service accéléré : c’est le montant fixe, {0} fakes."],
+    "Fechou por hoje!": ["That’s it for today!", "¡Cerramos por hoy!", "Per oggi abbiamo chiuso!", "C’est fini pour aujourd’hui !"],
+    "Turno acelerado: fica o valor fixo, {0} fakes. Já vou te mandar no Pix!": ["Shift sped up: it’s the fixed amount, {0} fakes. I’ll send it by Pix now!", "Turno acelerado: queda el valor fijo, {0} fakes. ¡Ya te lo mando por Pix!", "Turno accelerato: resta l’importo fisso, {0} fakes. Te lo mando subito con Pix!", "Service accéléré : c’est le montant fixe, {0} fakes. Je t’envoie ça par Pix !"],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
 
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 17, H_FECHA = 24, H_EQUIPE = 16.75, H_ULTIMO_GRUPO = 23.25, H_TURNO = 17, H_CHEIO_ATE = 17.5, H_ULTIMO_TURNO = 23;
   const DIAS_TRABALHO = [3, 4, 5, 6];                                  // diaSemana(): 0 = segunda → quinta, sexta, sábado e domingo (4 x 3)
   const PAGA = 70, GORJETA = 5, ATRASO = 5, PRAZO = 25;                // por noite · por entrega no prazo · por entrega atrasada · segundos
-  const PRECO_PIZZA = 100, SAUDE_PIZZA = -3, SAUDE_EXAGERO = -4;       // a pizza do jogador (enche a fome do dia)
+  const PRECO_PIZZA = 200, SAUDE_PIZZA = -3, SAUDE_EXAGERO = -4;       // a pizza do jogador (enche a fome do dia); (7.5.11) o preço é por sabor (SABORES[].preco), este é o mínimo
   const VEL_BIKE = 1.5;                                                // × a velocidade do jogador correndo
   const DIST_MIN = 40, DIST_MAX = 140;                                 // (m, pela rede de calçadas) da pizzaria até a casa do cliente
   const BIKE_PARADA = { x: 4.6, z: 9.75, yaw: 0 };                     // encostada na fachada da pizzaria (parede em z 10,4), à direita da porta (x 1,2): fora do caminho da calçada
@@ -183,9 +191,10 @@
   //   Tábua de madeira redonda, borda dourada com bolhas, base (queijo / molho / chocolate) com manchas de luz e sombra, coberturas
   //   próprias de cada sabor e as linhas do corte das 8 fatias. As fatias que já foram comidas mostram a tábua (com farelos).
   const SABORES = [
-    { id: 'mussarela', nome: 'Mussarela' }, { id: 'calabresa', nome: 'Calabresa' }, { id: 'margherita', nome: 'Margherita' },
-    { id: 'portuguesa', nome: 'Portuguesa' }, { id: 'frango', nome: 'Frango com Requeijão' }, { id: 'queijos', nome: 'Quatro Queijos' },
-    { id: 'pepperoni', nome: 'Pepperoni' }, { id: 'chocolate', nome: 'Chocolate com Morango' },
+    // (7.5.11) cada sabor com o seu preço, de 200 a 400 fakes (as simples mais baratas, as especiais e a doce mais caras)
+    { id: 'mussarela', nome: 'Mussarela', preco: 200 }, { id: 'calabresa', nome: 'Calabresa', preco: 230 }, { id: 'margherita', nome: 'Margherita', preco: 260 },
+    { id: 'portuguesa', nome: 'Portuguesa', preco: 290 }, { id: 'frango', nome: 'Frango com Requeijão', preco: 300 }, { id: 'queijos', nome: 'Quatro Queijos', preco: 340 },
+    { id: 'pepperoni', nome: 'Pepperoni', preco: 370 }, { id: 'chocolate', nome: 'Chocolate com Morango', preco: 400 },
   ];
   const NP = 32, CX = 15.5, R_PIZZA = 13.6, R_BORDA = 11.7, R_TABUA = 15.6;
   // gerador fixo (as coberturas ficam sempre no mesmo lugar)
@@ -816,7 +825,7 @@
       Dialogo.esconder();
       const i = await cardapioUI(d.fakes);
       const sb = SABORES[i]; if (!sb) return;
-      const preco = precoPizza();
+      const preco = precoPizza(sb);
       if (d.fakes < preco) { await api.fala('carla', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
       d.fakes -= preco; api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(preco); if (api.papoAmizade) api.papoAmizade('carla', 1);
       M.pagouPizza = preco;
@@ -850,7 +859,7 @@
       } catch (e) { console.error(e); }
       const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
     }
-    const precoPizza = () => (api.precoAmizade ? api.precoAmizade('carla', PRECO_PIZZA) : PRECO_PIZZA);   // amizade com a Carla -25 ou menos: +25%
+    const precoPizza = (sb) => { const v = (sb && sb.preco) || PRECO_PIZZA; return api.precoAmizade ? api.precoAmizade('carla', v) : v; };   // amizade com a Carla -25 ou menos: +25%
     // o cardápio (8 sabores com a pixel art), como o do seu Valdemar
     function cardapioUI(fakes) {
       return new Promise((res) => {
@@ -867,7 +876,7 @@
           const b = document.createElement('button'); b.type = 'button'; b.dataset.i = i;
           b.style.cssText = 'flex:0 0 118px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 11px/1.2 var(--font-display);text-align:center;';
           b.appendChild(iconePizza(sb.id, 8, 72));
-          const n = document.createElement('span'); n.textContent = T(sb.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = precoPizza() + ' ' + T('fakes');
+          const n = document.createElement('span'); n.textContent = T(sb.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = precoPizza(sb) + ' ' + T('fakes');
           b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
         });
         const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = 'align-self:center;--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;'; nada.onclick = () => fim(-1);
@@ -1337,8 +1346,9 @@
     }
     function fecharPainel() { if (M.painel) { api.fimPainel(M.painel); M.painel.remove(); M.painel = null; } }
     async function acelerar() {
-      const r = await Escolha.mostrar(T('Acelerar até a meia-noite? Você recebe só pelas horas trabalhadas até agora.'), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
+      const r = await Escolha.mostrar(Tf('Acelerar até a meia-noite? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia.', api.PAGA_ACELERADO), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
       Dialogo.esconder(); const s = S(); if (r !== 0 || !U() || M.pedido) return;
+      U().acelerado = true;                                              // (7.6.0) acelerou: o fixo, sem gorjetas nem proporcional
       const h = s.dados.hora; await api.preto(true, 450); s.dados.hora = 0.0; await encerrar(true, h, !!s.dentro); await api.preto(false, 450);   // na rua: a cena da bicicleta e o Pix do Mário
     }
     // (cidade: "Entrar no prédio" no meio do turno) encerra antes, pagando o que trabalhou
@@ -1352,7 +1362,7 @@
       const s = S(), u = s.turnoPizza, d = s.dados; if (!u || u.fim) return; u.fim = true;
       const hAbs = (h) => (h < 12 ? h + 24 : h);
       const ini = Math.max(H_TURNO, u.inicio <= H_CHEIO_ATE ? H_TURNO : u.inicio), fimH = antes ? clampN(hAbs(hParou), ini, H_FECHA) : H_FECHA;
-      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), base = Math.round(PAGA * frac), paga = Math.max(0, base + u.noPrazo * GORJETA - u.atrasadas * ATRASO);
+      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), base = Math.round(PAGA * frac), paga = u.acelerado ? api.PAGA_ACELERADO : Math.max(0, base + u.noPrazo * GORJETA - u.atrasadas * ATRASO);
       d.trabalhouDia = u.dia || d.dia; d.trabalhouHoje = d.trabalhouDia === d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */
       s.trabalhando = false; fecharPainel(); mostrarHud(false); tirarCaixaDaMao(); tirarCaixaChao(); if (M.cliRua) tirarClienteRua();
       if (montado()) descer(true);
@@ -1362,23 +1372,27 @@
       api.gravar('chegada');
       const espera = s.modo !== 'livre'; if (!espera) { s.modo = 'cena'; api.UI().ctl.hidden = true; }
       M.avisos = []; M.tAviso = 0; api.aviso('');
-      const recebeu = () => { api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true); };
+      let total = paga;
+      const recebeu = () => { api.somDinheiro(); api.ganhoNaTela(total); api.mostrarDinheiro(true); };
+      const dobro = async () => { if (api.dobrarPagamento) total = await api.dobrarPagamento(paga); };   // (7.6.0) receber ou ver um anúncio de 30 s e ganhar o dobro
       try {
         if (M.mario && s.dentro && !semConversa) {
           await api.fala('mario', T('Deu meia-noite! Fechou por hoje. Vou te mandar no Pix.'));
-          await api.fala('mario', Tf('Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Deu {4} fakes.', u.entregas, u.noPrazo, u.amassadas, u.atrasadas, paga));
+          if (u.acelerado) await api.fala('mario', Tf('Turno acelerado: fica o valor fixo, {0} fakes.', paga));
+          else await api.fala('mario', Tf('Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s). Deu {4} fakes.', u.entregas, u.noPrazo, u.amassadas, u.atrasadas, paga));
           Dialogo.esconder();
-          await comprovantePix(paga); recebeu();
+          await dobro(); await comprovantePix(total); recebeu();
         } else if (!s.dentro && !semCena) {
           await cenaDevolverBike();
-          await api.mensagemCelular(T('Mário'), Tf('Fechou por hoje! Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s).', u.entregas, u.noPrazo, u.amassadas, u.atrasadas), Tf('Deu {0} fakes. Já vou te mandar no Pix!', paga));
-          await comprovantePix(paga); recebeu();
+          if (u.acelerado) await api.mensagemCelular(T('Mário'), T('Fechou por hoje!'), Tf('Turno acelerado: fica o valor fixo, {0} fakes. Já vou te mandar no Pix!', paga));
+          else await api.mensagemCelular(T('Mário'), Tf('Fechou por hoje! Você fez {0} entrega(s): {1} no prazo, {2} amassada(s) e {3} atrasada(s).', u.entregas, u.noPrazo, u.amassadas, u.atrasadas), Tf('Deu {0} fakes. Já vou te mandar no Pix!', paga));
+          await dobro(); await comprovantePix(total); recebeu();
           fimCenaBike();
-        } else { recebeu(); avisoRapido(Tf('Turno encerrado: +{0} fakes', paga), 3600); }
+        } else { await dobro(); recebeu(); avisoRapido(Tf('Turno encerrado: +{0} fakes', total), 3600); }
       } catch (e) { console.error(e); fimCenaBike(); }
       s.turnoPizza = null;
       if (!espera && s.ativo && s.modo === 'cena') api.liberar();
-      return paga;
+      return total;
     }
     // FIM DO TURNO NA RUA: corte preto e ele chega empurrando a bicicleta pela calçada até a vaga dela na frente da pizzaria
     async function cenaDevolverBike() {

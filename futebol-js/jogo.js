@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.5.10';
+const VERSAO_JOGO = '7.6.0';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -2985,7 +2985,7 @@ const ACESSORIOS = [
   { k: 'luva_cravejada', tipo: 'luva', nome: 'Luva cravejada', preco: 560, base: '#151517' },
 ];
 const LUGARES_TATUAGEM = [{ k: 'bd', nome: 'Braço direito' }, { k: 'be', nome: 'Braço esquerdo' }, { k: 'pd', nome: 'Perna direita' }, { k: 'pe', nome: 'Perna esquerda' }];
-// AS 20 TATUAGENS: desenhos de traço (canvas) em centímetros, w x h cm. O preto e o cinza são tinta com transparência (a pele aparece
+// AS 30 TATUAGENS (as 10 últimas, de 7.6.0, são as FECHADAS: braço/perna fechados — fechada: true, ver voltaTatuagem): desenhos de traço (canvas) em centímetros, w x h cm. O preto e o cinza são tinta com transparência (a pele aparece
 //   por baixo, como tatuagem de verdade, em qualquer tom de pele). faixa: true = dá a volta no membro (desenho(g, larg, alt) em cm).
 const TINTA_A = (a) => 'rgba(14,14,18,' + a + ')';
 const TINTA_C = (h, a) => { const n = parseInt(h.slice(1), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + (a == null ? 0.9 : a) + ')'; };
@@ -3237,6 +3237,134 @@ const TATUAGENS = [
     TatDes.cobra(g, [[13.4, 24.4], [17, 26.4], [15.6, 29], [12.4, 28.6], [12.8, 27.2]], 1.5);                                          // a ponta do rabo, enrolada
     TatDes.cabecaNaja(g, 11.8, 8.6, 1.05);
   } },
+  // ---- (7.6.0) AS 10 FECHADAS: "braço fechado" / "perna fechada". O desenho cobre toda a parte da volta do antebraço (ou da coxa) que
+  //   se vê — frente, lado de fora e costas (os 3 primeiros quartos da volta, ver voltaTatuagem) — e o lado de DENTRO (encostado no
+  //   corpo, que ninguém enxerga) fica sem nada. desenho(g, W, H): W x H cm (a largura das 3 faces x a altura).
+  { k: 'f_tribal', nome: 'Tribal fechado', preco: 950, fechada: true, desenho(g, W, H) {
+    const preto = TINTA_A(0.95), n = Math.max(3, Math.round(W / 9)), p = W / n;
+    for (let i = 0; i < n; i++) {                                         // as lanças subindo, uma para cada lado, e o gancho no meio
+      const x = i * p, s = i % 2 ? -1 : 1, cx = x + p / 2;
+      g.beginPath(); g.moveTo(x + 0.4, H); g.bezierCurveTo(x + p * 0.1, H * 0.55, cx + s * p * 0.5, H * 0.38, cx + s * p * 0.15, H * 0.02);
+      g.bezierCurveTo(cx + s * p * 0.05, H * 0.36, cx - s * p * 0.2, H * 0.5, x + p - 0.4, H); g.closePath(); g.fillStyle = preto; g.fill();
+      g.beginPath(); g.moveTo(cx - s * p * 0.42, H * 0.3); g.bezierCurveTo(cx - s * p * 0.1, H * 0.18, cx + s * p * 0.05, H * 0.36, cx - s * p * 0.12, H * 0.48);
+      g.bezierCurveTo(cx - s * p * 0.08, H * 0.36, cx - s * p * 0.22, H * 0.3, cx - s * p * 0.42, H * 0.3); g.fill();
+      g.beginPath(); g.moveTo(x, H * 0.12); g.quadraticCurveTo(x + p * 0.25, H * 0.2, x + p * 0.18, H * 0.4); g.quadraticCurveTo(x + p * 0.1, H * 0.22, x, H * 0.12); g.fill();
+    }
+    g.beginPath(); g.rect(0, H - 1.1, W, 1.1); g.fillStyle = preto; g.fill();                                 // a faixa de baixo (punho/joelho)
+  } },
+  { k: 'f_carpa', nome: 'Carpa e ondas', preco: 1100, fechada: true, desenho(g, W, H) {
+    const az = (a) => TINTA_C('#1C3A80', a), y0 = H * 0.62, per = 7;
+    g.beginPath(); g.moveTo(0, H); for (let x = 0; x <= W + 0.1; x += 0.25) { const f = (x % per) / per; g.lineTo(x, y0 - Math.sin(f * Math.PI) * 2.4 + (f > 0.78 ? (f - 0.78) * 12 : 0)); } g.lineTo(W, H); g.closePath();
+    const gr = g.createLinearGradient(0, y0 - 3, 0, H); gr.addColorStop(0, TINTA_C('#4A8FD4')); gr.addColorStop(1, az(0.95)); g.fillStyle = gr; g.fill();
+    for (let x = per * 0.6; x < W; x += per) { g.beginPath(); g.arc(x, y0 - 1.2, 1.2, Math.PI * 0.9, Math.PI * 2.3); TatDes.traco(g, 0.32); g.beginPath(); g.arc(x + 0.25, y0 - 1.2, 0.45, 0, Math.PI * 2); g.fillStyle = 'rgba(240,240,232,0.85)'; g.fill();
+      for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x - 2.4 + k * 1.6, y0 + 2.2 + (k % 2) * 1.6, 1.1, Math.PI * 1.1, Math.PI * 1.9); TatDes.traco(g, 0.18, 'rgba(235,240,245,0.8)'); } }
+    const carpa = (cx, cy, e, flip) => {                                  // a carpa nadando para cima, laranja, com as escamas
+      g.save(); g.translate(cx, cy); g.scale(e * flip, e);
+      g.beginPath(); g.moveTo(0, -6); g.bezierCurveTo(2.6, -4.6, 2.8, 0.6, 1.2, 3.6); g.lineTo(3.2, 6.6); g.lineTo(0, 5); g.lineTo(-3.2, 6.6); g.lineTo(-1.2, 3.6); g.bezierCurveTo(-2.8, 0.6, -2.6, -4.6, 0, -6); g.closePath();
+      const gc = g.createLinearGradient(0, -6, 0, 6); gc.addColorStop(0, TINTA_C('#F2A23A')); gc.addColorStop(1, TINTA_C('#C8402A')); g.fillStyle = gc; g.fill(); TatDes.traco(g, 0.32);
+      for (let y = -3; y < 3; y += 1.1) for (let x = -1.6; x <= 1.6; x += 1.1) { g.beginPath(); g.arc(x + (y % 2.2 ? 0.5 : 0), y, 0.55, 0.2, Math.PI - 0.2); TatDes.traco(g, 0.12, TINTA_A(0.55)); }
+      for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 1.8, -1.6); g.quadraticCurveTo(s * 4, -1, s * 3.4, 0.6); g.quadraticCurveTo(s * 2.6, -0.2, s * 1.8, -0.4); g.fillStyle = TINTA_C('#E8741A', 0.85); g.fill(); TatDes.traco(g, 0.2); }
+      g.beginPath(); g.arc(-0.8, -4.4, 0.3, 0, Math.PI * 2); g.arc(0.8, -4.4, 0.3, 0, Math.PI * 2); g.fillStyle = TINTA_A(1); g.fill();
+      g.beginPath(); g.moveTo(-0.6, -5.8); g.quadraticCurveTo(-2.4, -6.8, -2.8, -8); g.moveTo(0.6, -5.8); g.quadraticCurveTo(2.4, -6.8, 2.8, -8); TatDes.traco(g, 0.16);
+      g.restore(); };
+    const n = Math.max(1, Math.round(W / 22));
+    for (let i = 0; i < n; i++) carpa(W * (i + 0.5) / n + (i % 2 ? 2 : -2), H * 0.38, Math.min(1.2, H / 20), i % 2 ? -1 : 1);
+    for (let i = 0; i < W / 6; i++) { const x = 3 + i * 6 + (i % 2) * 2.4, y = H * (i % 3 === 0 ? 0.1 : 0.2); g.beginPath(); g.arc(x, y, 0.5 + (i % 2) * 0.3, 0, Math.PI * 2); TatDes.traco(g, 0.16, az(0.8)); }   // as bolhas
+  } },
+  { k: 'f_floral', nome: 'Jardim de rosas', preco: 1050, fechada: true, desenho(g, W, H) {
+    const r = sorteador(4242), n = Math.max(3, Math.round(W / 10));
+    for (let i = 0; i < n * 2.2; i++) TatDes.folha(g, r() * W, r() * H, r() * Math.PI * 2, 3 + r() * 2.2, '#2E7A3A');
+    for (let i = 0; i < n * 2; i++) { const x = (i + 0.5) / (n * 2) * W, y = H * (i % 2 ? 0.28 : 0.72) + (r() - 0.5) * 3; TatDes.rosa(g, x, y, 2.8 + r() * 1.3, i % 3 === 2 ? null : '#B3202A'); }
+    for (let i = 0; i < n * 3; i++) { const x = r() * W, y = r() * H; g.beginPath(); g.arc(x, y, 0.35, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.7); g.fill(); }
+  } },
+  { k: 'f_geometrico', nome: 'Geométrico', preco: 1000, fechada: true, desenho(g, W, H) {
+    const t = 4.2, n = Math.ceil(W / t) + 1, m = Math.ceil(H / (t * 0.866)) + 1;
+    for (let j = 0; j < m; j++) for (let i = 0; i < n; i++) {                  // a malha de triângulos, uns cheios, uns pontilhados
+      const x = i * t + (j % 2 ? t / 2 : 0) - t / 2, y = j * t * 0.866, cima = (i + j) % 2 === 0;
+      g.beginPath(); if (cima) { g.moveTo(x, y + t * 0.866); g.lineTo(x + t / 2, y); g.lineTo(x + t, y + t * 0.866); } else { g.moveTo(x, y); g.lineTo(x + t, y); g.lineTo(x + t / 2, y + t * 0.866); } g.closePath();
+      const tipo = (i * 7 + j * 13) % 5;
+      if (tipo === 0) { g.fillStyle = TINTA_A(0.92); g.fill(); }
+      else if (tipo === 1) { g.save(); g.clip(); for (let yy = y; yy < y + t; yy += 0.5) for (let xx = x + ((yy - y) / 0.5 % 2) * 0.25; xx < x + t; xx += 0.5) { g.beginPath(); g.arc(xx, yy, 0.12, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.75); g.fill(); } g.restore(); }
+      else if (tipo === 2) { g.save(); g.clip(); for (let k = -t; k < t * 2; k += 0.6) { g.beginPath(); g.moveTo(x + k, y); g.lineTo(x + k - t, y + t); TatDes.traco(g, 0.14, TINTA_A(0.7)); } g.restore(); }
+      TatDes.traco(g, 0.22);
+    }
+  } },
+  { k: 'f_mandalas', nome: 'Mandalas', preco: 1150, fechada: true, desenho(g, W, H) {
+    const flor = (c0, c1, R) => {
+      for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; g.save(); g.translate(c0, c1); g.rotate(a); g.beginPath(); g.moveTo(0, -R * 0.55); g.quadraticCurveTo(R * 0.18, -R * 0.8, 0, -R); g.quadraticCurveTo(-R * 0.18, -R * 0.8, 0, -R * 0.55); g.fillStyle = TINTA_A(0.35); g.fill(); TatDes.traco(g, 0.18); g.restore(); }
+      for (let i = 0; i < 8; i++) { const a = (i + 0.5) / 8 * Math.PI * 2; g.save(); g.translate(c0, c1); g.rotate(a); g.beginPath(); g.moveTo(0, -R * 0.2); g.quadraticCurveTo(R * 0.24, -R * 0.38, 0, -R * 0.55); g.quadraticCurveTo(-R * 0.24, -R * 0.38, 0, -R * 0.2); g.fillStyle = TINTA_A(0.65); g.fill(); g.restore(); }
+      for (const [rr, w] of [[R, 0.22], [R * 0.55, 0.18], [R * 0.2, 0.16]]) { g.beginPath(); g.arc(c0, c1, rr, 0, Math.PI * 2); TatDes.traco(g, w); }
+      g.beginPath(); g.arc(c0, c1, R * 0.08, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.95); g.fill(); };
+    const n = Math.max(2, Math.round(W / 15)), R = Math.min(H * 0.3, W / n * 0.42);
+    for (let i = 0; i < n; i++) flor((i + 0.5) / n * W, H * (i % 2 ? 0.66 : 0.34), R);
+    for (let y = 0.6; y < H; y += 0.9) for (let x = 0.4 + (Math.round(y / 0.9) % 2) * 0.45; x < W; x += 0.9) {   // o pontilhismo do fundo, mais denso nas bordas
+      const k = Math.abs(y - H / 2) / (H / 2); if (((x * 37 + y * 17) % 1) > k * 0.9) continue; g.beginPath(); g.arc(x, y, 0.13, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.7); g.fill(); }
+  } },
+  { k: 'f_maori', nome: 'Maori', preco: 1200, fechada: true, desenho(g, W, H) {
+    const preto = TINTA_A(0.95);
+    for (const y of [0.6, H - 0.6]) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); TatDes.traco(g, 1.0); }
+    for (let x = 0; x < W; x += 1.6) { g.beginPath(); g.moveTo(x, 1.2); g.lineTo(x + 0.8, 2.4); g.lineTo(x + 1.6, 1.2); g.fillStyle = preto; g.fill(); g.beginPath(); g.moveTo(x, H - 1.2); g.lineTo(x + 0.8, H - 2.4); g.lineTo(x + 1.6, H - 1.2); g.fill(); }
+    const n = Math.max(2, Math.round(W / 12)), R = Math.min((H - 6) * 0.42, W / n * 0.4);
+    for (let i = 0; i < n; i++) {                                          // as espirais (koru) com as linhas paralelas em volta
+      const cx = (i + 0.5) / n * W, cy = H / 2, s = i % 2 ? -1 : 1;
+      for (let k = 0; k < 4; k++) { g.beginPath(); for (let a = 0; a < Math.PI * 3.2; a += 0.08) { const rr = R * (1 - a / (Math.PI * 3.6)) - k * 0.55; if (rr < 0.4) break; g.lineTo(cx + Math.cos(a * s) * rr, cy + Math.sin(a * s) * rr); } TatDes.traco(g, k === 0 ? 0.5 : 0.2); }
+      g.beginPath(); g.arc(cx, cy, R * 0.18, 0, Math.PI * 2); g.fillStyle = preto; g.fill();
+    }
+    for (let i = 0; i <= n; i++) { const x = i / n * W; g.beginPath(); g.moveTo(x, 3); g.bezierCurveTo(x + 2, H * 0.3, x - 2, H * 0.7, x, H - 3); TatDes.traco(g, 0.9); for (let k = 1; k < 4; k++) { g.beginPath(); g.moveTo(x + k * 0.55, 3.5); g.bezierCurveTo(x + 2 + k * 0.55, H * 0.3, x - 2 + k * 0.55, H * 0.7, x + k * 0.55, H - 3.5); TatDes.traco(g, 0.14, TINTA_A(0.8)); } }
+  } },
+  { k: 'f_galaxia', nome: 'Galáxia', preco: 1250, fechada: true, desenho(g, W, H) {
+    const r = sorteador(777);
+    const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, TINTA_C('#1A1450', 0.85)); gr.addColorStop(0.5, TINTA_C('#5C3494', 0.8)); gr.addColorStop(1, TINTA_C('#1C3A80', 0.85));
+    g.beginPath(); for (let x = 0; x <= W + 0.1; x += 0.5) g.lineTo(x, 1.2 + Math.sin(x * 0.9) * 0.6 + r() * 0.4); for (let x = W; x >= -0.1; x -= 0.5) g.lineTo(x, H - 1.2 - Math.sin(x * 0.7) * 0.6 - r() * 0.4); g.closePath(); g.fillStyle = gr; g.fill();   // a nebulosa (borda de nuvem)
+    for (let i = 0; i < W * H / 6; i++) { const x = r() * W, y = 1.5 + r() * (H - 3), s = r(); g.beginPath(); g.arc(x, y, s < 0.9 ? 0.12 : 0.28, 0, Math.PI * 2); g.fillStyle = 'rgba(250,250,240,' + (0.5 + s * 0.5) + ')'; g.fill(); }
+    for (let i = 0; i < W / 10; i++) { TatDes.estrela(g, r() * W, 2 + r() * (H - 4), 1.1, 0.3, 4, 0); g.fillStyle = 'rgba(255,250,230,0.95)'; g.fill(); }
+    const planeta = (x, y, R, cor) => { g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); const p = g.createRadialGradient(x - R * 0.4, y - R * 0.4, R * 0.1, x, y, R); p.addColorStop(0, TINTA_C(cor, 0.95)); p.addColorStop(1, TINTA_A(0.85)); g.fillStyle = p; g.fill(); TatDes.traco(g, 0.25);
+      g.beginPath(); g.ellipse(x, y, R * 1.8, R * 0.45, -0.35, 0, Math.PI * 2); TatDes.traco(g, 0.3, TINTA_C('#F2D35A', 0.9)); };
+    planeta(W * 0.22, H * 0.42, Math.min(3, H * 0.12), '#E8741A'); planeta(W * 0.7, H * 0.62, Math.min(2.2, H * 0.09), '#3FB7B0');
+    g.beginPath(); g.arc(W * 0.46, H * 0.3, Math.min(2.6, H * 0.1), 0, Math.PI * 2); g.fillStyle = 'rgba(240,238,226,0.92)'; g.fill(); g.beginPath(); g.arc(W * 0.46 + 1, H * 0.3 - 0.6, Math.min(2.4, H * 0.09), 0, Math.PI * 2); g.globalCompositeOperation = 'destination-out'; g.fill(); g.globalCompositeOperation = 'source-over';   // a lua
+  } },
+  { k: 'f_futebol', nome: 'Paixão pelo futebol', preco: 1300, fechada: true, desenho(g, W, H) {
+    for (let x = -H; x < W + H; x += 1.8) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x + H, H); g.moveTo(x + H, 0); g.lineTo(x, H); TatDes.traco(g, 0.1, TINTA_A(0.45)); }   // a rede no fundo
+    const bola = (x, y, R) => { g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.fillStyle = 'rgba(244,240,230,0.92)'; g.fill(); TatDes.traco(g, 0.3);
+      TatDes.estrela(g, x, y, R * 0.36, R * 0.3, 5, -Math.PI / 2); g.fillStyle = TINTA_A(0.95); g.fill();
+      for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 5; g.beginPath(); g.moveTo(x + Math.cos(a) * R * 0.36, y + Math.sin(a) * R * 0.36); g.lineTo(x + Math.cos(a) * R * 0.75, y + Math.sin(a) * R * 0.75); TatDes.traco(g, 0.16);
+        const b = a + Math.PI / 5; g.beginPath(); g.arc(x + Math.cos(b) * R * 0.86, y + Math.sin(b) * R * 0.86, R * 0.18, 0, Math.PI * 2); g.fillStyle = TINTA_A(0.9); g.fill(); } };
+    const n = Math.max(2, Math.round(W / 14));
+    for (let i = 0; i < n; i++) {
+      const cx = (i + 0.5) / n * W;
+      if (i % 2 === 0) { bola(cx, H * 0.56, Math.min(4.2, H * 0.17)); g.beginPath(); g.moveTo(cx - 4, H * 0.56 + 4.6); g.lineTo(cx + 4, H * 0.56 + 4.6); TatDes.traco(g, 0.2, TINTA_A(0.5)); }
+      else { g.save(); g.translate(cx - 5, H * 0.3); g.scale(0.85, 0.85);                    // a taça com as estrelas em cima
+        g.beginPath(); g.moveTo(1.8, 0.4); g.lineTo(8.2, 0.4); g.bezierCurveTo(8.2, 4.6, 6.6, 6.4, 5.6, 6.8); g.lineTo(5.6, 8.6); g.lineTo(4.4, 8.6); g.lineTo(4.4, 6.8); g.bezierCurveTo(3.4, 6.4, 1.8, 4.6, 1.8, 0.4); g.closePath();
+        const gt = g.createLinearGradient(1.8, 0, 8.2, 0); gt.addColorStop(0, TINTA_C('#F2D35A')); gt.addColorStop(1, TINTA_C('#A06A10')); g.fillStyle = gt; g.fill(); TatDes.traco(g, 0.36);
+        g.beginPath(); g.rect(2.2, 8.6, 5.6, 2.4); g.fillStyle = TINTA_C('#8A5A1A'); g.fill(); TatDes.traco(g, 0.3); g.restore(); }
+      for (let k = 0; k < 3; k++) { TatDes.estrela(g, cx - 3 + k * 3, H * 0.12, 0.9, 0.38, 5, -Math.PI / 2); g.fillStyle = TINTA_C('#F2C230'); g.fill(); TatDes.traco(g, 0.12); }
+    }
+    g.beginPath(); g.rect(0, H - 1.6, W, 1.6); g.fillStyle = TINTA_C('#1F7A4D', 0.85); g.fill(); TatDes.traco(g, 0.2);   // o gramado embaixo
+  } },
+  { k: 'f_relogio', nome: 'Relógio e rosas', preco: 1400, fechada: true, desenho(g, W, H) {
+    const r = sorteador(1919), n = Math.max(1, Math.round(W / 24));
+    for (let i = 0; i < W / 4; i++) TatDes.folha(g, r() * W, 1 + r() * (H - 2), r() * Math.PI * 2, 2.6 + r() * 1.6);
+    for (let i = 0; i < n; i++) {                                          // o relógio de bolso em preto e cinza, com os ponteiros e a corrente
+      const cx = (i + 0.5) / n * W, cy = H * 0.5, R = Math.min(H * 0.3, 7);
+      g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); const sb = g.createRadialGradient(cx - R * 0.3, cy - R * 0.3, R * 0.2, cx, cy, R); sb.addColorStop(0, TINTA_A(0.05)); sb.addColorStop(1, TINTA_A(0.5)); g.fillStyle = sb; g.fill(); TatDes.traco(g, 0.5);
+      g.beginPath(); g.arc(cx, cy, R * 0.86, 0, Math.PI * 2); TatDes.traco(g, 0.18, TINTA_A(0.7));
+      const rom = ['XII', 'III', 'VI', 'IX']; g.font = 'bold ' + (R * 0.22).toFixed(2) + 'px serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = TINTA_A(0.9);
+      for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2 - Math.PI / 2; if (k % 3 === 0) g.fillText(rom[k / 3], cx + Math.cos(a) * R * 0.68, cy + Math.sin(a) * R * 0.68); else { g.beginPath(); g.arc(cx + Math.cos(a) * R * 0.7, cy + Math.sin(a) * R * 0.7, R * 0.04, 0, Math.PI * 2); g.fill(); } }
+      g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx + R * 0.32, cy - R * 0.36); g.moveTo(cx, cy); g.lineTo(cx - R * 0.1, cy - R * 0.62); TatDes.traco(g, 0.28);
+      g.beginPath(); g.arc(cx, cy - R - 0.7, 0.8, 0, Math.PI * 2); TatDes.traco(g, 0.35);
+      for (let k = 0; k < 9; k++) { g.beginPath(); g.ellipse(cx + 1.2 + k * 1.1, cy - R - 1.4 - Math.sin(k * 0.5) * 1.2, 0.55, 0.32, 0.4, 0, Math.PI * 2); TatDes.traco(g, 0.16, TINTA_A(0.8)); }
+      TatDes.rosa(g, cx - R - 1.5, cy + R * 0.55, 3.3); TatDes.rosa(g, cx + R + 1.8, cy - R * 0.2, 3.8, '#B3202A'); TatDes.rosa(g, cx + R * 0.4, cy + R + 1.4, 2.6);
+    }
+    for (const y of [0.3, H - 0.3]) { g.beginPath(); for (let x = 0; x <= W; x += 0.5) g.lineTo(x, y + Math.sin(x * 1.3) * 0.25); TatDes.traco(g, 0.16, TINTA_A(0.4)); }   // o esfumado das bordas
+  } },
+  { k: 'f_chamas', nome: 'Chamas', preco: 1000, fechada: true, desenho(g, W, H) {
+    const r = sorteador(5150), n = Math.max(4, Math.round(W / 5));
+    const chama = (x, larg, alt, cor) => { g.beginPath(); g.moveTo(x - larg / 2, H); g.bezierCurveTo(x - larg * 0.7, H - alt * 0.5, x + larg * 0.3, H - alt * 0.6, x + larg * 0.05, H - alt);
+      g.bezierCurveTo(x + larg * 0.6, H - alt * 0.6, x + larg * 0.8, H - alt * 0.3, x + larg / 2, H); g.closePath(); g.fillStyle = cor; g.fill(); TatDes.traco(g, 0.22); };
+    for (let i = 0; i < n; i++) { const x = (i + 0.5) / n * W, a = H * (0.75 + r() * 0.22); chama(x, W / n * 1.5, a, TINTA_C('#C0301A', 0.9)); }
+    for (let i = 0; i < n; i++) { const x = (i + 0.5) / n * W + 1, a = H * (0.48 + r() * 0.2); chama(x, W / n * 1.1, a, TINTA_C('#E8741A', 0.92)); }
+    for (let i = 0; i < n; i++) { const x = (i + 0.5) / n * W - 0.6, a = H * (0.22 + r() * 0.12); chama(x, W / n * 0.7, a, TINTA_C('#F5D44A', 0.95)); }
+  } },
 ];
 const TATUAGEM_POR_K = {}, ACESSORIO_POR_K = {}, METAL_POR_K = {};
 for (const t of TATUAGENS) TATUAGEM_POR_K[t.k] = t;
@@ -3245,7 +3373,7 @@ for (const m of METAIS) METAL_POR_K[m.k] = m;
 // o desenho sozinho, num canvas a 8 px/cm (as faixas não têm: são desenhadas direto na volta do membro)
 const _desTat = {}, PX_CM_DES = 8;
 function desenhoTatuagem(k) {
-  const T = TATUAGEM_POR_K[k]; if (!T || T.faixa) return null;
+  const T = TATUAGEM_POR_K[k]; if (!T || T.faixa || T.fechada) return null;
   if (_desTat[k]) return _desTat[k];
   const cv = document.createElement('canvas'); cv.width = Math.ceil(T.w * PX_CM_DES); cv.height = Math.ceil(T.h * PX_CM_DES);
   const g = cv.getContext('2d'); g.scale(PX_CM_DES, PX_CM_DES); T.desenho(g, T.w, T.h);
@@ -3260,6 +3388,8 @@ function voltaTatuagem(k, perna) {
   const W = 256, H = perna ? 96 : 128, pc = perna ? 3.3 : 4.2, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const g = cv.getContext('2d');
   if (T.faixa) {
     g.save(); g.translate(0, perna ? 10 : 0); g.scale(pc, pc); T.desenho(g, W / pc, (H - (perna ? 10 : 0)) / pc); g.restore();
+  } else if (T.fechada) {                                               // (7.6.0) as fechadas: só os 3 quartos que se veem (o de dentro fica vazio)
+    const y0 = perna ? 10 : 0; g.save(); g.beginPath(); g.rect(0, y0, W * 0.75, H - y0); g.clip(); g.translate(0, y0); g.scale(pc, pc); T.desenho(g, W * 0.75 / pc, (H - y0) / pc); g.restore();
   } else {
     const D = desenhoTatuagem(k), maxW = 28, maxH = perna ? 19 : 29.5, e = Math.min(1, maxW / T.w, maxH / T.h);
     const w = T.w * e * pc, h = T.h * e * pc, cy = perna ? 60 : 64;
@@ -4336,6 +4466,15 @@ function updateOfficials(dt, rdt) {
     } else {
       const dir = o.cobre === 0 ? 1 : -1;
       tx = clamp(limiteLegal(o.cobre), 0, HALF_L) * dir; tz = o.lineZ;
+      // (7.5.11) no LATERAL e no ESCANTEIO do lado dele, o bandeirinha sai da frente da cobrança (ele parava em cima do cobrador e,
+      //   com a câmera das costas, tampava a cobrança): no escanteio fica na linha lateral, na altura da grande área; no lateral,
+      //   a pelo menos 8 m de quem cobra
+      const Sp = G.sp;
+      if (Sp && (Sp.kind === 'escanteio' || Sp.kind === 'lateral') && Math.sign(o.lineZ) === Sp.zs) {
+        const bx = (Sp.ballSpot || Sp.spot).x;
+        if (Sp.kind === 'escanteio') tx = Sp.side * (HALF_L - BOX.depth - 1);
+        else if (Math.abs(tx - bx) < 8) { tx = bx + (tx >= bx ? 8 : -8); if (Math.abs(tx) > HALF_L - 1) tx = bx - Math.sign(tx) * 8; }
+      }
       if (o.refPose === 'bandeira' || (G.foul && G.foul.ar === o)) { tx = o.x; tz = o.z; }   // parado com a bandeira
     }
     const des = seek(o, tx, tz, o.role === 'REF' ? 6.5 : 7);
@@ -4864,7 +5003,8 @@ const G = {
   desafio: null,                                  // treino do seu Nonato (Historia.desafio): ganchos do desafio (passo, evento, chutou, barreira, toque)
 };
 function resetStats() {
-  G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '', cabecadas: 0, cabecadasNoAlvo: 0 };
+  G.stats = { gols: 0, assist: 0, chutes: 0, noAlvo: 0, passes: 0, passesOk: 0, dribles: 0, driblesOk: 0, dominios: 0, dominiosOk: 0, desarmes: 0, perdas: 0, faltas: 0, faltasSofridas: 0, impedimentos: 0, cartoes: '', cabecadas: 0, cabecadasNoAlvo: 0,
+    cruzamentos: 0, chutesFortes: 0, chutesEfeito: 0, cobrancas: 0, corridaSeg: 0, semFolego: 0 };   // as últimas: para a evolução do modo história (cidade.js, REGRAS_EVO)
   // SÚMULA DOS GOLS (quem fez e quem deu o passe): o campeonato da várzea usa para a artilharia e as assistências de todo mundo.
   //   toqueAtual / toqueAnt: quem tocou na bola por último e quem tocou antes dele (ver stepGame). A assistência é de quem tocou
   //   antes do autor do gol, se for do mesmo time e o autor tiver recebido a bola há menos de 12 s.
@@ -6579,6 +6719,7 @@ function prepararBloqueios(chutador) {
   }
   for (const o of TEAMS[1 - chutador.team]) {
     if (o.isUser || o.role === 'GK' || o.out || o.stun > 0 || o.scripted || o.wallSlot >= 0 || o.bloqueio || o.slideT > 0) continue;
+    if (o.wallBlockT > 0) continue;                 // (7.5.11) quem está na BARREIRA já pulou (ou não) na cobrança: o "bloqueio" de linha alcançava 2,75 m e matava toda falta por cima
     const d0 = dist2D(o, chutador);
     if (d0 < 1.5 || d0 > 14) continue;
     let best = null, bd = Infinity;
@@ -7162,14 +7303,14 @@ function gkThink(p, dt) {
     if (ball.vx * -p.dir > 3 && ballSpeed() > 6) {
       const t = (planoX - ball.x) / ball.vx;
       if (t > 0 && t < 2.5) {
-        const pz = ball.z + ball.vz * t;          // onde a bola vai cruzar a linha dele
+        const pz = ball.z + vzVistaGK(p) * t;     // onde a bola vai cruzar a linha dele (7.5.11: a curva engana — ver vzVistaGK)
         const py = ball.y + ball.vy * t - 0.5 * CONFIG.GRAVITY * t * t;
         const gap = pz - p.z;
         const noAlvo = Math.abs(pz) < GOAL_HALF + 0.3 && py < CONFIG.GOAL_H + 0.3;
         const alcanca = Math.abs(gap) < 3.4;      // distância de um mergulho parado
         // TEMPO DE REAÇÃO: o goleiro leva ~0,15 a 0,3 s para ver o chute e sair do lugar (o melhor reage antes). Até lá fica onde
         //   está, só olhando; depois vai na bola no passo dele, sem acelerar além do normal. Chute forte, de perto e no canto entra.
-        if (ball.isShot && ball.gkReage == null) ball.gkReage = G.time + clamp(0.24 / Math.sqrt(fh(p, 'goleiro')) + rand(-0.05, 0.05), 0.12, 0.34);
+        if (ball.isShot && ball.gkReage == null) ball.gkReage = G.time + clamp(0.24 / Math.sqrt(fh(p, 'goleiro')) + rand(-0.05, 0.05), 0.12, 0.34) + (ball.faltaDireta ? 0.02 : 0);
         if (ball.isShot && G.time < ball.gkReage) { p.olhaT = Math.max(p.olhaT || 0, 0.4); return { vx: 0, vz: 0 }; }
         // (7.4.15) BOLA NO CANTO, LONGE DELE: antes ele só ficava olhando. Agora ele VAI ATRÁS (corre e mergulha) e o que decide é a
         //   física: chute lento e de longe dá tempo de chegar (e de defender); rápido, de perto e no canto, o mergulho não alcança.
@@ -7600,7 +7741,8 @@ function updateStamina(u, dt) {
   if (u.running && Math.hypot(u.vx, u.vz) > 3) {
     u.stamina = Math.max(0, u.stamina - dt / T);
     u.regenWait = CONFIG.STAMINA_REGEN_DELAY;
-    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; u.cansVar = Math.floor(Math.random() * 5); showToast('Sem fôlego!', 'bad'); }
+    if (u === user && G.state === 'play') G.stats.corridaSeg = (G.stats.corridaSeg || 0) + dt;   // a evolução da história: velocidade e resistência
+    if (u.stamina <= 0.005 && !u.exhausted) { u.stamina = 0; u.exhausted = true; u.cansadoT = 3.5; u.cansVar = Math.floor(Math.random() * 5); showToast('Sem fôlego!', 'bad'); if (u === user) G.stats.semFolego = (G.stats.semFolego | 0) + 1; }
   } else {
     u.regenWait -= dt;
     if (u.regenWait <= 0) u.stamina = Math.min(u.staminaMax ?? 1, u.stamina + dt / (livre ? T * CONFIG.LIVRE_RECUPERA : CONFIG.STAMINA_REGEN_TIME));   // lesão leve: máximo 70%
@@ -7956,6 +8098,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   G.possession = null;
   ball.vx = vx; ball.vy = vy; ball.vz = vz;
   ball.spinSide = spinSide; ball.spinVert = spinVert;
+  ball.vx0 = vx; ball.vz0 = vz; ball.x0 = ball.x; ball.z0 = ball.z; ball.tChute = G.time; ball.faltaDireta = false;   // (7.5.11) a linha em que ela saiu (o goleiro lê a curva atrasado)
   ball.y = Math.max(ball.y, CONFIG.BALL_R + 0.01);
   ball.lastKicker = from; G.lastTouch = from; from.chegaBola = null;
   from.controlCd = 0.45;
@@ -8275,6 +8418,8 @@ function checkBallContacts() {
       chance += (fh(gk, 'goleiro') - 1) * 0.3;     // habilidade de goleiro
       if (ball.y > 2.0 && gk.jumpT <= 0) chance -= 0.15;
       if (Math.abs(ball.spinSide) > 0.4) chance -= 0.08;
+      // (7.5.11) a curva que TIROU a bola da linha em que ela saiu engana o goleiro (ele foi na direção da saída): até −30%
+      if (ball.isShot && !noCorpo) chance -= clamp(desvioDaCurva() / 1.4, 0, 1) * 0.3;
       if (sp3 < 8) chance = 0.97;
       // Chute de longe: o goleiro tem mais tempo para ver a bola (até +35% de chance de defender).
       if (ball.distChute) chance += clamp((ball.distChute - 14) / 25, 0, 0.35);
@@ -8351,9 +8496,10 @@ function checkBallContacts() {
       if (closing > 0.5) {
         const pr = predictArrival();
         if (pr && pr.t < 0.4) {
-          const dificil = avaliarChegada(pr).precisaMinigame;   // rasteira e devagar: domínio automático
+          const avC = avaliarChegada(pr), dificil = avC.precisaMinigame;   // rasteira e devagar: domínio automático
           const gkAdv = TEAMS[1].find((g) => g.role === 'GK');
           if (gkAdv && pr.y > 1.0 && dist2D(gkAdv, ball) < 3 && gkAdv.stun <= 0) { /* o goleiro chega antes: deixa ele pegar */ }
+          else if (avC.bloqueio && pr.y <= RECV.ALT.alto && !(G.desafio)) { bloqueioDoUsuario(pr); return; }   // (7.5.11) bola forte/de perto do adversário: só bloqueio
           else
           if (dificil && pr.y > RECV.ALT.alto) { G.recvIgnore = 0.8; showToast('Passou por cima'); }
           else if (dificil) { startReceive(pr); return; }
@@ -8364,6 +8510,12 @@ function checkBallContacts() {
     if (d < 0.75 && ball.y < 1.9 && ball.isShot && ball.lastKicker && ball.lastKicker.team !== u.team && sp3 > 15 && !(u.boladaT > G.time)) {
       u.boladaT = G.time + 0.8;
       if (Math.random() < 0.65) { levarBolada(u); return; }
+    }
+    if (d < 0.9 && ball.y < 1.0 && ball.lastKicker && ball.lastKicker.team !== u.team && ball.lastKicker !== u && Math.hypot(ball.vx, ball.vz) > CHEGADA_ADV.MANSA && !G.desafio) {
+      // (7.5.11) a bola do adversário chegou rápida demais para a barra abrir (chutada de muito perto): não gruda no pé — bate e resvala
+      if (Math.random() < 0.6) { desviarNoCorpo(u, 0.35); showToast('Bloqueou!', 'good'); }
+      u.controlCd = Math.max(u.controlCd || 0, 0.45); G.recvIgnore = Math.max(G.recvIgnore, 0.6);
+      return;
     }
     if (d < 0.9 && ball.y < 1.0) {
       // (7.4.20) domínio automático sem "teletransporte": a bola continua na velocidade dela até o pé (chegaBola, no attachBall)
@@ -8396,6 +8548,7 @@ function checkBallContacts() {
       if (dist2D(p, ball) > 0.95) continue;
       if (ball.isShot && ball.lastKicker && ball.lastKicker.team === p.team) continue;   // não atrapalha o chute do companheiro
       if (p.ignBolaT > 0) continue;
+      if (p.wallBlockT > 0 && ball.isShot) continue;  // (7.5.11) a BARREIRA não cabeceia o chute (o pulo dela já é a defesa: até 2,15 m); antes ela "cabeceava" a 2,6 m e a 1 m de distância
       const rr = sorteioChuteForte(p);               // bola forte em cima do adversário: nem sempre ele resolve
       if (rr === 'passa') continue;
       if (rr === 'impacto') return;
@@ -9165,7 +9318,7 @@ function kickoff(team) {
   G.kickoffPending = { team, taker, partner };
   if (window.__semApito) window.__apitoPendente = true; else Som.apito(0.5);   // apito da saída de bola (espera a tela de carregando sumir)
   G.userRequest = 0;
-  G.cine = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null; G.direto = null;
+  G.cine = null; G.rampa = null; G.corrida = null; G.dominioPerfeito = false; G.sp = null; G.focus = null; G.roleT = 0; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.recv = null; G.recvFx = null; G.passTarget = null; G.apito = null; G.golPend = null; G.direto = null;
   esconderRecepcao(); user.recvPose = null;
   for (const sp of spares.concat(conesBola)) if (!sp.present) { sp.present = true; sp.fade = 1; }
   lostBall.life = 0; ball.hidden = false;
@@ -9485,7 +9638,8 @@ function startSetPieceWait() {
   // (7.4.20) escanteio e lateral com o pé também: antes você ficava travado na pose de "indo chutar" (a perna armando) enquanto
   //   escolhia; agora fica parado (ou andando, se se mexer) um pouco atrás da bola e a corrida + a batida só vêm depois da escolha
   if (p.isUser && (S.kind === 'escanteio' || (S.kind === 'lateral' && S.pe))) p.bolaFixa = { x: S.ballSpot.x, z: S.ballSpot.z, atras: 1.5, lado: 0.6 };
-  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : S.kind === 'tiro de meta' ? 'lancar' : (G.desafio && G.desafio.toque) || 'shot');   // (7.4.16) tiro de meta: começa no LANÇAR   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
+  if (p.isUser) startKick(S.kind === 'lateral' ? 'pass' : S.kind === 'tiro de meta' ? 'lancar' : (G.desafio && G.desafio.toque) || 'shot');
+  if (p.isUser && G.kick && G.state === 'aim' && faltaMiraPossivel(S)) iniciarFaltaMira();   // (7.5.11) a falta direta: a mira pontilhada   // (7.4.16) tiro de meta: começa no LANÇAR   // treino: o desafio diz se começa no CHUTAR ou no PASSAR
 }
 
 // ---------------------------------------------------------------------
@@ -9525,6 +9679,235 @@ function updateCobrador(dt) {
   }
 }
 
+// =====================================================================================================================
+// (7.5.11) FALTA COM A MIRA PONTILHADA — a sua falta direta (perto do gol, numa partida; o treino do seu Nonato continua como era).
+//   Antes a falta era a seta + a barra de força + o toque na bola, e com a barreira e o goleiro quase nunca entrava. Agora:
+//   · ARRASTE na tela: a mira (o círculo no gol) vai para o lado e para cima/baixo — é ali que você quer pôr a bola;
+//   · o EFEITO (a barra de baixo) entorta a linha pontilhada para um lado ou para o outro;
+//   · a linha pontilhada mostra o caminho da bola (fica VERMELHA onde ela bateria na barreira ou sairia), e CHUTAR bate.
+//   A força vem do atributo FORÇA (de longe, um jogador fraco não alcança a mira alta) e o tamanho da curva do atributo EFEITO;
+//   a pontaria (CHUTE/FINALIZAÇÃO, confiança, ressaca...) decide o quanto a bola de verdade sai do pontilhado.
+// =====================================================================================================================
+const FK = { DOTS: 30, CURVA: 1.05, TOPSPIN: -0.22, DIST_MAX: 36 };
+function faltaMiraPossivel(S) {
+  return !!S && S.kind === 'falta' && S.motivo !== 'impedimento' && S.motivo !== 'desafio' && !G.desafio && !G.espectador && S.taker === user
+    && S.dGoal != null && S.dGoal < FK.DIST_MAX && HALF_L - S.ballSpot.x > 6;
+}
+let fkMalhas = null;
+function fkGarantirMalhas() {
+  if (fkMalhas) return fkMalhas;
+  const geo = new THREE.SphereGeometry(0.1, 8, 6), pontos = [];
+  for (let i = 0; i < FK.DOTS; i++) { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, depthWrite: false })); m.visible = false; m.renderOrder = 5; scene.add(m); pontos.push(m); }
+  const anel = new THREE.Mesh(new THREE.TorusGeometry(0.5, 0.07, 6, 28), new THREE.MeshBasicMaterial({ color: 0xffd23a, depthWrite: false, transparent: true, opacity: 0.95 }));
+  const cruz = new THREE.Group();
+  for (const [w, h] of [[1.1, 0.06], [0.06, 1.1]]) { const c = new THREE.Mesh(new THREE.BoxGeometry(0.02, h, w), new THREE.MeshBasicMaterial({ color: 0xffd23a, depthWrite: false, transparent: true, opacity: 0.8 })); cruz.add(c); }
+  anel.rotation.y = Math.PI / 2; anel.renderOrder = 6; anel.visible = false; cruz.visible = false; scene.add(anel); scene.add(cruz);
+  fkMalhas = { pontos, anel, cruz };
+  return fkMalhas;
+}
+function fkEsconderMalhas() { if (!fkMalhas) return; for (const m of fkMalhas.pontos) m.visible = false; fkMalhas.anel.visible = false; fkMalhas.cruz.visible = false; }
+// a bola sai com velocidade v, direção a (rad) e subida vy, com o efeito ss (lado) e sv (de cima): onde ela cruza a linha do gol?
+function fkSimular(b0, a, vy, v, ss, sv, guardar) {
+  const b = { x: b0.x, y: CONFIG.BALL_R, z: b0.z, vx: Math.cos(a) * v, vy, vz: Math.sin(a) * v, ss, sv };
+  const h = 1 / 75, pts = guardar ? [{ x: b.x, y: b.y, z: b.z }] : null;
+  for (let t = 0; t < 3.2; t += h) {
+    passoBola(b, h);
+    if (pts) pts.push({ x: b.x, y: b.y, z: b.z });
+    if (b.x >= HALF_L) return { z: b.z, y: b.y, t, pts, chegou: true };
+    if (b.y <= CONFIG.BALL_R + 0.001 && b.vy === 0 && Math.hypot(b.vx, b.vz) < 1.5) return { z: b.z, y: CONFIG.BALL_R - 1, t, pts, chegou: false };
+  }
+  return { z: b.z, y: b.y, t: 3.2, pts, chegou: false };
+}
+// a força e a curva que ESTE jogador consegue dar (os atributos) — o pontilhado já mostra isso
+function fkParametros(u, F) {
+  const d = Math.hypot(HALF_L - F.bola.x, F.tz - F.bola.z);
+  const fF = clamp(fh(u, 'forca'), 0.5, 1.45), fE = clamp(Atributos.fator('efeito'), 0.45, 1.45);
+  const v = clamp(13 + d * 0.42, 18, 27) * clamp(0.8 + 0.2 * fF, 0.7, 1.1);
+  return { v, ss: -F.curva * FK.CURVA * fE, sv: FK.TOPSPIN * clamp(fE, 0.6, 1.2) };   // efeito > 0 (barra para a direita) = curva para a direita
+}
+// acha a direção e a subida que levam a bola até a mira (Newton em 2 variáveis, a física de verdade da bola)
+function fkResolver(u, F) {
+  const P = fkParametros(u, F), b0 = F.bola;
+  // o chute inicial: a conta de balística (com o mergulho do efeito de cima) — com subida de menos a bola chega rolando e a conta não anda
+  const dist0 = Math.hypot(HALF_L - b0.x, F.tz - b0.z), t0 = dist0 / (P.v * 0.93), gEf = CONFIG.GRAVITY - P.sv * CONFIG.LIFT;
+  let a = Math.atan2(F.tz - b0.z, HALF_L - b0.x), vy = clamp((F.ty - CONFIG.BALL_R + 0.5 * gEf * t0 * t0) / t0, 1, 12), r = null;
+  for (let it = 0; it < 9; it++) {
+    r = fkSimular(b0, a, vy, P.v, P.ss, P.sv);
+    const ez = r.z - F.tz, ey = r.y - F.ty;
+    if (Math.abs(ez) < 0.02 && Math.abs(ey) < 0.02) break;
+    const ra = fkSimular(b0, a + 0.003, vy, P.v, P.ss, P.sv), rv = fkSimular(b0, a, vy + 0.06, P.v, P.ss, P.sv);
+    const j11 = (ra.z - r.z) / 0.003, j12 = (rv.z - r.z) / 0.06, j21 = (ra.y - r.y) / 0.003, j22 = (rv.y - r.y) / 0.06;
+    const det = j11 * j22 - j12 * j21;
+    if (Math.abs(det) < 1e-6) { if (Math.abs(j22) < 1e-4 && ey < 0) { vy = Math.min(14, vy + 1.2); continue; } break; }   // chegou rolando: sobe mais
+    let da = (ez * j22 - ey * j12) / det, dv = (j11 * ey - j21 * ez) / det;
+    da = clamp(da, -0.15, 0.15); dv = clamp(dv, -3, 3);
+    a -= da; vy = clamp(vy - dv, 0.3, 14);
+  }
+  const sim = fkSimular(b0, a, vy, P.v, P.ss, P.sv, true);
+  F.sol = { a, vy, v: P.v, ss: P.ss, sv: P.sv, chega: sim.chegou && Math.abs(sim.z - F.tz) < 0.35 && Math.abs(sim.y - F.ty) < 0.35 };
+  // onde ela bateria na barreira (a altura de quem pula) ou sairia: dali em diante o pontilhado fica vermelho
+  const W = (G.sp && G.sp.wall) || [], altB = 2.2;                      // a barreira pulando bloqueia até 2,15 m (montarBarreira/checkBallContacts)
+  let corte = sim.pts.length;
+  for (let i = 1; i < sim.pts.length && corte === sim.pts.length; i++) {
+    const q = sim.pts[i];
+    for (const w of W) if (Math.hypot(q.x - w.x, q.z - w.z) < 0.62 && q.y < altB) { corte = i; break; }
+  }
+  const fim = sim.pts[sim.pts.length - 1], dentro = sim.chegou && Math.abs(fim.z) < GOAL_HALF - 0.05 && fim.y < CONFIG.GOAL_H - 0.03;
+  F.pts = sim.pts; F.corte = corte; F.dentro = dentro; F.barreira = corte < sim.pts.length;
+  // ARRISCADO (amarelo): passa raspando a barreira ou a mira está colada na trave/no travessão — o erro do chute pode estragar
+  let folga = 9; for (const q of sim.pts) for (const w of W) if (Math.hypot(q.x - w.x, q.z - w.z) < 0.9) folga = Math.min(folga, q.y - altB);
+  F.arriscado = !F.barreira && (folga < 0.4 || Math.abs(F.tz) > GOAL_HALF - 0.5 || F.ty > CONFIG.GOAL_H - 0.35 || F.ty < 0.35);
+}
+function fkAtualizarMalhas(F) {
+  const M = fkGarantirMalhas(), P = F.pts || [], n = FK.DOTS;
+  for (let i = 0; i < n; i++) {
+    const m = M.pontos[i], k = Math.min(P.length - 1, Math.round((i + 1) / n * (P.length - 1)));
+    if (!P.length || F.chutou) { m.visible = false; continue; }
+    const q = P[k]; m.position.set(q.x, q.y, q.z); m.visible = true;
+    const ruim = k >= F.corte || (!F.dentro && i > n * 0.8);
+    m.material.color.setHex(ruim ? 0xff4d4d : 0xffffff); m.scale.setScalar(1 - i / n * 0.35);
+  }
+  M.anel.visible = M.cruz.visible = !F.chutou;
+  M.anel.position.set(HALF_L - 0.05, F.ty, F.tz); M.cruz.position.copy(M.anel.position);
+  const cor = !F.dentro || F.barreira ? 0xff4d4d : F.arriscado ? 0xffd23a : 0x6cff6c;   // verde: boa · amarelo: arriscada · vermelho: barreira/fora
+  M.anel.material.color.setHex(cor); for (const c of M.cruz.children) c.material.color.setHex(cor);
+}
+// a tela: o aviso de cima, a barra do EFEITO, CHUTAR e PASSAR; arrastar em qualquer outro lugar move a mira
+function fkUI() {
+  let el = $('faltaUI');
+  if (el) return el;
+  const css = document.createElement('style');
+  css.textContent = `
+#faltaUI { position: fixed; inset: 0; z-index: 1; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+#faltaUI[hidden] { display: none; }
+#faltaUI .fkTopo { position: absolute; left: 50%; top: calc(54px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); max-width: min(560px, 92vw); text-align: center;
+  font: 700 12px/1.35 var(--font-body); color: #fff6d8; background: rgba(20,12,4,.72); border: 2px solid #f0a020; padding: 6px 10px; pointer-events: none; }
+#faltaUI .fkPainel { position: absolute; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(620px, 96vw); box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 6px; padding: 8px 10px; background: rgba(20,12,4,.82); border: 3px solid #f0a020; cursor: default; }
+#faltaUI .fkLinha { display: flex; gap: 8px; align-items: center; }
+#faltaUI .fkRot { font: 700 11px/1 var(--font-display); color: #f2c230; letter-spacing: .06em; min-width: 58px; }
+#faltaUI .fkTrilho { position: relative; flex: 1; height: 26px; background: linear-gradient(90deg, #2a72d6, #3a3a3a 50%, #d6582a); border: 2px solid #fff0c8; cursor: pointer; touch-action: none; }
+#faltaUI .fkTrilho::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,240,200,.6); }
+#faltaUI .fkPino { position: absolute; top: -5px; width: 14px; height: 32px; margin-left: -7px; background: #fff0c8; border: 2px solid #2a1206; box-sizing: border-box; pointer-events: none; }
+#faltaUI .fkInfo { font: 600 11px/1.3 var(--font-body); color: #fff0c8; flex: 1; }
+#faltaUI .fkBtns { display: flex; gap: 8px; }
+#faltaUI .fkBtns button { height: 40px; padding: 0 16px; font: 700 13px/1 var(--font-display); letter-spacing: .06em; border: 3px solid #2a1206; cursor: pointer; }
+#faltaUI .fkChutar { background: #f0a020; color: #2a1206; flex: 1; }
+#faltaUI .fkPassar { background: #3a3a3a; color: #fff0c8; }
+body.faltaMira #joy, body.faltaMira #actions { visibility: hidden; }
+@media (max-height: 420px) { #faltaUI .fkTopo { top: 46px; font-size: 11px; } #faltaUI .fkBtns button { height: 34px; } #faltaUI .fkPainel { padding: 6px 8px; gap: 4px; } #faltaUI .fkTrilho { height: 22px; } }`;
+  document.head.appendChild(css);
+  el = document.createElement('div'); el.id = 'faltaUI'; el.hidden = true;
+  el.innerHTML = '<div class="fkTopo"></div><div class="fkPainel"><div class="fkLinha"><span class="fkRot"></span><div class="fkTrilho"><div class="fkPino"></div></div></div>'
+    + '<div class="fkLinha"><span class="fkInfo"></span><div class="fkBtns"><button type="button" class="fkPassar"></button><button type="button" class="fkChutar"></button></div></div></div>';
+  ($('raizJogo') || document.body).appendChild(el);
+  const painel = el.querySelector('.fkPainel'), trilho = el.querySelector('.fkTrilho');
+  let arrasto = null, arrastoEf = null;
+  const efeitoDe = (x) => { const r = trilho.getBoundingClientRect(); return clamp(((x - r.left) / Math.max(1, r.width)) * 2 - 1, -1, 1); };
+  el.addEventListener('pointerdown', (e) => {
+    const F = G.kick && G.kick.faltaMira; if (!F || F.chutou) return;
+    e.preventDefault(); e.stopPropagation();
+    if (trilho.contains(e.target)) { arrastoEf = e.pointerId; F.curva = Math.abs(efeitoDe(e.clientX)) < 0.06 ? 0 : efeitoDe(e.clientX); F.sujo = true; return; }
+    if (painel.contains(e.target)) return;
+    arrasto = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+  window.addEventListener('pointermove', (e) => {
+    const F = G.kick && G.kick.faltaMira; if (!F || F.chutou) return;
+    if (e.pointerId === arrastoEf) { const c = efeitoDe(e.clientX); F.curva = Math.abs(c) < 0.06 ? 0 : c; F.sujo = true; return; }
+    if (!arrasto || e.pointerId !== arrasto.id) return;
+    const dx = e.clientX - arrasto.x, dy = e.clientY - arrasto.y; arrasto.x = e.clientX; arrasto.y = e.clientY;
+    fkMoverMira(F, dx, dy, true);
+  });
+  const solta = (e) => { if (arrasto && e.pointerId === arrasto.id) arrasto = null; if (e.pointerId === arrastoEf) arrastoEf = null; };
+  window.addEventListener('pointerup', solta); window.addEventListener('pointercancel', solta);
+  el.querySelector('.fkChutar').addEventListener('click', (e) => { e.stopPropagation(); faltaChutar(); });
+  el.querySelector('.fkPassar').addEventListener('click', (e) => { e.stopPropagation(); faltaPassar(); });
+  return el;
+}
+// move a mira: dx/dy em pixels da tela (arrastando) — o lado na tela é o da câmera (direita na tela = direita no gol)
+function fkMoverMira(F, dx, dy, pixels) {
+  const W = Math.max(320, AREA.w || innerWidth), H = Math.max(240, AREA.h || innerHeight);
+  const kz = pixels ? (GOAL_HALF * 2 + 4) / (W * 0.62) : 1, ky = pixels ? (CONFIG.GOAL_H + 1.2) / (H * 0.5) : 1;
+  F.tz = clamp(F.tz + dx * kz * fkLadoTela(), -(GOAL_HALF + 2.2), GOAL_HALF + 2.2);
+  F.ty = clamp(F.ty - dy * ky, 0.25, CONFIG.GOAL_H + 1.0);
+  F.sujo = true;
+}
+// +1 se, olhando da câmera, o z do mundo cresce para a DIREITA da tela
+function fkLadoTela() {
+  const a = new THREE.Vector3(HALF_L, 1, 0).project(camera), b = new THREE.Vector3(HALF_L, 1, 1).project(camera);
+  return b.x >= a.x ? 1 : -1;
+}
+function iniciarFaltaMira() {
+  const S = G.sp, k = G.kick, u = user; if (!S || !k) return;
+  const lado = Math.sign(S.ballSpot.z) || 1;                             // a barreira fecha o lado da trave mais perto: começa no outro
+  k.faltaMira = { bola: { x: S.ballSpot.x, z: S.ballSpot.z }, tz: -lado * (GOAL_HALF - 0.9), ty: 1.75, curva: 0, sujo: true, chutou: false };
+  k.aimed = true;
+  hideKickUI();
+  const el = fkUI(); el.hidden = false;
+  el.querySelector('.fkTopo').textContent = T('FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito');
+  el.querySelector('.fkRot').textContent = T('EFEITO');
+  el.querySelector('.fkChutar').textContent = T('CHUTAR');
+  el.querySelector('.fkPassar').textContent = T('PASSAR');
+  const est = (f) => '★'.repeat(clamp(Math.round(f * 3), 1, 5));
+  el.querySelector('.fkInfo').textContent = Tf('Força {0} · Efeito {1}', est(fh(u, 'forca')), est(Atributos.fator('efeito')));
+  atualizarFaltaMira(0);
+}
+function atualizarFaltaMira(rdt) {
+  const el = $('faltaUI');
+  const F = G.kick && G.kick.faltaMira, ativo = !!F && !F.chutou && G.state === 'aim';
+  if (!ativo) { if (el && !el.hidden) el.hidden = true; if (fkMalhas && fkMalhas.anel.visible) fkEsconderMalhas(); if (document.body.classList.contains('faltaMira')) document.body.classList.remove('faltaMira'); return; }
+  if (!document.body.classList.contains('faltaMira')) document.body.classList.add('faltaMira');   // some o joystick e os botões de ação (a falta tem os dela)
+  // teclado/controle: setas (ou o analógico) movem a mira; Q/E (ou o analógico direito) mexem no efeito
+  let mx = 0, my = 0;
+  if (teclaSegurada('direita') || keys.ArrowRight) mx += 1; if (teclaSegurada('esquerda') || keys.ArrowLeft) mx -= 1;
+  if (teclaSegurada('cima') || keys.ArrowUp) my -= 1; if (teclaSegurada('baixo') || keys.ArrowDown) my += 1;
+  if (Pad.ativo && Pad.mag > 0.2) { mx += Pad.right; my -= Pad.up; }
+  if (mx || my) fkMoverMira(F, mx * 3.2 * rdt, my * 1.6 * rdt, false);
+  let mc = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + (Pad.ativo ? (Pad.rx || 0) : 0);
+  if (Math.abs(mc) > 0.15) { F.curva = clamp(F.curva + mc * 1.2 * rdt, -1, 1); F.sujo = true; }
+  // o pino da barra do efeito
+  if (el) { const pino = el.querySelector('.fkPino'); if (pino) pino.style.left = ((F.curva + 1) / 2 * 100).toFixed(1) + '%'; }
+  if (F.sujo && performance.now() - (F.tSolve || 0) > 60) {           // (no máximo ~16 contas por segundo arrastando: celular)
+    F.sujo = false; F.tSolve = performance.now(); fkResolver(user, F);
+    const a = F.sol.a; G.kick.dirX = Math.cos(a); G.kick.dirZ = Math.sin(a);   // a corrida e a câmera seguem a direção da batida
+    const ox = -F.curva;                                                       // (o mesmo texto do toque na bola)
+    const txt = Math.abs(F.curva) < 0.06 ? T('Batida reta, sem efeito') : Tf('A bola {0}', T(ox > 0 ? 'curva para a esquerda' : 'curva para a direita'));
+    if (el) el.querySelector('.fkRot').textContent = T('EFEITO'), el.querySelector('.fkTopo').textContent = T('FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito') + ' — ' + txt
+      + (F.barreira ? ' · ' + T('assim bate na barreira!') : !F.dentro ? ' · ' + T('assim vai para fora') : F.arriscado ? ' · ' + T('arriscado!') : '');
+  }
+  fkAtualizarMalhas(F);
+}
+function faltaChutar() {
+  const k = G.kick, F = k && k.faltaMira; if (!F || F.chutou || G.state !== 'aim') return;
+  if (F.sujo) { F.sujo = false; fkResolver(user, F); }
+  F.chutou = true; fkEsconderMalhas(); const el = $('faltaUI'); if (el) el.hidden = true;
+  try { Som.clique && Som.clique(); } catch (e) { /* sem som */ }
+  k.power = 0.78; k.faixa = 4; k.ox = -F.curva; k.oy = 0; k.spinChosen = true;
+  k.dirX = Math.cos(F.sol.a); k.dirZ = Math.sin(F.sol.a);
+  executeUserKick();                                                       // a corrida até a bola (updateCobrador) e a batida (chuteDeFaltaMira)
+}
+function faltaPassar() {
+  const k = G.kick; if (!k || !k.faltaMira || k.faltaMira.chutou) return;
+  k.faltaMira = null; fkEsconderMalhas(); const el = $('faltaUI'); if (el) el.hidden = true;
+  G.kick = null; G.state = 'play'; hideKickUI();
+  startKick('pass');                                                       // o passe de sempre (seta e força)
+}
+// a batida (no contato da corrida): o que o pontilhado mostrou, mais o erro do jogador
+function chuteDeFaltaMira(k, u) {
+  const F = k.faltaMira, S0 = F.sol;
+  let f = fh(u, 'chute');
+  if (u.isUser && typeof Historia !== 'undefined' && Historia.emPartida()) f *= Espectros.precisao('chute');
+  const erro = clamp(1.35 - 0.35 * f, 0.6, 1.6) * difDominio();      // (a dificuldade da partida também pesa: difícil = erra mais)
+  const dK = Math.hypot(HALF_L - F.bola.x, F.tz - F.bola.z), amb = (1 + 0.9 * Math.abs(F.curva)) * Math.sqrt(clamp(dK / 22, 0.6, 1.6));   // mais efeito e mais longe: mais difícil de acertar
+  const a = S0.a + gauss() * 0.017 * erro * amb, vy = S0.vy + gauss() * 0.3 * erro * amb, v = S0.v * (1 + gauss() * 0.03 * erro);
+  const ss = S0.ss * clamp(1 + gauss() * 0.08 * erro, 0.75, 1.2);
+  kickBall(u, Math.cos(a) * v, vy, Math.sin(a) * v, ss, S0.sv);
+  u.angle = a;
+  ball.isShot = true; ball.userShot = true; ball.userCabeca = false; ball.faltaDireta = true; G.stats.chutes++;
+  ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = false;
+  prepararBloqueios(u);
+  checarCenaDoAngulo(true);
+}
 // A IA cobra só depois de o time se posicionar e escolhe a melhor opção (nada aleatório, nem sempre você).
 function aiSetPiece(p, dt) {
   const S = G.sp;
@@ -9692,7 +10075,7 @@ function iniciarParalisacao(F) {
   F.t = 0; F.cardShown = false;
   G.foul = F; G.offside = null; G.passTarget = null;
   G.recv = null; G.recvFx = null; esconderRecepcao(); user.recvPose = null;
-  if (G.cine) { user.scripted = false; G.cine.opp.scripted = false; G.cine = null; }
+  if (G.cine) { user.scripted = false; G.cine.opp.scripted = false; G.cine = null; G.rampa = null; }
   G.state = 'foul'; G.targetScale = 0.6;
   hideKickUI();
   setLetterbox(true);
@@ -9958,6 +10341,7 @@ function startKick(kind) {
     windup: 0,                                     // 0→1: preparação do chute em câmera lenta
   };
   G.kick.alto = lancar || (kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));   // escanteio: PASSAR é cruzar
+  { const lim = limitarMiraBolaParada(G.kick.dirX, G.kick.dirZ); G.kick.dirX = lim.x; G.kick.dirZ = lim.z; }   // (7.5.11) nunca começa apontando para fora
   G.kick.cruzarFixo = cruzarFixo;
   if (kind === 'shot') G.kick.cruzar = cruzarFixo || !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
   G.state = 'aim'; G.targetScale = G.kick.semLimite ? 1 : CONFIG.SLOWMO_AIM;   // só a seta gira; bola parada não precisa de câmera lenta
@@ -9996,8 +10380,23 @@ function rotuloDoToque(k) {
   if (k.lancar) return T('LANÇAMENTO');
   return T(k.alto ? 'CRUZAMENTO' : 'PASSE');
 }
+// (7.5.11) LATERAL e ESCANTEIO: a mira não passa da linha. No lateral só o meio-plano para dentro do campo (180°); no escanteio só o
+//   quarto de círculo que aponta para o campo (90°). Arrastando além disso, a seta trava no limite (não dá para cobrar para fora).
+function limitarMiraBolaParada(dx, dz) {
+  const S = G.sp;
+  if (!S || S.taker !== user || (S.kind !== 'lateral' && S.kind !== 'escanteio')) return { x: dx, z: dz };
+  const zs = S.zs || 1, sd = S.side || 1;
+  const c = S.kind === 'lateral' ? Math.atan2(-zs, 0) : Math.atan2(-zs, -sd);   // o centro do leque (para dentro)
+  const hw = S.kind === 'lateral' ? Math.PI / 2 - 0.07 : Math.PI / 4 - 0.05;   // meia-abertura (uma folguinha para a bola não correr em cima da linha)
+  const a = Math.atan2(dz, dx); let d = a - c; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI;
+  if (Math.abs(d) <= hw) return { x: dx, z: dz };
+  const b = c + Math.sign(d) * hw, L = Math.hypot(dx, dz) || 1;
+  return { x: Math.cos(b) * L, z: Math.sin(b) * L };
+}
 function setAimDir(dirX, dirZ) {
   const k = G.kick;
+  if (k && k.faltaMira) return;                     // (7.5.11) na falta da mira pontilhada quem decide a direção é a mira
+  const lim = limitarMiraBolaParada(dirX, dirZ); dirX = lim.x; dirZ = lim.z;
   k.dirX = dirX; k.dirZ = dirZ; k.aimed = true; k.target = null;
   k.alto = k.lancar || (k.kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));        // escanteio: o "PASSAR" é o cruzamento
   if (k.kind === 'shot') k.cruzar = !!k.cruzarFixo || !mirandoNoGol(dirX, dirZ);
@@ -10006,6 +10405,7 @@ function setAimDir(dirX, dirZ) {
 
 function confirmAim() {
   if (G.state !== 'aim') return;
+  if (G.kick && G.kick.faltaMira) { faltaChutar(); return; }   // (7.5.11) Enter/botão de chute na falta da mira pontilhada
   enterPower();
 }
 
@@ -10182,7 +10582,7 @@ function lancarBolaAlta(k, u) {
   const lado = k.kind === 'shot' ? (k.ox || 0) * 0.6 * fEf : 0;
   kickBall(u, Math.cos(a) * hs, vy, Math.sin(a) * hs, lado, 0, !!k.throwIn);
   u.angle = a;
-  ball.userPass = true; G.stats.passes++;
+  ball.userPass = true; G.stats.passes++; if (!k.throwIn) G.stats.cruzamentos = (G.stats.cruzamentos | 0) + 1;
   const Q = quedaDaBola();
   const rec = designarRecebedor(u, Q.x, Q.z, Q.t);
   if (!k.throwIn && !k.lancar) ball.cruzamento = { team: u.team, alvo: rec };
@@ -10200,6 +10600,7 @@ function executeUserKick() {
   const fEf = Atributos.fator('efeito');
   const ang0 = Math.atan2(k.dirZ, k.dirX);
   const fim = () => { G.kick = null; G.state = 'play'; G.targetScale = 1; hideKickUI(); };
+  if (k.faltaMira) { chuteDeFaltaMira(k, u); fim(); return; }   // (7.5.11) a falta da mira pontilhada
   // ---- (7.4.17) CRUZAMENTO RASTEIRO (toque no meio) ou QUICANDO (toque em cima) ----
   if (k.kind === 'shot' && k.cruzar && !k.throwIn && (k.oy || 0) <= TOQUE_MEIO) {
     const oy = k.oy || 0, quica = oy < -TOQUE_MEIO;
@@ -10208,7 +10609,7 @@ function executeUserKick() {
     const vy = quica ? -sp * lerp(0.18, 0.32, clamp((-oy - TOQUE_MEIO) / (1 - TOQUE_MEIO), 0, 1)) : 0.25;
     kickBall(u, Math.cos(a) * sp, vy, Math.sin(a) * sp, (k.ox || 0) * 0.9 * fEf, quica ? oy * fEf : 0);   // efeito de lado: a curva rasteira
     u.angle = a;
-    ball.userPass = true; G.stats.passes++;
+    ball.userPass = true; G.stats.passes++; G.stats.cruzamentos = (G.stats.cruzamentos | 0) + 1;
     designarRecebedor(u);
     prepararBloqueios(u);                            // quem está na linha tenta bloquear
     fim();
@@ -10273,10 +10674,17 @@ function executeUserKick() {
   if (!cavadinha && k.oy < -TOQUE_QUICA) vy = chuteContraOChao(k.oy, vC);   // (7.4.17) em cima da bola: sai quicando
   const hs = vC * Math.cos(elev);
   vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
-  kickBall(u, vx, vy, vz, k.ox * fEf, cavadinha ? 0 : k.oy * fEf, k.throwIn);  // sai de onde a bola está
+  // (7.5.11) bater EM CIMA da bola (sem chegar no quique) dá o "mergulho" da bola, mas antes o efeito puxava ela para o chão
+  //   logo no começo: ela batia, perdia velocidade rolando e o goleiro sempre chegava (parecia um chute fraco). Agora o mergulho
+  //   é mais suave e a bola chega no gol com a força que saiu.
+  const svChute = cavadinha ? 0 : k.oy < 0 && k.oy >= -TOQUE_QUICA ? k.oy * fEf * 0.4 : k.oy * fEf;
+  kickBall(u, vx, vy, vz, k.ox * fEf, svChute, k.throwIn);  // sai de onde a bola está
   u.angle = a;
   if (cavadinha) qualCav = qualidadeDaCavadinha(1);
   ball.isShot = true; ball.userShot = true; ball.userCabeca = false; G.stats.chutes++; ball.distChute = Math.hypot(HALF_L - u.x, u.z); ball.cavadinha = cavadinha;
+  if (k.power > 0.7) G.stats.chutesFortes = (G.stats.chutesFortes | 0) + 1;   // a evolução da história: força, efeito e bola parada
+  if (Math.abs(k.ox || 0) > 0.35) G.stats.chutesEfeito = (G.stats.chutesEfeito | 0) + 1;
+  if (u.bolaFixa) G.stats.cobrancas = (G.stats.cobrancas | 0) + 1;
   if (G.ultToque) G.ultToque.cav = cavadinha;
   if (cavadinha) marcarCavadinha(1, qualCav); else prepararBloqueios(u);   // bloqueio da IA
   fim();
@@ -10313,6 +10721,21 @@ function checarCenaDoAngulo(bom) {
 }
 
 // Simula a bola (mesma física do jogo, sem jogadores) até ela chegar na linha do gol adversário.
+// (7.5.11) O GOLEIRO LÊ O CHUTE PELA DIREÇÃO EM QUE A BOLA SAIU: com efeito, ele demora a perceber a curva (o melhor goleiro percebe
+//   antes). Antes ele refazia a conta a cada quadro com a velocidade de agora e acompanhava a curva perfeitamente — o chute com efeito,
+//   mesmo tirando dele, ia sempre parar nas mãos. Chute reto: a direção vista é a de verdade (nada muda).
+function vzVistaGK(gk) {
+  if (!ball.isShot || ball.vz0 == null || !ball.spinSide || ball.tChute == null) return ball.vz;
+  const lag = 0.62 / Math.sqrt(fh(gk, 'goleiro')) * (ball.faltaDireta ? 1.05 : 1), k = clamp((G.time - ball.tChute - 0.12) / lag, 0, 1);   // falta: a barreira tapa a saída da bola
+  const sp0 = Math.hypot(ball.vx0 || 0, ball.vz0) || 1, sp = Math.hypot(ball.vx, ball.vz);
+  return lerp(ball.vz0 * sp / sp0, ball.vz, k * k);
+}
+// quanto a curva tirou a bola da linha em que ela saiu (m), no ponto em que ela está agora
+function desvioDaCurva() {
+  if (ball.vz0 == null || ball.x0 == null || !ball.vx0) return 0;
+  const zr = ball.z0 + ball.vz0 / ball.vx0 * (ball.x - ball.x0);
+  return Math.abs(ball.z - zr);
+}
 function predictShot(lado = 1) {
   const b = { x: ball.x, y: ball.y, z: ball.z, vx: ball.vx, vy: ball.vy, vz: ball.vz, ss: ball.spinSide, sv: ball.spinVert };
   const R = CONFIG.BALL_R, h = 1 / 120;
@@ -10400,10 +10823,11 @@ function cameraPreChute() {
   const D = lerp(7.0, 4.6, smooth(clamp(C.t / 1.4, 0, 1)));   // começa mais aberto e vai fechando nele
   return { px: p.x + fx * 1.6 - fz * sd * D, py: 1.35, pz: p.z + fz * 1.6 + fx * sd * D, tx: p.x + fx * 0.35, ty: 0.85, tz: p.z + fz * 0.35 };
 }
-// Câmera lenta do chute, terceira câmera (atrás do gol): a grade/tela some para não tapar o caminho da bola.
+// Câmera lenta do chute, terceira câmera (atrás do gol) e (7.6.0) o seu lateral/escanteio (câmera das costas, do lado de fora da grade):
+//   a grade/tela some para não tapar o campo.
 let gradeCineEscondida = false;
 function gradeCine() {
-  const esc = !!(G.shotCine && G.shotCine.seg === 2) && !G.replay;
+  const esc = (!!(G.shotCine && G.shotCine.seg === 2) || camCobrancaAtiva()) && !G.replay;   // (7.6.0) e no seu lateral/escanteio: a câmera fica do lado de fora da grade e a tela tapava a quadra
   if (esc === gradeCineEscondida || G.replay) return;
   gradeCineEscondida = esc;
   if (TELA_MESH) TELA_MESH.visible = !esc;
@@ -10709,9 +11133,9 @@ function cameraFinta() {
 // ---------------------------------------------------------------------
 const RECV = {
   JANELA: 2,                                       // segundos (reais) para martelar
-  VEL: 1.0,                                        // velocidade do marcador (trilhos por segundo)
-  FOLGA: 0.025,                                    // tolerância nas bordas da faixa verde
-  ZONA: { pe: 0.26, peito: 0.22, peitoPulo: 0.2, alto: 0.2 },
+  VEL: 1.2,                                        // velocidade do marcador (trilhos por segundo) — (7.5.11) era 1,0; ver velMartelo
+  FOLGA: 0.02,                                     // tolerância nas bordas da faixa verde (era 0,025)
+  ZONA: { pe: 0.2, peito: 0.17, peitoPulo: 0.15, alto: 0.16 },   // (7.5.11) era 0,26/0,22/0,2/0,2: o domínio estava fácil demais; ver tamFaixa
   ALT: { pe: 0.9, peito: 1.5, peitoPulo: 1.95, alto: 2.9 },
 };
 const POSE_DUR = { peito: 0.6, peitoPulo: 0.65, cabeca: 0.7, bicicleta: 1.1, voleio: 0.95 };
@@ -10766,9 +11190,37 @@ function avaliarChegada(pr) {
   const torta = (pr.lat || 0) > CHEGADA.LAT_TORTA || (pingando && vh > 8) || pr.y > 1.8;
   const forte = vh > CHEGADA.RAPIDA || Math.hypot(vh, vy) > CHEGADA.RAPIDA + 2;
   const rasteiraCerta = pr.y <= CHEGADA.ALTURA_FACIL && !pingando && !torta;
-  const precisaMinigame = !!ball.dominioDificil || (rasteiraCerta ? vh > CHEGADA.AUTO_VH_CERTA : (pr.y > CHEGADA.ALTURA_FACIL || vh > CHEGADA.AUTO_VH || (pingando && vh > 6)));
-  return { vh, pingando, torta, forte, dificil: (forte && torta) || !!ball.dominioDificil, precisaMinigame };
+  let precisaMinigame = !!ball.dominioDificil || (rasteiraCerta ? vh > CHEGADA.AUTO_VH_CERTA : (pr.y > CHEGADA.ALTURA_FACIL || vh > CHEGADA.AUTO_VH || (pingando && vh > 6)));
+  // (7.5.11) BOLA DO ADVERSÁRIO (chute, passe ou cruzamento dele vindo em você): forte ou de muito perto = só dá para tentar BLOQUEAR
+  //   (sem domínio); rápida ou de perto = domínio DIFÍCIL (o ponto azul); só a bola mansa do adversário você domina de boa.
+  const A = chegadaAdversaria(vh);
+  if (A.adv && vh > CHEGADA_ADV.MANSA) precisaMinigame = true;
+  return { vh, pingando, torta, forte, dificil: (forte && torta) || !!ball.dominioDificil || A.dificil, precisaMinigame, bloqueio: A.bloqueio, adv: A.adv };
 }
+const CHEGADA_ADV = { MANSA: 9, CHUTE_FORTE: 15, FORTE: 21, PERTO: 6, PERTO_VH: 11, DIF_VH: 13, DIF_PERTO: 10 };
+function chegadaAdversaria(vh) {
+  const k = ball.lastKicker;
+  if (!user || !k || k.team === user.team || k === user) return { adv: false, bloqueio: false, dificil: false };
+  const dK = ball.x0 == null ? 99 : Math.hypot(user.x - ball.x0, user.z - ball.z0);   // de onde ela saiu (o chute/passe dele)
+  const bloqueio = (ball.isShot && vh > CHEGADA_ADV.CHUTE_FORTE) || vh > CHEGADA_ADV.FORTE || (dK < CHEGADA_ADV.PERTO && vh > CHEGADA_ADV.PERTO_VH);
+  const dificil = !bloqueio && (ball.isShot || vh > CHEGADA_ADV.DIF_VH || dK < CHEGADA_ADV.DIF_PERTO);
+  return { adv: true, bloqueio, dificil, dK };
+}
+// (7.5.11) só deu para bloquear: o corpo vai na frente da bola (a perna, o corpo de costas ou o pulo, pela altura) e ela resvala nele
+//   — ou passa, se ele não alcançar (checarBloqueios). Nada de domínio: a bola não gruda no pé.
+function bloqueioDoUsuario(pr) {
+  const u = user, tipo = pr.y < 0.75 ? 'perna' : pr.y > 1.5 ? 'pulo' : 'costas';
+  const ponto = { x: ball.x + ball.vx * pr.t, y: pr.y, z: ball.z + ball.vz * pr.t };
+  iniciarBloqueio(u, tipo, false, ponto);
+  u.controlCd = Math.max(u.controlCd || 0, BLOQUEIO[tipo].dur * 0.9); G.recvIgnore = Math.max(G.recvIgnore, 1.0);
+  showToast('Bola forte: só deu para bloquear!', '');
+}
+// (7.5.11) o tamanho da faixa verde e a velocidade da setinha: menores/mais rápida na dificuldade alta, maiores/mais lenta com o
+//   atributo DOMÍNIO alto (quanto melhor no domínio, mais fácil)
+const DIF_DOMINIO = { muito_facil: 0.8, facil: 0.9, normal: 1, dificil: 1.12, muito_dificil: 1.25 };
+function difDominio() { return PARTIDA && PARTIDA.criancas ? 0.9 : (DIF_DOMINIO[PARTIDA && PARTIDA.dificuldade] || 1); }
+function tamFaixa(kind) { return RECV.ZONA[kind] * clamp(Atributos.fator('dominio'), 0.6, 1.55) / difDominio(); }
+function velMartelo() { return difDominio() / clamp(Math.sqrt(Atributos.fator('dominio')), 0.78, 1.3); }
 
 // FINALIZAÇÃO ACROBÁTICA (voleio e bicicleta, sua ou da IA): CÂMERA LENTA mostrando o chute.
 //   começa antes do contato (o pulo e a perna subindo), corta para uma câmera baixa de lado e, depois do chute, a
@@ -10855,7 +11307,7 @@ function startReceive(pr) {
   // Fora isso é o domínio comum: acertou a faixa verde, dominou (sem o antigo sorteio de "acertou o tempo, mas escapou").
   const av = avaliarChegada(pr);
   let motivo = '';
-  if (av.dificil) motivo = av.vh > CHEGADA.MUITO_RAPIDA ? 'veio rápida demais' : av.pingando ? 'veio pingando' : pr.y > 1.8 ? 'veio alta demais' : 'veio forte e torta';
+  if (av.dificil) motivo = av.vh > CHEGADA.MUITO_RAPIDA ? 'veio rápida demais' : av.pingando ? 'veio pingando' : pr.y > 1.8 ? 'veio alta demais' : av.adv ? 'veio do adversário' : 'veio forte e torta';
   const risco = av.dificil ? 0.6 : 0;
   const dificil = av.dificil && kind !== 'alto';
   const R = {
@@ -10863,7 +11315,7 @@ function startReceive(pr) {
     t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, azul: null, done: false,
   };
   const SD = typeof Historia !== 'undefined' && Historia.emPartida() ? Sono.debuff() : null;   // dormiu mal: faixa menor e tracinho mais rápido
-  const tam = RECV.ZONA[kind] * Atributos.fator('dominio') * (SD ? SD.zona : 1); R.velK = SD ? SD.vel : 1;
+  const tam = clamp(tamFaixa(kind) * (SD ? SD.zona : 1), 0.06, 0.4); R.velK = (SD ? SD.vel : 1) * velMartelo();   // (7.5.11) dificuldade e atributo DOMÍNIO
   R.zona.ini = 0.06 + Math.random() * (0.88 - tam); R.zona.fim = R.zona.ini + tam;
   R.pos = R.zona.ini > 0.5 ? Math.random() * 0.15 : 0.85 + Math.random() * 0.1;   // começa longe da faixa
   R.dir = R.pos > 0.5 ? -1 : 1;
@@ -10921,7 +11373,7 @@ function startReceive(pr) {
   azulEl.hidden = !dificil;
   if (dificil) {
     const larg = $('hamTrack').getBoundingClientRect().width || 320, marc = $('hamMarker').getBoundingClientRect().width || 8;
-    const tamAzul = clamp(3 * marc / larg, 0.035, 0.12);
+    const tamAzul = clamp(3 * marc / larg * clamp(Atributos.fator('dominio'), 0.7, 1.4) / difDominio(), 0.03, 0.12);
     const ini = 0.08 + Math.random() * (0.84 - tamAzul);                                       // sem faixa verde: o ponto azul fica em qualquer lugar da barra
     R.azul = { ini, fim: ini + tamAzul };
     R.zona.ini = ini; R.zona.fim = ini + tamAzul;                                               // o marcador começa longe dele
@@ -11732,33 +12184,65 @@ function startDribble() {
   C.camSide = ((cam.px - user.x) * C.px + (cam.pz - user.z) * C.pz) >= 0 ? 1 : -1;
   if (C.tipo === 'protecao') C.camSide = -C.oppSide;   // do lado contrário ao dele: os dois de perfil
   user.scripted = true; opp.scripted = true; user.running = false;
-  C.cut = true;                                    // corte seco para a câmera de lado
+  C.sit = situacaoDrible(user, opp);               // (7.5.11) dois marcando, de costas (pivô), na lateral, perto do escanteio...
+  // (7.5.11) ENTRADA SUAVE: a câmera desliza até a de lado (antes era um corte seco) e a câmera lenta entra numa rampa (~0,35 s),
+  //   não de uma vez; os alvos só aparecem quando a cena já assentou
+  C.cut = false;
   G.cine = C;
-  G.state = 'dribble'; G.targetScale = CONFIG.SLOWMO_DRIBBLE;
+  G.state = 'dribble'; rampaTempo(CONFIG.SLOWMO_DRIBBLE, 0.35);
   setLetterbox(true);
   const W = AREA.w, H = AREA.h, placed = [];
-  // Contra o GOLEIRO é mais difícil: 3 toques em sequência rápida dentro de ~1 s, precisa acertar os 3.
+  // (7.5.11) QUANTOS ALVOS e QUANTO TEMPO para cada um saem da diferença entre o seu DRIBLE e a DEFESA dele: marcador melhor que você =
+  //   mais alvos e o anel fecha mais rápido (a janela do toque também encolhe); você melhor = menos alvos e mais tempo.
   const noGoleiro = opp.role === 'GK';
   C.noGoleiro = noGoleiro;
-  const count = noGoleiro ? 3 : CONFIG.DRIBBLE_TAPS;
-  // Os alvos se encaixam no tempo da tela: o último precisa terminar ~0,3 s antes do fim
-  // (é a folga para julgar o toque atrasado).
-  const tempo = noGoleiro ? CONFIG.DRIBBLE_TIME_GK : CONFIG.DRIBBLE_TIME;
-  const approach = noGoleiro ? 0.35 : clamp(tempo * 0.36, 0.5, 1.0), firstAt = noGoleiro ? 0.05 : 0.25;
-  const gap = count > 1 ? Math.max(noGoleiro ? 0.22 : 0.45, (tempo - firstAt - approach - 0.35) / (count - 1)) : 0;
+  const dif = clamp(fUser('drible') - fh(opp, noGoleiro ? 'goleiro' : 'defesa'), -1, 1);
+  const count = noGoleiro ? (dif < -0.25 ? 4 : 3) : clamp(Math.round(2 - dif * 2.2), 1, 4);
+  const kT = clamp(1 + dif * 0.55, 0.65, 1.35);     // >1: mais tempo e janela maior
+  const approach = (noGoleiro ? 0.38 : clamp(CONFIG.DRIBBLE_TIME * 0.36, 0.5, 1.0)) * kT, firstAt = 0.32;
+  const gapMin = noGoleiro ? 0.24 : 0.42 * clamp(kT, 0.8, 1.2);
+  const gap = count > 1 ? Math.max(gapMin, ((noGoleiro ? CONFIG.DRIBBLE_TIME_GK : CONFIG.DRIBBLE_TIME) - firstAt - approach - 0.35) / (count - 1)) : 0;
+  const tempo = firstAt + approach + (count - 1) * gap + 0.4;
+  const titulo = noGoleiro ? 'DRIBLE NO GOLEIRO' : C.sit === 'dois' ? 'DOIS NA MARCAÇÃO' : C.sit === 'pivo' ? 'DE COSTAS: GIRE' : C.sit === 'escanteio' ? 'PERTO DA BANDEIRINHA'
+    : C.sit === 'lateral' ? 'NA LINHA LATERAL' : ({ arrancada: 'ARRANCADA', protecao: 'PROTEJA A BOLA', corpo: 'DRIBLE DE CORPO', pedalada: 'PEDALADA' }[C.tipo] || 'DRIBLE');
+  // os alvos aparecem em QUALQUER lugar da tela (fora do placar, do joystick e dos botões) e longe dos lugares do drible anterior
+  const ruim = (q) => q.y < H * 0.17 || (q.x < W * 0.27 && q.y > H * 0.6) || (q.x > W * 0.7 && q.y > H * 0.58);
+  const antes = G.ultAlvosDrible || [];
   startTiming({
-    title: noGoleiro ? 'DRIBLE NO GOLEIRO' : ({ arrancada: 'ARRANCADA', protecao: 'PROTEJA A BOLA', corpo: 'DRIBLE DE CORPO', pedalada: 'PEDALADA' }[C.tipo] || 'DRIBLE'), count, firstAt, gap, approach,
-    duration: tempo, need: noGoleiro ? 3 : CONFIG.DRIBBLE_NEEDED,
+    title: titulo, count, firstAt, gap, approach, janela: kT,
+    duration: tempo, need: count,
     place: () => {
-      let pos;
-      for (let tries = 0; tries < 25; tries++) {
-        pos = { x: rand(W * 0.22, W * 0.78), y: rand(H * 0.36, H * 0.72) };
-        if (!placed.length || placed.every((q) => Math.hypot(pos.x - q.x, pos.y - q.y) > 170)) break;
+      let pos = null, melhor = null, bs = -1;
+      for (let tries = 0; tries < 40; tries++) {
+        const q = { x: rand(W * 0.1, W * 0.9), y: rand(H * 0.2, H * 0.84) };
+        if (ruim(q)) continue;
+        const dMin = Math.min(9999, ...placed.map((r) => Math.hypot(q.x - r.x, q.y - r.y)), ...antes.map((r) => Math.hypot(q.x - r.x, q.y - r.y) * 1.6));
+        if (dMin > 170) { pos = q; break; }
+        if (dMin > bs) { bs = dMin; melhor = q; }
       }
+      pos = pos || melhor || { x: W * 0.5, y: H * 0.5 };
       placed.push(pos); return pos;
     },
     onFinish: finishDribbleMinigame,
   });
+  G.ultAlvosDrible = placed.slice();
+}
+// (7.5.11) a câmera lenta em RAMPA (sem tranco): vai de onde está até "para" em "dur" segundos reais, com aceleração suave
+function rampaTempo(para, dur) { G.rampa = { de: G.timeScale, para, t: 0, dur: Math.max(0.05, dur) }; G.targetScale = para; }
+// a situação do drible (escolhe as animações que combinam com ela)
+function situacaoDrible(u, o) {
+  if (o.role === 'GK') return null;
+  const perto = TEAMS[1 - u.team].filter((q) => !q.out && q.role !== 'GK' && q.stun <= 0 && dist2D(q, u) < 3.6);
+  if (perto.length >= 2) return 'dois';
+  const atk = HALF_L * (u.team === 0 ? 1 : -1), paraGol = Math.atan2(-u.z, atk - u.x);
+  const deCostas = Math.abs(wrapAngle(u.angle - paraGol)) > 2.0;            // olhando para o próprio campo
+  const dx = o.x - u.x, dz = o.z - u.z, d = Math.hypot(dx, dz) || 1, ahead = (dx * Math.cos(u.angle) + dz * Math.sin(u.angle)) / d;
+  const fundo = Math.abs(atk - u.x), lat = HALF_W - Math.abs(u.z);
+  if (lat < 6 && fundo < 11) return 'escanteio';
+  if (deCostas && ahead < 0.2) return 'pivo';
+  if (lat < 4.2) return 'lateral';
+  if (ahead <= -0.35) return 'atras';
+  return null;
 }
 
 function finishDribbleMinigame(T) {
@@ -11785,13 +12269,17 @@ function finishDribbleMinigame(T) {
     // Variações: de frente (fora o goleiro) às vezes sai elástico, caneta ou chapéu; com ele do lado, roleta; parado, elástico.
     if (!C.noGoleiro) {
       const r = Math.random();
-      if (C.tipo === 'frente') C.tipo = r < 0.2 ? 'elastico' : r < 0.36 ? 'caneta' : r < 0.54 ? 'chapeu' : 'frente';
+      const sitTipo = escolherDribleSit(C, u, o);    // (7.5.11) a situação pede um drible próprio (dois marcando, pivô, lateral, escanteio...)
+      if (sitTipo) C.tipo = sitTipo;
+      else if (C.tipo === 'frente') C.tipo = r < 0.16 ? 'elastico' : r < 0.28 ? 'caneta' : r < 0.42 ? 'chapeu' : r < 0.56 ? 'tesoura' : r < 0.68 ? 'pisada' : 'frente';
       else if (C.tipo === 'corpo' && r < 0.45) C.tipo = 'roleta';
+      else if (C.tipo === 'corpo' && r < 0.65) C.tipo = 'pisada';
       else if (C.tipo === 'pedalada' && r < 0.35) C.tipo = 'elastico';
+      else if (C.tipo === 'pedalada' && r < 0.6) C.tipo = 'tesoura';
     }
     if (C.tipo !== 'frente') {                     // dribles novos: sem carretel, cada um com o seu caminho
       prepararDribleNovo(C, u, o);
-      G.targetScale = 0.55;
+      rampaTempo(0.6, 0.28);                        // (7.5.11) sai da câmera lenta em rampa (antes pulava de 0,06 para 0,55)
       return;
     }
     // De vez em quando o drible sai de CARRETEL (carretilha): você levanta a bola com o
@@ -11804,11 +12292,11 @@ function finishDribbleMinigame(T) {
       C.calcanhar = { x: u.x - C.fx * 0.25, z: u.z - C.fz * 0.25 };   // a bola vai para o calcanhar
       C.pulou = false;
     }
-    G.targetScale = 0.55;
+    rampaTempo(0.6, 0.28);
   } else {
     C.phase = 'fail';
     C.steal = { x: ball.x, z: ball.z };
-    G.targetScale = 0.5;
+    rampaTempo(0.55, 0.28);
   }
 }
 
@@ -11951,6 +12439,10 @@ function atualizarCarretel(C, dt) {
 const PROT = { atras: 0.55, lado: 0.7, giro: 0.3, tras: 0.06, tomba: 0.03, bz: -0.35, bx: 0.7, bote: 0.15 };
 function prepararDribleNovo(C, u, o) {
   C.p0 = { x: u.x, z: u.z }; C.b0 = { x: ball.x, z: ball.z }; C.o0 = { x: o.x, z: o.z };
+  if (DRIBLES_SIT[C.tipo]) {                                   // (7.5.11) os 10 dribles da situação
+    if (prepararDribleSit(C, u, o)) { u.driblePose = { tipo: C.tipo, t: 0, sai: C.sitS, lado: C.oppSide }; return; }
+    C.tipo = 'corpo';                                          // não coube no campo: drible de corpo
+  }
   const f = { x: C.fx, z: C.fz }, lado = C.oppSide;            // +1: marcador à sua direita
   if (C.tipo === 'arrancada') {
     C.dur = 0.9; C.p1 = { x: u.x + f.x * 3, z: u.z + f.z * 3 }; C.p2 = { x: u.x + f.x * 6.5, z: u.z + f.z * 6.5 };
@@ -12207,7 +12699,8 @@ function atualizarDribleNovo(C, dt) {
     const f = Math.max(0, 1 - o.perda.t / o.perda.dur);
     o.x += o.perda.vx * f * dt; o.z += o.perda.vz * f * dt; o.anim += dt * 9;
   }
-  if (C.tipo === 'chapeuCostas') atualizarChapeuCostas(C, dt, mover);
+  if (DRIBLES_SIT[C.tipo]) atualizarDribleSit(C, dt, mover, tropeca);   // (7.5.11)
+  else if (C.tipo === 'chapeuCostas') atualizarChapeuCostas(C, dt, mover);
   else if (C.tipo === 'elastico' || C.tipo === 'caneta' || C.tipo === 'chapeu' || C.tipo === 'roleta') atualizarVariacao(C, dt, mover, tropeca);
   else if (C.tipo === 'protecao') {
     const t = C.t, ang = Math.atan2(C.fz, C.fx);
@@ -12304,9 +12797,135 @@ function atualizarDribleNovo(C, dt) {
   if (k >= 1) endCine(true);
 }
 
+// =====================================================================================================================
+// (7.5.11) MAIS 10 DRIBLES, escolhidos pela SITUAÇÃO (situacaoDrible) — cada um descrito por quadros-chave num referencial local:
+//   F = para a frente (a direção em que você corria), L = para o lado "s" (cada drible diz qual lado é: longe do marcador, ou para
+//   dentro do campo na lateral/no escanteio). U = você, B = a bola (com a altura), O = o marcador (a partir de onde ele estava).
+//   As curvas passam pelos quadros com Catmull-Rom (velocidade contínua, sem o "anda-para-anda" de ponto em ponto).
+//   dois marcando ........ CROQUETA (a bola passa de um pé para o outro, de lado, entre os dois) · ENTRE OS DOIS (toque longo no vão e arranca)
+//   de costas (pivô) ..... GIRO DO PIVÔ (gira em volta dele e sai de frente para o gol) · CALCANHAR (toque de calcanhar e meia-volta)
+//   marcador atrás ....... PARADINHA (pisa na bola e para; ele passa direto; você arranca na diagonal)
+//   na lateral ........... DRIBLE DA VACA (a bola por um lado dele, você pelo outro) · CRUYFF (finge o cruzamento e puxa para dentro)
+//   perto do escanteio ... CRUYFF · GIRO NA BANDEIRINHA (protege de costas e gira para dentro)
+//   de frente (variação) . TESOURA (uma pedalada grande e sai por fora) · PISADA (rola a bola com a sola para o lado e sai)
+// =====================================================================================================================
+const DRIBLES_SIT = {
+  croqueta: { dur: 1.15, lado: 'sai', ole: true,
+    U: [[0, 0, 0], [0.25, 0.15, 0.05], [0.45, 0.45, 0.45], [0.75, 1.6, 0.6], [1.15, 4.2, 0.5]],
+    B: [[0, 0.6, 0, 0], [0.2, 0.62, -0.15, 0], [0.42, 0.78, 0.52, 0], [0.75, 2.25, 0.62, 0], [1.15, 4.9, 0.5, 0]],
+    O: [[0, 0, 0], [0.3, 0.2, -0.45], [0.6, 0.3, -0.7]], trop: [0.45, 0, -0.8], toques: [0.12, 0.38] },
+  entreDois: { dur: 1.0, lado: 'sai',
+    U: [[0, 0, 0], [0.18, 0.2, 0], [0.5, 1.8, 0.25], [1.0, 5.0, 0.2]],
+    B: [[0, 0.6, 0, 0], [0.15, 0.66, 0, 0], [0.32, 1.95, 0.3, 0], [0.6, 3.2, 0.3, 0], [1.0, 5.7, 0.2, 0]],
+    O: [[0, 0, 0], [0.35, 0.4, -0.35]], trop: [0.3, 0.6, -0.3], toques: [0.18] },
+  giroPivo: { dur: 1.35, lado: 'sai', ole: true,
+    U: [[0, 0, 0], [0.3, 0.1, 0.35], [0.6, -0.3, 0.85], [0.9, -1.4, 0.95], [1.35, -4.0, 0.7]],
+    B: [[0, 0.6, 0, 0], [0.3, 0.38, 0.55, 0], [0.6, -0.4, 1.3, 0], [0.9, -2.05, 1.0, 0], [1.35, -4.7, 0.65, 0]],
+    O: [[0, 0, 0], [0.4, 0.15, -0.3]], trop: [0.55, 0.6, -0.3], toques: [0.25, 0.6] },
+  calcanhar: { dur: 1.4, lado: 'sai', ole: true,
+    U: [[0, 0, 0], [0.35, 0.05, 0], [0.65, -0.2, 0.95], [1.0, -1.6, 1.0], [1.4, -4.2, 0.55]],
+    B: [[0, 0.6, 0, 0], [0.25, 0.05, 0.05, 0], [0.42, -0.6, 0.2, 0.08], [0.75, -1.9, 0.5, 0], [1.0, -2.3, 0.75, 0], [1.4, -4.9, 0.55, 0]],
+    O: [[0, 0, 0], [0.45, -0.1, -0.3]], trop: [0.6, -0.5, -0.4], toques: [0.3] },
+  paradinha: { dur: 1.3, lado: 'sai',
+    U: [[0, 0, 0], [0.3, 0.35, 0], [0.65, 0.45, 0], [0.9, 1.2, 0.35], [1.3, 4.0, 0.9]],
+    B: [[0, 0.6, 0, 0], [0.3, 0.52, 0, 0], [0.65, 0.6, 0, 0], [0.9, 1.85, 0.45, 0], [1.3, 4.7, 0.95, 0]],
+    O: [[0, 0, 0], [0.45, 1.7, -0.5], [0.8, 2.5, -0.75]], trop: [0.7, 1, -0.2], toques: [0.28, 0.72] },
+  vaca: { dur: 1.45, lado: 'dentro', ole: true, comD: true,
+    U: [[0, 0, 0], [0.25, 0.3, 0.2], [0.7, 'd0.7', 1.5], [1.05, 'd+1.4', 1.0], [1.45, 'd+4', 0.4]],
+    B: [[0, 0.6, 0, 0], [0.2, 0.75, -0.1, 0], [0.55, 'd0.8', -1.25, 0], [0.95, 'd+1.9', -0.6, 0], [1.15, 'd+2.2', 0.3, 0], [1.45, 'd+4.7', 0.4, 0]],
+    O: [[0, 0, 0], [0.4, -0.1, 0.35]], trop: [0.6, -0.3, 0.5], toques: [0.2, 1.1] },
+  cruyff: { dur: 1.35, lado: 'dentro', ole: true,
+    U: [[0, 0, 0], [0.35, 0.25, 0], [0.55, 0.3, 0.1], [0.9, 0.0, 0.9], [1.35, -0.6, 3.4]],
+    B: [[0, 0.6, 0, 0], [0.35, 0.72, 0, 0], [0.5, 0.25, 0.2, 0], [0.8, 0.0, 1.4, 0], [1.35, -0.5, 4.05, 0]],
+    O: [[0, 0, 0], [0.45, 0.1, -0.6]], trop: [0.65, 0.2, -0.6], toques: [0.45] },
+  escanteio: { dur: 1.6, lado: 'dentro',
+    U: [[0, 0, 0], [0.4, 0.1, 0], [0.8, 0.0, 0.2], [1.15, -0.3, 1.3], [1.6, -1.2, 3.6]],
+    B: [[0, 0.6, 0, 0], [0.4, 0.5, -0.1, 0], [0.8, 0.45, 0.1, 0], [1.15, 0.0, 1.9, 0], [1.6, -1.0, 4.3, 0]],
+    O: [[0, 0, 0], [0.6, 0.1, 0.2], [1.0, 0.4, -0.4]], trop: [1.0, 0.3, -0.6], toques: [0.9] },
+  tesoura: { dur: 1.2, lado: 'sai',
+    U: [[0, 0, 0], [0.4, 0.35, -0.1], [0.65, 0.55, 0.25], [1.2, 4.4, 1.1]],
+    B: [[0, 0.6, 0, 0], [0.4, 0.85, 0, 0], [0.65, 1.2, 0.4, 0], [1.2, 5.1, 1.15, 0]],
+    O: [[0, 0, 0], [0.4, 0.1, -0.6]], trop: [0.6, 0, -0.8], toques: [0.55] },
+  pisada: { dur: 1.15, lado: 'sai',
+    U: [[0, 0, 0], [0.3, 0.2, 0.3], [0.55, 0.35, 0.85], [1.15, 4.0, 1.25]],
+    B: [[0, 0.6, 0, 0], [0.3, 0.62, 0.55, 0], [0.55, 0.85, 1.15, 0], [1.15, 4.7, 1.3, 0]],
+    O: [[0, 0, 0], [0.35, 0.15, 0.1], [0.6, 0.2, -0.25]], trop: [0.55, 0, -0.7], toques: [0.2, 0.5] },
+};
+const SIT_DRIBLES = { dois: [['croqueta', 'entreDois'], 0.8], pivo: [['giroPivo', 'calcanhar'], 0.85], atras: [['paradinha'], 0.55], lateral: [['vaca', 'cruyff'], 0.75], escanteio: [['cruyff', 'escanteio'], 0.85] };
+function escolherDribleSit(C, u, o) {
+  const op = SIT_DRIBLES[C.sit]; if (!op || Math.random() > op[1]) return null;
+  const L = op[0].slice().sort(() => Math.random() - 0.5);
+  for (const tipo of L) if (prepararDribleSit(Object.assign({}, C, { tipo }), u, o, true)) return tipo;   // cabe no campo?
+  return null;
+}
+// monta o caminho do drible (teste = só confere se cabe no campo, sem mexer em nada)
+function prepararDribleSit(C, u, o, teste) {
+  const D = DRIBLES_SIT[C.tipo]; if (!D) return false;
+  const fx = C.fx, fz = C.fz;
+  let s = -C.oppSide;                                                 // longe do marcador
+  if (D.lado === 'dentro') s = (C.px * -u.x * 0.25 + C.pz * -u.z) >= 0 ? 1 : -1;   // para o lado de dentro do campo (o centro)
+  const dOpp = Math.max(1.2, Math.min(3.2, (o.x - u.x) * fx + (o.z - u.z) * fz));
+  const num = (v) => (typeof v === 'number' ? v : v[1] === '+' ? dOpp + parseFloat(v.slice(2)) : dOpp * parseFloat(v.slice(1)));
+  const mundo = (base, F, Lt) => ({ x: base.x + fx * F + C.px * s * Lt, z: base.z + fz * F + C.pz * s * Lt });
+  const p0 = { x: u.x, z: u.z }, b0 = { x: u.x, z: u.z }, o0 = { x: o.x, z: o.z };
+  const U = D.U.map((q) => Object.assign({ t: q[0] }, mundo(p0, num(q[1]), q[2])));
+  const B = D.B.map((q) => Object.assign({ t: q[0], h: q[3] || 0 }, mundo(b0, num(q[1]), q[2])));
+  if (U.concat(B).some((q) => foraDoCampo(q, 0.6))) return false;
+  if (teste) return true;
+  const O = D.O.map((q) => Object.assign({ t: q[0] }, mundo(o0, num(q[1]), q[2])));
+  Object.assign(C, { dur: D.dur, sitS: s, sitU: U, sitB: B, sitO: O, p0, b0, o0, sitBd: { x: ball.x - B[0].x, z: ball.z - B[0].z } });   // sitBd: a bola sai de onde está (sem pulo)
+  C.p1 = U[U.length - 2]; C.p2 = U[U.length - 1];                     // a direção de saída (endCine)
+  C.saiLado = s;
+  return true;
+}
+// Catmull-Rom pelos quadros (t crescente): posição no tempo t
+function quadroCR(Q, t) {
+  if (t <= Q[0].t) return Q[0];
+  const n = Q.length; if (t >= Q[n - 1].t) return Q[n - 1];
+  let i = 0; while (i < n - 2 && Q[i + 1].t <= t) i++;
+  const a = Q[Math.max(0, i - 1)], b = Q[i], c = Q[i + 1], d = Q[Math.min(n - 1, i + 2)], u = (t - b.t) / Math.max(1e-4, c.t - b.t), u2 = u * u, u3 = u2 * u;
+  const cr = (p0, p1, p2, p3) => 0.5 * (2 * p1 + (-p0 + p2) * u + (2 * p0 - 5 * p1 + 4 * p2 - p3) * u2 + (-p0 + 3 * p1 - 3 * p2 + p3) * u3);
+  return { x: cr(a.x, b.x, c.x, d.x), z: cr(a.z, b.z, c.z, d.z), h: b.h != null ? cr(a.h || 0, b.h || 0, c.h || 0, d.h || 0) : 0 };
+}
+function atualizarDribleSit(C, dt, mover, tropeca) {
+  const D = DRIBLES_SIT[C.tipo], u = user, o = C.opp, t = C.t;
+  const pu = quadroCR(C.sitU, t), pb = quadroCR(C.sitB, t), pn = quadroCR(C.sitU, Math.min(C.dur, t + 0.04));
+  mover(pu.x, pu.z);
+  const vx = pn.x - pu.x, vz = pn.z - pu.z;
+  if (Math.hypot(vx, vz) > 0.012) u.angle = turnToward(u.angle, Math.atan2(vz, vx), 11 * dt);   // olha para onde vai (gira de verdade no pivô/Cruyff)
+  const kd = 1 - clamp(t / 0.25, 0, 1), dd = C.sitBd || { x: 0, z: 0 };
+  ball.x = pb.x + dd.x * kd; ball.z = pb.z + dd.z * kd; ball.y = CONFIG.BALL_R + Math.max(0, pb.h || 0);
+  for (const tq of D.toques || []) if (t >= tq && !(C.sitToques || (C.sitToques = {}))[tq]) { C.sitToques[tq] = true; Som.toque(0.35); }
+  if (!o.perda) {                                                     // ele morde a finta (vai para o lado errado) e depois tropeça
+    const po = quadroCR(C.sitO, t); o.x = po.x; o.z = po.z; o.anim += 5 * dt;
+    o.angle = turnToward(o.angle, Math.atan2(ball.z - o.z, ball.x - o.x), 7 * dt);
+    o.tackle = t < D.trop[0] ? Math.min(0.7, t / D.trop[0]) * 0.7 : Math.max(0, o.tackle - dt * 4);
+  }
+  if (t >= D.trop[0]) tropeca((C.fx * D.trop[1] + C.px * C.sitS * D.trop[2]), (C.fz * D.trop[1] + C.pz * C.sitS * D.trop[2]));
+}
+// as poses (as pernas, o tronco e os braços em cada fase); fora das fases fica a corrida normal
+function poseDribleSit(m, P) {
+  const t = P.t, sn = P.sai || 1, onda = (a, b) => (t < a || t > b ? 0 : Math.sin((t - a) / (b - a) * Math.PI));
+  const pD = sn > 0 ? m.pernaD : m.pernaE, pE = pD === m.pernaD ? m.pernaE : m.pernaD;   // a perna do lado da saída e a outra
+  m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0;
+  const abre = (k) => { m.bracoE.rotation.x = 0.35 + 0.4 * k; m.bracoD.rotation.x = -0.35 - 0.4 * k; m.bracoE.rotation.z = 0.15 + 0.25 * k; m.bracoD.rotation.z = 0.15 + 0.25 * k; };
+  switch (P.tipo) {
+    case 'croqueta': { const a = onda(0.05, 0.25), b = onda(0.25, 0.48); pE.rotation.z = 0.25 * a; pE.rotation.x = (sn > 0 ? 0.35 : -0.35) * a; pD.rotation.z = 0.25 * b; pD.rotation.x = (sn > 0 ? -0.3 : 0.3) * b; m.raiz.rotation.x = 0.12 * sn * (b - a); m.corpo.rotation.z = -0.12; abre(Math.max(a, b)); break; }
+    case 'entreDois': { const a = onda(0.05, 0.3); pD.rotation.z = 0.7 * a; usarJoelhos(m, -0.0001, -0.4 * a - 0.0001); m.corpo.rotation.z = -0.25 * (t < 0.6 ? 1 : 1 - (t - 0.6) / 0.4); abre(a); break; }
+    case 'giroPivo': { const a = onda(0.1, 0.65); m.corpo.rotation.z = -0.2 * a; m.raiz.rotation.x = 0.18 * sn * a; pD.rotation.z = 0.3 * onda(0.15, 0.4); pD.rotation.x = 0.25 * sn * onda(0.15, 0.4); usarJoelhos(m, -0.35 * a - 0.0001, -0.35 * a - 0.0001); abre(a); break; }
+    case 'calcanhar': { const a = onda(0.18, 0.45); pD.rotation.z = -0.65 * a; usarJoelhos(m, -0.0001, -1.2 * a - 0.0001); m.corpo.rotation.z = -0.18 * a; usarCabeca(m, (0.18 * a) || 0.0001); abre(onda(0.4, 0.9)); break; }
+    case 'paradinha': { const a = onda(0.22, 0.7); pD.rotation.z = 0.5 * a; usarJoelhos(m, -0.15 * a - 0.0001, -0.35 * a - 0.0001); m.corpo.rotation.z = 0.12 * a; abre(a * 0.6); break; }
+    case 'vaca': { const a = onda(0.08, 0.28); pE.rotation.z = 0.45 * a; pE.rotation.x = (sn > 0 ? 0.4 : -0.4) * a; m.raiz.rotation.x = 0.2 * sn * onda(0.25, 0.9); m.corpo.rotation.z = -0.2 * onda(0.25, 1.0); abre(onda(0.2, 1.1)); break; }
+    case 'cruyff': { const arma = onda(0.08, 0.4), puxa = onda(0.35, 0.6); pD.rotation.z = -0.9 * arma + 0.3 * puxa; pD.rotation.x = 0.55 * sn * puxa; usarJoelhos(m, -0.15 * puxa - 0.0001, -0.9 * arma - 0.0001); m.corpo.rotation.z = -0.1 - 0.15 * puxa; m.raiz.rotation.x = 0.2 * sn * puxa; abre(arma * 0.5 + puxa); break; }
+    case 'escanteio': { const prot = t < 0.85 ? Math.min(1, t / 0.25) : Math.max(0, 1 - (t - 0.85) / 0.2); m.corpo.rotation.z = 0.06 * prot - 0.15 * onda(0.85, 1.3); m.pernaE.rotation.z = 0.12 * prot; m.pernaD.rotation.z = -0.12 * prot; m.bracoE.rotation.z = 0.5 * prot; m.bracoD.rotation.z = 0.5 * prot; m.bracoE.rotation.x = 0.7 * prot; m.bracoD.rotation.x = -0.7 * prot; m.raiz.rotation.x = 0.15 * sn * onda(0.85, 1.25); break; }
+    case 'tesoura': { const a = onda(0.08, 0.45), f = clamp((t - 0.08) / 0.37, 0, 1); pE.rotation.z = 0.7 * a; pE.rotation.x = (sn > 0 ? -1 : 1) * 0.5 * Math.sin(f * Math.PI * 2); m.raiz.rotation.x = -0.25 * sn * a; m.corpo.rotation.z = -0.15; abre(a); break; }
+    case 'pisada': { const a = onda(0.05, 0.55); pD.rotation.z = 0.45 * a; pD.rotation.x = (sn > 0 ? 0.35 : -0.35) * Math.sin(clamp((t - 0.05) / 0.5, 0, 1) * Math.PI * 0.5) * a; usarJoelhos(m, -0.0001, -0.25 * a - 0.0001); m.raiz.rotation.x = 0.1 * sn * a; abre(a * 0.6); break; }
+  }
+}
 // Poses dos dribles novos (por cima de tudo, no fim do syncMeshes).
 function aplicarDriblePose(p, m) {
   const P = p.driblePose;
+  if (DRIBLES_SIT[P.tipo]) { poseDribleSit(m, P); return; }   // (7.5.11) os 10 dribles da situação
   if (P.tipo === 'pedalada' && P.t < 0.9) {
     // Duas pedaladas: cada perna sobe à frente e gira por cima da bola, de dentro para fora.
     const fase = (P.t / 0.45) % 1, perna = P.t < 0.45 ? m.pernaD : m.pernaE, sinal = P.t < 0.45 ? -1 : 1;
@@ -12405,7 +13024,7 @@ function endCine(success) {
   G.cine = null;
   user.scripted = false; C.opp.scripted = false; C.opp.guard = 0;
   setLetterbox(false);
-  G.state = 'play'; G.targetScale = 1;
+  G.state = 'play'; rampaTempo(1, 0.45);           // (7.5.11) volta ao tempo normal em rampa (a câmera também desliza de volta)
   if (success) {
     G.stats.driblesOk++;
     if (C.carretel) { C.opp.stun = 1.4; user.carretel = 0; user.driblePose = null; }   // no carretel o marcador não cai, só fica parado
@@ -12427,7 +13046,7 @@ function endCine(success) {
     user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
     if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
     Som.drible();
-    Torcida.ole(user.team, C.carretel || C.tipo === 'caneta' || C.tipo === 'chapeu' || C.tipo === 'elastico' || C.tipo === 'chapeuCostas');   // (7.4.9) OLÉ!
+    Torcida.ole(user.team, C.carretel || C.tipo === 'caneta' || C.tipo === 'chapeu' || C.tipo === 'elastico' || C.tipo === 'chapeuCostas' || !!(DRIBLES_SIT[C.tipo] && DRIBLES_SIT[C.tipo].ole));   // (7.4.9) OLÉ!
     const nomes = { arrancada: 'Arrancada!', protecao: 'Protegeu a bola!', corpo: 'Drible de corpo!', pedalada: 'Pedalada!', chapeuCostas: 'Chapéu de costas!', elastico: 'Elástico!', caneta: 'Caneta!', chapeu: 'Chapéu!', roleta: 'Roleta!' };
     showToast(C.carretel ? 'CARRETEL!' : C.noGoleiro ? 'Driblou o goleiro!' : nomes[C.tipo] || (C.perfect ? 'Drible perfeito!' : 'Driblou!'), 'good');
   } else {
@@ -12474,7 +13093,7 @@ function updateTiming(rdt) {
       const k = Math.max(0, (tg.hitAt - T.t) / T.approach);
       tg.ring.style.transform = 'scale(' + (1 + k * 1.8).toFixed(3) + ')';
     }
-    if (T.t > tg.hitAt + 0.3) judgeTarget(tg, 'miss');
+    if (T.t > tg.hitAt + 0.3 * (T.janela || 1)) judgeTarget(tg, 'miss');
   }
   updateTimingHead();
   if (T.targets.every((t) => t.judged) || T.t >= T.duration) finishTiming();
@@ -12498,8 +13117,8 @@ function tapTiming(x, y) {
     if (Math.hypot(x - tg.x, y - tg.y) < 64 && (!best || tg.hitAt < best.hitAt)) best = tg;
   }
   if (!best) return;
-  const err = Math.abs(T.t - best.hitAt);
-  judgeTarget(best, err < 0.13 ? 'perfect' : err < 0.28 ? 'good' : 'miss');
+  const err = Math.abs(T.t - best.hitAt), kj = T.janela || 1;   // (7.5.11) a janela cresce/encolhe com drible × defesa
+  judgeTarget(best, err < 0.13 * kj ? 'perfect' : err < 0.28 * kj ? 'good' : 'miss');
 }
 
 function judgeTarget(tg, res) {
@@ -12775,6 +13394,7 @@ window.addEventListener('keydown', (e) => {
   const mode = computeMode();
   if (G.state === 'restart' && (e.code === 'Enter' || e.code === 'Escape')) { skipRestart(); return; }
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
+  if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && K('passar')) { faltaPassar(); return; }   // (7.5.11)
   if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('cruzar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
   if (G.state === 'dribble' && G.timing && K('driblar')) { tocarDribleProximo(); return; }   // (7.5.1) teclado: a tecla do drible acerta o próximo alvo
   if (K('camera')) toggleCamera();
@@ -12818,7 +13438,7 @@ window.addEventListener('keyup', (e) => {
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
 function keyboardAim() {
-  if (G.state !== 'aim' || aimPad.id !== null) return;
+  if (G.state !== 'aim' || aimPad.id !== null || (G.kick && G.kick.faltaMira)) return;
   let up = 0, right = 0;
   if (teclaSegurada('cima') || keys.ArrowUp) up += 1;
   if (teclaSegurada('baixo') || keys.ArrowDown) up -= 1;
@@ -13002,6 +13622,7 @@ function padApertou(b) {
       if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; }
       return;
     }
+    if (k.faltaMira && !k.faltaMira.chutou) { if (eh('passar') || eh('cancelar')) faltaPassar(); return; }   // (7.5.11) a falta da mira pontilhada
     if (eh('cancelar') || (k.kind === 'shot' && !k.cruzar && eh('passar'))) { cancelKick(); return; }   // segurando o chute, A = finta
     return;
   }
@@ -13384,16 +14005,19 @@ function statsHTML() {
 //   meia (MID) ....... passes certos, dribles, domínios e desarmes pesam mais; gol vale um pouco menos;
 //   zagueiro (DEF) ... gols SOFRIDOS pelo seu time (jogo sem tomar gol = bônus), desarmes e não perder a bola; gol seu vale mais (é raro).
 function notaPorPosicao(s, pos, sofridos) {
-  const erros = (s.passes - s.passesOk) * 0.2 + (s.dribles - s.driblesOk) * 0.2 + (s.dominios - s.dominiosOk) * 0.2;
-  const disc = s.faltas * 0.1 + s.impedimentos * 0.15 + (s.cartoes.includes('A') ? 0.4 : 0) + (s.cartoes.includes('V') ? 2 : 0) - (s.assist | 0) * (pos === 'MID' ? 0.8 : 0.6);   // a assistência entra aqui (com sinal trocado: soma na nota)
+  // Gol e assistência são o que mais pesa (um gol e uma assistência num jogo de 5 minutos já é jogo bom); os erros (passe, drible, domínio)
+  //   tiram pouco cada um, para uns passes errados não apagarem um gol.
+  const erros = (s.passes - s.passesOk) * 0.12 + (s.dribles - s.driblesOk) * 0.12 + (s.dominios - s.dominiosOk) * 0.12;
+  const disc = s.faltas * 0.1 + s.impedimentos * 0.15 + (s.cartoes.includes('A') ? 0.4 : 0) + (s.cartoes.includes('V') ? 2 : 0);
+  const assist = (s.assist | 0) * (pos === 'MID' ? 1.2 : pos === 'DEF' ? 0.9 : 1.0);
   if (pos === 'DEF') {
     const bonusGol = sofridos === 0 ? 1.2 : sofridos === 1 ? 0.5 : sofridos === 2 ? 0 : -0.4 * (sofridos - 2);
-    return 6 + bonusGol + s.desarmes * 0.4 + s.gols * 1.3 + s.noAlvo * 0.1 + s.passesOk * 0.1 + s.driblesOk * 0.25 + s.dominiosOk * 0.1 - erros * 0.8 - s.perdas * 0.2 - disc;
+    return 6 + bonusGol + s.desarmes * 0.4 + s.gols * 1.5 + assist + s.noAlvo * 0.1 + s.passesOk * 0.1 + s.driblesOk * 0.25 + s.dominiosOk * 0.1 - erros - s.perdas * 0.12 - disc;
   }
   if (pos === 'MID') {
-    return 6 + s.gols * 0.8 + s.noAlvo * 0.15 + s.passesOk * 0.2 + s.driblesOk * 0.35 + s.dominiosOk * 0.15 + s.desarmes * 0.25 - erros - s.perdas * 0.15 - disc;
+    return 6 + s.gols * 1.3 + assist + s.noAlvo * 0.15 + s.passesOk * 0.15 + s.driblesOk * 0.3 + s.dominiosOk * 0.1 + s.desarmes * 0.25 - erros - s.perdas * 0.1 - disc;
   }
-  return 6 + s.gols * 1.0 + s.noAlvo * 0.2 + s.passesOk * 0.1 + s.driblesOk * 0.3 + s.dominiosOk * 0.1 + s.desarmes * 0.2 - erros - s.perdas * 0.15 - disc;   // atacante (e o resto): a conta de sempre
+  return 6 + s.gols * 1.5 + assist + s.noAlvo * 0.2 + s.passesOk * 0.1 + s.driblesOk * 0.3 + s.dominiosOk * 0.1 + s.desarmes * 0.2 - erros - s.perdas * 0.1 - disc;   // atacante (e o resto)
 }
 function matchRating() {
   const pos = user && user.role ? user.role : 'FWD';
@@ -13488,14 +14112,14 @@ function intervalo() {
   G.targetScale = G.timeScale = 1;
   if (G.kick) G.kick = null;
   hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
-  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.cine = null; G.rampa = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
   G.possession = null; ball.vx *= 0.3; ball.vz *= 0.3;
   for (const p of players) if (!p.out) Object.assign(p, { scripted: true, vx: 0, vz: 0, stun: 0, fall: 0, falling: false, slideT: 0, slidePose: 0, jumpT: 0, diveT: 0, tackle: 0, guard: 0, kickT: 0, celeb: null, lamento: null });
   const r = referee; r.angle = Math.atan2(-r.z, -r.x); r.refPose = 'apito'; r.refPoseT = 1.6;
   G.intRef = { x: r.x, z: r.z, angle: r.angle };
   Som.apito(0.4); setTimeout(() => { try { Som.apito(1.0); } catch (e) { /* nada */ } }, 420);
   if (G.pulando) { fimDoIntervalo(); return; }
-  if (PARTIDA.campo.visual === 'futsal') { intervaloNaQuadra(); return; }
+  if (PARTIDA.campo.visual === 'futsal' || ehSociety()) { intervaloNaQuadra(); return; }   // (7.5.11) o sintético também: ninguém sai pela grade
   // a saída: cada um vai para a boca do túnel (ou para a lateral dos bancos), uns andando, outros trotando, sem pressa
   const tunel = !!TUNEL.grupo, abre = tunel || !!TUNEL.placa;      // sem túnel: o portão do alambrado abre (como na entrada)
   if (abre) mostrarTunel(true);
@@ -13505,23 +14129,57 @@ function intervalo() {
   setLetterbox(true);
   $('skipBtn').hidden = false; $('cineLabel').textContent = '';
 }
-// O INTERVALO DO FUTSAL: ninguém sai da quadra. Cada time vai para o seu lado da lateral (onde ficam os reservas) e lá uns
-//   sentam no chão (alguns bebendo água), outros bebem em pé ou alongam; o goleiro bebe em pé. As poses são as das cenas dos
-//   pênaltis (POSES_CENA), aplicadas com o relógio do intervalo.
+// O INTERVALO DO FUTSAL E DO SINTÉTICO: ninguém sai da quadra/do campo. Cada time vai para o seu lado da lateral e lá uns sentam,
+//   outros bebem água em pé, alongam ou aquecem; o goleiro bebe em pé. As poses são as das cenas dos pênaltis (POSES_CENA), aplicadas
+//   com o relógio do intervalo. (7.5.11) FUTSAL: um BANCO para cada time na lateral (antes sentavam no chão e pareciam flutuar na
+//   frente da mureta) e quem senta senta no banco (pose 'banco'). SINTÉTICO: sem banco (nem tem reserva): sentam no chão mesmo,
+//   entre a linha e a grade (antes eles saíam pelo portão da grade).
+const INT_BANCO = { comp: 3.7, lugares: 4, esp: 0.86 };
 function intervaloNaQuadra() {
-  const zL = -(HALF_W + Math.min(1.2, (PARTIDA.campo.folga || 2.4) * 0.5));
-  G.intSaida = { futsal: true, zL };
+  const futsal = PARTIDA.campo.visual === 'futsal';
+  const folga = futsal ? (PARTIDA.campo.folga || 2.4) : Math.max(1.2, BOARD_ZN - HALF_W);
+  const zL = -(HALF_W + Math.min(futsal ? 1.2 : 1.5, folga * 0.5));
+  const zB = -(HALF_W + Math.min(1.55, folga * 0.62));                 // a linha do assento do banco (futsal)
+  G.intSaida = { futsal: true, zL, bancos: futsal };
+  if (futsal) montarBancosIntervalo(zB);
   for (const team of [0, 1]) {
-    const L = TEAMS[team].filter((p) => !p.out), s = team === 0 ? -1 : 1;
+    const L = TEAMS[team].filter((p) => !p.out), s = team === 0 ? -1 : 1, cx = s * Math.max(4.2, Math.min(7.5, HALF_L * 0.2));
+    let lugar = 0, pe = 0;
+    // quem senta (no banco, no futsal) vai primeiro para os lugares do banco; os outros ficam em pé na frente/do lado
     L.forEach((p, i) => {
       const r = Math.random(), gk = p.role === 'GK';
-      const pose = gk ? 'agua' : r < 0.58 ? 'sentado' : r < 0.86 ? 'agua' : 'alonga';
-      p.intS = { t0: 0.5 + rand(0, 0.6), v: rand(3.8, 4.8), alvo: { x: s * (2.6 + i * 1.45) + rand(-0.2, 0.2), z: zL + rand(-0.2, 0.25) }, pose, v2: Math.random() < 0.5 ? 1 : 0,
-        garrafa: pose === 'agua' || (pose === 'sentado' && Math.random() < 0.55), foi: false };
+      let pose = gk ? 'agua' : r < 0.55 ? 'sentado' : r < 0.78 ? 'agua' : r < 0.9 ? 'alonga' : 'aquece';
+      if (futsal && pose === 'sentado' && lugar >= INT_BANCO.lugares) pose = 'agua';
+      let alvo;
+      if (futsal && pose === 'sentado') {
+        pose = 'banco';
+        alvo = { x: cx + (lugar - (INT_BANCO.lugares - 1) / 2) * INT_BANCO.esp, z: zB + 0.02 }; lugar++;
+      } else if (futsal) {
+        const k = pe++;                                                  // em pé: o 1º na frente do banco (conversando com quem senta), os outros nas pontas
+        alvo = k === 0 ? { x: cx - s * 0.2, z: zB + 1.05 } : { x: cx + (k % 2 ? 1 : -1) * (INT_BANCO.comp / 2 + 0.7 + Math.floor((k - 1) / 2) * 1.1), z: zB + 0.55 + rand(-0.1, 0.15) };
+      } else alvo = { x: cx + (i - (L.length - 1) / 2) * 1.45 + rand(-0.2, 0.2), z: zL + rand(-0.2, 0.25) };
+      p.intS = { t0: 0.5 + rand(0, 0.6), v: rand(3.8, 4.8), alvo, pose, v2: Math.random() < 0.5 ? 1 : 0,
+        garrafa: pose === 'agua' || ((pose === 'sentado' || pose === 'banco') && Math.random() < 0.55), foi: false };
     });
   }
   setLetterbox(true);
   $('skipBtn').hidden = false; $('cineLabel').textContent = '';
+}
+// os bancos do intervalo do futsal (de madeira, sem encosto): só durante o intervalo; somem no fim dele
+function montarBancosIntervalo(zB) {
+  tirarBancosIntervalo();
+  const L = new Lote(), C = INT_BANCO;
+  for (const team of [0, 1]) {
+    const s = team === 0 ? -1 : 1, cx = s * Math.max(4.2, Math.min(7.5, HALF_L * 0.2)), z = zB - 0.08;
+    L.caixa(C.comp, 0.07, 0.42, 0xa87844, cx, 0.415, z);                                  // o assento (a 45 cm, a mesma altura dos bancos de reserva)
+    L.caixa(C.comp, 0.05, 0.05, 0x8a5f33, cx, 0.36, z + 0.19);                            // a travessa da frente
+    for (const t of [-1, 1]) { L.caixa(0.08, 0.38, 0.36, 0x6b4a2b, cx + t * (C.comp / 2 - 0.25), 0.19, z); }
+  }
+  const m = L.malha(MAT_CORES); m.name = 'bancosIntervalo'; ESTADIO.add(m); G.intBancosMesh = m;
+}
+function tirarBancosIntervalo() {
+  const m = G.intBancosMesh; if (!m) return;
+  if (m.parent) m.parent.remove(m); if (m.geometry) m.geometry.dispose(); G.intBancosMesh = null;
 }
 function updateIntervalo(dt) {
   G.intT += dt;
@@ -13613,6 +14271,7 @@ function fimDoIntervalo() {
   esconderTelaIntervalo();
   if (G.intSaida && G.intSaida.tunel) mostrarTunel(false);
   for (const p of players) { if (p.intS) { p.intS = null; if (!p.out) p.mesh.raiz.visible = true; } if (p.fim && p.fim.pose) p.fim = null; }   // (futsal: as poses do intervalo)
+  tirarBancosIntervalo();                                                    // (7.5.11) os bancos do intervalo do futsal
   G.intSaida = null; G.intTela = false;
   $('banner').className = ''; $('cineLabel').textContent = ''; $('skipBtn').hidden = true;
   setLetterbox(false);
@@ -13640,6 +14299,7 @@ function salvarNoIntervalo() {
   const snap = estadoDoIntervalo();
   esconderTelaIntervalo();
   if (G.intSaida && G.intSaida.tunel) mostrarTunel(false);
+  tirarBancosIntervalo();
   setLetterbox(false); $('skipBtn').hidden = true; $('banner').className = ''; $('cineLabel').textContent = '';
   G.state = 'end'; G.intSaida = null;
   try { Som.fimGol(); } catch (e) { /* nada */ }
@@ -13759,7 +14419,7 @@ function apitoFinal() {
   G.targetScale = G.timeScale = 1;
   if (G.kick) { G.kick = null; }
   hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
-  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.cine = null; G.rampa = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
   if (G.dominioPerfeito) { G.dominioPerfeito = false; }
   G.possession = null; ball.vx *= 0.3; ball.vz *= 0.3;
   setLetterbox(true);
@@ -14039,6 +14699,12 @@ const POSES_CENA = {
     return { y: -0.59, lean: 0.28, lLz: 1.75 + (F.v ? 0.25 : 0), lRz: 1.55, jL: F.v ? -1.0 : -0.65, jR: -0.6, aLz: -0.7, aLx: 0.3,
       aRz: F.garrafa ? lerp(0.9, B.aRz, d) : -0.7, aRx: F.garrafa ? B.aRx : -0.3, cR: F.garrafa ? lerp(0.6, B.cR, d) : 0, cRx: F.garrafa ? B.cRx : 0, cab: B.cab || 0 };
   },
+  // (7.5.11) sentado no BANCO do intervalo do futsal (o quadril na altura do assento, como os reservas): mãos nos joelhos; às vezes bebe
+  banco: (t, p, F) => {
+    const d = F.garrafa ? cicloBeber(t, p.id * 0.9, 5) : 0, B = bebendo(d);
+    return { y: BANCO_SENTA_Y, lLz: 1.5, lRz: 1.5, jL: -1.5, jR: -1.5, lean: 0.04, aLz: 0.75, aLx: 0.12,
+      aRz: F.garrafa ? lerp(0.75, B.aRz, d) : 0.75, aRx: F.garrafa ? B.aRx : -0.12, cR: F.garrafa ? lerp(0, B.cR, d) : 0, cRx: F.garrafa ? B.cRx : 0, cab: (B.cab || 0) + Math.sin(t * 1.3 + p.id) * 0.04 };
+  },
   // aquecimento: skipping (joelho alto no lugar) ou polichinelo
   aquece: (t, p, F) => {
     if (F.v === 1) {
@@ -14104,7 +14770,7 @@ function abrirCena(modo, tom) {
   G.fimIni = 0; G.fimTom = tom; G.fimTomadas = []; G.fimPula = false; G.monteJunto = 0;
   G.targetScale = G.timeScale = 1;
   G.kick = null; hideKickUI(); esconderRecepcao(); $('timingLayer').hidden = true;
-  G.cine = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
+  G.cine = null; G.rampa = null; G.corrida = null; G.recv = null; G.recvFx = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.sp = null; G.foul = null; G.passTarget = null; G.apito = null; G.golPend = null;
   G.possession = null;
   setLetterbox(true); $('skipBtn').hidden = false; $('cineLabel').textContent = '';
 }
@@ -14800,6 +15466,13 @@ function updateYaw(rdt) {
     if (!k || !k.aimed) return;
     want = k.yawRef + wrapAngle(Math.atan2(k.dirZ, k.dirX) - k.yawRef) * 0.75;
     rapidez = 1.6;
+    // (7.5.11) lateral/escanteio (a câmera fica colada nas costas, então qualquer giro mexia a tela inteira): ela acompanha só
+    //   metade do giro da seta, mais devagar, e ignora mexidinhas de até ~12° (antes ela "pulava" a cada ajuste fino da mira)
+    if (camCobrancaAtiva()) {
+      const dA = wrapAngle(Math.atan2(k.dirZ, k.dirX) - k.yawRef), zm = 0.21;
+      const dU = Math.abs(dA) <= zm ? 0 : dA - Math.sign(dA) * zm;
+      want = k.yawRef + dU * 0.5; rapidez = 0.9;
+    }
   } else if (G.state === 'celebrate') {                  // comemoração: a câmera vai atrás de você (e gira mais rápido: correndo, ele saía da tela)
     const sp = Math.hypot(user.vx, user.vz);
     want = sp > 1.5 ? Math.atan2(user.vz, user.vx) : cam.yaw; rapidez = 4.2;
@@ -15651,7 +16324,7 @@ function syncMeshes(dt) {
   { const k = cam.mode === 'tv' ? 1.8 : 1; if (userRing.scale.x !== k) userRing.scale.set(k, k, 1); }   // (7.4.14) na câmera de TV o círculo é maior (de longe)
   userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && G.state !== 'intervalo' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
   const kk = G.kick;
-  aimArrow.visible = !!kk;
+  aimArrow.visible = !!kk && !kk.faltaMira;         // (7.5.11) na falta da mira pontilhada, a seta não aparece (o pontilhado é a mira)
   if (kk) {
     const O = kk.primeira ? { x: user.x + Math.cos(user.angle) * 0.62, z: user.z + Math.sin(user.angle) * 0.62 } : ball;   // (7.4.13) de primeira: a seta sai do pé (a bola ainda está no ar, chegando)
     aimArrow.position.set(O.x, 0.06, O.z); aimArrow.rotation.y = -Math.atan2(kk.dirZ, kk.dirX);
@@ -15719,6 +16392,7 @@ function stepGame(dt, rdt) {
     if (G.state === 'play' && !G.apito && !G.golPend) checkBallContacts();
   }
   if (G.state === 'power') updatePowerMeter();
+  atualizarFaltaMira(rdt);                         // (7.5.11) a falta da mira pontilhada (esconde a tela fora dela)
   if (G.state === 'spin' && G.kick && !G.kick.spinChosen) {
     G.kick.spinT += rdt;
     if (G.kick.spinT > 6 && !G.kick.semLimite) chooseSpin(0, 0);
@@ -16001,7 +16675,10 @@ function frame(now) {
   else if (G.state === 'subst') { atualizarSubstituicao(rdt); updateOfficials(0, rdt); syncMeshes(rdt); updateCamera(rdt); }   // cena da troca
   else {
     if (G.state !== 'paused' && G.state !== 'menu' && G.state !== 'end') {
-      G.timeScale += (G.targetScale - G.timeScale) * Math.min(1, rdt * 10);
+      if (G.rampa) {                                  // (7.5.11) rampa suave da câmera lenta (drible)
+        const R = G.rampa; R.t += rdt; const u = clamp(R.t / R.dur, 0, 1), e = u * u * (3 - 2 * u);
+        G.timeScale = lerp(R.de, R.para, e); G.targetScale = R.para; if (u >= 1) G.rampa = null;
+      } else G.timeScale += (G.targetScale - G.timeScale) * Math.min(1, rdt * 10);
       dt = rdt * G.timeScale * (G.espectador && G.state === 'play' ? 2.5 : 1);   // sem você em campo: mais rápido
       G.time += dt;
       stepGame(dt, rdt);
@@ -18658,6 +19335,18 @@ const Idioma = {
   'veio pingando': ['came in bouncing', 'llegó botando', 'è arrivata rimbalzando', 'est arrivé en rebondissant'],
   'veio alta demais': ['came in too high', 'llegó demasiado alto', 'è arrivata troppo alta', 'est arrivé trop haut'],
   'veio forte e torta': ['came in hard and crooked', 'llegó fuerte y torcido', 'è arrivata forte e storta', 'est arrivé fort et de travers'],
+  'veio do adversário': ['came from the opponent', 'vino del rival', 'è arrivata dall’avversario', 'venait de l’adversaire'],   // (7.5.11)
+  "DOIS NA MARCAÇÃO": ["TWO ON YOU", "DOS EN LA MARCA", "DUE IN MARCATURA", "DEUX AU MARQUAGE"],
+  "DE COSTAS: GIRE": ["BACK TO GOAL: TURN", "DE ESPALDAS: GIRA", "DI SPALLE: GIRATI", "DOS AU BUT : PIVOTE"],
+  "PERTO DA BANDEIRINHA": ["NEAR THE CORNER FLAG", "CERCA DEL BANDERÍN", "VICINO ALLA BANDIERINA", "PRÈS DU POTEAU DE CORNER"],
+  "NA LINHA LATERAL": ["ON THE TOUCHLINE", "EN LA BANDA", "SULLA LINEA LATERALE", "SUR LA LIGNE DE TOUCHE"],
+  "FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito": ["FREE KICK: drag to move the target (side and height) · the bar below is the curl", "FALTA: arrastra para mover la mira (lado y altura) · la barra de abajo es el efecto", "PUNIZIONE: trascina per spostare il mirino (lato e altezza) · la barra in basso è l’effetto", "COUP FRANC : fais glisser pour déplacer la mire (côté et hauteur) · la barre du bas, c’est l’effet"],
+  "EFEITO": ["CURL", "EFECTO", "EFFETTO", "EFFET"],
+  "Força {0} · Efeito {1}": ["Power {0} · Curl {1}", "Fuerza {0} · Efecto {1}", "Potenza {0} · Effetto {1}", "Puissance {0} · Effet {1}"],
+  "assim bate na barreira!": ["like this it hits the wall!", "¡así pega en la barrera!", "così prende la barriera!", "comme ça, ça touche le mur !"],
+  "assim vai para fora": ["like this it goes wide", "así se va afuera", "così va fuori", "comme ça, ça part dehors"],
+  "arriscado!": ["risky!", "¡arriesgado!", "rischioso!", "risqué !"],
+  'Bola forte: só deu para bloquear!': ['Hard ball: you could only block it!', '¡Balón fuerte: solo pudiste bloquear!', 'Pallone forte: hai potuto solo bloccare!', 'Ballon puissant : tu n’as pu que bloquer !'],
   'DRIBLE NO GOLEIRO': ['DRIBBLE THE KEEPER', 'REGATE AL PORTERO', 'DRIBBLING AL PORTIERE', 'DRIBBLE SUR LE GARDIEN'],
   'ARRANCADA': ['BURST', 'ARRANCADA', 'SCATTO', 'ACCÉLÉRATION'],
   'PROTEJA A BOLA': ['SHIELD THE BALL', 'PROTEGE EL BALÓN', 'PROTEGGI LA PALLA', 'PROTÈGE LE BALLON'],
@@ -19210,24 +19899,138 @@ const Musica = (() => {
     return RB * 4;
   };
 
+
+  // ----------------------------------------------------------- (7.6.0) AS VARIAÇÕES DA CIDADEZINHA, na mesma ideia do jazz (acordes com
+  //   sétima e nona, baixo andando, melodia solta por cima, percussão leve), com sotaque brasileiro. O jazz continua de terça a quinta:
+  //   BOSSA (a mais calma) ...... sábado e domingo: violão em síncope, baixo raiz–quinta, aro da caixa na clave e o chocalho bem baixinho
+  //   MPB (ijexá) ............... segunda: agogô, chocalho e um bumbo macio; teclado (sine + triangle) e o baixo sincopado
+  //   SAMBA (pagode, a animada) . sexta, dia de bar e movimento: surdo na segunda, pandeiro, tamborim no teleco-teco, cavaquinho e baixaria
+  //   O volume de cada uma foi medido (Musica._medir: RMS do arranjo, 16 compassos) e igualado ao do jazz em NIVEL.
+  const tick = (t, f, dur, vol, tipo) => nota(tipo || 'triangle', 12 * Math.log2(f / 440) + 69, t, dur, vol, { corte: f * 3, ataque: 0.002 });
+  const surdo = (t, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.25);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5 * v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5); o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.55); };
+  const pandeiro = (t, v, tapa) => { chiado(t, tapa ? 0.09 : 0.05, (tapa ? 0.11 : 0.05) * v, 7500, 'highpass'); if (tapa) chiado(t, 0.06, 0.09 * v, 1100, 'bandpass', 1.2); };
+  const agogo = (t, alto, v) => { tick(t, alto ? 1310 : 985, 0.16, 0.05 * v, 'square'); tick(t, alto ? 2620 : 1970, 0.08, 0.02 * v, 'sine'); };
+  const aro = (t, v) => { tick(t, 1750, 0.05, 0.08 * v, 'triangle'); chiado(t, 0.03, 0.05 * v, 2500, 'bandpass', 2); };
+  const shaker = (t, v) => chiado(t, 0.06, 0.03 * v, 5200, 'bandpass', 0.8);
+
+  // BOSSA: Dmaj9 | Bm9 | Em9 | A13 | F#m7 | B7(b9) | Em9 | A13 (♩ = 74, colcheias retas)
+  const BBPM = 74, BB = 60 / BBPM, B16 = BB / 4;
+  const BOSSA = [
+    { r: 38, v: [54, 57, 61, 64], e: [66, 69, 71, 73, 76] }, { r: 47, v: [54, 57, 61, 62], e: [66, 69, 71, 74, 76] },
+    { r: 40, v: [55, 59, 62, 66], e: [64, 66, 67, 71, 74] }, { r: 45, v: [55, 61, 66, 67], e: [64, 66, 69, 71, 73] },
+    { r: 42, v: [52, 57, 61, 64], e: [64, 66, 69, 71, 73] }, { r: 47, v: [51, 57, 60, 63], e: [63, 66, 69, 71, 72] },
+    { r: 40, v: [55, 59, 62, 66], e: [64, 66, 67, 71, 74] }, { r: 45, v: [55, 61, 66, 67], e: [61, 64, 66, 69, 73] },
+  ];
+  const BATIDA = [0, 3, 6, 10, 13];                                    // o violão: as semicolcheias da síncope (por compasso de 4/4)
+  const CLAVE = [0, 3, 6, 10, 12];
+  const bossa = (t0, n) => {
+    const c = BOSSA[n % BOSSA.length], quinta = c.r + 7;
+    for (const [k, m] of [[0, c.r], [6, quinta], [8, c.r], [14, quinta]]) nota('triangle', m, t0 + k * B16, B16 * (k % 8 ? 1.8 : 5), 0.3, { corte: 600, ataque: 0.01 });   // baixo raiz–quinta (com a antecipação)
+    for (const k of BATIDA) { const tk = t0 + k * B16 + (Math.random() - 0.5) * 0.008;   // o violão de náilon: o acorde inteiro, curto e macio
+      c.v.forEach((m, j) => nota('triangle', m, tk + j * 0.006, B16 * 2.2, 0.045, { corte: 1800, ataque: 0.004 })); }
+    if (n % 2 === 0) for (const m of c.v.slice(1)) nota('sine', m + 12, t0, BB * 7.6, 0.012, { corte: 1600, ataque: 0.9 });   // as cordas lá no fundo
+    for (const k of CLAVE) aro(t0 + k * B16, 0.5);
+    for (let i = 0; i < 8; i++) shaker(t0 + i * BB / 2, i % 2 ? 0.5 : 0.8);
+    if (n % 4 !== 3) { let i = 0;                                       // a melodia: poucas notas, longas (flauta: sine com um sopro de triangle)
+      while (i < 16) { if (Math.random() < 0.6) { i += 2; continue; } const m = escolhe(c.e) + 12, len = escolhe([2, 4, 4, 6]);
+        nota('sine', m, t0 + i * B16, B16 * len * 0.95, 0.05, { corte: 2600, ataque: 0.05 }); nota('triangle', m, t0 + i * B16, B16 * len * 0.6, 0.012, { corte: 1800, ataque: 0.06 }); i += len; } }
+    return BB * 4;
+  };
+
+  // MPB / IJEXÁ: Am9 | D9 | Fmaj7 | E7sus4 E7 (♩ = 92)
+  const MBPM = 92, MB = 60 / MBPM, M16 = MB / 4;
+  const MPB = [
+    { r: 45, v: [55, 59, 60, 64], e: [64, 67, 69, 71, 72, 76] }, { r: 38, v: [54, 57, 60, 64], e: [62, 64, 66, 69, 71, 74] },
+    { r: 41, v: [57, 60, 64, 65], e: [60, 64, 65, 67, 69, 72] }, { r: 40, v: [56, 59, 62, 64], e: [59, 62, 64, 68, 71, 74] },
+  ];
+  const IJEXA_AG = [[0, 0], [2, 1], [4, 1], [6, 0], [8, 0], [11, 1], [12, 1], [14, 0]];   // o agogô (0 = grave, 1 = agudo), em semicolcheias
+  const mpb = (t0, n) => {
+    const c = MPB[n % MPB.length], volta = Math.floor(n / 8) % 2;
+    for (const [k, m, d] of [[0, c.r, 3], [3, c.r + 12, 1], [6, c.r + 7, 2], [10, c.r, 2], [12, c.r + 10, 2], [14, c.r + 7, 2]]) nota('triangle', m, t0 + k * M16, M16 * d * 0.95, 0.27, { corte: 650, ataque: 0.008 });
+    for (const k of [0, 6, 10]) c.v.forEach((m) => { nota('sine', m, t0 + k * M16, M16 * 3.5, 0.045, { corte: 2400, ataque: 0.01 }); nota('triangle', m + 12, t0 + k * M16, M16 * 2, 0.012, { corte: 2600, det: 7 }); });   // o teclado
+    for (const [k, a] of IJEXA_AG) agogo(t0 + k * M16, a, 0.9);
+    for (let i = 0; i < 16; i++) shaker(t0 + i * M16, i % 4 === 0 ? 0.9 : i % 2 ? 0.45 : 0.65);
+    for (const k of [0, 10]) chute(t0 + k * M16, 0.35);
+    if (n >= 2) { let i = volta ? 0 : 2;                                // a voz (square bem filtrado) dobrada uma oitava acima, curtinha
+      while (i < 16) { if (Math.random() < 0.42) { i += 2; continue; } const m = escolhe(c.e), len = escolhe([1, 2, 2, 3]);
+        nota('square', m, t0 + i * M16, M16 * len * 0.9, 0.03, { corte: 1500, ataque: 0.02 }); nota('sine', m + 12, t0 + i * M16, M16 * len * 0.8, 0.016); i += len; } }
+    return MB * 4;
+  };
+
+  // SAMBA / PAGODE: C6 | A7 | Dm7 | G7 | E7 | Am7 | D7 | G7 (♩ = 102)
+  const SBPM = 102, SB = 60 / SBPM, S16 = SB / 4;
+  const SAMBA = [
+    { r: 36, v: [55, 57, 60, 64], e: [67, 69, 72, 74, 76] }, { r: 45, v: [55, 61, 64, 67], e: [64, 67, 69, 73, 76] },
+    { r: 38, v: [53, 57, 60, 65], e: [62, 65, 69, 72, 74] }, { r: 43, v: [53, 59, 62, 65], e: [62, 65, 67, 71, 74] },
+    { r: 40, v: [56, 59, 62, 64], e: [64, 68, 71, 74, 76] }, { r: 45, v: [55, 60, 64, 67], e: [64, 67, 69, 72, 76] },
+    { r: 38, v: [54, 57, 60, 66], e: [62, 66, 69, 72, 74] }, { r: 43, v: [53, 59, 62, 65], e: [62, 65, 67, 71, 74] },
+  ];
+  const TAMBORIM = [0, 2, 5, 7, 10, 12, 14];                            // o teleco-teco
+  const CAVACO = [[0, 1], [3, 0], [6, 1], [8, 0], [10, 1], [13, 0], [14, 1]];   // a batida do cavaquinho (1 = acento)
+  const samba = (t0, n) => {
+    const c = SAMBA[n % SAMBA.length], pr = SAMBA[(n + 1) % SAMBA.length], intro = n < 2;
+    surdo(t0, 0.45); surdo(t0 + 2 * SB, 0.45); surdo(t0 + SB, 0.95); surdo(t0 + 3 * SB, 0.95); if (n % 2) surdo(t0 + 3.5 * SB, 0.4);   // o surdo: forte no 2 e no 4
+    for (let i = 0; i < 16; i++) pandeiro(t0 + i * S16, i % 4 === 0 ? 1 : i % 4 === 3 ? 0.8 : 0.5, i % 4 === 2);
+    if (!intro) for (const k of TAMBORIM) tick(t0 + k * S16, 820, 0.06, 0.06, 'square');
+    for (const [k, ac] of CAVACO) c.v.forEach((m, j) => nota('triangle', m + 12, t0 + k * S16 + j * 0.004, S16 * 1.3, ac ? 0.05 : 0.03, { corte: 3000, ataque: 0.003 }));   // o cavaco (agudo, curto)
+    const ponte = pr.r - c.r; const bx = [[0, c.r, 2], [4, c.r + 7, 2], [8, c.r + 12, 2], [12, c.r + (ponte > 0 ? 9 : 4), 1], [14, pr.r + (ponte > 0 ? -1 : 1), 1]];   // a baixaria do 7 cordas, chegando no próximo acorde
+    for (const [k, m, d] of bx) nota('triangle', m, t0 + k * S16, S16 * d * 0.92, 0.3, { corte: 700, ataque: 0.006 });
+    if (!intro) { let i = 0;                                            // a melodia: síncopes curtas, "cantada" (square + sine)
+      while (i < 16) { if (Math.random() < 0.38) { i++; continue; } const m = escolhe(c.e), len = escolhe([1, 1, 2, 2, 3]);
+        nota('square', m, t0 + i * S16, S16 * len * 0.85, 0.034, { corte: 1700, ataque: 0.01 }); nota('sine', m + 12, t0 + i * S16, S16 * len * 0.7, 0.018); i += len; } }
+    if (n % 4 === 3) for (const k of [12, 13, 14, 15]) tick(t0 + k * S16, 700 + k * 20, 0.08, 0.07, 'square');   // a virada no fim da frase
+    return SB * 4;
+  };
+  const GERA = { jazz: (t, n) => jazz(t, n), rock: (t, n) => rock(t, n), bossa, mpb, samba };
+  const NIVEL = { jazz: 0.9, rock: 0.7, bossa: 1.065, mpb: 1.017, samba: 0.666 };   // o volume de cada uma (ver _medir): todas com a mesma altura
+  const DA_CIDADE = new Set(['jazz', 'bossa', 'mpb', 'samba']);
+  // o tema do dia (pedir 'jazz' = "a música da cidadezinha"): segunda MPB, sexta samba, sábado e domingo bossa, o resto o jazz
+  let fonteDia = null;
+  function temaDoDia() {
+    let dia = null;
+    try { dia = fonteDia ? fonteDia() : null; } catch (e) { dia = null; }
+    if (dia == null) try { const c = typeof HistoriaSave !== 'undefined' ? HistoriaSave.ler('cidade') : null; dia = c && c.dia; } catch (e) { dia = null; }
+    if (!dia) return 'jazz';
+    const ds = (((dia - 1) % 7) + 7) % 7;                                // 0 = segunda ... 6 = domingo
+    return ds === 0 ? 'mpb' : ds === 4 ? 'samba' : ds >= 5 ? 'bossa' : 'jazz';
+  }
+  // mede o volume (RMS, sem o grave abaixo de 120 Hz, que a gente quase não ouve no celular) de 'qual' num contexto offline
+  async function medir(qual, compassos, pcm) {
+    const sr = 22050, dur = 40, off = new OfflineAudioContext(1, sr * dur, sr), salva = { ctx, bus, ruido, dist };
+    ctx = off; bus = off.createGain(); bus.gain.value = NIVEL[qual] || 0.9;
+    const hp = off.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = pcm ? 20 : 80; bus.connect(hp); hp.connect(off.destination);
+    ruido = off.createBuffer(1, sr, sr); { const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+    dist = off.createWaveShaper(); { const cv = new Float32Array(257); for (let i = 0; i < 257; i++) cv[i] = Math.tanh((i / 128 - 1) * 6); dist.curve = cv; }
+    let t = 0.05, k = 0; const ger = GERA[qual]; while (k < (compassos || 16) && t < dur - 3) t += ger(t, k++);
+    ctx = salva.ctx; bus = salva.bus; ruido = salva.ruido; dist = salva.dist;
+    const buf = await off.startRendering(), d = buf.getChannelData(0), fim = Math.min(d.length, Math.floor(t * sr)); let s = 0, pico = 0;
+    for (let i = 0; i < fim; i++) { s += d[i] * d[i]; pico = Math.max(pico, Math.abs(d[i])); }
+    const r = { rmsDb: 10 * Math.log10(s / fim + 1e-12), picoDb: 20 * Math.log10(pico + 1e-9), seg: t };
+    if (pcm) { const q = new Int16Array(fim); for (let i = 0; i < fim; i++) q[i] = Math.max(-32767, Math.min(32767, d[i] * 32767)); let bin = ''; const u8 = new Uint8Array(q.buffer); for (let i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); r.pcm = btoa(bin); r.sr = sr; }   // (testes: o áudio)
+    return r;
+  }
+
   // o agendador: se a página travou (ou o navegador segurou o timer) e o relógio do áudio passou da próxima nota, pula o que ficou para
   //   trás em vez de agendar tudo de uma vez no passado (isso tocava dezenas de notas juntas: o estouro e o chiado)
   const laco = () => {
     if (!tocando || !ctx) return;
     if (prox < ctx.currentTime - 0.05) prox = ctx.currentTime + 0.08;
-    while (prox < ctx.currentTime + 1.2) prox += estilo === 'rock' ? rock(prox, compasso++) : jazz(prox, compasso++);
+    if (base === 'jazz' && DA_CIDADE.has(estilo) && compasso % 4 === 0) { const q = temaDoDia(); if (q !== estilo) { tocarJa(q); return; } }   // (7.6.0) virou o dia: troca o tema
+    while (prox < ctx.currentTime + 1.2) prox += (GERA[estilo] || GERA.jazz)(prox, compasso++);
   };
   // quem quer o lugar do jazz (a roda de pagode perto, a barbearia com a música dela...) pede com ceder(dono) e devolve com retomar(dono).
   //   Enquanto alguém segura, o jazz não toca; quando o último devolve, ele volta sozinho, se ainda era a música que devia estar tocando
   //   (um parar() no meio, de uma cena ou de uma partida, apaga esse pedido). Assim nunca tocam duas músicas por cima uma da outra.
   const donos = new Set(); let base = '';
+  // (7.6.0) tocar('jazz') = "a música da cidadezinha": toca o tema do dia (temaDoDia)
   const tocar = (qual) => {
-    qual = qual || 'jazz'; base = qual;
+    qual = qual || 'jazz'; if (DA_CIDADE.has(qual)) qual = 'jazz'; base = qual;   // pedir uma das da cidade (quem guardou Musica.estilo) = a da cidade de hoje
     if (qual === 'jazz' && donos.size) { if (tocando) pararJa(); return; }
-    tocarJa(qual);
+    tocarJa(qual === 'jazz' ? temaDoDia() : qual);
   };
-  const ceder = (dono) => { if (donos.has(dono)) return; donos.add(dono); if (tocando && estilo === 'jazz') pararJa(); };
-  const retomar = (dono) => { if (!donos.delete(dono)) return; if (!donos.size && base === 'jazz' && !tocando) tocarJa('jazz'); };
+  const ceder = (dono) => { if (donos.has(dono)) return; donos.add(dono); if (tocando && DA_CIDADE.has(estilo)) pararJa(); };
+  const retomar = (dono) => { if (!donos.delete(dono)) return; if (!donos.size && base === 'jazz' && !tocando) tocarJa(temaDoDia()); };
   const zerar = () => { donos.clear(); };
   const tocarJa = (qual) => {
     if (tocando && estilo === qual) return;
@@ -19236,7 +20039,7 @@ const Musica = (() => {
     if (!A) return;
     ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
     bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.musica || A.mestre);   // (7.4.13) volume de MÚSICA
-    bus.gain.linearRampToValueAtTime(qual === 'rock' ? 0.7 : 0.9, ctx.currentTime + 1.5);
+    bus.gain.linearRampToValueAtTime(NIVEL[qual] || 0.9, ctx.currentTime + 1.5);
     if (!ruido) { ruido = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     if (!dist) { dist = ctx.createWaveShaper(); const cv = new Float32Array(257); for (let i = 0; i < 257; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 6); } dist.curve = cv; }
     estilo = qual; tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
@@ -19274,7 +20077,8 @@ const Musica = (() => {
     o.connect(f); o2.connect(f); f.connect(g); g.connect(A.mestre);
     for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + d + 0.05); }
   };
-  return { tocar, parar, ceder, retomar, zerar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; }, get cedido() { return donos.size > 0; } };
+  return { tocar, parar, ceder, retomar, zerar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; }, get cedido() { return donos.size > 0; },
+    temaDoDia, definirDia: (fn) => { fonteDia = typeof fn === 'function' ? fn : null; }, _medir: medir, _NIVEL: NIVEL };   // (7.6.0) a cidade diz o dia (definirDia)
 })();
 
 // ---------------------------------------------------------------------
@@ -20014,6 +20818,9 @@ const Anuncios = (() => {
   }
   return { oferta, assistir, fechar, filme };
 })();
+// (7.6.0) a escolha do anúncio da partida livre (livre.js) vale enquanto o jogo não for recarregado pelo jogador: o recarregar automático
+//   ao sair da partida livre deixa o aviso '.manter' e a escolha continua
+try { if (sessionStorage.getItem('futebolJs.anuncioLivre.manter')) sessionStorage.removeItem('futebolJs.anuncioLivre.manter'); else sessionStorage.removeItem('futebolJs.anuncioLivre'); } catch (e) { /* sem sessionStorage */ }
 
 // HISTÓRIA SALVA POR FASE + FASES EM ARQUIVOS SEPARADOS
 //   Save da história (no aparelho, chave 'futebolJs.historia.v1'): { fase1: {...}, fase2: {...}, ... }. Cada fase mexe só na sua chave.
@@ -20351,7 +21158,7 @@ const Historia = (() => {
     else { const i = l1.indexOf(j); if (i >= 0) l1.splice(i, 1); if (!l0.includes(j)) l0.push(j); }
   }
   function devolverBola() {
-    G.sp = null; G.kickoffPending = null; G.apito = null; G.golPend = null; G.passTarget = null; G.foul = null; G.offside = null; G.cine = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.recv = null; G.corrida = null;
+    G.rampa = null; G.sp = null; G.kickoffPending = null; G.apito = null; G.golPend = null; G.passTarget = null; G.foul = null; G.offside = null; G.cine = null; G.shotCine = null; G.fintaCine = null; G.chuteCine = null; G.recv = null; G.corrida = null;
     esconderRecepcao(); hideKickUI(); user.recvPose = null; user.throwIn = false; user.setPiece = null; user.scripted = false; user.stun = 0; user.bolaFixa = null; G.kick = null;
     $('skipBtn').hidden = true; $('cineLabel').textContent = '';
     for (const p of players) { p.scripted = false; p.carry = false; p.throwIn = false; p.goalKick = false; p.setPiece = null; if (p !== user) p.parado = true; }
@@ -20783,9 +21590,9 @@ const Historia = (() => {
   function fimDaPartida() {
     const s = G.stats, gols = s.gols, nota = Number(matchRating());
     const expulso = !!user.red;              // o jogador levou o vermelho (a partida acaba na hora)
-    // "jogou bem" também depende da posição: atacante = fez gol; meia = distribuiu o jogo (passes certos ou gol); zagueiro = o time sofreu no máximo 1 gol.
+    // "jogou bem" também depende da posição: atacante = fez gol ou deu assistência; meia = distribuiu o jogo (passes certos, gol ou assistência); zagueiro = o time sofreu no máximo 1 gol.
     const pos = user && user.role ? user.role : 'FWD', sofridos = G.score[1];
-    const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1) : gols >= 1;
+    const cumpriu = pos === 'DEF' ? sofridos <= 1 : pos === 'MID' ? (s.passesOk >= 4 || gols >= 1 || (s.assist | 0) >= 1) : gols >= 1 || (s.assist | 0) >= 1;   // assistência também conta
     const pen = G.penaltisPlacar ? G.penaltisPlacar.slice() : null;      // mata-mata empatado: quem passou nos pênaltis
     const out = { placar: G.score.slice(), gols, nota, venceu: pen ? pen[0] > pen[1] : G.score[0] > G.score[1], empate: !pen && G.score[0] === G.score[1], expulso, posicao: pos, bom: !expulso && cumpriu && nota >= 8, estatisticas: Object.assign({}, s),
       penaltis: pen, golsLog: (G.golsLog || []).slice(), jogaram: PARTIDA.participantes.map((p) => ({ time: p.team, nome: p.voce ? CHAVE_VOCE : p.ficha || p.name, amarelo: !!p.yellow, vermelho: !!p.red, lesao: p.lesao ? (p.lesao.jogos | 0) : 0, pos: p.role })) };   // (7.4.1) a lesão e a posição: o campeonato da partida livre controla os desfalques
@@ -20808,7 +21615,7 @@ const Historia = (() => {
   }
   // Uma tentativa: o = { bola: {x, z}, face (para onde a bola vai), mira: {x, z} (para onde a seta começa), pos: [{ p, x, z, ang, parado, scripted, fora }] }
   function armarDesafio(o) {
-    Object.assign(G, { sp: null, kickoffPending: null, apito: null, golPend: null, passTarget: null, foul: null, offside: null, cine: null, shotCine: null, fintaCine: null, acroCine: null,
+    Object.assign(G, { sp: null, kickoffPending: null, apito: null, golPend: null, passTarget: null, foul: null, offside: null, cine: null, rampa: null, shotCine: null, fintaCine: null, acroCine: null,
       recv: null, recvFx: null, corrida: null, kick: null, direto: null, treinoGol: 0, dribbleWin: 0, dribbleOpp: null, targetScale: 1, timeScale: 1, celebAuto: null });
     esconderRecepcao(); hideKickUI(); $('skipBtn').hidden = true; $('cineLabel').textContent = ''; setLetterbox(false);
     for (const p of players) zerarJogador(p);

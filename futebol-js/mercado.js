@@ -165,6 +165,12 @@
     'Abacaxi': ['Pineapple', 'Piña', 'Ananas', 'Ananas'], 'Melancia': ['Watermelon', 'Sandía', 'Anguria', 'Pastèque'],
   };
   for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "Acelerar até as 22h? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia.": ["Skip to 10 PM? If you speed up, you only get a fixed {0} fakes for the day.", "¿Acelerar hasta las 22h? Si aceleras, solo recibes un valor fijo de {0} fakes por el día.", "Accelerare fino alle 22? Accelerando, ricevi solo un importo fisso di {0} fakes per la giornata.", "Accélérer jusqu’à 22 h ? En accélérant, tu ne touches qu’un montant fixe de {0} fakes pour la journée."],
+    "Turno acelerado! Aí fica o valor fixo: {0} fakes.": ["Shift sped up! Then it’s the fixed amount: {0} fakes.", "¡Turno acelerado! Entonces queda el valor fijo: {0} fakes.", "Turno accelerato! Allora resta l’importo fisso: {0} fakes.", "Service accéléré ! Alors c’est le montant fixe : {0} fakes."],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
 
   // ------------------------------------------------------------------ regras (fáceis de ajustar)
   const H_ABRE = 8, H_TURNO = 14, H_CHEIO_ATE = 14.5, H_FECHA = 22, H_ULTIMO_CLIENTE = 21;   // mercado 8h–22h · turno do jogador 14h–22h
@@ -1593,8 +1599,9 @@
       const k = [...U.repor].join(','); if (M.pRep.dataset.k !== k) { M.pRep.dataset.k = k; M.pRep.innerHTML = ''; for (const sec of U.repor) { const q = document.createElement('div'); q.style.cssText = 'width:14px;height:14px;background:' + COR_SEC[sec] + ';border:2px solid #2a1206;'; q.title = T(NOME_SEC[sec]); M.pRep.appendChild(q); } }
     }
     async function acelerar() {
-      const r = await Escolha.mostrar(T('Acelerar até as 22h? Você recebe só pelas horas trabalhadas até agora.'), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
+      const r = await Escolha.mostrar(Tf('Acelerar até as 22h? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia.', api.PAGA_ACELERADO), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
       Dialogo.esconder(); const s = S(); if (r !== 0 || !s.turnoMercado || s.turnoMercado.fim) return;
+      s.turnoMercado.acelerado = true;                                   // (7.6.0) acelerou: o fixo, sem descontos nem proporcional
       const h = s.dados.hora; await api.preto(true, 450); s.dados.hora = H_FECHA - 0.01; await encerrar(true, h); await api.preto(false, 450);
     }
     async function sairNoTurno() {
@@ -1611,20 +1618,25 @@
       for (const A of s.npcs) tirarBalao(A);                              // quem sobrou continua lá dentro: o Cadu "atende" até as 23h
       U.fila = []; atualizarMarcas();
       const ini = Math.max(H_TURNO, U.inicio <= H_CHEIO_ATE ? H_TURNO : U.inicio), fimH = antes ? clampN(hParou, ini, H_FECHA) : H_FECHA;
-      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA + U.irritados * IRRITADO, paga = Math.max(0, bruto - desc);
-      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */ api.somDinheiro(); api.ganhoNaTela(paga); api.mostrarDinheiro(true);   // trabalhouAlgumDia: libera a ligação do João
+      const frac = clampN((fimH - ini) / (H_FECHA - H_TURNO), 0, 1), bruto = Math.round(salario() * frac), desc = U.erros * DESCONTO + U.faltas * FALTA + U.irritados * IRRITADO, paga = U.acelerado ? api.PAGA_ACELERADO : Math.max(0, bruto - desc);
+      d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   /* (7.1.14) */   // trabalhouAlgumDia: libera a ligação do João
       api.gravar('chegada');
       const espera = s.modo !== 'livre'; if (!espera) { s.modo = 'cena'; api.UI().ctl.hidden = true; }
       M.avisos = []; M.tAviso = 0; api.aviso('');
       try {
         if (M.cadu) {
           if (!antes) await api.fala('cadu', restavam ? T('Pode deixar que eu atendo esses últimos e fecho o caixa. Não se preocupa, pode ir!') : T('Deu 22h! Pode ir, que eu fecho aqui.'));
-          await api.fala('cadu', Tf('Fechou o caixa por hoje! Você atendeu {0} clientes. Toma: {1} fakes.', U.atendidos, paga));
-          if (U.erros) await api.fala('cadu', Tf('Teve {0} troco(s) errado(s): {1} fakes de desconto.', U.erros, U.erros * DESCONTO));
-          if (U.faltas) await api.fala('cadu', Tf('Faltou produto na prateleira {0} vez(es): {1} fakes de desconto.', U.faltas, U.faltas * FALTA));
-          if (U.irritados) await api.fala('cadu', Tf('{0} cliente(s) cansaram de esperar e foram embora: {1} fakes de desconto.', U.irritados, U.irritados * IRRITADO));
+          if (U.acelerado) await api.fala('cadu', Tf('Turno acelerado! Aí fica o valor fixo: {0} fakes.', paga));
+          else {
+            await api.fala('cadu', Tf('Fechou o caixa por hoje! Você atendeu {0} clientes. Toma: {1} fakes.', U.atendidos, paga));
+            if (U.erros) await api.fala('cadu', Tf('Teve {0} troco(s) errado(s): {1} fakes de desconto.', U.erros, U.erros * DESCONTO));
+            if (U.faltas) await api.fala('cadu', Tf('Faltou produto na prateleira {0} vez(es): {1} fakes de desconto.', U.faltas, U.faltas * FALTA));
+            if (U.irritados) await api.fala('cadu', Tf('{0} cliente(s) cansaram de esperar e foram embora: {1} fakes de desconto.', U.irritados, U.irritados * IRRITADO));
+          }
           Dialogo.esconder();
         }
+        const total = api.dobrarPagamento ? await api.dobrarPagamento(paga) : paga;   // (7.6.0) receber ou ver um anúncio de 30 s e ganhar o dobro
+        api.somDinheiro(); api.ganhoNaTela(total); api.mostrarDinheiro(true);
       } catch (e) { console.error(e); }
       s.turnoMercado = null;
       if (sair && s.ativo && s.dentro) { try { await api.sairDoLugar(); } catch (e) { console.error(e); } }   // o jogador vai embora; o Cadu fecha

@@ -130,14 +130,53 @@ ARQUIVOS
                           teclado da história (WASD, Shift, Q/E, Espaço, Esc, M). Os botões da tela mostram o botão do controle.
                           Tudo trocável em Configurações → CONTROLE (XBOX) e na pausa (futebolJs.controle.v1). Teclado: + H cruza e
                           a tecla do drible acerta os alvos do minigame
+                          (7.5.11) LATERAL e ESCANTEIO: a mira trava no campo (180° no lateral, 90° no escanteio; não dá para cobrar para
+                          fora); o bandeirinha sai da frente dessas cobranças e a câmera das costas acompanha a mira com metade do giro,
+                          mais devagar. CHUTE: o goleiro lê a bola pela direção em que ela saiu (a curva engana; o melhor goleiro percebe
+                          antes) e a curva que tira a bola da linha diminui a chance de defesa; bater em cima da bola não joga mais a bola
+                          no chão logo no começo (ela chega com a força que saiu). FALTA com a MIRA PONTILHADA (falta direta perto do gol,
+                          numa partida): arraste para mover a mira no gol (lado e altura), a barra de baixo é o efeito, o pontilhado
+                          mostra o caminho (vermelho = barreira/fora, amarelo = arriscado); força pelo atributo FORÇA, curva pelo EFEITO,
+                          erro pelo CHUTE; quem está na barreira não dá mais o "bloqueio de linha" (alcançava 2,75 m). O treino do seu
+                          Nonato continua como era. DOMÍNIO: bola do adversário forte ou de muito perto = só bloqueio (sem domínio);
+                          rápida ou de perto = domínio difícil (ponto azul); faixa verde menor e setinha mais rápida, conforme a
+                          dificuldade e o atributo DOMÍNIO. DRIBLE: quantos alvos (1 a 4) e quanto tempo saem do seu DRIBLE contra a
+                          DEFESA dele; os alvos aparecem em qualquer lugar da tela; a câmera lenta entra e sai em rampa e a câmera desliza
+                          (sem corte seco); mais 10 dribles pela situação (croqueta e entre os dois com dois marcando; giro do pivô e
+                          calcanhar de costas; paradinha com o marcador atrás; drible da vaca e Cruyff na lateral; Cruyff e giro na
+                          bandeirinha perto do escanteio; tesoura e pisada). INTERVALO: no futsal, um banco para cada time e quem senta
+                          senta no banco; no sintético ninguém sai pela grade: sentam no chão, bebem água, alongam e aquecem na lateral.
+                          (7.6.0) MÚSICA DA CIDADEZINHA por dia da semana (Musica.temaDoDia; pedir 'jazz' = a música da cidade): segunda MPB/ijexá,
+                          terça a quinta o jazz de sempre, sexta samba/pagode (a animada, dia de bar), sábado e domingo bossa nova (a mais calma); o
+                          volume de todas foi medido (Musica._medir) e igualado (NIVEL). Troca sozinha quando vira o dia. TATUAGENS: mais 10 FECHADAS
+                          (braço/perna fechados: cobrem a frente, o lado de fora e as costas do antebraço/coxa; o lado de dentro, que ninguém vê, fica
+                          sem nada). ANÚNCIOS (Anuncios): a tela do Herick na partida livre usa o filme(); a escolha da partida livre vale até o jogador
+                          recarregar a página (sessionStorage 'futebolJs.anuncioLivre').
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
+                          (7.5.11) O mapa escreve o nome de cada lugar em que você já entrou (lojas, hospital e a casa da Lúcia). A
+                          calçada do cinema/cafeteria: quem anda por ela vai pela linha de −3,7 (antes −4,2, a 0,8 m das fachadas). Todo
+                          mundo que anda (pedestres, quem tem rotina, o seu Valdemar) desvia do jogador sem parar por até 3 s; não deu,
+                          atravessa (você cambaleia) e apressa o passo para recuperar o horário. O entorno foi arrastado 9 m para fora (as
+                          esquinas, a rua que dobra, os quarteirões, o posto): uma faixa de grama com árvores entre a várzea/o sintético
+                          do Doutor Bryan e os prédios das esquinas.
+                          (7.6.0) Lugar FECHADO: a porta não abre para quem chega (só para quem sai lá de dentro). ÍCONE FEDENDO (quadrado verde do
+                          lado da fome; tocar = "Fedendo"; some no banho). VISUAL NOVO: quem tem 20 corações ou mais repara na roupa/cores, no
+                          cabelo/barba e nos acessórios/tatuagens (elogia, zoa ou só percebe); com −10 ou menos fala xingando (falaAmizade/
+                          reacaoVisual). EXPEDIENTE: acelerar o turno paga sempre o fixo de 50 fakes (com aviso) e no fim de todo expediente dá para
+                          receber ou ver um anúncio de 30 s e ganhar o dobro (dobrarPagamento). NOITES DE TRABALHO (mercado seg–sex até 22h, pizzaria
+                          qui–dom até 0h; regraNoite): sem o aviso das 21h/limite das 22h; o aviso vem 1 h antes da hora de dormir (mercado 0h, pizzaria
+                          2h), a cena de ir para casa às 3h/4h e ele acorda às 7h/9h, ou mais cedo se tiver jogo da várzea/torneio ou encontro de manhã.
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   falas.js .............. as falas de amizade dos personagens: 15 de amizade negativa, 15 de amigos (50 ou mais) e 3 de corte
                           (-80) para cada um, e as gerais de preço mais caro (-25) e recusa (-50), nos 5 idiomas (baixado pela cidade)
   mercado.js ............ o trabalho no mercado (caixa, troco, reposição; baixado pela cidade)
+                          (7.6.0) Acelerar = 50 fakes fixos; no fim do turno, receber ou anúncio de 30 s para o dobro; turno até 22h sem o
+                          limite de dormir às 22h (dorme bem até a meia-noite).
   pizzaria.js ........... a pizzaria Forno a Lenha e o trabalho de entregador de bicicleta (baixado pela cidade)
+                          (7.5.11) A pizza custa de 200 a 400 fakes conforme o sabor (mussarela 200 … chocolate com morango 400).
+                          (7.6.0) Acelerar = 50 fakes fixos; no fim do turno, receber ou anúncio de 30 s para o dobro.
   restaurante.js ........ o restaurante self-service: 20 pratos em pixel art (a maioria saudável, com saladas e sobremesas), o
                           bufê com as cubas, a Dona Cida (cozinha) e o Renan (caixa), os clientes e a cena de comer e pagar
                           (baixado pela cidade)
@@ -150,10 +189,23 @@ ARQUIVOS
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
   treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
   esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações, as 20 chuteiras, as 15 bolas premium, as 25 roupas, os 15 acessórios e as 20 tatuagens (baixado pela cidade)
+                          (7.5.11) PROVADOR: você fica do lado de fora mostrando a roupa; trocar o modelo = entra na cabine, troca e sai
+                          dando uma voltinha; trocar só a cor (as 4 cores, como no guarda-roupa) = muda na hora, do lado de fora.
+                          (7.6.0) TATUAGEM: no estúdio da Tati você fica de roupa de baixo (fase2: roupa intima) para ver onde ela fica e paga na
+                          hora, com a Tati (FAZER), sem ir ao caixa. Mais 10 tatuagens fechadas (braço/perna fechados).
   treinoCampo.js ........ o campo de treino (mundo à parte, sem relógio) onde acontece o treino de chute, passe e cruzamento
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
+  namoro.js ............. os encontros seguintes com a Lúcia (baixado pela cidade). 
+                          (7.5.11) O convite para a casa dela é para o DOMINGO às 19h (no domingo, hoje à noite). No sofá dá para chegar
+                          mais perto dela (com corações de sobra ela deita a cabeça no seu ombro) e a despedida tem abraço, beijo (60
+                          corações ou namorando) ou toca aqui; namorando, as falas dela deixam isso claro (amor, saudade, agarradinho no
+                          sofá).
   varzea.js ............. o campeonato de várzea: o olheiro, os 10 times (emblemas em pixel art), a torcida, o vestiário
                           subterrâneo, a pré-partida e as estatísticas/prêmios (baixado pela cidade; o app Carreira usa a tabela)
+                          (7.5.11) O convite vem do Rafa no fim do torneio de futsal (inscrição automática); quem falta leva bronca com o placar e o
+                          próximo jogo; quem não foi a nenhum jogo da 1ª fase é cortado das eliminatórias.
+  torneios.js ........... (7.5.11) os mini torneios da história: o Torneio do Sintético (time do João) e o Torneio de Futsal
+                          (time do Biel), 10 times, todos contra todos, semifinal, final e 3º lugar (baixado pela cidade)
   serieb.js ............. a peneira e a carreira profissional: o presente (18 anos), a peneira "Time 1 x Time 2", a carta com
                           as 3 propostas, os 20 times da Série B (paródias com emblemas em pixel art e força dos últimos 3 anos),
                           os 20 times da Série A (7.3.0: paródias, escudos em pixel art, força dos últimos 10 anos), o ônibus do
@@ -209,6 +261,10 @@ ARQUIVOS
                           wall (a cabeceira-parede), towns (o inglês clássico, 3 jeitos) e brick (o antigo de bairro, com a fachada de
                           tijolo). CASA_DO_CLUBE leva cada clube para o seu; o "sem modelo" continua sorteando só entre os do Brasil
                           (7.5.4) A cena de fora (cena) tem 4 câmeras: a volta em torno, o mergulho, o helicóptero e a grua
+                          (7.6.0) Nenhuma arquibancada chega a menos de 4,5 m da bandeirinha (caminho/FOLGA_CANTO): nos ovais de canto muito
+                          redondo (Floresta, Concha, Lagoa, Toca e, menos, Anel, Mangueiral, Colina, Pétalas, Ferradura) o primeiro degrau, a
+                          mureta e a torcida em pé entravam no canto do campo e tapavam o escanteio. Conferido nos 48 modelos + oficial, Série B,
+                          várzeas, society e futsal (laterais e escanteios). No seu lateral/escanteio a tela da grade some (quadra, society, várzea).
   uniformes.js .......... o desenho das camisas 1 e 2 dos 40 times da Série A e da Série B (listras verticais e horizontais,
                           faixa diagonal, faixas no peito, laterais, degradê, texturas de estrelas, ondas, tigre...), seguindo
                           o padrão dos clubes parodiados, e a pixel art do peito (PEITO: 16 x 16 por time; sem ela vai o escudo
@@ -218,6 +274,9 @@ ARQUIVOS
                           continua 'periquito') e o vermelho das camisas dele virou branco
                           (7.5.2) Mais os 40 times da Espanha e da Inglaterra (listras, mangas de outra cor, faixas, laterais, texturas)
   livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
+                          (7.6.0) Antes do primeiro jogo da sessão, a tela do Herick: anúncio de 5 s no fim de cada partida OU um de 1 min uma
+                          vez só (até recarregar o jogo).
+
                           varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
                           com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,
                           Fachada ou Concha; se não der, a Floresta), amistoso, várzea, sintético e futsal. Campeonato e copa

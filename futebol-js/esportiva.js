@@ -212,6 +212,10 @@
     'A tatuagem "{0}" já está feita: {1}.': ['The "{0}" tattoo is done: {1}.', 'El tatuaje "{0}" ya está hecho: {1}.', 'Il tatuaggio "{0}" è fatto: {1}.', 'Le tatouage « {0} » est fait : {1}.'],
     'A sua sacola está vazia. O Biro mostra as chuteiras, a Kelly as roupas, o Juca as bolas, a Tati os acessórios e o Dedé as comemorações.': ['Your bag is empty. Biro shows the boots, Kelly the clothes, Juca the balls, Tati the accessories and Dedé the celebrations.', 'Tu bolsa está vacía. Biro muestra los botines, Kelly la ropa, Juca las pelotas, Tati los accesorios y Dedé las celebraciones.', 'La tua borsa è vuota. Biro mostra gli scarpini, Kelly i vestiti, Juca i palloni, Tati gli accessori e Dedé le esultanze.', 'Ton sac est vide. Biro montre les crampons, Kelly les vêtements, Juca les ballons, Tati les accessoires et Dedé les célébrations.'],
     'Sem pressa. A sacola fica aqui guardada enquanto você estiver na loja.': ['No rush. The bag stays here while you’re in the store.', 'Sin apuro. La bolsa queda guardada aquí mientras estés en la tienda.', 'Con calma. La borsa resta qui finché sei in negozio.', 'Pas de souci. Le sac reste ici tant que tu es dans le magasin.'],
+    // (7.5.11) o provador com as 4 cores
+    "ROUPA": ["OUTFIT", "ROPA", "ABITO", "TENUE"],
+    "CORES": ["COLORS", "COLORES", "COLORI", "COULEURS"],
+    "Escolha uma roupa primeiro.": ["Pick an outfit first.", "Elige una ropa primero.", "Scegli prima un abito.", "Choisis d’abord une tenue."],
   };
   const fem = () => typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F';
   const Tx = (k) => (typeof T === 'function' ? T(k) : k);
@@ -826,8 +830,10 @@
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
       }
     }
-    // ---------------------------------------------------------------- O PROVADOR (a cabine da cortina roxa): o jogador entra, a cortina
-    //   fecha e ele troca de roupa entre as que já são dele (as de casa e as compradas aqui). A escolhida fica vestida e ele sai com ela.
+    // ---------------------------------------------------------------- O PROVADOR (a cabine da cortina roxa): o jogador troca de roupa entre
+    //   as que já são dele (as de casa e as compradas aqui). (7.5.11) Ele fica do LADO DE FORA, na frente da cortina, mostrando o visual:
+    //   trocar o MODELO = ele entra na cabine (some atrás da cortina), troca e sai de novo dando uma voltinha; trocar só a COR (as 4
+    //   cores, como no guarda-roupa de casa) = muda na hora e ele continua do lado de fora.
     const preto = (on, ms) => (api.preto ? api.preto(on, ms) : Promise.resolve());
     const esperarMs = (ms) => (api.esperar ? api.esperar(ms) : new Promise((r) => setTimeout(r, ms)));
     const roupasMinhas = () => { const L = listaRp(), minhas = minhasRp(); return L.map((r, i) => i).filter((i) => !L[i].loja || minhas.includes(L[i].n)); };
@@ -836,36 +842,95 @@
       gravarF2({ roupa: { id: i, cores: c.slice() } });
       try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] provador:', e); }
     }
+    const coresVestidas = () => { const r = hF2().roupa, L = listaRp(); if (!r || !(r.id >= 0) || !L[r.id]) return null; return RPS().c4(r.cores && r.cores.length ? r.cores : L[r.id].c); };
+    function pintarRoupa(n, hex) {                                       // (7.5.11) só a cor: refaz o boneco com a cor nova (ele continua onde está)
+      const r = hF2().roupa; if (!r || !(r.id >= 0)) return; const c = coresVestidas(); if (!c || c[n] === hex) return;
+      c[n] = hex; gravarF2({ roupa: { id: r.id, cores: c.slice() } });
+      try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] provador (cor):', e); }
+    }
+    // onde ele fica mostrando a roupa (na frente da cortina, um passo para a loja) e a câmera de frente (ele à esquerda do painel)
+    const vitrineProv = () => { const P = M.D.provador; return { x: P.x - 0.15, z: P.z + 0.7 }; };
+    function camVitrine() { const V = vitrineProv(); api.camCena({ px: V.x - 0.1, py: 2.35, pz: V.z + 3.1, tx: V.x + 0.7, ty: 0.9, tz: V.z - 0.2 }); }
+    // trocar o MODELO: vira para a cortina, entra, troca lá dentro (escondido) e sai mostrando (uma voltinha)
+    async function trocarNaCabine(i) {
+      const s = S(), J = s.jog, P = M.D.provador, V = vitrineProv();
+      await andarJog(P.x, P.z, 1.9); J.yawAlvo = Math.PI / 2; await esperarMs(220);
+      await api.andar(J, [[P.x, P.z - 0.55]], 1.4);                     // passa pela cortina
+      M.escondeJog = true; try { api.som && api.som('pop'); } catch (e) { /* sem som */ }
+      await esperarMs(450); vestirQualquer(i); await esperarMs(650);
+      J.x = P.x; J.z = P.z - 0.55; J.yaw = J.yawAlvo = -Math.PI / 2;
+      M.escondeJog = false; s.meus.add(J.m); if (J.blob) J.blob.visible = true;
+      await api.andar(J, [[P.x, P.z], [V.x, V.z]], 1.5);
+      J.yawAlvo = -Math.PI / 2; await esperarMs(250);
+      M.giro = Math.PI * 2;                                              // a voltinha (o tick gira até completar)
+      await esperarMs(2600);
+    }
     function abrirPainelProvador() {
       return new Promise((fim) => {
         const RR = RPS(), L = listaRp();
         const el = document.createElement('div'); el.id = 'espProvador';
-        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#2a1a3c;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-sizing:border-box;';
-        const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:#7a4fb0;border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:3px;';
+        el.style.cssText = 'position:fixed;z-index:22;right:8px;top:8px;bottom:8px;width:min(350px,48vw);background:#2a1a3c;border:4px solid ' + AMAR + ';color:#f4f0e6;display:flex;flex-direction:column;font-family:var(--font-body);box-sizing:border-box;box-shadow:-6px 6px 0 rgba(0,0,0,.35);';
+        const cab = document.createElement('div'); cab.style.cssText = 'padding:8px 10px;background:#7a4fb0;border-bottom:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:5px;';
         const tit = document.createElement('div'); tit.style.cssText = 'font:700 14px/1.1 var(--font-display);letter-spacing:.08em;color:' + AMAR + ';'; tit.textContent = Tx('PROVADOR');
-        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);'; cab.append(tit, inf);
-        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;display:grid;grid-template-columns:1fr 1fr;gap:5px;align-content:start;';
+        const inf = document.createElement('div'); inf.style.cssText = 'font:600 11.5px/1.35 var(--font-body);';
+        const abas = document.createElement('div'); abas.style.cssText = 'display:flex;gap:4px;';
+        cab.append(tit, inf, abas);
+        const lista = document.createElement('div'); lista.style.cssText = 'flex:1;overflow:auto;padding:6px;';
         const pe = document.createElement('div'); pe.style.cssText = 'padding:6px 8px;border-top:3px solid ' + AMAR + ';display:flex;flex-direction:column;gap:5px;';
         const sair = document.createElement('button'); sair.type = 'button'; sair.className = 'pxBtn'; sair.textContent = Tx('SAIR DO PROVADOR'); sair.style.cssText = '--p:var(--p2,2px);height:38px;font-size:12px;';
         pe.append(sair);
+        let aba = 'roupa', ocupado = false;
+        const ROT = [Tx('Cor principal'), Tx('Cor secundária'), Tx('Cor dos detalhes'), Tx('Cor da estampa')];
+        const DICA = [Tx('blusa, camiseta ou vestido'), Tx('calça, short ou saia'), Tx('gola, barra, listras'), Tx('desenho, padrão ou escudo')];
+        const travar = (on) => { ocupado = on; el.style.pointerEvents = on ? 'none' : ''; el.style.opacity = on ? '0.55' : ''; };
         function render() {
           const vi = vestindoRp(), ids = roupasMinhas();
           inf.textContent = Tfx('Vestindo: {0}', Tx((L[vi] || L[0] || {}).n || ''));
+          abas.innerHTML = '';
+          for (const [k, t] of [['roupa', Tx('ROUPA')], ['cores', Tx('CORES')]]) {
+            const b = document.createElement('button'); b.type = 'button'; b.textContent = t; b.dataset.aba = k;
+            b.style.cssText = 'flex:1;height:26px;border:2px solid ' + (aba === k ? '#fff' : '#1a0f26') + ';background:' + (aba === k ? AMAR : '#3a2650') + ';color:' + (aba === k ? '#1a0f26' : '#f4f0e6') + ';font:700 11px/1 var(--font-display);cursor:pointer;';
+            b.onclick = () => { if (ocupado || aba === k) return; aba = k; lista.scrollTop = 0; render(); }; abas.appendChild(b);
+          }
           const rolagem = lista.scrollTop; lista.innerHTML = '';
-          for (const i of ids) {
-            const R = L[i], noCorpo = vi === i;
-            const b = document.createElement('button'); b.type = 'button'; b.dataset.k = R.n;
-            b.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 3px;background:' + (noCorpo ? '#3a5a2a' : '#3a2650') + ';border:2px solid ' + (noCorpo ? '#8fe04a' : '#5a3a7a') + ';color:#f4f0e6;font:700 10px/1.15 var(--font-display);min-height:78px;cursor:pointer;';
-            const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; cv.style.cssText = 'width:36px;height:36px;image-rendering:pixelated;border:2px solid #1a0f26;';
-            try { RR.amostraRoupa(cv, R, RR.c4(R.c)); } catch (e) { /* sem amostra */ }
-            const n = document.createElement('span'); n.textContent = Tx(R.n); n.style.cssText = 'text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;';
-            b.append(cv, n);
-            b.onclick = () => { if (noCorpo) return; vestirQualquer(i); api.gravar(S().dados.ponto || 'chegada'); try { api.som && api.som('pop'); } catch (e) { /* sem som */ } render(); };
-            lista.appendChild(b);
+          if (aba === 'roupa') {
+            const g = document.createElement('div'); g.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:5px;align-content:start;';
+            for (const i of ids) {
+              const R = L[i], noCorpo = vi === i;
+              const b = document.createElement('button'); b.type = 'button'; b.dataset.k = R.n;
+              b.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 3px;background:' + (noCorpo ? '#3a5a2a' : '#3a2650') + ';border:2px solid ' + (noCorpo ? '#8fe04a' : '#5a3a7a') + ';color:#f4f0e6;font:700 10px/1.15 var(--font-display);cursor:pointer;';
+              const cv = document.createElement('canvas'); cv.width = 32; cv.height = 32; cv.style.cssText = 'width:36px;height:36px;image-rendering:pixelated;border:2px solid #1a0f26;';
+              try { RR.amostraRoupa(cv, R, noCorpo ? (coresVestidas() || RR.c4(R.c)) : RR.c4(R.c)); } catch (e) { /* sem amostra */ }
+              const n = document.createElement('span'); n.textContent = Tx(R.n); n.style.cssText = 'text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;';
+              b.append(cv, n);
+              b.onclick = async () => {
+                if (noCorpo || ocupado) return; travar(true);
+                try { await trocarNaCabine(i); api.gravar(S().dados.ponto || 'chegada'); } catch (e) { console.error('[Esportiva] provador:', e); }
+                travar(false); render();
+              };
+              g.appendChild(b);
+            }
+            lista.appendChild(g);
+          } else {
+            const c = coresVestidas(), PAL = RR.PAL || [];
+            if (!c) { const v = document.createElement('div'); v.style.cssText = 'font:600 11.5px/1.35 var(--font-body);padding:6px;'; v.textContent = Tx('Escolha uma roupa primeiro.'); lista.appendChild(v); }
+            else for (let n = 0; n < 4; n++) {
+              const sec = document.createElement('div'); sec.style.cssText = 'font:700 11px/1.25 var(--font-display);margin:6px 2px 4px;'; sec.textContent = ROT[n] + ' ';
+              const sm = document.createElement('small'); sm.style.cssText = 'font:600 10px/1.2 var(--font-body);color:#d6c8ea;'; sm.textContent = '(' + DICA[n] + ')'; sec.appendChild(sm);
+              const gr = document.createElement('div'); gr.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(24px,1fr));gap:4px;';
+              for (const h of PAL) {
+                const b = document.createElement('button'); b.type = 'button'; b.dataset.c = n; b.dataset.v = h; b.setAttribute('aria-label', h);
+                const on = String(c[n]).toLowerCase() === h;
+                b.style.cssText = 'height:24px;background:' + h + ';border:' + (on ? '3px solid #fff' : '2px solid #1a0f26') + ';box-shadow:' + (on ? '0 0 0 2px ' + AMAR : 'none') + ';cursor:pointer;padding:0;';
+                b.onclick = () => { if (ocupado || on) return; pintarRoupa(n, h); api.gravar(S().dados.ponto || 'chegada'); try { api.som && api.som('pop'); } catch (e) { /* sem som */ } render(); };
+                gr.appendChild(b);
+              }
+              lista.append(sec, gr);
+            }
           }
           lista.scrollTop = rolagem;
         }
-        sair.onclick = () => { el.remove(); M.painel = null; fim(); };
+        sair.onclick = () => { if (ocupado) return; el.remove(); M.painel = null; fim(); };
         el.append(cab, lista, pe); (document.getElementById('raizJogo') || document.body).appendChild(el);
         M.painel = { el, render }; render();
       });
@@ -874,22 +939,16 @@
       const s = S(), J = s.jog, P = M.D && M.D.provador; if (!P || !RPS() || M.painel) return;
       s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso('');
       try {
-        await andarJog(P.x, P.z, 2.0); J.yaw = J.yawAlvo = Math.PI / 2;           // de frente para a cortina
-        await preto(true, 450);
-        M.escondeJog = true;                                              // lá dentro, atrás da cortina (o tick tira o boneco da tela)
-        api.camCena({ px: P.x + 0.65, py: 1.7, pz: P.z + 2.25, tx: P.x + 0.75, ty: 1.0, tz: P.z - 0.6 });   // a cortina fechada à esquerda do painel (sem a arara na frente)
-        await preto(false, 450);
+        const V = vitrineProv();
+        await andarJog(V.x, V.z, 2.0); J.yawAlvo = -Math.PI / 2;          // na frente da cortina, de frente para a loja
+        camVitrine(); await esperarMs(450);
         await abrirPainelProvador();
-        await preto(true, 450);
-        M.escondeJog = false; s.meus.add(J.m); if (J.blob) J.blob.visible = true;
-        J.x = P.x - 0.2; J.z = P.z + 0.45; J.yaw = J.yawAlvo = -Math.PI / 2;     // saiu da cortina de frente para a loja
-        api.camCena({ px: P.x + 0.2, py: 3.5, pz: P.z + 4.4, tx: P.x - 0.2, ty: 0.95, tz: P.z + 0.45 });   // do alto, por cima do manequim e da arara redonda (mais baixo, um deles ficava na frente)
-        await preto(false, 450); await esperarMs(600);
+        J.yawAlvo = -Math.PI / 2; await esperarMs(300);
         await api.fala('jog', Tx(pk(['Ficou bom em mim!', 'Gostei desse visual.'])));
         Dialogo.esconder();
       } catch (e) { console.error('[Esportiva] provador:', e); }
       finally {
-        M.escondeJog = false; if (s.meus && J.m) s.meus.add(J.m); if (J.blob) J.blob.visible = true;
+        M.escondeJog = false; M.giro = 0; if (s.meus && J.m) s.meus.add(J.m); if (J.blob) J.blob.visible = true;
         if (M.painel) { M.painel.el.remove(); M.painel = null; }
         api.camCena(null);
         const ss = S(); if (ss && ss.ativo && ss.modo === 'cena') api.liberar();
@@ -923,17 +982,18 @@
     function provarAc(enf) {
       const novo = !M.provAc; M.provAc = copiaEnf(enf);
       if (novo) for (const q of M.gente) { const E = q.es; if (E && E.fase !== 'sai' && E.i >= 0 && noCorredorAc(M.D.olhar[E.i])) { E.fase = 'olha'; E.t = (E.dur || 0) + 1; q.poseFn = null; } }
-      try { api.refazerJogador({ enfeites: M.provAc }); } catch (e) { console.warn('[Esportiva] provar acessório:', e); }
+      try { api.refazerJogador(M.abaAc === 'tat' ? { enfeites: M.provAc, roupa: { intima: true } } : { enfeites: M.provAc }); } catch (e) { console.warn('[Esportiva] provar acessório:', e); }   // (7.6.0) no estúdio de tatuagem: de cueca, para ver onde fica
       try { api.som && api.som('pop'); } catch (e) { /* sem som */ }
     }
     function desprovarAc() { if (!M.provAc) return; M.provAc = null; try { api.refazerJogador(); } catch (e) { console.warn('[Esportiva] desprovar acessório:', e); } }
     // a câmera do provador: de frente para o jogador (a oeste dele), ele à esquerda do painel. Brinco e colar: de perto; o resto: o corpo todo
     function camAc(aba) {
-      const P = PROV_AC, perto = aba === 'brinco' || aba === 'colar', D = perto ? 1.9 : 2.6;
-      api.camCena({ px: P.x - D, py: perto ? 1.55 : 1.3, pz: P.z + 0.08, tx: P.x, ty: perto ? 1.28 : 0.88, tz: P.z + (perto ? 0.55 : 0.74) });
+      const P = PROV_AC, perto = aba === 'brinco' || aba === 'colar', tat = aba === 'tat', D = perto ? 1.9 : tat ? 3.5 : 2.6;   // (7.6.0) tatuagem: o corpo inteiro, de cueca
+      api.camCena({ px: P.x - D, py: perto ? 1.55 : tat ? 1.15 : 1.3, pz: P.z + 0.08, tx: P.x, ty: perto ? 1.28 : tat ? 0.78 : 0.88, tz: P.z + (perto ? 0.55 : tat ? 1.0 : 0.74) });
     }
     // a roupa de agora cobre o lugar da tatuagem? (manga comprida no braço, calça na perna: aí ela não aparece)
     function cobertoAc(lug) {
+      if (M.cobre && M.cobre[lug] != null) return M.cobre[lug];        // (7.6.0) medido com a roupa de verdade, antes de ficar de cueca no estúdio
       try { const J = S().jog, m = J.m, n = parseInt(String(J.opt.pele).slice(1), 16), lado = lug[1] === 'd' ? 'D' : 'E';
         const malha = lug[0] === 'p' ? m['perna' + lado].inteira : m['braco' + lado].inteira, a = malha.geometry.attributes.color.array, j = (lug[0] === 'p' ? 0 : 24) * 3;
         return Math.abs(a[j] - ((n >> 16) & 255) / 255) > 0.02 || Math.abs(a[j + 1] - ((n >> 8) & 255) / 255) > 0.02 || Math.abs(a[j + 2] - (n & 255) / 255) > 0.02;
@@ -1024,13 +1084,30 @@
             if (aqui) delete DA.t[lug]; else DA.t[lug] = T.k; gravar();
             const e = copiaEnf(M.provAc); e.t = e.t || {}; if (aqui) delete e.t[lug]; else e.t[lug] = T.k; provarAc(e); render(); }));
           else if (naSac) bs.appendChild(bt(Tx('TIRAR'), '#a3162a', () => { M.sacola = M.sacola.filter((q) => q !== k); delete M.tatLugar[T.k]; render(); }));
-          else bs.appendChild(bt(Tx('LEVAR'), AMAR, () => { M.sacola.push(k); M.tatLugar[T.k] = lug; try { api.som && api.som('pop'); } catch (e) { /* nada */ } render(); }));
+          else bs.appendChild(bt(Tx('FAZER'), AMAR, () => fazerTatuagem(T, lug)));   // (7.6.0) a tatuagem se paga na hora, com a Tati (não vai para o caixa)
           dir.append(top, bs); lin.append(iconeTat(T.k), dir); return lin;
+        }
+        let fazendo = false;
+        async function fazerTatuagem(T, lug) {
+          if (fazendo) return; fazendo = true;
+          try {
+            const preco = T.preco, onde = Tx((LUGARES_TATUAGEM.find((q) => q.k === lug) || {}).nome || '').toLowerCase();
+            if (!d.devInfinito && d.fakes < preco) { api.aviso(Tfx('Faltam {0} fakes para essa tatuagem.', preco - d.fakes)); setTimeout(() => api.aviso(''), 2600); return; }
+            const r = await Escolha.mostrar(Tfx('Fazer a tatuagem "{0}" ({1}) agora, por {2} fakes?', Tx(T.nome), onde, preco), [Tfx('Pagar {0} fakes', preco), Tx('Agora não')], { centro: true });
+            Dialogo.esconder(); if (r !== 0) return;
+            d.fakes -= preco; if (d.devInfinito && d.fakes < 0) d.fakes = 0;
+            if (!DA.tats.includes(T.k)) DA.tats.push(T.k); DA.t[lug] = T.k; gravar();
+            try { api.somCaixa(); api.somDinheiro(); api.mostrarDinheiro(false); api.gastoNaTela(preco); } catch (e) { /* sem som */ }
+            const e = copiaEnf(M.provAc); e.t = e.t || {}; e.t[lug] = T.k; provarAc(e);
+            api.aviso(Tfx('Pronto! A tatuagem "{0}" está feita: {1}.', Tx(T.nome), onde)); setTimeout(() => api.aviso(''), 3200);
+            render();
+          } finally { fazendo = false; }
         }
         function render() {
           const aba = M.abaAc;
+          nota.textContent = Tx('PROVAR mostra no espelho, sem compromisso.') + ' ' + (aba === 'tat' ? Tx('A tatuagem você paga na hora, aqui com a Tati.') : Tx('O que está na sacola você paga no caixa, com a Marta.'));   // (7.6.0)
           inf.textContent = Tfx('Você tem {0} fakes', d.fakes) + '\n' + (M.sacola.length ? Tfx('Sacola: {0} ({1} fakes)', M.sacola.length, totalSacola()) : Tx('Sacola vazia'));
-          abas.innerHTML = ''; for (const [a, rot] of ABAS_AC) abas.appendChild(bt(Tx(rot), a === aba ? '#1a1406' : '#6a5010', () => { if (M.abaAc === a) return; M.abaAc = a; lista.scrollTop = 0; camAc(a); render(); }, a === aba));
+          abas.innerHTML = ''; for (const [a, rot] of ABAS_AC) abas.appendChild(bt(Tx(rot), a === aba ? '#1a1406' : '#6a5010', () => { if (M.abaAc === a) return; const tat = M.abaAc === 'tat' || a === 'tat'; M.abaAc = a; lista.scrollTop = 0; camAc(a); if (tat) provarAc(M.provAc); render(); }, a === aba));
           extra.innerHTML = '';
           if (aba === 'tat') {
             for (const L of LUGARES_TATUAGEM) extra.appendChild(bt(Tx(ROT_LUGAR[L.k]), L.k === M.lugarTat ? '#1a1406' : '#6a5010', () => { M.lugarTat = L.k; render(); }, L.k === M.lugarTat));
@@ -1063,13 +1140,17 @@
           await api.fala('esp_tati', Tx('Oi! Aqui é a seção de acessórios: brincos, colares, luvas e tatuagens.'));
           await api.fala('esp_tati', Tx('Tudo que é de metal sai em oito tons, do ouro ao grafite. É só escolher.'));
           await api.fala('esp_tati', Tx('As tatuagens eu mesma faço, no estúdio aqui do fundo. Você escolhe o desenho e o lugar: braço ou perna, direito ou esquerdo.'));
+          await api.fala('esp_tati', Tx('Na hora da tatuagem você fica só de roupa de baixo, para ver bem onde vai ficar. E a tatuagem se paga aqui comigo, na hora.'));   // (7.6.0)
+          E.tatiNova = true;
           await api.fala('esp_tati', Tx('Pode provar tudo no espelho. O que gostar vai para a sacola e a Marta cobra.'));
           E.tati = true; api.gravar(d.ponto || 'chegada');
-        } else await api.fala('esp_tati', Tx(pk(['Bora se enfeitar?', 'Chegou peça nova! Quer ver?'])));
+        } else if (!E.tatiNova) { E.tatiNova = true; await api.fala('esp_tati', Tx('Novidade: agora a tatuagem é feita e paga na hora, aqui comigo. Você fica só de roupa de baixo para ver bem onde vai ficar.')); api.gravar(d.ponto || 'chegada'); }   // (7.6.0)
+        else await api.fala('esp_tati', Tx(pk(['Bora se enfeitar?', 'Chegou peça nova! Quer ver?'])));
         Dialogo.esconder();
         await andarJog(PROV_AC.x, PROV_AC.z, 2.2); J.yaw = J.yawAlvo = Math.PI;
         A.yawAlvo = Math.atan2(-(J.z - A.z), J.x - A.x);
         if (!M.abaAc) M.abaAc = 'brinco'; if (!M.lugarTat) M.lugarTat = 'bd';
+        M.cobre = null; { const cb = {}; for (const L of LUGARES_TATUAGEM) cb[L.k] = cobertoAc(L.k); M.cobre = cb; }   // (7.6.0) com a roupa de verdade (no estúdio ele fica de cueca)
         sincronizarEnfeites(); camAc(M.abaAc); provarAc(enfeitesDe(dadosA()));
         const n0 = M.sacola.filter((k) => ehAc(k) || ehTat(k)).length;
         await abrirPainelAc();
@@ -1179,6 +1260,7 @@
       if (M.vitrine) { M.vitrine.rotation.y += dt * 0.7; M.vitrine.position.y = M.vitrine.userData.y + Math.sin(performance.now() / 600) * 0.03; }
       if (M.destaque) M.destaque.rotation.y += dt * 0.7;                // a mais cara girando na redoma
       if (M.escondeJog && s.jog) { s.meus.delete(s.jog.m); if (s.jog.blob) s.jog.blob.visible = false; if (s.jog.anel) s.jog.anel.visible = false; }
+      if (M.giro > 0 && s.jog) { const J = s.jog, g = Math.min(M.giro, dt * 2.6); J.yaw += g; J.yawAlvo = J.yaw; M.giro -= g; }   // (7.5.11) a voltinha de quem sai do provador
       if (M.provando != null || M.provandoRp != null || M.provAc) { const J = s.jog; J.yaw += dt * 0.8; J.yawAlvo = J.yaw; }   // o provador: o jogador gira devagar para mostrar a chuteira (ou a roupa)
       for (const E of EQUIPE) { const A = M.eq[E.k]; if (A && !A.falando && E.k !== 'dede' && s.modo === 'livre') { const J = s.jog, perto = Math.hypot(J.x - A.x, J.z - A.z) < 3.2; A.yawAlvo = perto ? Math.atan2(-(J.z - A.z), J.x - A.x) : A.casa.yaw; } }   // quem está perto: o vendedor olha para o jogador
     }
@@ -1189,5 +1271,26 @@
   }
 
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "FAZER": ["GET IT", "HACER", "FALLO", "FAIRE"],
+    "Faltam {0} fakes para essa tatuagem.": ["You’re {0} fakes short for this tattoo.", "Te faltan {0} fakes para este tatuaje.", "Ti mancano {0} fakes per questo tatuaggio.", "Il te manque {0} fakes pour ce tatouage."],
+    "Fazer a tatuagem \"{0}\" ({1}) agora, por {2} fakes?": ["Get the \"{0}\" tattoo ({1}) now, for {2} fakes?", "¿Hacer el tatuaje \"{0}\" ({1}) ahora, por {2} fakes?", "Fare il tatuaggio \"{0}\" ({1}) adesso, per {2} fakes?", "Faire le tatouage « {0} » ({1}) maintenant, pour {2} fakes ?"],
+    "Pronto! A tatuagem \"{0}\" está feita: {1}.": ["Done! The \"{0}\" tattoo is finished: {1}.", "¡Listo! El tatuaje \"{0}\" está hecho: {1}.", "Fatto! Il tatuaggio \"{0}\" è pronto: {1}.", "C’est fait ! Le tatouage « {0} » est terminé : {1}."],
+    "Na hora da tatuagem você fica só de roupa de baixo, para ver bem onde vai ficar. E a tatuagem se paga aqui comigo, na hora.": ["For the tattoo you strip down to your underwear, so you can see exactly where it goes. And you pay for the tattoo right here with me, on the spot.", "Para el tatuaje te quedas en ropa interior, para ver bien dónde va. Y el tatuaje se paga aquí conmigo, en el momento.", "Per il tatuaggio resti in biancheria intima, così vedi bene dove va. E il tatuaggio si paga qui da me, subito.", "Pour le tatouage, tu restes en sous-vêtements pour bien voir où il ira. Et le tatouage se paie ici, avec moi, tout de suite."],
+    "Novidade: agora a tatuagem é feita e paga na hora, aqui comigo. Você fica só de roupa de baixo para ver bem onde vai ficar.": ["News: now tattoos are done and paid for on the spot, right here with me. You strip down to your underwear to see exactly where it goes.", "Novedad: ahora el tatuaje se hace y se paga en el momento, aquí conmigo. Te quedas en ropa interior para ver bien dónde va.", "Novità: ora il tatuaggio si fa e si paga subito, qui da me. Resti in biancheria intima per vedere bene dove va.", "Nouveauté : maintenant le tatouage se fait et se paie sur place, ici avec moi. Tu restes en sous-vêtements pour bien voir où il ira."],
+    "A tatuagem você paga na hora, aqui com a Tati.": ["You pay for the tattoo on the spot, here with Tati.", "El tatuaje lo pagas en el momento, aquí con Tati.", "Il tatuaggio lo paghi subito, qui da Tati.", "Le tatouage, tu le paies sur place, ici avec Tati."],
+    "Tribal fechado": ["Full tribal sleeve", "Tribal cerrado", "Tribale completo", "Tribal complet"],
+    "Carpa e ondas": ["Koi and waves", "Carpa y olas", "Carpa e onde", "Carpe et vagues"],
+    "Jardim de rosas": ["Rose garden", "Jardín de rosas", "Giardino di rose", "Jardin de roses"],
+    "Geométrico": ["Geometric", "Geométrico", "Geometrico", "Géométrique"],
+    "Mandalas": ["Mandalas", "Mandalas", "Mandala", "Mandalas"],
+    "Maori": ["Maori", "Maorí", "Maori", "Maori"],
+    "Galáxia": ["Galaxy", "Galaxia", "Galassia", "Galaxie"],
+    "Paixão pelo futebol": ["Love of football", "Pasión por el fútbol", "Passione per il calcio", "Passion du foot"],
+    "Relógio e rosas": ["Clock and roses", "Reloj y rosas", "Orologio e rose", "Horloge et roses"],
+    "Chamas": ["Flames", "Llamas", "Fiamme", "Flammes"],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
   window.FutebolJS.registrarFase({ id: 'esportiva', nome: 'Golaço Esportes', nucleoMinimo: '7.1.13', iniciar: async () => {}, criar, dados: { PRECO, TRAD } });
 })();

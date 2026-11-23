@@ -1118,6 +1118,44 @@
     'Oiii, {0}! Vem cá, me dá um oi direito!': ['Hiii, {0}! Come here, say hi properly!', '¡Holaaa, {0}! ¡Ven, salúdame como se debe!', 'Ciaooo, {0}! Vieni qui, salutami come si deve!', 'Coucouuu, {0} ! Viens, dis-moi bonjour comme il faut !'],
   };
   for (const k of Object.keys(TRAD_NAMORO)) if (!I18N[k]) I18N[k] = TRAD_NAMORO[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "Já são {0}?! Chega por hoje, vou pra casa dormir.": ["It's already {0}?! That's enough for today, I'm going home to sleep.", "¿Ya son las {0}?! Basta por hoy, me voy a casa a dormir.", "Sono già le {0}?! Basta per oggi, vado a casa a dormire.", "Il est déjà {0} ?! Ça suffit pour aujourd’hui, je rentre dormir."],
+    "É melhor eu voltar para casa, tenho que dormir até as {0} para descansar bem, ou isso pode afetar meu desempenho.": ["I’d better head home, I have to be asleep by {0} to rest well, or it could hurt my performance.", "Mejor vuelvo a casa, tengo que dormirme antes de las {0} para descansar bien, o puede afectar mi rendimiento.", "Meglio tornare a casa, devo dormire entro le {0} per riposare bene, o potrebbe influire sul mio rendimento.", "Je ferais mieux de rentrer, je dois dormir avant {0} pour bien me reposer, sinon ça peut nuire à mes performances."],
+    "Fim do expediente: {0} fakes.": ["End of the shift: {0} fakes.", "Fin de la jornada: {0} fakes.", "Fine del turno: {0} fakes.", "Fin du service : {0} fakes."],
+    "Receber {0} fakes": ["Take {0} fakes", "Recibir {0} fakes", "Ricevi {0} fakes", "Recevoir {0} fakes"],
+    "Ver um anúncio de {0} s e ganhar {1} fakes": ["Watch a {0}-second ad and get {1} fakes", "Ver un anuncio de {0} s y ganar {1} fakes", "Guarda una pubblicità di {0} s e ricevi {1} fakes", "Regarder une pub de {0} s et gagner {1} fakes"],
+    "Pagamento em dobro": ["Double pay", "Pago doble", "Paga doppia", "Paie doublée"],
+    "Assista até o fim para receber o dobro.": ["Watch until the end to get double.", "Mira hasta el final para recibir el doble.", "Guarda fino alla fine per ricevere il doppio.", "Regarde jusqu’au bout pour recevoir le double."],
+    "Pronto! Pagamento dobrado.": ["Done! Pay doubled.", "¡Listo! Pago duplicado.", "Fatto! Paga raddoppiata.", "C’est fait ! Paie doublée."],
+    "Nenhum anúncio disponível agora: você recebe o valor normal.": ["No ad available right now: you get the normal amount.", "No hay anuncios disponibles ahora: recibes el valor normal.", "Nessuna pubblicità disponibile ora: ricevi l’importo normale.", "Aucune pub disponible pour le moment : tu reçois le montant normal."],
+    "Acelerar até as 16h? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia (as gorjetas que já recebeu ficam com você).": ["Speed up to 4 PM? If you speed up, you only get a fixed {0} fakes for the day (the tips you already got are yours).", "¿Acelerar hasta las 16h? Si aceleras, solo recibes un valor fijo de {0} fakes por el día (las propinas que ya recibiste son tuyas).", "Accelerare fino alle 16? Accelerando, ricevi solo un importo fisso di {0} fakes per la giornata (le mance già ricevute restano tue).", "Accélérer jusqu’à 16 h ? En accélérant, tu ne touches qu’un montant fixe de {0} fakes pour la journée (les pourboires déjà reçus restent à toi)."],
+    "Turno acelerado! Aí fica o valor fixo: {0} fakes. Até amanhã!": ["Shift sped up! Then it’s the fixed amount: {0} fakes. See you tomorrow!", "¡Turno acelerado! Entonces queda el valor fijo: {0} fakes. ¡Hasta mañana!", "Turno accelerato! Allora resta l’importo fisso: {0} fakes. A domani!", "Service accéléré ! Alors c’est le montant fixe : {0} fakes. À demain !"],
+    "Fedendo": ["Smelly", "Apestando", "Puzzolente", "Ça sent mauvais"],
+    "Opa, cortou o cabelo? Ficou muito bom!": ["Oh, you got a haircut? It looks really good!", "Ey, ¿te cortaste el pelo? ¡Te queda muy bien!", "Ehi, ti sei tagliato i capelli? Stanno benissimo!", "Oh, tu t’es coupé les cheveux ? Ça te va super bien !"],
+    "Cabelo novo! Caiu super bem em você.": ["New hair! It really suits you.", "¡Pelo nuevo! Te queda genial.", "Capelli nuovi! Ti stanno benissimo.", "Nouvelle coupe ! Ça te va super bien."],
+    "Eita, que visual novo! Gostei desse corte.": ["Whoa, what a new look! I like this cut.", "¡Uy, qué look nuevo! Me gusta ese corte.", "Wow, che look nuovo! Mi piace questo taglio.", "Waouh, nouveau look ! J’aime bien cette coupe."],
+    "Cortou o cabelo? Sei não, hein... preferia o antigo, haha.": ["Got a haircut? I don’t know, huh... I liked the old one better, haha.", "¿Te cortaste el pelo? No sé, eh... prefería el de antes, jaja.", "Ti sei tagliato i capelli? Mah, non so... preferivo quello di prima, ahah.", "Tu t’es coupé les cheveux ? Je sais pas, hein... je préférais l’ancienne, haha."],
+    "Hmm, esse corte novo... vou precisar me acostumar, haha.": ["Hmm, this new cut... I’ll need to get used to it, haha.", "Mmm, ese corte nuevo... me voy a tener que acostumbrar, jaja.", "Mmh, questo taglio nuovo... dovrò abituarmici, ahah.", "Hmm, cette nouvelle coupe... il va falloir que je m’y habitue, haha."],
+    "Ué, mudou o cabelo? Demorei pra te reconhecer!": ["Huh, you changed your hair? It took me a second to recognize you!", "¿Eh, cambiaste el pelo? ¡Tardé en reconocerte!", "Ehi, hai cambiato capelli? Ci ho messo un po’ a riconoscerti!", "Tiens, tu as changé de coiffure ? J’ai mis du temps à te reconnaître !"],
+    "Cortou o cabelo? Pagou pra ficar pior, né.": ["Got a haircut? You paid to look worse, huh.", "¿Te cortaste el pelo? Pagaste para quedar peor, ¿no?", "Ti sei tagliato i capelli? Hai pagato per peggiorare, eh.", "Tu t’es coupé les cheveux ? T’as payé pour être pire, hein."],
+    "Que corte é esse? Nem o cabelo te salva.": ["What kind of haircut is that? Not even your hair can save you.", "¿Qué corte es ese? Ni el pelo te salva.", "Che taglio è questo? Neanche i capelli ti salvano.", "C’est quoi, cette coupe ? Même tes cheveux ne te sauvent pas."],
+    "Roupa nova? Ficou estilosa, hein!": ["New clothes? Stylish, huh!", "¿Ropa nueva? ¡Con mucho estilo, eh!", "Vestiti nuovi? Che stile, eh!", "Nouvelle tenue ? Elle a du style, hein !"],
+    "Gostei dessa roupa! Combinou com você.": ["I like that outfit! It suits you.", "¡Me gusta esa ropa! Te queda bien.", "Mi piace questo vestito! Ti sta bene.", "J’aime bien cette tenue ! Elle te va bien."],
+    "Que roupa bonita! Tá chique, hein.": ["What nice clothes! Looking fancy, huh.", "¡Qué ropa bonita! Qué elegancia, eh.", "Che bei vestiti! Che eleganza, eh.", "Quelle belle tenue ! Très chic, hein."],
+    "Roupa nova, é? Sei não, hein... preferia a outra, haha.": ["New clothes, huh? I don’t know... I liked the other one better, haha.", "Ropa nueva, ¿eh? No sé, eh... prefería la otra, jaja.", "Vestiti nuovi, eh? Mah, non so... preferivo gli altri, ahah.", "Nouvelle tenue, hein ? Je sais pas... je préférais l’autre, haha."],
+    "Essas cores aí são uma escolha, hein, haha.": ["Those colors are quite a choice, huh, haha.", "Esos colores son toda una elección, eh, jaja.", "Quei colori sono proprio una scelta, eh, ahah.", "Ces couleurs, c’est un sacré choix, hein, haha."],
+    "Trocou de roupa? Mudou o visual!": ["Changed clothes? New look!", "¿Te cambiaste de ropa? ¡Look nuevo!", "Ti sei cambiato i vestiti? Look nuovo!", "Tu as changé de tenue ? Nouveau look !"],
+    "Roupa nova e continua sem graça.": ["New clothes and still boring.", "Ropa nueva y sigues igual de soso.", "Vestiti nuovi e sempre insipido.", "Nouvelle tenue et toujours aussi fade."],
+    "Que roupa horrível. Combina com você.": ["What awful clothes. They suit you.", "Qué ropa horrible. Te pega.", "Che vestiti orribili. Ti si addicono.", "Quelle tenue horrible. Elle te ressemble."],
+    "Que acessório bacana! Deu um charme.": ["What a cool accessory! Adds some charm.", "¡Qué accesorio tan bonito! Le da encanto.", "Che bell’accessorio! Dà un tocco in più.", "Quel accessoire sympa ! Ça a du charme."],
+    "Opa, novidade no visual! Ficou muito bom.": ["Oh, something new in the look! It looks really good.", "¡Ey, novedad en el look! Te queda muy bien.", "Ehi, novità nel look! Sta benissimo.", "Oh, du nouveau dans le look ! Ça rend très bien."],
+    "Esse enfeite novo... sei não, hein, preferia antes, haha.": ["That new accessory... I don’t know, huh, I liked it better before, haha.", "Ese adorno nuevo... no sé, eh, prefería antes, jaja.", "Questo ornamento nuovo... mah, non so, preferivo prima, ahah.", "Ce nouvel accessoire... je sais pas, hein, je préférais avant, haha."],
+    "Tem coisa nova aí no visual, né? Reparei!": ["There’s something new in your look, right? I noticed!", "Hay algo nuevo en tu look, ¿no? ¡Me di cuenta!", "C’è qualcosa di nuovo nel tuo look, vero? L’ho notato!", "Il y a du nouveau dans ton look, non ? J’ai remarqué !"],
+    "Pendurou isso aí pra quê? Não ajudou em nada.": ["Why did you hang that on? It didn’t help at all.", "¿Para qué te colgaste eso? No ayudó en nada.", "Perché ti sei appeso quella roba? Non è servito a niente.", "Pourquoi t’as accroché ce truc ? Ça n’arrange rien."],
+    "Pode enfeitar o quanto quiser, não melhora.": ["Decorate yourself all you want, it doesn’t get better.", "Puedes adornarte todo lo que quieras, no mejora.", "Puoi agghindarti quanto vuoi, non migliora.", "Tu peux te décorer autant que tu veux, ça ne s’améliore pas."],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
   const TRAD_SB_CD = {   // o wrap integral do seu Valdemar (a comida saudável do clube)
     "Wrap integral de frango": ["Wholewheat chicken wrap", "Wrap integral de pollo", "Wrap integrale di pollo", "Wrap complet au poulet"],
     "Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!": ["Now I've got a wholewheat chicken wrap for the folks who play ball for real. Healthy, huh!", "Ahora tengo un wrap integral de pollo para la gente que juega al fútbol en serio. ¡Sano, eh!", "Adesso ho un wrap integrale di pollo per chi gioca a calcio sul serio. Sano, eh!", "Maintenant j'ai un wrap complet au poulet pour ceux qui jouent au foot pour de vrai. Sain, hein !"],
@@ -1180,6 +1218,36 @@
     'Combo de cinema! Só falta o filme.': ['Movie combo! All that is missing is the movie.', '¡Combo de cine! Solo falta la película.', 'Combo da cinema! Manca solo il film.', 'Combo cinéma ! Il ne manque que le film.'],
   };
   for (const k of Object.keys(TRAD_CINE_CD)) if (!I18N[k]) I18N[k] = TRAD_CINE_CD[k];
+  const TRAD_TN_CD = {   // o convite do Biel depois do 1º racha, a 1ª vez na quadra e as falas do pós-jogo pelo desempenho
+    'Que jogo! Você acabou com a partida! A gente joga aqui toda segunda e quarta: aparece sempre, por favor!': ['What a game! You owned the match! We play here every Monday and Wednesday: please come back anytime!', '¡Qué partido! ¡Te adueñaste del juego! Jugamos aquí todos los lunes y miércoles: ¡ven siempre, por favor!', 'Che partita! Hai dominato! Giochiamo qui ogni lunedì e mercoledì: vieni sempre, per favore!', 'Quel match ! Tu as tout écrasé ! On joue ici tous les lundis et mercredis : reviens quand tu veux, s’il te plaît !'],
+    'Jogou direitinho! Dá pra melhorar, mas tá no caminho. A gente joga aqui toda segunda e quarta: aparece!': ['You played decently! There’s room to improve, but you’re on the right track. We play here every Monday and Wednesday: come by!', '¡Jugaste bien! Se puede mejorar, pero vas por buen camino. Jugamos aquí todos los lunes y miércoles: ¡ven!', 'Hai giocato discretamente! Si può migliorare, ma sei sulla strada giusta. Giochiamo qui ogni lunedì e mercoledì: passa!', 'Tu as bien joué ! On peut faire mieux, mais tu es sur la bonne voie. On joue ici tous les lundis et mercredis : passe nous voir !'],
+    'E aí! Eu sou o Biel. Tava assistindo o racha e curti o seu jogo.': ['Hey! I’m Biel. I was watching the pickup game and liked how you play.', '¡Qué tal! Soy Biel. Estaba mirando el picadito y me gustó cómo juegas.', 'Ehi! Io sono Biel. Stavo guardando la partitella e mi è piaciuto come giochi.', 'Salut ! Moi, c’est Biel. Je regardais le match entre potes et j’ai aimé ton jeu.'],
+    'Valeu, Biel! Eu sou {0}.': ['Thanks, Biel! I’m {0}.', '¡Gracias, Biel! Yo soy {0}.', 'Grazie, Biel! Io sono {0}.', 'Merci, Biel ! Moi, c’est {0}.'],
+    'Ó, a gente joga futsal na quadra perto da praça toda terça e quinta, às {0}. Vou estar te esperando lá!': ['Look, we play futsal at the court near the square every Tuesday and Thursday, at {0}. I’ll be waiting for you there!', 'Mira, jugamos futsal en la cancha cerca de la plaza todos los martes y jueves, a las {0}. ¡Te voy a estar esperando allí!', 'Senti, giochiamo a calcetto al campetto vicino alla piazza ogni martedì e giovedì, alle {0}. Ti aspetto lì!', 'Écoute, on joue au futsal au terrain près de la place tous les mardis et jeudis, à {0}. Je t’attendrai là-bas !'],
+    'Cola com a gente?': ['Will you join us?', '¿Te sumas?', 'Ti unisci a noi?', 'Tu viens avec nous ?'],
+    'Fechou, eu apareço!': ['Deal, I’ll be there!', '¡Hecho, ahí estaré!', 'Affare fatto, ci sarò!', 'Ça marche, je serai là !'],
+    'Vou ver se dá, valeu!': ['I’ll see if I can make it, thanks!', 'Voy a ver si puedo, ¡gracias!', 'Vedo se ce la faccio, grazie!', 'Je vais voir si je peux, merci !'],
+    'Isso! Até lá, então.': ['That’s it! See you there, then.', '¡Eso! Nos vemos allí, entonces.', 'Così si fa! Ci vediamo lì, allora.', 'C’est ça ! À bientôt là-bas, alors.'],
+    'Tranquilo! A gente tá lá toda terça e quinta.': ['No problem! We’re there every Tuesday and Thursday.', '¡No pasa nada! Estamos allí todos los martes y jueves.', 'Nessun problema! Siamo lì ogni martedì e giovedì.', 'Pas de souci ! On est là-bas tous les mardis et jeudis.'],
+    'Aí, {0}! Você veio mesmo! Falei que a gente jogava aqui.': ['There you are, {0}! You actually came! Told you we play here.', '¡Ahí está, {0}! ¡Viniste de verdad! Te dije que jugábamos aquí.', 'Eccoti, {0}! Sei venuto davvero! Te l’avevo detto che giocavamo qui.', 'Te voilà, {0} ! Tu es vraiment venu ! Je t’avais dit qu’on jouait ici.'],
+    'Vim jogar!': ['I came to play!', '¡Vine a jugar!', 'Sono qui per giocare!', 'Je suis venu jouer !'],
+    'Só passei pra ver.': ['I just stopped by to watch.', 'Solo pasé a mirar.', 'Sono solo passato a guardare.', 'Je passais juste voir.'],
+    'Vim ver se esse futsal é bom mesmo... duvido.': ['I came to see if this futsal is any good... I doubt it.', 'Vine a ver si este futsal es bueno de verdad... lo dudo.', 'Sono venuto a vedere se questo calcetto è davvero buono... ne dubito.', 'Je suis venu voir si ce futsal est vraiment bien... j’en doute.'],
+    'Ih, chegou cheio de marra... beleza, fica aí assistindo.': ['Whoa, someone showed up cocky... fine, just stay there and watch.', 'Uy, llegaste muy creído... bueno, quédate ahí mirando.', 'Eh, arrivi tutto spavaldo... va bene, resta lì a guardare.', 'Eh ben, t’arrives bien sûr de toi... d’accord, reste là à regarder.'],
+    'Ih, chegou cheia de marra... beleza, fica aí assistindo.': ['Whoa, someone showed up cocky... fine, just stay there and watch.', 'Uy, llegaste muy creída... bueno, quédate ahí mirando.', 'Eh, arrivi tutta spavalda... va bene, resta lì a guardare.', 'Eh ben, t’arrives bien sûre de toi... d’accord, reste là à regarder.'],
+    'É isso! A galera tá chegando. Bora!': ['That’s it! The guys are arriving. Let’s go!', '¡Eso! La gente ya está llegando. ¡Vamos!', 'Così si fa! Stanno arrivando tutti. Andiamo!', 'C’est ça ! Les autres arrivent. On y va !'],
+    'Tranquilo! Terça e quinta a gente tá aqui, é só colar.': ['No problem! We’re here Tuesdays and Thursdays, just drop by.', '¡No pasa nada! Martes y jueves estamos aquí, solo ven.', 'Nessun problema! Martedì e giovedì siamo qui, basta passare.', 'Pas de souci ! Le mardi et le jeudi, on est là, tu n’as qu’à passer.'],
+    '{0}, você jogou demais! Ninguém conseguiu te parar na quadra.': ['{0}, you were amazing! Nobody could stop you on the court.', '{0}, ¡jugaste muchísimo! Nadie pudo pararte en la cancha.', '{0}, hai giocato alla grande! Nessuno è riuscito a fermarti in campo.', '{0}, tu as été énorme ! Personne n’a pu t’arrêter sur le terrain.'],
+    'Boa, {0}! Jogou direitinho hoje.': ['Nice, {0}! You played decently today.', '¡Bien, {0}! Hoy jugaste bien.', 'Bravo, {0}! Oggi hai giocato discretamente.', 'Bien, {0} ! Tu as bien joué aujourd’hui.'],
+  };
+  for (const k of Object.keys(TRAD_TN_CD)) if (!I18N[k]) I18N[k] = TRAD_TN_CD[k];
+  if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {
+    'Aí, {0}! Você veio mesmo! Falei que a gente jogava aqui.': [null, null, 'Eccoti, {0}! Sei venuta davvero! Te l’avevo detto che giocavamo qui.', 'Te voilà, {0} ! Tu es vraiment venue ! Je t’avais dit qu’on jouait ici.'],
+    'Vim jogar!': [null, null, null, 'Je suis venue jouer !'],
+    'Só passei pra ver.': [null, null, 'Sono solo passata a guardare.', null],
+    'Vim ver se esse futsal é bom mesmo... duvido.': [null, null, 'Sono venuta a vedere se questo calcetto è davvero buono... ne dubito.', 'Je suis venue voir si ce futsal est vraiment bien... j’en doute.'],
+  });
+  if (typeof FEM_PT !== 'undefined') FEM_PT['Ih, chegou cheio de marra... beleza, fica aí assistindo.'] = 'Ih, chegou cheia de marra... beleza, fica aí assistindo.';
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {          // quando quem joga é mulher (trasferita, enchantée, svegliata...)
     'Naquele dia eu não esqueci... eu passei mal e apaguei no sofá. Falei que esqueci porque fiquei com vergonha.': [null, 'Ese día no me olvidé... me sentí mal y me quedé dormida en el sofá. Dije que me olvidé porque me dio vergüenza.', 'Quel giorno non me ne sono dimenticata... sono stata male e sono crollata sul divano. Ho detto che me ne ero dimenticata perché mi vergognavo.', 'Ce jour-là, je n’ai pas oublié... j’ai été malade et je me suis endormie sur le canapé. J’ai dit que j’avais oublié parce que j’avais honte.'],
     'A verdade é que a minha mãe me ligou chorando naquela hora, e eu não quis te encher com problema de família.': [null, null, null, 'La vérité, c’est que ma mère m’a appelée en pleurant à ce moment-là, et je ne voulais pas t’embêter avec des histoires de famille.'],
@@ -1209,6 +1277,9 @@
   const LIM = { x0: -120, x1: 120, z0: -76, z1: 76 };
   const RUAS_TERRA = [R(295, 0, 26, 760), R(872, 0, 26, 760), R(0, 190, 600, 22), R(0, 560, 900, 22), R(388, 582, 14, 34), R(1030, 338, 30, 24)];
   const AV = { z0: -2.2, z1: 6.2, zc: 2 };                         // asfalto (sem as calçadas). (6.6.5) era −3,2…7,2: a avenida ficou 2 m mais estreita e as calçadas, 1 m mais largas cada (dá para andar de 2 em 2)
+  // (7.5.11) a LINHA de quem anda pela calçada norte (a do cinema e da cafeteria) passou de −4,2 para −3,7: ela ficava a 0,8 m das fachadas
+  //   (a calçada vai de −5,1 a −2,2) e, com a mão direita (±0,42), quem ia para o oeste passava com o ombro raspando/entrando na parede
+  const CALC_N = -3.7, CALC_S = 8.1;
   const PISTAS = [{ z: 4.6, dir: 1 }, { z: -0.6, dir: -1 }];        // mão direita: quem vai para leste (+x) anda no lado sul (+z)
   const CALCADAS = [];                                             // calçadas elevadas (12 cm), com os vãos onde as ruas de terra cruzam
   {
@@ -1218,11 +1289,14 @@
   }
   // AS RUAS QUE DOBRAM (fora da cidade, nas duas pontas da avenida): a calçada continua até uma rua que cruza a avenida (x ±127,5 a ±134,5);
   //   quem vai embora a pé dobra a esquina e some atrás dos prédios da esquina; quem chega vem por ela. Só as calçadas de dentro têm gente.
-  const RUA_FORA = { ci: 125, a0: 127.5, a1: 134.5, co: 137, zf: 80 };   // calçada de dentro (125–127,5), asfalto (127,5–134,5), calçada de fora (134,5–137)
+  // (7.5.11) o entorno inteiro foi ARRASTADO 9 m para fora (DX_FORA): os prédios das esquinas encostavam na cerca do sintético do Doutor
+  //   Bryan e nos bancos da várzea. No lugar ficou uma faixa de grama (com a calçada e a avenida continuando até a esquina).
+  const DX_FORA = 9;
+  const RUA_FORA = { ci: 125 + DX_FORA, a0: 127.5 + DX_FORA, a1: 134.5 + DX_FORA, co: 137 + DX_FORA, zf: 80 };   // calçada de dentro (134–136,5), asfalto (136,5–143,5), calçada de fora (143,5–146)
   const ZONAS_FORA = [];
   for (const sg of [-1, 1]) {
     const X = (a, b) => (sg > 0 ? { x0: a, x1: b } : { x0: -b, x1: -a });
-    for (const [z0, z1] of [[-5.1, AV.z0], [AV.z1, 10.5]]) { CALCADAS.push(Object.assign(X(120, RUA_FORA.a0), { z0, z1, y: 0.12 })); CALCADAS.push(Object.assign(X(RUA_FORA.a1, 160), { z0, z1, y: 0.12 })); }
+    for (const [z0, z1] of [[-5.1, AV.z0], [AV.z1, 10.5]]) { CALCADAS.push(Object.assign(X(120, RUA_FORA.a0), { z0, z1, y: 0.12 })); CALCADAS.push(Object.assign(X(RUA_FORA.a1, 160 + DX_FORA), { z0, z1, y: 0.12 })); }
     for (const [z0, z1] of [[-RUA_FORA.zf, -5.1], [10.5, RUA_FORA.zf]]) { CALCADAS.push(Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0, z1, y: 0.12 })); CALCADAS.push(Object.assign(X(RUA_FORA.a1, RUA_FORA.co), { z0, z1, y: 0.12 })); }
     ZONAS_FORA.push(Object.assign(X(118, RUA_FORA.a0), { z0: -5.1, z1: AV.z0 }), Object.assign(X(118, RUA_FORA.a0), { z0: AV.z1, z1: 10.5 }),
       Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0: -RUA_FORA.zf, z1: -5.1 }), Object.assign(X(RUA_FORA.ci, RUA_FORA.a0), { z0: 10.5, z1: RUA_FORA.zf }));
@@ -1726,7 +1800,7 @@
       // os prédios das esquinas (do lado da cidade): de frente para a avenida, colados na calçada da rua que dobra (escondem quem dobra).
       //   Entram na cidade até onde dá (eram só 4,35 m de frente): até 0,8 m da cerca do sintético; do lado da várzea, até atrás dos
       //   bancos da torcida (VZ.leste); a oeste, sem cobrir a ponta das ruas de terra norte (z −38…−33,6) e sul (z 36…40,4).
-      const q = (xi) => X(xi, R0.ci - 0.25), xN = sg > 0 ? 120 : 117.8, xS = 117.8;
+      const q = (xi) => X(xi, R0.ci - 0.25), xN = 126.5, xS = 126.5;   // (7.5.11) começam 6,5 m depois do limite da cidade (antes 117,8–120: colados na cerca/nos bancos)
       predio(Object.assign(q(xN), { z0: -17, z1: -5.5 }), 1, 7.2, 2, sg > 0 ? '#e3b95a' : '#c9d6c3', { letreiro: { txt: sg > 0 ? 'PADARIA' : 'FARMÁCIA', fundo: sg > 0 ? '#7a4a2a' : '#1f7a4d', cor: '#fff6e0' } });
       predio(Object.assign(q(xN), { z0: sg > 0 ? -34 : -33.1, z1: -17.4 }), 1, 9.5, 3, '#d9b38c');
       predio(Object.assign(q(xS), { z0: 10.9, z1: 22.5 }), -1, 7.2, 2, sg > 0 ? '#bfcfdc' : '#e3c4c4', { letreiro: { txt: sg > 0 ? 'OFICINA' : 'MERCEARIA', fundo: sg > 0 ? '#2a3f66' : '#8a1f24', cor: '#fff6e0' } });
@@ -1742,20 +1816,20 @@
       }
       // ao longo da estrada: galpões e casas espalhados, o posto de gasolina (só numa ponta) e os postes com a fiação
       for (let k = 0; k < 7; k++) {
-        const x0 = 168 + k * 26 + rnd() * 8, lado = k % 2 ? 1 : -1, w = 8 + rnd() * 10, d = 7 + rnd() * 8, h = 3.5 + rnd() * 4;
+        const x0 = 168 + DX_FORA + 12 + k * 26 + rnd() * 8, lado = k % 2 ? 1 : -1, w = 8 + rnd() * 10, d = 7 + rnd() * 8, h = 3.5 + rnd() * 4;   // (7.5.11) +12: o quarteirão de lá não encosta mais no primeiro galpão
         const z0 = lado > 0 ? 14 + rnd() * 10 : -(14 + rnd() * 10) - d, c = cores[Math.floor(rnd() * cores.length)], xa = X(x0, x0 + w);
         Gd.box(w, h, d, c, (xa.x0 + xa.x1) / 2, 0, z0 + d / 2, '#9a968c'); Gd.box(w + 0.8, 0.5, d + 0.8, escurece(c, 0.7), (xa.x0 + xa.x1) / 2, h, z0 + d / 2);
         Gd.box(2.2, 2.6, 0.08, '#3a3d42', (xa.x0 + xa.x1) / 2, 0, lado > 0 ? z0 - 0.04 : z0 + d + 0.04);   // o portão
       }
       if (sg > 0) {                                                    // o posto: a cobertura, as bombas, a lojinha e a placa alta
-        const px = 150, pz = 14;
+        const px = 150 + DX_FORA + 14, pz = 26;   // (7.5.11) arrastado junto (e para trás do quarteirão: antes os dois se cruzavam)
         Gd.box(12, 0.5, 7, '#f4f2ea', px + 6, 4.6, pz + 3.5); Gd.box(12.2, 0.3, 7.2, '#c8352b', px + 6, 4.35, pz + 3.5);
         for (const dx of [2, 10]) Gd.box(0.4, 4.4, 0.4, '#d8d8d0', px + dx, 0, pz + 3.5);
         for (const dx of [4, 8]) { Gd.box(0.7, 1.5, 0.5, '#c8352b', px + dx, 0, pz + 3.5); Gd.box(0.5, 0.35, 0.52, '#f4f2ea', px + dx, 1.05, pz + 3.5); }
         Gd.box(6, 3.2, 4.5, '#f4f2ea', px + 6, 0, pz + 9.5); Gd.box(6.2, 0.6, 4.7, '#c8352b', px + 6, 3.2, pz + 9.5);
         Gd.box(0.4, 7, 0.4, '#8c9199', px - 1, 0, pz + 1); Gd.box(2.4, 1.6, 0.3, '#c8352b', px - 1, 6.2, pz + 1); Gd.box(2.0, 1.2, 0.32, '#f2c230', px - 1, 6.4, pz + 1);
       }
-      for (let x = 124; x < 400; x += 22) for (const zz of [-6.6, 12.0]) { const xa = sg * x; Gd.box(0.22, 7.5, 0.22, '#8a6a4a', xa, 0, zz); Gd.box(1.6, 0.12, 0.12, '#5a4a3a', xa, 7.0, zz); }
+      for (let x = 124 + DX_FORA; x < 400; x += 22) for (const zz of [-6.6, 12.0]) { const xa = sg * x; Gd.box(0.22, 7.5, 0.22, '#8a6a4a', xa, 0, zz); Gd.box(1.6, 0.12, 0.12, '#5a4a3a', xa, 7.0, zz); }
     }
     g.add(Gd.malha(MAT));
   }
@@ -2115,9 +2189,11 @@
         const x = -230 + rnd() * 460, z = -190 + rnd() * 380;
         if (x > LIM.x0 - 3 && x < LIM.x1 + 3 && z > LIM.z0 - 3 && z < LIM.z1 + 3) continue;
         if (Math.abs(z - AV.zc) < 9) continue;
-        if ((Math.abs(x) > 117 && Math.abs(x) < 168 && Math.abs(z) < 45) || (Math.abs(x) > RUA_FORA.ci - 2 && Math.abs(x) < RUA_FORA.co + 2)) continue;   // o entorno: as ruas que dobram e os quarteirões das esquinas
+        if ((Math.abs(x) > 117 && Math.abs(x) < 168 + DX_FORA + 12 && Math.abs(z) < 45) || (Math.abs(x) > RUA_FORA.ci - 2 && Math.abs(x) < RUA_FORA.co + 2)) continue;   // o entorno: as ruas que dobram e os quarteirões das esquinas
         arvore(x, z, 1 + rnd() * 0.9, false);
       }
+      // (7.5.11) a faixa de grama nova entre a cidade e os prédios das esquinas: umas árvores, longe da avenida e da calçada
+      for (const sg of [-1, 1]) for (const z of [-30, -21, -12, 17, 26, 35]) arvore(sg * (122.6 + rnd() * 1.6), z + rnd() * 2, 0.9 + rnd() * 0.4, false);
       addMalha(G, 0, 0); }
   }
   // alambrado em volta de um retângulo; vaos (portões): [{ lado: 'n'|'s'|'e'|'w', a, b }] em metros (x para n/s, z para e/w)
@@ -2674,7 +2750,7 @@
   //   O primeiro convite é uma LIGAÇÃO do João depois do primeiro dia de trabalho (celular pixelado no canto inferior direito, 10 s
   //   para atender; sem atender vem a mensagem). Depois disso o racha do sintético Doutor Bryan é toda segunda e quarta (DIAS_FUTEBOL).
   //   Toda partida no sintético: escolhe 5 ou 3 minutos, o horário e o clima do mundo vão para a partida e ficam salvos nos dados dela
-  //   (d.partidas), e o relógio do mundo anda 1h. A cada 10 chutes no alvo: +0,25 em chute, efeito e força (escala de 1 a 10).
+  //   (d.partidas), e o relógio do mundo anda 1h. A evolução das habilidades é a evoluirPartida (de 0,1 em 0,1, ver REGRAS_EVO).
   //   Depois de toda partida ele diz que precisa de um banho (d.precisaBanho): dormir sem banho tira 5 de saúde (fase2.js) e a
   //   Lúcia não deixa começar o turno sem banho.
   const TURNOS = { cafeteria: [8, 16], mercado: [14, 22], pizzaria: [17, 24] };   // (6.1.0) a pizzaria: 17h à meia-noite
@@ -2860,6 +2936,15 @@
     C.g += r.gols | 0; C.a += st.assist | 0; C.chutes += st.chutes | 0; C.noAlvo += st.noAlvo | 0; C.passes += st.passes | 0; C.passesOk += st.passesOk | 0;
     C.dribles += st.driblesOk | 0; C.desarmes += st.desarmes | 0; C.nota = Math.round((C.nota + nota) * 10) / 10; C.melhor = Math.max(C.melhor, nota); if (r.bom) C.bons++;
   }
+  // como o jogador foi na partida, em quatro faixas (as falas de quem comenta o jogo): gol e assistência pesam junto com a nota
+  function avaliarJogo(r) {
+    if (!r || !r.placar) return 'mal';
+    const st = r.estatisticas || {}, ga = (r.gols | 0) + (st.assist | 0), nota = +r.nota || 0;
+    if (r.expulso) return 'mal';
+    if (nota >= 8.5 || ga >= 3 || ((r.gols | 0) >= 2 && r.venceu)) return 'craque';
+    if (nota >= 7.3 || ga >= 1) return 'bem';
+    return nota >= 6 ? 'ok' : 'mal';
+  }
   function horarioClimaPartida() {                                      // a partida (e o treino do seu Nonato) com a hora e o tempo da cidade
     const h = S.dados.hora;
     return { horario: h >= 6 && h < 15.5 ? 'dia' : h >= 15.5 && h < 18.4 ? 'tarde' : 'noite', clima: S.clima.estado === 'chuva' || S.clima.chuva > 0.35 ? 'chuva' : 'seco' };
@@ -2869,15 +2954,16 @@
     const tec = { nome: 'Caio', aparencia: { pele: AP_CAIO.pele, cabelo: AP_CAIO.cabelo, estilo: AP_CAIO.estilo, roupa: '#222222' } };
     const t0 = { id: 's_joao', nome: T('Time do João'), sigla: 'JOÃ', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_COLETE, uniforme2: UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#f2c230', cor2: '#1c1c1f', letras: 'JP' }, tecnico: tec,
-      elenco: [Object.assign({}, HIST.joao, { nome: 'João' }), g('Rafa', 6161, 'M'), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Tiago', 4141, 'M'), g('Bruno', 4747, 'M')] };   // (7.4.19) 6 x 6: + o Bruno   // a Lúcia, se foi convidada, entra no lugar da Carol   // 5 x 5: + Tiago
+      elenco: [g('Tiago', 4141, 'M'), Object.assign({}, HIST.joao, { nome: 'João' }), g('Rafa', 6161, 'M'), (luciaJogaHoje('sintetico') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Carol', 5151, 'F')), g('Bruno', 4747, 'M')] };   // o 1º do elenco vai para o gol: o Tiago (o João joga na linha); a Lúcia, se foi convidada, entra no lugar da Carol
     const t1 = { id: 's_caio', nome: T('Time do Caio'), sigla: 'CAI', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_AZUL, uniforme2: UNI_COLETE,
       emblema: { forma: 'circulo', cor1: '#3a64b8', cor2: '#f2f2ee', letras: 'CA' }, tecnico: tec,
-      elenco: [Object.assign({ nome: 'Caio' }, AP_CAIO), Object.assign({ nome: 'Júlia' }, apJulia()), g('Marcos', 8181, 'M'), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M'), g('Lia', 9797, 'F')] };   // (7.4.19) 6 x 6: + a Lia; antes 5 x 5: + Vitinho
+      elenco: [g('Marcos', 8181, 'M'), Object.assign({ nome: 'Caio' }, AP_CAIO), Object.assign({ nome: 'Júlia' }, apJulia()), g('Dani', 9191, 'F'), g('Vitinho', 3131, 'M'), g('Lia', 9797, 'F')] };   // o Marcos no gol: o Caio e a Júlia jogam na linha
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || T('Você'), posicao: PERSONAGEM.posicaoHist || 'FWD', numero: PERSONAGEM.numero, aparencia: aparenciaNaPartida() };
     return { campo: 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: T('Racha do sintético'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },
       dificuldade: 'normal', clima, gramado: 'baixo', horario, duracao, usuario: eu, atributos: atributosJogador(), taticas: [null, null], formacoes: [null, null] };
   }
   function sairParaPartida() {                                           // entrega a tela ao jogo de verdade (a cidade fica guardada, escondida)
+    S.ultimaEvolucao = null;                                             // o comentário de evolução do jogador é só o desta partida
     Musica.parar(); MusicaCafe.parar();
     GANCHO_RENDER = null; camera.clearViewOffset();
     S.visCidade = scene.children.filter((c) => !c.isLight && c.visible);   // o que é da cidade e está à mostra (volta igual depois)
@@ -2919,9 +3005,9 @@
     d.partidas.push({ local: 'sintetico', dia: d.dia, semana: DIAS_SEM[diaSemana()], hora: Math.round(h * 100) / 100, horario, clima, nublado: S.clima.nuv > 0.35, duracao,
       placar: r ? r.placar : null, gols: r ? r.gols : 0, nota: r ? r.nota : 0, bom: !!(r && r.bom), venceu: !!(r && r.venceu), chutes: st.chutes | 0, noAlvo: st.noAlvo | 0, passesOk: st.passesOk | 0 });
     carreira(); registrarCarreira('sintetico', r);
-    // evolução: a cada 10 chutes no alvo, +0,25 em chute, efeito e força (até 10)
     const subiu = S.ultimaEvolucao ? S.ultimaEvolucao.txt : '';           // (7.1.14) a evolução agora é a evoluirPartida (chamada no registrarCarreira)
-    A.feito = true; f.jogos = (f.jogos | 0) + 1; d.precisaBanho = true;
+    const primeiroRacha = !(f.jogos | 0) && !fsal().convidado;           // o 1º racha: o Biel estava assistindo e convida para o futsal
+    A.feito = true; f.jogos = (f.jogos | 0) + 1; d.precisaBanho = true; if (!f.primeiroDia) f.primeiroDia = d.dia;
     tickHorario(1 / H_POR_S);                                          // sai da partida 1h depois
     f.joaoSai = d.hora;                                                // o João volta para casa a partir de agora
     S.missao = ''; recolherMissao(); definirMarca(null);
@@ -2929,19 +3015,29 @@
     const J = S.jog, E = P.dentro; J.sentado = false; J.x = E.x; J.z = E.z; J.y = altura(J.x, J.z); J.yaw = J.yawAlvo = Math.PI / 2; J.rota = null;
     const C = criarNPCFixo(AP_CAIO, false, 7, ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee']); C.x = E.x + 1.3; C.z = E.z - 0.4; C.yaw = C.yawAlvo = Math.PI; S.caio = C;
     const LJ = comLucia ? luciaDepoisDoJogo(E.x + 0.9, E.z + 0.9, J, ['#f2c230', '#1c1c1f', '#1c1c1f', '#f2f2ee']) : null;
+    let BI = null;
+    if (primeiroRacha) {                                                 // o Biel (de roupa normal) do outro lado
+      removerBiel(); criarBiel(); BI = S.biel; if (BI.excl) { BI.m.raiz.remove(BI.excl); BI.excl = null; }
+      BI.tipo = 'cena'; BI.cena = true; BI.x = E.x - 1.15; BI.z = E.z + 0.75; BI.y = altura(BI.x, BI.z); BI.yaw = BI.yawAlvo = Math.atan2(-(J.z - BI.z), J.x - BI.x);
+    }
     J.yawAlvo = Math.atan2(-(C.z - J.z), C.x - J.x); S.cam.snap = true;
     Musica.tocar('jazz');
     await preto(false, 900);
     try {
       if (!f.conheceCaio) { await fala('caio', T('E aí! Eu sou o Caio, eu organizo o racha aqui.')); f.conheceCaio = true; }
-      if (r && r.bom) await fala('caio', T('Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!'));
+      const av = avaliarJogo(r);
+      if (av === 'craque') await fala('caio', T('Que jogo! Você acabou com a partida! A gente joga aqui toda segunda e quarta: aparece sempre, por favor!'));
+      else if (av === 'bem') await fala('caio', T('Mandou muito bem hoje! A gente joga aqui toda segunda e quarta. Aparece, que eu gostei do seu jogo!'));
+      else if (av === 'ok') await fala('caio', T('Jogou direitinho! Dá pra melhorar, mas tá no caminho. A gente joga aqui toda segunda e quarta: aparece!'));
       else await fala('caio', T('Hoje não foi o seu dia, hein? Mas a gente joga aqui toda segunda e quarta. Aparece pra aprender: futebol se aprende jogando!'));
       if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
+      if (BI) await conviteBielRacha(BI, J);
       if (subiu) await fala('jog', Tf('Sinto que estou evoluindo: {0}.', subiu));
       await fala('jog', T('Ufa... depois dessa eu preciso tomar um banho.'));
       Dialogo.esconder();
     } catch (e) { console.error(e); }
     S.caio = null; irEmbora(C, null, 1.9);                               // o Caio vai embora andando (para fora da cidade)
+    if (BI && S.biel === BI) { BI.cena = false; irEmbora(BI, null, 1.9, () => { if (S.biel === BI) { S.biel = null; if (S.falantesExtra) delete S.falantesExtra.biel; } }); }
     if (LJ) luciaVaiParaCasa(LJ);
     gravar('chegada');
   }
@@ -3224,14 +3320,13 @@
     Dialogo.esconder();
   }
   // ================================================================== O BIEL E O FUTSAL DA QUADRA
-  //   A partir da 3ª semana (dia 15+), toda TERÇA, o Biel espera os amigos na frente da quadra de futsal (do lado do portão), com
-  //   uma exclamação em cima da cabeça. O horário é o mesmo do futebol (horaDoFutebol: 2h depois do turno de quem trabalha de dia, 4h antes
-  //   de quem trabalha de tarde/noite); ele fica lá de 45 min antes até 1h30 depois.
-  //   1ª conversa: ele conta que espera os amigos para um futsal → "Eu também jogo bola!" (ele chama: "Cola aí com nós, tem uma hora
-  //   livre?" → sim = futsal 5 x 5 / agora não) ou "Tranquilo, bom jogo!". Ele se apresenta e fica sabendo o seu nome.
-  //   Depois do primeiro jogo ele avisa que jogam lá toda TERÇA e QUINTA e convida: daí ele aparece nesses dois dias (com a missão e o
-  //   marcador no mapa). Nas outras conversas ele já chama pelo nome (BIEL_PAPOS, 5 jeitos).
-  //   Salvo em historia.cidade.futsal = { conheceu, convidado, jogos, papo, jogouDia }.
+  //   Depois do 1º racha no sintético, o Biel (que estava assistindo) se apresenta na cena da saída e chama para o futsal: a turma joga na
+  //   quadra toda TERÇA e QUINTA no horário do futebol (horaDoFutebol: 2h depois do turno de quem trabalha de dia, 4h antes de quem trabalha
+  //   de tarde/noite). Daí ele aparece já nessa semana: chega andando de fora da cidade para estar no portão meia hora antes, espera e fica
+  //   até 1h depois do horário (sem jogo, vai embora andando). A 1ª conversa na quadra é sobre o convite ("Você veio mesmo!").
+  //   Quem nunca foi ao racha encontra o Biel do jeito antigo: a partir da 3ª semana (dia 15+), toda terça, esperando os amigos.
+  //   Nas outras conversas ele já chama pelo nome (BIEL_PAPOS, 5 jeitos).
+  //   Salvo em historia.cidade.futsal = { conheceu, convidado, convite, primeiraQuadra, convidouDia, jogos, papo, jogouDia }.
   const BIEL = { x: -36.1, z: 10.85 }, DIAS_FUTSAL = [1, 3];              // terça e quinta (diaSemana: 0 = segunda)
   const AP_BIEL = () => apFixa(2727, 'M');
   const BIEL_PAPOS = [
@@ -3248,7 +3343,29 @@
     if (F.convidado ? !DIAS_FUTSAL.includes(ds) : !(ds === 1 && (d.dia || 1) >= 15)) return null;
     return horaDoFutebol();
   }
-  function bielNaHora() { const h = horaFutsalHoje(), H = S.dados.hora; return h != null && H >= h - 0.75 && H <= h + 1.5; }
+  // ele chega andando para estar lá meia hora antes, espera e fica até 1h depois do horário (sem jogo, vai embora)
+  function bielNaHora() { const h = horaFutsalHoje(), H = S.dados.hora; return h != null && H >= h - 0.5 - durBiel() && H <= h + 1; }
+  // quanto tempo (em horas do jogo) ele leva andando da ponta da cidade até o portão da quadra
+  function durBiel() {
+    if (S.bielDur == null) { let E = null; try { E = S.rede ? pontaPara(BIEL.x, BIEL.z) : null; } catch (e) { E = null; } S.bielDur = E ? rotaPts(caminhoRede(E.x, E.z, BIEL.x, BIEL.z)).L / 1.9 * H_POR_S * 1.6 : 0.4; }   // (folga: a ponta de onde ele vem é sorteada entre as mais perto)
+    return S.bielDur;
+  }
+  // depois do 1º racha no sintético: o Biel estava assistindo e chama para o futsal (ele aparece já nesta semana, terça e quinta)
+  async function conviteBielRacha(BI, J) {
+    const F = fsal(), d = S.dados, nome = nomeJog(), h = horaDoFutebol();
+    S.falantesExtra = S.falantesExtra || {}; S.falantesExtra.biel = { A: BI, nome: 'Biel', voz: 2 };
+    BI.yawAlvo = Math.atan2(-(J.z - BI.z), J.x - BI.x); J.yawAlvo = Math.atan2(-(BI.z - J.z), BI.x - J.x);
+    await fala('biel', T('E aí! Eu sou o Biel. Tava assistindo o racha e curti o seu jogo.'));
+    await fala('jog', Tf('Valeu, Biel! Eu sou {0}.', nome));
+    await fala('biel', Tf('Ó, a gente joga futsal na quadra perto da praça toda terça e quinta, às {0}. Vou estar te esperando lá!', fmtHora(h)));
+    const q = T('Cola com a gente?');
+    await fala('biel', q);
+    const r = await Escolha.mostrar(q, [T('Fechou, eu apareço!'), T('Vou ver se dá, valeu!')]);
+    await fala('jog', r === 0 ? T('Fechou, eu apareço!') : T('Vou ver se dá, valeu!'));
+    await fala('biel', r === 0 ? T('Isso! Até lá, então.') : T('Tranquilo! A gente tá lá toda terça e quinta.'));
+    Object.assign(F, { conheceu: true, convidado: true, convite: 'racha', primeiraQuadra: true, convidouDia: d.dia });
+    gravar(d.ponto || 'chegada');
+  }
   function spriteExclamacao() {                                         // "!" amarelo em pixel art, sempre de frente para a câmera
     const cv = document.createElement('canvas'); cv.width = 8; cv.height = 15; const g = cv.getContext('2d');
     const px = (x, y, w, h, c) => { g.fillStyle = c; g.fillRect(x, y, w, h); };
@@ -3271,7 +3388,8 @@
     // chega andando quando a janela abre (quem carrega o jogo ou sai de um lugar com a janela já aberta encontra ele lá); jogou ou a
     //   janela acabou: vai embora andando para fora da cidade
     const quer = bielNaHora() && !jogou, hf = horaFutsalHoje();
-    if (quer && !B && S.modo === 'livre') criarBiel((hf != null && d.hora < hf - 0.75 + 0.2) || Math.hypot(S.jog.x - BIEL.x, S.jog.z - BIEL.z) < 75);
+    if (S.modo === 'livre' && S.missao && S.missao === Tf('Missão: futsal com o Biel na quadra às {0}.', fmtHora(horaDoFutebol())) && (hf == null || jogou || d.hora > hf + 1)) { S.missao = ''; recolherMissao(); if (!(S.torneios && S.torneios.missao())) definirMarca(null); }   // passou a hora (ou o dia): a missão do futsal some
+    if (quer && !B && S.modo === 'livre') criarBiel((hf != null && d.hora < hf - 0.5) || Math.hypot(S.jog.x - BIEL.x, S.jog.z - BIEL.z) < 75);
     else if (!quer && B && S.modo === 'livre' && !B.indoEmbora) irEmbora(B, null, 1.9, () => { if (S.biel === B) { S.biel = null; if (S.falantesExtra) delete S.falantesExtra.biel; } });
     const A = S.biel; if (!A || !A.excl) return;
     if (A.via) { A.excl.visible = false; return; }                        // no caminho: sem exclamação e sem virar para o jogador
@@ -3290,7 +3408,15 @@
     const ab = F.conheceu ? falaAmizade('biel') : null;
     if (ab && ab.est === 'corte') { if (ab.l) await fala('biel', ab.l); Dialogo.esconder(); return; }   // -80: sem vaga no futsal, nunca mais
     if (F.jogouDia === d.dia) { await fala('biel', ab && ab.est === 'neg' ? T('Jogo acabou. Até.') : Tf('Valeu pelo jogo, {0}! Até a próxima.', nome)); Dialogo.esconder(); return; }
-    if (!F.conheceu) {
+    if (F.primeiraQuadra) {                                              // a 1ª vez na quadra depois do convite no sintético
+      const p0 = Tgf('Aí, {0}! Você veio mesmo! Falei que a gente jogava aqui.', nome);
+      await fala('biel', p0);
+      const r = await Escolha.mostrar(p0, [Tg('Vim jogar!'), Tg('Só passei pra ver.'), Tg('Vim ver se esse futsal é bom mesmo... duvido.')]);
+      F.primeiraQuadra = false; gravar(d.ponto || 'chegada');
+      if (r === 2) { await falaGrossa('biel', 'biel', Tg('Vim ver se esse futsal é bom mesmo... duvido.'), Tg('Ih, chegou cheio de marra... beleza, fica aí assistindo.')); Dialogo.esconder(); return; }
+      if (r === 0) { await fala('jog', Tg('Vim jogar!')); await fala('biel', T('É isso! A galera tá chegando. Bora!')); joga = true; }
+      else { await fala('jog', Tg('Só passei pra ver.')); await fala('biel', T('Tranquilo! Terça e quinta a gente tá aqui, é só colar.')); }
+    } else if (!F.conheceu) {
       const p0 = T('E aí! Tô esperando uns amigos chegarem pra jogar um futsal ali na quadra.');
       await fala('biel', p0);
       const r = await Escolha.mostrar(p0, [T('Eu também jogo bola!'), T('Tranquilo, bom jogo!'), T('Futsal? Isso é coisa de quem não sabe jogar no campo.')]);
@@ -3331,7 +3457,7 @@
     const tec = { nome: 'Biel', aparencia: { pele: ap.pele, cabelo: ap.cabelo, estilo: ap.estilo, roupa: '#222222' } };
     const t0 = { id: 'q_biel', nome: T('Time do Biel'), sigla: 'BIE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_VERDE, uniforme2: UNI_BRANCO,
       emblema: { forma: 'escudo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'BI' }, tecnico: tec,
-      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), (luciaJogaHoje('futsal') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Bruna', 2323, 'F')), g('Kauã', 2727, 'M')] };   // (7.4.19) 6 x 6: + o Kauã   // você completa os 5 (o Duda vai no gol)
+      elenco: [g('Duda', 2525, 'M'), Object.assign({ nome: 'Biel' }, ap), g('Léo', 2121, 'M'), (luciaJogaHoje('futsal') ? Object.assign({ nome: 'Lúcia' }, apLucia()) : g('Bruna', 2323, 'F')), g('Kauã', 2929, 'M')] };   // (7.4.19) 6 x 6: + o Kauã   // você completa os 5 (o Duda vai no gol)
     const t1 = { id: 'q_quadra', nome: T('Galera da Quadra'), sigla: 'QDR', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: UNI_BRANCO, uniforme2: UNI_VERDE,
       emblema: { forma: 'circulo', cor1: '#c8352b', cor2: '#f2f2ee', letras: 'QC' }, tecnico: tec,
       elenco: [g('Neto', 3434, 'M'), g('Paty', 3636, 'F'), g('Juninho', 3838, 'M'), g('Rafinha', 4040, 'M'), g('Gui', 4242, 'M'), g('Mel', 4646, 'F')] };   // (7.4.19) 6 x 6: + a Mel
@@ -3375,7 +3501,9 @@
     await preto(false, 900);
     try {
       const nome = nomeJog();
-      await fala('biel', r && r.bom ? Tf('Que jogão, {0}! Você manda bem demais na quadra.', nome) : Tf('Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.', nome));
+      const av = avaliarJogo(r);
+      await fala('biel', av === 'craque' ? Tf('{0}, você jogou demais! Ninguém conseguiu te parar na quadra.', nome) : av === 'bem' ? Tf('Que jogão, {0}! Você manda bem demais na quadra.', nome)
+        : av === 'ok' ? Tf('Boa, {0}! Jogou direitinho hoje.', nome) : Tf('Valeu, {0}! Hoje não encaixou muito, mas futsal é assim mesmo.', nome));
       if (primeiro) await fala('biel', T('A gente joga aqui toda terça e quinta. Cola com a gente sempre que quiser!'));
       else await fala('biel', T('Terça e quinta tem mais, hein? Te espero!'));
       if (comLucia) { await fala('lucia', Tf('Foi muito divertido, {0}! Obrigada por me chamar.', nomeJog())); d.luciaJogo = null; }
@@ -3389,7 +3517,7 @@
   // terça/quinta com o convite do Biel: missão e marcador (os dias não batem com o sintético, que é segunda e quarta)
   function mostrarAgendaFutsal() {
     const F = fsal(), d = S.dados, h = horaFutsalHoje();
-    if (!F.convidado || h == null || F.jogouDia === d.dia || d.hora > h + 1.5) return;
+    if (!F.convidado || h == null || F.jogouDia === d.dia || d.hora > h + 1) return;
     S.missao = Tf('Missão: futsal com o Biel na quadra às {0}.', fmtHora(h)); mostrarMissao();
     if (!S.dentro) definirMarca(BIEL.x, BIEL.z);
   }
@@ -3445,7 +3573,7 @@
     A.tipo = 'rua'; A.rua = { especial, lugar, viagens, vel: vel || 2, corre: !!corre, R: null };
     (S.dentro && S.fora ? S.fora.npcs : S.npcs).push(A); sumirV(A); return A;
   }
-  function tickRua(A) {
+  function tickRua(A, dt = 1 / 60) {
     const U = A.rua, R = U.R || (U.R = rotaCasaPorta(U.especial, U.lugar, U.vel)), h = S.dados.hora;
     if (!R) { if (!A.oculto) sumirV(A); return; }
     let k = -1, ida = true;
@@ -3454,8 +3582,8 @@
       if (!v.ida && h >= v.sai && h < v.sai + R.dur) { k = 1 - (h - v.sai) / R.dur; ida = false; break; }
     }
     if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
-    const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
-    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = !!U.corre; A.vel = U.vel;
+    const p = A.oculto ? pontoNaRota(R, k) : pontoComDesvio(A, R, k, ida, U.vel || 2, dt); if (A.oculto) { surgirV(A, p.x, p.z, p.yaw); A.atrasoM = 0; A.offDJ = 0; }   // (7.5.11) desvia do jogador
+    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = !!U.corre || !!p.pressa; A.vel = U.vel * (p.pressa ? DJ.PRESSA : 1);
   }
   function pontoNaRota(R, k) {
     const alvo = clamp(k, 0, 1) * R.L; let i = 1; while (i < R.acc.length - 1 && R.acc[i] < alvo) i++;
@@ -3465,14 +3593,14 @@
   function criarLuciaRua(f2) {
     const A = criarLucia(f2); A.tipo = 'luciaRua'; S.npcs.push(A); S.luciaRua = A; sumirV(A);
   }
-  function tickLuciaRua(A) {
+  function tickLuciaRua(A, dt = 1 / 60) {
     const R = rotaLucia(), h = S.dados.hora; if (!R) { if (!A.oculto) sumirV(A); return; }
     let k = -1, ida = true; const t0 = H_LUCIA_CHEGA - R.dur;
     if (h >= t0 && h < H_LUCIA_CHEGA) k = (h - t0) / R.dur;
     else { const sai = luciaSai(); if (h >= sai && h < sai + R.dur) { k = 1 - (h - sai) / R.dur; ida = false; } }
     if (k < 0) { if (!A.oculto) { sumirV(A); A.andando = false; } return; }
-    const p = pontoNaRota(R, k); if (A.oculto) surgirV(A, p.x, p.z, p.yaw);
-    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = false; A.vel = VEL_LUCIA;
+    const p = A.oculto ? pontoNaRota(R, k) : pontoComDesvio(A, R, k, ida, VEL_LUCIA, dt); if (A.oculto) { surgirV(A, p.x, p.z, p.yaw); A.atrasoM = 0; A.offDJ = 0; }   // (7.5.11) desvia do jogador
+    A.x = p.x; A.z = p.z; A.yawAlvo = ida ? p.yaw : p.yaw + Math.PI; A.andando = true; A.correndo = !!p.pressa; A.vel = VEL_LUCIA * (p.pressa ? DJ.PRESSA : 1);
   }
   // sair da cafeteria no meio do turno = encerrar o turno (como o "Acelerar final do turno": só os 20 do dia)
   async function sairNoTurno() {
@@ -3600,12 +3728,13 @@
       V.vel = P.vel; V.correndo = false;
       if (V.passaT > 0) V.passaT -= dt;
       if (d <= Math.max(v, 0.05)) { V.x = q.x; V.z = q.z; V.rotaV.shift(); V.bloqT = 0; if (V.rotaV.length) fim = false; else { V.rotaV = null; V.andando = false; } }
-      else if (!(V.passaT > 0) && Math.hypot(S.jog.x - (V.x + dx / d * 0.6), S.jog.z - (V.z + dz / d * 0.6)) < 0.55 && !S.jog.sentado) {   // o jogador no caminho
-        V.andando = false; fim = false; V.bloqT = (V.bloqT || 0) + dt;
-        if (V.bloqT > 0.5 && !q.desvio) desviarValdemar(V, q, dx / d, dz / d);   // contorna pelo lado de lá do jogador
-        if (V.bloqT > 2.5) { V.passaT = 1.4; V.bloqT = 0; }             // não tem por onde: segue (como quem tem rotina), o jogador cambaleia
+      else {
+        // (7.5.11) o jogador no caminho: desvia ANDANDO (sem parar) por até 3 s; não deu, atravessa (ele cambaleia) e apressa o passo
+        const vv = v * pressaNPC(V, dt), dj = desviaJogador(V, dx / d, dz / d, vv, dt);
+        if (dj && !dj.parado) { V.x += dj.ux * vv; V.z += dj.uz * vv; V.yawAlvo = Math.atan2(-dj.uz, dj.ux); V.andando = true; fim = false; }
+        else if (dj && dj.parado) { V.andando = false; fim = false; if (!q.desvio) desviarValdemar(V, q, dx / d, dz / d); }
+        else { V.x += dx / d * vv; V.z += dz / d * vv; V.yawAlvo = Math.atan2(-dz, dx); V.andando = true; V.bloqT = 0; fim = false; if (V.passaJogT > 0) V.passaT = V.passaJogT; }
       }
-      else { V.x += dx / d * v; V.z += dz / d * v; V.yawAlvo = Math.atan2(-dz, dx); V.andando = true; V.bloqT = 0; fim = false; }
     } else if (P.t === 'espera') { V.timer += dt; V.andando = false; if (V.timer < P.s) fim = false; else V.timer = 0; }
     else if (P.t === 'ate') { V.andando = false; if (!P.f()) fim = false; }
     else if (P.t === 'sumir') sumirV(V);
@@ -3745,7 +3874,7 @@
     if (A.correFaixa) { A.correFaixa = false; A.vel = A.velFaixa || A.vel; A.correndo = !!A.chuva || !!A.esporte; }
   }
   // em rotas (seguir): está numa ponta da faixa e o próximo ponto é a outra ponta?
-  function pontaFaixa(x, z) { const XF = PRACA_C.x; if (Math.abs(x - XF) > 0.75) return 0; return Math.abs(z - (-4.2)) < 0.75 ? -1 : Math.abs(z - 8.1) < 0.75 ? 1 : 0; }
+  function pontaFaixa(x, z) { const XF = PRACA_C.x; if (Math.abs(x - XF) > 0.75) return 0; return Math.abs(z - CALC_N) < 0.75 ? -1 : Math.abs(z - CALC_S) < 0.75 ? 1 : 0; }
   // 10 s travado: buzina várias vezes; quem está na frente leva um susto e volta para a calçada
   function assustar(c, P) {
     for (let k = 1; k < 4; k++) setTimeout(() => { if (S && S.ativo && !S.dentro) buzina(c); }, k * 380);
@@ -4078,7 +4207,7 @@
     const no = (x, z) => { const k = Math.round(x * 4) + ',' + Math.round(z * 4); if (idx.has(k)) return idx.get(k); nos.push({ x, z, viz: [] }); idx.set(k, nos.length - 1); return nos.length - 1; };
     const liga = (a, b) => { if (a === b) return; if (!nos[a].viz.includes(b)) nos[a].viz.push(b); if (!nos[b].viz.includes(a)) nos[b].viz.push(a); };
     const linha = (pts) => { let ant = no(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) { const [x0, z0] = pts[i - 1], [x1, z1] = pts[i], n = Math.max(1, Math.round(Math.hypot(x1 - x0, z1 - z0) / 10)); for (let k = 1; k <= n; k++) { const c = no(x0 + (x1 - x0) * k / n, z0 + (z1 - z0) * k / n); liga(ant, c); ant = c; } } };
-    const cx = PRACA_C.x, cz = PRACA_C.z, ZN = -4.2, ZS = 8.1, XW = -58.4, XE = 57, XF = cx;
+    const cx = PRACA_C.x, cz = PRACA_C.z, ZN = CALC_N, ZS = CALC_S, XW = -58.4, XE = 57, XF = cx;
     const XR = (RUA_FORA.ci + RUA_FORA.a0) / 2, ZR = RUA_FORA.zf - 4;                // a calçada de dentro da rua que dobra (fora da cidade)
     linha([[-XR, -ZR], [-XR, ZN], [-116, ZN], [XW, ZN], [XF, ZN], [XE, ZN], [116, ZN], [XR, ZN], [XR, -ZR]]);   // calçada norte (nas pontas dobra para o norte)
     linha([[-XR, ZR], [-XR, ZS], [-116, ZS], [XW, ZS], [XF, ZS], [XE, ZS], [116, ZS], [XR, ZS], [XR, ZR]]);     // calçada sul (nas pontas dobra para o sul)
@@ -4160,6 +4289,60 @@
   //   (6.6.15) nas CENAS também: antes, com S.modo 'cena', o jogador sempre tinha corpo (as pessoas paravam ou davam a volta nele).
   //   Agora a cena segue a mesma regra do jogo (parado: passam por dentro e ele cambaleia) e, como na cena ele anda pelo roteiro, nem
   //   andando ele trava ninguém (o roteiro não desvia de pedestre).
+  // (7.5.11) DESVIAR DO JOGADOR SEM PARAR (a lógica do seu Valdemar, melhorada, para TODO mundo que anda: pedestres, quem tem rotina,
+  //   o povo que vai e volta de casa): com o jogador no caminho, a pessoa tenta passar do lado (andando ou correndo, sem parar) por até
+  //   3 s — mesmo que no meio do caminho ela vá e volte. Não deu: ela ATRAVESSA o jogador (ele cambaleia, como com quem tem rotina) e
+  //   apressa o passo por uns 2 s para chegar onde deveria estar; depois volta ao passo normal.
+  const DJ = { RAIO: 0.6, OLHA: 1.7, TEMPO: 3, PRESSA: 1.45, PRESSA_T: 2.4 };
+  function jogNaFrente(A, ux, uz, x, z) {
+    const J = S.jog; if (!J || J.sentado || S.dentro || S.modo !== 'livre' || (S.meus && !S.meus.has(J.m))) return null;
+    const rx = J.x - (x == null ? A.x : x), rz = J.z - (z == null ? A.z : z), fr = rx * ux + rz * uz, lat = -rx * uz + rz * ux;
+    if (fr < -0.15 || fr > DJ.OLHA || Math.abs(lat) > DJ.RAIO + 0.15) return null;
+    return { fr, lat };
+  }
+  // devolve a direção (unitária) para desviar nesse quadro, { parado } se não há espaço agora, ou null (nada a fazer / atravessando)
+  function desviaJogador(A, ux, uz, v, dt) {
+    if (A.passaJogT > 0) { A.passaJogT -= dt; return null; }
+    const q = jogNaFrente(A, ux, uz);
+    if (!q) { if (A.desvJogT) A.desvJogT = Math.max(0, A.desvJogT - dt * 1.5); return null; }
+    A.desvJogT = (A.desvJogT || 0) + dt;
+    if (A.desvJogT >= DJ.TEMPO) { A.desvJogT = 0; A.passaJogT = 1.5; A.fantasma = Math.max(A.fantasma || 0, 1.5); A.pressaT = DJ.PRESSA_T; return null; }   // desistiu: atravessa e apressa
+    const J = S.jog, d0 = Math.hypot(J.x - A.x, J.z - A.z), lado = q.lat >= 0 ? -1 : 1, passo = Math.max(v, 0.02);
+    for (const sg of [lado, -lado]) for (const ang of [0.5, 0.85, 1.2]) {
+      const a = sg * ang, ca = Math.cos(a), sa = Math.sin(a), wx = ux * ca - uz * sa, wz = ux * sa + uz * ca;
+      const nx = A.x + wx * passo, nz = A.z + wz * passo, dn = Math.hypot(J.x - nx, J.z - nz);
+      if (dn < Math.min(d0, DJ.RAIO) - 1e-3) continue;                 // não chega mais perto dele
+      if (!livreNPC(nx, nz, A, true)) continue;                        // parede, mesa, poste, carro, outra pessoa
+      return { ux: wx, uz: wz };
+    }
+    return d0 > DJ.RAIO + 0.05 ? null : { parado: true };
+  }
+  // o passo apressado depois de atravessar (desacelera suave até o normal)
+  function pressaNPC(A, dt) { if (!(A.pressaT > 0)) return 1; A.pressaT -= dt; return 1 + (DJ.PRESSA - 1) * Math.min(1, Math.max(0, A.pressaT) / 0.8); }
+  // quem anda pela HORA (rota fixa: Lúcia, Cadu, Rosa...): desvia de lado sem sair da rota; sem lado livre, vai ficando para trás (sem
+  //   parar, a 35%); 3 s assim e atravessa, depois corre atrás do horário (o atraso cai) — ver tickRua/tickLuciaRua
+  function pontoComDesvio(A, R, k, ida, vel, dt) {
+    const L = R.L || 1, kEf = clamp(k - (ida ? 1 : -1) * (A.atrasoM || 0) / L, 0, 1), p = pontoNaRota(R, kEf);
+    const yaw = ida ? p.yaw : p.yaw + Math.PI, ux = Math.cos(yaw), uz = -Math.sin(yaw), lx = -uz, lz = ux;
+    let alvoOff = 0, sobra = false;
+    if (A.passaJogT > 0) A.passaJogT -= dt;
+    else {
+      const q = jogNaFrente(A, ux, uz, p.x, p.z);
+      if (q) {
+        A.desvJogT = (A.desvJogT || 0) + dt;
+        const lado = q.lat >= 0 ? -1 : 1, off = lado * (DJ.RAIO + 0.35 - Math.min(0.3, Math.abs(q.lat))) * 1.05;
+        if (livreNPC(p.x + lx * off, p.z + lz * off, A, true, true)) alvoOff = off;
+        else if (livreNPC(p.x - lx * off, p.z - lz * off, A, true, true)) alvoOff = -off;
+        else sobra = true;
+        if (A.desvJogT >= DJ.TEMPO) { A.desvJogT = 0; A.passaJogT = 1.5; A.fantasma = Math.max(A.fantasma || 0, 1.5); A.pressaT = DJ.PRESSA_T; alvoOff = 0; sobra = false; }
+      } else if (A.desvJogT) A.desvJogT = Math.max(0, A.desvJogT - dt * 1.5);
+    }
+    if (sobra) A.atrasoM = (A.atrasoM || 0) + vel * 0.65 * dt;            // vai ficando para trás (anda a 35%)
+    else if (A.atrasoM > 0) A.atrasoM = Math.max(0, A.atrasoM - vel * (A.pressaT > 0 ? DJ.PRESSA - 1 : 0.25) * dt);   // corre atrás do horário
+    if (A.pressaT > 0) A.pressaT -= dt;
+    A.offDJ = (A.offDJ || 0) + (alvoOff - (A.offDJ || 0)) * Math.min(1, dt * 4);
+    return { x: p.x + lx * A.offDJ, z: p.z + lz * A.offDJ, yaw: p.yaw, pressa: A.atrasoM > 0 && !sobra };
+  }
   const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || (S.modo === 'cena' ? false : J.andando || S.modo !== 'livre'); };
   function livreNPC(x, z, A, semJog, ignorarGente) {
     if (!Number.isFinite(x) || !Number.isFinite(z)) return false;
@@ -4173,8 +4356,8 @@
     if (!S.dentro && S.portao.k > 0.3) for (const b of S.portao.col) if (x > b.x0 - rr && x < b.x1 + rr && z > b.z0 - rr && z < b.z1 + rr) return false;
     if (!S.dentro) for (const c of S.carros) if (c.ativo && Math.abs(x - c.x) < 2.15 + rr && Math.abs(z - c.z) < 0.95 + rr) return false;
     if (ignorarGente) return true;
+    if (A && A.fantasma > 0) return true;                                // (7.5.11) atravessando (de propósito): nem o jogador segura
     if (!semJog && !temRotina(A) && jogBloqueia() && Math.hypot(x - S.jog.x, z - S.jog.z) < 0.62) return false;   // jogador parado: a pessoa segue reto e passa por dentro dele (ele cambaleia)
-    if (A && A.fantasma > 0) return true;
     for (const B of S.npcs) {
       if (B === A || B.oculto || (A && B === A.parceiro)) continue;      // (6.6.5) o par anda junto
       const dn = Math.hypot(x - B.x, z - B.z);
@@ -4244,7 +4427,7 @@
   // (6.6.5) MÃO DIREITA nas calçadas da avenida: quem anda ao longo delas vai pelo lado DIREITO da linha (indo para o leste, o lado sul),
   //   e quem vem de frente passa pelo outro lado, sem se trombar. O par anda quase no meio (o parceiro vai do lado que tiver espaço).
   //   Se o lado direito estiver ocupado por alguma coisa (mesa, pilar), vai pelo meio. Só muda PARA ONDE o passo aponta: chegar no ponto continua igual.
-  const LINHA_N = -4.2, LINHA_S = 8.1, LADO_CALC = 0.42;
+  const LINHA_N = CALC_N, LINHA_S = CALC_S, LADO_CALC = 0.42;
   function maoDireita(A, tx, tz) {
     if (S.dentro || A.atravessa || A.desvio) return null;
     const lin = Math.abs(tz - LINHA_N) < 0.3 ? LINHA_N : Math.abs(tz - LINHA_S) < 0.3 ? LINHA_S : null; if (lin == null) return null;
@@ -4276,7 +4459,10 @@
       return;
     }
     const md = maoDireita(A, N.x, N.z), dx = (md ? md.x : N.x) - A.x, dz = (md ? md.z : N.z) - A.z, d = Math.hypot(dx, dz) || 1e-6;   // (6.6.5) mão direita
-    const v = A.vel * dt; let moveu = false;
+    const v = A.vel * dt * pressaNPC(A, dt); let moveu = false;
+    { const dj = desviaJogador(A, dx / d, dz / d, v, dt);              // (7.5.11) o jogador no caminho: desvia andando (ou correndo), sem parar
+      if (dj && !dj.parado) { A.x += dj.ux * v; A.z += dj.uz * v; A.yawAlvo = Math.atan2(-dj.uz, dj.ux); A.andando = true; A.bloq = 0; return; }
+      if (dj && dj.parado) { A.andando = false; return; } }
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return; }
         if (Math.hypot(nx - S.jog.x, nz - S.jog.z) < 0.62 && !(A.esbarrao > 0.05)) { A.esbarrao = 0.5; A.travaE = 0.7; A.andando = false; return; } } }   // o jogador na frente: cambaleia e espera
@@ -4344,10 +4530,10 @@
         A.t += dt; const dyR = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dyR * Math.min(1, dt * 8);
         poseAtor(A, dt); continue;
       }
-      if ((temRotina(A) || !jogBloqueia()) && !A.oculto && A.andando && (S.modo === 'livre' || S.modo === 'cena') && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) { J0.esbarrao = 0.6; if (!(A.esbarrao > 0.05)) A.esbarrao = 0.6; }   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado): os dois cambaleiam
+      if ((temRotina(A) || !jogBloqueia() || A.passaJogT > 0) && !A.oculto && A.andando && (S.modo === 'livre' || S.modo === 'cena') && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.5 && !(J0.esbarrao > 0)) { J0.esbarrao = 0.6; if (!(A.esbarrao > 0.05)) A.esbarrao = 0.6; }   // passou por dentro do jogador (quem tem rotina, ou qualquer um com o jogador parado): os dois cambaleiam
       else if (S.modo === 'cena' && J0.andando && !A.oculto && !A.sentado && !A.deitado && !A.gesto && !J0.sentado && (!S.meus || S.meus.has(J0.m)) && Math.hypot(A.x - J0.x, A.z - J0.z) < 0.45 && !(A.esbarrao > 0.05)) A.esbarrao = 0.6;   // o jogador andando sozinho numa cena passou por dentro de alguém: a pessoa cambaleia
-      if (A.tipo === 'luciaRua') tickLuciaRua(A);
-      else if (A.tipo === 'rua') tickRua(A);                          // Cadu e Rosa indo e voltando do mercado
+      if (A.tipo === 'luciaRua') tickLuciaRua(A, dt);
+      else if (A.tipo === 'rua') tickRua(A, dt);                          // Cadu e Rosa indo e voltando do mercado
       if (A.oculto && A.tipo !== 'valdemar' && !A.dest) { if (A.boneco) A.boneco.visible = false; continue; }
       A.t += dt;
       if (A.tipo === 'anda') passoNPC(A, dt);
@@ -4713,12 +4899,34 @@
       gravar(d.ponto);
     }
   }
-  const NOME_CASA = { joao: T('Casa do João'), alves: T('Casa dos Alves') };     // (a do seu Valdemar já tem a placa própria, ver NOME_CASA_SEMPRE)
+  const NOME_CASA = { joao: T('Casa do João'), alves: T('Casa da Lúcia') };     // (a do seu Valdemar já tem a placa própria, ver NOME_CASA_SEMPRE)
   // chame isto de onde quer que a história venha a precisar: ao ver o NPC entrando em casa, ou quando ele "chamar" o jogador pelo mapa.
   // (nenhuma cena do jogo chama isto ainda: nem o João nem a Lúcia Alves andam pela cidade como personagens à parte por enquanto.)
   function revelarCasaNPC(marca) {
     const d = S.dados; if (d.casasConhecidas[marca]) return;
     d.casasConhecidas[marca] = true; gravar(d.ponto);
+  }
+  // (7.5.11) os lugares que dá para ENTRAR (as portas das lojas e a casa da Lúcia) ganham o nome no mapa na primeira vez que o jogador entra
+  function marcarEntrou(nome) {
+    const d = S.dados; if (!d) return; d.entrou = d.entrou || {};
+    if (nome === 'casaLucia') { revelarCasaNPC('alves'); return; }   // a casa já tem rótulo próprio (Casa dos Alves)
+    if (d.entrou[nome] || !NOME_LUGAR[nome]) return;
+    d.entrou[nome] = true; gravar(d.ponto);
+  }
+  // onde escrever: no meio do prédio (o retângulo da planta logo atrás da porta), não na calçada
+  let ROT_PORTA = null;
+  function rotuloPortas() {
+    if (ROT_PORTA) return ROT_PORTA; ROT_PORTA = {};
+    for (const P of PORTAS) {
+      const D = PORTAS_ANIM[P.nome]; let x = P.x, z = P.z;
+      if (D) {
+        const qx = P.x, qz = D.zf - D.s * 1.5;
+        const r = (S.planta || []).filter((p) => !p.chao && qx > p.r.x0 && qx < p.r.x1 && qz > p.r.z0 && qz < p.r.z1).sort((a, b) => (a.r.x1 - a.r.x0) * (a.r.z1 - a.r.z0) - (b.r.x1 - b.r.x0) * (b.r.z1 - b.r.z0))[0];
+        if (r) { x = (r.r.x0 + r.r.x1) / 2; z = (r.r.z0 + r.r.z1) / 2; } else z = D.zf - D.s * 5;
+      }
+      ROT_PORTA[P.nome] = { x, z };
+    }
+    return ROT_PORTA;
   }
   // o mapa (2D): o próprio chão pintado + os prédios + você + a marca
   function desenharMapa() {
@@ -4742,9 +4950,11 @@
       g.fillStyle = '#fff0c8'; L.forEach((l, i) => g.fillText(l, bx + bw / 2, by + 6.5 + i * 9));
     };
     for (const m of marcos()) if (S.dados.descobertos[m.id]) rotulo(m.x, m.z, m.nome);
+    const ent = S.dados.entrou || {}, RP = rotuloPortas();
+    for (const nome in ent) if (ent[nome] && RP[nome] && NOME_LUGAR[nome]) rotulo(RP[nome].x, RP[nome].z, T(NOME_LUGAR[nome]));
     for (const cs of S.casas || []) {
-      if (!cs.marca) continue;
-      const nome = cs.marca === 'valdemar' ? T('Seu Valdemar') : (S.dados.casasConhecidas[cs.marca] ? NOME_CASA[cs.marca] : null);
+      const k = cs.marca || cs.especial; if (!k) continue;                // (7.5.11) a casa dos Alves é "especial", não "marca"
+      const nome = k === 'valdemar' ? T('Seu Valdemar') : (S.dados.casasConhecidas[k] ? NOME_CASA[k] : null);
       if (nome) rotulo(cs.x, cs.z, nome);
     }
     if (S.marca) { const mx = X(S.marca.x), mz = Z(S.marca.z); g.fillStyle = S.dados.corMarca || CORES_MARCA[0]; g.strokeStyle = '#2a1206'; g.lineWidth = 2; g.beginPath(); g.arc(mx, mz, 7, 0, Math.PI * 2); g.fill(); g.stroke(); g.beginPath(); g.moveTo(mx - 4, mz + 9); g.lineTo(mx + 4, mz + 9); g.lineTo(mx, mz + 16); g.closePath(); g.fill(); }
@@ -4831,6 +5041,19 @@
     if (fora < 0.2 && fora > -2.6) return true;
     return andando && fora < 1.4 && P.s * Math.sin(yaw) > 0.55;          // vem na direção da porta (o "para dentro" é −s em z)
   }
+  // (7.6.0) o lugar está FECHADO? (as mesmas regras dos rótulos "fechado" da porta) — fechado, a porta não abre para quem chega de fora
+  function lugarFechado(nome) {
+    try {
+      if (nome === 'cinema') return !cinemaAberto();
+      if (nome === 'barbearia') return !(S.barbearia && S.barbearia.aberto());
+      if (nome === 'pizzaria') return !!(S.pizzaria && !S.pizzaria.aberto());
+      if (nome === 'academia') return !!(S.academia && S.academia.aberto && !S.academia.aberto());
+      if (nome === 'supermercado') return !!(S.mercado && !S.mercado.aberto());
+      if (nome === 'bar' || nome === 'restaurante') return !lojaAbertaMov(nome) && !(S.dados.encontroLucia && S.dados.encontroLucia.lugar === nome && !S.dados.encontroLucia.feito);
+      if (nome === 'cafeteria') return !cafeAberto();
+    } catch (e) { /* módulo ainda não chegou: aberto */ }
+    return false;
+  }
   function tickPortas(dt) {
     if (S.dentro) return;
     if (!S.portasA) { if (!S.grupoCidade || !S.casas) return; criarPortasAnim(); }
@@ -4841,9 +5064,11 @@
       P.g.visible = perto; if (!perto && P.k === 0) continue;
       if (checa) {
         const jm = P.jx != null && Math.hypot(J.x - P.jx, J.z - P.jz) > 0.04; P.jx = J.x; P.jz = J.z;   // o jogador está andando?
-        let q = P.segura > S.t || querPassar(P, J.x, J.z, J.yaw || 0, jm);
-        if (!q) for (const A of S.npcs) if (!A.oculto && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && querPassar(P, A.x, A.z, A.yaw, A.andando)) { q = true; break; }
-        if (!q && S.atoresExtra) for (const A of S.atoresExtra) if (A && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && querPassar(P, A.x, A.z, A.yaw, A.andando)) { q = true; break; }
+        if ((P.tF = (P.tF || 0) - 0.1) <= 0) { P.tF = 1; P.fechado = lugarFechado(id); }   // (7.6.0) fechado? (confere 1x por segundo)
+        const passa = (x, z, yaw, and) => (P.fechado ? (z - P.zf) * P.s < -0.05 && Math.abs(x - P.x) < P.w / 2 + 0.35 : querPassar(P, x, z, yaw, and));   // fechado: só quem sai lá de dentro (o dono fechando)
+        let q = P.segura > S.t || (!P.fechado && passa(J.x, J.z, J.yaw || 0, jm));   // fechado: o jogador nunca abre (a saída dele usa abrirPorta)
+        if (!q) for (const A of S.npcs) if (!A.oculto && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && passa(A.x, A.z, A.yaw, A.andando)) { q = true; break; }
+        if (!q && S.atoresExtra) for (const A of S.atoresExtra) if (A && Math.abs(A.x - P.x) < 3 && Math.abs(A.z - P.zf) < 3 && passa(A.x, A.z, A.yaw, A.andando)) { q = true; break; }
         if (q) P.fecha = S.t + 0.5;
         P.alvo = q || (P.fecha || 0) > S.t ? 1 : 0;                      // fecha meio segundo depois que ninguém mais precisa
       }
@@ -4889,6 +5114,7 @@
     S.grupoCidade.visible = false; R.grupo.position.x = OX; scene.add(R.grupo); S.grupo = R.grupo;
     S.col = R.col; S.circ = []; S.pisos = R.pisos; S.assentos = []; S.npcs = []; S.conversas = []; S.camBox = []; S.oclusores = []; S.lucia = null;
     S.dentro = Object.assign({ nome: P.nome }, R);
+    marcarEntrou(P.nome);                                             // (7.5.11) o nome do lugar passa a aparecer no mapa
     for (const o of R.ocl || []) oclusor(o.b, o.mesh);
     R.grupo.add(J.m.raiz, J.blob, J.anel);                            // o jogador vai junto para a sala
     const idx = R.assentos.map((a) => assento(a.x, a.z, a.fx, a.fz, a.h, a.tipo));
@@ -5110,6 +5336,7 @@
     Object.assign(S, { col: F.col, circ: F.circ, pisos: F.pisos, assentos: F.assentos, npcs: F.npcs, conversas: F.conversas, camBox: F.camBox, oclusores: F.oclusores, grupo: F.grupo });
     S.dentro = null; S.fora = null; S.fluxo = null; S.lucia = null; S.cenaConf = false; S.comeBoloJog = null; J.esperaPedido = false; S.grupoCidade.visible = true; S.setaAlvo = F.seta; if (S.bola) S.bola.jx = null;   // S.lucia só existe dentro da cafeteria; já foi descartada junto do grupo acima
     const P = F.porta; J.x = P.x + Math.cos(P.sai) * 0.4; J.z = P.z - Math.sin(P.sai) * 0.4; J.yaw = J.yawAlvo = P.sai; J.y = altura(J.x, J.z);
+    if (P.nome) abrirPorta(P.nome, 1.2);                                // (7.6.0) saindo: a porta abre para ele passar (mesmo depois de fechar)
     Object.assign(S.cam, F.cam); S.cam.snap = true;
     scene.background = new THREE.Color(CEU); if (scene.fog) { scene.fog.near = 70; scene.fog.far = 215; }
     { const V = S.valdemar; if (V && ((lojaAberta() && V.estado !== 'balcao') || (!lojaAberta() && V.estado === 'balcao'))) snapValdemar(); }   // passou a hora lá dentro: o seu Valdemar já está onde deveria
@@ -5159,7 +5386,7 @@
         v.push({ x: e.x, z: e.z, r: e.r, txt: T(e.txt), fn: e.acao === 'ficha' ? abrirFicha : e.acao === 'farmacia' ? abrirFarmacia : e.acao === 'caixa' ? falarComLucia : async () => {}, y: 2.4 });   // acao:'caixa' = caixa da cafeteria (Lúcia Alves)
       }
       alvosTurno(v);
-    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); alvosPortaLucia(v); alvosRacha(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.pagode) try { S.pagode.alvos(v); } catch (e) { console.warn('[Cidade] pagode:', e); } if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
+    } else if (S.interiores) { alvosFutebol(v); alvosBiel(v); alvosJoao(v); alvosPortaLucia(v); alvosRacha(v); if (S.varzea) try { S.varzea.alvos(v); } catch (e) { console.warn('[Cidade] várzea:', e); } if (S.torneios) try { S.torneios.alvos(v); } catch (e) { console.warn('[Cidade] torneios:', e); } if (S.serieb) try { S.serieb.alvos(v); } catch (e) { console.warn('[Cidade] série B:', e); } if (S.pizzaria) S.pizzaria.alvosRua(v); if (S.pagode) try { S.pagode.alvos(v); } catch (e) { console.warn('[Cidade] pagode:', e); } if (S.cinema) try { S.cinema.alvosRua(v); } catch (e) { erroCinema(e); } if (S.pesca) S.pesca.alvos(v); if (S.treinoMod) try { S.treinoMod.alvos(v); } catch (e) { /* sem treino */ } for (const P of PORTAS) {   // (6.4.0) Cadu no lago, píer, casinha da pesca
       if (P.nome === 'cinema' && !cinemaAberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Cinema fechado. Abre às 6h.'), fn: async () => {}, y: 3 }); continue; }   // o cinema abre das 6h às 22h
       if (P.nome === 'barbearia' && !(S.barbearia && S.barbearia.aberto())) { v.push({ x: P.x, z: P.z, r: 1.5, txt: S.barbearia ? T('Barbearia fechada. Abre às 8h.') : T('Barbearia'), fn: async () => {}, y: 3 }); continue; }   // a barbearia abre das 8h às 20h (sem o barbearia.js, só o nome)
       if (P.nome === 'pizzaria' && S.pizzaria && !S.pizzaria.aberto()) { v.push({ x: P.x, z: P.z, r: 1.5, txt: T('Pizzaria fechada. Abre às 17h.'), fn: async () => {}, y: 3 }); continue; }   // (6.1.0) a pizzaria abre das 17h à meia-noite
@@ -5241,16 +5468,24 @@
   const FOME_DO_DIA = 2;
   // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
   // ---------------------------------------------------------------------------------------------------------------------- (7.1.14)
-  // EVOLUÇÃO DEPOIS DE CADA PARTIDA DA HISTÓRIA (sintético, futsal, várzea e Brasileirão B). Contadores em dados.evo.c; cada vez que um
-  //   enche, a habilidade sobe (até 10). Também mexe nos espectros (Ativo, Confiante, Tranquilo) e marca o dia do último jogo
-  //   (o destreino e o sedentarismo contam a partir dele).
-  //     10 chutes no alvo → +0,25 chute, efeito e força     3 gols → +0,25 finalização          8 dribles certos → +0,25 drible
-  //     10 domínios certos → +0,25 domínio                   3 cabeçadas no alvo → +0,25 cabeceio 6 desarmes → +0,25 desarme e +0,1 defesa
-  //     3 assistências → +0,2 cruzamento e +0,1 passe        30 passes certos → +0,1 passe        tomou 1 gol ou menos → +0,05 defesa
-  const REGRAS_EVO = [
-    ['noAlvo', 10, { chute: 0.25, efeito: 0.25, forca: 0.25 }], ['gols', 3, { finalizacao: 0.25 }], ['driblesOk', 8, { drible: 0.25 }],
-    ['dominiosOk', 10, { dominio: 0.25 }], ['cabecadasNoAlvo', 3, { cabeceio: 0.25 }], ['desarmes', 6, { desarme: 0.25, defesa: 0.1 }],
-    ['assist', 3, { cruzamento: 0.2, passe: 0.1 }], ['passesOk', 30, { passe: 0.1 }],
+  // EVOLUÇÃO DEPOIS DE CADA PARTIDA DA HISTÓRIA (sintético, futsal, várzea, torneios e Brasileirão B). Contadores em dados.evo.c; cada vez que
+  //   um enche, a habilidade sobe 0,1 (até 10): devagar, de pouco em pouco, conforme o jogador joga. Também mexe nos espectros (Ativo,
+  //   Confiante, Tranquilo) e marca o dia do último jogo (o destreino e o sedentarismo contam a partir dele).
+  //     12 chutes → chute            8 chutes no alvo → finalização     3 gols → finalização       10 chutes fortes → força
+  //     8 chutes com efeito → efeito 4 cobranças de falta → efeito e chute                        6 dribles certos → drible
+  //     12 domínios certos → domínio 5 cabeçadas → cabeceio             3 cabeçadas no alvo → cabeceio
+  //     5 desarmes → desarme         8 desarmes → defesa                25 passes certos → passe    3 assistências → passe
+  //     8 cruzamentos → cruzamento   2 min correndo → velocidade        1min30 correndo → resistência
+  //     4 vezes sem fôlego → recuperação                                3 jogos tomando 1 gol ou menos → defesa (goleiro: goleiro)
+  const PASSO_EVO = 0.1;
+  const REGRAS_EVO = [   // [contador, estatística da partida, quantas, habilidades]
+    ['chutes', 'chutes', 12, ['chute']], ['noAlvo', 'noAlvo', 8, ['finalizacao']], ['gols', 'gols', 3, ['finalizacao']],
+    ['chutesFortes', 'chutesFortes', 10, ['forca']], ['chutesEfeito', 'chutesEfeito', 8, ['efeito']], ['cobrancas', 'cobrancas', 4, ['efeito', 'chute']],
+    ['driblesOk', 'driblesOk', 6, ['drible']], ['dominiosOk', 'dominiosOk', 12, ['dominio']],
+    ['cabecadas', 'cabecadas', 5, ['cabeceio']], ['cabecadasNoAlvo', 'cabecadasNoAlvo', 3, ['cabeceio']],
+    ['desarmes', 'desarmes', 5, ['desarme']], ['desarmesDef', 'desarmes', 8, ['defesa']],
+    ['passesOk', 'passesOk', 25, ['passe']], ['assist', 'assist', 3, ['passe']], ['cruzamentos', 'cruzamentos', 8, ['cruzamento']],
+    ['corridaVel', 'corridaSeg', 120, ['velocidade']], ['corridaRes', 'corridaSeg', 90, ['resistencia']], ['semFolego', 'semFolego', 4, ['recuperacao']],
   ];
   const r2 = (v) => Math.round(v * 100) / 100;
   function dadosEvo() { const d = S.dados; d.evo = d.evo || {}; d.evo.c = d.evo.c || {}; if (d.chutesCertos && !d.evo.c.noAlvo) { d.evo.c.noAlvo = d.chutesCertos; d.chutesCertos = 0; } return d.evo; }
@@ -5259,11 +5494,11 @@
     if (!r || !S || !S.dados) return null;
     const d = S.dados, E = dadosEvo(), at = atributosJogador(), st = Object.assign({}, r.estatisticas || {}), ganhos = {}, pl = r.placar || [0, 0];
     st.gols = r.gols | 0;
-    for (const [k, n, g] of REGRAS_EVO) {
-      E.c[k] = (E.c[k] | 0) + (st[k] | 0);
-      while (E.c[k] >= n) { E.c[k] -= n; for (const [h, v] of Object.entries(g)) subirHab(at, h, v, ganhos); }
+    for (const [k, est, n, habs] of REGRAS_EVO) {
+      E.c[k] = r2((+E.c[k] || 0) + (+st[est] || 0));
+      while (E.c[k] >= n) { E.c[k] = r2(E.c[k] - n); for (const h of habs) subirHab(at, h, PASSO_EVO, ganhos); }
     }
-    if ((pl[1] | 0) <= 1) subirHab(at, 'defesa', 0.05, ganhos);
+    if ((pl[1] | 0) <= 1) { E.c.seguras = (E.c.seguras | 0) + 1; if (E.c.seguras >= 3) { E.c.seguras -= 3; subirHab(at, r.posicao === 'GK' ? 'goleiro' : 'defesa', PASSO_EVO, ganhos); } }
     PERSONAGEM.atributos = Object.assign({}, at);
     d.ultFisico = d.ultTecnico = d.ativoDia = d.dia;                       // jogou: conta como atividade física e técnica
     try {
@@ -5625,6 +5860,21 @@
     S.ruaPescaOk = true; try { S.pesca.montarRua(); } catch (e) { console.warn('[Cidade] rua da pesca:', e); }
   }
   function atorDe(m, opt, tipo) { S.grupo.add(m.raiz); S.meus.add(m); return { m, opt, blob: sombraAtor(0.3), x: 0, z: 0, y: 0, yaw: 0, yawAlvo: 0, fase: 0, vel: 1, t: 0, andando: false, fala: false, sentado: false, assento: 0.52, espera: 0, bloq: 0, tipo: tipo || 'parado' }; }
+  // (7.6.0) O PAGAMENTO DO EXPEDIENTE (cafeteria, mercado, pizzaria): acelerar o turno paga sempre o fixo PAGA_ACELERADO; no fim de todo
+  //   expediente o jogador escolhe "receber" ou "ver um anúncio de 30 s e ganhar o dobro". O valor normal já entrou (e foi gravado) antes
+  //   da escolha; o anúncio visto até o fim soma o mesmo valor de novo. Devolve o total recebido.
+  const PAGA_ACELERADO = 50, ANUNCIO_DOBRO_S = 30;
+  async function dobrarPagamento(valor) {
+    if (!(valor > 0) || !S || !S.ativo) return valor;
+    const r = await Escolha.mostrar(Tf('Fim do expediente: {0} fakes.', valor), [Tf('Receber {0} fakes', valor), Tf('Ver um anúncio de {0} s e ganhar {1} fakes', ANUNCIO_DOBRO_S, valor * 2)], { centro: true });
+    Dialogo.esconder();
+    if (r !== 1) return valor;
+    let ok = false;
+    try { ok = await Anuncios.filme(ANUNCIO_DOBRO_S, { nome: 'expediente-2x', tit: T('Pagamento em dobro'), txt: T('Assista até o fim para receber o dobro.'), fim: T('Pronto! Pagamento dobrado.') }); } catch (e) { console.warn('[Cidade] anúncio do expediente:', e); }
+    if (!ok || !S || !S.dados) { aviso(T('Nenhum anúncio disponível agora: você recebe o valor normal.')); return valor; }
+    S.dados.fakes = (S.dados.fakes || 0) + valor; gravar('chegada');
+    return valor * 2;
+  }
   function apiMercado() {
     return {
       S: () => S, UI: () => UI, historia: () => API.historia, fala, aviso, esperar, preto, liberar, gravar, som,
@@ -5637,6 +5887,7 @@
       recusaPapo, papoEsgotado,                                          // só 2 conversas por dia que mexem nos corações
       lojaGente, lojaSaiu, lojaRestam, semente,                         // (6.6.5) o registro de quem está nas lojas
       mariposa,                                                          // a mariposa: o que acabou de acontecer muda a história
+      dobrarPagamento, PAGA_ACELERADO,                                   // (7.6.0) acelerar paga o fixo; fim do expediente: receber ou anúncio 2x
     };
   }
   // (6.1.0) o que o pizzaria.js (Forno a Lenha + entregas de bicicleta) usa daqui: o mesmo do mercado e mais o mapa/missão e a física da rua
@@ -5675,6 +5926,10 @@
   function apiVarzea() {
     return Object.assign(apiBarbearia(), { evoluirPartida, VZ, VARZEA, VARZEA_L, sairParaPartida, voltarDaPartida, aparenciaNaPartida, carreira, registrarCarreira, mensagemCelular, gerarAparencia, criarPessoa, PORTAO_VARZEA: VZ.portao, chegarDeFora, irEmbora });
   }
+  // o que o torneios.js (os torneios do sintético e do futsal) usa daqui: o da várzea e mais o futebol da cidade (racha, futsal, os rostos)
+  function apiTorneios() {
+    return Object.assign(apiVarzea(), { fut, fsal, horaDoFutebol, FUTSAL, apFixa, apJulia, AP_CAIO, apBiel: AP_BIEL, avaliarJogo, tickHorario, H_POR_S });
+  }
   // o que o serieb.js (a peneira e a carreira no Brasileirão B) usa daqui: o da várzea, o ponto de ônibus, a Lúcia (cenas do presente) e a ida
   //   para o quarto com uma cena pronta (a carta da peneira)
   function apiSerieB() {
@@ -5689,7 +5944,8 @@
   // o que o namoro.js (a casa da Lúcia com o Grão, o píer, o jantar em cortes, os bolos) usa daqui
   function apiNamoro() {
     return Object.assign(apiBarbearia(), { apLucia, criarLuciaEncontro, soltarLuciaEncontro, despedidaLucia, coracoes, sentarAtor, PIER, LAGO, PRACA_C, casaAlves, portaCasaLucia,
-      entrarEm, sairDoLugar, reservarMesaEncontro, pratosNaMesa, MESA_ENC, grosseria, falaGrossa, marcarArrogancia, mensagemCelular, encontroMarcado, ROUPA_ENC, ABRACO_D,
+      entrarEm, sairDoLugar, reservarMesaEncontro, pratosNaMesa, MESA_ENC, grosseria, falaGrossa, marcarArrogancia, mensagemCelular, encontroMarcado, ROUPA_ENC, ABRACO_D, BEIJO_D, BEIJO_MIN, mariposa, namorando: () => !!(S && S.dados && S.dados.namorando), diaSemanaDe,   // (7.5.11) o romance na casa dela
+     
       conheceLucia: conheceLuciaH, prepararDia, agendarHoje, mostrarAgendaEncontro, H_ACORDAR, GROSSO_CORACOES, Musica, somPortao, descartarPessoa, NOME_AMIGO,
       encontroFeito: () => { const d = S.dados; if (d.encontroLucia) d.encontroLucia.feito = true; } });
   }
@@ -5876,8 +6132,49 @@
     return e;
   }
   // sem falar: { est, l } para quem usa a fala como a pergunta do menu (com 50 ou mais, metade das vezes fica o papo normal, para variar)
+  // (7.6.0) O VISUAL NOVO: quem tem 20 corações ou mais com a gente repara quando muda a roupa (ou as cores), o cabelo/barba ou os
+  //   acessórios/tatuagens — às vezes elogia, às vezes zoa ("sei não, hein, preferia o antigo, haha"), às vezes só percebe; com −10 ou
+  //   menos, fala da mudança xingando. Cada um guarda o último visual que viu (dados.visualVisto[id]); a primeira vez só guarda.
+  const VISUAL_LINHAS = {
+    cabelo: {
+      elogio: ['Opa, cortou o cabelo? Ficou muito bom!', 'Cabelo novo! Caiu super bem em você.', 'Eita, que visual novo! Gostei desse corte.'],
+      zoeira: ['Cortou o cabelo? Sei não, hein... preferia o antigo, haha.', 'Hmm, esse corte novo... vou precisar me acostumar, haha.'],
+      percebe: ['Ué, mudou o cabelo? Demorei pra te reconhecer!'],
+      ofensa: ['Cortou o cabelo? Pagou pra ficar pior, né.', 'Que corte é esse? Nem o cabelo te salva.'],
+    },
+    roupa: {
+      elogio: ['Roupa nova? Ficou estilosa, hein!', 'Gostei dessa roupa! Combinou com você.', 'Que roupa bonita! Tá chique, hein.'],
+      zoeira: ['Roupa nova, é? Sei não, hein... preferia a outra, haha.', 'Essas cores aí são uma escolha, hein, haha.'],
+      percebe: ['Trocou de roupa? Mudou o visual!'],
+      ofensa: ['Roupa nova e continua sem graça.', 'Que roupa horrível. Combina com você.'],
+    },
+    acessorio: {
+      elogio: ['Que acessório bacana! Deu um charme.', 'Opa, novidade no visual! Ficou muito bom.'],
+      zoeira: ['Esse enfeite novo... sei não, hein, preferia antes, haha.'],
+      percebe: ['Tem coisa nova aí no visual, né? Reparei!'],
+      ofensa: ['Pendurou isso aí pra quê? Não ajudou em nada.', 'Pode enfeitar o quanto quiser, não melhora.'],
+    },
+  };
+  const VISUAL_GOSTA = 20, VISUAL_ODEIA = -10;
+  function sigVisual() {
+    const ap = (typeof PERSONAGEM !== 'undefined' && PERSONAGEM.aparencia) || {}; let r = '';
+    try { const f2 = API.historia.ler('fase2') || {}; r = JSON.stringify(f2.roupa || null); } catch (e) { /* sem fase2 */ }
+    return { r, c: [ap.estilo | 0, ap.cabelo || '', ap.barba | 0, ap.corBarba || ''].join('|'), a: JSON.stringify(ap.enfeites || null) };
+  }
+  function reacaoVisual(id) {
+    const d = S && S.dados; if (!d || !id || id === '*') return null;
+    const V = d.visualVisto || (d.visualVisto = {}), sg = sigVisual(), ant = V[id]; V[id] = sg;
+    if (!ant) return null;                                               // a primeira vez que vê: só guarda
+    const mudou = ant.c !== sg.c ? 'cabelo' : ant.r !== sg.r ? 'roupa' : ant.a !== sg.a ? 'acessorio' : null; if (!mudou) return null;
+    const v = Amizade.valor(id), L = VISUAL_LINHAS[mudou], pk = (l) => l[Math.floor(Math.random() * l.length)];
+    if (v <= VISUAL_ODEIA) return T(pk(L.ofensa));
+    if (v < VISUAL_GOSTA) return null;                                   // no meio: nem repara (ou não comenta)
+    const x = Math.random(); return T(pk(x < 0.6 ? L.elogio : x < 0.85 ? L.zoeira : L.percebe));
+  }
   function falaAmizade(id) {
-    const est = Amizade.estado(id); if (!est) return null;
+    const rv = Amizade.cortado(id) ? null : reacaoVisual(id), est = Amizade.estado(id);
+    if (rv && est !== 'corte') return { est: est || 'amigo', l: rv };   // (7.6.0) o visual novo entra no lugar da fala de abertura
+    if (!est) return null;
     return { est, l: est === 'amigo' && Math.random() < 0.5 ? null : linhaAmizade(id, est) };
   }
   const precoAmizade = (id, v) => (Amizade.valor(id) <= AMIZADE_CARO ? Math.ceil(v * 1.25) : v);
@@ -6227,9 +6524,10 @@
     if (UI.turnoMao.dataset.t !== kMao) { UI.turnoMao.dataset.t = kMao; UI.turnoMao.innerHTML = U.naMao >= 0 || U.boloMao ? '' : '<span style="color:#a88a5a">—</span>'; if (U.boloMao) UI.turnoMao.appendChild(iconeBolo(U.boloMao, '26px')); else if (U.naMao >= 0) UI.turnoMao.appendChild(iconeCafezinho(U.naMao, '26px')); }
   }
   async function acelerarTurno() {
-    const r = await Escolha.mostrar(T('Acelerar até as 16h? Você só ganha os 20 fakes do dia, sem nenhum adicional pelos clientes atendidos (as gorjetas que já recebeu ficam com você).'), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
+    const r = await Escolha.mostrar(Tf('Acelerar até as 16h? Acelerando, você recebe só um valor fixo de {0} fakes pelo dia (as gorjetas que já recebeu ficam com você).', PAGA_ACELERADO), [T('Acelerar'), T('Continuar trabalhando')], { centro: true });
     Dialogo.esconder();
     if (r !== 0 || !S.turno || S.turno.fim) return;
+    S.turno.acelerado = true;
     await preto(true, 450); S.dados.hora = H_TRAB_FIM; await encerrarTurno(true); await preto(false, 450);
   }
   // ---- fim do turno (16h ou acelerado): os clientes que esperavam vão embora, paga e a Lúcia se despede
@@ -6239,15 +6537,19 @@
     for (const A of S.npcs) if (A.cli && A.cli.pedido) { if (A.balao) A.balao.visible = false; if (A.cli.pedido.estado !== 'feliz' && A.cli.pedido.estado !== 'feito') { A.cli.pedido.estado = 'feito'; A.cli.semPagar = true; A.cli.t = Math.min(A.cli.t, 1 + Math.random() * 4); } }
     if (UI.turno) fimPainel(UI.turno);
     const el = document.getElementById('cdTrabalho'); if (el) el.remove();
-    const base = PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos), aumento = d.confeitaria ? Math.round(base * 0.5) : 0, paga = base + aumento;   // (6.6.18) com a confeitaria: +50% (a venda dos bolos)
-    d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   // (7.1.14) somDinheiro(); ganhoNaTela(paga); mostrarDinheiro(true); SomCafe.fim();
+    const base = U.acelerado ? PAGA_ACELERADO : PAGA_BASE + (acelerado ? 0 : PAGA_PEDIDO * U.atendidos), aumento = d.confeitaria && !U.acelerado ? Math.round(base * 0.5) : 0, paga = base + aumento;   // (6.6.18) com a confeitaria: +50% (a venda dos bolos) · (7.6.0) acelerado: o fixo
+    d.trabalhouHoje = true; d.trabalhouDia = d.dia; d.trabalhouAlgumDia = true; d.fakes += paga; try { Espectros.mover('humilde', 1, 'trabalhou'); Espectros.mover('disciplinado', 1.5, 'cumpriu o expediente'); } catch (e) { /* ok */ }   // (7.1.14)
+    SomCafe.fim();
     gravar('chegada');
     const espera = S.modo !== 'livre'; if (!espera) { S.modo = 'cena'; UI.ctl.hidden = true; }
     try {
-      if (acelerado) await fala('lucia', Tf('Turno encerrado! Hoje fica só o do dia: {0} fakes. Até amanhã!', base));
+      if (U.acelerado) await fala('lucia', Tf('Turno acelerado! Aí fica o valor fixo: {0} fakes. Até amanhã!', base));
+      else if (acelerado) await fala('lucia', Tf('Turno encerrado! Hoje fica só o do dia: {0} fakes. Até amanhã!', base));
       else await fala('lucia', Tf('Acabou o seu turno de hoje! Você atendeu {0} clientes: toma, {1} fakes ({2} do dia + {3} dos pedidos). Até a próxima!', U.atendidos, base, PAGA_BASE, PAGA_PEDIDO * U.atendidos));
       if (aumento) await fala('lucia', Tf('E mais {0} fakes de aumento: +50%, graças à venda dos bolos! Total: {1} fakes.', aumento, paga));
       Dialogo.esconder();
+      const total = await dobrarPagamento(paga);                       // (7.6.0) receber ou ver um anúncio de 30 s e ganhar o dobro
+      somDinheiro(); ganhoNaTela(total); mostrarDinheiro(true);
     } catch (e) { console.error(e); }
     S.turno = null; try { Musica.tocar('jazz'); } catch (e) { /* sem música */ }
     if (!espera && S && S.ativo && S.modo === 'cena') liberar();
@@ -7664,6 +7966,7 @@
 .cdQuad { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; background: rgba(42, 18, 6, 0.86); border: 3px solid #f0a020; color: #fff0c8; box-sizing: border-box; cursor: pointer; pointer-events: auto;
   font: 700 14px/1 var(--font-display); text-shadow: 0 2px 0 #2a1206; }
 .cdQuad:active { transform: translateY(2px); }
+.cdQuad.cdFedor { background: rgba(38, 96, 34, 0.92); border-color: #8fe06a; }   /* (7.6.0) fedendo: o quadrado verde ao lado da fome */
 .cdQuad .cdPausaI { display: flex; gap: 4px; } .cdQuad .cdPausaI i { display: block; width: 4px; height: 12px; background: #fff0c8; }
 .cdQuad .cdMapaI { position: relative; width: 18px; height: 14px; background: linear-gradient(90deg, #8fd06a 0 33%, #e8d79a 33% 66%, #8fd06a 66%); border: 2px solid #fff0c8; box-sizing: border-box; }
 .cdQuad .cdMapaI::after { content: ''; position: absolute; left: 5px; top: 1px; width: 4px; height: 4px; background: #e8452f; border-radius: 50%; }
@@ -7701,7 +8004,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const preto = div('cdPreto'), arrasto = div('cdArrasto'), aviso = div('cdAviso');
     const ctl = div('cdCtl', '<div class="cdPad"><div class="cdKnob"></div></div><div class="cdDica"></div><button type="button" class="pxBtn pxPrim cdBtn"></button>');
     const ficha = div('cdFicha', '<div class="cdCard"><h3 class="cdTit"></h3><p class="cdSub"></p><div class="cdBarras"></div><p class="cdFrase"></p><ul class="cdCond"></ul><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdFecharF"></button></div></div>');
-    const hud = div('cdHud', '<button type="button" class="cdQuad cdResumo"></button><div class="cdInfo" hidden><div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome"></button><button type="button" class="cdQuad cdCafe" hidden></button></div><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
+    const hud = div('cdHud', '<button type="button" class="cdQuad cdResumo"></button><div class="cdInfo" hidden><div class="cdGrana cdRel" role="status"><span class="cdClimaIco"></span><b class="cdHora">08:00</b></div><div class="cdGrana" role="status"><span class="cdNota"></span><b class="cdValor">0</b><small class="cdMoeda"></small></div><button type="button" class="cdQuad cdFome"></button><button type="button" class="cdQuad cdFedor" hidden></button><button type="button" class="cdQuad cdCafe" hidden></button></div><button type="button" class="cdQuad cdPausar"><span class="cdPausaI"><i></i><i></i></span></button>');
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
@@ -7709,7 +8012,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
     const q = (el, s) => el.querySelector(s);
     UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
-      btnPausa: q(hud, '.cdPausar'), resumo: q(hud, '.cdResumo'), info: q(hud, '.cdInfo'), fome: q(hud, '.cdFome'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
+      btnPausa: q(hud, '.cdPausar'), resumo: q(hud, '.cdResumo'), info: q(hud, '.cdInfo'), fome: q(hud, '.cdFome'), fedor: q(hud, '.cdFedor'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
     // joystick
@@ -7763,7 +8066,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.fome.setAttribute('aria-label', T('Fome'));
     UI.resumo.setAttribute('aria-label', T('Dia, hora e dinheiro'));
     UI.resumo.addEventListener('click', (e) => { e.stopPropagation(); if (!S) return; som(); abrirHud(5); });
-    UI.info.addEventListener('click', (e) => { if (!S || e.target.closest('.cdFome, .cdCafe')) return; som(); recolherHud(); });
+    UI.info.addEventListener('click', (e) => { if (!S || e.target.closest('.cdFome, .cdCafe, .cdFedor')) return; som(); recolherHud(); });
+    UI.fedor.setAttribute('aria-label', T('Fedendo'));
+    UI.fedor.addEventListener('click', () => { if (!S) return; som(); abrirHud(5); UI.aviso.textContent = T('Fedendo'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (7.6.0) some depois do banho
     UI.cafe.addEventListener('click', () => { if (!S) return; som(); const c = cafeEfeito(); if (!c) return; aviso(textoCafe(c)); clearTimeout(UI.cafeT); UI.cafeT = setTimeout(() => { if (S && UI) aviso(''); }, 2800); });
     UI.fome.addEventListener('click', () => { if (!S) return; som(); abrirHud(5); const n = nivelComida(); UI.aviso.textContent = n <= 0 ? T('Seu personagem ainda não comeu hoje.') : n < 1 ? T('Ainda dava para comer mais um pouco.') : T('Barriga cheia!'); UI.aviso.hidden = false; clearTimeout(UI.fomeT); UI.fomeT = setTimeout(() => { if (S && UI) UI.aviso.hidden = true; }, 2800); });   // (aqui 'aviso' é o elemento: escrevo direto nele)
     UI.btn.addEventListener('click', () => { if (S && S.ativo && S.modo === 'livre') interagir(); });
@@ -7994,17 +8299,19 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   function missaoBanho() { return S && S.dados && S.dados.precisaBanho ? T('Missão: tomar banho em casa.') : ''; }
   function textoMissoes() {
-    const L = [S.missao, missaoTrabalho(), missaoBanho()].filter(Boolean);
+    let tn = ''; try { tn = S.torneios ? S.torneios.missao() : ''; } catch (e) { tn = ''; }   // os jogos dos torneios de hoje
+    const L = [S.missao, tn, missaoTrabalho(), missaoBanho()].filter(Boolean);
     return L.length ? L.join('\n') : T('Nenhuma missão por enquanto.');
   }
   // mudou o trabalho ou o banho (novo dia, turno feito, jogou bola, tomou banho): mostra a lista de novo
   function tickMissoesRotina(dt) {
     if ((S.tRotina = (S.tRotina || 0) - dt) > 0) return;
     S.tRotina = 0.5;
-    const k = missaoTrabalho() + '|' + missaoBanho();
+    let tn = ''; try { tn = S.torneios ? S.torneios.missao() : ''; } catch (e) { tn = ''; }
+    const k = missaoTrabalho() + '|' + missaoBanho() + '|' + tn;
     if (k === S.rotinaK) return;
     const antes = S.rotinaK; S.rotinaK = k;
-    if (antes !== undefined && S.modo === 'livre' && k !== '|') mostrarMissao();
+    if (antes !== undefined && S.modo === 'livre' && k !== '||') mostrarMissao();
     else if (UI && !UI.missao.hidden) UI.missao.textContent = textoMissoes();
   }
   function mostrarMissao() {
@@ -8193,12 +8500,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (S.hRel != null && S.hRel >= 20 && d.hora < 4) virarDia();          // passou da meia-noite (andando o relógio ou pulando uns minutos: a sinuca do bar)
     S.hRel = d.hora;
     if (ant < H_ACORDAR && d.hora >= H_ACORDAR) amanheceu();
-    // (6.1.0) NOITE DE TRABALHO (pizzaria, quinta a domingo): sem o aviso das 21h (dormir às 22h); o aviso vem à 1h (dormir até as 2h)
-    //   e às 4h ele vai sozinho para casa (acorda às 9h). Nas outras noites: aviso às 21h e cutscene às 2h, como antes.
-    const nt = noiteDeTrabalho(), hMad = nt ? 4 : 2;
+    // (6.1.0/7.6.0) NOITE DE TRABALHO (mercado seg–sex até 22h; pizzaria qui–dom até 0h): sem o aviso das 21h (dormir às 22h). O aviso
+    //   vem 1 h antes da hora de dormir da noite (regraNoite: mercado 0h, pizzaria 2h) e na hora de apagar (3h / 4h) ele vai sozinho
+    //   para casa; acorda mais tarde (7h / 9h), mas a tempo dos jogos e encontros da manhã. Nas outras noites: aviso às 21h e cutscene às 2h.
+    if ((S.tNoite = (S.tNoite || 0) - dt) <= 0) { S.tNoite = 2; d.noiteTrab = regraNoite(diaDaNoite()); }   // a fase2 (o quarto) lê daqui
+    const nt = d.noiteTrab && d.noiteTrab.dia === diaDaNoite() ? d.noiteTrab : null, hMad = nt ? nt.apagar : 2;
     if (ant < hMad && d.hora >= hMad && !S.madrugada) { S.madrugada = true; madrugada(nt); return; }     // (5.0.0) passou das 2h acordado
-    const hAviso = nt ? d.hora >= 1 && d.hora < 4 : d.hora >= 21 && d.hora < 24;
-    if (!d.avisouDormir && hAviso && S.modo === 'livre' && !S.dentro && !S.turnoPizza) { d.avisouDormir = true; avisoDormir(nt); }
+    const hAviso = nt ? entreHoras(d.hora, (nt.dormir + 23) % 24, nt.apagar) : d.hora >= 21 && d.hora < 24;
+    if (!d.avisouDormir && hAviso && S.modo === 'livre' && !S.dentro && !S.turnoPizza && !S.turnoMercado && !S.trabalhando) { d.avisouDormir = true; avisoDormir(nt); }
     else if (!S.turnoPizza && !S.trabalhando) checarFome();   // (7.1.14) dois dias sem comer: aviso; no 3º, desmaio
     checarRachaPerdido();
   }
@@ -8211,7 +8520,21 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   }
   // a noite pertence ao dia em que começou: de madrugada (antes do meio-dia) ainda é a noite de ontem (quinta 1h = noite de quinta)
   const diaDaNoite = () => { const d = S.dados; return (d.dia || 1) - (d.hora < 12 ? 1 : 0); };
-  const noiteDeTrabalho = () => empregoEscolhido() === 'pizzaria' && [3, 4, 5, 6].includes(diaSemanaDe(diaDaNoite()));   // quinta a domingo
+  // (7.6.0) as noites dos empregos da noite: dormir = até quando é dormir bem; apagar = a hora da cutscene; acorda = a hora de acordar
+  //   (mais cedo se tiver jogo da várzea/torneio ou encontro com a Lúcia de manhã: acorda 1 h antes do vestiário abrir / do encontro)
+  const NOITE_EMPREGO = { mercado: { dormir: 0, apagar: 3, acorda: 7 }, pizzaria: { dormir: 2, apagar: 4, acorda: 9 } };
+  const entreHoras = (h, a, b) => (a <= b ? h >= a && h < b : h >= a || h < b);
+  function regraNoite(nd) {
+    const e = empregoEscolhido(), R = NOITE_EMPREGO[e], d = S && S.dados; if (!R || !d) return null;
+    const trabalha = (nd >= 2 && (DIAS_TRABALHO_EMPREGO[e] || DIAS_UTEIS).includes(diaSemanaDe(nd))) || d.trabalhouDia === nd;
+    if (!trabalha) return null;
+    const amanha = nd + 1; let cedo = 99;
+    try { const h = S.varzea && S.varzea.horaNoDia ? S.varzea.horaNoDia(amanha) : null; if (h != null) cedo = Math.min(cedo, h - 1); } catch (er) { /* sem várzea */ }
+    try { const h = S.torneios && S.torneios.horaNoDia ? S.torneios.horaNoDia(amanha) : null; if (h != null) cedo = Math.min(cedo, h - 1); } catch (er) { /* sem torneio */ }
+    const E = d.encontroLucia; if (E && E.dia === amanha && typeof E.hora === 'number') cedo = Math.min(cedo, E.hora);
+    const acorda = Math.max(H_ACORDAR, Math.min(R.acorda, Math.floor(cedo - 1)));
+    return { dia: nd, emprego: e, dormir: R.dormir, apagar: R.apagar, acorda };
+  }
   // O DIA VIRA À MEIA-NOITE (como no calendário). Quem ainda não dormiu continua no mesmo dia depois das 5h: dormir de madrugada só adianta as horas.
   function virarDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 600); }
   function amanheceu() { aviso(Tf('Amanheceu: {0}.', Calendario.longo(S.dados))); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }   // (7.4.6) a data do calendário
@@ -8222,21 +8545,21 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (J.sentado) levantar();
     if (S.pizzaria && S.pizzaria.montado()) try { S.pizzaria._f.descer(true); } catch (e) { /* já desceu */ }
     mariposa();                                                          // não dormir: a noite em claro pesa no dia seguinte
-    try { await fala('jog', nt ? T('Já são 4h?! Chega por hoje, vou pra casa dormir.') : T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
+    try { await fala('jog', nt ? Tf('Já são {0}?! Chega por hoje, vou pra casa dormir.', fmtHora(nt.apagar)) : T('Meu Deus, é 2h00?! O que eu tô fazendo acordado ainda??')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (!S.dentro) {
       S.camParada = true;
-      const pts = caminhoRede(J.x, J.z, SPAWN.x, -4.2).map((q) => [q.x, q.z]); pts.push([SPAWN.x, -5.5]);
+      const pts = caminhoRede(J.x, J.z, SPAWN.x, CALC_N).map((q) => [q.x, q.z]); pts.push([SPAWN.x, -5.5]);
       await Promise.race([andar(J, pts, 5.2), esperar(2600)]);
     }
     await preto(true, 900);
-    const d = S.dados; if (d.hora >= 12) d.dia = (d.dia || 1) + 1; d.hora = nt ? 9 : H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // (6.1.0) noite de trabalho: acorda às 9h (a meia-noite já virou o dia)
-    try { Sono.registrar(3, nt ? 'acordado até as 4h' : 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
+    const d = S.dados; if (d.hora >= 12) d.dia = (d.dia || 1) + 1; d.hora = nt ? nt.acorda : H_ACORDAR; d.avisouDormir = false; prepararDia(d);   // (6.1.0) noite de trabalho: acorda mais tarde (a meia-noite já virou o dia)
+    try { Sono.registrar(3, nt ? 'acordado até as ' + nt.apagar + 'h' : 'acordado até as 2h'); } catch (e) { console.warn('[Cidade] sono:', e); }
     gravar('predio'); S.paraFase2 = 'acordar';
     if (S.fimRes) S.fimRes();
   }
   async function avisoDormir(nt) {
     S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); S.jog.andando = false; S.jog.correndo = false;
-    try { await fala('jog', nt ? T('É melhor eu voltar para casa, tenho que dormir até as 2h para descansar bem, ou isso pode afetar meu desempenho.') : T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
+    try { await fala('jog', nt ? Tf('É melhor eu voltar para casa, tenho que dormir até as {0} para descansar bem, ou isso pode afetar meu desempenho.', fmtHora(nt.dormir)) : T('É melhor eu voltar para casa, tenho que dormir às 22h para ter minhas 8 horas de sono, ou isso pode afetar meu desempenho.')); Dialogo.esconder(); } catch (e) { console.error(e); }
     if (S && S.ativo && S.modo === 'cena') liberar();
   }
   let relUlt = '', relIco = '', hudChave = '', tHud = 0;
@@ -8258,7 +8581,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (ic !== relIco) { relIco = ic; const cv = iconeClima(ic); UI.climaIco.replaceChildren(cv); }
     { const hh = fmtHora(d.hora); if (UI.resumo.textContent !== hh) UI.resumo.textContent = hh; }   // (6.6.1) recolhido, o quadradinho mostra o HORÁRIO (não mais o ícone do clima)
     const nc = Math.round(nivelComida() * 8) / 8; if (UI.fome.dataset.n !== String(nc)) { UI.fome.dataset.n = String(nc); UI.fome.replaceChildren(iconeCoxa(nc)); }
-    { const ch = (d.dia || 1) + '|' + Math.floor(d.hora) + '|' + ic + '|' + nc + '|' + (cafeEfeito() ? 1 : 0); if (ch !== hudChave) { const prim = !hudChave; hudChave = ch; abrirHud(prim ? 4 : 3.5); } }   // muda o dia, a hora cheia, o clima, a fome ou o café: o HUD abre por uns segundos
+    { const fd = d.precisaBanho ? '1' : ''; if (UI.fedor.dataset.k !== fd) { UI.fedor.dataset.k = fd; UI.fedor.hidden = !fd; if (fd && !UI.fedor.firstChild) UI.fedor.appendChild(iconeFedor()); } }   // (7.6.0) fedendo (até o banho)
+    { const ch = (d.dia || 1) + '|' + Math.floor(d.hora) + '|' + ic + '|' + nc + '|' + (cafeEfeito() ? 1 : 0) + '|' + (d.precisaBanho ? 1 : 0); if (ch !== hudChave) { const prim = !hudChave; hudChave = ch; abrirHud(prim ? 4 : 3.5); } }   // muda o dia, a hora cheia, o clima, a fome ou o café: o HUD abre por uns segundos
     { const c = cafeEfeito(), k = c ? String(c.tier) : ''; if (UI.cafe.dataset.k !== k) { UI.cafe.dataset.k = k; UI.cafe.hidden = !c; UI.cafe.replaceChildren(); if (c) UI.cafe.appendChild(iconeCafezinho(c.tier, '24px')); } }   // o café que está fazendo efeito   // a coxinha fica até ele comer no dia
   }
   // a FOME: uma coxa de frango em pixel art 16x16, deitada na diagonal com a carne para CIMA (à direita) e o osso embaixo (à esquerda).
@@ -8286,6 +8610,26 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     }
     if (n > 0.5) for (const [x, y] of [[10, 5], [12, 4], [11, 7]]) if (g[y][x] === 'carne') { c.fillStyle = '#e08a3a'; c.fillRect(x, y, 1, 1); }   // a casquinha
     for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (g[y][x] === 'osso' && (x + y) % 5 === 0) { c.fillStyle = '#d8c8a4'; c.fillRect(x, y, 1, 1); }
+    cv.style.cssText = 'width:26px;height:26px;image-rendering:pixelated;display:block;pointer-events:none;';
+    return cv;
+  }
+  // (7.6.0) FEDENDO: um bonequinho em pixel art 16x16 com o cheirinho (três fumacinhas onduladas) subindo dele
+  function iconeFedor() {
+    const N = 16, cv = document.createElement('canvas'); cv.width = cv.height = N; const c = cv.getContext('2d');
+    const px = (x, y, cor) => { c.fillStyle = cor; c.fillRect(x, y, 1, 1); };
+    const PELE = '#f0c89a', ROUPA = '#e8e4d0', CALCA = '#3a4a6a', CONT = '#1a2a10', FUM = '#d8f070', FUM2 = '#a8d040';
+    const fig = [];                                                      // o boneco (de frente, braços abertos), embaixo à esquerda
+    for (let y = 7; y <= 9; y++) for (let x = 4; x <= 6; x++) fig.push([x, y, PELE]);          // cabeça
+    for (let y = 10; y <= 12; y++) for (let x = 3; x <= 7; x++) fig.push([x, y, ROUPA]);       // camiseta
+    fig.push([2, 10, PELE], [8, 10, PELE], [2, 11, PELE], [8, 11, PELE]);                      // braços
+    for (const x of [4, 6]) for (let y = 13; y <= 14; y++) fig.push([x, y, CALCA]);             // pernas
+    const tem = new Set(fig.map(([x, y]) => x + ',' + y));
+    for (const [x, y] of fig) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = (x + dx) + ',' + (y + dy); if (!tem.has(k) && x + dx >= 0 && x + dx < N && y + dy >= 0 && y + dy < N) { px(x + dx, y + dy, CONT); } }
+    for (const [x, y, cor] of fig) px(x, y, cor);
+    px(4, 8, CONT); px(6, 8, CONT);                                      // os olhinhos
+    const S_ = [0, 0, 1, 1, 0, 0, -1, -1];                              // o "S" de cada fumacinha
+    const onda = (x0, y0, alt, f) => { for (let i = 0; i < alt; i++) px(x0 + S_[(i + f) % 8], y0 - i, i < 2 ? FUM2 : FUM); };
+    onda(10, 9, 8, 0); onda(13, 11, 9, 4);                               // o cheirinho subindo
     cv.style.cssText = 'width:26px;height:26px;image-rendering:pixelated;display:block;pointer-events:none;';
     return cv;
   }
@@ -8367,9 +8711,12 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       else if (A.atravessa && pa && pa === pq) fimTravessia(A);
     }
     const md = rota.length > 1 ? maoDireita(A, q.x, q.z) : null;      // (6.6.5) mão direita na calçada da avenida (o último ponto, não: é a porta, o banco...)
-    const dq = Math.hypot(q.x - A.x, q.z - A.z), dx = (md ? md.x : q.x) - A.x, dz = (md ? md.z : q.z) - A.z, d = Math.hypot(dx, dz) || 1e-6, v = (A.correFaixa ? Math.max(vel, A.vel) : vel) * dt;
+    const dq = Math.hypot(q.x - A.x, q.z - A.z), dx = (md ? md.x : q.x) - A.x, dz = (md ? md.z : q.z) - A.z, d = Math.hypot(dx, dz) || 1e-6, v = (A.correFaixa ? Math.max(vel, A.vel) : vel) * dt * pressaNPC(A, dt);
     A.vel = A.correFaixa ? Math.max(vel, A.vel) : vel; A.correndo = A.vel > 2.5 || !!A.chuva;
     if (dq <= Math.max(v, rota.length > 1 ? (q.exato ? 0.1 : 0.6) : 0.08)) { if (rota.length === 1 && livreNPC(q.x, q.z, A, true)) { A.x = q.x; A.z = q.z; } rota.shift(); A.bloq = 0; if (!rota.length) { A.andando = false; return true; } return false; }
+    { const dj = desviaJogador(A, dx / d, dz / d, v, dt);              // (7.5.11) o jogador no caminho: desvia andando, sem parar (3 s; depois atravessa)
+      if (dj && !dj.parado) { A.x += dj.ux * v; A.z += dj.uz * v; A.yawAlvo = Math.atan2(-dj.uz, dj.ux); A.andando = true; A.bloq = 0; return false; }
+      if (dj && dj.parado) { A.andando = false; return false; } }
     let moveu = false;
     { const nx = A.x + dx / d * v, nz = A.z + dz / d * v;            // gente no caminho: um passa, o outro cambaleia
       if (!livreNPC(nx, nz, A) && livreNPC(nx, nz, A, true, true)) { const B = pessoaNoCaminho(nx, nz, A); if (B) { const c = cruzar(A, B); if (c === 'contorna') contornar(A, dx, dz, d); else if (c) { A.x = nx; A.z = nz; A.yawAlvo = Math.atan2(-dz, dx); A.andando = true; A.bloq = 0; } else A.andando = false; return false; } } }
@@ -9263,6 +9610,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function rodaAberta(R) {
     const h = S.dados.hora; if (h < H_RODA[0] || h >= H_RODA[1] || chovendoAgora() || S.dentro) return false;
     if (R.nome === 'sintetico') { const f = fut(), A = f.agenda; if (A && A.dia === S.dados.dia && !A.feito && Math.abs(h - (A.hora || horaDoFutebol())) < 2.5) return false; }
+    if (S.torneios && S.torneios.campoOcupado(R.nome)) return false;   // dia de jogo dos torneios: o campo é do torneio
     if (R.nome === 'quadra') { const J = S.jog, Q = R.lim; if (J && J.x > Q.x0 - 1 && J.x < Q.x1 + 1 && J.z > Q.z0 - 1 && J.z < Q.z1 + 1) return false; }
     return true;
   }
@@ -9293,6 +9641,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function rodaSegue(R) {
     const h = S.dados.hora; if (h < H_RODA[0] || h >= H_RODA[1] || chovendoAgora() || S.dentro) return false;
     if (R.nome === 'sintetico') { const f = fut(), A = f.agenda; if (A && A.dia === S.dados.dia && !A.feito && Math.abs(h - (A.hora || horaDoFutebol())) < 2.5) return false; }
+    if (S.torneios && S.torneios.campoOcupado(R.nome)) return false;   // dia de jogo dos torneios: o campo é do torneio
     return (R.jogNaRoda || 0) < 3;
   }
   function bolaDaRoda(R) {
@@ -9469,7 +9818,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
         if (S.pesca) S.pesca.tick(dt);
         if (S.barbearia) try { S.barbearia.tick(dt); } catch (e) { if (!S.erroBarb) { S.erroBarb = true; console.warn('[Cidade] barbearia:', e); } }
         if (S.namoro) try { S.namoro.tick(dt); } catch (e) { if (!S.erroNam) { S.erroNam = true; console.warn('[Cidade] namoro:', e); } }   // o Grão, o convite, as cenas                                  // (6.4.0) idem (o Cadu no lago, o Bené, o minigame de pesca)
-        if (S.varzea) try { S.varzea.tick(dt); } catch (e) { if (!S.erroVz) { S.erroVz = true; console.warn('[Cidade] várzea:', e); } }   // o campeonato de várzea (olheiro, torcida, rodadas)
+        if (S.varzea) try { S.varzea.tick(dt); } catch (e) { if (!S.erroVz) { S.erroVz = true; console.warn('[Cidade] várzea:', e); } }
+        if (S.torneios) try { S.torneios.tick(dt); } catch (e) { if (!S.erroTn) { S.erroTn = true; console.warn('[Cidade] torneios:', e); } }   // os torneios do sintético e do futsal   // o campeonato de várzea (olheiro, torcida, rodadas)
         if (S.serieb) try { S.serieb.tick(dt); } catch (e) { if (!S.erroSb) { S.erroSb = true; console.warn('[Cidade] série B:', e); } }   // a peneira e a carreira profissional (ônibus, hábitos, rodadas)
         if (!S.dentro) { tickCarros(dt); tickPortao(dt); tickBola(dt); if (S.treinoMod) { try { S.treinoMod.tick(dt); } catch (e) { if (!S.erroTreino) { S.erroTreino = true; console.warn('[Cidade] treino:', e); } } } else tickTreino(dt); tickPlantas(dt); }   // (6.6.16) o treino.js cuida da turma do Nonato
       }
@@ -9513,7 +9863,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     document.body.classList.remove('cdAtivo');
     for (const k of ['ctl', 'arrasto', 'hud', 'esq', 'aviso', 'seta', 'mapa', 'pausa', 'ficha']) UI[k].hidden = true;
     UI.preto.hidden = true; UI.preto.classList.add('claro');
-    if (typeof Dialogo !== 'undefined') Dialogo.esconder(); Musica.parar(); if (Musica.zerar) Musica.zerar();
+    if (typeof Dialogo !== 'undefined') Dialogo.esconder(); Musica.parar(); if (Musica.zerar) Musica.zerar(); if (Musica.definirDia) Musica.definirDia(null);
     S = null;
   }
 
@@ -9562,6 +9912,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       mods.push(Fases.carregar('barbearia').then((m) => { if (S && m && m.criar) S.barbearia = m.criar(apiBarbearia()); }, (e) => console.warn('[Cidade] barbearia.js não veio:', e)));
       mods.push(Fases.carregar('namoro').then((m) => { if (S && m && m.criar) S.namoro = m.criar(apiNamoro()); }, (e) => console.warn('[Cidade] namoro.js não veio:', e)));   // os encontros seguintes com a Lúcia, a casa dela, os bolos
       mods.push(Fases.carregar('varzea').then((m) => { if (S && m && m.criar) S.varzea = m.criar(apiVarzea()); }, (e) => console.warn('[Cidade] varzea.js não veio:', e)));
+      mods.push(Fases.carregar('torneios').then((m) => { if (S && m && m.criar) S.torneios = m.criar(apiTorneios()); }, (e) => console.warn('[Cidade] torneios.js não veio:', e)));   // os torneios do sintético e do futsal
       mods.push(Fases.carregar('serieb').then((m) => { if (S && m && m.criar) S.serieb = m.criar(apiSerieB()); }, (e) => console.warn('[Cidade] serieb.js não veio:', e)));   // a peneira e o Brasileirão B   // o campeonato de várzea   // a barbearia (cortes da loja)
       mods.push(Fases.carregar('pesca').then((m) => { if (S && m && m.criar) { S.pesca = m.criar(apiPesca()); montarRuaPesca(); } }, (e) => console.warn('[Cidade] pesca.js não veio:', e)));   // (6.4.0) pesca no lago
       mods.push(Fases.carregar('treino').then((m) => { if (S && m && m.criar && S.treino) { S.treinoMod = m.criar(apiTreino()); } }, (e) => console.warn('[Cidade] treino.js não veio:', e)));
@@ -9578,6 +9929,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
       const primeira = !dados.visitas; dados.visitas = (dados.visitas | 0) + 1;
       gravar('chegada');
       if (Musica.zerar) Musica.zerar();
+      if (Musica.definirDia) Musica.definirDia(() => (S && S.dados ? S.dados.dia : null));   // (7.6.0) o tema de cada dia da semana
       Musica.tocar('jazz');
       const encFim = ctx.args && ctx.args.encontroFim;                 // voltou do encontro no quarto (fase2.js): a despedida na casa da Lúcia
       if (encFim) {
@@ -9610,5 +9962,5 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
-    _fns: { novoCliente, pedirGarcom, reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia, checarFaltaEncontro, alvosPortaLucia, portaCasaLucia, pedirDesculpasLucia, chamarLuciaDeNovo, apiNamoro } });   // (_estado/_planta/_fns: para testes)
+    _fns: { novoCliente, pedirGarcom, reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, abrirMapa, fecharMapa, marcarEntrou, PORTAS, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia, checarFaltaEncontro, alvosPortaLucia, portaCasaLucia, pedirDesculpasLucia, chamarLuciaDeNovo, apiNamoro, dobrarPagamento, regraNoite, apiMercado, reacaoVisual, sigVisual, falaAmizade } });   // (_estado/_planta/_fns: para testes)
 })();

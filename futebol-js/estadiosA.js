@@ -89,10 +89,21 @@
   //   O contorno de um anel: lados retos e cantos em arco. Cada nó tem o centro do arco (cx, cz) e a normal (nx, nz) para fora;
   //   o ponto a uma distância o do contorno-base é centro + normal x (raio + o). Assim todas as fileiras usam os mesmos nós
   //   (os degraus encaixam sem buraco nos cantos). Sentido: lado z+ indo para x+, depois x+ indo para z-, e assim por diante.
+  // (7.6.0) o campo do estádio que está sendo montado: a curva do canto da arquibancada nunca chega a menos de FOLGA_CANTO m da
+  //   bandeirinha (nos ovais de canto muito redondo — Floresta, Concha, Lagoa, Toca — o primeiro degrau passava por dentro do canto do
+  //   campo, e a torcida em pé e a mureta tapavam a cobrança de escanteio). Vale para todos os anéis do mesmo contorno.
+  let CAMPO = null; const FOLGA_CANTO = 4.5;
   function caminho(ax, az, rb, op) {
     op = op || {};
     const nArc = op.nArc || 8, passo = op.passo || 4, N = [];
     rb = Math.max(0.01, Math.min(rb, ax - 0.01, az - 0.01));
+    if (CAMPO) {
+      const dx = ax - CAMPO.HL, dz = az - CAMPO.HW, folga = (r) => r - Math.hypot(r - dx, r - dz);
+      if (dx > FOLGA_CANTO && dz > FOLGA_CANTO && dx < 30 && dz < 30 && rb > Math.max(dx, dz) && folga(rb) < FOLGA_CANTO) {
+        let lo = Math.max(dx, dz), hi = rb; for (let i = 0; i < 40; i++) { const m = (lo + hi) / 2; if (folga(m) < FOLGA_CANTO) hi = m; else lo = m; }
+        rb = lo;
+      }
+    }
     const cantos = [[1, 1, 90, 0], [1, -1, 0, -90], [-1, -1, -90, -180], [-1, 1, 180, 90]];
     const lados = ['x+', 'z-', 'x-', 'z+'];
     for (let c = 0; c < 4; c++) {
@@ -2282,7 +2293,8 @@
     E.L = new Lote(); E.Lf = new Lote(); E.Lt = new Lote(); E.Lp = new Lote(); E.Lb = new Lote(); E.Lr = new Lote(); E.Lj = new Lote();
     const k = MODELOS[P.campo.modelo] ? P.campo.modelo : modeloDoTime(E.M);
     E.modelo = k;
-    MODELOS[k](E);
+    CAMPO = { HL: E.HL, HW: E.HW };
+    try { MODELOS[k](E); } finally { CAMPO = null; }
     if (P.campo.telao) E.txtTelao = P.campo.telao;                     // o texto do telão pedido pela partida (a copa europeia)
     if (!E.pegada) E.pegada = medir(E);
     let yMax = 20; for (let i = 1; i < E.L.pos.length; i += 3) if (E.L.pos[i] > yMax && Math.abs(E.L.pos[i - 1]) < E.pegada[0] && Math.abs(E.L.pos[i + 1]) < E.pegada[1]) yMax = E.L.pos[i];

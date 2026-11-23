@@ -225,6 +225,9 @@
     ],
   };
   const NU = { n: 'Nu', t: 'short', nu: 1, c: ['#000000', '#000000', '#000000', '#000000'] };          // só no banho (as cores viram a pele em vestirNu)
+  // (7.6.0) a roupa de baixo (o estúdio de tatuagem da Golaço Esportes: o jogador fica de cueca/lingerie para ver onde fica o desenho)
+  const INTIMA = { M: { n: 'Cueca', t: 'short', intima: 1 }, F: { n: 'Lingerie', t: 'short', intima: 1, top: 1 } };
+  const COR_INTIMA = { M: '#2a3a5a', F: '#1c1c1f' };
   const PIJAMA = { M: { n: 'Pijama', t: 'short', c: ['#6b7a99', '#6b7a99', '#6b7a99'] }, F: { n: 'Pijama', t: 'short', c: ['#e9a3c4', '#e9a3c4', '#e9a3c4'] } };
 
   const c4 = (c) => [c[0], c[1], c[2], c[3] || '#f2f2ee'];                  // 4ª cor: a BORDA do emblema do peito (saves antigos, com 3 cores, ganham branco)
@@ -242,6 +245,7 @@
     else if (R.t === 'jardineira') { o.meia = c[1]; o.meiao = 1; o.gola = c[0]; }
     else if (R.t === 'macacao') { o.camisa = c[0]; o.calcao = c[0]; o.meia = c[0]; o.meiao = 1; o.listra = c[1]; o.gola = c[2]; }
     if (R.nu) { o.camisa = o.calcao = o.listra = o.gola = o.meia = o.sola = pele; o.meiao = 0; o.manga = 0; }          // banho: o corpo todo é só pele
+    if (R.intima) { o.camisa = o.listra = o.gola = R.top ? c[0] : pele; o.calcao = c[1]; o.meia = o.sola = pele; o.meiao = 0; o.manga = 0; }   // (7.6.0) de cueca: descalço
     if (R.time) {
       o.meiao = 2; o.meia = c[2]; o.numero = '10'; o.nomeCamisa = (PERSONAGEM.nomeCamisa || '').toUpperCase();
       o.emblema = { forma: 'escudo', cor1: c[2], cor2: c[0], letras: 'FC' };
@@ -350,7 +354,7 @@
   function pintarEmblema(m, R, c) {
     let cv = null, tex = null;
     m.raiz.traverse((o) => { if (!cv && o.material && o.material.map && o.material.map.image && o.material.map.image.getContext && o.material.map.image.width === 128) { tex = o.material.map; cv = tex.image; } });
-    if (!cv || R.nu) return;
+    if (!cv || R.nu || R.intima) return;
     const g = cv.getContext('2d'), css = cssCor, borda = css(c[3]);
     if (!R.time) { estampar(g, 16, R, c, false); estampar(g, 48, R, c, true); }
     else {                                                      // escudo do time: contorno com a 4ª cor
@@ -368,7 +372,7 @@
   //   a cintura: curta nas camisetas, comprida (com o punho de malha) nos moletons, jaquetas e blusas de manga longa.
   //   Ficam para dentro: camisa de time, camisa social com calça (dentro: 1), top, vestido, saia, jardineira e macacão.
   function barraRoupa(m, R, c) {
-    if (R.nu || R.time || R.dentro || R.top || R.t === 'vestido' || R.t === 'saia' || R.t === 'jardineira' || R.t === 'macacao') return;
+    if (R.nu || R.intima || R.time || R.dentro || R.top || R.t === 'vestido' || R.t === 'saia' || R.t === 'jardineira' || R.t === 'macacao') return;
     let mat = null; m.raiz.traverse((o) => { if (!mat && o.material && o.material.map && o.material.map.image && o.material.map.image.width === 128) mat = o.material; });
     if (!mat || typeof regiao !== 'function') return;
     const longa = !!(R.m || R.solta || R.capuz || R.jaqueta), L = new Lote(UV_BRANCO);
@@ -716,7 +720,9 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   }
   function modeloJogador(d, extra) {      // (7.1.10) extra = { chuteira }: a cidade usa para o jogador provar chuteira na loja
     const fem = PERSONAGEM.genero === 'F', lista = ROUPAS[fem ? 'F' : 'M'], pij = PIJAMA[fem ? 'F' : 'M'];
-    const rs = d && d.roupa, R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
+    const rs = d && d.roupa, sx = fem ? 'F' : 'M';
+    if (rs && rs.intima) { const ci = rs.cor || COR_INTIMA[sx]; return vestirModelo(Object.assign(aparenciaJogador(), { enfeites: (PERSONAGEM.aparencia || {}).enfeites || null }, extra || {}), INTIMA[sx], c4([ci, ci, ci, ci])); }   // (7.6.0) de cueca/lingerie
+    const R = rs && rs.id >= 0 && lista[rs.id] ? lista[rs.id] : (lista[0] || pij), c = c4(rs && rs.cores ? rs.cores : R.c);
     return vestirModelo(Object.assign(aparenciaJogador(), { enfeites: (PERSONAGEM.aparencia || {}).enfeites || null }, extra || {}), R, c);   // brinco, colar, luva e tatuagens da Golaço Esportes
   }
   // (cidade.js) as pessoas da cidade: adultas (corpo e cabeça normais), com as mesmas roupas do guarda-roupa (menos as de time, que levam o nome do jogador)
@@ -1419,6 +1425,11 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     "Clube do Brasileirão B": ["Brasileirão B club", "Club del Brasileirão B", "Club del Brasileirão B", "Club du Brasileirão B"],
   });
   for (const k of Object.keys(TRAD_F2)) if (!I18N[k]) I18N[k] = TRAD_F2[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "Nossa, já são {0}h da manhã... não aguento mais de sono.": ["Wow, it’s already {0} in the morning... I can’t keep my eyes open.", "Vaya, ya son las {0} de la mañana... me muero de sueño.", "Accidenti, sono già le {0} del mattino... non ce la faccio più dal sonno.", "Ouah, il est déjà {0} h du matin... je tombe de sommeil."],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
   if (typeof FEM_PT !== 'undefined') Object.assign(FEM_PT, {"Obrigado, amor. De verdade.": "Obrigada, amor. De verdade.", "Obrigado por estar sempre do meu lado.": "Obrigada por estar sempre do meu lado."});
   // Variantes FEMININAS (it/fr; null = igual): só as falas do jogador ou ditas a ele que mudam de gênero nesses idiomas.
   const TRAD_F2_F = {
@@ -2204,12 +2215,22 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   //   O dia vira à MEIA-NOITE: quem dorme antes dela acorda no dia seguinte; quem dorme de madrugada acorda no MESMO dia (só adiantam as
   //   horas). A noite pertence ao dia em que começou (quinta 1h = noite de quinta: noiteDeTrabalho/horaAcordar recebem esse dia).
   const diaSem = (dia) => ((((dia || 1) - 1) % 7) + 7) % 7;
-  const noiteDeTrabalho = (dia) => !!(S && S.dados && S.dados.emprego === 'pizzaria' && [3, 4, 5, 6].includes(diaSem(dia)));
-  const horaAcordar = (dia) => (noiteDeTrabalho(dia) ? 9 : H_ACORDA);
-  const horaApagar = (dia) => (noiteDeTrabalho(dia) ? 4 : 2);
+  // (7.6.0) a regra da noite vem da cidade (historia.cidade.noiteTrab = regraNoite: mercado e pizzaria, com a hora de acordar a tempo
+  //   dos compromissos da manhã); sem ela (save antigo), a pizzaria de quinta a domingo como antes
+  const cacheNoite = { dia: null, R: null, t: 0 };
+  function noiteDeTrabalho(dia) {
+    const agora = performance.now(); if (cacheNoite.dia === dia && agora - cacheNoite.t < 3000) return cacheNoite.R;
+    let R = null;
+    try { const c = API.historia.ler('cidade') || {}; if (c.noiteTrab && c.noiteTrab.dia === dia) R = c.noiteTrab; } catch (e) { /* sem save */ }
+    if (!R && S && S.dados && S.dados.emprego === 'pizzaria' && [3, 4, 5, 6].includes(diaSem(dia))) R = { dia, dormir: 2, apagar: 4, acorda: 9 };
+    cacheNoite.dia = dia; cacheNoite.R = R; cacheNoite.t = agora; return R;
+  }
+  const horaAcordar = (dia) => { const R = noiteDeTrabalho(dia); return R ? R.acorda : H_ACORDA; };
+  const horaApagar = (dia) => { const R = noiteDeTrabalho(dia); return R ? R.apagar : 2; };
   function nivelDoSono(h, dia) {
     if (h >= horaAcordar(dia) && h < 20) return 0;                       // cochilo de dia: não conta como noite mal dormida
-    if (noiteDeTrabalho(dia)) return h >= 20 || h < 2 ? 0 : h < 4 ? 2 : 3;
+    const R = noiteDeTrabalho(dia);
+    if (R) { const t = h < 12 ? h + 24 : h, dm = R.dormir + 24, ap = R.apagar + 24; return t < dm ? 0 : t < dm + 1 ? 1 : t < ap ? 2 : 3; }
     return typeof Sono !== 'undefined' ? Sono.nivelPelaHora(h) : (h >= 20 && h < 22 ? 0 : h >= 22 ? 1 : h < 2 ? 2 : 3);
   }
   function registrarSono(nivel, motivo) { try { if (typeof Sono !== 'undefined') Sono.registrar(nivel, motivo); } catch (e) { console.warn('[Fase 2] sono:', e); } }
@@ -2327,11 +2348,11 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   async function apagarDeSono() {
     const nd = diaDaNoite(S.relogio.dia, S.relogio.hora), sujo = dormiuSujo(), nt = noiteDeTrabalho(nd), acorda = horaAcordar(nd);
     mariposa();                                                          // não dormir: a noite em claro pesa no dia seguinte
-    await dizer(['jog', nt ? T('Nossa, já são 4h da manhã... não aguento mais de sono.') : T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
+    await dizer(['jog', nt ? Tf('Nossa, já são {0}h da manhã... não aguento mais de sono.', nt.apagar) : T('Nossa, já são 2h da manhã... não aguento mais de sono.')]);
     await preto(true, 900);
-    registrarSono(3, nt ? 'acordado até as 4h' : 'acordado até as 2h');   // (6.1.0) apagar de sono também é noite mal dormida
+    registrarSono(3, nt ? 'acordado até as ' + nt.apagar + 'h' : 'acordado até as 2h');   // (6.1.0) apagar de sono também é noite mal dormida
     mudarLugar('quarto', 0, 0, 0, 0); if (S.relogio.hora >= 12) S.relogio.dia = (S.relogio.dia || 1) + 1; S.relogio.hora = acorda;   // de madrugada: o dia já virou à meia-noite
-    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? 4 : 2), ok: false, dia: S.relogio.dia } })); } catch (e) { console.warn(e); }
+    try { const c = API.historia.ler('cidade') || {}; API.historia.gravar('cidade', Object.assign({}, c, { hora: acorda, dia: S.relogio.dia, avisouDormir: false, sono: { horas: acorda - (nt ? nt.apagar : 2), ok: false, dia: S.relogio.dia } })); } catch (e) { console.warn(e); }
     aparecerNaCama(); await esperar(1200); await preto(false, 1200); await esperar(600);
     const J = S.jog; J.seguir = true; J.pose = 'pe'; J.x = -1.95; J.z = -1.5; J.yaw = J.yawAlvo = 0; J.ySnap = true;
     await dizer(['jog', T('Dormi pouco... acho que não vou render como deveria hoje.')]);

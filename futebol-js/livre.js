@@ -1162,7 +1162,50 @@
   }
   // (7.4.10) retomar = { estado, clima, horario }: a partida salva no intervalo (começa no 2º tempo, sem a abertura). A partida
   //   pode ser salva no intervalo ("Salvar e sair"): aí volta { salvo: estado } e quem chamou guarda (guardarPausa).
+  // ---------------------------------------------------------------------------------------- (7.6.0) OS ANÚNCIOS DA PARTIDA LIVRE
+  //   Antes do primeiro jogo, o Herick (o dono do cinema da cidadezinha, que fez o jogo) explica e dá duas opções, uma vez por
+  //   sessão (sessionStorage: some quando o jogo é recarregado pelo jogador; o recarregar automático ao sair da partida livre guarda,
+  //   ver jogo.js): 'fim' = um anúncio de 5 s ao final de cada partida · 'unico' = um anúncio de 1 min agora e nenhum outro.
+  const AN_CHAVE = 'futebolJs.anuncioLivre', AN_FIM_S = 5, AN_UNICO_S = 60;
+  const anLer = () => { try { return sessionStorage.getItem(AN_CHAVE); } catch (e) { return anMem; } };
+  let anMem = null;
+  function anGravar(v) { anMem = v; try { sessionStorage.setItem(AN_CHAVE, v); } catch (e) { /* sem sessionStorage: fica na memória */ } }
+  function retratoHerick() {                                           // o Herick em pixel art (24 x 24): cabelo cacheado, barba, colete vermelho
+    const N = 24, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d');
+    const r = (c, x, y, w, h) => { g.fillStyle = c; g.fillRect(x, y, w || 1, h || 1); };
+    const PELE = '#E8B994', PELE_S = '#C9946E', CAB = '#1A120D', BARBA = '#20160F', COLETE = '#C8352B', COLETE_E = '#8E1F1A', CAMISA = '#17171A', OLHO = '#1a1a1a';
+    r('#f2c230', 0, 0, N, N); r('#f7d55a', 0, 0, N, 3);                // o fundo
+    r(CAMISA, 3, 18, 18, 6); r(COLETE, 4, 18, 6, 6); r(COLETE, 14, 18, 6, 6); r(COLETE_E, 9, 18, 1, 6); r(COLETE_E, 14, 18, 1, 6); r('#fff0c8', 5, 20, 2, 1);   // o colete
+    r(PELE, 10, 16, 4, 3);                                               // o pescoço
+    r(PELE, 6, 5, 12, 12); r(PELE_S, 6, 15, 12, 2);                      // o rosto
+    for (const [x, y] of [[5, 2], [7, 1], [9, 1], [11, 0], [13, 1], [15, 1], [17, 2], [6, 3], [10, 2], [14, 2], [18, 4], [5, 5]]) r(CAB, x, y, 3, 3);   // os cachos
+    r(CAB, 5, 4, 14, 3); r(CAB, 5, 6, 2, 5); r(CAB, 17, 6, 2, 5);
+    r(BARBA, 6, 13, 12, 4); r(BARBA, 6, 11, 2, 3); r(BARBA, 16, 11, 2, 3); r(PELE, 10, 13, 4, 1); r('#7a3a2a', 10, 14, 4, 1);   // a barba e a boca
+    r(OLHO, 8, 9, 2, 2); r(OLHO, 14, 9, 2, 2); r('#fff', 8, 9); r('#fff', 14, 9); r(CAB, 8, 7, 3, 1); r(CAB, 13, 7, 3, 1); r(PELE_S, 11, 10, 2, 2);   // olhos, sobrancelhas e nariz
+    cv.style.cssText = 'width:96px;height:96px;image-rendering:pixelated;display:block;margin:0 auto 6px;border:3px solid #2a1206;';
+    return cv;
+  }
+  async function telaAnuncioHerick() {
+    if (anLer()) return;
+    const el = tela('<div class="lvCaixa">' + topo(T('Herick'), false) + '<div class="lvAnHerick"></div>' +
+      '<p class="lvMsg">' + escH(T('Esse jogo é totalmente grátis! Mas eu preciso de formas de ganhar dinheiro com ele... Para não ser chato e ter anúncio toda hora, quero te dar uma opção:')) + '</p><div class="lvGrade">' +
+      '<button type="button" class="pxBtn lvTipo" data-a="fim"><b>' + escH(Tf('Ver um anúncio de {0} s ao final de cada partida', AN_FIM_S)) + '</b></button>' +
+      '<button type="button" class="pxBtn lvTipo" data-a="unico"><b>' + escH(T('Ver um anúncio de 1 min uma única vez enquanto o jogo estiver aberto')) + '</b></button></div></div>');
+    const lugar = el.querySelector('.lvAnHerick'); if (lugar) lugar.appendChild(retratoHerick());
+    const a = (await escolha(el)).a === 'unico' ? 'unico' : 'fim';
+    anGravar(a);
+    if (a === 'unico') {
+      let ok = false;
+      try { ok = await Anuncios.filme(AN_UNICO_S, { nome: 'livre-unico', tit: T('Anúncio'), txt: T('Obrigado por apoiar o jogo! Depois deste, nenhum outro anúncio até você fechar o jogo.'), fim: T('Valeu! Bom jogo!') }); } catch (e) { console.warn('[Livre] anúncio:', e); }
+      if (!ok) console.info('[Livre] anúncio de 1 min indisponível');      // sem anúncio disponível: segue sem cobrar de novo
+    }
+  }
+  async function anuncioFimPartida(r) {
+    if (anLer() !== 'fim' || !r || r.salvo) return;                      // só no fim de uma partida jogada até o apito final
+    try { await Anuncios.filme(AN_FIM_S, { nome: 'livre-fim', tit: T('Anúncio'), txt: T('Obrigado por apoiar o jogo!'), fim: T('Valeu! Bom jogo!') }); } catch (e) { console.warn('[Livre] anúncio:', e); }
+  }
   async function jogar(J, retomar) {
+    try { await telaAnuncioHerick(); } catch (e) { console.warn('[Livre] tela do Herick:', e); }
     const cfgE = montarCfg(J);
     if (retomar) { if (retomar.clima) cfgE.clima = retomar.clima; if (retomar.horario) cfgE.horario = retomar.horario; }
     jogouNaSessao = true;
@@ -1176,6 +1219,7 @@
     } catch (e) { console.error('[Livre] partida:', e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
     bola(false);
     try { Historia.descartarResultado(); } catch (e) { /* nada */ }   // as fichas e o histórico daqui são do campeonato (não mexem nas outras partidas)
+    await anuncioFimPartida(r);                                         // (7.6.0) quem escolheu o anúncio de 5 s ao final de cada partida
     await preto(true, 500);
     return r;
   }
@@ -2305,7 +2349,7 @@
         catch (e) { console.error('[Livre]', e); try { await preto(false, 200); } catch (e2) { /* nada */ } }
       }
     } finally { aberto = false; }
-    if (jogouNaSessao) { location.reload(); return; }                  // já teve jogo: o menu inicial volta limpo
+    if (jogouNaSessao) { try { sessionStorage.setItem(AN_CHAVE + '.manter', '1'); } catch (e) { /* nada */ } location.reload(); return; }   // já teve jogo: o menu inicial volta limpo (a escolha do anúncio fica: o jogador não recarregou)
     esconder();
   }
 
@@ -2596,9 +2640,21 @@
     "A foto oficial: os onze titulares": ["The official photo: the starting eleven", "La foto oficial: los once titulares", "La foto ufficiale: gli undici titolari", "La photo officielle : les onze titulaires"],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD)) if (!I18N[k]) I18N[k] = TRAD[k];
+  // (7.6.0) os textos novos (en, es, it, fr)
+  const TRAD_760 = {
+    "Herick": ["Herick", "Herick", "Herick", "Herick"],
+    "Esse jogo é totalmente grátis! Mas eu preciso de formas de ganhar dinheiro com ele... Para não ser chato e ter anúncio toda hora, quero te dar uma opção:": ["This game is completely free! But I need some way to make money from it... So it isn’t annoying with ads all the time, I want to give you a choice:", "¡Este juego es totalmente gratis! Pero necesito formas de ganar dinero con él... Para no ser pesado y poner anuncios todo el rato, quiero darte una opción:", "Questo gioco è totalmente gratis! Ma ho bisogno di qualche modo per guadagnarci... Per non essere noioso con la pubblicità in continuazione, voglio darti una scelta:", "Ce jeu est totalement gratuit ! Mais j’ai besoin d’en tirer un peu d’argent... Pour ne pas être pénible avec des pubs tout le temps, je te laisse choisir :"],
+    "Ver um anúncio de {0} s ao final de cada partida": ["Watch a {0}-second ad at the end of each match", "Ver un anuncio de {0} s al final de cada partido", "Guardare una pubblicità di {0} s alla fine di ogni partita", "Regarder une pub de {0} s à la fin de chaque match"],
+    "Ver um anúncio de 1 min uma única vez enquanto o jogo estiver aberto": ["Watch a 1-minute ad only once while the game is open", "Ver un anuncio de 1 min una sola vez mientras el juego esté abierto", "Guardare una pubblicità di 1 min una sola volta finché il gioco resta aperto", "Regarder une pub de 1 min une seule fois tant que le jeu est ouvert"],
+    "Anúncio": ["Ad", "Anuncio", "Annuncio", "Publicité"],
+    "Obrigado por apoiar o jogo! Depois deste, nenhum outro anúncio até você fechar o jogo.": ["Thanks for supporting the game! After this one, no more ads until you close the game.", "¡Gracias por apoyar el juego! Después de este, ningún otro anuncio hasta que cierres el juego.", "Grazie per sostenere il gioco! Dopo questa, nessun’altra pubblicità finché non chiudi il gioco.", "Merci de soutenir le jeu ! Après celle-ci, plus aucune pub jusqu’à ce que tu fermes le jeu."],
+    "Obrigado por apoiar o jogo!": ["Thanks for supporting the game!", "¡Gracias por apoyar el juego!", "Grazie per sostenere il gioco!", "Merci de soutenir le jeu !"],
+    "Valeu! Bom jogo!": ["Thanks! Have a good game!", "¡Gracias! ¡Buen partido!", "Grazie! Buona partita!", "Merci ! Bon match !"],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
 
   window.FutebolJS.registrarFase({ id: 'livre', nome: 'Partida livre', nucleoMinimo: '7.4.1', iniciar: async () => {}, abrir,
-    _t: { abertura, festaTitulo, galaPremios, fimDoTorneio, listaPremios, novoCampeonato, novaCopa, classificacao, fecharRodada, fecharFaseCopa, premiosDe, artilharia, foraDe, fecharFichas, motor, montarCfg, jogoDeHoje, estadioFinal, salvos, salvar, dados: () => ({ SBD, VZD }),
+    _t: { telaAnuncioHerick, anuncioFimPartida, abertura, festaTitulo, galaPremios, fimDoTorneio, listaPremios, novoCampeonato, novaCopa, classificacao, fecharRodada, fecharFaseCopa, premiosDe, artilharia, foraDe, fecharFichas, motor, montarCfg, jogoDeHoje, estadioFinal, salvos, salvar, dados: () => ({ SBD, VZD }),
     novaChamp, tabelaChamp, registrarChamp, rodadaKO, tieNosso, agregadoTie, telaSorteio, hubChamp, verTabelaChamp, confronto, telaResultado,
     novaLiberta, montarGrupos, tabelaGrupo, fecharDiaLib, avancarLib, proximaRodadaLib, telaSorteioLib, hubLib, verTabelaLib, jogoDeHoje, salvar,
     preparar: async () => { if (!SBD) SBD = (await Fases.carregar('serieb')).dados; if (!VZD) VZD = (await Fases.carregar('varzea')).dados; if (!CP()) try { await Fases.carregar('campeoes'); } catch (e) { /* nada */ } if (!LB()) try { await Fases.carregar('libertadores'); } catch (e) { /* nada */ } } } });

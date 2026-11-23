@@ -4,9 +4,10 @@
    - Registrado com FutebolJS.registrarFase({ id: 'namoro' }) só para o jogo saber baixar o arquivo; NÃO roda como fase.
      A cidade baixa em segundo plano (Fases.carregar('namoro')) e chama criar(api) com o que ela empresta (apiNamoro, cidade.js).
    - O 1º encontro continua na cidade.js (restaurante, pizzaria ou a sua casa). Os seguintes começam sempre na PORTA DA CASA DELA:
-       · 2º: no dia seguinte ao 1º ela manda mensagem de manhã chamando para a CASA DELA (interiores.js 'casaLucia': gato, bolo e
-         café). Café com bolo da avó, o sonho da confeitaria e o GRÃO, o gato: com a aura tranquila ele pula no seu colo e ronrona;
-         puxando para problemático ele te arranha e foge. No fim, na porta, a despedida: abraço ou toca aqui.
+       · 2º: no dia seguinte ao 1º ela manda mensagem de manhã chamando para a CASA DELA no DOMINGO às 19h (7.5.11; se o convite chega
+         num domingo, é hoje) (interiores.js 'casaLucia': gato, bolo e café). Café com bolo da avó, o sonho da confeitaria e o GRÃO, o gato: com a aura tranquila ele pula no seu colo e ronrona;
+         puxando para problemático ele te arranha e foge. (7.5.11) No sofá dá para chegar mais perto dela; no fim, na porta, a
+         despedida: abraço, beijo (com BEIJO_MIN corações ou namorando) ou toca aqui. Namorando, as falas dela deixam isso claro.
        · 3º ('lago'): você bate, ela sai e vocês vão a pé até a ponta do píer do lago, de noite (lanternas, lua, grilos). Sentados com
          os pés para fora do píer, a conversa é sobre ELES (família, a avó do café, sonhos, medos), não sobre a cidade.
        · 4º em diante ('jantar'): só cortes, sem nenhuma fala: o caminho pela rua, o jantar no restaurante, pega-pega na praça e um
@@ -200,6 +201,33 @@
     'O que você faz?': ['What do you do?', '¿Qué haces?', 'Cosa fai?', 'Qu’est-ce que tu fais ?'],
     'Missão: ir à casa da Lúcia às {0}.': ['Mission: go to Lucy’s house at {0}.', 'Misión: ir a la casa de Lucía a las {0}.', 'Missione: andare a casa di Lucia alle {0}.', 'Mission : aller chez Lucie à {0}.'],
     'Toca aqui': ['High five', 'Choca esos cinco', 'Batti il cinque', 'Tope là'],
+    // (7.5.11) o convite de domingo, o sofá e a despedida com beijo
+    "Bom dia, amor!": ["Good morning, love!", "¡Buenos días, amor!", "Buongiorno, amore!", "Bonjour, mon amour !"],
+    "Ontem foi perfeito. Já tô com saudade.": ["Yesterday was perfect. I already miss you.", "Ayer fue perfecto. Ya te extraño.", "Ieri è stato perfetto. Mi manchi già.", "Hier, c’était parfait. Tu me manques déjà."],
+    "Vem aqui em casa hoje à noite? Domingo é dia de bolo da vó e café passado na hora... e de ficar agarradinho no sofá. Às 19h?": ["Come over to my place tonight? Sunday is grandma’s cake and fresh coffee day... and cuddling on the couch. At 7 PM?", "¿Vienes a mi casa esta noche? El domingo es día del pastel de la abuela y café recién hecho... y de acurrucarnos en el sofá. ¿A las 19h?", "Vieni da me stasera? La domenica è il giorno della torta della nonna e del caffè appena fatto... e delle coccole sul divano. Alle 19?", "Tu viens chez moi ce soir ? Le dimanche, c’est gâteau de mamie et café tout frais... et câlins sur le canapé. À 19 h ?"],
+    "Quer vir aqui em casa hoje à noite? Domingo é dia de bolo da vó e café passado na hora. Às 19h?": ["Want to come over to my place tonight? Sunday is grandma’s cake and fresh coffee day. At 7 PM?", "¿Quieres venir a mi casa esta noche? El domingo es día del pastel de la abuela y café recién hecho. ¿A las 19h?", "Ti va di venire da me stasera? La domenica è il giorno della torta della nonna e del caffè appena fatto. Alle 19?", "Tu veux venir chez moi ce soir ? Le dimanche, c’est gâteau de mamie et café tout frais. À 19 h ?"],
+    "Vem aqui em casa no domingo? Eu faço o bolo da minha vó, passo um café... e a gente fica agarradinho no sofá. Às 19h?": ["Come over to my place on Sunday? I’ll bake my grandma’s cake, make some coffee... and we can cuddle on the couch. At 7 PM?", "¿Vienes a mi casa el domingo? Hago el pastel de mi abuela, preparo un café... y nos acurrucamos en el sofá. ¿A las 19h?", "Vieni da me domenica? Faccio la torta di mia nonna, preparo un caffè... e ci coccoliamo sul divano. Alle 19?", "Tu viens chez moi dimanche ? Je fais le gâteau de ma mamie, un petit café... et on se fait des câlins sur le canapé. À 19 h ?"],
+    "Quer vir aqui em casa no domingo? Eu faço o bolo da minha vó e passo um café pra gente. Às 19h?": ["Want to come over to my place on Sunday? I’ll bake my grandma’s cake and make us some coffee. At 7 PM?", "¿Quieres venir a mi casa el domingo? Hago el pastel de mi abuela y preparo un café para nosotros. ¿A las 19h?", "Ti va di venire da me domenica? Faccio la torta di mia nonna e preparo un caffè per noi. Alle 19?", "Tu veux venir chez moi dimanche ? Je fais le gâteau de ma mamie et un petit café pour nous. À 19 h ?"],
+    "Claro, amor! Não perco por nada.": ["Of course, love! I wouldn’t miss it for anything.", "¡Claro, amor! No me lo pierdo por nada.", "Certo, amore! Non me lo perdo per niente al mondo.", "Bien sûr, mon amour ! Je ne raterais ça pour rien au monde."],
+    "Eba! Então tá marcado. O Grão vai adorar te conhecer.": ["Yay! It’s a date, then. Grão is going to love meeting you.", "¡Bien! Entonces quedamos. A Grão le va a encantar conocerte.", "Evviva! Allora è deciso. Grão non vede l’ora di conoscerti.", "Youpi ! C’est noté, alors. Grão va adorer te rencontrer."],
+    "Ah... mas domingo à noite você trabalha na pizzaria, né?": ["Oh... but you work at the pizzeria on Sunday nights, right?", "Ah... pero el domingo por la noche trabajas en la pizzería, ¿no?", "Ah... ma la domenica sera lavori in pizzeria, vero?", "Ah... mais le dimanche soir tu travailles à la pizzeria, non ?"],
+    "Eu peço pro Mário me liberar. Depois eu pago esse dia.": ["I’ll ask Mário to let me off. I’ll make up the day later.", "Le pido a Mário que me libere. Después recupero ese día.", "Chiedo a Mário di lasciarmi libero. Poi recupero quel giorno.", "Je demande à Mário de me libérer. Je rattraperai ce jour-là."],
+    "Ai, você é o melhor! ❤": ["Aww, you’re the best! ❤", "¡Ay, eres el mejor! ❤", "Ah, sei il migliore! ❤", "Oh, tu es le meilleur ! ❤"],
+    "Ai, você é a melhor! ❤": ["Aww, you’re the best! ❤", "¡Ay, eres la mejor! ❤", "Ah, sei la migliore! ❤", "Oh, tu es la meilleure ! ❤"],
+    "Então tá! Te espero.": ["Okay then! I’ll be waiting.", "¡Entonces vale! Te espero.", "Allora va bene! Ti aspetto.", "D’accord ! Je t’attends."],
+    "Oi, amor! Entra, entra! Não repara a bagunça.": ["Hi, love! Come in, come in! Don’t mind the mess.", "¡Hola, amor! ¡Pasa, pasa! No te fijes en el desorden.", "Ciao, amore! Entra, entra! Non fare caso al disordine.", "Salut, mon amour ! Entre, entre ! Ne fais pas attention au désordre."],
+    "Senta aí no sofá, amor, que eu já trago o café e o bolo!": ["Have a seat on the couch, love, I’ll bring the coffee and the cake!", "¡Siéntate en el sofá, amor, que ya traigo el café y el pastel!", "Siediti sul divano, amore, che ti porto subito il caffè e la torta!", "Assieds-toi sur le canapé, mon amour, j’apporte le café et le gâteau !"],
+    "Puxar ela para perto": ["Pull her close", "Acercarla a ti", "Tirarla a sé", "L’attirer contre toi"],
+    "Chegar mais perto dela": ["Move closer to her", "Acercarte a ella", "Avvicinarti a lei", "Te rapprocher d’elle"],
+    "Esse foi o melhor domingo em muito tempo. Volta logo, tá? Eu e o Grão vamos ficar com saudade.": ["This was the best Sunday in a long time. Come back soon, okay? Grão and I will miss you.", "Este fue el mejor domingo en mucho tiempo. Vuelve pronto, ¿sí? Grão y yo te vamos a extrañar.", "È stata la domenica più bella da tanto tempo. Torna presto, ok? Io e Grão sentiremo la tua mancanza.", "C’était le meilleur dimanche depuis longtemps. Reviens vite, d’accord ? Grão et moi, on va s’ennuyer de toi."],
+    "Boa noite, amor. Sonha comigo, tá?": ["Good night, love. Dream of me, okay?", "Buenas noches, amor. Sueña conmigo, ¿sí?", "Buonanotte, amore. Sognami, ok?", "Bonne nuit, mon amour. Rêve de moi, d’accord ?"],
+    "Boa noite, amor! Até amanhã no café.": ["Good night, love! See you tomorrow at the café.", "¡Buenas noches, amor! Nos vemos mañana en el café.", "Buonanotte, amore! Ci vediamo domani al bar.", "Bonne nuit, mon amour ! À demain au café."],
+    "Boa noite, amor!": ["Good night, love!", "¡Buenas noches, amor!", "Buonanotte, amore!", "Bonne nuit, mon amour !"],
+    "Boa noite, {0}...": ["Good night, {0}...", "Buenas noches, {0}...", "Buonanotte, {0}...", "Bonne nuit, {0}..."],
+    "Boa noite, Lúcia.": ["Good night, Lucy.", "Buenas noches, Lucía.", "Buonanotte, Lucia.", "Bonne nuit, Lucie."],
+    "Sabia que essa é a minha parte preferida do domingo? Você aqui do meu lado, o café, o Grão...": ["You know this is my favorite part of Sunday? You here by my side, the coffee, Grão...", "¿Sabías que esta es mi parte favorita del domingo? Tú aquí a mi lado, el café, Grão...", "Lo sai che questa è la mia parte preferita della domenica? Tu qui accanto a me, il caffè, Grão...", "Tu sais que c’est mon moment préféré du dimanche ? Toi à côté de moi, le café, Grão..."],
+    "Eu podia ficar assim a noite inteira...": ["I could stay like this all night...", "Podría quedarme así toda la noche...", "Potrei restare così tutta la notte...", "Je pourrais rester comme ça toute la nuit..."],
+    "A-ah... você tá pertinho, hein? N-não que eu esteja reclamando...": ["O-oh... you’re pretty close, huh? N-not that I’m complaining...", "A-ah... estás muy cerquita, ¿eh? N-no es que me queje...", "O-oh... sei proprio vicino, eh? N-non che mi stia lamentando...", "O-oh... tu es tout près, hein ? C-ce n’est pas que je me plaigne..."],
   };
   for (const k of Object.keys(TR)) if (!I18N[k]) I18N[k] = TR[k];
   const fem = () => PERSONAGEM.genero === 'F';
@@ -544,6 +572,12 @@
         if (m.cabecaLigada) { usarCabeca(m, -0.3); m.cabeca.rotation.x = 0.12; } A.nmTilt = true;
         return true;
       }
+      if (g === 'ombro') {                                              // (7.5.11) sentada, encostando a cabeça no ombro de quem está do lado (A.ladoOmbro: ±1)
+        const ld = A.ladoOmbro || 1; m.corpo.rotation.z = ld * 0.2;
+        for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 0.5; b.rotation.x = s * 0.42; usarCotovelo(b, 0, 0.55); }
+        if (m.cabecaLigada) { usarCabeca(m, -0.12); m.cabeca.rotation.z = ld * 0.28; } A.nmTilt = true;
+        return true;
+      }
       if (g === 'oferece') {                                            // estendendo a caixinha de brigadeiro com as duas mãos
         for (const [b, s] of [[m.bracoE, -1], [m.bracoD, 1]]) { b.rotation.z = 1.0; b.rotation.x = s * 0.36; usarCotovelo(b, 0, 0.45); }
         if (A.caixa) A.caixa.rotation.z = -(1.0 + 0.45);
@@ -609,21 +643,29 @@
       d.conviteCasa.feito = true;
       if (eraLivre) { s.modo = 'cena'; hud(true); s.jog.andando = false; s.jog.correndo = false; }
       plim(); await esperar(700);
-      const tarde = api.empregoEscolhido() === 'mercado';               // o turno do mercado vai até as 22h
-      const hora = tarde ? 22.25 : 19;
+      // (7.5.11) o encontro na casa dela é no DOMINGO às 19h (o domingo que vem; se o convite chega num domingo, é hoje à noite).
+      //   No domingo ninguém trabalha no mercado/café; o pizzaiolo pede para o Mário liberar (liberado, como nos outros encontros).
+      const hoje = d.dia || 1, ds = api.diaSemanaDe ? api.diaSemanaDe(hoje) : (((hoje - 1) % 7) + 7) % 7, k = (6 - ds + 7) % 7;
+      const hora = 19, pizzaiolo = api.empregoEscolhido() === 'pizzaria', namora = !!(api.namorando && api.namorando());
       const C = abrirChat(T('Lúcia Alves')); let grosso = false;
       try {
-        await C.ela(T('Bom dia!'));
-        await C.ela(T('Ontem foi muito divertido! Obrigada pela noite.'));
-        await C.ela(tarde ? T('Quer vir aqui em casa hoje, depois do seu turno? Eu faço um bolo e passo um café pra gente. Umas 22h15?') : T('Quer vir aqui em casa hoje à noite? Eu faço um bolo e passo um café pra gente. Às 19h?'));
-        const ops = [T('Claro! Vou sim.'), T('Só se tiver bolo de chocolate, hein!'), T('Pode ser, não tenho nada melhor pra fazer mesmo.')];
+        await C.ela(namora ? T('Bom dia, amor!') : T('Bom dia!'));
+        await C.ela(namora ? T('Ontem foi perfeito. Já tô com saudade.') : T('Ontem foi muito divertido! Obrigada pela noite.'));
+        if (k === 0) await C.ela(namora ? T('Vem aqui em casa hoje à noite? Domingo é dia de bolo da vó e café passado na hora... e de ficar agarradinho no sofá. Às 19h?') : T('Quer vir aqui em casa hoje à noite? Domingo é dia de bolo da vó e café passado na hora. Às 19h?'));
+        else await C.ela(namora ? T('Vem aqui em casa no domingo? Eu faço o bolo da minha vó, passo um café... e a gente fica agarradinho no sofá. Às 19h?') : T('Quer vir aqui em casa no domingo? Eu faço o bolo da minha vó e passo um café pra gente. Às 19h?'));
+        const ops = [namora ? T('Claro, amor! Não perco por nada.') : T('Claro! Vou sim.'), T('Só se tiver bolo de chocolate, hein!'), T('Pode ser, não tenho nada melhor pra fazer mesmo.')];
         const r = await C.escolher(ops); await C.eu(ops[r]);
         if (r === 2) { await C.ela(T('Nossa... quanta empolgação. Tá, combinado então.')); grosso = true; }
-        else await C.ela(r === 1 ? T('Haha, vai ter! Combinado então. O Grão vai adorar te conhecer.') : T('Combinado! O Grão vai adorar te conhecer.'));
+        else await C.ela(r === 1 ? T('Haha, vai ter! Combinado então. O Grão vai adorar te conhecer.') : namora ? T('Eba! Então tá marcado. O Grão vai adorar te conhecer.') : T('Combinado! O Grão vai adorar te conhecer.'));
+        if (pizzaiolo) {
+          await C.ela(T('Ah... mas domingo à noite você trabalha na pizzaria, né?'));
+          await C.eu(T('Eu peço pro Mário me liberar. Depois eu pago esse dia.'));
+          await C.ela(namora ? ((typeof PERSONAGEM !== 'undefined' && PERSONAGEM.genero === 'F') ? T('Ai, você é a melhor! ❤') : T('Ai, você é o melhor! ❤')) : T('Então tá! Te espero.'));
+        }
         await C.fechar();
       } catch (e) { console.error(e); C.remover(); }
       if (grosso) api.grosseria('lucia');
-      d.encontroLucia = { lugar: 'casaLucia', dia: d.dia || 1, hora, liberado: false };
+      d.encontroLucia = { lugar: 'casaLucia', dia: hoje + k, hora, liberado: pizzaiolo };
       api.gravar(d.ponto || 'chegada');
       if (eraLivre && S() && S().modo === 'cena') api.liberar();
       try { api.mostrarAgendaEncontro(); } catch (e) { /* ok */ }
@@ -983,13 +1025,28 @@
     }
     const G_ = (k) => G(k);
 
+    // (7.5.11) no sofá: chegar mais perto dela (ou, namorando, puxar ela para perto). Com corações de sobra (ou namorando) ela encosta a
+    //   cabeça no seu ombro e saem corações; antes disso ela fica tímida, mas gosta (+2).
+    async function chegarPerto(J, L, namora) {
+      const muito = namora || api.Amizade.valor('lucia') >= (api.BEIJO_MIN || 60);
+      cam({ px: 1.35, py: 1.3, pz: 2.35, tx: 1.4, ty: 0.62, tz: -0.85 });
+      const lx0 = L.x; L.x = lx0 + (J.x - lx0) * 0.35;                   // ela escorrega um pouco no sofá, para o lado dele
+      if (muito) { L.ladoOmbro = -1; L.gesto = 'ombro'; api.coracoes((L.x + J.x) / 2, 1.2, (L.z + J.z) / 2); await esperar(900); }   // ela senta à direita dele no sofá: inclina para a esquerda
+      else { L.gesto = 'timida'; await esperar(600); }
+      if (namora) await fala('lucia', T('Sabia que essa é a minha parte preferida do domingo? Você aqui do meu lado, o café, o Grão...'));
+      else if (muito) await fala('lucia', T('Eu podia ficar assim a noite inteira...'));
+      else await fala('lucia', T('A-ah... você tá pertinho, hein? N-não que eu esteja reclamando...'));
+      api.Amizade.somar('lucia', 2); Dialogo.esconder(); await esperar(700);
+      L.gesto = null; L.x = lx0; cam({ px: 1.5, py: 1.55, pz: 3.0, tx: 1.5, ty: 0.42, tz: -0.85 });
+    }
     async function visitaCasa(E) {
       if (M.rodando) return; M.rodando = true;
       const s = S(), d = s.dados, J = s.jog;
       try {
         comecar(); api.encontroFeito(); api.gravar('chegada');
         const { L: Lf } = await naPorta(E, ROUPA_CASA);
-        await fala('lucia', T('Oi! Entra, entra! Não repara a bagunça.')); Dialogo.esconder();
+        const namora = !!(api.namorando && api.namorando());              // (7.5.11) namorando: as falas dela deixam isso claro
+        await fala('lucia', namora ? T('Oi, amor! Entra, entra! Não repara a bagunça.') : T('Oi! Entra, entra! Não repara a bagunça.')); Dialogo.esconder();
         await preto(true, 600);
         api.soltarLuciaEncontro(Lf); M.L = null;
         M.visita = true; s.manterPreto = true;
@@ -1002,7 +1059,7 @@
         L.yawAlvo = L.yaw = yawPara(J.x - L.x, J.z - L.z) + 0.6;
         cam({ px: 0.7, py: 1.6, pz: s.dentro.entrada.z - 2.6, tx: 0.3, ty: 1.0, tz: s.dentro.entrada.z - 0.1 });
         await preto(false, 700); await esperar(400);
-        await fala('lucia', T('Senta aí no sofá que eu já trago o café e o bolo!')); Dialogo.esconder();
+        await fala('lucia', namora ? T('Senta aí no sofá, amor, que eu já trago o café e o bolo!') : T('Senta aí no sofá que eu já trago o café e o bolo!')); Dialogo.esconder();
         cam(camGeral);
         // ele vai para o sofá; ela vai para o balcão da cozinha
         const pJ = andar(J, [[0.35, 0.05], [C.sofaJ.x, C.sofaJ.z + 0.5]], 1.4);
@@ -1053,10 +1110,12 @@
         d.sabeConfeitaria = true;
         Dialogo.esconder();
         // ficar mais um pouco (uma vez: as histórias do Grão, os dois rindo) ou ir embora
-        let ficou = false;
+        let ficou = false, chegou = false;
         for (;;) {
-          const ops = [T('Bom... já estou indo.')]; if (!ficou) ops.push(T('Ficar mais um pouco'));
-          const r = await Escolha.mostrar(T('O que você faz?'), ops);
+          const ops = [[0, T('Bom... já estou indo.')]]; if (!ficou) ops.push([1, T('Ficar mais um pouco')]);
+          if (!chegou) ops.push([2, namora ? T('Puxar ela para perto') : T('Chegar mais perto dela')]);   // (7.5.11) um momento de romance no sofá
+          const ri = await Escolha.mostrar(T('O que você faz?'), ops.map((o) => o[1])), r = ops[ri] ? ops[ri][0] : 0;
+          if (r === 2) { chegou = true; await chegarPerto(J, L, namora); continue; }
           if (r !== 1) break;
           ficou = true; await preto(true, 400);
           d.hora = Math.min(23.4, d.hora + 0.75);
@@ -1070,7 +1129,7 @@
         }
         await fala('jog', T('Bom... já estou indo.'));
         await fala('lucia', T('Ah, já? Passou rápido demais...'));
-        await fala('lucia', G('Obrigada por ter vindo. Volta mais vezes, tá? O Grão vai cobrar.'));
+        await fala('lucia', namora ? T('Esse foi o melhor domingo em muito tempo. Volta logo, tá? Eu e o Grão vamos ficar com saudade.') : G('Obrigada por ter vindo. Volta mais vezes, tá? O Grão vai cobrar.'));
         Dialogo.esconder();
         d.visitouCasa = true; d.conviteCasa = null; d.encontroLucia = null; d.encontros = Math.max(d.encontros | 0, 1) + 1;
         await preto(true, 900);
@@ -1096,15 +1155,24 @@
       L.yaw = L.yawAlvo = yawPara(1, sg * 0.75); J.yaw = J.yawAlvo = yawPara(-1, sg * 0.75);   // um de frente para o outro, abertos para a câmera
       cam({ px: fx, py: 1.75, pz: fz + sg * 4.4, tx: fx, ty: 0.95, tz: fz });   // de frente para a porta
       await preto(false, 900); await esperar(300);
-      const r = await Escolha.mostrar(T('Como você se despede?'), [T('Abraçar'), T('Toca aqui')]);
-      L.yaw = L.yawAlvo = 0; J.yaw = J.yawAlvo = Math.PI;                  // para o abraço e o toca aqui: de frente um para o outro
+      // (7.5.11) a despedida agora tem o beijo, como nos outros encontros (com BEIJO_MIN corações ou namorando; antes disso ela ainda não quer)
+      const namora = !!(api.namorando && api.namorando()), podeBeijo = namora || api.Amizade.valor('lucia') >= (api.BEIJO_MIN || 60);
+      const r = await Escolha.mostrar(T('Como você se despede?'), [T('Abraçar'), T('Beijar'), T('Toca aqui')]);
+      L.yaw = L.yawAlvo = 0; J.yaw = J.yawAlvo = Math.PI;                  // para o abraço, o beijo e o toca aqui: de frente um para o outro
+      let beijou = false;
       if (r === 0) {                                                      // abraço: as cabeças passam uma ao lado da outra (sem atravessar)
         L.x = fx - api.ABRACO_D / 2; J.x = fx + api.ABRACO_D / 2; L.z = fz + 0.13; J.z = fz + sg * 0.05 - 0.13; L.gesto = J.gesto = 'abraco'; await esperar(2300);
+      } else if (r === 1 && podeBeijo) {                                  // o beijo (corações e a mariposa, como no encontro do restaurante)
+        const bd = api.BEIJO_D || 0.66; L.x = fx - bd / 2; J.x = fx + bd / 2; L.z = J.z = fz; L.gesto = J.gesto = 'beijo'; api.coracoes(fx, 1.75, fz); if (api.mariposa) api.mariposa(); await esperar(2600); beijou = true;
+      } else if (r === 1) {                                               // ainda não: ela sorri sem graça e dá um abraço
+        L.yaw = L.yawAlvo = yawPara(1, sg * 0.75); J.yaw = J.yawAlvo = yawPara(-1, sg * 0.75); L.gesto = 'timida'; await fala('lucia', T('Eu quero... mas ainda não.')); Dialogo.esconder(); L.gesto = null;
+        L.yaw = L.yawAlvo = 0; J.yaw = J.yawAlvo = Math.PI; L.x = fx - api.ABRACO_D / 2; J.x = fx + api.ABRACO_D / 2; L.z = fz + 0.13; J.z = fz + sg * 0.05 - 0.13; L.gesto = J.gesto = 'abraco'; await esperar(2000);
       } else { L.x = fx - 0.45; J.x = fx + 0.45; L.gesto = J.gesto = 'tocaAqui'; L.t = J.t = 0; await esperar(1300); L.gesto = J.gesto = 'ri'; await esperar(900); }
       L.gesto = J.gesto = null; L.x = fx - 0.5; J.x = fx + 0.5; L.z = fz; J.z = fz + sg * 0.05;
       L.yawAlvo = yawPara(1, sg * 0.75); J.yawAlvo = yawPara(-1, sg * 0.75);
-      await fala('lucia', Tf('Boa noite, {0}! Até amanhã no café.', api.nomeJog()));
-      await fala('jog', T('Boa noite, Lúcia!'));
+      if (namora) { await fala('lucia', beijou ? T('Boa noite, amor. Sonha comigo, tá?') : T('Boa noite, amor! Até amanhã no café.')); await fala('jog', T('Boa noite, amor!')); }
+      else if (beijou) { await fala('lucia', Tf('Boa noite, {0}...', api.nomeJog())); await fala('jog', T('Boa noite, Lúcia.')); }
+      else { await fala('lucia', Tf('Boa noite, {0}! Até amanhã no café.', api.nomeJog())); await fala('jog', T('Boa noite, Lúcia!')); }
       Dialogo.esconder();
       L.gesto = 'acena'; await esperar(1100); L.gesto = null;
       await andar(L, [[C.x, C.z + sg * 0.3]], 1.3);
@@ -1121,7 +1189,7 @@
       if (M.zona) esconderPerto(M.zona.x, M.zona.z, M.zona.r, M.zona.menos);
       for (const A of M.ocultos) { s.meus.delete(A.m); if (A.blob) A.blob.visible = false; }
       if (M.L && M.L.nmSome) { s.meus.delete(M.L.m); M.L.blob.visible = false; }
-      for (const A of [M.L, s.jog]) if (A && A.nmTilt && A.gesto !== 'timida') { A.m.corpo.rotation.x = 0; if (A.m.cabeca) A.m.cabeca.rotation.x = 0; A.nmTilt = false; }   // a pose da cidade não zera a inclinação de lado
+      for (const A of [M.L, s.jog]) if (A && A.nmTilt && A.gesto !== 'timida' && A.gesto !== 'ombro') { A.m.corpo.rotation.x = 0; A.m.corpo.rotation.z = 0; if (A.m.cabeca) { A.m.cabeca.rotation.x = 0; A.m.cabeca.rotation.z = 0; } A.nmTilt = false; }   // a pose da cidade não zera a inclinação de lado
       if (s.jog && s.jog.nmSome) { s.meus.delete(s.jog.m); s.jog.blob.visible = false; if (s.jog.anel) s.jog.anel.visible = false; }
       if (M.roda) tickRoda(dt);
       if (M.reflexo) { const mp = M.reflexo.material.map; mp.offset.y = (mp.offset.y + dt * 0.18) % 1; M.reflexo.material.opacity = 0.5 + Math.sin(s.t * 2.3) * 0.12; }
