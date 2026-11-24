@@ -158,6 +158,11 @@ ARQUIVOS
                           trompete) e blues shuffle (♩96, vibrafone). A MPB ficou mais calma (♩78, arpejo, agogô só no refrão). Volumes medidos na música
                           inteira e igualados (NIVEL). Corrigido: a melodia do jazz saía toda junta no começo (faltava o t0). GRAF: qualidade gráfica
                           (resolução interna), distância de renderização e a câmera da cidade, guardados no aparelho ('futebolJs.graficos.v1').
+                          (7.6.2) FALTA com FORÇA de verdade (fkCalcular/FK2): não tem mais mira no gol. Arraste para os lados = direção, a barra
+                          é o efeito e SEGURE o CHUTAR (botão, Enter/Espaço ou o botão do controle) para encher a barra de FORÇA; solte para bater.
+                          Quanto mais força, mais rápida e mais alta a bola sai: o pontilhado começa rente ao chão e vai subindo enquanto segura;
+                          passou da marca vermelha = isola. A bola segue a física normal (velocidade, subida, curva e topspin), sem trajeto
+                          calculado para um alvo; o texto de cima diz se assim vai no gol, na barreira, para fora ou se está arriscado.
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -176,6 +181,9 @@ ARQUIVOS
                           2h), a cena de ir para casa às 3h/4h e ele acorda às 7h/9h, ou mais cedo se tiver jogo da várzea/torneio ou encontro de manhã.
                           (7.6.1) CONFIGURAÇÕES na pausa da cidade: volumes (os mesmos do menu), qualidade gráfica (mais ou menos pixelado), distância
                           de renderização (névoa e fim da câmera) e a câmera (distância, altura e sensibilidade para girar), com botões de padrão.
+                          (7.6.2) Quem desvia do jogador (pedestres e quem tem rotina) não desliza mais de lado como no gelo (corpoSegueOPasso): o
+                          corpo vira para onde ele está andando de verdade, as pernas andam na velocidade real do desvio e o rosto olha para você
+                          quando passa perto (até 3 m).
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   falas.js .............. as falas de amizade dos personagens: 15 de amizade negativa, 15 de amigos (50 ou mais) e 3 de corte
                           (-80) para cada um, e as gerais de preço mais caro (-25) e recusa (-50), nos 5 idiomas (baixado pela cidade)

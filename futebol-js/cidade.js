@@ -4107,7 +4107,7 @@
       m.pernaD.rotation.z = pr; m.pernaE.rotation.z = -0.15; m.bracoE.rotation.x = 0.7; m.bracoD.rotation.x = -0.5; m.bracoE.rotation.z = 0.3;
       r.position.y = A.y;
     } else if (anda && (!A.goleiro || A.poseFn || A.tipo === 'morador')) {   // (6.6.19) o goleiro andando (indo/voltando do campo) anda de verdade
-      const k = A.correndo ? 1.1 : 0.75; A.fase += dt * A.vel * (A.correndo ? 2.9 : 4.6); const s = Math.sin(A.fase);
+      const k = A.correndo ? 1.1 : 0.75; A.fase += dt * (A.velAnim || A.vel) * (A.correndo ? 2.9 : 4.6); const s = Math.sin(A.fase);   // (7.6.2) velAnim: a velocidade de verdade quando desvia
       m.pernaE.rotation.z = s * k; m.pernaD.rotation.z = -s * k; m.bracoE.rotation.z = -s * k * 0.8; m.bracoD.rotation.z = s * k * 0.8;
       if (A.correndo) { usarCotovelo(m.bracoE, 0, 1.3); usarCotovelo(m.bracoD, 0, 1.3); }
       r.position.y = A.y + Math.abs(Math.cos(A.fase)) * (A.correndo ? 0.07 : 0.025);
@@ -4335,6 +4335,29 @@
       return { ux: wx, uz: wz };
     }
     return d0 > DJ.RAIO + 0.05 ? null : { parado: true };
+  }
+  // (7.6.2) O CORPO SEGUE O PASSO: quem anda pela hora (Lúcia, Cadu, Rosa, o povo que vai e volta de casa) desviava do jogador só
+  //   empurrando a posição para o lado — o corpo continuava reto na rota e a passada no ritmo de sempre (deslizava de lado, "no gelo").
+  //   Agora, enquanto desvia (ou fica para trás, ou apressa o passo depois), o corpo VIRA para a direção em que ele de fato está indo
+  //   (a soma do caminho com o passo de lado), a passada acompanha a velocidade de verdade (mais devagar = passos mais lentos) e a
+  //   cabeça olha para o jogador enquanto ele está perto — e depois volta a olhar para a frente.
+  function corpoSegueOPasso(A, dt) {
+    const px = A._mvx, pz = A._mvz; A._mvx = A.x; A._mvz = A.z;
+    const fim = () => { A.velAnim = null; };
+    if (px == null || !(dt > 0) || A.sentado || A.deitado || A.oculto || !A.andando) return fim();
+    const dx = A.x - px, dz = A.z - pz, v = Math.hypot(dx, dz) / dt;
+    if (v > 9) return fim();                                              // pulou de lugar (surgiu, teleporte)
+    const k = Math.min(1, dt * 9); A._svx = (A._svx || 0) + (dx / dt - (A._svx || 0)) * k; A._svz = (A._svz || 0) + (dz / dt - (A._svz || 0)) * k;
+    const desvia = A.desvJogT > 0 || Math.abs(A.offDJ || 0) > 0.04 || A.atrasoM > 0.05 || A.pressaT > 0 || A.passaJogT > 0;
+    if (!desvia) return fim();
+    const sv = Math.hypot(A._svx, A._svz);
+    if (sv > 0.25 && (A.tipo === 'rua' || A.tipo === 'luciaRua')) A.yawAlvo = Math.atan2(-A._svz, A._svx);   // vira para onde está indo de verdade
+    A.velAnim = Math.max(0.6, sv);                                       // a passada no ritmo de verdade
+    const J = S.jog;
+    if (J && A.desvJogT > 0 && Math.hypot(J.x - A.x, J.z - A.z) < 3) {   // olha para o jogador enquanto desvia dele
+      const ang = Math.atan2(-(J.z - A.z), J.x - A.x), rel = ((ang - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+      A.cabY = Math.max(-0.75, Math.min(0.75, rel));
+    }
   }
   // o passo apressado depois de atravessar (desacelera suave até o normal)
   function pressaNPC(A, dt) { if (!(A.pressaT > 0)) return 1; A.pressaT -= dt; return 1 + (DJ.PRESSA - 1) * Math.min(1, Math.max(0, A.pressaT) / 0.8); }
@@ -4571,6 +4594,7 @@
       else if (A.tipo === 'racha') { if (A.conversa) A.andando = false; else if (A.dest && A.dest.tipo === 'bola') tickBolaNPC(A, dt); else A.andando = false; }   // conversando: para de bater bola
       else if (A === S.lucia && A.tipo === 'parado' && S.dentro && S.dentro.nome === 'cafeteria') tickGarcom(A, dt);   // (6.6.18) a Lúcia atende as mesas
       if (A === S.valdemar && S.loja) tickLoja(dt);
+      corpoSegueOPasso(A, dt);                                          // (7.6.2) desviando: o corpo vira para onde vai e a passada segue a velocidade
       const dy = ((A.yawAlvo - A.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; A.yaw += dy * Math.min(1, dt * 8);
       if (!A.sentado) { const ty = altura(A.x, A.z); A.y += (ty - A.y) * Math.min(1, dt * 18); }
       // LONGE (mais de ~32 m): no lugar do boneco completo (~16 peças) aparece um boneco de 1 peça e a pose nem é calculada

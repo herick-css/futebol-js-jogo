@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.1';
+const VERSAO_JOGO = '7.6.2';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -9705,6 +9705,11 @@ function updateCobrador(dt) {
 //   · a linha pontilhada mostra o caminho da bola (fica VERMELHA onde ela bateria na barreira ou sairia), e CHUTAR bate.
 //   A força vem do atributo FORÇA (de longe, um jogador fraco não alcança a mira alta) e o tamanho da curva do atributo EFEITO;
 //   a pontaria (CHUTE/FINALIZAÇÃO, confiança, ressaca...) decide o quanto a bola de verdade sai do pontilhado.
+// (7.6.2) A FORÇA É SUA, COMO NO CHUTE: nada de a bola "procurar" um alvo (a conta que entortava o caminho para cair na mira deixava a
+//   batida esquisita). Agora você escolhe a DIREÇÃO (arrastando para os lados), o EFEITO (a barra) e a FORÇA: SEGURE o CHUTAR — a
+//   força enche e o pontilhado sai do chão e vai subindo (mais força = mais rápida e mais alta); SOLTE para bater. Passou do máximo,
+//   ela isola. A bola sai com essa velocidade, essa subida e esse efeito e segue só a física (passoBola), igual ao pontilhado —
+//   menos o erro do jogador.
 // =====================================================================================================================
 const FK = { DOTS: 30, CURVA: 1.05, TOPSPIN: -0.22, DIST_MAX: 36 };
 function faltaMiraPossivel(S) {
@@ -9736,45 +9741,30 @@ function fkSimular(b0, a, vy, v, ss, sv, guardar) {
   }
   return { z: b.z, y: b.y, t: 3.2, pts, chegou: false };
 }
-// a força e a curva que ESTE jogador consegue dar (os atributos) — o pontilhado já mostra isso
-function fkParametros(u, F) {
-  const d = Math.hypot(HALF_L - F.bola.x, F.tz - F.bola.z);
-  const fF = clamp(fh(u, 'forca'), 0.5, 1.45), fE = clamp(Atributos.fator('efeito'), 0.45, 1.45);
-  const v = clamp(13 + d * 0.42, 18, 27) * clamp(0.8 + 0.2 * fF, 0.7, 1.1);
-  return { v, ss: -F.curva * FK.CURVA * fE, sv: FK.TOPSPIN * clamp(fE, 0.6, 1.2) };   // efeito > 0 (barra para a direita) = curva para a direita
+// a força e a curva que ESTE jogador consegue dar (os atributos): com a força p (0 a 1, até 1,15 passando do ponto) a bola sai mais
+//   rápida E mais alta (o pé entra mais por baixo) — com pouca força ela vai rasteira, com muita ela sobe demais
+const FK2 = { V0: 11, V1: 19, VY0: 0.4, VY1: 9.4, EXP_VY: 1.35, ENCHE: 0.62, ISOLA: 1.15 };
+function fkParametros(u, F, p) {
+  const fF = clamp(fh(u, 'forca'), 0.5, 1.45), fE = clamp(Atributos.fator('efeito'), 0.45, 1.45), q = clamp(p, 0, FK2.ISOLA);
+  const v = (FK2.V0 + FK2.V1 * q) * clamp(0.82 + 0.18 * fF, 0.75, 1.08), vy = FK2.VY0 + FK2.VY1 * Math.pow(q, FK2.EXP_VY);
+  return { v, vy, ss: -F.curva * FK.CURVA * fE, sv: FK.TOPSPIN * clamp(fE, 0.6, 1.2) * clamp(q, 0.3, 1) };   // efeito > 0 (barra para a direita) = curva para a direita
 }
-// acha a direção e a subida que levam a bola até a mira (Newton em 2 variáveis, a física de verdade da bola)
-function fkResolver(u, F) {
-  const P = fkParametros(u, F), b0 = F.bola;
-  // o chute inicial: a conta de balística (com o mergulho do efeito de cima) — com subida de menos a bola chega rolando e a conta não anda
-  const dist0 = Math.hypot(HALF_L - b0.x, F.tz - b0.z), t0 = dist0 / (P.v * 0.93), gEf = CONFIG.GRAVITY - P.sv * CONFIG.LIFT;
-  let a = Math.atan2(F.tz - b0.z, HALF_L - b0.x), vy = clamp((F.ty - CONFIG.BALL_R + 0.5 * gEf * t0 * t0) / t0, 1, 12), r = null;
-  for (let it = 0; it < 9; it++) {
-    r = fkSimular(b0, a, vy, P.v, P.ss, P.sv);
-    const ez = r.z - F.tz, ey = r.y - F.ty;
-    if (Math.abs(ez) < 0.02 && Math.abs(ey) < 0.02) break;
-    const ra = fkSimular(b0, a + 0.003, vy, P.v, P.ss, P.sv), rv = fkSimular(b0, a, vy + 0.06, P.v, P.ss, P.sv);
-    const j11 = (ra.z - r.z) / 0.003, j12 = (rv.z - r.z) / 0.06, j21 = (ra.y - r.y) / 0.003, j22 = (rv.y - r.y) / 0.06;
-    const det = j11 * j22 - j12 * j21;
-    if (Math.abs(det) < 1e-6) { if (Math.abs(j22) < 1e-4 && ey < 0) { vy = Math.min(14, vy + 1.2); continue; } break; }   // chegou rolando: sobe mais
-    let da = (ez * j22 - ey * j12) / det, dv = (j11 * ey - j21 * ez) / det;
-    da = clamp(da, -0.15, 0.15); dv = clamp(dv, -3, 3);
-    a -= da; vy = clamp(vy - dv, 0.3, 14);
-  }
-  const sim = fkSimular(b0, a, vy, P.v, P.ss, P.sv, true);
-  F.sol = { a, vy, v: P.v, ss: P.ss, sv: P.sv, chega: sim.chegou && Math.abs(sim.z - F.tz) < 0.35 && Math.abs(sim.y - F.ty) < 0.35 };
-  // onde ela bateria na barreira (a altura de quem pula) ou sairia: dali em diante o pontilhado fica vermelho
+// o caminho de verdade (a mesma física da bola) com a direção, o efeito e a força escolhidos — e onde ela cruza a linha do gol
+function fkCalcular(u, F) {
+  const p = F.hold || F.p != null ? (F.p || 0) : F.pPrevia, P = fkParametros(u, F, p), b0 = F.bola;
+  const sim = fkSimular(b0, F.a, P.vy, P.v, P.ss, P.sv, true);
+  F.sol = { a: F.a, vy: P.vy, v: P.v, ss: P.ss, sv: P.sv };
   const W = (G.sp && G.sp.wall) || [], altB = 2.2;                      // a barreira pulando bloqueia até 2,15 m (montarBarreira/checkBallContacts)
   let corte = sim.pts.length;
   for (let i = 1; i < sim.pts.length && corte === sim.pts.length; i++) {
     const q = sim.pts[i];
     for (const w of W) if (Math.hypot(q.x - w.x, q.z - w.z) < 0.62 && q.y < altB) { corte = i; break; }
   }
-  const fim = sim.pts[sim.pts.length - 1], dentro = sim.chegou && Math.abs(fim.z) < GOAL_HALF - 0.05 && fim.y < CONFIG.GOAL_H - 0.03;
-  F.pts = sim.pts; F.corte = corte; F.dentro = dentro; F.barreira = corte < sim.pts.length;
-  // ARRISCADO (amarelo): passa raspando a barreira ou a mira está colada na trave/no travessão — o erro do chute pode estragar
+  const fim = sim.pts[sim.pts.length - 1], dentro = sim.chegou && Math.abs(fim.z) < GOAL_HALF - 0.05 && fim.y < CONFIG.GOAL_H - 0.03 && fim.y > 0;
+  F.pts = sim.pts; F.corte = corte; F.dentro = dentro; F.barreira = corte < sim.pts.length; F.fim = fim; F.chegou = sim.chegou;
+  F.tz = fim.z; F.ty = Math.max(0.12, fim.y);
   let folga = 9; for (const q of sim.pts) for (const w of W) if (Math.hypot(q.x - w.x, q.z - w.z) < 0.9) folga = Math.min(folga, q.y - altB);
-  F.arriscado = !F.barreira && (folga < 0.4 || Math.abs(F.tz) > GOAL_HALF - 0.5 || F.ty > CONFIG.GOAL_H - 0.35 || F.ty < 0.35);
+  F.arriscado = !F.barreira && (folga < 0.4 || Math.abs(fim.z) > GOAL_HALF - 0.5 || fim.y > CONFIG.GOAL_H - 0.35);
 }
 function fkAtualizarMalhas(F) {
   const M = fkGarantirMalhas(), P = F.pts || [], n = FK.DOTS;
@@ -9783,9 +9773,9 @@ function fkAtualizarMalhas(F) {
     if (!P.length || F.chutou) { m.visible = false; continue; }
     const q = P[k]; m.position.set(q.x, q.y, q.z); m.visible = true;
     const ruim = k >= F.corte || (!F.dentro && i > n * 0.8);
-    m.material.color.setHex(ruim ? 0xff4d4d : 0xffffff); m.scale.setScalar(1 - i / n * 0.35);
+    m.material.color.setHex(ruim ? 0xff4d4d : 0xffffff); m.scale.setScalar((1 - i / n * 0.35) * (F.hold ? 1 : 0.8)); m.material.opacity = F.hold ? 0.95 : 0.55;   // (7.6.2) antes de segurar: a prévia, mais fraca
   }
-  M.anel.visible = M.cruz.visible = !F.chutou;
+  M.anel.visible = M.cruz.visible = !F.chutou && !!F.chegou;
   M.anel.position.set(HALF_L - 0.05, F.ty, F.tz); M.cruz.position.copy(M.anel.position);
   const cor = !F.dentro || F.barreira ? 0xff4d4d : F.arriscado ? 0xffd23a : 0x6cff6c;   // verde: boa · amarelo: arriscada · vermelho: barreira/fora
   M.anel.material.color.setHex(cor); for (const c of M.cruz.children) c.material.color.setHex(cor);
@@ -9810,13 +9800,18 @@ function fkUI() {
 #faltaUI .fkInfo { font: 600 11px/1.3 var(--font-body); color: #fff0c8; flex: 1; }
 #faltaUI .fkBtns { display: flex; gap: 8px; }
 #faltaUI .fkBtns button { height: 40px; padding: 0 16px; font: 700 13px/1 var(--font-display); letter-spacing: .06em; border: 3px solid #2a1206; cursor: pointer; }
-#faltaUI .fkChutar { background: #f0a020; color: #2a1206; flex: 1; }
+#faltaUI .fkChutar { background: #f0a020; color: #2a1206; flex: 1; touch-action: none; }
+#faltaUI .fkChutar.segura { background: #ffd23a; transform: translateY(2px); }
+#faltaUI .fkForca { position: relative; flex: 1; height: 16px; background: #3a3a3a; border: 2px solid #fff0c8; overflow: hidden; }
+#faltaUI .fkForca i { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: linear-gradient(90deg, #6cff6c, #f2c230 70%, #ff7a2a); }
+#faltaUI .fkForca b { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #ff4d4d; left: calc(100% / 1.15); }
 #faltaUI .fkPassar { background: #3a3a3a; color: #fff0c8; }
 body.faltaMira #joy, body.faltaMira #actions { visibility: hidden; }
 @media (max-height: 420px) { #faltaUI .fkTopo { top: 46px; font-size: 11px; } #faltaUI .fkBtns button { height: 34px; } #faltaUI .fkPainel { padding: 6px 8px; gap: 4px; } #faltaUI .fkTrilho { height: 22px; } }`;
   document.head.appendChild(css);
   el = document.createElement('div'); el.id = 'faltaUI'; el.hidden = true;
   el.innerHTML = '<div class="fkTopo"></div><div class="fkPainel"><div class="fkLinha"><span class="fkRot"></span><div class="fkTrilho"><div class="fkPino"></div></div></div>'
+    + '<div class="fkLinha"><span class="fkRot fkRotF"></span><div class="fkForca"><i></i><b></b></div></div>'
     + '<div class="fkLinha"><span class="fkInfo"></span><div class="fkBtns"><button type="button" class="fkPassar"></button><button type="button" class="fkChutar"></button></div></div></div>';
   ($('raizJogo') || document.body).appendChild(el);
   const painel = el.querySelector('.fkPainel'), trilho = el.querySelector('.fkTrilho');
@@ -9838,16 +9833,22 @@ body.faltaMira #joy, body.faltaMira #actions { visibility: hidden; }
   });
   const solta = (e) => { if (arrasto && e.pointerId === arrasto.id) arrasto = null; if (e.pointerId === arrastoEf) arrastoEf = null; };
   window.addEventListener('pointerup', solta); window.addEventListener('pointercancel', solta);
-  el.querySelector('.fkChutar').addEventListener('click', (e) => { e.stopPropagation(); faltaChutar(); });
+  // (7.6.2) CHUTAR: segure para a força (o pontilhado vai subindo), solte para bater
+  const bt = el.querySelector('.fkChutar');
+  bt.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); try { bt.setPointerCapture(e.pointerId); } catch (er) { /* nada */ } faltaSegurar({ toque: e.pointerId }); });
+  const soltaBt = (e) => { const F = G.kick && G.kick.faltaMira; if (F && F.hold && F.por && F.por.toque === e.pointerId) faltaChutar(); };
+  bt.addEventListener('pointerup', soltaBt); bt.addEventListener('pointercancel', soltaBt); bt.addEventListener('lostpointercapture', soltaBt);
+  bt.addEventListener('click', (e) => e.stopPropagation());
   el.querySelector('.fkPassar').addEventListener('click', (e) => { e.stopPropagation(); faltaPassar(); });
   return el;
 }
-// move a mira: dx/dy em pixels da tela (arrastando) — o lado na tela é o da câmera (direita na tela = direita no gol)
+// move a DIREÇÃO: dx em pixels da tela (arrastando) — o lado na tela é o da câmera (direita na tela = direita no gol). (7.6.2) A altura
+//   não se arrasta mais: quem levanta a bola é a força (segurando o CHUTAR).
 function fkMoverMira(F, dx, dy, pixels) {
-  const W = Math.max(320, AREA.w || innerWidth), H = Math.max(240, AREA.h || innerHeight);
-  const kz = pixels ? (GOAL_HALF * 2 + 4) / (W * 0.62) : 1, ky = pixels ? (CONFIG.GOAL_H + 1.2) / (H * 0.5) : 1;
-  F.tz = clamp(F.tz + dx * kz * fkLadoTela(), -(GOAL_HALF + 2.2), GOAL_HALF + 2.2);
-  F.ty = clamp(F.ty - dy * ky, 0.25, CONFIG.GOAL_H + 1.0);
+  const W = Math.max(320, AREA.w || innerWidth), dGol = Math.max(8, HALF_L - F.bola.x);
+  const ka = pixels ? Math.atan2(GOAL_HALF * 2 + 4, dGol) / (W * 0.62) : 1;
+  const a0 = Math.atan2(-F.bola.z, HALF_L - F.bola.x), abre = Math.atan2(GOAL_HALF + 6, dGol);
+  F.a = clamp(F.a + dx * ka * fkLadoTela(), a0 - abre, a0 + abre);
   F.sujo = true;
 }
 // +1 se, olhando da câmera, o z do mundo cresce para a DIREITA da tela
@@ -9857,50 +9858,71 @@ function fkLadoTela() {
 }
 function iniciarFaltaMira() {
   const S = G.sp, k = G.kick, u = user; if (!S || !k) return;
-  const lado = Math.sign(S.ballSpot.z) || 1;                             // a barreira fecha o lado da trave mais perto: começa no outro
-  k.faltaMira = { bola: { x: S.ballSpot.x, z: S.ballSpot.z }, tz: -lado * (GOAL_HALF - 0.9), ty: 1.75, curva: 0, sujo: true, chutou: false };
+  const lado = Math.sign(S.ballSpot.z) || 1, tz = -lado * (GOAL_HALF - 0.9);   // a barreira fecha o lado da trave mais perto: começa mirando o outro
+  k.faltaMira = { bola: { x: S.ballSpot.x, z: S.ballSpot.z }, a: Math.atan2(tz - S.ballSpot.z, HALF_L - S.ballSpot.x), tz, ty: 1.2, curva: 0, sujo: true, chutou: false,
+    p: null, pPrevia: 0.62, hold: false, por: null };
   k.aimed = true;
   hideKickUI();
   const el = fkUI(); el.hidden = false;
-  el.querySelector('.fkTopo').textContent = T('FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito');
-  el.querySelector('.fkRot').textContent = T('EFEITO');
-  el.querySelector('.fkChutar').textContent = T('CHUTAR');
+  el.querySelector('.fkRot').textContent = T('EFEITO'); el.querySelector('.fkRotF').textContent = T('FORÇA');
+  el.querySelector('.fkChutar').textContent = T('SEGURE PARA CHUTAR');
   el.querySelector('.fkPassar').textContent = T('PASSAR');
   const est = (f) => '★'.repeat(clamp(Math.round(f * 3), 1, 5));
   el.querySelector('.fkInfo').textContent = Tf('Força {0} · Efeito {1}', est(fh(u, 'forca')), est(Atributos.fator('efeito')));
   atualizarFaltaMira(0);
+}
+// começa a encher a força: por toque (o botão), tecla (a de chutar/Enter) ou controle (o botão do chute)
+function faltaSegurar(por) {
+  const F = G.kick && G.kick.faltaMira; if (!F || F.chutou || F.hold || G.state !== 'aim') return;
+  F.hold = true; F.p = 0; F.por = por; F.sujo = true;
+  const b = $('faltaUI') && $('faltaUI').querySelector('.fkChutar'); if (b) { b.classList.add('segura'); b.textContent = T('SOLTE PARA BATER'); }
+}
+function faltaAindaSegura(F) {
+  const P = F.por || {};
+  if (P.toque != null) return true;                                       // o botão avisa quando solta (pointerup)
+  if (P.tecla) return !!keys[P.tecla];
+  if (P.pad != null) return !!(Pad.agora && Pad.agora[P.pad]);
+  return false;
 }
 function atualizarFaltaMira(rdt) {
   const el = $('faltaUI');
   const F = G.kick && G.kick.faltaMira, ativo = !!F && !F.chutou && G.state === 'aim';
   if (!ativo) { if (el && !el.hidden) el.hidden = true; if (fkMalhas && fkMalhas.anel.visible) fkEsconderMalhas(); if (document.body.classList.contains('faltaMira')) document.body.classList.remove('faltaMira'); return; }
   if (!document.body.classList.contains('faltaMira')) document.body.classList.add('faltaMira');   // some o joystick e os botões de ação (a falta tem os dela)
-  // teclado/controle: setas (ou o analógico) movem a mira; Q/E (ou o analógico direito) mexem no efeito
-  let mx = 0, my = 0;
+  // teclado/controle: setas (ou o analógico) mudam a direção; Q/E (ou o analógico direito) mexem no efeito
+  let mx = 0;
   if (teclaSegurada('direita') || keys.ArrowRight) mx += 1; if (teclaSegurada('esquerda') || keys.ArrowLeft) mx -= 1;
-  if (teclaSegurada('cima') || keys.ArrowUp) my -= 1; if (teclaSegurada('baixo') || keys.ArrowDown) my += 1;
-  if (Pad.ativo && Pad.mag > 0.2) { mx += Pad.right; my -= Pad.up; }
-  if (mx || my) fkMoverMira(F, mx * 3.2 * rdt, my * 1.6 * rdt, false);
+  if (Pad.ativo && Pad.mag > 0.2) mx += Pad.right;
+  if (mx && !F.hold) { F.a += mx * 0.32 * rdt * fkLadoTela(); fkMoverMira(F, 0, 0, false); }
   let mc = (keys.KeyE ? 1 : 0) - (keys.KeyQ ? 1 : 0) + (Pad.ativo ? (Pad.rx || 0) : 0);
   if (Math.abs(mc) > 0.15) { F.curva = clamp(F.curva + mc * 1.2 * rdt, -1, 1); F.sujo = true; }
-  // o pino da barra do efeito
-  if (el) { const pino = el.querySelector('.fkPino'); if (pino) pino.style.left = ((F.curva + 1) / 2 * 100).toFixed(1) + '%'; }
-  if (F.sujo && performance.now() - (F.tSolve || 0) > 60) {           // (no máximo ~16 contas por segundo arrastando: celular)
-    F.sujo = false; F.tSolve = performance.now(); fkResolver(user, F);
-    const a = F.sol.a; G.kick.dirX = Math.cos(a); G.kick.dirZ = Math.sin(a);   // a corrida e a câmera seguem a direção da batida
-    const ox = -F.curva;                                                       // (o mesmo texto do toque na bola)
+  // a força: enche enquanto segura (o pontilhado vai subindo); soltou, bate; passou do ponto, isola sozinha
+  if (F.hold) {
+    F.p = Math.min(FK2.ISOLA, F.p + rdt * FK2.ENCHE); F.sujo = true;
+    if (!faltaAindaSegura(F) || F.p >= FK2.ISOLA) { faltaChutar(); return; }
+  }
+  if (el) {
+    const pino = el.querySelector('.fkPino'); if (pino) pino.style.left = ((F.curva + 1) / 2 * 100).toFixed(1) + '%';
+    const fill = el.querySelector('.fkForca i'); if (fill) fill.style.width = ((F.hold ? F.p : 0) / FK2.ISOLA * 100).toFixed(1) + '%';
+  }
+  if (F.sujo && (F.hold || performance.now() - (F.tSolve || 0) > 50)) {
+    F.sujo = false; F.tSolve = performance.now(); fkCalcular(user, F);
+    G.kick.dirX = Math.cos(F.a); G.kick.dirZ = Math.sin(F.a);             // a corrida e a câmera seguem a direção da batida
+    const ox = -F.curva;
     const txt = Math.abs(F.curva) < 0.06 ? T('Batida reta, sem efeito') : Tf('A bola {0}', T(ox > 0 ? 'curva para a esquerda' : 'curva para a direita'));
-    if (el) el.querySelector('.fkRot').textContent = T('EFEITO'), el.querySelector('.fkTopo').textContent = T('FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito') + ' — ' + txt
-      + (F.barreira ? ' · ' + T('assim bate na barreira!') : !F.dentro ? ' · ' + T('assim vai para fora') : F.arriscado ? ' · ' + T('arriscado!') : '');
+    const situ = F.hold ? (F.p > 1 ? T('forte demais: vai isolar!') : F.barreira ? T('assim bate na barreira!') : !F.dentro ? T('assim vai para fora') : F.arriscado ? T('arriscado!') : T('no gol!')) : '';
+    if (el) el.querySelector('.fkTopo').textContent = T('FALTA: arraste para os lados para a direção · a barra é o efeito · segure CHUTAR para a força (a bola sobe) e solte')
+      + ' — ' + txt + (situ ? ' · ' + situ : '');
   }
   fkAtualizarMalhas(F);
 }
 function faltaChutar() {
   const k = G.kick, F = k && k.faltaMira; if (!F || F.chutou || G.state !== 'aim') return;
-  if (F.sujo) { F.sujo = false; fkResolver(user, F); }
+  if (!F.hold) { faltaSegurar({ toque: null, tecla: null }); F.p = F.pPrevia; }   // (sem segurar: bate com a força da prévia)
+  F.hold = false; fkCalcular(user, F);
   F.chutou = true; fkEsconderMalhas(); const el = $('faltaUI'); if (el) el.hidden = true;
   try { Som.clique && Som.clique(); } catch (e) { /* sem som */ }
-  k.power = 0.78; k.faixa = 4; k.ox = -F.curva; k.oy = 0; k.spinChosen = true;
+  k.power = clamp(F.p, 0.2, 1); k.faixa = 4; k.ox = -F.curva; k.oy = 0; k.spinChosen = true;
   k.dirX = Math.cos(F.sol.a); k.dirZ = Math.sin(F.sol.a);
   executeUserKick();                                                       // a corrida até a bola (updateCobrador) e a batida (chuteDeFaltaMira)
 }
@@ -9917,7 +9939,7 @@ function chuteDeFaltaMira(k, u) {
   if (u.isUser && typeof Historia !== 'undefined' && Historia.emPartida()) f *= Espectros.precisao('chute');
   const erro = clamp(1.35 - 0.35 * f, 0.6, 1.6) * difDominio();      // (a dificuldade da partida também pesa: difícil = erra mais)
   const dK = Math.hypot(HALF_L - F.bola.x, F.tz - F.bola.z), amb = (1 + 0.9 * Math.abs(F.curva)) * Math.sqrt(clamp(dK / 22, 0.6, 1.6));   // mais efeito e mais longe: mais difícil de acertar
-  const a = S0.a + gauss() * 0.017 * erro * amb, vy = S0.vy + gauss() * 0.3 * erro * amb, v = S0.v * (1 + gauss() * 0.03 * erro);
+  const a = S0.a + gauss() * 0.017 * erro * amb, vy = Math.max(0, S0.vy + gauss() * 0.3 * erro * amb), v = S0.v * (1 + gauss() * 0.03 * erro);
   const ss = S0.ss * clamp(1 + gauss() * 0.08 * erro, 0.75, 1.2);
   kickBall(u, Math.cos(a) * v, vy, Math.sin(a) * v, ss, S0.sv);
   u.angle = a;
@@ -10423,7 +10445,7 @@ function setAimDir(dirX, dirZ) {
 
 function confirmAim() {
   if (G.state !== 'aim') return;
-  if (G.kick && G.kick.faltaMira) { faltaChutar(); return; }   // (7.5.11) Enter/botão de chute na falta da mira pontilhada
+  if (G.kick && G.kick.faltaMira) { faltaChutar(); return; }   // (7.5.11) (7.6.2: tecla/botão seguram a força em faltaSegurar; aqui só quem chama direto)
   enterPower();
 }
 
@@ -13413,6 +13435,7 @@ window.addEventListener('keydown', (e) => {
   if (G.state === 'restart' && (e.code === 'Enter' || e.code === 'Escape')) { skipRestart(); return; }
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
   if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && K('passar')) { faltaPassar(); return; }   // (7.5.11)
+  if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && (e.code === 'Enter' || e.code === 'Space' || K('chutar'))) { faltaSegurar({ tecla: e.code }); return; }   // (7.6.2) segura a tecla: a força
   if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('cruzar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
   if (G.state === 'dribble' && G.timing && K('driblar')) { tocarDribleProximo(); return; }   // (7.5.1) teclado: a tecla do drible acerta o próximo alvo
   if (K('camera')) toggleCamera();
@@ -13635,6 +13658,7 @@ function padApertou(b) {
   if (KICK_STATES.includes(G.state) && G.kick) {
     const k = G.kick;
     if (G.state === 'spin') { if (b <= 3) { const sp = padEfeito(); chooseSpin(sp.x, sp.y); } return; }
+    if (G.state === 'aim' && k.faltaMira && !k.faltaMira.chutou && (eh('chutar') || b === Pad.botaoChute)) { faltaSegurar({ pad: b }); return; }   // (7.6.2) a falta: segura o chute para a força
     if (b === Pad.botaoChute && !k.primeira || k.primeira && (eh('passar') || eh('chutar') || eh('cruzar') || eh('passe1') || eh('chute1'))) {
       if (G.state === 'aim') confirmAim();
       if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; }
@@ -19358,7 +19382,11 @@ const Idioma = {
   "DE COSTAS: GIRE": ["BACK TO GOAL: TURN", "DE ESPALDAS: GIRA", "DI SPALLE: GIRATI", "DOS AU BUT : PIVOTE"],
   "PERTO DA BANDEIRINHA": ["NEAR THE CORNER FLAG", "CERCA DEL BANDERÍN", "VICINO ALLA BANDIERINA", "PRÈS DU POTEAU DE CORNER"],
   "NA LINHA LATERAL": ["ON THE TOUCHLINE", "EN LA BANDA", "SULLA LINEA LATERALE", "SUR LA LIGNE DE TOUCHE"],
-  "FALTA: arraste para mover a mira (lado e altura) · a barra de baixo é o efeito": ["FREE KICK: drag to move the target (side and height) · the bar below is the curl", "FALTA: arrastra para mover la mira (lado y altura) · la barra de abajo es el efecto", "PUNIZIONE: trascina per spostare il mirino (lato e altezza) · la barra in basso è l’effetto", "COUP FRANC : fais glisser pour déplacer la mire (côté et hauteur) · la barre du bas, c’est l’effet"],
+  "FALTA: arraste para os lados para a direção · a barra é o efeito · segure CHUTAR para a força (a bola sobe) e solte": ["FREE KICK: drag sideways to aim · the bar is the curl · hold SHOOT for power (the ball rises) and release", "FALTA: arrastra a los lados para la dirección · la barra es el efecto · mantén TIRAR para la fuerza (el balón sube) y suelta", "PUNIZIONE: trascina ai lati per la direzione · la barra è l’effetto · tieni premuto TIRA per la potenza (la palla sale) e rilascia", "COUP FRANC : fais glisser sur les côtés pour la direction · la barre, c’est l’effet · maintiens TIRER pour la puissance (le ballon monte) et relâche"],   // (7.6.2)
+  "SEGURE PARA CHUTAR": ["HOLD TO SHOOT", "MANTÉN PARA TIRAR", "TIENI PER TIRARE", "MAINTIENS POUR TIRER"],
+  "SOLTE PARA BATER": ["RELEASE TO SHOOT", "SUELTA PARA TIRAR", "RILASCIA PER TIRARE", "RELÂCHE POUR TIRER"],
+  "forte demais: vai isolar!": ["too hard: it will fly over!", "¡demasiado fuerte: se va a las nubes!", "troppo forte: finisce alle stelle!", "trop fort : ça va passer au-dessus !"],
+  "no gol!": ["on target!", "¡al arco!", "in porta!", "cadré !"],
   "EFEITO": ["CURL", "EFECTO", "EFFETTO", "EFFET"],
   "Força {0} · Efeito {1}": ["Power {0} · Curl {1}", "Fuerza {0} · Efecto {1}", "Potenza {0} · Effetto {1}", "Puissance {0} · Effet {1}"],
   "assim bate na barreira!": ["like this it hits the wall!", "¡así pega en la barrera!", "così prende la barriera!", "comme ça, ça touche le mur !"],
