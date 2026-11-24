@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.0';
+const VERSAO_JOGO = '7.6.1';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -4539,6 +4539,24 @@ const flatRing = (r1, r2, color, opacity = 0.9) => {
 };
 // Ajustes do jogador (guardados no aparelho): altura/distância da câmera, cor do círculo do jogador e layout dos botões (ver AJUSTES DO JOGADOR).
 const AJ = Object.assign({ camAlt: 1, camDist: 1, camH: 0, aro: '#f7941d', layout: {} }, (() => { try { const v = salvo.ler('futebolJs.ajustes.v1', {}); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })());
+// (7.6.1) GRÁFICOS E CÂMERA DA CIDADE (Configurações na pausa da cidadezinha; guardados no aparelho em 'futebolJs.graficos.v1'):
+//   res ...... a resolução interna (CONFIG.RENDER_H: menos = mais pixelado e mais leve) — vale para o jogo todo
+//   longe .... a distância de renderização da cidade (multiplica a névoa e o fim da câmera: menos = mais leve)
+//   camDist / camAlt / camSens ... a câmera da cidade: distância, altura (graus a mais no ângulo) e sensibilidade de girar
+const GRAF = (() => {
+  const CH = 'futebolJs.graficos.v1', PADRAO = { res: 320, longe: 1, camDist: 1, camAlt: 0, camSens: 1 }, LIM = { res: [160, 720], longe: [0.5, 1.6], camDist: [0.6, 1.7], camAlt: [-12, 25], camSens: [0.4, 2] };
+  const d = Object.assign({}, PADRAO); try { const v = salvo.ler(CH, {}); if (v && typeof v === 'object') for (const k of Object.keys(PADRAO)) if (typeof v[k] === 'number' && isFinite(v[k])) d[k] = v[k]; } catch (e) { /* sem armazenamento */ }
+  const prende = (k, v) => Math.max(LIM[k][0], Math.min(LIM[k][1], v));
+  for (const k of Object.keys(PADRAO)) d[k] = prende(k, d[k]);
+  const aplicar = () => { if (CONFIG.RENDER_H !== d.res) { CONFIG.RENDER_H = d.res; try { resize(); } catch (e) { /* ainda sem renderer */ } } };
+  aplicar();
+  return {
+    get: (k) => d[k], padrao: (k) => PADRAO[k],
+    set(k, v) { if (!(k in PADRAO)) return; d[k] = prende(k, Number(v)); if (k === 'res') aplicar(); },
+    guardar() { try { salvo.gravar(CH, d); } catch (e) { /* sem armazenamento */ } },
+    restaurar(lista) { for (const k of lista || Object.keys(PADRAO)) d[k] = PADRAO[k]; aplicar(); this.guardar(); },
+  };
+})();
 const userRing = flatRing(0.5, 0.68, 0xf7941d);
 userRing.material.color.set(AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d');
 const targetRing = flatRing(0.7, 0.95, 0xffffff); targetRing.visible = false;
@@ -14961,7 +14979,7 @@ function resumeGame() {
 }
 
 const SETTINGS = [
-  { id: 'Res', get: () => CONFIG.RENDER_H, set: (v) => { CONFIG.RENDER_H = v; resize(); }, fmt: (v) => v + 'p' },
+  { id: 'Res', get: () => CONFIG.RENDER_H, set: (v) => { GRAF.set('res', v); GRAF.guardar(); }, fmt: (v) => v + 'p' },   // (7.6.1) fica guardada (a mesma da pausa da cidade)
   { id: 'Shake', get: () => Math.round(CONFIG.RUN_SHAKE * 100), set: (v) => { CONFIG.RUN_SHAKE = v / 100; }, fmt: (v) => v === 0 ? T('desligada') : String(v) },
 ];
 function syncSettings() {
@@ -19815,41 +19833,6 @@ const Musica = (() => {
     s.connect(f); f.connect(g); g.connect(bus); s.start(t, Math.random() * 0.5, dur + 0.02);
   };
 
-  // ----------------------------------------------------------- JAZZ (ii–V–I, swing, vassourinha)
-  const JBPM = 92, JB = 60 / JBPM;
-  const JAZZ = [
-    { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
-    { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 77] },   // G13
-    { raiz: 36, notas: [55, 59, 62, 64], escala: [60, 62, 64, 67, 69, 71] },   // Cmaj9
-    { raiz: 45, notas: [55, 61, 64, 67], escala: [64, 67, 69, 72, 73, 76] },   // A7
-    { raiz: 40, notas: [55, 59, 62, 66], escala: [64, 66, 67, 71, 74, 76] },   // Em7
-    { raiz: 45, notas: [55, 61, 64, 67], escala: [61, 64, 67, 69, 72, 73] },   // A7
-    { raiz: 38, notas: [53, 57, 60, 64], escala: [62, 65, 67, 69, 72, 74] },   // Dm9
-    { raiz: 43, notas: [53, 59, 64, 69], escala: [67, 69, 71, 74, 76, 79] },   // G13
-  ];
-  const sw = (i) => (i % 2 ? JB * (2 / 3) : 0) + Math.floor(i / 2) * JB;
-  const jazz = (t0, n) => {
-    const c = JAZZ[n % JAZZ.length], pr = JAZZ[(n + 1) % JAZZ.length];
-    const b = [c.raiz, c.raiz + escolhe([3, 4, 7]), c.raiz + escolhe([5, 7, 9]), pr.raiz + escolhe([-1, 1])];
-    for (let i = 0; i < 4; i++) nota('triangle', b[i], t0 + i * JB, JB * 0.9, 0.34, { corte: 700, ataque: 0.01 });
-    for (const tb of escolhe([[0, 3], [1.5, 3], [0, 2.67], [0.67, 2.5]])) for (const m of c.notas) {
-      nota('sine', m, t0 + tb * JB, JB * 1.1, 0.07, { corte: 3000 });
-      nota('triangle', m + 12, t0 + tb * JB, JB * 0.8, 0.025, { corte: 2200, det: 6 });
-    }
-    if (n % 2 === 0) for (const m of [c.notas[0] - 12, c.notas[2] - 12]) nota('sawtooth', m, t0, JB * 7.5, 0.018, { corte: 520, ataque: 0.6 });
-    let i = 0;
-    while (i < 8) {
-      if (Math.random() < 0.46) { i++; continue; }
-      const m = escolhe(c.escala) + (Math.random() < 0.2 ? 12 : 0), len = Math.random() < 0.35 ? 2 : 1;
-      nota('square', m, t0 + sw(i), JB * (len * 0.55), 0.045, { corte: 1500, ataque: 0.02 });
-      nota('sine', m + 12, t0 + sw(i), JB * (len * 0.5), 0.02);
-      i += len;
-    }
-    for (let k = 0; k < 4; k++) { chiado(t0 + k * JB, 0.09, 0.05, 7000); chiado(t0 + k * JB + JB * (2 / 3), 0.05, 0.03, 8000); }
-    for (const k of [1, 3]) chiado(t0 + k * JB, 0.12, 0.05, 3500);
-    return JB * 4;
-  };
-
   // ----------------------------------------------------------- ROCK ALTERNATIVO (Am–F–C–G, 8 compassos verso / 8 refrão)
   const RBPM = 126, RB = 60 / RBPM, R8 = RB / 2;
   const ROCK = [{ r: 45, tri: [57, 60, 64, 69] }, { r: 41, tri: [53, 57, 60, 65] }, { r: 36, tri: [55, 60, 64, 67] }, { r: 43, tri: [55, 59, 62, 67] }];
@@ -19900,12 +19883,15 @@ const Musica = (() => {
   };
 
 
-  // ----------------------------------------------------------- (7.6.0) AS VARIAÇÕES DA CIDADEZINHA, na mesma ideia do jazz (acordes com
-  //   sétima e nona, baixo andando, melodia solta por cima, percussão leve), com sotaque brasileiro. O jazz continua de terça a quinta:
-  //   BOSSA (a mais calma) ...... sábado e domingo: violão em síncope, baixo raiz–quinta, aro da caixa na clave e o chocalho bem baixinho
-  //   MPB (ijexá) ............... segunda: agogô, chocalho e um bumbo macio; teclado (sine + triangle) e o baixo sincopado
-  //   SAMBA (pagode, a animada) . sexta, dia de bar e movimento: surdo na segunda, pandeiro, tamborim no teleco-teco, cavaquinho e baixaria
-  //   O volume de cada uma foi medido (Musica._medir: RMS do arranjo, 16 compassos) e igualado ao do jazz em NIVEL.
+  // ----------------------------------------------------------- (7.6.1) AS MÚSICAS DA CIDADEZINHA, com FORMA de música de verdade
+  //   Cada tema é uma música de 2 a 3 minutos: introdução, parte A (o tema), a resposta, a parte B (outra harmonia), o solo, a volta do
+  //   tema e o final — com viradas nas passagens. A melodia não é mais sorteada nota a nota: no começo de cada música nasce um MOTIVO
+  //   (uma frase de 2 compassos) que se repete, responde, sobe/desce e fecha em cadência; a parte B tem o motivo dela. A cada música
+  //   nova o motivo é outro (sementes diferentes), então nunca é a mesma coisa em loop.
+  //   JAZZ (terça a quinta) tem 3 versões, sorteadas a cada música: SWING (Dó, ii–V–I, ♩92, sax), COOL (Fá, ♩84, trompete com surdina e
+  //   prato de condução) e BLUES (Si♭, shuffle de 12 compassos, ♩96, vibrafone). BOSSA (sábado e domingo, ♩70), MPB (segunda, ♩78, mais
+  //   calma e espaçada que a 7.6.0) e SAMBA (sexta, ♩102). O volume de cada uma foi medido (Musica._medir: RMS da música inteira) e
+  //   igualado em NIVEL.
   const tick = (t, f, dur, vol, tipo) => nota(tipo || 'triangle', 12 * Math.log2(f / 440) + 69, t, dur, vol, { corte: f * 3, ataque: 0.002 });
   const surdo = (t, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(95, t); o.frequency.exponentialRampToValueAtTime(55, t + 0.25);
     g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.5 * v, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5); o.connect(g); g.connect(bus); o.start(t); o.stop(t + 0.55); };
@@ -19913,77 +19899,214 @@ const Musica = (() => {
   const agogo = (t, alto, v) => { tick(t, alto ? 1310 : 985, 0.16, 0.05 * v, 'square'); tick(t, alto ? 2620 : 1970, 0.08, 0.02 * v, 'sine'); };
   const aro = (t, v) => { tick(t, 1750, 0.05, 0.08 * v, 'triangle'); chiado(t, 0.03, 0.05 * v, 2500, 'bandpass', 2); };
   const shaker = (t, v) => chiado(t, 0.06, 0.03 * v, 5200, 'bandpass', 0.8);
+  const vassoura = (t, v, dur) => chiado(t, dur || 0.09, 0.05 * v, 7000);
+  const conducao = (t, v) => { chiado(t, 0.22, 0.035 * v, 9000); tick(t, 5200, 0.12, 0.012 * v, 'sine'); };   // o prato de condução (ride)
+  const chimbal = (t, v) => chiado(t, 0.05, 0.04 * v, 3500, 'bandpass', 1.5);                                // o chimbal com o pé (2 e 4)
+  const caixinha = (t, v) => { chiado(t, 0.1, 0.12 * v, 1800, 'bandpass', 0.8); nota('triangle', 57, t, 0.08, 0.1 * v, { corte: 1400, ataque: 0.002 }); };
+  const pratoFinal = (t, v) => chiado(t, 2.4, 0.06 * v, 6000);
 
-  // BOSSA: Dmaj9 | Bm9 | Em9 | A13 | F#m7 | B7(b9) | Em9 | A13 (♩ = 74, colcheias retas)
-  const BBPM = 74, BB = 60 / BBPM, B16 = BB / 4;
-  const BOSSA = [
-    { r: 38, v: [54, 57, 61, 64], e: [66, 69, 71, 73, 76] }, { r: 47, v: [54, 57, 61, 62], e: [66, 69, 71, 74, 76] },
-    { r: 40, v: [55, 59, 62, 66], e: [64, 66, 67, 71, 74] }, { r: 45, v: [55, 61, 66, 67], e: [64, 66, 69, 71, 73] },
-    { r: 42, v: [52, 57, 61, 64], e: [64, 66, 69, 71, 73] }, { r: 47, v: [51, 57, 60, 63], e: [63, 66, 69, 71, 72] },
-    { r: 40, v: [55, 59, 62, 66], e: [64, 66, 67, 71, 74] }, { r: 45, v: [55, 61, 66, 67], e: [61, 64, 66, 69, 73] },
-  ];
-  const BATIDA = [0, 3, 6, 10, 13];                                    // o violão: as semicolcheias da síncope (por compasso de 4/4)
+  // o sorteador com semente (cada música nasce com a sua) e o MOTIVO melódico
+  const semente = (s) => { let x = (s >>> 0) || 1; return () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 100000) / 100000; }; };
+  const ESC = (c, g) => { const L = c.e.length, i = ((g % L) + L) % L; return c.e[i] + Math.floor(g / L) * 12; };   // grau → nota, na escala do acorde da vez
+  function criarMotivo(r, G, cfg) {                                        // G = quantas casas tem a frase (no grid do tema)
+    const out = []; let p = cfg.anacruse && r() < 0.5 ? 1 : 0, g = 2 + Math.floor(r() * 3);
+    while (p < G - 1) {
+      if (r() > cfg.dens) { p += cfg.pausa || 1; continue; }
+      const d = Math.min(G - p, cfg.durs[Math.floor(r() * cfg.durs.length)]);
+      out.push({ p, d, g }); p += d;
+      const salto = r(); g += salto < 0.62 ? (r() < 0.5 ? 1 : -1) : salto < 0.85 ? (r() < 0.5 ? 2 : -2) : 0;
+      g = Math.max(0, Math.min(cfg.teto || 8, g));
+    }
+    if (out.length) { const u = out[out.length - 1]; u.d = Math.max(u.d, Math.min(4, G - u.p)); }
+    return out;
+  }
+  const deslocar = (m, dg) => m.map((q) => ({ p: q.p, d: q.d, g: Math.max(0, q.g + dg) }));
+  const cadencia = (m, G) => { const meio = m.filter((q) => q.p < G * 0.55); const fim = Math.ceil(G * 0.6); return meio.concat([{ p: fim, d: Math.max(2, G - fim - 1), g: 0 }]); };
+  const resposta = (m, r) => m.map((q, i) => ({ p: q.p, d: q.d, g: i === 0 ? q.g : Math.max(0, m[0].g - (q.g - m[0].g) + (r() < 0.3 ? 1 : 0)) }));   // o contorno espelhado
+  // as frases de uma seção: [tema, resposta, tema, cadência] (ou, com frase de 4 compassos, [tema, tema um grau acima, cadência])
+  function fraseDa(S, mot) {
+    const PL = S.tema.frase || 2, f = Math.floor(S.i / PL), nf = Math.max(1, Math.floor(S.len / PL));
+    if (PL >= 4) return f === nf - 1 ? mot.cad : f === 1 ? mot.sobe : mot.base;
+    const k = f % 4; return f === nf - 1 ? mot.cad : k === 1 ? mot.resp : k === 3 ? mot.sobe : mot.base;
+  }
+  // toca o pedaço da frase que cai neste compasso
+  function tocaFrase(S, c, frase, quando, timbre, vol, oit) {
+    const PL = S.tema.frase || 2, G = S.tema.grid, ini = (S.i % PL) * G;
+    for (const q of frase) if (q.p >= ini && q.p < ini + G) timbre(quando(q.p - ini), ESC(c, q.g) + (oit || 0), q.d, vol);
+  }
+  function improviso(S, c, r, quando, timbre, vol, dens) {               // o solo: frases curtas de escala, subindo e descendo
+    const G = S.tema.grid; let p = r() < 0.4 ? 1 : 0, g = 2 + Math.floor(r() * 4), dir = r() < 0.5 ? 1 : -1;
+    while (p < G) { if (r() > dens) { p++; continue; } const d = r() < 0.7 ? 1 : 2; timbre(quando(p), ESC(c, g), d, vol); p += d; g += dir; if (g > 9 || g < 1 || r() < 0.2) dir = -dir; }
+  }
+  // os timbres (dur em casas do grid; casa = a duração em segundos de uma casa)
+  const T_SAX = (casa) => (t, m, d, v) => { nota('square', m, t, casa * d * 0.95, 0.045 * v, { corte: 1500, ataque: 0.02 }); nota('sine', m + 12, t, casa * d * 0.85, 0.02 * v); };
+  const T_TROMPETE = (casa) => (t, m, d, v) => { nota('sawtooth', m, t, casa * d * 0.92, 0.03 * v, { corte: 1100, ataque: 0.035 }); nota('sine', m, t, casa * d * 0.9, 0.025 * v, { ataque: 0.03 }); };
+  const T_VIBRA = (casa) => (t, m, d, v) => { nota('sine', m, t, Math.max(0.5, casa * d * 1.6), 0.05 * v, { ataque: 0.004 }); nota('sine', m + 24, t, 0.25, 0.012 * v, { ataque: 0.002 }); nota('sine', m, t, Math.max(0.5, casa * d * 1.6), 0.02 * v, { ataque: 0.004, det: 9 }); };
+  const T_FLAUTA = (casa) => (t, m, d, v) => { nota('sine', m, t, casa * d * 0.95, 0.05 * v, { corte: 2600, ataque: 0.05 }); nota('triangle', m, t, casa * d * 0.6, 0.012 * v, { corte: 1800, ataque: 0.06 }); };
+  const T_VOZ = (casa) => (t, m, d, v) => { nota('square', m, t, casa * d * 0.9, 0.028 * v, { corte: 1300, ataque: 0.03 }); nota('sine', m + 12, t, casa * d * 0.85, 0.018 * v, { ataque: 0.03 }); };
+  const T_NYLON = (casa) => (t, m, d, v) => { nota('triangle', m, t, casa * d * 1.2, 0.06 * v, { corte: 2200, ataque: 0.003 }); nota('sine', m + 12, t, 0.2, 0.01 * v, { ataque: 0.002 }); };
+  const T_CAVACO = (casa) => (t, m, d, v) => { nota('triangle', m, t, casa * d * 0.8, 0.05 * v, { corte: 3200, ataque: 0.002 }); nota('square', m, t, 0.06, 0.008 * v, { corte: 2500 }); };
+
+  // ---- JAZZ (os 3)
+  const AC = (r, v, e) => ({ r, v, e });
+  const JZ_SWING = {
+    A: [AC(38, [53, 57, 60, 64], [62, 65, 67, 69, 72, 74]), AC(43, [53, 59, 64, 69], [67, 69, 71, 74, 76, 77]), AC(36, [55, 59, 62, 64], [60, 62, 64, 67, 69, 71]), AC(45, [55, 61, 64, 67], [64, 67, 69, 72, 73, 76]),
+        AC(40, [55, 59, 62, 66], [64, 66, 67, 71, 74, 76]), AC(45, [55, 61, 64, 67], [61, 64, 67, 69, 72, 73]), AC(38, [53, 57, 60, 64], [62, 65, 67, 69, 72, 74]), AC(43, [53, 59, 64, 69], [67, 69, 71, 74, 76, 79])],
+    B: [AC(40, [56, 59, 62, 66], [64, 66, 68, 71, 74, 76]), AC(40, [56, 59, 62, 66], [64, 66, 68, 71, 74, 76]), AC(45, [55, 61, 64, 67], [64, 66, 67, 69, 73, 76]), AC(45, [55, 61, 64, 67], [64, 66, 67, 69, 73, 76]),
+        AC(38, [54, 57, 60, 64], [62, 64, 66, 69, 72, 74]), AC(38, [54, 57, 60, 64], [62, 64, 66, 69, 72, 74]), AC(43, [53, 59, 64, 69], [67, 69, 71, 74, 76, 77]), AC(43, [53, 59, 62, 65], [62, 65, 67, 71, 74, 77])],
+    fim: AC(36, [55, 59, 62, 64], [60, 64, 67, 71, 72, 76]),
+  };
+  const JZ_COOL = {
+    A: [AC(41, [57, 60, 64, 67], [65, 67, 69, 72, 74, 76]), AC(38, [53, 57, 60, 65], [62, 65, 67, 69, 72, 74]), AC(43, [53, 58, 62, 65], [62, 65, 67, 70, 72, 74]), AC(36, [52, 58, 62, 64], [60, 62, 64, 67, 69, 70]),
+        AC(45, [55, 60, 64, 67], [64, 67, 69, 72, 74, 76]), AC(38, [54, 60, 64, 66], [62, 64, 66, 69, 72, 74]), AC(43, [53, 58, 62, 65], [62, 65, 67, 70, 72, 74]), AC(36, [52, 58, 62, 64], [60, 62, 64, 67, 69, 70])],
+    B: [AC(46, [57, 62, 65, 69], [65, 67, 69, 70, 72, 74]), AC(46, [55, 61, 62, 65], [65, 67, 68, 70, 72, 74]), AC(45, [55, 60, 64, 67], [64, 67, 69, 72, 74, 76]), AC(38, [54, 60, 64, 66], [62, 64, 66, 69, 72, 74]),
+        AC(43, [53, 58, 62, 65], [62, 65, 67, 70, 72, 74]), AC(36, [52, 58, 62, 64], [60, 62, 64, 67, 69, 70]), AC(41, [57, 60, 64, 67], [65, 67, 69, 72, 74, 76]), AC(36, [52, 58, 62, 64], [60, 62, 64, 67, 69, 70])],
+    fim: AC(41, [57, 60, 64, 67], [65, 69, 72, 76, 77, 81]),
+  };
+  const B7 = (r) => AC(r, [r + 16, r + 20, r + 22, r + 26], [r + 24, r + 27, r + 29, r + 30, r + 31, r + 34]);   // acorde de blues (7ª e 9ª) e a escala de blues
+  const JZ_BLUES = { A: [B7(34), B7(39), B7(34), B7(34), B7(39), B7(39), B7(34), B7(34), B7(41), B7(39), B7(34), B7(41)], fim: B7(34) };
+  const formaJazz = [['intro', 4], ['A', 8], ['A2', 8], ['B', 8], ['A3', 8], ['solo', 16], ['A4', 8], ['fim', 2]];
+  const formaBlues = [['intro', 4], ['A', 12], ['A2', 12], ['solo', 12], ['solo2', 12], ['A3', 12], ['fim', 2]];
+  function geraJazz(H, cor) {
+    return (t0, S) => {
+      const JB = 60 / S.tema.bpm, r = S.r, sec = S.sec, solo = sec.startsWith('solo'), intro = sec === 'intro', fim = sec === 'fim';
+      const prog = sec === 'B' && H.B ? H.B : H.A, c = fim ? H.fim : intro ? prog[(prog.length - 4 + S.i) % prog.length] : prog[S.i % prog.length];
+      const pr = fim ? H.fim : (sec === 'B' && H.B ? H.B : H.A)[(S.i + 1) % prog.length];
+      const sw = (p) => t0 + Math.floor(p / 2) * JB + (p % 2 ? JB * (cor.shuffle ? 0.7 : 2 / 3) : 0), casa = JB / 2;
+      if (fim) {                                                          // o acorde final, com o prato, e a última nota do sax
+        nota('triangle', c.r, t0, JB * 4, 0.34, { corte: 700 }); for (const m of c.v) { nota('sine', m, t0, JB * 6, 0.06); nota('triangle', m + 12, t0, JB * 5, 0.02, { corte: 2200 }); }
+        if (S.i === 0) { pratoFinal(t0, 1); cor.lead(casa)(t0, c.e[0] + 12, 8, 1); }
+        return JB * 4;
+      }
+      const anda = !(intro || (sec === 'A' && cor.doisNoA));               // o baixo: em 2 (raiz e quinta) na introdução e no 1º A; andando no resto
+      if (anda) { const b = [c.r, c.r + escolhe([3, 4, 7]), c.r + escolhe([5, 7, 9]), pr.r + escolhe([-1, 1])]; for (let i = 0; i < 4; i++) nota('triangle', b[i], t0 + i * JB, JB * 0.9, 0.34, { corte: 700, ataque: 0.01 }); }
+      else for (const [k, m] of [[0, c.r], [2, c.r + 7]]) nota('triangle', m, t0 + k * JB, JB * 1.8, 0.34, { corte: 700, ataque: 0.01 });
+      const comp = intro ? [[0]] : solo ? [[0, 1.67, 3], [0.67, 2, 3.67], [1, 2.67], [0, 1.5, 2.67]] : [[0, 3], [1.5, 3], [0, 2.67], [0.67, 2.5]];
+      for (const tb of escolhe(comp)) for (const m of c.v) { nota(cor.piano || 'sine', m, t0 + tb * JB, JB * (intro ? 3.5 : 1.1), 0.07, { corte: 3000 }); nota('triangle', m + 12, t0 + tb * JB, JB * 0.8, 0.025, { corte: 2200, det: 6 }); }
+      if (S.n % 2 === 0) for (const m of [c.v[0] - 12, c.v[2] - 12]) nota('sawtooth', m, t0, JB * 7.5, 0.016, { corte: 520, ataque: 0.6 });
+      // a bateria: vassourinha na introdução e no 1º A; prato de condução do 2º A em diante; o chimbal no 2 e no 4
+      const ride = !(intro || sec === 'A');
+      if (ride) for (let k = 0; k < 4; k++) { conducao(t0 + k * JB, k % 2 ? 0.8 : 1); if (k % 2) conducao(t0 + k * JB + JB * (cor.shuffle ? 0.7 : 2 / 3), 0.6); }
+      else for (let k = 0; k < 4; k++) { vassoura(t0 + k * JB, intro ? 0.6 : 1); vassoura(t0 + k * JB + JB * (2 / 3), 0.6, 0.05); }
+      if (!intro) for (const k of [1, 3]) chimbal(t0 + k * JB, 1);
+      if (cor.shuffle && !intro) for (let k = 0; k < 4; k++) chute(t0 + k * JB, 0.18);
+      if (S.ultimo && !intro) for (const k of [3, 3.33, 3.67]) caixinha(t0 + k * JB, k === 3 ? 0.7 : 1);   // a virada para a próxima parte
+      if (intro) return JB * 4;
+      const lead = (solo ? cor.solo : cor.lead)(casa), vol = solo ? 0.9 : 1;
+      if (solo) improviso(S, c, r, sw, lead, vol, cor.densSolo || 0.6);
+      else tocaFrase(S, c, fraseDa(S, sec === 'B' ? S.mus.motB : S.mus.motA), sw, lead, vol, cor.oit || 0);
+      return JB * 4;
+    };
+  }
+  const MOT_JAZZ = { dens: 0.58, durs: [1, 1, 2, 3], anacruse: true };
+  const TEMAS = {
+    jazzSwing: { estilo: 'jazz', bpm: 92, grid: 8, frase: 2, forma: formaJazz, mot: MOT_JAZZ, gera: geraJazz(JZ_SWING, { lead: T_SAX, solo: T_VIBRA, doisNoA: true }) },
+    jazzCool: { estilo: 'jazz', bpm: 84, grid: 8, frase: 2, forma: formaJazz, mot: { dens: 0.5, durs: [1, 2, 2, 3, 4] }, gera: geraJazz(JZ_COOL, { lead: T_TROMPETE, solo: T_SAX, doisNoA: true, densSolo: 0.5, piano: 'triangle' }) },
+    jazzBlues: { estilo: 'jazz', bpm: 96, grid: 8, frase: 4, forma: formaBlues, mot: { dens: 0.55, durs: [1, 1, 2, 3], anacruse: true, teto: 7 }, gera: geraJazz(JZ_BLUES, { lead: T_VIBRA, solo: T_SAX, shuffle: true, oit: 0, densSolo: 0.62 }) },
+  };
+
+  // ---- BOSSA (♩70): Dmaj9 Bm9 Em9 A13 F#m7 B7(b9) Em9 A13 · ponte: Gmaj7 Gm6 F#m7 B7 Em9 A7 Dmaj9 A13
+  const BOSSA_A = [AC(38, [54, 57, 61, 64], [66, 69, 71, 73, 76, 78]), AC(47, [54, 57, 61, 62], [66, 69, 71, 74, 76, 78]), AC(40, [55, 59, 62, 66], [64, 66, 67, 71, 74, 76]), AC(45, [55, 61, 66, 67], [64, 66, 69, 71, 73, 76]),
+    AC(42, [52, 57, 61, 64], [64, 66, 69, 71, 73, 76]), AC(47, [51, 57, 60, 63], [63, 66, 69, 71, 72, 75]), AC(40, [55, 59, 62, 66], [64, 66, 67, 71, 74, 76]), AC(45, [55, 61, 66, 67], [61, 64, 66, 69, 73, 76])];
+  const BOSSA_B = [AC(43, [54, 59, 62, 66], [66, 67, 69, 71, 74, 78]), AC(43, [52, 58, 62, 64], [64, 67, 69, 70, 74, 76]), AC(42, [52, 57, 61, 64], [64, 66, 69, 71, 73, 76]), AC(47, [51, 57, 60, 63], [63, 66, 69, 71, 72, 75]),
+    AC(40, [55, 59, 62, 66], [64, 66, 67, 71, 74, 76]), AC(45, [55, 61, 64, 67], [64, 67, 69, 73, 76, 79]), AC(38, [54, 57, 61, 64], [66, 69, 71, 73, 76, 78]), AC(45, [55, 61, 66, 67], [61, 64, 66, 69, 73, 76])];
+  const BATIDA = [[0, 3, 6, 10, 13], [0, 3, 6, 8, 11, 14], [0, 2, 6, 10, 12]];   // o violão: as síncopes (semicolcheias), uma por seção
   const CLAVE = [0, 3, 6, 10, 12];
-  const bossa = (t0, n) => {
-    const c = BOSSA[n % BOSSA.length], quinta = c.r + 7;
-    for (const [k, m] of [[0, c.r], [6, quinta], [8, c.r], [14, quinta]]) nota('triangle', m, t0 + k * B16, B16 * (k % 8 ? 1.8 : 5), 0.3, { corte: 600, ataque: 0.01 });   // baixo raiz–quinta (com a antecipação)
-    for (const k of BATIDA) { const tk = t0 + k * B16 + (Math.random() - 0.5) * 0.008;   // o violão de náilon: o acorde inteiro, curto e macio
-      c.v.forEach((m, j) => nota('triangle', m, tk + j * 0.006, B16 * 2.2, 0.045, { corte: 1800, ataque: 0.004 })); }
-    if (n % 2 === 0) for (const m of c.v.slice(1)) nota('sine', m + 12, t0, BB * 7.6, 0.012, { corte: 1600, ataque: 0.9 });   // as cordas lá no fundo
-    for (const k of CLAVE) aro(t0 + k * B16, 0.5);
-    for (let i = 0; i < 8; i++) shaker(t0 + i * BB / 2, i % 2 ? 0.5 : 0.8);
-    if (n % 4 !== 3) { let i = 0;                                       // a melodia: poucas notas, longas (flauta: sine com um sopro de triangle)
-      while (i < 16) { if (Math.random() < 0.6) { i += 2; continue; } const m = escolhe(c.e) + 12, len = escolhe([2, 4, 4, 6]);
-        nota('sine', m, t0 + i * B16, B16 * len * 0.95, 0.05, { corte: 2600, ataque: 0.05 }); nota('triangle', m, t0 + i * B16, B16 * len * 0.6, 0.012, { corte: 1800, ataque: 0.06 }); i += len; } }
-    return BB * 4;
-  };
+  TEMAS.bossa = { estilo: 'bossa', bpm: 70, grid: 16, frase: 2, forma: [['intro', 4], ['A', 8], ['A2', 8], ['B', 8], ['A3', 8], ['solo', 8], ['A4', 8], ['fim', 4]], mot: { dens: 0.42, durs: [2, 4, 4, 6], pausa: 2, teto: 7 },
+    gera: (t0, S) => {
+      const BB = 60 / S.tema.bpm, B16 = BB / 4, sec = S.sec, intro = sec === 'intro', fim = sec === 'fim', prog = sec === 'B' ? BOSSA_B : BOSSA_A;
+      const c = fim ? (S.i < S.len - 1 ? BOSSA_A[(6 + S.i) % 8] : BOSSA_A[0]) : prog[S.i % 8], quinta = c.r + 7, ultimoAcorde = fim && S.i === S.len - 1, q16 = (p) => t0 + p * B16;
+      if (ultimoAcorde) { nota('triangle', c.r, t0, BB * 5, 0.3, { corte: 600 }); c.v.forEach((m, j) => nota('triangle', m, t0 + j * 0.05, BB * 5, 0.05, { corte: 1800 })); nota('sine', c.e[0] + 12, t0 + 0.3, BB * 4, 0.04); return BB * 4; }
+      if (!intro) for (const [k, m] of [[0, c.r], [6, quinta], [8, c.r], [14, quinta]]) nota('triangle', m, q16(k), B16 * (k % 8 ? 1.8 : 5), 0.3, { corte: 600, ataque: 0.01 });
+      const bat = BATIDA[sec === 'B' ? 1 : sec === 'solo' ? 2 : 0];
+      for (const k of bat) { const tk = q16(k) + (Math.random() - 0.5) * 0.008; c.v.forEach((m, j) => nota('triangle', m, tk + j * 0.006, B16 * 2.2, 0.045, { corte: 1800, ataque: 0.004 })); }
+      if (!intro && S.i % 2 === 0) for (const m of c.v.slice(1)) nota('sine', m + 12, t0, BB * 7.6, sec === 'B' ? 0.018 : 0.011, { corte: 1600, ataque: 0.9 });   // as cordas (mais presentes na ponte)
+      if (!intro) { for (const k of CLAVE) aro(q16(k), sec.startsWith('A') && sec !== 'A' ? 0.5 : 0.35); for (let i = 0; i < 8; i++) shaker(t0 + i * BB / 2, i % 2 ? 0.5 : 0.8); }
+      if (S.ultimo && !intro && !fim) { aro(q16(13), 0.6); aro(q16(14), 0.7); aro(q16(15), 0.8); }
+      if (intro || fim) return BB * 4;
+      if (sec === 'solo') improviso(S, c, S.r, q16, T_NYLON(B16), 1, 0.38);
+      else tocaFrase(S, c, fraseDa(S, sec === 'B' ? S.mus.motB : S.mus.motA), q16, T_FLAUTA(B16), 1, 12);
+      return BB * 4;
+    } };
 
-  // MPB / IJEXÁ: Am9 | D9 | Fmaj7 | E7sus4 E7 (♩ = 92)
-  const MBPM = 92, MB = 60 / MBPM, M16 = MB / 4;
-  const MPB = [
-    { r: 45, v: [55, 59, 60, 64], e: [64, 67, 69, 71, 72, 76] }, { r: 38, v: [54, 57, 60, 64], e: [62, 64, 66, 69, 71, 74] },
-    { r: 41, v: [57, 60, 64, 65], e: [60, 64, 65, 67, 69, 72] }, { r: 40, v: [56, 59, 62, 64], e: [59, 62, 64, 68, 71, 74] },
-  ];
-  const IJEXA_AG = [[0, 0], [2, 1], [4, 1], [6, 0], [8, 0], [11, 1], [12, 1], [14, 0]];   // o agogô (0 = grave, 1 = agudo), em semicolcheias
-  const mpb = (t0, n) => {
-    const c = MPB[n % MPB.length], volta = Math.floor(n / 8) % 2;
-    for (const [k, m, d] of [[0, c.r, 3], [3, c.r + 12, 1], [6, c.r + 7, 2], [10, c.r, 2], [12, c.r + 10, 2], [14, c.r + 7, 2]]) nota('triangle', m, t0 + k * M16, M16 * d * 0.95, 0.27, { corte: 650, ataque: 0.008 });
-    for (const k of [0, 6, 10]) c.v.forEach((m) => { nota('sine', m, t0 + k * M16, M16 * 3.5, 0.045, { corte: 2400, ataque: 0.01 }); nota('triangle', m + 12, t0 + k * M16, M16 * 2, 0.012, { corte: 2600, det: 7 }); });   // o teclado
-    for (const [k, a] of IJEXA_AG) agogo(t0 + k * M16, a, 0.9);
-    for (let i = 0; i < 16; i++) shaker(t0 + i * M16, i % 4 === 0 ? 0.9 : i % 2 ? 0.45 : 0.65);
-    for (const k of [0, 10]) chute(t0 + k * M16, 0.35);
-    if (n >= 2) { let i = volta ? 0 : 2;                                // a voz (square bem filtrado) dobrada uma oitava acima, curtinha
-      while (i < 16) { if (Math.random() < 0.42) { i += 2; continue; } const m = escolhe(c.e), len = escolhe([1, 2, 2, 3]);
-        nota('square', m, t0 + i * M16, M16 * len * 0.9, 0.03, { corte: 1500, ataque: 0.02 }); nota('sine', m + 12, t0 + i * M16, M16 * len * 0.8, 0.016); i += len; } }
-    return MB * 4;
-  };
+  // ---- MPB (♩78, a calma da segunda): Am9 D9 Fmaj7 E7sus E7 · refrão: Dm9 G13 Cmaj7 Fmaj7 Bm7(b5) E7 Am9 E7
+  const MPB_A = [AC(45, [55, 59, 60, 64], [64, 67, 69, 71, 72, 76]), AC(38, [54, 57, 60, 64], [62, 64, 66, 69, 71, 74]), AC(41, [57, 60, 64, 65], [60, 64, 65, 67, 69, 72]), AC(40, [56, 59, 62, 64], [59, 62, 64, 68, 71, 74])];
+  const MPB_B = [AC(38, [53, 57, 60, 64], [62, 65, 67, 69, 72, 74]), AC(43, [53, 59, 64, 65], [62, 65, 67, 71, 74, 76]), AC(36, [55, 59, 64, 67], [60, 62, 64, 67, 71, 72]), AC(41, [57, 60, 64, 65], [60, 64, 65, 67, 69, 72]),
+    AC(47, [57, 62, 65, 69], [62, 65, 69, 71, 74, 77]), AC(40, [56, 59, 62, 64], [59, 62, 64, 68, 71, 74]), AC(45, [55, 59, 60, 64], [64, 67, 69, 71, 72, 76]), AC(40, [56, 59, 62, 64], [59, 62, 64, 68, 71, 74])];
+  const IJEXA_AG = [[0, 0], [3, 1], [6, 1], [8, 0], [11, 1], [14, 0]];   // o agogô do refrão, mais espaçado
+  TEMAS.mpb = { estilo: 'mpb', bpm: 78, grid: 16, frase: 2, forma: [['intro', 4], ['verso', 8], ['verso2', 8], ['refrao', 8], ['ponte', 4], ['verso3', 8], ['refrao2', 8], ['fim', 4]], mot: { dens: 0.4, durs: [2, 2, 3, 4], pausa: 2, teto: 7 },
+    gera: (t0, S) => {
+      const MB = 60 / S.tema.bpm, M16 = MB / 4, sec = S.sec, q16 = (p) => t0 + p * M16, refrao = sec.startsWith('refrao'), intro = sec === 'intro', ponte = sec === 'ponte', fim = sec === 'fim';
+      const c = refrao ? MPB_B[S.i % 8] : fim && S.i === S.len - 1 ? MPB_A[0] : MPB_A[S.i % 4];
+      if (fim && S.i === S.len - 1) { nota('triangle', c.r, t0, MB * 5, 0.27, { corte: 650 }); c.v.forEach((m) => nota('sine', m, t0, MB * 6, 0.05, { corte: 2400 })); pratoFinal(t0, 0.6); return MB * 4; }
+      // o teclado: arpejo calmo na introdução, na ponte e no verso; acordes no refrão
+      if (refrao) for (const k of [0, 6, 10]) c.v.forEach((m) => { nota('sine', m, q16(k), M16 * 3.5, 0.045, { corte: 2400, ataque: 0.01 }); nota('triangle', m + 12, q16(k), M16 * 2, 0.01, { corte: 2600, det: 7 }); });
+      else { const arp = [0, 2, 1, 3, 2, 1, 3, 2]; for (let i = 0; i < 8; i++) nota('sine', c.v[arp[i]] + (i % 4 === 3 ? 12 : 0), q16(i * 2), M16 * 4, 0.04, { corte: 2400, ataque: 0.01 });
+        if (S.i % 2 === 0) for (const m of c.v) nota('triangle', m, t0, MB * 3.8, 0.012, { corte: 1600, ataque: 0.3 }); }
+      if (!intro) { const bx = refrao ? [[0, c.r, 3], [3, c.r + 12, 1], [6, c.r + 7, 2], [10, c.r, 2], [14, c.r + 7, 2]] : ponte ? [[0, c.r, 8], [8, c.r + 7, 8]] : [[0, c.r, 6], [6, c.r + 7, 2], [10, c.r, 4], [14, c.r + 5, 2]];
+        for (const [k, m, d] of bx) nota('triangle', m, q16(k), M16 * d * 0.95, 0.27, { corte: 650, ataque: 0.008 }); }
+      // a percussão: chocalho em colcheias e o bumbo macio no verso; o agogô só no refrão; na ponte, quase nada
+      if (!intro && !ponte) { for (let i = 0; i < 8; i++) shaker(q16(i * 2), i % 2 ? 0.45 : 0.75); for (const k of [0, 10]) chute(q16(k), 0.3); }
+      if (refrao) { for (const [k, a] of IJEXA_AG) agogo(q16(k), a, 0.7); aro(q16(4), 0.35); aro(q16(12), 0.35); }
+      if (ponte && S.i % 2 === 1) shaker(q16(12), 0.6);
+      if (S.ultimo && !intro && !ponte) for (const k of [12, 13, 14, 15]) tick(q16(k), 600 + k * 25, 0.08, 0.045, 'triangle');
+      if (intro || fim) return MB * 4;
+      if (ponte) { if (S.i % 2 === 0) T_VOZ(M16)(q16(4), ESC(c, 4), 8, 0.8); return MB * 4; }
+      tocaFrase(S, c, fraseDa(S, refrao ? S.mus.motB : S.mus.motA), q16, T_VOZ(M16), 1, refrao ? 12 : 0);
+      if (sec === 'verso2' || sec === 'verso3') tocaFrase(S, c, fraseDa(S, S.mus.motA), (p) => q16(p) + M16 * 8, T_FLAUTA(M16), 0.45, 12);   // o eco da flauta
+      return MB * 4;
+    } };
 
-  // SAMBA / PAGODE: C6 | A7 | Dm7 | G7 | E7 | Am7 | D7 | G7 (♩ = 102)
-  const SBPM = 102, SB = 60 / SBPM, S16 = SB / 4;
-  const SAMBA = [
-    { r: 36, v: [55, 57, 60, 64], e: [67, 69, 72, 74, 76] }, { r: 45, v: [55, 61, 64, 67], e: [64, 67, 69, 73, 76] },
-    { r: 38, v: [53, 57, 60, 65], e: [62, 65, 69, 72, 74] }, { r: 43, v: [53, 59, 62, 65], e: [62, 65, 67, 71, 74] },
-    { r: 40, v: [56, 59, 62, 64], e: [64, 68, 71, 74, 76] }, { r: 45, v: [55, 60, 64, 67], e: [64, 67, 69, 72, 76] },
-    { r: 38, v: [54, 57, 60, 66], e: [62, 66, 69, 72, 74] }, { r: 43, v: [53, 59, 62, 65], e: [62, 65, 67, 71, 74] },
-  ];
-  const TAMBORIM = [0, 2, 5, 7, 10, 12, 14];                            // o teleco-teco
-  const CAVACO = [[0, 1], [3, 0], [6, 1], [8, 0], [10, 1], [13, 0], [14, 1]];   // a batida do cavaquinho (1 = acento)
-  const samba = (t0, n) => {
-    const c = SAMBA[n % SAMBA.length], pr = SAMBA[(n + 1) % SAMBA.length], intro = n < 2;
-    surdo(t0, 0.45); surdo(t0 + 2 * SB, 0.45); surdo(t0 + SB, 0.95); surdo(t0 + 3 * SB, 0.95); if (n % 2) surdo(t0 + 3.5 * SB, 0.4);   // o surdo: forte no 2 e no 4
-    for (let i = 0; i < 16; i++) pandeiro(t0 + i * S16, i % 4 === 0 ? 1 : i % 4 === 3 ? 0.8 : 0.5, i % 4 === 2);
-    if (!intro) for (const k of TAMBORIM) tick(t0 + k * S16, 820, 0.06, 0.06, 'square');
-    for (const [k, ac] of CAVACO) c.v.forEach((m, j) => nota('triangle', m + 12, t0 + k * S16 + j * 0.004, S16 * 1.3, ac ? 0.05 : 0.03, { corte: 3000, ataque: 0.003 }));   // o cavaco (agudo, curto)
-    const ponte = pr.r - c.r; const bx = [[0, c.r, 2], [4, c.r + 7, 2], [8, c.r + 12, 2], [12, c.r + (ponte > 0 ? 9 : 4), 1], [14, pr.r + (ponte > 0 ? -1 : 1), 1]];   // a baixaria do 7 cordas, chegando no próximo acorde
-    for (const [k, m, d] of bx) nota('triangle', m, t0 + k * S16, S16 * d * 0.92, 0.3, { corte: 700, ataque: 0.006 });
-    if (!intro) { let i = 0;                                            // a melodia: síncopes curtas, "cantada" (square + sine)
-      while (i < 16) { if (Math.random() < 0.38) { i++; continue; } const m = escolhe(c.e), len = escolhe([1, 1, 2, 2, 3]);
-        nota('square', m, t0 + i * S16, S16 * len * 0.85, 0.034, { corte: 1700, ataque: 0.01 }); nota('sine', m + 12, t0 + i * S16, S16 * len * 0.7, 0.018); i += len; } }
-    if (n % 4 === 3) for (const k of [12, 13, 14, 15]) tick(t0 + k * S16, 700 + k * 20, 0.08, 0.07, 'square');   // a virada no fim da frase
-    return SB * 4;
-  };
-  const GERA = { jazz: (t, n) => jazz(t, n), rock: (t, n) => rock(t, n), bossa, mpb, samba };
-  const NIVEL = { jazz: 0.9, rock: 0.7, bossa: 1.065, mpb: 1.017, samba: 0.666 };   // o volume de cada uma (ver _medir): todas com a mesma altura
+  // ---- SAMBA / PAGODE (♩102, a animada da sexta): C6 A7 Dm7 G7 E7 Am7 D7 G7 · refrão: F6 Fm6 Em7 A7 Dm7 G7 C6 G7
+  const SAMBA_A = [AC(36, [55, 57, 60, 64], [67, 69, 72, 74, 76, 79]), AC(45, [55, 61, 64, 67], [64, 67, 69, 73, 76, 79]), AC(38, [53, 57, 60, 65], [62, 65, 69, 72, 74, 77]), AC(43, [53, 59, 62, 65], [62, 65, 67, 71, 74, 77]),
+    AC(40, [56, 59, 62, 64], [64, 68, 71, 74, 76, 80]), AC(45, [55, 60, 64, 67], [64, 67, 69, 72, 76, 79]), AC(38, [54, 57, 60, 66], [62, 66, 69, 72, 74, 78]), AC(43, [53, 59, 62, 65], [62, 65, 67, 71, 74, 77])];
+  const SAMBA_B = [AC(41, [57, 60, 62, 65], [65, 67, 69, 72, 74, 77]), AC(41, [56, 60, 62, 65], [65, 68, 70, 72, 74, 77]), AC(40, [55, 59, 62, 64], [64, 67, 71, 72, 74, 76]), AC(45, [55, 61, 64, 67], [64, 67, 69, 73, 76, 79]),
+    AC(38, [53, 57, 60, 65], [62, 65, 69, 72, 74, 77]), AC(43, [53, 59, 62, 65], [62, 65, 67, 71, 74, 77]), AC(36, [55, 57, 60, 64], [67, 69, 72, 74, 76, 79]), AC(43, [53, 59, 62, 65], [62, 65, 67, 71, 74, 77])];
+  const TAMBORIM = [[0, 2, 5, 7, 10, 12, 14], [0, 3, 6, 8, 10, 13]];   // o teleco-teco (verso) e o do refrão
+  const CAVACO = [[[0, 1], [3, 0], [6, 1], [8, 0], [10, 1], [13, 0], [14, 1]], [[0, 1], [2, 0], [4, 1], [7, 0], [10, 1], [12, 0], [15, 1]]];
+  TEMAS.samba = { estilo: 'samba', bpm: 102, grid: 16, frase: 2, forma: [['intro', 4], ['A', 8], ['A2', 8], ['B', 8], ['breque', 1], ['A3', 8], ['B2', 8], ['solo', 8], ['B3', 8], ['fim', 2]], mot: { dens: 0.6, durs: [1, 1, 2, 2, 3] },
+    gera: (t0, S) => {
+      const SB = 60 / S.tema.bpm, S16 = SB / 4, sec = S.sec, q16 = (p) => t0 + p * S16, refrao = sec.startsWith('B'), intro = sec === 'intro', fim = sec === 'fim';
+      const prog = refrao ? SAMBA_B : SAMBA_A, c = fim ? SAMBA_A[0] : prog[S.i % 8], pr = prog[(S.i + 1) % 8];
+      if (sec === 'breque') { for (const k of [0, 3, 6]) { surdo(q16(k), 1); c.v.forEach((m) => nota('triangle', m + 12, q16(k), S16 * 1.5, 0.05, { corte: 3000 })); } pandeiro(q16(14), 1, true); pandeiro(q16(15), 1, true); return SB * 4; }
+      if (fim) { if (S.i === 0) { for (const k of [0, 3, 6, 10]) { surdo(q16(k), 1); c.v.forEach((m) => nota('triangle', m + 12, q16(k), S16 * 1.3, 0.05, { corte: 3000 })); } }
+        else { surdo(t0, 1); c.v.forEach((m) => nota('triangle', m + 12, t0, SB * 3, 0.05, { corte: 3000 })); nota('triangle', c.r, t0, SB * 3, 0.3, { corte: 700 }); pratoFinal(t0, 0.7); } return SB * 4; }
+      surdo(t0, 0.45); surdo(t0 + 2 * SB, 0.45); surdo(t0 + SB, 0.95); surdo(t0 + 3 * SB, 0.95); if (refrao || S.i % 2) surdo(t0 + 3.5 * SB, 0.4); if (refrao) surdo(t0 + 1.5 * SB, 0.35);   // o surdo: forte no 2 e no 4
+      for (let i = 0; i < 16; i++) pandeiro(q16(i), i % 4 === 0 ? 1 : i % 4 === 3 ? 0.8 : 0.5, i % 4 === 2);
+      if (!intro && sec !== 'A') for (const k of TAMBORIM[refrao ? 1 : 0]) tick(q16(k), 820, 0.06, 0.06, 'square');
+      for (const [k, ac] of CAVACO[refrao ? 1 : 0]) c.v.forEach((m, j) => nota('triangle', m + 12, q16(k) + j * 0.004, S16 * 1.3, ac ? 0.05 : 0.03, { corte: 3000, ataque: 0.003 }));
+      const ponte = pr.r - c.r, bx = [[0, c.r, 2], [4, c.r + 7, 2], [8, c.r + 12, 2], [12, c.r + (ponte > 0 ? 9 : 4), 1], [14, pr.r + (ponte > 0 ? -1 : 1), 1]];   // a baixaria
+      for (const [k, m, d] of bx) nota('triangle', m, q16(k), S16 * d * 0.92, 0.3, { corte: 700, ataque: 0.006 });
+      if (S.ultimo && !intro) for (const k of [12, 13, 14, 15]) tick(q16(k), 700 + k * 20, 0.08, 0.07, 'square');   // a virada
+      if (intro) return SB * 4;
+      if (sec === 'solo') improviso(S, c, S.r, q16, T_CAVACO(S16), 1, 0.62);
+      else { tocaFrase(S, c, fraseDa(S, refrao ? S.mus.motB : S.mus.motA), q16, T_VOZ(S16), 1.15, 0);
+        if (refrao) tocaFrase(S, c, fraseDa(S, S.mus.motB), q16, T_VOZ(S16), 0.5, 12); }   // o coro dobra o refrão uma oitava acima
+      return SB * 4;
+    } };
+
+  // a MÚSICA que está tocando: o tema, as barras (seção e posição de cada compasso) e os motivos sorteados
+  const VARIANTES = { jazz: ['jazzSwing', 'jazzCool', 'jazzBlues'], bossa: ['bossa'], mpb: ['mpb'], samba: ['samba'] };
+  let musica = null, ultimaVar = '';
+  function novaMusica(id, seed) {
+    const tema = TEMAS[id], r = semente(seed || (Math.random() * 1e9) | 0), barras = [];
+    tema.forma.forEach(([sec, len], k) => { for (let i = 0; i < len; i++) barras.push({ sec, i, len, ultimo: i === len - 1 && k < tema.forma.length - 1, prox: (tema.forma[k + 1] || [''])[0] }); });
+    const G = tema.grid * tema.frase, base = criarMotivo(r, G, tema.mot), baseB = criarMotivo(r, G, Object.assign({}, tema.mot, { dens: Math.min(0.85, tema.mot.dens + 0.08) }));
+    const mot = (b) => ({ base: b, resp: resposta(b, r), sobe: deslocar(b, 1), cad: cadencia(b, G) });
+    ultimaVar = id;
+    return { id, tema, barras, n: 0, r, motA: mot(base), motB: mot(baseB) };
+  }
+  function escolherVariante(estiloCidade) {
+    const L = VARIANTES[estiloCidade] || VARIANTES.jazz; if (L.length === 1) return L[0];
+    const op = L.filter((x) => x !== ultimaVar); return op[Math.floor(Math.random() * op.length)];   // o jazz: sorteia, sem repetir a anterior
+  }
+  function compassoDaCidade(t0) {
+    if (!musica || musica.n >= musica.barras.length) musica = novaMusica(escolherVariante(estilo));
+    const b = musica.barras[musica.n], S = Object.assign({ n: musica.n, r: musica.r, tema: musica.tema, mus: musica }, b);
+    musica.n++;
+    return musica.tema.gera(t0, S);
+  }
+  const NIVEL = { jazz: 1.01, rock: 0.7, jazzSwing: 1.01, jazzCool: 1.069, jazzBlues: 1.033, bossa: 1.244, mpb: 1.323, samba: 0.813 };   // o volume de cada uma, medido na música inteira (ver _medir): todas na mesma altura
   const DA_CIDADE = new Set(['jazz', 'bossa', 'mpb', 'samba']);
   // o tema do dia (pedir 'jazz' = "a música da cidadezinha"): segunda MPB, sexta samba, sábado e domingo bossa, o resto o jazz
   let fonteDia = null;
@@ -19996,17 +20119,23 @@ const Musica = (() => {
     return ds === 0 ? 'mpb' : ds === 4 ? 'samba' : ds >= 5 ? 'bossa' : 'jazz';
   }
   // mede o volume (RMS, sem o grave abaixo de 120 Hz, que a gente quase não ouve no celular) de 'qual' num contexto offline
+  //   (7.6.1) qual = 'rock', um estilo da cidade ('jazz' = o swing) ou uma variante ('jazzCool'...): mede a MÚSICA INTEIRA (2 a 3 min)
   async function medir(qual, compassos, pcm) {
-    const sr = 22050, dur = 40, off = new OfflineAudioContext(1, sr * dur, sr), salva = { ctx, bus, ruido, dist };
-    ctx = off; bus = off.createGain(); bus.gain.value = NIVEL[qual] || 0.9;
+    const id = TEMAS[qual] ? qual : qual === 'rock' ? null : (VARIANTES[qual] || ['jazzSwing'])[0];
+    const salvaM = { musica, ultimaVar }; if (id) musica = novaMusica(id, 4242);
+    const durM = id ? musica.barras.length * 240 / musica.tema.bpm + 4 : 40;
+    const sr = 22050, dur = Math.ceil(durM), off = new OfflineAudioContext(1, sr * dur, sr), salva = { ctx, bus, ruido, dist };
+    ctx = off; bus = off.createGain(); bus.gain.value = NIVEL[id || qual] || 0.9;
     const hp = off.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = pcm ? 20 : 80; bus.connect(hp); hp.connect(off.destination);
     ruido = off.createBuffer(1, sr, sr); { const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     dist = off.createWaveShaper(); { const cv = new Float32Array(257); for (let i = 0; i < 257; i++) cv[i] = Math.tanh((i / 128 - 1) * 6); dist.curve = cv; }
-    let t = 0.05, k = 0; const ger = GERA[qual]; while (k < (compassos || 16) && t < dur - 3) t += ger(t, k++);
-    ctx = salva.ctx; bus = salva.bus; ruido = salva.ruido; dist = salva.dist;
+    let t = 0.05, k = 0;
+    if (id) while (musica.n < musica.barras.length && (!compassos || musica.n < compassos)) t += compassoDaCidade(t);
+    else while (k < (compassos || 16) && t < dur - 3) t += rock(t, k++);
+    ctx = salva.ctx; bus = salva.bus; ruido = salva.ruido; dist = salva.dist; musica = salvaM.musica; ultimaVar = salvaM.ultimaVar;
     const buf = await off.startRendering(), d = buf.getChannelData(0), fim = Math.min(d.length, Math.floor(t * sr)); let s = 0, pico = 0;
     for (let i = 0; i < fim; i++) { s += d[i] * d[i]; pico = Math.max(pico, Math.abs(d[i])); }
-    const r = { rmsDb: 10 * Math.log10(s / fim + 1e-12), picoDb: 20 * Math.log10(pico + 1e-9), seg: t };
+    const r = { rmsDb: 10 * Math.log10(s / fim + 1e-12), picoDb: 20 * Math.log10(pico + 1e-9), seg: t, id: id || qual };
     if (pcm) { const q = new Int16Array(fim); for (let i = 0; i < fim; i++) q[i] = Math.max(-32767, Math.min(32767, d[i] * 32767)); let bin = ''; const u8 = new Uint8Array(q.buffer); for (let i = 0; i < u8.length; i += 8192) bin += String.fromCharCode.apply(null, u8.subarray(i, i + 8192)); r.pcm = btoa(bin); r.sr = sr; }   // (testes: o áudio)
     return r;
   }
@@ -20016,8 +20145,12 @@ const Musica = (() => {
   const laco = () => {
     if (!tocando || !ctx) return;
     if (prox < ctx.currentTime - 0.05) prox = ctx.currentTime + 0.08;
-    if (base === 'jazz' && DA_CIDADE.has(estilo) && compasso % 4 === 0) { const q = temaDoDia(); if (q !== estilo) { tocarJa(q); return; } }   // (7.6.0) virou o dia: troca o tema
-    while (prox < ctx.currentTime + 1.2) prox += (GERA[estilo] || GERA.jazz)(prox, compasso++);
+    const cidade = DA_CIDADE.has(estilo);
+    if (base === 'jazz' && cidade && musica && musica.n < musica.barras.length && musica.barras[musica.n].i === 0) { const q = temaDoDia(); if (q !== estilo) { tocarJa(q); return; } }   // (7.6.0) virou o dia: troca o tema (no começo de uma parte)
+    while (prox < ctx.currentTime + 1.2) {
+      if (cidade && (!musica || musica.n >= musica.barras.length)) { musica = novaMusica(escolherVariante(estilo)); try { bus.gain.setTargetAtTime(NIVEL[musica.id] || 0.9, prox, 0.4); } catch (e) { /* nada */ } }   // (7.6.1) a próxima música
+      prox += cidade ? compassoDaCidade(prox) : rock(prox, compasso++);
+    }
   };
   // quem quer o lugar do jazz (a roda de pagode perto, a barbearia com a música dela...) pede com ceder(dono) e devolve com retomar(dono).
   //   Enquanto alguém segura, o jazz não toca; quando o último devolve, ele volta sozinho, se ainda era a música que devia estar tocando
@@ -20039,7 +20172,8 @@ const Musica = (() => {
     if (!A) return;
     ctx = A.ctx; if (ctx.state === 'suspended') ctx.resume();
     bus = ctx.createGain(); bus.gain.value = 0; bus.connect(A.musica || A.mestre);   // (7.4.13) volume de MÚSICA
-    bus.gain.linearRampToValueAtTime(NIVEL[qual] || 0.9, ctx.currentTime + 1.5);
+    musica = DA_CIDADE.has(qual) ? novaMusica(escolherVariante(qual)) : null;   // (7.6.1) cada vez que a música da cidade (re)começa, é uma música nova
+    bus.gain.linearRampToValueAtTime(NIVEL[musica ? musica.id : qual] || 0.9, ctx.currentTime + 1.5);
     if (!ruido) { ruido = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate); const d = ruido.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     if (!dist) { dist = ctx.createWaveShaper(); const cv = new Float32Array(257); for (let i = 0; i < 257; i++) { const x = i / 128 - 1; cv[i] = Math.tanh(x * 6); } dist.curve = cv; }
     estilo = qual; tocando = true; compasso = 0; prox = ctx.currentTime + 0.15;
@@ -20078,7 +20212,9 @@ const Musica = (() => {
     for (const x of [o, o2, lfo]) { x.start(t); x.stop(t + d + 0.05); }
   };
   return { tocar, parar, ceder, retomar, zerar, menu, porta, get tocando() { return tocando; }, get estilo() { return estilo; }, get cedido() { return donos.size > 0; },
-    temaDoDia, definirDia: (fn) => { fonteDia = typeof fn === 'function' ? fn : null; }, _medir: medir, _NIVEL: NIVEL };   // (7.6.0) a cidade diz o dia (definirDia)
+    temaDoDia, definirDia: (fn) => { fonteDia = typeof fn === 'function' ? fn : null; }, _medir: medir, _NIVEL: NIVEL,
+    _proxima: () => { if (musica) musica.n = musica.barras.length; },   // (testes) pula para a próxima música
+    get musica() { return musica ? { id: musica.id, compasso: musica.n, total: musica.barras.length, parte: (musica.barras[Math.max(0, musica.n - 1)] || {}).sec } : null; } };   // (7.6.0) a cidade diz o dia (definirDia)
 })();
 
 // ---------------------------------------------------------------------

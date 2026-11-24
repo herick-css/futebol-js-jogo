@@ -1156,6 +1156,25 @@
     "Pode enfeitar o quanto quiser, não melhora.": ["Decorate yourself all you want, it doesn’t get better.", "Puedes adornarte todo lo que quieras, no mejora.", "Puoi agghindarti quanto vuoi, non migliora.", "Tu peux te décorer autant que tu veux, ça ne s’améliore pas."],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_760)) if (!I18N[k]) I18N[k] = TRAD_760[k];
+  // (7.6.1) as Configurações da pausa
+  const TRAD_761 = {
+    "Configurações": ["Settings", "Ajustes", "Impostazioni", "Paramètres"],
+    "Voltar": ["Back", "Volver", "Indietro", "Retour"],
+    "SOM": ["SOUND", "SONIDO", "AUDIO", "SON"],
+    "GRÁFICOS": ["GRAPHICS", "GRÁFICOS", "GRAFICA", "GRAPHISMES"],
+    "CÂMERA": ["CAMERA", "CÁMARA", "TELECAMERA", "CAMÉRA"],
+    "Gráficos padrão": ["Default graphics", "Gráficos por defecto", "Grafica predefinita", "Graphismes par défaut"],
+    "Câmera padrão": ["Default camera", "Cámara por defecto", "Telecamera predefinita", "Caméra par défaut"],
+    "Qualidade gráfica": ["Graphics quality", "Calidad gráfica", "Qualità grafica", "Qualité graphique"],
+    "Menos = mais pixelado e mais leve; mais = mais nítido e mais pesado.": ["Lower = more pixelated and lighter; higher = sharper and heavier.", "Menos = más pixelado y más ligero; más = más nítido y más pesado.", "Meno = più pixelato e più leggero; più = più nitido e più pesante.", "Moins = plus pixelisé et plus léger ; plus = plus net et plus lourd."],
+    "Distância de renderização": ["Render distance", "Distancia de renderizado", "Distanza di rendering", "Distance d’affichage"],
+    "Até onde a cidade aparece antes da névoa. Menos = mais leve.": ["How far the town shows before the fog. Lower = lighter.", "Hasta dónde se ve el pueblo antes de la niebla. Menos = más ligero.", "Fin dove si vede il paese prima della nebbia. Meno = più leggero.", "Jusqu’où la ville s’affiche avant le brouillard. Moins = plus léger."],
+    "Distância da câmera": ["Camera distance", "Distancia de la cámara", "Distanza della telecamera", "Distance de la caméra"],
+    "Altura da câmera": ["Camera height", "Altura de la cámara", "Altezza della telecamera", "Hauteur de la caméra"],
+    "Mais alta = olha mais de cima.": ["Higher = looks down more from above.", "Más alta = mira más desde arriba.", "Più alta = guarda più dall’alto.", "Plus haute = regarde davantage d’en haut."],
+    "Sensibilidade para girar": ["Turning sensitivity", "Sensibilidad al girar", "Sensibilità di rotazione", "Sensibilité de rotation"],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_761)) if (!I18N[k]) I18N[k] = TRAD_761[k];
   const TRAD_SB_CD = {   // o wrap integral do seu Valdemar (a comida saudável do clube)
     "Wrap integral de frango": ["Wholewheat chicken wrap", "Wrap integral de pollo", "Wrap integrale di pollo", "Wrap complet au poulet"],
     "Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!": ["Now I've got a wholewheat chicken wrap for the folks who play ball for real. Healthy, huh!", "Ahora tengo un wrap integral de pollo para la gente que juega al fútbol en serio. ¡Sano, eh!", "Adesso ho un wrap integrale di pollo per chi gioca a calcio sul serio. Sano, eh!", "Maintenant j'ai un wrap complet au poulet pour ceux qui jouent au foot pour de vrai. Sain, hein !"],
@@ -4658,7 +4677,7 @@
   }
   function mover(dt) {
     const J = S.jog, e = entrada(), T_ = UI.teclas;
-    if (T_.KeyQ) S.cam.yaw += dt * 1.8; if (T_.KeyE) S.cam.yaw -= dt * 1.8;
+    if (T_.KeyQ) S.cam.yaw += dt * 1.8 * grafCidade('camSens'); if (T_.KeyE) S.cam.yaw -= dt * 1.8 * grafCidade('camSens');
     const corre = e.m > 0.12 && (T_.ShiftLeft || T_.ShiftRight || (UI.joy.id != null && e.m >= LIMIAR_CORRER));
     UI.pad.classList.toggle('corre', !!corre);
     if (J.sentado) { if (e.m > 0.5 && !(J.comendo > 0) && !J.esperaPedido) levantar(); return; }      // (4.9.3) sentado: empurrar o direcional levanta; (6.1.0) esperando a pizza, não
@@ -4829,13 +4848,14 @@
     }
   }
   function atualizarCamera(dt) {
-    const J = S.jog, C = S.cam, P = C.pitch || 0.48;
+    const J = S.jog, C = S.cam, P = Math.max(0.12, Math.min(1.25, (C.pitch || 0.48) + grafCidade('camAlt') * Math.PI / 180));   // (7.6.1) + a altura escolhida
     if (S.camParada) return;                                          // cutscene das 2h: ele sai correndo da câmera
     if (S.camCena) { const c = S.camCena; camera.position.set(OX + c.px, c.py, c.pz); camera.lookAt(OX + c.tx, c.ty, c.tz); return; }   // câmera fixa de cena (encontro)
     const tx = J.x, ty = J.y + 1.35, tz = J.z;
     C.dAt = C.snap ? C.dist : C.dAt + (C.dist - C.dAt) * (1 - Math.exp(-dt * 4)); C.snap = false;
     const ux = Math.sin(C.yaw) * Math.cos(P), uy = Math.sin(P), uz = Math.cos(C.yaw) * Math.cos(P);
-    const px = tx + ux * C.dAt, py = ty + uy * C.dAt, pz = tz + uz * C.dAt;
+    const fd = S.dentro ? Math.min(1, grafCidade('camDist')) : grafCidade('camDist'), dd = C.dAt * fd;   // (7.6.1) a distância escolhida (dentro, só para perto)
+    const px = tx + ux * dd, py = ty + uy * dd, pz = tz + uz * dd;
     camera.position.set(OX + px, py, pz); camera.lookAt(OX + tx, ty, tz);
     atualizarOclusao(dt, px, py, pz, tx, ty - 0.2, tz);
   }
@@ -7998,6 +8018,17 @@
 #cdMapa .pxBtn, #cdPausa .pxBtn { --p: var(--p2, 2px); height: 38px; padding: 0 12px; font-size: 12px; }
 #cdMapa .pxBtn:disabled { opacity: 0.45; }
 #cdPausa .cdCard { width: min(320px, 100%); align-items: stretch; }
+#cdCfg { position: fixed; inset: 0; z-index: 15; display: grid; place-items: center; background: rgba(6, 4, 2, 0.7); padding: 10px; box-sizing: border-box; }
+#cdCfg[hidden] { display: none; }
+#cdCfg .cdCard { background: #2a1206; border: 4px solid #f0a020; color: #fff0c8; padding: 10px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; width: min(560px, 100%); max-height: 96%; overflow: auto; -webkit-overflow-scrolling: touch; }
+#cdCfg h3 { margin: 0; font: 700 15px/1.2 var(--font-display); letter-spacing: 0.1em; text-transform: uppercase; color: #f0a020; }
+#cdCfg details { border-top: 2px solid rgba(240, 160, 32, 0.35); padding-top: 6px; }
+#cdCfg summary { cursor: pointer; font: 700 13px var(--font-display); letter-spacing: 0.08em; color: #f0a020; padding: 4px 0; }
+#cdCfg .cdCfgLin { display: grid; grid-template-columns: minmax(0, 1fr) 64px; gap: 4px 8px; align-items: center; font: 600 13px/1.2 var(--font-body); margin: 6px 0; }
+#cdCfg .cdCfgLin small { grid-column: 1 / -1; opacity: 0.7; font: 400 11px/1.2 var(--font-body); margin-top: -2px; }
+#cdCfg .cdCfgLin input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: #f7941d; }
+#cdCfg .cdCfgLin output { font: 700 11px var(--font-display); text-align: right; }
+#cdCfg .pxBtn { --p: var(--p2, 2px); height: 38px; padding: 0 12px; font-size: 12px; }
 body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     document.head.appendChild(css);
     const raiz = $('raizJogo') || document.body, div = (id, html) => { const d = document.createElement('div'); d.id = id; d.hidden = true; if (html) d.innerHTML = html; return d; };
@@ -8008,10 +8039,11 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const esq = div('cdEsq', '<div class="cdMissao" role="button" tabindex="0"></div><button type="button" class="cdQuad cdMisIco" hidden>!</button><button type="button" class="cdQuad cdTurIco" hidden>!</button><button type="button" class="cdQuad cdMapaBtn"><span class="cdMapaI"></span></button>');
     const seta = div('cdSeta', '<div class="cdGira"><div class="cdPonta"></div></div><div class="cdDist"></div>');
     const mapa = div('cdMapa', '<div class="cdCard"><h3 class="cdTit"></h3><canvas width="720" height="456"></canvas><p class="cdDica"></p><div class="cdLinha"><div class="cdCores"></div><div class="cdBtns"><button type="button" class="pxBtn cdRemover"></button><button type="button" class="pxBtn pxPrim cdFechar"></button></div></div></div>');
-    const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdMenu"></button><button type="button" class="pxBtn cdDevBtn"></button></div></div>');
-    raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha);
+    const pausa = div('cdPausa', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdBtns" style="flex-direction:column"><button type="button" class="pxBtn pxPrim cdCont"></button><button type="button" class="pxBtn cdCfgBtn"></button><button type="button" class="pxBtn cdMenu"></button><button type="button" class="pxBtn cdDevBtn"></button></div></div>');
+    const cfg = div('cdCfg', '<div class="cdCard"><h3 class="cdTit"></h3><div class="cdCfgCorpo"></div><div class="cdBtns"><button type="button" class="pxBtn pxPrim cdCfgVoltar"></button></div></div>');   // (7.6.1)
+    raiz.append(preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, cfg);
     const q = (el, s) => el.querySelector(s);
-    UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
+    UI = { css, preto, arrasto, ctl, hud, esq, aviso, seta, mapa, pausa, ficha, cfg, dica: q(ctl, '.cdDica'), btn: q(ctl, '.cdBtn'), pad: q(ctl, '.cdPad'), knob: q(ctl, '.cdKnob'), grana: q(hud, '.cdGrana:not(.cdRel)'), hora: q(hud, '.cdHora'), climaIco: q(hud, '.cdClimaIco'), valor: q(hud, '.cdValor'), moeda: q(hud, '.cdMoeda'),
       btnPausa: q(hud, '.cdPausar'), resumo: q(hud, '.cdResumo'), info: q(hud, '.cdInfo'), fome: q(hud, '.cdFome'), fedor: q(hud, '.cdFedor'), cafe: q(hud, '.cdCafe'), missao: q(esq, '.cdMissao'), misIco: q(esq, '.cdMisIco'), turIco: q(esq, '.cdTurIco'), btnMapa: q(esq, '.cdMapaBtn'), setaGira: q(seta, '.cdGira'), setaPonta: q(seta, '.cdPonta'), setaDist: q(seta, '.cdDist'),
       mapaCv: q(mapa, 'canvas'), cores: q(mapa, '.cdCores'), remover: q(mapa, '.cdRemover'), fechar: q(mapa, '.cdFechar'), cont: q(pausa, '.cdCont'), menu: q(pausa, '.cdMenu') };
     for (const c of CORES_MARCA) { const b = document.createElement('button'); b.type = 'button'; b.className = 'cdCor'; b.dataset.cor = c; b.style.background = c; UI.cores.appendChild(b); }
@@ -8031,7 +8063,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     // arrastar em qualquer outro lugar da tela gira a câmera
     const arr = { id: null, x: 0 };
     arrasto.addEventListener('pointerdown', (e) => { if (arr.id != null) return; arr.id = e.pointerId; arr.x = e.clientX; arrasto.setPointerCapture(e.pointerId); });
-    arrasto.addEventListener('pointermove', (e) => { if (e.pointerId !== arr.id || !S) return; S.cam.yaw -= (e.clientX - arr.x) * 0.0075; arr.x = e.clientX; });
+    arrasto.addEventListener('pointermove', (e) => { if (e.pointerId !== arr.id || !S) return; S.cam.yaw -= (e.clientX - arr.x) * 0.0075 * grafCidade('camSens'); arr.x = e.clientX; });   // (7.6.1) sensibilidade
     const soltaArr = (e) => { if (e.pointerId === arr.id) arr.id = null; };
     arrasto.addEventListener('pointerup', soltaArr); arrasto.addEventListener('pointercancel', soltaArr);
     arrasto.addEventListener('wheel', (e) => { if (!S) return; e.preventDefault(); S.cam.dist = Math.max(5, Math.min(16, S.cam.dist + Math.sign(e.deltaY) * 0.8)); }, { passive: false });
@@ -8076,6 +8108,8 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.cont.addEventListener('click', () => alternarPausa());
     UI.menu.addEventListener('click', () => { if (!S || !S.ativo) return; som(); UI.pausa.hidden = true; S.modo = 'saindo'; sair(); });
     UI.pausa.querySelector('.cdDevBtn').addEventListener('click', () => { if (!S || !S.ativo) return; som(); abrirDev(); });   // (6.2.3)
+    UI.pausa.querySelector('.cdCfgBtn').addEventListener('click', () => { if (!S || !S.ativo) return; som(); abrirConfig(); });   // (7.6.1)
+    UI.cfg.querySelector('.cdCfgVoltar').addEventListener('click', () => { som(); fecharConfig(); });
     return UI;
   }
   // ================================================================== (6.2.3) PRIVILÉGIOS DO DESENVOLVEDOR (pause → senha)
@@ -8280,7 +8314,39 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     for (const A of S.npcs) { A.tQuieto = 0; if (A.congelado) descongelar(A); }
   }
   function tickDev() { const d = S.dados; if (d.devInfinito && d.fakes < DEV_GRANA) { d.fakes = DEV_GRANA; mostrarDinheiro(false); } }
-  function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; if (!p) fecharDev(); }
+  function alternarPausa() { if (!S) return; som(); const p = UI.pausa.hidden; UI.pausa.hidden = !p; S.pausado = p || !UI.mapa.hidden; if (!p) { fecharDev(); fecharConfig(); } }
+  // (7.6.1) CONFIGURAÇÕES (pausa da cidade): os volumes (os mesmos do menu), a qualidade gráfica (resolução interna: mais ou menos
+  //   pixelado), a distância de renderização e a câmera da cidade (distância, altura e sensibilidade). Tudo fica guardado no aparelho (GRAF).
+  const grafCidade = (k) => { try { return typeof GRAF !== 'undefined' ? GRAF.get(k) : k === 'camAlt' ? 0 : 1; } catch (e) { return k === 'camAlt' ? 0 : 1; } };
+  const CFG_LINHAS = [
+    ['graf', 'res', 'Qualidade gráfica', 'Menos = mais pixelado e mais leve; mais = mais nítido e mais pesado.', 160, 720, 20, (v) => v + 'p', 1],
+    ['graf', 'longe', 'Distância de renderização', 'Até onde a cidade aparece antes da névoa. Menos = mais leve.', 50, 160, 5, (v) => v + '%', 100],
+    ['cam', 'camDist', 'Distância da câmera', '', 60, 170, 5, (v) => v + '%', 100],
+    ['cam', 'camAlt', 'Altura da câmera', 'Mais alta = olha mais de cima.', -12, 25, 1, (v) => (v > 0 ? '+' : '') + v + '°', 1],
+    ['cam', 'camSens', 'Sensibilidade para girar', '', 40, 200, 10, (v) => v + '%', 100],
+  ];
+  function abrirConfig() {
+    if (!UI || !UI.cfg) return;
+    const corpo = UI.cfg.querySelector('.cdCfgCorpo'), lin = (g) => CFG_LINHAS.filter((L) => L[0] === g).map(([, k, nome, dica, mn, mx, pa, , esc]) =>
+      '<label class="cdCfgLin" data-k="' + k + '" data-esc="' + esc + '"><span>' + T(nome) + '</span><output></output><input type="range" min="' + mn + '" max="' + mx + '" step="' + pa + '">' + (dica ? '<small>' + T(dica) + '</small>' : '') + '</label>').join('');
+    let somH = ''; try { somH = typeof cfgSomHTML === 'function' ? cfgSomHTML() : ''; } catch (e) { somH = ''; }
+    corpo.innerHTML = (somH ? '<details open><summary>' + T('SOM') + '</summary>' + somH + '</details>' : '') +
+      '<details open><summary>' + T('GRÁFICOS') + '</summary>' + lin('graf') + '<div class="cdBtns"><button type="button" class="pxBtn" data-pad="graf">' + T('Gráficos padrão') + '</button></div></details>' +
+      '<details open><summary>' + T('CÂMERA') + '</summary>' + lin('cam') + '<div class="cdBtns"><button type="button" class="pxBtn" data-pad="cam">' + T('Câmera padrão') + '</button></div></details>';
+    try { if (somH && typeof cfgSomLigar === 'function') cfgSomLigar(corpo); } catch (e) { console.warn('[Cidade] som nas configurações:', e); }
+    const pinta = () => corpo.querySelectorAll('.cdCfgLin[data-k]').forEach((l) => {
+      const k = l.dataset.k, esc = Number(l.dataset.esc), L = CFG_LINHAS.find((q) => q[1] === k), v = Math.round(grafCidade(k) * esc);
+      l.querySelector('input').value = v; l.querySelector('output').textContent = L[7](v);
+    });
+    corpo.querySelectorAll('.cdCfgLin[data-k]').forEach((l) => {
+      const k = l.dataset.k, esc = Number(l.dataset.esc), r = l.querySelector('input'), L = CFG_LINHAS.find((q) => q[1] === k);
+      r.addEventListener('input', () => { GRAF.set(k, Number(r.value) / esc); l.querySelector('output').textContent = L[7](Number(r.value)); });
+      r.addEventListener('change', () => GRAF.guardar());
+    });
+    corpo.querySelectorAll('[data-pad]').forEach((b) => b.addEventListener('click', () => { som(); GRAF.restaurar(CFG_LINHAS.filter((L) => L[0] === b.dataset.pad).map((L) => L[1])); pinta(); }));
+    pinta(); UI.cfg.hidden = false;
+  }
+  function fecharConfig() { if (UI && UI.cfg) UI.cfg.hidden = true; try { if (typeof GRAF !== 'undefined') GRAF.guardar(); } catch (e) { /* nada */ } }
   let tMissao = null;
   // (7.2.1) MISSÕES DA ROTINA: além da missão da história (S.missao), o trabalho do dia e o banho também aparecem como missão.
   //   trabalho: dia de trabalho do seu emprego (cafeteria e mercado de segunda a sexta; pizzaria de quinta a domingo, menos no dia
@@ -8346,6 +8412,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     UI.btnPausa.setAttribute('aria-label', T('Pausar')); UI.btnMapa.setAttribute('aria-label', T('Mapa')); UI.misIco.setAttribute('aria-label', T('Missão'));
     UI.mapa.querySelector('.cdTit').textContent = T('Mapa'); UI.mapa.querySelector('.cdDica').textContent = T('Toque no mapa para marcar um destino. A cor escolhida aparece embaixo de você e a setinha mostra o caminho.');
     UI.remover.textContent = T('Remover marca'); UI.fechar.textContent = T('Fechar');
+    UI.pausa.querySelector('.cdCfgBtn').textContent = T('Configurações'); UI.cfg.querySelector('.cdTit').textContent = T('Configurações'); UI.cfg.querySelector('.cdCfgVoltar').textContent = T('Voltar');
     UI.pausa.querySelector('.cdTit').textContent = T('Pausado'); UI.cont.textContent = T('Continuar'); UI.menu.textContent = T('Voltar ao menu'); UI.pausa.querySelector('.cdDevBtn').textContent = T('Privilégios do desenvolvedor');
   }
   function mostrarDinheiro(pop) {
@@ -8377,13 +8444,14 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     if (scene.fog) { scene.fog.color.setHex(CEU); scene.fog.near = 70; scene.fog.far = 215; }
     for (const c of scene.children) { if (c.isLight) continue; M.vis.push([c, c.visible]); c.visible = false; }
     if (camera.fov !== 55) { camera.fov = 55; camera.updateProjectionMatrix(); }
+    M.far = camera.far;                                                  // (7.6.1) a distância de renderização mexe no fim da câmera
   }
   function restaurarMundo() {
     const M = S.mundo; if (!M) return;
     if (M.luz) { luzCeu.color.setHex(M.luz.hc); luzCeu.groundColor.setHex(M.luz.hg); luzCeu.intensity = M.luz.hi; sun.color.setHex(M.luz.sc); sun.intensity = M.luz.si; sun.position.fromArray(M.luz.sp); try { if (typeof particulas.intens === 'function') particulas.intens(1); particulas.definir(M.luz.part); } catch (e) { /* ok */ } }
     scene.background = M.bg; if (scene.fog && M.fog) { scene.fog.color.setHex(M.fog.c); scene.fog.near = M.fog.n; scene.fog.far = M.fog.f; }
     for (const [c, v] of M.vis) c.visible = v;
-    if (camera.fov !== M.fov) { camera.fov = M.fov; camera.updateProjectionMatrix(); }
+    if (camera.fov !== M.fov || (M.far && camera.far !== M.far)) { camera.fov = M.fov; if (M.far) camera.far = M.far; camera.updateProjectionMatrix(); }
   }
   const esconderBola = () => { try { ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false; } catch (e) { /* sem bola */ } };
 
@@ -8424,7 +8492,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const R = luzDoDia(d.hora), nuv = C.nuv;
     _tmp.copy(R.ceu); if (nuv > 0.001) { const g = (R.ceu.r + R.ceu.g + R.ceu.b) / 3 * 0.72; _cinza.setRGB(g * 0.97, g, g * 1.04); _tmp.lerp(_cinza, 0.8 * nuv); }
     if (!scene.background || !scene.background.isColor) scene.background = new THREE.Color();
-    scene.background.copy(_tmp); if (scene.fog) { scene.fog.color.copy(_tmp); scene.fog.near = R.ng[0] * (1 - 0.25 * nuv); scene.fog.far = R.ng[1] * (1 - 0.25 * nuv); }
+    const lg = grafCidade('longe');                                      // (7.6.1) a distância de renderização escolhida
+    scene.background.copy(_tmp); if (scene.fog) { scene.fog.color.copy(_tmp); scene.fog.near = R.ng[0] * (1 - 0.25 * nuv) * lg; scene.fog.far = R.ng[1] * (1 - 0.25 * nuv) * lg; }
+    { const fim = Math.max(90, Math.min(700, (scene.fog ? scene.fog.far : 300) * 1.12)); if (Math.abs(camera.far - fim) > 2) { camera.far = fim; camera.updateProjectionMatrix(); } }   // o que passa da névoa nem é desenhado
     luzCeu.color.copy(R.hc); luzCeu.groundColor.copy(R.hg); luzCeu.intensity = R.hi * (1 - 0.38 * nuv) + C.flash * 1.4;
     sun.color.copy(R.sc); sun.intensity = R.si * (1 - 0.7 * nuv) + C.flash * 0.6; sun.position.set(R.sp[0], R.sp[1], R.sp[2]);
     const on = Math.max(R.lamp, nuv * 0.4);                            // os postes acendem de noite (e um pouco quando o dia escurece com a chuva)

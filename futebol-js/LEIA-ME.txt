@@ -152,6 +152,12 @@ ARQUIVOS
                           (braço/perna fechados: cobrem a frente, o lado de fora e as costas do antebraço/coxa; o lado de dentro, que ninguém vê, fica
                           sem nada). ANÚNCIOS (Anuncios): a tela do Herick na partida livre usa o filme(); a escolha da partida livre vale até o jogador
                           recarregar a página (sessionStorage 'futebolJs.anuncioLivre').
+                          (7.6.1) As músicas da cidade agora têm FORMA (TEMAS/novaMusica): introdução, tema A, resposta, parte B, solo, volta do tema
+                          e final, com viradas, de 2,5 a 3 min cada; a melodia nasce de um MOTIVO sorteado a cada música (repete, responde, sobe e fecha
+                          em cadência), então não fica igual em loop. O jazz (ter–qui) tem 3 versões sorteadas a cada música: swing (♩92), cool (♩84,
+                          trompete) e blues shuffle (♩96, vibrafone). A MPB ficou mais calma (♩78, arpejo, agogô só no refrão). Volumes medidos na música
+                          inteira e igualados (NIVEL). Corrigido: a melodia do jazz saía toda junta no começo (faltava o t0). GRAF: qualidade gráfica
+                          (resolução interna), distância de renderização e a câmera da cidade, guardados no aparelho ('futebolJs.graficos.v1').
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
@@ -168,6 +174,8 @@ ARQUIVOS
                           receber ou ver um anúncio de 30 s e ganhar o dobro (dobrarPagamento). NOITES DE TRABALHO (mercado seg–sex até 22h, pizzaria
                           qui–dom até 0h; regraNoite): sem o aviso das 21h/limite das 22h; o aviso vem 1 h antes da hora de dormir (mercado 0h, pizzaria
                           2h), a cena de ir para casa às 3h/4h e ele acorda às 7h/9h, ou mais cedo se tiver jogo da várzea/torneio ou encontro de manhã.
+                          (7.6.1) CONFIGURAÇÕES na pausa da cidade: volumes (os mesmos do menu), qualidade gráfica (mais ou menos pixelado), distância
+                          de renderização (névoa e fim da câmera) e a câmera (distância, altura e sensibilidade para girar), com botões de padrão.
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   falas.js .............. as falas de amizade dos personagens: 15 de amizade negativa, 15 de amigos (50 ou mais) e 3 de corte
                           (-80) para cada um, e as gerais de preço mais caro (-25) e recusa (-50), nos 5 idiomas (baixado pela cidade)
