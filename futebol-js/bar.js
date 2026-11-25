@@ -109,6 +109,11 @@
     'Agora não': ['Not now', 'Ahora no', 'Non ora', 'Pas maintenant'],
     'Valendo 50 fakes (ganhou, leva 100)': ['For 50 fakes (win and take 100)', 'Por 50 fakes (si ganas, te llevas 100)', 'Per 50 fakes (se vinci, ne prendi 100)', 'Pour 50 fakes (gagne et repars avec 100)'],
     'Só por diversão': ['Just for fun', 'Solo por diversión', 'Solo per divertimento', 'Juste pour le plaisir'],
+    'Valendo {0} fakes (ganhou, leva {1})': ['For {0} fakes (win and take {1})', 'Por {0} fakes (si ganas, te llevas {1})', 'Per {0} fakes (se vinci, ne prendi {1})', 'Pour {0} fakes (gagne et repars avec {1})'],
+    'Você não tem {0} fakes pra apostar.': ['You don’t have {0} fakes to bet.', 'No tienes {0} fakes para apostar.', 'Non hai {0} fakes da scommettere.', 'Tu n’as pas {0} fakes à parier.'],
+    'E vou te falar uma coisa: se você ganhar de mim, eu coloco um lanche com o seu nome lá no cardápio da lanchonete.': ['And I’ll tell you what: if you beat me, I’ll put a sandwich with your name on the snack bar menu.', 'Y te digo una cosa: si me ganas, pongo un sándwich con tu nombre en el menú de la lonchería.', 'E ti dico una cosa: se mi batti, metto un panino col tuo nome nel menù del chiosco.', 'Et je vais te dire un truc : si tu me bats, je mets un sandwich à ton nom sur le menu du snack.'],
+    'E esse você come de graça, uma vez por dia. Palavra de Valdemar!': ['And you eat that one for free, once a day. Valdemar’s word!', 'Y ese te lo comes gratis, una vez al día. ¡Palabra de Valdemar!', 'E quello lo mangi gratis, una volta al giorno. Parola di Valdemar!', 'Et celui-là, tu le manges gratuitement, une fois par jour. Parole de Valdemar !'],
+    'E prometido é devido: a partir de hoje tem o X-{0} lá na lanchonete. Pra você é de graça, um por dia!': ['And a promise is a promise: starting today there’s the X-{0} at the snack bar. For you it’s free, one a day!', 'Y lo prometido es deuda: desde hoy está el X-{0} en la lonchería. Para ti es gratis, ¡uno al día!', 'E promessa è promessa: da oggi c’è l’X-{0} al chiosco. Per te è gratis, uno al giorno!', 'Et chose promise, chose due : dès aujourd’hui, il y a le X-{0} au snack. Pour toi, c’est gratuit, un par jour !'],
     'Vale quanto?': ['What are we playing for?', '¿Por cuánto?', 'Per quanto?', 'On joue pour combien ?'],
     'Zé Pinguço': ['Drunk Zé', 'Zé Borrachín', 'Zé l’Ubriacone', 'Zé le Pochtron'], 'Dona Marlene': ['Mrs. Marlene', 'Doña Marlene', 'Signora Marlene', 'Mme Marlene'],
     'Tonhão': ['Big Tony', 'Toñón', 'Tonhão', 'Gros Toni'], 'Cleiton Taco de Ouro': ['Cleiton Golden Cue', 'Cleiton Taco de Oro', 'Cleiton Stecca d’Oro', 'Cleiton Queue d’Or'],
@@ -602,6 +607,8 @@
       { id: 'valdemar', nome: 'Seu Valdemar', estrelas: 5, erro: 0.5, erroF: 0.04, sim: 8, posicao: true, val: true,
         desafio: 'Hehe... quer mesmo apanhar do velho aqui? Vem!', quips: { acerta: ['Olha essa!', 'Quarenta anos de sinuca, meu filho.'], erra: ['Ih, errei.'], ganha: ['Quarenta anos de sinuca, meu filho.'], perde: ['Treinou, hein?'] } },
     ];
+    // a aposta pela estrela do oponente: [quanto vale, quanto leva quem ganha]. Quanto mais estrela, mais alta a aposta e o retorno
+    const APOSTA = { 1: [50, 100], 2: [100, 220], 3: [150, 350], 4: [250, 600], 5: [400, 1000] };
     const OPO = {}; OPONENTES.forEach((o) => { OPO[o.id] = o; });
     const oponenteLa = (o) => (o.val ? faseVal() === 'sinuca' : o.dias.includes(api.diaSemana()) && hx() >= o.h[0] && hx() < o.h[1]);
 
@@ -932,23 +939,90 @@
       }
       P.tex.needsUpdate = true;
     }
+    // (7.6.3) O JOGO NA TV: antes os 10 bonecos corriam todos para uma bola que andava sozinha (ficavam um em cima do outro). Agora é um
+    //   joguinho de verdade, em miniatura: cada time tem goleiro, dois atrás e dois na frente, cada um na SUA posição (o bloco acompanha
+    //   a bola, sem amontoar); a bola tem dono: ele conduz para o gol de lá, toca para um companheiro mais à frente, só o mais perto
+    //   do outro time vai no bote (e às vezes rouba) e, perto do gol, chuta: o goleiro pega ou é gol (o placar sobe e a bola volta ao meio).
+    const TV_CASA = [[7, 31], [24, 21], [24, 41], [40, 25], [40, 37]];   // goleiro, zagueiros e atacantes do time que ataca para a direita
     function montarTV() {
       const T0 = M.D.tv, cv = document.createElement('canvas'); cv.width = 96; cv.height = 54;
       const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter;
       const m = new THREE.Mesh(new THREE.PlaneGeometry(T0.w, T0.h), new THREE.MeshBasicMaterial({ map: tex })); m.position.set(T0.x, T0.y, T0.z); M.R.grupo.add(m);
-      M.tv = { cv, g: cv.getContext('2d'), tex, t: 0, jog: Array.from({ length: 10 }, (v, i) => ({ x: 10 + Math.random() * 76, y: 12 + Math.random() * 34, time: i % 2, vx: 0, vy: 0 })), bola: { x: 48, y: 28 } , placar: [Math.floor(Math.random() * 3), Math.floor(Math.random() * 3)] };
+      const jog = [];
+      for (const time of [0, 1]) TV_CASA.forEach(([x, y], k) => { const hx = time ? 96 - x : x; jog.push({ time, k, gk: k === 0, hx, hy: y, x: hx, y, vx: 0, vy: 0 }); });
+      M.tv = { cv, g: cv.getContext('2d'), tex, t: 0, jog, bola: { x: 48, y: 31, vx: 0, vy: 0, dono: null, alvo: null, chute: false }, decide: 1, placar: [Math.floor(Math.random() * 3), Math.floor(Math.random() * 3)], pausa: 0 };
+      tvSaida(M.tv, Math.random() < 0.5 ? 0 : 1);
+    }
+    function tvSaida(V, time) {                                         // bola no meio com um atacante do time que sai jogando
+      for (const j of V.jog) { j.x = j.hx; j.y = j.hy; j.vx = j.vy = 0; }
+      const d = V.jog.find((j) => j.time === time && j.k === 3); d.x = time ? 50 : 46; d.y = 31;
+      Object.assign(V.bola, { x: 48, y: 31, vx: 0, vy: 0, dono: d, alvo: null, chute: false }); V.decide = 0.8;
+    }
+    function passoTV(V, dt) {
+      const B = V.bola, J = V.jog, dir = (j) => (j.time ? -1 : 1), golX = (time) => (time ? 5 : 91);
+      if (V.pausa > 0) { V.pausa -= dt; if (V.pausa <= 0) tvSaida(V, V.saiQuem); return; }
+      // a bola: com dono vai no pé dele; solta rola (e para devagar)
+      if (B.dono) { const o = B.dono; B.x = o.x + dir(o) * 1.4; B.y = o.y + 1; B.vx = B.vy = 0; }
+      else {
+        B.x += B.vx * dt; B.y += B.vy * dt; B.vx *= Math.pow(0.55, dt); B.vy *= Math.pow(0.55, dt);
+        if (B.y < 9 || B.y > 52) { B.vy = -B.vy; B.y = clampN(B.y, 9, 52); }
+        if (B.chute && (B.x <= 5 || B.x >= 91)) {                             // chegou no gol: o goleiro pega ou é gol
+          const lado = B.x >= 91 ? 0 : 1, gk = J.find((j) => j.time !== lado && j.gk), noGol = Math.abs(B.y - 31) < 8;
+          if (noGol && Math.random() < (Math.abs(gk.y - B.y) > 2.5 ? 0.7 : 0.15)) { V.placar[lado]++; V.pausa = 1.6; V.saiQuem = 1 - lado; B.chute = false; return; }
+          B.dono = gk; B.chute = false; V.decide = 1.2;
+        } else if (B.x < 5 || B.x > 91) { B.vx = -B.vx * 0.5; B.x = clampN(B.x, 5, 91); B.chute = false; }
+        // quem chega primeiro na bola solta domina
+        B.ultT = (B.ultT || 0) - dt;
+        let perto = null, pd = 3; for (const j of J) { if (j === B.ult && B.ultT > 0) continue; const d = Math.hypot(j.x - B.x, j.y - B.y); if (d < pd) { pd = d; perto = j; } }
+        if (perto && (perto === B.alvo || Math.hypot(B.vx, B.vy) < 26) && !B.chute) { B.dono = perto; B.alvo = null; V.decide = 0.5 + Math.random() * 0.8; }
+      }
+      const comBola = B.dono ? B.dono.time : null;
+      // quem vai na bola: o mais perto de cada time que NÃO tem a bola (só um), e o recebedor do passe
+      const caca = [0, 1].map((t) => { if (t === comBola) return null; let m = null, md = 1e9; for (const j of J) if (j.time === t && !j.gk) { const d = Math.hypot(j.x - B.x, j.y - B.y); if (d < md) { md = d; m = j; } } return m; });
+      const sx = (B.x - 48) * 0.42, sy = (B.y - 31) * 0.3;
+      for (const j of J) {
+        let tx, ty, vmax = 15;
+        if (j === B.dono) { tx = j.x + dir(j) * 8; ty = j.y + (31 - j.y) * 0.15 + (Math.random() - 0.5) * 6; vmax = 11; }
+        else if (j === B.alvo && !B.dono) { tx = B.x; ty = B.y; vmax = 17; }
+        else if (j === caca[j.time]) { tx = B.x; ty = B.y; vmax = 15; }
+        else if (j.gk) { tx = j.hx + dir(j) * Math.max(0, (dir(j) * (B.x - 48)) * 0.05); ty = 31 + clampN((B.y - 31) * 0.4, -6, 6); vmax = 10; }
+        else { const ataca = comBola === j.time ? dir(j) * 7 : -dir(j) * 3; tx = clampN(j.hx + sx + ataca, 8, 88); ty = clampN(j.hy + sy, 11, 51); vmax = 9; }
+        const dx = tx - j.x, dy = ty - j.y, d = Math.hypot(dx, dy) || 1, v = Math.min(vmax, d * 3);
+        j.vx += (dx / d * v - j.vx) * Math.min(1, dt * 6); j.vy += (dy / d * v - j.vy) * Math.min(1, dt * 6);
+      }
+      // ninguém em cima do outro: os do mesmo time se empurram
+      for (let a = 0; a < J.length; a++) for (let b = a + 1; b < J.length; b++) { const p = J[a], q = J[b], dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy); if (d < 4 && d > 0.01 && !(p === B.dono || q === B.dono)) { const k = (4 - d) * 0.5; p.x -= dx / d * k; p.y -= dy / d * k; q.x += dx / d * k; q.y += dy / d * k; } }
+      for (const j of J) { j.x = clampN(j.x + j.vx * dt, 5, 91); j.y = clampN(j.y + j.vy * dt, 10, 52); }
+      // o dono decide: toca para frente, chuta perto do gol ou segue conduzindo; o bote do mais perto pode roubar
+      if (B.dono) {
+        const o = B.dono, cc = caca[1 - o.time];
+        if (cc && Math.hypot(cc.x - o.x, cc.y - o.y) < 2.5 && !o.gk && Math.random() < dt * 0.6) { B.dono = cc; V.decide = 0.6; return; }   // roubou
+        V.decide -= dt;
+        if (V.decide <= 0) {
+          const dg = Math.abs(golX(1 - o.time) - o.x);
+          if (!o.gk && dg < 22 && Math.random() < 0.6) {                       // chute
+            const ty = 31 + (Math.random() - 0.5) * 18, tx = golX(1 - o.time), d = Math.hypot(tx - o.x, ty - o.y) || 1;
+            B.dono = null; B.chute = true; B.alvo = null; B.ult = o; B.ultT = 0.4; B.vx = (tx - o.x) / d * 60; B.vy = (ty - o.y) / d * 60;
+          } else {                                                             // passe para um companheiro (de preferência mais à frente)
+            const opc = J.filter((j) => j.time === o.time && j !== o && !j.gk).sort((a, b) => dir(o) * (b.x - a.x) + (Math.random() - 0.5) * 14);
+            const r = opc[0];
+            if (r) { const d = Math.hypot(r.x - o.x, r.y - o.y) || 1; B.dono = null; B.alvo = r; B.chute = false; B.ult = o; B.ultT = 0.3; B.vx = (r.x - o.x) / d * 38; B.vy = (r.y - o.y) / d * 38; }
+          }
+          V.decide = 0.7 + Math.random() * 1.1;
+        }
+      }
     }
     function desenharTV(dt) {
-      const V = M.tv; if (!V) return; V.t += dt; if (V.t < 0.12) return; V.t = 0;
+      const V = M.tv; if (!V) return; V.t += dt; if (V.t < 0.06) return;
+      const passo = Math.min(0.1, V.t); V.t = 0; passoTV(V, passo);
       const g = V.g, B = V.bola;
       g.fillStyle = '#2f8a3a'; g.fillRect(0, 0, 96, 54); g.fillStyle = '#35963f'; for (let x = 0; x < 96; x += 12) g.fillRect(x, 8, 6, 46);
       g.fillStyle = '#e8f4e8'; g.fillRect(4, 8, 88, 1); g.fillRect(4, 53, 88, 1); g.fillRect(4, 8, 1, 46); g.fillRect(91, 8, 1, 46); g.fillRect(48, 8, 1, 46);
       g.strokeStyle = '#e8f4e8'; g.beginPath(); g.arc(48.5, 31, 6, 0, Math.PI * 2); g.stroke(); g.strokeRect(4.5, 22.5, 8, 17); g.strokeRect(83.5, 22.5, 8, 17);
-      B.x += (Math.random() - 0.5) * 6; B.y += (Math.random() - 0.5) * 4; B.x = clampN(B.x, 8, 88); B.y = clampN(B.y, 12, 50);
-      for (const j of V.jog) { j.vx += (B.x - j.x) * 0.02 + (Math.random() - 0.5) * 0.8; j.vy += (B.y - j.y) * 0.02 + (Math.random() - 0.5) * 0.8; j.vx *= 0.8; j.vy *= 0.8; j.x = clampN(j.x + j.vx, 6, 90); j.y = clampN(j.y + j.vy, 10, 52); g.fillStyle = j.time ? '#f2f2ee' : '#c8302a'; g.fillRect(Math.round(j.x), Math.round(j.y) - 1, 2, 3); g.fillStyle = '#1c1c1f'; g.fillRect(Math.round(j.x), Math.round(j.y) + 2, 2, 1); }
+      for (const j of V.jog) { g.fillStyle = j.gk ? (j.time ? '#2a72d6' : '#f2c230') : j.time ? '#f2f2ee' : '#c8302a'; g.fillRect(Math.round(j.x), Math.round(j.y) - 1, 2, 3); g.fillStyle = '#1c1c1f'; g.fillRect(Math.round(j.x), Math.round(j.y) + 2, 2, 1); }
       g.fillStyle = '#ffffff'; g.fillRect(Math.round(B.x), Math.round(B.y), 1, 1);
       g.fillStyle = 'rgba(0,0,0,0.7)'; g.fillRect(2, 1, 40, 7); g.fillStyle = '#ffffff'; g.font = 'bold 6px monospace'; g.fillText('VER ' + V.placar[0] + 'x' + V.placar[1] + ' BRA', 4, 7);
-      if (Math.random() < 0.002) V.placar[Math.random() < 0.5 ? 0 : 1]++;
+      if (V.pausa > 0) { g.fillStyle = 'rgba(0,0,0,0.55)'; g.fillRect(30, 24, 36, 11); g.fillStyle = '#f2c230'; g.fillText('GOOOL!', 37, 32); }
       V.tex.needsUpdate = true;
     }
     function montarBolasMesa() {                                       // as bolas de enfeite no pano (mexem quando alguém tacada)
@@ -1384,17 +1458,23 @@
     async function desafiar(o) {
       const s = S(), d = s.dados, A = atorDoOponente(o); if (!A || M.jogando) return;
       const quem = o.val ? 'valb' : 'op_' + o.id;
-      const r = await Escolha.mostrar(Tx('Vale quanto?'), [Tx('Valendo 50 fakes (ganhou, leva 100)'), Tx('Só por diversão'), Tx('Agora não')]);
+      const [vAposta, vPremio] = APOSTA[o.estrelas] || APOSTA[1];
+      const r = await Escolha.mostrar(Tx('Vale quanto?'), [Tfx('Valendo {0} fakes (ganhou, leva {1})', vAposta, vPremio), Tx('Só por diversão'), Tx('Agora não')]);
       if (r === 2 || r < 0) return;
-      const aposta = r === 0 ? 50 : 0;
-      if (aposta && d.fakes < aposta) { await api.fala('jog', Tx('Você não tem 50 fakes pra apostar.')); Dialogo.esconder(); return; }
+      const aposta = r === 0 ? vAposta : 0;
+      if (aposta && d.fakes < aposta) { await api.fala('jog', Tfx('Você não tem {0} fakes pra apostar.', aposta)); Dialogo.esconder(); return; }
       let mod = null;
       try { mod = typeof Fases !== 'undefined' ? await Fases.carregar('sinuca') : null; } catch (e) { console.warn('[Bar] sinuca.js não veio:', e); }
       const jogar = mod && ((mod.dados && mod.dados.jogar) || (mod.criar && mod.criar().jogar)); if (!jogar) return;
       s.modo = 'cena'; api.UI().ctl.hidden = true; api.aviso(''); M.jogando = true; A.jogandoComJog = true;
       const J = s.jog;
       try {
-        await api.fala(quem, Tx(o.desafioF && fem() ? o.desafioF : o.desafio)); Dialogo.esconder();
+        await api.fala(quem, Tx(o.desafioF && fem() ? o.desafioF : o.desafio));
+        if (o.val && !dadosB().venceuValdemar) {                          // a promessa do seu Valdemar, antes da partida
+          await api.fala('valb', Tx('E vou te falar uma coisa: se você ganhar de mim, eu coloco um lanche com o seu nome lá no cardápio da lanchonete.'));
+          await api.fala('valb', Tx('E esse você come de graça, uma vez por dia. Palavra de Valdemar!'));
+        }
+        Dialogo.esconder();
         // os dois vão para a mesa (o jogador na cabeceira oeste, o oponente do outro lado)
         if (M.jogoNPC) { for (const B of M.jogoNPC.js) if (B !== A) { B.rotaP = null; pose(B, 'taco'); } M.jogoNPC = null; }
         if (J.sentado) api.levantar();
@@ -1412,8 +1492,14 @@
         const db = dadosB(); db.sinuca = db.sinuca || {}; const st = db.sinuca[o.id] = db.sinuca[o.id] || { v: 0, d: 0 };
         if (res.venceu) {
           st.v++;
-          if (aposta) { d.fakes += aposta * 2; api.somDinheiro(); api.mostrarDinheiro(false); api.ganhoNaTela(aposta * 2); }
-          if (o.val) { await api.fala('jog', Tx('Ganhei do seu Valdemar!')); await api.fala('valb', Tx('Ô loco... faz vinte anos que ninguém ganha de mim aqui. Respeito!')); if (!db.venceuValdemar) { db.venceuValdemar = true; Espectros.mover('confiante', 3, 'ganhou do Valdemar na sinuca'); } }
+          if (aposta) { d.fakes += vPremio; api.somDinheiro(); api.mostrarDinheiro(false); api.ganhoNaTela(vPremio); }
+          if (o.val) {
+            await api.fala('jog', Tx('Ganhei do seu Valdemar!')); await api.fala('valb', Tx('Ô loco... faz vinte anos que ninguém ganha de mim aqui. Respeito!'));
+            if (!db.venceuValdemar) {
+              db.venceuValdemar = true; Espectros.mover('confiante', 3, 'ganhou do Valdemar na sinuca');
+              await api.fala('valb', Tfx('E prometido é devido: a partir de hoje tem o X-{0} lá na lanchonete. Pra você é de graça, um por dia!', nomeJ()));
+            }
+          }
           else await api.fala(quem, Tx('Boa! Joga bem, hein!'));
         } else { st.d++; await api.fala(quem, Tx(o.val ? (fem() ? 'Quarenta anos de sinuca, minha filha.' : 'Quarenta anos de sinuca, meu filho.') : 'Hehe, fica pra próxima!')); }
         api.gravar(d.ponto || 'chegada');

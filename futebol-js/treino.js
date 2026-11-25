@@ -39,6 +39,8 @@
     // apresentação
     'Opa! Chegou gente nova no treino!': ['Hey! New face at practice!', '¡Epa! ¡Llegó alguien nuevo al entrenamiento!', 'Ehi! Gente nuova all’allenamento!', 'Oh ! Du nouveau à l’entraînement !'],
     'Eu sou o Paredão, o goleiro. Esses dois são o Juninho e o Tonhão.': ['I’m Paredão, the keeper. These two are Juninho and Tonhão.', 'Soy Paredão, el arquero. Estos dos son Juninho y Tonhão.', 'Io sono Paredão, il portiere. Questi due sono Juninho e Tonhão.', 'Moi c’est Paredão, le gardien. Eux, c’est Juninho et Tonhão.'],
+    'O seu Nonato mandou a gente treinar aqui na várzea: chute, passe e cruzamento.': ['Mr. Nonato sent us to train here at the dirt pitch: shooting, passing and crossing.', 'Don Nonato nos mandó a entrenar aquí en la cancha de tierra: tiro, pase y centro.', 'Il signor Nonato ci ha mandato ad allenarci qui al campetto: tiro, passaggio e cross.', 'M. Nonato nous a envoyés nous entraîner ici, sur le terrain vague : tir, passe et centre.'],   // (7.6.3)
+    'Só que são 2 treinos por dia, no máximo. O seu Nonato não quer ninguém estourado.': ['But it’s 2 sessions a day, tops. Mr. Nonato doesn’t want anyone worn out.', 'Pero son 2 entrenamientos por día, como máximo. Don Nonato no quiere a nadie reventado.', 'Però sono 2 allenamenti al giorno, al massimo. Il signor Nonato non vuole nessuno sfinito.', 'Mais c’est 2 entraînements par jour, maximum. M. Nonato ne veut personne d’épuisé.'],   // (7.6.3)
     'A gente treina aqui no campo do seu Nonato: chute, passe e cruzamento.': ['We train here on Mr. Nonato’s pitch: shooting, passing and crossing.', 'Entrenamos aquí en la cancha de don Nonato: tiro, pase y centro.', 'Ci alleniamo qui sul campo del signor Nonato: tiro, passaggio e cross.', 'On s’entraîne ici, sur le terrain de M. Nonato : tir, passe et centre.'],
     'São 30 situações de cada, e cada uma tem 3 desafios. Vai ficando difícil, hein!': ['There are 30 situations of each, and each one has 3 challenges. It gets tough, huh!', 'Son 30 situaciones de cada uno, y cada una tiene 3 desafíos. ¡Se pone difícil, eh!', 'Sono 30 situazioni per tipo, e ognuna ha 3 sfide. Diventa difficile, eh!', 'Il y a 30 situations de chaque, et chacune a 3 défis. Ça devient dur, hein !'],
     'Você tem 3 bolas por desafio. Acertou, a bola volta. Errou, perdeu uma.': ['You get 3 balls per challenge. Hit it and the ball comes back. Miss and you lose one.', 'Tienes 3 balones por desafío. Si aciertas, el balón vuelve. Si fallas, pierdes uno.', 'Hai 3 palloni per sfida. Se centri, il pallone torna. Se sbagli, ne perdi uno.', 'Tu as 3 ballons par défi. Réussi, le ballon revient. Raté, tu en perds un.'],
@@ -112,7 +114,7 @@
     'Faça o gol de {0} m. O Tonhão está na frente.': ['Score from {0} m. Tonhão is in the way.', 'Haz el gol desde {0} m. Tonhão está delante.', 'Segna da {0} m. Tonhão ti sta davanti.', 'Marque de {0} m. Tonhão est devant.'],
     'Acerte o aro (de {0} m). O Paredão está no gol.': ['Hit the hoop (from {0} m). Paredão is in goal.', 'Acierta el aro (desde {0} m). Paredão está en el arco.', 'Colpisci il cerchio (da {0} m). Paredão è in porta.', 'Touche le cerceau (à {0} m). Paredão est dans le but.'],
     'Passe para o Juninho, a {0} m. O Tonhão está colado nele.': ['Pass to Juninho, {0} m away. Tonhão is right on him.', 'Pasa a Juninho, a {0} m. Tonhão lo marca de cerca.', 'Passa a Juninho, a {0} m. Tonhão gli sta addosso.', 'Passe à Juninho, à {0} m. Tonhão le colle.'],
-    'Cobrança como na partida: mire, segure a força e toque na bola para o efeito.': ['Same set piece as in a match: aim, hold for power and tap the ball for curl.', 'Tiro como en el partido: apunta, mantén para la fuerza y toca el balón para el efecto.', 'Calcio piazzato come in partita: mira, tieni premuto per la forza e tocca il pallone per l’effetto.', 'Coup de pied arrêté comme en match : vise, maintiens pour la puissance et touche le ballon pour l’effet.'],
+    'Cobrança de falta como na partida: arraste para a direção, a barra é o efeito e segure CHUTAR para a força.': ['A free kick just like in a match: drag to aim, the bar is the curl and hold SHOOT for power.', 'Tiro libre como en el partido: arrastra para la dirección, la barra es el efecto y mantén TIRAR para la fuerza.', 'Punizione come in partita: trascina per la direzione, la barra è l’effetto e tieni premuto TIRA per la potenza.', 'Coup franc comme en match : fais glisser pour la direction, la barre, c’est l’effet, et maintiens TIRER pour la puissance.'],   // (7.6.3)
     'Use PASSAR: a força decide até onde a bola vai.': ['Use PASS: the power decides how far the ball goes.', 'Usa PASAR: la fuerza decide hasta dónde va el balón.', 'Usa PASSA: la forza decide fin dove va il pallone.', 'Utilise PASSER : la puissance décide jusqu’où va le ballon.'],
     'Use CHUTAR / CRUZAR mirando fora do gol: a bola vai pelo alto.': ['Use SHOOT / CROSS aiming away from goal: the ball goes in the air.', 'Usa TIRAR / CENTRAR apuntando fuera del arco: el balón va por arriba.', 'Usa TIRA / CROSS mirando fuori dalla porta: il pallone va alto.', 'Utilise TIRER / CENTRER en visant hors du but : le ballon part en l’air.'],
     'Treino': ['Practice', 'Entrenamiento', 'Allenamento', 'Entraînement'],
@@ -730,12 +732,15 @@
   // criar(api): a turma no campo, as luzes, a conversa e o treino
   // =====================================================================================================================
   function criar(api) {
-    const S = () => api.S(), L = LOGICA, Y0 = 0.08;                     // Y0: o piso do society (a grama sintética está 8 cm acima do chão)
+    const S = () => api.S(), L = LOGICA, Y0 = (api.S().treino && api.S().treino.F.y != null) ? api.S().treino.F.y : 0.08;   // Y0: o piso do campo (a grama sintética do society está 8 cm acima do chão; (7.6.3) a terra da várzea, no chão)
     const P = { sessao: false, dr: null, luz: null, t: 0, objs: [], falou: false };
     const TT = () => S().treino;                                         // { F, gz, spot, bat: [Juninho, Tonhão], gol: Paredão, esp, bola }
-    const W = (u, v) => ({ x: TT().F.cx + u, z: TT().gz - v });          // do treino (u, v) para a cidade (x, z)
-    const LC = (x, z) => ({ u: x - TT().F.cx, v: TT().gz - z });
-    const yawDir = (du, dv) => Math.atan2(dv, du);                       // yaw da cidade para andar no sentido (du, dv) do treino (x = u, z = −v)
+    // (7.6.3) o campo do treino pode estar girado (a turma foi para a VÁRZEA, que tem os gols nas pontas do x): T_.ori = { x, z (o meio
+    //   da linha do gol), U (o lado: u), V (para o meio do campo: v) }. Sem ori, é o society antigo: x = u, z = gz − v.
+    const ORI = () => { const T_ = TT(); return T_.ori || { x: T_.F.cx, z: T_.gz, U: { x: 1, z: 0 }, V: { x: 0, z: -1 } }; };
+    const W = (u, v) => { const o = ORI(); return { x: o.x + u * o.U.x + v * o.V.x, z: o.z + u * o.U.z + v * o.V.z }; };   // do treino (u, v) para a cidade (x, z)
+    const LC = (x, z) => { const o = ORI(), dx = x - o.x, dz = z - o.z; return { u: dx * o.U.x + dz * o.U.z, v: dx * o.V.x + dz * o.V.z }; };
+    const yawDir = (du, dv) => { const o = ORI(), dx = du * o.U.x + dv * o.V.x, dz = du * o.U.z + dv * o.V.z; return Math.atan2(-dz, dx); };   // yaw da cidade para andar no sentido (du, dv) do treino
     const gravar = () => { try { api.gravar(S().dados.ponto || 'chegada'); } catch (e) { /* sem save */ } };
     function dados() {
       const d = S().dados, p = d.treinoNonato || (d.treinoNonato = {});
@@ -771,7 +776,7 @@
       if (P.luz || !TT()) return;
       const F = TT().F, r = F.r, g = new THREE.Group(), cabecas = [];
       const matPoste = mat('#6d737b'), matCab = new THREE.MeshBasicMaterial({ color: 0x5a5a52 });
-      for (const [x, z] of [[r.x0 + 0.45, r.z0 + 6], [r.x1 - 0.45, r.z0 + 6], [r.x0 + 0.45, r.z1 - 6], [r.x1 - 0.45, r.z1 - 6]]) {   // por dentro do alambrado, na sobra do lado do campo
+      for (const [x, z] of F.postes || [[r.x0 + 0.45, r.z0 + 6], [r.x1 - 0.45, r.z0 + 6], [r.x0 + 0.45, r.z1 - 6], [r.x1 - 0.45, r.z1 - 6]]) {   // por dentro do alambrado, na sobra do lado do campo ((7.6.3) a várzea diz onde: F.postes)
         const poste = new THREE.Mesh(new THREE.BoxGeometry(0.22, 9, 0.22), matPoste); poste.position.set(x, 4.5, z); g.add(poste);
         const ld = Math.sign(F.cx - x), braco = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.12, 0.14), matPoste); braco.position.set(x + ld * 0.45, 8.9, z); g.add(braco);
         const cab = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.42, 0.55), matCab); cab.position.set(x + ld * 0.95, 8.85, z); cab.rotation.z = -ld * 0.5; g.add(cab); cabecas.push(cab);
@@ -824,7 +829,7 @@
           if (!D.corr) { const a0 = Math.random() < 0.5 ? -1 : 1; D.corr = { u: spot.u + a0 * 0.9, v: spot.v + 2.2, a: a0 }; } const a = D.corr.a;
           andarAte(outro, spot.u - a * 3.2, spot.v + 3.5, 1.6, dt); olhar(outro, 0, 0);
           if (andarAte(bat, D.corr.u, D.corr.v, 1.8, dt)) { olhar(bat, spot.u, spot.v); D.fase = 'olha'; D.ft = 0; }
-          const g = gk(clampN(spot.u * 0.06, -0.4, 0.4), 0.6); K.x += (g.x - K.x) * Math.min(1, dt * 3); K.z = g.z; K.yawAlvo = Math.PI / 2; if (!K.pf || K.pf.tipo !== 'gk') pose(K, 'gk');
+          const g = gk(clampN(spot.u * 0.06, -0.4, 0.4), 0.6); K.x += (g.x - K.x) * Math.min(1, dt * 3); K.z += (g.z - K.z) * Math.min(1, dt * 3); K.yawAlvo = yawDir(0, 1); if (!K.pf || K.pf.tipo !== 'gk') pose(K, 'gk');
         } else if (D.fase === 'olha') {
           bat.andando = false; if (D.ft > 1.1) { D.fase = 'corre'; D.ft = 0; D.estilo = ['peito', 'peito', 'chapa', 'chapa', 'cavadinha'][Math.floor(Math.random() * 5)]; }
         } else if (D.fase === 'corre') {
@@ -877,7 +882,7 @@
         if (D.fase === 'prepara') {
           bolaNPC(B, wing.u, L.RB, wing.v);
           const a = andarAte(A1, wing.u + lado * 0.6, wing.v + 1.6, 2.0, dt), b = andarAte(A0, area.u - lado * 1.2, area.v + 5.5, 2.0, dt);
-          const g = gk(lado * 0.5, 0.7); K.x += (g.x - K.x) * Math.min(1, dt * 3); K.z = g.z; K.yawAlvo = Math.PI / 2; if (!K.pf) pose(K, 'gk');
+          const g = gk(lado * 0.5, 0.7); K.x += (g.x - K.x) * Math.min(1, dt * 3); K.z += (g.z - K.z) * Math.min(1, dt * 3); K.yawAlvo = yawDir(0, 1); if (!K.pf) pose(K, 'gk');
           if (a && b) { olhar(A1, area.u, area.v); olhar(A0, wing.u, wing.v); D.fase = 'olha'; D.ft = 0; }
         } else if (D.fase === 'olha') {
           if (D.ft > 0.9) { D.fase = 'corre'; D.ft = 0; }
@@ -956,9 +961,9 @@
     // o Paredão acompanhando a jogada (a posição vem da lógica; aqui a pose: base, ponte, encaixe)
     function goleiroSegue(K, J, dt) {
       const g = J.gk; if (!g) return;
-      const p = W(g.u, g.v), antes = K.x; K.z = p.z; K.yawAlvo = Math.PI / 2; K.yaw = K.yawAlvo;
-      if (!K.pf || K.pf.tipo === 'gk') K.x = p.x;
-      if (K.pf && K.pf.tipo === 'gk') K.pf.lat = (K.x - antes) / Math.max(dt, 1e-3);
+      const p = W(g.u, g.v), antes = LC(K.x, K.z).u; K.yawAlvo = yawDir(0, 1); K.yaw = K.yawAlvo;
+      if (!K.pf || K.pf.tipo === 'gk') { K.x = p.x; K.z = p.z; } else { const q = W(antes, g.v); K.x = q.x; K.z = q.z; }   // (fora da base: só a profundidade)
+      if (K.pf && K.pf.tipo === 'gk') K.pf.lat = (LC(K.x, K.z).u - antes) / Math.max(dt, 1e-3);
       const ev = J.ev.find((e) => e.e === 'goleiro');
       if (ev && (!K.pf || K.pf.tipo === 'gk')) {
         const dl = ev.u - g.u;                                            // de onde a bola passou em relação ao corpo dele
@@ -991,11 +996,11 @@
         if (!p.conhece) {
           await api.fala('paredao', tr('Opa! Chegou gente nova no treino!'));
           await api.fala('paredao', tr('Eu sou o Paredão, o goleiro. Esses dois são o Juninho e o Tonhão.'));
-          await api.fala('juninho', tr('A gente treina aqui no campo do seu Nonato: chute, passe e cruzamento.'));
+          await api.fala('juninho', tr('O seu Nonato mandou a gente treinar aqui na várzea: chute, passe e cruzamento.'));
           await api.fala('tonhao', tr('São 30 situações de cada, e cada uma tem 3 desafios. Vai ficando difícil, hein!'));
           await api.fala('paredao', tr('Você tem 3 bolas por desafio. Acertou, a bola volta. Errou, perdeu uma.'));
           await api.fala('juninho', tr('Fechou os 3 desafios, a gente vê a diferença no seu pé.'));
-          await api.fala('paredao', tr('Só que são 2 treinos por dia, no máximo. O seu Nonato não gosta que gaste a grama.'));
+          await api.fala('paredao', tr('Só que são 2 treinos por dia, no máximo. O seu Nonato não quer ninguém estourado.'));
           const pr = api.proximaTurma && api.proximaTurma(), ag = api.turmaAgora && api.turmaAgora();
           if (ag) await api.fala('tonhao', trf('Hoje a gente fica até as {0}.', fmtH(ag.fim)));
           if (pr) await api.fala('tonhao', trf('A gente vem dia sim, dia não. A próxima vez é {0}, das {1} às {2}.', quandoTxt(pr.dia, pr.ini), fmtH(pr.ini), fmtH(pr.fim)));
@@ -1109,9 +1114,9 @@
       for (const A of [T_.gol].concat(T_.bat)) { limparPose(A); A.andando = false; }
       J.andando = false; J.correndo = false; limparPose(J);
       // de volta aos lugares; a turma volta a treinar sozinha
-      T_.bat.forEach((A, i) => { A.x = T_.esp[i].x; A.z = T_.esp[i].z; A.yaw = A.yawAlvo = -Math.PI / 2; });
-      T_.gol.x = T_.F.cx; T_.gol.z = T_.gz - 0.5; T_.gol.yaw = T_.gol.yawAlvo = Math.PI / 2;
-      const pj = W(-2.5, 11); J.x = pj.x; J.z = pj.z; J.y = Y0; J.yaw = J.yawAlvo = Math.PI / 2; s.camCena = null; s.cam.snap = true;
+      T_.bat.forEach((A, i) => { A.x = T_.esp[i].x; A.z = T_.esp[i].z; A.yaw = A.yawAlvo = yawDir(0, -1); });
+      { const pg = W(0, 0.5); T_.gol.x = pg.x; T_.gol.z = pg.z; T_.gol.yaw = T_.gol.yawAlvo = yawDir(0, 1); }
+      const pj = W(-2.5, 11); J.x = pj.x; J.z = pj.z; J.y = Y0; J.yaw = J.yawAlvo = yawDir(0, 1); s.camCena = null; s.cam.snap = true;
       T_.ocupado = false; iniciarDrill(0);
       if (fim !== 'erro' && api.tickHorario && api.H_POR_S) api.tickHorario(0.5 / api.H_POR_S);   // como a partida (que soma 1 h): o treino leva meia hora
       if (fim !== 'erro') await api.preto(false, 350);

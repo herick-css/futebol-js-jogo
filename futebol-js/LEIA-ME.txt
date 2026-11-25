@@ -163,8 +163,21 @@ ARQUIVOS
                           Quanto mais força, mais rápida e mais alta a bola sai: o pontilhado começa rente ao chão e vai subindo enquanto segura;
                           passou da marca vermelha = isola. A bola segue a física normal (velocidade, subida, curva e topspin), sem trajeto
                           calculado para um alvo; o texto de cima diz se assim vai no gol, na barreira, para fora ou se está arriscado.
+                          (7.6.3) FALTA: o pontilhado só vai até a linha da barreira (sem barreira, ~60% do caminho, no máximo 9,15 m) e não tem
+                          mais o anel colorido no gol nem o "no gol!/para fora/arriscado" (só avisa barreira e isolar). No treino do seu Nonato
+                          (CHUTE) a cobrança é esta mesma (G.desafio.faltaMira). IA SEM A BOLA: no máximo dois em volta de quem conduz (o do
+                          bote e um na frente dele; semAmontoar); no campo pequeno a marcação é por ZONA (cada um pega quem entra perto da sua
+                          posição ou está na frente do nosso gol); ninguém marca quem está colado em quem conduz; a formação sai menos da posição
+                          (menos passeio na defesa e o meio não atravessa o campo atrás da bola). Medido em jogos IA x IA de 5 min (society,
+                          várzea e 11 x 11): três ou mais em volta da bola caiu de ~10–20% do tempo para ~1–5%. GOLEIRO/JOGADOR PRESO NA REDE:
+                          o caminho contorna a armação inteira pelos cantos (rotaGol); travou mesmo assim (andou < 0,5 m em 1 s querendo andar),
+                          desencosta (soltarDaRede). TIME DA HISTÓRIA com alguém suspenso/lesionado (completarElencoFixo): ninguém repete (antes
+                          eram dois Brunos) e o goleiro continua no gol (antes o João ia para o gol); no racha, quem estava fora joga assim mesmo;
+                          no torneio entra o goleiro reserva. COMEMORAÇÃO: segurando o direcional a câmera não gira mais atrás de você (o
+                          controle parecia travado); solta e ela volta a seguir.
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
+                          (7.6.3) No prédio: fome, fedor e a hora no canto da tela (com os ícones da cidade); dormir leva às 6h do dia seguinte.
   cidade.js ............. a cidadezinha (o jogo baixa quando a Fase 2 termina)
                           (7.5.11) O mapa escreve o nome de cada lugar em que você já entrou (lojas, hospital e a casa da Lúcia). A
                           calçada do cinema/cafeteria: quem anda por ela vai pela linha de −3,7 (antes −4,2, a 0,8 m das fachadas). Todo
@@ -184,6 +197,14 @@ ARQUIVOS
                           (7.6.2) Quem desvia do jogador (pedestres e quem tem rotina) não desliza mais de lado como no gelo (corpoSegueOPasso): o
                           corpo vira para onde ele está andando de verdade, as pernas andam na velocidade real do desvio e o rosto olha para você
                           quando passa perto (até 3 m).
+                          (7.6.3) A NOITE ficou mais escura (céu 0,36 / sol 0,15) e a luz dos postes no chão mais forte: dá para ver onde cada
+                          poste ilumina. O JOÃO na entrada do sintético: se a galera ainda não entrou, "já tá chegando"; metade lá dentro, "metade
+                          já chegou"; todos lá, "já tá todo mundo aí dentro". A TURMA DO SEU NONATO treina na VÁRZEA (gol leste; campoDoTreino,
+                          entra pelo portão da várzea; no dia de jogo do campeonato da várzea a janela deles desvia do jogo).
+                          (7.6.3) LANCHE COM O SEU NOME: quem ganha do seu Valdemar na sinuca ganha o X-(seu nome) no cardápio do lanche, de
+                          graça, um por dia (lancheComNome). Quem desvia do jogador dá o passo de lado devagar (até 55% da passada, DJ.LADO),
+                          começa a desviar de mais longe e, em cena (com a hora parada), não escorrega mais de lado. Acorda às 6h (antes 5h).
+                          Os ícones de fome e fedor ficam disponíveis para o fase2.js (icones).
   interiores.js ......... o lado de dentro dos lugares da cidade (baixado pela cidade)
   falas.js .............. as falas de amizade dos personagens: 15 de amizade negativa, 15 de amigos (50 ou mais) e 3 de corte
                           (-80) para cada um, e as gerais de preço mais caro (-25) e recusa (-50), nos 5 idiomas (baixado pela cidade)
@@ -199,17 +220,28 @@ ARQUIVOS
   bar.js ................ o Bar do Jairo: cheio no fim de semana e vazio no meio da semana, o povo bebendo, dançando, fumando e
                           jogando sinuca, duas músicas (a do bar e a de casa lotada), 15 produtos em pixel art (álcool só depois
                           dos 18 anos), o seu Valdemar depois do trabalho e o homem de capuz do jogo do bicho (baixado pela cidade)
+                          (7.6.3) O jogo na TV: cada time com goleiro, dois atrás e dois na frente, cada um na sua posição; a bola tem dono
+                          (conduz, toca, só o mais perto do outro time vai no bote, chute e defesa do goleiro). Antes todos corriam para a bola.
+                          (7.6.3) SINUCA: a aposta sobe com as estrelas do oponente (de 50 → 100 até 400 → 1000 fakes; APOSTA) e o seu Valdemar
+                          promete, antes da partida, o lanche com o seu nome se você ganhar dele.
+  pagode.js ............. a roda de pagode da praça, sábado das 18h à meia-noite (baixado pela cidade)
+                          (7.6.3) A música da roda é gravada antes (OfflineAudioContext, mono, 22 kHz) e tocada pronta, volta por volta: sintetizar
+                          na hora, somado à música da cidade, fazia o áudio do celular chiar. Enquanto uma volta não fica pronta, toca ao vivo.
   sinuca.js ............. o minigame de sinuca (mesa em pixel art, física, regras da bola 8 e os oponentes; baixado pelo bar.js)
+                          (7.6.3) FALTA com regra de bar: a vez passa e cai a próxima bola do outro; só com a branca caída o outro põe a branca
+                          onde quiser. Encaçapar bola do adversário também é falta.
   academia.js ........... a academia: recepção, catracas, a personal Fernanda e os treinos (baixado pela cidade)
   cinema.js ............. o cinema: o Herick, a Joana, o segurança e as sessões que pagam fakes (baixado pela cidade)
   pesca.js .............. a pesca no Lago do Sapo Cururu: o seu Bené, iscas, varas, catálogo e o minigame (baixado pela cidade)
-  treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento no society (baixado pela cidade)
+  treino.js ............. a turma do seu Nonato e o treino de chute, passe e cruzamento ((7.6.3) na VÁRZEA; antes no society; baixado pela cidade)
+                          (7.6.3) O campo do treino pode estar girado (S.treino.ori: W/LC/yawDir); os refletores ficam atrás das linhas de fundo.
   esportiva.js .......... a loja Golaço Esportes: caixa (Marta), vendedores por seção, as 20 comemorações, as 20 chuteiras, as 15 bolas premium, as 25 roupas, os 15 acessórios e as 20 tatuagens (baixado pela cidade)
                           (7.5.11) PROVADOR: você fica do lado de fora mostrando a roupa; trocar o modelo = entra na cabine, troca e sai
                           dando uma voltinha; trocar só a cor (as 4 cores, como no guarda-roupa) = muda na hora, do lado de fora.
                           (7.6.0) TATUAGEM: no estúdio da Tati você fica de roupa de baixo (fase2: roupa intima) para ver onde ela fica e paga na
                           hora, com a Tati (FAZER), sem ir ao caixa. Mais 10 tatuagens fechadas (braço/perna fechados).
   treinoCampo.js ........ o campo de treino (mundo à parte, sem relógio) onde acontece o treino de chute, passe e cruzamento
+                          (7.6.3) O campo é o da várzea (varzeaCidade); no CHUTE a cobrança é a de falta da partida (direção, efeito e força).
   barbearia.js .......... a Barbearia do Toninho: compra e troca dos cortes da loja (baixado pela cidade)
   namoro.js ............. os encontros seguintes com a Lúcia (baixado pela cidade). 
                           (7.5.11) O convite para a casa dela é para o DOMINGO às 19h (no domingo, hoje à noite). No sofá dá para chegar

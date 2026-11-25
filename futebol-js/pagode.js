@@ -6,7 +6,8 @@
 //   - O povo chega aos poucos (sai de casa ou vem de fora), dança em volta da roda e vai embora cada um na sua hora.
 //   - A Rosa (do mercado) estreia o vestido novo que ela comentou; dá para conversar com ela (vale como uma das 2 conversas do dia) e
 //     ela cumpre a promessa de fazer o jogador dançar. O jogador também pode dançar sozinho perto da roda.
-//   - A música é sintetizada na hora (Web Audio): volume, abafado (passa-baixa) e lado (estéreo) pela distância e pela câmera. Perto da
+//   - A música é sintetizada (Web Audio) e gravada antes de tocar (cada volta numa gravação: preparar), para o áudio não engasgar;
+//     volume, abafado (passa-baixa) e lado (estéreo) pela distância e pela câmera. Perto da
 //     roda o jazz da rua para; longe, ele volta. Lá dentro de um lugar não se ouve nada.
 //   - Ninguém aparece nem some na frente do jogador: quem chega ou sai com ele longe (ou o relógio pulou) já aparece no lugar / some
 //     direto; a mesa e as cadeiras só aparecem ou somem quando estão fora da câmera (ou ele está longe).
@@ -86,7 +87,7 @@
   const TANTA = [[0, 'm'], [2, 'g'], [4, 'a'], [7, 'g'], [8, 'm'], [10, 's'], [12, 'a'], [14, 'g']];
 
   function criarMusica() {
-    const st = { bus: null, passa: null, pan: null, ruido: null, timer: 0, prox: 0, comp: 0, t0a: 0, ini: 0, tocando: false, fimComp: -1, fimEm: 0, vol: 0, volUlt: -1, corteUlt: -1, panUlt: 9, tVol: 0, ctxT: null };
+    const st = { bus: null, passa: null, pan: null, ruido: null, timer: 0, prox: 0, comp: 0, t0a: 0, ini: 0, tocando: false, fimComp: -1, fimEm: 0, vol: 0, volUlt: -1, corteUlt: -1, panUlt: 9, tVol: 0, ctxT: null, fontes: [], bloco: null };
     const audio = () => (typeof Som !== 'undefined' && Som.audio && !Som.mudo ? Som.audio : null);
     const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
     function nota(c, dst, m, t, dur, vol, tipo, corte, ataque) {
@@ -162,13 +163,56 @@
     function aplauso(c, dst, t0) {
       for (let i = 0; i < 70; i++) { const t = t0 + Math.random() * 3.2 * Math.pow(Math.random(), 0.6); chiado(c, dst, t, 0.05, rnd(0.03, 0.08) * (1 - (t - t0) / 4), rnd(1100, 2400), 'bandpass', 1.3); }
     }
+    // ---- A MÚSICA PRONTA (7.6.3): sintetizar na hora pedia centenas de osciladores e filtros por segundo (a voz e o coro são os mais
+    //   caros) e, somado à música da cidade, o áudio do celular não dava conta e saía o CHIADO (estalos de quando o som não fica pronto a
+    //   tempo). Agora cada volta (a entrada, a instrumental, a do cantor e a do coro) é gravada antes, fora do tempo real
+    //   (OfflineAudioContext, mono, 22 kHz), e a roda toca as gravações: um único AudioBufferSource por volta. Enquanto uma volta ainda
+    //   não ficou pronta, aquele trecho é sintetizado na hora, como antes.
+    const PR = { sr: 22050, buf: {}, gerando: false, cancelado: false };
+    const CAUDA = 2.5;                                                   // segundos depois do último compasso (o fim das notas)
+    const blocoDe = (n) => { if (n < 2) return { id: 'intro', n0: 0 }; const k = n - 2, v = VOLTAS[Math.floor(k / 16) % VOLTAS.length]; return { id: v, n0: n - (k % 16) }; };
+    async function gravar(c) { try { return await c.startRendering(); } catch (e) { console.warn('[Pagode] gravar:', e); return null; } }
+    async function preparar() {
+      if (PR.gerando || PR.buf.fim || typeof OfflineAudioContext === 'undefined') return;
+      PR.gerando = true; PR.cancelado = false;
+      const ordem = [['intro', 0, 2], ['inst', 2, 16], ['voz', 18, 16], ['coro', 34, 16]];
+      try {
+        for (const [id, n0, qtd] of ordem) {
+          if (PR.cancelado) return; if (PR.buf[id]) continue;
+          const c = new OfflineAudioContext(1, Math.ceil((qtd * COMP + CAUDA) * PR.sr), PR.sr);
+          for (let i = 0; i < qtd; i++) compasso(c, c.destination, 0.02 + i * COMP, n0 + i);
+          const b = await gravar(c); if (!b || PR.cancelado) return; PR.buf[id] = b;
+          await new Promise((r) => setTimeout(r, 60));
+        }
+        const c = new OfflineAudioContext(1, Math.ceil(6.5 * PR.sr), PR.sr);   // o "tchan" do fim e o aplauso (o rufar do pandeiro começa 0,45 s antes)
+        finalTutti(c, c.destination, 0.5); aplauso(c, c.destination, 1.8);
+        const b = await gravar(c); if (b && !PR.cancelado) PR.buf.fim = b;
+      } finally { PR.gerando = false; }
+    }
+    function tocarBuf(c, b, quando, inicio) {
+      const s = c.createBufferSource(); s.buffer = b; s.connect(st.bus);
+      const agora = c.currentTime; if (quando < agora) { inicio += agora - quando; quando = agora; }
+      if (inicio >= b.duration) return null;
+      s.start(quando, Math.max(0, inicio)); st.fontes.push(s); s.onended = () => { const i = st.fontes.indexOf(s); if (i >= 0) st.fontes.splice(i, 1); };
+      return s;
+    }
+    function pararFontes(quando) { for (const s of st.fontes.slice()) try { s.stop(quando); } catch (e) { /* já parou */ } }
     const batidas = () => (st.tocando ? (performance.now() - st.ini) / 1000 / BAT : 0);
     function laco() {
       const A = audio(); if (!A || !st.bus) return; const c = A.ctx;
       if (st.prox < c.currentTime) { st.comp = Math.floor((c.currentTime - st.t0a) / COMP) + 1; st.prox = st.t0a + st.comp * COMP; }
       while (st.prox < c.currentTime + 1.0) {
-        if (st.fimComp >= 0 && st.comp >= st.fimComp) { if (st.comp === st.fimComp) { finalTutti(c, st.bus, st.prox); aplauso(c, st.bus, st.prox + 1.3); } st.comp = st.fimComp + 1; st.prox = Infinity; break; }
-        compasso(c, st.bus, st.prox, st.comp); st.comp++; st.prox += COMP;
+        if (st.fimComp >= 0 && st.comp >= st.fimComp) {
+          if (st.comp === st.fimComp) {
+            pararFontes(st.prox + 0.02); st.bloco = null;
+            if (PR.buf.fim) tocarBuf(c, PR.buf.fim, st.prox - 0.5, 0); else { finalTutti(c, st.bus, st.prox); aplauso(c, st.bus, st.prox + 1.3); }
+          }
+          st.comp = st.fimComp + 1; st.prox = Infinity; break;
+        }
+        const B = blocoDe(st.comp), b = PR.buf[B.id], chave = B.id + ':' + B.n0;
+        if (b) { if (st.bloco !== chave) { st.bloco = chave; tocarBuf(c, b, st.prox, 0.02 + (st.comp - B.n0) * COMP); } }   // a volta inteira de uma vez (entrou no meio: a partir daquele compasso)
+        else { st.bloco = null; compasso(c, st.bus, st.prox, st.comp); }
+        st.comp++; st.prox += COMP;
       }
     }
     function ligar() {
@@ -180,20 +224,25 @@
       ult.connect(A.musica || A.mestre);
       st.t0a = c.currentTime - batidas() * BAT; st.comp = Math.floor(batidas() / 4) + 1; st.prox = st.t0a + st.comp * COMP;
       if (st.fimComp >= 0 && st.comp > st.fimComp) st.prox = Infinity;
-      st.volUlt = st.corteUlt = -1; st.panUlt = 9;
+      st.volUlt = st.corteUlt = -1; st.panUlt = 9; st.bloco = null;
       laco(); st.timer = setInterval(laco, 200);
     }
     function desligar(rapido) {
-      clearInterval(st.timer); st.timer = 0; if (!st.bus) return; const b = st.bus, cadeia = [st.bus, st.passa, st.pan]; st.bus = st.passa = st.pan = null;
+      clearInterval(st.timer); st.timer = 0; if (!st.bus) return; const b = st.bus, cadeia = [st.bus, st.passa, st.pan], fontes = st.fontes.slice(); st.bus = st.passa = st.pan = null; st.fontes = []; st.bloco = null;
+      setTimeout(() => { for (const f of fontes) try { f.stop(); } catch (e) { /* já parou */ } }, rapido ? 450 : 1650);
       try { const c = b.context; b.gain.cancelScheduledValues(c.currentTime); b.gain.setValueAtTime(b.gain.value, c.currentTime); b.gain.linearRampToValueAtTime(0, c.currentTime + (rapido ? 0.25 : 1.2)); } catch (e) { /* nada */ }
       setTimeout(() => { for (const n of cadeia) if (n) try { n.disconnect(); } catch (e) { /* nada */ } }, rapido ? 500 : 1700);
     }
     return {
-      comecar() { st.tocando = true; st.ini = performance.now(); st.fimComp = -1; st.fimEm = 0; },
+      comecar() { st.tocando = true; st.ini = performance.now(); st.fimComp = -1; st.fimEm = 0; preparar(); },
+      preparar,                                                         // grava as voltas antes da hora (o pagode chama quando a banda está para chegar)
+      liberar() { PR.cancelado = true; PR.buf = {}; },                  // a cidade fechou: solta a memória das gravações
+      get pronta() { return !!PR.buf.fim; }, get _gravado() { return { buf: PR.buf, fontes: st.fontes.length, bloco: st.bloco, comp: st.comp, fimComp: st.fimComp, prox: st.prox, agora: st.bus ? st.bus.context.currentTime : null }; },   // (para testes)
       // fecha a música no fim do compasso que está tocando (o acorde final e o aplauso); devolve em quantos segundos tudo acaba
       encerrar() {
         if (!st.tocando || st.fimComp >= 0) return Math.max(0, (st.fimEm - performance.now()) / 1000);
-        const b = batidas(); st.fimComp = Math.floor(b / 4) + 1; st.fimEm = st.ini + (st.fimComp * 4 * BAT + 4.6) * 1000;
+        // o agendador já pode ter adiantado o compasso seguinte: fecha no próximo que ainda não foi agendado
+        const b = batidas(); st.fimComp = Math.max(Math.floor(b / 4) + 1, st.bus ? st.comp : 0); st.fimEm = st.ini + (st.fimComp * 4 * BAT + 4.6) * 1000;
         return (st.fimEm - performance.now()) / 1000;
       },
       parar(rapido) { st.tocando = false; st.fimComp = -1; desligar(rapido); },
@@ -809,6 +858,7 @@
       }
       if (P.ev && P.ev.morto) return;
       const ev = P.ev;
+      if (ev && abs >= ev.base + H_BANDA_VEM - 1 && abs < ev.base + H_FIM) P.mus.preparar();   // uma hora antes da banda chegar: grava as voltas (fora do tempo real)
       tickSom(dt);
       const dentro = !!s.dentro, voltou = P.estavaDentro && !dentro; P.estavaDentro = dentro;
       if (!ev || dentro) return;
@@ -857,7 +907,7 @@
     }
     function limpar() {
       try { if (vivo()) acabarEvento(true); } catch (e) { /* nada */ }
-      P.mus.parar(true);
+      P.mus.parar(true); P.mus.liberar();
       if (P.jazzPausado) { P.jazzPausado = false; try { if (typeof Musica !== 'undefined' && Musica.retomar) Musica.retomar('pagode'); } catch (e) { /* nada */ } }
     }
     return {

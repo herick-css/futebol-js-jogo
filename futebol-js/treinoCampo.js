@@ -6,9 +6,10 @@
      O treino.js baixa este arquivo quando o jogador escolhe uma situação e chama sessao(ctx): ctx traz a lógica (LOGICA: os desafios),
      os sons, os textos, o HUD e o progresso salvo; a sessão devolve 'ok' (fechou os 3), 'falhou' ou 'saiu'.
    - O TREINO É JOGADO NO MOTOR DA PARTIDA (Historia.desafio do jogo.js): a cidade sai de cena como no racha do sintético
-     (api.sairParaPartida / api.voltarDaPartida), o campo é o mesmo do sintético (campo 'society', com a hora e o tempo da cidade) e
+     (api.sairParaPartida / api.voltarDaPartida), o campo é o da VÁRZEA da cidade ((7.6.3) campo 'varzeaCidade'; antes o society) e
      os bonecos são os da partida: você e o Juninho de colete, o Paredão no gol e o Tonhão (mais três da turma para a barreira) de azul.
-   - CADA TENTATIVA É UMA COBRANÇA SUA, COM O SISTEMA DE CHUTE DA PARTIDA: a seta (mira), a barra de força e o toque na bola (efeito),
+   - CADA TENTATIVA É UMA COBRANÇA SUA, COM O SISTEMA DE CHUTE DA PARTIDA ((7.6.3) no CHUTE é a cobrança de falta: direção arrastando,
+     efeito na barra e força segurando o CHUTAR, com o pontilhado até a barreira; no passe e no cruzamento: a seta, a barra de força e o toque),
      com a corrida até a bola. CHUTAR mirando no gol = chute; mirando fora dele = bola alta (cruzamento, lançamento). PASSAR = rasteiro.
      O goleiro defende e sai do gol, a barreira pula, o marcador corta e o Juninho recebe e cabeceia com a IA da partida.
    - O que é do treino fica por cima, em 3D: os aros no gol, as placas com a janela, os cones, o círculo no chão e o aro do cruzamento.
@@ -32,12 +33,14 @@
     const sobra = (i) => j('__treino' + i, api.gerarAparencia(7300 + i, 'M'));           // só para fechar o time (saem de campo)
     const t0 = { id: 'tr_nonato_a', nome: tr('Treino'), sigla: 'TRE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: api.UNI_COLETE, uniforme2: api.UNI_AZUL,
       emblema: { forma: 'escudo', cor1: '#1f7a4d', cor2: '#f2c230', letras: 'SN' }, tecnico: tec,
-      elenco: [sobra(0), sobra(1), sobra(2), j('Juninho', apDe(ctx.bat[0], 8081, 'M'))] };
+      elenco: [sobra(0), sobra(1), sobra(2), sobra(3), sobra(4), j('Juninho', apDe(ctx.bat[0], 8081, 'M'))] };   // (7.6.3) a várzea é 7 x 7: mais dois para fechar o time
     const t1 = { id: 'tr_nonato_b', nome: tr('Treino'), sigla: 'TRE', forca: 50, popularidade: 0.1, formacao: '4-4-2', tatica: 'tikitaka', uniforme: api.UNI_AZUL, uniforme2: api.UNI_COLETE,
       emblema: { forma: 'circulo', cor1: '#1f7a4d', cor2: '#f2f2ee', letras: 'SN' }, tecnico: tec,
-      elenco: [j('Paredão', apDe(ctx.gol, 8083, 'M')), j('Tonhão', apDe(ctx.bat[1], 8082, 'M'))].concat(EXTRAS.map((n, i) => j(n, api.gerarAparencia(8090 + i * 7, 'M')))) };
+      elenco: [j('Paredão', apDe(ctx.gol, 8083, 'M')), j('Tonhão', apDe(ctx.bat[1], 8082, 'M'))].concat(EXTRAS.map((n, i) => j(n, api.gerarAparencia(8090 + i * 7, 'M'))), [sobra(5), sobra(6)]) };
     const eu = { nome: PERSONAGEM.apelido || PERSONAGEM.nome || tr('Você'), posicao: 'FWD', numero: PERSONAGEM.numero, aparencia: api.aparenciaNaPartida() };
-    return { campo: (typeof CAMPOS !== 'undefined' && CAMPOS.societyTreino) ? 'societyTreino' : 'society', times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: tr('Treino'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },   // (7.4.19) o treino fica no society antigo (48 x 30, 5 x 5)
+    // (7.6.3) o treino é na VÁRZEA da cidade (antes no society do seu Nonato): o campo da partida é o da várzea
+    const campo = typeof CAMPOS !== 'undefined' && CAMPOS.varzeaCidade ? 'varzeaCidade' : (typeof CAMPOS !== 'undefined' && CAMPOS.societyTreino) ? 'societyTreino' : 'society';
+    return { campo, times: [t0, t1], mandante: 0, competicao: { tipo: 'amistoso', nome: tr('Treino'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null },   // (7.4.19) o treino fica no society antigo (48 x 30, 5 x 5)
       dificuldade: 'normal', clima: hc.clima, gramado: 'baixo', horario: hc.horario, duracao: 600, usuario: eu, atributos: ctx.atributos(), taticas: [null, null], formacoes: [null, null] };
   }
 
@@ -187,7 +190,7 @@
       U.desc.textContent = trf(D.desc, ...D.descA);
     }
     function dicaDoToque(D) {
-      if (D.tipo === 'chute') return tr('Cobrança como na partida: mire, segure a força e toque na bola para o efeito.');
+      if (D.tipo === 'chute') return tr('Cobrança de falta como na partida: arraste para a direção, a barra é o efeito e segure CHUTAR para a força.');
       if (D.toque === 'pass') return tr('Use PASSAR: a força decide até onde a bola vai.');
       return tr('Use CHUTAR / CRUZAR mirando fora do gol: a bola vai pelo alto.');
     }
@@ -213,6 +216,7 @@
       if (D.tipo !== 'chute') mira = { x: X(D.mira.v), z: Z(D.mira.u) };
       else mira = { x: HALF_L, z: Z((D.mira.u || 0) * su) };
       GD.toque = D.toque;
+      GD.faltaMira = D.tipo === 'chute';                                    // (7.6.3) CHUTE = a cobrança de falta da partida (direção, efeito e força segurando)
       PJ.gk.hab.goleiro = Math.round((5 + 3 * D.x) * 10) / 10;             // o Paredão fica mais esperto com a dificuldade: habilidade (até 8)
       GD.defesa = 0.45 + 0.55 * D.x;                                       // e a chance de defender o que chega nas mãos (metade no começo, inteira no fim)
       const ok = eng.armar({ bola: b, face: ang(b.x, b.z, mira.x, mira.z), mira, pos });

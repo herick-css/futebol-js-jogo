@@ -2208,7 +2208,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
       await dizer(['jog', T('Hoje começa o trabalho novo na cafeteria!')]);
     }
   }
-  // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 5h do dia seguinte
+  // ----- (4.9.5) dormir: a hora do dia mora na cidade (historia.cidade.hora); dormir leva para as 6h do dia seguinte
   // (6.1.0) NOITE DE TRABALHO (quem trabalha na pizzaria, de quinta a domingo): acorda às 9h; dormir até as 2h é dormir bem; às 4h ele
   //   apaga de sono (aqui) ou vai sozinho para casa (na cidade). Numa noite normal: dormir até as 22h é dormir bem; às 2h apaga.
   //   Dormiu MAL (nível do Sono > 0): reclama ao acordar e perde 5 de Saudável (Sono.registrar; vale toda noite, soma dia após dia).
@@ -2242,7 +2242,7 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     const amanha = cochilo || h >= 12, acorda = amanha ? horaAcordar(dia) : horaAcordar(nd), diaAc = amanha ? dia + 1 : dia;
     await andar(J, [[-1.95, -1.5]], 1.9); olhar(J, Q.cama.cx, -1.5); await esperar(250);
     if (cochilo) {                                                     // (5.4.3) dá para dormir a qualquer hora (pula o resto do dia)
-      const txt = acorda === H_ACORDA ? T('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às 5h?') : Tf('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?', acorda);
+      const txt = Tf('Ainda não é hora de dormir. Dormir mesmo assim e acordar amanhã às {0}h?', acorda);
       const r = await Escolha.mostrar(txt, [T('Dormir'), T('Agora não')], { centro: true });
       Dialogo.esconder(); if (r !== 0) return;
     }
@@ -2317,8 +2317,8 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
   // ------------------------------------------------------------------ o quadro
   // ----- O RELÓGIO NO CONDOMÍNIO: a hora mora na cidade (historia.cidade.hora). Aqui ela anda enquanto o personagem está LIVRE
   //   (andando pelo quarto, escada...). Cenas como banho, vaso, pia, guarda-roupa, computador e conversas não contam. Grava a hora de
-  //   volta ao sair do prédio (e de 20 em 20 s). Passou das 2h acordado aqui dentro: apaga de sono e acorda às 5h na cama.
-  const H_POR_S_F2 = 24 / 1200, H_ACORDA = 5;
+  //   volta ao sair do prédio (e de 20 em 20 s). Passou das 2h acordado aqui dentro: apaga de sono e acorda às 6h na cama.
+  const H_POR_S_F2 = 24 / 1200, H_ACORDA = 6;
   function relogioTick(dt) {
     const R = S.relogio, ant = R.hora; R.hora += dt * H_POR_S_F2; if (R.hora >= 24) { R.hora -= 24; R.dia = (R.dia || 1) + 1; salvarRelogio(); }   // meia-noite: vira o dia
     R.salvarT = (R.salvarT || 0) + dt; if (R.salvarT > 20) { R.salvarT = 0; salvarRelogio(); }
@@ -2326,11 +2326,28 @@ body.f2Ativo #dialogo, body.f2Ativo #escolha { z-index: 21; }`;
     if (ant < hAp && R.hora >= hAp && !S.apagando) { S.apagando = true; S.modo = 'cena'; UI.ctl.hidden = true; aviso(''); apagarDeSono().finally(() => { if (S) { S.apagando = false; if (S.ativo && S.modo === 'cena') liberar(); } }); }
     mostrarRelogio();
   }
+  // o HUD do prédio: a fome (a coxa) e o fedor (até o banho) com os ícones da cidade (cidade.js, icones), e o horário
+  let icoCD = null, icoPedido = false, icoLido = { t: -1e9, c: null };
   function mostrarRelogio() {
     if (!S.relogio) return;
-    if (!UI.relogio) { const el = document.createElement('div'); el.id = 'f2Relogio'; el.style.cssText = 'position:fixed;z-index:9;right:max(10px,env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));height:34px;box-sizing:border-box;display:flex;align-items:center;padding:0 10px;background:rgba(42,18,6,.86);border:3px solid #7fb4e0;color:#fff0c8;font:700 14px/1 var(--font-display);font-variant-numeric:tabular-nums;pointer-events:none;'; ($('raizJogo') || document.body).appendChild(el); UI.relogio = el; }
+    if (!UI.relogio) {
+      const el = document.createElement('div'); el.id = 'f2Relogio';
+      el.style.cssText = 'position:fixed;z-index:9;right:max(10px,env(safe-area-inset-right,0px));top:calc(8px + env(safe-area-inset-top,0px));display:flex;gap:6px;align-items:center;pointer-events:none;';
+      const quad = 'width:34px;height:34px;box-sizing:border-box;display:grid;place-items:center;background:rgba(42,18,6,.86);border:3px solid #f0a020;';
+      el.innerHTML = '<div class="f2Fome" style="' + quad + 'display:none;"></div><div class="f2Fedor" style="' + quad + 'background:rgba(38,96,34,.92);border-color:#8fe06a;display:none;"></div>'
+        + '<b class="f2Hora" style="height:34px;box-sizing:border-box;display:flex;align-items:center;padding:0 10px;background:rgba(42,18,6,.86);border:3px solid #7fb4e0;color:#fff0c8;font:700 14px/1 var(--font-display);font-variant-numeric:tabular-nums;"></b>';
+      ($('raizJogo') || document.body).appendChild(el); UI.relogio = el;
+    }
     const m = Math.floor((S.relogio.hora * 60 + 0.001) / 10) * 10, t = String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
-    if (UI.relogio.textContent !== t) UI.relogio.textContent = t;
+    const H = UI.relogio.querySelector('.f2Hora'); if (H.textContent !== t) H.textContent = t;
+    if (!icoCD && !icoPedido && typeof Fases !== 'undefined') { icoPedido = true; Fases.carregar('cidade').then((m2) => { icoCD = m2 && m2.icones ? m2.icones : null; }, () => {}); }
+    const agora = performance.now(); if (agora - icoLido.t > 1500) { icoLido.t = agora; try { icoLido.c = API.historia.ler('cidade') || null; } catch (e) { icoLido.c = null; } }
+    const c = icoLido.c, Fo = UI.relogio.querySelector('.f2Fome'), Fe = UI.relogio.querySelector('.f2Fedor');
+    if (icoCD && c) {
+      const n = Math.round(icoCD.comida(Object.assign({}, c, { dia: S.relogio.dia })) * 8) / 8; if (Fo.dataset.n !== String(n)) { Fo.dataset.n = String(n); Fo.replaceChildren(icoCD.coxa(n)); }
+      const fd = c.precisaBanho ? '1' : ''; if (Fe.dataset.k !== fd) { Fe.dataset.k = fd; Fe.style.display = fd ? 'grid' : 'none'; if (fd && !Fe.firstChild) Fe.appendChild(icoCD.fedor()); }
+      Fo.style.display = 'grid';
+    } else { Fo.style.display = 'none'; Fe.style.display = 'none'; Fe.dataset.k = ''; }
     UI.relogio.hidden = false;
   }
   function salvarRelogio() {

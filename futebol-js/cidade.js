@@ -1175,6 +1175,16 @@
     "Sensibilidade para girar": ["Turning sensitivity", "Sensibilidad al girar", "Sensibilità di rotazione", "Sensibilité de rotation"],
   };
   if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_761)) if (!I18N[k]) I18N[k] = TRAD_761[k];
+  const TRAD_763 = {   // (7.6.3) o João na entrada do sintético: a galera ainda vem, metade já chegou ou já está toda lá dentro
+    "Fala, {0}! Metade da galera já chegou, o resto tá vindo.": ["Hey, {0}! Half the crew is here already, the rest are on their way.", "¡Hola, {0}! La mitad de la banda ya llegó, el resto viene en camino.", "Ehi, {0}! Metà della banda è già qui, gli altri stanno arrivando.", "Salut, {0} ! La moitié de la bande est déjà là, les autres arrivent."],
+    "E aí, {0}! Já tem gente batendo bola lá dentro, o resto já vem.": ["Hey, {0}! Some are already kicking the ball around inside, the rest are coming.", "¡Ey, {0}! Ya hay gente pateando adentro, el resto ya viene.", "Ehi, {0}! C’è già chi palleggia lì dentro, gli altri arrivano.", "Salut, {0} ! Il y en a déjà qui tapent la balle à l’intérieur, les autres arrivent."],
+    "Fala, {0}! A galera já tá toda aí dentro, só falta você.": ["Hey, {0}! The whole crew is already inside, we’re just missing you.", "¡Hola, {0}! Ya está toda la banda adentro, solo faltas tú.", "Ehi, {0}! La banda è già tutta dentro, manchi solo tu.", "Salut, {0} ! Toute la bande est déjà à l’intérieur, il ne manque que toi."],
+    "E aí, {0}! O pessoal já chegou e tá batendo bola. Bora?": ["Hey, {0}! Everyone’s here and kicking the ball around. Shall we?", "¡Ey, {0}! Ya llegaron todos y están pateando. ¿Vamos?", "Ehi, {0}! Sono già arrivati tutti e stanno palleggiando. Andiamo?", "Salut, {0} ! Tout le monde est arrivé et tape la balle. On y va ?"],
+    "{0}! Até que enfim! A galera já tá esperando lá dentro.": ["{0}! Finally! The crew is already waiting inside.", "¡{0}! ¡Por fin! La banda ya está esperando adentro.", "{0}! Finalmente! La banda sta già aspettando dentro.", "{0} ! Enfin ! La bande attend déjà à l’intérieur."],
+    "Bora! A galera já tá esperando lá dentro.": ["Let’s go! The crew is already waiting inside.", "¡Vamos! La banda ya está esperando adentro.", "Andiamo! La banda sta già aspettando dentro.", "On y va ! La bande attend déjà à l’intérieur."],
+    "Bora! O resto da galera já tá chegando.": ["Let’s go! The rest of the crew is almost here.", "¡Vamos! El resto de la banda ya está llegando.", "Andiamo! Il resto della banda sta arrivando.", "On y va ! Le reste de la bande arrive."],
+  };
+  if (typeof I18N !== 'undefined') for (const k of Object.keys(TRAD_763)) if (!I18N[k]) I18N[k] = TRAD_763[k];
   const TRAD_SB_CD = {   // o wrap integral do seu Valdemar (a comida saudável do clube)
     "Wrap integral de frango": ["Wholewheat chicken wrap", "Wrap integral de pollo", "Wrap integrale di pollo", "Wrap complet au poulet"],
     "Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!": ["Now I've got a wholewheat chicken wrap for the folks who play ball for real. Healthy, huh!", "Ahora tengo un wrap integral de pollo para la gente que juega al fútbol en serio. ¡Sano, eh!", "Adesso ho un wrap integrale di pollo per chi gioca a calcio sul serio. Sano, eh!", "Maintenant j'ai un wrap complet au poulet pour ceux qui jouent au foot pour de vrai. Sain, hein !"],
@@ -1260,6 +1270,14 @@
     'Boa, {0}! Jogou direitinho hoje.': ['Nice, {0}! You played decently today.', '¡Bien, {0}! Hoy jugaste bien.', 'Bravo, {0}! Oggi hai giocato discretamente.', 'Bien, {0} ! Tu as bien joué aujourd’hui.'],
   };
   for (const k of Object.keys(TRAD_TN_CD)) if (!I18N[k]) I18N[k] = TRAD_TN_CD[k];
+  const TRAD_LANCHE_CD = {   // o lanche com o nome do jogador (quem ganha do seu Valdemar na sinuca)
+    'X-{0}': ['X-{0}', 'X-{0}', 'X-{0}', 'X-{0}'],
+    'Saindo um {0}, por conta da casa!': ['One {0} coming up, on the house!', '¡Sale un {0}, invita la casa!', 'Ecco un {0}, offre la casa!', 'Un {0}, c’est la maison qui offre !'],
+    'O seu já saiu hoje! É um por dia, combinado é combinado. Amanhã tem de novo.': ['You already had yours today! It’s one a day, a deal is a deal. There’s another one tomorrow.', '¡El tuyo ya salió hoy! Es uno al día, lo prometido es deuda. Mañana hay otro.', 'Il tuo è già uscito oggi! È uno al giorno, i patti sono patti. Domani ce n’è un altro.', 'Le tien est déjà sorti aujourd’hui ! C’est un par jour, un marché est un marché. Demain, il y en a un autre.'],
+    'Grátis (1 por dia)': ['Free (1 a day)', 'Gratis (1 al día)', 'Gratis (1 al giorno)', 'Gratuit (1 par jour)'],
+    'Amanhã tem de novo': ['Another one tomorrow', 'Mañana hay otro', 'Domani ce n’è un altro', 'Un autre demain'],
+  };
+  for (const k of Object.keys(TRAD_LANCHE_CD)) if (!I18N[k]) I18N[k] = TRAD_LANCHE_CD[k];
   if (typeof FEM_TRAD !== 'undefined') Object.assign(FEM_TRAD, {
     'Aí, {0}! Você veio mesmo! Falei que a gente jogava aqui.': [null, null, 'Eccoti, {0}! Sei venuta davvero! Te l’avevo detto che giocavamo qui.', 'Te voilà, {0} ! Tu es vraiment venue ! Je t’avais dit qu’on jouait ici.'],
     'Vim jogar!': [null, null, null, 'Je suis venue jouer !'],
@@ -2673,6 +2691,8 @@
     const T0 = TURNOS[empregoEscolhido()], ocup = [];
     const DT = DIAS_TRABALHO_EMPREGO[empregoEscolhido()] || DIAS_UTEIS;   // (7.2.1) os dias de trabalho do SEU emprego (a pizzaria é de quinta a domingo)
     for (const k of [-1, 0, 1]) if (T0 && DT.includes(diaSemanaDe(dia + k))) ocup.push([k * 24 + T0[0] - 0.5, k * 24 + T0[1] + 0.5]);
+    // (7.6.3) o treino agora é na VÁRZEA: no dia de jogo do campeonato da várzea a turma não pega o campo (2 h antes até 2 h depois)
+    for (const k of [-1, 0, 1]) { let hv = null; try { hv = S.varzea && S.varzea.horaNoDia ? S.varzea.horaNoDia(dia + k) : null; } catch (e) { hv = null; } if (hv != null) ocup.push([k * 24 + hv - 2, k * 24 + hv + 2]); }
     let best = null, bs = -1;
     for (let s0 = 0; s0 < 24; s0 += 0.5) {
       const s1 = s0 + TURMA_H; if (ocup.some(([a, b]) => s0 < b && s1 > a)) continue;
@@ -2709,22 +2729,33 @@
     return null;
   }
 
-  // ------------------------------------------------------------------ TREINO no primeiro society: dois batem pênalti, um goleiro defende (ou não)
+  // ------------------------------------------------------------------ TREINO DA TURMA DO SEU NONATO: (7.6.3) na VÁRZEA (antes no primeiro
+  //   society, o do seu Nonato). A várzea ficava vazia quase a semana inteira; agora a turma treina lá, no gol LESTE (x = VARZEA_L.x1).
+  //   O campo da várzea tem os gols nas pontas do x: o treino.js usa ori (o meio da linha do gol, U = o lado, V = para o meio do campo).
+  //   Entra e sai pelo portão da várzea (rotaGente); de noite, os refletores do treino (treino.js) ficam atrás das linhas de fundo.
+  function campoDoTreino() {
+    const gx = VARZEA_L.x1, cz = VZ.cz, F = { r: VARZEA, cx: VZ.cx, cz, y: 0, varzea: true,
+      gate: { out: { x: VZ.portao.x, z: VZ.portao.z + 1.4 }, in: { x: VZ.portao.x, z: VZ.portao.z - 1.4 } },
+      postes: [[VARZEA_L.x0 - 2.2, cz - 12], [VARZEA_L.x0 - 2.2, cz + 12], [VARZEA_L.x1 + 2.2, cz - 12], [VARZEA_L.x1 + 2.2, cz + 12]] };
+    return { F, ori: { x: gx, z: cz, U: { x: 0, z: -1 }, V: { x: -1, z: 0 } } };
+  }
   function criarTreino(f2) {
-    const rnd = semente(808), F = S.societys[0], gz = F.cz + 15, spot = { x: F.cx, z: F.cz + 8 };
+    const rnd = semente(808), { F, ori } = campoDoTreino(), W = (u, v) => ({ x: ori.x + u * ori.U.x + v * ori.V.x, z: ori.z + u * ori.U.z + v * ori.V.z });
+    const gz = ori.z, spot = W(0, 7), yawGol = Math.atan2(ori.V.z, -ori.V.x), yawCampo = Math.atan2(-ori.V.z, ori.V.x);   // de frente para o gol / para o campo
     const bat = [criarPessoa(f2, rnd, false), criarPessoa(f2, rnd, rnd() < 0.4)], gol_ = criarPessoa(f2, rnd, false);
-    const esp = [{ x: F.cx - 1.6, z: F.cz + 3 }, { x: F.cx + 1.6, z: F.cz + 3 }];
-    bat.forEach((A, i) => { A.tipo = 'treino'; A.x = esp[i].x; A.z = esp[i].z; A.yaw = A.yawAlvo = -Math.PI / 2; A.y = 0.08; S.npcs.push(A); });
-    gol_.tipo = 'treino'; gol_.goleiro = true; gol_.x = F.cx; gol_.z = gz - 0.5; gol_.yaw = gol_.yawAlvo = Math.PI / 2; gol_.y = 0.08; S.npcs.push(gol_);
+    const esp = [W(-1.6, 12), W(1.6, 12)], pg = W(0, 0.5);
+    bat.forEach((A, i) => { A.tipo = 'treino'; A.x = esp[i].x; A.z = esp[i].z; A.yaw = A.yawAlvo = yawGol; A.y = F.y; S.npcs.push(A); });
+    gol_.tipo = 'treino'; gol_.goleiro = true; gol_.x = pg.x; gol_.z = pg.z; gol_.yaw = gol_.yawAlvo = yawCampo; gol_.y = F.y; S.npcs.push(gol_);
     // a bola nasce ESCONDIDA e já na marca: criada no (0, 0) e visível, ficava largada no meio da avenida (o 0, 0 da cidade, com o asfalto
     //   por cima dela) até a turma começar a treinar, e nos dias em que a turma não vinha ela nem saía de lá
     const mesh = new THREE.Mesh(guardar(new THREE.SphereGeometry(0.15, 12, 8)), guardar(new THREE.MeshLambertMaterial({ map: guardar(texBolinha()) })));
     mesh.position.set(spot.x, 0.23, spot.z); mesh.visible = false; S.grupo.add(mesh);
     const sombra = sombraAtor(0.17); sombra.visible = false;
-    S.treino = { F, gz, spot, bat, gol: gol_, esp, vez: 0, fase: 'anda', t: 0, parado: true, bola: { mesh, sombra, x: spot.x, y: 0.23, z: spot.z, vx: 0, vy: 0, vz: 0 } };
+    S.treino = { F, gz, ori, spot, bat, gol: gol_, esp, vez: 0, fase: 'anda', t: 0, parado: true, bola: { mesh, sombra, x: spot.x, y: 0.23, z: spot.z, vx: 0, vy: 0, vz: 0 } };
   }
   function tickTreino(dt) {
     const T_ = S.treino; if (!T_) return;
+    if (T_.ori) { T_.parado = true; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; return; }   // (7.6.3) o treino antigo (sem o treino.js) era só do society: na várzea eles só esperam
     if (T_.pausa) { T_.parado = true; T_.bola.mesh.visible = false; T_.bola.sombra.visible = false; return; }          // quem treina foi para casa (ou está na chuva): o treino para
     if (T_.parado) { T_.parado = false; const b = T_.bola; b.x = T_.spot.x; b.z = T_.spot.z; b.y = 0.23; b.vx = b.vy = b.vz = 0; b.saiu = false; b.rolando = false; b.defendida = false; T_.fase = 'anda'; T_.t = 0; T_.vez = 0; T_.gol.x = T_.F.cx; b.mesh.visible = true; b.sombra.visible = true; for (const P of T_.bat) { P.chuteT = -1; } }
     const B = T_.bola, A = T_.bat[T_.vez], K = T_.gol, g = 9.8, chao = 0.08 + 0.15;
@@ -3128,6 +3159,17 @@
     'Opa, {0}! O Caio mandou mensagem: a galera já tá a caminho.',
     'Segura aí, {0}, que a galera já vai chegar. Eu até já aqueci!',
   ];
+  const JOAO_METADE = [                                                 // (7.6.3) parte da galera já entrou no sintético
+    'Fala, {0}! Metade da galera já chegou, o resto tá vindo.',
+    'E aí, {0}! Já tem gente batendo bola lá dentro, o resto já vem.',
+  ];
+  const JOAO_JA = [                                                     // (7.6.3) a galera toda já está lá dentro
+    'Fala, {0}! A galera já tá toda aí dentro, só falta você.',
+    'E aí, {0}! O pessoal já chegou e tá batendo bola. Bora?',
+    '{0}! Até que enfim! A galera já tá esperando lá dentro.',
+  ];
+  // quantos da galera do racha já passaram do portão do sintético (m.e === 2: entrando ou na roda)
+  function galeraNoCampo() { const K = S.racha, n = K ? K.m.filter((m) => m.e === 2 && m.A).length : 0; return { n, todos: n >= RACHA_GALERA.length }; }
   const JOAO_PAPOS = [
     'E aí, {0}! Segunda e quarta tem racha no sintético, não esquece!',
     'Fala, {0}! Tô aqui de bobeira em casa. Tudo certo?',
@@ -3320,13 +3362,14 @@
     const nome = nomeJog(), ab = falaAmizade('joao');
     if (ab && ab.est === 'corte') { if (ab.l) await fala('joao', ab.l); Dialogo.esconder(); return; }   // -80: o João não perde mais tempo com você
     if (A.estado === 'espera') {
-      const p = ab && ab.l ? ab.l : Tf(JOAO_ESPERA[(f.papoJoao | 0) % JOAO_ESPERA.length], nome); f.papoJoao = (f.papoJoao | 0) + 1;
+      const gl = galeraNoCampo(), L = gl.todos ? JOAO_JA : gl.n ? JOAO_METADE : JOAO_ESPERA;   // (7.6.3) só diz que a galera vem se ainda não entraram
+      const p = ab && ab.l ? ab.l : Tf(L[(f.papoJoao | 0) % L.length], nome); f.papoJoao = (f.papoJoao | 0) + 1;
       await fala('joao', p);
       const r = await Escolha.mostrar(p, [T('Bora jogar!'), T('Vou dar uma volta e já volto.'), T('Esse racha de vocês é muito fraco.')]);
       if (r === 2) { await falaGrossa('joao', 'joao', T('Esse racha de vocês é muito fraco.'), Tg('Fraco? Nossa, acordou de mau humor, hein... Quando quiser jogar, a gente tá aqui.')); Dialogo.esconder(); return; }
       await fala('jog', r === 0 ? T('Bora jogar!') : T('Vou dar uma volta e já volto.'));
       papoAmizade('joao');
-      if (r === 0) { await fala('joao', T('Olha a galera chegando aí! Bora!')); Dialogo.esconder(); await jogarSintetico(); return; }
+      if (r === 0) { await fala('joao', gl.todos ? T('Bora! A galera já tá esperando lá dentro.') : gl.n ? T('Bora! O resto da galera já tá chegando.') : T('Olha a galera chegando aí! Bora!')); Dialogo.esconder(); await jogarSintetico(); return; }
       await fala('joao', T('Beleza, mas não demora!'));
     } else {
       if (await recusaPapo('joao')) { Dialogo.esconder(); return; }   // já conversaram 2 vezes hoje (na espera do racha ele sempre fala: é o convite para jogar)
@@ -4312,11 +4355,11 @@
   //   o povo que vai e volta de casa): com o jogador no caminho, a pessoa tenta passar do lado (andando ou correndo, sem parar) por até
   //   3 s — mesmo que no meio do caminho ela vá e volte. Não deu: ela ATRAVESSA o jogador (ele cambaleia, como com quem tem rotina) e
   //   apressa o passo por uns 2 s para chegar onde deveria estar; depois volta ao passo normal.
-  const DJ = { RAIO: 0.6, OLHA: 1.7, TEMPO: 3, PRESSA: 1.45, PRESSA_T: 2.4 };
-  function jogNaFrente(A, ux, uz, x, z) {
+  const DJ = { RAIO: 0.6, OLHA: 1.7, OLHA_ROTA: 3.4, LADO: 0.55, TEMPO: 3, PRESSA: 1.45, PRESSA_T: 2.4 };
+  function jogNaFrente(A, ux, uz, x, z, olha) {
     const J = S.jog; if (!J || J.sentado || S.dentro || S.modo !== 'livre' || (S.meus && !S.meus.has(J.m))) return null;
     const rx = J.x - (x == null ? A.x : x), rz = J.z - (z == null ? A.z : z), fr = rx * ux + rz * uz, lat = -rx * uz + rz * ux;
-    if (fr < -0.15 || fr > DJ.OLHA || Math.abs(lat) > DJ.RAIO + 0.15) return null;
+    if (fr < -0.15 || fr > (olha || DJ.OLHA) || Math.abs(lat) > DJ.RAIO + 0.15) return null;
     return { fr, lat };
   }
   // devolve a direção (unitária) para desviar nesse quadro, { parado } se não há espaço agora, ou null (nada a fazer / atravessando)
@@ -4369,7 +4412,7 @@
     let alvoOff = 0, sobra = false;
     if (A.passaJogT > 0) A.passaJogT -= dt;
     else {
-      const q = jogNaFrente(A, ux, uz, p.x, p.z);
+      const q = jogNaFrente(A, ux, uz, p.x, p.z, DJ.OLHA_ROTA);           // olha mais longe: o passo de lado é devagar, então começa antes
       if (q) {
         A.desvJogT = (A.desvJogT || 0) + dt;
         const lado = q.lat >= 0 ? -1 : 1, off = lado * (DJ.RAIO + 0.35 - Math.min(0.3, Math.abs(q.lat))) * 1.05;
@@ -4380,9 +4423,15 @@
       } else if (A.desvJogT) A.desvJogT = Math.max(0, A.desvJogT - dt * 1.5);
     }
     if (sobra) A.atrasoM = (A.atrasoM || 0) + vel * 0.65 * dt;            // vai ficando para trás (anda a 35%)
-    else if (A.atrasoM > 0) A.atrasoM = Math.max(0, A.atrasoM - vel * (A.pressaT > 0 ? DJ.PRESSA - 1 : 0.25) * dt);   // corre atrás do horário
+    else if (A.atrasoM > 0 && S.modo === 'livre') A.atrasoM = Math.max(0, A.atrasoM - vel * (A.pressaT > 0 ? DJ.PRESSA - 1 : 0.25) * dt);   // corre atrás do horário (em cena, com a hora parada, não)
     if (A.pressaT > 0) A.pressaT -= dt;
-    A.offDJ = (A.offDJ || 0) + (alvoOff - (A.offDJ || 0)) * Math.min(1, dt * 4);
+    // (7.6.3) o PASSO DE LADO tem limite de velocidade (no máximo 55% da passada): antes o lado chegava a ~4 m/s e a pessoa deslizava.
+    //   E o que ela anda de lado sai da passada para a frente (o passo é na diagonal, com a mesma velocidade): fica um tiquinho para trás
+    //   e depois recupera o horário, como no atraso de sempre.
+    //   Em cena (a hora para) ela fica onde está: antes o passo de lado voltava sozinho e ela escorregava de lado, parada, olhando o jogador.
+    const off0 = A.offDJ || 0, vLat = vel * DJ.LADO, dOff = S.modo !== 'livre' ? 0 : clamp((alvoOff - off0) * Math.min(1, dt * 3), -vLat * dt, vLat * dt);
+    A.offDJ = off0 + dOff;
+    if (dt > 0 && dOff !== 0) { const l = Math.min(vel * 0.95, Math.abs(dOff) / dt); A.atrasoM = (A.atrasoM || 0) + (vel - Math.sqrt(vel * vel - l * l)) * dt; }
     return { x: p.x + lx * A.offDJ, z: p.z + lz * A.offDJ, yaw: p.yaw, pressa: A.atrasoM > 0 && !sobra };
   }
   const jogBloqueia = () => { const J = S.jog; return !J || J.sentado || (S.modo === 'cena' ? false : J.andando || S.modo !== 'livre'); };
@@ -5508,7 +5557,9 @@
     { id: 'semsalada', nome: 'X-sem-salada com refri', preco: 22, enche: 1.5 },
     { id: 'wrapfit', nome: 'Wrap integral de frango', preco: 18, enche: 1, saudavel: true },   // só para quem joga num clube (a missão de comer saudável)
   ];
-  const cardapioHoje = () => CARDAPIO.filter((c) => !c.saudavel || !!(S.dados.pro && S.dados.pro.clube));
+  // quem ganha do seu Valdemar na sinuca (bar.js) ganha um lanche com o próprio nome no cardápio: de graça, um por dia
+  const lancheComNome = () => (S.dados.bar && S.dados.bar.venceuValdemar ? { id: 'xnome', nome: Tf('X-{0}', nomeJog()), preco: 0, enche: 1.5, gratis: true } : null);
+  const cardapioHoje = () => { const L = CARDAPIO.filter((c) => !c.saudavel || !!(S.dados.pro && S.dados.pro.clube)), X = lancheComNome(); return X ? [X].concat(L) : L; };
   const FOME_DO_DIA = 2;
   // um "dia livre" = um dia em que dá para andar pela cidade; a fome vem UMA vez por dia (o avanço dos dias ainda não existe: hoje é sempre o dia 1)
   // ---------------------------------------------------------------------------------------------------------------------- (7.1.14)
@@ -5795,14 +5846,20 @@
     if (cheio) await fala('jog', T('Eu já tô satisfeito... mas bem que cabia mais um.'));
     Dialogo.esconder();
     if (d.pro && d.pro.clube && !d.valdemarWrap) { d.valdemarWrap = true; await fala('val', T('Agora eu tenho um wrap integral de frango pra galera que joga bola de verdade. Saudável, hein!')); }
-    const lista = cardapioHoje(), i0 = await cardapio(d.fakes), i = i0 >= 0 ? CARDAPIO.indexOf(lista[i0]) : i0;
-    if (i === -2) { await falaGrossa('val', 'val', T('Esse lanche aqui é gordura pura, hein. Credo.'), (fem() ? T('Gordura pura é esse seu humor, moça! Quer comer ou não quer?') : T('Gordura pura é esse seu humor, rapaz! Quer comer ou não quer?'))); Dialogo.esconder(); return; }
-    const c = CARDAPIO[i];
+    const lista = cardapioHoje(), i0 = await cardapio(d.fakes);
+    if (i0 === -2) { await falaGrossa('val', 'val', T('Esse lanche aqui é gordura pura, hein. Credo.'), (fem() ? T('Gordura pura é esse seu humor, moça! Quer comer ou não quer?') : T('Gordura pura é esse seu humor, rapaz! Quer comer ou não quer?'))); Dialogo.esconder(); return; }
+    const c = i0 >= 0 ? lista[i0] : null;
     if (!c) { await fala('val', T('Tranquilo, fica à vontade!')); Dialogo.esconder(); return; }
-    const preco = precoDe(c);
-    if (d.fakes < preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
-    d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
-    await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder(); papoAmizade('val', 1);
+    if (c.gratis) {
+      if (d.lancheNomeDia === d.dia) { await fala('val', T('O seu já saiu hoje! É um por dia, combinado é combinado. Amanhã tem de novo.')); Dialogo.esconder(); return; }
+      d.lancheNomeDia = d.dia;
+      await fala('val', Tf('Saindo um {0}, por conta da casa!', c.nome)); Dialogo.esconder(); papoAmizade('val', 1);
+    } else {
+      const preco = precoDe(c);
+      if (d.fakes < preco) { await fala('val', T('Ih... tá faltando dinheiro aí, hein?')); Dialogo.esconder(); return; }
+      d.fakes -= preco; somDinheiro(); mostrarDinheiro(false); gastoNaTela(preco);
+      await fala('val', Tf('Saindo um {0}!', T(c.nome))); Dialogo.esconder(); papoAmizade('val', 1);
+    }
     await esperar(1400);
     darLanche(J, c.id);                                              // o lanche aparece entre as mãos
     J.comendo = 3.6; await esperar(3700);
@@ -7880,6 +7937,7 @@
     else if (id === 'refri') copo(5, 5);
     else if (id === 'combo') { balde(0, 9, 7); copo(10, 6); }
     else if (id === 'podrao') { hamb(1, 14, [[ALF, 1, true], [QJ, 1], [MEAT, 2], [OVO, 1], [MEAT, 1]], 14); px(5, 9, QJ); px(6, 9, QJ); }
+    else if (id === 'xnome') { hamb(1, 14, [[ALF, 1, true], [TOM, 1], [QJ, 1], [MEAT, 2], [QJ, 1], [MEAT, 2], [OVO, 1]], 15); rc(7, 0, 1, 4, '#c8a068'); rc(8, 0, 4, 2, '#d8302a'); px(9, 0, '#f4f4ec'); }   // o lanche com o nome do jogador: duplo, com a bandeirinha no palito
     else if (id === 'quasetudo') { hamb(1, 14, [[ALF, 1, true], [TOM, 1], [QJ, 1], [MEAT, 1], ['#e89a9a', 1], [OVO, 1], [MEAT, 1], [QJ, 1]], 15); }
     else if (id === 'wrapfit') {                                   // o wrap integral: a massa enrolada, cortada na diagonal, com alface, frango e tomate aparecendo
       const MASSA = '#c8a068', MASSA2 = '#a8804a', FR = '#f0dcb0';
@@ -7918,10 +7976,12 @@
       const fim = (i) => { el.remove(); res(i); };
       cardapioHoje().forEach((c, i) => {
         const b = document.createElement('button'); b.type = 'button';
-        const pr = precoDe(c);
-        b.style.cssText = 'flex:0 0 124px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid #8a5a2a;color:#fff0c8;cursor:pointer;font:700 12px/1.2 var(--font-display);text-align:center;' + (fakes < pr ? 'opacity:.55;' : '');
+        const pr = c.gratis ? 0 : precoDe(c), jaComeu = c.gratis && S.dados.lancheNomeDia === S.dados.dia;
+        b.style.cssText = 'flex:0 0 124px;scroll-snap-align:start;display:flex;flex-direction:column;gap:4px;align-items:center;padding:8px 4px;background:#3a1c0a;border:3px solid ' + (c.gratis ? '#f2c230' : '#8a5a2a') + ';color:#fff0c8;cursor:pointer;font:700 12px/1.2 var(--font-display);text-align:center;' + (fakes < pr || jaComeu ? 'opacity:.55;' : '');
         b.appendChild(iconePx(c.id));
-        const n = document.createElement('span'); n.textContent = T(c.nome); const p = document.createElement('span'); p.style.color = '#f2c230'; p.textContent = pr + ' ' + T('fakes'); if (pr !== c.preco) { const v = document.createElement('s'); v.style.cssText = 'color:#a88a5a;margin-right:4px;'; v.textContent = c.preco; p.prepend(v); }
+        const n = document.createElement('span'); n.textContent = c.gratis ? c.nome : T(c.nome); const p = document.createElement('span'); p.style.color = c.gratis ? '#8fe04a' : '#f2c230';
+        if (c.gratis) p.textContent = jaComeu ? T('Amanhã tem de novo') : T('Grátis (1 por dia)');
+        else { p.textContent = pr + ' ' + T('fakes'); if (pr !== c.preco) { const v = document.createElement('s'); v.style.cssText = 'color:#a88a5a;margin-right:4px;'; v.textContent = c.preco; p.prepend(v); } }
         b.append(n, p); b.onclick = () => fim(i); grade.appendChild(b);
       });
       const nada = document.createElement('button'); nada.type = 'button'; nada.className = 'pxBtn'; nada.textContent = T('Nada, obrigado'); nada.style.cssText = '--p:var(--p2,2px);height:38px;padding:0 14px;font-size:12px;width:auto;'; nada.onclick = () => fim(-1);
@@ -8480,9 +8540,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   const esconderBola = () => { try { ball.mesh.visible = ball.shadow.visible = false; userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false; } catch (e) { /* sem bola */ } };
 
   // ------------------------------------------------------------------ RELÓGIO (dia de 15 min), céu, clima, chuva, luz da noite e a reação das pessoas
-  const SEG_DIA = 1200, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 5;   // acorda às 5h
+  const SEG_DIA = 1200, H_POR_S = 24 / SEG_DIA, H_DORMIR = 22, H_ACORDAR = 6;   // acorda às 6h (as noites de trabalho acordam mais tarde: NOITE_EMPREGO)
   const K = (h, ceu, hc, hg, hi, sc, si, sp, ng, lamp) => ({ h, ceu: new THREE.Color(ceu), hc: new THREE.Color(hc), hg: new THREE.Color(hg), hi, sc: new THREE.Color(sc), si, sp, ng, lamp });
-  const NOITE_ = [0x0a1424, 0x6f82b4, 0x1a2a18, 0.5, 0x8aa0d8, 0.26, [-25, 45, 15], [45, 150], 1];
+  const NOITE_ = [0x0a1424, 0x6f82b4, 0x1a2a18, 0.36, 0x8aa0d8, 0.15, [-25, 45, 15], [45, 150], 1];   // (7.6.3) noite mais escura (0,5/0,26): a luz dos postes aparece
   // luz do dia mais baixa: antes céu 0,97 + sol 0,95 estourava (água branca, mato marrom à tarde, interiores "de vidro")
   const CHAVES = [K(0, ...NOITE_), K(5.4, ...NOITE_),
     K(6.2, 0xe8a07a, 0xffd8b8, 0x4a4a30, 0.5, 0xffb070, 0.42, [-70, 10, 20], [55, 170], 0.8),
@@ -8492,7 +8552,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     K(16.3, 0xe9dca8, 0xfff2d8, 0x4f6a35, 0.68, 0xffe6b8, 0.56, [55, 30, 28], [65, 195], 0),
     K(17.8, 0xf2b070, 0xffe2c0, 0x4a4a30, 0.6, 0xffc88a, 0.5, [65, 16, 30], [60, 180], 0.1),
     K(18.7, 0xc0705a, 0xe8b098, 0x3a3a30, 0.5, 0xff9a60, 0.38, [70, 8, 25], [55, 165], 0.7),
-    K(19.5, 0x2c2c4c, 0x8090b8, 0x1a2a18, 0.5, 0x8aa0d8, 0.28, [-25, 45, 15], [48, 150], 1),
+    K(19.5, 0x2c2c4c, 0x8090b8, 0x1a2a18, 0.42, 0x8aa0d8, 0.2, [-25, 45, 15], [48, 150], 1),
     K(20.4, ...NOITE_), K(24, ...NOITE_)];
   const LUZ = { ceu: new THREE.Color(), hc: new THREE.Color(), hg: new THREE.Color(), sc: new THREE.Color(), hi: 0, si: 0, sp: [0, 0, 0], ng: [0, 0], lamp: 0 };
   const _cinza = new THREE.Color(), _tmp = new THREE.Color(), _cOff = new THREE.Color(0x9a9a92), _cOn = new THREE.Color(0xffffff);
@@ -8523,7 +8583,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     sun.color.copy(R.sc); sun.intensity = R.si * (1 - 0.7 * nuv) + C.flash * 0.6; sun.position.set(R.sp[0], R.sp[1], R.sp[2]);
     const on = Math.max(R.lamp, nuv * 0.4);                            // os postes acendem de noite (e um pouco quando o dia escurece com a chuva)
     if (S.lampMat) S.lampMat.color.copy(_cOff).lerp(_cOn, on);
-    if (S.luzes) { S.luzes.matP.opacity = on * 0.62; S.luzes.matH.opacity = on * 0.9; S.luzes.pools.visible = S.luzes.matP.opacity > 0.01;
+    if (S.luzes) { S.luzes.matP.opacity = on * 0.95; S.luzes.matH.opacity = on * 0.9; S.luzes.pools.visible = S.luzes.matP.opacity > 0.01;
       const hv = S.luzes.matH.opacity > 0.01; if (hv !== S.luzes.hv) { S.luzes.hv = hv; for (const h of S.luzes.halos) h.visible = hv; } }   // de dia os brilhos nem são desenhados
     // janelas acesas e faróis: só pela hora (a luz da rua também acende um pouco na chuva, as casas não)
     const noite = R.lamp;
@@ -8629,7 +8689,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     const acorda = Math.max(H_ACORDAR, Math.min(R.acorda, Math.floor(cedo - 1)));
     return { dia: nd, emprego: e, dormir: R.dormir, apagar: R.apagar, acorda };
   }
-  // O DIA VIRA À MEIA-NOITE (como no calendário). Quem ainda não dormiu continua no mesmo dia depois das 5h: dormir de madrugada só adianta as horas.
+  // O DIA VIRA À MEIA-NOITE (como no calendário). Quem ainda não dormiu continua no mesmo dia depois das 6h: dormir de madrugada só adianta as horas.
   function virarDia() { const d = S.dados; d.dia = (d.dia || 1) + 1; prepararDia(d); setTimeout(() => { if (S && S.ativo) agendarHoje(); }, 600); }
   function amanheceu() { aviso(Tf('Amanheceu: {0}.', Calendario.longo(S.dados))); setTimeout(() => { if (S && UI && !UI.aviso.hidden) aviso(''); }, 3500); }   // (7.4.6) a data do calendário
   // 2h: ele se assusta, sai correndo para o prédio (a câmera fica parada) e o jogo corta para ele acordando no dia seguinte
@@ -8662,8 +8722,9 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   function abrirHud(seg) { if (!UI || !UI.info) return; UI.info.hidden = false; UI.resumo.hidden = true; clearTimeout(tHud); tHud = setTimeout(recolherHud, (seg || 3.5) * 1000); }
   function recolherHud() { clearTimeout(tHud); if (!UI || !UI.info) return; UI.info.hidden = true; UI.resumo.hidden = false; }
   // quanto o personagem já comeu hoje: 0 = nada (só o osso) … 1 = matou a fome (a coxa inteira)
-  function nivelComida() {
-    const d = S.dados, hoje = d.dia || 1;
+  function nivelComida() { return nivelComidaDe(S.dados); }
+  function nivelComidaDe(d) {
+    const hoje = d.dia || 1;
     const fome = d.fomeDia === hoje || d.comeuDia === hoje ? (d.fome == null ? FOME_DO_DIA : d.fome) : FOME_DO_DIA;
     return clamp(1 - fome / FOME_DO_DIA, 0, 1);
   }
@@ -8901,7 +8962,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
     r.estado = 'posto';
   }
   function rotaGente(x0, z0, x1, z1) {                               // como caminhoRede, mas quem está dentro do campo (cercado) sai e entra pelo portão
-    for (const F of S.societys || []) {
+    for (const F of (S.societys || []).concat(S.treino && S.treino.F.varzea ? [S.treino.F] : [])) {   // (7.6.3) e a várzea (a turma do treino)
       const r = F.r, dentro = (x, z) => x > r.x0 - 0.5 && x < r.x1 + 0.5 && z > r.z0 - 0.5 && z < r.z1 + 0.5, g = F.gate, d0 = dentro(x0, z0), d1 = dentro(x1, z1);
       if (d0 && d1) return [{ x: x1, z: z1 }];
       if (d0) return [{ x: g.in.x, z: g.in.z }, { x: g.out.x, z: g.out.z }].concat(caminhoRede(g.out.x, g.out.z, x1, z1));
@@ -10055,6 +10116,7 @@ body.cdAtivo #dialogo, body.cdAtivo #escolha { z-index: 21; }`;
   // a fase2.js usa a mesma conversa do encontro (no quarto) e o "♥ +n" na tela
   const encontroApi = { roteiro: roteiroEncontro, coracao: (n) => amizadeNaTela('lucia', n), coracaoDe: (id, n) => amizadeNaTela(id, n), arrogancia: () => marcarArrogancia('foi grosso'), BEIJO_MIN };
   window.FutebolJS.registrarFase({ id: 'cidade', nome: 'Cidadezinha', nucleoMinimo: '5.0.0', iniciar, encontro: encontroApi,
+    icones: { coxa: iconeCoxa, fedor: iconeFedor, comida: nivelComidaDe },   // o fase2.js (o prédio) mostra a fome e o fedor com os mesmos ícones
     _estado: () => S, _planta: { R, PX, PZ, LAGO, PIER, SPAWN },
     _fns: { novoCliente, pedirGarcom, reorganizarRua, janelaTurma, turmaAgora, turmaVai, idaTurma, missaoTrabalho, missaoBanho, textoMissoes, atendimento, conversarRacha, alvosRacha, linhaAmizade, falaAmizade, precoAmizade, checarAtendimento, abrirFarmacia, tomarRemedio, REMEDIOS, desenharRemedio, aplicarDiaHora, evoluirPartida, prepararDia, processarDias, checarFome, desmaio, chamarLuciaSair, livre, livreNPC, caminhoRede, joaoAgora, tickJoao, conversarJoao, pontoJoaoSintetico, rotaJoao, cruzar, passoNPC, faixaLivre, encontroAgora, despedidaLucia, cenaEncontroPredio, encontroMarcado, cafeAberto, luciaNoCafe, cafeFecha, luciaSai, Amizade, luciaJogaHoje, jogarFutsal, jogarSintetico, tocarCelular, atenderLigacao, perdeuLigacao, agendarHoje, cfgSintetico, horaDoFutebol, lugarDoEmprego, fut, MusicaCafe, SomCafe, interagir, falarComLucia, iniciarTurno, encerrarTurno, abrirBancada, anotarPedido, entregarPedido, clientesDoTurno, rotaLucia, menuBalcao, alvoAtual, alvos, tickDescobertas, gravar, virarDia, madrugada, avisoDormir, entrarEm, sairDoLugar, abrirMapa, fecharMapa, marcarEntrou, PORTAS, vomitar, gotaVomito, fase1Lucia, luciaDepoisDoJogo, criarNPCFixo, irEmbora, chegarDeFora, luciaVaiParaCasa, empregoEscolhido, liberar, TIERS, atributosJogador, apiAcademia, abrirDev, climaDev, dukeDev, comecarPapo, comecarPedra, comecarFoto, comecarSelfieDupla, entrarNaRoda, rodas, fimAtiv, darCel, tirarCel, flashCel, bordaLago, dentroLago, LAGO, tickLojas, viagem, lojaGente, maoDireita, grosseria, falaGrossa, conversaLucia, apresentacaoLuciaVisitante, janelaTurma, turmaAgora, proximaTurma, PORTAS, abrirPorta, dentroDaPorta, irParaArvore, acharSlot, costasAtor, trasNoTronco, cenaConfeitaria, comprarBolo, montarConfeitaria, iconeBolo, BOLOS, CONF, garcom, pedirNamoro, chamarLuciaSair, convidarLuciaJogar, iniciarTurno, encerrarTurno, pegarBoloTurno, bolosAnotados, mostrarAgendaEncontro, falarComLucia, checarFaltaEncontro, alvosPortaLucia, portaCasaLucia, pedirDesculpasLucia, chamarLuciaDeNovo, apiNamoro, dobrarPagamento, regraNoite, apiMercado, reacaoVisual, sigVisual, falaAmizade } });   // (_estado/_planta/_fns: para testes)
 })();

@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.2';
+const VERSAO_JOGO = '7.6.3';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -284,32 +284,63 @@ function goalCollide(p, ox, oz) {
     }
   }
 }
-// Caminho que contorna o gol: se o trajeto até o alvo cruza a armação, passa antes pela frente da trave.
+// Caminho que contorna o gol. (7.6.3) A armação (traves + rede) é um retângulo sólido atrás da linha de fundo: se o trajeto
+//   reto até o alvo atravessa esse retângulo, o jogador vai primeiro para o CANTO dele que deixa o caminho mais curto (os cantos
+//   da frente, na trave, ou os de trás, no fundo da rede). Antes só existia o desvio pela frente da trave: o goleiro que parava
+//   ATRÁS do gol (depois de um mergulho, buscando a bola que saiu) ia em linha reta e ficava correndo contra a rede por fora.
+const GOL_FOLGA = 0.75;                            // quanto o canto fica afastado da armação (o corpo + uma sobra)
+function cruzaCaixa(ax, az, bx, bz, x0, x1, z0, z1) {   // o segmento a→b passa por dentro do retângulo? (Liang–Barsky)
+  let t0 = 0, t1 = 1; const dx = bx - ax, dz = bz - az;
+  for (const [pp, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) {
+    if (Math.abs(pp) < 1e-9) { if (q < 0) return false; continue; }
+    const r = q / pp; if (pp < 0) { if (r > t1) return false; if (r > t0) t0 = r; } else { if (r < t0) return false; if (r < t1) t1 = r; }
+  }
+  return t1 - t0 > 1e-4;
+}
 function rotaGol(p, tx, tz) {
   // Já está DENTRO do gol (rede)? Primeiro sai pela boca do gol (pela frente), senão a lateral da
   // rede o prendia lá dentro quando ia buscar a bola do tiro de meta.
   for (const side of [-1, 1]) {
     const gx = side * HALF_L, rel = (p.x - gx) * side, relT = (tx - gx) * side;
-    if (rel > -0.05 && rel < GOAL_DEPTH + BODY_R + 0.3 && Math.abs(p.z) < GOAL_HALF + 0.35 && !(relT > -0.05 && Math.abs(tz) < GOAL_HALF + 0.35)) {
+    if (rel > -0.05 && rel < GOAL_DEPTH && Math.abs(p.z) < GOAL_HALF && !(relT > -0.05 && Math.abs(tz) < GOAL_HALF + 0.35)) {
       return { x: gx - side * 0.9, z: clamp(p.z, -(GOAL_HALF - 0.9), GOAL_HALF - 0.9) };
     }
   }
   for (const side of [-1, 1]) {
-    const gx = side * HALF_L;
-    const foraP = (p.x - gx) * side > -0.2, foraT = (tx - gx) * side > -0.2;
-    if (foraP === foraT) continue;                  // os dois do mesmo lado da linha de fundo
-    const fora = foraP ? p : { x: tx, z: tz }, dentro = foraP ? { x: tx, z: tz } : p;
-    const k = (gx - dentro.x) / ((fora.x - dentro.x) || 1e-6);   // onde o trajeto cruza a linha de fundo
-    const zc = dentro.z + (fora.z - dentro.z) * k;
-    if (Math.abs(zc) < GOAL_HALF + 0.7) {
-      const lado = Math.sign(fora.z) || 1;
-      const wp = { x: gx - side * 0.9, z: lado * (GOAL_HALF + 1.0) };
-      if (Math.hypot(p.x - wp.x, p.z - wp.z) > 0.4) return wp;
+    const gx = side * HALF_L, bx = gx + side * GOAL_DEPTH;
+    // a caixa sólida (com o corpo): da linha de fundo até o fundo da rede, de trave a trave
+    const x0 = Math.min(gx, bx) - BODY_R, x1 = Math.max(gx, bx) + BODY_R, z0 = -GOAL_HALF - BODY_R, z1 = GOAL_HALF + BODY_R;
+    // de dentro da boca do gol (alvo também dentro) não há o que contornar
+    const dentroP = (p.x - gx) * side > -0.05 && (p.x - gx) * side < GOAL_DEPTH && Math.abs(p.z) < GOAL_HALF;
+    if (dentroP || !cruzaCaixa(p.x, p.z, tx, tz, x0, x1, z0, z1)) continue;
+    const ext = GOAL_HALF + GOL_FOLGA, fx = gx - side * GOL_FOLGA, tras = bx + side * GOL_FOLGA;
+    const cantos = [{ x: fx, z: -ext }, { x: fx, z: ext }, { x: tras, z: -ext }, { x: tras, z: ext }];
+    let best = null, bd = Infinity;
+    for (const c of cantos) {
+      if (Math.hypot(c.x - p.x, c.z - p.z) < 0.35) continue;             // já chegou nesse canto: o próximo
+      if (cruzaCaixa(p.x, p.z, c.x, c.z, x0, x1, z0, z1)) continue;      // não dá para chegar reto nele
+      // do canto até o alvo: reto, ou passando pelo outro canto do mesmo lado (frente ↔ trás)
+      const resto = cruzaCaixa(c.x, c.z, tx, tz, x0, x1, z0, z1) ? Math.hypot(c.x - (c.x === fx ? tras : fx), 0) + Math.hypot((c.x === fx ? tras : fx) - tx, c.z - tz) : Math.hypot(tx - c.x, tz - c.z);
+      const d = Math.hypot(c.x - p.x, c.z - p.z) + resto;
+      if (d < bd) { bd = d; best = c; }
     }
+    if (best) return best;
   }
   return { x: tx, z: tz };
 }
 
+// (7.6.3) Última garantia contra a rede: dentro do gol, sai pela boca; por fora (atrás ou do lado), desencosta da armação
+//   (0,6 m para fora, pelo lado mais perto), e o caminho pelos cantos (rotaGol) segue dali.
+function soltarDaRede(p) {
+  const side = Math.sign(p.x) || 1, gx = side * HALF_L, bx = gx + side * GOAL_DEPTH, rel = (p.x - gx) * side;
+  if (rel < -0.05) return;
+  if (rel < GOAL_DEPTH && Math.abs(p.z) < GOAL_HALF) { p.x = gx - side * 0.5; p.z = clamp(p.z, -(GOAL_HALF - 0.5), GOAL_HALF - 0.5); return; }
+  const fora = 0.6 + BODY_R;
+  const dLado = Math.abs(Math.abs(p.z) - GOAL_HALF), dFundo = Math.abs(p.x - bx);
+  if (Math.abs(p.z) >= GOAL_HALF - 0.05 && (dLado <= dFundo || rel < GOAL_DEPTH)) p.z = Math.sign(p.z || 1) * (GOAL_HALF + fora);
+  else p.x = bx + side * fora;
+  p.vx = p.vz = 0;
+}
 // Anda até um ponto (usado nas cenas), contornando o gol. Devolve true quando chegou.
 // jogadores esbarram no banco de reservas (retângulo) e no técnico (círculo).
 const RAIO_JOGADOR = 0.32, RAIO_TECNICO = 0.32;
@@ -5263,7 +5294,8 @@ function papeisSemBola(t, holder, live, oppHas) {
     G.linhaDef[t] = clamp(hRel - recuo + lin, -40 + Math.max(0, lin) * 0.5, -6 + lin);
     if (!campoPequeno()) {
       const livres = TEAMS[t].filter((p) => p.role !== 'GK' && !p.isUser && !p.out && p.stun <= 0 && !p.scripted && p !== G.pressers[t] && p !== G.covers[t]);
-      const alvos = TEAMS[1 - t].filter((q) => q.role !== 'GK' && !q.out && q !== holder && Math.abs(q.x - ownGx) < 52 * ESC);
+      const colado = 5 * Math.max(0.75, ESC);                             // (7.6.3) quem está colado em quem conduz é do bote: ninguém dobra em cima
+      const alvos = TEAMS[1 - t].filter((q) => q.role !== 'GK' && !q.out && q !== holder && Math.abs(q.x - ownGx) < 52 * ESC && dist2D(q, holder) > colado);
       const raio = 13 * Math.max(0.75, ESC) * (TTd.marcRaio || 1), pares = [];
       for (const p of livres) {
         const f = formationTarget(p, false);
@@ -5428,7 +5460,20 @@ function papeisCampoPequeno(t, holder, live, oppHas, recebendo) {
   if (live && oppHas) {
     const ops = TEAMS[1 - t].filter((q) => q.role !== 'GK' && q !== holder && !(q.stun > 0) && !q.out);
     const marcadores = cand.filter((p) => p !== a && p !== fixo && p !== cobre), pares = [];
-    for (const p of marcadores) for (const q of ops) pares.push([dist2D(p, q), p, q]);
+    // (7.6.3) MARCAÇÃO POR ZONA no campo pequeno. Antes cada um ia no adversário mais perto DELE, em qualquer lugar: o time inteiro
+    //   saía da posição atrás dos homens (e da bola) e às vezes três cercavam um pelos lados, com a defesa aberta. Agora cada um só
+    //   pega quem entrou na ZONA dele (perto da posição da tática) ou quem está na frente do nosso gol; quem está colado em quem
+    //   conduz é do bote (não dobra). Sem ninguém na zona, ele guarda a posição. A marcação individual (tática 'homem') segue como era.
+    const indiv = !!taticaDe(t).colado, raioZ = HALF_W * 0.55, perto = 3.2 * Math.max(0.75, ESC);
+    for (const p of marcadores) {
+      const f = indiv ? null : formationTarget(p, false);
+      for (const q of ops) {
+        if (indiv) { pares.push([dist2D(p, q), p, q]); continue; }
+        if (dist2D(q, holder) < perto) continue;
+        const dz = Math.hypot(f.x - q.x, f.z - q.z), corre = q.profT > 0 || q.runT > 0, naCara = Math.abs(q.x - ownGx) < HALF_L * 0.45;
+        if (dz < raioZ * (corre ? 1.5 : 1) || naCara) pares.push([dz * 0.7 + dist2D(p, q) * 0.3 - (naCara ? 3 : 0), p, q]);
+      }
+    }
     pares.sort((x, y) => x[0] - y[0]);
     const usP = new Set(), usQ = new Set();
     for (const [, p, q] of pares) { if (usP.has(p) || usQ.has(q)) continue; usP.add(p); usQ.add(q); G.marca[t].set(p, q); }
@@ -5546,7 +5591,7 @@ function formationTarget(p, attacking) {
       : phase === 'defesa' ? clamp(bRel - (wide ? 3 : 6), -34, 12) : clamp(bRel - 2, -28, 20);
     if (bx0 > -14 && TT.falso9 && phase === 'ataque') rx += 4;      // falso 9: os meias pisam na área no lugar dele
     if (phase === 'ataque') rx = Math.min(rx + (TT.chegada || 0), 48 - 9);   // (7.1.22) a tática manda os meias mais (ou menos) para a frente
-    rz = bz0 * (phase === 'ataque' ? 1.25 : 0.65) * larg + bz * (phase === 'ataque' ? 0.2 : 0.45);
+    rz = bz0 * (phase === 'ataque' ? 1.25 : 0.65) * larg + bz * (phase === 'ataque' ? 0.2 : 0.3);   // (7.6.3) 0,45 na defesa: o meio inteiro corria para o lado da bola
   } else {
     rx = phase === 'ataque' ? clamp(bRel + 14, 0, 48 - 9) : clamp(bRel + 16, -2, 18);
     if (TT.falso9 && phase === 'ataque') rx = clamp(bRel + 2, -6, 48 - 18);   // falso 9: recua para receber (pivô)
@@ -5560,13 +5605,16 @@ function formationTarget(p, attacking) {
   // CAMPO MÉDIO (7 x 7, várzea): o bloco se espremia na faixa da bola (todo mundo puxado para o lado dela). Metade do
   // caminho volta para a largura da posição de cada um: quem é do lado de lá fica lá, aberto, como opção de inversão.
   if (!cruz && !campoPequeno() && !campoGrande()) rz = lerp(rz, bz0 * (phase === 'ataque' ? 1.3 : 0.95) * larg, 0.5);
+  // (7.6.3) CAMPO PEQUENO: o mesmo, mais leve (a quadra é estreita): quem joga do lado de lá não atravessa a quadra atrás da bola
+  if (!cruz && campoPequeno() && phase !== 'ataque') rz = lerp(rz, bz0 * 0.9 * larg, 0.35);
   // Linha de defesa: os zagueiros (e laterais) defendendo andam juntos na linha calculada em papeisSemBola.
   const LD = G.linhaDef && G.linhaDef[p.team];
   if (LD != null && phase === 'defesa' && G.state === 'play' && !G.sp && (p.funcao ? (p.funcao === 'zagueiro' || p.funcao === 'lateral') : p.role === 'DEF')) rx = lerp(rx, LD, 0.65);
   const zagaB = p.funcao ? (p.funcao === 'zagueiro' || p.funcao === 'lateral') : p.role === 'DEF';
   rx += bloco * (phase === 'ataque' ? 0.5 : (bloco > 0 && zagaB ? 0.45 : 1));   // (7.1.22) pressão alta: quem sobe é a frente; a zaga sobe menos da metade
-  rx += p.drift.x * 0.6 + (p.runT > 0 && !(campoGrande() && p.funcao) ? 8 : 0);
-  rz += p.drift.z * 0.6;
+  const dK = phase === 'ataque' ? 0.6 : 0.3;                            // (7.6.3) defendendo, cada um fica mais quieto na posição (0,6)
+  rx += p.drift.x * dK + (p.runT > 0 && !(campoGrande() && p.funcao) ? 8 : 0);
+  rz += p.drift.z * dK;
   rx *= ESC; rz *= ESC_W;
   // Atacando: fica na linha do penúltimo defensor (de vez em quando um se distrai e passa dela).
   if (attacking && !(p.semLinhaT > 0) && PARTIDA.regras.impedimento) rx = Math.min(rx, limiteLegal(p.team) - 0.6);
@@ -5724,8 +5772,31 @@ const lamentandoNoChao = (p) => (p.lamento === 'sentado' || p.lamento === 'deita
 // A IA decide para onde ir (aiDecide) e o RITMO (andar ou correr) sai de quanto aquilo vale (querCorrer) e do fôlego.
 function aiThink(p, dt) {
   p.querCorrer = 0;
-  const des = aiDecide(p, dt);
+  const des = semAmontoar(p, aiDecide(p, dt));
   return ritmoIA(p, des, dt);
+}
+// (7.6.3) SEM AMONTOAR EM QUEM CONDUZ. A soma dos papéis (o bote, a cobertura, o marcador do homem que estava ali perto, quem
+//   voltava por fora) às vezes punha três em volta de quem tem a bola — pelos lados, sem ninguém na frente — e a defesa abria.
+//   Agora, defendendo, perto de quem conduz ficam no máximo DOIS: o do bote e um na frente dele (entre a bola e o gol). Quem
+//   chegaria como terceiro (ou como segundo pelo lado/por trás) não entra no raio: a parte do passo que ia para a bola vira passo
+//   para fora, puxado para o lado do nosso gol (a posição dele). Dentro da nossa área não vale: ali é todo mundo na bola.
+function semAmontoar(p, des) {
+  const h = G.possession;
+  if (!h || h.team === p.team || h.role === 'GK' || p.isUser || p.role === 'GK' || G.state !== 'play' || G.sp || G.kickoffPending) return des;
+  if (G.pressers[p.team] === p || (G.desarmeLimpo && G.desarmeLimpo.p === p) || p.chaseT > 0) return des;
+  const ownGx = -p.dir * HALF_L, gx = ownGx - h.x, gz = -h.z, gl = Math.hypot(gx, gz) || 1;
+  if (gl < BOX.depth + 3 * ESC) return des;                               // na cara do nosso gol: defende a área
+  const R = 6.5 * Math.max(0.75, ESC), d = dist2D(p, h);
+  if (d > R + 1) return des;
+  const frente = ((p.x - h.x) * gx + (p.z - h.z) * gz) / (gl * (d || 1));
+  let outros = 0; for (const q of TEAMS[p.team]) if (q !== p && q.role !== 'GK' && !q.out && dist2D(q, h) < R) outros++;
+  if (outros < 2 && frente > 0.35) return des;                             // é o segundo e está na frente (cobertura): fica
+  const ux = (p.x - h.x) / (d || 1), uz = (p.z - h.z) / (d || 1);
+  let vx = des.vx, vz = des.vz;
+  const vIn = -(vx * ux + vz * uz); if (vIn > 0) { vx += ux * vIn; vz += uz * vIn; }   // não chega mais perto
+  const k = clamp((R - d) / R, 0, 1);
+  if (k > 0) { const sp = CONFIG.AI_SPEED * 0.7 * k, ox = ux * 0.55 + gx / gl * 0.45, oz = uz * 0.55 + gz / gl * 0.45, ol = Math.hypot(ox, oz) || 1; vx += ox / ol * sp; vz += oz / ol * sp; }
+  return { vx, vz };
 }
 // Velocidade de "andar" (trote) de cada um: AI_WALK, um pouco menor para quem é lento (crianças, velocidade baixa).
 const andarIA = (p) => CONFIG.AI_WALK * clamp(p.speedMul || 1, 0.75, 1.08);
@@ -7684,8 +7755,8 @@ function userDesired(u, dt) {
   // (7.5.0) comemoração com a câmera de trás: a câmera vira para onde você corre; se o joystick seguisse o ângulo novo a cada
   //   quadro, segurar para o lado fazia você andar em círculo (parecia invertido). Enquanto você segura, vale o ângulo de quando
   //   começou a segurar; soltou, pega o da câmera de novo.
-  let yawCtl = cam.yaw;
-  if (G.state === 'celebrate' && cam.mode !== 'tv') { if (u.yawCeleb == null) u.yawCeleb = cam.yaw; yawCtl = u.yawCeleb; } else u.yawCeleb = null;
+  const yawCtl = cam.yaw;                          // (7.6.3) a câmera não gira mais enquanto você segura (updateCamera): o direcional é o da tela
+  u.yawCeleb = null;
   const w = screenToWorld(inp.up / inp.mag, inp.right / inp.mag, yawCtl);
   let vx = w.x * s, vz = w.z * s;
   // Falta do adversário esperando a cobrança: você não consegue entrar nos 9,15 m da bola.
@@ -7951,12 +8022,17 @@ function updatePlayers(dt) {
         const tx = p.x + des.vx / vd * 12, tz = p.z + des.vz / vd * 12, wp = rotaGol(p, tx, tz);
         if (wp.x !== tx || wp.z !== tz) { const dx = wp.x - p.x, dz = wp.z - p.z, dd = Math.hypot(dx, dz) || 1; des = { vx: dx / dd * vd, vz: dz / dd * vd }; }
       }
-      p.presoGol = (Math.hypot(p.x - (p.ogx ?? p.x), p.z - (p.ogz ?? p.z)) < 0.01 && vd > 1) ? (p.presoGol || 0) + dt : 0; p.ogx = p.x; p.ogz = p.z;
-      if (p.presoGol > 1.2) {                       // última garantia: se ainda assim travou, sai pela frente da trave
-        const side = Math.sign(p.x) || 1, gx = side * HALF_L; p.presoGol = 0;
-        if ((p.x - gx) * side > -0.05) { p.x = gx - side * 0.5; p.z = Math.abs(p.z) < GOAL_HALF ? clamp(p.z, -(GOAL_HALF - 0.5), GOAL_HALF - 0.5) : Math.sign(p.z) * (GOAL_HALF + 0.6); }
-      }
-    } else p.presoGol = 0;
+      // (7.6.3) TRAVADO NA REDE: antes só contava se ficasse parado no mesmo centímetro; deslizando colado na rede (por fora) ele
+      //   "corria" para sempre. Agora mede o quanto andou de verdade em cada 1 s querendo andar: menos de 0,5 m = travado.
+      if (vd > 1) {
+        if (!p.gJan) p.gJan = { t: 0, x: p.x, z: p.z };
+        p.gJan.t += dt;
+        if (p.gJan.t >= 1) {
+          const andou = Math.hypot(p.x - p.gJan.x, p.z - p.gJan.z); p.gJan = { t: 0, x: p.x, z: p.z };
+          if (andou < 0.5) soltarDaRede(p);
+        }
+      } else p.gJan = null;
+    } else p.gJan = null;
 
     let acc = p.dash > 0 || p.diveT > 0 || p.slideT > 0 ? 60 : 22;
     // Inércia da IA: correndo, ela não dá meia-volta na hora (freia e vira) — fica menos "robótica".
@@ -9713,8 +9789,9 @@ function updateCobrador(dt) {
 // =====================================================================================================================
 const FK = { DOTS: 30, CURVA: 1.05, TOPSPIN: -0.22, DIST_MAX: 36 };
 function faltaMiraPossivel(S) {
-  return !!S && S.kind === 'falta' && S.motivo !== 'impedimento' && S.motivo !== 'desafio' && !G.desafio && !G.espectador && S.taker === user
-    && S.dGoal != null && S.dGoal < FK.DIST_MAX && HALF_L - S.ballSpot.x > 6;
+  const treino = !!(G.desafio && G.desafio.faltaMira && S && S.motivo === 'desafio');   // (7.6.3) o treino do seu Nonato (CHUTE) usa a mesma cobrança
+  return !!S && S.kind === 'falta' && S.motivo !== 'impedimento' && (treino || (S.motivo !== 'desafio' && !G.desafio)) && !G.espectador && S.taker === user
+    && S.dGoal != null && S.dGoal < FK.DIST_MAX && HALF_L - S.ballSpot.x > (treino ? 2 : 6);
 }
 let fkMalhas = null;
 function fkGarantirMalhas() {
@@ -9765,17 +9842,23 @@ function fkCalcular(u, F) {
   F.tz = fim.z; F.ty = Math.max(0.12, fim.y);
   let folga = 9; for (const q of sim.pts) for (const w of W) if (Math.hypot(q.x - w.x, q.z - w.z) < 0.9) folga = Math.min(folga, q.y - altB);
   F.arriscado = !F.barreira && (folga < 0.4 || Math.abs(fim.z) > GOAL_HALF - 0.5 || fim.y > CONFIG.GOAL_H - 0.35);
+  // (7.6.3) O PONTILHADO SÓ VAI ATÉ A BARREIRA: mostrar o caminho inteiro (e o anel colorido onde ela ia entrar) entregava o resultado.
+  //   Agora ele para na linha da barreira (um pouco depois dela); sem barreira, a ~60% do caminho até o gol (no máximo 9,15 m).
+  let dLim = Infinity; for (const w of W) dLim = Math.min(dLim, Math.hypot(w.x - b0.x, w.z - b0.z) + 0.7);
+  if (!isFinite(dLim)) dLim = Math.min(9.15, Math.hypot(HALF_L - b0.x, b0.z) * 0.6);
+  let lim = sim.pts.length; for (let i = 1; i < sim.pts.length; i++) if (Math.hypot(sim.pts[i].x - b0.x, sim.pts[i].z - b0.z) > dLim) { lim = i + 1; break; }
+  F.limite = Math.max(2, Math.min(sim.pts.length, lim));
 }
 function fkAtualizarMalhas(F) {
-  const M = fkGarantirMalhas(), P = F.pts || [], n = FK.DOTS;
-  for (let i = 0; i < n; i++) {
-    const m = M.pontos[i], k = Math.min(P.length - 1, Math.round((i + 1) / n * (P.length - 1)));
-    if (!P.length || F.chutou) { m.visible = false; continue; }
+  const M = fkGarantirMalhas(), P = F.pts || [], n = Math.round(FK.DOTS * 0.5), L = Math.min(P.length, F.limite || P.length);   // (7.6.3) só até a barreira
+  for (let i = 0; i < FK.DOTS; i++) {
+    const m = M.pontos[i], k = Math.min(L - 1, Math.round((i + 1) / n * (L - 1)));
+    if (!P.length || F.chutou || i >= n) { m.visible = false; continue; }
     const q = P[k]; m.position.set(q.x, q.y, q.z); m.visible = true;
-    const ruim = k >= F.corte || (!F.dentro && i > n * 0.8);
-    m.material.color.setHex(ruim ? 0xff4d4d : 0xffffff); m.scale.setScalar((1 - i / n * 0.35) * (F.hold ? 1 : 0.8)); m.material.opacity = F.hold ? 0.95 : 0.55;   // (7.6.2) antes de segurar: a prévia, mais fraca
+    const ruim = k >= F.corte;                       // vermelho só onde ela bate na barreira (o resto do caminho você não vê)
+    m.material.color.setHex(ruim ? 0xff4d4d : 0xffffff); m.scale.setScalar((1 - i / n * 0.25) * (F.hold ? 1 : 0.8)); m.material.opacity = F.hold ? 0.95 : 0.55;   // (7.6.2) antes de segurar: a prévia, mais fraca
   }
-  M.anel.visible = M.cruz.visible = !F.chutou && !!F.chegou;
+  M.anel.visible = M.cruz.visible = false;           // (7.6.3) sem o anel no gol: ele mostrava onde a bola ia entrar
   M.anel.position.set(HALF_L - 0.05, F.ty, F.tz); M.cruz.position.copy(M.anel.position);
   const cor = !F.dentro || F.barreira ? 0xff4d4d : F.arriscado ? 0xffd23a : 0x6cff6c;   // verde: boa · amarelo: arriscada · vermelho: barreira/fora
   M.anel.material.color.setHex(cor); for (const c of M.cruz.children) c.material.color.setHex(cor);
@@ -9807,7 +9890,8 @@ function fkUI() {
 #faltaUI .fkForca b { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #ff4d4d; left: calc(100% / 1.15); }
 #faltaUI .fkPassar { background: #3a3a3a; color: #fff0c8; }
 body.faltaMira #joy, body.faltaMira #actions { visibility: hidden; }
-@media (max-height: 420px) { #faltaUI .fkTopo { top: 46px; font-size: 11px; } #faltaUI .fkBtns button { height: 34px; } #faltaUI .fkPainel { padding: 6px 8px; gap: 4px; } #faltaUI .fkTrilho { height: 22px; } }`;
+body.noDesafio #faltaUI .fkTopo { top: calc(92px + env(safe-area-inset-top, 0px)); }   /* (7.6.3) no treino: abaixo do quadro do desafio */
+@media (max-height: 420px) { #faltaUI .fkTopo { top: 46px; font-size: 11px; } body.noDesafio #faltaUI .fkTopo { top: 84px; } #faltaUI .fkBtns button { height: 34px; } #faltaUI .fkPainel { padding: 6px 8px; gap: 4px; } #faltaUI .fkTrilho { height: 22px; } }`;
   document.head.appendChild(css);
   el = document.createElement('div'); el.id = 'faltaUI'; el.hidden = true;
   el.innerHTML = '<div class="fkTopo"></div><div class="fkPainel"><div class="fkLinha"><span class="fkRot"></span><div class="fkTrilho"><div class="fkPino"></div></div></div>'
@@ -9910,7 +9994,7 @@ function atualizarFaltaMira(rdt) {
     G.kick.dirX = Math.cos(F.a); G.kick.dirZ = Math.sin(F.a);             // a corrida e a câmera seguem a direção da batida
     const ox = -F.curva;
     const txt = Math.abs(F.curva) < 0.06 ? T('Batida reta, sem efeito') : Tf('A bola {0}', T(ox > 0 ? 'curva para a esquerda' : 'curva para a direita'));
-    const situ = F.hold ? (F.p > 1 ? T('forte demais: vai isolar!') : F.barreira ? T('assim bate na barreira!') : !F.dentro ? T('assim vai para fora') : F.arriscado ? T('arriscado!') : T('no gol!')) : '';
+    const situ = F.hold ? (F.p > 1 ? T('forte demais: vai isolar!') : F.barreira ? T('assim bate na barreira!') : '') : '';   // (7.6.3) não diz mais se vai no gol, para fora ou arriscado
     if (el) el.querySelector('.fkTopo').textContent = T('FALTA: arraste para os lados para a direção · a barra é o efeito · segure CHUTAR para a força (a bola sobe) e solte')
       + ' — ' + txt + (situ ? ' · ' + situ : '');
   }
@@ -15516,8 +15600,11 @@ function updateYaw(rdt) {
       want = k.yawRef + dU * 0.5; rapidez = 0.9;
     }
   } else if (G.state === 'celebrate') {                  // comemoração: a câmera vai atrás de você (e gira mais rápido: correndo, ele saía da tela)
-    const sp = Math.hypot(user.vx, user.vz);
-    want = sp > 1.5 ? Math.atan2(user.vz, user.vx) : cam.yaw; rapidez = 4.2;
+    // (7.6.3) MAS NÃO enquanto você segura o direcional: a câmera girando atrás de você mudava o "para cima" da tela no meio da corrida
+    //   e o controle parecia travado (segurando para o lado, ele acabava sempre correndo para o fundo). Segurando, a câmera só
+    //   acompanha (anda junto, sem girar) e o direcional vale direto para a tela; soltou (ou é a animação da comemoração), ela vira.
+    const sp = Math.hypot(user.vx, user.vz), segurando = readMove().mag > 0.01 && !(user.celeb && !CELEBRACOES[user.celeb.name].controlado);
+    want = sp > 1.5 && !segurando ? Math.atan2(user.vz, user.vx) : cam.yaw; rapidez = 4.2;
   } else if (cam.mode === 'livre') return;               // (7.4.13) câmera livre: quem gira é você (arrastando a tela)
   else if (cam.mode === 'frente') want = 0;
   else if (G.possession === user) {
@@ -17768,6 +17855,23 @@ function criarJogador(P, team, f, j, num, isUser) {
   };
 }
 
+// (7.6.3) TIME DA HISTÓRIA (elenco fixo e curto: o racha do sintético, o futsal, os torneios). Antes, com alguém suspenso ou
+// lesionado, faltava gente e o lugar vazio repetia alguém do elenco (dois Brunos) e todo mundo subia uma casa (o João no gol).
+// Agora: o goleiro do elenco (o 1º) fora → entra o goleiro reserva (pos 'GK'); sem goleiro reserva, ele joga assim mesmo.
+// Faltando gente na linha, quem estava fora joga assim mesmo (o racha não tem banco), na ordem do elenco. Ninguém repete.
+function completarElencoFixo(P, team, T, disp, slots, userSlot) {
+  const E = P.elencos[team], idx = new Map(E.map((j, i) => [j, i]));
+  const volta = (j) => { if (!disp.includes(j)) disp.push(j); P.desfalques[team] = P.desfalques[team].filter((d) => d.nome !== j.nome); };
+  const gkSlot = slots.length && slots[0].role === 'GK' && userSlot !== 0;
+  if (gkSlot && E[0] && !disp.includes(E[0])) {
+    const res = disp.find((j) => j.pos === 'GK');
+    if (!res) volta(E[0]);
+  }
+  const precisa = slots.length - (userSlot >= 0 ? 1 : 0);
+  for (const j of E) { if (disp.length >= precisa) break; volta(j); }
+  disp.sort((a, b) => idx.get(a) - idx.get(b));
+  if (gkSlot && disp[0] !== E[0]) { const g = disp.findIndex((j) => j.pos === 'GK'); if (g > 0) disp.unshift(disp.splice(g, 1)[0]); }
+}
 function montarTimes(P) {
   for (const p of players) descartarBoneco(p.mesh.raiz);
   players.length = 0; TEAMS[0].length = 0; TEAMS[1].length = 0; user = null;
@@ -17790,6 +17894,7 @@ function montarTimes(P) {
       const f = H.times[T.id] && H.times[T.id][j.nome];
       if (indisponivel(f)) P.desfalques[team].push({ nome: j.nome, motivo: motivoFora(f) }); else disponiveis.push(j);
     }
+    if (T.elenco) completarElencoFixo(P, team, T, disponiveis, slots, userSlot);   // (7.6.3) time da história: ninguém repete e o goleiro continua no gol
     if (team === 0) {
       const fv = H.times[T.id] && H.times[T.id][CHAVE_VOCE];
       P.usuarioIndisponivel = indisponivel(fv) ? motivoFora(fv) : '';   // o modo história decide; no teste você joga assim mesmo
@@ -21798,7 +21903,10 @@ const Historia = (() => {
     for (const p of players) if (p.wallSlot >= 0 && S.wall[p.wallSlot]) { const w = S.wall[p.wallSlot]; p.x = w.x; p.z = w.z; p.angle = Math.atan2(S.ballSpot.z - w.z, S.ballSpot.x - w.x); p.parado = true; }
     skipRestart();                                   // você já aparece na bola: a seta abre na hora (startSetPieceWait)
     const k = G.kick;
-    if (k && o.mira) {
+    if (k && k.faltaMira && o.mira) {                // (7.6.3) a cobrança de falta (treino de CHUTE): a direção começa na mira do desafio
+      const F = k.faltaMira; F.a = Math.atan2(o.mira.z - S.ballSpot.z, o.mira.x - S.ballSpot.x); F.sujo = true;
+      k.dirX = Math.cos(F.a); k.dirZ = Math.sin(F.a);
+    } else if (k && o.mira) {
       const dx = o.mira.x - S.ballSpot.x, dz = o.mira.z - S.ballSpot.z, d = Math.hypot(dx, dz) || 1;
       k.dirX = dx / d; k.dirZ = dz / d; if (k.kind === 'shot') k.cruzar = !mirandoNoGol(k.dirX, k.dirZ);
       $('stageKind').textContent = rotuloDoToque(k);
@@ -21816,7 +21924,7 @@ const Historia = (() => {
       cssDesafio = true;
       const st = document.createElement('style');
       st.textContent = 'body.noDesafio #score, body.noDesafio #radar { display: none !important; }' +
-        ' body.desafioCartao #stageBar, body.desafioCartao #powerUI, body.desafioCartao #spinUI, body.desafioCartao #aimPad, body.desafioCartao #cancelKick, body.desafioCartao #actions, body.desafioCartao #joy { visibility: hidden !important; }';
+        ' body.desafioCartao #stageBar, body.desafioCartao #powerUI, body.desafioCartao #spinUI, body.desafioCartao #aimPad, body.desafioCartao #cancelKick, body.desafioCartao #actions, body.desafioCartao #joy, body.desafioCartao #faltaUI { visibility: hidden !important; }';
       document.head.appendChild(st);
     }
     modo = 'desafio'; pendente = null; partidaEscola = false; G.treinoGol = 0;

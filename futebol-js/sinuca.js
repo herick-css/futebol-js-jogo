@@ -17,9 +17,11 @@
      · MESA ABERTA: a primeira bola encaçapada depois da saída decide o grupo (lisas ou listradas). Caíram uma lisa e uma listrada
        na mesma tacada: a mesa continua aberta e quem tacou joga de novo. Com a mesa aberta, tocar primeiro na 8 é falta.
      · TACADA VÁLIDA: a branca toca primeiro numa bola do seu grupo (ou na 8, quando só falta ela) e, depois do toque, alguma bola
-       cai ou bate na tabela. Encaçapou uma sua: joga de novo. Bola do outro que cair fica caída (ajuda o outro).
-     · FALTA (a branca caiu, não tocou em nada, tocou primeiro na bola errada, nenhuma bola na tabela depois do toque) = o outro
-       ganha a BOLA NA MÃO e põe a branca em qualquer lugar livre da mesa.
+       cai ou bate na tabela. Encaçapou uma sua: joga de novo.
+     · FALTA (a branca caiu, não tocou em nada, tocou primeiro na bola errada, encaçapou bola do outro, nenhuma bola na tabela
+       depois do toque) = regra de bar: a vez passa e cai a próxima bola do outro (a de número menor do grupo dele), mesmo que
+       já tenha caído uma dele na tacada. Só quando a branca cai o outro põe a branca onde quiser (na saída, atrás da linha);
+       nas outras faltas a branca fica onde parou. Com a mesa aberta ainda não tem grupo, então só passa a vez.
      · A 8: com o grupo todo encaçapado, a 8 numa tacada válida ganha. A 8 antes da hora, junto com a última do grupo ou com falta perde.
    - A MIRA começa sempre reta na horizontal (ou na vertical, se a horizontal já pegasse uma bola), numa direção que só bate na
      tabela: nunca começa numa tacada pronta. Quem acha a jogada é o jogador.
@@ -56,6 +58,14 @@
     'A 8 voltou para a mesa.': ['The 8 is back on the table.', 'La 8 volvió a la mesa.', 'L’8 torna sul tavolo.', 'La 8 revient sur la table.'],
     'A branca caiu junto com a 8.': ['The cue ball went in with the 8.', 'La blanca cayó junto con la 8.', 'La bianca è caduta insieme all’8.', 'La blanche est tombée avec la 8.'],
     'Falta na tacada da 8.': ['Foul on the 8-ball shot.', 'Falta en la tirada de la 8.', 'Fallo sul tiro dell’8.', 'Faute sur le tir de la 8.'],
+    'Encaçapou uma bola do adversário.': ['Potted an opponent’s ball.', 'Embocó una bola del rival.', 'Ha imbucato una palla dell’avversario.', 'A empoché une bille de l’adversaire.'],
+    'Falta! A bola {0} cai e você põe a branca onde quiser.': ['Foul! Ball {0} goes down and you place the cue ball wherever you like.', '¡Falta! Cae la bola {0} y pones la blanca donde quieras.', 'Fallo! Cade la palla {0} e metti la bianca dove vuoi.', 'Faute ! La bille {0} tombe et tu places la blanche où tu veux.'],
+    'Falta! A bola {0} cai e {1} põe a branca onde quiser.': ['Foul! Ball {0} goes down and {1} places the cue ball wherever they like.', '¡Falta! Cae la bola {0} y {1} pone la blanca donde quiera.', 'Fallo! Cade la palla {0} e {1} mette la bianca dove vuole.', 'Faute ! La bille {0} tombe et {1} place la blanche à son choix.'],
+    'Falta! A bola {0} cai e a vez é sua.': ['Foul! Ball {0} goes down and it’s your turn.', '¡Falta! Cae la bola {0} y es tu turno.', 'Fallo! Cade la palla {0} e tocca a te.', 'Faute ! La bille {0} tombe et c’est à toi.'],
+    'Falta! A bola {0} cai e a vez é de {1}.': ['Foul! Ball {0} goes down and it’s {1}’s turn.', '¡Falta! Cae la bola {0} y es el turno de {1}.', 'Fallo! Cade la palla {0} e tocca a {1}.', 'Faute ! La bille {0} tombe et c’est à {1} de jouer.'],
+    'Falta! Sua vez.': ['Foul! Your turn.', '¡Falta! Tu turno.', 'Fallo! Tocca a te.', 'Faute ! À toi.'],
+    'Falta! Vez de {0}.': ['Foul! {0}’s turn.', '¡Falta! Turno de {0}.', 'Fallo! Tocca a {0}.', 'Faute ! À {0} de jouer.'],
+    '{0} agora joga na 8.': ['{0} now goes for the 8.', '{0} ahora va por la 8.', '{0} ora tira all’8.', '{0} joue maintenant la 8.'],
     'Nenhuma bola bateu na tabela.': ['No ball hit a cushion.', 'Ninguna bola tocó la banda.', 'Nessuna palla ha toccato la sponda.', 'Aucune bille n’a touché la bande.'],
     'Caiu lisa e listrada: a mesa continua aberta.': ['A solid and a stripe went in: the table stays open.', 'Cayeron una lisa y una rayada: la mesa sigue abierta.', 'Sono entrate una piena e una spezzata: il tavolo resta aperto.', 'Une pleine et une rayée sont tombées : la table reste ouverte.'],
     'Na saída a mesa continua aberta. Joga de novo.': ['After the break the table stays open. Shoot again.', 'En la salida la mesa sigue abierta. Tira de nuevo.', 'Dopo lo spacco il tavolo resta aperto. Tira ancora.', 'Après la casse, la table reste ouverte. Rejoue.'],
@@ -203,6 +213,7 @@
       if (limpo) { if (ev.primeira !== 8) { falta = true; motivo = 'Tocou primeiro na bola errada.'; } }
       else if (gp === 'oito') { falta = true; motivo = 'Tocou primeiro na bola errada.'; }
       else if (tinhaGrupo && gp !== g) { falta = true; motivo = 'Tocou primeiro na bola errada.'; }
+      if (!falta && tinhaGrupo && caidas.some((id) => id !== 8 && grupoDe(id) !== g)) { falta = true; motivo = 'Encaçapou uma bola do adversário.'; }
       if (!falta && !caidas.length && !ev.trilho) { falta = true; motivo = 'Nenhuma bola bateu na tabela.'; }
     }
     const r = { falta, motivo, continua: false, fim: null, grupoNovo: null, oitoVolta: false, mesaAberta: false, cozinha: est.saida && caiuBranca };
@@ -533,12 +544,23 @@
         if (r.oitoVolta) { const o = est.B.find((b) => b.id === 8); o.fora = false; o.x = PE.x; o.y = PE.y; while (!posicaoLivre(est.B, o.x, o.y) && o.x < X1 - R) o.x += 1; fala(tr('A 8 voltou para a mesa.')); }
         if (r.grupoNovo) { est.grupo[quem] = r.grupoNovo; est.grupo[1 - quem] = r.grupoNovo === 'lisas' ? 'listradas' : 'lisas'; if (est.grupo[0]) fala(tr(est.grupo[0] === 'lisas' ? 'Você ficou com as lisas.' : 'Você ficou com as listradas.')); }
         if (r.falta) {
+          // a falta (regra de bar): a vez passa e cai a próxima bola de quem sofreu a falta (a de número menor do grupo dele).
+          //   Só a branca caída dá a bola na mão; nas outras faltas a branca fica onde parou. Com a mesa aberta não tem bola para cair.
           est.vez = 1 - quem; const c = est.B[0]; c.vx = c.vy = 0;
-          if (c.fora) { c.fora = false; c.x = CABECA.x; c.y = CABECA.y; while (!posicaoLivre(est.B, c.x, c.y) && c.x > X0 + R + 2) c.x -= 2; }
+          const caiuBranca = c.fora;
+          if (caiuBranca) { c.fora = false; c.x = CABECA.x; c.y = CABECA.y; while (!posicaoLivre(est.B, c.x, c.y) && c.x > X0 + R + 2) c.x -= 2; }
           cozinha = !!r.cozinha;
-          fala(tr(r.motivo) + ' ' + (est.vez === 0 ? tr('Falta! Bola na mão para você.') : trf('Falta! Bola na mão para {0}.', O.nome)), 3200);
+          const gC = est.grupo[est.vez], bC = gC ? est.B.filter((b) => !b.fora && grupoDe(b.id) === gC).sort((a, b) => a.id - b.id)[0] : null;
+          if (bC) { bC.fora = true; bC.vx = bC.vy = 0; SOM.cacapa(); }
+          const eu = est.vez === 0;
+          const txt = bC
+            ? (caiuBranca ? (eu ? trf('Falta! A bola {0} cai e você põe a branca onde quiser.', bC.id) : trf('Falta! A bola {0} cai e {1} põe a branca onde quiser.', bC.id, O.nome))
+              : (eu ? trf('Falta! A bola {0} cai e a vez é sua.', bC.id) : trf('Falta! A bola {0} cai e a vez é de {1}.', bC.id, O.nome)))
+            : (caiuBranca ? (eu ? tr('Falta! Bola na mão para você.') : trf('Falta! Bola na mão para {0}.', O.nome)) : (eu ? tr('Falta! Sua vez.') : trf('Falta! Vez de {0}.', O.nome)));
+          fala(tr(r.motivo) + ' ' + txt, 3600);
           if (quem === 1) quip('erra');
-          mao = true;
+          if (gC && !restam(est.B, gC)) setTimeout(() => { if (!fim) fala(eu ? tr('Agora é a 8!') : trf('{0} agora joga na 8.', O.nome)); }, 3600);
+          mao = caiuBranca;
         } else if (r.continua) {
           if (r.mesaAberta) fala(tr(antesSaida ? 'Na saída a mesa continua aberta. Joga de novo.' : 'Caiu lisa e listrada: a mesa continua aberta.') + (quem === 0 ? '' : ' · ' + trf('Vez de {0}', nomeQ)), 3200);
           else if (!r.grupoNovo) fala(quem === 0 ? tr('Encaçapou! Joga de novo.') : trf('Vez de {0}', nomeQ));
