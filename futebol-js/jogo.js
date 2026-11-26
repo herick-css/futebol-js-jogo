@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.3';
+const VERSAO_JOGO = '7.6.4';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -1675,13 +1675,422 @@ function buildPitch(op) {
 }
 const BANDEIRAS = [];
 
-// Placas de publicidade em volta do campo. Os "anúncios" são dos seus próprios projetos.
-// placas do estádio do Brasileirão B: o comércio do bairro (o último é escuro: as faces de cima e das pontas usam um pedaço dele)
-const ANUNCIOS_B = [['PADARIA PÃO QUENTINHO', '#e8c27a', '#5a2a10'], ['AUTO PEÇAS 2 IRMÃOS', '#1f4a8a', '#f2c230'], ['AÇOUGUE BOI GORDO', '#a8201a', '#ffffff'],
-  ['FUTEBOL JS', '#F7941D', '#071430'], ['MATERIAIS SÃO JORGE', '#2f7a3a', '#ffffff'], ['BAR DO TIÃO', '#111111', '#f2c230']];
-// placas do Brasileirão A (LED): marcas grandes de mentira e os projetos de sempre
-const ANUNCIOS_A = [['BANCO FAKES', '#101820', '#2fe08a'], ['FUTEBOL JS', '#F7941D', '#071430'], ['TV AGRICULTURA', '#0d3b1e', '#f2c230'], ['SUPER LAN MASTER', '#0B4F9C', '#ffffff'],
-  ['GOLAÇO ESPORTES', '#c8202e', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['ESFERA', '#1d2a6b', '#ffffff'], ['CACHOLA', '#111111', '#6bf08e']];
+// ---------------------------------------------------------------------
+// (7.6.4) MARCAS: as empresas de mentira (paródias) das placas de publicidade — e, no modo Manager, os patrocinadores do time.
+//   Tudo em pixel art feito por código: o ícone numa grade de 32 × 32 (formas + sombra + contorno automático) e o nome numa fonte
+//   de pixels própria (5 × 7), para sair nítido em qualquer escala e não depender da fonte da página ter carregado.
+//   Marcas.lista ......................... [{ id, nome, linhas, fundo, cor, ... }] (a ordem é a das placas)
+//   Marcas.icone(id, escala) ............ canvas 32·escala com o ícone (fundo transparente)
+//   Marcas.placa(id, escala, op) ........ canvas 256 × 32 (·escala) da placa: fundo, ícone e nome (op.led: linhas de LED)
+//   Marcas.cartao(id, escala) ........... canvas 96 × 64 (·escala): o ícone em cima e o nome embaixo (bom para o Manager)
+//   Marcas.desenharPlaca(g, x, y, id, op)  desenha a placa 256 × 32 num contexto já aberto
+// ---------------------------------------------------------------------
+const Marcas = (() => {
+  // ----------------------------------------------------------------- a grade de pixels
+  class Grade {
+    constructor(w, h) { this.w = w; this.h = h; this.d = new Array(w * h).fill(null); }
+    px(x, y, c) { x = Math.floor(x); y = Math.floor(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.d[y * this.w + x] = c; }
+    get(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h ? this.d[y * this.w + x] : null; }
+    ret(x, y, w, h, c) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) this.px(i, j, c); return this; }
+    // elipse cheia pelos centros dos pixels; f(x, y, u, v) opcional devolve a cor de cada pixel (u, v de -1 a 1)
+    elip(cx, cy, rx, ry, c, f) {
+      for (let y = Math.floor(cy - ry - 1); y <= cy + ry + 1; y++) for (let x = Math.floor(cx - rx - 1); x <= cx + rx + 1; x++) {
+        const u = (x + 0.5 - cx) / rx, v = (y + 0.5 - cy) / ry;
+        if (u * u + v * v <= 1) this.px(x, y, f ? f(x, y, u, v) : c);
+      }
+      return this;
+    }
+    disco(cx, cy, r, c, f) { return this.elip(cx, cy, r, r, c, f); }
+    // anel (arco) entre os raios r0 e r1, só entre os ângulos a0 e a1 (radianos, 0 = direita, sentido horário na tela)
+    arco(cx, cy, r0, r1, a0, a1, c) {
+      for (let y = Math.floor(cy - r1 - 1); y <= cy + r1 + 1; y++) for (let x = Math.floor(cx - r1 - 1); x <= cx + r1 + 1; x++) {
+        const dx = x + 0.5 - cx, dy = y + 0.5 - cy, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+        if (d >= r0 && d <= r1 && a >= a0 && a <= a1) this.px(x, y, c);
+      }
+      return this;
+    }
+    lin(x0, y0, x1, y1, c) {
+      x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+      const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+      let e = dx + dy;
+      for (;;) { this.px(x0, y0, c); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
+      return this;
+    }
+    // polígono cheio (par-ímpar pelo centro do pixel); f opcional como na elipse
+    poli(pts, c, f) {
+      let y0 = Infinity, y1 = -Infinity, x0 = Infinity, x1 = -Infinity;
+      for (const [x, y] of pts) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
+      for (let y = Math.floor(y0); y <= y1; y++) for (let x = Math.floor(x0); x <= x1; x++) {
+        const px = x + 0.5, py = y + 0.5; let dentro = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) dentro = !dentro;
+        }
+        if (dentro) this.px(x, y, f ? f(x, y) : c);
+      }
+      return this;
+    }
+    // pixels escritos à mão: linhas de texto, cada caractere uma cor da paleta (espaço/'.' = nada)
+    mapa(x, y, linhas, pal) { linhas.forEach((l, j) => { for (let i = 0; i < l.length; i++) { const c = pal[l[i]]; if (c) this.px(x + i, y + j, c); } }); return this; }
+    // contorno: todo pixel vazio encostado (4 vizinhos; com diag, 8) num pixel pintado ganha a cor c
+    contorno(c, diag) {
+      const novo = [];
+      for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+        if (this.get(x, y)) continue;
+        const viz = [[1, 0], [-1, 0], [0, 1], [0, -1]].concat(diag ? [[1, 1], [-1, 1], [1, -1], [-1, -1]] : []);
+        if (viz.some(([a, b]) => this.get(x + a, y + b))) novo.push([x, y]);
+      }
+      for (const [x, y] of novo) this.px(x, y, c);
+      return this;
+    }
+    // escurece (ou clareia) a borda de um lado de tudo o que tem a cor c: dá o volume (luz de cima à esquerda)
+    sombrear(c, escuro, claro) {
+      const ve = (x, y) => this.get(x, y) === c || this.get(x, y) === escuro || this.get(x, y) === claro;
+      const mud = [];
+      for (let y = 0; y < this.h; y++) for (let x = 0; x < this.w; x++) {
+        if (this.get(x, y) !== c) continue;
+        if (escuro && (!ve(x + 1, y) || !ve(x, y + 1))) mud.push([x, y, escuro]);
+        else if (claro && (!ve(x - 1, y) || !ve(x, y - 1))) mud.push([x, y, claro]);
+      }
+      for (const [x, y, k] of mud) this.px(x, y, k);
+      return this;
+    }
+    desenhar(g, x, y, esc) { esc = esc || 1; for (let j = 0; j < this.h; j++) for (let i = 0; i < this.w; i++) { const c = this.d[j * this.w + i]; if (c) { g.fillStyle = c; g.fillRect(x + i * esc, y + j * esc, esc, esc); } } }
+  }
+
+  // ----------------------------------------------------------------- a fonte de pixels (5 × 7; o 'Ê' é um E mais baixo com o acento em cima, na mesma altura)
+  const F = {};
+  const def = (ch, rows, dy) => { F[ch] = { rows, w: rows[0].length, dy: dy || 0 }; };
+  const UP = {
+    A: ['.###.', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'], B: ['####.', '#...#', '#...#', '####.', '#...#', '#...#', '####.'],
+    C: ['.###.', '#...#', '#....', '#....', '#....', '#...#', '.###.'], D: ['####.', '#...#', '#...#', '#...#', '#...#', '#...#', '####.'],
+    E: ['#####', '#....', '#....', '####.', '#....', '#....', '#####'], F: ['#####', '#....', '#....', '####.', '#....', '#....', '#....'],
+    G: ['.###.', '#...#', '#....', '#.###', '#...#', '#...#', '.####'], H: ['#...#', '#...#', '#...#', '#####', '#...#', '#...#', '#...#'],
+    I: ['###', '.#.', '.#.', '.#.', '.#.', '.#.', '###'], J: ['..###', '...#.', '...#.', '...#.', '...#.', '#..#.', '.##..'],
+    K: ['#...#', '#..#.', '#.#..', '##...', '#.#..', '#..#.', '#...#'], L: ['#....', '#....', '#....', '#....', '#....', '#....', '#####'],
+    M: ['#...#', '##.##', '#.#.#', '#.#.#', '#...#', '#...#', '#...#'], N: ['#...#', '#...#', '##..#', '#.#.#', '#..##', '#...#', '#...#'],
+    O: ['.###.', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], P: ['####.', '#...#', '#...#', '####.', '#....', '#....', '#....'],
+    Q: ['.###.', '#...#', '#...#', '#...#', '#.#.#', '#..#.', '.##.#'], R: ['####.', '#...#', '#...#', '####.', '#.#..', '#..#.', '#...#'],
+    S: ['.####', '#....', '#....', '.###.', '....#', '....#', '####.'], T: ['#####', '..#..', '..#..', '..#..', '..#..', '..#..', '..#..'],
+    U: ['#...#', '#...#', '#...#', '#...#', '#...#', '#...#', '.###.'], V: ['#...#', '#...#', '#...#', '#...#', '#...#', '.#.#.', '..#..'],
+    W: ['#...#', '#...#', '#...#', '#.#.#', '#.#.#', '#.#.#', '.#.#.'], X: ['#...#', '#...#', '.#.#.', '..#..', '.#.#.', '#...#', '#...#'],
+    Y: ['#...#', '#...#', '.#.#.', '..#..', '..#..', '..#..', '..#..'], Z: ['#####', '....#', '...#.', '..#..', '.#...', '#....', '#####'],
+    a: ['.....', '.....', '.###.', '....#', '.####', '#...#', '.####'], c: ['....', '....', '.###', '#...', '#...', '#...', '.###'],
+    e: ['.....', '.....', '.###.', '#...#', '#####', '#....', '.####'], i: ['#', '.', '#', '#', '#', '#', '#'],
+    m: ['.....', '.....', '##.#.', '#.#.#', '#.#.#', '#.#.#', '#...#'], o: ['.....', '.....', '.###.', '#...#', '#...#', '#...#', '.###.'],
+    '.': ['.', '.', '.', '.', '.', '.', '#'], '-': ['...', '...', '...', '###', '...', '...', '...'], ' ': ['...', '...', '...', '...', '...', '...', '...'],
+    '!': ['#', '#', '#', '#', '#', '.', '#'], '&': ['.##..', '#..#.', '#.#..', '.#...', '#.#.#', '#..#.', '.##.#'],
+  };
+  for (const k in UP) def(k, UP[k]);
+  def('Ê', ['..#..', '.#.#.', '#####', '#....', '####.', '#....', '#####']);
+  // largura do texto (px de fonte, sem escala): cada letra + 1 de espaço
+  function largura(txt) { let w = 0; for (const ch of txt) w += ((F[ch] || F[' ']).w + 1); return Math.max(0, w - 1); }
+  // desenha o texto com sombra/contorno: runs = [{ t, c }]; op: { esc, sombra (cor), contorno (cor) }
+  function texto(g, x, y, runs, op) {
+    op = op || {}; const esc = op.esc || 1;
+    const passa = (cor, ox, oy) => {
+      let cx = x;
+      for (const r of runs) for (const ch of r.t) {
+        const gl = F[ch] || F[' '];
+        g.fillStyle = cor || r.c;
+        gl.rows.forEach((row, j) => { for (let i = 0; i < row.length; i++) if (row[i] === '#') g.fillRect(cx + (i + ox) * esc, y + (j + gl.dy) * esc + oy * esc, esc, esc); });
+        cx += (gl.w + 1) * esc;
+      }
+    };
+    if (op.contorno) { const c = op.contorno, k = op.passo || 1; for (const [a, b] of [[-k, 0], [k, 0], [0, -k], [0, k], [k, k]]) passa(c, a / esc, b / esc); }
+    if (op.sombra) passa(op.sombra, 1 / esc * (op.passoSombra || 1), 1 / esc * (op.passoSombra || 1));
+    passa(null, 0, 0);
+  }
+
+  // ----------------------------------------------------------------- os ícones
+  const PRETO = '#14101a';
+  const ICONES = {
+    // NonLethal Model: o robozinho inofensivo (cabeça branca, olhinhos felizes, coração na antena e um curativo)
+    nonlethal(G) {
+      const B = '#fbf7fb', B2 = '#e4d7e6', B3 = '#c8b6cc', R = '#ff4f9a', R2 = '#d62f78', T = '#2b1733';
+      G.mapa(13, 1, ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'], { '#': R });
+      G.px(14, 2, '#ffd0e6'); G.px(15, 2, '#ffd0e6');
+      G.ret(16, 7, 1, 2, B3);
+      G.ret(3, 14, 3, 7, R); G.ret(26, 14, 3, 7, R); G.ret(3, 19, 3, 2, R2); G.ret(26, 19, 3, 2, R2);
+      G.poli([[7, 9], [25, 9], [27, 11], [27, 25], [25, 27], [7, 27], [5, 25], [5, 11]], B, (x, y) => (x >= 25 || y >= 25 ? B2 : B));
+      G.ret(7, 26, 18, 1, B3); G.ret(26, 12, 1, 13, B3);
+      G.poli([[9, 12], [23, 12], [24, 13], [24, 21], [23, 22], [9, 22], [8, 21], [8, 13]], T);
+      G.mapa(10, 15, ['.###.', '#...#'], { '#': R }); G.mapa(18, 15, ['.###.', '#...#'], { '#': R });
+      G.mapa(13, 19, ['#.....#', '.#####.'], { '#': '#ffffff' });
+      G.ret(9, 13, 2, 1, '#4a2f55');
+      G.ret(9, 23, 3, 1, '#ffb3d1'); G.ret(21, 23, 3, 1, '#ffb3d1');
+      // o curativo em diagonal no canto da cabeça
+      G.mapa(18, 7, ['...##', '..###', '.##o#', '##o##', '#o##.', '.##..'], { '#': '#ffcf9a', o: '#e9a46a' });
+      G.contorno(PRETO);
+    },
+    // Caquinha Cola: o cocozinho sorridente com as bolhinhas do refrigerante
+    caquinha(G) {
+      const M = '#8a5228', M2 = '#5e3416', M3 = '#b87a45';
+      const camada = (cx, cy, rx, ry) => G.elip(cx, cy, rx, ry, M, (x, y, u, v) => (v > 0.45 || u > 0.7 ? M2 : u < -0.35 && v < -0.2 ? M3 : M));
+      camada(16, 25.5, 12, 4.5); camada(16, 19.5, 9.5, 4); camada(16, 14, 7, 3.5); camada(16.5, 9.5, 4.2, 2.8);
+      G.poli([[16, 4], [20, 6], [19, 8], [16, 7.5]], M, (x, y) => (y < 6 ? M3 : M));
+      G.ret(10, 23, 12, 1, M2); G.ret(12, 17, 9, 1, M2);
+      // a carinha
+      G.mapa(10, 16, ['##...##', '#o...#o'.replace(/o/g, 'k')], { '#': '#ffffff', k: PRETO });
+      G.mapa(9, 16, ['.###...###.', '#wkw...#wk#'.replace(/w/g, 'W'), '.###...###.'], { '#': '#ffffff', W: '#ffffff', k: PRETO });
+      G.mapa(12, 20, ['#.....#', '.#####.'], { '#': PRETO });
+      G.ret(13, 21, 5, 1, '#e0402f');
+      G.contorno(PRETO);
+      // as bolhas (branco com brilho), fora do contorno
+      for (const [x, y, r] of [[26, 7, 2.2], [28.5, 2.5, 1.4], [5, 8, 1.6], [3, 3.5, 1]]) { G.disco(x, y, r, '#ffffff'); if (r > 1.5) G.px(x - 1, y - 1, '#ffd6d0'); }
+    },
+    // Santa Uva: o cacho de uva com a auréola
+    santauva(G) {
+      const U = '#8f47d1', U2 = '#5e2392', U3 = '#c99af2';
+      G.elip(16, 2.5, 7, 1.9, '#ffffff'); G.elip(16, 2.6, 4.6, 0.9, null);
+      for (let x = 10; x <= 22; x++) if (G.get(x, 2) && Math.abs(x - 16) < 5) G.px(x, 2, null);
+      G.lin(16, 5, 16, 9, '#6b4a22'); G.lin(17, 5, 17, 8, '#8a6232');
+      G.elip(22, 7, 4.5, 2.4, '#53b548', (x, y, u, v) => (v > 0.3 ? '#2f7f2c' : '#53b548')); G.lin(19, 7, 25, 7, '#2f7f2c');
+      const uva = (cx, cy, r) => G.disco(cx, cy, r, U, (x, y, u, v) => (u + v > 0.75 ? U2 : u < -0.2 && v < -0.2 ? U3 : U));
+      const linhas = [[10.5, [7.5, 13.2, 18.8, 24.5]], [15.5, [10.3, 16, 21.7]], [20.5, [13.2, 18.8]], [25.5, [16]]];
+      for (const [y, xs] of linhas) for (const x of xs) uva(x, y, 3.1);
+      for (const [y, xs] of linhas) for (const x of xs) G.px(x - 1.6, y - 1.6, '#ffffff');
+      G.contorno('#24082f');
+    },
+    // Spot Wi-Fi: o alfinete de mapa ("o ponto") com o sinal de wi-fi dentro
+    spotwifi(G) {
+      const V = '#2bdc6a', V2 = '#17a34b', V3 = '#8ff0ae', K = '#0d0f0d';
+      G.poli([[16, 30], [8, 20], [24, 20]], V2);
+      G.disco(16, 13, 11, V, (x, y, u, v) => (u + v > 0.85 ? V2 : u < -0.3 && v < -0.45 ? V3 : V));
+      G.arco(16, 18, 9.2, 11.2, -Math.PI * 0.78, -Math.PI * 0.22, K);
+      G.arco(16, 18, 5.4, 7.4, -Math.PI * 0.78, -Math.PI * 0.22, K);
+      G.disco(16, 17.5, 2.2, K);
+      G.contorno('#063015');
+      G.contorno('#8ff0ae');
+    },
+    // Burguer Queen: o hambúrguer de coroa
+    burguerqueen(G) {
+      const P = '#f4a93a', P2 = '#c97a1d', P3 = '#ffd27a', Y = '#ffd21f', Y2 = '#d99c00';
+      G.poli([[8, 9], [10, 3], [13, 7], [16, 1], [19, 7], [22, 3], [24, 9]], Y, (x, y) => (x > 20 && y > 6 ? Y2 : Y));
+      G.ret(8, 8, 17, 2, Y2); G.px(10, 3, '#ffffff'); G.px(16, 2, '#ffffff'); G.px(22, 3, '#ffffff');
+      G.disco(16, 8.5, 1.2, '#e8282b'); G.px(12, 8, '#ffffff'); G.px(20, 8, '#ffffff');
+      G.elip(16, 17, 13, 7.5, P, (x, y, u, v) => (y > 17 ? null : u > 0.55 || v > -0.15 ? P2 : u < -0.3 && v < -0.5 ? P3 : P));
+      for (const [x, y] of [[10, 13], [14, 11], [19, 12], [22, 14], [16, 14], [12, 15]]) { G.px(x, y, '#fffbe8'); G.px(x + 1, y, '#e8d9b0'); }
+      for (let x = 3; x <= 28; x++) { G.px(x, 17, '#4fbf3a'); G.px(x, 18, x % 3 === 0 ? '#2e8f25' : '#4fbf3a'); }
+      G.ret(4, 19, 24, 1, Y); for (const x of [7, 15, 22]) { G.px(x, 20, Y); G.px(x + 1, 20, Y); G.px(x, 21, Y); }
+      G.poli([[4, 20], [28, 20], [29, 22], [28, 24], [4, 24], [3, 22]], '#6b3a1c', (x, y) => (y >= 23 ? '#4a2410' : y === 20 ? '#8a5230' : '#6b3a1c'));
+      for (const [x, y] of [[7, 20], [8, 21], [15, 20], [16, 21], [22, 20]]) G.px(x, y, Y);
+      G.poli([[4, 25], [28, 25], [27, 28], [25, 29], [7, 29], [5, 28]], P, (x, y) => (y >= 28 ? P2 : P));
+      G.contorno('#3a1608');
+      G.contorno('#ffffff');
+    },
+    // Manco do Nadson: a caixinha de batata frita com a muleta (o Nadson é manco)
+    manco(G) {
+      const Y = '#ffd21f', Y2 = '#e0a800', R = '#e02a1f', R2 = '#a8150f', W = '#ffffff';
+      for (const [x, y0, h] of [[9, 7, 9], [11, 4, 11], [13, 6, 9], [15, 3, 12], [17, 5, 10], [19, 2, 13], [21, 6, 9]]) {
+        G.ret(x, y0, 2, h, Y); G.px(x + 1, y0, Y2); G.ret(x + 1, y0 + 1, 1, h - 1, Y2);
+      }
+      G.poli([[7, 13], [25, 13], [23, 30], [9, 30]], R, (x, y) => (x >= 21 ? R2 : R));
+      G.poli([[7, 13], [25, 13], [24.4, 16], [7.6, 16]], R2);
+      // o sorriso e o "N" do Nadson em branco
+      G.mapa(11, 19, ['.##...##.', '.##...##.', '.........', '#.......#', '.#######.', '..#####..'], { '#': W });
+      G.ret(13, 23, 5, 1, '#ffb0a8');
+      G.contorno('#3a0a06');
+      // a muleta encostada do lado
+      G.lin(27, 8, 27, 30, '#c9cdd4'); G.lin(28, 8, 28, 30, '#8c929c'); G.ret(25, 6, 5, 2, '#5a5f68'); G.ret(26, 18, 3, 2, '#5a5f68');
+      G.ret(26, 30, 3, 1, '#2a2d33');
+    },
+    // Sobre Whey: a coqueteleira de whey (com o raio de "energia")
+    sobrewhey(G) {
+      const V = '#0f8a3c', V2 = '#0a6129', W = '#f4f7f2', W2 = '#cdd6cb', Y = '#ffd21f', Y2 = '#d9a400';
+      G.ret(13, 1, 6, 2, V2); G.ret(12, 3, 8, 3, V);
+      G.ret(10, 6, 12, 3, V); G.ret(10, 8, 12, 1, V2);
+      G.poli([[10, 9], [22, 9], [21, 29], [11, 29]], W, (x, y) => (x >= 19 ? W2 : y > 22 ? '#e7d6bd' : W));
+      G.ret(11, 22, 10, 1, '#c9a97a');
+      G.poli([[10.5, 13], [21.5, 13], [21.3, 20], [10.7, 20]], Y, (x, y) => (x >= 19 ? Y2 : Y));
+      G.poli([[17, 13.5], [13, 17.5], [16, 17.5], [14, 20], [19, 15.5], [16, 15.5], [18, 13.5]], V2);
+      G.px(12, 10, '#ffffff'); G.ret(12, 11, 1, 2, '#ffffff');
+      G.contorno('#062a12');
+      // as marquinhas de "chacoalhando"
+      for (const s of [-1, 1]) { const x = s < 0 ? 4 : 27; G.lin(x, 8, x + s, 10, '#ffffff'); G.lin(x + s * 1, 14, x + s * 2, 16, '#ffffff'); G.lin(x, 20, x + s, 22, '#ffffff'); }
+    },
+    // AiCome: a bolsa térmica de entrega, com garfo e faca e o vaporzinho
+    aicome(G) {
+      const R = '#ea1d2c', R2 = '#b3101d', R3 = '#ff6b75', W = '#ffffff';
+      G.poli([[6, 11], [12, 6], [28, 6], [22, 11]], R3);
+      G.poli([[22, 11], [28, 6], [28, 24], [22, 29]], R2);
+      G.ret(6, 11, 16, 18, R);
+      G.ret(6, 15, 16, 1, R2); G.lin(12, 6, 28, 6, R2);
+      G.ret(9, 7, 1, 3, '#7a0c14'); G.ret(19, 7, 1, 3, '#7a0c14');
+      // o garfo e a faca cruzados no meio
+      G.mapa(9, 17, ['#.#.#.....#', '#.#.#....##', '#####...###', '.###....###', '..#.....###', '..#......##', '..#......#.', '..#......#.', '..#......#.', '..#......#.'], { '#': W });
+      G.contorno('#4a0208');
+      // o vapor
+      for (const [x, s] of [[11, 0], [16, 1], [21, 0]]) for (let y = 0; y < 5; y++) G.px(x + ((y + s) % 2 ? 1 : 0), y, '#ff9aa2');
+    },
+    // Udder Taxis: a teta de vaca (malhada) com a faixa quadriculada de táxi
+    udder(G) {
+      const W = '#ffffff', W2 = '#e3e3e3', K = '#111111', P = '#f7a8bd', P2 = '#d97a95';
+      const P3 = '#ffd3df';
+      // a barriga da vaca (branca com manchas pretas) e, em cima, a faixa quadriculada do táxi
+      for (let x = 1; x < 31; x++) for (let y = 1; y < 3; y++) G.px(x, y, ((Math.floor(x / 2) + y) % 2) ? K : W);
+      G.ret(1, 3, 30, 6, W); G.ret(1, 8, 30, 1, W2);
+      G.elip(7, 5, 3.6, 2.2, K); G.elip(20, 4.5, 2.6, 1.6, K); G.elip(27.5, 6.5, 2.2, 1.6, K); G.px(13, 6, K); G.px(14, 6, K);
+      // o úbere: a bolsa rosada, com as quatro tetas embaixo
+      G.poli([[5, 9], [27, 9], [26, 14], [23, 18], [9, 18], [6, 14]], P, (x, y) => (x >= 22 || y >= 17 ? P2 : x <= 8 && y <= 12 ? P3 : P));
+      G.ret(15, 10, 1, 7, P2);
+      for (const [x, h] of [[7, 7], [12, 9], [18, 9], [23, 7]]) { G.ret(x, 18, 3, h, P); G.ret(x + 2, 18, 1, h, P2); G.px(x, 18, P3); G.ret(x + 1, 18 + h, 1, 1, P2); }
+      G.contorno('#3a3a3a');
+      G.contorno(W);
+    },
+    // Little Doll Drink: a bonequinha pequena (de pano) com o copinho de refri
+    littledoll(G) {
+      const S = '#f7d2b0', S2 = '#e0ab85', H = '#7a3e1d', H2 = '#552810', V = '#2fa84f', V2 = '#1d7a36', W = '#ffffff';
+      G.disco(16, 11, 7.5, S, (x, y, u, v) => (u + v > 0.9 ? S2 : S));
+      G.elip(16, 6.5, 7.6, 3.6, H, (x, y, u, v) => (v > 0.2 ? H2 : H)); G.ret(9, 6, 2, 5, H); G.ret(21, 6, 2, 5, H);
+      G.disco(6.5, 10, 2.4, H2); G.disco(25.5, 10, 2.4, H2); G.ret(8, 9, 1, 2, '#ff5f8f'); G.ret(23, 9, 1, 2, '#ff5f8f');
+      G.mapa(13, 2, ['##.##', '#####', '##.##'], { '#': W });
+      G.ret(12, 11, 2, 2, PRETO); G.ret(18, 11, 2, 2, PRETO); G.px(12, 11, W); G.px(18, 11, W);
+      G.ret(10, 14, 2, 1, '#ff9aa8'); G.ret(20, 14, 2, 1, '#ff9aa8'); G.mapa(14, 15, ['#..#', '.##.'], { '#': '#b3392f' });
+      G.poli([[11, 19], [21, 19], [25, 29], [7, 29]], V, (x, y) => (x >= 21 ? V2 : V));
+      G.ret(12, 19, 8, 2, W); G.px(16, 22, W); G.px(16, 24, W); G.px(16, 26, W);
+      G.ret(10, 29, 3, 2, '#5a2a14'); G.ret(19, 29, 3, 2, '#5a2a14');
+      // o copinho de refri na mão (com canudo)
+      G.ret(5, 21, 4, 3, S); G.poli([[24, 18], [29, 18], [28, 26], [25, 26]], W, (x, y) => (y < 20 ? '#e8e8e8' : W)); G.ret(25, 21, 3, 2, V);
+      G.lin(27, 18, 29, 13, V2); G.ret(23, 21, 2, 2, S);
+      G.contorno('#2a160c');
+    },
+    // Caralivro: o livro aberto com uma cara sorridente nas duas páginas
+    caralivro(G) {
+      const B = '#2d63c8', B2 = '#1a3f8a', W = '#ffffff', W2 = '#d9e3f5';
+      G.poli([[2, 9], [16, 12], [30, 9], [30, 27], [16, 30], [2, 27]], B2);
+      G.poli([[3, 7], [15, 9], [15, 27], [3, 25]], W, (x, y) => (x >= 13 ? W2 : W));
+      G.poli([[17, 9], [29, 7], [29, 25], [17, 27]], W, (x, y) => (x <= 18 ? W2 : W));
+      G.ret(15, 9, 2, 19, B2);
+      for (const y of [11, 13]) { G.lin(5, y - 2, 9, y - 1, '#b8c7e6'); }
+      G.ret(7, 14, 3, 3, B); G.ret(22, 14, 3, 3, B); G.px(7, 14, W); G.px(22, 14, W);
+      G.mapa(6, 19, ['#..................#', '.#................#.', '..##............##.', '....############...'].map((l) => l.slice(0, 20)), { '#': B });
+      G.contorno('#0c1f48');
+    },
+    // ZapZap: o balão de conversa com o raio
+    zapzap(G) {
+      const W = '#ffffff', W2 = '#d8f2df', V = '#16a34a', V2 = '#0b6b2e', Y = '#ffe14a';
+      G.poli([[5, 3], [27, 3], [29, 5], [29, 20], [27, 22], [13, 22], [6, 28], [8, 22], [5, 22], [3, 20], [3, 5]], W, (x, y) => (x >= 27 || y >= 21 ? W2 : W));
+      G.poli([[19, 4.5], [10, 14], [15, 14], [12, 21], [22, 11], [17, 11], [21, 4.5]], V, (x, y) => (x >= 18 && y >= 9 ? V2 : V));
+      G.px(19, 6, Y); G.px(18, 7, Y);
+      G.contorno('#063a17');
+    },
+    // Bill AiDi Carros: o carrinho elétrico (com o cabo de tomada) e a nota de dinheiro ("bill")
+    billaidi(G) {
+      const W = '#ffffff', W2 = '#c9d6e0', B = '#7fd3ff', K = '#1b1f26', G1 = '#8fd48a', G2 = '#4f9e4a';
+      G.poli([[16, 1], [30, 1], [30, 9], [16, 9]], G1); G.ret(16, 1, 14, 1, G2); G.ret(16, 8, 14, 1, G2); G.disco(23, 5, 2.2, G2); G.px(23, 5, G1); G.px(18, 3, G2); G.px(28, 6, G2);
+      G.poli([[3, 16], [8, 11], [19, 11], [24, 16], [29, 17], [29, 23], [3, 23]], W, (x, y) => (y >= 21 ? W2 : W));
+      G.poli([[8.5, 12], [13, 12], [13, 16], [5, 16]], B); G.poli([[14, 12], [18.5, 12], [22.5, 16], [14, 16]], B);
+      G.ret(27, 18, 2, 2, '#ffd21f'); G.ret(3, 18, 2, 2, '#ff5040'); G.ret(4, 20, 24, 1, '#13a6d8');
+      for (const x of [9, 23]) { G.disco(x, 23.5, 3.4, K); G.disco(x, 23.5, 1.4, '#a9b4c0'); }
+      // o cabo saindo de trás do carro até o plugue
+      G.lin(3, 21, 1, 24, K); G.lin(1, 24, 1, 28, K); G.lin(1, 28, 5, 29, K); G.ret(5, 28, 3, 3, '#3a3f48'); G.px(8, 28, '#ffd21f'); G.px(8, 30, '#ffd21f');
+      G.contorno('#0a2c3d');
+    },
+    // Mercê Deles Carros: o sedã comprido, prateado, com o brilho no capô
+    mercedeles(G) {
+      const S = '#d7dce3', S2 = '#9aa3ae', S3 = '#f6f8fb', K = '#121417', V = '#3d4a5c';
+      G.poli([[1, 18], [6, 17], [10, 12], [21, 12], [25, 17], [31, 18], [31, 24], [1, 24]], S, (x, y) => (y >= 22 ? S2 : y <= 13 ? S3 : S));
+      G.poli([[10.5, 13], [15, 13], [15, 17], [7, 17]], V); G.poli([[16, 13], [20.5, 13], [24, 17], [16, 17]], V);
+      G.ret(2, 20, 29, 1, S3); G.ret(29, 19, 2, 2, '#fff3b0'); G.ret(1, 19, 2, 2, '#e8424a');
+      for (const x of [7, 25]) { G.disco(x, 24, 3.4, K); G.disco(x, 24, 1.6, S2); }
+      G.contorno('#000000');
+      G.contorno('#6a7380');
+      // o brilho (estrela de 4 pontas) e a sombra no chão
+      G.mapa(24, 3, ['...#...', '...#...', '..###..', '###W###', '..###..', '...#...', '...#...'], { '#': '#e9edf3', W: '#ffffff' });
+      G.mapa(4, 7, ['.#.', '#W#', '.#.'], { '#': '#c9ced6', W: '#ffffff' });
+    },
+    // B. Emi Dabliu Carros: o esportivo baixinho, com aerofólio e as linhas de velocidade
+    bemidabliu(G) {
+      const A = '#4fb3ff', A2 = '#1f6fc2', A3 = '#bfe4ff', K = '#0c0f16', W = '#ffffff';
+      G.poli([[3, 20], [4, 16], [7, 15], [12, 11], [20, 11], [25, 15], [30, 17], [30, 23], [3, 23]], A, (x, y) => (y >= 21 ? A2 : y <= 12 ? A3 : A));
+      G.ret(2, 13, 4, 1, A2); G.ret(4, 14, 1, 2, A2);
+      G.poli([[12.5, 12], [16, 12], [16, 15], [9, 15]], '#0f2347'); G.poli([[17, 12], [19.5, 12], [23, 15], [17, 15]], '#0f2347');
+      G.ret(5, 18, 24, 1, W); G.ret(28, 18, 2, 2, '#fff3b0');
+      for (const x of [9, 24]) { G.disco(x, 23.5, 3.3, K); G.disco(x, 23.5, 1.5, '#c4ccd8'); G.px(x, 23, W); }
+      G.contorno('#06142e');
+      for (const [y, x0, x1] of [[9, 1, 7], [12, 0, 3], [26, 0, 4]]) G.lin(x0, y, x1, y, '#bfe4ff');
+    },
+  };
+
+  // ----------------------------------------------------------------- as marcas
+  //   linhas: o nome nas placas ([[{ t, c }], ...] — a 2ª linha, se houver, é menor); fundo/borda: cores da placa; som: contorno do texto
+  const L = (t, c) => [{ t, c }];
+  const lista = [
+    { id: 'nonlethal', nome: 'NonLethal Model', linhas: [L('NONLETHAL', '#ffffff'), L('MODEL', '#ffe0ee')], fundo: '#ff4f9a', fundo2: '#e23a85', som: '#a8215f' },
+    { id: 'caquinha', nome: 'Caquinha Cola', linhas: [L('CAQUINHA', '#ffffff'), L('COLA', '#ffffff')], fundo: '#d8141f', fundo2: '#b80c16', som: '#6e0309', grande2: true },
+    { id: 'santauva', nome: 'Santa Uva', linhas: [L('SANTA UVA', '#ffffff')], fundo: '#5b2a86', fundo2: '#4a1f70', som: '#250b3c' },
+    { id: 'spotwifi', nome: 'Spot Wi-Fi', linhas: [[{ t: 'SPOT ', c: '#2bdc6a' }, { t: 'Wi-Fi', c: '#ffffff' }]], fundo: '#0d0f0d', fundo2: '#1b1f1b', som: '#063015' },
+    { id: 'burguerqueen', nome: 'Burguer Queen', linhas: [L('BURGUER', '#ffd21f'), L('QUEEN', '#ffffff')], fundo: '#d62300', fundo2: '#b01c00', som: '#5a0e00', grande2: true },
+    { id: 'manco', nome: 'Manco do Nadson', linhas: [L('MANCO DO', '#d8141f'), L('NADSON', '#d8141f')], fundo: '#ffd21f', fundo2: '#f2c200', som: '#ffffff', grande2: true },
+    { id: 'sobrewhey', nome: 'Sobre Whey', linhas: [[{ t: 'SOBRE ', c: '#ffffff' }, { t: 'WHEY', c: '#ffd21f' }]], fundo: '#0f8a3c', fundo2: '#0b7432', som: '#04381a' },
+    { id: 'aicome', nome: 'AiCome', linhas: [[{ t: 'Ai', c: '#b3101d' }, { t: 'Come', c: '#ea1d2c' }]], fundo: '#ffffff', fundo2: '#ffe3e5', som: '#ffc4c9' },
+    { id: 'udder', nome: 'Udder Taxis', linhas: [L('UDDER', '#ffffff'), L('TAXIS', '#bdbdbd')], fundo: '#111111', fundo2: '#2a2a2a', som: '#000000', xadrez: true },
+    { id: 'littledoll', nome: 'Little Doll Drink', linhas: [L('LITTLE DOLL', '#ffffff'), L('DRINK', '#d6ffd9')], fundo: '#2fa84f', fundo2: '#26913f', som: '#0d4a1e' },
+    { id: 'caralivro', nome: 'Caralivro', linhas: [L('CARALIVRO', '#ffffff')], fundo: '#2d63c8', fundo2: '#2554ad', som: '#0c1f48' },
+    { id: 'zapzap', nome: 'ZapZap', linhas: [[{ t: 'ZAP', c: '#ffffff' }, { t: 'ZAP', c: '#c8ffd6' }]], fundo: '#16a34a', fundo2: '#12893d', som: '#063a17' },
+    { id: 'billaidi', nome: 'Bill AiDi Carros', linhas: [L('BILL AiDi', '#ffffff'), L('CARROS', '#c9f0ff')], fundo: '#1393d0', fundo2: '#0f7fb5', som: '#063a57' },
+    { id: 'mercedeles', nome: 'Mercê Deles Carros', linhas: [L('MERCÊ DELES', '#e4e8ee'), L('CARROS', '#9aa3ae')], fundo: '#121417', fundo2: '#22262c', som: '#000000' },
+    { id: 'bemidabliu', nome: 'B. Emi Dabliu Carros', linhas: [L('B. EMI DABLIU', '#ffffff'), L('CARROS', '#9fd3ff')], fundo: '#0f2d63', fundo2: '#14397c', som: '#050f24' },
+  ];
+  const porId = {}; for (const m of lista) porId[m.id] = m;
+
+  const cacheIcone = {};
+  function grade(id) {
+    if (!cacheIcone[id]) { const G = new Grade(32, 32); try { ICONES[id](G); } catch (e) { console.warn('[Marcas] ícone', id, e); } cacheIcone[id] = G; }
+    return cacheIcone[id];
+  }
+  const tela = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; return [c, g]; };
+  function icone(id, esc) { esc = esc || 1; const [c, g] = tela(32 * esc, 32 * esc); grade(id).desenhar(g, 0, 0, esc); return c; }
+
+  // a placa 256 × 32: o fundo (com uma faixa de detalhe), o ícone à esquerda e o nome centrado no resto
+  function desenharPlaca(g, x0, y0, id, op) {
+    op = op || {}; const m = porId[id]; if (!m) return;
+    const W = 256, H = 32;
+    g.fillStyle = m.fundo; g.fillRect(x0, y0, W, H);
+    g.fillStyle = m.fundo2; g.fillRect(x0, y0, W, 1); g.fillRect(x0, y0 + H - 1, W, 1);
+    if (m.xadrez) for (let x = 0; x < W; x += 2) { g.fillStyle = (x / 2) % 2 ? '#ffffff' : '#111111'; g.fillRect(x0 + x, y0 + H - 1, 2, 1); g.fillStyle = (x / 2) % 2 ? '#111111' : '#ffffff'; g.fillRect(x0 + x, y0, 2, 1); }
+    // o ícone numa "janela" levemente mais escura, para separar do nome
+    g.fillStyle = m.fundo2; g.fillRect(x0 + 4, y0 + 1, 36, H - 2);
+    grade(id).desenhar(g, x0 + 6, y0, 1);
+    // o nome: 1ª linha em escala 2; a 2ª linha (se houver) em escala 1 (ou 2, se couber e a marca pedir)
+    const area = W - 48, xa = x0 + 44;
+    const l1 = m.linhas[0], l2 = m.linhas[1], t1 = l1.map((r) => r.t).join(''), t2 = l2 ? l2.map((r) => r.t).join('') : '';
+    const cabe2 = (t) => largura(t) * 2 <= area;
+    const junto = l2 ? l1.concat([{ t: ' ', c: '#fff' }], l2) : l1, tj = junto.map((r) => r.t).join('');
+    const dois = (y, l) => { const t = l.map((r) => r.t).join(''); texto(g, xa + Math.round((area - largura(t) * 2) / 2), y, l, { esc: 2, contorno: m.som }); };
+    if (cabe2(tj) && !m.grande2) dois(y0 + 9, junto);                       // tudo numa linha grande
+    else if (l2 && cabe2(t1) && cabe2(t2)) { dois(y0 + 1, l1); dois(y0 + 17, l2); }   // duas linhas grandes
+    else if (l2) {                                                         // a 1ª grande e a 2ª pequena
+      texto(g, xa + Math.round((area - largura(t1) * 2) / 2), y0 + 4, l1, { esc: 2, contorno: m.som });
+      texto(g, xa + Math.round((area - largura(t2)) / 2), y0 + 21, l2, { esc: 1, contorno: m.som });
+    } else texto(g, xa + Math.round((area - largura(t1)) / 2), y0 + 12, l1, { esc: 1, contorno: m.som });
+    if (op.led) { g.fillStyle = 'rgba(0,0,0,0.22)'; for (let y = 1; y < H; y += 2) g.fillRect(x0, y0 + y, W, 1); }
+  }
+  function placa(id, esc, op) {
+    esc = esc || 1; const [c, g] = tela(256, 32); desenharPlaca(g, 0, 0, id, op);
+    if (esc === 1) return c;
+    const [c2, g2] = tela(256 * esc, 32 * esc); g2.drawImage(c, 0, 0, 256 * esc, 32 * esc); return c2;
+  }
+  // o cartão (96 × 64): o ícone grande em cima e o nome embaixo (para listas de patrocinadores)
+  function cartao(id, esc) {
+    esc = esc || 1; const m = porId[id]; const [c, g] = tela(96, 64);
+    if (m) {
+      g.fillStyle = m.fundo; g.fillRect(0, 0, 96, 64); g.fillStyle = m.fundo2; g.fillRect(0, 0, 96, 3); g.fillRect(0, 61, 96, 3);
+      grade(id).desenhar(g, 32, 4, 1);
+      const linhas = m.linhas.slice(0, 2);
+      linhas.forEach((l, k) => { const t = l.map((r) => r.t).join(''); texto(g, Math.round((96 - largura(t)) / 2), 39 + k * 10, l, { esc: 1, contorno: m.som }); });
+    }
+    if (esc === 1) return c;
+    const [c2, g2] = tela(96 * esc, 64 * esc); g2.drawImage(c, 0, 0, 96 * esc, 64 * esc); return c2;
+  }
+  return { lista, porId, icone, placa, cartao, desenharPlaca, ids: () => lista.map((m) => m.id), _Grade: Grade, _texto: texto, _largura: largura };
+})();
+
+// Placas de publicidade em volta do campo: (7.6.4) as marcas de mentira do Marcas (no lugar dos nomes antigos). Cada estádio começa a
+//   sequência num ponto diferente (a mesma lista, outra ordem na volta do campo); no Brasileirão A as placas são de LED.
+const ANUNCIOS_B = { inicio: 5 };
+const ANUNCIOS_A = { inicio: 9, led: true };
 let ESTADIO_A = null;                              // o último estádio do Brasileirão A montado ({ modelo, nome, torcedores })
 // (7.4.19) TEXTO QUE CABE: diminui a FONTE até o texto caber na largura (antes o canvas espremia o texto na marra, com o maxWidth,
 //   e nome de time grande ficava achatado/"bugado"; no túnel ainda era cortado em 22 letras). Desenha e devolve o tamanho usado.
@@ -1693,41 +2102,171 @@ function textoQueCabe(g, txt, x, y, maxW, px, op) {
   g.fillText(txt, x, y, maxW);                    // (só no limite mínimo ainda aperta um pouco)
   return t;
 }
-function buildBoards(lista) {
-  const ADS = lista || [['SUPER LAN MASTER', '#0B4F9C', '#F7941D'], ['FUTEBOL JS', '#F7941D', '#071430'], ['PONTO COMUNITÁRIO', '#1f9e5c', '#ffffff'],
-    ['ATALIBA', '#d8443a', '#ffffff'], ['ORBIT', '#071430', '#6bf08e'], ['CACHOLA', '#111111', '#6bf08e']];
-  const tex = drawTexture(256, 16, (g) => {
-    const w = 256 / ADS.length;
-    ADS.forEach(([txt, bg, fg], i) => {
-      g.fillStyle = bg; g.fillRect(i * w, 0, w, 16);
-      g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle';
-      textoQueCabe(g, txt, i * w + w / 2, 8.5, w - 4, 8);
-    });
-  }, 1, 1);
-  const H = 0.9;
-  // DESEMPENHO: antes cada placa tinha um material por face (6 chamadas de desenho); agora é 1.
-  // As faces de cima e das pontas usam um pedacinho escuro do próprio anúncio.
-  const add = (len, x, z, alongX) => {
-    const t = tex.clone(); t.needsUpdate = true; t.repeat.set(Math.max(1, Math.round(len / 34)), 1); t.wrapS = THREE.RepeatWrapping;
-    const m = new THREE.MeshLambertMaterial({ map: t });
-    const L = new Lote();
+// (7.6.4) ONDE AS PLACAS CABEM. As placas ficavam sempre no retângulo BOARD_X × BOARD_Z/BOARD_ZN; em quase todos os estádios do
+//   Brasileirão A (e nos da Europa e da América) a arquibancada vem mais perto do que isso nos CANTOS (curva, chanfro) e, em alguns,
+//   no lado dos bancos inteiro: a ponta da placa atravessava a arquibancada, ou a placa do lado dos bancos ficava escondida dentro
+//   da mureta. Agora, depois de montar o estádio, a arquibancada é cortada na altura das placas (vira segmentos no chão) e:
+//   1) cada lado recua até ficar na frente da mureta (sem passar do mínimo: o gol atrás, os bancos do lado deles);
+//   2) cada lado vira só os trechos livres (a placa para antes de entrar na arquibancada do canto);
+//   3) no canto que sobrou aberto entra uma placa em diagonal, se ela couber sem encostar em nada.
+//   O limite da bola (BOARD_X/BOARD_Z/BOARD_ZN) acompanha o lado recuado, para ela bater na placa que se vê.
+function segmentosNaAlturaDasPlacas() {
+  const segs = [], YS = [0.12, 0.45, 0.8];
+  const XO = BOARD_X + 1, ZO = Math.max(BOARD_Z, BOARD_ZN) + 1, XI = HALF_L + 0.5, ZI = HALF_W + 0.5;
+  ESTADIO.updateMatrixWorld(true);
+  ESTADIO.traverse((o) => {
+    if (!o.isMesh || !o.visible || o.name === 'placaPub' || o.material === crowd.material || !o.geometry || !o.geometry.attributes.position) return;
+    for (let q = o.parent; q; q = q.parent) if (q.name === 'tunel') return;
+    const P = o.geometry.attributes.position.array, I = o.geometry.index ? o.geometry.index.array : null, e = o.matrixWorld.elements;
+    const nV = P.length / 3, W = new Float32Array(P.length);
+    for (let i = 0; i < nV; i++) {
+      const x = P[i * 3], y = P[i * 3 + 1], z = P[i * 3 + 2];
+      W[i * 3] = e[0] * x + e[4] * y + e[8] * z + e[12]; W[i * 3 + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; W[i * 3 + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
+    }
+    const n = I ? I.length : nV;
+    for (let t = 0; t + 2 < n; t += 3) {
+      const a = (I ? I[t] : t) * 3, b = (I ? I[t + 1] : t + 1) * 3, c = (I ? I[t + 2] : t + 2) * 3;
+      const y0 = Math.min(W[a + 1], W[b + 1], W[c + 1]), y1 = Math.max(W[a + 1], W[b + 1], W[c + 1]);
+      if (y1 < 0.1 || y0 > 0.85) continue;
+      const x0 = Math.min(W[a], W[b], W[c]), x1 = Math.max(W[a], W[b], W[c]), z0 = Math.min(W[a + 2], W[b + 2], W[c + 2]), z1 = Math.max(W[a + 2], W[b + 2], W[c + 2]);
+      if (x1 < -XO || x0 > XO || z1 < -ZO || z0 > ZO) continue;
+      if (x0 > -XI && x1 < XI && z0 > -ZI && z1 < ZI) continue;          // dentro do campo (o gol, a bandeirinha...)
+      for (const y of YS) {
+        if (y < y0 || y > y1) continue;
+        const pts = [];
+        const corta = (p, q) => { const yp = W[p + 1], yq = W[q + 1]; if (yp === yq || (yp - y) * (yq - y) > 0) return; const k = (y - yp) / (yq - yp); pts.push(W[p] + (W[q] - W[p]) * k, W[p + 2] + (W[q + 2] - W[p + 2]) * k); };
+        corta(a, b); corta(b, c); corta(c, a);
+        if (pts.length >= 4) segs.push([pts[0], pts[1], pts[pts.length - 2], pts[pts.length - 1]]);
+      }
+    }
+  });
+  return segs;
+}
+// o pedaço do segmento g que fica dentro do retângulo (ou null)
+function recorteSeg(g, x0, x1, z0, z1) {
+  let t0 = 0, t1 = 1; const ax = g[0], az = g[1], dx = g[2] - ax, dz = g[3] - az;
+  for (const [pp, q] of [[-dx, ax - x0], [dx, x1 - ax], [-dz, az - z0], [dz, z1 - az]]) {
+    if (Math.abs(pp) < 1e-9) { if (q < 0) return null; continue; }
+    const r = q / pp; if (pp < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; }
+  }
+  return t1 - t0 > 1e-6 ? [ax + dx * t0, az + dz * t0, ax + dx * t1, az + dz * t1] : null;
+}
+// o desenho das placas: { lados: [{ eixo, c, trechos: [[a0, a1]...] }], cantos: [{ x0, z0, x1, z1 }], X, Z, Zn }
+function arrumarPlacas(segs) {
+  const ESP = 0.15, HW = HALF_W, HL = HALF_L;
+  const livre = (eixo, c, s0, s1) => {
+    const r = eixo === 'x' ? [s0, s1, c - ESP, c + ESP] : [c - ESP, c + ESP, s0, s1];
+    for (const g of segs) if (cruzaCaixa(g[0], g[1], g[2], g[3], r[0], r[1], r[2], r[3])) return false;
+    return true;
+  };
+  // 1) a frente da arquibancada no meio de cada lado (até onde a placa pode ir)
+  const frente = (eixo, sinal, campo, nominal, meio) => {
+    let f = Infinity;
+    for (const g of segs) {
+      const r = eixo === 'x' ? recorteSeg(g, -meio, meio, sinal > 0 ? campo + 0.3 : -(nominal + 0.6), sinal > 0 ? nominal + 0.6 : -(campo + 0.3))
+        : recorteSeg(g, sinal > 0 ? campo + 0.3 : -(nominal + 0.6), sinal > 0 ? nominal + 0.6 : -(campo + 0.3), -meio, meio);
+      if (r) f = Math.min(f, eixo === 'x' ? Math.min(r[1] * sinal, r[3] * sinal) : Math.min(r[0] * sinal, r[2] * sinal));
+    }
+    return f;
+  };
+  const recua = (nominal, f, minimo) => Math.max(minimo, Math.min(nominal, f - ESP - 0.2));
+  // o lado dos bancos: o normal é a placa passar ATRÁS dos bancos; se a mureta vem antes disso, a placa fica na frente dela
+  //   (atrás do técnico) e se abre onde estão os bancos (como em muito estádio de verdade)
+  const atrasDosBancos = HW + LADO_BANCO.banco + 1.0, minBanco = HW + LADO_BANCO.tecnico + 0.7, minFundo = HL + GOAL_DEPTH + 1.2, minLado = HW + 2.2;
+  const fr = { z: frente('x', 1, HW, BOARD_Z, HL * 0.6), zn: frente('x', -1, HW, BOARD_ZN, HL * 0.6), xp: frente('z', 1, HL, BOARD_X, HW * 0.6), xn: frente('z', -1, HL, BOARD_X, HW * 0.6) };
+  const Z = recua(BOARD_Z, fr.z, minLado);
+  const Zn = recua(BOARD_ZN, fr.zn, BOARD_ZN > BOARD_Z ? minBanco : minLado);
+  const X = Math.min(recua(BOARD_X, fr.xp, minFundo), recua(BOARD_X, fr.xn, minFundo));
+  const temBancos = BOARD_ZN > BOARD_Z && !(PARTIDA && PARTIDA.campo && PARTIDA.campo.visual === 'futsal');
+  const vaoBancos = temBancos && Zn < atrasDosBancos ? [-1, 1].map((t) => { const x = (t < 0 ? -1 : 1) * Math.min(9, HL * 0.25); return [x - 3.0, x + 3.0]; }) : [];
+  // 2) os trechos livres de cada lado (fatias de 0,5 m, de 0,25 em 0,25)
+  const trechos = (eixo, c, a0, a1, vaos) => {
+    const res = []; let ini = null; const PASSO = 0.25, F = 0.5;
+    for (let s = a0; s <= a1 + 1e-6; s += PASSO) {
+      const ok = !(vaos || []).some(([v0, v1]) => s + F / 2 > v0 && s - F / 2 < v1) && livre(eixo, c, Math.max(a0, s - F / 2), Math.min(a1, s + F / 2));
+      if (ok && ini == null) ini = s;
+      if ((!ok || s + PASSO > a1 + 1e-6) && ini != null) { const fim = ok ? a1 : s - F / 2; if (fim - ini > 1.5) res.push([ini, fim]); ini = null; }
+    }
+    return res;
+  };
+  const lados = [
+    { eixo: 'x', c: Z, trechos: trechos('x', Z, -X, X) },
+    { eixo: 'x', c: -Zn, trechos: trechos('x', -Zn, -X, X, vaoBancos), banco: true },
+    { eixo: 'z', c: -X, trechos: trechos('z', -X, -Zn, Z) },
+    { eixo: 'z', c: X, trechos: trechos('z', X, -Zn, Z) },
+  ];
+  // 3) os cantos: se as duas placas pararam antes do canto, uma placa em diagonal fecha o buraco (se couber)
+  const cantos = [];
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {
+    const lz = lados[sz > 0 ? 0 : 1], lx = lados[sx > 0 ? 3 : 2], cz = sz > 0 ? Z : -Zn, cx = sx * X;
+    if (!lz.trechos.length || !lx.trechos.length) continue;
+    const ez = sx > 0 ? lz.trechos[lz.trechos.length - 1][1] : lz.trechos[0][0];   // onde a placa do lado comprido parou
+    const ex = sz > 0 ? lx.trechos[lx.trechos.length - 1][1] : lx.trechos[0][0];   // e a do fundo
+    if (Math.abs(cx - ez) < 0.3 && Math.abs(cz - ex) < 0.3) continue;               // chegaram as duas no canto: fechado
+    const p = [ez, cz], q = [cx, ex], len = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (len < 1.2) continue;
+    const ux = (q[0] - p[0]) / len, uz = (q[1] - p[1]) / len;
+    let ok = true;
+    for (const g of segs) {                                 // a diagonal no referencial dela: u ao longo, v de lado
+      const loc = (x, z) => [(x - p[0]) * ux + (z - p[1]) * uz, -(x - p[0]) * uz + (z - p[1]) * ux];
+      const A = loc(g[0], g[1]), B = loc(g[2], g[3]);
+      if (cruzaCaixa(A[0], A[1], B[0], B[1], 0.05, len - 0.05, -ESP, ESP)) { ok = false; break; }
+    }
+    if (ok) cantos.push({ x0: p[0], z0: p[1], x1: q[0], z1: q[1] });
+  }
+  return { lados, cantos, X, Z, Zn, fr };
+}
+function buildBoards(op) {
+  op = op || {};
+  // o atlas: 256 × 512, uma placa (256 × 32) por linha, na ordem do Marcas.lista; a última linha é escura (o topo e as pontas)
+  const N = 16, ids = Marcas.ids();
+  const tex = drawTexture(256, 32 * N, (g) => {
+    g.fillStyle = '#16181c'; g.fillRect(0, 0, 256, 32 * N);
+    ids.forEach((id, k) => Marcas.desenharPlaca(g, 0, k * 32, id, { led: op.led }));
+  });
+  const vMeio = 0.5 / (32 * N);                    // meio texel de folga: o filtro "nearest" não pega a linha do vizinho na borda
+  const linha = (k) => [0, 1 - (k + 1) / N + vMeio, 1, 1 - k / N - vMeio];
+  const escuro = [0.3, vMeio * 4, 0.7, 1 / N - vMeio * 4];
+  const m = op.led ? new THREE.MeshBasicMaterial({ map: tex, color: 0xe6e6e6 }) : new THREE.MeshLambertMaterial({ map: tex });
+  const H = 0.9, ANUNCIO = 7.2;                    // cada anúncio tem 7,2 × 0,9 m (o mesmo 8 : 1 da textura)
+  let prox = op.inicio || 0;                       // a marca do próximo anúncio (cada pedaço continua de onde o outro parou)
+  // um pedaço de placa = uma fila de anúncios inteiros (esticados um tiquinho para fechar o comprimento); ang: o giro em y
+  const add = (len, x, z, alongX, ang) => {
+    const L = new Lote(), n = Math.max(1, Math.round(len / ANUNCIO)), seg = len / n;
     const frente = alongX ? [4, 5] : [0, 1];
-    const rr = t.repeat.x, escuro = [0.92 / rr, 0.1, 0.93 / rr, 0.2];   // pedaço preto (anúncio CACHOLA), já contando a repetição
-    L.caixa(alongX ? len : 0.2, H, alongX ? 0.2 : len, 0xffffff, 0, 0, 0, (i) => (frente.includes(i) ? [0, 0, 1, 1] : escuro));
-    const mesh = L.malha(m);
-    mesh.position.set(x, H / 2, z);
+    for (let i = 0; i < n; i++) {
+      const k = prox++ % ids.length, c = -len / 2 + seg * (i + 0.5);
+      L.caixa(alongX ? seg : 0.2, H, alongX ? 0.2 : seg, 0xffffff, alongX ? c : 0, 0, alongX ? 0 : c, (f) => (frente.includes(f) ? linha(k) : escuro));
+    }
+    const mesh = L.malha(m); mesh.name = 'placaPub';
+    mesh.position.set(x, H / 2, z); if (ang) mesh.rotation.y = ang;
     ESTADIO.add(mesh); freeze(mesh);
     return mesh;
   };
-  // a placa do lado dos bancos vai em três pedaços: o do meio sai do lugar quando os times entram pelo túnel (mostrarTunel)
   const G2 = TUNEL_LARG / 2 + 0.2;
-  add(BOARD_X - G2, -(BOARD_X + G2) / 2, -BOARD_ZN, true);
-  TUNEL.placa = add(G2 * 2, 0, -BOARD_ZN, true);
-  add(BOARD_X - G2, (BOARD_X + G2) / 2, -BOARD_ZN, true);
-  add(BOARD_X * 2, 0, BOARD_Z, true);
-  add(BOARD_Z + BOARD_ZN, -BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
-  add(BOARD_Z + BOARD_ZN, BOARD_X, (BOARD_Z - BOARD_ZN) / 2, false);
+  // o desenho: sem estádio em volta (ou sem pedir), o retângulo de sempre
+  let D = null;
+  if (op.ajustar) try { D = arrumarPlacas(segmentosNaAlturaDasPlacas()); } catch (e) { console.warn('[Placas] ajuste:', e); D = null; }
+  if (!D) D = { X: BOARD_X, Z: BOARD_Z, Zn: BOARD_ZN, cantos: [], lados: [
+    { eixo: 'x', c: BOARD_Z, trechos: [[-BOARD_X, BOARD_X]] }, { eixo: 'x', c: -BOARD_ZN, trechos: [[-BOARD_X, BOARD_X]], banco: true },
+    { eixo: 'z', c: -BOARD_X, trechos: [[-BOARD_ZN, BOARD_Z]] }, { eixo: 'z', c: BOARD_X, trechos: [[-BOARD_ZN, BOARD_Z]] }] };
+  BOARD_X = D.X; BOARD_Z = D.Z; BOARD_ZN = D.Zn;
+  ULT_PLACAS = D;
+  for (const l of D.lados) for (const [a0, a1] of l.trechos) {
+    if (l.banco && a0 < -G2 && a1 > G2) {
+      // a placa do lado dos bancos vai em três pedaços: o do meio sai do lugar quando os times entram pelo túnel (mostrarTunel)
+      add(-G2 - a0, (a0 - G2) / 2, l.c, true);
+      TUNEL.placa = add(G2 * 2, 0, l.c, true);
+      add(a1 - G2, (a1 + G2) / 2, l.c, true);
+    } else if (l.eixo === 'x') add(a1 - a0, (a0 + a1) / 2, l.c, true);
+    else add(a1 - a0, l.c, (a0 + a1) / 2, false);
+  }
+  for (const k of D.cantos) {
+    const len = Math.hypot(k.x1 - k.x0, k.z1 - k.z0);
+    add(len, (k.x0 + k.x1) / 2, (k.z0 + k.z1) / 2, true, -Math.atan2(k.z1 - k.z0, k.x1 - k.x0));
+  }
 }
+let ULT_PLACAS = null;                             // (7.6.4) o último desenho das placas (para os testes)
 // O TÚNEL DA ENTRADA DOS TIMES: o túnel inflável nas cores do mandante (com o escudo e o nome dos lados), do meio da linha lateral
 //   dos bancos até dentro da arquibancada. Fica escondido no jogo; mostrarTunel(true) o põe no lugar e tira a placa do meio
 //   (a cena de entrada da partida livre). Os times saem pela boca dele, a TUNEL_BOCA metros da linha lateral.
@@ -9745,11 +10284,18 @@ function startSetPieceWait() {
 // ---------------------------------------------------------------------
 function updateCobrador(dt) {
   const u = user, B = u.bolaFixa;
-  if (!B) return;
+  // (7.6.4) lateral com as mãos: ele não sai do lugar; o corpo vira só um pouco para o lado da seta
+  if (!B) {
+    const k = G.kick;
+    if (k && k.cobranca && u.throwIn && G.possession === u && KICK_STATES.includes(G.state)) { u.vx = u.vz = 0; u.angle = turnToward(u.angle, anguloDoCobrador(k), 6 * dt); }
+    return;
+  }
   const k = G.kick;
   if (!k || G.possession !== u || !KICK_STATES.includes(G.state)) { u.bolaFixa = null; G.corrida = null; return; }
-  const ang = Math.atan2(k.dirZ, k.dirX), fx = Math.cos(ang), fz = Math.sin(ang);
-  const R = G.corrida;
+  const ang = Math.atan2(k.dirZ, k.dirX), R = G.corrida;
+  // (7.6.4) escanteio e lateral com o pé: enquanto escolhe, ele fica atrás da bola na direção do CENTRO do leque (não anda atrás
+  //   da seta); a corrida até a bola, depois da escolha, é que segue a direção da batida
+  const aPos = k.cobranca && !R ? k.cobranca.c : ang, fx = Math.cos(aPos), fz = Math.sin(aPos);
   let tx, tz, vmax;
   const atras = B.atras || 2.4, lado = B.lado || 0.9;   // (7.4.20) escanteio/lateral: mais perto da bola (a placa/grade está ali atrás)
   if (!R) { tx = B.x - fx * atras + fz * lado; tz = B.z - fz * atras - fx * lado; vmax = 2.6; }        // esquerda = (fz, −fx)
@@ -9760,7 +10306,7 @@ function updateCobrador(dt) {
   if (d > 0.01) { u.x += dx / d * passo; u.z += dz / d * passo; }
   u.vx = d > 0.01 ? dx / d * v : 0; u.vz = d > 0.01 ? dz / d * v : 0;
   u.anim += v * 2.6 * dt;
-  if (!R) { u.angle = turnToward(u.angle, Math.atan2(B.z - u.z, B.x - u.x), 8 * dt); return; }   // de frente para a bola
+  if (!R) { const aBola = Math.atan2(B.z - u.z, B.x - u.x); u.angle = turnToward(u.angle, k.cobranca ? anguloDoCobrador(k, aBola) : aBola, 8 * dt); return; }   // de frente para a bola (na cobrança, virando um pouco para a seta)
   u.angle = turnToward(u.angle, d > 0.6 ? Math.atan2(dz, dx) : ang, 10 * dt);
   // Perna para trás ~0,19 s antes de chegar (é quando o balanço da perna encontra a bola).
   if (!R.balanco && (d - passo) / Math.max(1, v) < 0.19) { R.balanco = true; u.kickT = 0.35; }
@@ -10468,19 +11014,46 @@ function startKick(kind) {
   { const lim = limitarMiraBolaParada(G.kick.dirX, G.kick.dirZ); G.kick.dirX = lim.x; G.kick.dirZ = lim.z; }   // (7.5.11) nunca começa apontando para fora
   G.kick.cruzarFixo = cruzarFixo;
   if (kind === 'shot') G.kick.cruzar = cruzarFixo || !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
+  // (7.6.4) LATERAL e ESCANTEIO seus: a seta gira devagar (arrastando para os lados), o jogador fica parado e só vira um pouco o
+  //   corpo, e quem confirma é o botão (soltar o dedo não trava mais a seta). No lateral dá para escolher o lateral AÉREO.
+  const L0 = lequeDaCobranca();
+  if (L0) { G.kick.cobranca = L0; G.kick.aereo = false; }
   G.state = 'aim'; G.targetScale = G.kick.semLimite ? 1 : CONFIG.SLOWMO_AIM;   // só a seta gira; bola parada não precisa de câmera lenta
   if (joy.id !== null) {
     aimPad.id = joy.id; aimPad.onJoy = true;
     aimPad.ox = joy.cx; aimPad.oy = joy.cy;
     aimPad.dx = joy.x * JOY_R; aimPad.dy = joy.y * JOY_R;
+    aimPad.dx0 = aimPad.dx; aimPad.ang0 = Math.atan2(G.kick.dirZ, G.kick.dirX);
     joy.id = null; joy.x = joy.y = 0;
-    applyAimVector();
+    if (!G.kick.cobranca) applyAimVector();
     drawAimKnob();
   }
   showStage('aim');
 }
 
+// (7.6.4) a cobrança de lateral/escanteio: o leque da mira ({ c: o centro, para dentro do campo; hw: meia-abertura }) ou null
+function lequeDaCobranca() {
+  const S = G.sp;
+  if (!S || S.taker !== user || (S.kind !== 'lateral' && S.kind !== 'escanteio')) return null;
+  const zs = S.zs || 1, sd = S.side || 1;
+  return S.kind === 'lateral' ? { c: Math.atan2(-zs, 0), hw: Math.PI / 2 - 0.07, kind: 'lateral', pe: !!S.pe } : { c: Math.atan2(-zs, -sd), hw: Math.PI / 4 - 0.05, kind: 'escanteio' };
+}
+const SENS_COBRANCA = 0.004;                       // rad por pixel arrastado (≈ 0,23°: 100 px giram 23°)
+const GIRO_COBRANCA = 0.9;                         // rad/s com a tecla ou o analógico no máximo
+// para que lado a seta gira quando o dedo vai para a DIREITA da tela (depende da câmera)
+function sinalGiroTela(yaw) { const up = screenToWorld(1, 0, yaw), rt = screenToWorld(0, 1, yaw); return Math.sign(up.x * rt.z - up.z * rt.x) || 1; }
+function girarSetaCobranca(ang) { setAimDir(Math.cos(ang), Math.sin(ang)); }
+// o corpo do cobrador: de frente para o centro do leque, virando só um pouco (no máximo ~23°) para o lado da seta
+function anguloDoCobrador(k, base) {
+  const d = wrapAngle(Math.atan2(k.dirZ, k.dirX) - k.cobranca.c);
+  return (base == null ? k.cobranca.c : base) + clamp(d * 0.35, -0.4, 0.4);
+}
 function applyAimVector() {
+  if (G.kick && G.kick.cobranca) {                 // (7.6.4) cobrança: o arrasto para os lados GIRA a seta, devagar
+    const k = G.kick, d = aimPad.dx - (aimPad.dx0 || 0);
+    girarSetaCobranca((aimPad.ang0 != null ? aimPad.ang0 : Math.atan2(k.dirZ, k.dirX)) + sinalGiroTela(k.yawRef) * d * SENS_COBRANCA);
+    return;
+  }
   const len = Math.hypot(aimPad.dx, aimPad.dy);
   if (len < 12 || !G.kick) return;
   const w = screenToWorld(-aimPad.dy / len, aimPad.dx / len, G.kick.yawRef);  // a seta segue o dedo (câmera do começo da mira)
@@ -10500,7 +11073,7 @@ function mirandoNoGol(dx, dz) {
 function rotuloDoToque(k) {
   if (k.primeira) return T(k.kind === 'shot' ? (k.cruzar ? 'CRUZAMENTO DE PRIMEIRA' : 'CHUTE DE PRIMEIRA') : 'PASSE DE PRIMEIRA');   // (7.4.13)
   if (k.kind === 'shot') return T(k.cruzar ? 'CRUZAMENTO' : (user.setPiece === 'penalti' ? 'PÊNALTI' : 'CHUTE'));
-  if (k.throwIn) return T('LATERAL');
+  if (k.throwIn || (k.cobranca && k.cobranca.kind === 'lateral')) return k.aereo ? T('LATERAL AÉREO') : T('LATERAL');
   if (k.lancar) return T('LANÇAMENTO');
   return T(k.alto ? 'CRUZAMENTO' : 'PASSE');
 }
@@ -10523,8 +11096,10 @@ function setAimDir(dirX, dirZ) {
   const lim = limitarMiraBolaParada(dirX, dirZ); dirX = lim.x; dirZ = lim.z;
   k.dirX = dirX; k.dirZ = dirZ; k.aimed = true; k.target = null;
   k.alto = k.lancar || (k.kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));        // escanteio: o "PASSAR" é o cruzamento
+  if (k.aereo && !k.throwIn && k.kind === 'pass') k.alto = true;                                // (7.6.4) lateral com o pé batendo por baixo: bola alta
   if (k.kind === 'shot') k.cruzar = !!k.cruzarFixo || !mirandoNoGol(dirX, dirZ);
   $('stageKind').textContent = rotuloDoToque(k);
+  if (k.cobranca && typeof COB_UI !== 'undefined') COB_UI.atualizar();
 }
 
 function confirmAim() {
@@ -10690,7 +11265,7 @@ function lancarBolaAlta(k, u) {
   let D, T, y1 = 0.4;
   if (k.throwIn) {
     D = lerp(3, 17 * clamp(0.8 + 0.2 * pf, 0.6, 1.1), k.power);
-    T = clamp(0.5 + D * 0.03, 0.55, 1.05);
+    T = k.aereo ? clamp(1.25 + D * 0.05, 1.35, 2.1) : clamp(0.5 + D * 0.03, 0.55, 1.05);   // (7.6.4) aéreo: a bola sobe bem mais (cai na cabeça)
   } else {
     // (7.4.19) o cruzamento/lançamento é um pouco mais FRACO que o chute: alcance máximo 15% menor e a bola sobe mais devagar
     //   (voa ~10% mais tempo), então chega com menos velocidade e não corre tanto depois de quicar.
@@ -13391,6 +13966,7 @@ $('touch').addEventListener('pointerdown', (e) => {
   } else if (G.state === 'aim' && aimPad.id === null) {
     aimPad.id = e.pointerId; aimPad.onJoy = false;
     aimPad.ox = e.clientX; aimPad.oy = e.clientY; aimPad.dx = aimPad.dy = 0;
+    aimPad.dx0 = 0; aimPad.ang0 = G.kick ? Math.atan2(G.kick.dirZ, G.kick.dirX) : null;   // (7.6.4) a cobrança gira a partir daqui
     drawAimKnob();
   } else if (G.state === 'power') {
     startPowerHold(e.pointerId);
@@ -13413,7 +13989,7 @@ function endPointer(e) {
   if (e.pointerId === aimPad.id) {
     aimPad.id = null;
     $('aimPad').hidden = true; setKnob($('joyKnob'), 0, 0);
-    if (G.state === 'aim') {
+    if (G.state === 'aim' && !(G.kick && G.kick.cobranca)) {   // (7.6.4) na cobrança quem confirma é o botão
       if (G.kick && G.kick.aimed) confirmAim();
       else showToast('Arraste para escolher a direção');
     }
@@ -13438,6 +14014,43 @@ $('spinBall').addEventListener('pointerdown', (e) => {
 $('hamTrack').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); martelar(null); });
 $('timingLayer').addEventListener('pointerdown', (e) => { e.preventDefault(); tapTiming(e.clientX, e.clientY - AREA.topo); });
 $('cancelKick').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); cancelKick(); });
+// (7.6.4) OS BOTÕES DA COBRANÇA (lateral e escanteio seus): CONFIRMAR (lançar/cruzar) e, no lateral, AÉREO (bater por baixo da
+//   bola / arremesso alto). Ficam no lugar dos botões de ação, com o mesmo formato redondo.
+const COB_UI = (() => {
+  const st = document.createElement('style');
+  st.textContent = '#cobUI { position: fixed; z-index: 4; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(18px + env(safe-area-inset-bottom, 0px));'
+    + ' display: grid; grid-template-columns: 86px 104px; grid-template-rows: 104px; gap: 12px; grid-template-areas: "s2 s1"; pointer-events: none; }'
+    + ' #cobUI .act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center; }'
+    + ' #cobUI .act b { font-weight: 400; font-size: 12px; } #cobUI .act small { font-family: var(--font-body); font-size: 9px; line-height: 1.1; opacity: 0.85; }'
+    + ' #cobUI #cobAereo.on { background: rgba(107, 240, 142, 0.85); color: #071430; border-color: #071430; }'
+    + ' @media (max-height: 430px) { #cobUI { right: calc(12px + env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); grid-template-columns: 70px 84px; grid-template-rows: 84px; gap: 8px; } }';
+  document.head.appendChild(st);
+  const el = document.createElement('div'); el.id = 'cobUI'; el.hidden = true;
+  el.innerHTML = '<button type="button" class="act s2" id="cobAereo"><b></b><small></small></button><button type="button" class="act s1 primary" id="cobOk"><b></b><small></small></button>';
+  $('cancelKick').parentNode.appendChild(el);
+  const ok = el.querySelector('#cobOk'), ae = el.querySelector('#cobAereo');
+  ok.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'aim' && G.kick && G.kick.cobranca) confirmAim(); });
+  ae.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); alternarLateralAereo(); });
+  function atualizar() {
+    const k = G.kick, L = k && k.cobranca;
+    el.hidden = !(G.state === 'aim' && L);
+    if (el.hidden) return;
+    ok.querySelector('b').textContent = L.kind === 'escanteio' ? (k.kind === 'shot' && !k.cruzar ? T('CHUTAR') : T('CRUZAR')) : k.throwIn ? T('LANÇAR') : T('COBRAR');
+    ok.querySelector('small').textContent = T('arraste para girar');
+    ae.hidden = L.kind !== 'lateral';
+    ae.classList.toggle('on', !!k.aereo);
+    ae.querySelector('b').textContent = T('AÉREO');
+    ae.querySelector('small').textContent = k.throwIn ? T('arremesso alto') : T('por baixo da bola');
+  }
+  return { atualizar, el };
+})();
+function alternarLateralAereo() {
+  const k = G.kick;
+  if (G.state !== 'aim' || !k || !k.cobranca || k.cobranca.kind !== 'lateral') return;
+  k.aereo = !k.aereo;
+  setAimDir(k.dirX, k.dirZ);                         // refaz o "alto" e o rótulo
+  COB_UI.atualizar();
+}
 $('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') { if (!G.intTela) mostrarTelaIntervalo(); } else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
 // (7.4.13) três câmeras: BOLA (atrás de você, virada para a bola) → FRENTE (fixa para o gol) → LIVRE (você arrasta a tela, do
@@ -13520,6 +14133,7 @@ window.addEventListener('keydown', (e) => {
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
   if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && K('passar')) { faltaPassar(); return; }   // (7.5.11)
   if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && (e.code === 'Enter' || e.code === 'Space' || K('chutar'))) { faltaSegurar({ tecla: e.code }); return; }   // (7.6.2) segura a tecla: a força
+  if (G.state === 'aim' && G.kick && G.kick.cobranca && G.kick.cobranca.kind === 'lateral' && K('cruzar')) { alternarLateralAereo(); return; }   // (7.6.4)
   if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('cruzar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
   if (G.state === 'dribble' && G.timing && K('driblar')) { tocarDribleProximo(); return; }   // (7.5.1) teclado: a tecla do drible acerta o próximo alvo
   if (K('camera')) toggleCamera();
@@ -13562,8 +14176,15 @@ window.addEventListener('keyup', (e) => {
 });
 window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-function keyboardAim() {
+function keyboardAim(rdt) {
   if (G.state !== 'aim' || aimPad.id !== null || (G.kick && G.kick.faltaMira)) return;
+  if (G.kick && G.kick.cobranca) {                 // (7.6.4) cobrança: as setas para os lados giram a seta devagar
+    let r = 0;
+    if (teclaSegurada('direita') || keys.ArrowRight) r += 1;
+    if (teclaSegurada('esquerda') || keys.ArrowLeft) r -= 1;
+    if (r) { const k = G.kick; girarSetaCobranca(Math.atan2(k.dirZ, k.dirX) + sinalGiroTela(k.yawRef) * r * GIRO_COBRANCA * (rdt || 1 / 60)); }
+    return;
+  }
   let up = 0, right = 0;
   if (teclaSegurada('cima') || keys.ArrowUp) up += 1;
   if (teclaSegurada('baixo') || keys.ArrowDown) up -= 1;
@@ -13743,6 +14364,10 @@ function padApertou(b) {
     const k = G.kick;
     if (G.state === 'spin') { if (b <= 3) { const sp = padEfeito(); chooseSpin(sp.x, sp.y); } return; }
     if (G.state === 'aim' && k.faltaMira && !k.faltaMira.chutou && (eh('chutar') || b === Pad.botaoChute)) { faltaSegurar({ pad: b }); return; }   // (7.6.2) a falta: segura o chute para a força
+    if (G.state === 'aim' && k.cobranca) {           // (7.6.4) cobrança: B (cruzar) liga o lateral aéreo; A/X confirmam e já seguram a força
+      if (k.cobranca.kind === 'lateral' && eh('cruzar')) { alternarLateralAereo(); return; }
+      if (eh('passar') || eh('chutar') || eh('cruzar') || b === Pad.botaoChute) { confirmAim(); if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; Pad.botaoChute = b; } return; }
+    }
     if (b === Pad.botaoChute && !k.primeira || k.primeira && (eh('passar') || eh('chutar') || eh('cruzar') || eh('passe1') || eh('chute1'))) {
       if (G.state === 'aim') confirmAim();
       if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; }
@@ -13802,11 +14427,13 @@ function padSoltou(b) {
 function padEfeito() { let x = Pad.right, y = -Pad.up; const m = Math.hypot(x, y); if (m > 1) { x /= m; y /= m; } return { x, y }; }
 function padContinuo(rdt) {
   // MIRA com o analógico (a seta segue para onde ele aponta, na câmera do começo da mira)
-  if (G.state === 'aim' && G.kick && Pad.mag > 0.3 && aimPad.id === null) {
+  if (G.state === 'aim' && G.kick && G.kick.cobranca && aimPad.id === null) {   // (7.6.4) cobrança: o analógico gira a seta devagar
+    if (Math.abs(Pad.right) > 0.2) { const k = G.kick; girarSetaCobranca(Math.atan2(k.dirZ, k.dirX) + sinalGiroTela(k.yawRef) * Pad.right * GIRO_COBRANCA * rdt); }
+  } else if (G.state === 'aim' && G.kick && Pad.mag > 0.3 && aimPad.id === null) {
     const w = screenToWorld(Pad.up / Pad.mag, Pad.right / Pad.mag, G.kick.yawRef); setAimDir(w.x, w.z);
   }
   // segurou o botão do toque desde o começo: em 0,25 s a mira trava onde o analógico aponta e a força começa
-  if (G.state === 'aim' && G.kick && Pad.botaoChute != null && Pad.agora[Pad.botaoChute] && !Pad.forca && performance.now() - Pad.chuteT0 > 250) {
+  if (G.state === 'aim' && G.kick && !G.kick.cobranca && Pad.botaoChute != null && Pad.agora[Pad.botaoChute] && !Pad.forca && performance.now() - Pad.chuteT0 > 250) {
     confirmAim(); if (G.state === 'power') { startPowerHold('pad'); Pad.forca = Pad.botaoChute; }
   }
   if (!KICK_STATES.includes(G.state) && Pad.botaoChute != null && !Pad.agora[Pad.botaoChute]) Pad.botaoChute = null;
@@ -13948,11 +14575,12 @@ function showStage(stage) {
   $('stageHint').textContent = T(STAGE_HINTS[stage]);
   $('powerUI').hidden = stage !== 'power';
   $('spinUI').hidden = stage !== 'spin';
+  COB_UI.atualizar();                               // (7.6.4) os botões da cobrança (só na mira do lateral/escanteio)
 }
 
 function hideKickUI() {
   document.body.classList.remove('mirando');
-  $('stageBar').hidden = true; $('cancelKick').hidden = true;
+  $('stageBar').hidden = true; $('cancelKick').hidden = true; COB_UI.el.hidden = true;
   $('powerUI').hidden = true; $('spinUI').hidden = true; $('aimPad').hidden = true;
   aimArrow.visible = false; targetRing.visible = false;
   power.holding = false; aimPad.id = null;
@@ -16485,7 +17113,7 @@ function stepGame(dt, rdt) {
   atualizarPenaltis(dt);
   verificarFimDeTempo(dt);
   if (G.userRequest > 0) G.userRequest -= dt;
-  keyboardAim();
+  keyboardAim(rdt);
   atualizarControleTime(dt);                        // (7.4.13) time inteiro: quem você controla agora
   updateRoles(dt);
   updatePlayers(dt);
@@ -17029,12 +17657,13 @@ function montarEstadio() {
   ESTADIO_A = null;                                // (7.4.0) só vale para a partida montada agora (os fogos e a cena de fora dependem dele)
   buildPitch(tipo === 'arenaA' && window.EstadiosA ? { semFundo: true } : undefined);   // (7.4.0) no Brasileirão A o chão de fora é o do estadiosA.js (o pátio e a cidade)
   TUNEL.placa = null; TUNEL.grupo = null;
-  if (tipo === 'arena') { buildBoards(); buildStands(); } else if (tipo === 'arenaB') { buildBoards(ANUNCIOS_B); buildStandsB(); }
+  // (7.6.4) primeiro a arquibancada, depois as placas (elas se ajeitam na frente dela: buildBoards com ajustar)
+  if (tipo === 'arena') { buildStands(); buildBoards({ ajustar: true }); } else if (tipo === 'arenaB') { buildStandsB(); buildBoards(Object.assign({ ajustar: true }, ANUNCIOS_B)); }
   else if (tipo === 'arenaA') {                    // Brasileirão A: os 8 estádios do estadiosA.js (sem o arquivo, o estádio oficial)
-    buildBoards(ANUNCIOS_A);
     let ok = false;
     if (window.EstadiosA) try { ESTADIO_A = window.EstadiosA.construir(PARTIDA); ok = true; } catch (e) { console.warn('[Estádio A]', e); crowd.limpar(); }
     if (!ok) buildStands();
+    buildBoards(Object.assign({ ajustar: true }, ANUNCIOS_A));
   } else buildArredores(tipo);
   if (ehArena(tipo)) montarTunel();
   buildGoal(-1); buildGoal(1);
@@ -19713,6 +20342,15 @@ const Idioma = {
   };
   for (const k of Object.keys(NOVAS)) if (!(k in I18N)) I18N[k] = NOVAS[k];
 })();
+// (7.6.4) a cobrança de lateral/escanteio
+Object.assign(I18N, {
+  'LATERAL AÉREO': ['AERIAL THROW-IN', 'SAQUE DE BANDA AÉREO', 'RIMESSA ALTA', 'TOUCHE AÉRIENNE'],
+  'COBRAR': ['TAKE IT', 'SACAR', 'BATTI', 'TIRER'],
+  'AÉREO': ['AERIAL', 'AÉREO', 'AEREO', 'AÉRIEN'],
+  'arraste para girar': ['drag to turn', 'arrastra para girar', 'trascina per girare', 'glisse pour tourner'],
+  'por baixo da bola': ['under the ball', 'por debajo del balón', 'sotto il pallone', 'sous le ballon'],
+  'arremesso alto': ['high throw', 'saque alto', 'lancio alto', 'lancer haut'],
+});
 function Tseguro(k) { try { return T(k); } catch (e) { return k; } }   // (6.1.2) para código que roda antes de o Idioma existir
 function T(chave) {
   if (Idioma.atual === 'pt') return chave;
@@ -20762,7 +21400,7 @@ Object.assign(I18N, {
   "Que golaço de falta! Você leva jeito!": ["What a free-kick goal! You've got talent!", "¡Qué golazo de tiro libre! ¡Tienes talento!", "Che gol su punizione! Hai talento!", "Quel but sur coup franc ! Tu as du talent !"],
   "Falta é assim mesmo: cada uma tem um segredo. Vamos treinando!": ["Free kicks are like that: each one has its secret. Let's keep practicing!", "Los tiros libres son así: cada uno tiene su secreto. ¡Sigamos practicando!", "Le punizioni sono così: ognuna ha il suo segreto. Continuiamo ad allenarci!", "Les coups francs, c'est comme ça : chacun a son secret. Continuons à nous entraîner !"],
   "Agora o lateral. Na quadra de futsal ele é cobrado com o pé: a bola fica no chão, na linha lateral.": ["Now the throw-in. On a futsal court it's taken with the foot: the ball sits on the ground, on the sideline.", "Ahora el saque de banda. En la cancha de futsal se saca con el pie: la pelota queda en el suelo, en la línea lateral.", "Ora la rimessa laterale. Nel futsal si batte con il piede: il pallone sta a terra, sulla linea laterale.", "Maintenant la remise en jeu. En futsal, elle se fait au pied : le ballon est posé au sol, sur la ligne de touche."],
-  "Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!": ["When the ball goes out on the side, play restarts from there. Here you tap PASS, aim at me and choose how hard to kick it. Go!", "Cuando la pelota sale por la banda, el juego se reanuda desde ahí. Aquí tocas PASAR, apuntas hacia mí y eliges la fuerza del toque. ¡Vamos!", "Quando il pallone esce dalla linea laterale, il gioco riparte da lì. Qui tocchi PASSA, mira verso di me e scegli la forza del tocco. Vai!", "Quand le ballon sort sur le côté, le jeu reprend de là. Ici, tu touches PASSER, tu me vises et tu choisis la force de la touche. Vas-y !"],
+  "Quando a bola sai pela lateral, o jogo recomeça de lá. Arraste para os lados para girar a seta até mim, toque em COBRAR e escolha a força do toque. Vai!": ["When the ball goes out on the side, play restarts from there. Drag sideways to turn the arrow towards me, tap TAKE IT and choose how hard to kick it. Go!", "Cuando la pelota sale por la banda, el juego se reanuda desde ahí. Arrastra hacia los lados para girar la flecha hacia mí, toca SACAR y elige la fuerza del toque. ¡Vamos!", "Quando il pallone esce dalla linea laterale, il gioco riparte da lì. Trascina di lato per girare la freccia verso di me, tocca BATTI e scegli la forza del tocco. Vai!", "Quand le ballon sort sur le côté, le jeu reprend de là. Glisse sur les côtés pour tourner la flèche vers moi, touche TIRER et choisis la force de la touche. Vas-y !"],
   "LATERAL: devolva a bola para o João": ["THROW-IN: pass the ball back to João", "SAQUE DE BANDA: devuélvele la pelota a João", "RIMESSA: restituisci il pallone a João", "REMISE EN JEU : redonne le ballon à João"],
   "Boa! Um lateral bem cobrado mantém a bola com o seu time.": ["Nice! A well-taken throw-in keeps the ball with your team.", "¡Bien! Un saque de banda bien hecho mantiene la pelota en tu equipo.", "Bene! Una rimessa fatta bene tiene il pallone alla tua squadra.", "Bien ! Une remise en jeu bien faite garde le ballon dans ton équipe."],
   "E por fim o escanteio: quando a bola sai pela linha de fundo depois de tocar no time que defende, a gente cobra do cantinho. Hora de cruzar na área!": ["And finally the corner kick: when the ball goes out over the end line after touching the defending team, we take it from the corner. Time to cross into the box!", "Y por último el tiro de esquina: cuando la pelota sale por la línea de fondo tras tocar al equipo que defiende, cobramos desde la esquina. ¡Hora de centrar al área!", "E infine il calcio d'angolo: quando il pallone esce sulla linea di fondo dopo aver toccato la squadra che difende, si batte dall'angolo. È il momento di crossare in area!", "Et enfin le corner : quand le ballon sort sur la ligne de fond après avoir touché l'équipe qui défend, on tire depuis le coin. C'est l'heure de centrer dans la surface !"],
@@ -21778,7 +22416,7 @@ const Historia = (() => {
     await duasChances({
       tentar: async (n) => {
         const fez = await aulaParada('lateral', { x: -2, z: HALF_W }, { x: -2, z: HALF_W - 5 }, { x: 8, z: -5 }, { x: -2, z: HALF_W - 0.25 },
-          n === 0 ? T('Quando a bola sai pela lateral, o jogo recomeça de lá. Aqui você toca em PASSAR, mira em mim e escolhe a força do toque. Vai!') : null,
+          n === 0 ? T('Quando a bola sai pela lateral, o jogo recomeça de lá. Arraste para os lados para girar a seta até mim, toque em COBRAR e escolha a força do toque. Vai!') : null,
           T('LATERAL: devolva a bola para o João'));
         if (!fez) return true;
         await fim();
@@ -23112,7 +23750,9 @@ window.FutebolJS = {
   trocarTaticaFase: (team, fase, chave) => { if (team === 0) G.taticaManual = Object.assign({}, G.taticaManual && G.taticaManual !== true ? G.taticaManual : {}, { [fase]: true }); return trocarTaticaFase(team, fase, chave); },
   elencoDoTime: (id) => elencoDoTime(TIMES[id]),
   TIMES, CAMPOS, FORMACOES, TATICAS, DIFICULDADES, CLIMAS, HORARIOS, NOMES, DURACOES,
+  Marcas,                                       // (7.6.4) as marcas das placas (e dos patrocinadores do modo Manager)
 };
+window.Marcas = Marcas;
 
 montarPartida(Object.assign({}, PARTIDA_PADRAO, lerTelaDeConfig()));
 kickoff(0);

@@ -175,6 +175,23 @@ ARQUIVOS
                           eram dois Brunos) e o goleiro continua no gol (antes o João ia para o gol); no racha, quem estava fora joga assim mesmo;
                           no torneio entra o goleiro reserva. COMEMORAÇÃO: segurando o direcional a câmera não gira mais atrás de você (o
                           controle parecia travado); solta e ela volta a seguir.
+                          (7.6.4) MARCAS (Marcas, no jogo.js): 15 empresas de paródia em pixel art feitas por código (ícone 32 x 32 com sombra e
+                          contorno + nome na fonte de pixels própria 5 x 7): NonLethal Model, Caquinha Cola, Santa Uva, Spot Wi-Fi, Burguer Queen,
+                          Manco do Nadson, Sobre Whey, AiCome, Udder Taxis, Little Doll Drink, Caralivro, ZapZap, Bill AiDi Carros, Mercê Deles
+                          Carros e B. Emi Dabliu Carros. São as PLACAS de todos os estádios (no lugar dos nomes antigos; no Brasileirão A, de LED)
+                          e ficam prontas para o modo Manager: Marcas.lista (id, nome, cores), Marcas.icone(id, escala), Marcas.placa(id, escala),
+                          Marcas.cartao(id, escala) e Marcas.desenharPlaca(g, x, y, id) — também em FutebolJS.Marcas e window.Marcas.
+                          PLACAS QUE ATRAVESSAVAM A ARQUIBANCADA: em 80 dos 89 estádios do estadiosA.js (Brasileirão A, Europa e América) a ponta
+                          das placas entrava na arquibancada dos cantos, e em 19 a placa do lado dos bancos ficava escondida dentro da mureta.
+                          Agora a arquibancada é montada antes, cortada na altura das placas (segmentosNaAlturaDasPlacas) e arrumarPlacas: recua
+                          cada lado para a frente da mureta, deixa só os trechos livres, fecha o canto com uma placa em diagonal quando cabe e,
+                          onde a mureta dos bancos vem antes dos bancos, a placa fica na frente dela com um vão em cada banco. O limite da bola
+                          (BOARD_X/BOARD_Z/BOARD_ZN) acompanha. Conferido nos 92 estádios: nenhuma placa encosta em nada.
+                          LATERAL e ESCANTEIO seus: o jogador não anda mais atrás da seta (fica parado, de frente para o campo, e só vira um pouco
+                          o corpo); a seta GIRA devagar arrastando para os lados (0,23° por pixel; setas do teclado e analógico também giram, mais
+                          devagar) e soltar o dedo não confirma: o botão CRUZAR / LANÇAR / COBRAR confirma (Enter, CHUTAR ou PASSAR no teclado;
+                          A/X no controle). No lateral, o botão AÉREO (ou CRUZAR/H no teclado, B no controle): com o pé, bate por baixo da bola
+                          (bola alta, ~2,5 m em vez de rasteira); com as mãos, o arremesso sobe bem mais (~5 m em vez de ~2,3 m).
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
                           (7.6.3) No prédio: fome, fedor e a hora no canto da tela (com os ícones da cidade); dormir leva às 6h do dia seguinte.
