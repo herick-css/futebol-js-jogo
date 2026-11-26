@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.4';
+const VERSAO_JOGO = '7.6.5';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -5735,6 +5735,26 @@ function pontoDeEncontro(p, vel, tMax = 3) {
 
 // Papéis recalculados a cada 0,3 s (e não todo quadro): dá um "tempo de reação" mais humano
 // e também economiza processamento.
+// (7.6.5) quem chega primeiro na bola solta (com a física dela): o jogador, ou null quando está dividido (diferença < 0,35 s)
+function quemChegaNaBola() {
+  const tempo = [Infinity, Infinity], quem = [null, null], ponto = [null, null];
+  for (let t = 0; t < 2; t++) {
+    const cand = TEAMS[t].filter((p) => !p.out && p.role !== 'GK' && !(p.stun > 0.5) && !p.scripted).sort((a, b) => dist2D(a, ball) - dist2D(b, ball)).slice(0, 2);
+    for (const p of cand) {
+      const vel = p.isUser ? CONFIG.USER_RUN * (p.exhausted ? 0.7 : 1) : CONFIG.AI_SPEED * (p.speedMul || 1);
+      const r = ballSpeed() > 0.5 ? pontoDeEncontro(p, vel) : { ok: false, t: 0, folga: -dist2D(p, ball) };
+      let tt = r.ok ? r.t : r.t + Math.max(0, -r.folga) / vel;
+      if (p.isUser) {                                // você parado (ou indo para outro lado) ainda precisa reagir: conta um atraso
+        const d = dist2D(p, ball) || 1, vb = ((p.vx || 0) * (ball.x - p.x) + (p.vz || 0) * (ball.z - p.z)) / d;
+        if (vb < 1) tt += 0.4;
+      }
+      if (tt < tempo[t]) { tempo[t] = tt; quem[t] = p; ponto[t] = r.ok ? { x: r.x, z: r.z } : { x: ball.x, z: ball.z }; }
+    }
+  }
+  if (tempo[0] + 0.35 < tempo[1]) { G.pontoPrev = ponto[0]; return quem[0]; }
+  if (tempo[1] + 0.35 < tempo[0]) { G.pontoPrev = ponto[1]; return quem[1]; }
+  return null;
+}
 function updateRoles(dt) {
   G.roleT -= dt;
   if (G.roleT > 0) return;
@@ -5746,8 +5766,15 @@ function updateRoles(dt) {
   const real = G.possession;
   if (real) { G.ultDono = real; G.ultDonoT = G.time; }
   const PTp = G.passTarget && G.passTarget.p && !G.passTarget.p.out ? G.passTarget.p : null;
-  const holder = real || PTp || (G.ultDono && !G.ultDono.out && G.time - (G.ultDonoT || 0) < 2.5 && (G.state === 'play') ? G.ultDono : null);
-  G.dono = holder;
+  // (7.6.5) BOLA SOLTA: quem CHEGA PRIMEIRO nela (a previsão da bola andando, de cada lado: você e a IA) é o dono da jogada — o time
+  //   dele já se arma para atacar e o outro recua. Antes valia quem tocou por último (2,5 s) e depois ninguém: com a bola
+  //   adiantada, o time recuava mesmo com você chegando antes nela (e voltava a subir quando você pegava: travado, robótico).
+  //   Sem um favorito claro (menos de 0,35 s de diferença), fica como antes.
+  const previsto = !real && !PTp && G.state === 'play' && !G.sp && !G.kickoffPending ? quemChegaNaBola() : null;
+  const holder = real || PTp || previsto || (G.ultDono && !G.ultDono.out && G.time - (G.ultDonoT || 0) < 2.5 && (G.state === 'play') ? G.ultDono : null);
+  G.dono = holder; G.donoPrevisto = previsto;
+  // e o time se arma em volta de ONDE a bola vai ser dominada (não de onde ela está rolando agora)
+  if (previsto && G.pontoPrev) { G.focus = G.pontoPrev; G.focoPrevisto = true; } else if (G.focoPrevisto) { if (!G.sp) G.focus = null; G.focoPrevisto = false; }
   for (let t = 0; t < 2; t++) {
     let a = null, ad = Infinity, b = null, bd = Infinity;
     const target = real || ball;
@@ -5770,14 +5797,28 @@ function updateRoles(dt) {
     // Quem vinha atrás continua perseguindo como cobertura.
     if (live && oppHas && real) {
       const ownGx = (t === 0 ? -1 : 1) * HALF_L;
-      const gx = ownGx - holder.x, gz = -holder.z, gl = Math.hypot(gx, gz) || 1;
+      const Dc = dirContencao(holder, ownGx);                       // (7.6.5) aberto: "na frente" é no corredor dele
+      // (7.6.5) raio maior (18 → 26 m): com o mais perto CORRENDO ATRÁS dele, quem está lá na frente já é o do bote (sai ao encontro
+      //   e segura de frente). Antes a defesa só recuava até ele chegar a 18 m dela — muitas vezes já na entrada da área.
       const naFrente = TEAMS[t].filter((p) => p.role !== 'GK' && !p.isUser && p.stun <= 0 && !p.scripted && !p.out
-        && ((p.x - holder.x) * gx + (p.z - holder.z) * gz) / (gl * (dist2D(p, holder) || 1)) > 0.35 && dist2D(p, holder) < 18 * ESC)
+        && ((p.x - holder.x) * Dc.x + (p.z - holder.z) * Dc.z) / (dist2D(p, holder) || 1) > 0.35 && dist2D(p, holder) < 26 * ESC)
         .sort((x, y) => dist2D(x, holder) - dist2D(y, holder));
+      // (7.6.5) quem já está marcando o OUTRO atacante não larga ele para dar o bote, se houver outro na frente quase tão perto
+      const marcAnt = G.marcacao && G.marcacao[t];
+      if (naFrente.length > 1 && marcAnt && marcAnt.get(naFrente[0]) && !marcAnt.get(naFrente[1]) && dist2D(naFrente[1], holder) < dist2D(naFrente[0], holder) + 6 * Math.max(0.75, ESC)) naFrente.splice(0, 1);
       if (naFrente.length && naFrente[0] !== G.pressers[t]) {
         const atras = G.pressers[t];
         G.pressers[t] = naFrente[0];
         G.covers[t] = atras && atras !== naFrente[0] ? atras : (naFrente[1] || b);
+      }
+      // (7.6.5) a COBERTURA é de quem está do nosso lado do gol (no caminho dele, mesmo que um pouco mais longe): quem vem correndo
+      //   atrás não cobre nada. Antes, com o mais perto vindo atrás, a cobertura ficava com ele e o caminho pela lateral ficava livre.
+      const pr = G.pressers[t];
+      if (pr) {
+        const cob = TEAMS[t].filter((p) => p !== pr && p.role !== 'GK' && !p.isUser && p.stun <= 0 && !p.scripted && !p.out
+          && Math.abs(p.x - ownGx) < Math.abs(holder.x - ownGx) - 1 && dist2D(p, holder) < 32 * ESC)
+          .sort((x, y) => dist2D(x, holder) - dist2D(y, holder));
+        if (cob.length && !(G.covers[t] && Math.abs(G.covers[t].x - ownGx) < Math.abs(holder.x - ownGx) - 1)) G.covers[t] = cob[0];
       }
     }
     // Apoio: os 2 companheiros mais perto de quem está com a bola se oferecem para o passe (triângulos).
@@ -5854,6 +5895,33 @@ function papeisSemBola(t, holder, live, oppHas) {
         for (const p of livres) { if (usP.has(p)) continue; const d = dist2D(p, q) + ((p.x - q.x) * dirT > 0 ? 6 : 0); if (d < bd) { bd = d; best = p; } }
         if (!best) break;
         usP.add(best); usQ.add(q); G.marcacao[t].set(best, q);
+      }
+      // (7.6.5) DOIS ATACANTES: um segundo atacante perto do nosso gol (na altura de quem conduz ou mais à frente) e sem ninguém nele
+      //   leva o da cobertura — um marca quem conduz, o outro marca o outro. Antes o segundo zagueiro ficava cobrindo a bola e o
+      //   outro atacante, livre, recebia na cara do gol.
+      // (quem só corre ATRÁS dele, vindo do meio-campo, não conta como marcação: ele segue livre na frente da nossa zaga)
+      const marcadorDe = new Map(); for (const [p, q] of G.marcacao[t]) marcadorDe.set(q, p);
+      const ladoDoGol = (p, q) => p && Math.abs(p.x - ownGx) < Math.abs(q.x - ownGx) + 1;
+      const dH = Math.abs(holder.x - ownGx), perigosos = TEAMS[1 - t].filter((q) => q.role !== 'GK' && !q.out && q !== holder && !ladoDoGol(marcadorDe.get(q), q)
+        && Math.abs(q.x - ownGx) < dH + 8 * ESC && Math.abs(q.x - ownGx) < HALF_L * 0.9 && Math.abs(q.z) < HALF_W * 0.8 && dist2D(q, holder) > 3);
+      if (perigosos.length) {
+        // quem pega: do nosso lado do gol em relação a ele (nunca correndo atrás), sem homem — o da cobertura, o segundo zagueiro
+        //   ou alguém da linha de trás; fica com o mais perto
+        const c = G.covers[t] && !G.covers[t].out ? G.covers[t] : null;
+        const zagaL = (p) => p.funcao ? (p.funcao === 'zagueiro' || p.funcao === 'lateral' || p.funcao === 'volante') : p.role === 'DEF';
+        for (const q of perigosos.sort((a, b) => Math.abs(a.x - ownGx) - Math.abs(b.x - ownGx))) {
+          const dq = Math.abs(q.x - ownGx);
+          let quem = null, bd = Infinity;
+          for (const p of TEAMS[t]) {
+            if (p.role === 'GK' || p.isUser || p.out || p.stun > 0 || p.scripted || p === G.pressers[t] || G.marcacao[t].has(p)) continue;
+            if (p !== c && !zagaL(p)) continue;
+            if (Math.abs(p.x - ownGx) > dq + 1) continue;                   // atrás dele não adianta
+            const d = dist2D(p, q); if (d < bd && d < 22 * Math.max(0.75, ESC)) { bd = d; quem = p; }
+          }
+          if (!quem) continue;
+          const antes = marcadorDe.get(q); if (antes) G.marcacao[t].delete(antes);   // quem vinha atrás dele volta para a posição
+          G.marcacao[t].set(quem, q); if (quem === c) G.covers[t] = null;
+        }
       }
     }
     return;
@@ -5980,11 +6048,18 @@ function papeisCampoPequeno(t, holder, live, oppHas, recebendo) {
   //   Quem ficou para trás (foi passado) volta na cobertura; se o da frente era o fixo, o mais recuado dos outros vira o fixo.
   let cobre = null;
   if (live && oppHas && real && holder.role !== 'GK') {
-    const gx = ownGx - holder.x, gz = -holder.z, gl = Math.hypot(gx, gz) || 1;
+    const Dc = dirContencao(holder, ownGx), gx = Dc.x, gz = Dc.z, gl = 1;   // (7.6.5) aberto: "na frente" é no corredor dele
     const frenteDe = (p) => ((p.x - holder.x) * gx + (p.z - holder.z) * gz) / (gl * (dist2D(p, holder) || 1));
     const noNossoCampo = holder.x * dir < 0, raio = (noNossoCampo ? 22 : 12) * Math.max(0.7, ESC);   // no nosso campo a BOLA vem antes do homem
     const naFrente = cand.filter((p) => !(G.passTarget && G.passTarget.p === p) && dist2D(p, holder) < raio && frenteDe(p) > 0.35)
       .sort((x, y) => dist2D(x, holder) - dist2D(y, holder));
+    // (7.6.5) DOIS ATACANTES: o do bote é o que está mais longe do outro atacante; o que está perto dele fica para marcá-lo
+    if (naFrente.length > 1) {
+      const dHx = Math.abs(holder.x - ownGx);
+      const q2 = TEAMS[1 - t].filter((q) => q !== holder && q.role !== 'GK' && !q.out && Math.abs(q.x - ownGx) < dHx + 8 * Math.max(0.75, ESC) && dist2D(q, holder) > 3)
+        .sort((x, y) => Math.abs(x.x - ownGx) - Math.abs(y.x - ownGx))[0];
+      if (q2 && dist2D(naFrente[0], q2) < dist2D(naFrente[1], q2) && dist2D(naFrente[1], holder) < dist2D(naFrente[0], holder) + 6 * Math.max(0.75, ESC)) naFrente.splice(0, 2, naFrente[1], naFrente[0]);
+    }
     const f0 = naFrente[0], aPassado = a && frenteDe(a) < 0.2;          // o do bote foi passado (está do lado/atrás)
     if (f0 && f0 !== a && (!a || aPassado || dist2D(f0, holder) < dist2D(a, holder) + 6)) {
       if (a && dist2D(a, holder) < 6) cobre = a;
@@ -6017,12 +6092,21 @@ function papeisCampoPequeno(t, holder, live, oppHas, recebendo) {
     const usP = new Set(), usQ = new Set();
     for (const [, p, q] of pares) { if (usP.has(p) || usQ.has(q)) continue; usP.add(p); usQ.add(q); G.marca[t].set(p, q); }
     // O fixo cobre o adversário mais perigoso que ninguém marca (o mais perto do nosso gol); sem sobra, cobre a jogada.
-    const sobra = ops.filter((q) => !usQ.has(q)).sort((x, y) => Math.hypot(ownGx - x.x, x.z) - Math.hypot(ownGx - y.x, y.z));
+    // (7.6.5) quem só corre ATRÁS do atacante (o marcador ficou do lado errado, longe do nosso gol) não conta: ele está sobrando
+    const marcadorDe = new Map(); for (const [p, q] of G.marca[t]) marcadorDe.set(q, p);
+    const atrasDele = (q) => { const m = marcadorDe.get(q); return !m || Math.abs(m.x - ownGx) > Math.abs(q.x - ownGx) + 1; };
+    const sobra = ops.filter((q) => atrasDele(q)).sort((x, y) => Math.hypot(ownGx - x.x, x.z) - Math.hypot(ownGx - y.x, y.z));
     // (7.4.21) o fixo só sai para cobrir um adversário sobrando quando o do bote já está bem NA FRENTE de quem conduz; senão a
     //   prioridade é a bola: ele fica na linha atacante→gol (antes ia para o lado cobrir alguém e o atacante passava reto)
     const hgx = ownGx - holder.x, hgz = -holder.z, hgl = Math.hypot(hgx, hgz) || 1;
     const prNaFrente = a && dist2D(a, holder) < 3.5 && ((a.x - holder.x) * hgx + (a.z - holder.z) * hgz) / (hgl * (dist2D(a, holder) || 1)) > 0.6;
-    G.fixoAlvo[t] = prNaFrente ? (sobra[0] || null) : null;
+    // (7.6.5) DOIS ATACANTES: o do bote já está entre quem conduz e o gol (mesmo sem estar colado) e o outro atacante está perto do
+    //   nosso gol, sem ninguém: o fixo vai nele — um marca cada um. Antes o fixo seguia cobrindo a bola e o outro ficava livre.
+    const prEntre = a && dist2D(a, holder) < 20 * Math.max(0.75, ESC) && ((a.x - holder.x) * hgx + (a.z - holder.z) * hgz) / (hgl * (dist2D(a, holder) || 1)) > 0.2;
+    const dHx = Math.abs(holder.x - ownGx);
+    const perigoso = sobra.find((q) => Math.abs(q.x - ownGx) < dHx + 8 * Math.max(0.75, ESC) && Math.abs(q.z) < HALF_W * 0.85 && dist2D(q, holder) > 3) || null;
+    G.fixoAlvo[t] = prNaFrente ? (sobra[0] || null) : prEntre ? perigoso : null;
+    if (G.fixoAlvo[t] && marcadorDe.get(G.fixoAlvo[t])) G.marca[t].delete(marcadorDe.get(G.fixoAlvo[t]));   // o fixo assume; quem vinha atrás volta
   }
   G.support[t] = [];
   G.vaga = G.vaga || [new Map(), new Map()]; G.vaga[t] = new Map();
@@ -6054,10 +6138,14 @@ function aiCampoPequeno(p, holder, myTeamHas, oppHolds) {
     if (G.pressers[t] === p) return null;                                       // contenção e bote (lógica de sempre)
     if (ehFixo) {
       const alvo = G.fixoAlvo[t] || holder;
-      const gx = ownGx - alvo.x, gz = -alvo.z, gl = Math.hypot(gx, gz) || 1;
-      // (7.4.21) cobrindo a jogada, ele fecha conforme o atacante chega perto do gol (6,5 m lá no meio; ~3 m na entrada da área)
+      // (7.6.5) cobrindo a jogada: no caminho dele (aberto, o corredor: dirContencao) e sem entrar na área antes dele (pisoDefesa);
+      //   antes recuava até a pequena área. Cobrindo um atacante: nas costas dele.
+      const Dc = alvo === holder ? dirContencao(holder, ownGx) : null, gl = Dc ? Dc.gl : Math.hypot(ownGx - alvo.x, alvo.z) || 1;
+      const gx = Dc ? Dc.x * gl : ownGx - alvo.x, gz = Dc ? Dc.z * gl : -alvo.z;
       const d = Math.min(alvo === holder ? clamp(gl * 0.3, 3, 6.5) : 1.6, Math.max(0, gl - SMALL_BOX.depth * 0.8));    // sem ninguém para cobrir, fica ~6,5 m atrás da bola (o bote é de quem pressiona); cobrindo alguém: nas costas dele
-      const tx = clamp(alvo.x + gx / gl * d, -HALF_L + 1.5, HALF_L - 1.5), tz = clamp(alvo.z + gz / gl * d * 0.8, -HALF_W + 1.5, HALF_W - 1.5);
+      let tx = clamp(alvo.x + gx / gl * d, -HALF_L + 1.5, HALF_L - 1.5);
+      const tz = clamp(alvo.z + gz / gl * d * 0.8, -HALF_W + 1.5, HALF_W - 1.5);
+      if (alvo === holder) { tx = comPiso(t, holder, tx, tz); marcarRecuo(p); }
       const dT = Math.hypot(tx - p.x, tz - p.z);
       // (7.4.21) quem conduz vindo para cima dele: recua NA MESMA velocidade (antes 95% e sem arrancar: era alcançado e passado)
       const vem = alvo === holder && ((holder.vx || 0) * gx + (holder.vz || 0) * gz) / gl > 2.5;
@@ -6159,6 +6247,9 @@ function formationTarget(p, attacking) {
   if (attacking && !(p.semLinhaT > 0) && PARTIDA.regras.impedimento) rx = Math.min(rx, limiteLegal(p.team) - 0.6);
   rx = clamp(rx, -HALF_L + 4 * ESC, HALF_L - 5 * ESC);
   rz = clamp(rz, -HALF_W + 2, HALF_W - 2);
+  // (7.6.5) a linha de trás não entra na área antes de quem conduz (pisoDefesa)
+  const hP = G.possession;
+  if (phase === 'defesa' && zagaB && hP && hP.team !== p.team && hP.role !== 'GK' && G.state === 'play' && !G.sp) rx = comPiso(p.team, hP, rx * p.dir, rz * p.dir) * p.dir;
   return { x: rx * p.dir, z: rz * p.dir };
 }
 
@@ -6312,6 +6403,11 @@ const lamentandoNoChao = (p) => (p.lamento === 'sentado' || p.lamento === 'deita
 function aiThink(p, dt) {
   p.querCorrer = 0;
   const des = semAmontoar(p, aiDecide(p, dt));
+  // (7.6.5) quem está NA FRENTE de quem conduz, colado (no alcance do bote), tenta o desarme mesmo sem ser "o do bote" — antes
+  //   ficava andando junto, de frente para ele, e ele seguia
+  const h = G.possession;
+  if (h && h.team !== p.team && h.role !== 'GK' && p.role !== 'GK' && !p.isUser && G.pressers[p.team] !== p && G.state === 'play' && !G.sp
+    && dist2D(p, h) < CONFIG.TACKLE_RANGE + 0.2 && !porTras(p, h)) tryTackle(p, h, dt);
   return ritmoIA(p, des, dt);
 }
 // (7.6.3) SEM AMONTOAR EM QUEM CONDUZ. A soma dos papéis (o bote, a cobertura, o marcador do homem que estava ali perto, quem
@@ -6461,19 +6557,12 @@ function aiSemBola(p, dt, holder) {
   // juntos até dentro da área.
   if (oppHolds && real && !campoPequeno() && p.role === 'DEF' && holder.role !== 'GK') {
     const D = duplaDeZaga(p.team, holder);
-    if (D) {
-      if (D.sobe === p) {
-        tryTackle(p, holder, dt);
-        corrida(p, 3);
-        return seek(p, holder.x + holder.vx * 0.3, holder.z + holder.vz * 0.3, CONFIG.AI_SPEED * p.speedMul);
-      }
-      if (D.cobre === p) {
-        const ownGx = -p.dir * HALF_L;
-        let gx = ownGx - holder.x, gz = -holder.z; const gl = Math.hypot(gx, gz) || 1;
-        const dist = Math.min(7, gl - BOX.depth * 0.5);
-        corrida(p, 2);
-        return seek(p, holder.x + gx / gl * dist, holder.z + gz / gl * dist * 0.8, CONFIG.AI_SPEED * 0.95 * p.speedMul);
-      }
+    const temHomem = G.marcacao && G.marcacao[p.team] && G.marcacao[p.team].get(p);   // (7.6.5) com dois atacantes, o segundo zagueiro marca o outro
+    if (D && !temHomem) {
+      // (7.6.5) o que sobe faz a contenção de verdade (de frente, recuando e dando o bote: aiPressiona) — antes ia reto para cima
+      //   dele e era passado; o outro fica na cobertura, uns 5–7 m atrás, sem entrar na área antes dele (pisoDefesa)
+      if (D.sobe === p) { marcarRecuo(p); return aiPressiona(p, holder, dt); }
+      if (D.cobre === p) return coberturaZaga(p, holder);
     }
   }
   // (7.1.22) ZONA DE PRESSÃO (tática sem a bola): o bote só vai até a linha pressAte (no sentido do nosso ataque; 0 = meio-campo).
@@ -6489,11 +6578,7 @@ function aiSemBola(p, dt, holder) {
     return seek(p, tx, tz, CONFIG.AI_SPEED * 0.85 * p.speedMul);
   }
   if (TTd && G.covers[p.team] === p && TTd.pressers >= 2 && hAv > -2 && dist2D(p, holder) < 16 * Math.max(0.7, ESC) && holder.role !== 'GK' && p.role !== 'DEF') return aiPressiona(p, holder, dt);   // pressão alta: no campo DELES o segundo também vai no bote (no nosso campo ele volta a cobrir)
-  if (oppHolds && real && G.covers[p.team] === p) {
-    const ownGx = -p.dir * HALF_L, tx = lerp(ball.x, ownGx, 0.3), tz = lerp(ball.z, 0, 0.3);
-    if (Math.hypot(tx - p.x, tz - p.z) > 6) corrida(p, 2);
-    return seek(p, tx, tz, CONFIG.AI_SPEED * 0.9 * p.speedMul);
-  }
+  if (oppHolds && real && G.covers[p.team] === p && !(G.marcacao && G.marcacao[p.team] && G.marcacao[p.team].get(p))) return coberturaZaga(p, holder);
   let t = formationTarget(p, myTeamHas);
   // Bola longe: trota. Bola perto: anda mais rápido.
   let far = dist2D(p, ball) > 35 ? 0.6 : 0.85;
@@ -6525,6 +6610,29 @@ function aiSemBola(p, dt, holder) {
   return seek(p, t.x, t.z, CONFIG.AI_SPEED * far * p.speedMul);
 }
 
+// (7.6.5) COBERTURA: o segundo homem fica no caminho de quem conduz (pelo meio, a linha até o gol; aberto, o corredor), 4–7 m atrás
+//   do companheiro do bote, recuando de frente para a bola e sem entrar na área enquanto ele não entra (pisoDefesa).
+function coberturaZaga(p, holder) {
+  const ownGx = -p.dir * HALF_L, Dc = dirContencao(holder, ownGx);
+  const d = clamp(Dc.gl * 0.28, 4, 7);
+  let tx = holder.x + Dc.x * d, tz = holder.z + Dc.z * d * 0.85;
+  // pelo meio: na DIAGONAL do companheiro do bote (2,5 m para o lado contrário ao dele), e não colado atrás dele na mesma linha;
+  //   aberto, fica no corredor
+  const pr = G.pressers[p.team];
+  if (Dc.aberto < 0.3 && pr && dist2D(pr, holder) < 5) tz += (-Math.sign(pr.z - holder.z) || 1) * 2.5 * (1 - Dc.aberto / 0.3);
+  tx = comPiso(p.team, holder, tx, tz);
+  tx = clamp(tx, -HALF_L + 1, HALF_L - 1); tz = clamp(tz, -HALF_W + 1, HALF_W - 1);
+  const dT = Math.hypot(tx - p.x, tz - p.z), vem = ((holder.vx || 0) * Dc.x + (holder.vz || 0) * Dc.z) > 2.5;
+  if (dT > 6 || vem) corrida(p, dT > 9 ? 3 : 2);
+  marcarRecuo(p);
+  if (vem && dT < 6) {                                 // recuando no ritmo dele (como na contenção)
+    const vmax = CONFIG.AI_SPEED * 1.05 * p.speedMul;
+    let vx = (holder.vx || 0) + (tx - p.x) * 2.0, vz = (holder.vz || 0) + (tz - p.z) * 2.0;
+    const v = Math.hypot(vx, vz); if (v > vmax) { vx *= vmax / v; vz *= vmax / v; }
+    return travaNoPiso(p, holder, { vx, vz });
+  }
+  return seek(p, tx, tz, CONFIG.AI_SPEED * (vem || dT > 3 ? 1 : 0.85) * p.speedMul);
+}
 // Quem pressiona quem conduz. Contenção ANDANDO, bote CORRENDO.
 // Atacante de COSTAS para o nosso gol (pivô): o marcador cola nas costas dele (encosta) em vez de ficar a 2,4 m.
 function aiPressiona(p, holder, dt) {
@@ -6558,10 +6666,22 @@ function aiPressiona(p, holder, dt) {
   p.chaseCd = (p.chaseCd || 0) - dt;
   if (p.chaseT > 0) { p.chaseT -= dt; p.committing = Math.max(p.committing, 0.1); }
   const ownGx = -p.dir * HALF_L;
-  let gx = ownGx - holder.x, gz = -holder.z * 0.6;
-  const gl = Math.hypot(gx, gz) || 1;
+  // (7.6.5) a linha da contenção: para o gol pelo meio; aberto, o corredor pela lateral (dirContencao)
+  const Dc = dirContencao(holder, ownGx);
+  let gx = Dc.x, gz = Dc.z;
+  const gl = 1;
   const dH = dist2D(p, holder);
-  if (p.committing > 0) {
+  marcarRecuo(p);
+  // (7.6.5) recuou até a entrada da área (o piso) e ele continua vindo: não recua mais — é a hora do bote
+  {
+    const piso = pisoDefesa(p.team, holder), dP = Math.abs(p.x - ownGx);
+    if (dP < piso + 0.8 && Math.abs(p.z) < BOX.half + 2.5 && dH < 3.2 && !porTras(p, holder)) p.committing = Math.max(p.committing, 0.5);
+  }
+  // (7.6.5) o BOTE só sai de perto (até ~3,5 m) e de frente / do lado do gol. Antes ele podia "decidir o bote" a 12 m e corria
+  //   reto na direção de onde o atacante ESTAVA: chegava do lado dele (pela lateral, ia junto até a linha de fundo).
+  //   Longe ou fora do caminho, primeiro entra na frente (abaixo); o bote fica para quando chegar.
+  const foraCam = dH > 0.01 ? ((p.x - holder.x) * gx + (p.z - holder.z) * gz) / dH : 1;
+  if (p.committing > 0 && (p.chaseT > 0 || (dH < 3.5 && foraCam > -0.2) || (holder === user && KICK_STATES.includes(G.state)))) {   // parado para chutar: vai de qualquer jeito
     p.committing -= dt;
     tryTackle(p, holder, dt);
     corrida(p, 3);
@@ -6580,15 +6700,43 @@ function aiPressiona(p, holder, dt) {
   //   para onde ele vai (espelho) na mesma velocidade e fecha o caminho reto para o gol; 3) perto, parte para o bote.
   const vh = Math.hypot(holder.vx, holder.vz), hx = holder.x + holder.vx * 0.25, hz = holder.z + holder.vz * 0.25;
   const naLinha = dH > 0.01 ? ((p.x - holder.x) * gx + (p.z - holder.z) * gz) / (gl * dH) : 1;   // 1 = bem na frente; < 0 = atrás
-  if (naLinha < 0.45 && dH > 1.1) {
-    const frente = clamp(dH * 0.85 + vh * 0.25, 2.2, 9);
+  // (7.6.5) ele vindo rápido e eu ainda fora do caminho dele (mais de 1,2 m para o lado): primeiro ENTRA NO CAMINHO lá na frente
+  //   (corte); só depois segura de frente. Antes, com ~60° de diferença já contava como "na frente" e ele chegava do lado
+  const fora = Math.abs((p.x - holder.x) * gz - (p.z - holder.z) * gx) / gl;
+  const vemRapido = ((holder.vx || 0) * gx + (holder.vz || 0) * gz) > 2.5;
+  if ((naLinha < 0.45 || (vemRapido && fora > 1.2 && dH < 12)) && dH > 1.1) {
+    let frente = clamp(dH * 0.85 + vh * 0.25, 2.2, 9);
+    // (7.6.5) ele vem rápido (pela lateral, principalmente): o ponto de corte é onde dá para CHEGAR ANTES dele, com 2 m de folga —
+    //   antes ia para um ponto perto demais, chegava do lado dele e era passado na corrida
+    if (vh > 2.5) {
+      const vD = CONFIG.AI_SPEED * (p.speedMul || 1);
+      for (let A = 2.5; A <= 16; A += 0.5) {
+        const px = holder.x + gx * A, pz = holder.z + gz * A;
+        if (Math.hypot(px - p.x, pz - p.z) / vD <= (A - 2) / vh) { frente = Math.max(frente, A); break; }
+        if (A >= 16) frente = Math.max(frente, 9);
+      }
+    }
     corrida(p, 3);
-    return seek(p, clamp(hx + gx / gl * frente, -HALF_L + 1, HALF_L - 1), clamp(hz + gz / gl * frente, -HALF_W + 1, HALF_W - 1), CONFIG.AI_SPEED * p.speedMul);
+    const cx = clamp(comPiso(p.team, holder, hx + gx / gl * frente, hz + gz / gl * frente), -HALF_L + 1, HALF_L - 1);
+    // (7.6.5) sem a bola ele é um pouco mais rápido que quem conduz (5%: 5,04 contra 4,96 m/s) — dá para fechar o corredor
+    return seek(p, cx, clamp(hz + gz / gl * frente, -HALF_W + 1, HALF_W - 1), CONFIG.AI_SPEED * (vh > 3.5 ? 1.05 : 1) * p.speedMul);
   }
-  const fecha = clamp(1.3 + vh * 0.06, 1.3, 1.7);
+  // (7.6.5) ele vindo em velocidade para cima: segura um pouco mais longe (2–2,4 m) e recua de frente no ritmo dele, em vez de
+  //   esperar colado (era passado na arrancada); parado ou devagar, fecha (1,3–1,7 m) como antes
+  const vem = ((holder.vx || 0) * gx + (holder.vz || 0) * gz) > 2.5;
+  const fecha = vem ? clamp(1.9 + vh * 0.1, 2.0, 2.4) : clamp(1.3 + vh * 0.06, 1.3, 1.7);
   if (dH < 1.9 && !porTras(p, holder)) p.committing = Math.max(p.committing, Math.random() < (perigoGol ? 0.9 : 0.6) * dt * 3 * (Dp ? Dp.bote : 1) ? 0.45 : 0);   // de frente e perto: dá o bote
-  if (dH > 3.5 || vh > 3.5) corrida(p, 2);                          // chegando / acompanhando a arrancada
-  return seek(p, hx + gx / gl * fecha, hz + gz / gl * fecha, CONFIG.AI_SPEED * (vh > 2 ? 1 : 0.85) * p.speedMul);
+  if (dH > 3.5 || vh > 3.5) corrida(p, vem ? 3 : 2);                // chegando / acompanhando a arrancada
+  const fx = comPiso(p.team, holder, hx + gx / gl * fecha, hz + gz / gl * fecha), fz = hz + gz / gl * fecha;
+  if (vem) {
+    // (7.6.5) RECUANDO DE FRENTE: no ritmo dele (a velocidade dele + a correção até o ponto da contenção). Antes ia para o ponto
+    //   em linha reta: corria para cima dele, não conseguia frear e virar a tempo e ele passava
+    const vmax = CONFIG.AI_SPEED * 1.05 * p.speedMul;
+    let vx = (holder.vx || 0) + (fx - p.x) * 2.2, vz = (holder.vz || 0) + (fz - p.z) * 2.2;
+    const v = Math.hypot(vx, vz); if (v > vmax) { vx *= vmax / v; vz *= vmax / v; }
+    return travaNoPiso(p, holder, { vx, vz });
+  }
+  return seek(p, fx, fz, CONFIG.AI_SPEED * (vh > 2 ? 1 : 0.85) * p.speedMul);
 }
 
 // SENTINELA (contra a "banheira"): com a bola do NOSSO time, cada atacante adversário que passou do meio-campo e ficou
@@ -7792,6 +7940,7 @@ function gkThink(p, dt) {
       const dono = G.possession;
       if (dono && dono.team !== p.team && Math.random() < S.chance) {
         givePossession(p, { silent: true });
+        if ((p.diveVX || 0) * p.dir < 0) { p.diveVX = 0; p.diveVZ *= 0.3; }   // (7.6.5) abafou indo para trás: segura ali (não entra no gol com a bola)
         perderBola(dono, Math.random() < 0.5 ? 'queda' : 'joelho');
         if (dono.isUser) G.stats.perdas++;
         showToast(p.team === 1 ? 'O goleiro saiu nos pés!' : 'Nosso goleiro abafou!', p.team === 1 ? 'bad' : 'good');
@@ -7902,6 +8051,13 @@ function gkThink(p, dt) {
     if (alvo && ball.y > 1.2 && ball.lastKicker && ball.lastKicker.team !== p.team && !gkSaiNoCruzamento(p, alvo.x, alvo.z)) alvo = null;
     if (alvo) return seek(p, alvo.x, alvo.z, CONFIG.GK_SPEED * 1.3);
   }
+  // (7.6.5) durante o DRIBLE (câmera lenta) de alguém dentro da área dele, o goleiro não fica parado: vem fechando na bola,
+  //   até ~1,6 m dela (no fim do drible ele sai nos pés: ver posDrible abaixo)
+  if (G.state === 'dribble' && G.cine && G.cine.opp !== p && holder && holder.team !== p.team) {
+    const inBox = Math.abs(ball.x - ownGx) < BOX.depth && Math.abs(ball.z) < BOX.half, dB = dist2D(p, ball);
+    if (inBox && dB < 10 && dB > 1.6) { const k = (dB - 1.6) / dB; return seek(p, p.x + (ball.x - p.x) * k, p.z + (ball.z - p.z) * k, CONFIG.GK_SPEED * 0.9); }
+    if (inBox && dB <= 1.6) return { vx: 0, vz: 0 };
+  }
   if (G.state === 'play' && holder && holder.team !== p.team) {
     const inBox = Math.abs(holder.x - ownGx) < BOX.depth && Math.abs(holder.z) < BOX.half;
     // SAÍDA NOS PÉS: atacante na área chegando devagar (andando, sem fôlego) ou colado
@@ -7909,6 +8065,9 @@ function gkThink(p, dt) {
     if (inBox && p.stun <= 0 && !(p.saidaCd > G.time)) {
       const dH = dist2D(p, holder), vH = Math.hypot(holder.vx, holder.vz);
       const lento = vH < 4.6 || holder.exhausted || (holder.isUser && !holder.running);
+      // (7.6.5) acabou de driblar alguém DENTRO DA ÁREA, perto dele: a bola ainda está longe do pé (o drible é largo) — ele sai nela
+      const posDrible = holder.fimDribleT && G.time - holder.fimDribleT < 1.3 && dH < 4.2;
+      if (posDrible) { iniciarSaidaNosPes(p, holder, dH < 2.6 ? 0.9 : 0.75); return { vx: p.diveVX, vz: p.diveVZ }; }
       if ((lento && dH < 3.4) || dH < 1.7) { iniciarSaidaNosPes(p, holder, lento ? 0.85 : 0.55); return { vx: p.diveVX, vz: p.diveVZ }; }
     }
     if (inBox && dist2D(p, holder) < 7) { tryTackle(p, holder, dt); return seek(p, holder.x, holder.z, CONFIG.GK_SPEED); }
@@ -8068,6 +8227,36 @@ function duplaDeZaga(team, holder) {
   if (atras.length < 2 || atras.some((q) => q.role !== 'DEF')) return null;
   atras.sort((a, b) => dist2D(a, holder) - dist2D(b, holder));
   return { sobe: atras[0], cobre: atras[1] };
+}
+// (7.6.5) A DIREÇÃO DA CONTENÇÃO: de quem conduz para onde ele quer chegar. Pelo meio é o nosso gol; aberto (perto da lateral e
+//   fora da área) é o CORREDOR: a linha de fundo na frente dele, só um pouco puxada para dentro. Quem marca fica no caminho pela
+//   lateral — antes ficava na linha atacante→gol (na diagonal, para o meio) e o corredor pela lateral ficava livre.
+function dirContencao(h, ownGx) {
+  const gx = ownGx - h.x, dGol = Math.abs(gx);
+  const aberto = clamp((Math.abs(h.z) - HALF_W * 0.42) / (HALF_W * 0.3), 0, 1) * clamp((dGol - BOX.depth * 0.5) / (BOX.depth * 0.8), 0, 1);
+  const gz = -h.z * (1 - 0.85 * aberto), l = Math.hypot(gx, gz) || 1;
+  return { x: gx / l, z: gz / l, gl: Math.hypot(gx, h.z) || 1, aberto };
+}
+// (7.6.5) O PISO DA DEFESA: até onde a linha de trás recua (distância do nosso gol). Com quem conduz fora da área, ninguém da defesa
+//   entra nela: recua de frente para ele, mas para na entrada da área (antes a linha ia recuando junto até a pequena área e só
+//   lá alguém saía no bote). Ele entrando na área, a defesa vai junto, até a pequena área.
+function pisoDefesa(team, h) {
+  const ownGx = (team === 0 ? -1 : 1) * HALF_L, dH = Math.abs(h.x - ownGx);
+  return Math.max(SMALL_BOX.depth + 0.5, Math.min(BOX.depth + 1, dH - 2.5));
+}
+function comPiso(team, h, x, z) {                     // x de um alvo da defesa, sem passar do piso (só na faixa da área)
+  if (!h || Math.abs(z) > BOX.half + 2.5) return x;
+  const ownGx = (team === 0 ? -1 : 1) * HALF_L, piso = pisoDefesa(team, h);
+  return Math.abs(x - ownGx) < piso ? ownGx - Math.sign(ownGx) * piso : x;
+}
+// (7.6.5) quem está na contenção/cobertura recua DE FRENTE para a bola (encolhido), em vez de virar de costas para correr
+const marcarRecuo = (p) => { p.recuoAte = G.time + 0.2; };
+// (7.6.5) recuando no ritmo de quem conduz: chegando no piso, não passa dele (tira a parte da velocidade que vai para o gol)
+function travaNoPiso(p, h, v) {
+  if (!h || Math.abs(p.z) > BOX.half + 2.5) return v;
+  const ownGx = -p.dir * HALF_L, piso = pisoDefesa(p.team, h), dP = Math.abs(p.x - ownGx), praGol = Math.sign(ownGx);
+  if (dP <= piso + 0.4 && v.vx * praGol > 0) v.vx *= clamp((dP - piso) / 0.4, 0, 1);
+  return v;
 }
 
 function tryTackle(def, holder, dt) {
@@ -8267,7 +8456,8 @@ function userDesired(u, dt) {
   const E = u.embalo;
   if (E) {
     E.t -= dt;
-    if (E.t <= 0 || inp.mag > 0.25 || G.possession !== u) u.embalo = null;
+    if (foraDoCampo({ x: u.x + E.x * 1.8, z: u.z + E.z * 1.8 }, 0.6)) { u.embalo = null; u.dash = 0; u.vx *= 0.3; u.vz *= 0.3; }   // (7.6.5) não leva você para fora nem para dentro do gol: para antes da linha
+    else if (E.t <= 0 || inp.mag > 0.25 || G.possession !== u) u.embalo = null;
     else {
       u.running = true;
       const s0 = (G.possession === u ? CONFIG.USER_RUN_BALL : CONFIG.USER_RUN) * Math.min(1, E.t / 0.4 + 0.3);   // no fim vai soltando
@@ -8640,7 +8830,8 @@ function updatePlayers(dt) {
       // De costas / de lado só em ajuste curto (até ~2,4 m/s) ou marcando de perto quem conduz (até 4,6 m/s).
       // Para ir mais longe ele VIRA e corre de frente.
       const h = G.possession, marcandoPerto = h && h.team !== p.team && dist2D(p, h) < 7;
-      const limite = marcandoPerto ? 4.6 : 2.4, desvio = Math.abs(wrapAngle(runAng - toBall));
+      const recuando = h && h.team !== p.team && p.recuoAte > G.time && dist2D(p, h) < 14;   // (7.6.5) contenção/cobertura: recua olhando para ele
+      const limite = recuando ? 99 : marcandoPerto ? 4.6 : 2.4, desvio = Math.abs(wrapAngle(runAng - toBall));
       let face = sp > limite && desvio > (marcandoPerto ? 1.6 : 1.1) ? runAng : toBall;
       if (p.colado) face = Math.atan2(p.colado.z - p.z, p.colado.x - p.x);   // colado: de frente para as costas dele, acompanhando
       p.angle = turnToward(p.angle, face, (p.colado ? 7 : 9) * dt);
@@ -9370,7 +9561,7 @@ function scoreGoal(team, tGol) {
     const passe = quem && G.toqueAnt && G.toqueAnt !== quem && G.toqueAnt.team === team && G.time - G.toqueAntT < 12 ? G.toqueAnt : null;
     const nomeDe = (p) => (p.voce ? CHAVE_VOCE : p.ficha || p.name);
     if (passe && passe.isUser) G.stats.assist++;
-    if (G.golsLog) G.golsLog.push({ time: team, autor: quem ? nomeDe(quem) : null, contra: !quem, assist: passe ? nomeDe(passe) : null, t: Math.round(G.time) });
+    if (G.golsLog) G.golsLog.push({ time: team, autor: quem ? nomeDe(quem) : null, contra: !quem, assist: passe ? nomeDe(passe) : null, t: Math.round(G.time), rel: relogioDecorrido() });
   }
   G.possession = null;
   G.lastConceded = team === 0 ? 1 : 0;
@@ -12864,10 +13055,25 @@ function tipoDeDrible(u, o, vel) {
   return vel < 1.5 ? 'pedalada' : 'frente';
 }
 
+// (7.6.5) A DIREÇÃO DO DRIBLE: a animação anda em linha reta uns 5–6 m na direção em que você corria; perto da lateral ou da linha
+//   de fundo ela levava você para fora (ou para dentro do gol). Agora, se o caminho sai do campo, a direção gira para dentro
+//   (o mínimo necessário, de 10° em 10°, até 90°), para o lado que tem mais campo.
+function direcaoDentroDoCampo(u, fx, fz) {
+  const ok = (ax, az) => [2, 4, 6.5].every((d) => !foraDoCampo({ x: u.x + ax * d, z: u.z + az * d }, 2.0));
+  if (ok(fx, fz)) return { fx, fz };
+  const a0 = Math.atan2(fz, fx), centro = Math.atan2(-u.z, -u.x);
+  const lado = Math.sign(wrapAngle(centro - a0)) || 1;              // gira primeiro para o lado do meio do campo
+  for (let k = 1; k <= 9; k++) for (const s of [lado, -lado]) {
+    const a = a0 + s * k * Math.PI / 18, ax = Math.cos(a), az = Math.sin(a);
+    if (ok(ax, az)) return { fx: ax, fz: az };
+  }
+  const a = a0 + lado * Math.PI / 2; return { fx: Math.cos(a), fz: Math.sin(a) };
+}
 function startDribble() {
   if (G.state !== 'play' || G.possession !== user) return;
   if (user.dribbleCd > 0 || G.dribbleWin <= 0 || !G.dribbleOpp) return;   // só no momento certo
-  const fx = Math.cos(user.angle), fz = Math.sin(user.angle);
+  let fx = Math.cos(user.angle), fz = Math.sin(user.angle);
+  ({ fx, fz } = direcaoDentroDoCampo(user, fx, fz));   // (7.6.5) a saída do drible não vai para fora nem para dentro do gol
   const opp = G.dribbleOpp;
   G.dribbleWin = 0;
   user.dribbleCd = CONFIG.DRIBBLE_COOLDOWN;
@@ -12966,8 +13172,10 @@ function finishDribbleMinigame(T) {
     C.fallSide = Math.random() < 0.5 ? 1 : -1;
     C.perfect = T.perfect === T.count;
     // Variações: de frente (fora o goleiro) às vezes sai elástico, caneta ou chapéu; com ele do lado, roleta; parado, elástico.
+    // (7.6.5) com o goleiro adversário perto (até 8 m), nada de caneta, chapéu ou carretel: a bola passaria por ele (ou por cima)
+    const gkPerto = players.some((g) => g.role === 'GK' && g.team !== u.team && !g.out && dist2D(g, u) < 8);
     if (!C.noGoleiro) {
-      const r = Math.random();
+      const r = gkPerto ? 0.99 : Math.random();
       const sitTipo = escolherDribleSit(C, u, o);    // (7.5.11) a situação pede um drible próprio (dois marcando, pivô, lateral, escanteio...)
       if (sitTipo) C.tipo = sitTipo;
       else if (C.tipo === 'frente') C.tipo = r < 0.16 ? 'elastico' : r < 0.28 ? 'caneta' : r < 0.42 ? 'chapeu' : r < 0.56 ? 'tesoura' : r < 0.68 ? 'pisada' : 'frente';
@@ -12983,7 +13191,7 @@ function finishDribbleMinigame(T) {
     }
     // De vez em quando o drible sai de CARRETEL (carretilha): você levanta a bola com o
     // calcanhar por trás, ela passa por cima da sua cabeça e da do marcador, e você busca na frente.
-    C.carretel = !C.noGoleiro && Math.random() < 0.4;
+    C.carretel = !C.noGoleiro && !gkPerto && Math.random() < 0.4;
     if (C.carretel) {
       C.p1 = { x: u.x + C.fx * along * 0.5 + C.px * lat * 1.5, z: u.z + C.fz * along * 0.5 + C.pz * lat * 1.5 };   // passa longe dele (ombro não encosta)
       C.p2 = { x: u.x + C.fx * along, z: u.z + C.fz * along };
@@ -12999,11 +13207,26 @@ function finishDribbleMinigame(T) {
   }
 }
 
+// (7.6.5) o passo do drible (animação roteirizada): não sai do campo nem entra no gol (fica a 0,6 m da linha) e não atravessa o
+//   goleiro adversário (para a 1,3 m dele — ele está ali para tomar a bola). A bola idem: fica dentro do campo.
+function passoDoDrible(u, x, z, opp) {
+  const C = G.cine;
+  if (C && C.travadoGK) return { x: u.x, z: u.z };            // chegou no goleiro: fica ali (ele vem na bola)
+  let nx = clamp(x, -HALF_L + 0.6, HALF_L - 0.6), nz = clamp(z, -HALF_W + 0.6, HALF_W - 0.6);
+  for (const g of players) {
+    if (g.role !== 'GK' || g.team === u.team || g === opp || g.out) continue;
+    const d1 = Math.hypot(nx - g.x, nz - g.z);
+    if (d1 < 1.7 && d1 < Math.hypot(u.x - g.x, u.z - g.z)) { nx = u.x; nz = u.z; if (C) C.travadoGK = true; }
+  }
+  return { x: nx, z: nz };
+}
 function updateCine(dt) {
   const C = G.cine;
   if (!C) return;
   const u = user, o = C.opp;
   C.t += dt;
+  if (C.phase === 'success') { ball.x = clamp(ball.x, -HALF_L + 0.4, HALF_L - 0.4); ball.z = clamp(ball.z, -HALF_W + 0.4, HALF_W - 0.4); }   // (7.6.5) a bola do drible também não sai
+  if (C.travadoGK) { ball.x = u.x + Math.cos(u.angle) * 0.6; ball.z = u.z + Math.sin(u.angle) * 0.6; ball.y = CONFIG.BALL_R; ball.vx = ball.vz = ball.vy = 0; }   // (7.6.5) e a bola fica no pé (não passa pelo goleiro)
   if (C.phase === 'approach') {
     // Você segue na sua direção (sem encostar no marcador).
     const nx = u.x + C.fx * C.speed * dt, nz = u.z + C.fz * C.speed * dt;
@@ -13022,7 +13245,7 @@ function updateCine(dt) {
     const k = Math.min(1, C.t / 0.95), e = smooth(k);
     const pt = bezier(C.p0, C.p1, C.p2, e), pt2 = bezier(C.p0, C.p1, C.p2, Math.min(1, e + 0.02));
     u.vx = (pt2.x - pt.x) * 300; u.vz = (pt2.z - pt.z) * 300;
-    u.x = pt.x; u.z = pt.z;
+    { const q = passoDoDrible(u, pt.x, pt.z, o); if (q.x !== pt.x || q.z !== pt.z) u.vx = u.vz = 0; u.x = q.x; u.z = q.z; }   // (7.6.5)
     if (Math.hypot(u.vx, u.vz) > 0.1) u.angle = Math.atan2(u.vz, u.vx);
     u.anim += 7 * 2.6 * dt;
     const b = bezier(C.b0, C.b1, C.b2, Math.min(1, e * 1.05 + 0.03));
@@ -13097,7 +13320,7 @@ function atualizarCarretel(C, dt) {
     pt = { x: lerp(C.aoLado.x, C.pegaB.x, ek), z: lerp(C.aoLado.z, C.pegaB.z, ek) }; pt2 = { x: lerp(C.aoLado.x, C.pegaB.x, Math.min(1, ek + 0.05)), z: lerp(C.aoLado.z, C.pegaB.z, Math.min(1, ek + 0.05)) };
   }
   u.vx = (pt2.x - pt.x) * 260; u.vz = (pt2.z - pt.z) * 260;
-  u.x = pt.x; u.z = pt.z;
+  { const q = passoDoDrible(u, pt.x, pt.z, C.opp); u.x = q.x; u.z = q.z; }   // (7.6.5) sem sair do campo / entrar no gol
   if (k > 0.33 && k < 0.86 && Math.hypot(u.vx, u.vz) > 0.1) u.angle = turnToward(u.angle, Math.atan2(u.vz, u.vx), 10 * dt);
   else if (k >= 0.86) u.angle = turnToward(u.angle, Math.atan2(f.z, f.x), 10 * dt);
   u.anim += (k > 0.3 ? 7 : 0.5) * 2.6 * dt;
@@ -13383,6 +13606,7 @@ function atualizarDribleNovo(C, dt) {
   const u = user, o = C.opp, k = Math.min(1, C.t / C.dur);
   const P = u.driblePose; if (P) P.t = C.t;
   const mover = (x, z, v) => {                     // você vai para (x, z) nesse quadro
+    ({ x, z } = passoDoDrible(u, x, z, C.opp));       // (7.6.5) sem sair do campo, entrar no gol ou atravessar o goleiro
     const vx = (x - u.x) / Math.max(dt, 1e-4), vz = (z - u.z) / Math.max(dt, 1e-4);
     u.vx = vx; u.vz = vz; u.x = x; u.z = z; u.anim += (v || Math.hypot(vx, vz)) * 2.6 * dt;
   };
@@ -13742,6 +13966,7 @@ function endCine(success) {
     // continua CORRENDO na direção do drible (você estava tocando nos alvos, não no
     // joystick) até mexer no joystick, por no máximo 2,5 s. E o drible certo devolve 2 s de fôlego.
     user.embalo = { t: 2.5, x: ex / el, z: ez / el };
+    user.fimDribleT = G.time;                       // (7.6.5) o goleiro fica atento: drible na cara dele = ele vai na bola
     user.stamina = Math.min(1, user.stamina + 2 / CONFIG.STAMINA_RUN_TIME);
     if (user.exhausted && user.stamina >= CONFIG.STAMINA_MIN_TO_RUN) user.exhausted = false;
     Som.drible();
@@ -14592,7 +14817,7 @@ function computeMode() {
   if (G.state !== 'play' || G.espectador) return 'none';
   if (G.possession === user) return user.throwIn ? 'throw' : G.kickoffPending ? 'kickoff' : user.role === 'GK' && !user.comPe ? 'goleiro' : (G.sp ? 'setpiece' : 'ball');   // (7.4.16) goleiro: PASSAR / LANÇAR; (7.4.17) com a bola no pé: como jogador de linha
   if (G.possession && G.possession.team === 0) return 'team';
-  if (G.possession && G.possession.team === 1) return 'defend';
+  if (G.possession && G.possession.team === 1) return goleiroComBolaNaMao(G.possession) ? 'none' : 'defend';   // (7.6.5) goleiro com a bola na mão: sem DESARMAR/CARRINHO (não dá para tomar dele)
   if (bolaVindoPraVoce()) return pertoParaChuteDePrimeira() ? 'primeiraC' : 'primeira';   // (7.4.13) dá para bater de primeira
   return 'loose';
 }
@@ -14852,6 +15077,20 @@ function decorridoPartida() {
   const n = nTempos(), d = duracaoTempo();
   const f = G.acrescimoDado ? 1 : 1 - clamp(G.clock, 0, d) / d;          // nos acréscimos, o tempo já acabou
   return clamp(((G.tempo || 1) - 1) / n + f / n, 0, 1);
+}
+// (7.6.5) o relógio da partida no momento (contando para cima, os dois tempos somados): { s: segundos desde o apito inicial até o fim
+//   do tempo normal deste tempo, ac: segundos de acréscimo (0 fora dos acréscimos) }. Vai na súmula (golsLog[].rel) para os gols
+//   aparecerem no minuto e segundo de verdade (antes: o tempo de jogo inteiro, com as cenas, esticado para 90 minutos: 316').
+function relogioDecorrido() {
+  const d = duracaoTempo(), base = ((G.tempo || 1) - 1) * d;
+  if (G.acrescimoDado) return { s: Math.round(base + d), ac: Math.max(0, Math.round((G.acrescimo || 0) - Math.max(0, G.clock))) };
+  return { s: Math.max(0, Math.round(base + d - clamp(G.clock, 0, d))), ac: 0 };
+}
+// '3:27' ou '2:30+0:12' (acréscimo); null quando o gol não tem o relógio (súmula antiga)
+function relogioDoGol(x) {
+  const r = x && x.rel; if (!r || typeof r.s !== 'number') return null;
+  const f = (n) => Math.floor(n / 60) + ':' + String(Math.round(n) % 60).padStart(2, '0');
+  return f(r.s) + (r.ac > 0 ? '+' + f(r.ac) : '');
 }
 function fimDoTempo() {
   if ((G.tempo || 1) < nTempos()) intervalo(); else apitoFinal();
@@ -18268,6 +18507,14 @@ const particulas = (() => {
   let obj = null, tipo = 'seco';
   const U = { uTempo: { value: 0 }, uCentro: { value: new THREE.Vector3() }, uCaixa: { value: CAIXA0 }, uAlt: { value: ALT0 }, uVel: { value: 18 }, uVento: { value: 0 }, uInt: { value: 1 } };
   const dir = new THREE.Vector3();
+  // o menor degrau que cobre o valor pedido; só desce quando o pedido fica bem abaixo do degrau de baixo (folga de 25%)
+  function degrau(atual, quer, D) {
+    const alvo = D.find((v) => v >= quer) || D[D.length - 1];
+    if (alvo > atual) return alvo;
+    const i = D.indexOf(atual);
+    if (i > 0 && quer < D[i - 1] * 0.75) return alvo;
+    return D.includes(atual) ? atual : alvo;
+  }
   function criar(t) {
     if (obj) { scene.remove(obj); obj.geometry.dispose(); obj.material.dispose(); obj = null; }
     tipo = t;
@@ -18319,8 +18566,12 @@ const particulas = (() => {
       const hz = Math.hypot(dir.x, dir.z) || 1;
       U.uCentro.value.set(c.x + dir.x / hz * d * hz, 0, c.z + dir.z / hz * d * hz);
       const dist = Math.hypot(U.uCentro.value.x - c.x, U.uCentro.value.z - c.z);
-      U.uCaixa.value = Math.max(CAIXA0, Math.min(150, dist * 0.8 + 25));
-      U.uAlt.value = Math.max(ALT0, Math.min(90, c.y + 8));
+      // (7.6.5) A ALTURA E A CAIXA SÓ MUDAM EM DEGRAUS (e com folga para voltar). A queda é mod(altura base − tempo × velocidade,
+      //   altura): com o tempo grande, qualquer centímetro a mais na altura embaralhava todas as gotas. A câmera de TV (e a do
+      //   society/futsal) sobe e desce o tempo todo, a altura mudava a cada quadro e a chuva parecia voltar para cima e acelerar.
+      const alt = Math.max(ALT0, Math.min(90, c.y + 8)), cx = Math.max(CAIXA0, Math.min(150, dist * 0.8 + 25));
+      U.uAlt.value = degrau(U.uAlt.value, alt, [22, 32, 46, 64, 90]);
+      U.uCaixa.value = degrau(U.uCaixa.value, cx, [60, 85, 115, 150]);
     },
   };
 })();
@@ -20382,9 +20633,12 @@ function bandeiraUrl(id) {
     }
     for (let x = 0; x < W; x++) { const dx = x + 0.5 - W / 2, y = Math.round(H / 2 - 1 - dx * 0.16); if (dx * dx < 29) { R(x, y, 1, 1, '#F4F4EC'); R(x, y + 1, 1, 1, '#F4F4EC'); } }
   } else if (id === 'us') {
-    for (let i = 0; i < 13; i++) R(0, Math.round(i * H / 13), W, Math.max(1, Math.round((i + 1) * H / 13) - Math.round(i * H / 13)), i % 2 ? '#F4F4EC' : '#C8202A');
-    R(0, 0, 14, 11, '#23336E');
-    for (let y = 1; y < 10; y += 2) for (let x = (y % 4 === 1 ? 1 : 2); x < 13; x += 2) R(x, y, 1, 1, '#F4F4EC');
+    // (7.6.5) 13 listras não cabem em 21 pixels (umas ficavam com 1 px e outras com 2: uma branca parecia mais grossa). Esta é
+    //   desenhada 10x maior (mesma proporção 32:21): cada listra fica com 16 ou 17 px, iguais na tela; as estrelas em blocos de pixel.
+    const K = 10; c.width = W * K; c.height = H * K; const HH = H * K, Y = (i) => Math.round(i * HH / 13);
+    for (let i = 0; i < 13; i++) R(0, Y(i), W * K, Y(i + 1) - Y(i), i % 2 ? '#F4F4EC' : '#C8202A');
+    const cw = 14 * K, ch = Y(7); R(0, 0, cw, ch, '#23336E');                    // o azul cobre as 7 primeiras listras, como na de verdade
+    for (let r = 0; r < 5; r++) { const n = r % 2 ? 5 : 6; for (let k = 0; k < n; k++) { const x = Math.round((k + (r % 2 ? 1.5 : 1)) * cw / 7), y = Math.round((r + 1) * ch / 6); R(x - 5, y - 5, 10, 10, '#F4F4EC'); } }
   } else if (id === 'fr') {
     R(0, 0, 11, H, '#2338A0'); R(11, 0, 10, H, '#F4F4EC'); R(21, 0, 11, H, '#D5222E');
   } else if (id === 'it') {

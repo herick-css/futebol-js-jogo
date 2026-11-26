@@ -140,6 +140,15 @@
 #livre .lvChips.lvMuitos .pxBtn { font-size: 11px; padding: 4px 7px; }
 #livre .lvChips .pxBtn { width: auto; min-width: 0; min-height: 34px; font-size: 11.5px; padding: 2px 8px; letter-spacing: .04em; text-transform: none; flex: 0 0 auto; }
 #livre .lvMsg { font: 600 13px/1.4 var(--font-body); margin: 4px 0 10px; }
+#livre .lvAnuncio { width: min(720px, 100%); text-align: center; display: flex; flex-direction: column; align-items: center; }
+#livre .lvAnuncio .lvTit { margin: 0 0 2px; }
+#livre .lvAnuncio .lvAnHerick { display: flex; justify-content: center; }
+#livre .lvAnuncio .lvAnCv { width: 170px; height: 170px; display: block; }
+#livre .lvAnuncio .lvMsg { max-width: 600px; margin: 2px auto 10px; }
+#livre .lvAnBtns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; }
+#livre .lvAnBtns .lvTipo { flex: 0 1 260px; min-height: 76px; }
+#livre .lvAnBtns .lvTipo b { font-size: 13px; line-height: 1.25; }
+@media (max-height: 460px) { #livre .lvAnuncio .lvAnCv { width: 130px; height: 130px; } #livre .lvAnBtns .lvTipo { min-height: 60px; } }
 #livre .lvLista { margin: 0; padding: 0; list-style: none; font: 600 12px/1.35 var(--font-body); }
 #livre .lvLista li { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-top: 1px solid rgba(255,240,200,.12); }
 #livre .lvLista li.nos { color: var(--mx-laranja); }
@@ -1165,8 +1174,8 @@
   // ---------------------------------------------------------------------------------------- (7.6.0) OS ANÚNCIOS DA PARTIDA LIVRE
   //   Antes do primeiro jogo, o Herick (o dono do cinema da cidadezinha, que fez o jogo) explica e dá duas opções, uma vez por
   //   sessão (sessionStorage: some quando o jogo é recarregado pelo jogador; o recarregar automático ao sair da partida livre guarda,
-  //   ver jogo.js): 'fim' = um anúncio de 5 s ao final de cada partida · 'unico' = um anúncio de 1 min agora e nenhum outro.
-  const AN_CHAVE = 'futebolJs.anuncioLivre', AN_FIM_S = 5, AN_UNICO_S = 60;
+  //   ver jogo.js): 'fim' = um anúncio de 15 s (era 5 s até a 7.6.4) ao final de cada partida · 'unico' = um anúncio de 1 min agora e nenhum outro.
+  const AN_CHAVE = 'futebolJs.anuncioLivre', AN_FIM_S = 15, AN_UNICO_S = 60;
   const anLer = () => { try { return sessionStorage.getItem(AN_CHAVE); } catch (e) { return anMem; } };
   let anMem = null;
   function anGravar(v) { anMem = v; try { sessionStorage.setItem(AN_CHAVE, v); } catch (e) { /* sem sessionStorage: fica na memória */ } }
@@ -1185,14 +1194,46 @@
     cv.style.cssText = 'width:96px;height:96px;image-rendering:pixelated;display:block;margin:0 auto 6px;border:3px solid #2a1206;';
     return cv;
   }
+  // (7.6.5) o Herick em 3D (o mesmo modelo do cinema, cinema.js), de frente e acenando. Sem WebGL ou sem o cinema.js: o retrato em pixel art.
+  async function herickAcenando(lugar) {
+    let C = null; try { C = await Fases.carregar('cinema'); } catch (e) { C = null; }
+    if (!C || typeof C.modeloHerick !== 'function' || !lugar.isConnected) throw new Error('sem o modelo do Herick');
+    const canvas = document.createElement('canvas'); canvas.className = 'lvAnCv'; lugar.appendChild(canvas);
+    let R = null, raf = 0, vivo = true, m = null;
+    const parar = () => { vivo = false; cancelAnimationFrame(raf); try { if (m) m.descartar(); } catch (e) { /* nada */ } try { if (R) { R.dispose(); R.forceContextLoss(); } } catch (e) { /* nada */ } };
+    try {
+      const w = Math.max(120, canvas.clientWidth || 170), h = Math.max(120, canvas.clientHeight || 170);
+      R = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false }); R.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); R.setSize(w, h, false);
+      const cena = new THREE.Scene(); cena.add(new THREE.HemisphereLight(0xfff4e0, 0x3a2c1e, 0.62)); const sol = new THREE.DirectionalLight(0xffffff, 0.5); sol.position.set(1.2, 3, 5); cena.add(sol);
+      const cam = new THREE.PerspectiveCamera(26, w / h, 0.1, 40); cam.position.set(0, 1.5, 4.5); cam.lookAt(0, 1.22, 0);
+      m = C.modeloHerick(); m.raiz.rotation.y = -Math.PI / 2; cena.add(m.raiz);     // o modelo olha para +x; virado, olha para a câmera
+      const t0 = performance.now();
+      const quadro = () => {
+        if (!vivo) return;
+        if (!canvas.isConnected) { parar(); return; }
+        const t = (performance.now() - t0) / 1000;
+        m.corpo.position.y = Math.sin(t * 2.2) * 0.012;
+        m.bracoD.rotation.set(0, 0, 2.55 + Math.sin(t * 7.5) * 0.38);     // o braço direito lá em cima, balançando: tchau!
+        m.bracoE.rotation.set(Math.sin(t * 1.3) * 0.03, 0, -0.06);
+        m.cabeca.rotation.set(0, 0, Math.sin(t * 2.6) * 0.07);
+        m.corpo.rotation.z = Math.sin(t * 7.5) * 0.02;
+        R.render(cena, cam); raf = requestAnimationFrame(quadro);
+      };
+      quadro();
+    } catch (e) { parar(); canvas.remove(); throw e; }
+    return { parar };
+  }
   async function telaAnuncioHerick() {
     if (anLer()) return;
-    const el = tela('<div class="lvCaixa">' + topo(T('Herick'), false) + '<div class="lvAnHerick"></div>' +
-      '<p class="lvMsg">' + escH(T('Esse jogo é totalmente grátis! Mas eu preciso de formas de ganhar dinheiro com ele... Para não ser chato e ter anúncio toda hora, quero te dar uma opção:')) + '</p><div class="lvGrade">' +
+    const el = tela('<div class="lvCaixa lvAnuncio">' + '<div class="lvTit">' + escH(T('Herick')) + '</div><div class="lvAnHerick"></div>' +
+      '<p class="lvMsg">' + escH(T('Esse jogo é totalmente grátis! Mas eu preciso de formas de ganhar dinheiro com ele... Para não ser chato e ter anúncio toda hora, quero te dar uma opção:')) + '</p><div class="lvAnBtns">' +
       '<button type="button" class="pxBtn lvTipo" data-a="fim"><b>' + escH(Tf('Ver um anúncio de {0} s ao final de cada partida', AN_FIM_S)) + '</b></button>' +
       '<button type="button" class="pxBtn lvTipo" data-a="unico"><b>' + escH(T('Ver um anúncio de 1 min uma única vez enquanto o jogo estiver aberto')) + '</b></button></div></div>');
-    const lugar = el.querySelector('.lvAnHerick'); if (lugar) lugar.appendChild(retratoHerick());
+    const lugar = el.querySelector('.lvAnHerick');
+    let anim = null;
+    if (lugar) herickAcenando(lugar).then((x) => { anim = x; }, (e) => { console.info('[Livre] Herick 3D:', e && e.message); if (lugar.isConnected && !lugar.firstChild) lugar.appendChild(retratoHerick()); });
     const a = (await escolha(el)).a === 'unico' ? 'unico' : 'fim';
+    if (anim) anim.parar();
     anGravar(a);
     if (a === 'unico') {
       let ok = false;
@@ -1219,7 +1260,7 @@
     } catch (e) { console.error('[Livre] partida:', e); try { Historia.abortar(); } catch (e2) { /* nada */ } }
     bola(false);
     try { Historia.descartarResultado(); } catch (e) { /* nada */ }   // as fichas e o histórico daqui são do campeonato (não mexem nas outras partidas)
-    await anuncioFimPartida(r);                                         // (7.6.0) quem escolheu o anúncio de 5 s ao final de cada partida
+    await anuncioFimPartida(r);                                         // (7.6.0) quem escolheu o anúncio de 15 s ao final de cada partida
     await preto(true, 500);
     return r;
   }
@@ -1923,7 +1964,7 @@
   function resumoDoJogo(J, r) {
     const out = { gols: [[], []], cartoes: [[], []] };
     if (!r) return out;
-    for (const x of r.golsLog || []) out.gols[x.time].push((x.autor === VOCE ? T('Você') : x.autor || T('Gol contra')) + (x.t != null ? ' ' + Math.max(1, Math.round(x.t / Math.max(1, Number(J.cfg.dur) || 300) * 90)) + '\'' : ''));
+    for (const x of r.golsLog || []) out.gols[x.time].push((x.autor === VOCE ? T('Você') : x.autor || T('Gol contra')) + (typeof relogioDoGol === 'function' && relogioDoGol(x) ? ' ' + relogioDoGol(x) : ''));
     for (const p of r.jogaram || []) { if (p.vermelho) out.cartoes[p.time].push('🟥 ' + (p.nome === VOCE ? T('Você') : p.nome)); else if (p.amarelo) out.cartoes[p.time].push('🟨 ' + (p.nome === VOCE ? T('Você') : p.nome)); }
     return out;
   }

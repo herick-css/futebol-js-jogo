@@ -192,6 +192,21 @@ ARQUIVOS
                           devagar) e soltar o dedo não confirma: o botão CRUZAR / LANÇAR / COBRAR confirma (Enter, CHUTAR ou PASSAR no teclado;
                           A/X no controle). No lateral, o botão AÉREO (ou CRUZAR/H no teclado, B no controle): com o pé, bate por baixo da bola
                           (bola alta, ~2,5 m em vez de rasteira); com as mãos, o arremesso sobe bem mais (~5 m em vez de ~2,3 m).
+                          (7.6.5) DEFESA DA IA: a linha de trás recua DE FRENTE para quem conduz, mas não entra na grande área antes dele
+                          (pisoDefesa/comPiso); um faz a contenção (recua no ritmo dele e dá o bote de perto: o bote só sai a até ~3,5 m e de
+                          frente) e o outro fica na cobertura, 4–7 m atrás, na diagonal (coberturaZaga); chegando no piso, é a hora do bote.
+                          DOIS ATACANTES: o segundo, perto do nosso gol e sem ninguém do lado do gol dele, é marcado pelo da cobertura ou da linha
+                          de trás (quem só corre atrás dele não conta); quem já marca o outro não larga para dar o bote; no campo pequeno o fixo
+                          vai nele. PELA LATERAL: a contenção é no CORREDOR (dirContencao), o corte mira o ponto onde dá para chegar antes dele e
+                          a cobertura é de quem está do nosso lado do gol. BOLA SOLTA: quem chega primeiro (quemChegaNaBola, com a física da
+                          bola) é o dono da jogada: o time dele sobe, o outro recua, armados em volta do ponto do domínio.
+                          DRIBLE: a saída gira para dentro quando o caminho sairia do campo ou entraria no gol (direcaoDentroDoCampo); a animação e
+                          a bola não passam da linha nem atravessam o goleiro (passoDoDrible); o embalo para antes da linha; com o goleiro a até
+                          8 m, sem caneta/chapéu/carretel. GOLEIRO: no drible dentro da área vem fechando na bola e, no fim do drible perto dele,
+                          sai nos pés (75–90%); abafando indo para trás, segura ali (não entra no gol com a bola); com a bola na mão dele, sem os
+                          botões DESARMAR/CARRINHO. CHUVA: a altura e a caixa das gotas mudam em degraus (antes acompanhavam a câmera de TV e
+                          embaralhavam as gotas: pareciam voltar para cima e acelerar). SÚMULA: o gol guarda o relógio (golsLog[].rel) e aparece
+                          em minuto:segundo (relogioDoGol: '2:30+0:12' nos acréscimos). Bandeira dos EUA da tela de idioma com as 13 listras iguais.
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
                           (7.6.3) No prédio: fome, fedor e a hora no canto da tela (com os ícones da cidade); dormir leva às 6h do dia seguinte.
@@ -340,7 +355,9 @@ ARQUIVOS
                           (7.5.2) Mais os 40 times da Espanha e da Inglaterra (listras, mangas de outra cor, faixas, laterais, texturas)
   livre.js .............. a partida livre (7.4.1; baixada pelo botão "Partida livre" do menu, junto com o serieb.js e o
                           (7.6.0) Antes do primeiro jogo da sessão, a tela do Herick: anúncio de 5 s no fim de cada partida OU um de 1 min uma
-                          vez só (até recarregar o jogo).
+                          vez só (até recarregar o jogo). (7.6.5) Agora 15 s no fim de cada partida; a tela é centralizada (título, o Herick
+                          em 3D acenando, o texto e os dois botões) — o modelo vem do cinema.js (sem ele, o retrato em pixel art). Os gols no
+                          resumo da partida aparecem em minuto:segundo do relógio do jogo (antes o tempo inteiro esticado para 90': 316').
 
                           varzea.js): campeonato (Série A ou B, rápido de 19 ou padrão de 38 rodadas), copa (Copa do Brasil
                           com 32 times, mata-mata e a final num estádio grande que não seja casa dos finalistas: Anel,
