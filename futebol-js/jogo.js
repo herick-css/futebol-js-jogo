@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.6';
+const VERSAO_JOGO = '7.6.7';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -5426,7 +5426,9 @@ function calcOffside(from) {
   return set.size ? { team: T, set } : null;
 }
 
-function nomeDe(p) { return p.voce ? 'você' : p.name; }
+// (7.6.7) controlando o time inteiro com um personagem: ele aparece pelo nome (nunca "Você")
+const rotuloVoce = () => (PARTIDA && PARTIDA.controleTime && PARTIDA.usuario && PARTIDA.usuario.nome) || 'Você';
+function nomeDe(p) { return p.voce ? (PARTIDA && PARTIDA.controleTime && PARTIDA.usuario && PARTIDA.usuario.nome ? PARTIDA.usuario.nome : 'você') : p.name; }   // (7.6.7) time inteiro: o nome do personagem
 
 function callOffside(p) {
   const r0 = G.offside && G.offside.reg;
@@ -5763,7 +5765,11 @@ function trocarCamisa(p, tirar) {
     const at = ms.geometry && ms.geometry.attributes.color; if (!at) continue;
     if (!C.orig.has(at)) C.orig.set(at, at.array.slice());
     const O = C.orig.get(at), arr = at.array;
-    if (tirar) { for (let i = 0; i < arr.length; i += 3) if (C.alvos.some((c) => Math.abs(O[i] - c[0]) < 0.02 && Math.abs(O[i + 1] - c[1]) < 0.02 && Math.abs(O[i + 2] - c[2]) < 0.02)) { arr[i] = C.pele[0]; arr[i + 1] = C.pele[1]; arr[i + 2] = C.pele[2]; } }
+    // o calção fica: muitos uniformes têm calção da mesma cor da camisa (ou do desenho dela) e antes ele virava pele junto.
+    //   No tronco, os vértices do calção são os da caixa de 0,34 × 0,26 × 0,6 (meia-largura 0,17 e meia-profundidade 0,30, até y 0,93)
+    const pos = ms.geometry.attributes.position, ehTronco = ms === A.troncoInteiro || ms === A.troncoSemCabeca;
+    const doCalcao = (v) => ehTronco && pos.getY(v) < 0.935 && (Math.abs(Math.abs(pos.getX(v)) - 0.17) < 0.004 || Math.abs(Math.abs(pos.getZ(v)) - 0.3) < 0.004);
+    if (tirar) { for (let i = 0; i < arr.length; i += 3) if (!doCalcao(i / 3) && C.alvos.some((c) => Math.abs(O[i] - c[0]) < 0.02 && Math.abs(O[i + 1] - c[1]) < 0.02 && Math.abs(O[i + 2] - c[2]) < 0.02)) { arr[i] = C.pele[0]; arr[i + 1] = C.pele[1]; arr[i + 2] = C.pele[2]; } }
     else arr.set(O);
     at.needsUpdate = true;
   }
@@ -5833,7 +5839,7 @@ function atualizarCartaoFesta(dt) {
     CF.mostrado = true; CF.tm = CF.t;
     CF.expulsar = !!CF.p.yellow; CF.p.yellow = true;
     const ref = officials.find((o) => o.role === 'REF');
-    if (ref && festa) { ref.refPose = 'cartao'; ref.refPoseT = 1.8; ref.cartao.material.color.setHex(CF.expulsar ? 0xe02020 : 0xffd400); }
+    if (ref && festa) { ref.refPose = 'cartao'; ref.refPoseT = CF.expulsar ? 2.6 : 1.8; ref.cartao.material.color.setHex(0xffd400); }   // o segundo: mostra o amarelo e depois o vermelho
     if (CF.p.isUser) G.stats.cartoes += CF.expulsar ? 'V' : 'A';
     showToast(T(CF.expulsar ? 'Segundo amarelo: vermelho para' : 'Cartão amarelo para') + ' ' + nomeDe(CF.p) + ' (' + T(CF.motivo === 'torcida' ? 'comemorou na torcida' : 'tirou a camisa') + ')', CF.p.team === 0 ? 'bad' : 'good');
   };
@@ -5846,6 +5852,12 @@ function atualizarCartaoFesta(dt) {
   const ref = officials.find((o) => o.role === 'REF');
   if (!CF.mostrado && CF.p.celeb == null && ((ref && Math.hypot(ref.x - CF.p.x, ref.z - CF.p.z) < 2.6) || CF.t > 8)) mostrar();   // espera o juiz chegar (até ~8 s)
   if (CF.mostrado && !CF.expulsar && CF.t - CF.tm > 1.9) G.cartaoFesta = null;   // o juiz volta para o lugar dele
+  // (7.6.7) JÁ TINHA AMARELO: o juiz mostra o amarelo, troca pelo vermelho e ele sai NA HORA (antes só saía no recomeço, depois da
+  //   cena do gol e no meio do replay, e parecia que o vermelho não tinha vindo)
+  if (CF.mostrado && CF.expulsar) {
+    if (ref && CF.t - CF.tm > 0.8) ref.cartao.material.color.setHex(0xe02020);
+    if (CF.t - CF.tm > 2.4) { G.cartaoFesta = null; if (!CF.p.out) { CF.p.celeb = null; expulsar(CF.p); } }
+  }
 }
 
 Object.assign(CELEBRACOES.giro, { voo: [[0.62, 1.15]] });
@@ -16035,7 +16047,7 @@ function estadoDoIntervalo() {
   return {
     v: 1, placar: G.score.slice(), golsLog: (G.golsLog || []).slice(), stats: Object.assign({}, G.stats),
     trocas: G.trocas.map((t) => Object.assign({}, t)),
-    jogadores: P.participantes.map((p) => ({ team: p.team, k: chaveJog(p), nome: p.voce ? 'Você' : p.name, am: !!p.yellow, vm: !!p.red, faltas: p.fouls | 0, folego: p.folego ?? 1, lesao: p.lesao || null })),
+    jogadores: P.participantes.map((p) => ({ team: p.team, k: chaveJog(p), nome: p.voce ? rotuloVoce() : p.name, am: !!p.yellow, vm: !!p.red, faltas: p.fouls | 0, folego: p.folego ?? 1, lesao: p.lesao || null })),
     tat: P.tat ? JSON.parse(JSON.stringify(P.tat)) : null, taticaManual: G.taticaManual || null,
   };
 }
@@ -16055,7 +16067,7 @@ function retomarNoIntervalo(S) {
   if (!S || S.v !== 1) return;
   const P = PARTIDA;
   for (const t of S.trocas || []) {
-    const sai = TEAMS[t.team].find((p) => !p.out && (p.voce ? 'Você' : p.name) === t.sai);
+    const sai = TEAMS[t.team].find((p) => !p.out && (p.voce ? rotuloVoce() : p.name) === t.sai);
     const R = P.reservas[t.team], i = R.findIndex((j) => j.nome === t.entra);
     if (!sai || i < 0 || !podeTrocar(t.team)) continue;
     R.unshift(R.splice(i, 1)[0]);
@@ -18520,7 +18532,7 @@ const CenaPosGol = (() => {
 //   Só roda enquanto grava (nada no jogo normal).
 // =====================================================================
 const ReplayVideo = (() => {
-  let btn = null, rec = null, pedacos = [], cv = null, g = null, fim = 0, aviso = null, tipo = '';
+  let btn = null, rec = null, pedacos = [], cv = null, g = null, fim = 0, ini0 = 0, aviso = null, tipo = '';
   const pode = () => typeof MediaRecorder !== 'undefined' && !!HTMLCanvasElement.prototype.captureStream;
   function css() {
     if (document.getElementById('replayVideoCss')) return;
@@ -18528,14 +18540,17 @@ const ReplayVideo = (() => {
     st.textContent = '#salvarReplay{pointer-events:auto;position:fixed;z-index:4;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(13 * var(--avh,1vh) + 10px);background:var(--panel);border:2px solid var(--flood);padding:8px 14px;font-family:var(--font-display);font-size:11px;color:#fff}'
       + '#salvarReplay.rec{border-color:var(--bad);color:var(--bad)}'
       + '#replayAviso{position:fixed;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 40px));background:var(--panel-solid);border:3px solid var(--chalk);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:16px;display:flex;flex-direction:column;gap:12px;font-size:14px;text-align:center}'
-      + '#replayAviso .btnRow{justify-content:center}';
+      + '#replayAviso .btnRow{justify-content:center}'
+      + '#replayPronto{position:fixed;z-index:30;left:50%;top:50%;transform:translate(-50%,-50%);width:min(440px,calc(100% - 40px));background:var(--panel-solid);border:3px solid var(--chalk);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:16px;display:flex;flex-direction:column;gap:12px;font-size:14px;text-align:center;pointer-events:auto}'
+      + '#replayPronto .btnRow{justify-content:center;flex-wrap:wrap}';
     document.head.appendChild(st);
   }
   function botao(on) {
     css();
     if (!btn) {
       btn = document.createElement('button'); btn.type = 'button'; btn.id = 'salvarReplay';
-      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (rec) parar(); else perguntar(); });
+      btn.addEventListener('pointerdown', (e) => e.stopPropagation());
+      btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); if (rec) parar(); else perguntar(); });
       (document.getElementById('raizJogo') || document.body).appendChild(btn);
     }
     btn.hidden = !on || !pode(); btn.classList.toggle('rec', !!rec); btn.textContent = rec ? T('PARAR') + ' ■' : T('SALVAR REPLAY') + ' ⬇';
@@ -18550,8 +18565,9 @@ const ReplayVideo = (() => {
     const row = document.createElement('div'); row.className = 'btnRow';
     const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'big'; ok.textContent = T('Gravar');
     const no = document.createElement('button'); no.type = 'button'; no.className = 'ghost'; no.textContent = T('Cancelar');
-    ok.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; comecar(); });
-    no.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; });
+    for (const b of [ok, no]) b.addEventListener('pointerdown', (e) => e.stopPropagation());
+    ok.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; comecar(); });
+    no.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; });
     row.appendChild(ok); row.appendChild(no); aviso.appendChild(p); aviso.appendChild(row);
     (document.getElementById('raizJogo') || document.body).appendChild(aviso);
   }
@@ -18568,14 +18584,14 @@ const ReplayVideo = (() => {
     rec.ondataavailable = (e) => { if (e.data && e.data.size) pedacos.push(e.data); };
     rec.onstop = entregar;
     R.t = 0; R.camPos = null;                          // do começo do lance
-    const vel = R.cam === 2 ? 0.6 : 1; fim = performance.now() + R.dur / vel * 1000;
+    const vel = R.cam === 2 ? 0.6 : 1; ini0 = performance.now(); fim = ini0 + R.dur / vel * 1000;
     rec.start(250);
     botao(true); rotuloReplay();
   }
   function quadro() {
     if (!g) return;
     g.drawImage(renderer.domElement, 0, 0, cv.width, cv.height);
-    if (G.replay && performance.now() > fim + 400) parar();   // segurança (a volta acabou e o replay não avisou)
+    if (G.replay && performance.now() > fim + 400 + (fim - ini0)) parar();   // segurança (a volta acabou e o replay não avisou). (7.6.7) Com folga do tamanho da volta: no celular lento o replay anda mais devagar que o relógio e a gravação era cortada antes do fim
   }
   function parar(descartar) {
     if (!rec) return;
@@ -18583,17 +18599,38 @@ const ReplayVideo = (() => {
     try { r.stop(); } catch (e) { /* já parou */ }
     g = null; botao(!!G.replay); if (G.replay) rotuloReplay();
   }
-  async function entregar() {
+  // (7.6.7) A ENTREGA PRECISA DE UM TOQUE: o navegador só abre a folha de compartilhar/salvar (navigator.share) logo depois de um
+  //   toque do jogador. Antes ela era chamada sozinha quando a gravação acabava, o navegador recusava e o vídeo não ia para a
+  //   galeria. Agora aparece o painel "vídeo pronto": SALVAR NA GALERIA (celular: a folha do sistema, com "Salvar vídeo" / Fotos /
+  //   Galeria) e BAIXAR (o arquivo; no computador é o único botão). Os botões usam "click" (o toque que o navegador aceita).
+  let pronto = null;
+  function baixar(P) {
+    const url = URL.createObjectURL(P.blob), a = document.createElement('a'); a.href = url; a.download = P.nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    showToast(T('Replay salvo!'), 'good');
+  }
+  function fecharPronto() { if (pronto && pronto.el) pronto.el.remove(); pronto = null; }
+  function entregar() {
     const ext = /mp4/.test(tipo) ? 'mp4' : 'webm', blob = new Blob(pedacos, { type: tipo ? tipo.split(';')[0] : 'video/webm' }); pedacos = [];
     if (!blob.size) { showToast(T('Não deu para gravar o vídeo neste aparelho'), 'bad'); return; }
     const nome = 'replay-gol-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.' + ext;
-    try {
-      const f = new File([blob], nome, { type: blob.type });
-      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: T('Replay do gol') }); showToast(T('Replay salvo!'), 'good'); return; }
-    } catch (e) { if (e && e.name === 'AbortError') return; }
-    const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 20000);
-    showToast(T('Replay salvo!'), 'good');
+    let f = null; try { f = new File([blob], nome, { type: blob.type }); } catch (e) { f = null; }
+    let comp = false; try { comp = !!(f && navigator.canShare && navigator.canShare({ files: [f] })); } catch (e) { comp = false; }
+    fecharPronto(); css();
+    const P = pronto = { blob, nome, f, el: document.createElement('div') };
+    P.el.id = 'replayPronto';
+    const txt = document.createElement('div'); txt.textContent = comp ? T('O vídeo do replay está pronto. Toque em SALVAR NA GALERIA e escolha "Salvar vídeo" (ou Fotos / Galeria).') : T('O vídeo do replay está pronto.');
+    const row = document.createElement('div'); row.className = 'btnRow';
+    const mk = (rot, cls, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = rot; b.addEventListener('pointerdown', (e) => e.stopPropagation()); b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fn(); }); row.appendChild(b); return b; };
+    if (comp) mk(T('SALVAR NA GALERIA'), 'big', async () => {
+      try { await navigator.share({ files: [P.f] }); showToast(T('Replay salvo!'), 'good'); fecharPronto(); }
+      catch (e) { if (e && e.name === 'AbortError') return; baixar(P); fecharPronto(); }   // a folha não abriu: baixa o arquivo
+    });
+    mk(T('BAIXAR'), comp ? 'ghost' : 'big', () => { baixar(P); fecharPronto(); });
+    mk(T('Fechar'), 'ghost', fecharPronto);
+    P.el.addEventListener('pointerdown', (e) => e.stopPropagation());
+    P.el.appendChild(txt); P.el.appendChild(row);
+    (document.getElementById('raizJogo') || document.body).appendChild(P.el);
   }
   return { botao, quadro, parar, get gravando() { return !!rec; }, get falta() { return (fim - performance.now()) / 1000; } };
 })();
@@ -19693,7 +19730,7 @@ function criarJogador(P, team, f, j, num, isUser) {
     camisa: isGK ? U.goleiro : U.camisa, listra: U.listra, gola: U.gola, numero: num,
     calcao: U.calcao, meia: isGK ? U.goleiro : U.meia, sola: U.sola, emblema: T.emblema, modelo: modeloDaCamisa(U, isGK), peito: U.peito,
     pele: j.pele, cabelo: j.cabelo, estilo: j.estilo, barba: j.barba, rosto: j.rosto, labio: j.labio, corBarba: j.corBarba, nomeCamisa: j.nomeCamisa, manga: j.manga, meiao: j.meiao, chuteira: j.chuteira, luva: isGK ? 0xf2f2ee : null, enfeites: P.criancas ? null : j.enfeites,
-    nome: isUser ? 'VOCÊ' : nome, fundoNome: isUser ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),
+    nome: isUser ? (P.controleTime ? nome : 'VOCÊ') : nome, fundoNome: isUser && !P.controleTime ? 'rgba(201,106,18,0.92)' : corFundoNome(U.camisa),   // (7.6.7) time inteiro: o nome (o personagem escolhido) em vez de VOCÊ
   });
   marcarFusao(mesh);
   scene.add(mesh.raiz);
@@ -19778,14 +19815,18 @@ function montarTimes(P) {
       if (userSlot !== slotOrigem && doElenco.has(userSlot)) { doElenco.set(slotOrigem, doElenco.get(userSlot)); doElenco.delete(userSlot); }
     }
     let k = trocaPos ? slots.length - 1 : 0;
+    // (7.6.7) CONTROLANDO O TIME INTEIRO sem personagem escolhido: o lugar do "você" fica com o jogador do elenco (nome, cara,
+    //   habilidades e número dele); você só começa controlando ele. Assim todos aparecem com o nome (antes um deles era "VOCÊ").
+    const semVoce = team === 0 && !!P.controleTime && !P.usuario.aparencia;
     slots.forEach((f, i) => {
-      const isUser = i === userSlot;
+      const isUser = i === userSlot && !semVoce;
       // sem personagem: na partida feminina você também é uma jogadora (aparência do gerador)
       const apVoce = P.usuario.aparencia || (P.genero === 'F' ? gerarAparencia(sementeDe('voce-F'), 'F') : null);
       const j = isUser ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0 }, apVoce || {}) : (trocaPos ? doElenco.get(i) : (disponiveis[k++] || P.elencos[team][i % P.elencos[team].length]));
       const p = criarJogador(P, team, f, j, isUser && numPref ? numPref : numero(f.role), isUser);
       players.push(p); TEAMS[team].push(p); P.participantes.push(p);
       if (isUser) user = p;
+      else if (semVoce && i === userSlot) { p.isUser = true; user = p; }
     });
     P.reservas[team] = disponiveis.slice(k, ehSociety(P) ? k + ASSENTOS_SOCIETY : undefined);   // banco: quem sobrou disponível (society: só 3 lugares)
   }
@@ -19848,7 +19889,7 @@ function sentarNoBanco(sai, team, direto) {
   const ocup = new Set(reservasBanco.filter((d) => d.team === team && (d.saiu || PARTIDA.reservas[team].includes(d.j))).map((d) => d.assento));
   let i = [0, 1, 2, 3, 4].slice(0, ehSociety() ? ASSENTOS_SOCIETY : 5).find((k) => !ocup.has(k));
   if (i === undefined) return;
-  const j = sai.voce ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
+  const j = sai.voce ? Object.assign({ pele: '#946042', cabelo: '#1C140F', estilo: 0, nome: PARTIDA.controleTime ? PARTIDA.usuario.nome : 'VOCÊ' }, PARTIDA.usuario.aparencia || {}) : sai.dados || { pele: '#BF8159', cabelo: '#111', estilo: 0, nome: sai.name };
   const lado = Math.sign(sai.x - bancoX(team)) || 1;
   const a = assentoBanco(team, i);
   reservasBanco.push({ team, j, assento: i, saiu: true, mancando: !!sai.mancando, mesh: bonecoDoBanco(PARTIDA, team, j, sai.role, sai.numero, sai.voce),
@@ -20003,7 +20044,7 @@ function talvezLesionar(p, chanceExtra = 1) {
 function lesionar(p, grav) {
   const L = grav || sortearGravidade(p);
   p.lesao = L;
-  G.lesoes.push({ team: p.team, nome: p.voce ? 'Você' : p.name, ficha: p.ficha, tipo: L.tipo, jogos: L.jogos });
+  G.lesoes.push({ team: p.team, nome: p.voce ? rotuloVoce() : p.name, ficha: p.ficha, tipo: L.tipo, jogos: L.jogos });
   showToast((p.voce ? 'Você se machucou' : p.name + ' se machucou') + ' (lesão ' + L.tipo + ')', p.team === 0 ? 'bad' : '');
   if (L.tipo === 'leve') {
     if (p.voce) { p.staminaMax = 0.7; p.stamina = Math.min(p.stamina, 0.7); } else p.speedMul *= 0.92;
@@ -20156,7 +20197,7 @@ function trocarNasListas(item) {
   if (G.passTarget && G.passTarget.p === sai) G.passTarget = null;
   for (const k of [0, 1]) { if (G.chasers[k] === sai) G.chasers[k] = null; if (G.pressers[k] === sai) G.pressers[k] = null; if (G.covers[k] === sai) G.covers[k] = null; }
   sai.out = true; sai.substituido = true;
-  G.trocas.push({ team, sai: sai.voce ? 'Você' : sai.name, numSai: sai.numero, entra: entra.name, numEntra: num, motivo: item.motivo });
+  G.trocas.push({ team, sai: sai.voce ? rotuloVoce() : sai.name, numSai: sai.numero, entra: entra.name, numEntra: num, motivo: item.motivo });
   if (sai.isUser) virarEspectador();
   return entra;
 }
@@ -20516,7 +20557,7 @@ function registrarResultado(motivo) {
   });
   for (const p of P.participantes) {
     const f = fichaDe(H, P.timesObj[p.team].id, p.ficha);
-    const nome = p.voce ? 'Você' : p.name;
+    const nome = p.voce ? rotuloVoce() : p.name;
     if (p.red) { f.suspenso += 1; susp.push({ team: p.team, nome, motivo: 'vermelho' }); }
     else if (p.yellow && R.cartoesAcumulam) {
       f.amarelos = (f.amarelos || 0) + 1;
@@ -21615,6 +21656,10 @@ Object.assign(I18N, {
   'SALVAR REPLAY': ['SAVE REPLAY', 'GUARDAR REPETICIÓN', 'SALVA REPLAY', 'ENREGISTRER LE REPLAY'], 'PARAR': ['STOP', 'PARAR', 'FERMA', 'ARRÊTER'],
   'Gravar': ['Record', 'Grabar', 'Registra', 'Enregistrer'],
   'O vídeo vai ser salvo no ângulo que está na tela agora: {0}. Para outro ângulo, troque de câmera antes (toque na tela).': ['The video will be saved in the angle on screen now: {0}. For another angle, change the camera first (tap the screen).', 'El vídeo se guardará en el ángulo que está en pantalla ahora: {0}. Para otro ángulo, cambia de cámara antes (toca la pantalla).', 'Il video verrà salvato con l’inquadratura che è sullo schermo ora: {0}. Per un’altra, cambia camera prima (tocca lo schermo).', 'La vidéo sera enregistrée avec l’angle affiché maintenant : {0}. Pour un autre angle, change de caméra avant (touche l’écran).'],
+  'O vídeo do replay está pronto. Toque em SALVAR NA GALERIA e escolha "Salvar vídeo" (ou Fotos / Galeria).': ['The replay video is ready. Tap SAVE TO GALLERY and choose "Save video" (or Photos / Gallery).', 'El video de la repetición está listo. Toca GUARDAR EN LA GALERÍA y elige "Guardar video" (o Fotos / Galería).', 'Il video del replay è pronto. Tocca SALVA NELLA GALLERIA e scegli "Salva video" (o Foto / Galleria).', 'La vidéo du replay est prête. Touche ENREGISTRER DANS LA GALERIE et choisis « Enregistrer la vidéo » (ou Photos / Galerie).'],
+  'O vídeo do replay está pronto.': ['The replay video is ready.', 'El video de la repetición está listo.', 'Il video del replay è pronto.', 'La vidéo du replay est prête.'],
+  'SALVAR NA GALERIA': ['SAVE TO GALLERY', 'GUARDAR EN LA GALERÍA', 'SALVA NELLA GALLERIA', 'ENREGISTRER DANS LA GALERIE'],
+  'BAIXAR': ['DOWNLOAD', 'DESCARGAR', 'SCARICA', 'TÉLÉCHARGER'],
   'Replay salvo!': ['Replay saved!', '¡Repetición guardada!', 'Replay salvato!', 'Replay enregistré !'], 'Replay do gol': ['Goal replay', 'Repetición del gol', 'Replay del gol', 'Replay du but'],
   'Não deu para gravar o vídeo neste aparelho': ['Could not record the video on this device', 'No se pudo grabar el vídeo en este dispositivo', 'Impossibile registrare il video su questo dispositivo', 'Impossible d’enregistrer la vidéo sur cet appareil'],
   'GOL CONTRA': ['OWN GOAL', 'GOL EN PROPIA', 'AUTOGOL', 'BUT CONTRE SON CAMP'],
