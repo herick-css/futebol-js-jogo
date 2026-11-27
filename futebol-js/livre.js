@@ -1167,7 +1167,8 @@
       competicao: Object.assign({ tipo: 'amistoso', nome: T('Amistoso'), rodada: 0, fase: '', mataMata: false, jogo: 'unico', placarIda: null }, J.comp || {}),
       dificuldade: c.dif || 'normal', clima: climaDe(c), gramado: 'baixo', horario: horarioDe(c, J.rodada), duracao: Number(c.dur) || 300, genero: 'M', usuario, taticas: [null, null], formacoes: [null, null],
       comemoracoes: [c.celeb1 || 'aviao', c.celeb2 || 'joelhada'], bola: c.bola || '', kits: J.kits || null, regras: J.campo === 'society' ? { tempos: 1 } : undefined,   // o sintético é um tempo só
-      controleTime: c.controle === 'time' };   // (7.4.13) controlar o time inteiro (só aqui; o modo história nunca manda)   // (7.4.10) as comemorações, a bola e os uniformes escolhidos
+      controleTime: c.controle === 'time',
+      estTorneio: J.S && J.S.est ? { est: J.S.est, k: [J.a, J.b], copa: !!(J.comp && (J.comp.mataMata || /copa|champ|liberta/i.test(J.comp.tipo || ''))) } : null };   // (7.6.6) gols/assistências do campeonato na cena depois do gol   // (7.4.13) controlar o time inteiro (só aqui; o modo história nunca manda)   // (7.4.10) as comemorações, a bola e os uniformes escolhidos
   }
   // (7.4.10) retomar = { estado, clima, horario }: a partida salva no intervalo (começa no 2º tempo, sem a abertura). A partida
   //   pode ser salva no intervalo ("Salvar e sair"): aí volta { salvo: estado } e quem chamou guarda (guardarPausa).
@@ -1574,7 +1575,19 @@
           await corte(() => { aoLugar(); G.torcidaCena = 0.95; try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ } legenda(Tf('A torcida do {0} faz a festa', nM)); });
           if (J.fogos) try { E.fogos({ dur: 4, ritmo: 2.4 }); } catch (e) { /* nada */ }
           const HL = HALF_L, HW = HALF_W;
+          // (7.6.6) bandeiras com mastro (as do time e o bandeirão com a foto e o nome de um jogador) na parte da torcida que a câmera mostra
+          let band = null;
+          try {
+            const Z = [
+              { f: (x, z) => z > HW && Math.abs(x) < 30, foco: { x: 0, z: HW + 4 } },                              // correndo na frente da lateral
+              { f: (x, z) => x < -HL && Math.abs(z) < 26, foco: { x: -(HL + 6), z: -2 } },                         // a organizada atrás do gol
+              { f: (x, z) => z > HW && x > -14 && x < 22, foco: { x: 4, z: HW + 2 } },                               // do alto
+              { f: (x, z) => (x > HL || z > HW) && x > 8 && z > -8, foco: { x: HL + 6, z: HW + 6 } },                 // do canto
+            ][v] || null;
+            if (Z && typeof bandeirasDaTorcida === 'function') { band = bandeirasDaTorcida(PARTIDA.mandante, Z.f, Z.foco, 14, v === 2 ? 2.6 : 1); /* do alto (longe): os bandeirões grandes */ if (band) { scene.add(band.grupo); lixo.push(band.grupo); } }   // o fim da abertura descarta (some junto com o resto)
+          } catch (e) { console.warn('[bandeiras]', e); band = null; }
           await plano1(4.4, (tt) => {
+            if (band) band.atualizar(tt);
             if (tt > 2.2 && tt < 2.25) try { crowd.comemorar(PARTIDA.mandante); } catch (e) { /* nada */ }
             const k = suave(tt / 4.4);
             if (v === 1) camOlha(-(HL - 5) - k * 1.5, 1.3 + k * 1.2, -17 + k * 5, -(HL + 34), 9 + k * 2, -7 + k * 9);                   // a organizada atrás do gol

@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.5';
+const VERSAO_JOGO = '7.6.6';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -2417,7 +2417,8 @@ const crowd = (() => {
   const W = 0.8, H = 1.6, IN = 0.5 / 128, INV = 0.5 / 64;   // meio texel de margem
   // base: pé do torcedor; dir: direção em que ele OLHA (para o campo); ang: 0..1 na volta do estádio
   function torcedor(bx, by, bz, dirX, dirZ, time, emPe, ang) {
-    cont[time ? 1 : 0]++;                                // (7.4.9) quantos de cada time (o tamanho e o volume de cada torcida)
+    cont[time ? 1 : 0]++;
+    Confete.registrar(bx, by, bz, dirX, dirZ, time);   // (7.6.6) a amostra de onde sai o confete do gol                                // (7.4.9) quantos de cada time (o tamanho e o volume de cada torcida)
     const cel = (emPe ? 6 : 0) + time * 3 + (Math.random() * 3 | 0);
     let u0 = (cel % 8) * 16 / 128 + IN, u1 = ((cel % 8) * 16 + 16) / 128 - IN;
     const vT = 1 - Math.floor(cel / 8) * 32 / 64 - INV, vB = 1 - (Math.floor(cel / 8) * 32 + 32) / 64 + INV;
@@ -2440,8 +2441,23 @@ const crowd = (() => {
     g.setAttribute('aFase', new THREE.Float32BufferAttribute(fase, 1));
     g.setAttribute('aJeito', new THREE.Float32BufferAttribute(jeito, 3));
     g.setIndex(idx);
-    return new THREE.Mesh(g, material);
+    const M = new THREE.Mesh(g, material); malhas.push(M); return M;
   }
+  const malhas = [];                                   // (7.6.6) as malhas desta partida (para abrir o patamar da escadinha)
+  // (7.6.6) tira (manda para baixo do chão) os torcedores que estão onde a escadinha chega: o patamar fica vazio para você e a festa
+  function esvaziar(pred) {
+    let n = 0;
+    for (const M of malhas) {
+      const a = M.geometry.attributes.position, A = a.array;
+      for (let i = 0; i < A.length; i += 12) {
+        const bx = (A[i + 6] + A[i + 9]) / 2, by = A[i + 7], bz = (A[i + 8] + A[i + 11]) / 2;
+        if (by > -50 && pred(bx, by, bz)) { for (let k = 1; k < 12; k += 3) A[i + k] = -200; n++; }
+      }
+      a.needsUpdate = true; M.geometry.computeBoundingSphere();
+    }
+    return n;
+  }
+  const lugaresDoTime = (x0, x1, z0, z1) => { const L = []; for (let i = 0; i < pos.length; i += 12) { const x = pos[i + 6], y = pos[i + 7], z = pos[i + 8]; if (x >= x0 && x <= x1 && z >= z0 && z <= z1) L.push([x, y, z]); } return L; };
 
   let festa = [0, 0], olaT = -1, proximaOla = rand(35, 70);
   const cont = [0, 0], canto = [0, 0];               // (7.4.9) torcedores de cada time; canto = segundos que cada torcida ainda canta (pula no ritmo)
@@ -2472,15 +2488,317 @@ const crowd = (() => {
     tex.needsUpdate = true;
   }
   // Nova partida: esvazia a lista de torcedores (buildStands monta de novo).
-  function limpar() { pos.length = nor.length = uv.length = fase.length = jeito.length = idx.length = 0; festa = [0, 0]; cont[0] = cont[1] = 0; canto[0] = canto[1] = 0; }
+  function limpar() { pos.length = nor.length = uv.length = fase.length = jeito.length = idx.length = 0; festa = [0, 0]; cont[0] = cont[1] = 0; canto[0] = canto[1] = 0; Confete.limpar(); malhas.length = 0; }
   // (7.4.9) a torcida reage: agitar = um pulinho (olé, defesa, palmas); cantar = pula no ritmo enquanto canta;
   //   parte(t) = fração da torcida que é do time t; lotacao() = 0..1 (estádio vazio → cheio), para o volume do som
   function agitar(time, v) { festa[time] = Math.max(festa[time], v); }
   function cantar(time, dur) { canto[time] = Math.max(canto[time], dur); }
   function parte(time) { const n = cont[0] + cont[1]; return n ? cont[time] / n : 0.5; }
   function lotacao() { return clamp((cont[0] + cont[1]) / 1400, 0.12, 1); }
-  return { torcedor, malha, atualizar, comemorar, pintarAtlas, limpar, agitar, cantar, parte, lotacao, total: () => cont[0] + cont[1] };
+  // (7.6.6) tem outro ANEL da arquibancada em cima deste lugar (até "alto" metros acima, num raio de "raio" metros)? Torcedores bem
+  //   mais altos do que a inclinação da própria arquibancada explicaria = o anel de cima (e a cobertura dele): ali não cabe mastro.
+  function anelAcima(x, y, z, alto, raio) {
+    for (let i = 0; i < pos.length; i += 12) {
+      const fy = pos[i + 7], dx = pos[i + 6] - x, dz = pos[i + 8] - z, dh = Math.hypot(dx, dz);   // o canto de baixo (o pé) de cada torcedor
+      if (dh > raio) continue;
+      const dy = fy - y;
+      if (dy > 0.55 * dh + 2.0 && dy < alto + 3) return true;
+    }
+    return false;
+  }
+  return { torcedor, malha, atualizar, comemorar, pintarAtlas, limpar, agitar, cantar, parte, lotacao, anelAcima, esvaziar, lugares: lugaresDoTime, tex, total: () => cont[0] + cont[1] };
 })();
+
+// =====================================================================
+// (7.6.6) CONFETE NO GOL: a torcida de quem fez o gol joga papel picado (as DUAS cores principais do time) para o lado do campo.
+//   Cada torcedor montado (crowd.torcedor) entra numa amostra pequena (até 260 lugares por time, sorteados por igual). No gol,
+//   ~700 papeizinhos saem de lugares dessa amostra, voam para a frente (para o campo), freiam no ar, caem devagar balançando e
+//   assentam no degrau/gramado (o degrau é estimado pela inclinação da arquibancada: ninguém atravessa o chão) e somem aos poucos.
+//   DESEMPENHO: 1 malha de pontos (1 chamada de desenho) e TODA a conta no shader (o processador só troca o tempo, 1 número
+//   por quadro); só existe por ~7 s depois do gol e some no replay. Sem arquibancada (várzea, quadra): não sai confete.
+// =====================================================================
+const Confete = (() => {
+  const N = 1500, AMOSTRA = 260, VIDA = 7.5;
+  const amostras = [[], []], vistos = [0, 0];
+  let pontos = null, t = 0, ativo = false;
+  const U = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uT: { value: 0 }, uEsc: { value: 600 }, uCor0: { value: new THREE.Color() }, uCor1: { value: new THREE.Color() } }]);
+  const material = new THREE.ShaderMaterial({
+    uniforms: U, fog: true,
+    vertexShader: `attribute vec3 aP0; attribute vec3 aV; attribute vec3 aJ; attribute float aPouso; uniform float uT; uniform float uEsc; varying float vCor; varying float vBrilho;
+      #include <fog_pars_vertex>
+      void main() {
+        // aJ: x = qual das 2 cores, y = fase (balanço/giro), z = atraso da saída (os papéis não saem todos juntos)
+        float t0 = uT - aJ.z;
+        vCor = aJ.x;
+        if (t0 <= 0.0) { gl_Position = vec4(2.0, 2.0, 2.0, 1.0); gl_PointSize = 0.0; return; }
+        float t = min(t0, aPouso);                                    // no chão: para (não escorrega pela grama)
+        float k = 0.55, sai = (1.0 - exp(-k * t)) / k;                 // freia no ar (resistência)
+        vec3 p = aP0 + vec3(aV.x, 0.0, aV.z) * sai;
+        float g = 6.0, vt = 0.9, t1 = (aV.y + vt) / g;                // sobe, para, e cai na velocidade de "papel" (0,9 m/s)
+        p.y += t < t1 ? aV.y * t - 0.5 * g * t * t : aV.y * t1 - 0.5 * g * t1 * t1 - vt * (t - t1);
+        float caindo = clamp(t - t1, 0.0, 1.0);
+        p.x += sin(t * 5.0 + aJ.y * 6.28) * 0.22 * caindo; p.z += cos(t * 4.3 + aJ.y * 6.28) * 0.22 * caindo;
+        float d = length(vec2(aV.x, aV.z)) * sai, chao = max(0.03, aP0.y - 0.45 - 0.5 * d);   // o degrau embaixo dele (a arquibancada desce para o campo)
+        float pousou = step(aPouso - 0.001, t0); p.y = max(p.y, chao);
+        vBrilho = pousou > 0.5 ? 0.85 : 0.72 + 0.28 * step(0.0, sin(t * 13.0 + aJ.y * 40.0));   // vira no ar: claro e escuro DENTRO da cor do time (sem clarear para outra cor)
+        vec4 mvPosition = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mvPosition;
+        float some = 1.0 - smoothstep(${(VIDA - 1.6).toFixed(1)}, ${VIDA.toFixed(1)}, uT);
+        gl_PointSize = clamp(0.5 * uEsc / max(0.5, -mvPosition.z), 4.0, 10.0) * some;   // pelo menos 4 pixels: aparece na câmera de TV (o jogo desenha em resolução baixa)   // pelo menos 2 pixels (o jogo desenha em resolução baixa)
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `uniform vec3 uCor0; uniform vec3 uCor1; varying float vCor; varying float vBrilho;
+      #include <fog_pars_fragment>
+      void main() {
+        vec3 c = (vCor < 0.5 ? uCor0 : uCor1) * vBrilho;
+        vec2 q = gl_PointCoord; float borda = step(q.x, 0.2) + step(0.8, q.x) + step(q.y, 0.2) + step(0.8, q.y);
+        if (borda > 0.0) c *= 0.55;                                    // a beirada mais escura do mesmo tom: o papel destaca da torcida da mesma cor
+        gl_FragColor = vec4(c, 1.0);
+        #include <fog_fragment>
+      }`,
+  });
+  function registrar(x, y, z, dx, dz, time) {          // chamado por cada torcedor montado (amostragem por reservatório: todos com a mesma chance)
+    const k = time ? 1 : 0, A = amostras[k]; vistos[k]++;
+    if (A.length < AMOSTRA) A.push([x, y, z, dx, dz]);
+    else { const j = Math.floor(Math.random() * vistos[k]); if (j < AMOSTRA) A[j] = [x, y, z, dx, dz]; }
+  }
+  function esconder() { ativo = false; if (pontos) pontos.visible = false; }
+  function limpar() { amostras[0].length = amostras[1].length = 0; vistos[0] = vistos[1] = 0; esconder(); }
+  function disparar(time, cor0, cor1) {
+    const A = amostras[time ? 1 : 0];
+    if (A.length < 12) return false;                   // sem torcida desse time (ou estádio sem arquibancada)
+    if (!pontos) {
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3));   // (só para o three saber quantos pontos; a posição vem do aP0)
+      g.setAttribute('aP0', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('aV', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('aJ', new THREE.Float32BufferAttribute(new Float32Array(N * 3), 3));
+      g.setAttribute('aPouso', new THREE.Float32BufferAttribute(new Float32Array(N), 1));
+      pontos = new THREE.Points(g, material); pontos.frustumCulled = false; pontos.renderOrder = 2; scene.add(pontos);
+    }
+    const g = pontos.geometry, P = g.attributes.aP0.array, V = g.attributes.aV.array, J = g.attributes.aJ.array, PO = g.attributes.aPouso.array;
+    for (let i = 0; i < N; i++) {
+      let a = A[(Math.random() * A.length) | 0];
+      for (let k = 0; k < 3; k++) { const b = A[(Math.random() * A.length) | 0]; if (b[1] < a[1]) a = b; }   // quase sempre das fileiras da frente (as mais baixas): o papel chega no campo
+      const dl = Math.hypot(a[3], a[4]) || 1, fx = a[3] / dl, fz = a[4] / dl;
+      const ang = rand(-0.5, 0.5), c = Math.cos(ang), s = Math.sin(ang), vx = fx * c - fz * s, vz = fx * s + fz * c, dLinha = Math.max(0, Math.max(Math.abs(a[0]) - HALF_L, Math.abs(a[2]) - HALF_W)), vh = Math.max(2.5, (dLinha + rand(-3, 7)) * 0.55);   // a distância que o papel anda até parar é vh / 0,55 (a freada do ar)   // ~3 s de voo: uns cai antes da linha, outros até ~7 m dentro do campo
+      P[i * 3] = a[0] + rand(-0.4, 0.4); P[i * 3 + 1] = a[1] + 1.7 + rand(0, 0.3); P[i * 3 + 2] = a[2] + rand(-0.4, 0.4);   // da mão (acima da cabeça)
+      const onda2 = Math.random() >= 0.55;
+      V[i * 3] = vx * vh; V[i * 3 + 1] = onda2 ? rand(2.8, 4.6) : rand(1.2, 3.2); V[i * 3 + 2] = vz * vh;   // a 2ª onda sobe mais (passa na frente das placas, contra o céu); ~1,8 m no máximo: não chega na cobertura
+      J[i * 3] = Math.random() < 0.5 ? 0 : 1; J[i * 3 + 1] = Math.random(); J[i * 3 + 2] = onda2 ? rand(0.5, 1.8) : rand(0, 0.5);   // em 2 ondas
+      // quando ele pousa (a mesma conta do shader, feita uma vez aqui): dali em diante fica parado onde caiu
+      { const k = 0.55, gg = 6, vt = 0.9, vy = V[i * 3 + 1], t1 = (vy + vt) / gg, vh2 = Math.hypot(V[i * 3], V[i * 3 + 2]); let tp = 9;
+        for (let tt = 0.1; tt < 9; tt += 0.05) {
+          const y = P[i * 3 + 1] + (tt < t1 ? vy * tt - 0.5 * gg * tt * tt : vy * t1 - 0.5 * gg * t1 * t1 - vt * (tt - t1)), d = vh2 * (1 - Math.exp(-k * tt)) / k;
+          if (y <= Math.max(0.03, P[i * 3 + 1] - 0.45 - 0.5 * d)) { tp = tt; break; }
+        }
+        PO[i] = tp; }
+    }
+    g.attributes.aP0.needsUpdate = g.attributes.aV.needsUpdate = g.attributes.aJ.needsUpdate = g.attributes.aPouso.needsUpdate = true;
+    U.uCor0.value.set(cor0 || '#ffffff'); U.uCor1.value.set(cor1 || cor0 || '#ffffff');
+    t = 0; U.uT.value = 0; ativo = true; pontos.visible = true;
+    return true;
+  }
+  function atualizar(dt) {
+    if (!ativo) return;
+    if (G.state === 'replay' || G.state === 'menu' || G.state === 'fim') { esconder(); return; }   // o replay mostra o lance ANTES do gol
+    t += dt; U.uT.value = t;
+    U.uEsc.value = renderer.domElement.height / (2 * Math.tan(camera.fov * Math.PI / 360));
+    if (t > VIDA) esconder();
+  }
+  return { registrar, disparar, atualizar, limpar, esconder, amostra: (time) => amostras[time ? 1 : 0], get estado() { return { ativo, t, amostra: [amostras[0].length, amostras[1].length] }; } };
+})();
+
+// =====================================================================
+// (7.6.6) BANDEIRAS COM MASTRO NA TORCIDA (a cena da torcida na abertura da partida, livre.js): torcedores do time balançando
+//   bandeiras nas cores do time (faixas da camisa e da listra, o escudo no meio) e um BANDEIRÃO com a foto (o rosto em pixel art)
+//   e o nome de um jogador do time (você, se for do time; senão um dos titulares). Os mastros saem das mãos de torcedores de verdade
+//   (os lugares da amostra do Confete), voltados para o campo, e vão de um lado para o outro (cada um no seu ritmo); o pano tremula.
+//   DESEMPENHO: 3 malhas no total (todos os mastros numa, todos os panos do time noutra, o bandeirão na terceira), contas no
+//   processador só de ~25 bandeiras × 24 pontos por quadro, e SÓ durante a cena (descartar() no fim).
+//   filtro(x, z) escolhe a parte da arquibancada que a câmera mostra; foco = {x, z}: o bandeirão fica no lugar mais perto dele.
+// =====================================================================
+// =====================================================================
+// (7.6.6) ESCADINHA DA TORCIDA (atrás de cada gol, ao lado da rede): depois do SEU gol, chegando na placa de publicidade de trás do
+//   gol você PULA a placa (em vez de subir nela), corre até a escadinha, sobe e fica no patamar da primeira fileira; a torcida do seu
+//   time vem se amontoar em volta para comemorar junto. Dá CARTÃO AMARELO (o juiz mostra do campo).
+//   A escada: degraus de concreto com corrimão (1 malha por gol, parada: "freeze"); o patamar é aberto tirando os torcedores que
+//   estavam ali (para ninguém ficar dentro de ninguém). Só existe se a arquibancada de trás do gol estiver perto o bastante.
+//   Os que vêm se amontoar: 14 torcedores (o mesmo desenho da torcida) numa malha só, só durante essa comemoração.
+// =====================================================================
+const EscadaTorcida = (() => {
+  const lados = {};                                   // lados[±1] = [{ s, zs, xIni, xFim, yTopo, run, h, n, grupo }, ...] (uma de cada lado da rede)
+  let festa = null;
+  const MAT = new THREE.MeshLambertMaterial({ vertexColors: true });
+  function montar(arena) {
+    for (const k of [-1, 1]) { for (const e of lados[k] || []) if (e.grupo && e.grupo.parent) e.grupo.parent.remove(e.grupo); delete lados[k]; }
+    if (!arena) return;
+    const Lt = new Lote([0, 0, 1, 1]), todas = [];        // DESEMPENHO: as escadas (até 4) numa malha só = 1 desenho
+    for (const s of [-1, 1]) for (const lz of [-1, 1]) {
+      const zs = lz * (GOAL_HALF + 4.2);              // uma de cada lado da rede (você usa a mais perto de onde pulou a placa)
+      // a primeira fileira atrás do gol, perto da escada
+      const L = crowd.lugares(s > 0 ? BOARD_X + 0.5 : -BOARD_X - 40, s > 0 ? BOARD_X + 40 : -BOARD_X - 0.5, zs - 3.5, zs + 3.5);
+      if (L.length < 4) continue;
+      let xF = Infinity, yF = 0;
+      for (const [x, y] of L) { const d = Math.abs(x); if (d < xF) { xF = d; yF = y; } }
+      const yTopo = Math.max(0, yF), xIni = BOARD_X + 0.9, xFim = xF - 0.45, disp = xFim - xIni;
+      if (yTopo < 0.25 || yTopo > 4.2 || disp < 1.2) continue;   // gente no chão (não precisa de escada) ou longe/alto demais
+      const n = Math.max(2, Math.ceil(yTopo / 0.3)), h = yTopo / n, run = Math.min(0.34, (disp - 0.3) / n);
+      if (run < 0.2) continue;
+      const x0 = xFim - n * run, W = 1.6, cinza = 0xa9a49a, ferro = 0xd7d9dc;
+      for (let i = 0; i < n; i++) {                   // degraus (cada um um bloco do chão até o seu topo)
+        const ht = (i + 1) * h, xc = x0 + (i + 0.5) * run;
+        Lt.caixa(run + 0.002, ht, W, i % 2 ? cinza : 0x9f9a90, s * xc, ht / 2, zs);
+        for (const lz of [-1, 1]) {                   // corrimão: pilar e o pedaço de cima em cada degrau
+          Lt.caixa(0.05, 0.95, 0.05, ferro, s * xc, ht + 0.475, zs + lz * (W / 2 - 0.04));
+          Lt.caixa(run + 0.01, 0.05, 0.06, ferro, s * xc, ht + 0.95, zs + lz * (W / 2 - 0.04));
+        }
+      }
+      // o patamar: sem torcedores numa área de 2,6 × 2,2 m em cima da escada (você e a festa ficam ali)
+      crowd.esvaziar((x, y, z) => Math.abs(z - zs) < 2.9 && s * x > xFim - 0.2 && s * x < xFim + 2.2 && y < yTopo + 1.6);
+      const e = { s, zs, xIni, xFim, x0, yTopo, run, h, n, grupo: null }; (lados[s] = lados[s] || []).push(e); todas.push(e);
+    }
+    if (todas.length) { const g = Lt.malha(MAT); g.name = 'escadaTorcida'; scene.add(g); freeze(g); for (const e of todas) e.grupo = g; }
+  }
+  // os 14 que vêm comemorar: quads do atlas da torcida (de pé, do seu time), andando do lado até a sua volta e pulando
+  function iniciarFesta(E, team) {
+    if (festa) acabarFesta();
+    const N = 14, pos = new Float32Array(N * 12), uv = [], idx = [];
+    for (let i = 0; i < N; i++) {
+      const cel = 6 + (team ? 3 : 0) + (i % 3), IN = 0.5 / 128, INV = 0.5 / 64;
+      let u0 = (cel % 8) * 16 / 128 + IN, u1 = ((cel % 8) * 16 + 16) / 128 - IN; if (i % 2) [u0, u1] = [u1, u0];
+      const vT = 1 - Math.floor(cel / 8) * 32 / 64 - INV, vB = 1 - (Math.floor(cel / 8) * 32 + 32) / 64 + INV;
+      uv.push(u0, vT, u1, vT, u0, vB, u1, vB); const b = i * 4; idx.push(b, b + 2, b + 1, b + 2, b + 3, b + 1);
+    }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(new Array(N * 4).fill(0).flatMap(() => [-E.s, 0, 0]), 3));
+    const M = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ map: crowd.tex, alphaTest: 0.4, side: THREE.DoubleSide })); M.frustumCulled = false; scene.add(M);
+    // cada um: de onde vem (na arquibancada, 3–6 m para o lado/para trás) e o lugar dele em volta de você (patamar + fileira de trás)
+    const F = [];
+    for (let i = 0; i < N; i++) {
+      const lado = i % 2 ? 1 : -1, fila = i < 8 ? 0 : 1, col = Math.floor((i % 8) / 2) + (fila ? 0.5 : 0);
+      const dz = lado * (0.95 + col * 0.45), dx = 0.25 + fila * 0.85 + (i % 3) * 0.12;   // o mais perto a 0,95 m (o corpo dele tem ~0,8 m de largura: ninguém entra nele)
+      F.push({ de: { dz: lado * rand(3.2, 5.5), dx: rand(0.3, 2.4) }, para: { dz, dx }, atraso: rand(0, 0.9), fase: rand(0, 6.28), vel: rand(7, 10) });
+    }
+    festa = { E, M, F, t: 0 };
+  }
+  function atualizarFesta(dt) {
+    if (!festa) return;
+    if (!(G.celebAuto && G.celebAuto.tipo === 'torcida') || G.state === 'replay') { acabarFesta(); return; }
+    festa.t += dt;
+    const E = festa.E, A = festa.M.geometry.attributes.position, P = A.array, W = 0.4, H = 1.6, t = festa.t;
+    festa.F.forEach((f, i) => {
+      const k = smooth(clamp((t - f.atraso) / 1.4, 0, 1));
+      const dz = lerp(f.de.dz, f.para.dz, k), dx = lerp(f.de.dx, f.para.dx, k);
+      const x = E.s * (E.xFim + dx), z = E.zs + dz, y = E.yTopo + Math.max(0, dx - 0.3) * 0.5 + (k > 0.95 ? Math.abs(Math.sin(t * f.vel + f.fase)) * 0.22 : Math.abs(Math.sin(t * 9 + f.fase)) * 0.06);
+      const o = i * 12;
+      // virados para o campo (de frente para a câmera do lance): o plano em z
+      P[o] = x; P[o + 1] = y + H; P[o + 2] = z + E.s * W; P[o + 3] = x; P[o + 4] = y + H; P[o + 5] = z - E.s * W;
+      P[o + 6] = x; P[o + 7] = y; P[o + 8] = z + E.s * W; P[o + 9] = x; P[o + 10] = y; P[o + 11] = z - E.s * W;
+    });
+    A.needsUpdate = true;
+  }
+  function acabarFesta() { if (!festa) return; scene.remove(festa.M); festa.M.geometry.dispose(); festa.M.material.dispose(); festa = null; }
+  const lado = (s, z) => { const L = lados[s]; if (!L || !L.length) return null; return L.slice().sort((a, b) => Math.abs(a.zs - (z || 0)) - Math.abs(b.zs - (z || 0)))[0]; };
+  return { montar, lado, iniciarFesta, atualizarFesta, acabarFesta, get estado() { return { lados: [].concat(...Object.values(lados)).map((e) => ({ s: e.s, n: e.n, yTopo: +e.yTopo.toFixed(2), x0: +e.x0.toFixed(2), xFim: +e.xFim.toFixed(2), zs: e.zs })), festa: !!festa }; } };
+})();
+function bandeirasDaTorcida(team, filtro, foco, n = 14, escala = 1) {
+  const A = Confete.amostra(team).filter((a) => filtro(a[0], a[2]));
+  if (A.length < 3) return null;
+  const T = PARTIDA.timesObj[team], U = (T && T.uniforme) || PARTIDA.uniformes[team] || {}, cam1 = U.camisa || '#0B4F9C', cam2 = U.listra || '#ffffff';
+  // os lugares: espalhados (pelo menos 3,5 m um do outro); o mais perto do foco (e mais baixo = mais da frente) é o do bandeirão
+  const ord = A.slice().sort((a, b) => (Math.hypot(a[0] - foco.x, a[2] - foco.z) + a[1] * 4) - (Math.hypot(b[0] - foco.x, b[2] - foco.z) + b[1] * 4));   // perto do foco e das fileiras da frente
+  const lug = [];
+  for (const a of ord) { if (lug.length >= n) break; if (lug.every((b) => Math.hypot(a[0] - b[0], a[2] - b[2]) > (b === lug[0] ? 6.8 : 4.4) * escala) && !crowd.anelAcima(a[0], a[1], a[2], (lug.length ? 5 : 6.8) * escala, (lug.length ? 3.5 : 5.5) * escala)) lug.push(a); }   // com o anel de cima por cima: o mastro atravessaria — outro lugar   // o pano de uma não alcança o mastro da outra
+  // as artes
+  const tela = (w, h, f) => { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); g.imageSmoothingEnabled = false; f(g, w, h); const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; return t; };
+  // as do time, em DOIS desenhos lado a lado na mesma textura (metade: fundo da camisa; outra metade: fundo da listra), alternando:
+  //   no meio de uma torcida da cor da camisa, a de fundo da outra cor aparece
+  const texTime = tela(96, 32, (g) => {
+    for (const [ox, c1, c2] of [[0, cam1, cam2], [48, cam2, cam1]]) {
+      g.fillStyle = c1; g.fillRect(ox, 0, 48, 32); g.fillStyle = c2; g.fillRect(ox, 0, 48, 5); g.fillRect(ox, 27, 48, 5);
+      try { desenharEmblema(g, ox + 14, 6, 20, 20, T && T.emblema); } catch (e) { /* sem escudo */ }
+    }
+  });
+  //   o jogador: você (com o seu nome de verdade, no "um jogador"); senão o camisa 10, um atacante ou outro titular de linha
+  const nomeVoce = String((PARTIDA.usuario && PARTIDA.usuario.nome) || '').trim(), voceOk = nomeVoce && !/^voc[eê]$/i.test(nomeVoce) && !(PARTIDA.controleTime);
+  const linha = (TEAMS[team] || []).filter((p) => !p.out && p.role !== 'GK' && p.dados && !p.voce);
+  const jog = (voceOk && (TEAMS[team] || []).find((p) => p.voce && !p.out)) || linha.find((p) => p.numero === 10) || linha.find((p) => p.role === 'FWD') || linha[0];
+  const nome = String(jog ? (jog.voce ? nomeVoce : jog.name) : (T && T.nome) || '').toUpperCase().slice(0, 14);
+  const lum = (h) => { const c = new THREE.Color(h); return c.r * 0.3 + c.g * 0.59 + c.b * 0.11; };
+  const texJog = tela(128, 64, (g, w, h) => {
+    g.fillStyle = cam1; g.fillRect(0, 0, w, h); g.fillStyle = cam2; g.fillRect(0, 0, w, 4); g.fillRect(0, h - 4, w, 4);
+    g.fillStyle = '#f4efe2'; g.fillRect(5, 8, 48, 48);                   // a moldura da foto
+    const r = document.createElement('canvas'); r.width = r.height = 16; const rg = r.getContext('2d'), d = (jog && jog.dados) || {};
+    try { pintarRosto(rg, 0, 0, d.pele || '#bf8159', d); } catch (e) { rg.fillStyle = d.pele || '#bf8159'; rg.fillRect(0, 0, 16, 16); }
+    g.drawImage(r, 0, 0, 16, 16, 9, 12, 40, 40);
+    // o nome: o maior que couber, em branco numa faixa escura (lê de longe em qualquer cor de time)
+    const pal = nome.split(' '), duas = pal.length > 1 && nome.length > 9, L1 = duas ? pal.slice(0, Math.ceil(pal.length / 2)).join(' ') : nome, L2 = duas ? pal.slice(Math.ceil(pal.length / 2)).join(' ') : '';
+    let fs = 20; const larg = () => Math.max(g.measureText(L1).width, L2 ? g.measureText(L2).width : 0);
+    g.font = 'bold ' + fs + 'px monospace'; while (fs > 9 && larg() > w - 64) { fs--; g.font = 'bold ' + fs + 'px monospace'; }
+    g.fillStyle = 'rgba(0,0,0,0.6)'; g.fillRect(56, duas ? 32 - fs - 3 : 32 - fs / 2 - 4, w - 58, duas ? fs * 2 + 6 : fs + 8);
+    g.textBaseline = 'middle'; g.fillStyle = '#ffffff';
+    if (duas) { g.fillText(L1, 59, 32 - fs / 2); g.fillText(L2, 59, 32 + fs / 2 + 1); } else g.fillText(nome, 59, 33);
+  });
+  // geometria: o pano é uma grade 6×2 (colunas × linhas de pontos 7×3); o mastro, uma caixinha de 4 lados (8 pontos, 8 triângulos)
+  const CC = 7, CL = 3;
+  const pano = (qtd, meia) => {
+    const g = new THREE.BufferGeometry(), pos = new Float32Array(qtd * CC * CL * 3), uv = [], idx = [];
+    for (let f = 0; f < qtd; f++) for (let l = 0; l < CL; l++) for (let c = 0; c < CC; c++) uv.push(meia ? (c / (CC - 1)) * 0.5 + (f % 2) * 0.5 : c / (CC - 1), 1 - l / (CL - 1));
+    for (let f = 0; f < qtd; f++) for (let l = 0; l < CL - 1; l++) for (let c = 0; c < CC - 1; c++) { const a = f * CC * CL + l * CC + c; idx.push(a, a + CC, a + 1, a + 1, a + CC, a + CC + 1); }
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+    return g;
+  };
+  const nT = Math.max(0, lug.length - 1);
+  const gTime = pano(nT, true), gJog = pano(1, false), gMastro = new THREE.BufferGeometry();
+  const mp = new Float32Array(lug.length * 8 * 3), mi = [];
+  for (let f = 0; f < lug.length; f++) { const b = f * 8; for (const [a1, a2] of [[0, 1], [1, 2], [2, 3], [3, 0]]) mi.push(b + a1, b + a2, b + 4 + a1, b + a2, b + 4 + a2, b + 4 + a1); }
+  gMastro.setAttribute('position', new THREE.BufferAttribute(mp, 3)); gMastro.setIndex(mi);
+  // sem névoa (como a torcida): na câmera do alto, do outro lado do campo, a névoa apagava as bandeiras no céu
+  const mTime = new THREE.MeshLambertMaterial({ map: texTime, side: THREE.DoubleSide, fog: false }), mJog = new THREE.MeshLambertMaterial({ map: texJog, side: THREE.DoubleSide, fog: false });
+  const mMastro = new THREE.MeshLambertMaterial({ color: 0xd9cfb4, side: THREE.DoubleSide, fog: false });
+  const grupo = new THREE.Group();
+  for (const [g, m] of [[gTime, mTime], [gJog, mJog], [gMastro, mMastro]]) { const o = new THREE.Mesh(g, m); o.frustumCulled = false; grupo.add(o); }
+  const B = lug.map((a, i) => {
+    const dl = Math.hypot(a[3], a[4]) || 1, dx = a[3] / dl, dz = a[4] / dl, big = i === 0;   // o pano sai para a ESQUERDA de quem olha do campo (a frente do desenho para o campo: o nome não fica espelhado)
+    const E = escala; return { x: a[0], y: a[1] + 1.45, z: a[2], dx, dz, sx: dz, sz: -dx, big, L: (big ? 4.6 : 3.4) * E, W: (big ? 4.4 : 2.3) * E, H: (big ? 2.2 : 1.45) * E, fase: rand(-0.6, 0.6), rit: 1.7, amp: big ? 0.2 : rand(0.28, 0.38) };   // quase no mesmo ritmo (como torcida de verdade): uma não entra na outra
+  });
+  function atualizar(t) {
+    const PT = gTime.attributes.position.array, PJ = gJog.attributes.position.array;
+    let kT = 0;
+    B.forEach((b, f) => {
+      const a = Math.sin(t * b.rit + b.fase) * b.amp, sa = Math.sin(a), ca = Math.cos(a);
+      const ux = b.sx * sa, uy = ca, uz = b.sz * sa;                  // o mastro, inclinado para o lado (vai e volta)
+      const wx = b.sx * ca, wy = -sa, wz = b.sz * ca;                 // o pano sai do mastro para o lado
+      const tx = b.x + ux * b.L, ty = b.y + uy * b.L, tz = b.z + uz * b.L;
+      // o mastro: 4 cantos embaixo (na mão) e 4 em cima, 6 cm de grossura
+      const e = 0.03, m = f * 24;
+      [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([p, q], k) => {
+        const ox = b.sx * p * e + b.dx * q * e, oz = b.sz * p * e + b.dz * q * e;
+        mp[m + k * 3] = b.x + ox; mp[m + k * 3 + 1] = b.y; mp[m + k * 3 + 2] = b.z + oz;
+        mp[m + 12 + k * 3] = tx + ox; mp[m + 12 + k * 3 + 1] = ty; mp[m + 12 + k * 3 + 2] = tz + oz;
+      });
+      // o pano: preso no mastro (coluna 0) e tremulando mais na ponta; vai junto com o balanço (atrasado um pouco)
+      const P = b.big ? PJ : PT, o0 = b.big ? 0 : kT * CC * CL * 3;
+      for (let l = 0; l < CL; l++) for (let c = 0; c < CC; c++) {
+        const cc = c / (CC - 1), ll = l / (CL - 1), onda = Math.sin(t * 6 - cc * 4 + b.fase) * 0.16 * cc - Math.cos(t * b.rit + b.fase) * b.amp * 0.6 * cc;
+        const i = o0 + (l * CC + c) * 3;
+        P[i] = tx - ux * ll * b.H + wx * cc * b.W + b.dx * onda;
+        P[i + 1] = ty - uy * ll * b.H + wy * cc * b.W - cc * cc * 0.08;
+        P[i + 2] = tz - uz * ll * b.H + wz * cc * b.W + b.dz * onda;
+      }
+      if (!b.big) kT++;
+    });
+    gTime.attributes.position.needsUpdate = gJog.attributes.position.needsUpdate = gMastro.attributes.position.needsUpdate = true;
+    gTime.computeVertexNormals(); gJog.computeVertexNormals(); gMastro.computeVertexNormals();
+  }
+  function descartar() {
+    if (grupo.parent) grupo.parent.remove(grupo);
+    for (const o of [gTime, gJog, gMastro, mTime, mJog, mMastro, texTime, texJog]) try { o.dispose(); } catch (e) { /* nada */ }
+  }
+  atualizar(0);
+  return { grupo, atualizar, descartar, jogador: nome, qtd: B.length };
+}
 
 // ---------------------------------------------------------------------
 // SONS — todos GERADOS no código com a Web Audio API: nenhum arquivo para baixar.
@@ -4502,6 +4820,24 @@ function pintarTraje(g, ox, o, costas) {
   if (o.emblema && (V.tipo === 'agasalho' || V.tipo === 'polo' || V.tipo === 'jaqueta')) desenharEmblema(g, ox + 19, 6, 8, 9, o.emblema);
   else if (o.emblema && V.tipo === 'terno') desenharEmblema(g, ox + 20, 7, 6, 7, o.emblema);
 }
+// (7.6.6) SEM CAMISA (a comemoração "Tirar a camisa"): a frente (x 16–48) e as costas (x 48–80) do tronco na cor da pele, com uns
+//   pixels mais escuros marcando o peito e o umbigo; personagem feminina fica com um TOP esportivo (faixa larga no peito e as alças)
+function pintarSemCamisa(g, o) {
+  const [r, gg, b] = rgbCor(o.pele), esc = (k) => 'rgb(' + Math.round(r * k) + ',' + Math.round(gg * k) + ',' + Math.round(b * k) + ')';
+  for (const ox of [16, 48]) {
+    g.fillStyle = esc(1); g.fillRect(ox, 0, 32, 32);
+    g.fillStyle = esc(0.86);
+    if (ox === 16) { if (!o.top) { g.fillRect(ox + 8, 11, 6, 1); g.fillRect(ox + 18, 11, 6, 1); } g.fillRect(ox + 15, 21, 2, 2); }   // peito e umbigo
+    else g.fillRect(ox + 15, 6, 2, 18);                  // a coluna
+    if (o.top) {
+      g.fillStyle = o.top; g.fillRect(ox + 2, 5, 28, 10); g.fillRect(ox + 7, 0, 4, 5); g.fillRect(ox + 21, 0, 4, 5);
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(ox + 2, 13, 28, 2);
+    }
+  }
+  // as camisas com desenho usam também as laterais do tronco e as mangas do atlas (x 96–128, y 16–32): pele (o top também dos lados)
+  g.fillStyle = esc(1); g.fillRect(96, 16, 32, 16);
+  if (o.top) { g.fillStyle = o.top; g.fillRect(96, 19, 16, 5); }
+}
 function atlasJogador(o) {
   const hd = o.modelo && !o.traje ? 2 : 1;          // camisa com desenho: o atlas em dobro (ver pintarCamisaModelo)
   const t = drawTexture(ATLAS_W * hd, ATLAS_H * hd, (g) => {
@@ -4514,6 +4850,7 @@ function atlasJogador(o) {
       pintarCamisa(g, 48, o.camisa, o.listra, o.gola, o.numero, true, null, o.nomeCamisa, o.corTexto);
     }
     if (o.traje) { pintarTraje(g, 16, o, false); pintarTraje(g, 48, o, true); }   // (7.4.1) técnico: terno, agasalho, polo...
+    if (o.semCamisa) pintarSemCamisa(g, o);                // (7.6.6) comemoração tirando a camisa: o peito e as costas na cor da pele (ela: com o top)
     pintarLadosCabeca(g, 80, 0, o);
     if (o.chuteira != null) pintarChuteira(g, 80, 16, CHUTEIRAS[o.chuteira] || CHUTEIRAS[0]);
     // (7.4.11) o quadrado das cores (x 0–16, y 16–32) só precisa de branco no meio (UV_BRANCO): a volta fica na cor da camisa,
@@ -4523,17 +4860,23 @@ function atlasJogador(o) {
   if (hd > 1) { t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; }   // de longe as listras não "piscam"
   return t;
 }
+// (7.6.6) a etiqueta era 128×20 com filtro "pixelado" sem mipmaps: quando o boneco ficava longe
+// (câmera de TV), as letras se misturavam e o nome parecia embaralhado/duplicado. Agora o desenho é
+// feito no dobro da resolução e a textura usa mipmaps (as letras diminuem sem se embaralhar).
+// Mesmo tamanho na tela, mesma chamada de desenho — só ~40 KB a mais de textura por jogador.
 function texNome(nome, fundo) {
-  return drawTexture(128, 20, (g, w) => {
-    g.clearRect(0, 0, w, 20);
-    g.font = 'bold 12px Arial'; g.textAlign = 'center';
+  const t = drawTexture(256, 40, (g, w) => {
+    g.clearRect(0, 0, w, 40);
+    g.font = 'bold 24px Arial'; g.textAlign = 'center';
     const txt = nome.length > 16 ? nome.slice(0, 15) + '…' : nome;
-    const larg = Math.min(w - 2, g.measureText(txt).width + 10);
+    const larg = Math.min(w - 4, g.measureText(txt).width + 20);
     g.fillStyle = fundo || 'rgba(7,20,48,0.85)';
-    g.fillRect((w - larg) / 2, 2, larg, 16);
+    g.fillRect((w - larg) / 2, 4, larg, 32);
     g.fillStyle = '#FFFFFF';
-    g.fillText(txt, w / 2, 14);
+    g.fillText(txt, w / 2, 28);
   });
+  t.magFilter = THREE.LinearFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true;
+  return t;
 }
 
 // DESEMPENHO: cada boneco era feito de ~20 caixas e algumas tinham 6 materiais — umas 39 chamadas de
@@ -4800,7 +5143,7 @@ function makeAthlete(o) {
   raiz.add(sombra);
   // (6.6.15) o topo da cabeça COM o cabelo (no espaço do corpo): o jornal da chuva fica em cima dele; cabelo muito alto = só a mão
   let topoCabeca = 1.36 + 0.52 * kc; for (const p of pecasCabeca) topoCabeca = Math.max(topoCabeca, p[5] + p[1] / 2);
-  const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra, topoCabeca, cabelo: topoCabeca - (1.36 + 0.52 * kc) };
+  const atleta = { raiz, corpo, pernaE, pernaD, bracoE, bracoD, etiqueta, troncoInteiro, troncoSemCabeca, cabeca, sombra, topoCabeca, cabelo: topoCabeca - (1.36 + 0.52 * kc), opts: o };   // (7.6.6) opts: tirar a camisa refaz o desenho
   if (enf && enf.t) tatuarAtleta(atleta, enf.t, pele);
   if (o.escala) raiz.scale.setScalar(o.escala);
   raiz.userData.atleta = atleta; ATLETAS.add(atleta);
@@ -5009,7 +5352,12 @@ function updateOfficials(dt, rdt) {
   atualizarLinhas();
   for (const o of officials) {
     let tx, tz;
-    if (o.role === 'REF') {
+    const CF = o.role === 'REF' ? G.cartaoFesta : null;
+    if (CF && CF.p && !CF.p.out) {                    // (7.6.6) vai até quem comemorou sem camisa / na torcida para dar o amarelo
+      const q = CF.p, ax = clamp(q.x, -HALF_L + 1, HALF_L - 1), az = clamp(q.z, -HALF_W + 1, HALF_W - 1), dx = ax - q.x, dz = az - q.z, dl = Math.hypot(dx, dz);
+      const ux = dl > 0.3 ? dx / dl : -Math.sign(q.x || 1), uz = dl > 0.3 ? dz / dl : 0;   // pelo lado do campo
+      tx = ax + ux * 1.9; tz = az + uz * 1.9;
+    } else if (o.role === 'REF') {
       // O juiz acompanha o lance de longe, na diagonal, e não entra nas áreas (a não ser no pênalti).
       // Em bola parada ele fica num lugar de juiz de verdade, longe do cobrador e do goleiro.
       const S = G.sp, lim = HALF_L - BOX.depth - 2;
@@ -5047,11 +5395,11 @@ function updateOfficials(dt, rdt) {
       }
       if (o.refPose === 'bandeira' || (G.foul && G.foul.ar === o)) { tx = o.x; tz = o.z; }   // parado com a bandeira
     }
-    const des = seek(o, tx, tz, o.role === 'REF' ? 6.5 : 7);
+    const des = seek(o, tx, tz, o.role === 'REF' ? (CF ? 8.5 : 6.5) : 7);   // (7.6.6) indo dar o cartão da comemoração: corre mais
     const k = Math.min(1, dt * 6);
     o.vx += (des.vx - o.vx) * k; o.vz += (des.vz - o.vz) * k;
     o.x += o.vx * dt; o.z += o.vz * dt;
-    const alvo = o.refPose && o.role === 'REF' && G.foul ? G.foul.off : (G.foul && G.foul.ar === o ? { x: o.x, z: 0 } : ball);   // bandeirinha olha para o campo
+    const alvo = CF && CF.p ? CF.p : o.refPose && o.role === 'REF' && G.foul ? G.foul.off : (G.foul && G.foul.ar === o ? { x: o.x, z: 0 } : ball);   // bandeirinha olha para o campo
     o.angle = turnToward(o.angle, Math.atan2(alvo.z - o.z, alvo.x - o.x), 6 * dt);
     o.anim += Math.hypot(o.vx, o.vz) * dt * 2.6;
     if (o.refPoseT > 0) { o.refPoseT -= rdt; if (o.refPoseT <= 0) o.refPose = null; }
@@ -5131,6 +5479,8 @@ const userRing = flatRing(0.5, 0.68, 0xf7941d);
 userRing.material.color.set(AJ.aro && AJ.aro !== 'nenhum' ? AJ.aro : '#f7941d');
 const targetRing = flatRing(0.7, 0.95, 0xffffff); targetRing.visible = false;
 const dribbleRing = flatRing(0.6, 0.8, 0xff7676, 0.8); dribbleRing.visible = false;
+// (7.6.6) TROCAR APONTANDO: um aro fino e claro no companheiro para quem TROCAR iria agora (só com o time inteiro e o direcional apontado).
+const apontaRing = flatRing(0.42, 0.52, 0xffffff, 0.55); apontaRing.visible = false;
 
 // ÁREA DO LATERAL: quem é do outro time fica fora de um meio-círculo em volta da bola até a cobrança sair — 5 m no
 // lateral com o pé (society/futsal), 2 m no arremesso. Antes você podia ficar em cima de quem cobrava e roubava sempre.
@@ -5372,6 +5722,132 @@ const CELEBRACOES = {
 //     entrando nele). Só nos pulos de verdade (voo: [início, fim] em segundos) ele fica no ar; pulinho = os saltinhos curtos da dança.
 for (const k of Object.keys(CELEBRACOES)) for (const [, q] of CELEBRACOES[k].keys) { if (q.lLx) q.lLx = -q.lLx; if (q.lRx) q.lRx = -q.lRx; }
 Object.assign(CELEBRACOES.mortal, { voo: [[0.6, 1.45]] });
+// (7.6.6) TIRAR A CAMISA: põe as mãos na barra da camisa, puxa por cima da cabeça (aí o boneco fica sem camisa — ela, com o top) e
+//   gira a camisa (pixel art com as cores e o desenho do time) com o braço direito no alto, aberto para o lado (a camisa não passa
+//   pela cabeça). Dá CARTÃO AMARELO (o juiz vem e mostra quando a comemoração acaba). A camisa volta no recomeço (e no replay).
+CELEBRACOES.camisa = { nome: 'Tirar a camisa', dur: 4.4, giro: 0, swing: 0.3, vel: [[0, 3], [0.35, 0], [4.4, 0]], cartao: 'camisa',
+  keys: [
+    [0, {}],
+    [0.35, { aLz: 0.38, aRz: 0.38, aLx: -0.32, aRx: 0.32, lean: 0.12, cab: 0.15 }],          // as mãos na barra (cruzadas na frente)
+    [0.75, { aLz: 2.1, aRz: 2.1, aLx: -0.12, aRx: 0.12, lean: -0.04, cab: 0.3 }],             // puxando para cima (cabeça baixa)
+    [1.0, { aLz: 2.95, aRz: 2.95, aLx: 0.12, aRx: -0.12, lean: -0.08 }],                       // por cima da cabeça: saiu
+    [1.35, { aLz: 0.5, aLx: 0.95, aRz: 2.75, aRx: -0.9, lean: -0.05 }],
+    [1.7, { aLz: 0.55, aLx: 1.0, aRz: 2.95, aRx: -0.8, lean: -0.08, y: 0.06 }],
+    [2.05, { aLz: 0.5, aLx: 0.95, aRz: 2.7, aRx: -0.95, lean: -0.05 }],
+    [2.4, { aLz: 0.55, aLx: 1.0, aRz: 2.95, aRx: -0.8, lean: -0.08, y: 0.06 }],
+    [2.75, { aLz: 0.5, aLx: 0.95, aRz: 2.7, aRx: -0.95, lean: -0.05 }],
+    [3.1, { aLz: 0.55, aLx: 1.0, aRz: 2.95, aRx: -0.8, lean: -0.08, y: 0.06 }],
+    [3.6, { aLz: 0.4, aLx: 0.7, aRz: 2.7, aRx: -0.9, lean: -0.03 }],
+    [4.4, { aLz: 0.1, aLx: 0.25, aRz: 0.25, aRx: -0.3 }],                                       // braços descem (a camisa na mão)
+  ],
+  aoQuadro: (p, m, t) => { if (t >= 0.9 && !p.semCamisa) trocarCamisa(p, true); if (p.semCamisa) moverCamisaNaMao(p, m, t); } };
+CELEBRACOES.camisa.keys.forEach(([, q]) => { if (q.lLx) q.lLx = -q.lLx; if (q.lRx) q.lRx = -q.lRx; });   // (mesma convenção das outras: aqui não há pernas para o lado)
+const CAMISA_ALVO = new Set(['camisa']);
+// quem é "ela": a ficha da jogadora, o seu personagem ou a partida feminina
+const ehJogadora = (p) => !!p && ((p.dados && p.dados.genero === 'F') || (p.voce && typeof PERSONAGEM !== 'undefined' && PERSONAGEM && PERSONAGEM.genero === 'F') || (!(p.dados && p.dados.genero) && PARTIDA && PARTIDA.genero === 'F'));
+// as peças do tronco e dos braços (onde a cor da camisa vira pele); o resto (calção, meião, chuteira) não muda
+function pecasDaCamisa(A) { const S = new Set([A.troncoInteiro, A.troncoSemCabeca]); for (const b of [A.bracoE, A.bracoD]) b.traverse((o) => { if (o.isMesh) S.add(o); }); return S; }
+function trocarCamisa(p, tirar) {
+  const A = p && p.mesh; if (!A || !A.opts || !A.troncoInteiro || !!p.semCamisa === !!tirar) return;
+  const base = A.troncoInteiro.material, o = A.opts;
+  if (!A._camisa) {
+    const hx = (h) => (typeof h === 'number' ? h : parseInt(String(h).slice(1), 16));
+    const alvos = [hx(o.camisa)];
+    if (o.modelo) try { alvos.push(hexDeRGB(compilarModelo(o.modelo, o)(0.5, 0.5, 'm'))); } catch (e) { /* só a cor da camisa */ }
+    const fem = ehJogadora(p);
+    A._camisa = { alvos: alvos.map((h) => [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255]), pele: (() => { const h = hx(o.pele); return [((h >> 16) & 255) / 255, ((h >> 8) & 255) / 255, (h & 255) / 255]; })(),
+      com: base.map, sem: atlasJogador(Object.assign({}, o, { modelo: null, semCamisa: true, top: fem ? '#1b1d22' : null })), orig: new Map(), pecas: pecasDaCamisa(A) };
+  }
+  const C = A._camisa;
+  for (const ms of C.pecas) {
+    const at = ms.geometry && ms.geometry.attributes.color; if (!at) continue;
+    if (!C.orig.has(at)) C.orig.set(at, at.array.slice());
+    const O = C.orig.get(at), arr = at.array;
+    if (tirar) { for (let i = 0; i < arr.length; i += 3) if (C.alvos.some((c) => Math.abs(O[i] - c[0]) < 0.02 && Math.abs(O[i + 1] - c[1]) < 0.02 && Math.abs(O[i + 2] - c[2]) < 0.02)) { arr[i] = C.pele[0]; arr[i + 1] = C.pele[1]; arr[i + 2] = C.pele[2]; } }
+    else arr.set(O);
+    at.needsUpdate = true;
+  }
+  // o boneco "fundido" (todas as peças numa malha só): copia de novo as cores das peças, na mesma ordem da fusão
+  if (A.fundido) {
+    const fa = A.fundido.geometry.attributes.color; let v0 = 0;
+    A.raiz.traverse((ms) => {
+      if (!ms.isMesh || ms.material !== base || ms === A.fundido) return;
+      const g = ms.geometry, a = g && g.attributes;
+      if (!(g.index && a.position && a.normal && a.uv && a.color)) return;
+      if (v0 + a.color.array.length <= fa.array.length) fa.array.set(a.color.array, v0);
+      v0 += a.color.array.length;
+    });
+    fa.needsUpdate = true;
+    A.fundido.material.map = tirar ? C.sem : C.com;
+  }
+  base.map = tirar ? C.sem : C.com;
+  p.semCamisa = !!tirar;
+  if (tirar) {                                          // a camisa na mão
+    if (!A._camisaMao) A._camisaMao = camisaPixelArt(A, o);
+    if (!A._camisaMao.parent) scene.add(A._camisaMao);
+    A._camisaMao.visible = true;
+  } else if (A._camisaMao) A._camisaMao.visible = false;
+}
+// a camisa que ele segura: a silhueta de uma camisa em pixel art (24×22), com a FRENTE copiada do desenho da camisa dele (cores,
+//   listras, escudo) e as mangas na cor da camisa. Um plano só (1 desenho), presa na mão pela gola, balançando.
+function camisaPixelArt(A, o) {
+  const c = document.createElement('canvas'); c.width = 24; c.height = 22; const g = c.getContext('2d'); g.imageSmoothingEnabled = false;
+  const src = A._camisa.com && A._camisa.com.image, hd = src ? src.width / ATLAS_W : 1;
+  const cor = typeof o.camisa === 'number' ? '#' + o.camisa.toString(16).padStart(6, '0') : o.camisa;
+  g.fillStyle = cor; g.fillRect(0, 2, 6, 7); g.fillRect(18, 2, 6, 7);                    // mangas
+  if (src) g.drawImage(src, 16 * hd, 0, 32 * hd, 32 * hd, 5, 1, 14, 21); else { g.fillStyle = cor; g.fillRect(5, 1, 14, 21); }
+  g.clearRect(10, 0, 4, 2);                                                              // a gola
+  g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(0, 8, 6, 1); g.fillRect(18, 8, 6, 1);
+  const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+  const geo = new THREE.PlaneGeometry(0.62, 0.57); geo.translate(0, -0.285, 0);           // a origem na gola (na mão)
+  const ms = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: t, side: THREE.DoubleSide, alphaTest: 0.5 }));
+  ms.visible = false; return ms;
+}
+const _maoV = typeof THREE !== 'undefined' ? new THREE.Vector3() : null;
+function moverCamisaNaMao(p, m, t) {
+  const S = m._camisaMao; if (!S || !S.visible) return;
+  m.raiz.updateMatrixWorld(true);
+  _maoV.set(0, -0.66, 0); m.bracoD.localToWorld(_maoV);
+  S.position.copy(_maoV);
+  // girando no alto: a camisa fica sempre de frente para a câmera e roda no plano da tela (como um pano girando na mão);
+  //   antes ela girava em volta do eixo vertical e, de lado para a câmera, virava um risco fino
+  const gira = t > 1.2 && t < 3.6 ? (t - 1.2) * 9 : Math.sin(t * 5) * 0.12;
+  S.quaternion.copy(camera.quaternion); S.rotateZ(gira);
+}
+// a camisa volta no recomeço (e antes do replay: o replay mostra o lance com a camisa)
+function vestirCamisasSeAcabou() {
+  if (G.state === 'celebrate' || G.state === 'goal' || G.state === 'cenaGol') return;
+  for (const p of players) if (p.semCamisa) trocarCamisa(p, false);
+}
+// o AMARELO da comemoração (tirar a camisa / subir na torcida): o juiz vem até ele e mostra o cartão; segundo amarelo = vermelho
+//   (a expulsão acontece no recomeço, para não cortar a festa no meio)
+function cartaoDaComemoracao(p, motivo) {
+  if (!p || G.cartaoFesta || G.desafio || (typeof Historia !== 'undefined' && Historia.emTreino && Historia.emTreino())) return;
+  G.cartaoFesta = { p, motivo, t: 0, mostrado: false };
+}
+function atualizarCartaoFesta(dt) {
+  const CF = G.cartaoFesta; if (!CF) return;
+  CF.t += dt;
+  const festa = G.state === 'celebrate' || G.state === 'goal' || G.state === 'cenaGol';
+  const mostrar = () => {
+    CF.mostrado = true; CF.tm = CF.t;
+    CF.expulsar = !!CF.p.yellow; CF.p.yellow = true;
+    const ref = officials.find((o) => o.role === 'REF');
+    if (ref && festa) { ref.refPose = 'cartao'; ref.refPoseT = 1.8; ref.cartao.material.color.setHex(CF.expulsar ? 0xe02020 : 0xffd400); }
+    if (CF.p.isUser) G.stats.cartoes += CF.expulsar ? 'V' : 'A';
+    showToast(T(CF.expulsar ? 'Segundo amarelo: vermelho para' : 'Cartão amarelo para') + ' ' + nomeDe(CF.p) + ' (' + T(CF.motivo === 'torcida' ? 'comemorou na torcida' : 'tirou a camisa') + ')', CF.p.team === 0 ? 'bad' : 'good');
+  };
+  if (!festa) {                                      // a festa acabou (ou foi pulada): o cartão vale igual; o vermelho tira ele do jogo agora
+    if (!CF.mostrado) mostrar();
+    G.cartaoFesta = null;
+    if (CF.expulsar && !CF.p.out) expulsar(CF.p);
+    return;
+  }
+  const ref = officials.find((o) => o.role === 'REF');
+  if (!CF.mostrado && CF.p.celeb == null && ((ref && Math.hypot(ref.x - CF.p.x, ref.z - CF.p.z) < 2.6) || CF.t > 8)) mostrar();   // espera o juiz chegar (até ~8 s)
+  if (CF.mostrado && !CF.expulsar && CF.t - CF.tm > 1.9) G.cartaoFesta = null;   // o juiz volta para o lugar dele
+}
+
 Object.assign(CELEBRACOES.giro, { voo: [[0.62, 1.15]] });
 Object.assign(CELEBRACOES.soco, { voo: [[0.64, 1.25]] });
 Object.assign(CELEBRACOES.peixinho, { voo: [[0.22, 0.55]] });
@@ -6550,6 +7026,15 @@ function aiSemBola(p, dt, holder) {
     return seek(p, alvo.x, alvo.z, vel);
   }
   const oppHolds = holder && holder.team !== p.team;
+  // (7.6.6) NO CAMINHO DELE: quem conduz vem na direção deste defensor (ele está na frente, na linha da corrida, a menos de ~9 m):
+  //   em vez de seguir a marcação/cobertura e sair da frente (abrindo o caminho), ele vai PARA CIMA DA BOLA — bloqueia e tenta o
+  //   desarme (aiPressiona: contenção de frente e bote). Só o mais perto do time que está no caminho (os outros seguem marcando).
+  //   Se o do bote já está colado nele, de frente (fazendo o trabalho), quem está atrás continua na cobertura (não vão os dois).
+  const prB = G.pressers[p.team], boteFeito = !!(prB && prB !== p && !prB.out && dist2D(prB, holder) < 2.5 && !porTras(prB, holder));
+  if (oppHolds && real && G.state === 'play' && !G.sp && !G.kickoffPending && p.role !== 'GK' && holder.role !== 'GK' && prB !== p && !boteFeito
+    && noCaminhoDele(p, holder) && !TEAMS[p.team].some((q) => q !== p && !q.out && q.role !== 'GK' && dist2D(q, holder) < dist2D(p, holder) && noCaminhoDele(q, holder))) {
+    marcarRecuo(p); return aiPressiona(p, holder, dt);
+  }
   if (campoPequeno()) { const r = aiCampoPequeno(p, holder, myTeamHas, oppHolds); if (r) return r; }   // fixo e marcação 1 x 1
   // SÓ RESTARAM OS ZAGUEIROS (todo mundo do time que está entre o atacante e o gol é
   // zagueiro) e o atacante ainda está FORA da área: o mais perto dele SOBE para dar o bote e o
@@ -6633,6 +7118,14 @@ function coberturaZaga(p, holder) {
   }
   return seek(p, tx, tz, CONFIG.AI_SPEED * (vem || dT > 3 ? 1 : 0.85) * p.speedMul);
 }
+// (7.6.6) p está NO CAMINHO de quem conduz: na frente dele (no sentido da corrida), entre ele e o nosso gol, a 1–9 m, e perto da
+//   linha da corrida (até ~1,4 m para o lado, um pouco mais de longe). Só conta com ele andando/correndo (≥ 1,5 m/s).
+function noCaminhoDele(p, h) {
+  const vh = Math.hypot(h.vx || 0, h.vz || 0); if (vh < 1.5) return false;
+  const dx = p.x - h.x, dz = p.z - h.z, ux = h.vx / vh, uz = h.vz / vh, frente = dx * ux + dz * uz;
+  if (frente < 1 || frente > 9 || (p.x - h.x) * -p.dir < -0.5) return false;   // atrás dele, longe ou do lado errado (mais longe do nosso gol)
+  return Math.abs(dx * uz - dz * ux) < 1.4 + frente * 0.08 && !(p.stun > 0.3) && !p.fall;
+}
 // Quem pressiona quem conduz. Contenção ANDANDO, bote CORRENDO.
 // Atacante de COSTAS para o nosso gol (pivô): o marcador cola nas costas dele (encosta) em vez de ficar a 2,4 m.
 function aiPressiona(p, holder, dt) {
@@ -6704,7 +7197,11 @@ function aiPressiona(p, holder, dt) {
   //   (corte); só depois segura de frente. Antes, com ~60° de diferença já contava como "na frente" e ele chegava do lado
   const fora = Math.abs((p.x - holder.x) * gz - (p.z - holder.z) * gx) / gl;
   const vemRapido = ((holder.vx || 0) * gx + (holder.vz || 0) * gz) > 2.5;
-  if ((naLinha < 0.45 || (vemRapido && fora > 1.2 && dH < 12)) && dH > 1.1) {
+  // (7.6.6) ele vem RETO para cima de mim (eu na linha da corrida dele, de frente): não recuo nem saio para o corte — vou na bola
+  //   (bloqueio + bote). Antes, com ele em velocidade, o defensor recuava/abria para o "corte" e o atacante passava pelo espaço.
+  if (noCaminhoDele(p, holder) && dH < 3.2 && !porTras(p, holder)) p.committing = Math.max(p.committing, 0.45);   // (o bote sai no próximo quadro, no bloco do bote acima)
+  const deFrente = naLinha > 0.75 && dH < 7;          // (7.6.6) já na frente dele e perto: segura ali (sem correr para o corte lá adiante)
+  if ((naLinha < 0.45 || (vemRapido && fora > 1.2 && dH < 12 && !deFrente)) && dH > 1.1) {
     let frente = clamp(dH * 0.85 + vh * 0.25, 2.2, 9);
     // (7.6.5) ele vem rápido (pela lateral, principalmente): o ponto de corte é onde dá para CHEGAR ANTES dele, com 2 m de folga —
     //   antes ia para um ponto perto demais, chegava do lado dele e era passado na corrida
@@ -6728,6 +7225,12 @@ function aiPressiona(p, holder, dt) {
   if (dH < 1.9 && !porTras(p, holder)) p.committing = Math.max(p.committing, Math.random() < (perigoGol ? 0.9 : 0.6) * dt * 3 * (Dp ? Dp.bote : 1) ? 0.45 : 0);   // de frente e perto: dá o bote
   if (dH > 3.5 || vh > 3.5) corrida(p, vem ? 3 : 2);                // chegando / acompanhando a arrancada
   const fx = comPiso(p.team, holder, hx + gx / gl * fecha, hz + gz / gl * fecha), fz = hz + gz / gl * fecha;
+  // (7.6.6) ele vem RETO na minha direção (estou no caminho da corrida dele, a menos de 7 m): não recuo abrindo espaço — fecho na bola
+  //   (encurto, fico na frente dela para bloquear) e, perto, dou o bote (acima). Recuar de frente fica para quando ele vem de lado.
+  if (noCaminhoDele(p, holder) && dH < 7 && !porTras(p, holder)) {
+    if (dH > 3.5) corrida(p, 2);
+    return seek(p, holder.x + (holder.vx || 0) * 0.3, holder.z + (holder.vz || 0) * 0.3, CONFIG.AI_SPEED * 0.95 * p.speedMul);
+  }
   if (vem) {
     // (7.6.5) RECUANDO DE FRENTE: no ritmo dele (a velocidade dele + a correção até o ponto da contenção). Antes ia para o ponto
     //   em linha reta: corria para cima dele, não conseguia frear e virar a tempo e ele passava
@@ -7961,6 +8464,12 @@ function gkThink(p, dt) {
   }
   if (p.jumpT > 0) p.jumpT -= dt;
   if (p.olhaT > 0) p.olhaT -= dt;
+  // (7.6.6) PÊNALTI, goleiro que escolheu o MEIO: se a bola vem alta nele (a cavadinha no meio, a bomba no alto), ele PULA com os
+  //   braços para cima ~0,35 s antes de ela chegar (antes ficava parado e a bola "batia" nele de pé, passando pela cabeça)
+  if (ball.penalti && p.penZona && p.penZona.lado === 0 && !p.penPulou && !G.possession && p.jumpT <= 0) {
+    const dx = p.x - ball.x, t = Math.abs(ball.vx) > 1 && dx * ball.vx > 0 ? dx / ball.vx : -1;
+    if (t > 0 && t < 0.38) { const y = ball.y + ball.vy * t - 0.5 * CONFIG.GRAVITY * t * t; if (y > 1.45 && y < 3.4 && Math.abs(ball.z + ball.vz * t - p.z) < 2.2) { p.jumpT = 0.5; p.penPulou = true; } }
+  }
   // PULO PARA TRÁS na cavadinha: sobe de costas com os braços esticados e cai deitado de costas.
   if (p.pulaTras) {
     const P = p.pulaTras; P.t += dt;
@@ -8360,8 +8869,26 @@ function trocarControle(p, forcar, goleiro) {
 }
 function trocarJogadorManual() {
   if (!controleDoTime() || G.state !== 'play' || G.kick || G.recv || G.recvFx || G.possession === user) return;
-  const p = proximoControlavel(user);
+  const p = jogadorApontado() || proximoControlavel(user);
   if (p && trocarControle(p)) G.ctlCd = 1.6;               // a troca automática espera um pouco (senão desfaz a sua)
+}
+// (7.6.6) TROCAR APONTANDO: com o direcional apontado, TROCAR vai para o companheiro naquela direção (o mais alinhado com ela, a
+//   distância pesa pouco); só tocar em TROCAR (direcional solto) continua indo para o mais perto da bola.
+function jogadorApontado() {
+  let inp = null; try { inp = readMove(); } catch (e) { inp = null; }
+  if (!inp || !(inp.mag > 0.35) || !user) return null;
+  const y = cam.yaw, fx = Math.cos(y), fz = Math.sin(y), rx = -Math.sin(y), rz = Math.cos(y);
+  let dx = inp.up * fx + inp.right * rx, dz = inp.up * fz + inp.right * rz; const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+  let best = null, bs = Infinity;
+  for (const p of TEAMS[0]) {
+    if (p === user || !controlavel(p)) continue;
+    const vx = p.x - user.x, vz = p.z - user.z, d = Math.hypot(vx, vz) || 1;
+    const ang = Math.acos(clamp((vx * dx + vz * dz) / d, -1, 1));
+    if (ang > (d < 4 ? 1.3 : 0.85)) continue;         // até ~50° para cada lado da direção apontada (~75° se ele já está colado em você, correndo até ele)
+    const sc = ang + d / 90;
+    if (sc < bs) { bs = sc; best = p; }
+  }
+  return best;
 }
 // (7.4.17) VOCÊ COM O GOLEIRO, BOLA NA MÃO: tem GK_MAO_SEG segundos (ou até sair da área) para repor com a mão — PASSAR é o
 //   arremesso com a mão e BOLA LONGA é o bate-pronto (joga a bola para cima e chuta). Passou o tempo ou saiu da área: ele larga a bola
@@ -8980,9 +9507,13 @@ function passoBola(b, h) {
     const ax = (b.vz / hs) * b.ss * CONFIG.CURVE * fm, az = (-b.vx / hs) * b.ss * CONFIG.CURVE * fm;
     b.vx += ax * h; b.vz += az * h;
   }
+  const vy0 = b.vy;
   b.vy += (-CONFIG.GRAVITY + (ar ? b.sv * CONFIG.LIFT * fm : 0)) * h;
   if (ar) { const f = 1 / (1 + ARRASTO * hs * h); b.vx *= f; b.vz *= f; }
-  b.x += b.vx * h; b.y += b.vy * h; b.z += b.vz * h;
+  // (7.6.6) a altura anda com a MÉDIA da velocidade vertical no passo (exato para a gravidade): antes usava só a do fim do passo e,
+  //   com o celular mais lento (passos maiores, até 0,05 s), toda bola alta saía mais baixa — a mesma cavadinha/cruzamento mudava de
+  //   altura conforme o FPS. Agora a parábola é a mesma em 30 ou 60 quadros por segundo (e as previsões da IA usam esta mesma conta).
+  b.x += b.vx * h; b.y += (vy0 + b.vy) * 0.5 * h; b.z += b.vz * h;
   if (b.y < R) {
     b.y = R;
     if (b.vy < -1.2) {
@@ -9252,7 +9783,7 @@ function checkBallContacts() {
       if (!ball.isShot && sp3 < 22) chance = Math.max(chance, 0.88);   // lançamento/cruzamento: ele sai e segura
       if (noCorpo) chance = Math.max(chance, 0.92);
       if (ball.cavadinha) chance = chanceCavadinhaGoleiro(gk, 0, noCorpo);
-      if (ball.penalti && !noCorpo) chance = Math.min(chance, 0.5);   // pênalti bem batido: mesmo no canto certo é difícil
+      if (ball.penalti) chance = chancePenaltiPorZona(gk, chance, noCorpo);   // pênalti: depende da zona que ele escolheu (7.6.6)
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
       if (campoPequeno() && ball.isShot && !noCorpo && !ball.cavadinha && !ball.penalti) chance -= 0.08;   // (7.4.20) society/futsal: um pouco mais fácil fora do corpo
       if (DI && DI.team !== gk.team) chance = 1;     // lateral/indireto: defesa fácil
@@ -9264,9 +9795,9 @@ function checkBallContacts() {
       // (7.4.20) society/futsal: errou a defesa no canto = nem sempre a ponta do pé/da mão ainda desvia (antes o deslize com o pé
       //   desviava 100% e o tapa 50%, e o goleiro "defendia" quase tudo). Perto de onde ele estava continua desviando quase sempre.
       const pq = campoPequeno(), perto = clamp(1 - passa / reach, 0, 1);
-      const chancePe = pq ? 0.3 + 0.55 * perto : 1, chanceTapa = pq ? 0.2 + 0.3 * perto : 0.5;
+      const chancePe = pq ? 0.3 + 0.55 * perto : 1, chanceTapa = pq ? 0.2 + 0.3 * perto : ball.penalti ? (gk.penAcerto === 'zona' ? 0.3 : 0.05) : 0.5;   // (7.6.6) no pênalti: espalma se acertou a zona (errou: quase nunca)
       if (!ball.saveOk && gk.diveT > 0 && gk.diveTipo === 'pe' && Math.random() < chancePe * fD) { defesaComOPe(gk, sp3); return; }   // a perna chegou: desvia
-      if (!ball.saveOk && (noCorpo || (sp3 > 12 && Math.random() < chanceTapa * fD))) {   // no corpo nunca "atravessa": rebate
+      if (!ball.saveOk && ((noCorpo && !(ball.penalti && gk.penAcerto === 'lado')) || (sp3 > 12 && Math.random() < chanceTapa * fD))) {   // no corpo nunca "atravessa": rebate
         ball.vx = -ball.vx * 0.3; ball.vz += rand(-7, 7); ball.vy = rand(2, 5);
         bolaSaiDoGoleiro(gk, 1.2);
         ball.lastKicker = gk; G.lastTouch = gk; gk.controlCd = 0.8; ball.isShot = false;
@@ -9562,12 +10093,14 @@ function scoreGoal(team, tGol) {
     const nomeDe = (p) => (p.voce ? CHAVE_VOCE : p.ficha || p.name);
     if (passe && passe.isUser) G.stats.assist++;
     if (G.golsLog) G.golsLog.push({ time: team, autor: quem ? nomeDe(quem) : null, contra: !quem, assist: passe ? nomeDe(passe) : null, t: Math.round(G.time), rel: relogioDecorrido() });
+    G.golInfoPend = { team, autor: quem, assist: passe };   // (7.6.6) a cena depois do gol mostra os números dele
   }
   G.possession = null;
   G.lastConceded = team === 0 ? 1 : 0;
   G.scoredBy = team;
-  G.tGol = tGol != null ? tGol : G.time; G.ladoGol = Math.sign(ball.x) || 1; G.replayFeito = false;   // para o replay
+  G.tGol = tGol != null ? tGol : G.time; G.ladoGol = Math.sign(ball.x) || 1; G.replayFeito = false; G.cenaGolFeita = false;   // para o replay; (7.6.6) e a cena depois do gol
   crowd.comemorar(team);
+  { const TO = PARTIDA.timesObj && PARTIDA.timesObj[team], u = (TO && TO.uniforme) || PARTIDA.uniformes[team] || {}; Confete.disparar(team, u.camisa, u.listra); }   // (7.6.6) papel picado nas 2 cores do time
   Torcida.gol(team);                                       // (7.4.9) do tamanho da torcida de quem fez; a casa não comemora gol do visitante
   if (PARTIDA.fogos && ESTADIO_A && team === PARTIDA.mandante && window.EstadiosA && window.EstadiosA.fogos) try { window.EstadiosA.fogos({ dur: 6, ritmo: 2.2 }); } catch (e) { /* sem fogos */ }   // (7.4.0) jogo grande: gol do mandante = fogos
   // Quem tomou o gol reage de um jeito: mão na cintura (metade), senta no chão ou se joga de costas.
@@ -9599,7 +10132,11 @@ function scoreGoal(team, tGol) {
 
 function startCelebration(name) {
   if (G.state !== 'celebrate' || user.celeb || G.celebAuto) return;
+  if (!CELEBRACOES[name]) return;
+  if (name === 'camisa' && user.semCamisa) return;     // (7.6.6) já tirou
   user.celeb = { name, t: 0 };
+  if (CELEBRACOES[name].cartao) cartaoDaComemoracao(user, CELEBRACOES[name].cartao);   // (7.6.6) tirar a camisa = amarelo
+  if (name === 'camisa') { const b4 = document.querySelector('#actions .act.s4'); if (b4) b4.hidden = true; }
   showToast(T(CELEBRACOES[name].nome) + '!', 'good');
   // (7.4.1) às vezes 1 ou 2 companheiros que já chegaram perto fazem a MESMA comemoração junto com você (no mesmo ritmo e direção)
   const perto = TEAMS[user.team].filter((p) => p !== user && !p.out && p.role !== 'GK' && !p.celeb && dist2D(p, user) < 5.5).sort((a, b) => dist2D(a, user) - dist2D(b, user));
@@ -9679,6 +10216,7 @@ function checarComemoracaoAuto() {
   }
   const nx = Math.abs(u.x) > BOARD_X - 1.3 ? Math.sign(u.x) : 0, nz = u.z > BOARD_Z - 1.3 ? 1 : u.z < -(BOARD_ZN - 1.3) ? -1 : 0;
   const alvo = nz ? { nx: 0, nz } : { nx, nz: 0 };
+  if (nx && !nz && pode.includes('placa') && EscadaTorcida.lado(nx, u.z)) { iniciarComemoracaoAuto('torcida', EscadaTorcida.lado(nx, u.z)); return; }   // (7.6.6) atrás do gol: pula a placa e sobe na torcida
   if ((nx || nz) && pode.includes('placa')) iniciarComemoracaoAuto('placa', alvo);
   else if ((nx || nz) && pode.includes('grade') && !(alvo.nx && Math.abs(u.z) < GOAL_HALF + 1.0)) iniciarComemoracaoAuto('grade', alvo);   // atrás da rede do gol, não (a rede fica no meio)
 }
@@ -9742,6 +10280,21 @@ function iniciarComemoracaoAuto(tipo, alvo) {
     A.T2 = A.tPega + A.tLeva;
     A.dur = A.T2 + 3.2;
     ball.vx = ball.vz = ball.vy = 0;
+  } else if (tipo === 'torcida') {
+    // (7.6.6) pula a placa de trás do gol, vai até a escadinha, sobe e comemora no patamar com a torcida (amarelo)
+    const E = alvo, sx = E.s, zb = clamp(u.z, -BOARD_ZN + 2.5, BOARD_Z - 2.5);
+    A.E = E; A.y = 0;
+    A.P = [{ x: u.x, z: u.z }, { x: sx * (BOARD_X - 0.6), z: zb }, { x: sx * (BOARD_X + 0.85), z: zb }, { x: sx * (BOARD_X + 0.85), z: E.zs }, { x: sx * (E.x0 - 0.2), z: E.zs }, { x: sx * (E.xFim + 0.35), z: E.zs }];
+    const d = (i) => Math.hypot(A.P[i + 1].x - A.P[i].x, A.P[i + 1].z - A.P[i].z);
+    A.T = [0];
+    A.T.push(A.T[0] + clamp(d(0) / 7, 0.25, 2.6));        // corre até a placa
+    A.T.push(A.T[1] + 0.62);                               // o pulo por cima da placa
+    A.T.push(A.T[2] + d(2) / 5.5);                         // corre atrás das placas até a escada
+    A.T.push(A.T[3] + d(3) / 4 + 0.05);                    // chega no pé da escada
+    A.T.push(A.T[4] + E.n * 0.27 + 0.2);                   // sobe os degraus
+    A.dur = A.T[5] + 5.2;
+    A.olhaCampo = Math.atan2(0, -sx);
+    cartaoDaComemoracao(u, 'torcida');
   } else {
     // Placa (e GRADE no society): vai até ela, de frente. Placa: sobe e fica em cima (0,9 m).
     // Grade: escala o alambrado até ~1,3 m, segura lá em cima e fica balançando.
@@ -9767,7 +10320,7 @@ function iniciarComemoracaoAuto(tipo, alvo) {
   if (tipo === 'bola' && typeof Historia !== 'undefined' && Historia.ovoPode()) G.ovoBola = true;   // ovo de páscoa: pegou a bola da rede na partida da escola (Fase 1)
   u.scripted = true; u.vx = u.vz = 0;
   G.celebT = Math.max(G.celebT, A.dur + 0.6);
-  showToast({ bandeira: 'Chutou a bandeirinha!', tecnico: 'Comemoração secreta: abraço no técnico!', placa: 'Subiu na placa!', grade: 'Pulou na grade!', bola: 'Bola para a torcida!' }[tipo], 'good');
+  showToast({ bandeira: 'Chutou a bandeirinha!', tecnico: 'Comemoração secreta: abraço no técnico!', placa: 'Subiu na placa!', grade: 'Pulou na grade!', bola: 'Bola para a torcida!', torcida: 'Foi comemorar com a torcida!' }[tipo], 'good');
 }
 
 function updateComemoracaoAuto(dt) {
@@ -9790,6 +10343,25 @@ function updateComemoracaoAuto(dt) {
       if (!A.b.balanco && t >= 0.88) A.b.balanco = { t: 0, dx: Math.cos(A.chute), dz: Math.sin(A.chute) };
       if (t > 1.3) u.angle = turnToward(u.angle, A.fora, 4 * dt);
     }
+  } else if (A.tipo === 'torcida') {
+    const P = A.P, T = A.T, E = A.E;
+    let i = 0; while (i < 5 && t >= T[i + 1]) i++;
+    if (i >= 5) {                                  // lá em cima: de frente para o campo, a torcida chegando em volta
+      u.x = P[5].x; u.z = P[5].z; A.y = E.yTopo; A.fase = 'festa';
+      u.angle = turnToward(u.angle, A.olhaCampo, 6 * dt);
+      if (!A.festa) { A.festa = true; EscadaTorcida.iniciarFesta(E, u.team); crowd.agitar(u.team, 1); }
+    } else {
+      const k = clamp((t - T[i]) / Math.max(0.01, T[i + 1] - T[i]), 0, 1), kk = i === 1 ? k : i === 4 ? k : smooth(k);
+      const nx = lerp(P[i].x, P[i + 1].x, kk), nz = lerp(P[i].z, P[i + 1].z, kk);
+      const dx = P[i + 1].x - P[i].x, dz = P[i + 1].z - P[i].z;
+      if (Math.hypot(dx, dz) > 0.05) u.angle = turnToward(u.angle, Math.atan2(dz, dx), (i === 1 ? 30 : 12) * dt);
+      u.x = nx; u.z = nz; u.anim += (i === 4 ? 4 : 7) * 2.6 * dt;
+      A.fase = ['corre', 'pula', 'corre', 'corre', 'sobe'][i]; A.k = k;
+      if (i === 1) A.y = Math.sin(k * Math.PI) * 1.05;                      // por cima da placa (0,9 m): os pés passam com folga (pernas encolhidas)
+      else if (i === 4) A.y = E.h * Math.min(E.n, Math.floor(Math.max(0, (Math.abs(nx) - E.x0) / E.run) + 0.999)) - (1 - Math.min(1, ((Math.abs(nx) - E.x0) / E.run % 1) * 3)) * 0;   // em cima do degrau onde o pé está
+      else A.y = 0;
+    }
+    u.vx = u.vz = 0;
   } else if (A.tipo === 'bola') {
     atualizarCelebBola(A, u, t, dt);
   } else if (A.tipo === 'grade') {
@@ -9859,6 +10431,22 @@ function aplicarCelebAuto(p, m) {
   const A = G.celebAuto, t = A.t, agora = performance.now();
   if (A.tipo === 'tecnico') { if (t >= ABRACO.chega) poseAbraco(m, t, agora, 'jogador'); return; }
   if (A.tipo === 'bola') { poseCelebBola(A, m, t, agora); return; }
+  if (A.tipo === 'torcida') {                         // (7.6.6)
+    m.raiz.position.y = A.y + (A.fase === 'festa' ? Math.abs(Math.sin(agora / 190)) * 0.18 : 0);
+    if (A.fase === 'pula') {                          // pernas encolhidas e braços para o alto no pulo
+      const f = Math.sin(A.k * Math.PI);
+      m.pernaE.rotation.z = 1.2 * f; m.pernaD.rotation.z = 0.9 * f; usarJoelhos(m, -1.6 * f, -1.4 * f);
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 1.6 + 0.8 * f; m.bracoE.rotation.x = 0.25; m.bracoD.rotation.x = -0.25; m.corpo.rotation.z = -0.15 * f;
+    } else if (A.fase === 'sobe') {                   // degrau por degrau: um joelho de cada vez
+      const f = Math.abs(Math.sin(agora / 140)), lado = Math.sin(agora / 140) > 0;
+      m.pernaE.rotation.z = lado ? 0.95 * f : 0.15; m.pernaD.rotation.z = lado ? 0.15 : 0.95 * f; usarJoelhos(m, lado ? -1.1 * f : 0, lado ? 0 : -1.1 * f);
+      m.bracoE.rotation.z = 0.4; m.bracoD.rotation.z = -0.3; m.corpo.rotation.z = -0.12;
+    } else if (A.fase === 'festa') {                  // braços para cima, pulando com a galera
+      usarJoelhos(m, 0, 0); m.pernaE.rotation.z = m.pernaD.rotation.z = 0;
+      m.bracoE.rotation.z = m.bracoD.rotation.z = 2.85 + Math.sin(agora / 150) * 0.15; m.bracoE.rotation.x = 0.3; m.bracoD.rotation.x = -0.3; m.corpo.rotation.z = 0;
+    }
+    return;
+  }
   if (A.tipo === 'grade') { poseGrade(A, m, t, agora); return; }
   if (A.tipo === 'bandeira') {
     if (t > 1.3) {                                 // braços para cima, pulinhos
@@ -10040,6 +10628,14 @@ function cameraCelebAuto() {
     const dC = A.senta ? 7.2 : 6;
     return { px: A.bx - A.nx * dC + A.nz * 1.6, py: 2.1 + yy * 0.9, pz: A.bz - A.nz * dC + A.nx * 1.6, tx: A.bx, ty: 2.0 + yy * 1.15, tz: A.bz };
   }
+  if (A.tipo === 'torcida') {                         // (7.6.6) do campo, olhando para ele e a escadinha (sobe junto)
+    const E = A.E, yy = A.fase === 'festa' ? E.yTopo : (A.y || 0);
+    // do campo, ao lado do gol (do lado da escada, fora da rede): pega o pulo, a corrida atrás das placas e a subida
+    const lz = Math.sign(E.zs) || 1;
+    if (A.t < A.T[3]) return { px: E.s * (HALF_L - 3.5), py: 2.6, pz: lz * (GOAL_HALF + 10), tx: u.x, ty: 1.1, tz: u.z };
+    // depois de pular: mais perto, rente às placas (do lado de dentro), de frente para a escada e o patamar
+    return { px: E.s * (BOARD_X - 0.8), py: 2.3 + yy * 0.8, pz: E.zs + lz * 5.5, tx: E.s * (E.xFim - 0.3), ty: 1.2 + yy, tz: E.zs };
+  }
   if (A.tipo === 'tecnico') {
     // Do lado do campo, de frente para os dois (de corpo inteiro, com o banco atrás).
     const mx = (u.x + A.cx) / 2, mz = (u.z + A.cz) / 2;
@@ -10071,6 +10667,7 @@ function endCelebration() {
     Historia.ovoBola().catch((e) => console.error(e)).then(() => { G.fading = false; endCelebration(); });
     return;
   }
+  if (!G.cenaGolFeita) { G.cenaGolFeita = true; if (CenaPosGol.iniciar(endCelebration)) return; }   // (7.6.6) a cena depois da comemoração (antes do replay)
   if (!G.replayFeito) { G.replayFeito = true; iniciarReplayGol(endCelebration); return; }   // replay antes da saída
   G.fading = true;
   saidaDaComemoracao();
@@ -10092,7 +10689,7 @@ function clearFlags(p) {
 //   da saída (que fica lado a lado de propósito)
 function separarNaSaida() {
   const L = players.filter((p) => !p.out);
-  for (let it = 0; it < 6; it++) {
+  for (let it = 0; it < 3; it++) {
     let mexeu = false;
     for (let i = 0; i < L.length; i++) for (let j = i + 1; j < L.length; j++) {
       const a = L[i], b = L[j], dz = b.z - a.z, d = Math.hypot(b.x - a.x, dz);
@@ -10426,7 +11023,70 @@ function atualizarReserva(S, p, dt) {
   return R.fase !== 'voando';
 }
 
-// "Pular": o cobrador já aparece no lugar com a bola; os outros continuam andando normalmente.
+// (7.6.6) PULAR CENA: todo mundo já no lugar em que estaria quando a cena terminasse — a barreira montada, quem defende a 9,15 m,
+//   a área do escanteio ocupada, quem recebe o lateral posicionado, você também (antes só o cobrador pulava; os outros
+//   continuavam andando e o jogo recomeçava com todo mundo fora de lugar). Quem estava caído já levanta.
+function posicionarComoNoFimDaCena() {
+  const S = G.sp, emFalta = G.state === 'foul' && G.foul;
+  const ref = S ? (S.ballSpot || S.stand || S.spot) : emFalta ? G.foul.spot : ball;
+  const timeDaBola = S ? S.team : emFalta ? G.foul.team : -1, movidos = [];
+  const focoAntes = G.focus; if (ref) G.focus = { x: ref.x, z: ref.z };   // a formação conta a partir de ONDE vai ser a cobrança (a bola ainda pode estar longe, voltando)
+  for (const p of players) {
+    if (p.out || p.red || p.x > 900 || (S && p === S.taker) || (p.scripted && !(G.subst && G.subst.pares.some((P) => P.entra === p)))) continue;
+    // o goleiro não usa o alvo de formação (ele se posiciona sozinho no gkThink): volta para o gol, um pouco à frente da linha
+    //   (mais adiantado com a bola no campo do adversário) e puxado para o lado da bola; no pênalti contra, o alvo da cobrança (na linha)
+    const gol = p.role === 'GK' && !(S && S.kind === 'penalti' && p.team !== S.team);
+    const t = gol ? { x: -p.dir * HALF_L + p.dir * (ref && ref.x * p.dir > 0 ? 3.5 : 1), z: clamp((ref ? ref.z : 0) * 0.12, -(GOAL_HALF - 0.5), GOAL_HALF - 0.5) }
+      : emFalta ? alvoReposicao(p) : S ? restartTarget(p) : formationTarget(p, !!(G.possession && G.possession.team === p.team));
+    if (!t || !isFinite(t.x) || !isFinite(t.z)) continue;
+    let x = t.x, z = t.z;
+    const muro = !!(S && S.kind === 'falta' && p.wallSlot >= 0 && S.wall && S.wall[p.wallSlot]);
+    const semDesvio = !!(S && (S.kind === 'penalti' || S.kind === 'tiro de meta'));   // pênalti/tiro de meta: o lugar já é o certo (fora da área)
+    if (!gol && !muro && !semDesvio && p.role !== 'GK') {
+      // o alvo de formação é um "molde" (colunas certinhas, gente colada na lateral): um desvio pequeno e fixo por jogador (±2 m no comprimento, ±1,5 m na largura)
+      //   deixa como fica no fim da cena de verdade; quem defende nunca fica mais perto da bola que o alvo (barreira, meio-círculo)
+      x += (((p.id * 37) % 13) / 12 - 0.5) * 4; z += (((p.id * 53) % 11) / 10 - 0.5) * 3;
+      if (ref && p.team !== timeDaBola) {
+        const d0 = Math.hypot(t.x - ref.x, t.z - ref.z), d1 = Math.hypot(x - ref.x, z - ref.z);
+        if (d1 < d0 && d1 > 0.01) { x = ref.x + (x - ref.x) / d1 * d0; z = ref.z + (z - ref.z) / d1 * d0; }
+      }
+      const mz = Math.min(4, HALF_W * 0.2) + (p.id % 3) * Math.min(1.5, HALF_W * 0.06);   // (cada um num recuo diferente: não forma outra fila)
+      x = clamp(x, -HALF_L + 1.5, HALF_L - 1.5); z = clamp(z, -HALF_W + mz, HALF_W - mz);   // ninguém colado na linha (só quem cobra)
+    }
+    p.x = clamp(x, -HALF_L - 1, HALF_L + 1); p.z = clamp(z, -HALF_W - 1, HALF_W + 1); p.vx = p.vz = 0;
+    p.fall = 0; p.falling = false; p.levanta = null; p.stun = 0; p.diveT = 0; p.slideT = 0; p.jumpT = 0; p.pulaTras = null; p.caidoComBola = 0; p.embalo = null; p.dash = 0;
+    if (!gol && !muro && p.role !== 'GK') { movidos.push(p); p._dMin = ref && p.team !== timeDaBola ? Math.hypot(t.x - ref.x, t.z - ref.z) : 0; }
+  }
+  G.focus = focoAntes;
+  // ninguém empilhado: companheiros a pelo menos 2,2 m e adversários a 0,9 m (a marcação no escanteio fica colada, como na cena);
+  //   a barreira, o goleiro e quem cobra não se mexem (só empurram os outros). Uma vez só, ao pular (~22×22 contas × 3).
+  const fixos = players.filter((q) => !q.out && !q.red && q.x < 900 && !movidos.includes(q));
+  for (let it = 0; it < 3; it++) {
+    for (let i = 0; i < movidos.length; i++) {
+      const a = movidos[i];
+      for (const b of movidos.slice(i + 1).concat(fixos)) {
+        const min = a.team === b.team ? 2.2 : 0.9, dx = a.x - b.x, dz = a.z - b.z, d = Math.hypot(dx, dz);
+        if (d >= min) continue;
+        const ux = d > 0.01 ? dx / d : Math.cos(a.id), uz = d > 0.01 ? dz / d : Math.sin(a.id), fixo = fixos.includes(b), m = (min - d) * (fixo ? 1 : 0.5);
+        a.x += ux * m; a.z += uz * m;
+        if (!fixo) { b.x -= ux * m; b.z -= uz * m; }
+      }
+    }
+  }
+  for (const p of movidos) {
+    if (p._dMin > 0) { const d = Math.hypot(p.x - ref.x, p.z - ref.z); if (d < p._dMin && d > 0.01) { p.x = ref.x + (p.x - ref.x) / d * p._dMin; p.z = ref.z + (p.z - ref.z) / d * p._dMin; } }   // o empurrão não aproxima quem defende
+    p.z = clamp(p.z, -HALF_W + 1, HALF_W - 1); p.x = clamp(p.x, -HALF_L + 0.5, HALF_L - 0.5); p._dMin = 0;
+    // pênalti: todo mundo (menos quem cobra e os goleiros) fora da área e da meia-lua; tiro de meta: o adversário fora da área
+    if (S && (S.kind === 'penalti' || (S.kind === 'tiro de meta' && p.team !== S.team))) {
+      foraDaArea(p, S.side);
+      if (S.kind === 'penalti' && S.ballSpot) afastarDe(p, S.ballSpot, 9.6);
+    }
+  }
+  for (const p of players) if (!p.out && !p.scripted && p.x < 900 && ref && !(S && p === S.taker)) p.angle = Math.atan2(ref.z - p.z, ref.x - p.x);   // de frente para a bola
+  if (cam.mode === 'tv') cam.yaw = yawTV();
+  Object.assign(cam, cameraGoal());
+}
+// "Pular": o cobrador já aparece no lugar com a bola; (7.6.6) e os outros também já no lugar (posicionarComoNoFimDaCena).
 function skipRestart() {
   const S = G.sp;
   if (!S || G.state !== 'restart') return;
@@ -10440,7 +11100,10 @@ function skipRestart() {
   }
   p.x = S.stand.x; p.z = S.stand.z; p.angle = S.face; p.carry = false; S.onRack = false;
   if (S.kind === 'lateral' && !S.pe) p.throwIn = true;
+  posicionarComoNoFimDaCena();
+  p.angle = S.face;
   startSetPieceWait();
+  Object.assign(cam, cameraGoal());                // (7.6.6) a câmera já no enquadramento da cobrança (sem mexer no giro: a sua cobrança já virou para a mira)
 }
 
 function startSetPieceWait() {
@@ -10987,6 +11650,7 @@ function pularParalisacao() {
   if (!F || G.state !== 'foul') return;
   if (F.card && !F.cardShown) mostrarCartao(F);
   iniciarCobrancaFalta(F);
+  if (G.state === 'restart' && G.sp && !G.pulando) skipRestart();   // (7.6.6) pulou a falta: já vai direto para a cobrança, todos no lugar
 }
 
 function iniciarCobrancaFalta(F) {
@@ -11152,14 +11816,37 @@ function aiPenalti(p) {
   ball.isShot = true;
 }
 
-// Goleiro no pênalti: escolhe um lado na hora do chute (40% cada canto, 20% fica) e pula já.
-// Se acertar o lado, a bola passa perto das mãos e a defesa é decidida como num chute normal.
+// Goleiro no pênalti: escolhe na hora do chute e pula já. (7.6.6) Ele escolhe uma das 5 zonas — esquerda em cima, esquerda embaixo, meio, direita em cima, direita embaixo — (as mesmas chances)
+//   e vai nela: o mergulho alto ou baixo para o lado escolhido; no meio, fica e pula se a bola vier alta nele (a cavadinha no meio, por exemplo).
+//   A defesa depende de acertar a zona (chancePenaltiPorZona): então fazer o gol também depende de sorte.
+// a defesa do pênalti pela zona escolhida (gk.penZona) × a zona por onde a bola passa (lado: o terço do meio do gol é o "meio";
+//   altura: acima de ~1,25 m é "em cima"). Acertou a zona: segura 35–55% (o resto é a força/colocação do chute) e, se não
+//   segurar, ainda espalma ~30%; acertou o lado e errou a altura: até 20%; foi para o outro lado: só a ponta da mão (até 10%).
+//   Sem zona (goleiro que você controla): o teto antigo, 50%. Bola NO CORPO dele: segura como sempre — menos quando ele mergulhou
+//   na altura errada (alto, e ela passou rasteira por baixo): aí só às vezes (35%).
+function chancePenaltiPorZona(gk, chance, noCorpo) {
+  const Z = gk && gk.penZona; if (!Z) return noCorpo ? chance : Math.min(chance, 0.5);
+  const ladoBola = Math.abs(ball.z) < GOAL_HALF * 0.3 ? 0 : Math.sign(ball.z), altBola = ball.y > 1.25 ? 'alto' : 'baixo';
+  gk.penAcerto = Z.lado !== ladoBola ? 'errou' : Z.lado === 0 || Z.alt === altBola ? 'zona' : 'lado';
+  if (noCorpo) return gk.penAcerto === 'lado' ? Math.min(chance, 0.35) : chance;   // no corpo: segura (mergulhou alto e a bola foi rasteira por baixo dele: só às vezes)
+  if (gk.penAcerto === 'errou') return Math.min(chance, 0.1);
+  if (gk.penAcerto === 'zona') return clamp(chance + 0.1, 0.35, 0.55);
+  return Math.min(chance, 0.2);
+}
+const ZONAS_PENALTI = [[-1, 'alto'], [-1, 'baixo'], [0, ''], [1, 'alto'], [1, 'baixo']];
 function goleiroAdivinha(gk) {
   if (!gk || gk.out) return;
-  const r = Math.random(), lado = r < 0.4 ? -1 : r < 0.8 ? 1 : 0;
-  if (lado === 0) { gk.jumpT = 0.5; return; }
-  gk.diveDur = 0.65; gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null;
-  gk.diveVX = 0; gk.diveVZ = lado * 5.5; gk.diveTipo = Math.random() < 0.6 ? 'baixo' : 'alto';
+  const [lado, alt] = ZONAS_PENALTI[Math.floor(Math.random() * ZONAS_PENALTI.length)];
+  gk.penZona = { lado, alt }; gk.penAcerto = null; gk.penPulou = false;
+  if (lado === 0) { gk.jumpT = 0; return; }        // no meio: espera a bola (a reação normal dele pula se ela vier alta)
+  // o mergulho é medido para ele estar NA ZONA (o canto, a ~60% da largura do gol) quando a bola chega na linha — antes era sempre
+  //   5,5 m/s por 0,65 s: com chute mais lento ele já tinha caído (e passado do ponto) quando a bola chegava, e nunca defendia
+  const hs = Math.hypot(ball.vx, ball.vz) || 15, tChega = clamp(tempoNoAr(Math.abs(gk.x - ball.x), hs), 0.3, 1.1);
+  const zAlvo = lado * GOAL_HALF * 0.62;
+  gk.diveDur = clamp(tChega + 0.1, 0.65, 1.1); gk.diveT = gk.diveDur; gk.diveTomb = gk.diveAlt = null;
+  // ...e sem passar da trave: o corpo termina o mergulho dentro do gol (~1,2 m antes do poste; as mãos chegam nele)
+  const vMax = Math.max(0, (GOAL_HALF - 1.2) - Math.abs(gk.z)) / gk.diveDur;
+  gk.diveVX = 0; gk.diveVZ = lado * Math.min(clamp(Math.abs((zAlvo - gk.z) / tChega), 2.5, 7.5), vMax); gk.diveTipo = alt;
   gk.diveSide = Math.sign(lado * Math.cos(gk.angle)) || 1;
 }
 
@@ -11204,6 +11891,7 @@ function startKick(kind) {
   G.kick.alto = lancar || (kind === 'pass' && !!(G.sp && G.sp.kind === 'escanteio'));   // escanteio: PASSAR é cruzar
   { const lim = limitarMiraBolaParada(G.kick.dirX, G.kick.dirZ); G.kick.dirX = lim.x; G.kick.dirZ = lim.z; }   // (7.5.11) nunca começa apontando para fora
   G.kick.cruzarFixo = cruzarFixo;
+  G.kick.tiroMeta = !!(user.goalKick && G.sp && G.sp.kind === 'tiro de meta');   // (7.6.6) dá para trocar para o passe RASTEIRO
   if (kind === 'shot') G.kick.cruzar = cruzarFixo || !mirandoNoGol(G.kick.dirX, G.kick.dirZ);
   // (7.6.4) LATERAL e ESCANTEIO seus: a seta gira devagar (arrastando para os lados), o jogador fica parado e só vira um pouco o
   //   corpo, e quem confirma é o botão (soltar o dedo não trava mais a seta). No lateral dá para escolher o lateral AÉREO.
@@ -11225,8 +11913,11 @@ function startKick(kind) {
 // (7.6.4) a cobrança de lateral/escanteio: o leque da mira ({ c: o centro, para dentro do campo; hw: meia-abertura }) ou null
 function lequeDaCobranca() {
   const S = G.sp;
-  if (!S || S.taker !== user || (S.kind !== 'lateral' && S.kind !== 'escanteio')) return null;
+  if (!S || S.taker !== user || (S.kind !== 'lateral' && S.kind !== 'escanteio' && S.kind !== 'penalti')) return null;
   const zs = S.zs || 1, sd = S.side || 1;
+  // (7.6.6) PÊNALTI: o mesmo esquema — a seta GIRA (arrastando para os lados), você fica parado atrás da bola; o leque cobre o gol
+  //   e um pouco para fora das traves (dá para chutar para fora, como sempre)
+  if (S.kind === 'penalti') { const d = Math.abs(sd * HALF_L - S.ballSpot.x) || 11; return { c: Math.atan2(0, sd * HALF_L - S.ballSpot.x), hw: Math.atan2(GOAL_HALF + 1.5, d), kind: 'penalti' }; }
   return S.kind === 'lateral' ? { c: Math.atan2(-zs, 0), hw: Math.PI / 2 - 0.07, kind: 'lateral', pe: !!S.pe } : { c: Math.atan2(-zs, -sd), hw: Math.PI / 4 - 0.05, kind: 'escanteio' };
 }
 const SENS_COBRANCA = 0.004;                       // rad por pixel arrastado (≈ 0,23°: 100 px giram 23°)
@@ -11319,6 +12010,7 @@ const FORCA_X = [0, 0.1, 0.3, 0.45, 0.7, 0.85, 1];
 const VEL_CHUTE = [3.5, 5, 9, 18, 25.5, 28.5, 31];     // m/s com força 7 (o chute "bom", no verde, sai a 20–25 m/s; o AZUL é fraco de verdade: 5–9 m/s)
 const VEL_PASSE = [4, 6, 10, 13, 18, 21, 24];         // passe rasteiro: ~5 m até ~40 m
 const VEL_CAV = [5, 20];                                          // cavadinha: m/s = 5 + 20 × força (azul ~7–11, amarelo ~11–14, verde ~14–19, vermelho até ~25)
+const CAV_OY_MIN_PEN = 0.56;                                      // (7.6.6) no pênalti: a faixa de baixo da bola (22% da altura, marcada em verde: CAVADINHA)
 const CAV_OY_MIN = 0.9;                                           // cavadinha só se o toque cair do ponto mais baixo da bola até ~5% do diâmetro acima (oy vai de -1 em cima a 1 embaixo; 0,9 = 5%)
 const ELEV_CAV = 0.75;                                            // ângulo de saída da cavadinha (~43°): a força decide altura e distância
 const ELEV_BAIXO = 0.27;                                          // rad a mais no chute quando se bate no ponto mais baixo da bola (oy = 1): ~15° 
@@ -11384,13 +12076,14 @@ function releasePower() {
   showStage('spin');
 }
 
+const penaltiDoUsuario = () => !!(G.sp && G.sp.kind === 'penalti' && G.sp.taker === user);
 function chooseSpin(ox, oy) {
   const k = G.kick;
   if (!k || k.spinChosen) return;
   k.spinChosen = true; k.ox = ox; k.oy = oy;
   const dot = $('spinDot');
   dot.hidden = false; dot.style.left = (50 + ox * 50) + '%'; dot.style.top = (50 + oy * 50) + '%';
-  $('spinInfo').textContent = describeSpin(ox, oy, k.kind === 'shot' && k.cruzar);
+  $('spinInfo').textContent = k.kind === 'shot' && penaltiDoUsuario() && oy >= CAV_OY_MIN_PEN ? T('Cavadinha!') : describeSpin(ox, oy, k.kind === 'shot' && k.cruzar);
   setTimeout(() => { if (G.state === 'spin' && G.kick === k) executeUserKick(); }, 380);
 }
 
@@ -11554,15 +12247,30 @@ function executeUserKick() {
   // CAVADINHA = tocar bem EMBAIXO da bola, em QUALQUER força. Não tem tabela à parte: a bola sai com a MESMA velocidade do chute
   // daquela força (VEL_CHUTE × força do jogador), só que num ângulo de cavadinha (ELEV_CAV, alto). Então quanto mais forte, mais alta e
   // mais longe ela vai — se entra ou não depende só da sua distância até o gol (e do goleiro adiantado).
-  const cavadinha = k.kind === 'shot' && k.oy >= CAV_OY_MIN;   // só no ponto mais baixo da bola (os 5% de baixo)
+  // (7.6.6) PÊNALTI: a cavadinha "não funcionava" — da marca, a velocidade normal da cavadinha (5 + 20 × força) só caía dentro do gol
+  //   no AZUL; qualquer força maior passava por cima do travessão (parecia que não existia). No pênalti a área do toque também é
+  //   bem maior (a faixa verde de baixo da bola) e a força decide a ALTURA em que ela cruza a linha (fraca ~1 m, forte quase no travessão;
+  //   no vermelho passa por cima) — ver mais abaixo. No celular os 5% eram uma faixa de poucos pixels: no pênalti a faixa é de 22% e
+  //   aparece marcada (verde, "CAVADINHA") na bola do efeito, que desce para baixo do gol (não tapa mais o goleiro).
+  const penaltiSeu = !!(G.sp && G.sp.kind === 'penalti' && G.sp.taker === u);
+  const cavadinha = k.kind === 'shot' && k.oy >= (penaltiSeu ? CAV_OY_MIN_PEN : CAV_OY_MIN);   // só no ponto mais baixo da bola (os 5% de baixo; no pênalti, a faixa de 22%)
   let vx, vy, vz, qualCav = 0;
   // A velocidade da cavadinha é UMA reta pela força (sem degrau entre as faixas, porque a tabela do chute dobra a velocidade no amarelo e a
   // cavadinha ficava exagerada): VEL_CAV[0] + VEL_CAV[1] × força, × força do jogador como no chute.
   const vC = cavadinha ? (VEL_CAV[0] + VEL_CAV[1] * k.power) * (k.power > 0.45 ? clamp(0.75 + 0.25 * fF, 0.55, 1.12) : 1) : speed;
   if (cavadinha) elev = ELEV_CAV + gauss() * ERRO_FAIXA[k.faixa] * 0.7;
-  vy = Math.max(0.3, vC * Math.sin(elev));
+  let vCav = vC;
+  if (cavadinha && penaltiSeu) {                   // (7.6.6) a velocidade que faz a bola cruzar a linha do gol na altura que a força pede
+    const gx = G.sp.side * HALF_L, ca = Math.abs(Math.cos(a)) || 1, D = Math.abs(gx - ball.x) / ca;
+    const hAlvo = clamp(0.7 + (CONFIG.GOAL_H - 1.15) / 0.8 * k.power + gauss() * ERRO_FAIXA[k.faixa] * 0.6, 0.4, CONFIG.GOAL_H + 1.2);   // até ~80% passa folgada por baixo do travessão; ~90% raspa nele; o vermelho vai por cima
+    const altura = (v) => { const h0 = v * Math.cos(elev), t = tempoNoAr(D, h0); return ball.y + v * Math.sin(elev) * t - 0.5 * CONFIG.GRAVITY * t * t; };
+    let lo = 4, hi = 26;                            // a altura cresce com a velocidade: busca binária (uma vez, ~20 contas)
+    for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (altura(m) < hAlvo) lo = m; else hi = m; }
+    vCav = (lo + hi) / 2;
+  }
+  vy = Math.max(0.3, (cavadinha ? vCav : vC) * Math.sin(elev));
   if (!cavadinha && k.oy < -TOQUE_QUICA) vy = chuteContraOChao(k.oy, vC);   // (7.4.17) em cima da bola: sai quicando
-  const hs = vC * Math.cos(elev);
+  const hs = (cavadinha ? vCav : vC) * Math.cos(elev);
   vx = Math.cos(a) * hs; vz = Math.sin(a) * hs;
   // (7.5.11) bater EM CIMA da bola (sem chegar no quique) dá o "mergulho" da bola, mas antes o efeito puxava ela para o chão
   //   logo no começo: ela batia, perdia velocidade rolando e o goleiro sempre chegava (parecia um chute fraco). Agora o mergulho
@@ -14098,6 +14806,7 @@ const TECLAS_ACOES = [
   { id: 'chute1', nome: 'Chute de primeira', grupo: 'recv', padrao: 'KeyI' },
   { id: 'comemorar1', nome: 'Comemoração 1', grupo: 'festa', padrao: 'Digit1' },
   { id: 'comemorar2', nome: 'Comemoração 2', grupo: 'festa', padrao: 'Digit2' },
+  { id: 'tirarCamisa', nome: 'Tirar a camisa (amarelo)', grupo: 'festa', padrao: 'Digit3' },
   { id: 'camera', nome: 'Trocar a câmera', grupo: 'sempre', padrao: 'KeyC' },
   { id: 'trocar', nome: 'Trocar de jogador (time inteiro)', grupo: 'sempre', padrao: 'KeyR' },
 ];
@@ -14257,10 +14966,17 @@ const COB_UI = (() => {
   ok.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'aim' && G.kick && G.kick.cobranca) confirmAim(); });
   ae.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); alternarLateralAereo(); });
   function atualizar() {
-    const k = G.kick, L = k && k.cobranca;
-    el.hidden = !(G.state === 'aim' && L);
+    const k = G.kick, L = k && k.cobranca, tm = !!(k && k.tiroMeta && !L);
+    el.hidden = !(G.state === 'aim' && (L || tm));
     if (el.hidden) return;
-    ok.querySelector('b').textContent = L.kind === 'escanteio' ? (k.kind === 'shot' && !k.cruzar ? T('CHUTAR') : T('CRUZAR')) : k.throwIn ? T('LANÇAR') : T('COBRAR');
+    ok.hidden = tm; el.classList.toggle('so1', tm);
+    if (tm) {                                        // (7.6.6) tiro de meta: o botão troca entre a bola ALTA e o passe RASTEIRO
+      ae.hidden = false; ae.classList.toggle('on', !k.lancar);
+      ae.querySelector('b').textContent = k.lancar ? T('BOLA ALTA') : T('RASTEIRO');
+      ae.querySelector('small').textContent = T('toque para trocar');
+      return;
+    }
+    ok.querySelector('b').textContent = L.kind === 'penalti' ? T('CHUTAR') : L.kind === 'escanteio' ? (k.kind === 'shot' && !k.cruzar ? T('CHUTAR') : T('CRUZAR')) : k.throwIn ? T('LANÇAR') : T('COBRAR');
     ok.querySelector('small').textContent = T('arraste para girar');
     ae.hidden = L.kind !== 'lateral';
     ae.classList.toggle('on', !!k.aereo);
@@ -14269,14 +14985,35 @@ const COB_UI = (() => {
   }
   return { atualizar, el };
 })();
+// (7.6.6) PÊNALTI, na escolha do efeito: a bola do efeito desce para a parte de baixo da tela (no meio ela tapava o gol e o goleiro) e
+//   a faixa de baixo dela (22%: CAV_OY_MIN_PEN) aparece em verde com "CAVADINHA" — antes era um toque nos 5% de baixo, impossível no dedo.
+//   Só CSS + um elemento (sem custo por quadro).
+(() => {
+  const st = document.createElement('style');
+  st.textContent = '#spinBall .cavFaixa { display: none; position: absolute; inset: 0; border-radius: 50%; pointer-events: none;'
+    + ' background: linear-gradient(to bottom, transparent 78%, rgba(107, 240, 142, 0.6) 78%); }'
+    + ' #spinBall .cavFaixa span { position: absolute; left: 50%; bottom: 7%; transform: translateX(-50%); font-family: var(--font-display); font-size: 9px; color: #071430; white-space: nowrap; }'
+    + ' body.spinPenalti #spinBall .cavFaixa { display: block; } body.spinPenalti #spinBall .spinTag.baixo { visibility: hidden; }'
+    + ' body.spinPenalti #spinUI { top: auto; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); flex-direction: column-reverse; }'
+    + ' body.spinPenalti #spinBall { width: min(30 * var(--avh, 1vh), 170px); height: min(30 * var(--avh, 1vh), 170px); }';
+  document.head.appendChild(st);
+  const b = $('spinBall'), f = document.createElement('div');
+  f.className = 'cavFaixa'; f.innerHTML = '<span></span>';
+  b.insertBefore(f, b.firstChild);
+  const baixo = [...b.querySelectorAll('.spinTag')].find((t) => /BAIXO/.test(t.textContent)); if (baixo) baixo.classList.add('baixo');
+})();
 function alternarLateralAereo() {
   const k = G.kick;
+  if (G.state === 'aim' && k && k.tiroMeta && !k.cobranca) {   // (7.6.6) tiro de meta: alto ↔ rasteiro
+    k.lancar = !k.lancar; setAimDir(k.dirX, k.dirZ); COB_UI.atualizar();
+    showToast(k.lancar ? 'Tiro de meta: bola alta' : 'Tiro de meta: passe rasteiro'); return;
+  }
   if (G.state !== 'aim' || !k || !k.cobranca || k.cobranca.kind !== 'lateral') return;
   k.aereo = !k.aereo;
   setAimDir(k.dirX, k.dirZ);                         // refaz o "alto" e o rótulo
   COB_UI.atualizar();
 }
-$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') { if (!G.intTela) mostrarTelaIntervalo(); } else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
+$('skipBtn').addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (G.state === 'cenaGol') CenaPosGol.terminar(); else if (G.state === 'subst') terminarSubstituicao(); else if (G.state === 'replay') terminarReplay(); else if (G.espectador && !G.pulando) pularParaResultado(); else if (G.state === 'fim') terminarCenaFinal(); else if (G.state === 'intervalo') { if (!G.intTela) mostrarTelaIntervalo(); } else if (G.state === 'foul') pularParalisacao(); else skipRestart(); });
 
 // (7.4.13) três câmeras: BOLA (atrás de você, virada para a bola) → FRENTE (fixa para o gol) → LIVRE (você arrasta a tela, do
 //   lado direito, para a direção em que quer olhar; para cima e para baixo sobe e desce a câmera)
@@ -14315,18 +15052,22 @@ function cameraTV() {
   // (7.4.19) LATERAL e ESCANTEIO (os do adversário ficam nesta câmera): ela vai até a bola, mesmo FORA do campo, para mostrar quem
   //   cobra (antes o centro parava a 40% da largura e a 8 m da linha de fundo, e o cobrador ficava fora da tela)
   const S = G.sp, cobra = !!S && (S.kind === 'lateral' || S.kind === 'escanteio');
-  const ax = cobra ? ball.x : user && !user.out ? ball.x + (user.x - ball.x) * 0.2 : ball.x;
-  const x = cobra ? clamp(ax * 0.9, -HALF_L + 1, HALF_L - 1) : clamp(ax, -HALF_L + Math.min(8, HALF_L * 0.35), HALF_L - Math.min(8, HALF_L * 0.35));
-  const z = clamp(ball.z * 0.5, -HALF_W * 0.4, HALF_W * 0.4);
-  // a câmera não vai para dentro da arquibancada: fica no lugar de sempre e só INCLINA até a bola (do lado de cá olha mais para baixo)
-  const tz = cobra ? clamp(ball.z, -HALF_W - 1.5, HALF_W + 1.5) - (ball.z > 0 ? 0 : 1.5) : z - 1.5;
+  // (7.6.6) LATERAL e ESCANTEIO: a câmera NÃO vai mais até o cobrador (ela inclinava até ele e o campo sumia: você não via os seus
+  //   jogadores para marcar). Fica no enquadramento de sempre — no escanteio, puxada para a área — e só RECUA (e sobe junto,
+  //   no mesmo ângulo) até o cobrador, fora da linha, caber na beirada da tela.
+  const esc = cobra && S.kind === 'escanteio';
+  const ax = esc ? Math.sign(ball.x) * (HALF_L - Math.max(BOX.depth * 0.75, 6)) : cobra ? ball.x : user && !user.out ? ball.x + (user.x - ball.x) * 0.2 : ball.x;
+  const x = clamp(ax, -HALF_L + Math.min(8, HALF_L * 0.35), HALF_L - Math.min(8, HALF_L * 0.35));
+  const z = esc ? 0 : clamp(ball.z * 0.5, -HALF_W * 0.4, HALF_W * 0.4);   // escanteio: do meio (a área inteira de frente)
+  // a câmera não vai para dentro da arquibancada: fica no lugar de sempre (do lado de lá, a cobrança puxa o olhar só um pouco)
+  const tz = cobra && ball.z < 0 ? lerp(z - 1.5, -HALF_W - 1, esc ? 0.18 : 0.3) : z - 1.5;
   // a jogada na lateral do lado de cá (perto da câmera): ela recua (e sobe junto, no mesmo ângulo) até a beirada de baixo da tela
-  //   mostrar a bola com folga e a linha lateral; do lado de lá e no meio fica onde sempre esteve
-  let k = 1;
-  if (!cobra && ball.z > 0) {
-    const meia = camera.fov * Math.PI / 360 * 0.8, zVer = Math.min(HALF_W + 1.5, ball.z + 4);
+  //   mostrar a bola com folga e a linha lateral (na cobrança, o cobrador lá fora); do lado de lá e no meio fica onde sempre esteve
+  let k = esc ? 1.12 : 1;                            // escanteio: um pouco mais aberta (a área inteira acima dos botões)
+  if (ball.z > 0) {
+    const meia = camera.fov * Math.PI / 360 * 0.8, zVer = cobra ? Math.min(HALF_W + 2.6, ball.z + 2) : Math.min(HALF_W + 1.5, ball.z + 4);
     const cabe = (s) => { const py = Math.max(4, H * s), pz = z + D * s; return Math.atan2(py, pz - zVer) - Math.atan2(py - 0.3, pz - tz) <= meia; };
-    if (!cabe(1)) { let a = 1, b = 1.9; for (let i = 0; i < 10; i++) { const m = (a + b) / 2; if (cabe(m)) b = m; else a = m; } k = b; }
+    if (!cabe(k)) { let a = k, b = cobra ? 2.4 : 1.9; for (let i = 0; i < 10; i++) { const m = (a + b) / 2; if (cabe(m)) b = m; else a = m; } k = b; }
   }
   return { px: x, py: Math.max(4, H * k), pz: z + D * k, tx: x, ty: 0.3, tz };
 }
@@ -14355,10 +15096,11 @@ window.addEventListener('keydown', (e) => {
   const K = (a) => tecla(a, e.code);
   const mode = computeMode();
   if (G.state === 'restart' && (e.code === 'Enter' || e.code === 'Escape')) { skipRestart(); return; }
+  if (G.state === 'cenaGol' && (e.code === 'Enter' || e.code === 'Escape')) { CenaPosGol.terminar(); return; }   // (7.6.6) pula para o replay
   if (G.state === 'foul' && (e.code === 'Enter' || e.code === 'Escape')) { pularParalisacao(); return; }
   if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && K('passar')) { faltaPassar(); return; }   // (7.5.11)
   if (G.state === 'aim' && G.kick && G.kick.faltaMira && !G.kick.faltaMira.chutou && (e.code === 'Enter' || e.code === 'Space' || K('chutar'))) { faltaSegurar({ tecla: e.code }); return; }   // (7.6.2) segura a tecla: a força
-  if (G.state === 'aim' && G.kick && G.kick.cobranca && G.kick.cobranca.kind === 'lateral' && K('cruzar')) { alternarLateralAereo(); return; }   // (7.6.4)
+  if (G.state === 'aim' && G.kick && ((G.kick.cobranca && G.kick.cobranca.kind === 'lateral') || (G.kick.tiroMeta && !G.kick.cobranca)) && K('cruzar')) { alternarLateralAereo(); return; }   // (7.6.4); (7.6.6) tiro de meta
   if (G.state === 'aim' && (e.code === 'Enter' || K('chutar') || K('passar') || K('cruzar') || K('passe1') || K('chute1'))) { confirmAim(); return; }
   if (G.state === 'dribble' && G.timing && K('driblar')) { tocarDribleProximo(); return; }   // (7.5.1) teclado: a tecla do drible acerta o próximo alvo
   if (K('camera')) toggleCamera();
@@ -14382,6 +15124,7 @@ window.addEventListener('keydown', (e) => {
   if (G.state === 'celebrate') {
     if (K('comemorar1')) startCelebration(celebDoJogador().slots[0]);
     if (K('comemorar2')) startCelebration(celebDoJogador().slots[1]);
+    if (K('tirarCamisa')) startCelebration('camisa');   // (7.6.6)
     if (e.code === 'Enter') endCelebration();
   }
   if (K('chutar') && (mode === 'ball' || mode === 'setpiece')) startKick('shot');
@@ -14452,6 +15195,7 @@ const PAD_ACOES = [
   { id: 'comemorar1', nome: 'Comemoração 1', grupo: 'festa', padrao: 0 },
   { id: 'comemorar2', nome: 'Comemoração 2', grupo: 'festa', padrao: 2 },
   { id: 'pularFesta', nome: 'Pular a comemoração', grupo: 'festa', padrao: 3 },
+  { id: 'tirarCamisa', nome: 'Tirar a camisa (amarelo)', grupo: 'festa', padrao: 1 },
   { id: 'trocar', nome: 'Trocar de jogador (time inteiro)', grupo: 'sempre', padrao: 4 },
   { id: 'camera', nome: 'Trocar a câmera', grupo: 'sempre', padrao: 8 },
   { id: 'pausa', nome: 'Pausar / continuar', grupo: 'sempre', padrao: 9 },
@@ -14583,12 +15327,14 @@ function padApertou(b) {
   }
   if (eh('pausa')) { pauseGame(); return; }
   if (G.state === 'restart') { if (b === 0) skipRestart(); return; }
+  if (G.state === 'cenaGol') { if (b === 0 || eh('pularFesta')) CenaPosGol.terminar(); return; }   // (7.6.6)
   if (G.state === 'foul') { if (b === 0) pularParalisacao(); return; }
   if (G.state === 'dribble' && G.timing) { tocarDribleComBotao(b); return; }
   if (KICK_STATES.includes(G.state) && G.kick) {
     const k = G.kick;
     if (G.state === 'spin') { if (b <= 3) { const sp = padEfeito(); chooseSpin(sp.x, sp.y); } return; }
     if (G.state === 'aim' && k.faltaMira && !k.faltaMira.chutou && (eh('chutar') || b === Pad.botaoChute)) { faltaSegurar({ pad: b }); return; }   // (7.6.2) a falta: segura o chute para a força
+    if (G.state === 'aim' && k.tiroMeta && !k.cobranca && eh('cruzar')) { alternarLateralAereo(); return; }   // (7.6.6) tiro de meta: B troca alto/rasteiro
     if (G.state === 'aim' && k.cobranca) {           // (7.6.4) cobrança: B (cruzar) liga o lateral aéreo; A/X confirmam e já seguram a força
       if (k.cobranca.kind === 'lateral' && eh('cruzar')) { alternarLateralAereo(); return; }
       if (eh('passar') || eh('chutar') || eh('cruzar') || b === Pad.botaoChute) { confirmAim(); if (G.state === 'power' && !power.holding) { startPowerHold('pad'); Pad.forca = b; Pad.botaoChute = b; } return; }
@@ -14622,6 +15368,7 @@ function padApertou(b) {
     if (eh('comemorar1')) startCelebration(celebDoJogador().slots[0]);
     else if (eh('comemorar2')) startCelebration(celebDoJogador().slots[1]);
     else if (eh('pularFesta')) endCelebration();
+    else if (eh('tirarCamisa')) startCelebration('camisa');   // (7.6.6)
     return;
   }
   if (mode === 'ball' || mode === 'setpiece') {
@@ -14706,7 +15453,7 @@ function tocarDribleComBotao(b) {
 }
 // os botões da tela mostram o botão do controle (quando há um controle ligado)
 const PAD_ROTULO = { 'CHUTAR / CRUZAR': 'chutar', 'PASSAR': 'passar', 'CRUZAR': 'cruzar', 'DRIBLAR': 'driblar', 'PEDIR BOLA': 'pedir', 'DESARMAR': 'desarmar', 'CARRINHO': 'carrinho',
-  'TROCAR': 'trocar', 'LANÇAR': 'passar', 'BOLA LONGA': 'chutar', 'PASSE DE 1ª': 'passar', 'CHUTE DE 1ª': 'chutar', 'PULAR': 'pularFesta' };
+  'TROCAR': 'trocar', 'LANÇAR': 'passar', 'BOLA LONGA': 'chutar', 'PASSE DE 1ª': 'passar', 'CHUTE DE 1ª': 'chutar', 'PULAR': 'pularFesta', 'TIRAR CAMISA': 'tirarCamisa' };
 function marcarBotoesDoControle(mode) {
   if (!Pad.ativo) return;
   const A = $('actions'); if (!A) return;
@@ -14800,6 +15547,9 @@ function showStage(stage) {
   $('stageHint').textContent = T(STAGE_HINTS[stage]);
   $('powerUI').hidden = stage !== 'power';
   $('spinUI').hidden = stage !== 'spin';
+  { const pen = stage === 'spin' && G.kick.kind === 'shot' && penaltiDoUsuario();   // (7.6.6) pênalti: a faixa da cavadinha
+    document.body.classList.toggle('spinPenalti', pen);
+    if (pen) { const sp = document.querySelector('#spinBall .cavFaixa span'); if (sp) sp.textContent = T('CAVADINHA'); } }
   COB_UI.atualizar();                               // (7.6.4) os botões da cobrança (só na mira do lateral/escanteio)
 }
 
@@ -14868,6 +15618,7 @@ function renderButtons(mode) {
     const mkC = (i, slot) => { const nome = T(CELEBRACOES[cs[i]].nome).toUpperCase(), bt = mk(nome, slot, () => startCelebration(cs[i]), 'primary'); if (nome.length > 9) { bt.style.fontSize = nome.length > 12 ? '8px' : '9px'; bt.style.whiteSpace = 'normal'; bt.style.lineHeight = '1.05'; bt.style.padding = '0 6px'; } };   // nome comprido: letra menor e quebra de linha
     mkC(0, 's1'); mkC(1, 's2');
     mk('PULAR', 's3', endCelebration);
+    if (!user.semCamisa && !G.celebAuto) { const bc = mk('TIRAR CAMISA', 's4', () => startCelebration('camisa')); bc.style.fontSize = '9px'; }   // (7.6.6) dá amarelo
   } else if (mode === 'kickoff') {
     mk('PASSAR', 's1', kickoffPass, 'primary');            // um toque só: sem mira nem força
   } else if (mode === 'setpiece') {
@@ -15998,6 +16749,8 @@ function ajAplicarLayout() {
     const c = L[n];
     css += '#actions .act.' + n + '{position:absolute;width:' + c.t + 'px;height:' + c.t + 'px;right:calc(' + c.x + 'px + ' + sR + ');bottom:calc(' + c.y + 'px + ' + sB + ');font-size:' + Math.max(8, Math.min(18, c.t * 0.125)).toFixed(1) + 'px}';
   }
+  // (7.6.6) o 4º botão (só na comemoração: TIRAR CAMISA) no canto vazio entre o 2º e o 3º
+  css += '#actions .act.s4{position:absolute;width:' + Math.round(L.s3.t * 0.92) + 'px;height:' + Math.round(L.s3.t * 0.92) + 'px;right:calc(' + (L.s2.x + 6) + 'px + ' + sR + ');bottom:calc(' + (L.s3.y + 6) + 'px + ' + sB + ');font-size:9px}';
   // (7.4.14) os botões da recepção (dominar, de primeira, cabecear, finalizar) também têm tamanho e lugar próprios
   css += '#recvActs{left:0;top:0;right:0;bottom:0;display:block}';
   for (const n of ['s1', 's2', 's3']) {
@@ -16516,6 +17269,7 @@ function cameraGoal() {
   if (G.shotCine) return shotCameraGoal();
   if (G.fintaCine) return cameraFinta();
   if (G.camOvo) return G.camOvo;                   // cena do ovo de páscoa
+  if (G.state === 'cenaGol') return CenaPosGol.camera();   // (7.6.6)
   if (G.celebAuto) return cameraCelebAuto();
   if (G.state === 'goal' && G.golAutor) {         // gol de outro: câmera na comemoração de quem fez
     const a = G.golAutor, Gp = G.golGrupo;
@@ -17282,6 +18036,8 @@ function syncMeshes(dt) {
     if (p.impacto) aplicarImpacto(p, m);
     if (p.driblePose) aplicarDriblePose(p, m); else if (m.pernaE.rotation.x || m.pernaD.rotation.x) { m.pernaE.rotation.x = 0; m.pernaD.rotation.x = 0; }
     if (p.celeb && p.celebP) { aplicarPoseCelebExtras(m, p.celebP); if (!(p.isUser && CELEBRACOES[p.celeb.name].controlado)) celebNoChao(m, CELEBRACOES[p.celeb.name], p.celeb.t, p.celebP); }   // (7.1.9) cotovelos, cabeça e pernas para o lado; (7.4.14) os pés no chão
+    if (p.celeb && CELEBRACOES[p.celeb.name].aoQuadro) CELEBRACOES[p.celeb.name].aoQuadro(p, m, p.celeb.t);   // (7.6.6) tirar a camisa: troca o boneco e leva a camisa na mão
+    else if (p.semCamisa) moverCamisaNaMao(p, m, 9);
     if (p.bloqueio) aplicarBloqueio(p, m); else if (m.cabeca.rotation.y) m.cabeca.rotation.y = 0;
     if (p.levanta && p.levanta.t >= 0 && p.role !== 'GK') aplicarLevanta(p, m);   // levantando do chão (depois do voleio/bicicleta)
     if (p.role === 'GK') aplicarPosesGoleiro(p, m, dt);   // olhar, deslizar com o pé, pulo para trás, ajoelhar, tapa, levantar
@@ -17316,9 +18072,16 @@ function syncMeshes(dt) {
   }
   ball.shadow.position.set(ball.mesh.position.x, 0.02, ball.mesh.position.z);
   ball.shadow.scale.setScalar(Math.max(0.4, 1 - (ball.mesh.position.y - CONFIG.BALL_R) * 0.12));
-  userRing.position.set(user.x, 0.03, user.z);
-  { const k = cam.mode === 'tv' ? 1.8 : 1; if (userRing.scale.x !== k) userRing.scale.set(k, k, 1); }   // (7.4.14) na câmera de TV o círculo é maior (de longe)
+  userRing.position.set(user.x, G.celebAuto && G.celebAuto.tipo === 'torcida' ? (G.celebAuto.y || 0) + 0.03 : 0.03, user.z);   // (7.6.6) na escadinha o aro vai junto
+  { const k = cam.mode === 'tv' ? 1.8 : 1; if (userRing.scale.x !== k) userRing.scale.set(k, k, 1); }
+  // (7.4.14) na câmera de TV o círculo é maior (de longe)
+  if (!COB_UI.el.hidden && G.state !== 'aim') COB_UI.el.hidden = true;   // (7.6.6) os botões da cobrança/tiro de meta só na mira
   userRing.visible = !G.cine && !G.semNomes && !G.espectador && G.state !== 'replay' && G.state !== 'fim' && G.state !== 'intervalo' && AJ.aro !== 'nenhum';   // sem círculo no replay (ficava parado no lugar errado) e opção de tirar
+  { // (7.6.6) aro de quem TROCAR pegaria apontando (o mesmo teste da troca: ~12 contas por quadro, 1 desenho quando aparece)
+    const ap = userRing.visible && G.state === 'play' && !G.kick && !G.recv && !G.recvFx && G.possession !== user && controleDoTime() ? jogadorApontado() : null;
+    apontaRing.visible = !!ap;
+    if (ap) { apontaRing.position.set(ap.x, 0.03, ap.z); const k = cam.mode === 'tv' ? 1.8 : 1; if (apontaRing.scale.x !== k) apontaRing.scale.set(k, k, 1); }
+  }
   const kk = G.kick;
   aimArrow.visible = !!kk && !kk.faltaMira;         // (7.5.11) na falta da mira pontilhada, a seta não aparece (o pontilhado é a mira)
   if (kk) {
@@ -17400,11 +18163,13 @@ function stepGame(dt, rdt) {
     G.celebT -= rdt;
     if (G.celebT <= 0) endCelebration();
   }
+  if (G.state === 'cenaGol') CenaPosGol.atualizar(rdt);   // (7.6.6)
   if (G.state === 'goal') {
     G.goalTimer -= rdt;
     G.goalT = (G.goalT || 0) + rdt;
     atualizarGrupoDoGol(rdt);
     if (G.goalT > 0.8) G.targetScale = 1;          // câmera lenta só no comecinho
+    if (G.goalTimer <= 0 && !G.fading && !G.cenaGolFeita) { G.cenaGolFeita = true; if (CenaPosGol.iniciar(() => {})) return; }   // (7.6.6)
     if (G.goalTimer <= 0 && !G.fading && !G.replayFeito) { G.replayFeito = true; iniciarReplayGol(() => {}); return; }   // replay antes da saída
     if (G.goalTimer <= 0 && !G.fading) {
       // Escurece a tela, reposiciona todo mundo e clareia (em vez do "teletransporte" à vista).
@@ -17525,16 +18290,21 @@ function iniciarReplay(R) {
   $('skipBtn').hidden = false; $('skipBtn').textContent = T('Pular replay ▶');
   hideKickUI(); esconderRecepcao();
   rotuloReplay();
+  ReplayVideo.botao(R.tipo === 'gol' && !G.espectador);   // (7.6.6) SALVAR REPLAY
 }
+// (7.6.6) 6 câmeras no replay do gol: as 3 de antes + do ALTO (drone em cima do lance), da ARQUIBANCADA (do outro lado, no alto, de
+//   longe) e de DENTRO DO GOL (atrás da linha, no meio da rede, rente ao chão, olhando o lance chegar)
+const REPLAY_CAMS = ['TV', 'ATRÁS DO GOL', 'PERTO DO LANCE', 'DO ALTO', 'DA ARQUIBANCADA', 'DE DENTRO DO GOL'];
 function rotuloReplay() {
   const R = G.replay;
-  const nomes = [T('TV'), T('ATRÁS DO GOL'), T('PERTO DO LANCE')];
-  $('cineLabel').textContent = R.tipo === 'gol' ? Tf('REPLAY · {0} ({1}/3) · toque para trocar de câmera', nomes[R.cam], R.cam + 1) : T(R.congelado ? 'IMPEDIMENTO · azul: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
+  const nomes = REPLAY_CAMS.map((k) => T(k));
+  $('cineLabel').textContent = R.tipo === 'gol' ? (ReplayVideo.gravando ? Tf('GRAVANDO · {0} · {1} s', nomes[R.cam], Math.max(0, Math.ceil(ReplayVideo.falta))) : Tf('REPLAY · {0} ({1}/{2}) · toque para trocar de câmera', nomes[R.cam], R.cam + 1, REPLAY_CAMS.length)) : T(R.congelado ? 'IMPEDIMENTO · azul: penúltimo defensor · vermelha: atacante' : 'REPLAY DO IMPEDIMENTO');
 }
 function terminarReplay() {
   const R = G.replay;
   if (!R) return;
   G.replay = null;
+  ReplayVideo.parar(true); ReplayVideo.botao(false);   // (7.6.6)
   for (const s of [-1, 1]) { if (FUNDO_GRADE[s].tela) FUNDO_GRADE[s].tela.visible = true; if (FUNDO_GRADE[s].postes) FUNDO_GRADE[s].postes.visible = true; }
   linhasImped.g.visible = false;
   setLetterbox(false);
@@ -17549,14 +18319,15 @@ document.addEventListener('pointerdown', (e) => {
   const R = G.replay;
   if (G.state !== 'replay' || !R || R.tipo !== 'gol' || G.espectador || G.paused) return;
   if (e.target && e.target.closest && e.target.closest('button')) return;
-  R.t = 0; R.cam = (R.cam + 1) % 3; R.camPos = null; rotuloReplay();
+  if (ReplayVideo.gravando) return;                  // (7.6.6) gravando o vídeo: o ângulo fica
+  R.t = 0; R.cam = (R.cam + 1) % REPLAY_CAMS.length; R.camPos = null; rotuloReplay();
 }, true);
 // Roda no lugar do jogo enquanto G.state === 'replay' (tempo real).
 function atualizarReplay(rdt) {
   const R = G.replay;
   if (!R) return;
   const Q = R.quadros, t0 = Q[0].t;
-  userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;   // o círculo do jogador ficava parado no replay
+  userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; apontaRing.visible = false; aimArrow.visible = false;   // o círculo do jogador ficava parado no replay
   let vel = 1;
   if (R.tipo === 'gol' && R.cam === 2) vel = 0.6;                   // a câmera de perto é em câmera lenta
   if (R.tipo === 'imped') vel = 0.6;
@@ -17565,7 +18336,8 @@ function atualizarReplay(rdt) {
     if (R.tipo === 'gol') {
       // fora de campo (espectador) ninguém está olhando o botão: uma câmera só e segue o jogo.
       if (G.espectador) { terminarReplay(); return; }
-      R.t = 0; R.cam = (R.cam + 1) % 3; R.camPos = null; rotuloReplay();   // próxima câmera (e repete)
+      if (ReplayVideo.gravando) { ReplayVideo.parar(); R.t = 0; R.camPos = null; rotuloReplay(); }   // (7.6.6) gravou uma volta inteira daquele ângulo
+      else { R.t = 0; R.cam = (R.cam + 1) % REPLAY_CAMS.length; R.camPos = null; rotuloReplay(); }   // próxima câmera (e repete)
     }
     else if (!R.congelado) { R.congelado = true; R.t = R.dur; R.congT = 0; mostrarLinhas(R); rotuloReplay(); }
   }
@@ -17588,11 +18360,18 @@ function cameraReplay(R, bola, rdt) {
     px = x; py = 7; pz = -(HALF_W + 9); tx = x; ty = 0; tz = 0;
   } else if (R.cam === 0) { px = bola.x * 0.85; py = 12; pz = -(HALF_W + 8); }                        // TV (em cima das placas)
   else if (R.cam === 1) { px = R.lado * (HALF_L + 9); py = 4.5; pz = bola.z * 0.3; }                   // atrás do gol, por cima da rede
-  else { px = bola.x - R.lado * 5.5; py = 1.5; pz = bola.z + 4; }                                      // perto, rasteira
+  else if (R.cam === 2) { px = bola.x - R.lado * 5.5; py = 1.5; pz = bola.z + 4; }                     // perto, rasteira
+  else if (R.cam === 3) { px = bola.x - R.lado * 0.01; py = 22; pz = bola.z + 6; }                        // do alto (drone)
+  else if (R.cam === 4) { px = bola.x * 0.6 - R.lado * 12; py = 20; pz = HALF_W + 26; }                   // da arquibancada do outro lado
+  else {                                                                                                // de dentro do gol: no canto do fundo da rede (o canto longe da bola), olhando o lance chegar
+    const zc = (bola.z > 0 ? -1 : 1) * (GOAL_HALF - 0.5);
+    px = R.lado * (HALF_L + 1.5); py = 1.5; pz = zc;
+    tx = R.lado > 0 ? Math.min(bola.x, HALF_L - 4) : Math.max(bola.x, -HALF_L + 4); ty = Math.max(0.5, Math.min(bola.y, 2)); tz = bola.z * 0.7;
+  }
   if (![px, py, pz, tx, ty, tz].every(Number.isFinite)) return;      // valor inválido: mantém a câmera como está
   if (R.camPos && !Object.values(R.camPos).every(Number.isFinite)) R.camPos = null;
   for (const s of [-1, 1]) {                        // atrás do gol some só a grade do fundo desse lado (a que tampa a câmera)
-    const esc = R.tipo === 'gol' && R.cam === 1 && s === R.lado;
+    const esc = R.tipo === 'gol' && (R.cam === 1 || R.cam === 5) && s === R.lado;
     if (FUNDO_GRADE[s].tela) FUNDO_GRADE[s].tela.visible = !esc;
     if (FUNDO_GRADE[s].postes) FUNDO_GRADE[s].postes.visible = !esc;
   }
@@ -17611,6 +18390,213 @@ function mostrarLinhas(R) {
 }
 
 // Gol: os 10 s antes do gol (o gravador continua 1,5 s depois do gol para pegar a bola na rede).
+// =====================================================================
+// (7.6.6) A CENA DEPOIS DO GOL (entre a comemoração e o replay): dois planos — primeiro a torcida de quem fez festejando (com o
+//   confete) ou quem fez o gol voltando para o meio (sorteado), depois o time todo voltando para as posições — e, enquanto isso, um
+//   quadro na tela com quantos gols e assistências quem fez tem NESTE campeonato/copa (o que tinha antes + os desta partida); no
+//   amistoso, nesta partida. PULAR leva para o replay. Os jogadores ANDAM até o lugar da saída de bola.
+//   DESEMPENHO: nada novo na cena 3D (só câmera e passos); 1 quadro de HTML.
+// =====================================================================
+const CenaPosGol = (() => {
+  let C = null, hud = null;
+  const PLANOS_A = ['torcida', 'autor'], DUR = [2.8, 3.4];
+  const escHtml = (x) => String(x).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  function css() {
+    if (document.getElementById('cenaGolCss')) return;
+    const st = document.createElement('style'); st.id = 'cenaGolCss';
+    st.textContent = '#cenaGolHud{position:fixed;z-index:4;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(13 * var(--avh,1vh) + 14px);display:flex;align-items:center;gap:12px;'
+      + 'background:var(--panel-solid);border:3px solid var(--chalk);box-shadow:5px 5px 0 rgba(0,0,0,.5);padding:8px 14px 8px 8px;pointer-events:none;opacity:0;transform:translateX(-24px);transition:opacity .35s,transform .35s}'
+      + '#cenaGolHud.on{opacity:1;transform:none}#cenaGolHud canvas{width:44px;height:44px;image-rendering:pixelated}'
+      + '#cenaGolHud .nm{font-family:var(--font-display);font-size:15px;color:#fff;white-space:nowrap}#cenaGolHud .nums{display:flex;gap:14px;margin-top:3px}'
+      + '#cenaGolHud .nums b{font-family:var(--font-display);font-size:20px;color:var(--flood)}#cenaGolHud .nums span{font-family:var(--font-display);font-size:10px;color:var(--muted);margin-left:4px}'
+      + '#cenaGolHud .sub{font-family:var(--font-display);font-size:9px;color:var(--muted);letter-spacing:.06em;margin-top:2px}';
+    document.head.appendChild(st);
+  }
+  // os números: o campeonato/copa da partida livre manda PARTIDA.estTorneio = { est: S.est, k: [chave do time 0, do time 1] }
+  //   (S.est['k|nome'] = [gols, assistências, jogos, notas]); a partida ainda não entrou lá, então soma os desta partida (G.golsLog)
+  function numeros(p) {
+    const nome = p.voce ? CHAVE_VOCE : p.ficha || p.name, aqui = { g: 0, a: 0 };
+    for (const L of G.golsLog || []) { if (L.time !== p.team) continue; if (L.autor === nome) aqui.g++; if (L.assist === nome) aqui.a++; }
+    const ET = PARTIDA && PARTIDA.estTorneio, e = ET && ET.est && ET.k ? ET.est[ET.k[p.team] + '|' + nome] : null;
+    const cp = (PARTIDA && PARTIDA.competicao) || {};
+    if (ET && ET.est) return { g: (e ? e[0] : 0) + aqui.g, a: (e ? e[1] : 0) + aqui.a, onde: ET.copa || cp.mataMata ? 'NA COPA' : 'NO CAMPEONATO', nomeComp: cp.nome || '' };
+    return { g: aqui.g, a: aqui.a, onde: 'NESTA PARTIDA', nomeComp: '' };
+  }
+  const nomeDeQuem = (p) => (p.voce ? ((PARTIDA.usuario && PARTIDA.usuario.nome) || T('você')) : p.name);
+  function montarHud(info) {
+    css();
+    if (!hud) { hud = document.createElement('div'); hud.id = 'cenaGolHud'; (document.getElementById('raizJogo') || document.body).appendChild(hud); }
+    hud.innerHTML = '';
+    const team = info.team, T0 = PARTIDA.timesObj[team], cv = document.createElement('canvas'); cv.width = cv.height = 32;
+    try { desenharEmblema(cv.getContext('2d'), 2, 2, 28, 28, T0 && T0.emblema); } catch (e) { /* sem escudo */ }
+    const box = document.createElement('div'), nm = document.createElement('div'); nm.className = 'nm';
+    if (!info.autor) { nm.textContent = T('GOL CONTRA'); box.appendChild(nm); }
+    else {
+      const p = info.autor, N = numeros(p);
+      nm.textContent = nomeDeQuem(p) + (p.numero != null ? '  #' + p.numero : '');
+      const nums = document.createElement('div'); nums.className = 'nums';
+      nums.innerHTML = '<div><b>' + N.g + '</b><span>' + escHtml(T(N.g === 1 ? 'GOL' : 'GOLS')) + '</span></div><div><b>' + N.a + '</b><span>' + escHtml(T(N.a === 1 ? 'ASSISTÊNCIA' : 'ASSISTÊNCIAS')) + '</span></div>';
+      const sub = document.createElement('div'); sub.className = 'sub'; sub.textContent = T(N.onde) + (N.nomeComp ? ' · ' + String(N.nomeComp).toUpperCase() : '');
+      box.appendChild(nm); box.appendChild(nums); box.appendChild(sub);
+      if (info.assist && info.assist.team === team) { const as = document.createElement('div'); as.className = 'sub'; as.textContent = Tf('Assistência: {0}', nomeDeQuem(info.assist)); box.appendChild(as); }
+    }
+    hud.appendChild(cv); hud.appendChild(box);
+    hud.hidden = false; requestAnimationFrame(() => { if (hud) hud.classList.add('on'); });
+  }
+  // o lugar de cada um na saída de bola: no próprio campo, perto do lugar de origem dele na formação
+  function lugarDaSaida(p) { return { x: clamp(p.base.x * 0.92, -HALF_L + 2, -1.2) * p.dir, z: clamp(p.base.z, -HALF_W + 1.5, HALF_W - 1.5) }; }
+  function iniciar(depois) {
+    if (G.espectador || G.pen || G.desafio || G.state === 'fim' || G.state === 'end') return false;
+    const info = G.golInfoPend; if (!info) return false;
+    G.golInfoPend = null;
+    const autor = info.autor && !info.autor.out ? info.autor : null;
+    const planos = [PLANOS_A[Math.floor(Math.random() * 2)], 'voltando'];
+    if (planos[0] === 'autor' && !autor) planos[0] = 'torcida';
+    if (planos[0] === 'torcida' && Confete.amostra(info.team).length < 12) planos[0] = autor ? 'autor' : 'voltando';
+    C = { t: 0, plano: 0, planos, info, autor, depois, antes: G.state, team: info.team };
+    // a torcida: o lugar da amostra mais perto do gol onde foi o gol (de quem fez)
+    const A = Confete.amostra(info.team), lado = G.ladoGol || 1;
+    if (A.length) C.torc = A.slice().sort((a, b) => Math.hypot(a[0] - lado * HALF_L * 0.6, a[2]) - Math.hypot(b[0] - lado * HALF_L * 0.6, b[2]))[0];
+    // o corte: ninguém fora do campo, ninguém comemorando nem caído; todos andam (o jogo não mexe neles durante a cena)
+    if (G.celebAuto) { G.celebAuto = null; try { EscadaTorcida.acabarFesta(); } catch (e) { /* nada */ } }
+    for (const p of players) {
+      if (p.out || p.x > 900) continue;
+      p.celeb = null; p.fall = 0; p.falling = false; p.stun = 0; p.diveT = 0; p.slideT = 0; p.jumpT = 0; p.levanta = null; p.pulaTras = null; p.caidoComBola = 0; p.lamento = null;
+      p.x = clamp(p.x, -HALF_L + 0.6, HALF_L - 0.6); p.z = clamp(p.z, -HALF_W + 0.6, HALF_W - 0.6);
+      if (p.mesh) p.mesh.raiz.position.y = 0;
+      p.scripted = true; p.vx = p.vz = 0;
+      p._alvoCena = lugarDaSaida(p); p._velCena = rand(2.2, 3.4);
+    }
+    G.state = 'cenaGol'; G.targetScale = G.timeScale = 1; C.semNomes = G.semNomes; G.semNomes = true;   // sem os nomes em cima (é cena)
+    crowd.comemorar(info.team);
+    setLetterbox(true); hideKickUI();
+    $('skipBtn').hidden = false; $('skipBtn').textContent = T('Pular') + ' ▶'; $('cineLabel').textContent = '';
+    montarHud(info);
+    snapCamera();
+    return true;
+  }
+  function atualizar(rdt) {
+    if (!C) return;
+    C.t += rdt;
+    for (const p of players) {
+      if (p.out || p.x > 900 || !p._alvoCena) continue;
+      const a = p._alvoCena;
+      if (walkTo(p, a.x, a.z, p._velCena, rdt)) p.angle = turnToward(p.angle, Math.atan2(-p.z * 0.2, -p.x), 4 * rdt);   // chegou: de frente para o meio
+    }
+    if (C.t >= DUR[C.plano]) {
+      C.t = 0; C.plano++;
+      if (C.plano >= C.planos.length) { terminar(); return; }
+      snapCamera();
+    }
+  }
+  function camera() {
+    const pl = C ? C.planos[C.plano] : 'voltando', k = C ? clamp(C.t / DUR[C.plano], 0, 1) : 0;
+    if (pl === 'torcida' && C.torc) {               // do gramado, de frente para a torcida que festeja (o confete caindo), passando devagar
+      const a = C.torc, dl = Math.hypot(a[3], a[4]) || 1, fx = a[3] / dl, fz = a[4] / dl, lx = -fz, lz = fx, d = 16;
+      return { px: clamp(a[0] + fx * d + lx * (k * 6 - 3), -HALF_L, HALF_L), py: 2.2 + k * 0.8, pz: clamp(a[2] + fz * d + lz * (k * 6 - 3), -HALF_W, HALF_W), tx: a[0], ty: a[1] + 2.2, tz: a[2] };
+    }
+    if (pl === 'autor' && C.autor) {                 // de frente para quem fez, andando de volta (recuando junto)
+      const p = C.autor, fx = Math.cos(p.angle), fz = Math.sin(p.angle);
+      return { px: p.x + fx * (4.6 - k * 0.6) + fz * 1.2, py: 1.7, pz: p.z + fz * (4.6 - k * 0.6) - fx * 1.2, tx: p.x, ty: 1.15, tz: p.z };
+    }
+    return { px: -6 + k * 12, py: 15, pz: -(HALF_W + 10), tx: 0, ty: 0, tz: 0 };   // o time todo voltando: do alto, da lateral
+  }
+  function terminar() {
+    if (!C) return;
+    const c = C; C = null;
+    if (hud) { hud.classList.remove('on'); hud.hidden = true; }
+    for (const p of players) if (p._alvoCena) { p.scripted = false; p._alvoCena = null; p.vx = p.vz = 0; }
+    setLetterbox(false); $('skipBtn').hidden = true; $('skipBtn').textContent = T('Pular ▶');
+    G.state = c.antes; G.semNomes = c.semNomes;
+    if (c.antes === 'goal') G.goalTimer = Math.min(G.goalTimer, 0);
+    c.depois();
+  }
+  return { iniciar, atualizar, camera, terminar, get ativa() { return !!C; }, get estado() { return C ? { plano: C.planos[C.plano], planos: C.planos.slice(), t: C.t } : null; } };
+})();
+// =====================================================================
+// (7.6.6) SALVAR O REPLAY: grava UMA volta do replay no ângulo que está na tela (avisa antes qual é) e entrega o vídeo para salvar
+//   no aparelho (no celular, a folha de "compartilhar/salvar vídeo"; no computador, o download). O 3D é desenhado em resolução baixa:
+//   cada quadro é copiado ampliado (sem suavizar, em múltiplo inteiro) para um canvas de ~720 de altura, que é o que vira vídeo.
+//   Só roda enquanto grava (nada no jogo normal).
+// =====================================================================
+const ReplayVideo = (() => {
+  let btn = null, rec = null, pedacos = [], cv = null, g = null, fim = 0, aviso = null, tipo = '';
+  const pode = () => typeof MediaRecorder !== 'undefined' && !!HTMLCanvasElement.prototype.captureStream;
+  function css() {
+    if (document.getElementById('replayVideoCss')) return;
+    const st = document.createElement('style'); st.id = 'replayVideoCss';
+    st.textContent = '#salvarReplay{pointer-events:auto;position:fixed;z-index:4;left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(13 * var(--avh,1vh) + 10px);background:var(--panel);border:2px solid var(--flood);padding:8px 14px;font-family:var(--font-display);font-size:11px;color:#fff}'
+      + '#salvarReplay.rec{border-color:var(--bad);color:var(--bad)}'
+      + '#replayAviso{position:fixed;z-index:7;left:50%;top:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 40px));background:var(--panel-solid);border:3px solid var(--chalk);box-shadow:6px 6px 0 rgba(0,0,0,.5);padding:16px;display:flex;flex-direction:column;gap:12px;font-size:14px;text-align:center}'
+      + '#replayAviso .btnRow{justify-content:center}';
+    document.head.appendChild(st);
+  }
+  function botao(on) {
+    css();
+    if (!btn) {
+      btn = document.createElement('button'); btn.type = 'button'; btn.id = 'salvarReplay';
+      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); if (rec) parar(); else perguntar(); });
+      (document.getElementById('raizJogo') || document.body).appendChild(btn);
+    }
+    btn.hidden = !on || !pode(); btn.classList.toggle('rec', !!rec); btn.textContent = rec ? T('PARAR') + ' ■' : T('SALVAR REPLAY') + ' ⬇';
+    if (!on && aviso) { aviso.remove(); aviso = null; }
+  }
+  // o aviso: o vídeo sai no ângulo que está na tela
+  function perguntar() {
+    const R = G.replay; if (!R || aviso) return;
+    const nomeCam = T(REPLAY_CAMS[R.cam]);
+    aviso = document.createElement('div'); aviso.id = 'replayAviso';
+    const p = document.createElement('div'); p.textContent = Tf('O vídeo vai ser salvo no ângulo que está na tela agora: {0}. Para outro ângulo, troque de câmera antes (toque na tela).', nomeCam);
+    const row = document.createElement('div'); row.className = 'btnRow';
+    const ok = document.createElement('button'); ok.type = 'button'; ok.className = 'big'; ok.textContent = T('Gravar');
+    const no = document.createElement('button'); no.type = 'button'; no.className = 'ghost'; no.textContent = T('Cancelar');
+    ok.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; comecar(); });
+    no.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); aviso.remove(); aviso = null; });
+    row.appendChild(ok); row.appendChild(no); aviso.appendChild(p); aviso.appendChild(row);
+    (document.getElementById('raizJogo') || document.body).appendChild(aviso);
+  }
+  function comecar() {
+    const R = G.replay; if (!R || rec || !pode()) return;
+    const src = renderer.domElement, esc = Math.max(1, Math.round(720 / src.height));
+    cv = document.createElement('canvas'); cv.width = src.width * esc; cv.height = src.height * esc;
+    g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
+    const tipos = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    tipo = tipos.find((t) => { try { return MediaRecorder.isTypeSupported(t); } catch (e) { return false; } }) || '';
+    try { rec = new MediaRecorder(cv.captureStream(30), tipo ? { mimeType: tipo, videoBitsPerSecond: 4e6 } : undefined); }
+    catch (e) { rec = null; g = null; showToast(T('Não deu para gravar o vídeo neste aparelho'), 'bad'); return; }
+    pedacos = [];
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) pedacos.push(e.data); };
+    rec.onstop = entregar;
+    R.t = 0; R.camPos = null;                          // do começo do lance
+    const vel = R.cam === 2 ? 0.6 : 1; fim = performance.now() + R.dur / vel * 1000;
+    rec.start(250);
+    botao(true); rotuloReplay();
+  }
+  function quadro() {
+    if (!g) return;
+    g.drawImage(renderer.domElement, 0, 0, cv.width, cv.height);
+    if (G.replay && performance.now() > fim + 400) parar();   // segurança (a volta acabou e o replay não avisou)
+  }
+  function parar(descartar) {
+    if (!rec) return;
+    const r = rec; rec = null; if (descartar) r.onstop = null;
+    try { r.stop(); } catch (e) { /* já parou */ }
+    g = null; botao(!!G.replay); if (G.replay) rotuloReplay();
+  }
+  async function entregar() {
+    const ext = /mp4/.test(tipo) ? 'mp4' : 'webm', blob = new Blob(pedacos, { type: tipo ? tipo.split(';')[0] : 'video/webm' }); pedacos = [];
+    if (!blob.size) { showToast(T('Não deu para gravar o vídeo neste aparelho'), 'bad'); return; }
+    const nome = 'replay-gol-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.' + ext;
+    try {
+      const f = new File([blob], nome, { type: blob.type });
+      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: T('Replay do gol') }); showToast(T('Replay salvo!'), 'good'); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 20000);
+    showToast(T('Replay salvo!'), 'good');
+  }
+  return { botao, quadro, parar, get gravando() { return !!rec; }, get falta() { return (fim - performance.now()) / 1000; } };
+})();
 function iniciarReplayGol(depois) {
   const tg = G.tGol || G.time;
   // Corta o replay no último "teletransporte" da bola (saída de bola, tiro de meta, lateral...):
@@ -17689,6 +18675,8 @@ function frame(now) {
   }
   Cena.tick();                                               // botão "Pular cena"
   crowd.atualizar(rdt);
+  Confete.atualizar(rdt);
+  vestirCamisasSeAcabou(); atualizarCartaoFesta(rdt); EscadaTorcida.atualizarFesta(rdt);   // (7.6.6)
   particulas.atualizar(rdt);
   atualizarTecnicos(rdt);
   atualizarBanco(rdt);
@@ -17699,7 +18687,7 @@ function frame(now) {
   Torcida.atualizar(rdt);                                   // (7.4.9) cantos, vaias (a torcida reage ao jogo)
   Musica.menu(G.state === 'menu' && !GANCHO_RENDER && !Abertura.ativa && !!document.getElementById('startScreen') && !document.getElementById('startScreen').hidden);   // (7.4.16) não por cima da vinheta do Harbor         // criador/fase: sem barulho de torcida
   // torcida: só o relógio do shader (o resto é na placa de vídeo)
-  if (!RENDER_PAUSADO) renderer.render(scene, camera);                // (uma tela inteira por cima, como a vinheta das copas: não desenha o 3D escondido)
+  if (!RENDER_PAUSADO) { renderer.render(scene, camera); if (ReplayVideo.gravando) ReplayVideo.quadro(); }   // (7.6.6) o vídeo do replay copia o quadro logo depois de desenhar                // (uma tela inteira por cima, como a vinheta das copas: não desenha o 3D escondido)
   radarT += rdt;
   if (radarT > 0.066) { radarT = 0; drawRadar(); }
   updateHUD();
@@ -17904,6 +18892,7 @@ function montarEstadio() {
     if (!ok) buildStands();
     buildBoards(Object.assign({ ajustar: true }, ANUNCIOS_A));
   } else buildArredores(tipo);
+  EscadaTorcida.montar(ehArena(tipo));                // (7.6.6) a escadinha atrás de cada gol (só nos estádios com placas e arquibancada atrás do gol)
   if (ehArena(tipo)) montarTunel();
   buildGoal(-1); buildGoal(1);
   if (PARTIDA.campo.visual === 'futsal') BANCOS.length = 0; else construirBancos();   // quadra de futsal: sem banco
@@ -19304,6 +20293,8 @@ function terminarSubstituicao() {
     P.entra.scripted = false;
     if (pulouCena) { P.entra.z = -(HALF_W - 1); P.entra.angle = Math.PI / 2; }   // pulou: já entra em campo
   }
+  G.state = S.estadoAntes;
+  if (pulouCena) posicionarComoNoFimDaCena();        // (7.6.6) quem entrou (e todo mundo) já no lugar
   CORPOS = players.concat(officials);
   placaTroca.esconder();
   setLetterbox(G.state === 'foul' || S.estadoAntes === 'foul');
@@ -20601,6 +21592,37 @@ Object.assign(I18N, {
   'arraste para girar': ['drag to turn', 'arrastra para girar', 'trascina per girare', 'glisse pour tourner'],
   'por baixo da bola': ['under the ball', 'por debajo del balón', 'sotto il pallone', 'sous le ballon'],
   'arremesso alto': ['high throw', 'saque alto', 'lancio alto', 'lancer haut'],
+});
+// (7.6.6) tiro de meta alto/rasteiro
+Object.assign(I18N, {
+  'RASTEIRO': ['ALONG THE GROUND', 'RASO', 'RASOTERRA', 'À RAS DE TERRE'],
+  'toque para trocar': ['tap to switch', 'toca para cambiar', 'tocca per cambiare', 'touche pour changer'],
+  'CAVADINHA': ['CHIP', 'VASELINA', 'CUCCHIAIO', 'PANENKA'],
+  'Cavadinha!': ['Chip!', '¡Vaselina!', 'Cucchiaio!', 'Panenka !'],
+  'Tiro de meta: bola alta': ['Goal kick: high ball', 'Saque de puerta: balón alto', 'Rinvio: palla alta', 'Six mètres : balle haute'],
+  'Tirar a camisa': ['Shirt off', 'Quitarse la camiseta', 'Togliersi la maglia', 'Enlever le maillot'],
+  'TIRAR CAMISA': ['SHIRT OFF', 'QUITAR CAMISETA', 'VIA LA MAGLIA', 'ENLEVER MAILLOT'],
+  'Tirar a camisa (amarelo)': ['Shirt off (yellow card)', 'Quitarse la camiseta (amarilla)', 'Togliersi la maglia (giallo)', 'Enlever le maillot (carton jaune)'],
+  'Cartão amarelo para': ['Yellow card for', 'Tarjeta amarilla para', 'Cartellino giallo a', 'Carton jaune pour'],
+  'Segundo amarelo: vermelho para': ['Second yellow: red card for', 'Segunda amarilla: roja para', 'Secondo giallo: rosso a', 'Deuxième jaune : rouge pour'],
+  'comemorou na torcida': ['celebrated with the fans', 'celebró con la afición', 'ha esultato con i tifosi', 'a fêté avec les supporters'],
+  'tirou a camisa': ['took the shirt off', 'se quitó la camiseta', 'si è tolto la maglia', 'a enlevé son maillot'],
+  'Foi comemorar com a torcida!': ['Went to celebrate with the fans!', '¡Fue a celebrar con la afición!', 'È andato a festeggiare con i tifosi!', 'Il est allé fêter avec les supporters !'],
+  'REPLAY · {0} ({1}/{2}) · toque para trocar de câmera': ['REPLAY · {0} ({1}/{2}) · tap to change camera', 'REPETICIÓN · {0} ({1}/{2}) · toca para cambiar de cámara', 'REPLAY · {0} ({1}/{2}) · tocca per cambiare camera', 'REPLAY · {0} ({1}/{2}) · touche pour changer de caméra'],
+  'GRAVANDO · {0} · {1} s': ['RECORDING · {0} · {1} s', 'GRABANDO · {0} · {1} s', 'REGISTRAZIONE · {0} · {1} s', 'ENREGISTREMENT · {0} · {1} s'],
+  'DO ALTO': ['FROM ABOVE', 'DESDE ARRIBA', 'DALL’ALTO', 'D’EN HAUT'], 'DA ARQUIBANCADA': ['FROM THE STANDS', 'DESDE LA GRADA', 'DALLA TRIBUNA', 'DEPUIS LES TRIBUNES'],
+  'DE DENTRO DO GOL': ['FROM INSIDE THE GOAL', 'DESDE DENTRO DE LA PORTERÍA', 'DA DENTRO LA PORTA', 'DE L’INTÉRIEUR DU BUT'],
+  'SALVAR REPLAY': ['SAVE REPLAY', 'GUARDAR REPETICIÓN', 'SALVA REPLAY', 'ENREGISTRER LE REPLAY'], 'PARAR': ['STOP', 'PARAR', 'FERMA', 'ARRÊTER'],
+  'Gravar': ['Record', 'Grabar', 'Registra', 'Enregistrer'],
+  'O vídeo vai ser salvo no ângulo que está na tela agora: {0}. Para outro ângulo, troque de câmera antes (toque na tela).': ['The video will be saved in the angle on screen now: {0}. For another angle, change the camera first (tap the screen).', 'El vídeo se guardará en el ángulo que está en pantalla ahora: {0}. Para otro ángulo, cambia de cámara antes (toca la pantalla).', 'Il video verrà salvato con l’inquadratura che è sullo schermo ora: {0}. Per un’altra, cambia camera prima (tocca lo schermo).', 'La vidéo sera enregistrée avec l’angle affiché maintenant : {0}. Pour un autre angle, change de caméra avant (touche l’écran).'],
+  'Replay salvo!': ['Replay saved!', '¡Repetición guardada!', 'Replay salvato!', 'Replay enregistré !'], 'Replay do gol': ['Goal replay', 'Repetición del gol', 'Replay del gol', 'Replay du but'],
+  'Não deu para gravar o vídeo neste aparelho': ['Could not record the video on this device', 'No se pudo grabar el vídeo en este dispositivo', 'Impossibile registrare il video su questo dispositivo', 'Impossible d’enregistrer la vidéo sur cet appareil'],
+  'GOL CONTRA': ['OWN GOAL', 'GOL EN PROPIA', 'AUTOGOL', 'BUT CONTRE SON CAMP'],
+  'GOL': ['GOAL', 'GOL', 'GOL', 'BUT'], 'GOLS': ['GOALS', 'GOLES', 'GOL', 'BUTS'],
+  'ASSISTÊNCIA': ['ASSIST', 'ASISTENCIA', 'ASSIST', 'PASSE DÉC.'], 'ASSISTÊNCIAS': ['ASSISTS', 'ASISTENCIAS', 'ASSIST', 'PASSES DÉC.'],
+  'NO CAMPEONATO': ['IN THE LEAGUE', 'EN EL CAMPEONATO', 'IN CAMPIONATO', 'EN CHAMPIONNAT'], 'NA COPA': ['IN THE CUP', 'EN LA COPA', 'IN COPPA', 'EN COUPE'],
+  'NESTA PARTIDA': ['IN THIS MATCH', 'EN ESTE PARTIDO', 'IN QUESTA PARTITA', 'DANS CE MATCH'], 'Assistência: {0}': ['Assist: {0}', 'Asistencia: {0}', 'Assist: {0}', 'Passe décisive : {0}'],
+  'Tiro de meta: passe rasteiro': ['Goal kick: ground pass', 'Saque de puerta: pase raso', 'Rinvio: passaggio rasoterra', 'Six mètres : passe à ras de terre'],
 });
 function Tseguro(k) { try { return T(k); } catch (e) { return k; } }   // (6.1.2) para código que roda antes de o Idioma existir
 function T(chave) {
@@ -23034,7 +24056,7 @@ body.criadorAberto #touch, body.criadorAberto #hud { visibility: hidden !importa
     camY += (foco.y - camY) * kk; camD += (foco.d - camD) * kk; camAz += ((foco.az || 0) - camAz) * kk;
     for (const A of ATLETAS) A.raiz.visible = (A === boneco);          // só o boneco aparece no campo
     ball.mesh.visible = ball.shadow.visible = false;
-    userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; aimArrow.visible = false;
+    userRing.visible = false; targetRing.visible = false; dribbleRing.visible = false; apontaRing.visible = false; aimArrow.visible = false;
     if (boneco) {
       boneco.raiz.rotation.y = yaw;
       if (aquece) {                                  // aquecimento: pulinhos e braços girando (o mesmo do reserva no banco)

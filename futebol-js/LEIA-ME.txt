@@ -207,6 +207,27 @@ ARQUIVOS
                           botões DESARMAR/CARRINHO. CHUVA: a altura e a caixa das gotas mudam em degraus (antes acompanhavam a câmera de TV e
                           embaralhavam as gotas: pareciam voltar para cima e acelerar). SÚMULA: o gol guarda o relógio (golsLog[].rel) e aparece
                           em minuto:segundo (relogioDoGol: '2:30+0:12' nos acréscimos). Bandeira dos EUA da tela de idioma com as 13 listras iguais.
+                          (7.6.6) CÂMERA DE TV no lateral e no escanteio do adversário: mantém o enquadramento do campo (não inclina até o
+                          cobrador) e afasta até caber quem cobra; no escanteio, centrada e um pouco mais aberta. TROCAR APONTANDO (time inteiro):
+                          com o direcional apontado, TROCAR vai para o companheiro naquela direção (um aro branco fino mostra quem); só tocar
+                          continua indo para o mais perto da bola. TIRO DE META: o botão troca BOLA ALTA / RASTEIRO (teclado: cruzar; controle: B).
+                          Os nomes em cima dos bonecos em resolução dobrada (de longe não embaralham). PULAR CENA (falta, lateral, escanteio,
+                          substituição): todos já no lugar do fim da cena (posicionarComoNoFimDaCena: barreira, quem defende a 9,15 m, área do
+                          escanteio, você também, goleiros no gol, sem ninguém empilhado). PÊNALTI: a seta gira (você parado atrás da bola), a
+                          cavadinha na faixa de baixo da bola (agora entra na altura que a força pede) e o goleiro escolhe uma de 5 zonas (esquerda/
+                          direita em cima/embaixo, meio). A física da bola no ar não depende mais do FPS. ZAGUEIRO NO CAMINHO: quem conduz vem reto
+                          nele → ele vai na bola (bote/desarme) em vez de recuar abrindo; só um vai, o outro cobre.
+                          BANDEIRAS NA TORCIDA (cena da torcida da abertura, livre.js): ~14 bandeiras com mastro (escudo e cores do time) e um
+                          bandeirão com a foto e o nome de um jogador (bandeirasDaTorcida). CONFETE NO GOL (Confete): a torcida de quem marcou joga
+                          papel picado nas 2 cores do time para o campo (1 desenho, conta no shader, ~7,5 s). ESCADINHA DA TORCIDA (EscadaTorcida):
+                          atrás de cada gol, dos dois lados da rede; no SEU gol, chegando na placa de trás do gol você pula a placa, sobe a escada e
+                          a torcida se amontoa em volta — cartão amarelo. TIRAR A CAMISA (4º botão na comemoração, tecla 3, controle B): a camisa
+                          sai pela cabeça, o boneco fica sem camisa (jogadora: com top) e gira a camisa (pixel art do uniforme) — cartão amarelo;
+                          a camisa volta no recomeço; 2º amarelo = vermelho no recomeço. CENA DEPOIS DO GOL (CenaPosGol, antes do replay): a torcida
+                          festejando ou quem fez voltando, depois o time voltando para a saída, com o quadro de gols/assistências dele no
+                          campeonato/copa (partida livre: PARTIDA.estTorneio) ou nesta partida; PULAR vai para o replay. REPLAY: 6 câmeras (+ do
+                          alto, da arquibancada, de dentro do gol) e SALVAR REPLAY: grava uma volta no ângulo da tela (avisa antes) e entrega o
+                          vídeo (celular: compartilhar/salvar; computador: download; mp4 ou webm conforme o aparelho).
   fase1.js .............. a Fase 1 (escola, corredor, quadra, primeira partida); o jogo baixa quando a história começa
   fase2.js .............. a Fase 2 (em desenvolvimento); o jogo baixa quando a Fase 1 termina
                           (7.6.3) No prédio: fome, fedor e a hora no canto da tela (com os ícones da cidade); dormir leva às 6h do dia seguinte.
