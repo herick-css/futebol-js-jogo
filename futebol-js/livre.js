@@ -286,7 +286,7 @@
     horario: [['auto', 'Automático'], ['dia', 'Dia'], ['tarde', 'Tarde'], ['noite', 'Noite']],
     clima: [['seco', 'Seco'], ['chuva', 'Chuva'], ['neve', 'Neve'], ['sorteio', 'Sorteado']],
     dur: [[180, '3 min'], [300, '5 min'], [480, '8 min'], [600, '10 min']],
-    dif: [['muito_facil', 'Muito fácil'], ['facil', 'Fácil'], ['normal', 'Normal'], ['dificil', 'Difícil'], ['muito_dificil', 'Muito difícil']],
+    dif: [['muito_facil', 'Muito fácil'], ['facil', 'Fácil'], ['normal', 'Normal'], ['dificil', 'Difícil'], ['muito_dificil', 'Muito difícil'], ['especialista', 'Especialista']],
     pos: [['FWD', 'Atacante'], ['MID', 'Meia'], ['DEF', 'Zagueiro']],
     abertura: [['completa', 'Completa'], ['curta', 'Curta'], ['nenhuma', 'Sem abertura']],
     controle: [['um', 'Um jogador'], ['time', 'Time inteiro']],

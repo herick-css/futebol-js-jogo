@@ -69,7 +69,7 @@
 // 1. CONFIGURAÇÕES
 // ---------------------------------------------------------------------
 // Versão do jogo (aparece na tela inicial; o carregador do Canva usa para avisar de atualização).
-const VERSAO_JOGO = '7.6.7';
+const VERSAO_JOGO = '7.6.8';
 // 7.3.0 (serieb.js, festa.js, fase2.js): a SÉRIE A — 20 paródias dos clubes de 2026 com escudo em pixel art e força pelos últimos
 //   10 anos; as duas séries simuladas juntas (3/1/0, gols, assistências, notas); sobem 4 e caem 4 com temporadas seguidas; Copa do
 //   Brasil (32 times); Estadual e Regional com as duas séries; estrelas da A em dobro nos jogos entre séries; a classificação antes
@@ -553,6 +553,7 @@ const DIFICULDADES = {
   normal:        { nome: 'Normal',        nivel: 0 },
   dificil:       { nome: 'Difícil',       nivel: 1 },
   muito_dificil: { nome: 'Muito difícil', nivel: 2 },
+  especialista:  { nome: 'Especialista',  nivel: 3 },   // (7.6.8) mais difícil que o muito difícil
 };
 // O ADVERSÁRIO EM CADA NÍVEL (fora do modo história). hab: o tanto que soma em TODAS as habilidades de cada jogador adversário
 //   (finalização, passe, defesa, desarme, goleiro, fôlego...): "gen" para o elenco sorteado pela faixa do nível (FAIXA_NIVEL, que já
@@ -565,8 +566,9 @@ const DIF_ADV = {
   normal:        { gen: 1.5, pronto: 1.5, bote: 1.25, pressa: 0.8 },
   dificil:       { gen: 1.5, pronto: 2.2, bote: 1.25, pressa: 0.8 },
   muito_dificil: { gen: 2.4, pronto: 3.2, bote: 1.4, pressa: 0.71 },
+  especialista:  { gen: 3.2, pronto: 4.2, bote: 1.55, pressa: 0.6, gk: 0.06 },   // (7.6.8) habilidades no teto, bote e decisão mais rápidos e o goleiro deles +6% na defesa
 };
-let DIF = { ativo: false, adv: 1, gen: 0, pronto: 0, bote: 1, pressa: 1 };
+let DIF = { ativo: false, adv: 1, gen: 0, pronto: 0, bote: 1, pressa: 1, gk: 0 };
 const difDe = (p) => (DIF.ativo && p && p.team === DIF.adv ? DIF : null);   // o ajuste vale para este jogador? (só o time adversário)
 
 // ---- Times. Cores em '#rrggbb'. forca 0–100. popularidade 0–1 (quanto de torcida leva).
@@ -903,7 +905,7 @@ const HABILIDADES = ['defesa', 'desarme', 'forca', 'resistencia', 'recuperacao',
 // (7.1.22) HAB_PESO achata a curva: 5 fica ~0,82 e 10 fica ~1,24 do nível 7 (antes 0,71 e 1,43) — 5 é ruim sem ser horrível, 10 é muito bom sem ser roubado.
 const HAB_PESO = 0.6;
 const HAB_EXP = { velocidade: 0.22, resistencia: 1.0, recuperacao: 1.0, forca: 0.6, chute: 1, efeito: 1, passe: 1, cruzamento: 1, drible: 1, dominio: 1, cabeceio: 1, finalizacao: 1, defesa: 1, desarme: 1, goleiro: 1 };
-const FAIXA_NIVEL = { muito_facil: [2, 3], facil: [3, 4], normal: [5, 6], dificil: [6, 8], muito_dificil: [8, 10] };
+const FAIXA_NIVEL = { muito_facil: [2, 3], facil: [3, 4], normal: [5, 6], dificil: [6, 8], muito_dificil: [8, 10], especialista: [9, 10] };
 const VIES_POSICAO = {
   GK: { goleiro: 2, defesa: 0, drible: -2, finalizacao: -3, chute: -1, cabeceio: -1 },
   DEF: { defesa: 1, desarme: 1, cabeceio: 1, finalizacao: -1, drible: -1, goleiro: -6 },
@@ -8071,9 +8073,11 @@ function aiBolaAerea(p) {
   const ec = p.escCorpo || 1;
   if (pertoDaArea) {
     const ang = Math.abs(wrapAngle(Math.atan2(-p.z, gx - p.x) - p.angle));   // de costas = ~π
-    let tipo = ball.y > 1.55 * ec ? 'cabeca' : 'voleio';
-    if (ang > 2.1) tipo = ball.y > 1.15 * ec && Math.random() < 0.5 ? 'bicicleta' : 'cabeca';
-    if (tipo !== 'cabeca' || naArea) { aiFinalizaAereo(p, tipo); return; }
+    // (7.6.8) o normal é CABEÇADA (bola alta) ou PEIXINHO (na altura do peito/cintura, na área); voleio e bicicleta ficam raros
+    //   (antes toda bola abaixo de 1,55 m virava voleio e, de costas, metade virava bicicleta)
+    let tipo = ball.y > 1.55 * ec ? 'cabeca' : naArea && ball.y > 0.65 * ec && Math.random() < 0.8 ? 'peixinho' : Math.random() < 0.3 ? 'voleio' : null;
+    if (ang > 2.1) tipo = ball.y > 1.15 * ec && Math.random() < 0.15 ? 'bicicleta' : ball.y > 1.55 * ec || !naArea ? 'cabeca' : 'peixinho';
+    if (tipo && (tipo !== 'cabeca' || naArea)) { aiFinalizaAereo(p, tipo); return; }
   }
   const perigo = dOwn < 30 * ESC && ball.lastKicker && ball.lastKicker.team !== p.team;
   const apertado = nearestOf(opponentsOf(p), p).d < 1.7;
@@ -8110,8 +8114,9 @@ function erroDeCabeca(p, sp, base) { return gauss() * (base + Math.max(0, sp - 1
 function aiFinalizaAereo(p, tipo) {
   const gx = p.dir * HALF_L;
   let tz, ty;
-  if (tipo === 'cabeca') ({ tz, ty } = cantoAereo(p, true));
+  if (tipo === 'cabeca' || tipo === 'peixinho') ({ tz, ty } = cantoAereo(p, true));
   else ({ tz, ty } = miraAcrobatica(p, tipo));      // voleio/bicicleta: a precisão vem do nível acrobático
+  if (tipo === 'peixinho') return aiPeixinho(p, tz, ty);
   const sp = (tipo === 'cabeca' ? Math.min(CABECA.VEL_GOL[1], rand(...CABECA.VEL_GOL) * Math.sqrt(fh(p, 'forca'))) : (tipo === 'voleio' ? rand(17, 24) : rand(15, 20)) * Math.sqrt(fh(p, 'forca')));
   if (tipo === 'cabeca') { tz += erroDeCabeca(p, sp, 0.6); ty += erroDeCabeca(p, sp, 0.3); }
   else tz += gauss() * Math.max(0, sp - 20) * 0.05;   // muito forte: um pouco menos preciso
@@ -8138,6 +8143,20 @@ function aiFinalizaAereo(p, tipo) {
   showToast(nome + ' de ' + p.name + '!', p.team === 0 ? 'good' : 'bad');
 }
 
+// (7.6.8) PEIXINHO DA IA: mergulha de cabeça; a bola vai até a testa no começo do mergulho (sem câmera lenta) e sai de lá no toque
+function aiPeixinho(p, tz, ty) {
+  const gx = p.dir * HALF_L, sp = Math.min(CABECA.VEL_GOL[1] * 1.08, rand(...CABECA.VEL_GOL) * 1.08 * Math.sqrt(fh(p, 'forca')));
+  tz += erroDeCabeca(p, sp, 0.6); ty += erroDeCabeca(p, sp, 0.3);
+  const yA = clamp(ball.y, 0.7, 1.95), ang = Math.atan2(tz - ball.z, gx - ball.x);
+  p.angle = ang;
+  const hx = p.x + Math.cos(ang) * PEIXE.FRENTE, hz = p.z + Math.sin(ang) * PEIXE.FRENTE;   // onde a testa vai estar
+  const dx = gx - hx, dz = tz - hz, D = Math.hypot(dx, dz) || 1, T = tempoNoAr(D, sp), vy = (ty - yA + 0.5 * CONFIG.GRAVITY * T * T) / T;
+  const t0 = Math.max(0, CONTATO_T.peixinho - 0.22);
+  p.recvPose = { kind: 'peixinho', t: t0, t0, dur: POSE_DUR.peixinho, side: Math.random() < 0.5 ? 1 : -1, yAlvo: yA };
+  G.acroIA = { p, vx: dx / D * sp, vy, vz: dz / D * sp, b: { x: hx, y: yA, z: hz }, b0: { x: ball.x, y: ball.y, z: ball.z }, t0 };
+  G.possession = null; ball.lastKicker = p; G.lastTouch = p; ball.vx = ball.vy = ball.vz = 0; p.controlCd = 0.8;
+  showToast('Peixinho de ' + p.name + '!', p.team === 0 ? 'good' : 'bad');
+}
 // (7.2.0) ALCANCE DA CABEÇADA: a cabeça não tem a força do pé. Passe de cabeça vai até ~9–13 m (força e cabeceio puxam
 //   um pouco) e a bola sai a no máximo 13 m/s — antes o cabeceio mirava o melhor companheiro mesmo a 40 m e a bola
 //   "virava o campo" mais forte que um chute.
@@ -8401,11 +8420,12 @@ function corpoGoleiro(gk) {
   const topo = gk.jumpT > 0 ? 2.3 + Math.sin((1 - gk.jumpT / 0.5) * Math.PI) * 0.7 : 2.3;
   return { a: pe, b: { x: gk.x, y: topo, z: gk.z }, raio: 1.1 };   // em pé: braços alcançam ~1,1 m para os lados
 }
-// Cavadinha: quanto mais adiantado ele estava, menos alcança. Na linha (≤2 m) pega quase sempre; a 6 m, ~45%;
-// a 8 m ou mais, ~20%. Cavadinha bem batida tira até mais 25% — mas só se ele estiver fora da linha.
+// Cavadinha: quanto mais adiantado ele estava, menos alcança. Na linha (≤3 m) pega quase sempre; a 6 m, ~70%;
+// a 10 m ou mais, ~34%. Cavadinha bem batida tira até mais 18% — mas só se ele estiver fora da linha.
 function chanceCavadinhaGoleiro(gk, adiant, noCorpo) {
   const adi = ball.cavadinha ? (ball.cavAdiant || adiant || 0) : (adiant || 0), q = ball.cavadinha ? (ball.cavQual || 0) : 0;
-  let chance = clamp(0.95 - (adi - 2) * 0.12, 0.15, 0.95) - q * 0.25 * clamp((adi - 2) / 4, 0, 1);
+  // (7.6.8) mais difícil de encobrir: a 6 m ~70% (era 45%), a 8 m ~52%, a 10 m ~34%; a cavadinha bem batida tira até 18% (era 25%)
+  let chance = clamp(0.97 - (adi - 3) * 0.09, 0.25, 0.97) - q * 0.18 * clamp((adi - 2) / 4, 0, 1);
   if (noCorpo && adi < 4) chance = Math.max(chance, 0.95);
   return chance;
 }
@@ -8474,8 +8494,7 @@ function gkThink(p, dt) {
     const depoisDoToque = p.diveTomb != null && progressoMergulho(p) > p.diveKc;   // passou do ponto: o voo perde força
     return { vx: p.diveVX || 0, vz: depoisDoToque ? p.diveVZ * 0.35 : p.diveVZ };
   }
-  if (p.jumpT > 0) p.jumpT -= dt;
-  if (p.olhaT > 0) p.olhaT -= dt;
+  if (p.olhaT > 0) p.olhaT -= dt;                 // (o pulo, jumpT, conta no laço de todos: ver o pulo da barreira)
   // (7.6.6) PÊNALTI, goleiro que escolheu o MEIO: se a bola vem alta nele (a cavadinha no meio, a bomba no alto), ele PULA com os
   //   braços para cima ~0,35 s antes de ela chegar (antes ficava parado e a bola "batia" nele de pé, passando pela cabeça)
   if (ball.penalti && p.penZona && p.penZona.lado === 0 && !p.penPulou && !G.possession && p.jumpT <= 0) {
@@ -8540,16 +8559,16 @@ function gkThink(p, dt) {
     const dH = Math.hypot(holder.x - ownGx, holder.z);
     const sozinho = dH < 19 * ESC && ultimoHomem({ team: p.team, dir: p.dir, x: p.x }, holder, true);   // sai só com o atacante já perto
     if (sozinho) {
-      if (p.saidaDe !== holder || G.time - p.saidaVisto > 2) { p.saidaDe = holder; p.vaiSair = Math.random() < 0.55; }
+      if (p.saidaDe !== holder || G.time - p.saidaVisto > 2) { p.saidaDe = holder; p.vaiSair = Math.random() < 0.82; }   // (7.6.8) era 55%
       p.saidaVisto = G.time;
       if (p.vaiSair && dH > 4) {
-        const dist = clamp(dH * 0.55, 2.5, 11), ux = (holder.x - ownGx) / dH, uz = holder.z / dH;
+        // (7.6.8) sai NA BISSETRIZ do ângulo (antes na linha atacante → meio do gol, presa perto do meio): fecha o lado por onde ele
+        //   tentaria passar; e vem acompanhando de lado se ele corta
+        const A = posFechandoAngulo(p, holder, clamp(dH * 0.55, 2.5, 11));
         if (dist2D(p, holder) < 2.2) tryTackle(p, holder, dt);
-        // (7.4.4) atacante vindo de lado: perto da linha do gol ele não passa dos 15% da trave (o lado de lá ficava aberto);
-        //   adiantado, já fora da pequena área, pode abrir um pouco mais para fechar o ângulo
-        const adX = Math.abs(ux * dist), limZ = LIM_GK() + Math.max(0, adX - 1.5) * 0.6;
-        return seek(p, ownGx + ux * dist, clamp(uz * dist, -limZ, limZ), CONFIG.GK_SPEED * 1.25);
+        return seek(p, A.x, A.z, CONFIG.GK_SPEED * 1.25);
       }
+      if (!p.vaiSair && dH > 4) { const A = posFechandoAngulo(p, holder, clamp(dH * 0.18, 1.2, 3.2)); return seek(p, A.x, A.z, CONFIG.GK_SPEED * 1.15); }   // não sai: fica perto da linha, mas fechando o ângulo
     } else p.saidaDe = null;
   }
   // Bola alta caindo na área dele (lançamento, cruzamento): vai buscar no ponto de queda.
@@ -8687,7 +8706,7 @@ function gkThink(p, dt) {
         // ele só ajeita o corpo e espera a bola cair — e ela é lenta, dá tempo.
         const voltaDeCostas = ball.cavadinha && (ball.cavAdiant || 0) > 4;
         if (ball.cavadinha && !voltaDeCostas && t < 0.5 && py > 1.9 && Math.abs(gap) < 1.6 && p.jumpT <= 0) p.jumpT = 0.5;
-        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (voltaDeCostas ? 0.55 : 1));   // no passo dele (antes 40% mais rápido)
+        return seek(p, lineX, clamp(pz, -GOAL_HALF, GOAL_HALF), CONFIG.GK_SPEED * (voltaDeCostas ? 0.8 : 1));   // (7.6.8) de costas: 0,8 (era 0,55)   // no passo dele (antes 40% mais rápido)
       }
     }
     const inBox = Math.abs(ball.x - ownGx) < BOX.depth - 2 && Math.abs(ball.z) < BOX.half - 2;
@@ -8698,9 +8717,22 @@ function gkThink(p, dt) {
   //   agora ~1,7 m, como um goleiro de quadra
   const dF = Math.abs(F.x - ownGx);
   const depth = campoPequeno() ? 0.9 + clamp((50 * ESC - dF) * 0.035, 0, 1.3) : 1.0 + clamp((50 - dF) * 0.06, 0, 3);
-  // (7.4.4) acompanhando a bola ele anda de um lado para o outro, mas para a 15% da largura do gol de cada trave (com a trave
-  //   de 0 a 100%, ele fica entre 15% e 85%): antes chegava quase na trave e deixava o outro lado todo aberto
-  return seek(p, ownGx + p.dir * depth, clamp(F.z * 0.3, -LIM_GK(), LIM_GK()), CONFIG.GK_SPEED);
+  // (7.6.8) FECHANDO O ÂNGULO: ele fica na BISSETRIZ do ângulo que a bola enxerga entre as duas traves (antes era 30% do lado da bola,
+  //   preso a 70% da meia largura do gol, e com a bola aberta perto da linha de fundo o primeiro pau ficava aberto: dava para passar
+  //   do lado dele e bater reto)
+  const A = posFechandoAngulo(p, F, depth);
+  return seek(p, A.x, A.z, CONFIG.GK_SPEED * (A.perto ? 1.15 : 1));
+}
+// o ponto da bissetriz (bola → as duas traves) a "depth" metros da linha do gol, sem passar do pé da trave
+function posFechandoAngulo(p, F, depth) {
+  const ownGx = -p.dir * HALF_L, gh = GOAL_HALF;
+  const dL = Math.hypot(F.x - ownGx, F.z + gh), dR = Math.hypot(F.x - ownGx, F.z - gh);
+  const zb = -gh + 2 * gh * dL / Math.max(0.01, dL + dR);          // teorema da bissetriz: onde ela corta a linha do gol
+  let ux = F.x - ownGx, uz = F.z - zb; const l = Math.hypot(ux, uz) || 1; ux /= l; uz /= l;
+  if (ux * p.dir < 0.1) { ux = p.dir * 0.1; uz = Math.sign(uz || 1) * Math.sqrt(1 - 0.01); }   // bola na linha de fundo (ou atrás): quase na linha
+  const d = Math.min(depth, Math.max(0.6, l - 1.2));               // anda "depth" na direção da bola, sem chegar nela
+  const lim = gh - 0.35;
+  return { x: ownGx + ux * d, z: clamp(zb + uz * d, -lim - Math.abs(ux * d) * 0.25, lim + Math.abs(ux * d) * 0.25), perto: l < 20 };
 }
 const LIM_GK = () => GOAL_HALF * 0.7;                // meia largura do gol menos 15% da largura inteira
 
@@ -9211,9 +9243,11 @@ function updatePlayers(dt) {
       p.lamentoAtraso -= dt;
       if (p.lamentoAtraso <= 0) p.lamentoK = Math.min(1, p.lamentoK + dt / 0.7);
     }
-    // Pulo da barreira (o goleiro conta o pulo dele no gkThink). Antes ninguém zerava esse
+    // Pulo (barreira, cabeceio, goleiro). Antes ninguém zerava esse
     // contador nos jogadores de linha, e quem pulava na barreira ficava de braços para cima pra sempre.
-    if (p.role !== 'GK' && p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.jumpAlt = 0; }
+    // (7.6.8) agora o do goleiro também conta aqui: o gkThink não roda quando ele é o seu (time inteiro, bola na mão dele) nem em
+    //   algumas paradas, e o goleiro que pegou o escanteio no alto ficava pulando de braços esticados para sempre
+    if (p.jumpT > 0) { p.jumpT = Math.max(0, p.jumpT - dt); if (p.jumpT === 0) p.jumpAlt = 0; }
     if (p.falling) { p.fall = Math.min(1, p.fall + dt * 2.8); if (p.fall >= 1) p.falling = false; }   // caindo aos poucos
     else if (p.fall > 0 && !p.scripted && p.stun < 0.5 && !p.levanta) p.fall = Math.max(0, p.fall - dt * (p.levantaRapido > 0 ? 4.5 : 2.5));   // goleiro levanta com pressa
     if (p.isUser) { updateStamina(p, dt); detectarDribleDeCorpo(p, dt); }
@@ -9463,7 +9497,7 @@ function kickBall(from, vx, vy, vz, spinSide = 0, spinVert = 0, isThrow = false)
   ball.spinSide = spinSide; ball.spinVert = spinVert;
   ball.vx0 = vx; ball.vz0 = vz; ball.x0 = ball.x; ball.z0 = ball.z; ball.tChute = G.time; ball.faltaDireta = false;   // (7.5.11) a linha em que ela saiu (o goleiro lê a curva atrasado)
   ball.y = Math.max(ball.y, CONFIG.BALL_R + 0.01);
-  ball.lastKicker = from; G.lastTouch = from; from.chegaBola = null;
+  ball.lastKicker = from; G.lastTouch = from; from.chegaBola = null; ball.tocadaPor = from;   // (7.6.8) tocada DE PROPÓSITO (passe, chute, lateral): o recuo só vale assim
   from.controlCd = 0.45;
   if (!isThrow) { const v = Math.hypot(vx, vy, vz); if (v > 17) Som.chute((v - 17) / 14); else Som.toque(v / 17); }
   if (!isThrow && !(from.role === 'GK' && !from.goalKick && !from.comPe)) from.kickT = 0.35; // animação do chute (goleiro: no tiro de meta e com a bola no pé)
@@ -9723,8 +9757,10 @@ function checkBallContacts() {
     if (DI && DI.team !== gk.team && DI.deixa) continue;
     // RECUO: bola tocada de propósito por um companheiro → o goleiro não pode pegar com a
     // mão. Ele domina com o pé (bola baixa, perto dele) e joga como jogador de linha.
+    // (7.6.8) só quando o companheiro TOCOU de propósito (kickBall). Bola do adversário que só desviou/bateu num companheiro (bloqueio,
+    //   rebote, carrinho) não é recuo: antes o goleiro saía jogando com o pé numa bola que vinha do adversário
     const LK = ball.lastKicker;
-    if (LK && LK !== gk && LK.team === gk.team && !ball.isShot) {
+    if (LK && LK !== gk && LK.team === gk.team && !ball.isShot && ball.tocadaPor === LK) {
       if (ball.y < 1.0 && dist2D(gk, ball) < 0.9 && sp3 < 22) {
         givePossession(gk, { comPe: true });
         if (gk.team === 0 || LK === user) showToast('Recuo: o goleiro joga com os pés');
@@ -9783,6 +9819,7 @@ function checkBallContacts() {
       const noCorpo = passa < 0.6 && ball.y < 2.1;
       let chance = clamp(1.45 - sp3 / 30, 0.2, 0.95) + clamp(1 - passa / reach, 0, 1) * 0.45;
       chance += (fh(gk, 'goleiro') - 1) * 0.3;     // habilidade de goleiro
+      { const Dg = difDe(gk); if (Dg && Dg.gk) chance += Dg.gk; }   // (7.6.8) especialista: o goleiro deles defende um pouco mais
       if (ball.y > 2.0 && gk.jumpT <= 0) chance -= 0.15;
       if (Math.abs(ball.spinSide) > 0.4) chance -= 0.08;
       // (7.5.11) a curva que TIROU a bola da linha em que ela saiu engana o goleiro (ele foi na direção da saída): até −30%
@@ -9791,9 +9828,12 @@ function checkBallContacts() {
       // Chute de longe: o goleiro tem mais tempo para ver a bola (até +35% de chance de defender).
       if (ball.distChute) chance += clamp((ball.distChute - 14) / 25, 0, 0.35);
       // Chute de muito perto (cara a cara): o goleiro quase não tem tempo de reagir.
-      if (ball.distChute && ball.distChute < 13) chance -= (13 - ball.distChute) / 13 * 0.75;
+      // (7.6.8) só pesa se o chute é FORTE: chute fraco de perto dá tempo (antes tirava até 75% de qualquer chute e a bola mansa entrava)
+      if (ball.distChute && ball.distChute < 13) chance -= (13 - ball.distChute) / 13 * 0.75 * clamp((sp3 - 12) / 14, 0, 1);
       if (!ball.isShot && sp3 < 22) chance = Math.max(chance, 0.88);   // lançamento/cruzamento: ele sai e segura
       if (noCorpo) chance = Math.max(chance, 0.92);
+      // (7.6.8) BOLA FRACA: até ~15 m/s ele defende quase sempre o que chega nas mãos (até 18 m/s ainda é bem provável)
+      if (ball.isShot && !ball.penalti && sp3 < 18) chance = Math.max(chance, 0.95 - clamp((sp3 - 12) / 6, 0, 1) * 0.2 - (noCorpo ? 0 : clamp(passa / reach - 0.6, 0, 0.4) * 0.5));
       if (ball.cavadinha) chance = chanceCavadinhaGoleiro(gk, 0, noCorpo);
       if (ball.penalti) chance = chancePenaltiPorZona(gk, chance, noCorpo);   // pênalti: depende da zona que ele escolheu (7.6.6)
       if (ball.userShot && !noCorpo && !ball.cavadinha) chance = Math.min(chance, 0.88);   // TETO: chute seu longe do corpo sempre pode entrar
@@ -12748,8 +12788,8 @@ const RECV = {
   ZONA: { pe: 0.2, peito: 0.17, peitoPulo: 0.15, alto: 0.16 },   // (7.5.11) era 0,26/0,22/0,2/0,2: o domínio estava fácil demais; ver tamFaixa
   ALT: { pe: 0.9, peito: 1.5, peitoPulo: 1.95, alto: 2.9 },
 };
-const POSE_DUR = { peito: 0.6, peitoPulo: 0.65, cabeca: 0.7, bicicleta: 1.1, voleio: 0.95 };
-const CONTATO_T = { pe: 0.2, peito: 0.22, peitoPulo: 0.26, cabeca: 0.26, bicicleta: 0.42, voleio: 0.36 };
+const POSE_DUR = { peito: 0.6, peitoPulo: 0.65, cabeca: 0.7, bicicleta: 1.1, voleio: 0.95, peixinho: 1.0 };
+const CONTATO_T = { pe: 0.2, peito: 0.22, peitoPulo: 0.26, cabeca: 0.26, bicicleta: 0.42, voleio: 0.36, peixinho: 0.3 };
 
 // Simula a bola (e você andando) por até 1 s e diz quando e em que altura ela chega em você.
 function predictArrival() {
@@ -12827,7 +12867,7 @@ function bloqueioDoUsuario(pr) {
 }
 // (7.5.11) o tamanho da faixa verde e a velocidade da setinha: menores/mais rápida na dificuldade alta, maiores/mais lenta com o
 //   atributo DOMÍNIO alto (quanto melhor no domínio, mais fácil)
-const DIF_DOMINIO = { muito_facil: 0.8, facil: 0.9, normal: 1, dificil: 1.12, muito_dificil: 1.25 };
+const DIF_DOMINIO = { muito_facil: 0.8, facil: 0.9, normal: 1, dificil: 1.12, muito_dificil: 1.25, especialista: 1.38 };
 function difDominio() { return PARTIDA && PARTIDA.criancas ? 0.9 : (DIF_DOMINIO[PARTIDA && PARTIDA.dificuldade] || 1); }
 function tamFaixa(kind) { return RECV.ZONA[kind] * clamp(Atributos.fator('dominio'), 0.6, 1.55) / difDominio(); }
 function velMartelo() { return difDominio() / clamp(Math.sqrt(Atributos.fator('dominio')), 0.78, 1.3); }
@@ -12844,9 +12884,9 @@ function miraAcrobatica(p, tipo) {
   const gk = opponentsOf(p).find((o) => o.role === 'GK');
   const lado = gk && Math.abs(gk.z) > 0.2 ? -Math.sign(gk.z) : (Math.random() < 0.5 ? -1 : 1);
   const canto = Math.random() < 0.75 ? lado : -lado;
-  const nivel = tipo === 'cabecada' || tipo === 'cabeca' ? fh(p, 'cabeceio') : nivelAcrobatico(p);
+  const nivel = tipo === 'cabecada' || tipo === 'cabeca' || tipo === 'peixinho' ? fh(p, 'cabeceio') : nivelAcrobatico(p);
   const q = clamp((nivel - 0.4) / 0.9, 0, 1);       // 0 = fraco ... 1 = no canto
-  const H = CONFIG.GOAL_H, alto = Math.random() < (tipo === 'cabecada' || tipo === 'cabeca' ? 0.35 : 0.5);
+  const H = CONFIG.GOAL_H, alto = Math.random() < (tipo === 'cabecada' || tipo === 'cabeca' ? 0.35 : tipo === 'peixinho' ? 0.2 : 0.5);
   let tz = canto * (GOAL_HALF - 0.4) * lerp(0.3, 1, q) + gauss() * lerp(0.85, 0.15, q);
   let ty = lerp(1.2, alto ? H - 0.45 : 0.35, lerp(0.35, 1, q)) + gauss() * lerp(0.45, 0.1, q);
   return { tz, ty: clamp(ty, 0.2, H + 0.6), nivel };
@@ -12889,7 +12929,10 @@ function atualizarChuteAcroIA(rdt) {
   if (!C) return;
   const p = C.p, rp = p.recvPose;
   if (!rp || G.state !== 'play' || G.possession) { G.acroIA = null; return; }
-  if (rp.t < CONTATO_T[rp.kind]) { ball.x = C.b.x; ball.y = C.b.y; ball.z = C.b.z; ball.vx = ball.vy = ball.vz = 0; return; }
+  if (rp.t < CONTATO_T[rp.kind]) {
+    const k = C.b0 ? smooth(clamp((rp.t - C.t0) / Math.max(0.01, CONTATO_T[rp.kind] - C.t0), 0, 1)) : 1;   // (7.6.8) peixinho: a bola chega na testa
+    ball.x = lerp(C.b0 ? C.b0.x : C.b.x, C.b.x, k); ball.y = lerp(C.b0 ? C.b0.y : C.b.y, C.b.y, k); ball.z = lerp(C.b0 ? C.b0.z : C.b.z, C.b.z, k); ball.vx = ball.vy = ball.vz = 0; return;
+  }
   G.acroIA = null;
   kickBall(p, C.vx, C.vy, C.vz, 0, 0);
   p.kickT = 0;
@@ -12897,19 +12940,23 @@ function atualizarChuteAcroIA(rdt) {
   if (G.acroCine && G.acroCine.p === p) G.acroCine.tc = 0;
 }
 // Para onde você está virado em relação ao gol adversário decide o tipo de finalização.
-function tipoFinalizacao() {
+// (7.6.8) NO CRUZAMENTO O NORMAL É CABEÇADA OU PEIXINHO: antes o lado do corpo decidia (de lado para o gol = voleio, de costas =
+//   bicicleta) e quase todo cruzamento virava finalização acrobática. Agora: bola alta na área = CABEÇADA (de costas para o gol, só
+//   1 em 4 vira bicicleta); bola na altura do peito/da cintura na área = PEIXINHO; fora da área (até ~5 m) só às vezes (30%) o voleio
+//   ou a bicicleta aparecem. O sorteio é um só por bola (a mesma recepção).
+function tipoFinalizacao(kind) {
   const toGoal = Math.atan2(-user.z, HALF_L - user.x);
   const ang = Math.abs(wrapAngle(toGoal - user.angle));
-  const tipo = ang < 1.05 ? 'cabecada' : ang < 2.1 ? 'voleio' : 'bicicleta';
-  // Cabeçada ao gol só DENTRO da área; voleio e bicicleta até um pouco fora dela (~5 m).
-  // Fora disso não tem finalização aérea — só o cabeceio de passe.
   const fundo = HALF_L - user.x, lat = Math.abs(user.z);
   const naArea = fundo < BOX.depth && lat < BOX.half;
   const pertoDaArea = fundo < BOX.depth + 5 && lat < BOX.half + 3;
-  if (tipo === 'cabecada') return naArea ? tipo : null;
-  return pertoDaArea ? tipo : null;
+  if (kind === 'peito' || kind === 'peitoPulo') return naArea ? 'peixinho' : null;
+  if (kind && kind !== 'alto') return null;
+  if (naArea) return ang > 2.3 && Math.random() < 0.25 ? 'bicicleta' : 'cabecada';
+  if (pertoDaArea && ang >= 1.05 && Math.random() < 0.3) return ang < 2.1 ? 'voleio' : 'bicicleta';
+  return null;
 }
-const NOME_FIN = { cabecada: 'CABEÇADA AO GOL', voleio: 'VOLEIO', bicicleta: 'BICICLETA' };
+const NOME_FIN = { cabecada: 'CABEÇADA AO GOL', voleio: 'VOLEIO', bicicleta: 'BICICLETA', peixinho: 'PEIXINHO' };
 
 function startReceive(pr) {
   const kind = pr.y < RECV.ALT.pe ? 'pe' : pr.y < RECV.ALT.peito ? 'peito' : pr.y < RECV.ALT.peitoPulo ? 'peitoPulo' : 'alto';
@@ -12921,7 +12968,7 @@ function startReceive(pr) {
   const risco = av.dificil ? 0.6 : 0;
   const dificil = av.dificil && kind !== 'alto';
   const R = {
-    kind, pr, risco, motivo, dificil, forcedMiss: false, fin: tipoFinalizacao(),
+    kind, pr, risco, motivo, dificil, forcedMiss: false, fin: tipoFinalizacao(kind),
     t: 0, pos: 0, dir: 1, zona: { ini: 0, fim: 0 }, azul: null, done: false,
   };
   const SD = typeof Historia !== 'undefined' && Historia.emPartida() ? Sono.debuff() : null;   // dormiu mal: faixa menor e tracinho mais rápido
@@ -12966,6 +13013,7 @@ function startReceive(pr) {
     botao('DOMINAR', 'dominar', 's1', true);
     if (R.op1) botao('PASSE DE 1ª', 'passe1', 's2', false);
     if (R.chute1) botao('CHUTE DE 1ª', 'chute1', R.op1 ? 's3' : 's2', false);
+    if (R.fin === 'peixinho') botao('PEIXINHO', 'finalizar', R.op1 && R.chute1 ? 's4' : R.op1 || R.chute1 ? 's3' : 's2', false);   // (7.6.8) bola na altura do peito na área
   }
   $('recvInfo').textContent = T(kind === 'alto' ? 'Bata na faixa verde. Cabecear toca no companheiro mais perto.'
     : dificil ? 'Passe difícil: acerte o ponto AZUL' : R.op1 || R.chute1 ? 'Bata na faixa verde: domine ou toque de primeira' : 'Bata quando o marcador estiver na faixa verde');
@@ -13069,7 +13117,7 @@ function resolveReceive(acao, ok) {
   }
   if (!acao) acao = 'dominar';                     // tempo esgotado no domínio: a bola bate e escapa
   let pose = null;
-  if (R.kind === 'peito' || R.kind === 'peitoPulo') pose = R.kind;
+  if (R.kind === 'peito' || R.kind === 'peitoPulo') pose = acao === 'finalizar' && R.fin === 'peixinho' ? 'peixinho' : R.kind;
   else if (R.kind === 'alto') pose = acao === 'cabecear' || R.fin === 'cabecada' ? 'cabeca' : R.fin;
   if (acao === 'dominar') { const v = escolherDominio(R, acao); if (v) pose = v; }   // domínios novos (coxa, sola, orientado...)
   let lado = Math.random() < 0.5 ? 1 : -1;
@@ -13080,6 +13128,7 @@ function resolveReceive(acao, ok) {
     lado = (qx * -Math.sin(angEspera) + qz * Math.cos(angEspera)) >= 0 ? 1 : -1;
   }
   user.recvPose = pose ? { kind: pose, t: 0, dur: POSE_DUR[pose], side: lado } : null;
+  if (pose === 'peixinho') user.recvPose.yAlvo = clamp(R.pr.y, 0.7, 1.95);   // a cabeça vai na altura da bola
   if (ok && acao === 'finalizar' && (pose === 'voleio' || pose === 'bicicleta')) iniciarCenaAcro(user, pose);
   G.recvFx = { t: 0, from: { x: ball.x, y: ball.y, z: ball.z }, contactT: CONTATO_T[pose || 'pe'], kind: R.kind, acao, ok, pose, fin: R.fin, fase: 'ida',
     perfeito: !!R.perfeito, culpaDoPasse: !!R.culpaDoPasse, passador: ball.lastKicker };
@@ -13113,6 +13162,7 @@ function puloRecepcao(rp) {
   return 0;
 }
 const INCL_PEITO = 0.18;
+const PEIXE = { FRENTE: 1.35, CABECA: 1.62 };          // (7.6.8) peixinho: a testa vai 1,35 m à frente dos pés; a cabeça fica a 1,62 m dos pés
 function pontoContato(pose) {
   if (DOMINIOS_NOVOS.includes(pose) && user.recvPose && user.recvPose.kind === pose) return pontoContatoNovo(pose);
   const c = Math.cos(user.angle), s = Math.sin(user.angle), j = puloRecepcao(user.recvPose);
@@ -13123,6 +13173,7 @@ function pontoContato(pose) {
     const fx = lx * Math.cos(inc) - ly * Math.sin(inc), fy = lx * Math.sin(inc) + ly * Math.cos(inc);
     return { x: user.x + c * fx, y: fy + j, z: user.z + s * fx };
   }
+  if (pose === 'peixinho') { const yA = user.recvPose && user.recvPose.yAlvo || 1.2; return { x: user.x + c * PEIXE.FRENTE, y: yA, z: user.z + s * PEIXE.FRENTE }; }   // (7.6.8) a testa, no mergulho
   const P = { pe: [0.62, CONFIG.BALL_R], peito: [0.33, 1.12], peitoPulo: [0.33, 1.12], cabeca: [0.18, 2.08], bicicleta: [0.1, 1.35], voleio: [0.45, 1.0] }[pose || 'pe'];
   return { x: user.x + c * P[0], y: P[1] + j, z: user.z + s * P[0] };
 }
@@ -13311,7 +13362,7 @@ function pontoPe() { return { x: user.x + Math.cos(user.angle) * 0.62, y: CONFIG
 //   ~0,06–0,2 s a bola é ajustada os centímetros que faltam até o pé/peito/cabeça desenhados.
 const ESPERA = { MAX_T: 1.8, VEL: 7.5, BALANCO: 0.19 };
 // ponto de contato de cada pose, no corpo: [para a frente, para o lado] (o lado vai para onde a perna da pose está)
-const OFF_CONTATO = { pe: [0.62, 0], peito: [0.31, 0], peitoPulo: [0.31, 0], cabeca: [0.18, 0], bicicleta: [0.1, 0], voleio: [0.45, 0],
+const OFF_CONTATO = { pe: [0.62, 0], peito: [0.31, 0], peitoPulo: [0.31, 0], cabeca: [0.18, 0], bicicleta: [0.1, 0], voleio: [0.45, 0], peixinho: [PEIXE.FRENTE, 0],
   coxa: [0.32, 0.12], amortece: [0.45, 0.12], solaPara: [0.34, 0.12], orientado: [0.28, 0.3], esticado: [0.45, 0.62], peitoSobe: [0.36, 0], peDoAlto: [0.45, 0.12], cabecinha: [0.2, 0] };
 function anguloDeEspera() {
   const hs = Math.hypot(ball.vx, ball.vz);
@@ -13419,6 +13470,10 @@ function contatoRecepcao(F) {
   if (F.acao === 'primeira') { baterDePrimeira(F); return; }   // (7.4.13)
   if (G.offside && G.offside.set.has(user)) { fimRecepcao(); callOffside(user); return; }
   if (G.offside) G.offside = null;
+  if (F.pose === 'peixinho') {                      // (7.6.8) peixinho: cabeçada mergulhando
+    if (F.ok) finalizarAereo('peixinho'); else toqueTorto('Peixinho torto');
+    fimRecepcao(); return;
+  }
   if (F.kind !== 'alto') {
     if (F.ok) {
       G.stats.dominiosOk++;
@@ -13496,14 +13551,15 @@ function cabecearPasse() {
 function finalizarAereo(tipo) {
   const { tz, ty } = miraAcrobatica(user, tipo);
   const dx = HALF_L - ball.x, dz = tz - ball.z, D = Math.hypot(dx, dz) || 1;
-  const sp = tipo === 'cabecada' ? rand(13, 17) * Math.min(1.1, Math.sqrt(fh(user, 'forca'))) : rand(20, 25);   // (7.2.0) cabeçada nunca na força de um chute
+  const cab = tipo === 'cabecada' || tipo === 'peixinho';
+  const sp = cab ? rand(13, 17) * (tipo === 'peixinho' ? 1.08 : 1) * Math.min(1.1, Math.sqrt(fh(user, 'forca'))) : rand(20, 25);   // (7.2.0) cabeçada nunca na força de um chute (o peixinho leva o corpo junto: um pouco mais)
   const T = D / sp;
   const vy = (ty - ball.y + 0.5 * CONFIG.GRAVITY * T * T) / T;
-  if (tipo === 'cabecada') user.angle = Math.atan2(dz, dx);
+  if (cab) user.angle = Math.atan2(dz, dx);
   kickBall(user, dx / D * sp, vy, dz / D * sp);
-  if (tipo === 'cabecada') user.kickT = 0;
-  ball.isShot = true; ball.userShot = true; ball.userCabeca = tipo === 'cabecada'; G.stats.chutes++; if (ball.userCabeca) G.stats.cabecadas = (G.stats.cabecadas | 0) + 1; prepararBloqueios(user);
-  showToast({ cabecada: 'Cabeçada!', voleio: 'Voleio!', bicicleta: 'Bicicleta!' }[tipo], 'good');
+  if (cab) user.kickT = 0;
+  ball.isShot = true; ball.userShot = true; ball.userCabeca = cab; G.stats.chutes++; if (ball.userCabeca) G.stats.cabecadas = (G.stats.cabecadas | 0) + 1; prepararBloqueios(user);
+  showToast({ cabecada: 'Cabeçada!', voleio: 'Voleio!', bicicleta: 'Bicicleta!', peixinho: 'Peixinho!' }[tipo], 'good');
   if (G.acroCine && G.acroCine.p === user) G.acroCine.tc = 0;   // a câmera lenta segue a bola
   else checarCenaDoAngulo();
 }
@@ -13526,6 +13582,7 @@ function updateRecvPose(rdt) {
       // caiu (de costas na bicicleta, de lado no voleio) e LEVANTA de um dos jeitos (ver LEVANTAR), sem "desgirar" do chão
       if (rp.kind === 'bicicleta') { p.fall = 1; p.fallKind = 'costas'; p.fallSide = rp.side; iniciarLevanta(p, 'costas', false, 0.12, 0.8); }
       if (rp.kind === 'voleio') { p.fall = 1; p.fallKind = 'lado'; p.fallSide = rp.side; iniciarLevanta(p, 'lado', false, 0.1, 0.8); }
+      if (rp.kind === 'peixinho') { p.fall = 1; p.fallKind = 'frente'; p.fallSide = rp.side; iniciarLevanta(p, 'frente', false, 0.1, 0.8); }   // (7.6.8) caiu de barriga
       p.recvPose = null;
     }
   }
@@ -13630,6 +13687,15 @@ function aplicarPoseRecepcao(p, m) {
     lR = u < 0.2 ? -0.5 * (u / 0.2) : u < 0.5 ? lerp(-0.5, 2.0, (u - 0.2) / 0.3) : lerp(2.0, 0, (u - 0.5) / 0.5);
     lL = u < 0.5 ? lerp(0.6, -0.4, u / 0.5) : lerp(-0.4, 0, (u - 0.5) / 0.5);
     aZL = aZR = -0.3; aXL = 1.0; aXR = -1.0;
+  } else if (rp.kind === 'peixinho') {
+    // (7.6.8) PEIXINHO: o corpo gira a partir dos pés para a frente até a testa chegar na bola (PEIXE.FRENTE à frente, na altura dela);
+    //   depois do toque desce de barriga até o chão. Braços esticados para a frente, pernas para trás.
+    const kc = CONTATO_T.peixinho / rp.dur, yA = rp.yAlvo || 1.2;
+    const a1 = Math.asin(clamp(PEIXE.FRENTE / PEIXE.CABECA, 0, 1)), y1 = Math.max(0.12, yA - PEIXE.CABECA * Math.cos(a1));
+    const ida = smooth(clamp(u / kc, 0, 1)), cai = smooth(clamp((u - kc) / (1 - kc), 0, 1));
+    frente = -(a1 * ida + (1.5 - a1) * cai);                          // negativo = para a frente
+    yLado = y1 * ida * (1 - cai) + 0.12 * cai;
+    incl = -0.1 * ida; aZL = aZR = lerp(0.2, 2.9, ida); aXL = 0.25; aXR = -0.25; lL = -0.15 * ida; lR = -0.3 * ida;
   } else if (rp.kind === 'voleio') {
     const s = smooth(Math.min(1, u / 0.45));
     tomb = rp.side * 1.35 * s;                                          // deita de lado no ar
@@ -13638,8 +13704,8 @@ function aplicarPoseRecepcao(p, m) {
     if (rp.side > 0) aXR = lerp(-0.9, -3.0, s); else aXL = lerp(0.9, 3.0, s);   // braço de baixo sobe
     yLado = 0.3 * s;
   }
-  let y = Math.max(puloRecepcao(rp), yLado);
-  if (rp.kind === 'bicicleta' || rp.kind === 'voleio') {
+  let y = rp.kind === 'peixinho' ? yLado : Math.max(puloRecepcao(rp), yLado);
+  if (rp.kind === 'bicicleta' || rp.kind === 'voleio' || rp.kind === 'peixinho') {
     // ENTRADA SUAVE: os primeiros ~0,14 s saem da pose em que ele estava (correndo) — antes ele pulava de uma vez para a pose do chute
     if (!rp.k0) rp.k0 = Object.assign(lerPose(m), { y: m.raiz.position.y });
     const K = rp.k0, w0 = smooth(clamp((rp.t - (rp.t0 || 0)) / 0.14, 0, 1));
@@ -13653,7 +13719,7 @@ function aplicarPoseRecepcao(p, m) {
   m.corpo.rotation.z = incl; m.corpo.position.y = 0;
   m.bracoE.rotation.z = aZL; m.bracoD.rotation.z = aZR; m.bracoE.rotation.x = aXL; m.bracoD.rotation.x = aXR;
   m.pernaE.rotation.z = lL; m.pernaD.rotation.z = lR;
-  if (rp.kind === 'bicicleta' || rp.kind === 'voleio') naoEntrarNoChao(m);
+  if (rp.kind === 'bicicleta' || rp.kind === 'voleio' || rp.kind === 'peixinho') naoEntrarNoChao(m);
 }
 
 // (7.2.0) ÁREA LIVRE DO GOLEIRO: com a bola NAS MÃOS (não no pé), quem é do outro time fica a pelo menos GK_AREA_LIVRE
@@ -18818,7 +18884,7 @@ function resolverPartida(cfg = {}) {
 function calcularAjuste(P) {
   const nivel = (DIFICULDADES[P.dificuldade] || DIFICULDADES.normal).nivel;
   const dif = (P.timesObj[1].forca - P.timesObj[0].forca) / 40;   // adversário melhor → positivo
-  const peso = clamp(nivel * 0.32 + dif * 0.55, -1, 1);
+  const peso = clamp(nivel * 0.32 + dif * 0.55, -1, nivel >= 3 ? 1.25 : 1);   // (7.6.8) especialista passa um pouco do teto
   return {
     peso,
     velAdv: 1 + 0.07 * peso,                       // adversários um pouco mais rápidos (máx. +7%)
@@ -19651,7 +19717,7 @@ function montarPartida(cfg) {
   PARTIDA = resolverPartida(cfg);
   PARTIDA.criancas = cfg && cfg.criancas || null;
   { const D = DIF_ADV[PARTIDA.dificuldade] || DIF_ADV.normal, historia = !!(cfg && cfg.atributos);   // (a história tem o equilíbrio dela: lá não muda)
-    DIF = { ativo: !historia && !PARTIDA.criancas, adv: 1, gen: D.gen, pronto: D.pronto, bote: D.bote, pressa: D.pressa }; }
+    DIF = { ativo: !historia && !PARTIDA.criancas, adv: 1, gen: D.gen, pronto: D.pronto, bote: D.bote, pressa: D.pressa, gk: D.gk || 0 }; }
   Atributos.aplicar(cfg && cfg.atributos);          // sem "atributos" = tudo 7 (o jogo de sempre)
   aplicarDimensoes(PARTIDA.campo);
   CONFIG.MATCH_SECONDS = PARTIDA.duracao;
@@ -21331,6 +21397,7 @@ const Idioma = {
   'CABEÇADA': ['HEADER', 'CABEZAZO', 'COLPO DI TESTA', 'TÊTE'],
   'VOLEIO': ['VOLLEY', 'VOLEA', 'VOLEA', 'VOLÉE'],
   'BICICLETA': ['BICYCLE KICK', 'CHILENA', 'ROVESCIATA', 'CISEAUX'],
+  'PEIXINHO': ['DIVING HEADER', 'PALOMITA', 'TUFFO DI TESTA', 'TÊTE PLONGEANTE'], 'Peixinho torto': ['Miscued diving header', 'Palomita desviada', 'Tuffo di testa sbagliato', 'Tête plongeante ratée'],
   'DOMINAR': ['CONTROL', 'CONTROLAR', 'CONTROLLA', 'CONTRÔLER'],
   'Bata na faixa verde. Cabecear toca no companheiro mais perto.': ['Hit the green band. A header goes to the nearest teammate.', 'Pulsa en la franja verde. El cabezazo va al compañero más cercano.', 'Premi nella fascia verde. Il colpo di testa va al compagno più vicino.', 'Tape dans la zone verte. La tête va au coéquipier le plus proche.'],
   'Passe difícil: acerte o ponto AZUL': ['Hard pass: hit the BLUE spot', 'Pase difícil: acierta el punto AZUL', 'Passaggio difficile: colpisci il punto BLU', 'Passe difficile : touche le point BLEU'],
@@ -21570,6 +21637,7 @@ const Idioma = {
   'Fácil': ['Easy', 'Fácil', 'Facile', 'Facile'],
   'Difícil': ['Hard', 'Difícil', 'Difficile', 'Difficile'],
   'Muito difícil': ['Very hard', 'Muy difícil', 'Molto difficile', 'Très difficile'],
+  'Especialista': ['Expert', 'Experto', 'Esperto', 'Expert'],
   'Seco': ['Dry', 'Seco', 'Asciutto', 'Sec'],
   'Chuva': ['Rain', 'Lluvia', 'Pioggia', 'Pluie'],
   'Neve': ['Snow', 'Nieve', 'Neve', 'Neige'],
